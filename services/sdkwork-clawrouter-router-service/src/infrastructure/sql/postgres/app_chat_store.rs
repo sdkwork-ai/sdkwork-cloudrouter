@@ -330,13 +330,15 @@ async fn create_turn(
         &command,
         conversation_pk,
         turn_id,
-        &command.input_item_uuid,
-        next_sequence_no,
-        "message",
-        Some("user"),
-        "input",
-        "completed",
-        Some(&command.message),
+        ChatItemInsert {
+            uuid: &command.input_item_uuid,
+            sequence_no: next_sequence_no,
+            item_type: "message",
+            role: Some("user"),
+            direction: "input",
+            status: "completed",
+            content_text: Some(&command.message),
+        },
     )
     .await?;
 
@@ -345,13 +347,15 @@ async fn create_turn(
         &command,
         conversation_pk,
         turn_id,
-        &command.output_item_uuid,
-        output_sequence_no,
-        "message",
-        Some("assistant"),
-        "output",
-        "pending",
-        None,
+        ChatItemInsert {
+            uuid: &command.output_item_uuid,
+            sequence_no: output_sequence_no,
+            item_type: "message",
+            role: Some("assistant"),
+            direction: "output",
+            status: "pending",
+            content_text: None,
+        },
     )
     .await?;
 
@@ -529,7 +533,6 @@ async fn complete_turn_response(
             None => {
                 if let Some(outcome) = update_existing_streaming_turn_response_outcome(
                     &mut tx,
-                    command.subject,
                     conversation_pk,
                     turn_pk,
                     &turn,
@@ -709,10 +712,12 @@ async fn complete_turn_response(
     let context_snapshot_id = insert_context_snapshot(
         &mut tx,
         &command,
-        conversation_pk,
-        turn_pk,
-        &input_item,
-        &output_item,
+        ChatContextSnapshotItems {
+            conversation_pk,
+            turn_pk,
+            input_item: &input_item,
+            output_item: &output_item,
+        },
         &usage,
         &metadata,
     )
@@ -1041,7 +1046,6 @@ async fn load_existing_turn_response_outcome(
 
 async fn update_existing_streaming_turn_response_outcome(
     tx: &mut Transaction<'_, Postgres>,
-    subject: AppChatSubject,
     conversation_pk: i64,
     turn_pk: i64,
     turn: &sqlx::postgres::PgRow,
@@ -1049,6 +1053,7 @@ async fn update_existing_streaming_turn_response_outcome(
     metadata: &str,
     usage_metadata: &str,
 ) -> DomainResult<Option<AppChatTurnOutcome>> {
+    let subject = command.subject;
     let row = sqlx::query(
         r#"
         SELECT
@@ -1261,10 +1266,12 @@ async fn update_existing_streaming_turn_response_outcome(
     let context_snapshot_id = insert_context_snapshot(
         tx,
         command,
-        conversation_pk,
-        turn_pk,
-        &input_item,
-        &output_item,
+        ChatContextSnapshotItems {
+            conversation_pk,
+            turn_pk,
+            input_item: &input_item,
+            output_item: &output_item,
+        },
         &usage,
         metadata,
     )
@@ -1508,16 +1515,26 @@ async fn load_turn_response_message_by_pk(
     row_to_message(row)
 }
 
+struct ChatContextSnapshotItems<'a> {
+    conversation_pk: i64,
+    turn_pk: i64,
+    input_item: &'a sqlx::postgres::PgRow,
+    output_item: &'a sqlx::postgres::PgRow,
+}
+
 async fn insert_context_snapshot(
     tx: &mut Transaction<'_, Postgres>,
     command: &CompleteAppChatTurnCommand,
-    conversation_pk: i64,
-    turn_pk: i64,
-    input_item: &sqlx::postgres::PgRow,
-    output_item: &sqlx::postgres::PgRow,
+    items: ChatContextSnapshotItems<'_>,
     usage: &AppChatUsageSnapshot,
     metadata: &str,
 ) -> DomainResult<i64> {
+    let ChatContextSnapshotItems {
+        conversation_pk,
+        turn_pk,
+        input_item,
+        output_item,
+    } = items;
     let snapshot_no = next_context_snapshot_no(tx, command.subject, turn_pk).await?;
     let runtime_invocation_pk = load_runtime_invocation_pk(
         tx,
@@ -1876,18 +1893,22 @@ fn checked_sequence_next(current: i64, sequence_name: &str) -> DomainResult<i64>
         .ok_or_else(|| DomainError::conflict(format!("{sequence_name} sequence is exhausted")))
 }
 
+struct ChatItemInsert<'a> {
+    uuid: &'a str,
+    sequence_no: i64,
+    item_type: &'a str,
+    role: Option<&'a str>,
+    direction: &'a str,
+    status: &'a str,
+    content_text: Option<&'a str>,
+}
+
 async fn insert_item(
     tx: &mut Transaction<'_, Postgres>,
     command: &CreateAppChatTurnCommand,
     conversation_pk: i64,
     turn_id: i64,
-    uuid: &str,
-    sequence_no: i64,
-    item_type: &str,
-    role: Option<&str>,
-    direction: &str,
-    status: &str,
-    content_text: Option<&str>,
+    item: ChatItemInsert<'_>,
 ) -> DomainResult<i64> {
     let metadata = serde_json::to_string(&command.metadata)
         .map_err(|error| DomainError::new(format!("invalid chat item metadata: {error}")))?;
@@ -1916,18 +1937,18 @@ async fn insert_item(
         RETURNING id
         "#,
     )
-    .bind(uuid)
+    .bind(item.uuid)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .bind(command.subject.user_id)
     .bind(conversation_pk)
     .bind(turn_id)
-    .bind(sequence_no)
-    .bind(item_type)
-    .bind(role)
-    .bind(direction)
-    .bind(status)
-    .bind(content_text)
+    .bind(item.sequence_no)
+    .bind(item.item_type)
+    .bind(item.role)
+    .bind(item.direction)
+    .bind(item.status)
+    .bind(item.content_text)
     .bind(&command.requested_at)
     .bind(&metadata)
     .bind(next_claw_runtime_id("ai_chat_item")?)

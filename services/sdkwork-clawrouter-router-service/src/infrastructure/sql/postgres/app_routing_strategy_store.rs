@@ -385,7 +385,7 @@ fn rule_code(index: usize, source_model: &str) -> String {
 }
 
 fn string_cell(row: &sqlx::postgres::PgRow, column: &str) -> String {
-    optional_string_cell(row, column).unwrap_or_else(String::new)
+    optional_string_cell(row, column).unwrap_or_default()
 }
 
 fn required_string_cell(row: &sqlx::postgres::PgRow, column: &str) -> DomainResult<String> {

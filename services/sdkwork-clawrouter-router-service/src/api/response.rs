@@ -17,6 +17,31 @@ use serde::Serialize;
 
 use crate::api::request_id::generate_server_request_id;
 
+/// Keeps validation failures compact on successful request paths while preserving
+/// the exact RFC 9457 response assembled by the API boundary.
+pub(crate) struct ApiResponseError(Box<Response>);
+
+impl std::fmt::Debug for ApiResponseError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("ApiResponseError")
+            .field("status", &self.0.status())
+            .finish_non_exhaustive()
+    }
+}
+
+impl From<Response> for ApiResponseError {
+    fn from(response: Response) -> Self {
+        Self(Box::new(response))
+    }
+}
+
+impl IntoResponse for ApiResponseError {
+    fn into_response(self) -> Response {
+        *self.0
+    }
+}
+
 pub fn new_trace_id() -> String {
     generate_server_request_id().unwrap_or_else(|_| sdkwork_utils_rust::uuid())
 }

@@ -24,6 +24,15 @@ const MAX_CLAIM_BATCH_SIZE: usize = 200;
 const MAX_RETRY_ENVELOPE_BYTES: usize = 32 * 1024;
 const MAX_IN_MEMORY_RETRY_ENTRIES: usize = 1024;
 
+struct InvalidRetryEntry<'a> {
+    stream_entry_id: &'a str,
+    consumer_id: &'a str,
+    stream_event_id: &'a str,
+    raw_envelope: &'a str,
+    failure_code: &'a str,
+    canonical_event_id: Option<&'a str>,
+}
+
 fn redis_hash_tag(value: &str) -> Option<&str> {
     let open = value.find('{')?;
     let remainder = &value[open + 1..];
@@ -318,12 +327,16 @@ impl RedisGatewayAccountingRetryQueue {
                         );
                         self.dead_letter_invalid_entry(
                             connection,
-                            &entry.id,
-                            consumer_id,
-                            &stream_event_id,
-                            raw_envelope.as_deref().unwrap_or("<invalid-envelope>"),
-                            "stream_event_id_mismatch",
-                            Some(&envelope.event_id),
+                            InvalidRetryEntry {
+                                stream_entry_id: &entry.id,
+                                consumer_id,
+                                stream_event_id: &stream_event_id,
+                                raw_envelope: raw_envelope
+                                    .as_deref()
+                                    .unwrap_or("<invalid-envelope>"),
+                                failure_code: "stream_event_id_mismatch",
+                                canonical_event_id: Some(&envelope.event_id),
+                            },
                         )
                         .await?;
                         tracing::error!(
@@ -335,19 +348,15 @@ impl RedisGatewayAccountingRetryQueue {
                         );
                     } else if !envelope.is_due(now_epoch_millis()) {
                         let available_at = envelope.available_at_epoch_millis;
-                        if let Err(error) = self
-                            .defer_stream_entry(
-                                connection,
-                                &entry.id,
-                                consumer_id,
-                                &envelope.event_id,
-                                raw_envelope.as_deref().unwrap_or_default(),
-                                available_at,
-                            )
-                            .await
-                        {
-                            return Err(error);
-                        }
+                        self.defer_stream_entry(
+                            connection,
+                            &entry.id,
+                            consumer_id,
+                            &envelope.event_id,
+                            raw_envelope.as_deref().unwrap_or_default(),
+                            available_at,
+                        )
+                        .await?;
                     } else {
                         deliveries.push(GatewayAccountingRetryDelivery {
                             delivery_id: encode_redis_delivery_id(&entry.id, consumer_id)?,
@@ -358,12 +367,14 @@ impl RedisGatewayAccountingRetryQueue {
                 Err(error) => {
                     self.dead_letter_invalid_entry(
                         connection,
-                        &entry.id,
-                        consumer_id,
-                        &stream_event_id,
-                        raw_envelope.as_deref().unwrap_or("<invalid-envelope>"),
-                        "invalid_envelope",
-                        None,
+                        InvalidRetryEntry {
+                            stream_entry_id: &entry.id,
+                            consumer_id,
+                            stream_event_id: &stream_event_id,
+                            raw_envelope: raw_envelope.as_deref().unwrap_or("<invalid-envelope>"),
+                            failure_code: "invalid_envelope",
+                            canonical_event_id: None,
+                        },
                     )
                     .await?;
                     tracing::error!(
@@ -381,13 +392,16 @@ impl RedisGatewayAccountingRetryQueue {
     async fn dead_letter_invalid_entry(
         &self,
         connection: &mut ConnectionManager,
-        stream_entry_id: &str,
-        consumer_id: &str,
-        stream_event_id: &str,
-        raw_envelope: &str,
-        failure_code: &str,
-        canonical_event_id: Option<&str>,
+        entry: InvalidRetryEntry<'_>,
     ) -> DomainResult<()> {
+        let InvalidRetryEntry {
+            stream_entry_id,
+            consumer_id,
+            stream_event_id,
+            raw_envelope,
+            failure_code,
+            canonical_event_id,
+        } = entry;
         let envelope_evidence = bounded_invalid_envelope_evidence(raw_envelope);
         let script = Script::new(
             r#"

@@ -61,7 +61,8 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
                 Some("vault://providers/openrouter/account/responses"),
             )
             .with_timeout_ms(30_000)
-            .with_retry_policy(ProviderRetryPolicy::new(3, vec![429, 503], 0).unwrap()),
+            .with_retry_policy(ProviderRetryPolicy::new(3, vec![429, 503], 0).unwrap())
+            .with_account_group_binding(10, 100, 100),
     );
     catalog.add_plan(PricingPlan::new(
         "standard",
@@ -151,7 +152,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
             r#"{"catalogKey":"openai/gpt-4.1-mini"}"#,
             "openai/gpt-4.1-mini",
         )
-        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
     );
     catalog
 }
@@ -186,18 +187,25 @@ fn catalog_with_responses_fallback_route(key_hash: String) -> InMemoryPricingCat
                 Some("vault://providers/openrouter/account/responses-fallback"),
             )
             .with_timeout_ms(20_000)
-            .with_retry_policy(ProviderRetryPolicy::new(3, vec![429, 503], 0).unwrap()),
+            .with_retry_policy(ProviderRetryPolicy::new(3, vec![429, 503], 0).unwrap())
+            .with_account_group_binding(10, 200, 100),
     );
-    catalog.add_price(
-        ModelPrice::new_for_catalog_key(
-            "openai/gpt-4.1-mini",
-            "gpt-4.1-mini",
-            PriceSide::UpstreamCost,
-            BillingMeter::LlmInputToken,
-            Money::usd("0.120000").unwrap(),
-        )
-        .for_upstream_account("openrouter-fallback", 3002),
-    );
+    for (meter, unit_price) in [
+        (BillingMeter::LlmInputToken, "0.120000"),
+        (BillingMeter::LlmOutputToken, "0.480000"),
+        (BillingMeter::LlmCacheReadToken, "0.060000"),
+    ] {
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                "openai/gpt-4.1-mini",
+                "gpt-4.1-mini",
+                PriceSide::UpstreamCost,
+                meter,
+                Money::usd(unit_price).unwrap(),
+            )
+            .for_upstream_account("openrouter-fallback", 3002),
+        );
+    }
     catalog.add_routing_rule(
         RoutingRule::new(
             9100,
@@ -209,8 +217,7 @@ fn catalog_with_responses_fallback_route(key_hash: String) -> InMemoryPricingCat
             r#"{"catalogKey":"openai/gpt-4.1-mini"}"#,
             "openai/gpt-4.1-mini",
         )
-        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)])
-        .with_fallback_chain(vec![RouteCandidate::new(3002, 50)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
     );
     catalog
 }
@@ -597,7 +604,7 @@ async fn openai_responses_invocation_plugins_cannot_override_account_before_rela
     assert!(payload["error"]["message"]
         .as_str()
         .unwrap()
-        .contains("plugin mutated selected upstream route"));
+        .contains("plugin mutated the selected upstream route"));
     assert_eq!(
         vec![
             "before_route_selection:gpt-4.1-mini",
@@ -775,9 +782,11 @@ async fn openai_responses_records_usage_after_provider_success() {
     assert_eq!(1, command.modality);
     assert_eq!(1, command.usage_type);
     assert_eq!("llm_input_token", command.billing_meter_code);
-    assert_eq!("0.198000", command.base_input_unit_price);
-    assert_eq!("0.792000", command.base_output_unit_price);
-    assert_eq!("0.099000", command.cache_read_unit_price);
+    assert_eq!("0.180000", command.base_input_unit_price);
+    assert_eq!("0.720000", command.base_output_unit_price);
+    assert_eq!("0.090000", command.cache_read_unit_price);
+    assert_eq!("1.100000", command.rate_multiplier);
+    assert_eq!("1.200000", command.reference_multiplier);
     assert_eq!("0.000000990000", command.customer_charge_amount);
     assert_eq!("0.000000550000", command.upstream_cost_amount);
     assert_eq!("USD", command.currency);

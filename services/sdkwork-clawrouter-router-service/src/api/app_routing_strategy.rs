@@ -118,7 +118,7 @@ async fn fetch_routing_strategy(
         scoped.into()
     }) {
         Ok(subject) => subject,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
 
     match state.store.load_routing_strategy(subject).await {

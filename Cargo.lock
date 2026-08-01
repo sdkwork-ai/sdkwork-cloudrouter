@@ -2409,6 +2409,7 @@ dependencies = [
  "axum",
  "sdkwork-api-clawrouter-assembly",
  "sdkwork-claw-config",
+ "sdkwork-claw-http",
  "sdkwork-web-bootstrap",
  "serde_json",
  "tokio",
@@ -3278,6 +3279,7 @@ dependencies = [
 name = "sdkwork-models-contract-service"
 version = "0.1.0"
 dependencies = [
+ "sdkwork-utils-rust",
  "serde",
  "serde_json",
  "sqlx",

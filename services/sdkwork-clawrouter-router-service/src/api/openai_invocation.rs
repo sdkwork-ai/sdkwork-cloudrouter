@@ -162,6 +162,17 @@ impl OpenAiInvocationFault {
         }
     }
 
+    pub fn provider_usage_missing(message: impl Into<String>) -> Self {
+        Self {
+            kind: OpenAiInvocationFaultKind::UsageRecording,
+            status_code: None,
+            error_code: "provider_usage_missing".to_owned(),
+            message: message.into(),
+            retryable: false,
+            latency_ms: None,
+        }
+    }
+
     pub fn with_latency_ms(mut self, latency_ms: i64) -> Self {
         self.latency_ms = Some(latency_ms.max(0));
         self

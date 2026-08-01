@@ -25,7 +25,7 @@ fn test_subject() -> sdkwork_clawrouter_router_service::application::InvocationS
 }
 
 fn openai_invocation(method: Method, path: &str, body: InvocationBody) -> Invocation {
-    let classification = OpenAiResourceClassifier::default()
+    let classification = OpenAiResourceClassifier
         .classify(&InvocationClassificationRequest::new(method.clone(), path))
         .expect("classification");
     let (resource, billing, routing) = classification.into_parts();
@@ -61,7 +61,7 @@ async fn maps_chat_and_responses_to_composite_token_billing() {
     ] {
         let mut invocation = openai_invocation(Method::POST, path, body);
 
-        BillingPolicyInterceptor::default()
+        BillingPolicyInterceptor
             .before(&mut invocation)
             .await
             .expect("billing policy");
@@ -91,7 +91,7 @@ async fn maps_streaming_model_calls_to_streaming_usage_accumulator() {
     );
     invocation.dispatch = InvocationDispatch::sse_stream();
 
-    BillingPolicyInterceptor::default()
+    BillingPolicyInterceptor
         .before(&mut invocation)
         .await
         .expect("billing policy");
@@ -118,8 +118,8 @@ async fn payload_then_billing_pipeline_maps_stream_true_to_streaming_usage_sourc
         })),
     );
     let pipeline = InvocationPipeline::new()
-        .with_interceptor(PayloadExtractionInterceptor::default())
-        .with_interceptor(BillingPolicyInterceptor::default());
+        .with_interceptor(PayloadExtractionInterceptor)
+        .with_interceptor(BillingPolicyInterceptor);
 
     pipeline
         .execute(&mut invocation)
@@ -143,7 +143,7 @@ async fn maps_embeddings_to_single_embedding_token_billing() {
         })),
     );
 
-    BillingPolicyInterceptor::default()
+    BillingPolicyInterceptor
         .before(&mut invocation)
         .await
         .expect("billing policy");
@@ -189,7 +189,7 @@ async fn maps_modal_and_realtime_model_resources_to_metered_billing() {
             InvocationBody::json(json!({"model": "gpt-4o-mini"})),
         );
 
-        BillingPolicyInterceptor::default()
+        BillingPolicyInterceptor
             .before(&mut invocation)
             .await
             .expect("billing policy");
@@ -207,7 +207,7 @@ async fn maps_modal_and_realtime_model_resources_to_metered_billing() {
 async fn maps_management_resources_to_fixed_api_request_billing() {
     let mut invocation = openai_invocation(Method::POST, "/v1/files", InvocationBody::Empty);
 
-    BillingPolicyInterceptor::default()
+    BillingPolicyInterceptor
         .before(&mut invocation)
         .await
         .expect("billing policy");
@@ -223,8 +223,8 @@ async fn maps_management_resources_to_fixed_api_request_billing() {
 }
 
 #[tokio::test]
-async fn maps_provider_native_resources_to_adapter_usage_line_billing() {
-    let classification = ProviderNativeResourceClassifier::default()
+async fn maps_provider_native_resources_to_fixed_request_until_adapter_resolution() {
+    let classification = ProviderNativeResourceClassifier
         .classify(
             &InvocationClassificationRequest::new(Method::POST, "/kling/v1/videos/text2video")
                 .with_supplier_code("kling")
@@ -243,7 +243,7 @@ async fn maps_provider_native_resources_to_adapter_usage_line_billing() {
     );
     invocation.routing = routing;
 
-    BillingPolicyInterceptor::default()
+    BillingPolicyInterceptor
         .before(&mut invocation)
         .await
         .expect("billing policy");
@@ -251,7 +251,7 @@ async fn maps_provider_native_resources_to_adapter_usage_line_billing() {
     assert_eq!(BillingMode::ExternalUsageLine, invocation.billing.mode);
     assert_eq!(Some(BillingMeter::VideoResult), invocation.billing.meter);
     assert_eq!(
-        BillingQuantitySource::AdapterUsageLines,
+        BillingQuantitySource::FixedRequest,
         invocation.billing.quantity_source
     );
     assert!(invocation.billing.pricing_required);
@@ -263,7 +263,7 @@ async fn maps_free_resources_to_trace_only_billing() {
     let mut invocation = openai_invocation(Method::GET, "/v1/models", InvocationBody::Empty);
     invocation.billing = InvocationBilling::api_request(BillingMeter::ApiRequest);
 
-    BillingPolicyInterceptor::default()
+    BillingPolicyInterceptor
         .before(&mut invocation)
         .await
         .expect("billing policy");

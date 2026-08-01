@@ -108,6 +108,7 @@ impl ProviderRelayHttpPoolConfig {
 #[derive(Clone)]
 struct ProviderRelayRuntime {
     client: ProviderClient,
+    target_policy: OutboundTargetPolicy,
     response_timeout: Duration,
     stream_response_timeout: Duration,
     response_max_bytes: u64,
@@ -122,6 +123,18 @@ impl ProviderRelayRuntime {
             DEFAULT_PROVIDER_RESPONSE_MAX_BYTES,
             ProviderRetryPolicy::default(),
             ProviderRelayHttpPoolConfig::default(),
+            OutboundTargetPolicy::Production,
+        )
+    }
+
+    fn for_target_policy(target_policy: OutboundTargetPolicy) -> Self {
+        Self::with_default_retry_policy(
+            DEFAULT_PROVIDER_RESPONSE_TIMEOUT,
+            DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT,
+            DEFAULT_PROVIDER_RESPONSE_MAX_BYTES,
+            ProviderRetryPolicy::default(),
+            ProviderRelayHttpPoolConfig::default(),
+            target_policy,
         )
     }
 
@@ -131,9 +144,11 @@ impl ProviderRelayRuntime {
         response_max_bytes: u64,
         default_retry_policy: ProviderRetryPolicy,
         pool_config: ProviderRelayHttpPoolConfig,
+        target_policy: OutboundTargetPolicy,
     ) -> Self {
         Self {
-            client: build_provider_client(pool_config),
+            client: build_provider_client(pool_config, target_policy),
+            target_policy,
             response_timeout,
             stream_response_timeout,
             response_max_bytes,
@@ -148,6 +163,7 @@ impl ProviderRelayRuntime {
             .unwrap_or(self.response_timeout);
         Self {
             client: self.client.clone(),
+            target_policy: self.target_policy,
             response_timeout,
             stream_response_timeout: self.stream_response_timeout,
             response_max_bytes: self.response_max_bytes,
@@ -168,16 +184,33 @@ pub struct UpstreamProviderEndpoint {
     includes_openai_v1_prefix: bool,
     bearer_token: String,
     auth_profile: ProviderAuthProfile,
+    target_policy: OutboundTargetPolicy,
 }
 
 impl UpstreamProviderEndpoint {
     pub fn new(base_url: impl Into<String>, bearer_token: impl Into<String>) -> DomainResult<Self> {
+        Self::new_with_policy(base_url, bearer_token, OutboundTargetPolicy::Production)
+    }
+
+    /// Creates an endpoint for an explicitly local development or test server.
+    /// Production service wiring must use [`Self::new`].
+    pub fn for_local_development(
+        base_url: impl Into<String>,
+        bearer_token: impl Into<String>,
+    ) -> DomainResult<Self> {
+        Self::new_with_policy(base_url, bearer_token, OutboundTargetPolicy::Development)
+    }
+
+    fn new_with_policy(
+        base_url: impl Into<String>,
+        bearer_token: impl Into<String>,
+        target_policy: OutboundTargetPolicy,
+    ) -> DomainResult<Self> {
         let base_url = base_url.into();
         if base_url.trim().is_empty() {
             return Err(DomainError::new("upstream provider base URL is required"));
         }
-        let validated_url =
-            validate_outbound_base_url(&base_url, OutboundTargetPolicy::Production).map_err(
+        let validated_url = validate_outbound_base_url(&base_url, target_policy).map_err(
                 |error| {
                     DomainError::new(format!(
                         "ssrf_blocked: upstream provider base URL violates the outbound target policy: {error}"
@@ -191,11 +224,15 @@ impl UpstreamProviderEndpoint {
             ))
         })?;
         let scheme = uri.scheme_str();
-        // H-1: upstream provider traffic must use HTTPS. Plain HTTP is rejected
-        // here (defense-in-depth) and again at the connector via `.https_only()`.
-        if !matches!(scheme, Some("https")) || uri.authority().is_none() {
+        // H-1: production upstream traffic must use HTTPS. The explicit
+        // development policy is limited to local development and tests.
+        let scheme_allowed = match target_policy {
+            OutboundTargetPolicy::Production => matches!(scheme, Some("https")),
+            OutboundTargetPolicy::Development => matches!(scheme, Some("http" | "https")),
+        };
+        if !scheme_allowed || uri.authority().is_none() {
             return Err(DomainError::new(
-                "upstream provider base URL must be an absolute https provider URL",
+                "upstream provider base URL must be an absolute URL allowed by the outbound target policy",
             ));
         }
         let uri_path = uri.path().trim_end_matches('/');
@@ -211,6 +248,7 @@ impl UpstreamProviderEndpoint {
             includes_openai_v1_prefix,
             bearer_token,
             auth_profile: ProviderAuthProfile::bearer(),
+            target_policy,
         })
     }
 
@@ -463,10 +501,8 @@ pub struct OpenAiCompatibleChatCompletionRelay {
 
 impl OpenAiCompatibleChatCompletionRelay {
     pub fn new(endpoint: UpstreamProviderEndpoint) -> Self {
-        Self {
-            endpoint,
-            runtime: ProviderRelayRuntime::default(),
-        }
+        let runtime = ProviderRelayRuntime::for_target_policy(endpoint.target_policy);
+        Self { endpoint, runtime }
     }
 
     pub fn with_response_timeout(
@@ -504,6 +540,7 @@ impl OpenAiCompatibleChatCompletionRelay {
         default_retry_policy: ProviderRetryPolicy,
         http_pool_config: ProviderRelayHttpPoolConfig,
     ) -> Self {
+        let target_policy = endpoint.target_policy;
         Self {
             endpoint,
             runtime: ProviderRelayRuntime::with_default_retry_policy(
@@ -512,6 +549,7 @@ impl OpenAiCompatibleChatCompletionRelay {
                 response_max_bytes,
                 default_retry_policy,
                 http_pool_config,
+                target_policy,
             ),
         }
     }
@@ -525,10 +563,8 @@ pub struct OpenAiCompatibleChatCompletionStreamRelay {
 
 impl OpenAiCompatibleChatCompletionStreamRelay {
     pub fn new(endpoint: UpstreamProviderEndpoint) -> Self {
-        Self {
-            endpoint,
-            runtime: ProviderRelayRuntime::default(),
-        }
+        let runtime = ProviderRelayRuntime::for_target_policy(endpoint.target_policy);
+        Self { endpoint, runtime }
     }
 
     pub fn with_response_timeout(
@@ -566,6 +602,7 @@ impl OpenAiCompatibleChatCompletionStreamRelay {
         default_retry_policy: ProviderRetryPolicy,
         http_pool_config: ProviderRelayHttpPoolConfig,
     ) -> Self {
+        let target_policy = endpoint.target_policy;
         Self {
             endpoint,
             runtime: ProviderRelayRuntime::with_default_retry_policy(
@@ -574,6 +611,7 @@ impl OpenAiCompatibleChatCompletionStreamRelay {
                 response_max_bytes,
                 default_retry_policy,
                 http_pool_config,
+                target_policy,
             ),
         }
     }
@@ -593,6 +631,16 @@ impl SecretRefOpenAiCompatibleChatCompletionRelay {
         }
     }
 
+    /// Creates a relay for an explicitly local development or test provider.
+    pub fn for_local_development(
+        secret_resolver: std::sync::Arc<dyn ProviderSecretResolver + Send + Sync>,
+    ) -> Self {
+        Self {
+            secret_resolver,
+            runtime: ProviderRelayRuntime::for_target_policy(OutboundTargetPolicy::Development),
+        }
+    }
+
     pub fn with_response_timeout(
         secret_resolver: std::sync::Arc<dyn ProviderSecretResolver + Send + Sync>,
         response_timeout: Duration,
@@ -640,6 +688,7 @@ impl SecretRefOpenAiCompatibleChatCompletionRelay {
                 response_max_bytes,
                 default_retry_policy,
                 http_pool_config,
+                OutboundTargetPolicy::Production,
             ),
         }
     }
@@ -659,6 +708,16 @@ impl SecretRefOpenAiCompatibleChatCompletionStreamRelay {
         }
     }
 
+    /// Creates a relay for an explicitly local development or test provider.
+    pub fn for_local_development(
+        secret_resolver: std::sync::Arc<dyn ProviderSecretResolver + Send + Sync>,
+    ) -> Self {
+        Self {
+            secret_resolver,
+            runtime: ProviderRelayRuntime::for_target_policy(OutboundTargetPolicy::Development),
+        }
+    }
+
     pub fn with_response_timeout(
         secret_resolver: std::sync::Arc<dyn ProviderSecretResolver + Send + Sync>,
         response_timeout: Duration,
@@ -706,6 +765,7 @@ impl SecretRefOpenAiCompatibleChatCompletionStreamRelay {
                 response_max_bytes,
                 default_retry_policy,
                 http_pool_config,
+                OutboundTargetPolicy::Production,
             ),
         }
     }
@@ -726,8 +786,12 @@ impl ChatCompletionRelay for SecretRefOpenAiCompatibleChatCompletionRelay {
                 .clone()
                 .ok_or_else(|| DomainError::new("provider secret_ref is required for relay"))?;
             let bearer_token = self.secret_resolver.resolve_secret_value(&secret_ref)?;
-            let endpoint = UpstreamProviderEndpoint::new(base_url, bearer_token)?
-                .with_auth_profile(request.provider_auth_profile.clone());
+            let endpoint = UpstreamProviderEndpoint::new_with_policy(
+                base_url,
+                bearer_token,
+                self.runtime.target_policy,
+            )?
+            .with_auth_profile(request.provider_auth_profile.clone());
             let runtime = self.runtime.for_request(request.provider_timeout_ms);
             send_chat_completion_with_runtime(&runtime, &endpoint, request).await
         })
@@ -749,8 +813,12 @@ impl ChatCompletionStreamRelay for SecretRefOpenAiCompatibleChatCompletionStream
                 .clone()
                 .ok_or_else(|| DomainError::new("provider secret_ref is required for relay"))?;
             let bearer_token = self.secret_resolver.resolve_secret_value(&secret_ref)?;
-            let endpoint = UpstreamProviderEndpoint::new(base_url, bearer_token)?
-                .with_auth_profile(request.provider_auth_profile.clone());
+            let endpoint = UpstreamProviderEndpoint::new_with_policy(
+                base_url,
+                bearer_token,
+                self.runtime.target_policy,
+            )?
+            .with_auth_profile(request.provider_auth_profile.clone());
             let runtime = self.runtime.for_request(request.provider_timeout_ms);
             send_chat_completion_stream_with_runtime(&runtime, &endpoint, request).await
         })
@@ -765,10 +833,8 @@ pub struct OpenAiCompatibleResponsesRelay {
 
 impl OpenAiCompatibleResponsesRelay {
     pub fn new(endpoint: UpstreamProviderEndpoint) -> Self {
-        Self {
-            endpoint,
-            runtime: ProviderRelayRuntime::default(),
-        }
+        let runtime = ProviderRelayRuntime::for_target_policy(endpoint.target_policy);
+        Self { endpoint, runtime }
     }
 
     pub fn with_response_timeout(
@@ -806,6 +872,7 @@ impl OpenAiCompatibleResponsesRelay {
         default_retry_policy: ProviderRetryPolicy,
         http_pool_config: ProviderRelayHttpPoolConfig,
     ) -> Self {
+        let target_policy = endpoint.target_policy;
         Self {
             endpoint,
             runtime: ProviderRelayRuntime::with_default_retry_policy(
@@ -814,6 +881,7 @@ impl OpenAiCompatibleResponsesRelay {
                 response_max_bytes,
                 default_retry_policy,
                 http_pool_config,
+                target_policy,
             ),
         }
     }
@@ -827,10 +895,8 @@ pub struct OpenAiCompatibleEmbeddingsRelay {
 
 impl OpenAiCompatibleEmbeddingsRelay {
     pub fn new(endpoint: UpstreamProviderEndpoint) -> Self {
-        Self {
-            endpoint,
-            runtime: ProviderRelayRuntime::default(),
-        }
+        let runtime = ProviderRelayRuntime::for_target_policy(endpoint.target_policy);
+        Self { endpoint, runtime }
     }
 
     pub fn with_response_timeout(
@@ -868,6 +934,7 @@ impl OpenAiCompatibleEmbeddingsRelay {
         default_retry_policy: ProviderRetryPolicy,
         http_pool_config: ProviderRelayHttpPoolConfig,
     ) -> Self {
+        let target_policy = endpoint.target_policy;
         Self {
             endpoint,
             runtime: ProviderRelayRuntime::with_default_retry_policy(
@@ -876,6 +943,7 @@ impl OpenAiCompatibleEmbeddingsRelay {
                 response_max_bytes,
                 default_retry_policy,
                 http_pool_config,
+                target_policy,
             ),
         }
     }
@@ -895,6 +963,16 @@ impl SecretRefOpenAiCompatibleResponsesRelay {
         }
     }
 
+    /// Creates a relay for an explicitly local development or test provider.
+    pub fn for_local_development(
+        secret_resolver: std::sync::Arc<dyn ProviderSecretResolver + Send + Sync>,
+    ) -> Self {
+        Self {
+            secret_resolver,
+            runtime: ProviderRelayRuntime::for_target_policy(OutboundTargetPolicy::Development),
+        }
+    }
+
     pub fn with_response_timeout(
         secret_resolver: std::sync::Arc<dyn ProviderSecretResolver + Send + Sync>,
         response_timeout: Duration,
@@ -942,6 +1020,7 @@ impl SecretRefOpenAiCompatibleResponsesRelay {
                 response_max_bytes,
                 default_retry_policy,
                 http_pool_config,
+                OutboundTargetPolicy::Production,
             ),
         }
     }
@@ -961,6 +1040,16 @@ impl SecretRefOpenAiCompatibleEmbeddingsRelay {
         }
     }
 
+    /// Creates a relay for an explicitly local development or test provider.
+    pub fn for_local_development(
+        secret_resolver: std::sync::Arc<dyn ProviderSecretResolver + Send + Sync>,
+    ) -> Self {
+        Self {
+            secret_resolver,
+            runtime: ProviderRelayRuntime::for_target_policy(OutboundTargetPolicy::Development),
+        }
+    }
+
     pub fn with_response_timeout(
         secret_resolver: std::sync::Arc<dyn ProviderSecretResolver + Send + Sync>,
         response_timeout: Duration,
@@ -1008,6 +1097,7 @@ impl SecretRefOpenAiCompatibleEmbeddingsRelay {
                 response_max_bytes,
                 default_retry_policy,
                 http_pool_config,
+                OutboundTargetPolicy::Production,
             ),
         }
     }
@@ -1025,8 +1115,12 @@ impl ResponsesRelay for SecretRefOpenAiCompatibleResponsesRelay {
                 .clone()
                 .ok_or_else(|| DomainError::new("provider secret_ref is required for relay"))?;
             let bearer_token = self.secret_resolver.resolve_secret_value(&secret_ref)?;
-            let endpoint = UpstreamProviderEndpoint::new(base_url, bearer_token)?
-                .with_auth_profile(request.provider_auth_profile.clone());
+            let endpoint = UpstreamProviderEndpoint::new_with_policy(
+                base_url,
+                bearer_token,
+                self.runtime.target_policy,
+            )?
+            .with_auth_profile(request.provider_auth_profile.clone());
             let runtime = self.runtime.for_request(request.provider_timeout_ms);
             send_response_with_runtime(&runtime, &endpoint, request).await
         })
@@ -1048,8 +1142,12 @@ impl EmbeddingsRelay for SecretRefOpenAiCompatibleEmbeddingsRelay {
                 .clone()
                 .ok_or_else(|| DomainError::new("provider secret_ref is required for relay"))?;
             let bearer_token = self.secret_resolver.resolve_secret_value(&secret_ref)?;
-            let endpoint = UpstreamProviderEndpoint::new(base_url, bearer_token)?
-                .with_auth_profile(request.provider_auth_profile.clone());
+            let endpoint = UpstreamProviderEndpoint::new_with_policy(
+                base_url,
+                bearer_token,
+                self.runtime.target_policy,
+            )?
+            .with_auth_profile(request.provider_auth_profile.clone());
             let runtime = self.runtime.for_request(request.provider_timeout_ms);
             send_embedding_with_runtime(&runtime, &endpoint, request).await
         })
@@ -1157,8 +1255,11 @@ async fn send_chat_completion_stream_with_runtime(
     endpoint: &UpstreamProviderEndpoint,
     request: ChatCompletionRelayRequest,
 ) -> DomainResult<ChatCompletionStreamRelayResponse> {
-    let body =
-        upstream_model_request_body(request.request_body, &request.provider_model, "chat stream")?;
+    let body = crate::ports::require_stream_usage(upstream_model_request_body(
+        request.request_body,
+        &request.provider_model,
+        "chat stream",
+    )?)?;
     let upstream_uri = endpoint.chat_completions_uri()?;
     tracing::debug!(
         supplier_code = %request.supplier_code,
@@ -1346,27 +1447,33 @@ async fn send_provider_request(
     .map_err(|error| DomainError::new(format!("upstream provider request failed: {error}")))
 }
 
-fn build_provider_client(pool_config: ProviderRelayHttpPoolConfig) -> ProviderClient {
-    // C-5: tune the upstream connection pool. C-5/H-1: enforce HTTPS for all
-    // upstream provider traffic via `.https_only()` so plain HTTP upstreams are
-    // rejected at connector construction time (defense-in-depth with the
-    // scheme check in `UpstreamProviderEndpoint::new`).
+fn build_provider_client(
+    pool_config: ProviderRelayHttpPoolConfig,
+    target_policy: OutboundTargetPolicy,
+) -> ProviderClient {
+    // C-5: tune the upstream connection pool. H-1: production uses an
+    // HTTPS-only connector; local development must be selected explicitly.
     //
     // `connect_timeout` is applied to the underlying `HttpConnector` because
     // the legacy client `Builder` does not expose a connect-timeout setter.
     // HTTP/2 keep-alive fields are kept in the config for forward compatibility
     // but are not applied here because the workspace does not enable the
     // `http2` feature on hyper/hyper-util/hyper-rustls.
-    let mut http_connector = HttpConnector::new_with_resolver(OutboundDnsResolver::new(
-        OutboundTargetPolicy::Production,
-    ));
+    let mut http_connector =
+        HttpConnector::new_with_resolver(OutboundDnsResolver::new(target_policy));
     http_connector.set_connect_timeout(Some(pool_config.connect_timeout));
     http_connector.enforce_http(false);
-    let connector = hyper_rustls::HttpsConnectorBuilder::new()
-        .with_webpki_roots()
-        .https_only()
-        .enable_http1()
-        .wrap_connector(http_connector);
+    let connector_builder = hyper_rustls::HttpsConnectorBuilder::new().with_webpki_roots();
+    let connector = match target_policy {
+        OutboundTargetPolicy::Production => connector_builder
+            .https_only()
+            .enable_http1()
+            .wrap_connector(http_connector),
+        OutboundTargetPolicy::Development => connector_builder
+            .https_or_http()
+            .enable_http1()
+            .wrap_connector(http_connector),
+    };
     Client::builder(TokioExecutor::new())
         .pool_idle_timeout(Some(pool_config.pool_idle_timeout))
         .pool_max_idle_per_host(pool_config.pool_max_idle_per_host)
@@ -1443,7 +1550,10 @@ mod tests {
     fn https_only_connector_rejects_http_scheme() {
         // build_provider_client enforces https_only; constructing a client must
         // not panic and must yield a usable client.
-        let _client = build_provider_client(ProviderRelayHttpPoolConfig::default());
+        let _client = build_provider_client(
+            ProviderRelayHttpPoolConfig::default(),
+            OutboundTargetPolicy::Production,
+        );
     }
 
     #[test]

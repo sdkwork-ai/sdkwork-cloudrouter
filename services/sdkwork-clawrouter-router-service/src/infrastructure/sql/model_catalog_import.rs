@@ -382,7 +382,7 @@ pub(crate) fn catalog_scope_counts(catalog: &ModelCatalog) -> CatalogScopeCounts
         .vendors
         .iter()
         .flat_map(|vendor| vendor.model_voice_bindings.iter())
-        .map(|binding_file| binding_file.bindings.iter().count())
+        .map(|binding_file| binding_file.bindings.len())
         .sum();
     let video_profile_count = catalog
         .vendors
@@ -427,12 +427,10 @@ pub(crate) fn catalog_authority_keys(catalog: &ModelCatalog) -> CatalogAuthority
     let catalog_keys = catalog_identity_models(catalog)
         .keys()
         .cloned()
-        .into_iter()
         .collect::<Vec<_>>();
     let public_catalog_keys = public_catalog_identity_models(catalog)
         .keys()
         .cloned()
-        .into_iter()
         .collect::<Vec<_>>();
     let model_catalog_key_set = public_catalog_keys.iter().cloned().collect::<BTreeSet<_>>();
     let family_uuids = catalog
@@ -1408,9 +1406,7 @@ pub(crate) fn merge_runtime_pricing_dictionary_rows(
     dictionary
 }
 
-fn model_price_row_identity(
-    row: &crate::infrastructure::sql::rows::ModelPriceRow,
-) -> (
+type ModelPriceRowIdentity = (
     i64,
     i64,
     String,
@@ -1420,7 +1416,11 @@ fn model_price_row_identity(
     Option<String>,
     Option<i64>,
     Option<String>,
-) {
+);
+
+fn model_price_row_identity(
+    row: &crate::infrastructure::sql::rows::ModelPriceRow,
+) -> ModelPriceRowIdentity {
     (
         row.tenant_id,
         row.organization_id,

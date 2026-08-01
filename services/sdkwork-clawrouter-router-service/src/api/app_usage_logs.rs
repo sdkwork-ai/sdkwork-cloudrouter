@@ -122,7 +122,7 @@ async fn fetch_usage_logs(
         scoped.into()
     }) {
         Ok(subject) => subject,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
 
     let validated_query = match validate_usage_logs_query(query) {
@@ -155,13 +155,13 @@ fn validate_usage_logs_query(
     query: AppUsageLogsQuery,
 ) -> Result<ValidatedUsageLogsQuery, UsageLogsQueryValidationError> {
     let pagination = parse_offset_list_query(query.page, query.page_size).map_err(|message| {
-        UsageLogsQueryValidationError::new(if message.starts_with("page ") {
-            format!("usage logs {message}")
-        } else if message.starts_with("page_size ") {
-            format!("usage logs {message}")
-        } else {
-            message
-        })
+        UsageLogsQueryValidationError::new(
+            if message.starts_with("page ") || message.starts_with("page_size ") {
+                format!("usage logs {message}")
+            } else {
+                message
+            },
+        )
     })?;
 
     let keyword = normalize_usage_logs_query_string(

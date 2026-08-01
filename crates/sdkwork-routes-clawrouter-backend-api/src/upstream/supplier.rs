@@ -1,7 +1,7 @@
 use axum::extract::rejection::{JsonRejection, QueryRejection};
 use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
-use axum::response::Response;
+use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
 use sdkwork_clawrouter_router_service::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
@@ -17,7 +17,7 @@ use super::shared::{
     bounded_list_response, collection_item_response, decode_json, decode_query, domain_error,
     idempotency_uuid, item_response, list_query, list_response, no_content_response, not_found,
     optional_text, parse_id, parse_if_match, problem, requested_at, required_text, subject,
-    ListQuery, UpstreamState, MAX_NESTED_ITEMS,
+    ListQuery, RequestResult, UpstreamState, MAX_NESTED_ITEMS,
 };
 
 const MAX_CODE_LENGTH: usize = 128;
@@ -213,7 +213,7 @@ async fn list_suppliers(
 ) -> Response {
     let query = match decode_query(query).and_then(|query| list_query(subject(scoped), query)) {
         Ok(query) => query,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state.store.list_suppliers(query).await {
         Ok(page) => list_response(
@@ -235,7 +235,7 @@ async fn get_supplier(
 ) -> Response {
     let supplier_id = match parse_id(supplier_id, "supplierId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state.store.get_supplier(subject(scoped), supplier_id).await {
         Ok(Some(item)) => item_response(StatusCode::OK, SupplierResponse::from(item)),
@@ -253,15 +253,15 @@ async fn create_supplier(
     let scoped = subject(scoped);
     let uuid = match idempotency_uuid(&headers, &scoped, SUPPLIER_CREATE_IDEMPOTENCY_SCOPE) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let payload = match decode_json(payload) {
         Ok(payload) => payload,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let command = match create_command(scoped, uuid, payload) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state.store.save_supplier(command).await {
         Ok(item) => item_response(StatusCode::CREATED, SupplierResponse::from(item)),
@@ -278,15 +278,15 @@ async fn update_supplier(
 ) -> Response {
     let supplier_id = match parse_id(supplier_id, "supplierId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let expected_version = match parse_if_match(&headers) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let payload = match decode_json(payload) {
         Ok(payload) => payload,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let scoped = subject(scoped);
     let existing = match state.store.get_supplier(scoped.clone(), supplier_id).await {
@@ -296,7 +296,7 @@ async fn update_supplier(
     };
     let command = match update_command(scoped, existing, expected_version, payload) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state.store.save_supplier(command).await {
         Ok(item) => item_response(StatusCode::OK, SupplierResponse::from(item)),
@@ -312,11 +312,11 @@ async fn delete_supplier(
 ) -> Response {
     let supplier_id = match parse_id(supplier_id, "supplierId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let expected_version = match parse_if_match(&headers) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state
         .store
@@ -341,7 +341,7 @@ async fn list_endpoints(
 ) -> Response {
     let supplier_id = match parse_id(supplier_id, "supplierId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state
         .store
@@ -362,15 +362,15 @@ async fn replace_endpoints(
 ) -> Response {
     let supplier_id = match parse_id(supplier_id, "supplierId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let expected_version = match parse_if_match(&headers) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let payload = match decode_json(payload).and_then(endpoint_inputs) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state
         .store
@@ -397,7 +397,7 @@ async fn list_auth_methods(
 ) -> Response {
     let supplier_id = match parse_id(supplier_id, "supplierId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state
         .store
@@ -420,15 +420,15 @@ async fn replace_auth_methods(
 ) -> Response {
     let supplier_id = match parse_id(supplier_id, "supplierId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let expected_version = match parse_if_match(&headers) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let payload = match decode_json(payload).and_then(auth_method_inputs) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state
         .store
@@ -455,7 +455,7 @@ async fn list_resources(
 ) -> Response {
     let supplier_id = match parse_id(supplier_id, "supplierId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state
         .store
@@ -476,15 +476,15 @@ async fn replace_resources(
 ) -> Response {
     let supplier_id = match parse_id(supplier_id, "supplierId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let expected_version = match parse_if_match(&headers) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let payload = match decode_json(payload).and_then(resource_inputs) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state
         .store
@@ -508,7 +508,7 @@ fn create_command(
     subject: sdkwork_clawrouter_router_service::ports::AdminUpstreamSubject,
     uuid: String,
     request: SupplierCreateRequest,
-) -> Result<SaveAdminUpstreamSupplierCommand, Response> {
+) -> RequestResult<SaveAdminUpstreamSupplierCommand> {
     let supplier_name = required_text(request.supplier_name, "supplierName", MAX_NAME_LENGTH)?;
     Ok(SaveAdminUpstreamSupplierCommand {
         subject,
@@ -541,7 +541,7 @@ fn update_command(
     existing: AdminUpstreamSupplierItem,
     expected_version: i64,
     request: SupplierUpdateRequest,
-) -> Result<SaveAdminUpstreamSupplierCommand, Response> {
+) -> RequestResult<SaveAdminUpstreamSupplierCommand> {
     Ok(SaveAdminUpstreamSupplierCommand {
         subject,
         supplier_id: Some(existing.id),
@@ -601,7 +601,7 @@ fn update_command(
 
 fn endpoint_inputs(
     request: EndpointReplaceRequest,
-) -> Result<Vec<AdminUpstreamSupplierEndpointInput>, Response> {
+) -> RequestResult<Vec<AdminUpstreamSupplierEndpointInput>> {
     ensure_count(request.items.len(), "endpoints")?;
     request
         .items
@@ -625,7 +625,7 @@ fn endpoint_inputs(
 
 fn auth_method_inputs(
     request: AuthMethodReplaceRequest,
-) -> Result<Vec<AdminUpstreamSupplierAuthMethodInput>, Response> {
+) -> RequestResult<Vec<AdminUpstreamSupplierAuthMethodInput>> {
     ensure_count(request.items.len(), "authMethods")?;
     request
         .items
@@ -666,7 +666,7 @@ fn auth_method_inputs(
 
 fn resource_inputs(
     request: ResourceReplaceRequest,
-) -> Result<Vec<AdminUpstreamResourceInput>, Response> {
+) -> RequestResult<Vec<AdminUpstreamResourceInput>> {
     ensure_count(request.items.len(), "resources")?;
     request
         .items
@@ -704,7 +704,7 @@ fn resource_inputs(
         .collect()
 }
 
-fn supplier_type(value: String) -> Result<String, Response> {
+fn supplier_type(value: String) -> RequestResult<String> {
     let value = required_text(value, "supplierType", 32)?;
     if !matches!(value.as_str(), "official" | "relay") {
         return Err(problem(
@@ -715,7 +715,7 @@ fn supplier_type(value: String) -> Result<String, Response> {
     Ok(value)
 }
 
-fn auth_type(value: String) -> Result<String, Response> {
+fn auth_type(value: String) -> RequestResult<String> {
     let value = required_text(value, "authType", 64)?;
     if !matches!(value.as_str(), "api_key" | "bearer_token" | "custom") {
         return Err(problem(
@@ -726,7 +726,7 @@ fn auth_type(value: String) -> Result<String, Response> {
     Ok(value)
 }
 
-fn status(value: i32) -> Result<i32, Response> {
+fn status(value: i32) -> RequestResult<i32> {
     if !matches!(value, 0 | 1) {
         return Err(problem(
             SdkWorkResultCode::InvalidParameter,
@@ -736,7 +736,7 @@ fn status(value: i32) -> Result<i32, Response> {
     Ok(value)
 }
 
-fn non_negative(value: i32, field: &str) -> Result<i32, Response> {
+fn non_negative(value: i32, field: &str) -> RequestResult<i32> {
     if value < 0 {
         return Err(problem(
             SdkWorkResultCode::InvalidParameter,
@@ -746,7 +746,7 @@ fn non_negative(value: i32, field: &str) -> Result<i32, Response> {
     Ok(value)
 }
 
-fn positive_optional(value: Option<i32>, field: &str) -> Result<Option<i32>, Response> {
+fn positive_optional(value: Option<i32>, field: &str) -> RequestResult<Option<i32>> {
     if value.is_some_and(|value| value <= 0) {
         return Err(problem(
             SdkWorkResultCode::InvalidParameter,
@@ -756,7 +756,7 @@ fn positive_optional(value: Option<i32>, field: &str) -> Result<Option<i32>, Res
     Ok(value)
 }
 
-fn ensure_count(count: usize, field: &str) -> Result<(), Response> {
+fn ensure_count(count: usize, field: &str) -> RequestResult<()> {
     if count > MAX_NESTED_ITEMS {
         return Err(problem(
             SdkWorkResultCode::InvalidParameter,

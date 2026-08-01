@@ -96,43 +96,88 @@ pub fn invocation_policy_guard_from_runtime_toml_with_instance_count(
     ))
 }
 
-fn invocation_router_state<C>(
+pub struct InvocationRouterOptions<'a> {
+    pub secret_resolver: Option<Arc<dyn ProviderSecretResolver + Send + Sync>>,
+    pub sticky_store: Option<Arc<dyn StickyRouteStore>>,
+    pub usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
+    pub provider_adapter_config: Option<ProviderAdapterConfig>,
+    pub invocation_policy_guard: Option<Arc<GatewayInvocationPolicyGuard>>,
+    pub tenant_inflight_config: Option<TenantInflightConfig>,
+    pub redis_config: Option<&'a RedisConfig>,
+    pub trust_forwarded_headers: bool,
+    pub body_limit_bytes: usize,
+    pub stream_response_timeout: Duration,
+    pub query_string_api_key_policy: QueryStringApiKeyPolicy,
+    pub internal_gateway_verifier: Option<Arc<InternalGatewayRequestVerifier>>,
+}
+
+impl Default for InvocationRouterOptions<'_> {
+    fn default() -> Self {
+        Self {
+            secret_resolver: None,
+            sticky_store: None,
+            usage_recorder: None,
+            provider_adapter_config: None,
+            invocation_policy_guard: None,
+            tenant_inflight_config: None,
+            redis_config: None,
+            trust_forwarded_headers: false,
+            body_limit_bytes: RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
+            stream_response_timeout: DEFAULT_STREAM_TOTAL_TIMEOUT,
+            query_string_api_key_policy: QueryStringApiKeyPolicy::default(),
+            internal_gateway_verifier: None,
+        }
+    }
+}
+
+fn invocation_router_from_options<C>(
     catalog: Arc<C>,
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
-    pipeline: InvocationPipeline,
-    invocation_policy_guard: Arc<GatewayInvocationPolicyGuard>,
-    trust_forwarded_headers: bool,
-    body_limit_bytes: usize,
-    stream_response_timeout: Duration,
-    query_string_api_key_policy: QueryStringApiKeyPolicy,
-) -> InvocationRouterState<C>
+    dispatcher: Arc<dyn InvocationDispatcher>,
+    options: InvocationRouterOptions<'_>,
+) -> Router
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
-    InvocationRouterState {
-        catalog,
-        api_key_hasher,
-        pipeline,
+    let InvocationRouterOptions {
+        secret_resolver,
+        sticky_store,
+        usage_recorder,
+        provider_adapter_config,
         invocation_policy_guard,
+        tenant_inflight_config,
+        redis_config,
         trust_forwarded_headers,
         body_limit_bytes,
         stream_response_timeout,
         query_string_api_key_policy,
-        internal_gateway_verifier: None,
-    }
-}
-
-impl<C> InvocationRouterState<C>
-where
-    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
-{
-    fn with_internal_gateway_verifier(
-        mut self,
-        verifier: Option<Arc<InternalGatewayRequestVerifier>>,
-    ) -> Self {
-        self.internal_gateway_verifier = verifier;
-        self
-    }
+        internal_gateway_verifier,
+    } = options;
+    let adapter_resolver = provider_adapter_config
+        .and_then(InvocationProviderAdapterResolver::from_config)
+        .map(|resolver| Arc::new(resolver) as Arc<dyn ProviderAdapterRouteResolver>);
+    let pipeline = invocation_pipeline_with_redis(InvocationPipelineInput {
+        catalog: Arc::clone(&catalog),
+        dispatcher,
+        secret_resolver,
+        sticky_store,
+        usage_recorder,
+        adapter_resolver,
+        redis_config,
+        tenant_inflight_config,
+    });
+    invocation_router_with_state(InvocationRouterState {
+        catalog,
+        api_key_hasher,
+        pipeline,
+        invocation_policy_guard: invocation_policy_guard
+            .unwrap_or_else(default_invocation_policy_guard),
+        trust_forwarded_headers,
+        body_limit_bytes,
+        stream_response_timeout,
+        query_string_api_key_policy,
+        internal_gateway_verifier,
+    })
 }
 
 pub fn invocation_router_with_catalog_api_key_hasher_dispatcher_and_secret_resolver<C>(
@@ -144,16 +189,15 @@ pub fn invocation_router_with_catalog_api_key_hasher_dispatcher_and_secret_resol
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
-    invocation_router_with_state(invocation_router_state(
-        Arc::clone(&catalog),
+    invocation_router_from_options(
+        catalog,
         api_key_hasher,
-        invocation_pipeline(catalog, dispatcher, Some(secret_resolver), None, None, None),
-        default_invocation_policy_guard(),
-        false,
-        RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
-        DEFAULT_STREAM_TOTAL_TIMEOUT,
-        QueryStringApiKeyPolicy::default(),
-    ))
+        dispatcher,
+        InvocationRouterOptions {
+            secret_resolver: Some(secret_resolver),
+            ..InvocationRouterOptions::default()
+        },
+    )
 }
 
 pub fn invocation_router_with_catalog_api_key_hasher_and_dispatcher<C>(
@@ -164,16 +208,12 @@ pub fn invocation_router_with_catalog_api_key_hasher_and_dispatcher<C>(
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
-    invocation_router_with_state(invocation_router_state(
-        Arc::clone(&catalog),
+    invocation_router_from_options(
+        catalog,
         api_key_hasher,
-        invocation_pipeline(catalog, dispatcher, None, None, None, None),
-        default_invocation_policy_guard(),
-        false,
-        RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
-        DEFAULT_STREAM_TOTAL_TIMEOUT,
-        QueryStringApiKeyPolicy::default(),
-    ))
+        dispatcher,
+        InvocationRouterOptions::default(),
+    )
 }
 
 pub fn invocation_router_with_catalog_api_key_hasher_dispatcher_secret_resolver_and_sticky_store<
@@ -188,23 +228,16 @@ pub fn invocation_router_with_catalog_api_key_hasher_dispatcher_secret_resolver_
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
-    invocation_router_with_state(invocation_router_state(
-        Arc::clone(&catalog),
+    invocation_router_from_options(
+        catalog,
         api_key_hasher,
-        invocation_pipeline(
-            catalog,
-            dispatcher,
-            Some(secret_resolver),
-            Some(sticky_store),
-            None,
-            None,
-        ),
-        default_invocation_policy_guard(),
-        false,
-        RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
-        DEFAULT_STREAM_TOTAL_TIMEOUT,
-        QueryStringApiKeyPolicy::default(),
-    ))
+        dispatcher,
+        InvocationRouterOptions {
+            secret_resolver: Some(secret_resolver),
+            sticky_store: Some(sticky_store),
+            ..InvocationRouterOptions::default()
+        },
+    )
 }
 
 pub fn invocation_router_with_full_pipeline<C>(
@@ -241,51 +274,30 @@ pub fn invocation_router_with_full_pipeline_and_query_string_api_key_policy<C>(
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
-    invocation_router_with_state(invocation_router_state(
-        Arc::clone(&catalog),
+    invocation_router_from_options(
+        catalog,
         api_key_hasher,
-        invocation_pipeline(
-            catalog,
-            dispatcher,
+        dispatcher,
+        InvocationRouterOptions {
             secret_resolver,
             sticky_store,
             usage_recorder,
-            None,
-        ),
-        default_invocation_policy_guard(),
-        false,
-        RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
-        DEFAULT_STREAM_TOTAL_TIMEOUT,
-        query_string_api_key_policy,
-    ))
+            query_string_api_key_policy,
+            ..InvocationRouterOptions::default()
+        },
+    )
 }
 
 pub fn invocation_router_with_full_pipeline_and_provider_adapter_config<C>(
     catalog: Arc<C>,
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
     dispatcher: Arc<dyn InvocationDispatcher>,
-    secret_resolver: Option<Arc<dyn ProviderSecretResolver + Send + Sync>>,
-    sticky_store: Option<Arc<dyn StickyRouteStore>>,
-    usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
-    provider_adapter_config: Option<ProviderAdapterConfig>,
-    invocation_policy_guard: Option<Arc<GatewayInvocationPolicyGuard>>,
+    options: InvocationRouterOptions<'_>,
 ) -> Router
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
-    invocation_router_with_full_pipeline_provider_adapter_and_tenant_inflight(
-        catalog,
-        api_key_hasher,
-        dispatcher,
-        secret_resolver,
-        sticky_store,
-        usage_recorder,
-        provider_adapter_config,
-        invocation_policy_guard,
-        None,
-        None,
-        RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
-    )
+    invocation_router_from_options(catalog, api_key_hasher, dispatcher, options)
 }
 
 /// Build an invocation router with tenant in-flight concurrency limiting
@@ -300,34 +312,12 @@ pub fn invocation_router_with_full_pipeline_provider_adapter_and_tenant_inflight
     catalog: Arc<C>,
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
     dispatcher: Arc<dyn InvocationDispatcher>,
-    secret_resolver: Option<Arc<dyn ProviderSecretResolver + Send + Sync>>,
-    sticky_store: Option<Arc<dyn StickyRouteStore>>,
-    usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
-    provider_adapter_config: Option<ProviderAdapterConfig>,
-    invocation_policy_guard: Option<Arc<GatewayInvocationPolicyGuard>>,
-    tenant_inflight_config: Option<TenantInflightConfig>,
-    redis_config: Option<&RedisConfig>,
-    body_limit_bytes: usize,
+    options: InvocationRouterOptions<'_>,
 ) -> Router
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
-    invocation_router_with_full_pipeline_provider_adapter_tenant_inflight_and_query_string_api_key_policy(
-        catalog,
-        api_key_hasher,
-        dispatcher,
-        secret_resolver,
-        sticky_store,
-        usage_recorder,
-        provider_adapter_config,
-        invocation_policy_guard,
-        tenant_inflight_config,
-        redis_config,
-        body_limit_bytes,
-        DEFAULT_STREAM_TOTAL_TIMEOUT,
-        QueryStringApiKeyPolicy::default(),
-        None,
-    )
+    invocation_router_from_options(catalog, api_key_hasher, dispatcher, options)
 }
 
 pub(crate) fn invocation_router_with_full_pipeline_provider_adapter_tenant_inflight_and_query_string_api_key_policy<
@@ -336,46 +326,12 @@ pub(crate) fn invocation_router_with_full_pipeline_provider_adapter_tenant_infli
     catalog: Arc<C>,
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
     dispatcher: Arc<dyn InvocationDispatcher>,
-    secret_resolver: Option<Arc<dyn ProviderSecretResolver + Send + Sync>>,
-    sticky_store: Option<Arc<dyn StickyRouteStore>>,
-    usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
-    provider_adapter_config: Option<ProviderAdapterConfig>,
-    invocation_policy_guard: Option<Arc<GatewayInvocationPolicyGuard>>,
-    tenant_inflight_config: Option<TenantInflightConfig>,
-    redis_config: Option<&RedisConfig>,
-    body_limit_bytes: usize,
-    stream_response_timeout: Duration,
-    query_string_api_key_policy: QueryStringApiKeyPolicy,
-    internal_gateway_verifier: Option<Arc<InternalGatewayRequestVerifier>>,
+    options: InvocationRouterOptions<'_>,
 ) -> Router
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
-    let adapter_resolver = provider_adapter_config
-        .and_then(InvocationProviderAdapterResolver::from_config)
-        .map(|resolver| Arc::new(resolver) as Arc<dyn ProviderAdapterRouteResolver>);
-    invocation_router_with_state(
-        invocation_router_state(
-            Arc::clone(&catalog),
-            api_key_hasher,
-            invocation_pipeline_with_redis(
-                catalog,
-                dispatcher,
-                secret_resolver,
-                sticky_store,
-                usage_recorder,
-                adapter_resolver,
-                redis_config,
-                tenant_inflight_config,
-            ),
-            invocation_policy_guard.unwrap_or_else(default_invocation_policy_guard),
-            false,
-            body_limit_bytes,
-            stream_response_timeout,
-            query_string_api_key_policy,
-        )
-        .with_internal_gateway_verifier(internal_gateway_verifier),
-    )
+    invocation_router_from_options(catalog, api_key_hasher, dispatcher, options)
 }
 
 /// Build an invocation router with explicit `trust_forwarded_headers` and
@@ -389,40 +345,12 @@ pub fn invocation_router_with_full_pipeline_and_trust_forwarded_headers<C>(
     catalog: Arc<C>,
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
     dispatcher: Arc<dyn InvocationDispatcher>,
-    secret_resolver: Option<Arc<dyn ProviderSecretResolver + Send + Sync>>,
-    sticky_store: Option<Arc<dyn StickyRouteStore>>,
-    usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
-    provider_adapter_config: Option<ProviderAdapterConfig>,
-    invocation_policy_guard: Option<Arc<GatewayInvocationPolicyGuard>>,
-    trust_forwarded_headers: bool,
-    redis_config: Option<&sdkwork_claw_config::RedisConfig>,
-    body_limit_bytes: usize,
+    options: InvocationRouterOptions<'_>,
 ) -> Router
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
-    let adapter_resolver = provider_adapter_config
-        .and_then(InvocationProviderAdapterResolver::from_config)
-        .map(|resolver| Arc::new(resolver) as Arc<dyn ProviderAdapterRouteResolver>);
-    invocation_router_with_state(invocation_router_state(
-        Arc::clone(&catalog),
-        api_key_hasher,
-        invocation_pipeline_with_redis(
-            catalog,
-            dispatcher,
-            secret_resolver,
-            sticky_store,
-            usage_recorder,
-            adapter_resolver,
-            redis_config,
-            None,
-        ),
-        invocation_policy_guard.unwrap_or_else(default_invocation_policy_guard),
-        trust_forwarded_headers,
-        body_limit_bytes,
-        DEFAULT_STREAM_TOTAL_TIMEOUT,
-        QueryStringApiKeyPolicy::default(),
-    ))
+    invocation_router_from_options(catalog, api_key_hasher, dispatcher, options)
 }
 
 fn invocation_router_with_state<C>(state: InvocationRouterState<C>) -> Router
@@ -467,42 +395,31 @@ fn reject_retired_openai_method(request: &Request<Body>) -> Option<Response> {
     Some(response)
 }
 
-fn invocation_pipeline<C>(
+struct InvocationPipelineInput<'a, C> {
     catalog: Arc<C>,
     dispatcher: Arc<dyn InvocationDispatcher>,
     secret_resolver: Option<Arc<dyn ProviderSecretResolver + Send + Sync>>,
     sticky_store: Option<Arc<dyn StickyRouteStore>>,
     usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
     adapter_resolver: Option<Arc<dyn ProviderAdapterRouteResolver>>,
-) -> InvocationPipeline
+    redis_config: Option<&'a RedisConfig>,
+    tenant_inflight_config: Option<TenantInflightConfig>,
+}
+
+fn invocation_pipeline_with_redis<C>(input: InvocationPipelineInput<'_, C>) -> InvocationPipeline
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
-    invocation_pipeline_with_redis(
+    let InvocationPipelineInput {
         catalog,
         dispatcher,
         secret_resolver,
         sticky_store,
         usage_recorder,
         adapter_resolver,
-        None,
-        None,
-    )
-}
-
-fn invocation_pipeline_with_redis<C>(
-    catalog: Arc<C>,
-    dispatcher: Arc<dyn InvocationDispatcher>,
-    secret_resolver: Option<Arc<dyn ProviderSecretResolver + Send + Sync>>,
-    sticky_store: Option<Arc<dyn StickyRouteStore>>,
-    usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
-    adapter_resolver: Option<Arc<dyn ProviderAdapterRouteResolver>>,
-    redis_config: Option<&sdkwork_claw_config::RedisConfig>,
-    tenant_inflight_config: Option<TenantInflightConfig>,
-) -> InvocationPipeline
-where
-    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
-{
+        redis_config,
+        tenant_inflight_config,
+    } = input;
     let idempotency = IdempotencyInterceptor::try_with_redis_config(
         sdkwork_clawrouter_router_service::application::IdempotencyConfig::default(),
         redis_config,
@@ -515,8 +432,8 @@ where
     let mut pipeline = InvocationPipeline::new()
         .with_interceptor(MetricsInterceptor::new())
         .with_interceptor(idempotency)
-        .with_interceptor(PayloadExtractionInterceptor::default())
-        .with_interceptor(BillingPolicyInterceptor::default());
+        .with_interceptor(PayloadExtractionInterceptor)
+        .with_interceptor(BillingPolicyInterceptor);
 
     if let Some(sticky_store) = sticky_store.clone() {
         pipeline = pipeline.with_interceptor(StickyResolutionInterceptor::new(sticky_store));
@@ -546,7 +463,7 @@ where
 
     pipeline = pipeline.with_interceptor(PricingPreflightInterceptor::new(Arc::clone(&catalog)));
 
-    pipeline = pipeline.with_interceptor(ResponseNormalizationInterceptor::default());
+    pipeline = pipeline.with_interceptor(ResponseNormalizationInterceptor);
 
     // H-9: bound per-tenant in-flight provider requests just before dispatch so
     // a tenant cannot exhaust the gateway's provider connection pool. The slot
@@ -568,8 +485,8 @@ where
     }
 
     pipeline
-        .with_interceptor(PricingSettlementInterceptor::default())
+        .with_interceptor(PricingSettlementInterceptor)
         .with_interceptor(PricingFinalizationInterceptor::new(catalog))
-        .with_interceptor(TraceTelemetryInterceptor::default())
-        .with_interceptor(UsageExtractionInterceptor::default())
+        .with_interceptor(TraceTelemetryInterceptor)
+        .with_interceptor(UsageExtractionInterceptor)
 }

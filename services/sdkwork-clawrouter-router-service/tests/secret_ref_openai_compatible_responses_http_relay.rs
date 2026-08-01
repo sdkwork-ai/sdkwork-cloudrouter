@@ -47,12 +47,14 @@ async fn secret_ref_responses_relay_resolves_endpoint_and_secret_from_request_co
     });
 
     let secret_ref = "vault://providers/openrouter/account/main";
-    let relay = SecretRefOpenAiCompatibleResponsesRelay::new(Arc::new(MapSecretResolver {
-        secrets: HashMap::from([(
-            secret_ref.to_owned(),
-            "sk-provider-from-secret-ref".to_owned(),
-        )]),
-    }));
+    let relay = SecretRefOpenAiCompatibleResponsesRelay::for_local_development(Arc::new(
+        MapSecretResolver {
+            secrets: HashMap::from([(
+                secret_ref.to_owned(),
+                "sk-provider-from-secret-ref".to_owned(),
+            )]),
+        },
+    ));
 
     let request_body = json!({
         "model": "gpt-4.1-mini",
@@ -116,9 +118,11 @@ async fn secret_ref_responses_relay_resolves_endpoint_and_secret_from_request_co
 #[tokio::test]
 async fn secret_ref_responses_relay_rejects_missing_endpoint_or_secret_ref_without_leaking_values()
 {
-    let relay = SecretRefOpenAiCompatibleResponsesRelay::new(Arc::new(MapSecretResolver {
-        secrets: HashMap::new(),
-    }));
+    let relay = SecretRefOpenAiCompatibleResponsesRelay::for_local_development(Arc::new(
+        MapSecretResolver {
+            secrets: HashMap::new(),
+        },
+    ));
 
     let missing_endpoint = relay
         .create_response(ResponsesRelayRequest {

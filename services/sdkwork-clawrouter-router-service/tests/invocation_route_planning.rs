@@ -125,7 +125,6 @@ fn add_group_policy_rule(
     match_expression: &str,
     target_model: &str,
     candidates: Vec<RouteCandidate>,
-    fallback: Vec<RouteCandidate>,
 ) {
     catalog.add_routing_policy(RoutingPolicy::new(
         policy_id,
@@ -147,8 +146,7 @@ fn add_group_policy_rule(
             match_expression,
             target_model,
         )
-        .with_candidate_account_groups(candidates)
-        .with_fallback_chain(fallback),
+        .with_candidate_account_groups(candidates),
     );
 }
 
@@ -168,7 +166,7 @@ fn subject() -> sdkwork_clawrouter_router_service::application::InvocationSubjec
 }
 
 fn openai_invocation(method: Method, path: &str, body: InvocationBody) -> Invocation {
-    let classification = OpenAiResourceClassifier::default()
+    let classification = OpenAiResourceClassifier
         .classify(&InvocationClassificationRequest::new(method.clone(), path))
         .expect("classification");
     let (resource, billing, routing) = classification.into_parts();
@@ -189,7 +187,7 @@ fn provider_native_invocation(
     path: &str,
     capability: RoutingCapability,
 ) -> Invocation {
-    let classification = ProviderNativeResourceClassifier::default()
+    let classification = ProviderNativeResourceClassifier
         .classify(
             &InvocationClassificationRequest::new(Method::POST, path)
                 .with_supplier_code(supplier_code)
@@ -228,7 +226,6 @@ async fn plans_model_route_and_resolves_account() {
         r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
         "openai/gpt-4o-mini",
         vec![RouteCandidate::new(10, 100)],
-        vec![],
     );
     let catalog = Arc::new(catalog);
     let mut invocation = openai_invocation(
@@ -286,7 +283,6 @@ async fn plans_management_api_account_route() {
         r#"{"routeKey":"openai/management/files"}"#,
         "",
         vec![RouteCandidate::new(10, 100)],
-        vec![],
     );
     let catalog = Arc::new(catalog);
     let mut invocation = openai_invocation(Method::POST, "/v1/files", InvocationBody::Empty);
@@ -319,7 +315,6 @@ async fn plans_provider_native_account_route_and_resolves_account() {
         r#"{"routeKey":"kling.text_to_video"}"#,
         "kling.text_to_video",
         vec![RouteCandidate::new(10, 100)],
-        vec![],
     );
     let catalog = Arc::new(catalog);
     let mut invocation =
@@ -362,7 +357,6 @@ async fn plans_provider_native_account_route_even_when_request_contains_model_me
         r#"{"routeKey":"kling.text_to_video"}"#,
         "kling.text_to_video",
         vec![RouteCandidate::new(10, 100)],
-        vec![],
     );
     let catalog = Arc::new(catalog);
     let mut invocation =
@@ -456,7 +450,6 @@ async fn model_route_plan_preserves_account_group_failover_order() {
         r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
         "openai/gpt-4o-mini",
         vec![RouteCandidate::new(10, 100)],
-        vec![],
     );
     let catalog = Arc::new(catalog);
     let mut invocation = openai_invocation(
@@ -526,7 +519,6 @@ async fn account_resolution_preserves_credential_rotation() {
         r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
         "openai/gpt-4o-mini",
         vec![RouteCandidate::new(10, 100)],
-        vec![],
     );
     let catalog = Arc::new(catalog);
     let mut invocation = openai_invocation(

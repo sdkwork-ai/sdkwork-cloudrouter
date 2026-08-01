@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "Claw Router - AI API Gateway SLO/SLI Dashboard",
+  "description": "Claw Router HTTP operations dashboard backed by runtime Prometheus metrics",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -33,7 +33,7 @@
       },
       "id": 1,
       "panels": [],
-      "title": "SLO Overview",
+      "title": "HTTP Overview",
       "type": "row"
     },
     {
@@ -94,7 +94,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "clawrouter_slo_availability_current / 100",
+          "expr": "1 - (sum(rate(sdkwork_http_requests_labeled_total{service=~\"$service\",environment=~\"$environment\",deployment_profile=~\"$deployment_profile\",runtime_target=~\"$runtime_target\",status=~\"5..\"}[5m])) / clamp_min(sum(rate(sdkwork_http_requests_labeled_total{service=~\"$service\",environment=~\"$environment\",deployment_profile=~\"$deployment_profile\",runtime_target=~\"$runtime_target\"}[5m])), 0.001))",
           "legendFormat": "Availability",
           "refId": "A"
         }
@@ -122,11 +122,11 @@
               },
               {
                 "color": "yellow",
-                "value": 50
+                "value": 500
               },
               {
                 "color": "red",
-                "value": 100
+                "value": 1000
               }
             ]
           },
@@ -160,7 +160,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "clawrouter_slo_latency_p95_seconds * 1000",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(sdkwork_http_request_duration_seconds_bucket{service=~\"$service\",environment=~\"$environment\",deployment_profile=~\"$deployment_profile\",runtime_target=~\"$runtime_target\"}[5m]))) * 1000",
           "legendFormat": "p95 Latency",
           "refId": "A"
         }
@@ -188,11 +188,11 @@
               },
               {
                 "color": "yellow",
-                "value": 100
+                "value": 1000
               },
               {
                 "color": "red",
-                "value": 200
+                "value": 2000
               }
             ]
           },
@@ -226,7 +226,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "clawrouter_slo_latency_p99_seconds * 1000",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(sdkwork_http_request_duration_seconds_bucket{service=~\"$service\",environment=~\"$environment\",deployment_profile=~\"$deployment_profile\",runtime_target=~\"$runtime_target\"}[5m]))) * 1000",
           "legendFormat": "p99 Latency",
           "refId": "A"
         }
@@ -249,16 +249,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 1000
-              },
-              {
                 "color": "green",
-                "value": 10000
+                "value": null
               }
             ]
           },
@@ -292,7 +284,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "clawrouter_slo_throughput_rps",
+          "expr": "sum(rate(sdkwork_http_requests_labeled_total{service=~\"$service\",environment=~\"$environment\",deployment_profile=~\"$deployment_profile\",runtime_target=~\"$runtime_target\"}[5m]))",
           "legendFormat": "RPS",
           "refId": "A"
         }
@@ -393,7 +385,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "rate(clawrouter_requests_total{status=\"success\"}[5m])",
+          "expr": "sum(rate(sdkwork_http_requests_labeled_total{service=~\"$service\",environment=~\"$environment\",deployment_profile=~\"$deployment_profile\",runtime_target=~\"$runtime_target\",status!~\"5..\"}[5m]))",
           "legendFormat": "Success",
           "refId": "A"
         },
@@ -402,7 +394,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "rate(clawrouter_requests_total{status=\"failure\"}[5m])",
+          "expr": "sum(rate(sdkwork_http_requests_labeled_total{service=~\"$service\",environment=~\"$environment\",deployment_profile=~\"$deployment_profile\",runtime_target=~\"$runtime_target\",status=~\"5..\"}[5m]))",
           "legendFormat": "Failure",
           "refId": "B"
         }
@@ -460,11 +452,11 @@
               },
               {
                 "color": "yellow",
-                "value": 50
+                "value": 500
               },
               {
                 "color": "red",
-                "value": 100
+                "value": 1000
               }
             ]
           },
@@ -498,7 +490,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "clawrouter_slo_latency_p95_seconds * 1000",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(sdkwork_http_request_duration_seconds_bucket{service=~\"$service\",environment=~\"$environment\",deployment_profile=~\"$deployment_profile\",runtime_target=~\"$runtime_target\"}[5m]))) * 1000",
           "legendFormat": "p95",
           "refId": "A"
         },
@@ -507,7 +499,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "clawrouter_slo_latency_p99_seconds * 1000",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(sdkwork_http_request_duration_seconds_bucket{service=~\"$service\",environment=~\"$environment\",deployment_profile=~\"$deployment_profile\",runtime_target=~\"$runtime_target\"}[5m]))) * 1000",
           "legendFormat": "p99",
           "refId": "B"
         },
@@ -516,7 +508,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "clawrouter_slo_latency_p95_seconds * 1000 * 0.5",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(sdkwork_http_request_duration_seconds_bucket{service=~\"$service\",environment=~\"$environment\",deployment_profile=~\"$deployment_profile\",runtime_target=~\"$runtime_target\"}[5m]))) * 1000",
           "legendFormat": "p50",
           "refId": "C"
         }
@@ -592,7 +584,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "clawrouter_requests_total",
+          "expr": "sum by (status) (rate(sdkwork_http_requests_labeled_total{service=~\"$service\",environment=~\"$environment\",deployment_profile=~\"$deployment_profile\",runtime_target=~\"$runtime_target\"}[5m]))",
           "legendFormat": "{{status}}",
           "refId": "A"
         }
@@ -680,7 +672,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "increase(clawrouter_requests_total{status=\"failure\"}[5m])",
+          "expr": "sum(increase(sdkwork_http_requests_labeled_total{service=~\"$service\",environment=~\"$environment\",deployment_profile=~\"$deployment_profile\",runtime_target=~\"$runtime_target\",status=~\"5..\"}[5m]))",
           "legendFormat": "Errors",
           "refId": "A"
         }
@@ -698,7 +690,7 @@
       },
       "id": 12,
       "panels": [],
-      "title": "SLO Budget",
+      "title": "Availability Window",
       "type": "row"
     },
     {
@@ -723,11 +715,11 @@
               },
               {
                 "color": "yellow",
-                "value": 50
+                "value": 99
               },
               {
                 "color": "green",
-                "value": 80
+                "value": 99.9
               }
             ]
           },
@@ -759,12 +751,12 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "(1 - (clawrouter_requests_total{status=\"failure\"} / clawrouter_requests_total)) * 100",
-          "legendFormat": "Error Budget Remaining",
+          "expr": "(1 - (sum(increase(sdkwork_http_requests_labeled_total{service=~\"$service\",environment=~\"$environment\",deployment_profile=~\"$deployment_profile\",runtime_target=~\"$runtime_target\",status=~\"5..\"}[30d])) / clamp_min(sum(increase(sdkwork_http_requests_labeled_total{service=~\"$service\",environment=~\"$environment\",deployment_profile=~\"$deployment_profile\",runtime_target=~\"$runtime_target\"}[30d])), 1))) * 100",
+          "legendFormat": "30d Availability",
           "refId": "A"
         }
       ],
-      "title": "Error Budget Remaining",
+      "title": "30d Availability",
       "type": "gauge"
     },
     {
@@ -812,7 +804,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
               },
               {
@@ -820,7 +812,7 @@
                 "value": 99
               },
               {
-                "color": "red",
+                "color": "green",
                 "value": 99.9
               }
             ]
@@ -855,7 +847,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "clawrouter_slo_availability_current / 100",
+          "expr": "1 - (sum(rate(sdkwork_http_requests_labeled_total{service=~\"$service\",environment=~\"$environment\",deployment_profile=~\"$deployment_profile\",runtime_target=~\"$runtime_target\",status=~\"5..\"}[5m])) / clamp_min(sum(rate(sdkwork_http_requests_labeled_total{service=~\"$service\",environment=~\"$environment\",deployment_profile=~\"$deployment_profile\",runtime_target=~\"$runtime_target\"}[5m])), 0.001))",
           "legendFormat": "Availability",
           "refId": "A"
         }
@@ -867,7 +859,7 @@
   "refresh": "30s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["clawrouter", "ai-gateway", "slo", "observability"],
+  "tags": ["clawrouter", "ai-gateway", "http", "observability"],
   "templating": {
     "list": [
       {
@@ -884,20 +876,89 @@
         "type": "datasource"
       },
       {
-        "allValue": "",
+        "allValue": ".*",
         "current": {},
         "datasource": {
           "type": "prometheus",
           "uid": "${datasource}"
         },
-        "definition": "label_values(clawrouter_requests_total, tenant_id)",
+        "definition": "label_values(sdkwork_http_requests_labeled_total, service)",
         "hide": 0,
         "includeAll": true,
         "multi": true,
-        "name": "tenant",
+        "name": "service",
         "options": [],
         "query": {
-          "query": "label_values(clawrouter_requests_total, tenant_id)",
+          "query": "label_values(sdkwork_http_requests_labeled_total, service)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(sdkwork_http_requests_labeled_total, environment)",
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "name": "environment",
+        "options": [],
+        "query": {
+          "query": "label_values(sdkwork_http_requests_labeled_total, environment)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(sdkwork_http_requests_labeled_total, deployment_profile)",
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "name": "deployment_profile",
+        "options": [],
+        "query": {
+          "query": "label_values(sdkwork_http_requests_labeled_total, deployment_profile)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(sdkwork_http_requests_labeled_total, runtime_target)",
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "name": "runtime_target",
+        "options": [],
+        "query": {
+          "query": "label_values(sdkwork_http_requests_labeled_total, runtime_target)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 2,
@@ -914,8 +975,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Claw Router - SLO Dashboard",
-  "uid": "clawrouter-slo",
+  "title": "Claw Router - HTTP Operations",
+  "uid": "clawrouter-http-operations",
   "version": 1,
   "weekStart": ""
 }

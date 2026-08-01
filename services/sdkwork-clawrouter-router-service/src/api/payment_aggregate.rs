@@ -35,6 +35,7 @@ struct PaymentIntentCreateRequest {
     merchant_order_no: String,
     amount: MoneyAmountRequest,
     subject: String,
+    #[serde(rename = "providerCode")]
     supplier_code: String,
     payment_method: Option<String>,
     scene: Option<String>,
@@ -103,6 +104,7 @@ struct PaymentIntentResponse {
     merchant_order_no: String,
     amount: MoneyAmountResponse,
     subject: String,
+    #[serde(rename = "providerCode")]
     supplier_code: String,
     payment_method: String,
     status: String,
@@ -117,6 +119,7 @@ struct PaymentRefundResponse {
     payment_intent_id: String,
     merchant_refund_no: String,
     amount: MoneyAmountResponse,
+    #[serde(rename = "providerCode")]
     supplier_code: String,
     status: String,
     reason: String,

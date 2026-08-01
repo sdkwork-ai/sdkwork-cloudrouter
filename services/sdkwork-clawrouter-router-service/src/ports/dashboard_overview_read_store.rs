@@ -24,6 +24,7 @@ pub struct DashboardOverviewSubject {
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
+#[derive(Default)]
 pub struct DashboardOverviewSnapshot {
     pub summary: DashboardOverviewSummary,
     pub request_sparkline: Vec<DashboardSparklinePoint>,
@@ -34,22 +35,6 @@ pub struct DashboardOverviewSnapshot {
     pub announcements: Vec<DashboardAnnouncement>,
     pub configuration_domains: Vec<DashboardConfigurationDomain>,
     pub warnings: Vec<String>,
-}
-
-impl Default for DashboardOverviewSnapshot {
-    fn default() -> Self {
-        Self {
-            summary: DashboardOverviewSummary::default(),
-            request_sparkline: Vec::new(),
-            multimodal_sparkline: Vec::new(),
-            performance_sparkline: Vec::new(),
-            chart_data: Vec::new(),
-            top_models: Vec::new(),
-            announcements: Vec::new(),
-            configuration_domains: Vec::new(),
-            warnings: Vec::new(),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Default, Serialize, PartialEq)]

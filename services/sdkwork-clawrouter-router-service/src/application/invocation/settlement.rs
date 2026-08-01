@@ -574,31 +574,6 @@ fn adapter_usage_pricing_snapshot(
     .to_string()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn usage_line(meter: BillingMeter) -> InvocationUsageLine {
-        InvocationUsageLine::new(
-            meter,
-            GatewayUsageQuantity::tokens(1).expect("valid test quantity"),
-        )
-    }
-
-    #[test]
-    fn duplicate_usage_type_ranges_remain_disjoint_for_large_line_indexes() {
-        let high_index =
-            usage_type_for_line(&usage_line(BillingMeter::LlmReasoningToken), 999_999, true);
-        let next_meter =
-            usage_type_for_line(&usage_line(BillingMeter::LlmCacheWriteToken), 0, true);
-
-        assert_eq!(4_019_999, high_index);
-        assert_eq!(4_020_000, next_meter);
-        assert_ne!(high_index, next_meter);
-        assert!(next_meter <= i64::from(i32::MAX));
-    }
-}
-
 fn effective_invocation_dispatch_status_code(invocation: &Invocation) -> Option<u16> {
     invocation
         .dispatch
@@ -630,4 +605,29 @@ fn adapter_response_status_code(body: &Value) -> Option<u16> {
 
 fn settlement_error(message: impl Into<String>) -> InvocationError {
     InvocationError::new(InvocationErrorKind::Usage, message)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn usage_line(meter: BillingMeter) -> InvocationUsageLine {
+        InvocationUsageLine::new(
+            meter,
+            GatewayUsageQuantity::tokens(1).expect("valid test quantity"),
+        )
+    }
+
+    #[test]
+    fn duplicate_usage_type_ranges_remain_disjoint_for_large_line_indexes() {
+        let high_index =
+            usage_type_for_line(&usage_line(BillingMeter::LlmReasoningToken), 999_999, true);
+        let next_meter =
+            usage_type_for_line(&usage_line(BillingMeter::LlmCacheWriteToken), 0, true);
+
+        assert_eq!(4_019_999, high_index);
+        assert_eq!(4_020_000, next_meter);
+        assert_ne!(high_index, next_meter);
+        assert!(next_meter <= i64::from(i32::MAX));
+    }
 }

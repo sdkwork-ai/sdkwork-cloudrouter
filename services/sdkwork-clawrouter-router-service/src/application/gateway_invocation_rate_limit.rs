@@ -164,31 +164,23 @@ impl GatewayInvocationRateLimiter {
                 .filter(|value| *value > 0)
                 .map(|value| value.max(limit))
                 .unwrap_or(limit);
-            if let Err(retry_after) = self
-                .check_window(
-                    scope_key,
-                    "rps",
-                    ONE_SECOND,
-                    u32::try_from(effective_limit).unwrap_or(u32::MAX),
-                )
-                .await
-            {
-                return Err(retry_after);
-            }
+            self.check_window(
+                scope_key,
+                "rps",
+                ONE_SECOND,
+                u32::try_from(effective_limit).unwrap_or(u32::MAX),
+            )
+            .await?
         }
 
         if let Some(limit) = spec.requests_per_day.filter(|value| *value > 0) {
-            if let Err(retry_after) = self
-                .check_window(
-                    scope_key,
-                    "rpd",
-                    ONE_DAY,
-                    u32::try_from(limit).unwrap_or(u32::MAX),
-                )
-                .await
-            {
-                return Err(retry_after);
-            }
+            self.check_window(
+                scope_key,
+                "rpd",
+                ONE_DAY,
+                u32::try_from(limit).unwrap_or(u32::MAX),
+            )
+            .await?
         }
 
         Ok(())

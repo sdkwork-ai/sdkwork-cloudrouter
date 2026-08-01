@@ -109,17 +109,16 @@ fn gateway_usage_upsert_placeholder_order_matches_all_postgres_bindings() {
 
 #[test]
 fn gateway_trace_upsert_preserves_text_error_types_and_never_persists_raw_user_agent() {
-    for source in [POSTGRES_GATEWAY_USAGE_RECORDER] {
-        let upsert = function_block(
-            source,
-            "async fn upsert_trace(",
-            "async fn upsert_usage_fact(",
-        );
-        assert!(upsert.contains(".bind(command.error_type.as_deref())"));
-        assert!(upsert.contains(".bind(context.user_agent_hash.as_deref())"));
-        assert!(!source.contains("error_type_code"));
-        assert!(!source.contains("json!({ \"userAgent\""));
-    }
+    let source = POSTGRES_GATEWAY_USAGE_RECORDER;
+    let upsert = function_block(
+        source,
+        "async fn upsert_trace(",
+        "async fn upsert_usage_fact(",
+    );
+    assert!(upsert.contains(".bind(command.error_type.as_deref())"));
+    assert!(upsert.contains(".bind(context.user_agent_hash.as_deref())"));
+    assert!(!source.contains("error_type_code"));
+    assert!(!source.contains("json!({ \"userAgent\""));
 }
 
 #[test]

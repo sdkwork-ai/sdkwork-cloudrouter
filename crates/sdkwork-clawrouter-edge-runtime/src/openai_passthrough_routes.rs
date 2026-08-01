@@ -90,15 +90,7 @@ fn openai_route_methods() -> &'static HashMap<String, u8> {
             .paths
             .into_iter()
             .filter(|(path, _)| path.starts_with("/v1/"))
-            .map(|(path, item)| {
-                let mut methods = 0;
-                methods |= item.get.is_some().then_some(METHOD_GET).unwrap_or(0);
-                methods |= item.post.is_some().then_some(METHOD_POST).unwrap_or(0);
-                methods |= item.put.is_some().then_some(METHOD_PUT).unwrap_or(0);
-                methods |= item.patch.is_some().then_some(METHOD_PATCH).unwrap_or(0);
-                methods |= item.delete.is_some().then_some(METHOD_DELETE).unwrap_or(0);
-                (path, methods)
-            })
+            .map(|(path, item)| (path, path_item_method_mask(&item)))
             .collect()
     })
 }
@@ -130,11 +122,21 @@ fn provider_route_methods() -> &'static [ProviderRouteContract] {
 
 fn path_item_method_mask(item: &OpenApiPathItem) -> u8 {
     let mut methods = 0;
-    methods |= item.get.is_some().then_some(METHOD_GET).unwrap_or(0);
-    methods |= item.post.is_some().then_some(METHOD_POST).unwrap_or(0);
-    methods |= item.put.is_some().then_some(METHOD_PUT).unwrap_or(0);
-    methods |= item.patch.is_some().then_some(METHOD_PATCH).unwrap_or(0);
-    methods |= item.delete.is_some().then_some(METHOD_DELETE).unwrap_or(0);
+    if item.get.is_some() {
+        methods |= METHOD_GET;
+    }
+    if item.post.is_some() {
+        methods |= METHOD_POST;
+    }
+    if item.put.is_some() {
+        methods |= METHOD_PUT;
+    }
+    if item.patch.is_some() {
+        methods |= METHOD_PATCH;
+    }
+    if item.delete.is_some() {
+        methods |= METHOD_DELETE;
+    }
     methods
 }
 

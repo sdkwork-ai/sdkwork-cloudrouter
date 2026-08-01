@@ -24,7 +24,7 @@ fn test_subject() -> sdkwork_clawrouter_router_service::application::InvocationS
 }
 
 fn classified_invocation(method: Method, path: &str, body: InvocationBody) -> Invocation {
-    let classification = OpenAiResourceClassifier::default()
+    let classification = OpenAiResourceClassifier
         .classify(&InvocationClassificationRequest::new(method.clone(), path))
         .expect("classification");
     let (resource, billing, routing) = classification.into_parts();
@@ -40,7 +40,7 @@ fn classified_invocation(method: Method, path: &str, body: InvocationBody) -> In
 }
 
 fn provider_native_invocation(supplier_code: &str, path: &str, body: InvocationBody) -> Invocation {
-    let classification = ProviderNativeResourceClassifier::default()
+    let classification = ProviderNativeResourceClassifier
         .classify(
             &InvocationClassificationRequest::new(Method::POST, path)
                 .with_supplier_code(supplier_code)
@@ -72,7 +72,7 @@ async fn extracts_model_and_stream_from_json_body() {
         })),
     );
 
-    PayloadExtractionInterceptor::default()
+    PayloadExtractionInterceptor
         .before(&mut invocation)
         .await
         .expect("payload extraction");
@@ -96,7 +96,7 @@ async fn extracts_model_from_query_when_body_is_empty() {
         InvocationBody::Empty,
     );
 
-    PayloadExtractionInterceptor::default()
+    PayloadExtractionInterceptor
         .before(&mut invocation)
         .await
         .expect("payload extraction");
@@ -120,11 +120,11 @@ async fn preserves_object_and_parent_ids_from_classification() {
         InvocationBody::json(json!({"model": "gpt-4o-mini"})),
     );
 
-    PayloadExtractionInterceptor::default()
+    PayloadExtractionInterceptor
         .before(&mut file)
         .await
         .expect("file payload extraction");
-    PayloadExtractionInterceptor::default()
+    PayloadExtractionInterceptor
         .before(&mut thread_run)
         .await
         .expect("thread payload extraction");
@@ -162,7 +162,7 @@ async fn extracts_provider_native_model_metadata_without_changing_resource_ident
         })),
     );
 
-    PayloadExtractionInterceptor::default()
+    PayloadExtractionInterceptor
         .before(&mut invocation)
         .await
         .expect("provider native payload extraction");
@@ -193,7 +193,7 @@ async fn preserves_provider_native_model_metadata_extracted_from_standard_path()
         })),
     );
 
-    PayloadExtractionInterceptor::default()
+    PayloadExtractionInterceptor
         .before(&mut invocation)
         .await
         .expect("provider native path model payload extraction");
@@ -221,7 +221,7 @@ async fn required_model_missing_fails_before_routing() {
         InvocationBody::json(json!({"messages": [{"role": "user", "content": "ping"}]})),
     );
 
-    let error = PayloadExtractionInterceptor::default()
+    let error = PayloadExtractionInterceptor
         .before(&mut invocation)
         .await
         .expect_err("model required");

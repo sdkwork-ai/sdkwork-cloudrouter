@@ -1,4 +1,4 @@
-mod common;
+pub mod common;
 use common::InternalTrustedSubjectHeaders;
 use std::convert::Infallible;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -32,6 +32,9 @@ use tower::ServiceExt;
 
 const DELAYED_STREAM_SECOND_CHUNK_MILLIS: u64 = 120;
 const STREAM_COMPLETION_TIMEOUT_MILLIS: u64 = 250;
+const TEST_TENANT_ID: i64 = 100001;
+const TEST_ORGANIZATION_ID: i64 = 0;
+const TEST_USER_ID: i64 = 30;
 
 #[tokio::test]
 async fn app_runtime_create_invocation_uses_product_runtime_namespace_and_store_contract() {
@@ -73,7 +76,7 @@ async fn app_runtime_create_invocation_uses_product_runtime_namespace_and_store_
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, response.status());
+    assert_eq!(StatusCode::CREATED, response.status());
     let payload = response_json(response).await;
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("runtime-invocation-1", payload["data"]["item"]["id"]);
@@ -82,9 +85,9 @@ async fn app_runtime_create_invocation_uses_product_runtime_namespace_and_store_
 
     let commands = store.create_invocation_commands.lock().unwrap();
     assert_eq!(1, commands.len());
-    assert_eq!(10, commands[0].subject.tenant_id);
-    assert_eq!(20, commands[0].subject.organization_id);
-    assert_eq!(30, commands[0].subject.user_id);
+    assert_eq!(TEST_TENANT_ID, commands[0].subject.tenant_id);
+    assert_eq!(TEST_ORGANIZATION_ID, commands[0].subject.organization_id);
+    assert_eq!(TEST_USER_ID, commands[0].subject.user_id);
     assert_eq!("runtime-invocation-uuid-1", commands[0].invocation_uuid);
     assert_eq!("chat_response", commands[0].invocation_type);
     assert_eq!("claude_code", commands[0].runtime);
@@ -136,7 +139,7 @@ async fn app_runtime_records_events_and_artifacts_under_invocation() {
         )
         .await
         .unwrap();
-    assert_eq!(StatusCode::OK, response.status());
+    assert_eq!(StatusCode::CREATED, response.status());
     let payload = response_json(response).await;
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("runtime-event-1", payload["data"]["item"]["id"]);
@@ -162,7 +165,7 @@ async fn app_runtime_records_events_and_artifacts_under_invocation() {
                       "contentJson":{"kind":"markdown"},
                       "storageKey":"runtime/runtime-invocation-1/summary.md",
                       "sha256":"abc123",
-                      "sizeBytes":9,
+                      "sizeBytes":"9",
                       "metadata":{"source":"codex"}
                     }"##,
                 ))
@@ -170,7 +173,7 @@ async fn app_runtime_records_events_and_artifacts_under_invocation() {
         )
         .await
         .unwrap();
-    assert_eq!(StatusCode::OK, response.status());
+    assert_eq!(StatusCode::CREATED, response.status());
     let payload = response_json(response).await;
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("runtime-artifact-1", payload["data"]["item"]["id"]);
@@ -361,7 +364,7 @@ async fn app_runtime_create_event_preserves_stream_text_delta_whitespace() {
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, response.status());
+    assert_eq!(StatusCode::CREATED, response.status());
     let payload = response_json(response).await;
     assert_eq!(text_delta, payload["data"]["item"]["textDelta"]);
 
@@ -426,9 +429,9 @@ async fn app_runtime_stream_executes_openai_compatible_invocation_and_persists_d
     let relay_requests = relay_requests.lock().unwrap();
     assert_eq!(1, relay_requests.len());
     assert_eq!(101, relay_requests[0].api_key_id);
-    assert_eq!(10, relay_requests[0].tenant_id);
-    assert_eq!(20, relay_requests[0].organization_id);
-    assert_eq!(30, relay_requests[0].user_id);
+    assert_eq!(TEST_TENANT_ID, relay_requests[0].tenant_id);
+    assert_eq!(TEST_ORGANIZATION_ID, relay_requests[0].organization_id);
+    assert_eq!(TEST_USER_ID, relay_requests[0].user_id);
     assert_eq!("openai/gpt-4o-mini", relay_requests[0].model);
     assert_eq!("provider-gpt-4o-mini", relay_requests[0].provider_model);
     assert_eq!(true, relay_requests[0].request_body["stream"]);
@@ -719,15 +722,16 @@ async fn app_runtime_stream_execution_continues_after_client_disconnect_and_reco
     )
     .await
     .expect("runtime execution should finalize after the browser stream disconnects");
-    let event_commands = store.create_event_commands.lock().unwrap();
-    let delta_events = event_commands_of_type(&event_commands, "response.output_text.delta");
-    assert_eq!(
-        2,
-        delta_events.len(),
-        "runtime execution must keep consuming and persisting provider deltas after the browser stream disconnects"
-    );
-    assert_runtime_completed_event_recorded(&event_commands);
-    drop(event_commands);
+    {
+        let event_commands = store.create_event_commands.lock().unwrap();
+        let delta_events = event_commands_of_type(&event_commands, "response.output_text.delta");
+        assert_eq!(
+            2,
+            delta_events.len(),
+            "runtime execution must keep consuming and persisting provider deltas after the browser stream disconnects"
+        );
+        assert_runtime_completed_event_recorded(&event_commands);
+    }
 
     let response = router
         .oneshot(
@@ -1451,9 +1455,9 @@ async fn app_runtime_complete_invocation_updates_status_and_response_snapshot() 
                       "status":"completed",
                       "providerResponseId":"msg_123",
                       "finishReason":"stop",
-                      "latencyMs":1200,
-                      "ttftMs":200,
-                      "exitCode":0,
+                      "latencyMs":"1200",
+                      "ttftMs":"200",
+                      "exitCode":"0",
                       "responseJson":{"id":"msg_123"},
                       "usageJson":{"inputTokens":10,"outputTokens":20}
                     }"#,
@@ -1931,7 +1935,7 @@ async fn app_runtime_gateway_executor_rejects_request_route_key_outside_trusted_
 
     let body = runtime_failed_sse_text(response).await;
     assert!(
-        body.contains("runtime route API key does not belong to trusted subject"),
+        body.contains("runtime route API key does not belong to scoped subject"),
         "{body}"
     );
     assert!(gateway_requests.lock().unwrap().is_empty());
@@ -4057,8 +4061,8 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
         vec![
             sdkwork_clawrouter_router_service::domain::RoutingPolicy::new(
                 9001,
-                10,
-                20,
+                TEST_TENANT_ID,
+                TEST_ORGANIZATION_ID,
                 "standard-chat",
                 sdkwork_clawrouter_router_service::domain::RoutingPolicyScope::UpstreamAccountGroup,
                 Some(10),
@@ -4077,8 +4081,8 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
         }
         vec![sdkwork_clawrouter_router_service::domain::RoutingRule::new(
             9102,
-            10,
-            20,
+            TEST_TENANT_ID,
+            TEST_ORGANIZATION_ID,
             9101,
             "openai-chat",
             1,
@@ -4086,7 +4090,7 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
             &self.catalog_key,
         )
         .with_candidate_account_groups(vec![
-            sdkwork_clawrouter_router_service::domain::RouteCandidate::new(3001, 100),
+            sdkwork_clawrouter_router_service::domain::RouteCandidate::new(10, 100),
         ])]
     }
 
@@ -4115,7 +4119,7 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
                         "sk-app",
                         "hash",
                     )
-                    .with_owner(10, 20, 30)
+                    .with_owner(TEST_TENANT_ID, TEST_ORGANIZATION_ID, TEST_USER_ID)
                     .with_default_for_runtime(fixture.default_for_runtime)
                 })
                 .collect();
@@ -4123,7 +4127,7 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
         let api_key = sdkwork_clawrouter_router_service::domain::GatewayApiKey::new(
             101, 10, "sk-app", "hash",
         )
-        .with_owner(10, 20, 30);
+        .with_owner(TEST_TENANT_ID, TEST_ORGANIZATION_ID, TEST_USER_ID);
         let mut api_keys = vec![api_key];
         if let Some(api_key_id) = self.foreign_api_key_id {
             api_keys.push(
@@ -4133,7 +4137,7 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
                     "sk-foreign",
                     "foreign-hash",
                 )
-                .with_owner(99, 20, 30),
+                .with_owner(TEST_TENANT_ID + 1, TEST_ORGANIZATION_ID, TEST_USER_ID),
             );
         }
         api_keys
@@ -4167,21 +4171,33 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
         billing_meter: sdkwork_clawrouter_router_service::domain::BillingMeter,
     ) -> Vec<sdkwork_clawrouter_router_service::domain::ModelPrice> {
         if model != self.catalog_key
-            || price_side != sdkwork_clawrouter_router_service::domain::PriceSide::OfficialReference
             || billing_meter
                 != sdkwork_clawrouter_router_service::domain::BillingMeter::LlmInputToken
         {
             return Vec::new();
         }
-        vec![
-            sdkwork_clawrouter_router_service::domain::ModelPrice::new_for_catalog_key(
-                &self.catalog_key,
-                &self.model,
-                sdkwork_clawrouter_router_service::domain::PriceSide::OfficialReference,
-                sdkwork_clawrouter_router_service::domain::BillingMeter::LlmInputToken,
-                sdkwork_clawrouter_router_service::domain::Money::usd("0.150000").unwrap(),
-            ),
-        ]
+        match price_side {
+            sdkwork_clawrouter_router_service::domain::PriceSide::OfficialReference => vec![
+                sdkwork_clawrouter_router_service::domain::ModelPrice::new_for_catalog_key(
+                    &self.catalog_key,
+                    &self.model,
+                    sdkwork_clawrouter_router_service::domain::PriceSide::OfficialReference,
+                    sdkwork_clawrouter_router_service::domain::BillingMeter::LlmInputToken,
+                    sdkwork_clawrouter_router_service::domain::Money::usd("0.150000").unwrap(),
+                ),
+            ],
+            sdkwork_clawrouter_router_service::domain::PriceSide::UpstreamCost => vec![
+                sdkwork_clawrouter_router_service::domain::ModelPrice::new_for_catalog_key(
+                    &self.catalog_key,
+                    &self.model,
+                    sdkwork_clawrouter_router_service::domain::PriceSide::UpstreamCost,
+                    sdkwork_clawrouter_router_service::domain::BillingMeter::LlmInputToken,
+                    sdkwork_clawrouter_router_service::domain::Money::usd("0.100000").unwrap(),
+                )
+                .for_upstream_account("openai", 3001),
+            ],
+            _ => Vec::new(),
+        }
     }
 
     fn list_model_prices_for_side(
@@ -4573,7 +4589,7 @@ impl AppRuntimeGatewayClient for RecordingGatewayRuntimeClient {
                     .get("authorization")
                     .cloned()
                     .unwrap_or_default(),
-                internal_principal: request.internal_principal.clone(),
+                internal_principal: request.internal_principal,
                 request_id: request.headers.get("x-request-id").cloned(),
                 trace_id: request.headers.get("x-trace-id").cloned(),
                 content_type,

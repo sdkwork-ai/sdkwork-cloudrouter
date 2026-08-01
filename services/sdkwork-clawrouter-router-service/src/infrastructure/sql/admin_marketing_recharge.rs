@@ -139,18 +139,33 @@ pub(crate) fn compute_grant_amount(
         .map_err(|_| DomainError::new("recharge credited points overflow"))
 }
 
+pub(crate) struct RechargePackageRecord {
+    pub id: String,
+    pub package_no: String,
+    pub name: String,
+    pub sku_id: String,
+    pub price_amount: String,
+    pub currency_code: String,
+    pub bonus_points: i64,
+    pub status: String,
+    pub updated_at: String,
+}
+
 pub(crate) fn recharge_package_item(
-    id: String,
-    package_no: String,
-    name: String,
-    sku_id: String,
-    price_amount: String,
-    currency_code: String,
-    bonus_points: i64,
-    status: String,
-    updated_at: String,
+    record: RechargePackageRecord,
     settings: &RechargeSettingsModel,
 ) -> DomainResult<AdminRechargePackageItem> {
+    let RechargePackageRecord {
+        id,
+        package_no,
+        name,
+        sku_id,
+        price_amount,
+        currency_code,
+        bonus_points,
+        status,
+        updated_at,
+    } = record;
     let grant_amount = compute_grant_amount(&price_amount, &currency_code, bonus_points, settings)?;
     Ok(AdminRechargePackageItem {
         id,
@@ -208,32 +223,6 @@ pub(crate) fn canonical_decimal_string(
         Ok(whole.to_owned())
     } else {
         Ok(format!("{whole}.{fraction}"))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn compute_grant_amount_supports_multi_currency_conversion() {
-        let settings = RechargeSettingsModel {
-            base_currency_code: "CNY".to_owned(),
-            base_points_per_cny: "10".to_owned(),
-            currency_to_cny_rates: BTreeMap::from([
-                ("CNY".to_owned(), "1".to_owned()),
-                ("USD".to_owned(), "7.5".to_owned()),
-            ]),
-        };
-
-        assert_eq!(
-            150,
-            compute_grant_amount("12.00", "CNY", 30, &settings).unwrap()
-        );
-        assert_eq!(
-            1550,
-            compute_grant_amount("20.00", "USD", 50, &settings).unwrap()
-        );
     }
 }
 
@@ -297,4 +286,30 @@ fn decimal_to_scaled_i128(value: &str, scale: usize) -> DomainResult<i128> {
         .checked_mul(10_i128.pow(scale as u32))
         .and_then(|scaled| scaled.checked_add(fraction_scaled))
         .ok_or_else(|| DomainError::new(format!("invalid decimal value: {value}")))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn compute_grant_amount_supports_multi_currency_conversion() {
+        let settings = RechargeSettingsModel {
+            base_currency_code: "CNY".to_owned(),
+            base_points_per_cny: "10".to_owned(),
+            currency_to_cny_rates: BTreeMap::from([
+                ("CNY".to_owned(), "1".to_owned()),
+                ("USD".to_owned(), "7.5".to_owned()),
+            ]),
+        };
+
+        assert_eq!(
+            150,
+            compute_grant_amount("12.00", "CNY", 30, &settings).unwrap()
+        );
+        assert_eq!(
+            1550,
+            compute_grant_amount("20.00", "USD", 50, &settings).unwrap()
+        );
+    }
 }

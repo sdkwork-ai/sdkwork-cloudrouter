@@ -109,6 +109,42 @@ struct ProviderNativeAdapterRuntime {
     client: ProviderAdapterHttpClient,
 }
 
+struct AdapterInvokeInput<'a> {
+    request: Request,
+    context: Option<&'a AuthenticatedApiKeyContext>,
+    target: &'a ProviderPassthroughTarget,
+    adapter: &'a ProviderNativeAdapterRuntime,
+    route: ProviderAdapterRouteConfig,
+    standard_path: String,
+    account_id: i64,
+    region_code: &'a str,
+    timeout_ms: Option<u64>,
+}
+
+struct ProviderNativeAdapterInvocationInput<'a> {
+    parts: &'a axum::http::request::Parts,
+    target: &'a ProviderPassthroughTarget,
+    route: &'a ProviderAdapterRouteConfig,
+    standard_path: String,
+    context: Option<&'a AuthenticatedApiKeyContext>,
+    request_body: Value,
+    account_id: i64,
+    region_code: &'a str,
+    timeout_ms: Option<u64>,
+}
+
+struct AdapterUsagePricingSnapshotInput<'a> {
+    invocation: &'a AdapterInvocationRequest,
+    usage_line: &'a AdapterUsageLine,
+    line_index: usize,
+    catalog_key: &'a str,
+    requested_model_catalog_key: &'a str,
+    requested_model: &'a str,
+    provider_native_model: &'a str,
+    billing_meter: &'a BillingMeter,
+    price: &'a sdkwork_clawrouter_router_service::application::ResolvedModelPrice,
+}
+
 const PROVIDER_NATIVE_PASSTHROUGH_PROVIDERS: &[&str] = &[
     "openai",
     "google",
@@ -193,22 +229,37 @@ pub fn router_with_provider_passthrough_and_adapter_config_for_development(
     )
 }
 
+pub(crate) struct AuthenticatedGatewayPassthroughConfig<C> {
+    pub config: ProviderRelayConfig,
+    pub catalog: Arc<C>,
+    pub api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
+    pub adapter_config: Option<ProviderAdapterConfig>,
+    pub usage_recorder: Option<UsageRecorder>,
+    pub query_string_api_key_policy: QueryStringApiKeyPolicy,
+    pub body_max_bytes: usize,
+    pub response_timeout: Duration,
+    pub http_pool_config: ProviderRelayHttpPoolConfig,
+}
+
 pub(crate) fn authenticated_gateway_passthrough_router_with_adapter_config_and_query_string_api_key_policy<
     C,
 >(
-    config: ProviderRelayConfig,
-    catalog: Arc<C>,
-    api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
-    adapter_config: Option<ProviderAdapterConfig>,
-    usage_recorder: Option<UsageRecorder>,
-    query_string_api_key_policy: QueryStringApiKeyPolicy,
-    body_max_bytes: usize,
-    response_timeout: Duration,
-    http_pool_config: ProviderRelayHttpPoolConfig,
+    input: AuthenticatedGatewayPassthroughConfig<C>,
 ) -> Router
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
+    let AuthenticatedGatewayPassthroughConfig {
+        config,
+        catalog,
+        api_key_hasher,
+        adapter_config,
+        usage_recorder,
+        query_string_api_key_policy,
+        body_max_bytes,
+        response_timeout,
+        http_pool_config,
+    } = input;
     let runtime =
         ProviderPassthroughRuntime::from_config_with_adapter_and_body_max_bytes_and_transport(
             config,
@@ -384,11 +435,11 @@ where
     }
     let context = match authenticate_passthrough_api_key(&state, &headers, &uri) {
         Ok(context) => context,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     *request.uri_mut() = match sanitize_authenticated_gateway_uri(&uri) {
         Ok(uri) => uri,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let result = state
         .runtime
@@ -417,12 +468,12 @@ where
     if let Some(response) = reject_unsupported_openai_method(&request) {
         return response;
     }
-    if let Err(response) = authenticate_passthrough_api_key(&state, &headers, &uri) {
-        return response;
+    if let Err(error) = authenticate_passthrough_api_key(&state, &headers, &uri) {
+        return error.into_response();
     }
     *request.uri_mut() = match sanitize_authenticated_gateway_uri(&uri) {
         Ok(uri) => uri,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.runtime.forward_openai(request).await {
         Ok(response) => response,
@@ -530,7 +581,7 @@ fn authenticate_passthrough_api_key<C>(
     state: &AuthenticatedProviderPassthroughState<C>,
     headers: &HeaderMap,
     uri: &Uri,
-) -> Result<AuthenticatedApiKeyContext, Response>
+) -> Result<AuthenticatedApiKeyContext, crate::gateway_api_key_auth::GatewayAuthError>
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
@@ -768,17 +819,17 @@ impl ProviderPassthroughRuntime {
                 adapter.registry.resolve_standard_path(&lookup).mode
             {
                 let (_, result, _) = self
-                    .invoke_adapter(
+                    .invoke_adapter(AdapterInvokeInput {
                         request,
                         context,
                         target,
                         adapter,
                         route,
                         standard_path,
-                        0,
-                        "global",
-                        None,
-                    )
+                        account_id: 0,
+                        region_code: "global",
+                        timeout_ms: None,
+                    })
                     .await?;
                 return adapter_invoke_result_response(result).map_err(Into::into);
             }
@@ -814,17 +865,17 @@ impl ProviderPassthroughRuntime {
             {
                 ensure_authenticated_adapter_route_supported(&route)?;
                 let (invocation, result, user_agent) = self
-                    .invoke_adapter(
+                    .invoke_adapter(AdapterInvokeInput {
                         request,
-                        Some(context),
+                        context: Some(context),
                         target,
                         adapter,
                         route,
                         standard_path,
-                        0,
-                        "global",
-                        None,
-                    )
+                        account_id: 0,
+                        region_code: "global",
+                        timeout_ms: None,
+                    })
                     .await?;
                 return match result {
                     AdapterInvokeResult::Buffered(response) => {
@@ -886,15 +937,7 @@ impl ProviderPassthroughRuntime {
 
     async fn invoke_adapter(
         &self,
-        request: Request,
-        context: Option<&AuthenticatedApiKeyContext>,
-        target: &ProviderPassthroughTarget,
-        adapter: &ProviderNativeAdapterRuntime,
-        route: ProviderAdapterRouteConfig,
-        standard_path: String,
-        account_id: i64,
-        region_code: &str,
-        timeout_ms: Option<u64>,
+        input: AdapterInvokeInput<'_>,
     ) -> Result<
         (
             AdapterInvocationRequest,
@@ -903,22 +946,34 @@ impl ProviderPassthroughRuntime {
         ),
         ProviderPassthroughError,
     > {
+        let AdapterInvokeInput {
+            request,
+            context,
+            target,
+            adapter,
+            route,
+            standard_path,
+            account_id,
+            region_code,
+            timeout_ms,
+        } = input;
         let (parts, body) = request.into_parts();
         let user_agent = request_header_value(&parts.headers, USER_AGENT.as_str())
             .and_then(|value| normalize_user_agent_header(value.as_str()));
         let body = self.read_request_body(body).await?;
         let request_body = provider_adapter_request_body(&body)?;
-        let invocation = build_provider_native_adapter_invocation(
-            &parts,
-            target,
-            &route,
-            standard_path,
-            context,
-            request_body,
-            account_id,
-            region_code,
-            timeout_ms,
-        );
+        let invocation =
+            build_provider_native_adapter_invocation(ProviderNativeAdapterInvocationInput {
+                parts: &parts,
+                target,
+                route: &route,
+                standard_path,
+                context,
+                request_body,
+                account_id,
+                region_code,
+                timeout_ms,
+            });
         let response = adapter
             .client
             .invoke(&route, invocation.clone())
@@ -1073,17 +1128,17 @@ where
         &billing_meter,
     )?;
     let token_counts = adapter_token_counts(&billing_meter, quantity.billable_quantity.as_str())?;
-    let pricing_snapshot = adapter_usage_pricing_snapshot(
+    let pricing_snapshot = adapter_usage_pricing_snapshot(AdapterUsagePricingSnapshotInput {
         invocation,
         usage_line,
         line_index,
-        &catalog_key,
-        &requested_model_catalog_key,
-        &requested_model,
-        &provider_native_model,
-        &billing_meter,
-        &price,
-    );
+        catalog_key: &catalog_key,
+        requested_model_catalog_key: &requested_model_catalog_key,
+        requested_model: &requested_model,
+        provider_native_model: &provider_native_model,
+        billing_meter: &billing_meter,
+        price: &price,
+    });
 
     Ok(GatewayUsageRecordCommand {
         request_id: invocation
@@ -1393,17 +1448,18 @@ fn adapter_billing_meter_ordinal(billing_meter: &BillingMeter) -> i64 {
     }
 }
 
-fn adapter_usage_pricing_snapshot(
-    invocation: &AdapterInvocationRequest,
-    usage_line: &AdapterUsageLine,
-    line_index: usize,
-    catalog_key: &str,
-    requested_model_catalog_key: &str,
-    requested_model: &str,
-    provider_native_model: &str,
-    billing_meter: &BillingMeter,
-    price: &sdkwork_clawrouter_router_service::application::ResolvedModelPrice,
-) -> String {
+fn adapter_usage_pricing_snapshot(input: AdapterUsagePricingSnapshotInput<'_>) -> String {
+    let AdapterUsagePricingSnapshotInput {
+        invocation,
+        usage_line,
+        line_index,
+        catalog_key,
+        requested_model_catalog_key,
+        requested_model,
+        provider_native_model,
+        billing_meter,
+        price,
+    } = input;
     json!({
         "source": "provider_adapter_usage_line",
         "lineIndex": line_index,
@@ -1519,16 +1575,19 @@ fn provider_adapter_request_body(body: &[u8]) -> Result<Value, ProviderPassthrou
 }
 
 fn build_provider_native_adapter_invocation(
-    parts: &axum::http::request::Parts,
-    target: &ProviderPassthroughTarget,
-    route: &ProviderAdapterRouteConfig,
-    standard_path: String,
-    context: Option<&AuthenticatedApiKeyContext>,
-    request_body: Value,
-    account_id: i64,
-    region_code: &str,
-    timeout_ms: Option<u64>,
+    input: ProviderNativeAdapterInvocationInput<'_>,
 ) -> AdapterInvocationRequest {
+    let ProviderNativeAdapterInvocationInput {
+        parts,
+        target,
+        route,
+        standard_path,
+        context,
+        request_body,
+        account_id,
+        region_code,
+        timeout_ms,
+    } = input;
     let endpoint_key = route
         .endpoint_key
         .clone()

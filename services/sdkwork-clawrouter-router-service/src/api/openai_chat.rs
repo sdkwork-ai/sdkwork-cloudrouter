@@ -25,24 +25,29 @@ use crate::api::openai_invocation::{
     OpenAiInvocationFault, OpenAiInvocationPluginError, OpenAiInvocationPluginRef,
     OpenAiInvocationRelayOutcome,
 };
+use crate::api::openai_relay_execution::{OpenAiRelayExecution, OpenAiRouteRelayExecution};
 use crate::api::openai_runtime::{
     authenticate_api_key, provider_relay_attempt_retry_policy, resolve_openai_upstream_route_plan,
     route_http_status_is_retryable, OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig,
-    ResolvedOpenAiUpstreamRoute, ResolvedOpenAiUpstreamRoutePlan,
+    ResolvedOpenAiUpstreamRoute,
 };
 use crate::api::openai_usage::{
     build_request_trace_command, build_usage_record_command_builder, chat_usage_billing_profile,
-    chat_usage_from_stream_event, provider_error_code_from_body, provider_error_message_from_body,
-    provider_error_type_from_body, record_request_trace, GatewayUsageRecordCommandBuilder,
-    OpenAiTokenUsage, OpenAiUsageRecorder,
+    chat_usage_from_stream_event, observe_provider_usage_missing, provider_error_code_from_body,
+    provider_error_message_from_body, provider_error_type_from_body, record_request_trace,
+    GatewayUsageRecordCommandBuilder, OpenAiTokenUsage, OpenAiUsageRecorder,
 };
-use crate::application::{ApiKeySecretHasher, AuthenticatedApiKeyContext};
+use crate::application::ApiKeySecretHasher;
 use crate::domain::{BillingMeter, ProviderRetryPolicy, RoutingCapability};
 use crate::ports::GatewayUsageRecordFuture;
 use crate::ports::{
-    ChatCompletionRelay, ChatCompletionRelayRequest, ChatCompletionStreamRelay,
+    require_stream_usage, ChatCompletionRelay, ChatCompletionRelayRequest, ChatCompletionStreamRelay,
     GatewayUsageRecorder, UpstreamAccountRouteCatalog,
 };
+
+const MAX_STREAM_USAGE_EVENT_BUFFER_BYTES: usize = 256 * 1024;
+const PROVIDER_STREAM_USAGE_MISSING_MESSAGE: &str =
+    "provider streaming chat completion response is missing terminal usage";
 
 struct OpenAiChatState<C> {
     catalog: Arc<C>,
@@ -521,7 +526,6 @@ where
                 &invocation_context,
                 None,
                 Some(error.status_code.as_u16()),
-                request.stream,
                 None,
                 Some(error.code.to_owned()),
                 Some(error.error_type.to_owned()),
@@ -550,7 +554,6 @@ where
                     &invocation_context,
                     None,
                     Some(http_status),
-                    request.stream,
                     None,
                     Some("route_selection_failed".to_owned()),
                     Some(if http_status >= 500 {
@@ -588,7 +591,6 @@ where
                 &invocation_context,
                 Some(&route),
                 Some(error.status_code.as_u16()),
-                request.stream,
                 None,
                 Some(error.code.to_owned()),
                 Some(error.error_type.to_owned()),
@@ -611,7 +613,6 @@ where
                     &invocation_context,
                     Some(&route),
                     Some(StatusCode::NOT_IMPLEMENTED.as_u16()),
-                    true,
                     None,
                     Some("streaming_relay_not_configured".to_owned()),
                     Some("server_error".to_owned()),
@@ -632,15 +633,17 @@ where
         return match relay_chat_completion_stream(
             stream_relay.as_ref(),
             state.catalog.as_ref(),
-            state.usage_recorder.clone(),
-            state.usage_recording.clone(),
-            &state.plugins,
-            &invocation_context,
-            context,
-            route_plan,
-            request,
-            state.failure_strategy,
-            &state.default_retry_policy,
+            OpenAiRelayExecution {
+                usage_recorder: state.usage_recorder.clone(),
+                usage_recording: state.usage_recording.clone(),
+                plugins: &state.plugins,
+                invocation_context: &invocation_context,
+                context,
+                route_plan,
+                request,
+                failure_strategy: state.failure_strategy,
+                default_retry_policy: &state.default_retry_policy,
+            },
         )
         .await
         {
@@ -656,7 +659,6 @@ where
                 &invocation_context,
                 Some(&route),
                 Some(StatusCode::NOT_IMPLEMENTED.as_u16()),
-                false,
                 None,
                 Some("provider_relay_not_configured".to_owned()),
                 Some("server_error".to_owned()),
@@ -674,15 +676,17 @@ where
 
     match relay_chat_completion(
         relay.as_ref(),
-        state.usage_recorder.clone(),
-        state.usage_recording.clone(),
-        &state.plugins,
-        &invocation_context,
-        context,
-        route_plan,
-        request,
-        state.failure_strategy,
-        &state.default_retry_policy,
+        OpenAiRelayExecution {
+            usage_recorder: state.usage_recorder.clone(),
+            usage_recording: state.usage_recording.clone(),
+            plugins: &state.plugins,
+            invocation_context: &invocation_context,
+            context,
+            route_plan,
+            request,
+            failure_strategy: state.failure_strategy,
+            default_retry_policy: &state.default_retry_policy,
+        },
     )
     .await
     {
@@ -710,28 +714,38 @@ fn parse_request(body: &[u8]) -> Result<ParsedOpenAiChatCompletionRequest, Strin
     if request.messages.is_empty() {
         return Err("messages is required".to_owned());
     }
+    let stream = request.stream.unwrap_or(false);
+    let request_body = if stream {
+        require_stream_usage(request_body).map_err(|error| error.to_string())?
+    } else {
+        request_body
+    };
     Ok(ParsedOpenAiChatCompletionRequest {
         model: request.model,
-        stream: request.stream.unwrap_or(false),
+        stream,
         request_body,
     })
 }
 
-async fn relay_chat_completion_stream(
+async fn relay_chat_completion_stream<C>(
     relay: &(dyn ChatCompletionStreamRelay + Send + Sync),
-    catalog: &(impl UpstreamAccountRouteCatalog + Send + Sync),
-    usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
-    usage_recording: Option<
-        Arc<OpenAiUsageRecorder<impl UpstreamAccountRouteCatalog + Send + Sync + 'static>>,
-    >,
-    plugins: &[OpenAiInvocationPluginRef],
-    invocation_context: &OpenAiInvocationContext,
-    context: AuthenticatedApiKeyContext,
-    route_plan: ResolvedOpenAiUpstreamRoutePlan,
-    request: ParsedOpenAiChatCompletionRequest,
-    failure_strategy: OpenAiRuntimeFailureStrategy,
-    default_retry_policy: &ProviderRetryPolicy,
-) -> Result<Response, Response> {
+    catalog: &C,
+    execution: OpenAiRelayExecution<'_, C, ParsedOpenAiChatCompletionRequest>,
+) -> Result<Response, Response>
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    let OpenAiRelayExecution {
+        usage_recorder,
+        usage_recording,
+        plugins,
+        invocation_context,
+        context,
+        route_plan,
+        request,
+        failure_strategy,
+        default_retry_policy,
+    } = execution;
     let requested_model = request.model;
     let request_body = request.request_body;
     let mut last_error = None;
@@ -746,17 +760,19 @@ async fn relay_chat_completion_stream(
         match relay_chat_completion_stream_route(
             relay,
             catalog,
-            usage_recorder.clone(),
-            usage_recording.as_ref(),
-            plugins,
-            invocation_context,
-            &context,
-            &route,
-            &requested_model,
-            request_body.clone(),
-            relay_failure_strategy,
-            route_count,
-            default_retry_policy,
+            OpenAiRouteRelayExecution {
+                usage_recorder: usage_recorder.clone(),
+                usage_recording: usage_recording.as_ref(),
+                plugins,
+                invocation_context,
+                context: &context,
+                route: &route,
+                requested_model: &requested_model,
+                request_body: request_body.clone(),
+                failure_strategy: relay_failure_strategy,
+                route_count,
+                default_retry_policy,
+            },
         )
         .await
         {
@@ -781,23 +797,27 @@ async fn relay_chat_completion_stream(
     }))
 }
 
-async fn relay_chat_completion_stream_route(
+async fn relay_chat_completion_stream_route<C>(
     relay: &(dyn ChatCompletionStreamRelay + Send + Sync),
-    catalog: &(impl UpstreamAccountRouteCatalog + Send + Sync),
-    usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
-    usage_recording: Option<
-        &Arc<OpenAiUsageRecorder<impl UpstreamAccountRouteCatalog + Send + Sync + 'static>>,
-    >,
-    plugins: &[OpenAiInvocationPluginRef],
-    invocation_context: &OpenAiInvocationContext,
-    context: &AuthenticatedApiKeyContext,
-    route: &ResolvedOpenAiUpstreamRoute,
-    requested_model: &str,
-    request_body: serde_json::Value,
-    failure_strategy: OpenAiRuntimeFailureStrategy,
-    route_count: usize,
-    default_retry_policy: &ProviderRetryPolicy,
-) -> Result<Response, RouteRelayFailure> {
+    catalog: &C,
+    execution: OpenAiRouteRelayExecution<'_, C>,
+) -> Result<Response, RouteRelayFailure>
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    let OpenAiRouteRelayExecution {
+        usage_recorder,
+        usage_recording,
+        plugins,
+        invocation_context,
+        context,
+        route,
+        requested_model,
+        request_body,
+        failure_strategy,
+        route_count,
+        default_retry_policy,
+    } = execution;
     let provider_retry_policy =
         provider_relay_attempt_retry_policy(route, failure_strategy, route_count);
     let started_at = Instant::now();
@@ -834,7 +854,6 @@ async fn relay_chat_completion_stream_route(
                     invocation_context,
                     Some(route),
                     Some(502),
-                    true,
                     fault.latency_ms,
                     Some(fault.error_code.clone()),
                     Some("server_error".to_owned()),
@@ -849,7 +868,7 @@ async fn relay_chat_completion_stream_route(
                 fault.message.clone(),
             );
             notify_route_fault(plugins, invocation_context, route, &fault).await;
-            notify_error(plugins, invocation_context, Some(&route), &plugin_error).await;
+            notify_error(plugins, invocation_context, Some(route), &plugin_error).await;
             return Err(RouteRelayFailure::Retryable(
                 plugin_error.into_openai_response(),
             ));
@@ -869,7 +888,6 @@ async fn relay_chat_completion_stream_route(
                     invocation_context,
                     Some(route),
                     Some(502),
-                    true,
                     fault.latency_ms,
                     Some(fault.error_code.clone()),
                     Some("server_error".to_owned()),
@@ -911,7 +929,6 @@ async fn relay_chat_completion_stream_route(
                 invocation_context,
                 Some(route),
                 Some(response.status_code),
-                true,
                 fault.latency_ms,
                 Some(fault.error_code.clone()),
                 Some("server_error".to_owned()),
@@ -938,16 +955,15 @@ async fn relay_chat_completion_stream_route(
     }
     if let Some(usage_recording) = usage_recording.as_ref() {
         if let Err(fault) = usage_recording
-            .record_after_success(invocation_context, &route, &relay_outcome)
+            .record_after_success(invocation_context, route, &relay_outcome)
             .await
         {
             record_request_trace(
                 usage_recorder.as_ref(),
                 build_request_trace_command(
                     invocation_context,
-                    Some(&route),
+                    Some(route),
                     Some(502),
-                    true,
                     fault.latency_ms.or(relay_outcome.latency_ms),
                     Some(fault.error_code.clone()),
                     Some("server_error".to_owned()),
@@ -955,27 +971,25 @@ async fn relay_chat_completion_stream_route(
                 ),
             )
             .await;
-            notify_route_fault(plugins, invocation_context, &route, &fault).await;
+            notify_route_fault(plugins, invocation_context, route, &fault).await;
             let error = OpenAiInvocationPluginError::new(
                 StatusCode::BAD_GATEWAY,
                 "provider_usage_record_failed",
                 "server_error",
                 fault.message,
             );
-            notify_error(plugins, invocation_context, Some(&route), &error).await;
+            notify_error(plugins, invocation_context, Some(route), &error).await;
             return Err(RouteRelayFailure::Terminal(error.into_openai_response()));
         }
     }
-    notify_route_success(plugins, invocation_context, route, &relay_outcome).await;
-    notify_after_relay_observers(plugins, invocation_context, route, &relay_outcome).await;
     builder = builder.header(CONTENT_TYPE, content_type);
     let body = match usage_recorder {
         Some(usage_recorder) if status.is_success() => {
             let command_builder = build_usage_record_command_builder(
                 catalog,
                 invocation_context,
-                &context,
-                &route,
+                context,
+                route,
                 response.status_code,
                 true,
                 chat_usage_billing_profile(),
@@ -996,9 +1010,14 @@ async fn relay_chat_completion_stream_route(
                 plugins.to_vec(),
                 invocation_context.clone(),
                 route.clone(),
+                relay_outcome,
             ))
         }
-        _ => response.body,
+        _ => {
+            notify_route_success(plugins, invocation_context, route, &relay_outcome).await;
+            notify_after_relay_observers(plugins, invocation_context, route, &relay_outcome).await;
+            response.body
+        }
     };
     builder.body(body).map_err(|_| {
         RouteRelayFailure::Terminal(openai_error(
@@ -1010,20 +1029,24 @@ async fn relay_chat_completion_stream_route(
     })
 }
 
-async fn relay_chat_completion(
+async fn relay_chat_completion<C>(
     relay: &(dyn ChatCompletionRelay + Send + Sync),
-    usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
-    usage_recording: Option<
-        Arc<OpenAiUsageRecorder<impl UpstreamAccountRouteCatalog + Send + Sync + 'static>>,
-    >,
-    plugins: &[OpenAiInvocationPluginRef],
-    invocation_context: &OpenAiInvocationContext,
-    context: AuthenticatedApiKeyContext,
-    route_plan: ResolvedOpenAiUpstreamRoutePlan,
-    request: ParsedOpenAiChatCompletionRequest,
-    failure_strategy: OpenAiRuntimeFailureStrategy,
-    default_retry_policy: &ProviderRetryPolicy,
-) -> Result<Response, Response> {
+    execution: OpenAiRelayExecution<'_, C, ParsedOpenAiChatCompletionRequest>,
+) -> Result<Response, Response>
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    let OpenAiRelayExecution {
+        usage_recorder,
+        usage_recording,
+        plugins,
+        invocation_context,
+        context,
+        route_plan,
+        request,
+        failure_strategy,
+        default_retry_policy,
+    } = execution;
     let requested_model = request.model;
     let request_body = request.request_body;
     let mut last_error = None;
@@ -1037,17 +1060,19 @@ async fn relay_chat_completion(
         }
         match relay_chat_completion_route(
             relay,
-            usage_recorder.clone(),
-            usage_recording.as_ref(),
-            plugins,
-            invocation_context,
-            &context,
-            &route,
-            &requested_model,
-            request_body.clone(),
-            relay_failure_strategy,
-            route_count,
-            default_retry_policy,
+            OpenAiRouteRelayExecution {
+                usage_recorder: usage_recorder.clone(),
+                usage_recording: usage_recording.as_ref(),
+                plugins,
+                invocation_context,
+                context: &context,
+                route: &route,
+                requested_model: &requested_model,
+                request_body: request_body.clone(),
+                failure_strategy: relay_failure_strategy,
+                route_count,
+                default_retry_policy,
+            },
         )
         .await
         {
@@ -1083,22 +1108,26 @@ fn elapsed_millis(started_at: Instant) -> i64 {
     started_at.elapsed().as_millis().clamp(1, i64::MAX as u128) as i64
 }
 
-async fn relay_chat_completion_route(
+async fn relay_chat_completion_route<C>(
     relay: &(dyn ChatCompletionRelay + Send + Sync),
-    usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
-    usage_recording: Option<
-        &Arc<OpenAiUsageRecorder<impl UpstreamAccountRouteCatalog + Send + Sync + 'static>>,
-    >,
-    plugins: &[OpenAiInvocationPluginRef],
-    invocation_context: &OpenAiInvocationContext,
-    context: &AuthenticatedApiKeyContext,
-    route: &ResolvedOpenAiUpstreamRoute,
-    requested_model: &str,
-    request_body: serde_json::Value,
-    failure_strategy: OpenAiRuntimeFailureStrategy,
-    route_count: usize,
-    default_retry_policy: &ProviderRetryPolicy,
-) -> Result<Response, RouteRelayFailure> {
+    execution: OpenAiRouteRelayExecution<'_, C>,
+) -> Result<Response, RouteRelayFailure>
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    let OpenAiRouteRelayExecution {
+        usage_recorder,
+        usage_recording,
+        plugins,
+        invocation_context,
+        context,
+        route,
+        requested_model,
+        request_body,
+        failure_strategy,
+        route_count,
+        default_retry_policy,
+    } = execution;
     let provider_retry_policy =
         provider_relay_attempt_retry_policy(route, failure_strategy, route_count);
     let started_at = Instant::now();
@@ -1135,7 +1164,6 @@ async fn relay_chat_completion_route(
                     invocation_context,
                     Some(route),
                     Some(502),
-                    false,
                     fault.latency_ms,
                     Some(fault.error_code.clone()),
                     Some("server_error".to_owned()),
@@ -1170,7 +1198,6 @@ async fn relay_chat_completion_route(
                     invocation_context,
                     Some(route),
                     Some(502),
-                    false,
                     fault.latency_ms,
                     Some(fault.error_code.clone()),
                     Some("server_error".to_owned()),
@@ -1205,7 +1232,6 @@ async fn relay_chat_completion_route(
                 invocation_context,
                 Some(route),
                 Some(response.status_code),
-                false,
                 fault.latency_ms,
                 Some(provider_error_code_from_body(
                     &response.body,
@@ -1243,7 +1269,6 @@ async fn relay_chat_completion_route(
                     invocation_context,
                     Some(route),
                     Some(502),
-                    false,
                     fault.latency_ms.or(relay_outcome.latency_ms),
                     Some(fault.error_code.clone()),
                     Some("server_error".to_owned()),
@@ -1273,10 +1298,12 @@ struct StreamingUsageRecordingBody {
     plugins: Vec<OpenAiInvocationPluginRef>,
     invocation_context: OpenAiInvocationContext,
     route: ResolvedOpenAiUpstreamRoute,
+    relay_outcome: OpenAiInvocationRelayOutcome,
     event_buffer: String,
     usage: Option<OpenAiTokenUsage>,
     recording: Option<GatewayUsageRecordFuture<'static>>,
     recording_is_trace_only: bool,
+    completion_notification: Option<Pin<Box<dyn Future<Output = ()> + Send>>>,
     fault_notification: Option<Pin<Box<dyn Future<Output = ()> + Send>>>,
     terminal_error: Option<String>,
     trace_recorded: bool,
@@ -1290,6 +1317,7 @@ impl StreamingUsageRecordingBody {
         plugins: Vec<OpenAiInvocationPluginRef>,
         invocation_context: OpenAiInvocationContext,
         route: ResolvedOpenAiUpstreamRoute,
+        relay_outcome: OpenAiInvocationRelayOutcome,
     ) -> Self {
         Self {
             inner,
@@ -1298,10 +1326,12 @@ impl StreamingUsageRecordingBody {
             plugins,
             invocation_context,
             route,
+            relay_outcome,
             event_buffer: String::new(),
             usage: None,
             recording: None,
             recording_is_trace_only: false,
+            completion_notification: None,
             fault_notification: None,
             terminal_error: None,
             trace_recorded: false,
@@ -1309,6 +1339,15 @@ impl StreamingUsageRecordingBody {
     }
 
     fn observe_chunk(&mut self, chunk: &Bytes) {
+        if self.event_buffer.len().saturating_add(chunk.len())
+            > MAX_STREAM_USAGE_EVENT_BUFFER_BYTES
+        {
+            self.event_buffer.clear();
+            self.terminal_error = Some(format!(
+                "provider streaming usage event exceeds {MAX_STREAM_USAGE_EVENT_BUFFER_BYTES} bytes"
+            ));
+            return;
+        }
         let text = String::from_utf8_lossy(chunk);
         self.event_buffer.push_str(&text);
         while let Some((boundary, boundary_len)) = next_sse_event_boundary(&self.event_buffer) {
@@ -1352,21 +1391,27 @@ impl StreamingUsageRecordingBody {
             return;
         };
         let Some(usage) = self.usage else {
-            tracing::warn!(
-                "provider streaming chat completion response is missing usage; recording zero-token request usage"
+            observe_provider_usage_missing(OpenAiInvocationEndpoint::ChatCompletions, true);
+            tracing::error!(
+                endpoint = "chat_completions",
+                streaming = true,
+                error_code = "provider_usage_missing",
+                reconciliation_required = true,
+                "{PROVIDER_STREAM_USAGE_MISSING_MESSAGE}"
             );
-            let command = match command_builder.build_zero_token_request() {
-                Ok(command) => command,
-                Err(error) => {
-                    tracing::warn!(error = %redact_error_message(&error), "failed to build streaming chat zero-token usage record");
-                    self.terminal_error = Some(error.to_string());
-                    return;
-                }
-            };
+            let command = command_builder
+                .clone()
+                .with_error(
+                    Some("provider_usage_missing".to_owned()),
+                    Some("server_error".to_owned()),
+                    Some(PROVIDER_STREAM_USAGE_MISSING_MESSAGE.to_owned()),
+                )
+                .trace_command();
             let future: GatewayUsageRecordFuture<'static> =
-                Box::pin(async move { usage_recorder.record_gateway_usage(command).await });
+                Box::pin(async move { usage_recorder.record_gateway_trace(command).await });
             self.recording = Some(future);
-            self.recording_is_trace_only = false;
+            self.recording_is_trace_only = true;
+            self.trace_recorded = true;
             return;
         };
         let command = match command_builder.build(usage) {
@@ -1384,6 +1429,9 @@ impl StreamingUsageRecordingBody {
     }
 
     fn poll_recording(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), axum::Error>> {
+        if self.completion_notification.is_some() {
+            return self.poll_completion_notification(cx);
+        }
         self.prepare_recording();
         if self.terminal_error.is_some() {
             return self.poll_terminal_error(cx);
@@ -1394,10 +1442,15 @@ impl StreamingUsageRecordingBody {
         match recording.as_mut().poll(cx) {
             Poll::Ready(Ok(())) => {
                 self.recording = None;
-                self.recording_is_trace_only = false;
+                let trace_only = std::mem::take(&mut self.recording_is_trace_only);
                 self.usage_recorder = None;
                 self.command_builder = None;
-                Poll::Ready(Ok(()))
+                if trace_only {
+                    self.prepare_missing_usage_notification();
+                } else {
+                    self.prepare_success_notification();
+                }
+                self.poll_completion_notification(cx)
             }
             Poll::Ready(Err(error)) => {
                 self.recording = None;
@@ -1406,11 +1459,70 @@ impl StreamingUsageRecordingBody {
                     self.recording_is_trace_only = false;
                     self.usage_recorder = None;
                     self.command_builder = None;
-                    return Poll::Ready(Ok(()));
+                    self.prepare_missing_usage_notification();
+                    return self.poll_completion_notification(cx);
                 }
                 tracing::warn!(error = %redact_error_message(&error), "failed to record streaming chat usage");
                 self.terminal_error = Some(error.to_string());
                 self.poll_terminal_error(cx)
+            }
+            Poll::Pending => Poll::Pending,
+        }
+    }
+
+    fn prepare_success_notification(&mut self) {
+        let plugins = self.plugins.clone();
+        let invocation_context = self.invocation_context.clone();
+        let route = self.route.clone();
+        let relay_outcome = self.relay_outcome.clone();
+        self.completion_notification = Some(Box::pin(async move {
+            notify_route_success(&plugins, &invocation_context, &route, &relay_outcome).await;
+            notify_after_relay_observers(
+                &plugins,
+                &invocation_context,
+                &route,
+                &relay_outcome,
+            )
+            .await;
+        }));
+    }
+
+    fn prepare_missing_usage_notification(&mut self) {
+        let plugins = self.plugins.clone();
+        let invocation_context = self.invocation_context.clone();
+        let route = self.route.clone();
+        let fault = OpenAiInvocationFault::provider_usage_missing(
+            PROVIDER_STREAM_USAGE_MISSING_MESSAGE,
+        );
+        self.completion_notification = Some(Box::pin(async move {
+            notify_route_fault(&plugins, &invocation_context, &route, &fault).await;
+            let plugin_error = OpenAiInvocationPluginError::new(
+                StatusCode::BAD_GATEWAY,
+                "provider_usage_missing",
+                "server_error",
+                fault.message.clone(),
+            );
+            notify_error(
+                &plugins,
+                &invocation_context,
+                Some(&route),
+                &plugin_error,
+            )
+            .await;
+        }));
+    }
+
+    fn poll_completion_notification(
+        &mut self,
+        cx: &mut Context<'_>,
+    ) -> Poll<Result<(), axum::Error>> {
+        let Some(notification) = self.completion_notification.as_mut() else {
+            return Poll::Ready(Ok(()));
+        };
+        match notification.as_mut().poll(cx) {
+            Poll::Ready(()) => {
+                self.completion_notification = None;
+                Poll::Ready(Ok(()))
             }
             Poll::Pending => Poll::Pending,
         }
@@ -1466,10 +1578,7 @@ impl StreamingUsageRecordingBody {
             Poll::Ready(()) => {
                 self.fault_notification = None;
                 self.terminal_error = None;
-                Poll::Ready(Err(axum::Error::new(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    error,
-                ))))
+                Poll::Ready(Err(axum::Error::new(std::io::Error::other(error))))
             }
             Poll::Pending => Poll::Pending,
         }
@@ -1491,6 +1600,13 @@ impl HttpBody for StreamingUsageRecordingBody {
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
     ) -> Poll<Option<Result<Frame<Self::Data>, Self::Error>>> {
+        if self.terminal_error.is_some() {
+            return match self.poll_terminal_error(cx) {
+                Poll::Ready(Ok(())) => Poll::Ready(None),
+                Poll::Ready(Err(error)) => Poll::Ready(Some(Err(error))),
+                Poll::Pending => Poll::Pending,
+            };
+        }
         match Pin::new(&mut self.inner).poll_frame(cx) {
             Poll::Ready(Some(Ok(frame))) => {
                 if let Some(data) = frame.data_ref() {

@@ -93,13 +93,23 @@
     }
   ],
   "contracts": {
-    "publicExports": [],
+    "publicExports": [
+      "."
+    ],
     "runtimeEntrypoints": [
-      "Cargo.toml"
+      "src/lib.rs#init_tracing_with_runtime_config"
     ],
     "sdkClients": [],
     "events": [],
-    "configKeys": [],
+    "configKeys": [
+      "OTEL_TRACING_ENABLED",
+      "OTEL_EXPORTER_OTLP_ENDPOINT",
+      "OTEL_SERVICE_NAME",
+      "OTEL_TRACES_SAMPLER_ARG",
+      "OTEL_EXPORTER_TIMEOUT_SECS",
+      "OTEL_EXPORTER_OTLP_CERTIFICATE",
+      "RUST_LOG"
+    ],
     "routeManifest": null
   },
   "integration": {
@@ -110,7 +120,7 @@
   },
   "verification": {
     "commands": [
-      "cargo test --manifest-path apps/sdkwork-clawrouter/crates/sdkwork-claw-observability/Cargo.toml"
+      "cargo test -p sdkwork-claw-observability"
     ]
   },
   "metadata": {

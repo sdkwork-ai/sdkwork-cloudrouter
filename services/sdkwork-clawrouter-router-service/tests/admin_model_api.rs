@@ -1,15 +1,30 @@
 use std::sync::Arc;
 
 use axum::body::Body;
-use axum::http::{Request, StatusCode};
+use axum::http::{HeaderName, HeaderValue, Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_clawrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
     ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, UpstreamAccountGroup,
+    UpstreamAccountRoute,
 };
 use sdkwork_clawrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use tower::ServiceExt;
+
+pub mod common;
+
+fn backend_request(uri: &str, headers: &[(&'static str, &'static str)]) -> Request<Body> {
+    let mut request =
+        common::web_framework_backend_request_without_subject("GET", uri, Body::empty());
+    for (name, value) in headers {
+        request.headers_mut().insert(
+            HeaderName::from_static(name),
+            HeaderValue::from_static(value),
+        );
+    }
+    request
+}
 
 fn catalog() -> InMemoryPricingCatalog {
     let mut catalog = InMemoryPricingCatalog::default();
@@ -31,6 +46,14 @@ fn catalog() -> InMemoryPricingCatalog {
         3001,
         "gpt-4o-mini",
     ));
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_upstream_endpoint(
+                Some("http://provider-proxy.internal/openrouter"),
+                Some("vault://providers/openrouter/account/main"),
+            )
+            .with_account_group_binding(10, 100, 100),
+    );
     catalog.add_plan(PricingPlan::new(
         "standard",
         PriceSide::OfficialReference,
@@ -78,20 +101,23 @@ async fn admin_model_catalog_route_returns_plus_result_with_catalog_price_view()
     let router =
         sdkwork_clawrouter_router_service::api::admin_model_catalog_router(Arc::new(catalog()));
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/backend/v3/api/ai/models?api_key_id=100&billing_meter=llm_input_token&vendor_code=openai")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(backend_request(
+            "/backend/v3/api/ai/models?api_key_id=100&billing_meter=llm_input_token&vendor_code=openai",
+            &[],
+        ))
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, response.status());
+    let status = response.status();
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .unwrap();
+    assert_eq!(
+        StatusCode::OK,
+        status,
+        "unexpected response body: {}",
+        String::from_utf8_lossy(&body)
+    );
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
     assert_eq!(0, payload["code"].as_i64().unwrap());
@@ -156,13 +182,10 @@ async fn admin_model_catalog_route_excludes_deprecated_hidden_and_unroutable_mod
     let router =
         sdkwork_clawrouter_router_service::api::admin_model_catalog_router(Arc::new(catalog));
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/backend/v3/api/ai/models?api_key_id=100&billing_meter=llm_input_token&vendor_code=openai")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(backend_request(
+            "/backend/v3/api/ai/models?api_key_id=100&billing_meter=llm_input_token&vendor_code=openai",
+            &[],
+        ))
         .await
         .unwrap();
 
@@ -189,14 +212,10 @@ async fn admin_model_catalog_route_accepts_api_key_context_from_header() {
     let router =
         sdkwork_clawrouter_router_service::api::admin_model_catalog_router(Arc::new(catalog()));
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/backend/v3/api/ai/models?billing_meter=llm_input_token&vendor_code=openai")
-                .header("x-sdkwork-api-key-id", "100")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(backend_request(
+            "/backend/v3/api/ai/models?billing_meter=llm_input_token&vendor_code=openai",
+            &[("x-sdkwork-api-key-id", "100")],
+        ))
         .await
         .unwrap();
 
@@ -222,13 +241,7 @@ async fn admin_model_catalog_route_accepts_empty_body_and_marks_customer_price_u
     let router =
         sdkwork_clawrouter_router_service::api::admin_model_catalog_router(Arc::new(catalog()));
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/backend/v3/api/ai/models")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(backend_request("/backend/v3/api/ai/models", &[]))
         .await
         .unwrap();
 
@@ -261,14 +274,10 @@ async fn admin_model_catalog_route_authenticates_bearer_credential_with_configur
         );
 
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/backend/v3/api/ai/models")
-                .header("authorization", "Bearer sk-live-secret")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(backend_request(
+            "/backend/v3/api/ai/models",
+            &[("authorization", "Bearer sk-live-secret")],
+        ))
         .await
         .unwrap();
 
@@ -299,14 +308,10 @@ async fn admin_model_catalog_route_rejects_invalid_bearer_credential_when_hasher
         );
 
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/backend/v3/api/ai/models")
-                .header("authorization", "Bearer sk-wrong-secret")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(backend_request(
+            "/backend/v3/api/ai/models",
+            &[("authorization", "Bearer sk-wrong-secret")],
+        ))
         .await
         .unwrap();
 
@@ -317,7 +322,7 @@ async fn admin_model_catalog_route_rejects_invalid_bearer_credential_when_hasher
     let body = String::from_utf8(body.to_vec()).unwrap();
     let payload: serde_json::Value = serde_json::from_str(&body).unwrap();
 
-    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert_eq!(40103, payload["code"].as_i64().unwrap());
     assert_eq!("api key credential is invalid", payload["detail"]);
     assert!(!body.contains("sk-wrong-secret"));
 }
@@ -333,14 +338,10 @@ async fn admin_model_catalog_route_rejects_spoofed_api_key_context_when_hasher_i
         );
 
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/backend/v3/api/ai/models")
-                .header("x-sdkwork-api-key-id", "101")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(backend_request(
+            "/backend/v3/api/ai/models",
+            &[("x-sdkwork-api-key-id", "101")],
+        ))
         .await
         .unwrap();
 
@@ -351,6 +352,6 @@ async fn admin_model_catalog_route_rejects_spoofed_api_key_context_when_hasher_i
     let body = String::from_utf8(body.to_vec()).unwrap();
     let payload: serde_json::Value = serde_json::from_str(&body).unwrap();
 
-    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert_eq!(40101, payload["code"].as_i64().unwrap());
     assert_eq!("api key credential is required", payload["detail"]);
 }

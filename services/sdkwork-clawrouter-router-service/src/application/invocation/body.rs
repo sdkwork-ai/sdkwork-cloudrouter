@@ -1,7 +1,8 @@
 use serde_json::Value;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub enum InvocationBody {
+    #[default]
     Empty,
     Json(Value),
     Bytes(Vec<u8>),
@@ -18,11 +19,5 @@ impl InvocationBody {
 
     pub fn is_empty(&self) -> bool {
         matches!(self, Self::Empty)
-    }
-}
-
-impl Default for InvocationBody {
-    fn default() -> Self {
-        Self::Empty
     }
 }

@@ -5,7 +5,7 @@ static PATH_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 #[tokio::test]
 async fn gateway_env_startup_rejects_zero_config_server_placeholder_postgres() {
-    let _guard = env_guard().lock().unwrap();
+    let _guard = env_guard().lock().await;
     let saved_database_url = std::env::var("SDKWORK_DATABASE_URL").ok();
     let saved_deployment_mode = std::env::var("SDKWORK_CLAW_DEPLOYMENT_MODE").ok();
     let saved_config_file = std::env::var("SDKWORK_CLAW_CONFIG_FILE").ok();
@@ -42,7 +42,7 @@ async fn gateway_env_startup_rejects_zero_config_server_placeholder_postgres() {
 
 #[tokio::test]
 async fn gateway_env_startup_rejects_static_server_snowflake_node_id_before_database_bootstrap() {
-    let _guard = env_guard().lock().unwrap();
+    let _guard = env_guard().lock().await;
     let saved_database_url = std::env::var("SDKWORK_DATABASE_URL").ok();
     let saved_deployment_mode = std::env::var("SDKWORK_CLAW_DEPLOYMENT_MODE").ok();
     let saved_config_file = std::env::var("SDKWORK_CLAW_CONFIG_FILE").ok();
@@ -85,9 +85,9 @@ fn unique_runtime_config_path() -> std::path::PathBuf {
     path
 }
 
-fn env_guard() -> &'static std::sync::Mutex<()> {
-    static GUARD: std::sync::OnceLock<std::sync::Mutex<()>> = std::sync::OnceLock::new();
-    GUARD.get_or_init(|| std::sync::Mutex::new(()))
+fn env_guard() -> &'static tokio::sync::Mutex<()> {
+    static GUARD: std::sync::OnceLock<tokio::sync::Mutex<()>> = std::sync::OnceLock::new();
+    GUARD.get_or_init(|| tokio::sync::Mutex::new(()))
 }
 
 fn restore_env_var(name: &str, value: Option<String>) {

@@ -1,207 +1,290 @@
-# Claw Router SLO Alerting Rules
-# Based on multi-window burn rate alerting for error budgets
-#
-# SLO Target: 99.9% availability (0.1% error budget)
-# Measurement Window: 30 days
-# Error Budget: 0.1% * 30d = 43.2 minutes of allowed errors
+# Claw Router production alerting rules.
+# Availability treats HTTP 5xx as service failures; 4xx remains caller-visible
+# traffic but does not consume the service availability budget.
 
 groups:
-  - name: clawrouter-slo-availability
+  - name: clawrouter-availability-burn-rate
     interval: 30s
     rules:
-      # Fast burn: 1% errors in 1 hour
-      - alert: ClawRouterSLOAvailabilityFastBurn
+      - alert: ClawRouterAvailabilityFastBurn
         expr: |
           (
-            1 - (
-              sum(rate(clawrouter_requests_total{status="success"}[1h]))
-              /
-              sum(rate(clawrouter_requests_total[1h]))
+            sum by (service, environment, deployment_profile, runtime_target) (
+              rate(sdkwork_http_requests_labeled_total{environment="production",status=~"5.."}[1h])
             )
-          ) > (0.1 / 100) * 14.4
+            /
+            clamp_min(
+              sum by (service, environment, deployment_profile, runtime_target) (
+                rate(sdkwork_http_requests_labeled_total{environment="production"}[1h])
+              ),
+              0.001
+            )
+          ) > 14.4 * 0.001
+          and
+          (
+            sum by (service, environment, deployment_profile, runtime_target) (
+              rate(sdkwork_http_requests_labeled_total{environment="production",status=~"5.."}[5m])
+            )
+            /
+            clamp_min(
+              sum by (service, environment, deployment_profile, runtime_target) (
+                rate(sdkwork_http_requests_labeled_total{environment="production"}[5m])
+              ),
+              0.001
+            )
+          ) > 14.4 * 0.001
         for: 5m
         labels:
           severity: critical
           slo: availability
           burn_rate: fast
         annotations:
-          summary: "Claw Router availability SLO at risk - fast burn"
-          description: |
-            Availability has burned through more than 10% of the error budget
-            in the last hour. Current error rate: {{ $value | humanizePercentage }}
-          runbook_url: "https://docs.clawrouter.example.com/runbooks/slo-availability"
+          summary: "Claw Router availability budget is burning rapidly"
+          description: "The 1h and 5m HTTP 5xx ratios both exceed the 14.4x burn-rate threshold."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
-      # Medium burn: 1% errors in 6 hours
-      - alert: ClawRouterSLOAvailabilityMediumBurn
+      - alert: ClawRouterAvailabilityMediumBurn
         expr: |
           (
-            1 - (
-              sum(rate(clawrouter_requests_total{status="success"}[6h]))
-              /
-              sum(rate(clawrouter_requests_total[6h]))
+            sum by (service, environment, deployment_profile, runtime_target) (
+              rate(sdkwork_http_requests_labeled_total{environment="production",status=~"5.."}[6h])
             )
-          ) > (0.1 / 100) * 6
+            /
+            clamp_min(
+              sum by (service, environment, deployment_profile, runtime_target) (
+                rate(sdkwork_http_requests_labeled_total{environment="production"}[6h])
+              ),
+              0.001
+            )
+          ) > 6 * 0.001
+          and
+          (
+            sum by (service, environment, deployment_profile, runtime_target) (
+              rate(sdkwork_http_requests_labeled_total{environment="production",status=~"5.."}[30m])
+            )
+            /
+            clamp_min(
+              sum by (service, environment, deployment_profile, runtime_target) (
+                rate(sdkwork_http_requests_labeled_total{environment="production"}[30m])
+              ),
+              0.001
+            )
+          ) > 6 * 0.001
         for: 30m
         labels:
           severity: warning
           slo: availability
           burn_rate: medium
         annotations:
-          summary: "Claw Router availability SLO at risk - medium burn"
-          description: |
-            Availability has burned through more than 10% of the error budget
-            in the last 6 hours. Current error rate: {{ $value | humanizePercentage }}
-          runbook_url: "https://docs.clawrouter.example.com/runbooks/slo-availability"
+          summary: "Claw Router availability budget is burning"
+          description: "The 6h and 30m HTTP 5xx ratios both exceed the 6x burn-rate threshold."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
-      # Slow burn: 1% errors in 3 days
-      - alert: ClawRouterSLOAvailabilitySlowBurn
+      - alert: ClawRouterAvailabilitySlowBurn
         expr: |
           (
-            1 - (
-              sum(rate(clawrouter_requests_total{status="success"}[3d]))
-              /
-              sum(rate(clawrouter_requests_total[3d]))
+            sum by (service, environment, deployment_profile, runtime_target) (
+              rate(sdkwork_http_requests_labeled_total{environment="production",status=~"5.."}[3d])
             )
-          ) > (0.1 / 100)
+            /
+            clamp_min(
+              sum by (service, environment, deployment_profile, runtime_target) (
+                rate(sdkwork_http_requests_labeled_total{environment="production"}[3d])
+              ),
+              0.001
+            )
+          ) > 0.001
+          and
+          (
+            sum by (service, environment, deployment_profile, runtime_target) (
+              rate(sdkwork_http_requests_labeled_total{environment="production",status=~"5.."}[6h])
+            )
+            /
+            clamp_min(
+              sum by (service, environment, deployment_profile, runtime_target) (
+                rate(sdkwork_http_requests_labeled_total{environment="production"}[6h])
+              ),
+              0.001
+            )
+          ) > 0.001
         for: 3h
         labels:
           severity: warning
           slo: availability
           burn_rate: slow
         annotations:
-          summary: "Claw Router availability SLO at risk - slow burn"
-          description: |
-            Availability has burned through more than 10% of the error budget
-            in the last 3 days. Current error rate: {{ $value | humanizePercentage }}
-          runbook_url: "https://docs.clawrouter.example.com/runbooks/slo-availability"
+          summary: "Claw Router availability budget has a sustained burn"
+          description: "The 3d and 6h HTTP 5xx ratios both exceed the base error-budget rate."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
-  - name: clawrouter-slo-latency
+  - name: clawrouter-http
     interval: 30s
     rules:
-      # P95 latency SLO breach
-      - alert: ClawRouterSLOP95LatencyBreach
-        expr: clawrouter_slo_latency_p95_seconds > 0.050
+      - alert: ClawRouterControlPlaneP95LatencyHigh
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le, service, environment, deployment_profile, runtime_target) (
+              rate(sdkwork_http_request_duration_seconds_bucket{
+                environment="production",
+                api_surface=~"app-api|backend-api"
+              }[10m])
+            )
+          ) > 1
         for: 10m
         labels:
           severity: warning
-          slo: latency
-          percentile: p95
         annotations:
-          summary: "Claw Router P95 latency exceeds SLO target"
-          description: |
-            P95 latency is {{ $value | humanizeDuration }} which exceeds
-            the 50ms SLO target. This may indicate:
-            - Provider API slowdown
-            - Circuit breaker activation
-            - Resource contention
-          runbook_url: "https://docs.clawrouter.example.com/runbooks/slo-latency"
+          summary: "Claw Router control-plane p95 latency is high"
+          description: "The 10m p95 app/backend API latency exceeds the 1 second operational guardrail."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
-      # P99 latency SLO breach (critical)
-      - alert: ClawRouterSLOP99LatencyBreach
-        expr: clawrouter_slo_latency_p99_seconds > 0.100
+      - alert: ClawRouterControlPlaneP99LatencyCritical
+        expr: |
+          histogram_quantile(
+            0.99,
+            sum by (le, service, environment, deployment_profile, runtime_target) (
+              rate(sdkwork_http_request_duration_seconds_bucket{
+                environment="production",
+                api_surface=~"app-api|backend-api"
+              }[5m])
+            )
+          ) > 2
         for: 5m
         labels:
           severity: critical
-          slo: latency
-          percentile: p99
         annotations:
-          summary: "Claw Router P99 latency exceeds SLO target"
-          description: |
-            P99 latency is {{ $value | humanizeDuration }} which exceeds
-            the 100ms SLO target. This indicates severe latency issues.
-          runbook_url: "https://docs.clawrouter.example.com/runbooks/slo-latency"
+          summary: "Claw Router control-plane p99 latency is critical"
+          description: "The 5m p99 app/backend API latency exceeds the 2 second operational guardrail."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
-  - name: clawrouter-slo-throughput
-    interval: 60s
-    rules:
-      # Low throughput alert
-      - alert: ClawRouterSLOThroughputLow
-        expr: clawrouter_slo_throughput_rps < 100
-        for: 15m
-        labels:
-          severity: warning
-          slo: throughput
-        annotations:
-          summary: "Claw Router throughput below SLO target"
-          description: |
-            Current throughput is {{ $value | humanize }} RPS which is below
-            the 1000 RPS SLO target. This may indicate:
-            - Client-side issues
-            - Authentication/authorization failures
-            - Provider API issues
-
-  - name: clawrouter-availability
-    interval: 30s
-    rules:
-      # High error rate
-      - alert: ClawRouterHighErrorRate
+      - alert: ClawRouterHighServerErrorRate
         expr: |
-          sum(rate(clawrouter_requests_total{status="failure"}[5m]))
+          sum by (service, environment, deployment_profile, runtime_target) (
+            rate(sdkwork_http_requests_labeled_total{environment="production",status=~"5.."}[5m])
+          )
           /
-          sum(rate(clawrouter_requests_total[5m])) > 0.01
+          clamp_min(
+            sum by (service, environment, deployment_profile, runtime_target) (
+              rate(sdkwork_http_requests_labeled_total{environment="production"}[5m])
+            ),
+            0.001
+          ) > 0.01
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "Claw Router error rate is elevated"
-          description: |
-            Error rate is {{ $value | humanizePercentage }} over the last 5 minutes.
-            This exceeds the 1% threshold.
+          summary: "Claw Router HTTP 5xx rate is elevated"
+          description: "The 5m HTTP 5xx ratio exceeds 1%."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
-      # Very high error rate (service degraded)
-      - alert: ClawRouterVeryHighErrorRate
+      - alert: ClawRouterVeryHighServerErrorRate
         expr: |
-          sum(rate(clawrouter_requests_total{status="failure"}[5m]))
+          sum by (service, environment, deployment_profile, runtime_target) (
+            rate(sdkwork_http_requests_labeled_total{environment="production",status=~"5.."}[5m])
+          )
           /
-          sum(rate(clawrouter_requests_total[5m])) > 0.05
+          clamp_min(
+            sum by (service, environment, deployment_profile, runtime_target) (
+              rate(sdkwork_http_requests_labeled_total{environment="production"}[5m])
+            ),
+            0.001
+          ) > 0.05
         for: 2m
         labels:
           severity: critical
         annotations:
-          summary: "Claw Router error rate is critically high"
-          description: |
-            Error rate is {{ $value | humanizePercentage }} over the last 5 minutes.
-            This exceeds the 5% critical threshold. Immediate investigation required.
+          summary: "Claw Router HTTP 5xx rate is critical"
+          description: "The 5m HTTP 5xx ratio exceeds 5%."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
-      # Service down (no successful requests for 5 minutes)
-      - alert: ClawRouterServiceDown
+      - alert: ClawRouterOnlyServerErrors
         expr: |
-          sum(rate(clawrouter_requests_total{status="success"}[5m])) == 0
+          sum by (service, environment, deployment_profile, runtime_target) (
+            rate(sdkwork_http_requests_labeled_total{environment="production",status!~"5.."}[5m])
+          ) == 0
           and
-          sum(rate(clawrouter_requests_total[5m])) > 0
+          sum by (service, environment, deployment_profile, runtime_target) (
+            rate(sdkwork_http_requests_labeled_total{environment="production",status=~"5.."}[5m])
+          ) > 0
         for: 5m
         labels:
           severity: critical
         annotations:
-          summary: "Claw Router service is returning errors only"
-          description: |
-            No successful requests in the last 5 minutes despite traffic being received.
-            All requests are failing.
+          summary: "Claw Router is serving only HTTP 5xx responses"
+          description: "Traffic is present, but no non-5xx response has been observed for 5 minutes."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
   - name: clawrouter-infrastructure
-    interval: 60s
+    interval: 30s
     rules:
-      # Prometheus target down
       - alert: ClawRouterMetricsUnavailable
-        expr: up{job="clawrouter"} == 0
+        expr: up{pod=~"sdkwork-(api-)?clawrouter-.*"} == 0
         for: 2m
         labels:
           severity: warning
         annotations:
           summary: "Claw Router metrics endpoint is unavailable"
-          description: "Prometheus cannot scrape the Claw Router metrics endpoint."
+          description: "Prometheus cannot scrape a discovered Claw Router pod."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
-      # High memory usage
-      - alert: ClawRouterHighMemoryUsage
+      - alert: ClawRouterReadinessFailure
+        expr: increase(sdkwork_http_readiness_checks_total{result="not_ready"}[5m]) > 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Claw Router readiness checks are failing"
+          description: "At least one required dependency readiness check failed in the last 5 minutes."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"
+
+      - alert: ClawRouterMetricSeriesDropped
+        expr: increase(sdkwork_http_metric_series_dropped_total[10m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Claw Router dropped bounded metric series"
+          description: "The HTTP metric registry rejected a new series because its fixed capacity or label-byte bound was reached."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"
+
+      - alert: ClawRouterContainerMemoryHigh
         expr: |
-          process_resident_memory_bytes{job="clawrouter"}
-          /
-          system_memory_bytes * 100 > 80
+          (
+            container_memory_working_set_bytes{
+              pod=~"sdkwork-(api-)?clawrouter-.*",
+              container!="",
+              container!="POD"
+            }
+            /
+            on (namespace, pod, container)
+            clamp_min(
+              container_spec_memory_limit_bytes{
+                pod=~"sdkwork-(api-)?clawrouter-.*",
+                container!="",
+                container!="POD"
+              },
+              1
+            )
+          ) > 0.8
         for: 10m
         labels:
           severity: warning
         annotations:
-          summary: "Claw Router memory usage is high"
-          description: |
-            Memory usage is at {{ $value | humanizePercentage }} of available memory.
-            Consider scaling or investigating memory leaks.
+          summary: "Claw Router container memory exceeds 80% of its limit"
+          description: "The container working set is approaching its declared cgroup memory limit."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"
+
+      - alert: ClawRouterContainerOOMKilled
+        expr: |
+          kube_pod_container_status_last_terminated_reason{
+            pod=~"sdkwork-(api-)?clawrouter-.*",
+            reason="OOMKilled"
+          } == 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Claw Router container was OOM-killed"
+          description: "Kubernetes reports OOMKilled as the most recent container termination reason."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"

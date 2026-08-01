@@ -59,11 +59,7 @@ impl AdminApiKeyRateLimitStore for PostgresAdminApiKeyRateLimitStore {
             bind_api_key_quota_policy(&mut tx, policy_id, &command, &api_key).await?;
             insert_config_snapshot(
                 &mut tx,
-                &command.config_snapshot_uuid,
-                &command.request_id,
-                command.subject.tenant_id,
-                command.subject.organization_id,
-                command.subject.operator_id,
+                &command,
                 policy_id,
                 serde_json::json!({
                     "action": "create_api_key_rate_limit",
@@ -75,17 +71,11 @@ impl AdminApiKeyRateLimitStore for PostgresAdminApiKeyRateLimitStore {
                     "rpd": command.rpd,
                     "burst": command.burst
                 }),
-                &command.requested_at,
             )
             .await?;
             insert_audit_log(
                 &mut tx,
-                &command.audit_log_uuid,
-                &command.request_id,
-                command.subject.tenant_id,
-                command.subject.organization_id,
-                command.subject.operator_id,
-                command.subject.operator_type,
+                &command,
                 policy_id,
                 serde_json::json!({
                     "action": "create_api_key_rate_limit",
@@ -100,19 +90,20 @@ impl AdminApiKeyRateLimitStore for PostgresAdminApiKeyRateLimitStore {
             .await?;
             record_postgres_ai_routing_config_change(
                 &mut tx,
-                api_key_rate_limit_routing_config_change(
-                    command.subject.tenant_id,
-                    command.subject.organization_id,
-                    command.subject.operator_id,
-                    &command.request_id,
-                    &command.requested_at,
-                    "create_api_key_rate_limit",
-                    policy_id,
-                    serde_json::json!({
+                AiRoutingConfigChange {
+                    tenant_id: command.subject.tenant_id,
+                    organization_id: command.subject.organization_id,
+                    operator_id: command.subject.operator_id,
+                    request_id: &command.request_id,
+                    requested_at: &command.requested_at,
+                    changed_object_type: "api_key_rate_limit",
+                    changed_object_id: policy_id,
+                    action: "create_api_key_rate_limit",
+                    event_payload: serde_json::json!({
                         "apiKeyRateLimitId": policy_id,
                         "apiKeyId": api_key.id
                     }),
-                ),
+                },
             )
             .await?;
             let item = load_api_key_rate_limit_by_id(
@@ -421,17 +412,15 @@ async fn load_api_key_rate_limit_by_id(
 
 async fn insert_config_snapshot(
     tx: &mut Transaction<'_, Postgres>,
-    snapshot_uuid: &str,
-    request_id: &str,
-    tenant_id: i64,
-    organization_id: i64,
-    operator_id: i64,
+    command: &CreateAdminApiKeyRateLimitCommand,
     target_id: i64,
     payload: serde_json::Value,
-    requested_at: &str,
 ) -> DomainResult<()> {
     let payload = payload.to_string();
-    let snapshot_no = format!("api-key-rate-limit-{target_id}-save-{snapshot_uuid}");
+    let snapshot_no = format!(
+        "api-key-rate-limit-{target_id}-save-{}",
+        command.config_snapshot_uuid
+    );
     let id = next_claw_runtime_id("ops_config_snapshot")?;
     sqlx::query(
         r#"
@@ -441,19 +430,19 @@ async fn insert_config_snapshot(
             ($1, $2, $3, $4, $5, 1, $6, $7, $8, 'ai_quota_policy', $9::jsonb, $10::jsonb, $11, $12::timestamptz, $13, $14)
         "#,
     )
-    .bind(snapshot_uuid)
-    .bind(tenant_id)
-    .bind(organization_id)
-    .bind(operator_id)
-    .bind(request_id)
+    .bind(&command.config_snapshot_uuid)
+    .bind(command.subject.tenant_id)
+    .bind(command.subject.organization_id)
+    .bind(command.subject.operator_id)
+    .bind(&command.request_id)
     .bind(snapshot_no)
     .bind(CONFIG_SCOPE_ROUTER)
     .bind(CONFIG_TYPE_API_KEY_RATE_LIMIT)
     .bind(serde_json::json!([target_id]).to_string())
     .bind(&payload)
     .bind(digest_hex(&payload))
-    .bind(requested_at)
-    .bind(operator_id)
+    .bind(&command.requested_at)
+    .bind(command.subject.operator_id)
     .bind(id)
     .execute(&mut **tx)
     .await
@@ -463,12 +452,7 @@ async fn insert_config_snapshot(
 
 async fn insert_audit_log(
     tx: &mut Transaction<'_, Postgres>,
-    audit_log_uuid: &str,
-    request_id: &str,
-    tenant_id: i64,
-    organization_id: i64,
-    operator_id: i64,
-    operator_type: i32,
+    command: &CreateAdminApiKeyRateLimitCommand,
     target_id: i64,
     change_summary: serde_json::Value,
 ) -> DomainResult<()> {
@@ -481,14 +465,14 @@ async fn insert_audit_log(
             ($1, $2, $3, 'create_api_key_rate_limit', $4, $5, $6, $7, $8, $9::jsonb, $10)
         "#,
     )
-    .bind(audit_log_uuid)
-    .bind(tenant_id)
-    .bind(organization_id)
+    .bind(&command.audit_log_uuid)
+    .bind(command.subject.tenant_id)
+    .bind(command.subject.organization_id)
     .bind(API_KEY_RATE_LIMIT_TARGET_TYPE)
     .bind(target_id)
-    .bind(request_id)
-    .bind(operator_id)
-    .bind(operator_type)
+    .bind(&command.request_id)
+    .bind(command.subject.operator_id)
+    .bind(command.subject.operator_type)
     .bind(change_summary.to_string())
     .bind(id)
     .execute(&mut **tx)
@@ -630,27 +614,4 @@ fn store_error(context: &str, error: sqlx::Error) -> DomainError {
         }
     }
     redacted_store_error(context, error)
-}
-
-fn api_key_rate_limit_routing_config_change<'a>(
-    tenant_id: i64,
-    organization_id: i64,
-    operator_id: i64,
-    request_id: &'a str,
-    requested_at: &'a str,
-    action: &'a str,
-    api_key_rate_limit_id: i64,
-    event_payload: serde_json::Value,
-) -> AiRoutingConfigChange<'a> {
-    AiRoutingConfigChange {
-        tenant_id,
-        organization_id,
-        operator_id,
-        request_id,
-        requested_at,
-        changed_object_type: "api_key_rate_limit",
-        changed_object_id: api_key_rate_limit_id,
-        action,
-        event_payload,
-    }
 }

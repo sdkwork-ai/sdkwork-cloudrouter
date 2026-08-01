@@ -210,7 +210,7 @@ async fn assembler_registers_stripe_adapter_from_projection() {
     let registry = assembler
         .resolve_projection_and_register(
             PaymentProviderRegistry::empty(),
-            &json!({
+            json!({
                 "providerCode": "stripe",
                 "merchantId": "acct_stripe_1",
                 "environment": "sandbox",

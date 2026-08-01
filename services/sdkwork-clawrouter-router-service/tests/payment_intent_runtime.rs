@@ -99,7 +99,7 @@ async fn confirm_payment_intent_records_provider_operation_attempt() {
         .await
         .unwrap_err();
 
-    assert!(error.to_string().contains("CreatePaymentIntent") == false);
+    assert!(!error.to_string().contains("CreatePaymentIntent"));
     assert!(error.to_string().contains("ConfirmPaymentIntent"));
 
     let attempts = store.operation_attempts();

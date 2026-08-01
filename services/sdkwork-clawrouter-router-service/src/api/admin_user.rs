@@ -257,7 +257,7 @@ async fn create_user(
     let requested_at = current_timestamp_string();
     let request_id = match server_request_id() {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let command = match build_create_user_command(
         &state,
@@ -321,7 +321,7 @@ async fn update_user_with_request(
     let requested_at = current_timestamp_string();
     let request_id = match server_request_id() {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let audit_log_uuid = match state.secret_generator.generate_entity_uuid() {
         Ok(value) => value,
@@ -377,7 +377,7 @@ async fn adjust_balance(
     let requested_at = current_timestamp_string();
     let request_id = match server_request_id() {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let account_uuid = match state.secret_generator.generate_entity_uuid() {
         Ok(value) => value,
@@ -444,7 +444,7 @@ async fn create_api_key(
     let requested_at = current_timestamp_string();
     let request_id = match server_request_id() {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let idempotency_key = match normalize_idempotency_key(&headers, state.secret_generator.as_ref())
     {
@@ -453,14 +453,16 @@ async fn create_api_key(
     };
     let command = match build_create_api_key_command(
         &state,
-        subject,
-        user_id,
-        name,
-        &raw_key,
-        key_hash,
-        requested_at,
-        request_id,
-        idempotency_key,
+        CreateApiKeyCommandInput {
+            subject,
+            user_id,
+            name,
+            raw_key: &raw_key,
+            key_hash,
+            requested_at,
+            request_id,
+            idempotency_key,
+        },
     ) {
         Ok(command) => command,
         Err(error) => return command_build_error_response(error),
@@ -490,7 +492,7 @@ async fn delete_api_key(
     let requested_at = current_timestamp_string();
     let request_id = match server_request_id() {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let audit_log_uuid = match state.secret_generator.generate_entity_uuid() {
         Ok(value) => value,
@@ -546,7 +548,7 @@ async fn create_backend_api_key(
     let requested_at = current_timestamp_string();
     let request_id = match server_request_id() {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let idempotency_key = match normalize_idempotency_key(&headers, state.secret_generator.as_ref())
     {
@@ -579,15 +581,17 @@ async fn create_backend_api_key(
     };
     let command = match build_backend_create_api_key_command(
         &state,
-        subject,
-        user_id,
         group.id,
-        name,
-        &raw_key,
-        key_hash,
-        requested_at,
-        request_id,
-        idempotency_key,
+        CreateApiKeyCommandInput {
+            subject,
+            user_id,
+            name,
+            raw_key: &raw_key,
+            key_hash,
+            requested_at,
+            request_id,
+            idempotency_key,
+        },
     ) {
         Ok(command) => command,
         Err(error) => return command_build_error_response(error),
@@ -622,7 +626,7 @@ async fn delete_backend_api_key(
     let requested_at = current_timestamp_string();
     let request_id = match server_request_id() {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let audit_log_uuid = match state.secret_generator.generate_entity_uuid() {
         Ok(value) => value,
@@ -675,17 +679,31 @@ fn build_create_user_command(
     })
 }
 
-fn build_create_api_key_command(
-    state: &AdminUserState,
+struct CreateApiKeyCommandInput<'a> {
     subject: AdminUserSubject,
     user_id: i64,
     name: String,
-    raw_key: &str,
+    raw_key: &'a str,
     key_hash: String,
     requested_at: String,
     request_id: String,
     idempotency_key: String,
+}
+
+fn build_create_api_key_command(
+    state: &AdminUserState,
+    input: CreateApiKeyCommandInput<'_>,
 ) -> Result<CreateAdminUserApiKeyCommand, DomainError> {
+    let CreateApiKeyCommandInput {
+        subject,
+        user_id,
+        name,
+        raw_key,
+        key_hash,
+        requested_at,
+        request_id,
+        idempotency_key,
+    } = input;
     Ok(CreateAdminUserApiKeyCommand {
         api_key_uuid: state.secret_generator.generate_entity_uuid()?,
         audit_log_uuid: state.secret_generator.generate_entity_uuid()?,
@@ -705,16 +723,19 @@ fn build_create_api_key_command(
 
 fn build_backend_create_api_key_command(
     state: &AdminApiKeyCommandState,
-    subject: AdminUserSubject,
-    user_id: i64,
     group_id: i64,
-    name: String,
-    raw_key: &str,
-    key_hash: String,
-    requested_at: String,
-    request_id: String,
-    idempotency_key: String,
+    input: CreateApiKeyCommandInput<'_>,
 ) -> Result<CreateGatewayApiKeyCommand, DomainError> {
+    let CreateApiKeyCommandInput {
+        subject,
+        user_id,
+        name,
+        raw_key,
+        key_hash,
+        requested_at,
+        request_id,
+        idempotency_key,
+    } = input;
     Ok(CreateGatewayApiKeyCommand {
         api_key_uuid: state.secret_generator.generate_entity_uuid()?,
         access_policy_uuid: state.secret_generator.generate_entity_uuid()?,
@@ -870,10 +891,12 @@ fn positive_path_id(value: i64, field: &str) -> Result<i64, String> {
     }
 }
 
-fn server_request_id() -> Result<String, Response> {
+fn server_request_id() -> Result<String, crate::api::response::ApiResponseError> {
     generate_server_request_id().map_err(|error| match error {
-        RequestIdError::Invalid(message) => bad_request(message),
-        RequestIdError::System(message) => command_build_error_response(DomainError::new(message)),
+        RequestIdError::Invalid(message) => bad_request(message).into(),
+        RequestIdError::System(message) => {
+            command_build_error_response(DomainError::new(message)).into()
+        }
     })
 }
 

@@ -407,6 +407,33 @@ account and endpoint health-state tables. Usage, audit, and ledger facts are
 durable authorities; dashboards and metric snapshots are rebuildable read
 models.
 
+Every served process uses the shared `sdkwork-web-framework`
+`HttpMetricsRegistry`. App/backend framework requests record route templates,
+operation IDs, surface, method, numeric status, and handler latency; open and
+internal routes that do not enter the framework pipeline are recorded by the
+Claw HTTP router layer. The registry has an exact 4096 request-series ceiling,
+64 fixed contention shards, a 2048-byte label-key bound, and an independent
+128-stage ceiling. Request and pipeline durations use the documented
+`0.005` through `30` second Prometheus histogram buckets. Saturation increments
+`sdkwork_http_metric_series_dropped_total` without growing memory or rejecting
+business traffic.
+
+`GET /metrics` combines the canonical framework exposition with native
+readiness, tenant-isolation, runtime-ID, and invocation metrics registered in
+the process. There is no independent metrics listener or in-process SLO sample
+collector. Availability, throughput, and latency percentiles are derived in
+PromQL from `sdkwork_http_requests_labeled_total` and
+`sdkwork_http_request_duration_seconds_bucket`. Kubernetes pods declare scrape
+annotations for their actual listener ports; the checked-in dashboard and
+alerts use only runtime-exposed or Kubernetes/cAdvisor metrics and bounded
+deployment labels. Operational response is documented in
+[the observability alert runbook](../../runbooks/observability-alert-response.md).
+
+The checked-in 1-second p95 and 2-second p99 control-plane alerts are incident
+guardrails, not accepted customer SLA values. Final latency, throughput, and
+memory ceilings remain blocked on the reproducible release-candidate load and
+soak evidence required by the PRD.
+
 ## 8. Deployment And Runtime Topology
 
 | Profile | Server database | Coordination | Shape |

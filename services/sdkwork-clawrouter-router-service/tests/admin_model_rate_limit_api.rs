@@ -1,4 +1,4 @@
-mod common;
+pub mod common;
 use common::InternalTrustedSubjectHeaders;
 use std::sync::{Arc, Mutex};
 
@@ -191,7 +191,7 @@ impl AdminModelRateLimitStore for TestModelRateLimitStore {
                     item.tenant_id == query.subject.tenant_id
                         && item.organization_id == query.subject.organization_id
                         && item.deleted_at.is_none()
-                        && q.as_ref().map_or(true, |q| {
+                        && q.as_ref().is_none_or(|q| {
                             item.model.to_ascii_lowercase().contains(q)
                                 || item.account_group.to_ascii_lowercase().contains(q)
                         })

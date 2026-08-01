@@ -24,10 +24,11 @@ use thiserror::Error;
 type HmacSha256Type = Hmac<Sha256>;
 
 /// Supported signing algorithms for per-tenant session tokens.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SigningAlgorithm {
     /// HMAC-SHA256 (symmetric, backward compatible)
+    #[default]
     Hs256,
     /// RSA-SHA256 (enterprise, widely supported)
     Rs256,
@@ -35,12 +36,6 @@ pub enum SigningAlgorithm {
     Es256,
     /// Ed25519 (highest security, modern)
     EdDsa,
-}
-
-impl Default for SigningAlgorithm {
-    fn default() -> Self {
-        Self::Hs256
-    }
 }
 
 impl std::fmt::Display for SigningAlgorithm {

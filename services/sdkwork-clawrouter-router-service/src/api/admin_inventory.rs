@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
     json_success_list_response, offset_page_info, parse_offset_list_query, problem_from_wire_code,
-    success_envelope,
+    success_envelope, ApiResponseError,
 };
 use crate::domain::DomainError;
 use crate::ports::{
@@ -122,7 +122,7 @@ async fn update_stock(
     };
     let command = match stock_update_command(scoped, &headers, stock_id, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.update_stock(command).await {
         Ok(item) => Json(success_envelope(InventoryResourceResponse { item })).into_response(),
@@ -142,7 +142,7 @@ where
 {
     let query = match validated_list_query(scoped, query) {
         Ok(query) => query,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match load(query).await {
         Ok(collection) => json_success_list_response(
@@ -157,7 +157,7 @@ where
 fn validated_list_query(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     request: InventoryListQueryRequest,
-) -> Result<ListAdminInventoryRecordsQuery, Response> {
+) -> Result<ListAdminInventoryRecordsQuery, ApiResponseError> {
     let subject = scoped.into();
     let pagination =
         parse_offset_list_query(request.page, request.page_size).map_err(bad_request)?;
@@ -186,22 +186,18 @@ fn stock_update_command(
     headers: &HeaderMap,
     stock_id: String,
     request: StockUpdateRequest,
-) -> Result<UpdateAdminInventoryStockCommand, Response> {
+) -> Result<UpdateAdminInventoryStockCommand, ApiResponseError> {
     if request.version < 0 {
-        return Err(bad_request("version must be greater than or equal to 0"));
+        return Err(bad_request("version must be greater than or equal to 0").into());
     }
     if let Some(quantity) = request.available_quantity {
         if quantity < 0 {
-            return Err(bad_request(
-                "availableQuantity must be greater than or equal to 0",
-            ));
+            return Err(bad_request("availableQuantity must be greater than or equal to 0").into());
         }
     }
     if let Some(quantity) = request.reserved_quantity {
         if quantity < 0 {
-            return Err(bad_request(
-                "reservedQuantity must be greater than or equal to 0",
-            ));
+            return Err(bad_request("reservedQuantity must be greater than or equal to 0").into());
         }
     }
     Ok(UpdateAdminInventoryStockCommand {
@@ -228,8 +224,8 @@ where
     serde_json::from_slice(body).map_err(|error| format!("invalid {resource} payload: {error}"))
 }
 
-fn server_request_id() -> Result<String, Response> {
-    generate_server_request_id().map_err(request_id_error_response)
+fn server_request_id() -> Result<String, ApiResponseError> {
+    generate_server_request_id().map_err(|error| request_id_error_response(error).into())
 }
 
 fn request_id_error_response(error: RequestIdError) -> Response {
@@ -241,11 +237,12 @@ fn request_id_error_response(error: RequestIdError) -> Response {
     }
 }
 
-fn required_header(headers: &HeaderMap, name: &str) -> Result<String, Response> {
-    optional_header(headers, name)?.ok_or_else(|| bad_request(format!("{name} header is required")))
+fn required_header(headers: &HeaderMap, name: &str) -> Result<String, ApiResponseError> {
+    optional_header(headers, name)?
+        .ok_or_else(|| bad_request(format!("{name} header is required")).into())
 }
 
-fn optional_header(headers: &HeaderMap, name: &str) -> Result<Option<String>, Response> {
+fn optional_header(headers: &HeaderMap, name: &str) -> Result<Option<String>, ApiResponseError> {
     let Some(value) = headers.get(name) else {
         return Ok(None);
     };
@@ -259,13 +256,14 @@ fn normalize_enum(
     value: String,
     field_name: &str,
     allowed_values: &[&str],
-) -> Result<String, Response> {
+) -> Result<String, ApiResponseError> {
     let value = normalize_required_text(value, field_name, MAX_CODE_LEN)?.to_ascii_lowercase();
     if !allowed_values.contains(&value.as_str()) {
         return Err(bad_request(format!(
             "{field_name} must be one of {}",
             allowed_values.join(", ")
-        )));
+        ))
+        .into());
     }
     Ok(value)
 }
@@ -274,16 +272,16 @@ fn normalize_required_text(
     value: String,
     field_name: &str,
     max_len: usize,
-) -> Result<String, Response> {
+) -> Result<String, ApiResponseError> {
     normalize_optional_text(Some(value), field_name, max_len)?
-        .ok_or_else(|| bad_request(format!("{field_name} is required")))
+        .ok_or_else(|| bad_request(format!("{field_name} is required")).into())
 }
 
 fn normalize_optional_text(
     value: Option<String>,
     field_name: &str,
     max_len: usize,
-) -> Result<Option<String>, Response> {
+) -> Result<Option<String>, ApiResponseError> {
     let Some(value) = value else {
         return Ok(None);
     };
@@ -294,7 +292,8 @@ fn normalize_optional_text(
     if value.chars().count() > max_len || !value.bytes().all(|byte| (0x20..=0x7e).contains(&byte)) {
         return Err(bad_request(format!(
             "{field_name} must be visible ASCII and at most {max_len} characters"
-        )));
+        ))
+        .into());
     }
     Ok(Some(value.to_owned()))
 }

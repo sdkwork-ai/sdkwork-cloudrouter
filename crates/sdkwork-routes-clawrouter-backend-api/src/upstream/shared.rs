@@ -22,6 +22,29 @@ const MAX_IDEMPOTENCY_KEY_LENGTH: usize = 128;
 
 pub(super) type UpstreamStore = Arc<dyn AdminUpstreamStore + Send + Sync>;
 pub(super) type UpstreamVerifier = Arc<dyn AdminUpstreamAccountVerifier + Send + Sync>;
+pub(super) type RequestResult<T> = Result<T, RequestProblem>;
+
+#[derive(Debug)]
+pub(super) struct RequestProblem {
+    code: SdkWorkResultCode,
+    detail: String,
+}
+
+impl IntoResponse for RequestProblem {
+    fn into_response(self) -> Response {
+        let trace_id = uuid();
+        let body = SdkWorkProblemDetail::platform(self.code, self.detail, trace_id.clone());
+        let status = StatusCode::from_u16(body.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let mut response = (
+            status,
+            [(header::CONTENT_TYPE, "application/problem+json")],
+            Json(body),
+        )
+            .into_response();
+        attach_trace_id(&mut response, &trace_id);
+        response
+    }
+}
 
 #[derive(Clone)]
 pub(super) struct UpstreamState {
@@ -56,7 +79,7 @@ pub(super) fn subject(scoped: SqlScopedAdminSubject) -> AdminUpstreamSubject {
 pub(super) fn list_query(
     subject: AdminUpstreamSubject,
     query: ListQuery,
-) -> Result<AdminUpstreamListQuery, Response> {
+) -> RequestResult<AdminUpstreamListQuery> {
     let page = query.page.unwrap_or(1);
     let page_size = query.page_size.unwrap_or(20);
     if page < 1 {
@@ -91,7 +114,7 @@ pub(super) fn list_query(
     })
 }
 
-pub(super) fn parse_id(value: String, field: &str) -> Result<i64, Response> {
+pub(super) fn parse_id(value: String, field: &str) -> RequestResult<i64> {
     value
         .parse::<i64>()
         .ok()
@@ -104,7 +127,7 @@ pub(super) fn parse_id(value: String, field: &str) -> Result<i64, Response> {
         })
 }
 
-pub(super) fn parse_if_match(headers: &HeaderMap) -> Result<i64, Response> {
+pub(super) fn parse_if_match(headers: &HeaderMap) -> RequestResult<i64> {
     let value = headers.get(header::IF_MATCH).ok_or_else(|| {
         problem(
             SdkWorkResultCode::PreconditionRequired,
@@ -135,7 +158,7 @@ pub(super) fn idempotency_uuid(
     headers: &HeaderMap,
     subject: &AdminUpstreamSubject,
     account_id: i64,
-) -> Result<String, Response> {
+) -> RequestResult<String> {
     let key = headers.get("idempotency-key").ok_or_else(|| {
         problem(
             SdkWorkResultCode::PreconditionRequired,
@@ -184,7 +207,7 @@ pub(super) fn required_text(
     value: String,
     field: &str,
     max_length: usize,
-) -> Result<String, Response> {
+) -> RequestResult<String> {
     let value = normalize_visible_text(value, field, max_length)?;
     if value.is_empty() {
         return Err(problem(
@@ -199,18 +222,14 @@ pub(super) fn optional_text(
     value: Option<String>,
     field: &str,
     max_length: usize,
-) -> Result<Option<String>, Response> {
+) -> RequestResult<Option<String>> {
     value
         .map(|value| normalize_visible_text(value, field, max_length))
         .transpose()
         .map(|value| value.filter(|value| !value.is_empty()))
 }
 
-fn normalize_visible_text(
-    value: String,
-    field: &str,
-    max_length: usize,
-) -> Result<String, Response> {
+fn normalize_visible_text(value: String, field: &str, max_length: usize) -> RequestResult<String> {
     if value.chars().any(char::is_control) || value.chars().count() > max_length {
         return Err(problem(
             SdkWorkResultCode::InvalidParameter,
@@ -220,7 +239,7 @@ fn normalize_visible_text(
     Ok(value.trim().to_owned())
 }
 
-pub(super) fn positive_decimal(value: String, field: &str) -> Result<String, Response> {
+pub(super) fn positive_decimal(value: String, field: &str) -> RequestResult<String> {
     let value = required_text(value, field, 64)?;
     let decimal = DecimalValue::parse(&value).map_err(|_| {
         problem(
@@ -237,7 +256,7 @@ pub(super) fn positive_decimal(value: String, field: &str) -> Result<String, Res
     Ok(value)
 }
 
-pub(super) fn decode_json<T>(payload: Result<Json<T>, JsonRejection>) -> Result<T, Response> {
+pub(super) fn decode_json<T>(payload: Result<Json<T>, JsonRejection>) -> RequestResult<T> {
     payload.map(|Json(value)| value).map_err(|rejection| {
         problem(
             SdkWorkResultCode::MalformedRequest,
@@ -248,7 +267,7 @@ pub(super) fn decode_json<T>(payload: Result<Json<T>, JsonRejection>) -> Result<
 
 pub(super) fn decode_query(
     query: Result<axum::extract::Query<ListQuery>, QueryRejection>,
-) -> Result<ListQuery, Response> {
+) -> RequestResult<ListQuery> {
     query
         .map(|axum::extract::Query(value)| value)
         .map_err(|rejection| {
@@ -316,7 +335,7 @@ fn success_response<T: Serialize>(status: StatusCode, data: T) -> Response {
 
 pub(super) fn domain_error(error: DomainError) -> Response {
     if error.is_not_found() {
-        return problem(SdkWorkResultCode::NotFound, error.to_string());
+        return problem(SdkWorkResultCode::NotFound, error.to_string()).into_response();
     }
     if error.is_conflict() {
         let detail = error.to_string();
@@ -325,12 +344,13 @@ pub(super) fn domain_error(error: DomainError) -> Response {
         } else {
             SdkWorkResultCode::Conflict
         };
-        return problem(code, detail);
+        return problem(code, detail).into_response();
     }
     problem(
         SdkWorkResultCode::InternalError,
         "upstream management operation failed",
     )
+    .into_response()
 }
 
 pub(super) fn verification_error(error: AdminUpstreamAccountVerificationError) -> Response {
@@ -343,7 +363,7 @@ pub(super) fn verification_error(error: AdminUpstreamAccountVerificationError) -
         }
         AdminUpstreamAccountVerificationError::Internal => SdkWorkResultCode::InternalError,
     };
-    problem(code, error.to_string())
+    problem(code, error.to_string()).into_response()
 }
 
 pub(super) fn not_found(entity: &str) -> Response {
@@ -351,20 +371,14 @@ pub(super) fn not_found(entity: &str) -> Response {
         SdkWorkResultCode::NotFound,
         format!("{entity} was not found"),
     )
+    .into_response()
 }
 
-pub(super) fn problem(code: SdkWorkResultCode, detail: impl Into<String>) -> Response {
-    let trace_id = uuid();
-    let body = SdkWorkProblemDetail::platform(code, detail, trace_id.clone());
-    let status = StatusCode::from_u16(body.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-    let mut response = (
-        status,
-        [(header::CONTENT_TYPE, "application/problem+json")],
-        Json(body),
-    )
-        .into_response();
-    attach_trace_id(&mut response, &trace_id);
-    response
+pub(super) fn problem(code: SdkWorkResultCode, detail: impl Into<String>) -> RequestProblem {
+    RequestProblem {
+        code,
+        detail: detail.into(),
+    }
 }
 
 fn attach_trace_id(response: &mut Response, trace_id: &str) {

@@ -1,7 +1,7 @@
 use axum::extract::rejection::{JsonRejection, QueryRejection};
 use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
-use axum::response::Response;
+use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
 use sdkwork_clawrouter_router_service::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
@@ -17,7 +17,7 @@ use super::shared::{
     bounded_list_response, collection_item_response, decode_json, decode_query, domain_error,
     idempotency_uuid, item_response, list_query, list_response, no_content_response, not_found,
     optional_text, parse_id, parse_if_match, positive_decimal, problem, requested_at,
-    required_text, subject, ListQuery, UpstreamState, MAX_NESTED_ITEMS,
+    required_text, subject, ListQuery, RequestResult, UpstreamState, MAX_NESTED_ITEMS,
 };
 use super::supplier::ResourceResponse;
 
@@ -151,7 +151,7 @@ async fn list_groups(
 ) -> Response {
     let query = match decode_query(query).and_then(|query| list_query(subject(scoped), query)) {
         Ok(query) => query,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state.store.list_account_groups(query).await {
         Ok(page) => list_response(
@@ -177,7 +177,7 @@ async fn get_group(
 ) -> Response {
     let group_id = match parse_id(group_id, "accountGroupId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state
         .store
@@ -199,15 +199,15 @@ async fn create_group(
     let scoped = subject(scoped);
     let uuid = match idempotency_uuid(&headers, &scoped, ACCOUNT_GROUP_CREATE_IDEMPOTENCY_SCOPE) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let payload = match decode_json(payload) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let command = match create_command(scoped, uuid, payload) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state.store.save_account_group(command).await {
         Ok(item) => item_response(StatusCode::CREATED, AccountGroupResponse::from(item)),
@@ -224,15 +224,15 @@ async fn update_group(
 ) -> Response {
     let group_id = match parse_id(group_id, "accountGroupId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let expected_version = match parse_if_match(&headers) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let payload = match decode_json(payload) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let scoped = subject(scoped);
     let existing = match state
@@ -246,7 +246,7 @@ async fn update_group(
     };
     let command = match update_command(scoped, existing, expected_version, payload) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state.store.save_account_group(command).await {
         Ok(item) => item_response(StatusCode::OK, AccountGroupResponse::from(item)),
@@ -262,11 +262,11 @@ async fn delete_group(
 ) -> Response {
     let group_id = match parse_id(group_id, "accountGroupId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let expected_version = match parse_if_match(&headers) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state
         .store
@@ -286,7 +286,7 @@ async fn list_members(
 ) -> Response {
     let group_id = match parse_id(group_id, "accountGroupId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state
         .store
@@ -307,15 +307,15 @@ async fn replace_members(
 ) -> Response {
     let group_id = match parse_id(group_id, "accountGroupId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let expected_version = match parse_if_match(&headers) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let items = match decode_json(payload).and_then(member_inputs) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state
         .store
@@ -342,7 +342,7 @@ async fn list_resources(
 ) -> Response {
     let group_id = match parse_id(group_id, "accountGroupId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state
         .store
@@ -363,15 +363,15 @@ async fn replace_resources(
 ) -> Response {
     let group_id = match parse_id(group_id, "accountGroupId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let expected_version = match parse_if_match(&headers) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let items = match decode_json(payload).and_then(resource_inputs) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state
         .store
@@ -395,7 +395,7 @@ fn create_command(
     subject: sdkwork_clawrouter_router_service::ports::AdminUpstreamSubject,
     uuid: String,
     request: AccountGroupCreateRequest,
-) -> Result<SaveAdminUpstreamAccountGroupCommand, Response> {
+) -> RequestResult<SaveAdminUpstreamAccountGroupCommand> {
     Ok(SaveAdminUpstreamAccountGroupCommand {
         subject,
         account_group_id: None,
@@ -435,7 +435,7 @@ fn update_command(
     existing: AdminUpstreamAccountGroupItem,
     expected_version: i64,
     request: AccountGroupUpdateRequest,
-) -> Result<SaveAdminUpstreamAccountGroupCommand, Response> {
+) -> RequestResult<SaveAdminUpstreamAccountGroupCommand> {
     Ok(SaveAdminUpstreamAccountGroupCommand {
         subject,
         account_group_id: Some(existing.id),
@@ -485,7 +485,7 @@ fn update_command(
 
 fn member_inputs(
     request: MemberReplaceRequest,
-) -> Result<Vec<AdminUpstreamAccountGroupMemberInput>, Response> {
+) -> RequestResult<Vec<AdminUpstreamAccountGroupMemberInput>> {
     ensure_count(request.items.len(), "members")?;
     request
         .items
@@ -508,7 +508,7 @@ fn member_inputs(
 
 fn resource_inputs(
     request: ResourceReplaceRequest,
-) -> Result<Vec<AdminUpstreamResourceInput>, Response> {
+) -> RequestResult<Vec<AdminUpstreamResourceInput>> {
     ensure_count(request.items.len(), "resources")?;
     request
         .items
@@ -546,7 +546,7 @@ fn resource_inputs(
         .collect()
 }
 
-fn group_type(value: String) -> Result<String, Response> {
+fn group_type(value: String) -> RequestResult<String> {
     let value = required_text(value, "groupType", 32)?;
     if !matches!(value.as_str(), "shared" | "dedicated") {
         return Err(problem(
@@ -557,7 +557,7 @@ fn group_type(value: String) -> Result<String, Response> {
     Ok(value)
 }
 
-fn routing_strategy(value: String) -> Result<String, Response> {
+fn routing_strategy(value: String) -> RequestResult<String> {
     let value = required_text(value, "routingStrategy", 32)?;
     if !matches!(
         value.as_str(),
@@ -571,7 +571,7 @@ fn routing_strategy(value: String) -> Result<String, Response> {
     Ok(value)
 }
 
-fn fallback_mode(value: String) -> Result<String, Response> {
+fn fallback_mode(value: String) -> RequestResult<String> {
     let value = required_text(value, "fallbackMode", 32)?;
     if !matches!(
         value.as_str(),
@@ -585,7 +585,7 @@ fn fallback_mode(value: String) -> Result<String, Response> {
     Ok(value)
 }
 
-fn status(value: i32) -> Result<i32, Response> {
+fn status(value: i32) -> RequestResult<i32> {
     if !matches!(value, 0 | 1) {
         return Err(problem(
             SdkWorkResultCode::InvalidParameter,
@@ -595,7 +595,7 @@ fn status(value: i32) -> Result<i32, Response> {
     Ok(value)
 }
 
-fn non_negative(value: i32, field: &str) -> Result<i32, Response> {
+fn non_negative(value: i32, field: &str) -> RequestResult<i32> {
     if value < 0 {
         return Err(problem(
             SdkWorkResultCode::InvalidParameter,
@@ -605,7 +605,7 @@ fn non_negative(value: i32, field: &str) -> Result<i32, Response> {
     Ok(value)
 }
 
-fn ensure_count(count: usize, field: &str) -> Result<(), Response> {
+fn ensure_count(count: usize, field: &str) -> RequestResult<()> {
     if count > MAX_NESTED_ITEMS {
         return Err(problem(
             SdkWorkResultCode::InvalidParameter,

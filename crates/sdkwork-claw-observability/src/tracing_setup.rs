@@ -427,10 +427,10 @@ mod tests {
             config.log_filter.as_deref()
         );
         assert_eq!(LogFormat::Json, config.log_format);
-        assert_eq!(false, config.log_ansi);
-        assert_eq!(true, config.log_target);
-        assert_eq!(true, config.log_thread_names);
-        assert_eq!(false, config.log_thread_ids);
+        assert!(!config.log_ansi);
+        assert!(config.log_target);
+        assert!(config.log_thread_names);
+        assert!(!config.log_thread_ids);
     }
 
     #[test]

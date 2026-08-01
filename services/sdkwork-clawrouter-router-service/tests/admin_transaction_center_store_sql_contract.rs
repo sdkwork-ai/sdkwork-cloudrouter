@@ -36,63 +36,60 @@ fn transaction_center_postgres_provider_json_projection_tolerates_blank_text_col
 
 #[test]
 fn transaction_center_sql_stores_keep_tenant_rows_before_global_seed_fallback() {
-    for (label, source) in [("postgres", POSTGRES_STORE)] {
-        assert!(
-            source.contains("tenant_id IN (CAST(") && source.contains(", '0')"),
-            "{label} transaction center store must query tenant rows plus global seed rows"
-        );
-        assert!(
-            source.contains("WHEN tenant_id = CAST(")
-                || source.contains("WHEN c.tenant_id = CAST(")
-                || source.contains("WHEN r.tenant_id = CAST("),
-            "{label} transaction center store must sort tenant rows ahead of global seed rows"
-        );
-    }
+    let source = POSTGRES_STORE;
+    assert!(
+        source.contains("tenant_id IN (CAST(") && source.contains(", '0')"),
+        "postgres transaction center store must query tenant rows plus global seed rows"
+    );
+    assert!(
+        source.contains("WHEN tenant_id = CAST(")
+            || source.contains("WHEN c.tenant_id = CAST(")
+            || source.contains("WHEN r.tenant_id = CAST("),
+        "postgres transaction center store must sort tenant rows ahead of global seed rows"
+    );
 }
 
 #[test]
 fn transaction_center_sql_stores_do_not_hide_missing_standard_tables() {
-    for (label, source) in [("postgres", POSTGRES_STORE)] {
-        assert!(
-            !source.contains("table_exists("),
-            "{label} transaction center store must fail fast when a standard table is missing"
-        );
-        assert!(
-            !source.contains("empty_collection(") && !source.contains("empty_child_collection("),
-            "{label} transaction center store must not silently convert schema defects to empty pages"
-        );
-    }
+    let source = POSTGRES_STORE;
+    assert!(
+        !source.contains("table_exists("),
+        "postgres transaction center store must fail fast when a standard table is missing"
+    );
+    assert!(
+        !source.contains("empty_collection(") && !source.contains("empty_child_collection("),
+        "postgres transaction center store must not silently convert schema defects to empty pages"
+    );
 }
 
 #[test]
 fn transaction_center_provider_account_create_uses_command_scoped_idempotency() {
-    for (label, source) in [("postgres", POSTGRES_STORE)] {
-        assert!(
-            source.contains("payment_provider_account_idempotency_id"),
-            "{label} store must isolate provider account command idempotency in a named helper"
-        );
-        assert!(
-            source.contains("\"payment-provider-account-command\""),
-            "{label} store must use a command-scoped id namespace"
-        );
-        let helper = source
-            .split("fn payment_provider_account_idempotency_id")
-            .nth(1)
-            .unwrap_or_default()
-            .split("fn ensure_payment_provider_account_replay_matches")
-            .next()
-            .unwrap_or_default();
-        assert!(
-            helper.contains("command.subject.tenant_id")
-                && helper.contains("command.subject.organization_id")
-                && helper.contains("command.idempotency_key"),
-            "{label} command idempotency must include tenant, organization, and Idempotency-Key"
-        );
-        assert!(
-            !helper.contains("command.account_no"),
-            "{label} command idempotency must not include mutable payload fields such as accountNo"
-        );
-    }
+    let source = POSTGRES_STORE;
+    assert!(
+        source.contains("payment_provider_account_idempotency_id"),
+        "postgres store must isolate provider account command idempotency in a named helper"
+    );
+    assert!(
+        source.contains("\"payment-provider-account-command\""),
+        "postgres store must use a command-scoped id namespace"
+    );
+    let helper = source
+        .split("fn payment_provider_account_idempotency_id")
+        .nth(1)
+        .unwrap_or_default()
+        .split("fn ensure_payment_provider_account_replay_matches")
+        .next()
+        .unwrap_or_default();
+    assert!(
+        helper.contains("command.subject.tenant_id")
+            && helper.contains("command.subject.organization_id")
+            && helper.contains("command.idempotency_key"),
+        "postgres command idempotency must include tenant, organization, and Idempotency-Key"
+    );
+    assert!(
+        !helper.contains("command.account_no"),
+        "postgres command idempotency must not include mutable payload fields such as accountNo"
+    );
 }
 
 #[test]
@@ -206,16 +203,15 @@ fn transaction_center_mainstream_payment_supplier_codes_match_aggregate_contract
 
 #[test]
 fn transaction_center_sql_stores_persist_rotated_at_from_provider_account_command() {
-    for (label, source) in [("postgres", POSTGRES_STORE)] {
-        assert!(
-            source.contains("command.rotated_at.as_deref()"),
-            "{label} store must persist rotatedAt from the provider account command"
-        );
-        assert!(
-            source.contains("(\"rotatedAt\", command.rotated_at.as_deref())"),
-            "{label} store must include rotatedAt in provider account idempotent replay checks"
-        );
-    }
+    let source = POSTGRES_STORE;
+    assert!(
+        source.contains("command.rotated_at.as_deref()"),
+        "postgres store must persist rotatedAt from the provider account command"
+    );
+    assert!(
+        source.contains("(\"rotatedAt\", command.rotated_at.as_deref())"),
+        "postgres store must include rotatedAt in provider account idempotent replay checks"
+    );
 }
 
 #[test]
@@ -224,123 +220,90 @@ fn transaction_center_provider_account_projection_exposes_sdk_note_from_audit_su
         POSTGRES_STORE.contains("audit.change_summary->>'note'"),
         "postgres provider account projection must expose SDK note from audit change_summary"
     );
-    for (label, source) in [("postgres", POSTGRES_STORE)] {
-        assert!(
-            source.contains("'payments.provider_account.create'"),
-            "{label} provider account note projection must scope audit reads to create events"
-        );
-    }
+    assert!(
+        POSTGRES_STORE.contains("'payments.provider_account.create'"),
+        "postgres provider account note projection must scope audit reads to create events"
+    );
 }
 
 #[test]
 fn transaction_center_provider_account_create_writes_ops_audit_log() {
-    for (label, source) in [("postgres", POSTGRES_STORE)] {
-        assert!(
-            source.contains("PAYMENT_PROVIDER_ACCOUNT_AUDIT_ACTION"),
-            "{label} store must name the provider account audit action"
-        );
-        assert!(
-            !source.contains("PAYMENT_PROVIDER_ACCOUNT_CREATE_AUDIT_ACTION"),
-            "{label} store must use the canonical provider account audit action name directly"
-        );
-        assert!(
-            source.contains("payments.provider_account.create"),
-            "{label} store must use the standard provider account create audit action"
-        );
-        assert!(
-            source.contains("INSERT INTO ops_audit_log"),
-            "{label} store must write the ops audit table declared by the backend contract"
-        );
-        assert!(
-            source.contains("target_uuid"),
-            "{label} store must bind string provider account ids through target_uuid"
-        );
-        assert!(
-            source.contains("WHERE NOT EXISTS"),
-            "{label} store must make audit writes idempotent for command replays"
-        );
-        assert!(
-            source.contains("\"clientRequestNo\": command.client_request_no")
-                && source.contains("\"note\": command.note"),
-            "{label} store must persist SDK request metadata in the provider account audit summary"
-        );
-        assert!(
-            source.contains("ensure_payment_provider_account_replay_audit_matches"),
-            "{label} store must verify audit-backed request metadata during idempotent replays"
-        );
-        let audit_replay = source
-            .split("fn ensure_payment_provider_account_replay_matches")
-            .nth(1)
-            .unwrap_or_default();
-        assert!(
-            audit_replay.contains("(\"clientRequestNo\", command.client_request_no.as_deref())")
-                && audit_replay.contains("(\"note\", command.note.as_deref())"),
-            "{label} store must reject provider account replays that mutate SDK request metadata"
-        );
-    }
+    let source = POSTGRES_STORE;
+    assert!(source.contains("PAYMENT_PROVIDER_ACCOUNT_AUDIT_ACTION"));
+    assert!(!source.contains("PAYMENT_PROVIDER_ACCOUNT_CREATE_AUDIT_ACTION"));
+    assert!(source.contains("payments.provider_account.create"));
+    assert!(source.contains("INSERT INTO ops_audit_log"));
+    assert!(source.contains("target_uuid"));
+    assert!(source.contains("WHERE NOT EXISTS"));
+    assert!(
+        source.contains("\"clientRequestNo\": command.client_request_no")
+            && source.contains("\"note\": command.note"),
+        "postgres store must persist SDK request metadata in the provider account audit summary"
+    );
+    assert!(
+        source.contains("ensure_payment_provider_account_replay_audit_matches"),
+        "postgres store must verify audit-backed request metadata during idempotent replays"
+    );
+    let audit_replay = source
+        .split("fn ensure_payment_provider_account_replay_matches")
+        .nth(1)
+        .unwrap_or_default();
+    assert!(
+        audit_replay.contains("(\"clientRequestNo\", command.client_request_no.as_deref())")
+            && audit_replay.contains("(\"note\", command.note.as_deref())"),
+        "postgres store must reject provider account replays that mutate SDK request metadata"
+    );
 }
 
 #[test]
 fn transaction_center_payment_route_rule_projection_matches_generated_item_contract() {
-    for (label, source) in [("postgres", POSTGRES_STORE)] {
-        assert!(
-            source.contains("fallbackChannelId"),
-            "{label} store must expose fallbackChannelId for CommercePaymentRouteRuleItem"
-        );
-        assert!(
-            source.contains("fallbackEnabled"),
-            "{label} store must expose fallbackEnabled for CommercePaymentRouteRuleItem"
-        );
-    }
+    assert!(POSTGRES_STORE.contains("fallbackChannelId"));
+    assert!(POSTGRES_STORE.contains("fallbackEnabled"));
 }
 
 #[test]
 fn transaction_center_payment_provider_and_method_projections_match_generated_item_contracts() {
-    for (label, source) in [("postgres", POSTGRES_STORE)] {
-        for field in [
-            "supportedCountries",
-            "supportedCurrencies",
-            "capabilities",
-            "methodType",
-            "checkoutScenes",
-        ] {
-            assert!(
-                source.contains(field),
-                "{label} store must expose {field} required by generated payment SDK item contracts"
-            );
-        }
-    }
-    for (label, source) in [("postgres", POSTGRES_STORE)] {
+    let source = POSTGRES_STORE;
+    for field in [
+        "supportedCountries",
+        "supportedCurrencies",
+        "capabilities",
+        "methodType",
+        "checkoutScenes",
+    ] {
         assert!(
-            source.contains("NULLIF(provider, 'wallet_balance')"),
-            "{label} payment method projection must expose wallet_balance providerCode as null to match the SDK enum"
+            source.contains(field),
+            "postgres store must expose {field} required by generated payment SDK item contracts"
         );
     }
+    assert!(
+        source.contains("NULLIF(provider, 'wallet_balance')"),
+        "postgres payment method projection must expose wallet_balance providerCode as null to match the SDK enum"
+    );
 }
 
 #[test]
 fn transaction_center_payment_runtime_projection_standardizes_method_provider_and_subject_codes() {
-    for (label, source) in [("postgres", POSTGRES_STORE)] {
-        for expected in [
-            "WHEN pi.provider = 'stripe' THEN 'card'",
-            "WHEN pa.provider = 'stripe' THEN 'card'",
-            "WHEN pi.provider = 'card' THEN 'stripe'",
-            "WHEN pa.provider = 'card' THEN 'stripe'",
-            "WHEN pi.provider IN ('wechat', 'wechatpay') THEN 'wechat_pay'",
-            "WHEN pa.provider IN ('wechat', 'wechatpay') THEN 'wechat_pay'",
-            "WHEN 'membership' THEN 'membership_purchase'",
-        ] {
-            assert!(
-                source.contains(expected),
-                "{label} payment runtime projection must include normalization fragment {expected}"
-            );
-        }
+    let source = POSTGRES_STORE;
+    for expected in [
+        "WHEN pi.provider = 'stripe' THEN 'card'",
+        "WHEN pa.provider = 'stripe' THEN 'card'",
+        "WHEN pi.provider = 'card' THEN 'stripe'",
+        "WHEN pa.provider = 'card' THEN 'stripe'",
+        "WHEN pi.provider IN ('wechat', 'wechatpay') THEN 'wechat_pay'",
+        "WHEN pa.provider IN ('wechat', 'wechatpay') THEN 'wechat_pay'",
+        "WHEN 'membership' THEN 'membership_purchase'",
+    ] {
         assert!(
-            !source.contains("'providerCode', pi.provider")
-                && !source.contains("'providerCode', pa.provider")
-                && !source.contains("pi.provider AS providerCode")
-                && !source.contains("pa.provider AS providerCode"),
-            "{label} payment runtime projection must not expose raw provider as providerCode"
+            source.contains(expected),
+            "postgres payment runtime projection must include normalization fragment {expected}"
         );
     }
+    assert!(
+        !source.contains("'providerCode', pi.provider")
+            && !source.contains("'providerCode', pa.provider")
+            && !source.contains("pi.provider AS providerCode")
+            && !source.contains("pa.provider AS providerCode"),
+        "postgres payment runtime projection must not expose raw provider as providerCode"
+    );
 }

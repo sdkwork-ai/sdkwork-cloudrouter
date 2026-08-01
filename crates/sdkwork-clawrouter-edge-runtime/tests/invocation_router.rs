@@ -420,7 +420,7 @@ fn catalog_with_hashed_api_key_and_base_url(
         DecimalValue::parse("1.000000").unwrap(),
         DecimalValue::parse("1.100000").unwrap(),
     ));
-    catalog.add_api_key(GatewayApiKey::new(101, 10, "sk-live", &key_hash).with_owner(10, 20, 30));
+    catalog.add_api_key(GatewayApiKey::new(101, 10, "sk-live", key_hash).with_owner(10, 20, 30));
     add_price_pair(
         &mut catalog,
         BillingMeter::LlmInputToken,
@@ -1417,11 +1417,12 @@ async fn invocation_router_provider_native_adapter_uses_standard_chain_and_recor
             Arc::new(catalog_with_hashed_api_key(&key_hash)),
             hasher,
             Arc::new(sdkwork_clawrouter_edge_runtime::InvocationHttpDispatcher::for_development()),
-            Some(secret_resolver()),
-            None,
-            Some(usage_recorder.clone()),
-            Some(provider_adapter_config(&adapter_base_url)),
-            None,
+            sdkwork_clawrouter_edge_runtime::InvocationRouterOptions {
+                secret_resolver: Some(secret_resolver()),
+                usage_recorder: Some(usage_recorder.clone()),
+                provider_adapter_config: Some(provider_adapter_config(&adapter_base_url)),
+                ..sdkwork_clawrouter_edge_runtime::InvocationRouterOptions::default()
+            },
         );
 
     let response = router

@@ -12,7 +12,7 @@ use crate::infrastructure::sql::admin_marketing_recharge::{
     canonical_decimal_string, parse_recharge_settings_model,
     recharge_package_item as build_recharge_package_item, recharge_package_name,
     recharge_settings_to_item, recharge_sku_specs, serialize_recharge_settings_remark,
-    RechargeSettingsModel, RECHARGE_RULE_NO,
+    RechargePackageRecord, RechargeSettingsModel, RECHARGE_RULE_NO,
 };
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
@@ -60,6 +60,34 @@ struct RechargePackageSkuBinding {
     currency_code: String,
 }
 
+#[derive(Debug, Clone, Copy)]
+struct RechargeSkuMutation<'a> {
+    requested_at: &'a str,
+    tenant_id: i64,
+    organization_id: i64,
+    product_id: &'a str,
+    price_amount: &'a str,
+    currency_code: &'a str,
+    status: AdminRechargePackageStatus,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct MarketingAuditContext<'a> {
+    audit_log_uuid: &'a str,
+    request_id: &'a str,
+    subject: AdminMarketingSubject,
+}
+
+impl<'a> MarketingAuditContext<'a> {
+    fn new(audit_log_uuid: &'a str, request_id: &'a str, subject: AdminMarketingSubject) -> Self {
+        Self {
+            audit_log_uuid,
+            request_id,
+            subject,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct PostgresAdminMarketingStore {
     pool: PgPool,
@@ -90,12 +118,11 @@ impl AdminMarketingStore for PostgresAdminMarketingStore {
             let offer_id = create_promotion_offer(&mut tx, &command).await?;
             insert_audit_log_for_target_uuid(
                 &mut tx,
-                &command.audit_log_uuid,
-                &command.request_id,
-                command.subject.tenant_id,
-                command.subject.organization_id,
-                command.subject.operator_id,
-                command.subject.operator_type,
+                MarketingAuditContext::new(
+                    &command.audit_log_uuid,
+                    &command.request_id,
+                    command.subject,
+                ),
                 "create_promotion_offer",
                 TARGET_TYPE_PROMOTION_OFFER,
                 &offer_id,
@@ -136,12 +163,11 @@ impl AdminMarketingStore for PostgresAdminMarketingStore {
             if deleted {
                 insert_audit_log_for_target_uuid(
                     &mut tx,
-                    &command.audit_log_uuid,
-                    &command.request_id,
-                    command.subject.tenant_id,
-                    command.subject.organization_id,
-                    command.subject.operator_id,
-                    command.subject.operator_type,
+                    MarketingAuditContext::new(
+                        &command.audit_log_uuid,
+                        &command.request_id,
+                        command.subject,
+                    ),
                     "delete_promotion_offer",
                     TARGET_TYPE_PROMOTION_OFFER,
                     &command.offer_id,
@@ -174,12 +200,11 @@ impl AdminMarketingStore for PostgresAdminMarketingStore {
             }
             insert_audit_log_for_target_uuid(
                 &mut tx,
-                &command.audit_log_uuid,
-                &command.request_id,
-                command.subject.tenant_id,
-                command.subject.organization_id,
-                command.subject.operator_id,
-                command.subject.operator_type,
+                MarketingAuditContext::new(
+                    &command.audit_log_uuid,
+                    &command.request_id,
+                    command.subject,
+                ),
                 "update_promotion_offer",
                 TARGET_TYPE_PROMOTION_OFFER,
                 &command.offer_id,
@@ -241,12 +266,11 @@ impl AdminMarketingStore for PostgresAdminMarketingStore {
             update_promotion_offer_received_count(&mut tx, &command).await?;
             insert_audit_log_for_target_uuid(
                 &mut tx,
-                &command.audit_log_uuid,
-                &command.request_id,
-                command.subject.tenant_id,
-                command.subject.organization_id,
-                command.subject.operator_id,
-                command.subject.operator_type,
+                MarketingAuditContext::new(
+                    &command.audit_log_uuid,
+                    &command.request_id,
+                    command.subject,
+                ),
                 "generate_promotion_coupon_stock",
                 TARGET_TYPE_PROMOTION_COUPON_STOCK,
                 &stock_id,
@@ -301,12 +325,11 @@ impl AdminMarketingStore for PostgresAdminMarketingStore {
                 }
                 insert_audit_log_for_target_uuid(
                     &mut tx,
-                    &command.audit_log_uuid,
-                    &command.request_id,
-                    command.subject.tenant_id,
-                    command.subject.organization_id,
-                    command.subject.operator_id,
-                    command.subject.operator_type,
+                    MarketingAuditContext::new(
+                        &command.audit_log_uuid,
+                        &command.request_id,
+                        command.subject,
+                    ),
                     "update_promotion_code_status",
                     TARGET_TYPE_PROMOTION_CODE,
                     &command.code_id,
@@ -387,12 +410,11 @@ impl AdminMarketingStore for PostgresAdminMarketingStore {
             sync_recharge_package_product_for_create(&mut tx, &command, package_sequence).await?;
             insert_audit_log(
                 &mut tx,
-                &command.audit_log_uuid,
-                &command.request_id,
-                command.subject.tenant_id,
-                command.subject.organization_id,
-                command.subject.operator_id,
-                command.subject.operator_type,
+                MarketingAuditContext::new(
+                    &command.audit_log_uuid,
+                    &command.request_id,
+                    command.subject,
+                ),
                 "create_recharge_package",
                 TARGET_TYPE_RECHARGE_PACKAGE,
                 0,
@@ -439,12 +461,11 @@ impl AdminMarketingStore for PostgresAdminMarketingStore {
             sync_recharge_package_product_for_update(&mut tx, &command).await?;
             insert_audit_log(
                 &mut tx,
-                &command.audit_log_uuid,
-                &command.request_id,
-                command.subject.tenant_id,
-                command.subject.organization_id,
-                command.subject.operator_id,
-                command.subject.operator_type,
+                MarketingAuditContext::new(
+                    &command.audit_log_uuid,
+                    &command.request_id,
+                    command.subject,
+                ),
                 "update_recharge_package",
                 TARGET_TYPE_RECHARGE_PACKAGE,
                 0,
@@ -489,12 +510,11 @@ impl AdminMarketingStore for PostgresAdminMarketingStore {
                 disable_recharge_product_and_sku_for_amount(&mut tx, &command).await?;
                 insert_audit_log(
                     &mut tx,
-                    &command.audit_log_uuid,
-                    &command.request_id,
-                    command.subject.tenant_id,
-                    command.subject.organization_id,
-                    command.subject.operator_id,
-                    command.subject.operator_type,
+                    MarketingAuditContext::new(
+                        &command.audit_log_uuid,
+                        &command.request_id,
+                        command.subject,
+                    ),
                     "delete_recharge_package",
                     TARGET_TYPE_RECHARGE_PACKAGE,
                     0,
@@ -527,12 +547,11 @@ impl AdminMarketingStore for PostgresAdminMarketingStore {
             let exchange_rule_id = upsert_exchange_rule(&mut tx, &command).await?;
             insert_audit_log_for_target_uuid(
                 &mut tx,
-                &command.audit_log_uuid,
-                &command.request_id,
-                command.subject.tenant_id,
-                command.subject.organization_id,
-                command.subject.operator_id,
-                command.subject.operator_type,
+                MarketingAuditContext::new(
+                    &command.audit_log_uuid,
+                    &command.request_id,
+                    command.subject,
+                ),
                 "update_exchange_rule",
                 TARGET_TYPE_EXCHANGE_RULE,
                 &exchange_rule_id,
@@ -574,12 +593,11 @@ impl AdminMarketingStore for PostgresAdminMarketingStore {
             let settings = upsert_recharge_settings(&mut tx, &command).await?;
             insert_audit_log_for_target_uuid(
                 &mut tx,
-                &command.audit_log_uuid,
-                &command.request_id,
-                command.subject.tenant_id,
-                command.subject.organization_id,
-                command.subject.operator_id,
-                command.subject.operator_type,
+                MarketingAuditContext::new(
+                    &command.audit_log_uuid,
+                    &command.request_id,
+                    command.subject,
+                ),
                 "update_recharge_settings",
                 TARGET_TYPE_RECHARGE_SETTINGS,
                 RECHARGE_RULE_NO,
@@ -1285,7 +1303,7 @@ async fn update_promotion_code_status(
     let Some(fact) = load_promotion_code_status_fact(tx, command).await? else {
         return Ok(false);
     };
-    ensure_promotion_code_status_transition(&fact, &status)?;
+    ensure_promotion_code_status_transition(&fact, status)?;
     let result = if status == PromotionCouponStatus::Redeemed.as_str() {
         sqlx::query(
             r#"
@@ -1299,7 +1317,7 @@ async fn update_promotion_code_status(
               AND status <> 'disabled'
             "#,
         )
-        .bind(&status)
+        .bind(status)
         .bind(&command.requested_at)
         .bind(&command.requested_at)
         .bind(&command.code_id)
@@ -1320,7 +1338,7 @@ async fn update_promotion_code_status(
               AND status <> 'disabled'
             "#,
         )
-        .bind(&status)
+        .bind(status)
         .bind(&command.requested_at)
         .bind(&command.code_id)
         .bind(command.subject.tenant_id)
@@ -1878,14 +1896,16 @@ async fn seed_recharge_packages(
         .await?;
         insert_recharge_sku_row(
             tx,
-            &requested_at,
-            tenant_id,
-            organization_id,
             sequence,
-            &product_id,
-            package.price_amount,
-            package.currency_code,
-            status,
+            RechargeSkuMutation {
+                requested_at: &requested_at,
+                tenant_id,
+                organization_id,
+                product_id: &product_id,
+                price_amount: package.price_amount,
+                currency_code: package.currency_code,
+                status,
+            },
         )
         .await?;
         refresh_recharge_product_status(tx, &product_id, &requested_at, &request_id).await?;
@@ -2418,14 +2438,16 @@ async fn sync_recharge_package_product_for_create(
     .await?;
     insert_recharge_sku_row(
         tx,
-        &command.requested_at,
-        command.subject.tenant_id,
-        command.subject.organization_id,
         sequence,
-        &product_id,
-        &command.price_amount,
-        &command.currency_code,
-        command.status,
+        RechargeSkuMutation {
+            requested_at: &command.requested_at,
+            tenant_id: command.subject.tenant_id,
+            organization_id: command.subject.organization_id,
+            product_id: &product_id,
+            price_amount: &command.price_amount,
+            currency_code: &command.currency_code,
+            status: command.status,
+        },
     )
     .await?;
     refresh_recharge_product_status(tx, &product_id, &command.requested_at, &command.request_id)
@@ -2470,13 +2492,15 @@ async fn sync_recharge_package_product_for_update(
     let updated = update_recharge_sku_row_by_id(
         tx,
         &binding.sku_id,
-        command.subject.tenant_id,
-        command.subject.organization_id,
-        &product_id,
-        &command.requested_at,
-        &command.price_amount,
-        &command.currency_code,
-        command.status,
+        RechargeSkuMutation {
+            requested_at: &command.requested_at,
+            tenant_id: command.subject.tenant_id,
+            organization_id: command.subject.organization_id,
+            product_id: &product_id,
+            price_amount: &command.price_amount,
+            currency_code: &command.currency_code,
+            status: command.status,
+        },
     )
     .await?;
     if !updated {
@@ -2644,14 +2668,8 @@ async fn insert_recharge_product_row(
 
 async fn insert_recharge_sku_row(
     tx: &mut Transaction<'_, Postgres>,
-    requested_at: &str,
-    tenant_id: i64,
-    organization_id: i64,
     sequence: i64,
-    product_id: &str,
-    price_amount: &str,
-    currency_code: &str,
-    status: AdminRechargePackageStatus,
+    mutation: RechargeSkuMutation<'_>,
 ) -> DomainResult<()> {
     sqlx::query(
         r#"
@@ -2671,17 +2689,27 @@ async fn insert_recharge_sku_row(
             updated_at = EXCLUDED.updated_at
         "#,
     )
-    .bind(recharge_sku_id(tenant_id, organization_id, sequence))
-    .bind(tenant_id)
-    .bind(organization_id)
-    .bind(product_id)
+    .bind(recharge_sku_id(
+        mutation.tenant_id,
+        mutation.organization_id,
+        sequence,
+    ))
+    .bind(mutation.tenant_id)
+    .bind(mutation.organization_id)
+    .bind(mutation.product_id)
     .bind(recharge_sku_no(sequence))
-    .bind(recharge_package_name(price_amount, currency_code))
-    .bind(price_amount)
-    .bind(currency_code)
-    .bind(recharge_package_status_label(status))
-    .bind(recharge_sku_specs(price_amount, currency_code))
-    .bind(requested_at)
+    .bind(recharge_package_name(
+        mutation.price_amount,
+        mutation.currency_code,
+    ))
+    .bind(mutation.price_amount)
+    .bind(mutation.currency_code)
+    .bind(recharge_package_status_label(mutation.status))
+    .bind(recharge_sku_specs(
+        mutation.price_amount,
+        mutation.currency_code,
+    ))
+    .bind(mutation.requested_at)
     .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to create recharge sku", error))?;
@@ -2691,13 +2719,7 @@ async fn insert_recharge_sku_row(
 async fn update_recharge_sku_row_by_id(
     tx: &mut Transaction<'_, Postgres>,
     sku_id: &str,
-    tenant_id: i64,
-    organization_id: i64,
-    product_id: &str,
-    requested_at: &str,
-    price_amount: &str,
-    currency_code: &str,
-    status: AdminRechargePackageStatus,
+    mutation: RechargeSkuMutation<'_>,
 ) -> DomainResult<bool> {
     let result = sqlx::query(
         r#"
@@ -2719,16 +2741,22 @@ async fn update_recharge_sku_row_by_id(
               )
         "#,
     )
-    .bind(product_id)
-    .bind(recharge_package_name(price_amount, currency_code))
-    .bind(price_amount)
-    .bind(currency_code)
-    .bind(recharge_package_status_label(status))
-    .bind(recharge_sku_specs(price_amount, currency_code))
-    .bind(requested_at)
+    .bind(mutation.product_id)
+    .bind(recharge_package_name(
+        mutation.price_amount,
+        mutation.currency_code,
+    ))
+    .bind(mutation.price_amount)
+    .bind(mutation.currency_code)
+    .bind(recharge_package_status_label(mutation.status))
+    .bind(recharge_sku_specs(
+        mutation.price_amount,
+        mutation.currency_code,
+    ))
+    .bind(mutation.requested_at)
     .bind(sku_id)
-    .bind(tenant_id)
-    .bind(organization_id)
+    .bind(mutation.tenant_id)
+    .bind(mutation.organization_id)
     .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to update recharge sku", error))?;
@@ -2956,12 +2984,7 @@ async fn list_payment_attempts(
 
 async fn insert_audit_log(
     tx: &mut Transaction<'_, Postgres>,
-    audit_log_uuid: &str,
-    request_id: &str,
-    tenant_id: i64,
-    organization_id: i64,
-    operator_id: i64,
-    operator_type: i32,
+    context: MarketingAuditContext<'_>,
     action: &'static str,
     target_type: i32,
     target_id: i64,
@@ -2976,15 +2999,15 @@ async fn insert_audit_log(
         "#,
     )
     .bind(next_claw_runtime_id("ops_audit_log")?)
-    .bind(audit_log_uuid)
-    .bind(tenant_id)
-    .bind(organization_id)
+    .bind(context.audit_log_uuid)
+    .bind(context.subject.tenant_id)
+    .bind(context.subject.organization_id)
     .bind(action)
     .bind(target_type)
     .bind(target_id)
-    .bind(request_id)
-    .bind(operator_id)
-    .bind(operator_type)
+    .bind(context.request_id)
+    .bind(context.subject.operator_id)
+    .bind(context.subject.operator_type)
     .bind(change_summary.to_string())
     .execute(&mut **tx)
     .await
@@ -2994,12 +3017,7 @@ async fn insert_audit_log(
 
 async fn insert_audit_log_for_target_uuid(
     tx: &mut Transaction<'_, Postgres>,
-    audit_log_uuid: &str,
-    request_id: &str,
-    tenant_id: i64,
-    organization_id: i64,
-    operator_id: i64,
-    operator_type: i32,
+    context: MarketingAuditContext<'_>,
     action: &'static str,
     target_type: i32,
     target_uuid: &str,
@@ -3014,15 +3032,15 @@ async fn insert_audit_log_for_target_uuid(
         "#,
     )
     .bind(next_claw_runtime_id("ops_audit_log")?)
-    .bind(audit_log_uuid)
-    .bind(tenant_id)
-    .bind(organization_id)
+    .bind(context.audit_log_uuid)
+    .bind(context.subject.tenant_id)
+    .bind(context.subject.organization_id)
     .bind(action)
     .bind(target_type)
     .bind(target_uuid)
-    .bind(request_id)
-    .bind(operator_id)
-    .bind(operator_type)
+    .bind(context.request_id)
+    .bind(context.subject.operator_id)
+    .bind(context.subject.operator_type)
     .bind(change_summary.to_string())
     .execute(&mut **tx)
     .await
@@ -3343,19 +3361,21 @@ fn recharge_package_from_row(
         .to_ascii_uppercase();
     let bonus_points = integer_cell(row, "bonus_points").max(0);
     build_recharge_package_item(
-        string_cell(row, "id"),
-        string_cell(row, "package_no"),
-        string_cell(row, "name"),
-        string_cell(row, "sku_id"),
-        price_amount,
-        if currency_code.is_empty() {
-            "CNY".to_owned()
-        } else {
-            currency_code
+        RechargePackageRecord {
+            id: string_cell(row, "id"),
+            package_no: string_cell(row, "package_no"),
+            name: string_cell(row, "name"),
+            sku_id: string_cell(row, "sku_id"),
+            price_amount,
+            currency_code: if currency_code.is_empty() {
+                "CNY".to_owned()
+            } else {
+                currency_code
+            },
+            bonus_points,
+            status: string_cell(row, "status"),
+            updated_at: string_cell(row, "updated_at"),
         },
-        bonus_points,
-        string_cell(row, "status"),
-        string_cell(row, "updated_at"),
         settings,
     )
 }

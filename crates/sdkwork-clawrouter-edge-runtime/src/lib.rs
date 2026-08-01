@@ -32,6 +32,7 @@ pub use invocation_router::{
     invocation_router_with_full_pipeline_and_provider_adapter_config,
     invocation_router_with_full_pipeline_and_trust_forwarded_headers,
     invocation_router_with_full_pipeline_provider_adapter_and_tenant_inflight,
+    InvocationRouterOptions,
 };
 #[rustfmt::skip]
 pub use openai_passthrough_routes::{openai_compatible_passthrough_paths, openai_method_passthrough_paths, stored_chat_completion_passthrough_paths};

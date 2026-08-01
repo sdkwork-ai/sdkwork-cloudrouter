@@ -28,6 +28,19 @@ const ACTION_ALLOW: i32 = 21;
 const ALLOW_PRIORITY: i32 = 10;
 const DENY_PRIORITY: i32 = 100;
 
+struct FirewallRuleMutationLog<'a> {
+    config_snapshot_uuid: &'a str,
+    audit_log_uuid: &'a str,
+    request_id: &'a str,
+    tenant_id: i64,
+    organization_id: i64,
+    operator_id: i64,
+    operator_type: i32,
+    action: &'a str,
+    target_id: i64,
+    requested_at: &'a str,
+}
+
 #[derive(Debug, Clone)]
 pub struct PostgresAdminFirewallRuleStore {
     pool: PgPool,
@@ -57,15 +70,21 @@ impl AdminFirewallRuleStore for PostgresAdminFirewallRuleStore {
                     store_error("failed to begin firewall rule transaction", error)
                 })?;
             let id = upsert_firewall_rule(&mut tx, &command).await?;
+            let mutation_log = FirewallRuleMutationLog {
+                config_snapshot_uuid: &command.config_snapshot_uuid,
+                audit_log_uuid: &command.audit_log_uuid,
+                request_id: &command.request_id,
+                tenant_id: command.subject.tenant_id,
+                organization_id: command.subject.organization_id,
+                operator_id: command.subject.operator_id,
+                operator_type: command.subject.operator_type,
+                action: "create_firewall_rule",
+                target_id: id,
+                requested_at: &command.requested_at,
+            };
             insert_config_snapshot(
                 &mut tx,
-                &command.config_snapshot_uuid,
-                &command.request_id,
-                command.subject.tenant_id,
-                command.subject.organization_id,
-                command.subject.operator_id,
-                "create_firewall_rule",
-                id,
+                &mutation_log,
                 serde_json::json!({
                     "action": "create_firewall_rule",
                     "firewallRuleId": id,
@@ -76,19 +95,11 @@ impl AdminFirewallRuleStore for PostgresAdminFirewallRuleStore {
                     "value": &command.value,
                     "reason": &command.reason
                 }),
-                &command.requested_at,
             )
             .await?;
             insert_audit_log(
                 &mut tx,
-                &command.audit_log_uuid,
-                &command.request_id,
-                command.subject.tenant_id,
-                command.subject.organization_id,
-                command.subject.operator_id,
-                command.subject.operator_type,
-                "create_firewall_rule",
-                id,
+                &mutation_log,
                 serde_json::json!({
                     "action": "create_firewall_rule",
                     "firewallRuleId": id,
@@ -100,20 +111,21 @@ impl AdminFirewallRuleStore for PostgresAdminFirewallRuleStore {
             .await?;
             record_postgres_ai_routing_config_change(
                 &mut tx,
-                firewall_rule_routing_config_change(
-                    command.subject.tenant_id,
-                    command.subject.organization_id,
-                    command.subject.operator_id,
-                    &command.request_id,
-                    &command.requested_at,
-                    "create_firewall_rule",
-                    id,
-                    serde_json::json!({
+                AiRoutingConfigChange {
+                    tenant_id: mutation_log.tenant_id,
+                    organization_id: mutation_log.organization_id,
+                    operator_id: mutation_log.operator_id,
+                    request_id: mutation_log.request_id,
+                    requested_at: mutation_log.requested_at,
+                    changed_object_type: "firewall_rule",
+                    changed_object_id: mutation_log.target_id,
+                    action: mutation_log.action,
+                    event_payload: serde_json::json!({
                         "firewallRuleId": id,
                         "type": &command.firewall_type,
                         "value": &command.value
                     }),
-                ),
+                },
             )
             .await?;
             let item = load_firewall_rule_by_id(
@@ -142,33 +154,31 @@ impl AdminFirewallRuleStore for PostgresAdminFirewallRuleStore {
                 })?;
             let deleted = soft_delete_firewall_rule(&mut tx, &command).await?;
             if deleted {
+                let mutation_log = FirewallRuleMutationLog {
+                    config_snapshot_uuid: &command.config_snapshot_uuid,
+                    audit_log_uuid: &command.audit_log_uuid,
+                    request_id: &command.request_id,
+                    tenant_id: command.subject.tenant_id,
+                    organization_id: command.subject.organization_id,
+                    operator_id: command.subject.operator_id,
+                    operator_type: command.subject.operator_type,
+                    action: "delete_firewall_rule",
+                    target_id: command.rule_id,
+                    requested_at: &command.requested_at,
+                };
                 insert_config_snapshot(
                     &mut tx,
-                    &command.config_snapshot_uuid,
-                    &command.request_id,
-                    command.subject.tenant_id,
-                    command.subject.organization_id,
-                    command.subject.operator_id,
-                    "delete_firewall_rule",
-                    command.rule_id,
+                    &mutation_log,
                     serde_json::json!({
                         "action": "delete_firewall_rule",
                         "firewallRuleId": command.rule_id,
                         "deleted": true
                     }),
-                    &command.requested_at,
                 )
                 .await?;
                 insert_audit_log(
                     &mut tx,
-                    &command.audit_log_uuid,
-                    &command.request_id,
-                    command.subject.tenant_id,
-                    command.subject.organization_id,
-                    command.subject.operator_id,
-                    command.subject.operator_type,
-                    "delete_firewall_rule",
-                    command.rule_id,
+                    &mutation_log,
                     serde_json::json!({
                         "action": "delete_firewall_rule",
                         "firewallRuleId": command.rule_id
@@ -177,19 +187,20 @@ impl AdminFirewallRuleStore for PostgresAdminFirewallRuleStore {
                 .await?;
                 record_postgres_ai_routing_config_change(
                     &mut tx,
-                    firewall_rule_routing_config_change(
-                        command.subject.tenant_id,
-                        command.subject.organization_id,
-                        command.subject.operator_id,
-                        &command.request_id,
-                        &command.requested_at,
-                        "delete_firewall_rule",
-                        command.rule_id,
-                        serde_json::json!({
+                    AiRoutingConfigChange {
+                        tenant_id: mutation_log.tenant_id,
+                        organization_id: mutation_log.organization_id,
+                        operator_id: mutation_log.operator_id,
+                        request_id: mutation_log.request_id,
+                        requested_at: mutation_log.requested_at,
+                        changed_object_type: "firewall_rule",
+                        changed_object_id: mutation_log.target_id,
+                        action: mutation_log.action,
+                        event_payload: serde_json::json!({
                             "firewallRuleId": command.rule_id,
                             "deleted": true
                         }),
-                    ),
+                    },
                 )
                 .await?;
             }
@@ -454,18 +465,14 @@ async fn load_firewall_rule_by_id(
 
 async fn insert_config_snapshot(
     tx: &mut Transaction<'_, Postgres>,
-    snapshot_uuid: &str,
-    request_id: &str,
-    tenant_id: i64,
-    organization_id: i64,
-    operator_id: i64,
-    action: &str,
-    target_id: i64,
+    mutation: &FirewallRuleMutationLog<'_>,
     payload: serde_json::Value,
-    requested_at: &str,
 ) -> DomainResult<()> {
     let payload = payload.to_string();
-    let snapshot_no = format!("firewall-rule-{target_id}-{action}-{snapshot_uuid}");
+    let snapshot_no = format!(
+        "firewall-rule-{}-{}-{}",
+        mutation.target_id, mutation.action, mutation.config_snapshot_uuid
+    );
     let id = next_claw_runtime_id("ops_config_snapshot")?;
     sqlx::query(
         r#"
@@ -475,19 +482,19 @@ async fn insert_config_snapshot(
             ($1, $2, $3, $4, $5, 1, $6, $7, $8, 'iam_gateway_risk_rule', $9::jsonb, $10::jsonb, $11, $12::timestamptz, $13, $14)
         "#,
     )
-    .bind(snapshot_uuid)
-    .bind(tenant_id)
-    .bind(organization_id)
-    .bind(operator_id)
-    .bind(request_id)
+    .bind(mutation.config_snapshot_uuid)
+    .bind(mutation.tenant_id)
+    .bind(mutation.organization_id)
+    .bind(mutation.operator_id)
+    .bind(mutation.request_id)
     .bind(snapshot_no)
     .bind(CONFIG_SCOPE_ROUTER)
     .bind(CONFIG_TYPE_FIREWALL_RULE)
-    .bind(serde_json::json!([target_id]).to_string())
+    .bind(serde_json::json!([mutation.target_id]).to_string())
     .bind(&payload)
     .bind(digest_hex(&payload))
-    .bind(requested_at)
-    .bind(operator_id)
+    .bind(mutation.requested_at)
+    .bind(mutation.operator_id)
     .bind(id)
     .execute(&mut **tx)
     .await
@@ -497,14 +504,7 @@ async fn insert_config_snapshot(
 
 async fn insert_audit_log(
     tx: &mut Transaction<'_, Postgres>,
-    audit_log_uuid: &str,
-    request_id: &str,
-    tenant_id: i64,
-    organization_id: i64,
-    operator_id: i64,
-    operator_type: i32,
-    action: &str,
-    target_id: i64,
+    mutation: &FirewallRuleMutationLog<'_>,
     change_summary: serde_json::Value,
 ) -> DomainResult<()> {
     let id = next_claw_runtime_id("ops_audit_log")?;
@@ -516,15 +516,15 @@ async fn insert_audit_log(
             ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11)
         "#,
     )
-    .bind(audit_log_uuid)
-    .bind(tenant_id)
-    .bind(organization_id)
-    .bind(action)
+    .bind(mutation.audit_log_uuid)
+    .bind(mutation.tenant_id)
+    .bind(mutation.organization_id)
+    .bind(mutation.action)
     .bind(FIREWALL_AUDIT_TARGET_TYPE)
-    .bind(target_id)
-    .bind(request_id)
-    .bind(operator_id)
-    .bind(operator_type)
+    .bind(mutation.target_id)
+    .bind(mutation.request_id)
+    .bind(mutation.operator_id)
+    .bind(mutation.operator_type)
     .bind(change_summary.to_string())
     .bind(id)
     .execute(&mut **tx)
@@ -675,27 +675,4 @@ fn store_error(context: &str, error: sqlx::Error) -> DomainError {
         }
     }
     redacted_store_error(context, error)
-}
-
-fn firewall_rule_routing_config_change<'a>(
-    tenant_id: i64,
-    organization_id: i64,
-    operator_id: i64,
-    request_id: &'a str,
-    requested_at: &'a str,
-    action: &'a str,
-    firewall_rule_id: i64,
-    event_payload: serde_json::Value,
-) -> AiRoutingConfigChange<'a> {
-    AiRoutingConfigChange {
-        tenant_id,
-        organization_id,
-        operator_id,
-        request_id,
-        requested_at,
-        changed_object_type: "firewall_rule",
-        changed_object_id: firewall_rule_id,
-        action,
-        event_payload,
-    }
 }

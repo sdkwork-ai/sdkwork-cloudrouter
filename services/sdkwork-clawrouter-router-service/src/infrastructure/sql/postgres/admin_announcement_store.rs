@@ -17,6 +17,18 @@ const MESSAGE_TYPE_INFO: i32 = 1;
 const SEVERITY_INFO: i32 = 1;
 const ANNOUNCEMENT_PRIORITY: i32 = 100;
 
+struct AnnouncementAuditLog<'a> {
+    audit_log_uuid: &'a str,
+    request_id: &'a str,
+    tenant_id: i64,
+    organization_id: i64,
+    operator_id: i64,
+    operator_type: i32,
+    action: &'static str,
+    target_id: i64,
+    change_summary: serde_json::Value,
+}
+
 #[derive(Debug, Clone)]
 pub struct PostgresAdminAnnouncementStore {
     pool: PgPool,
@@ -49,22 +61,24 @@ impl AdminAnnouncementStore for PostgresAdminAnnouncementStore {
             insert_announcement_recipient(&mut tx, id, &command).await?;
             insert_audit_log(
                 &mut tx,
-                &command.audit_log_uuid,
-                &command.request_id,
-                command.subject.tenant_id,
-                command.subject.organization_id,
-                command.subject.operator_id,
-                command.subject.operator_type,
-                "create_announcement",
-                id,
-                serde_json::json!({
+                AnnouncementAuditLog {
+                    audit_log_uuid: &command.audit_log_uuid,
+                    request_id: &command.request_id,
+                    tenant_id: command.subject.tenant_id,
+                    organization_id: command.subject.organization_id,
+                    operator_id: command.subject.operator_id,
+                    operator_type: command.subject.operator_type,
+                    action: "create_announcement",
+                    target_id: id,
+                    change_summary: serde_json::json!({
                     "action": "create_announcement",
                     "notificationId": id,
                     "title": &command.title,
                     "target": &command.target,
                     "status": &command.status,
                     "showAsPopup": command.show_as_popup
-                }),
+                    }),
+                },
             )
             .await?;
             let item = load_announcement_by_id(
@@ -103,15 +117,16 @@ impl AdminAnnouncementStore for PostgresAdminAnnouncementStore {
             }
             insert_audit_log(
                 &mut tx,
-                &command.audit_log_uuid,
-                &command.request_id,
-                command.subject.tenant_id,
-                command.subject.organization_id,
-                command.subject.operator_id,
-                command.subject.operator_type,
-                "update_announcement",
-                command.announcement_id,
-                serde_json::json!({
+                AnnouncementAuditLog {
+                    audit_log_uuid: &command.audit_log_uuid,
+                    request_id: &command.request_id,
+                    tenant_id: command.subject.tenant_id,
+                    organization_id: command.subject.organization_id,
+                    operator_id: command.subject.operator_id,
+                    operator_type: command.subject.operator_type,
+                    action: "update_announcement",
+                    target_id: command.announcement_id,
+                    change_summary: serde_json::json!({
                     "action": "update_announcement",
                     "notificationId": command.announcement_id,
                     "titleChanged": command.title.is_some(),
@@ -119,7 +134,8 @@ impl AdminAnnouncementStore for PostgresAdminAnnouncementStore {
                     "target": command.target,
                     "status": command.status,
                     "showAsPopup": command.show_as_popup
-                }),
+                    }),
+                },
             )
             .await?;
             let item = load_announcement_by_id(
@@ -149,18 +165,20 @@ impl AdminAnnouncementStore for PostgresAdminAnnouncementStore {
             if deleted {
                 insert_audit_log(
                     &mut tx,
-                    &command.audit_log_uuid,
-                    &command.request_id,
-                    command.subject.tenant_id,
-                    command.subject.organization_id,
-                    command.subject.operator_id,
-                    command.subject.operator_type,
-                    "delete_announcement",
-                    command.announcement_id,
-                    serde_json::json!({
+                    AnnouncementAuditLog {
+                        audit_log_uuid: &command.audit_log_uuid,
+                        request_id: &command.request_id,
+                        tenant_id: command.subject.tenant_id,
+                        organization_id: command.subject.organization_id,
+                        operator_id: command.subject.operator_id,
+                        operator_type: command.subject.operator_type,
+                        action: "delete_announcement",
+                        target_id: command.announcement_id,
+                        change_summary: serde_json::json!({
                         "action": "delete_announcement",
                         "notificationId": command.announcement_id
-                    }),
+                        }),
+                    },
                 )
                 .await?;
             }
@@ -563,15 +581,7 @@ async fn load_announcement_by_id(
 
 async fn insert_audit_log(
     tx: &mut Transaction<'_, Postgres>,
-    audit_log_uuid: &str,
-    request_id: &str,
-    tenant_id: i64,
-    organization_id: i64,
-    operator_id: i64,
-    operator_type: i32,
-    action: &'static str,
-    target_id: i64,
-    change_summary: serde_json::Value,
+    audit: AnnouncementAuditLog<'_>,
 ) -> DomainResult<()> {
     let id = next_claw_runtime_id("ops_audit_log")?;
     sqlx::query(
@@ -582,16 +592,16 @@ async fn insert_audit_log(
             ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11)
         "#,
     )
-    .bind(audit_log_uuid)
-    .bind(tenant_id)
-    .bind(organization_id)
-    .bind(action)
+    .bind(audit.audit_log_uuid)
+    .bind(audit.tenant_id)
+    .bind(audit.organization_id)
+    .bind(audit.action)
     .bind(ANNOUNCEMENT_TARGET_TYPE)
-    .bind(target_id)
-    .bind(request_id)
-    .bind(operator_id)
-    .bind(operator_type)
-    .bind(change_summary.to_string())
+    .bind(audit.target_id)
+    .bind(audit.request_id)
+    .bind(audit.operator_id)
+    .bind(audit.operator_type)
+    .bind(audit.change_summary.to_string())
     .bind(id)
     .execute(&mut **tx)
     .await

@@ -42,6 +42,45 @@ async fn service_router_exposes_standard_health_and_ready_endpoints() {
 }
 
 #[tokio::test]
+async fn service_router_metrics_expose_canonical_bounded_request_contract() {
+    let router = sdkwork_claw_http::service_router("sdkwork-clawrouter-edge-runtime");
+    let response = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/openapi.json")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::OK, response.status());
+
+    sdkwork_claw_http::record_readiness_check(true);
+
+    let metrics = router
+        .oneshot(
+            Request::builder()
+                .uri("/metrics")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::OK, metrics.status());
+    let body = axum::body::to_bytes(metrics.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let rendered = String::from_utf8(body.to_vec()).unwrap();
+    assert!(rendered.contains("sdkwork_http_requests_labeled_total{"));
+    assert!(rendered.contains("sdkwork_http_request_duration_seconds_bucket{"));
+    assert!(rendered.contains("route=\"/openapi.json\""));
+    assert!(rendered.contains("operation_id=\"-\""));
+    assert!(rendered.contains("sdkwork_http_readiness_checks_total"));
+    assert!(!rendered.contains("# HELP http_requests_total "));
+}
+
+#[tokio::test]
 async fn service_router_health_uses_the_resolved_deployment_mode_from_state() {
     let response = sdkwork_claw_http::service_router_with_deployment_mode(
         "sdkwork-clawrouter-edge-runtime",
@@ -2206,7 +2245,9 @@ async fn service_router_exposes_surface_openapi_documents() {
         .unwrap();
     let app_payload: serde_json::Value = serde_json::from_slice(&app_body).unwrap();
     assert_eq!("/app/v3/api", app_payload["x-api-prefix"]);
-    assert!(app_payload["paths"].get("/app/v3/api/ai/models").is_some());
+    assert!(app_payload["paths"]
+        .get("/app/v3/api/ai/dashboard/overview")
+        .is_some());
 
     let backend_response = sdkwork_claw_http::service_router_with_contract_routes(
         "sdkwork-clawrouter-admin-gateway",
@@ -2227,7 +2268,7 @@ async fn service_router_exposes_surface_openapi_documents() {
     let backend_payload: serde_json::Value = serde_json::from_slice(&backend_body).unwrap();
     assert_eq!("/backend/v3/api", backend_payload["x-api-prefix"]);
     assert!(backend_payload["paths"]
-        .get("/backend/v3/api/ai/models")
+        .get("/backend/v3/api/ai/upstream_suppliers")
         .is_some());
 }
 
@@ -2239,10 +2280,14 @@ async fn service_router_surface_openapi_documents_local_business_centers_only() 
         "/app/v3/api/openapi.json",
     )
     .await;
-    for (method, path, operation_id) in [("get", "/app/v3/api/ai/models", "models.list")] {
-        assert_openapi_operation(&app_payload, method, path, operation_id);
-    }
+    assert_openapi_operation(
+        &app_payload,
+        "get",
+        "/app/v3/api/ai/dashboard/overview",
+        "dashboard.overview.retrieve",
+    );
     for (method, path) in [
+        ("get", "/app/v3/api/ai/models"),
         ("get", "/app/v3/api/platform/apps/store"),
         ("get", "/app/v3/api/platform/apps/categories"),
         ("get", "/app/v3/api/platform/apps/installed"),
@@ -2267,7 +2312,7 @@ async fn service_router_surface_openapi_documents_local_business_centers_only() 
                 .get(path)
                 .and_then(|path_item| path_item.get(method))
                 .is_none(),
-            "runtime app OpenAPI must not expose Commerce dependency operation {method} {path}"
+            "runtime app OpenAPI must not expose declared SDK dependency operation {method} {path}"
         );
     }
     assert!(
@@ -2284,11 +2329,10 @@ async fn service_router_surface_openapi_documents_local_business_centers_only() 
     )
     .await;
     for (method, path, operation_id) in [
-        ("get", "/backend/v3/api/ai/models", "models.list"),
         (
-            "patch",
-            "/backend/v3/api/content/announcements/{announcementId}",
-            "announcements.update",
+            "get",
+            "/backend/v3/api/ai/upstream_suppliers",
+            "upstreamSuppliers.list",
         ),
         (
             "get",
@@ -2296,24 +2340,9 @@ async fn service_router_surface_openapi_documents_local_business_centers_only() 
             "payments.providers.list",
         ),
         (
-            "post",
-            "/backend/v3/api/payments/provider_accounts",
-            "payments.providerAccounts.create",
-        ),
-        (
-            "get",
-            "/backend/v3/api/payments/route_rules",
-            "payments.routeRules.list",
-        ),
-        (
-            "get",
-            "/backend/v3/api/promotions/offers",
-            "promotions.offers.management.list",
-        ),
-        (
             "get",
             "/backend/v3/api/recharges/packages",
-            "recharges.packages.management.list",
+            "packages.management.list",
         ),
         (
             "get",
@@ -2329,6 +2358,14 @@ async fn service_router_surface_openapi_documents_local_business_centers_only() 
         assert_openapi_operation(&backend_payload, method, path, operation_id);
     }
     for (method, path) in [
+        ("get", "/backend/v3/api/ai/models"),
+        (
+            "patch",
+            "/backend/v3/api/content/announcements/{announcementId}",
+        ),
+        ("post", "/backend/v3/api/payments/provider_accounts"),
+        ("get", "/backend/v3/api/payments/route_rules"),
+        ("get", "/backend/v3/api/promotions/offers"),
         ("post", "/backend/v3/api/catalog/products"),
         ("patch", "/backend/v3/api/inventory/stocks/{stockId}"),
         ("get", "/backend/v3/api/orders"),
@@ -2348,7 +2385,7 @@ async fn service_router_surface_openapi_documents_local_business_centers_only() 
                 .get(path)
                 .and_then(|path_item| path_item.get(method))
                 .is_none(),
-            "runtime backend OpenAPI must not expose Commerce dependency operation {method} {path}"
+            "runtime backend OpenAPI must not expose declared SDK dependency operation {method} {path}"
         );
     }
 }
@@ -2365,28 +2402,18 @@ async fn service_router_backend_openapi_documents_local_standalone_business_cent
     for (method, path, operation_id) in [
         (
             "get",
+            "/backend/v3/api/ai/upstream_suppliers",
+            "upstreamSuppliers.list",
+        ),
+        (
+            "get",
             "/backend/v3/api/payments/providers",
             "payments.providers.list",
         ),
         (
-            "post",
-            "/backend/v3/api/payments/provider_accounts",
-            "payments.providerAccounts.create",
-        ),
-        (
-            "get",
-            "/backend/v3/api/payments/route_rules",
-            "payments.routeRules.list",
-        ),
-        (
-            "get",
-            "/backend/v3/api/promotions/offers",
-            "promotions.offers.management.list",
-        ),
-        (
             "get",
             "/backend/v3/api/recharges/packages",
-            "recharges.packages.management.list",
+            "packages.management.list",
         ),
         (
             "get",

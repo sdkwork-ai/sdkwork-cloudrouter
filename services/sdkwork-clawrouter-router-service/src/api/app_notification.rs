@@ -14,7 +14,7 @@ use crate::api::app_sql_subject::{
 };
 use crate::api::response::{
     json_success_list_response, offset_page_info, parse_offset_list_query, problem_from_wire_code,
-    success_envelope,
+    success_envelope, ApiResponseError,
 };
 use crate::domain::DomainError;
 use crate::ports::{
@@ -136,7 +136,7 @@ async fn list_notifications(
         scoped.into()
     }) {
         Ok(subject) => subject,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let pagination = match parse_offset_list_query(query.page, query.page_size) {
         Ok(value) => value,
@@ -151,7 +151,7 @@ async fn list_notifications(
     };
     let app_id = match normalized_app_id(query.app_id.as_deref()) {
         Ok(app_id) => app_id,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let include_archived = query.include_archived.unwrap_or(false);
 
@@ -182,15 +182,14 @@ async fn mark_popup_seen(
     Path(notification_id): Path<String>,
     Query(query): Query<NotificationCommandQuery>,
 ) -> Response {
-    let subject =
-        map_required_app_sql_subject(subject, |scoped| AppNotificationSubject::from(scoped));
+    let subject = map_required_app_sql_subject(subject, AppNotificationSubject::from);
     let app_id = match normalized_app_id(query.app_id.as_deref()) {
         Ok(app_id) => app_id,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let notification_id = match validate_notification_id(notification_id) {
         Ok(notification_id) => notification_id,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
 
     match state
@@ -215,15 +214,14 @@ async fn acknowledge(
     Path(notification_id): Path<String>,
     Query(query): Query<NotificationCommandQuery>,
 ) -> Response {
-    let subject =
-        map_required_app_sql_subject(subject, |scoped| AppNotificationSubject::from(scoped));
+    let subject = map_required_app_sql_subject(subject, AppNotificationSubject::from);
     let app_id = match normalized_app_id(query.app_id.as_deref()) {
         Ok(app_id) => app_id,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let notification_id = match validate_notification_id(notification_id) {
         Ok(notification_id) => notification_id,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
 
     match state
@@ -243,21 +241,21 @@ async fn acknowledge(
     }
 }
 
-fn normalized_app_id(value: Option<&str>) -> Result<String, Response> {
+fn normalized_app_id(value: Option<&str>) -> Result<String, ApiResponseError> {
     let app_id = value
         .map(|value| value.trim().to_owned())
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| DEFAULT_APP_ID.to_owned());
     if app_id.len() > MAX_APP_ID_LEN || !is_safe_identifier(&app_id) {
-        return Err(bad_request("appId is invalid"));
+        return Err(bad_request("appId is invalid").into());
     }
     Ok(app_id)
 }
 
-fn validate_notification_id(value: String) -> Result<String, Response> {
+fn validate_notification_id(value: String) -> Result<String, ApiResponseError> {
     let value = value.trim().to_owned();
     if value.is_empty() || value.len() > MAX_NOTIFICATION_ID_LEN || !is_safe_identifier(&value) {
-        return Err(bad_request("notificationId is invalid"));
+        return Err(bad_request("notificationId is invalid").into());
     }
     Ok(value)
 }

@@ -436,8 +436,7 @@ fn response_body_should_parse_json(content_type: Option<&str>, bytes: &[u8]) -> 
             let first = bytes
                 .iter()
                 .copied()
-                .skip_while(u8::is_ascii_whitespace)
-                .next();
+                .find(|byte| !byte.is_ascii_whitespace());
             matches!(first, Some(b'{') | Some(b'['))
         })
 }

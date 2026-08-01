@@ -16,6 +16,10 @@ spec:
       labels:
         app: sdkwork-clawrouter
         component: admin-api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "18081"
     spec:
       terminationGracePeriodSeconds: 60
       securityContext:

@@ -154,7 +154,7 @@ enum PolicyScopeRouteSelection {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum PolicyScopeUpstreamAccountRouteSelection {
-    Selected(SelectedUpstreamAccountRoute),
+    Selected(Box<SelectedUpstreamAccountRoute>),
     SoftUnavailable(UpstreamRouteSelectionError),
     HardError(UpstreamRouteSelectionError),
 }
@@ -169,7 +169,7 @@ enum CandidateUpstreamModelRouteEvaluation {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum CandidateUpstreamAccountRouteEvaluation {
-    Selected(UpstreamAccountRoute),
+    Selected(Box<UpstreamAccountRoute>),
     RoutingInvalid(DomainError),
     NoCallableCandidate,
 }
@@ -353,7 +353,7 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                 &account_group_bindings,
             ) {
                 PolicyScopeUpstreamAccountRouteSelection::Selected(selection) => {
-                    return Ok(selection)
+                    return Ok(*selection)
                 }
                 PolicyScopeUpstreamAccountRouteSelection::SoftUnavailable(error) => {
                     last_unavailable = Some(error);
@@ -497,10 +497,10 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         };
         let mut rules = self.catalog.list_routing_rules(profile_id);
         rules.sort_by_key(|rule| (rule.priority, rule.id));
-        for rule in rules
+        if let Some(rule) = rules
             .into_iter()
             .filter(|rule| self.rule_is_in_scope(rule, &query.context))
-            .filter(|rule| rule.matches_catalog_key(&query.catalog_key, &query.requested_model))
+            .find(|rule| rule.matches_catalog_key(&query.catalog_key, &query.requested_model))
         {
             let candidate_chain = scoped_candidate_chain(&rule, &policy, account_group_bindings);
             let used_rule_fallback_chain =
@@ -606,24 +606,24 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         };
         let mut rules = self.catalog.list_routing_rules(profile_id);
         rules.sort_by_key(|rule| (rule.priority, rule.id));
-        for rule in rules
+        if let Some(rule) = rules
             .into_iter()
             .filter(|rule| self.rule_is_in_scope(rule, &query.context))
-            .filter(|rule| rule.matches_route_key(&query.route_key))
+            .find(|rule| rule.matches_route_key(&query.route_key))
         {
             let candidate_chain = scoped_candidate_chain(&rule, &policy, account_group_bindings);
             let used_rule_fallback_chain =
                 candidate_chain_uses_rule_fallback(&rule, &candidate_chain);
             match self.evaluate_candidate_account_routes(routes, candidate_chain) {
                 CandidateUpstreamAccountRouteEvaluation::Selected(route) => {
-                    return PolicyScopeUpstreamAccountRouteSelection::Selected(
+                    return PolicyScopeUpstreamAccountRouteSelection::Selected(Box::new(
                         selected_upstream_account_route(
-                            route,
+                            *route,
                             &query.context,
                             Some(policy.id),
                             Some(rule.id),
                         ),
-                    );
+                    ));
                 }
                 CandidateUpstreamAccountRouteEvaluation::RoutingInvalid(error) => {
                     return PolicyScopeUpstreamAccountRouteSelection::HardError(
@@ -905,7 +905,7 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             let Some(route) = routes.into_iter().next() else {
                 continue;
             };
-            return CandidateUpstreamAccountRouteEvaluation::Selected(route);
+            return CandidateUpstreamAccountRouteEvaluation::Selected(Box::new(route));
         }
         CandidateUpstreamAccountRouteEvaluation::NoCallableCandidate
     }
@@ -919,7 +919,9 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         let candidates = group_bound_account_route_candidates(routes, account_group_bindings);
         match self.evaluate_candidate_account_routes(routes, candidates) {
             CandidateUpstreamAccountRouteEvaluation::Selected(route) => {
-                Ok(Some(selected_upstream_account_route(route, context, None, None)))
+                Ok(Some(selected_upstream_account_route(
+                    *route, context, None, None,
+                )))
             }
             CandidateUpstreamAccountRouteEvaluation::RoutingInvalid(error) => Err(
                 UpstreamRouteSelectionError::upstream_route_unavailable(format!(
@@ -1253,8 +1255,10 @@ fn upstream_account_group_bindings(
     api_scope_keys: &[&str],
     capability: RoutingCapability,
 ) -> UpstreamAccountGroupBindings {
-    let mut bindings = UpstreamAccountGroupBindings::default();
-    bindings.selected_account_group_id = Some(group_id);
+    let mut bindings = UpstreamAccountGroupBindings {
+        selected_account_group_id: Some(group_id),
+        ..UpstreamAccountGroupBindings::default()
+    };
     for route in routes {
         let route_bindings = route
             .account_group_bindings

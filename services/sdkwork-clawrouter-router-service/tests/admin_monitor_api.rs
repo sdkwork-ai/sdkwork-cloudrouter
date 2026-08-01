@@ -1,4 +1,4 @@
-mod common;
+pub mod common;
 use common::InternalTrustedSubjectHeaders;
 use std::sync::Arc;
 
@@ -110,7 +110,7 @@ impl AdminMonitorReadStore for TestAdminMonitorReadStore {
         query: AdminMonitorQuery,
     ) -> AdminMonitorReadFuture<'a, AdminMonitorCollection<AdminMonitorNode>> {
         Box::pin(async move {
-            assert_eq!(10, query.subject.tenant_id);
+            assert_eq!(100001, query.subject.tenant_id);
             Ok(AdminMonitorCollection {
                 items: vec![AdminMonitorNode {
                     id: "1".to_owned(),

@@ -1,4 +1,4 @@
-mod common;
+pub mod common;
 
 use std::sync::{Arc, Mutex};
 
@@ -92,17 +92,18 @@ async fn app_gateway_traces_rejects_invalid_cursor_before_store_access() {
 
 #[tokio::test]
 async fn app_gateway_traces_rejects_noncanonical_or_unknown_query_parameters() {
-    for uri in [
-        "/app/v3/api/ai/gateway/traces?pageSize=20",
-        "/app/v3/api/ai/gateway/traces?limit=20",
-        "/app/v3/api/ai/gateway/traces?page=2",
-        "/app/v3/api/ai/gateway/traces?page_size=201",
+    for (key, value) in [
+        ("pageSize", "20"),
+        ("limit", "20"),
+        ("page", "2"),
+        ("page_size", "201"),
     ] {
+        let uri = format!("/app/v3/api/ai/gateway/traces?{key}={value}");
         let read_store = Arc::new(CapturingGatewayTracesReadStore::default());
         let response = app_gateway_traces_router_with_read_store(read_store.clone())
             .oneshot(common::web_framework_app_request(
                 "GET",
-                uri,
+                &uri,
                 Body::empty(),
                 "100001",
                 Some("0"),

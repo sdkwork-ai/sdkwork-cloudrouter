@@ -10,7 +10,6 @@ mod dispatch_executor;
 mod error;
 mod idempotency;
 mod interceptor;
-mod invocation;
 mod metrics_interceptor;
 mod multipart_form;
 mod openai_classifier;
@@ -27,6 +26,7 @@ mod route_planning;
 mod routing;
 mod secrets;
 mod settlement;
+mod state;
 mod sticky;
 mod subject;
 mod telemetry;
@@ -58,7 +58,6 @@ pub use idempotency::{
     IdempotencyStore, IdempotencyStoreEntry, IdempotencyStoreError,
 };
 pub use interceptor::{InvocationFuture, InvocationInterceptor};
-pub use invocation::{Invocation, InvocationId, InvocationRequest};
 pub use metrics_interceptor::MetricsInterceptor;
 pub use openai_classifier::OpenAiResourceClassifier;
 pub use payload::PayloadExtractionInterceptor;
@@ -80,6 +79,7 @@ pub use routing::{
 };
 pub use secrets::SecretResolutionInterceptor;
 pub use settlement::PricingSettlementInterceptor;
+pub use state::{Invocation, InvocationId, InvocationRequest};
 pub use sticky::{StickyCommitInterceptor, StickyResolutionInterceptor};
 pub use subject::{InvocationAuthType, InvocationSubject};
 pub use telemetry::{InvocationNormalizedResponse, InvocationTelemetry};

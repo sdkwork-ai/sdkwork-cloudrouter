@@ -12,7 +12,7 @@ use url::Url;
 use crate::api::response::{
     json_created_response, json_success_list_response, no_content_response,
     normalize_list_search_query, offset_page_info, parse_offset_list_query, problem_from_wire_code,
-    success_envelope, validation_problem,
+    success_envelope, validation_problem, ApiResponseError,
 };
 use crate::ports::{
     AdminServiceNodeItem, AdminServiceNodeStore, AdminServiceNodeSubject,
@@ -106,7 +106,7 @@ async fn list_service_nodes(
     let subject = scoped.into();
     let query = match build_list_query(subject, query) {
         Ok(query) => query,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.list_service_nodes(query).await {
         Ok(page) => json_success_list_response(
@@ -126,7 +126,7 @@ async fn create_service_node(
     let subject = scoped.into();
     let command = match build_create_command(subject, payload) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.create_service_node(command).await {
         Ok(item) => json_created_response(None, AdminServiceNodeMutationResponse { item }),
@@ -143,7 +143,7 @@ async fn update_service_node(
     let subject = scoped.into();
     let command = match build_update_command(subject, node_id, payload) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.update_service_node(command).await {
         Ok(item) => {
@@ -162,7 +162,7 @@ async fn update_service_node_status(
     let subject = scoped.into();
     let command = match build_status_command(subject, node_id, payload) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.update_service_node_status(command).await {
         Ok(item) => {
@@ -180,7 +180,7 @@ async fn delete_service_node(
     let subject = scoped.into();
     let node_id = match required_visible_text(node_id, "node id", MAX_ID_LEN) {
         Ok(node_id) => node_id,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state
         .store
@@ -196,7 +196,7 @@ async fn delete_service_node(
 fn build_list_query(
     subject: AdminServiceNodeSubject,
     query: AdminServiceNodeListQuery,
-) -> Result<ListAdminServiceNodesQuery, Response> {
+) -> Result<ListAdminServiceNodesQuery, ApiResponseError> {
     let pagination = parse_offset_list_query(query.page, query.page_size).map_err(bad_request)?;
     Ok(ListAdminServiceNodesQuery {
         subject,
@@ -211,7 +211,7 @@ fn build_list_query(
 fn build_create_command(
     subject: AdminServiceNodeSubject,
     payload: AdminServiceNodeCreateRequest,
-) -> Result<CreateAdminServiceNodeCommand, Response> {
+) -> Result<CreateAdminServiceNodeCommand, ApiResponseError> {
     let domains = required_domains(payload.domains, payload.domain)?;
     let base_url = required_base_url_or_legacy_domain(payload.base_url, &domains)?;
     Ok(CreateAdminServiceNodeCommand {
@@ -234,11 +234,9 @@ fn build_update_command(
     subject: AdminServiceNodeSubject,
     node_id: String,
     payload: AdminServiceNodeUpdateRequest,
-) -> Result<UpdateAdminServiceNodeCommand, Response> {
+) -> Result<UpdateAdminServiceNodeCommand, ApiResponseError> {
     if payload.status.is_some() {
-        return Err(bad_request(
-            "status must be changed through status endpoint",
-        ));
+        return Err(bad_request("status must be changed through status endpoint").into());
     }
     let name = optional_visible_text(payload.name, "name", MAX_TEXT_LEN)?;
     let deployment_profile = payload
@@ -256,7 +254,7 @@ fn build_update_command(
         && ip.is_none()
         && remark.is_none()
     {
-        return Err(bad_request("service node update fields are required"));
+        return Err(bad_request("service node update fields are required").into());
     }
     Ok(UpdateAdminServiceNodeCommand {
         subject,
@@ -274,7 +272,7 @@ fn build_status_command(
     subject: AdminServiceNodeSubject,
     node_id: String,
     payload: AdminServiceNodeStatusRequest,
-) -> Result<UpdateAdminServiceNodeStatusCommand, Response> {
+) -> Result<UpdateAdminServiceNodeStatusCommand, ApiResponseError> {
     Ok(UpdateAdminServiceNodeStatusCommand {
         subject,
         node_id: required_visible_text(node_id, "node id", MAX_ID_LEN)?,
@@ -282,39 +280,37 @@ fn build_status_command(
     })
 }
 
-fn optional_status(value: Option<String>) -> Result<Option<String>, Response> {
+fn optional_status(value: Option<String>) -> Result<Option<String>, ApiResponseError> {
     value.map(required_status).transpose()
 }
 
-fn required_status(value: String) -> Result<String, Response> {
+fn required_status(value: String) -> Result<String, ApiResponseError> {
     let value = required_visible_text(value, "status", 32)?;
     match value.as_str() {
         "enabled" | "disabled" => Ok(value),
-        _ => Err(bad_request("status must be enabled or disabled")),
+        _ => Err(bad_request("status must be enabled or disabled").into()),
     }
 }
 
-fn required_deployment_profile(value: String) -> Result<String, Response> {
+fn required_deployment_profile(value: String) -> Result<String, ApiResponseError> {
     let value = required_visible_text(value, "deployment profile", 32)?.to_ascii_lowercase();
     match value.as_str() {
         "standalone" | "cloud" => Ok(value),
-        _ => Err(bad_request(
-            "deployment profile must be standalone or cloud",
-        )),
+        _ => Err(bad_request("deployment profile must be standalone or cloud").into()),
     }
 }
 
 fn required_base_url_or_legacy_domain(
     base_url: Option<String>,
     domains: &[String],
-) -> Result<String, Response> {
+) -> Result<String, ApiResponseError> {
     match base_url {
         Some(base_url) => required_base_url(base_url),
         None => Ok(format!("https://{}/v1", domains[0])),
     }
 }
 
-fn required_base_url(value: String) -> Result<String, Response> {
+fn required_base_url(value: String) -> Result<String, ApiResponseError> {
     let value = required_visible_text(value, "base URL", MAX_BASE_URL_LEN)?;
     let mut parsed = Url::parse(&value).map_err(|_| bad_request("base URL must be a valid URL"))?;
     if !matches!(parsed.scheme(), "http" | "https")
@@ -326,7 +322,8 @@ fn required_base_url(value: String) -> Result<String, Response> {
     {
         return Err(bad_request(
             "base URL must use HTTP(S) without credentials, query, or fragment",
-        ));
+        )
+        .into());
     }
     parsed.set_query(None);
     parsed.set_fragment(None);
@@ -343,16 +340,16 @@ fn required_base_url(value: String) -> Result<String, Response> {
 fn required_domains(
     domains: Option<Vec<String>>,
     legacy_domain: Option<String>,
-) -> Result<Vec<String>, Response> {
+) -> Result<Vec<String>, ApiResponseError> {
     optional_domains(domains, legacy_domain)?
         .filter(|domains| !domains.is_empty())
-        .ok_or_else(|| bad_request("at least one domain is required"))
+        .ok_or_else(|| bad_request("at least one domain is required").into())
 }
 
 fn optional_domains(
     domains: Option<Vec<String>>,
     legacy_domain: Option<String>,
-) -> Result<Option<Vec<String>>, Response> {
+) -> Result<Option<Vec<String>>, ApiResponseError> {
     if domains.is_none() && legacy_domain.is_none() {
         return Ok(None);
     }
@@ -363,7 +360,8 @@ fn optional_domains(
     if values.len() > MAX_DOMAINS {
         return Err(bad_request(format!(
             "domains must contain at most {MAX_DOMAINS} entries"
-        )));
+        ))
+        .into());
     }
     let mut normalized = Vec::with_capacity(values.len());
     for value in values {
@@ -373,12 +371,12 @@ fn optional_domains(
         }
     }
     if normalized.is_empty() {
-        return Err(bad_request("at least one domain is required"));
+        return Err(bad_request("at least one domain is required").into());
     }
     Ok(Some(normalized))
 }
 
-fn required_domain(value: String) -> Result<String, Response> {
+fn required_domain(value: String) -> Result<String, ApiResponseError> {
     let value = required_visible_text(value, "domain", MAX_DOMAIN_LEN)?;
     let candidate = if value.contains("://") {
         value
@@ -393,7 +391,7 @@ fn required_domain(value: String) -> Result<String, Response> {
         || parsed.query().is_some()
         || parsed.fragment().is_some()
     {
-        return Err(bad_request("domain must be a hostname or URL host"));
+        return Err(bad_request("domain must be a hostname or URL host").into());
     }
     let host = parsed
         .host_str()
@@ -410,7 +408,7 @@ fn required_domain(value: String) -> Result<String, Response> {
     })
 }
 
-fn optional_ip(value: Option<String>) -> Result<Option<String>, Response> {
+fn optional_ip(value: Option<String>) -> Result<Option<String>, ApiResponseError> {
     value
         .map(|value| {
             let value = value.trim().to_owned();
@@ -423,24 +421,25 @@ fn optional_ip(value: Option<String>) -> Result<Option<String>, Response> {
         .transpose()
 }
 
-fn required_ip(value: String) -> Result<String, Response> {
+fn required_ip(value: String) -> Result<String, ApiResponseError> {
     let value = required_visible_text(value, "ip", MAX_IP_LEN)?;
     value
         .parse::<IpAddr>()
         .map(|_| value)
-        .map_err(|_| bad_request("ip must be a valid IPv4 or IPv6 address"))
+        .map_err(|_| bad_request("ip must be a valid IPv4 or IPv6 address").into())
 }
 
-fn optional_remark(value: Option<String>) -> Result<Option<String>, Response> {
+fn optional_remark(value: Option<String>) -> Result<Option<String>, ApiResponseError> {
     value.map(required_remark).transpose()
 }
 
-fn required_remark(value: String) -> Result<String, Response> {
+fn required_remark(value: String) -> Result<String, ApiResponseError> {
     let value = value.trim().to_owned();
     if value.len() > MAX_REMARK_LEN || !value.chars().all(|ch| ch == '\n' || !ch.is_control()) {
         return Err(bad_request(format!(
             "remark must be visible text and at most {MAX_REMARK_LEN} characters"
-        )));
+        ))
+        .into());
     }
     Ok(value)
 }
@@ -468,7 +467,7 @@ fn optional_visible_text(
     value: Option<String>,
     field_name: &str,
     max_len: usize,
-) -> Result<Option<String>, Response> {
+) -> Result<Option<String>, ApiResponseError> {
     value
         .map(|value| required_visible_text(value, field_name, max_len))
         .transpose()
@@ -478,15 +477,16 @@ fn required_visible_text(
     value: String,
     field_name: &str,
     max_len: usize,
-) -> Result<String, Response> {
+) -> Result<String, ApiResponseError> {
     let value = value.trim().to_owned();
     if value.is_empty() {
-        return Err(bad_request(format!("{field_name} is required")));
+        return Err(bad_request(format!("{field_name} is required")).into());
     }
     if value.len() > max_len || !value.chars().all(|ch| !ch.is_control()) {
         return Err(bad_request(format!(
             "{field_name} must be visible text and at most {max_len} characters"
-        )));
+        ))
+        .into());
     }
     Ok(value)
 }

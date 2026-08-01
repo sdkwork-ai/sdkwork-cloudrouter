@@ -42,6 +42,7 @@ mod openai_embeddings;
 mod openai_error;
 mod openai_invocation;
 mod openai_models;
+mod openai_relay_execution;
 mod openai_responses;
 mod openai_runtime;
 mod openai_usage;

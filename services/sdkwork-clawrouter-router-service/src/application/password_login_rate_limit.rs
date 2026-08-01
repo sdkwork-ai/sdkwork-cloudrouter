@@ -56,6 +56,12 @@ pub fn shared_password_login_rate_limiter(
     Arc::new(limiter)
 }
 
+impl Default for PasswordLoginRateLimiter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PasswordLoginRateLimiter {
     pub fn new() -> Self {
         Self::try_with_redis_config(None)

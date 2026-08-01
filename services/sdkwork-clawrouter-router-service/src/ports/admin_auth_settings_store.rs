@@ -14,23 +14,12 @@ pub struct AdminAuthSettingsSubject {
     pub operator_type: i32,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct AdminAuthVerificationPolicy {
     pub email_code_login_enabled: bool,
     pub email_registration_verification_required: bool,
     pub phone_code_login_enabled: bool,
     pub phone_registration_verification_required: bool,
-}
-
-impl Default for AdminAuthVerificationPolicy {
-    fn default() -> Self {
-        Self {
-            email_code_login_enabled: false,
-            email_registration_verification_required: false,
-            phone_code_login_enabled: false,
-            phone_registration_verification_required: false,
-        }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

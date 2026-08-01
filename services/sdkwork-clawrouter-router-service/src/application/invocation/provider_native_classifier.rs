@@ -306,7 +306,7 @@ fn infer_endpoint_key(path: &str) -> String {
     path.trim_matches('/')
         .split('/')
         .filter(|segment| !segment.is_empty())
-        .last()
+        .next_back()
         .map(normalize_key)
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| "native_api".to_owned())

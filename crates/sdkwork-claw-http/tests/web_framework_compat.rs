@@ -129,5 +129,5 @@ async fn project_trusted_subject_middleware_returns_projection_error_for_non_num
         .await
         .expect("body");
     let payload: serde_json::Value = serde_json::from_slice(&body).expect("json");
-    assert_eq!("5001", payload["code"]);
+    assert_eq!(50_001, payload["code"]);
 }

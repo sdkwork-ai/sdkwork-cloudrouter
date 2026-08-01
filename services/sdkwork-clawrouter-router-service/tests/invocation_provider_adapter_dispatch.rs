@@ -3,9 +3,9 @@ use std::sync::Arc;
 use axum::http::Method;
 use sdkwork_claw_provider_adapter_contract::AdapterInvocationShape;
 use sdkwork_clawrouter_router_service::application::{
-    AuthenticatedApiKeyContext, DispatchMode, Invocation, InvocationAdapterTarget,
-    InvocationBilling, InvocationErrorKind, InvocationInterceptor, InvocationRequest,
-    InvocationResource, InvocationShape, InvocationSubject, InvocationSurface,
+    AuthenticatedApiKeyContext, BillingMode, BillingQuantitySource, DispatchMode, Invocation,
+    InvocationAdapterTarget, InvocationBilling, InvocationErrorKind, InvocationInterceptor,
+    InvocationRequest, InvocationResource, InvocationShape, InvocationSubject, InvocationSurface,
     ProviderAdapterDispatchInterceptor, ResourceType,
 };
 use sdkwork_clawrouter_router_service::domain::{
@@ -53,7 +53,14 @@ fn provider_native_invocation() -> Invocation {
             .with_request_id("req-provider-adapter"),
         subject(),
         resource,
-        InvocationBilling::composite(BillingMeter::LlmInputToken),
+        InvocationBilling {
+            mode: BillingMode::ExternalUsageLine,
+            meter: Some(BillingMeter::VideoResult),
+            quantity_source: BillingQuantitySource::FixedRequest,
+            pricing_required: true,
+            settlement_required: true,
+            prepaid_required: false,
+        },
     )
 }
 
@@ -97,6 +104,10 @@ async fn provider_native_invocation_uses_resolved_internal_adapter_target() {
     );
     assert_eq!(InvocationShape::Json, invocation.dispatch.invocation_shape);
     assert_eq!(Some(target), invocation.dispatch.adapter_target);
+    assert_eq!(
+        BillingQuantitySource::AdapterUsageLines,
+        invocation.billing.quantity_source
+    );
 }
 
 #[tokio::test]
@@ -112,6 +123,10 @@ async fn provider_native_invocation_stays_direct_when_no_adapter_route_matches()
         invocation.dispatch.mode
     );
     assert!(invocation.dispatch.adapter_target.is_none());
+    assert_eq!(
+        BillingQuantitySource::FixedRequest,
+        invocation.billing.quantity_source
+    );
 }
 
 #[tokio::test]

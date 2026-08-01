@@ -45,7 +45,10 @@ pub use federated_database_env::{
     ensure_workspace_database_env_from_config, materialize_federated_database_env_from_config,
 };
 pub use headers::{default_security_headers, redact_http_header};
-pub use metrics::{metrics, metrics_middleware, record_readiness_check};
+pub use metrics::{
+    configure_http_metrics_for_runtime, metrics, metrics_middleware, record_readiness_check,
+    shared_http_metrics_registry,
+};
 pub use open_api_capability::{
     open_api_capability_for_request, open_api_capability_router, OpenApiCapability,
 };

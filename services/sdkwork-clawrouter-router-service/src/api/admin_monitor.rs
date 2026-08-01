@@ -8,7 +8,7 @@ use serde::Deserialize;
 
 use crate::api::response::{
     json_success_list_response, normalize_list_search_query, offset_page_info,
-    parse_offset_list_query, problem_from_wire_code,
+    parse_offset_list_query, problem_from_wire_code, ApiResponseError,
 };
 use crate::ports::{AdminMonitorQuery, AdminMonitorReadStore};
 
@@ -50,7 +50,7 @@ async fn fetch_nodes(
 ) -> Response {
     let query = match monitor_query(scoped, query) {
         Ok(query) => query,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.read_store.list_monitor_nodes(query).await {
         Ok(collection) => monitor_success(collection),
@@ -65,7 +65,7 @@ async fn fetch_alerts(
 ) -> Response {
     let query = match monitor_query(scoped, query) {
         Ok(query) => query,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.read_store.list_monitor_alerts(query).await {
         Ok(collection) => monitor_success(collection),
@@ -80,7 +80,7 @@ async fn fetch_performance(
 ) -> Response {
     let query = match monitor_query(scoped, query) {
         Ok(query) => query,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.read_store.list_monitor_performance(query).await {
         Ok(collection) => monitor_success(collection),
@@ -93,7 +93,7 @@ async fn fetch_performance(
 fn monitor_query(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     query: AdminMonitorListQuery,
-) -> Result<AdminMonitorQuery, Response> {
+) -> Result<AdminMonitorQuery, ApiResponseError> {
     let pagination = parse_offset_list_query(query.page, query.page_size).map_err(bad_request)?;
     Ok(AdminMonitorQuery {
         subject: scoped.into(),

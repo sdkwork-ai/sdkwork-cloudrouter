@@ -41,8 +41,9 @@ pub struct ResolvedOpenAiUpstreamRoutePlan {
     pub routes: Vec<ResolvedOpenAiUpstreamRoute>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum OpenAiRuntimeFailureStrategy {
+    #[default]
     Failover,
     FailClosed,
 }
@@ -53,13 +54,7 @@ impl OpenAiRuntimeFailureStrategy {
     }
 }
 
-impl Default for OpenAiRuntimeFailureStrategy {
-    fn default() -> Self {
-        Self::Failover
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct OpenAiRuntimeRouteConfig {
     pub default_retry_policy: ProviderRetryPolicy,
     pub failure_strategy: OpenAiRuntimeFailureStrategy,
@@ -73,15 +68,6 @@ impl OpenAiRuntimeRouteConfig {
         Self {
             default_retry_policy,
             failure_strategy,
-        }
-    }
-}
-
-impl Default for OpenAiRuntimeRouteConfig {
-    fn default() -> Self {
-        Self {
-            default_retry_policy: ProviderRetryPolicy::default(),
-            failure_strategy: OpenAiRuntimeFailureStrategy::default(),
         }
     }
 }

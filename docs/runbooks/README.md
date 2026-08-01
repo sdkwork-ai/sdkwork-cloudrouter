@@ -42,6 +42,7 @@ Day-2 operations, capacity, and change-management runbooks.
 | Production operations (health, shutdown, password rate limit, supply chain) | [../../deployments/runbooks/production-operations.md](../../deployments/runbooks/production-operations.md) | P0 | Historical date only; no current-candidate evidence |
 | Database migration rollback (Flyway down / PITR) | [database-migration-rollback.md](database-migration-rollback.md) | P1 | Historical date only; no current-candidate evidence |
 | Rate limit / circuit break tuning | [rate-limit-circuit-break.md](rate-limit-circuit-break.md) | P1 | Historical date only; no current-candidate evidence |
+| HTTP/SLO, metrics, readiness, memory, and OOM alerts | [observability-alert-response.md](observability-alert-response.md) | P0/P1 | Not executed for current candidate |
 
 ### Security (安全)
 
@@ -78,7 +79,7 @@ Audit, evidence, and regulatory-response runbooks.
 | --- | --- | --- | --- |
 | Liveness | `GET /healthz` | `200 {"status":"ok"}` | Restart pod via K8s livenessProbe |
 | Readiness | `GET /readyz` | `200 {"status":"ready"}` with dependency breakdown | Remove from service endpoints; inspect `/readyz` body for failed dependency |
-| Metrics | `GET /metrics` | `200` Prometheus exposition | Investigate if scrape fails; check `clawrouter_metrics_export_total` |
+| Metrics | `GET /metrics` | `200` Prometheus exposition with `sdkwork_http_requests_labeled_total` | Follow the observability alert runbook and inspect scrape/discovery policy |
 
 ## Escalation
 

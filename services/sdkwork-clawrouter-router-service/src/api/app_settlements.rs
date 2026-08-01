@@ -92,7 +92,7 @@ async fn fetch_settlements_dashboard(
         scoped.into()
     }) {
         Ok(subject) => subject,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
 
     let validated_query = match validate_settlements_dashboard_query(query) {

@@ -305,8 +305,8 @@ async fn collect_settlement_groups(
         groups.entry(key).or_default().push(candidate);
     }
     Ok(groups
-        .into_iter()
-        .map(|(_, candidates)| SettlementGroup { candidates })
+        .into_values()
+        .map(|candidates| SettlementGroup { candidates })
         .collect())
 }
 

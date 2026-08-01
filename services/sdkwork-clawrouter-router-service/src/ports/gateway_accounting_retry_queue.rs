@@ -20,8 +20,8 @@ pub type GatewayAccountingRetryQueueFuture<'a, T> =
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "kind", content = "command", rename_all = "snake_case")]
 pub enum GatewayAccountingRetryPayload {
-    Trace(GatewayRequestTraceCommand),
-    Usage(GatewayUsageRecordCommand),
+    Trace(Box<GatewayRequestTraceCommand>),
+    Usage(Box<GatewayUsageRecordCommand>),
 }
 
 impl GatewayAccountingRetryPayload {
@@ -70,7 +70,10 @@ impl GatewayAccountingRetryEnvelope {
     ) -> DomainResult<Self> {
         let mut command = command;
         scrub_trace_command(&mut command);
-        Self::from_payload(GatewayAccountingRetryPayload::Trace(command), context)
+        Self::from_payload(
+            GatewayAccountingRetryPayload::Trace(Box::new(command)),
+            context,
+        )
     }
 
     pub fn from_usage(command: GatewayUsageRecordCommand) -> DomainResult<Self> {
@@ -88,7 +91,10 @@ impl GatewayAccountingRetryEnvelope {
     ) -> DomainResult<Self> {
         let mut command = command;
         scrub_usage_command(&mut command);
-        Self::from_payload(GatewayAccountingRetryPayload::Usage(command), context)
+        Self::from_payload(
+            GatewayAccountingRetryPayload::Usage(Box::new(command)),
+            context,
+        )
     }
 
     pub fn next_attempt(&self, now_epoch_millis: u64, delay: Duration) -> DomainResult<Self> {

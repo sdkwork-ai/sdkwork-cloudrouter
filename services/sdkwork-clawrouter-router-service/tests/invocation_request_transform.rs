@@ -101,7 +101,7 @@ async fn applies_bearer_auth_header() {
         .before(&mut invocation)
         .await
         .expect("secret");
-    RequestTransformInterceptor::default()
+    RequestTransformInterceptor
         .before(&mut invocation)
         .await
         .expect("transform");
@@ -129,7 +129,7 @@ async fn applies_header_auth_and_default_headers() {
         .before(&mut invocation)
         .await
         .expect("secret");
-    RequestTransformInterceptor::default()
+    RequestTransformInterceptor
         .before(&mut invocation)
         .await
         .expect("transform");
@@ -171,7 +171,7 @@ async fn strips_inbound_gateway_credentials_before_provider_auth() {
         .before(&mut invocation)
         .await
         .expect("secret");
-    RequestTransformInterceptor::default()
+    RequestTransformInterceptor
         .before(&mut invocation)
         .await
         .expect("transform");
@@ -202,7 +202,7 @@ async fn applies_query_auth() {
         .before(&mut invocation)
         .await
         .expect("secret");
-    RequestTransformInterceptor::default()
+    RequestTransformInterceptor
         .before(&mut invocation)
         .await
         .expect("transform");
@@ -224,7 +224,7 @@ async fn strips_inbound_query_credentials_before_provider_query_auth() {
         .before(&mut invocation)
         .await
         .expect("secret");
-    RequestTransformInterceptor::default()
+    RequestTransformInterceptor
         .before(&mut invocation)
         .await
         .expect("transform");
@@ -247,7 +247,7 @@ async fn strips_encoded_inbound_query_credentials_before_provider_query_auth() {
         .before(&mut invocation)
         .await
         .expect("secret");
-    RequestTransformInterceptor::default()
+    RequestTransformInterceptor
         .before(&mut invocation)
         .await
         .expect("transform");
@@ -267,7 +267,7 @@ async fn provider_request_debug_redacts_sensitive_values() {
         .before(&mut invocation)
         .await
         .expect("secret");
-    RequestTransformInterceptor::default()
+    RequestTransformInterceptor
         .before(&mut invocation)
         .await
         .expect("transform");
@@ -286,7 +286,7 @@ async fn rewrites_openai_json_body_model_to_provider_model() {
         .before(&mut invocation)
         .await
         .expect("secret");
-    RequestTransformInterceptor::default()
+    RequestTransformInterceptor
         .before(&mut invocation)
         .await
         .expect("transform");
@@ -312,7 +312,7 @@ async fn rewrites_query_model_to_provider_model() {
         .before(&mut invocation)
         .await
         .expect("secret");
-    RequestTransformInterceptor::default()
+    RequestTransformInterceptor
         .before(&mut invocation)
         .await
         .expect("transform");
@@ -337,7 +337,7 @@ async fn percent_encodes_rewritten_query_model() {
         .before(&mut invocation)
         .await
         .expect("secret");
-    RequestTransformInterceptor::default()
+    RequestTransformInterceptor
         .before(&mut invocation)
         .await
         .expect("transform");
@@ -368,7 +368,7 @@ async fn percent_encodes_query_auth_name_and_value_after_sanitizing_inbound_cred
         .before(&mut invocation)
         .await
         .expect("secret");
-    RequestTransformInterceptor::default()
+    RequestTransformInterceptor
         .before(&mut invocation)
         .await
         .expect("transform");
@@ -406,7 +406,7 @@ async fn builds_adapter_request_as_standard_json_body() {
         .before(&mut invocation)
         .await
         .expect("secret");
-    RequestTransformInterceptor::default()
+    RequestTransformInterceptor
         .before(&mut invocation)
         .await
         .expect("transform");

@@ -1,4 +1,4 @@
-mod common;
+pub mod common;
 use common::InternalTrustedSubjectHeaders;
 use std::sync::{Arc, Mutex};
 
@@ -48,8 +48,8 @@ async fn app_dashboard_overview_normalizes_valid_utc_timestamps_before_read_stor
         Some("2026-04-29 02:03:04".to_owned()),
         captured_query.end_time
     );
-    assert_eq!(10, captured_subject.tenant_id);
-    assert_eq!(20, captured_subject.organization_id);
+    assert_eq!(100001, captured_subject.tenant_id);
+    assert_eq!(0, captured_subject.organization_id);
     assert_eq!(30, captured_subject.user_id);
 }
 

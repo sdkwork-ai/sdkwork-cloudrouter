@@ -5,6 +5,7 @@ use sdkwork_claw_config::DatabaseConfig;
 use sdkwork_claw_http::{
     claw_service_security_policy, ensure_workspace_database_env_from_config,
     inject_legacy_handler_context_from_web_context, resolve_claw_web_environment_from_process_env,
+    shared_http_metrics_registry,
 };
 use sdkwork_iam_web_adapter::{
     iam_app_context_from_web_request, iam_web_request_context_resolver_from_env,
@@ -60,6 +61,7 @@ fn build_claw_router_backend_web_framework_layer(
         })
         .with_security_policy(security_policy)
         .with_route_manifest(route_manifest.clone())
+        .with_metrics(shared_http_metrics_registry())
         .with_authorization_policy(Arc::new(IamAuthorizationPolicy::new(route_manifest)))
         .with_domain_injector(Arc::new(ClawRouterBackendDomainInjector))
 }

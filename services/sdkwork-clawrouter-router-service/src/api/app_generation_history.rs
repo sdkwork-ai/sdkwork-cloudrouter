@@ -79,7 +79,7 @@ async fn fetch_history(
         scoped.into()
     }) {
         Ok(subject) => subject,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let query = match build_generation_history_list_query(request) {
         Ok(query) => query,

@@ -31,9 +31,11 @@ async fn openai_compatible_responses_relay_uses_provider_model_and_upstream_secr
         axum::serve(listener, provider).await.unwrap();
     });
 
-    let endpoint =
-        UpstreamProviderEndpoint::new(format!("http://{addr}"), "sk-upstream-provider-secret")
-            .unwrap();
+    let endpoint = UpstreamProviderEndpoint::for_local_development(
+        format!("http://{addr}"),
+        "sk-upstream-provider-secret",
+    )
+    .unwrap();
     let relay = OpenAiCompatibleResponsesRelay::new(endpoint);
     let request_body = json!({
         "model": "gpt-4.1-mini",

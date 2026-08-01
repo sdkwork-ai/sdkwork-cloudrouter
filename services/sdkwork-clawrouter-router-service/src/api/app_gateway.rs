@@ -102,7 +102,7 @@ async fn fetch_gateway_traces(
     };
     let subject = match map_optional_app_sql_subject(subject, state.require_subject, Into::into) {
         Ok(subject) => subject,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let query = match validate_gateway_traces_query(query) {
         Ok(query) => query,

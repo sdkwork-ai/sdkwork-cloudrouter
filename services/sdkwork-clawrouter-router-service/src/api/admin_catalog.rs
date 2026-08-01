@@ -14,7 +14,7 @@ use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
     json_created_response, json_success_list_response, no_content_response,
     normalize_list_search_query, offset_page_info, parse_offset_list_query, problem_from_wire_code,
-    success_envelope,
+    success_envelope, ApiResponseError,
 };
 use crate::application::{load_admin_category_seed_bundles, DEFAULT_ADMIN_CATEGORY_SEED_DATASETS};
 use crate::domain::DomainError;
@@ -305,7 +305,7 @@ async fn create_category(
     };
     let command = match category_command(scoped, &headers, None, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     resource_created_result(
         state.store.create_category(command).await,
@@ -326,11 +326,11 @@ async fn update_category(
     };
     let category_id = match normalize_required_text(category_id, "categoryId", MAX_ID_LEN) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let command = match category_command(scoped, &headers, Some(category_id), request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     resource_result(
         state.store.update_category(command).await,
@@ -347,14 +347,14 @@ async fn delete_category(
     let subject = scoped.into();
     let category_id = match normalize_required_text(category_id, "categoryId", MAX_ID_LEN) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let command = DeleteAdminCategoryCommand {
         subject,
         category_id,
         request_id: match server_request_id() {
             Ok(value) => value,
-            Err(response) => return response,
+            Err(error) => return error.into_response(),
         },
         requested_at: current_timestamp_string(),
     };
@@ -377,7 +377,7 @@ async fn initialize_category_seeds(
     };
     let datasets = match normalize_category_seed_datasets(request.datasets) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let bundles = match load_admin_category_seed_bundles(&datasets) {
         Ok(value) => value,
@@ -387,7 +387,7 @@ async fn initialize_category_seeds(
     };
     let mode = match normalize_optional_text(request.mode, "mode", MAX_CODE_LEN) {
         Ok(value) => value.unwrap_or_else(|| "admin_button".to_owned()),
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let command = AdminCategorySeedInitializeCommand {
         subject: scoped.into(),
@@ -396,11 +396,11 @@ async fn initialize_category_seeds(
         mode,
         idempotency_key: match required_header(&headers, IDEMPOTENCY_KEY_HEADER) {
             Ok(value) => value,
-            Err(response) => return response,
+            Err(error) => return error.into_response(),
         },
         request_id: match server_request_id() {
             Ok(value) => value,
-            Err(response) => return response,
+            Err(error) => return error.into_response(),
         },
         requested_at: current_timestamp_string(),
     };
@@ -424,7 +424,7 @@ async fn create_product(
     };
     let command = match product_command(scoped, &headers, None, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     resource_created_result(
         state.store.create_product(command).await,
@@ -445,11 +445,11 @@ async fn update_product(
     };
     let product_id = match normalize_required_text(product_id, "productId", MAX_ID_LEN) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let command = match product_command(scoped, &headers, Some(product_id), request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     resource_result(
         state.store.update_product(command).await,
@@ -466,14 +466,14 @@ async fn delete_product(
     let subject = scoped.into();
     let product_id = match normalize_required_text(product_id, "productId", MAX_ID_LEN) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let command = DeleteAdminProductCommand {
         subject,
         product_id,
         request_id: match server_request_id() {
             Ok(value) => value,
-            Err(response) => return response,
+            Err(error) => return error.into_response(),
         },
         requested_at: current_timestamp_string(),
     };
@@ -496,7 +496,7 @@ async fn create_sku(
     };
     let command = match sku_command(scoped, &headers, None, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     resource_created_result(
         state.store.create_sku(command).await,
@@ -517,11 +517,11 @@ async fn update_sku(
     };
     let sku_id = match normalize_required_text(sku_id, "skuId", MAX_ID_LEN) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let command = match sku_command(scoped, &headers, Some(sku_id), request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     resource_result(
         state.store.update_sku(command).await,
@@ -538,14 +538,14 @@ async fn delete_sku(
     let subject = scoped.into();
     let sku_id = match normalize_required_text(sku_id, "skuId", MAX_ID_LEN) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let command = DeleteAdminSkuCommand {
         subject,
         sku_id,
         request_id: match server_request_id() {
             Ok(value) => value,
-            Err(response) => return response,
+            Err(error) => return error.into_response(),
         },
         requested_at: current_timestamp_string(),
     };
@@ -568,7 +568,7 @@ async fn create_attribute(
     };
     let command = match attribute_command(scoped, &headers, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     resource_created_result(
         state.store.create_attribute(command).await,
@@ -589,7 +589,7 @@ async fn create_category_attribute(
         };
     let command = match category_attribute_command(scoped, &headers, None, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     resource_created_result(
         state.store.create_category_attribute(command).await,
@@ -611,11 +611,11 @@ async fn update_category_attribute(
         };
     let binding_id = match normalize_required_text(binding_id, "bindingId", MAX_ID_LEN) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let command = match category_attribute_command(scoped, &headers, Some(binding_id), request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     resource_result(
         state.store.update_category_attribute(command).await,
@@ -632,14 +632,14 @@ async fn delete_category_attribute(
     let subject = scoped.into();
     let binding_id = match normalize_required_text(binding_id, "bindingId", MAX_ID_LEN) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let command = DeleteAdminCategoryAttributeCommand {
         subject,
         binding_id,
         request_id: match server_request_id() {
             Ok(value) => value,
-            Err(response) => return response,
+            Err(error) => return error.into_response(),
         },
         requested_at: current_timestamp_string(),
     };
@@ -662,7 +662,7 @@ async fn create_price_list(
     };
     let command = match price_list_command(scoped, &headers, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     resource_created_result(
         state.store.create_price_list(command).await,
@@ -682,7 +682,7 @@ where
 {
     let query = match validated_list_query(scoped, query) {
         Ok(query) => query,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match load(query).await {
         Ok(collection) => json_success_list_response(
@@ -714,7 +714,7 @@ fn resource_created_result(
 fn validated_list_query(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     request: CatalogListQueryRequest,
-) -> Result<ListAdminCatalogRecordsQuery, Response> {
+) -> Result<ListAdminCatalogRecordsQuery, ApiResponseError> {
     let subject = scoped.into();
     let pagination =
         parse_offset_list_query(request.page, request.page_size).map_err(bad_request)?;
@@ -751,7 +751,7 @@ fn category_command(
     headers: &HeaderMap,
     category_id: Option<String>,
     request: CategoryMutationRequest,
-) -> Result<AdminCategoryMutationCommand, Response> {
+) -> Result<AdminCategoryMutationCommand, ApiResponseError> {
     Ok(AdminCategoryMutationCommand {
         subject: scoped.into(),
         category_id,
@@ -768,7 +768,7 @@ fn category_command(
 
 fn normalize_category_seed_datasets(
     datasets: Option<Vec<String>>,
-) -> Result<Vec<String>, Response> {
+) -> Result<Vec<String>, ApiResponseError> {
     let requested = datasets.unwrap_or_else(|| {
         DEFAULT_ADMIN_CATEGORY_SEED_DATASETS
             .iter()
@@ -776,7 +776,7 @@ fn normalize_category_seed_datasets(
             .collect()
     });
     if requested.is_empty() {
-        return Err(bad_request("datasets must not be empty"));
+        return Err(bad_request("datasets must not be empty").into());
     }
     let mut normalized = Vec::with_capacity(requested.len());
     for dataset in requested {
@@ -786,7 +786,8 @@ fn normalize_category_seed_datasets(
             return Err(bad_request(format!(
                 "dataset must be one of {}",
                 DEFAULT_ADMIN_CATEGORY_SEED_DATASETS.join(", ")
-            )));
+            ))
+            .into());
         }
         if !normalized.contains(&dataset) {
             normalized.push(dataset);
@@ -800,7 +801,7 @@ fn product_command(
     headers: &HeaderMap,
     product_id: Option<String>,
     request: ProductMutationRequest,
-) -> Result<AdminProductMutationCommand, Response> {
+) -> Result<AdminProductMutationCommand, ApiResponseError> {
     Ok(AdminProductMutationCommand {
         subject: scoped.into(),
         product_id,
@@ -824,7 +825,7 @@ fn product_command(
 
 fn normalize_product_category_ids(
     category_ids: Option<Vec<String>>,
-) -> Result<Vec<String>, Response> {
+) -> Result<Vec<String>, ApiResponseError> {
     let Some(category_ids) = category_ids else {
         return Ok(Vec::new());
     };
@@ -838,7 +839,8 @@ fn normalize_product_category_ids(
         if normalized.len() > MAX_PRODUCT_CATEGORY_BINDINGS {
             return Err(bad_request(format!(
                 "categoryIds must contain at most {MAX_PRODUCT_CATEGORY_BINDINGS} items"
-            )));
+            ))
+            .into());
         }
     }
     Ok(normalized)
@@ -849,7 +851,7 @@ fn sku_command(
     headers: &HeaderMap,
     sku_id: Option<String>,
     request: SkuMutationRequest,
-) -> Result<AdminSkuMutationCommand, Response> {
+) -> Result<AdminSkuMutationCommand, ApiResponseError> {
     let mut attributes = Vec::new();
     for attribute in request.attributes.unwrap_or_default() {
         let _ = normalize_required_text(attribute.attribute_name, "attributeName", 256)?;
@@ -912,7 +914,7 @@ fn attribute_command(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     headers: &HeaderMap,
     request: AttributeMutationRequest,
-) -> Result<AdminAttributeMutationCommand, Response> {
+) -> Result<AdminAttributeMutationCommand, ApiResponseError> {
     Ok(AdminAttributeMutationCommand {
         subject: scoped.into(),
         attribute_no: normalize_required_text(request.attribute_no, "attributeNo", MAX_ID_LEN)?,
@@ -934,7 +936,7 @@ fn category_attribute_command(
     headers: &HeaderMap,
     binding_id: Option<String>,
     request: CategoryAttributeMutationRequest,
-) -> Result<AdminCategoryAttributeMutationCommand, Response> {
+) -> Result<AdminCategoryAttributeMutationCommand, ApiResponseError> {
     Ok(AdminCategoryAttributeMutationCommand {
         subject: scoped.into(),
         binding_id,
@@ -955,7 +957,7 @@ fn price_list_command(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     headers: &HeaderMap,
     request: PriceListMutationRequest,
-) -> Result<AdminPriceListMutationCommand, Response> {
+) -> Result<AdminPriceListMutationCommand, ApiResponseError> {
     Ok(AdminPriceListMutationCommand {
         subject: scoped.into(),
         price_list_no: normalize_required_text(request.price_list_no, "priceListNo", MAX_ID_LEN)?,
@@ -983,8 +985,8 @@ where
     serde_json::from_slice(body).map_err(|error| format!("invalid {resource} payload: {error}"))
 }
 
-fn server_request_id() -> Result<String, Response> {
-    generate_server_request_id().map_err(request_id_error_response)
+fn server_request_id() -> Result<String, ApiResponseError> {
+    generate_server_request_id().map_err(|error| request_id_error_response(error).into())
 }
 
 fn request_id_error_response(error: RequestIdError) -> Response {
@@ -996,11 +998,12 @@ fn request_id_error_response(error: RequestIdError) -> Response {
     }
 }
 
-fn required_header(headers: &HeaderMap, name: &str) -> Result<String, Response> {
-    optional_header(headers, name)?.ok_or_else(|| bad_request(format!("{name} header is required")))
+fn required_header(headers: &HeaderMap, name: &str) -> Result<String, ApiResponseError> {
+    optional_header(headers, name)?
+        .ok_or_else(|| bad_request(format!("{name} header is required")).into())
 }
 
-fn optional_header(headers: &HeaderMap, name: &str) -> Result<Option<String>, Response> {
+fn optional_header(headers: &HeaderMap, name: &str) -> Result<Option<String>, ApiResponseError> {
     let Some(value) = headers.get(name) else {
         return Ok(None);
     };
@@ -1014,13 +1017,14 @@ fn normalize_enum(
     value: String,
     field_name: &str,
     allowed_values: &[&str],
-) -> Result<String, Response> {
+) -> Result<String, ApiResponseError> {
     let value = normalize_required_text(value, field_name, MAX_CODE_LEN)?.to_ascii_lowercase();
     if !allowed_values.contains(&value.as_str()) {
         return Err(bad_request(format!(
             "{field_name} must be one of {}",
             allowed_values.join(", ")
-        )));
+        ))
+        .into());
     }
     Ok(value)
 }
@@ -1029,25 +1033,25 @@ fn normalize_required_text(
     value: String,
     field_name: &str,
     max_len: usize,
-) -> Result<String, Response> {
+) -> Result<String, ApiResponseError> {
     normalize_optional_text(Some(value), field_name, max_len)?
-        .ok_or_else(|| bad_request(format!("{field_name} is required")))
+        .ok_or_else(|| bad_request(format!("{field_name} is required")).into())
 }
 
 fn normalize_required_display_text(
     value: String,
     field_name: &str,
     max_len: usize,
-) -> Result<String, Response> {
+) -> Result<String, ApiResponseError> {
     normalize_optional_display_text(Some(value), field_name, max_len)?
-        .ok_or_else(|| bad_request(format!("{field_name} is required")))
+        .ok_or_else(|| bad_request(format!("{field_name} is required")).into())
 }
 
 fn normalize_optional_display_text(
     value: Option<String>,
     field_name: &str,
     max_len: usize,
-) -> Result<Option<String>, Response> {
+) -> Result<Option<String>, ApiResponseError> {
     let Some(value) = value else {
         return Ok(None);
     };
@@ -1058,7 +1062,8 @@ fn normalize_optional_display_text(
     if value.chars().count() > max_len || value.chars().any(char::is_control) {
         return Err(bad_request(format!(
             "{field_name} must be visible text and at most {max_len} characters"
-        )));
+        ))
+        .into());
     }
     Ok(Some(value.to_owned()))
 }
@@ -1067,7 +1072,7 @@ fn normalize_optional_text(
     value: Option<String>,
     field_name: &str,
     max_len: usize,
-) -> Result<Option<String>, Response> {
+) -> Result<Option<String>, ApiResponseError> {
     let Some(value) = value else {
         return Ok(None);
     };
@@ -1078,7 +1083,8 @@ fn normalize_optional_text(
     if value.chars().count() > max_len || !value.bytes().all(|byte| (0x20..=0x7e).contains(&byte)) {
         return Err(bad_request(format!(
             "{field_name} must be visible ASCII and at most {max_len} characters"
-        )));
+        ))
+        .into());
     }
     Ok(Some(value.to_owned()))
 }
@@ -1086,14 +1092,12 @@ fn normalize_optional_text(
 fn normalize_optional_media_resource(
     value: Option<Value>,
     field_name: &str,
-) -> Result<Option<Value>, Response> {
+) -> Result<Option<Value>, ApiResponseError> {
     let Some(value) = value else {
         return Ok(None);
     };
     let Some(record) = value.as_object() else {
-        return Err(bad_request(format!(
-            "{field_name} must be a MediaResource object"
-        )));
+        return Err(bad_request(format!("{field_name} must be a MediaResource object")).into());
     };
     let kind = record
         .get("kind")
@@ -1108,7 +1112,8 @@ fn normalize_optional_media_resource(
     if kind.is_empty() || source.is_empty() {
         return Err(bad_request(format!(
             "{field_name} must include MediaResource kind and source"
-        )));
+        ))
+        .into());
     }
     let has_locator = ["id", "publicUrl", "url", "uri", "objectKey", "objectBlobId"]
         .iter()
@@ -1122,7 +1127,8 @@ fn normalize_optional_media_resource(
     if !has_locator {
         return Err(bad_request(format!(
             "{field_name} must include a media resource locator"
-        )));
+        ))
+        .into());
     }
     Ok(Some(Value::Object(record.clone())))
 }

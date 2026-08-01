@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::sync::OnceLock;
 
 use axum::http::StatusCode;
 use serde_json::Value;
@@ -110,6 +111,13 @@ where
                 ),
             )
         })?;
+        if body
+            .get("usage")
+            .filter(|usage| !usage.is_null())
+            .is_none()
+        {
+            observe_provider_usage_missing(context.endpoint, false);
+        }
         let usage =
             usage_from_response(context.endpoint, body).map_err(provider_usage_record_error)?;
         let mut command = build_usage_record_command(
@@ -287,10 +295,6 @@ impl GatewayUsageRecordCommandBuilder {
             pricing_plan_code: self.pricing_plan_code.clone(),
             pricing_snapshot: self.pricing_snapshot.clone(),
         })
-    }
-
-    pub(crate) fn build_zero_token_request(&self) -> DomainResult<GatewayUsageRecordCommand> {
-        self.build(OpenAiTokenUsage::default())
     }
 
     pub(crate) fn trace_command(&self) -> GatewayRequestTraceCommand {
@@ -494,7 +498,6 @@ pub(crate) fn build_request_trace_command(
     invocation_context: &OpenAiInvocationContext,
     route: Option<&ResolvedOpenAiUpstreamRoute>,
     http_status: Option<u16>,
-    streaming: bool,
     latency_ms: Option<i64>,
     provider_error_code: Option<String>,
     error_type: Option<String>,
@@ -533,7 +536,7 @@ pub(crate) fn build_request_trace_command(
         http_method: invocation_context.http_method.clone(),
         user_agent: invocation_context.user_agent.clone(),
         http_status,
-        streaming,
+        streaming: invocation_context.stream,
         prompt_tokens: 0,
         completion_tokens: 0,
         cached_tokens: 0,
@@ -900,6 +903,45 @@ pub(crate) fn provider_usage_record_error(error: DomainError) -> OpenAiInvocatio
         "server_error",
         error.to_string(),
     )
+}
+
+pub(crate) fn observe_provider_usage_missing(
+    endpoint: OpenAiInvocationEndpoint,
+    streaming: bool,
+) {
+    provider_usage_missing_counter()
+        .with_label_values(&[
+            endpoint_metric_label(endpoint),
+            if streaming { "true" } else { "false" },
+        ])
+        .inc();
+}
+
+fn provider_usage_missing_counter() -> prometheus::IntCounterVec {
+    static METRIC: OnceLock<prometheus::IntCounterVec> = OnceLock::new();
+    METRIC
+        .get_or_init(|| {
+            let metric = prometheus::IntCounterVec::new(
+                prometheus::Opts::new(
+                    "gateway_missing_usage_total",
+                    "Successful provider responses missing required usage facts.",
+                )
+                .namespace("clawrouter"),
+                &["endpoint", "streaming"],
+            )
+            .expect("provider missing usage metric");
+            let _ = prometheus::register(Box::new(metric.clone()));
+            metric
+        })
+        .clone()
+}
+
+fn endpoint_metric_label(endpoint: OpenAiInvocationEndpoint) -> &'static str {
+    match endpoint {
+        OpenAiInvocationEndpoint::ChatCompletions => "chat_completions",
+        OpenAiInvocationEndpoint::Responses => "responses",
+        OpenAiInvocationEndpoint::Embeddings => "embeddings",
+    }
 }
 
 fn upstream_unit_price(price: &ResolvedModelPrice) -> DecimalValue {

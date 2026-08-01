@@ -154,26 +154,27 @@ async fn openai_chat_registry_hit_calls_internal_adapter_without_direct_relay() 
 
     assert_eq!(StatusCode::OK, response.status());
     assert!(direct_calls.lock().unwrap().is_empty());
-    let adapter_calls = fake_adapter.calls.lock().unwrap();
-    assert_eq!(1, adapter_calls.len());
-    let adapter_call = &adapter_calls[0];
-    assert_eq!(
-        "openai.chat_completions",
-        adapter_call.invocation.endpoint_key
-    );
-    assert_eq!(
-        "/v1/chat/completions",
-        adapter_call.invocation.standard_path
-    );
-    assert_eq!(
-        AdapterInvocationShape::SyncJson,
-        adapter_call.invocation.shape
-    );
-    assert_eq!("openrouter", adapter_call.provider.supplier_code);
-    assert_eq!(3001, adapter_call.provider.account_id);
-    assert_eq!("gpt-4o-mini", adapter_call.provider.provider_model);
-    assert_gateway_resolved_secret(&adapter_call.secret, "sk-openrouter-main");
-    drop(adapter_calls);
+    {
+        let adapter_calls = fake_adapter.calls.lock().unwrap();
+        assert_eq!(1, adapter_calls.len());
+        let adapter_call = &adapter_calls[0];
+        assert_eq!(
+            "openai.chat_completions",
+            adapter_call.invocation.endpoint_key
+        );
+        assert_eq!(
+            "/v1/chat/completions",
+            adapter_call.invocation.standard_path
+        );
+        assert_eq!(
+            AdapterInvocationShape::SyncJson,
+            adapter_call.invocation.shape
+        );
+        assert_eq!("openrouter", adapter_call.provider.supplier_code);
+        assert_eq!(3001, adapter_call.provider.account_id);
+        assert_eq!("gpt-4o-mini", adapter_call.provider.provider_model);
+        assert_gateway_resolved_secret(&adapter_call.secret, "sk-openrouter-main");
+    }
     let payload = response_json(response).await;
     assert_eq!("chatcmpl-adapter", payload["id"]);
 }
@@ -229,28 +230,29 @@ async fn openai_chat_stream_registry_hit_calls_internal_adapter_without_direct_s
     assert_eq!(StatusCode::OK, response.status());
     assert!(direct_chat_calls.lock().unwrap().is_empty());
     assert!(direct_stream_calls.lock().unwrap().is_empty());
-    let adapter_calls = fake_adapter.calls.lock().unwrap();
-    assert_eq!(1, adapter_calls.len());
-    let adapter_call = &adapter_calls[0];
-    assert_eq!(
-        "openai.chat_completions",
-        adapter_call.invocation.endpoint_key
-    );
-    assert_eq!(
-        "/v1/chat/completions",
-        adapter_call.invocation.standard_path
-    );
-    assert_eq!(
-        AdapterInvocationShape::SseStream,
-        adapter_call.invocation.shape
-    );
-    assert!(adapter_call.invocation.stream);
-    assert_eq!("openrouter", adapter_call.provider.supplier_code);
-    assert_eq!(3001, adapter_call.provider.account_id);
-    assert_eq!("gpt-4o-mini", adapter_call.provider.provider_model);
-    assert_eq!(true, adapter_call.body["stream"]);
-    assert_gateway_resolved_secret(&adapter_call.secret, "sk-openrouter-main");
-    drop(adapter_calls);
+    {
+        let adapter_calls = fake_adapter.calls.lock().unwrap();
+        assert_eq!(1, adapter_calls.len());
+        let adapter_call = &adapter_calls[0];
+        assert_eq!(
+            "openai.chat_completions",
+            adapter_call.invocation.endpoint_key
+        );
+        assert_eq!(
+            "/v1/chat/completions",
+            adapter_call.invocation.standard_path
+        );
+        assert_eq!(
+            AdapterInvocationShape::SseStream,
+            adapter_call.invocation.shape
+        );
+        assert!(adapter_call.invocation.stream);
+        assert_eq!("openrouter", adapter_call.provider.supplier_code);
+        assert_eq!(3001, adapter_call.provider.account_id);
+        assert_eq!("gpt-4o-mini", adapter_call.provider.provider_model);
+        assert_eq!(true, adapter_call.body["stream"]);
+        assert_gateway_resolved_secret(&adapter_call.secret, "sk-openrouter-main");
+    }
     let body = response_text(response).await;
     assert!(body.contains("chatcmpl-adapter"));
     assert!(body.contains("data: [DONE]"));
@@ -461,10 +463,12 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
         ),
     );
     catalog.add_upstream_account_route(
-        UpstreamAccountRoute::new("openrouter", 3001).with_upstream_endpoint(
-            Some("http://provider-proxy.internal/openrouter"),
-            Some("vault://providers/openrouter/account/main"),
-        ),
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_upstream_endpoint(
+                Some("http://provider-proxy.internal/openrouter"),
+                Some("vault://providers/openrouter/account/main"),
+            )
+            .with_account_group_binding(10, 100, 100),
     );
     catalog.add_plan(PricingPlan::new(
         "standard",
@@ -520,7 +524,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
             r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
             "openai/gpt-4o-mini",
         )
-        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
     );
     catalog
 }

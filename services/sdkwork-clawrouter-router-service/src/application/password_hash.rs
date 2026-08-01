@@ -167,7 +167,7 @@ fn pbkdf2_hmac_sha256(
     validate_iterations(iterations)?;
 
     let hash_len = 32_usize;
-    let blocks = (output_len + hash_len - 1) / hash_len;
+    let blocks = output_len.div_ceil(hash_len);
     let mut derived_key = Vec::with_capacity(blocks * hash_len);
     let mac_template = hmac_for_password(password)?;
     for block_index in 1..=blocks {

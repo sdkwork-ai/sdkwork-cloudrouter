@@ -16,6 +16,10 @@ spec:
       labels:
         app: sdkwork-clawrouter
         component: gateway
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "18080"
     spec:
       terminationGracePeriodSeconds: 60
       securityContext:
@@ -65,7 +69,7 @@ spec:
                   fieldPath: metadata.uid
             - name: SDKWORK_CLAW_CONFIG_FILE
               value: /etc/sdkwork/clawrouter.toml
-            - name: SDKWORK_CLAW_GATEWAY_BIND
+            - name: SDKWORK_CLAWROUTER_APPLICATION_PUBLIC_INGRESS_BIND
               value: 0.0.0.0:18080
             - name: SDKWORK_CLAW_REDIS_URL
               valueFrom:

@@ -10,7 +10,7 @@ use serde_json::Value;
 
 use crate::api::response::{
     json_success_list_response, normalize_list_search_query, offset_page_info,
-    parse_offset_list_query, problem_from_wire_code, success_envelope,
+    parse_offset_list_query, problem_from_wire_code, success_envelope, ApiResponseError,
 };
 use crate::domain::DomainError;
 use crate::ports::{
@@ -37,6 +37,8 @@ const MAX_TIMEOUT_MS: i32 = 300_000;
 struct AdminMcpState {
     store: Arc<dyn AdminMcpStore + Send + Sync>,
 }
+
+type ApiResult<T> = Result<T, ApiResponseError>;
 
 #[derive(Debug, Default, Deserialize)]
 struct ListPaginationQuery {
@@ -200,7 +202,7 @@ async fn list_servers(
 ) -> Response {
     let query = match build_list_servers_query(scoped, &headers, request) {
         Ok(query) => query,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.list_servers(query).await {
         Ok(page) => paginated_list_response(page),
@@ -216,7 +218,7 @@ async fn get_server(
 ) -> Response {
     let query = match build_get_server_query(scoped, &headers, &server_id) {
         Ok(query) => query,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.get_server(query).await {
         Ok(Some(item)) => item_response(item),
@@ -233,7 +235,7 @@ async fn create_server(
 ) -> Response {
     let command = match build_create_server_command(scoped, &headers, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.create_server(command).await {
         Ok(item) => item_response(item),
@@ -250,7 +252,7 @@ async fn update_server(
 ) -> Response {
     let command = match build_update_server_command(scoped, &headers, &server_id, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.update_server(command).await {
         Ok(Some(item)) => item_response(item),
@@ -268,7 +270,7 @@ async fn list_revisions(
 ) -> Response {
     let query = match build_list_revisions_query(scoped, &headers, &server_id, request) {
         Ok(query) => query,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.list_revisions(query).await {
         Ok(page) => paginated_list_response(page),
@@ -285,7 +287,7 @@ async fn create_revision(
 ) -> Response {
     let command = match build_create_revision_command(scoped, &headers, &server_id, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.create_revision(command).await {
         Ok(item) => item_response(item),
@@ -301,7 +303,7 @@ async fn publish_revision(
 ) -> Response {
     let command = match build_publish_revision_command(scoped, &headers, &revision_id) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.publish_revision(command).await {
         Ok(Some(item)) => item_response(item),
@@ -318,7 +320,7 @@ async fn discover_tools(
 ) -> Response {
     let command = match build_discover_command(scoped, &headers, &server_id) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.discover_tools(command).await {
         Ok(item) => Json(success_envelope(item)).into_response(),
@@ -334,7 +336,7 @@ async fn check_health(
 ) -> Response {
     let command = match build_health_command(scoped, &headers, &server_id) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.check_health(command).await {
         Ok(item) => Json(success_envelope(item)).into_response(),
@@ -351,7 +353,7 @@ async fn list_tools(
 ) -> Response {
     let query = match build_list_tools_query(scoped, &headers, &server_id, request) {
         Ok(query) => query,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.list_tools(query).await {
         Ok(page) => paginated_list_response(page),
@@ -368,7 +370,7 @@ async fn update_tool(
 ) -> Response {
     let command = match build_update_tool_command(scoped, &headers, &tool_id, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.update_tool(command).await {
         Ok(Some(item)) => item_response(item),
@@ -386,7 +388,7 @@ async fn list_bindings(
 ) -> Response {
     let query = match build_list_bindings_query(scoped, &headers, &server_id, request) {
         Ok(query) => query,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.list_bindings(query).await {
         Ok(page) => paginated_list_response(page),
@@ -403,7 +405,7 @@ async fn create_binding(
 ) -> Response {
     let command = match build_create_binding_command(scoped, &headers, &server_id, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.create_binding(command).await {
         Ok(item) => item_response(item),
@@ -420,7 +422,7 @@ async fn update_binding(
 ) -> Response {
     let command = match build_update_binding_command(scoped, &headers, &binding_id, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.update_binding(command).await {
         Ok(Some(item)) => item_response(item),
@@ -433,7 +435,7 @@ fn build_list_servers_query(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: &HeaderMap,
     request: ListServersRequest,
-) -> Result<ListAdminMcpServersQuery, Response> {
+) -> ApiResult<ListAdminMcpServersQuery> {
     let subject = scoped.into();
     let pagination =
         parse_offset_list_query(request.page, request.page_size).map_err(bad_request)?;
@@ -454,7 +456,7 @@ fn build_get_server_query(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: &HeaderMap,
     server_id: &str,
-) -> Result<GetAdminMcpServerQuery, Response> {
+) -> ApiResult<GetAdminMcpServerQuery> {
     Ok(GetAdminMcpServerQuery {
         subject: scoped.into(),
         server_id: parse_positive_i64(server_id, "serverId")?,
@@ -465,7 +467,7 @@ fn build_create_server_command(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: &HeaderMap,
     request: CreateServerRequest,
-) -> Result<CreateAdminMcpServerCommand, Response> {
+) -> ApiResult<CreateAdminMcpServerCommand> {
     Ok(CreateAdminMcpServerCommand {
         subject: scoped.into(),
         server_key: normalize_required_key(request.server_key, "serverKey")?,
@@ -489,7 +491,7 @@ fn build_update_server_command(
     _headers: &HeaderMap,
     server_id: &str,
     request: UpdateServerRequest,
-) -> Result<UpdateAdminMcpServerCommand, Response> {
+) -> ApiResult<UpdateAdminMcpServerCommand> {
     Ok(UpdateAdminMcpServerCommand {
         subject: scoped.into(),
         server_id: parse_positive_i64(server_id, "serverId")?,
@@ -522,7 +524,7 @@ fn build_list_revisions_query(
     _headers: &HeaderMap,
     server_id: &str,
     request: ListPaginationQuery,
-) -> Result<ListAdminMcpServerRevisionsQuery, Response> {
+) -> ApiResult<ListAdminMcpServerRevisionsQuery> {
     let pagination =
         parse_offset_list_query(request.page, request.page_size).map_err(bad_request)?;
     Ok(ListAdminMcpServerRevisionsQuery {
@@ -539,7 +541,7 @@ fn build_create_revision_command(
     _headers: &HeaderMap,
     server_id: &str,
     request: CreateRevisionRequest,
-) -> Result<CreateAdminMcpServerRevisionCommand, Response> {
+) -> ApiResult<CreateAdminMcpServerRevisionCommand> {
     let transport = normalize_optional_enum(request.transport, "transport")?
         .unwrap_or_else(|| "http".to_owned());
     Ok(CreateAdminMcpServerRevisionCommand {
@@ -563,7 +565,7 @@ fn build_publish_revision_command(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: &HeaderMap,
     revision_id: &str,
-) -> Result<PublishAdminMcpServerRevisionCommand, Response> {
+) -> ApiResult<PublishAdminMcpServerRevisionCommand> {
     Ok(PublishAdminMcpServerRevisionCommand {
         subject: scoped.into(),
         revision_id: parse_positive_i64(revision_id, "revisionId")?,
@@ -574,7 +576,7 @@ fn build_discover_command(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: &HeaderMap,
     server_id: &str,
-) -> Result<DiscoverAdminMcpToolsCommand, Response> {
+) -> ApiResult<DiscoverAdminMcpToolsCommand> {
     Ok(DiscoverAdminMcpToolsCommand {
         subject: scoped.into(),
         server_id: parse_positive_i64(server_id, "serverId")?,
@@ -585,7 +587,7 @@ fn build_health_command(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: &HeaderMap,
     server_id: &str,
-) -> Result<TestAdminMcpServerHealthCommand, Response> {
+) -> ApiResult<TestAdminMcpServerHealthCommand> {
     Ok(TestAdminMcpServerHealthCommand {
         subject: scoped.into(),
         server_id: parse_positive_i64(server_id, "serverId")?,
@@ -597,7 +599,7 @@ fn build_list_tools_query(
     _headers: &HeaderMap,
     server_id: &str,
     request: ListPaginationQuery,
-) -> Result<ListAdminMcpToolsQuery, Response> {
+) -> ApiResult<ListAdminMcpToolsQuery> {
     let pagination =
         parse_offset_list_query(request.page, request.page_size).map_err(bad_request)?;
     Ok(ListAdminMcpToolsQuery {
@@ -614,7 +616,7 @@ fn build_update_tool_command(
     _headers: &HeaderMap,
     tool_id: &str,
     request: UpdateToolRequest,
-) -> Result<UpdateAdminMcpToolCommand, Response> {
+) -> ApiResult<UpdateAdminMcpToolCommand> {
     Ok(UpdateAdminMcpToolCommand {
         subject: scoped.into(),
         tool_id: parse_positive_i64(tool_id, "toolId")?,
@@ -652,7 +654,7 @@ fn build_list_bindings_query(
     _headers: &HeaderMap,
     server_id: &str,
     request: ListPaginationQuery,
-) -> Result<ListAdminMcpBindingsQuery, Response> {
+) -> ApiResult<ListAdminMcpBindingsQuery> {
     let pagination =
         parse_offset_list_query(request.page, request.page_size).map_err(bad_request)?;
     Ok(ListAdminMcpBindingsQuery {
@@ -669,7 +671,7 @@ fn build_create_binding_command(
     _headers: &HeaderMap,
     server_id: &str,
     request: CreateBindingRequest,
-) -> Result<CreateAdminMcpBindingCommand, Response> {
+) -> ApiResult<CreateAdminMcpBindingCommand> {
     Ok(CreateAdminMcpBindingCommand {
         subject: scoped.into(),
         server_id: parse_positive_i64(server_id, "serverId")?,
@@ -695,7 +697,7 @@ fn build_update_binding_command(
     _headers: &HeaderMap,
     binding_id: &str,
     request: UpdateBindingRequest,
-) -> Result<UpdateAdminMcpBindingCommand, Response> {
+) -> ApiResult<UpdateAdminMcpBindingCommand> {
     Ok(UpdateAdminMcpBindingCommand {
         subject: scoped.into(),
         binding_id: parse_positive_i64(binding_id, "bindingId")?,
@@ -730,7 +732,7 @@ fn build_update_binding_command(
     })
 }
 
-fn normalize_required_key(value: String, field_name: &str) -> Result<String, Response> {
+fn normalize_required_key(value: String, field_name: &str) -> ApiResult<String> {
     let value = normalize_required_text(value, field_name, MAX_KEY_LEN)?;
     if !value
         .bytes()
@@ -743,18 +745,12 @@ fn normalize_required_key(value: String, field_name: &str) -> Result<String, Res
     Ok(value)
 }
 
-fn normalize_optional_enum(
-    value: Option<String>,
-    field_name: &str,
-) -> Result<Option<String>, Response> {
+fn normalize_optional_enum(value: Option<String>, field_name: &str) -> ApiResult<Option<String>> {
     normalize_optional_text(value, field_name, MAX_ENUM_LEN)
         .map(|value| value.map(|value| value.to_ascii_lowercase()))
 }
 
-fn normalize_optional_id(
-    value: Option<String>,
-    field_name: &str,
-) -> Result<Option<String>, Response> {
+fn normalize_optional_id(value: Option<String>, field_name: &str) -> ApiResult<Option<String>> {
     let Some(value) = normalize_optional_text(value, field_name, MAX_KEY_LEN)? else {
         return Ok(None);
     };
@@ -765,7 +761,7 @@ fn normalize_optional_id(
 fn normalize_nullable_id(
     value: Option<Value>,
     field_name: &str,
-) -> Result<Option<Option<String>>, Response> {
+) -> ApiResult<Option<Option<String>>> {
     let value = normalize_nullable_text(value, field_name, MAX_KEY_LEN)?;
     if let Some(Some(value)) = value.as_ref() {
         validate_id_token(value, field_name)?;
@@ -773,7 +769,7 @@ fn normalize_nullable_id(
     Ok(value)
 }
 
-fn validate_id_token(value: &str, field_name: &str) -> Result<(), Response> {
+fn validate_id_token(value: &str, field_name: &str) -> ApiResult<()> {
     if !value
         .bytes()
         .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b':'))
@@ -785,11 +781,7 @@ fn validate_id_token(value: &str, field_name: &str) -> Result<(), Response> {
     Ok(())
 }
 
-fn normalize_required_text(
-    value: String,
-    field_name: &str,
-    max_len: usize,
-) -> Result<String, Response> {
+fn normalize_required_text(value: String, field_name: &str, max_len: usize) -> ApiResult<String> {
     normalize_optional_text(Some(value), field_name, max_len)?
         .ok_or_else(|| bad_request(format!("{field_name} is required")))
 }
@@ -798,7 +790,7 @@ fn normalize_optional_text(
     value: Option<String>,
     field_name: &str,
     max_len: usize,
-) -> Result<Option<String>, Response> {
+) -> ApiResult<Option<String>> {
     let Some(value) = value else {
         return Ok(None);
     };
@@ -818,12 +810,12 @@ fn normalize_nullable_text(
     value: Option<Value>,
     field_name: &str,
     max_len: usize,
-) -> Result<Option<Option<String>>, Response> {
+) -> ApiResult<Option<Option<String>>> {
     match value {
         None => Ok(None),
         Some(Value::Null) => Ok(Some(None)),
         Some(Value::String(value)) => {
-            normalize_optional_text(Some(value), field_name, max_len).map(|value| Some(value))
+            normalize_optional_text(Some(value), field_name, max_len).map(Some)
         }
         Some(_) => Err(bad_request(format!(
             "{field_name} must be a string or null"
@@ -831,7 +823,7 @@ fn normalize_nullable_text(
     }
 }
 
-fn normalize_tags(values: Option<Vec<String>>) -> Result<Vec<String>, Response> {
+fn normalize_tags(values: Option<Vec<String>>) -> ApiResult<Vec<String>> {
     let Some(values) = values else {
         return Ok(Vec::new());
     };
@@ -852,7 +844,7 @@ fn normalize_tags(values: Option<Vec<String>>) -> Result<Vec<String>, Response> 
     Ok(tags)
 }
 
-fn normalize_timeout(value: Option<i32>) -> Result<i32, Response> {
+fn normalize_timeout(value: Option<i32>) -> ApiResult<i32> {
     let value = value.unwrap_or(30_000);
     if !(MIN_TIMEOUT_MS..=MAX_TIMEOUT_MS).contains(&value) {
         return Err(bad_request(format!(
@@ -862,10 +854,7 @@ fn normalize_timeout(value: Option<i32>) -> Result<i32, Response> {
     Ok(value)
 }
 
-fn normalize_optional_positive_i64(
-    value: Option<i64>,
-    field_name: &str,
-) -> Result<Option<i64>, Response> {
+fn normalize_optional_positive_i64(value: Option<i64>, field_name: &str) -> ApiResult<Option<i64>> {
     value
         .map(|value| normalize_positive_i64(value, field_name))
         .transpose()
@@ -874,7 +863,7 @@ fn normalize_optional_positive_i64(
 fn normalize_nullable_positive_i64(
     value: Option<Value>,
     field_name: &str,
-) -> Result<Option<Option<i64>>, Response> {
+) -> ApiResult<Option<Option<i64>>> {
     match value {
         None => Ok(None),
         Some(Value::Null) => Ok(Some(None)),
@@ -898,7 +887,7 @@ fn normalize_nullable_positive_i64(
     }
 }
 
-fn normalize_positive_i64(value: i64, field_name: &str) -> Result<i64, Response> {
+fn normalize_positive_i64(value: i64, field_name: &str) -> ApiResult<i64> {
     if value <= 0 {
         return Err(bad_request(format!(
             "{field_name} must be a positive integer"
@@ -907,7 +896,7 @@ fn normalize_positive_i64(value: i64, field_name: &str) -> Result<i64, Response>
     Ok(value)
 }
 
-fn parse_positive_i64(value: &str, field_name: &str) -> Result<i64, Response> {
+fn parse_positive_i64(value: &str, field_name: &str) -> ApiResult<i64> {
     let value = value
         .trim()
         .parse::<i64>()
@@ -920,7 +909,7 @@ fn parse_positive_i64(value: &str, field_name: &str) -> Result<i64, Response> {
     Ok(value)
 }
 
-fn json_object_or_default(value: Option<Value>, field_name: &str) -> Result<Value, Response> {
+fn json_object_or_default(value: Option<Value>, field_name: &str) -> ApiResult<Value> {
     match value {
         Some(Value::Object(map)) => Ok(Value::Object(map)),
         Some(_) => Err(bad_request(format!("{field_name} must be a JSON object"))),
@@ -928,7 +917,7 @@ fn json_object_or_default(value: Option<Value>, field_name: &str) -> Result<Valu
     }
 }
 
-fn json_array_or_default(value: Option<Value>, field_name: &str) -> Result<Value, Response> {
+fn json_array_or_default(value: Option<Value>, field_name: &str) -> ApiResult<Value> {
     match value {
         Some(Value::Array(items)) => Ok(Value::Array(items)),
         Some(_) => Err(bad_request(format!("{field_name} must be a JSON array"))),
@@ -936,7 +925,7 @@ fn json_array_or_default(value: Option<Value>, field_name: &str) -> Result<Value
     }
 }
 
-fn json_string_array_or_default(value: Option<Value>, field_name: &str) -> Result<Value, Response> {
+fn json_string_array_or_default(value: Option<Value>, field_name: &str) -> ApiResult<Value> {
     let value = json_array_or_default(value, field_name)?;
     let Some(items) = value.as_array() else {
         return Err(bad_request(format!(
@@ -963,8 +952,10 @@ fn item_response<T: Serialize>(item: T) -> Response {
     Json(success_envelope(AdminMcpItemEnvelope { item })).into_response()
 }
 
-fn bad_request(message: impl Into<String>) -> Response {
-    problem_from_wire_code("4001", message.into()).into_response()
+fn bad_request(message: impl Into<String>) -> ApiResponseError {
+    problem_from_wire_code("4001", message.into())
+        .into_response()
+        .into()
 }
 
 fn not_found_response(message: impl Into<String>) -> Response {

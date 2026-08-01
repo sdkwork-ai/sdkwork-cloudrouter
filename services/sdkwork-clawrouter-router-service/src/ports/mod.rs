@@ -262,6 +262,7 @@ pub use chat_completion_relay::{
 pub use chat_completion_stream_relay::{
     ChatCompletionStreamRelay, ChatCompletionStreamRelayFuture, ChatCompletionStreamRelayResponse,
 };
+pub(crate) use chat_completion_stream_relay::require_stream_usage;
 pub use dashboard_overview_read_store::{
     DashboardAnnouncement, DashboardChartPoint, DashboardConfigurationDomain,
     DashboardOverviewQuery, DashboardOverviewReadFuture, DashboardOverviewReadStore,

@@ -2,6 +2,13 @@ const POSTGRES_MODEL_RANKING_REFRESH_STORE: &str = include_str!(
     "../../../../sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx/src/postgres/model_ranking_refresh_store.rs"
 );
 
+fn production_store_source() -> &'static str {
+    POSTGRES_MODEL_RANKING_REFRESH_STORE
+        .split("#[cfg(test)]")
+        .next()
+        .expect("model ranking refresh production source must precede its test module")
+}
+
 fn compact_sql(value: &str) -> String {
     value.split_whitespace().collect::<Vec<_>>().join(" ")
 }
@@ -30,7 +37,7 @@ fn postgres_model_ranking_refresh_uses_indexable_usage_occurred_at_window_predic
         "AND u.occurred_at >= $6::timestamp AT TIME ZONE 'UTC'",
         "AND u.occurred_at < $7::timestamp AT TIME ZONE 'UTC'",
     ] {
-        assert_sql_contains(POSTGRES_MODEL_RANKING_REFRESH_STORE, expected);
+        assert_sql_contains(production_store_source(), expected);
     }
 
     for forbidden in [
@@ -38,7 +45,7 @@ fn postgres_model_ranking_refresh_uses_indexable_usage_occurred_at_window_predic
         "DATE(u.occurred_at)",
         "to_char(u.occurred_at",
     ] {
-        assert_sql_not_contains(POSTGRES_MODEL_RANKING_REFRESH_STORE, forbidden);
+        assert_sql_not_contains(production_store_source(), forbidden);
     }
 }
 
@@ -55,7 +62,7 @@ fn postgres_model_ranking_refresh_selects_model_scope_by_exact_tenant_then_tenan
         "OR ($1 > 0 AND $2 > 0 AND m.tenant_id = $1 AND m.organization_id = 0)",
         "OR (m.tenant_id = 0 AND m.organization_id = 0)",
     ] {
-        assert_sql_contains(POSTGRES_MODEL_RANKING_REFRESH_STORE, expected);
+        assert_sql_contains(production_store_source(), expected);
     }
 }
 
@@ -67,7 +74,7 @@ fn postgres_model_ranking_refresh_uses_public_active_models_only() {
         "AND COALESCE(m.shelf_state, 1) = 1",
         "AND COALESCE(m.routing_state, 1) = 1",
     ] {
-        assert_sql_contains(POSTGRES_MODEL_RANKING_REFRESH_STORE, expected);
+        assert_sql_contains(production_store_source(), expected);
     }
 }
 
@@ -86,17 +93,17 @@ fn postgres_model_ranking_refresh_reads_previous_rank_from_same_scope_period_and
         "AND p.region_code = a.region_code",
         "AND p.catalog_key = a.catalog_key",
     ] {
-        assert_sql_contains(POSTGRES_MODEL_RANKING_REFRESH_STORE, expected);
+        assert_sql_contains(production_store_source(), expected);
     }
 }
 
 #[test]
 fn postgres_model_ranking_refresh_uses_explicit_customer_charge_amount() {
     assert_sql_contains(
-        POSTGRES_MODEL_RANKING_REFRESH_STORE,
+        production_store_source(),
         "SUM(COALESCE(u.customer_charge_amount, 0)) AS cost_amount",
     );
-    assert_sql_not_contains(POSTGRES_MODEL_RANKING_REFRESH_STORE, "u.cost_amount");
+    assert_sql_not_contains(production_store_source(), "u.cost_amount");
 }
 
 #[test]
@@ -107,7 +114,7 @@ fn postgres_model_ranking_refresh_uses_canonical_catalog_key_and_regionless_mode
         "ON m.catalog_key = u.catalog_key",
         "PARTITION BY r.vendor_code, r.region_code, r.catalog_key",
     ] {
-        assert_sql_contains(POSTGRES_MODEL_RANKING_REFRESH_STORE, expected);
+        assert_sql_contains(production_store_source(), expected);
     }
 
     for forbidden in [
@@ -120,7 +127,7 @@ fn postgres_model_ranking_refresh_uses_canonical_catalog_key_and_regionless_mode
         "m.catalog_key = split_part",
         "m.catalog_key = substr",
     ] {
-        assert_sql_not_contains(POSTGRES_MODEL_RANKING_REFRESH_STORE, forbidden);
+        assert_sql_not_contains(production_store_source(), forbidden);
     }
 }
 
@@ -134,7 +141,7 @@ fn postgres_model_ranking_refresh_upserts_one_active_row_per_snapshot_scope_and_
         "status = excluded.status",
         "rank_payload = excluded.rank_payload",
     ] {
-        assert_sql_contains(POSTGRES_MODEL_RANKING_REFRESH_STORE, expected);
+        assert_sql_contains(production_store_source(), expected);
     }
 }
 
@@ -159,7 +166,7 @@ fn postgres_model_ranking_refresh_records_typed_audit_job_with_json_payload() {
         "\"alertSeverity\": command.alert_severity",
         "\"sourceTables\": [\"ai_usage\", \"ai_model\", \"ai_model_rank_snapshot\"]",
     ] {
-        assert_sql_contains(POSTGRES_MODEL_RANKING_REFRESH_STORE, expected);
+        assert_sql_contains(production_store_source(), expected);
     }
 }
 
@@ -170,6 +177,6 @@ fn postgres_model_ranking_refresh_writes_explicit_snapshot_ids() {
         "INSERT INTO ai_model_rank_snapshot (id, uuid, tenant_id, organization_id",
         ".bind(next_claw_runtime_id(\"ai_model_rank_snapshot\")?)",
     ] {
-        assert_sql_contains(POSTGRES_MODEL_RANKING_REFRESH_STORE, expected);
+        assert_sql_contains(production_store_source(), expected);
     }
 }

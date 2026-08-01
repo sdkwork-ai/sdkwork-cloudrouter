@@ -1,4 +1,4 @@
-mod common;
+pub mod common;
 use common::InternalTrustedSubjectHeaders;
 use std::sync::{Arc, Mutex};
 
@@ -94,8 +94,13 @@ async fn request_json(
     expected_status: StatusCode,
 ) -> Value {
     let response = router.oneshot(request).await.unwrap();
-    assert_eq!(expected_status, response.status());
-    json_payload(response).await
+    let status = response.status();
+    let payload = json_payload(response).await;
+    assert_eq!(
+        expected_status, status,
+        "unexpected response payload: {payload}"
+    );
+    payload
 }
 
 async fn request_empty(router: axum::Router, request: Request<Body>, expected_status: StatusCode) {

@@ -1,4 +1,4 @@
-mod common;
+pub mod common;
 use std::sync::{Arc, Mutex};
 
 use axum::body::Body;
@@ -391,14 +391,15 @@ async fn admin_model_list_accepts_sdk_vendor_codes_and_normalizes_query_errors()
         .unwrap();
 
     assert_eq!(StatusCode::OK, response.status());
-    let listed_queries = store.listed_queries.lock().unwrap();
-    assert_eq!(listed_queries.len(), 1);
-    assert_eq!(
-        listed_queries[0].vendor_codes,
-        vec!["openai".to_owned(), "anthropic".to_owned()]
-    );
-    assert_eq!(listed_queries[0].normalized_limit(), 1);
-    drop(listed_queries);
+    {
+        let listed_queries = store.listed_queries.lock().unwrap();
+        assert_eq!(listed_queries.len(), 1);
+        assert_eq!(
+            listed_queries[0].vendor_codes,
+            vec!["openai".to_owned(), "anthropic".to_owned()]
+        );
+        assert_eq!(listed_queries[0].normalized_limit(), 1);
+    }
 
     let response = router
         .oneshot(signed_request(

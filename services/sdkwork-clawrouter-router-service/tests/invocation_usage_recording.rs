@@ -529,10 +529,10 @@ async fn usage_recording_excludes_embedding_image_counts_from_trace_tokens() {
 async fn usage_recording_records_error_trace_as_pipeline_observer() {
     let recorder = Arc::new(RecordingGatewayUsageRecorder::default());
     let pipeline = InvocationPipeline::new()
-        .with_interceptor(ResponseNormalizationInterceptor::default())
+        .with_interceptor(ResponseNormalizationInterceptor)
         .with_interceptor(FailingDispatchInterceptor)
         .with_interceptor(UsageRecordingInterceptor::new(recorder.clone()))
-        .with_interceptor(TraceTelemetryInterceptor::default());
+        .with_interceptor(TraceTelemetryInterceptor);
     let mut invocation = model_invocation();
 
     let error = pipeline.execute(&mut invocation).await.unwrap_err();

@@ -3,9 +3,10 @@
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
 use axum::http::{Extensions, HeaderMap};
-use axum::response::Response;
+use axum::response::{IntoResponse, Response};
 
 use crate::api::app_sql_subject::{resolve_optional_app_sql_subject, SqlScopedSubject};
+use crate::api::response::ApiResponseError;
 use crate::api::subject::unauthorized_subject_response;
 
 /// Operator scope for Claw SQL admin stores that persist BIGINT subject columns.
@@ -75,7 +76,9 @@ where
     type Rejection = Response;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        match resolve_optional_admin_sql_subject(&parts.headers, &parts.extensions, true)? {
+        match resolve_optional_admin_sql_subject(&parts.headers, &parts.extensions, true)
+            .map_err(IntoResponse::into_response)?
+        {
             Some(subject) => Ok(subject),
             None => Err(unauthorized_subject_response()),
         }
@@ -95,11 +98,11 @@ where
     }
 }
 
-pub fn resolve_optional_admin_sql_subject(
+pub(crate) fn resolve_optional_admin_sql_subject(
     headers: &HeaderMap,
     extensions: &Extensions,
     require_subject: bool,
-) -> Result<Option<SqlScopedAdminSubject>, Response> {
+) -> Result<Option<SqlScopedAdminSubject>, ApiResponseError> {
     resolve_optional_app_sql_subject(headers, extensions, require_subject)
         .map(|subject| subject.map(SqlScopedAdminSubject::from))
 }

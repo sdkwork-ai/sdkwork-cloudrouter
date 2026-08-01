@@ -660,20 +660,38 @@ pub async fn router_with_postgres_product_catalog(
     ))
 }
 
+pub struct PostgresSharedRuntime {
+    pub config: DatabaseConfig,
+    pub pool: PgPool,
+    pub catalog: Arc<RefreshableSqlPricingCatalog>,
+    pub api_key_security_config: ApiKeySecurityConfig,
+    pub upstream_credential_security_config: UpstreamCredentialSecurityConfig,
+    pub trusted_subject_config: TrustedSubjectConfig,
+    pub app_session_config: AppSessionConfig,
+    pub deployment_mode: DeploymentMode,
+    pub cache_manager: RuntimeCacheManager,
+    pub database_installer: Arc<DatabaseInstaller>,
+    pub request_limits_config: RequestLimitsConfig,
+    pub models_catalog_root: Option<String>,
+}
+
 pub fn router_with_postgres_shared_runtime(
-    config: DatabaseConfig,
-    pool: PgPool,
-    catalog: Arc<RefreshableSqlPricingCatalog>,
-    api_key_security_config: ApiKeySecurityConfig,
-    upstream_credential_security_config: UpstreamCredentialSecurityConfig,
-    trusted_subject_config: TrustedSubjectConfig,
-    app_session_config: AppSessionConfig,
-    deployment_mode: DeploymentMode,
-    cache_manager: RuntimeCacheManager,
-    database_installer: Arc<DatabaseInstaller>,
-    request_limits_config: RequestLimitsConfig,
-    models_catalog_root: Option<String>,
+    runtime: PostgresSharedRuntime,
 ) -> Result<Router, ProductCatalogRouterError> {
+    let PostgresSharedRuntime {
+        config,
+        pool,
+        catalog,
+        api_key_security_config,
+        upstream_credential_security_config,
+        trusted_subject_config,
+        app_session_config,
+        deployment_mode,
+        cache_manager,
+        database_installer,
+        request_limits_config,
+        models_catalog_root,
+    } = runtime;
     let api_key_hasher = build_api_key_hasher(&api_key_security_config)?;
     let credential_secret_codec =
         credential_secret_codec_from_config(&upstream_credential_security_config)?;
@@ -1445,6 +1463,12 @@ pub async fn serve_with_runtime_config(
     bind_addr: &str,
     runtime_toml: Option<&sdkwork_claw_config::RuntimeTomlConfig>,
 ) -> anyhow::Result<()> {
+    sdkwork_claw_http::configure_http_metrics_for_runtime(
+        SERVICE_NAME,
+        runtime_toml,
+        Some("postgresql"),
+    )
+    .map_err(anyhow::Error::msg)?;
     sdkwork_claw_observability::init_tracing_with_runtime_config(
         runtime_toml.map(|config| &config.observability),
     )
@@ -1469,9 +1493,10 @@ mod tests {
         ServerRequestId, WebApiSurface, WebAuthLevel, WebAuthMode, WebDeploymentMode,
         WebEnvironment, WebLoginScope, WebRequestContext, WebRequestPrincipal, WebTransportFacts,
     };
-    use std::sync::{Mutex, OnceLock};
+    use std::sync::OnceLock;
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::sync::Mutex;
 
     #[tokio::test]
     async fn installation_status_admin_denial_uses_standard_problem_detail() {
@@ -1622,7 +1647,7 @@ mod tests {
     #[tokio::test(flavor = "current_thread")]
     async fn router_from_env_rejects_static_or_invalid_server_snowflake_node_id_before_database_bootstrap(
     ) {
-        let _guard = env_guard().lock().unwrap();
+        let _guard = env_guard().lock().await;
         let saved_database_url = std::env::var("SDKWORK_DATABASE_URL").ok();
         let saved_deployment_mode = std::env::var("SDKWORK_CLAW_DEPLOYMENT_MODE").ok();
         let saved_config_file = std::env::var("SDKWORK_CLAW_CONFIG_FILE").ok();

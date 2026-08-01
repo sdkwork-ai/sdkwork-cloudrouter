@@ -128,23 +128,24 @@ async fn openai_embeddings_registry_hit_calls_internal_adapter_without_direct_re
 
     assert_eq!(StatusCode::OK, response.status());
     assert!(direct_calls.lock().unwrap().is_empty());
-    let adapter_calls = fake_adapter.calls.lock().unwrap();
-    assert_eq!(1, adapter_calls.len());
-    let adapter_call = &adapter_calls[0];
-    assert_eq!("openai.embeddings", adapter_call.invocation.endpoint_key);
-    assert_eq!("/v1/embeddings", adapter_call.invocation.standard_path);
-    assert_eq!(
-        AdapterInvocationShape::SyncJson,
-        adapter_call.invocation.shape
-    );
-    assert_eq!("openrouter", adapter_call.provider.supplier_code);
-    assert_eq!(3001, adapter_call.provider.account_id);
-    assert_eq!(
-        "text-embedding-3-small",
-        adapter_call.provider.provider_model
-    );
-    assert_gateway_resolved_secret(&adapter_call.secret, "sk-openrouter-embedding");
-    drop(adapter_calls);
+    {
+        let adapter_calls = fake_adapter.calls.lock().unwrap();
+        assert_eq!(1, adapter_calls.len());
+        let adapter_call = &adapter_calls[0];
+        assert_eq!("openai.embeddings", adapter_call.invocation.endpoint_key);
+        assert_eq!("/v1/embeddings", adapter_call.invocation.standard_path);
+        assert_eq!(
+            AdapterInvocationShape::SyncJson,
+            adapter_call.invocation.shape
+        );
+        assert_eq!("openrouter", adapter_call.provider.supplier_code);
+        assert_eq!(3001, adapter_call.provider.account_id);
+        assert_eq!(
+            "text-embedding-3-small",
+            adapter_call.provider.provider_model
+        );
+        assert_gateway_resolved_secret(&adapter_call.secret, "sk-openrouter-embedding");
+    }
     let payload = response_json(response).await;
     assert_eq!("list", payload["object"]);
 }
@@ -291,10 +292,12 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
         ),
     );
     catalog.add_upstream_account_route(
-        UpstreamAccountRoute::new("openrouter", 3001).with_upstream_endpoint(
-            Some("http://provider-proxy.internal/openrouter"),
-            Some("vault://providers/openrouter/account/embedding"),
-        ),
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_upstream_endpoint(
+                Some("http://provider-proxy.internal/openrouter"),
+                Some("vault://providers/openrouter/account/embedding"),
+            )
+            .with_account_group_binding(10, 100, 100),
     );
     catalog.add_plan(PricingPlan::new(
         "standard",
@@ -350,7 +353,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
             r#"{"catalogKey":"openai/text-embedding-3-small"}"#,
             "openai/text-embedding-3-small",
         )
-        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
     );
     catalog
 }

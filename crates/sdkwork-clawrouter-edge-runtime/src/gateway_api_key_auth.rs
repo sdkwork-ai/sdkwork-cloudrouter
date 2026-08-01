@@ -15,13 +15,38 @@ use sdkwork_clawrouter_router_service::application::{
 use sdkwork_clawrouter_router_service::ports::PricingCatalog;
 use serde_json::json;
 
+#[derive(Debug)]
+pub(crate) struct GatewayAuthError {
+    status: StatusCode,
+    code: &'static str,
+    error_type: &'static str,
+    message: String,
+}
+
+impl IntoResponse for GatewayAuthError {
+    fn into_response(self) -> Response {
+        (
+            self.status,
+            Json(json!({
+                "error": {
+                    "message": self.message,
+                    "type": self.error_type,
+                    "param": null,
+                    "code": self.code
+                }
+            })),
+        )
+            .into_response()
+    }
+}
+
 pub(crate) fn authenticate_gateway_api_key<C>(
     catalog: &C,
     api_key_hasher: &(dyn ApiKeySecretHasher + Send + Sync),
     headers: &HeaderMap,
     uri: &Uri,
     query_string_api_key_policy: QueryStringApiKeyPolicy,
-) -> Result<AuthenticatedApiKeyContext, Response>
+) -> Result<AuthenticatedApiKeyContext, GatewayAuthError>
 where
     C: PricingCatalog,
 {
@@ -66,7 +91,7 @@ pub(crate) async fn authenticate_internal_gateway_request<C>(
     method: &Method,
     uri: &Uri,
     body: &[u8],
-) -> Result<AuthenticatedApiKeyContext, Response>
+) -> Result<AuthenticatedApiKeyContext, GatewayAuthError>
 where
     C: PricingCatalog,
 {
@@ -84,7 +109,7 @@ where
         .ok_or_else(internal_gateway_auth_error)
 }
 
-pub(crate) fn sanitize_authenticated_gateway_uri(uri: &Uri) -> Result<Uri, Response> {
+pub(crate) fn sanitize_authenticated_gateway_uri(uri: &Uri) -> Result<Uri, GatewayAuthError> {
     sanitize_sensitive_query_in_uri(uri).map_err(|_| {
         gateway_auth_error(
             StatusCode::BAD_REQUEST,
@@ -100,19 +125,13 @@ fn gateway_auth_error(
     code: &'static str,
     error_type: &'static str,
     message: impl ToString,
-) -> Response {
-    (
+) -> GatewayAuthError {
+    GatewayAuthError {
         status,
-        Json(json!({
-            "error": {
-                "message": message.to_string(),
-                "type": error_type,
-                "param": null,
-                "code": code
-            }
-        })),
-    )
-        .into_response()
+        code,
+        error_type,
+        message: message.to_string(),
+    }
 }
 
 fn parse_signed_internal_gateway_request(
@@ -190,7 +209,7 @@ where
     })
 }
 
-fn internal_gateway_auth_error() -> Response {
+fn internal_gateway_auth_error() -> GatewayAuthError {
     gateway_auth_error(
         StatusCode::UNAUTHORIZED,
         "invalid_internal_authentication",

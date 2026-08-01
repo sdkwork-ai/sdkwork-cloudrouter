@@ -25,15 +25,12 @@ See `docs/31-product-composition-model.md`.
 
 ## Initialization state
 
-The following lifecycle description is not evidence of a feature-complete
-runtime schema. The active
-[readiness review](../docs/engineering/reviews/REVIEW-20260714-production-readiness-revalidation.md)
-records that the canonical schema does not currently create the app-chat or
-runtime usage-link tables required by the wired app-chat stores. A successful
-`db:init`, `db:validate`, or `/readyz` must not be presented as proof that chat
-routes are safe until that ownership and migration gap is closed.
+The canonical baseline contains the complete current Claw Router-owned schema,
+including app-chat and runtime usage-link tables. Product installation remains
+a composed lifecycle: migrate the `sdkwork-models` module first, migrate this
+module and its declared child modules, then bootstrap application data.
 
-This authoritative-server module is in **initialization state** for greenfield deployments:
+This authoritative-server module uses the following greenfield lifecycle:
 
 1. **Baseline** - `database/ddl/baseline/postgres/0001_clawrouter_baseline.sql` contains the complete pre-release DDL snapshot.
 2. **Migrations** - `database/migrations/postgres/` contains guarded upgrade paths for pre-release installations. The folded baseline already reflects their canonical end state; fresh installs apply the baseline and record or skip compatible migrations through the lifecycle framework.

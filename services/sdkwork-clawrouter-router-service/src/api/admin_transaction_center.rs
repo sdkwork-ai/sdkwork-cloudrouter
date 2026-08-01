@@ -13,7 +13,7 @@ use sha2::{Digest, Sha256};
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
     json_created_response, json_success_list_response, no_content_response, offset_page_info,
-    parse_offset_list_query, problem_from_wire_code, success_envelope,
+    parse_offset_list_query, problem_from_wire_code, success_envelope, ApiResponseError,
 };
 use crate::application::{validate_payment_secret_ref, PaymentProviderRegistryError};
 use crate::domain::DomainError;
@@ -80,6 +80,7 @@ struct TransactionCenterListQueryRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct PaymentProviderAccountMutationRequest {
+    #[serde(rename = "providerCode")]
     supplier_code: String,
     account_role: Option<String>,
     merchant_id: String,
@@ -320,7 +321,7 @@ async fn create_payment_provider_account(
     };
     let command = match build_create_payment_provider_account_command(scoped, &headers, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.create_payment_provider_account(command).await {
         Ok(item) => json_created_response(None, TransactionCenterResourceResponse { item }),
@@ -353,7 +354,7 @@ async fn update_payment_provider_account(
         request,
     ) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.update_payment_provider_account(command).await {
         Ok(item) => {
@@ -389,7 +390,7 @@ async fn update_payment_provider_account_status(
         request,
     ) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state
         .store
@@ -420,7 +421,7 @@ async fn delete_payment_provider_account(
         provider_account_id,
     ) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.delete_payment_provider_account(command).await {
         Ok(true) => no_content_response(None),
@@ -530,7 +531,7 @@ where
 {
     let query = match validated_list_query(scoped, query) {
         Ok(query) => query,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match load(query).await {
         Ok(collection) => collection_response(collection),
@@ -557,7 +558,7 @@ where
     let subject = scoped.into();
     let parent_id = match normalize_required_text(parent_id, field_name, MAX_ID_LEN) {
         Ok(parent_id) => parent_id,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let pagination = match parse_offset_list_query(query.page, query.page_size) {
         Ok(pagination) => pagination,
@@ -565,7 +566,7 @@ where
     };
     let status = match normalize_optional_text(query.status, "status", MAX_QUERY_STATUS_LEN) {
         Ok(status) => status.map(|value| value.to_ascii_lowercase()),
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match load(ListAdminTransactionChildRecordsQuery {
         subject,
@@ -601,7 +602,7 @@ where
     let subject = scoped.into();
     let record_id = match normalize_required_text(record_id, field_name, MAX_ID_LEN) {
         Ok(record_id) => record_id,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match load(LoadAdminTransactionRecordQuery { subject, record_id }).await {
         Ok(Some(item)) => {
@@ -625,11 +626,11 @@ fn collection_response(collection: AdminTransactionCollection) -> Response {
 fn validated_list_query(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     query: TransactionCenterListQueryRequest,
-) -> Result<ListAdminTransactionRecordsQuery, Response> {
+) -> Result<ListAdminTransactionRecordsQuery, ApiResponseError> {
     let subject = scoped.into();
     let pagination = match parse_offset_list_query(query.page, query.page_size) {
         Ok(pagination) => pagination,
-        Err(message) => return Err(bad_request(message)),
+        Err(message) => return Err(bad_request(message).into()),
     };
     Ok(ListAdminTransactionRecordsQuery {
         subject,
@@ -683,7 +684,7 @@ fn build_create_payment_provider_account_command(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     headers: &HeaderMap,
     request: PaymentProviderAccountMutationRequest,
-) -> Result<CreateAdminPaymentProviderAccountCommand, Response> {
+) -> Result<CreateAdminPaymentProviderAccountCommand, ApiResponseError> {
     let subject = scoped.into();
     let normalized = normalize_payment_provider_account_mutation(request)?;
     let idempotency_key = required_header(headers, IDEMPOTENCY_KEY_HEADER)?;
@@ -692,7 +693,8 @@ fn build_create_payment_provider_account_command(
         return Err(transaction_center_system_response(
             "payment provider account number generation failed",
             DomainError::new("generated accountNo violates the provider account contract"),
-        ));
+        )
+        .into());
     }
 
     Ok(CreateAdminPaymentProviderAccountCommand {
@@ -722,7 +724,7 @@ fn build_update_payment_provider_account_command(
     headers: &HeaderMap,
     provider_account_id: String,
     request: PaymentProviderAccountMutationRequest,
-) -> Result<UpdateAdminPaymentProviderAccountCommand, Response> {
+) -> Result<UpdateAdminPaymentProviderAccountCommand, ApiResponseError> {
     let subject = scoped.into();
     let provider_account_id =
         normalize_required_text(provider_account_id, "providerAccountId", MAX_ID_LEN)?;
@@ -755,7 +757,7 @@ fn build_update_payment_provider_account_status_command(
     headers: &HeaderMap,
     provider_account_id: String,
     request: PaymentProviderAccountStatusUpdateRequest,
-) -> Result<UpdateAdminPaymentProviderAccountStatusCommand, Response> {
+) -> Result<UpdateAdminPaymentProviderAccountStatusCommand, ApiResponseError> {
     let subject = scoped.into();
     let provider_account_id =
         normalize_required_text(provider_account_id, "providerAccountId", MAX_ID_LEN)?;
@@ -786,7 +788,7 @@ fn build_delete_payment_provider_account_command(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: &HeaderMap,
     provider_account_id: String,
-) -> Result<DeleteAdminPaymentProviderAccountCommand, Response> {
+) -> Result<DeleteAdminPaymentProviderAccountCommand, ApiResponseError> {
     Ok(DeleteAdminPaymentProviderAccountCommand {
         subject: scoped.into(),
         provider_account_id: normalize_required_text(
@@ -801,7 +803,7 @@ fn build_delete_payment_provider_account_command(
 
 fn normalize_payment_provider_account_mutation(
     request: PaymentProviderAccountMutationRequest,
-) -> Result<NormalizedPaymentProviderAccountMutation, Response> {
+) -> Result<NormalizedPaymentProviderAccountMutation, ApiResponseError> {
     let supplier_code = normalize_enum(
         request.supplier_code,
         "providerCode",
@@ -906,12 +908,12 @@ fn is_ascii_identifier(value: &str) -> bool {
             .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
 }
 
-fn validate_secret_ref(supplier_code: &str, value: &str) -> Result<(), Response> {
+fn validate_secret_ref(supplier_code: &str, value: &str) -> Result<(), ApiResponseError> {
     validate_payment_secret_ref(supplier_code, value).map_err(|error| match error {
         PaymentProviderRegistryError::InvalidProviderRequest { message, .. } => {
-            bad_request(message)
+            bad_request(message).into()
         }
-        other => bad_request(other.to_string()),
+        other => bad_request(other.to_string()).into(),
     })
 }
 
@@ -921,8 +923,8 @@ where
 {
     serde_json::from_slice(body).map_err(|error| format!("invalid {resource} payload: {error}"))
 }
-fn server_request_id() -> Result<String, Response> {
-    generate_server_request_id().map_err(request_id_error_response)
+fn server_request_id() -> Result<String, ApiResponseError> {
+    generate_server_request_id().map_err(|error| request_id_error_response(error).into())
 }
 
 fn request_id_error_response(error: RequestIdError) -> Response {
@@ -935,11 +937,12 @@ fn request_id_error_response(error: RequestIdError) -> Response {
     }
 }
 
-fn required_header(headers: &HeaderMap, name: &str) -> Result<String, Response> {
-    optional_header(headers, name)?.ok_or_else(|| bad_request(format!("{name} header is required")))
+fn required_header(headers: &HeaderMap, name: &str) -> Result<String, ApiResponseError> {
+    optional_header(headers, name)?
+        .ok_or_else(|| bad_request(format!("{name} header is required")).into())
 }
 
-fn optional_header(headers: &HeaderMap, name: &str) -> Result<Option<String>, Response> {
+fn optional_header(headers: &HeaderMap, name: &str) -> Result<Option<String>, ApiResponseError> {
     let Some(value) = headers.get(name) else {
         return Ok(None);
     };
@@ -953,16 +956,16 @@ fn normalize_required_text(
     value: String,
     field_name: &str,
     max_len: usize,
-) -> Result<String, Response> {
+) -> Result<String, ApiResponseError> {
     normalize_optional_text(Some(value), field_name, max_len)?
-        .ok_or_else(|| bad_request(format!("{field_name} is required")))
+        .ok_or_else(|| bad_request(format!("{field_name} is required")).into())
 }
 
 fn normalize_optional_text(
     value: Option<String>,
     field_name: &str,
     max_len: usize,
-) -> Result<Option<String>, Response> {
+) -> Result<Option<String>, ApiResponseError> {
     let Some(value) = value else {
         return Ok(None);
     };
@@ -973,7 +976,8 @@ fn normalize_optional_text(
     if value.chars().count() > max_len || !value.bytes().all(|byte| (0x20..=0x7e).contains(&byte)) {
         return Err(bad_request(format!(
             "{field_name} must be visible ASCII and at most {max_len} characters"
-        )));
+        ))
+        .into());
     }
     Ok(Some(value.to_owned()))
 }
@@ -989,7 +993,7 @@ fn normalize_enum(
     max_len: usize,
     allowed_values: &[&str],
     ascii_case: AsciiCase,
-) -> Result<String, Response> {
+) -> Result<String, ApiResponseError> {
     let value = normalize_required_text(value, field_name, max_len)?;
     let value = match ascii_case {
         AsciiCase::Lower => value.to_ascii_lowercase(),
@@ -998,7 +1002,8 @@ fn normalize_enum(
         return Err(bad_request(format!(
             "{field_name} must be one of {}",
             allowed_values.join(", ")
-        )));
+        ))
+        .into());
     }
     Ok(value)
 }
@@ -1009,7 +1014,7 @@ fn normalize_optional_enum(
     max_len: usize,
     allowed_values: &[&str],
     ascii_case: AsciiCase,
-) -> Result<Option<String>, Response> {
+) -> Result<Option<String>, ApiResponseError> {
     let Some(value) = normalize_optional_text(value, field_name, max_len)? else {
         return Ok(None);
     };
@@ -1020,7 +1025,8 @@ fn normalize_optional_enum(
         return Err(bad_request(format!(
             "{field_name} must be one of {}",
             allowed_values.join(", ")
-        )));
+        ))
+        .into());
     }
     Ok(Some(value))
 }
@@ -1030,10 +1036,10 @@ fn normalize_ascii_code(
     field_name: &str,
     exact_len: usize,
     pattern: &str,
-) -> Result<String, Response> {
+) -> Result<String, ApiResponseError> {
     let value = normalize_required_text(value, field_name, MAX_CURRENCY_LEN)?.to_ascii_uppercase();
     if value.len() != exact_len || !value.bytes().all(|byte| byte.is_ascii_uppercase()) {
-        return Err(bad_request(format!("{field_name} must match {pattern}")));
+        return Err(bad_request(format!("{field_name} must match {pattern}")).into());
     }
     Ok(value)
 }
@@ -1043,7 +1049,7 @@ fn normalize_optional_ascii_code(
     field_name: &str,
     exact_len: usize,
     pattern: &str,
-) -> Result<Option<String>, Response> {
+) -> Result<Option<String>, ApiResponseError> {
     let Some(value) = value else {
         return Ok(None);
     };

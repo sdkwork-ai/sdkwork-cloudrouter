@@ -94,6 +94,15 @@ struct GatewayRuntimeExecutor<C> {
     gateway_client: Arc<dyn AppRuntimeGatewayClient + Send + Sync>,
 }
 
+struct RuntimeStreamingInvocation {
+    store: Arc<dyn AppRuntimeStore + Send + Sync>,
+    entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
+    stream_bus: Arc<dyn RuntimeStreamBus + Send + Sync>,
+    subject: AppRuntimeSubject,
+    invocation_id: String,
+    execution: AppRuntimeInvocationExecution,
+}
+
 type BoxedByteStream = Pin<Box<dyn Stream<Item = Result<Bytes, axum::Error>> + Send>>;
 
 const RUNTIME_SSE_BUFFER_MAX_BYTES: usize = 4 * 1024 * 1024;
@@ -1595,10 +1604,9 @@ fn runtime_provider_stream_sse_response(
 ) -> Response {
     let provider_stream = Box::pin(body.into_data_stream().map(|chunk| {
         chunk.map_err(|error| {
-            axum::Error::new(io::Error::new(
-                io::ErrorKind::Other,
-                format!("provider stream body failed: {error}"),
-            ))
+            axum::Error::new(io::Error::other(format!(
+                "provider stream body failed: {error}"
+            )))
         })
     }));
     let stream_state = RuntimeEventSseStreamState {
@@ -1638,10 +1646,9 @@ fn runtime_gateway_stream_sse_response(
 ) -> Response {
     let provider_stream = Box::pin(body.into_data_stream().map(|chunk| {
         chunk.map_err(|error| {
-            axum::Error::new(io::Error::new(
-                io::ErrorKind::Other,
-                format!("gateway stream body failed: {error}"),
-            ))
+            axum::Error::new(io::Error::other(format!(
+                "gateway stream body failed: {error}"
+            )))
         })
     }));
     let stream_state = RuntimeEventSseStreamState {
@@ -1688,12 +1695,14 @@ where
             execute_gateway_streaming_invocation(
                 self.catalog.as_ref(),
                 self.gateway_client.as_ref(),
-                store,
-                entity_uuid_generator,
-                stream_bus,
-                subject,
-                invocation_id,
-                execution,
+                RuntimeStreamingInvocation {
+                    store,
+                    entity_uuid_generator,
+                    stream_bus,
+                    subject,
+                    invocation_id,
+                    execution,
+                },
             )
             .await
         })
@@ -1714,16 +1723,19 @@ async fn load_runtime_invocation_execution(
 async fn execute_gateway_streaming_invocation<C>(
     catalog: &C,
     gateway_client: &(dyn AppRuntimeGatewayClient + Send + Sync),
-    store: Arc<dyn AppRuntimeStore + Send + Sync>,
-    entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
-    stream_bus: Arc<dyn RuntimeStreamBus + Send + Sync>,
-    subject: AppRuntimeSubject,
-    invocation_id: String,
-    execution: AppRuntimeInvocationExecution,
+    invocation: RuntimeStreamingInvocation,
 ) -> Result<Response, DomainError>
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
+    let RuntimeStreamingInvocation {
+        store,
+        entity_uuid_generator,
+        stream_bus,
+        subject,
+        invocation_id,
+        execution,
+    } = invocation;
     if !is_executable_gateway_stream(&execution.item) {
         return Err(DomainError::new(format!(
             "runtime invocation is not executable through the gateway stream: runtime={}, endpoint={}, status={}, streaming={}",
@@ -1904,9 +1916,7 @@ fn runtime_gateway_route_diagnostic_value<'a>(message: &'a str, key: &str) -> Op
     let marker = format!("{key}=");
     let start = message.find(&marker)? + marker.len();
     let tail = &message[start..];
-    let end = tail
-        .find(|ch: char| matches!(ch, ';' | '"' | '\\' | '}' | ','))
-        .unwrap_or(tail.len());
+    let end = tail.find([';', '"', '\\', '}', ',']).unwrap_or(tail.len());
     let value = tail[..end].trim();
     (!value.is_empty()).then_some(value)
 }
@@ -3065,7 +3075,7 @@ fn gemini_parts_from_message_content(content: Option<&Value>) -> Option<Value> {
                         .map(|text| serde_json::json!({ "text": text }))
                 })
                 .collect::<Vec<_>>();
-            (!parts.is_empty()).then(|| Value::Array(parts))
+            (!parts.is_empty()).then_some(Value::Array(parts))
         }
         _ => None,
     }
@@ -3438,16 +3448,19 @@ fn percent_encode_path_segment(value: &str) -> String {
 async fn execute_openai_compatible_streaming_invocation<C>(
     catalog: &C,
     chat_stream_relay: &(dyn ChatCompletionStreamRelay + Send + Sync),
-    store: Arc<dyn AppRuntimeStore + Send + Sync>,
-    entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
-    stream_bus: Arc<dyn RuntimeStreamBus + Send + Sync>,
-    subject: AppRuntimeSubject,
-    invocation_id: String,
-    execution: AppRuntimeInvocationExecution,
+    invocation: RuntimeStreamingInvocation,
 ) -> Result<Response, DomainError>
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
+    let RuntimeStreamingInvocation {
+        store,
+        entity_uuid_generator,
+        stream_bus,
+        subject,
+        invocation_id,
+        execution,
+    } = invocation;
     if !is_executable_openai_compatible_stream(&execution.item) {
         return Err(DomainError::new(format!(
             "runtime invocation is not executable as an OpenAI-compatible stream: runtime={}, endpoint={}, status={}, streaming={}",
@@ -3470,7 +3483,7 @@ where
         RoutingCapability::Chat,
         BillingMeter::LlmInputToken,
     )
-    .map_err(openai_route_response_error)?;
+    .map_err(|response| openai_route_response_error(&response))?;
     let route = route_plan
         .first_route()
         .ok_or_else(|| DomainError::new("resolved route plan contains no routes"))?;
@@ -3531,12 +3544,14 @@ where
             execute_openai_compatible_streaming_invocation(
                 self.catalog.as_ref(),
                 self.chat_stream_relay.as_ref(),
-                store,
-                entity_uuid_generator,
-                stream_bus,
-                subject,
-                invocation_id,
-                execution,
+                RuntimeStreamingInvocation {
+                    store,
+                    entity_uuid_generator,
+                    stream_bus,
+                    subject,
+                    invocation_id,
+                    execution,
+                },
             )
             .await
         })
@@ -4185,15 +4200,8 @@ fn build_runtime_chat_request_body(
 }
 
 async fn persist_provider_sse_event(
-    store: &(dyn AppRuntimeStore + Send + Sync),
-    entity_uuid_generator: &(dyn EntityUuidGenerator + Send + Sync),
-    stream_bus: &(dyn RuntimeStreamBus + Send + Sync),
-    subject: AppRuntimeSubject,
-    invocation_id: &str,
-    event_source: &str,
-    target_type: Option<&str>,
+    state: &mut RuntimeEventSseStreamState,
     event: &str,
-    pending: &mut VecDeque<Bytes>,
 ) -> Result<bool, DomainError> {
     let data = event
         .lines()
@@ -4212,9 +4220,9 @@ async fn persist_provider_sse_event(
     })?;
     let usage = runtime_event_usage_payload(&payload);
     let mut emitted_event_with_usage = false;
-    for asset in extract_generation_assets(&payload, target_type) {
-        let event_uuid = entity_uuid_generator.generate_entity_uuid()?;
-        let source_payload_key = if event_source == "gateway" {
+    for asset in extract_generation_assets(&payload, state.target_type.as_deref()) {
+        let event_uuid = state.entity_uuid_generator.generate_entity_uuid()?;
+        let source_payload_key = if state.event_source == "gateway" {
             "gatewayEvent"
         } else {
             "providerEvent"
@@ -4226,10 +4234,11 @@ async fn persist_provider_sse_event(
         if has_runtime_usage_payload(&usage) {
             emitted_event_with_usage = true;
         }
-        let item = store
+        let item = state
+            .store
             .create_event(CreateAppRuntimeEventCommand {
-                subject,
-                invocation_id: invocation_id.to_owned(),
+                subject: state.subject,
+                invocation_id: state.invocation_id.clone(),
                 event_uuid,
                 event_type: "generation.asset".to_owned(),
                 event_source: "generation".to_owned(),
@@ -4239,14 +4248,19 @@ async fn persist_provider_sse_event(
                 requested_at: current_timestamp_string(),
             })
             .await?;
-        publish_runtime_stream_event(stream_bus, invocation_id, &item).await;
-        pending.push_back(runtime_event_sse_bytes(&item)?);
+        publish_runtime_stream_event(
+            state.stream_bus.as_ref(),
+            state.invocation_id.as_str(),
+            &item,
+        )
+        .await;
+        state.pending.push_back(runtime_event_sse_bytes(&item)?);
     }
     for delta in extract_stream_text_deltas(&payload) {
         if delta.is_empty() {
             continue;
         }
-        let event_uuid = entity_uuid_generator.generate_entity_uuid()?;
+        let event_uuid = state.entity_uuid_generator.generate_entity_uuid()?;
         let mut payload_json = Map::new();
         payload_json.insert("delta".to_owned(), Value::String(delta.clone()));
         payload_json.insert("usage".to_owned(), usage.clone());
@@ -4254,25 +4268,31 @@ async fn persist_provider_sse_event(
         if has_runtime_usage_payload(&usage) {
             emitted_event_with_usage = true;
         }
-        let item = store
+        let item = state
+            .store
             .create_event(CreateAppRuntimeEventCommand {
-                subject,
-                invocation_id: invocation_id.to_owned(),
+                subject: state.subject,
+                invocation_id: state.invocation_id.clone(),
                 event_uuid,
                 event_type: "response.output_text.delta".to_owned(),
-                event_source: event_source.to_owned(),
+                event_source: state.event_source.clone(),
                 payload_json: Value::Object(payload_json),
                 text_delta: Some(delta),
                 metadata: Value::Object(Map::new()),
                 requested_at: current_timestamp_string(),
             })
             .await?;
-        publish_runtime_stream_event(stream_bus, invocation_id, &item).await;
-        pending.push_back(runtime_event_sse_bytes(&item)?);
+        publish_runtime_stream_event(
+            state.stream_bus.as_ref(),
+            state.invocation_id.as_str(),
+            &item,
+        )
+        .await;
+        state.pending.push_back(runtime_event_sse_bytes(&item)?);
     }
     if has_runtime_usage_payload(&usage) && !emitted_event_with_usage {
-        let event_uuid = entity_uuid_generator.generate_entity_uuid()?;
-        let source_payload_key = if event_source == "gateway" {
+        let event_uuid = state.entity_uuid_generator.generate_entity_uuid()?;
+        let source_payload_key = if state.event_source == "gateway" {
             "gatewayEvent"
         } else {
             "providerEvent"
@@ -4280,21 +4300,27 @@ async fn persist_provider_sse_event(
         let mut payload_json = Map::new();
         payload_json.insert("usage".to_owned(), usage);
         payload_json.insert(source_payload_key.to_owned(), payload);
-        let item = store
+        let item = state
+            .store
             .create_event(CreateAppRuntimeEventCommand {
-                subject,
-                invocation_id: invocation_id.to_owned(),
+                subject: state.subject,
+                invocation_id: state.invocation_id.clone(),
                 event_uuid,
                 event_type: "runtime.usage".to_owned(),
-                event_source: event_source.to_owned(),
+                event_source: state.event_source.clone(),
                 payload_json: Value::Object(payload_json),
                 text_delta: None,
                 metadata: Value::Object(Map::new()),
                 requested_at: current_timestamp_string(),
             })
             .await?;
-        publish_runtime_stream_event(stream_bus, invocation_id, &item).await;
-        pending.push_back(runtime_event_sse_bytes(&item)?);
+        publish_runtime_stream_event(
+            state.stream_bus.as_ref(),
+            state.invocation_id.as_str(),
+            &item,
+        )
+        .await;
+        state.pending.push_back(runtime_event_sse_bytes(&item)?);
     }
     Ok(false)
 }
@@ -4611,7 +4637,7 @@ fn generation_asset_from_object(
                 None
             }
         });
-    let asset_url = url.or_else(|| data_url).or_else(|| {
+    let asset_url = url.or(data_url).or_else(|| {
         b64_json.as_deref().map(|value| {
             format!(
                 "data:{};base64,{value}",
@@ -5034,7 +5060,7 @@ fn next_sse_event_boundary(buffer: &str) -> Option<(usize, usize)> {
         .min_by_key(|(index, _)| *index)
 }
 
-fn openai_route_response_error(response: Box<Response>) -> DomainError {
+fn openai_route_response_error(response: &Response) -> DomainError {
     DomainError::new(format!(
         "runtime route selection failed with HTTP {}",
         response.status()
@@ -5072,19 +5098,7 @@ async fn next_runtime_sse_chunk(
                 while let Some((boundary, boundary_len)) = next_sse_event_boundary(&state.buffer) {
                     let event = state.buffer[..boundary].to_owned();
                     state.buffer.drain(..boundary + boundary_len);
-                    match persist_provider_sse_event(
-                        state.store.as_ref(),
-                        state.entity_uuid_generator.as_ref(),
-                        state.stream_bus.as_ref(),
-                        state.subject,
-                        &state.invocation_id,
-                        &state.event_source,
-                        state.target_type.as_deref(),
-                        &event,
-                        &mut state.pending,
-                    )
-                    .await
-                    {
+                    match persist_provider_sse_event(&mut state, &event).await {
                         Ok(done) => {
                             if done {
                                 state.done = true;
@@ -5112,19 +5126,7 @@ async fn next_runtime_sse_chunk(
             None => {
                 if !state.buffer.trim().is_empty() {
                     let event = std::mem::take(&mut state.buffer);
-                    match persist_provider_sse_event(
-                        state.store.as_ref(),
-                        state.entity_uuid_generator.as_ref(),
-                        state.stream_bus.as_ref(),
-                        state.subject,
-                        &state.invocation_id,
-                        &state.event_source,
-                        state.target_type.as_deref(),
-                        &event,
-                        &mut state.pending,
-                    )
-                    .await
-                    {
+                    match persist_provider_sse_event(&mut state, &event).await {
                         Ok(_) => {}
                         Err(error) => {
                             state.done = true;
@@ -5144,7 +5146,7 @@ async fn next_runtime_sse_chunk(
 }
 
 fn axum_error(error: DomainError) -> axum::Error {
-    axum::Error::new(io::Error::new(io::ErrorKind::Other, error.to_string()))
+    axum::Error::new(io::Error::other(error.to_string()))
 }
 
 async fn next_runtime_tail_sse_chunk(

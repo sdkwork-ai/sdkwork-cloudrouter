@@ -319,7 +319,7 @@ async fn fetch_promotion_offers(
     let subject = scoped.into();
     let parsed = match parse_marketing_list_query(params) {
         Ok(parsed) => parsed,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state
         .store
@@ -345,7 +345,7 @@ async fn fetch_promotion_coupon_stocks(
     let subject = scoped.into();
     let parsed = match parse_marketing_list_query(params) {
         Ok(parsed) => parsed,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state
         .store
@@ -373,7 +373,7 @@ async fn fetch_promotion_codes(
     let subject = scoped.into();
     let parsed = match parse_marketing_list_query(params) {
         Ok(parsed) => parsed,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state
         .store
@@ -399,7 +399,7 @@ async fn fetch_promotion_code_redemptions(
     let subject = scoped.into();
     let parsed = match parse_marketing_list_query(params) {
         Ok(parsed) => parsed,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state
         .store
@@ -605,7 +605,7 @@ async fn fetch_recharge_records(
     let subject = scoped.into();
     let parsed = match parse_marketing_list_query(params) {
         Ok(parsed) => parsed,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state
         .store
@@ -658,7 +658,7 @@ async fn fetch_recharge_packages(
         page_size: params.page_size,
     }) {
         Ok(parsed) => parsed,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let status = match normalize_optional_recharge_package_status(params.status.as_deref()) {
         Ok(status) => status,
@@ -822,7 +822,7 @@ async fn fetch_referral_stats(
     let subject = scoped.into();
     let parsed = match parse_marketing_list_query(params) {
         Ok(parsed) => parsed,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state
         .store
@@ -865,7 +865,7 @@ async fn fetch_exchange_rules(
         page_size: params.page_size,
     }) {
         Ok(parsed) => parsed,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state
         .store
@@ -920,7 +920,7 @@ async fn fetch_payment_attempts(
     let subject = scoped.into();
     let parsed = match parse_marketing_list_query(params) {
         Ok(parsed) => parsed,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state
         .store
@@ -939,8 +939,9 @@ async fn fetch_payment_attempts(
 
 fn parse_marketing_list_query(
     params: AdminMarketingListQueryRequest,
-) -> Result<ParsedOffsetListQuery, Response> {
-    parse_offset_list_query(params.page, params.page_size).map_err(|message| bad_request(message))
+) -> Result<ParsedOffsetListQuery, crate::api::response::ApiResponseError> {
+    parse_offset_list_query(params.page, params.page_size)
+        .map_err(|message| bad_request(message).into())
 }
 
 fn marketing_list_response<T>(page: AdminMarketingListPage<T>) -> Response

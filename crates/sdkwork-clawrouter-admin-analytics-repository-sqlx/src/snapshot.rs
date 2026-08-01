@@ -68,23 +68,45 @@ pub(crate) struct AnalyticsPieRow {
     pub value: DecimalValue,
 }
 
+#[derive(Debug, Clone)]
+pub(crate) struct AnalyticsSnapshotInput {
+    pub time_range: AdminAnalyticsTimeRange,
+    pub start_time: String,
+    pub end_time: String,
+    pub limit: i64,
+    pub summary_row: AnalyticsSummaryRow,
+    pub trend_rows: Vec<AnalyticsTrendRow>,
+    pub user_points_rows: Vec<AnalyticsUserRankRow>,
+    pub user_tokens_rows: Vec<AnalyticsUserRankRow>,
+    pub user_requests_rows: Vec<AnalyticsUserRankRow>,
+    pub model_points_rows: Vec<AnalyticsModelRankRow>,
+    pub model_tokens_rows: Vec<AnalyticsModelRankRow>,
+    pub model_requests_rows: Vec<AnalyticsModelRankRow>,
+    pub user_model_distributions: Vec<(String, Vec<AnalyticsPieRow>)>,
+    pub model_distribution_rows: Vec<AnalyticsPieRow>,
+    pub modality_distribution_rows: Vec<AnalyticsPieRow>,
+}
+
 pub(crate) fn build_snapshot(
-    time_range: AdminAnalyticsTimeRange,
-    start_time: String,
-    end_time: String,
-    limit: i64,
-    summary_row: AnalyticsSummaryRow,
-    trend_rows: Vec<AnalyticsTrendRow>,
-    user_points_rows: Vec<AnalyticsUserRankRow>,
-    user_tokens_rows: Vec<AnalyticsUserRankRow>,
-    user_requests_rows: Vec<AnalyticsUserRankRow>,
-    model_points_rows: Vec<AnalyticsModelRankRow>,
-    model_tokens_rows: Vec<AnalyticsModelRankRow>,
-    model_requests_rows: Vec<AnalyticsModelRankRow>,
-    user_model_distributions: Vec<(String, Vec<AnalyticsPieRow>)>,
-    model_distribution_rows: Vec<AnalyticsPieRow>,
-    modality_distribution_rows: Vec<AnalyticsPieRow>,
+    input: AnalyticsSnapshotInput,
 ) -> RepositoryResult<AdminAnalyticsSnapshot> {
+    let AnalyticsSnapshotInput {
+        time_range,
+        start_time,
+        end_time,
+        limit,
+        summary_row,
+        trend_rows,
+        user_points_rows,
+        user_tokens_rows,
+        user_requests_rows,
+        model_points_rows,
+        model_tokens_rows,
+        model_requests_rows,
+        user_model_distributions,
+        model_distribution_rows,
+        modality_distribution_rows,
+    } = input;
     let summary = build_summary(summary_row)?;
     let top_user_requests = user_requests_rows
         .first()

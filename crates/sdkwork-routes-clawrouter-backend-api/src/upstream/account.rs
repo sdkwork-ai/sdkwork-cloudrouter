@@ -1,7 +1,7 @@
 use axum::extract::rejection::{JsonRejection, QueryRejection};
 use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
-use axum::response::Response;
+use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
 use sdkwork_clawrouter_router_service::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
@@ -17,7 +17,7 @@ use super::shared::{
     decode_json, decode_query, domain_error, idempotency_uuid, item_response, list_query,
     list_response, no_content_response, not_found, optional_text, parse_id, parse_if_match,
     positive_decimal, problem, requested_at, required_text, subject, verification_error, ListQuery,
-    UpstreamState,
+    RequestResult, UpstreamState,
 };
 
 const MAX_CODE_LENGTH: usize = 128;
@@ -173,7 +173,7 @@ async fn list_accounts(
 ) -> Response {
     let query = match decode_query(query).and_then(|query| list_query(subject(scoped), query)) {
         Ok(query) => query,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state.store.list_accounts(query).await {
         Ok(page) => list_response(
@@ -195,7 +195,7 @@ async fn get_account(
 ) -> Response {
     let account_id = match parse_id(account_id, "accountId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state.store.get_account(subject(scoped), account_id).await {
         Ok(Some(item)) => item_response(StatusCode::OK, AccountResponse::from(item)),
@@ -213,15 +213,15 @@ async fn create_account(
     let scoped = subject(scoped);
     let uuid = match idempotency_uuid(&headers, &scoped, ACCOUNT_CREATE_IDEMPOTENCY_SCOPE) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let payload = match decode_json(payload) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let command = match create_command(scoped, uuid, payload) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state.store.save_account(command).await {
         Ok(item) => item_response(StatusCode::CREATED, AccountResponse::from(item)),
@@ -238,15 +238,15 @@ async fn update_account(
 ) -> Response {
     let account_id = match parse_id(account_id, "accountId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let expected_version = match parse_if_match(&headers) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let payload = match decode_json(payload) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let scoped = subject(scoped);
     let existing = match state.store.get_account(scoped.clone(), account_id).await {
@@ -256,7 +256,7 @@ async fn update_account(
     };
     let command = match update_command(scoped, existing, expected_version, payload) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state.store.save_account(command).await {
         Ok(item) => item_response(StatusCode::OK, AccountResponse::from(item)),
@@ -272,11 +272,11 @@ async fn delete_account(
 ) -> Response {
     let account_id = match parse_id(account_id, "accountId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let expected_version = match parse_if_match(&headers) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state
         .store
@@ -302,11 +302,11 @@ async fn list_credentials(
 ) -> Response {
     let account_id = match parse_id(account_id, "accountId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let query = match decode_query(query).and_then(|query| list_query(subject(scoped), query)) {
         Ok(query) => query,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state
         .store
@@ -338,20 +338,20 @@ async fn create_credential(
 ) -> Response {
     let account_id = match parse_id(account_id, "accountId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let scoped = subject(scoped);
     let uuid = match idempotency_uuid(&headers, &scoped, account_id) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let payload = match decode_json(payload) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let command = match credential_command(scoped, account_id, uuid, payload) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state.store.create_account_credential(command).await {
         Ok(item) => item_response(StatusCode::CREATED, CredentialResponse::from(item)),
@@ -366,11 +366,11 @@ async fn deactivate_credential(
 ) -> Response {
     let account_id = match parse_id(account_id, "accountId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let credential_id = match parse_id(credential_id, "credentialId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     match state
         .store
@@ -391,15 +391,15 @@ async fn verify_account(
 ) -> Response {
     let account_id = match parse_id(account_id, "accountId") {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let payload = match decode_json(payload) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let timeout_ms = match verification_timeout_ms(payload.timeout_ms) {
         Ok(value) => value,
-        Err(response) => return response,
+        Err(response) => return response.into_response(),
     };
     let command = VerifyAdminUpstreamAccountCommand {
         subject: subject(scoped),
@@ -407,14 +407,14 @@ async fn verify_account(
         endpoint_id: match payload.endpoint_id {
             Some(value) => match parse_id(value, "endpointId") {
                 Ok(value) => Some(value),
-                Err(response) => return response,
+                Err(response) => return response.into_response(),
             },
             None => None,
         },
         credential_id: match payload.credential_id {
             Some(value) => match parse_id(value, "credentialId") {
                 Ok(value) => Some(value),
-                Err(response) => return response,
+                Err(response) => return response.into_response(),
             },
             None => None,
         },
@@ -427,7 +427,7 @@ async fn verify_account(
     }
 }
 
-fn verification_timeout_ms(value: Option<u64>) -> Result<u64, Response> {
+fn verification_timeout_ms(value: Option<u64>) -> RequestResult<u64> {
     let value = value.unwrap_or(10_000);
     if !(100..=30_000).contains(&value) {
         return Err(problem(
@@ -442,7 +442,7 @@ fn create_command(
     subject: sdkwork_clawrouter_router_service::ports::AdminUpstreamSubject,
     uuid: String,
     request: AccountCreateRequest,
-) -> Result<SaveAdminUpstreamAccountCommand, Response> {
+) -> RequestResult<SaveAdminUpstreamAccountCommand> {
     Ok(SaveAdminUpstreamAccountCommand {
         subject,
         account_id: None,
@@ -501,7 +501,7 @@ fn update_command(
     existing: AdminUpstreamAccountItem,
     expected_version: i64,
     request: AccountUpdateRequest,
-) -> Result<SaveAdminUpstreamAccountCommand, Response> {
+) -> RequestResult<SaveAdminUpstreamAccountCommand> {
     Ok(SaveAdminUpstreamAccountCommand {
         subject,
         account_id: Some(existing.id),
@@ -573,7 +573,7 @@ fn credential_command(
     account_id: i64,
     uuid: String,
     request: CredentialCreateRequest,
-) -> Result<CreateAdminUpstreamAccountCredentialCommand, Response> {
+) -> RequestResult<CreateAdminUpstreamAccountCredentialCommand> {
     let secret = required_text(request.secret, "secret", MAX_SECRET_LENGTH)?;
     let expires_at = optional_text(request.expires_at, "expiresAt", 64)?;
     if expires_at
@@ -597,7 +597,7 @@ fn credential_command(
     })
 }
 
-fn non_negative_decimal(value: String, field: &str) -> Result<String, Response> {
+fn non_negative_decimal(value: String, field: &str) -> RequestResult<String> {
     let value = required_text(value, field, 64)?;
     let parsed =
         sdkwork_clawrouter_router_service::domain::DecimalValue::parse(&value).map_err(|_| {
@@ -615,7 +615,7 @@ fn non_negative_decimal(value: String, field: &str) -> Result<String, Response> 
     Ok(value)
 }
 
-fn status(value: i32) -> Result<i32, Response> {
+fn status(value: i32) -> RequestResult<i32> {
     if !matches!(value, 0 | 1) {
         return Err(problem(
             SdkWorkResultCode::InvalidParameter,
@@ -625,7 +625,7 @@ fn status(value: i32) -> Result<i32, Response> {
     Ok(value)
 }
 
-fn non_negative_i64(value: Option<i64>, field: &str) -> Result<Option<i64>, Response> {
+fn non_negative_i64(value: Option<i64>, field: &str) -> RequestResult<Option<i64>> {
     if value.is_some_and(|value| value < 0) {
         return Err(problem(
             SdkWorkResultCode::InvalidParameter,
@@ -635,7 +635,7 @@ fn non_negative_i64(value: Option<i64>, field: &str) -> Result<Option<i64>, Resp
     Ok(value)
 }
 
-fn non_negative_i32(value: i32, field: &str) -> Result<i32, Response> {
+fn non_negative_i32(value: i32, field: &str) -> RequestResult<i32> {
     if value < 0 {
         return Err(problem(
             SdkWorkResultCode::InvalidParameter,
@@ -645,7 +645,7 @@ fn non_negative_i32(value: i32, field: &str) -> Result<i32, Response> {
     Ok(value)
 }
 
-fn positive_i32(value: Option<i32>, field: &str) -> Result<Option<i32>, Response> {
+fn positive_i32(value: Option<i32>, field: &str) -> RequestResult<Option<i32>> {
     if value.is_some_and(|value| value <= 0) {
         return Err(problem(
             SdkWorkResultCode::InvalidParameter,
@@ -731,11 +731,17 @@ mod tests {
         assert_eq!(30_000, verification_timeout_ms(Some(30_000)).unwrap());
         assert_eq!(
             StatusCode::BAD_REQUEST,
-            verification_timeout_ms(Some(99)).unwrap_err().status()
+            verification_timeout_ms(Some(99))
+                .unwrap_err()
+                .into_response()
+                .status()
         );
         assert_eq!(
             StatusCode::BAD_REQUEST,
-            verification_timeout_ms(Some(30_001)).unwrap_err().status()
+            verification_timeout_ms(Some(30_001))
+                .unwrap_err()
+                .into_response()
+                .status()
         );
     }
 

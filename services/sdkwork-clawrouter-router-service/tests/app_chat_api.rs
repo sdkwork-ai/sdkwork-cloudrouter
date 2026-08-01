@@ -1,4 +1,4 @@
-mod common;
+pub mod common;
 use common::InternalTrustedSubjectHeaders;
 use std::sync::{Arc, Mutex};
 
@@ -140,17 +140,18 @@ async fn app_chat_list_rejects_forbidden_or_ambiguous_pagination_parameters() {
         Arc::new(SequentialUuidGenerator::new(Vec::new())),
     );
 
-    for query in [
-        "pageSize=20",
-        "limit=20",
-        "page_no=1",
-        "pageNo=1",
-        "per_page=20",
-        "size=20",
-        "page=1&page=2",
-        "page=not-a-number",
-        "page_size=201",
+    for (key, value) in [
+        ("pageSize", "20"),
+        ("limit", "20"),
+        ("page_no", "1"),
+        ("pageNo", "1"),
+        ("per_page", "20"),
+        ("size", "20"),
+        ("page", "1&page=2"),
+        ("page", "not-a-number"),
+        ("page_size", "201"),
     ] {
+        let query = format!("{key}={value}");
         let response = router
             .clone()
             .oneshot(
@@ -265,9 +266,9 @@ async fn app_chat_complete_turn_response_carries_runtime_usage_and_assistant_out
                       "runtimeInvocationId":"runtime-invocation-1",
                       "usageFactId":"101",
                       "usage":{
-                        "inputTokens":100,
-                        "outputTokens":200,
-                        "totalTokens":300,
+                        "inputTokens":"100",
+                        "outputTokens":"200",
+                        "totalTokens":"300",
                         "cost":"0.123",
                         "currency":"USD"
                       },
@@ -279,8 +280,9 @@ async fn app_chat_complete_turn_response_carries_runtime_usage_and_assistant_out
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, response.status());
+    let status = response.status();
     let payload = response_json(response).await;
+    assert_eq!(StatusCode::OK, status, "unexpected response: {payload}");
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("completed", payload["data"]["turn"]["status"]);
     assert_eq!("assistant", payload["data"]["messages"][0]["role"]);
@@ -293,7 +295,10 @@ async fn app_chat_complete_turn_response_carries_runtime_usage_and_assistant_out
         "runtime-invocation-1",
         payload["data"]["messages"][0]["runtimeInvocationId"]
     );
-    assert_eq!(100, payload["data"]["messages"][0]["usage"]["inputTokens"]);
+    assert_eq!(
+        "100",
+        payload["data"]["messages"][0]["usage"]["inputTokens"]
+    );
     assert_eq!(
         "0.123",
         payload["data"]["messages"][0]["usage"]["costAmount"]
@@ -405,7 +410,7 @@ async fn app_chat_complete_turn_response_rejects_non_numeric_usage_fact_id() {
                     r#"{
                       "message":"invalid usage id",
                       "usageFactId":"usage-fact-abc",
-                      "usage":{"inputTokens":100}
+                      "usage":{"inputTokens":"100"}
                     }"#,
                 ))
                 .unwrap(),

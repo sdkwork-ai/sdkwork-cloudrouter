@@ -28,8 +28,8 @@ const PRODUCT_API_SOURCES: &[(&str, &str)] = &[
         ),
     ),
     (
-        "admin_payment_runtime.rs",
-        include_str!("../src/api/admin_payment_runtime.rs"),
+        "payment_aggregate.rs",
+        include_str!("../src/api/payment_aggregate.rs"),
     ),
     (
         "admin_storage.rs",

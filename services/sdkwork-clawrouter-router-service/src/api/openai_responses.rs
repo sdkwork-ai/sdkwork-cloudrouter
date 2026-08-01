@@ -21,10 +21,11 @@ use crate::api::openai_invocation::{
     OpenAiInvocationFault, OpenAiInvocationPluginError, OpenAiInvocationPluginRef,
     OpenAiInvocationRelayOutcome,
 };
+use crate::api::openai_relay_execution::{OpenAiRelayExecution, OpenAiRouteRelayExecution};
 use crate::api::openai_runtime::{
     authenticate_api_key, provider_relay_attempt_retry_policy, resolve_openai_upstream_route_plan,
     route_http_status_is_retryable, OpenAiRouteError, OpenAiRuntimeFailureStrategy,
-    OpenAiRuntimeRouteConfig, ResolvedOpenAiUpstreamRoute, ResolvedOpenAiUpstreamRoutePlan,
+    OpenAiRuntimeRouteConfig, ResolvedOpenAiUpstreamRoutePlan,
 };
 use crate::api::openai_usage::{
     build_request_trace_command, provider_error_code_from_body, provider_error_message_from_body,
@@ -344,7 +345,6 @@ where
                 &invocation_context,
                 None,
                 Some(error.status_code.as_u16()),
-                request.stream,
                 None,
                 Some(error.code.to_owned()),
                 Some(error.error_type.to_owned()),
@@ -365,7 +365,6 @@ where
                     &invocation_context,
                     None,
                     Some(http_status),
-                    request.stream,
                     None,
                     Some("route_selection_failed".to_owned()),
                     Some(if http_status >= 500 {
@@ -403,7 +402,6 @@ where
                 &invocation_context,
                 Some(&route),
                 Some(error.status_code.as_u16()),
-                request.stream,
                 None,
                 Some(error.code.to_owned()),
                 Some(error.error_type.to_owned()),
@@ -425,7 +423,6 @@ where
                 &invocation_context,
                 Some(&route),
                 Some(StatusCode::NOT_IMPLEMENTED.as_u16()),
-                true,
                 None,
                 Some("streaming_relay_not_configured".to_owned()),
                 Some("server_error".to_owned()),
@@ -448,7 +445,6 @@ where
                 &invocation_context,
                 Some(&route),
                 Some(StatusCode::NOT_IMPLEMENTED.as_u16()),
-                false,
                 None,
                 Some("responses_relay_not_configured".to_owned()),
                 Some("server_error".to_owned()),
@@ -466,15 +462,17 @@ where
 
     match relay_response(
         relay.as_ref(),
-        state.usage_recorder.clone(),
-        state.usage_recording.clone(),
-        &state.plugins,
-        &invocation_context,
-        context,
-        route_plan,
-        request,
-        state.failure_strategy,
-        &state.default_retry_policy,
+        OpenAiRelayExecution {
+            usage_recorder: state.usage_recorder.clone(),
+            usage_recording: state.usage_recording.clone(),
+            plugins: &state.plugins,
+            invocation_context: &invocation_context,
+            context,
+            route_plan,
+            request,
+            failure_strategy: state.failure_strategy,
+            default_retry_policy: &state.default_retry_policy,
+        },
     )
     .await
     {
@@ -520,20 +518,24 @@ where
     )
 }
 
-async fn relay_response(
+async fn relay_response<C>(
     relay: &(dyn ResponsesRelay + Send + Sync),
-    usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
-    usage_recording: Option<
-        Arc<OpenAiUsageRecorder<impl UpstreamAccountRouteCatalog + Send + Sync + 'static>>,
-    >,
-    plugins: &[OpenAiInvocationPluginRef],
-    invocation_context: &OpenAiInvocationContext,
-    context: AuthenticatedApiKeyContext,
-    route_plan: ResolvedOpenAiUpstreamRoutePlan,
-    request: ParsedOpenAiResponsesRequest,
-    failure_strategy: OpenAiRuntimeFailureStrategy,
-    default_retry_policy: &ProviderRetryPolicy,
-) -> Result<Response, Response> {
+    execution: OpenAiRelayExecution<'_, C, ParsedOpenAiResponsesRequest>,
+) -> Result<Response, Response>
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    let OpenAiRelayExecution {
+        usage_recorder,
+        usage_recording,
+        plugins,
+        invocation_context,
+        context,
+        route_plan,
+        request,
+        failure_strategy,
+        default_retry_policy,
+    } = execution;
     let requested_model = request.model;
     let request_body = request.request_body;
     let mut last_error = None;
@@ -546,17 +548,19 @@ async fn relay_response(
         }
         match relay_response_route(
             relay,
-            usage_recorder.clone(),
-            usage_recording.as_ref(),
-            plugins,
-            invocation_context,
-            &context,
-            &route,
-            &requested_model,
-            request_body.clone(),
-            failure_strategy,
-            route_count,
-            default_retry_policy,
+            OpenAiRouteRelayExecution {
+                usage_recorder: usage_recorder.clone(),
+                usage_recording: usage_recording.as_ref(),
+                plugins,
+                invocation_context,
+                context: &context,
+                route: &route,
+                requested_model: &requested_model,
+                request_body: request_body.clone(),
+                failure_strategy,
+                route_count,
+                default_retry_policy,
+            },
         )
         .await
         {
@@ -590,22 +594,26 @@ fn elapsed_millis(started_at: Instant) -> i64 {
     started_at.elapsed().as_millis().clamp(1, i64::MAX as u128) as i64
 }
 
-async fn relay_response_route(
+async fn relay_response_route<C>(
     relay: &(dyn ResponsesRelay + Send + Sync),
-    usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
-    usage_recording: Option<
-        &Arc<OpenAiUsageRecorder<impl UpstreamAccountRouteCatalog + Send + Sync + 'static>>,
-    >,
-    plugins: &[OpenAiInvocationPluginRef],
-    invocation_context: &OpenAiInvocationContext,
-    context: &AuthenticatedApiKeyContext,
-    route: &ResolvedOpenAiUpstreamRoute,
-    requested_model: &str,
-    request_body: serde_json::Value,
-    failure_strategy: OpenAiRuntimeFailureStrategy,
-    route_count: usize,
-    default_retry_policy: &ProviderRetryPolicy,
-) -> Result<Response, RouteRelayFailure> {
+    execution: OpenAiRouteRelayExecution<'_, C>,
+) -> Result<Response, RouteRelayFailure>
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    let OpenAiRouteRelayExecution {
+        usage_recorder,
+        usage_recording,
+        plugins,
+        invocation_context,
+        context,
+        route,
+        requested_model,
+        request_body,
+        failure_strategy,
+        route_count,
+        default_retry_policy,
+    } = execution;
     let provider_retry_policy =
         provider_relay_attempt_retry_policy(route, failure_strategy, route_count);
     let started_at = Instant::now();
@@ -642,7 +650,6 @@ async fn relay_response_route(
                     invocation_context,
                     Some(route),
                     Some(502),
-                    false,
                     fault.latency_ms,
                     Some(fault.error_code.clone()),
                     Some("server_error".to_owned()),
@@ -677,7 +684,6 @@ async fn relay_response_route(
                     invocation_context,
                     Some(route),
                     Some(502),
-                    false,
                     fault.latency_ms,
                     Some(fault.error_code.clone()),
                     Some("server_error".to_owned()),
@@ -711,7 +717,6 @@ async fn relay_response_route(
                 invocation_context,
                 Some(route),
                 Some(response.status_code),
-                false,
                 fault.latency_ms,
                 Some(provider_error_code_from_body(
                     &response.body,
@@ -749,7 +754,6 @@ async fn relay_response_route(
                     invocation_context,
                     Some(route),
                     Some(502),
-                    false,
                     fault.latency_ms.or(outcome.latency_ms),
                     Some(fault.error_code.clone()),
                     Some("server_error".to_owned()),

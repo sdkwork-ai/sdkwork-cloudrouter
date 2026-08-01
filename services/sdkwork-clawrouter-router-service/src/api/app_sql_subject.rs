@@ -16,7 +16,7 @@ use sdkwork_web_core::{TenantAppContext, WebRequestContext};
 
 use sdkwork_claw_http::TenantIsolationViolation;
 
-use crate::api::response::problem_from_wire_code;
+use crate::api::response::{problem_from_wire_code, ApiResponseError};
 use crate::api::subject::unauthorized_subject_response;
 use crate::ports::{
     AppChatSubject, AppNotificationSubject, AppRoutingStrategySubject, AppRoutingSubject,
@@ -182,11 +182,10 @@ where
     type Rejection = Response;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        Ok(Self(resolve_optional_app_sql_subject(
-            &parts.headers,
-            &parts.extensions,
-            false,
-        )?))
+        Ok(Self(
+            resolve_optional_app_sql_subject(&parts.headers, &parts.extensions, false)
+                .map_err(IntoResponse::into_response)?,
+        ))
     }
 }
 
@@ -197,21 +196,23 @@ where
     type Rejection = Response;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        match resolve_optional_app_sql_subject(&parts.headers, &parts.extensions, true)? {
+        match resolve_optional_app_sql_subject(&parts.headers, &parts.extensions, true)
+            .map_err(IntoResponse::into_response)?
+        {
             Some(subject) => Ok(Self(subject)),
             None => Err(unauthorized_subject_response()),
         }
     }
 }
 
-pub fn map_optional_app_sql_subject<T>(
+pub(crate) fn map_optional_app_sql_subject<T>(
     subject: Option<SqlScopedSubject>,
     require_subject: bool,
     map: impl FnOnce(SqlScopedSubject) -> T,
-) -> Result<Option<T>, Response> {
+) -> Result<Option<T>, ApiResponseError> {
     match subject {
         Some(subject) => Ok(Some(map(subject))),
-        None if require_subject => Err(unauthorized_subject_response()),
+        None if require_subject => Err(unauthorized_subject_response().into()),
         None => Ok(None),
     }
 }
@@ -223,19 +224,19 @@ pub fn map_required_app_sql_subject<T>(
     map(subject)
 }
 
-pub fn resolve_optional_app_sql_subject(
+pub(crate) fn resolve_optional_app_sql_subject(
     headers: &HeaderMap,
     extensions: &Extensions,
     require_subject: bool,
-) -> Result<Option<SqlScopedSubject>, Response> {
+) -> Result<Option<SqlScopedSubject>, ApiResponseError> {
     if let Some(context) = extensions.get::<WebRequestContext>() {
         if let Some(principal) = context.principal.as_ref() {
             let tenant_app = TenantAppContext::try_from_request_context(context).map_err(|_| {
-                subject_mapping_failed_response(
+                ApiResponseError::from(subject_mapping_failed_response(
                     principal.tenant_id(),
                     principal.user_id(),
                     SqlScopedSubjectMappingError::InvalidUserId,
-                )
+                ))
             })?;
             return match SqlScopedSubject::from_tenant_app(&tenant_app) {
                 Ok(subject) => Ok(Some(subject)),
@@ -251,7 +252,8 @@ pub fn resolve_optional_app_sql_subject(
                         principal.tenant_id(),
                         principal.user_id(),
                         error,
-                    ))
+                    )
+                    .into())
                 }
             };
         }
@@ -262,7 +264,7 @@ pub fn resolve_optional_app_sql_subject(
     }
 
     if require_subject {
-        return Err(unauthorized_subject_response());
+        return Err(unauthorized_subject_response().into());
     }
     Ok(None)
 }

@@ -146,7 +146,7 @@ fn rule_applies_to_invocation(rule: &GatewayRiskRule, auth: &AuthenticatedApiKey
         (None, _) | (Some(0), _) => true,
         (Some(SCOPE_TYPE_API_KEY), Some(scope_id)) => scope_id == auth.api_key_id,
         (Some(SCOPE_TYPE_ORGANIZATION), Some(scope_id)) => scope_id == auth.organization_id,
-        (Some(_), Some(scope_id)) if scope_id == 0 => true,
+        (Some(_), Some(0)) => true,
         (Some(_), None) => true,
         _ => false,
     }
@@ -160,10 +160,10 @@ fn rule_matches_client_ip(client_ip: Option<&str>, rule: &GatewayRiskRule) -> bo
     if is_blank(Some(target)) {
         return false;
     }
+    if rule.target_type == TARGET_TYPE_CIDR || target.contains('/') {
+        return ip_matches_entry(client_ip, target, MATCH_MODE_CIDR);
+    }
     match rule.target_type {
-        TARGET_TYPE_CIDR | _ if target.contains('/') => {
-            ip_matches_entry(client_ip, target, MATCH_MODE_CIDR)
-        }
         TARGET_TYPE_IP => ip_matches_entry(client_ip, target, MATCH_MODE_EXACT),
         _ => ip_matches_entry(client_ip, target, rule.match_mode),
     }

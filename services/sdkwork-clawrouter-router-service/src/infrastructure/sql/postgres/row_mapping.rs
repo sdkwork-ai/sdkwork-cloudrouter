@@ -412,15 +412,19 @@ fn api_key_from_row(row: PgRow) -> Result<GatewayApiKeyRow, sqlx::Error> {
     })
 }
 
+pub(crate) struct ApiKeyPageQuery<'a> {
+    pub tenant_id: i64,
+    pub organization_id: i64,
+    pub user_id: i64,
+    pub search: Option<&'a str>,
+    pub page_size: i64,
+    pub offset: i64,
+}
+
 pub async fn load_api_keys_paginated(
     pool: &sqlx::PgPool,
     base_sql: &str,
-    tenant_id: i64,
-    organization_id: i64,
-    user_id: i64,
-    search: Option<&str>,
-    page_size: i64,
-    offset: i64,
+    page: ApiKeyPageQuery<'_>,
 ) -> Result<Vec<GatewayApiKeyRow>, sqlx::Error> {
     let sql = format!(
         r#"
@@ -440,12 +444,12 @@ pub async fn load_api_keys_paginated(
         "#
     );
     let rows = sqlx::query(&sql)
-        .bind(tenant_id)
-        .bind(organization_id)
-        .bind(user_id)
-        .bind(search)
-        .bind(page_size)
-        .bind(offset)
+        .bind(page.tenant_id)
+        .bind(page.organization_id)
+        .bind(page.user_id)
+        .bind(page.search)
+        .bind(page.page_size)
+        .bind(page.offset)
         .fetch_all(pool)
         .await?;
     rows.into_iter().map(api_key_from_row).collect()

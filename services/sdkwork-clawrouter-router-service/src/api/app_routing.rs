@@ -125,7 +125,7 @@ async fn fetch_routing_account_groups(
         scoped.into()
     }) {
         Ok(subject) => subject,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let query = match build_routing_list_query(request) {
         Ok(query) => query,
@@ -155,7 +155,7 @@ async fn fetch_routing_api_keys(
         scoped.into()
     }) {
         Ok(subject) => subject,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let query = match build_routing_list_query(request) {
         Ok(query) => query,
@@ -181,7 +181,7 @@ async fn fetch_routing_request_traces(
         scoped.into()
     }) {
         Ok(subject) => subject,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let query = match build_routing_list_query(request) {
         Ok(query) => query,
@@ -210,7 +210,7 @@ async fn fetch_routing_usage(
         scoped.into()
     }) {
         Ok(subject) => subject,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
 
     match state.read_store.load_routing_usage(subject).await {

@@ -4,7 +4,7 @@ use std::time::Duration;
 use axum::body::{to_bytes, Body};
 use axum::extract::ConnectInfo;
 use axum::http::{header, HeaderMap, HeaderValue, Request, StatusCode, Uri};
-use axum::response::Response;
+use axum::response::{IntoResponse, Response};
 use sdkwork_claw_security::{
     INTERNAL_GATEWAY_AUTH_HEADERS, INTERNAL_GATEWAY_ROUTE_PREFIX, REDACTED,
 };
@@ -51,11 +51,11 @@ where
         state.query_string_api_key_policy,
     ) {
         Ok(context) => context,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     parts.uri = match sanitize_authenticated_gateway_uri(&parts.uri) {
         Ok(uri) => uri,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     handle_authenticated_invocation(
         state,
@@ -113,7 +113,7 @@ where
     .await
     {
         Ok(context) => context,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     parts.uri = match internal_gateway_target_uri(&parts.uri)
         .and_then(|uri| sanitize_authenticated_gateway_uri(&uri).map_err(|_| ()))
@@ -293,8 +293,7 @@ fn request_body_should_parse_json(headers: &HeaderMap, bytes: &[u8]) -> bool {
             let trimmed = bytes
                 .iter()
                 .copied()
-                .skip_while(u8::is_ascii_whitespace)
-                .next();
+                .find(|byte| !byte.is_ascii_whitespace());
             matches!(trimmed, Some(b'{') | Some(b'['))
         })
 }
@@ -316,7 +315,7 @@ fn classify_request(
     }
 
     if path == "/v1" || path.starts_with("/v1/") {
-        return OpenAiResourceClassifier::default()
+        return OpenAiResourceClassifier
             .classify(&request)
             .map(|classification| (classification, path.to_owned()));
     }
@@ -330,7 +329,7 @@ fn classify_request(
     request.path = standard_path;
     request.supplier_code = Some(supplier_code);
     let invocation_path = request.path.clone();
-    ProviderNativeResourceClassifier::default()
+    ProviderNativeResourceClassifier
         .classify(&request)
         .map(|classification| (classification, invocation_path))
 }

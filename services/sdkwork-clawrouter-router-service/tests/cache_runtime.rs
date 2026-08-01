@@ -529,7 +529,7 @@ async fn cache_namespace_key_listing_returns_safe_metadata_only() {
     assert_eq!(2, keys.scanned_items);
     assert!(keys.scan_complete);
     assert_eq!(2, keys.returned_items);
-    assert_eq!(None, keys.page_size);
+    assert_eq!(Some(200), keys.page_size);
     assert!(!keys.has_more);
     assert_eq!(2, keys.items.len());
     assert_eq!("qr-list-1", keys.items[0].key);

@@ -1,4 +1,4 @@
-mod common;
+pub mod common;
 use common::InternalTrustedSubjectHeaders;
 use std::future::Future;
 use std::pin::Pin;
@@ -39,8 +39,8 @@ async fn app_settlements_dashboard_billing_route_matches_app_sdk_contract() {
     let captured_query = read_store.captured_query.lock().unwrap().clone().unwrap();
     let captured_subject = read_store.captured_subject.lock().unwrap().unwrap();
     assert_eq!(Some(2026), captured_query.year);
-    assert_eq!(10, captured_subject.tenant_id);
-    assert_eq!(20, captured_subject.organization_id);
+    assert_eq!(100001, captured_subject.tenant_id);
+    assert_eq!(0, captured_subject.organization_id);
     assert_eq!(30, captured_subject.user_id);
 }
 

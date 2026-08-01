@@ -3,6 +3,8 @@ use std::collections::BTreeMap;
 use std::sync::atomic::{AtomicU64, Ordering as AtomicOrdering};
 use std::sync::OnceLock;
 
+use sha2::{Digest, Sha256};
+
 use crate::domain::{
     DecimalValue, DomainError, DomainResult, UpstreamAccountFallbackMode, UpstreamAccountGroup,
     UpstreamAccountGroupBinding, UpstreamAccountRoute, UpstreamAccountRoutingStrategy,
@@ -141,7 +143,7 @@ fn build_account_candidate(
 
 fn order_accounts(
     group: &UpstreamAccountGroup,
-    accounts: &mut Vec<AccountCandidate>,
+    accounts: &mut [AccountCandidate],
 ) -> DomainResult<()> {
     accounts.sort_by(AccountCandidate::stable_compare);
     let active_priority = accounts
@@ -278,7 +280,7 @@ fn endpoint_compare(left: &UpstreamAccountRoute, right: &UpstreamAccountRoute) -
 
 fn order_credentials(
     account_group_id: i64,
-    routes: &mut Vec<UpstreamAccountRoute>,
+    routes: &mut [UpstreamAccountRoute],
 ) -> DomainResult<()> {
     routes.sort_by_key(|route| {
         (
@@ -352,46 +354,144 @@ fn weighted_index(
     Ok(0)
 }
 
-const ROUTING_COUNTER_SHARDS: usize = 256;
+const ROUTING_COUNTER_CAPACITY: usize = 1 << 18;
+const ROUTING_COUNTER_MAX_PROBES: usize = 64;
+const ROUTING_COUNTER_FALLBACK_SHARDS: usize = 256;
+const ROUTING_COUNTER_SLOT_EMPTY: u64 = 0;
+const ROUTING_COUNTER_SLOT_INITIALIZING: u64 = 1;
+const ROUTING_COUNTER_SLOT_READY: u64 = 2;
 
-static ROUTING_COUNTERS: OnceLock<Box<[AtomicU64]>> = OnceLock::new();
-static ROUTING_INSTANCE_SALT: OnceLock<u64> = OnceLock::new();
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct RoutingCounterFingerprint {
+    high: u64,
+    low: u64,
+}
+
+impl RoutingCounterFingerprint {
+    fn for_key(key: &str) -> Self {
+        let digest = Sha256::digest(key.as_bytes());
+        let mut high = [0_u8; 8];
+        let mut low = [0_u8; 8];
+        high.copy_from_slice(&digest[..8]);
+        low.copy_from_slice(&digest[8..16]);
+        Self {
+            high: u64::from_le_bytes(high),
+            low: u64::from_le_bytes(low),
+        }
+    }
+
+    fn slot_index(self) -> usize {
+        (self.high ^ self.low) as usize & (ROUTING_COUNTER_CAPACITY - 1)
+    }
+}
+
+#[derive(Debug)]
+struct RoutingCounterSlot {
+    state: AtomicU64,
+    fingerprint_high: AtomicU64,
+    fingerprint_low: AtomicU64,
+    sequence: AtomicU64,
+}
+
+impl RoutingCounterSlot {
+    fn new() -> Self {
+        Self {
+            state: AtomicU64::new(ROUTING_COUNTER_SLOT_EMPTY),
+            fingerprint_high: AtomicU64::new(0),
+            fingerprint_low: AtomicU64::new(0),
+            sequence: AtomicU64::new(0),
+        }
+    }
+
+    fn fingerprint(&self) -> RoutingCounterFingerprint {
+        RoutingCounterFingerprint {
+            high: self.fingerprint_high.load(AtomicOrdering::Relaxed),
+            low: self.fingerprint_low.load(AtomicOrdering::Relaxed),
+        }
+    }
+}
+
+#[derive(Debug)]
+struct RoutingCounterTable {
+    slots: Box<[RoutingCounterSlot]>,
+    fallback_shards: Box<[AtomicU64]>,
+}
+
+impl RoutingCounterTable {
+    fn new() -> Self {
+        debug_assert!(ROUTING_COUNTER_CAPACITY.is_power_of_two());
+        Self {
+            slots: std::iter::repeat_with(RoutingCounterSlot::new)
+                .take(ROUTING_COUNTER_CAPACITY)
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+            fallback_shards: std::iter::repeat_with(|| AtomicU64::new(0))
+                .take(ROUTING_COUNTER_FALLBACK_SHARDS)
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        }
+    }
+
+    fn next_sequence(&self, fingerprint: RoutingCounterFingerprint) -> u64 {
+        let initial_index = fingerprint.slot_index();
+        for probe in 0..ROUTING_COUNTER_MAX_PROBES {
+            let slot =
+                &self.slots[(initial_index.wrapping_add(probe)) & (ROUTING_COUNTER_CAPACITY - 1)];
+            loop {
+                match slot.state.load(AtomicOrdering::Acquire) {
+                    ROUTING_COUNTER_SLOT_READY => {
+                        if slot.fingerprint() == fingerprint {
+                            return slot.sequence.fetch_add(1, AtomicOrdering::Relaxed);
+                        }
+                        break;
+                    }
+                    ROUTING_COUNTER_SLOT_EMPTY => {
+                        if slot
+                            .state
+                            .compare_exchange(
+                                ROUTING_COUNTER_SLOT_EMPTY,
+                                ROUTING_COUNTER_SLOT_INITIALIZING,
+                                AtomicOrdering::AcqRel,
+                                AtomicOrdering::Acquire,
+                            )
+                            .is_ok()
+                        {
+                            slot.fingerprint_high
+                                .store(fingerprint.high, AtomicOrdering::Relaxed);
+                            slot.fingerprint_low
+                                .store(fingerprint.low, AtomicOrdering::Relaxed);
+                            slot.state
+                                .store(ROUTING_COUNTER_SLOT_READY, AtomicOrdering::Release);
+                            return slot.sequence.fetch_add(1, AtomicOrdering::Relaxed);
+                        }
+                    }
+                    ROUTING_COUNTER_SLOT_INITIALIZING => std::hint::spin_loop(),
+                    _ => {
+                        debug_assert!(false, "routing counter slot state is invalid");
+                        break;
+                    }
+                }
+            }
+        }
+
+        let shard_index = fingerprint.slot_index() % self.fallback_shards.len();
+        let sequence = self.fallback_shards[shard_index].fetch_add(1, AtomicOrdering::Relaxed);
+        sequence
+            .wrapping_add(fingerprint.high)
+            .wrapping_add(fingerprint.low)
+    }
+}
+
+static ROUTING_COUNTERS: OnceLock<RoutingCounterTable> = OnceLock::new();
 
 fn next_offset(key: &str, modulus: u64) -> u64 {
     if modulus <= 1 {
         return 0;
     }
-    let key_hash = stable_routing_hash(key);
-    let counters = ROUTING_COUNTERS.get_or_init(|| {
-        (0..ROUTING_COUNTER_SHARDS)
-            .map(|_| AtomicU64::new(0))
-            .collect::<Vec<_>>()
-            .into_boxed_slice()
-    });
-    let shard = &counters[(key_hash as usize) % ROUTING_COUNTER_SHARDS];
-    let sequence = shard.fetch_add(1, AtomicOrdering::Relaxed);
-    sequence
-        .wrapping_add(key_hash)
-        .wrapping_add(*ROUTING_INSTANCE_SALT.get_or_init(routing_instance_salt))
+    ROUTING_COUNTERS
+        .get_or_init(RoutingCounterTable::new)
+        .next_sequence(RoutingCounterFingerprint::for_key(key))
         % modulus
-}
-
-fn stable_routing_hash(value: &str) -> u64 {
-    value
-        .as_bytes()
-        .iter()
-        .fold(0xcbf2_9ce4_8422_2325, |hash, byte| {
-            (hash ^ u64::from(*byte)).wrapping_mul(0x0000_0100_0000_01b3)
-        })
-}
-
-fn routing_instance_salt() -> u64 {
-    let mut bytes = [0_u8; 8];
-    if getrandom::fill(&mut bytes).is_ok() {
-        return u64::from_le_bytes(bytes);
-    }
-
-    stable_routing_hash(&format!("{}:{:p}", std::process::id(), &ROUTING_COUNTERS))
 }
 
 fn random_offset(modulus: usize) -> usize {

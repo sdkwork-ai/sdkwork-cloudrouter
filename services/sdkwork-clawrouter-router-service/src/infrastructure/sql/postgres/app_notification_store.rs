@@ -393,7 +393,7 @@ fn notification_type_for_display(message_type: i64, severity: i64) -> DomainResu
 
 fn validate_severity(value: i64) -> DomainResult<()> {
     match value {
-        1 | 2 | 3 | 4 => Ok(()),
+        1..=4 => Ok(()),
         value => Err(DomainError::new(format!(
             "invalid notification severity from database row: {value}"
         ))),

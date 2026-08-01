@@ -109,10 +109,11 @@ impl ChatCompletionStreamRelay for AdapterAwareChatCompletionStreamRelay {
 }
 
 fn chat_completion_stream_adapter_invocation(
-    request: ChatCompletionRelayRequest,
+    mut request: ChatCompletionRelayRequest,
     secret_resolver: Option<&ProviderSecretResolverRef>,
     shape: AdapterInvocationShape,
 ) -> DomainResult<AdapterInvocationRequest> {
+    request.request_body = crate::ports::require_stream_usage(request.request_body)?;
     build_openai_adapter_invocation_with_shape(
         CHAT_COMPLETIONS_ENDPOINT,
         OpenAiAdapterInvocationParts {
@@ -182,15 +183,13 @@ fn normalize_chat_completion_stream_event(mut value: Value) -> Value {
     let Some(object) = value.as_object_mut() else {
         return value;
     };
-    if !object.contains_key("object") {
-        object.insert(
-            "object".to_owned(),
-            Value::String("chat.completion.chunk".to_owned()),
-        );
-    } else if object
+    let object_kind = object
         .get("object")
         .and_then(Value::as_str)
-        .is_some_and(|object| object == "chat.completion")
+        .map(str::to_owned);
+    if object_kind
+        .as_deref()
+        .is_none_or(|kind| kind == "chat.completion")
     {
         object.insert(
             "object".to_owned(),

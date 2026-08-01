@@ -9,7 +9,11 @@ This README is the SDKWork module entrypoint for `sdkwork-claw-observability`. T
 
 ## Public API
 
-- `.`
+- `init_tracing*` installs the process-wide structured tracing subscriber.
+- `OtlpConfig` owns typed OTLP trace-export configuration.
+- Prometheus request metrics are owned by `sdkwork-web-framework` and
+  `sdkwork-claw-http`; this crate does not maintain a second request collector
+  or listener.
 
 ## Required SDK Surface
 
@@ -17,7 +21,7 @@ This README is the SDKWork module entrypoint for `sdkwork-claw-observability`. T
 
 ## Configuration
 
-Configuration keys, runtime entrypoints, and integration contracts are declared in `specs/component.spec.json`. Shared modules must receive configuration through typed bootstrap or service boundaries rather than reading host-local environment state directly.
+Configuration keys, runtime entrypoints, and integration contracts are declared in `specs/component.spec.json`. Process bootstrap may load the declared OTEL variables through `OtlpConfig::from_env`; reusable services receive typed tracing configuration and do not read host-local settings.
 
 ## SaaS/Private/Local Behavior
 
@@ -33,7 +37,7 @@ Extension points are limited to public exports, runtime entrypoints, SDK clients
 
 ## Verification
 
-- `cargo test --manifest-path apps/sdkwork-clawrouter/crates/sdkwork-claw-observability/Cargo.toml`
+- `cargo test -p sdkwork-claw-observability`
 
 ## Owner And Status
 

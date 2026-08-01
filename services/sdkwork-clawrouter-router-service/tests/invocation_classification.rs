@@ -16,7 +16,7 @@ fn classify_openai(
     InvocationBilling,
     InvocationRouting,
 ) {
-    OpenAiResourceClassifier::default()
+    OpenAiResourceClassifier
         .classify(&InvocationClassificationRequest::new(method, path))
         .expect("classification")
         .into_parts()
@@ -270,7 +270,7 @@ fn rejects_provider_control_plane_routes() {
         (Method::GET, "/v1/projects/proj_123/api_keys"),
         (Method::DELETE, "/v1/models/gpt-4o-mini"),
     ] {
-        let error = OpenAiResourceClassifier::default()
+        let error = OpenAiResourceClassifier
             .classify(&InvocationClassificationRequest::new(method.clone(), path))
             .expect_err("provider control-plane route must not be classified");
 
@@ -339,7 +339,7 @@ fn classifies_provider_native_routes_from_provider_prefix_and_endpoint_key() {
         .with_endpoint_key("text_to_video")
         .with_capability(RoutingCapability::Video);
 
-    let classification = ProviderNativeResourceClassifier::default()
+    let classification = ProviderNativeResourceClassifier
         .classify(&request)
         .expect("provider native classification");
     let (resource, billing, routing) = classification.into_parts();
@@ -395,7 +395,7 @@ fn classifies_provider_native_standard_paths_to_seeded_route_keys() {
             .with_supplier_code(provider)
             .with_provider_family("media");
 
-        let classification = ProviderNativeResourceClassifier::default()
+        let classification = ProviderNativeResourceClassifier
             .classify(&request)
             .expect("provider native classification");
         let (resource, billing, routing) = classification.into_parts();
@@ -429,7 +429,7 @@ fn classifies_provider_native_unknown_paths_with_normalized_fallback_route_key()
         .with_supplier_code("Custom-Provider")
         .with_capability(RoutingCapability::Network);
 
-    let classification = ProviderNativeResourceClassifier::default()
+    let classification = ProviderNativeResourceClassifier
         .classify(&request)
         .expect("provider native classification");
     let (resource, _billing, routing) = classification.into_parts();

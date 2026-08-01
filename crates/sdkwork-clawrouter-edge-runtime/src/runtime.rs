@@ -152,7 +152,7 @@ fn positive_runtime_i64(key: &str) -> Option<i64> {
     (value > 0).then_some(value)
 }
 
-fn router_with_invocation_runtime_routes<C>(
+struct InvocationRuntimeRoutesInput<'a, C> {
     base_router: Router,
     catalog: Arc<C>,
     api_key_hasher: ApiKeyHasher,
@@ -161,7 +161,7 @@ fn router_with_invocation_runtime_routes<C>(
     usage_recorder: Option<UsageRecorder>,
     provider_adapter_config: Option<ProviderAdapterConfig>,
     query_string_api_key_policy: QueryStringApiKeyPolicy,
-    runtime_toml: Option<&RuntimeTomlConfig>,
+    runtime_toml: Option<&'a RuntimeTomlConfig>,
     body_max_bytes: usize,
     tenant_inflight_config: Option<TenantInflightConfig>,
     estimated_instance_count: u32,
@@ -170,10 +170,31 @@ fn router_with_invocation_runtime_routes<C>(
     provider_response_timeout: Duration,
     provider_http_pool_config: ProviderRelayHttpPoolConfig,
     internal_gateway_verifier: Arc<InternalGatewayRequestVerifier>,
-) -> Router
+}
+
+fn router_with_invocation_runtime_routes<C>(input: InvocationRuntimeRoutesInput<'_, C>) -> Router
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
+    let InvocationRuntimeRoutesInput {
+        base_router,
+        catalog,
+        api_key_hasher,
+        provider_secret_resolver,
+        sticky_store,
+        usage_recorder,
+        provider_adapter_config,
+        query_string_api_key_policy,
+        runtime_toml,
+        body_max_bytes,
+        tenant_inflight_config,
+        estimated_instance_count,
+        stream_response_timeout,
+        response_max_bytes,
+        provider_response_timeout,
+        provider_http_pool_config,
+        internal_gateway_verifier,
+    } = input;
     let secret_resolver = provider_secret_resolver.map(|resolver| {
         let resolver: Arc<dyn ProviderSecretResolver + Send + Sync> = resolver;
         resolver
@@ -190,25 +211,30 @@ where
                 provider_response_timeout,
                 provider_http_pool_config,
             )),
-            secret_resolver,
-            sticky_store,
-            usage_recorder,
-            provider_adapter_config,
-            Some(crate::invocation_router::invocation_policy_guard_from_runtime_toml_with_instance_count(
-                runtime_toml,
-                estimated_instance_count,
-            )),
-            tenant_inflight_config,
-            redis_config.as_ref(),
-            body_max_bytes,
-            stream_response_timeout,
-            query_string_api_key_policy,
-            Some(internal_gateway_verifier),
+            crate::invocation_router::InvocationRouterOptions {
+                secret_resolver,
+                sticky_store,
+                usage_recorder,
+                provider_adapter_config,
+                invocation_policy_guard: Some(
+                    crate::invocation_router::invocation_policy_guard_from_runtime_toml_with_instance_count(
+                        runtime_toml,
+                        estimated_instance_count,
+                    ),
+                ),
+                tenant_inflight_config,
+                redis_config: redis_config.as_ref(),
+                body_limit_bytes: body_max_bytes,
+                stream_response_timeout,
+                query_string_api_key_policy,
+                internal_gateway_verifier: Some(internal_gateway_verifier),
+                ..crate::invocation_router::InvocationRouterOptions::default()
+            },
         ),
     )
 }
 
-fn merge_relay_authenticated_openai_passthrough<C>(
+struct RelayAuthenticatedOpenAiPassthroughInput<C> {
     router: Router,
     catalog: Arc<C>,
     api_key_hasher: ApiKeyHasher,
@@ -220,10 +246,27 @@ fn merge_relay_authenticated_openai_passthrough<C>(
     body_max_bytes: usize,
     provider_response_timeout: Duration,
     provider_http_pool_config: ProviderRelayHttpPoolConfig,
+}
+
+fn merge_relay_authenticated_openai_passthrough<C>(
+    input: RelayAuthenticatedOpenAiPassthroughInput<C>,
 ) -> Router
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
+    let RelayAuthenticatedOpenAiPassthroughInput {
+        router,
+        catalog,
+        api_key_hasher,
+        provider_passthrough_config,
+        provider_adapter_config,
+        usage_recorder,
+        secret_resolver_configured,
+        query_string_api_key_policy,
+        body_max_bytes,
+        provider_response_timeout,
+        provider_http_pool_config,
+    } = input;
     if secret_resolver_configured {
         return router;
     }
@@ -232,20 +275,22 @@ where
     };
     router.merge(
         crate::passthrough::authenticated_gateway_passthrough_router_with_adapter_config_and_query_string_api_key_policy(
-            config,
-            catalog,
-            api_key_hasher,
-            provider_adapter_config,
-            usage_recorder,
-            query_string_api_key_policy,
-            body_max_bytes,
-            provider_response_timeout,
-            provider_http_pool_config,
+            crate::passthrough::AuthenticatedGatewayPassthroughConfig {
+                config,
+                catalog,
+                api_key_hasher,
+                adapter_config: provider_adapter_config,
+                usage_recorder,
+                query_string_api_key_policy,
+                body_max_bytes,
+                response_timeout: provider_response_timeout,
+                http_pool_config: provider_http_pool_config,
+            },
         ),
     )
 }
 
-fn router_with_database_runtime_routes<C>(
+struct DatabaseRuntimeRoutesInput<'a, C> {
     base_router: Router,
     catalog: Arc<C>,
     api_key_hasher: ApiKeyHasher,
@@ -256,37 +301,55 @@ fn router_with_database_runtime_routes<C>(
     provider_adapter_config: Option<ProviderAdapterConfig>,
     provider_runtime_config: ProviderRelayRuntimeConfig,
     query_string_api_key_policy: QueryStringApiKeyPolicy,
-    runtime_toml: Option<&RuntimeTomlConfig>,
+    runtime_toml: Option<&'a RuntimeTomlConfig>,
     request_limits_config: RequestLimitsConfig,
+}
+
+fn router_with_database_runtime_routes<C>(
+    input: DatabaseRuntimeRoutesInput<'_, C>,
 ) -> Result<Router, GatewayRouterError>
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
+    let DatabaseRuntimeRoutesInput {
+        base_router,
+        catalog,
+        api_key_hasher,
+        provider_secret_resolver,
+        invocation_sticky_store,
+        usage_recorder,
+        provider_passthrough_config,
+        provider_adapter_config,
+        provider_runtime_config,
+        query_string_api_key_policy,
+        runtime_toml,
+        request_limits_config,
+    } = input;
     let internal_gateway_verifier = build_internal_gateway_request_verifier(runtime_toml)?;
     let dispatcher_response_max_bytes =
         invocation_response_max_bytes(provider_runtime_config.response_max_bytes)?;
     let body_max_bytes = gateway_invocation_body_max_bytes(request_limits_config);
     let secret_resolver_configured = provider_secret_resolver.is_some();
     let router = if secret_resolver_configured {
-        router_with_invocation_runtime_routes(
+        router_with_invocation_runtime_routes(InvocationRuntimeRoutesInput {
             base_router,
-            Arc::clone(&catalog),
-            Arc::clone(&api_key_hasher),
+            catalog: Arc::clone(&catalog),
+            api_key_hasher: Arc::clone(&api_key_hasher),
             provider_secret_resolver,
-            invocation_sticky_store,
-            usage_recorder.clone(),
-            provider_adapter_config.clone(),
+            sticky_store: invocation_sticky_store,
+            usage_recorder: usage_recorder.clone(),
+            provider_adapter_config: provider_adapter_config.clone(),
             query_string_api_key_policy,
             runtime_toml,
             body_max_bytes,
-            Some(provider_runtime_config.tenant_inflight_config),
-            provider_runtime_config.estimated_instance_count,
-            provider_runtime_config.stream_response_timeout,
-            dispatcher_response_max_bytes,
-            provider_runtime_config.response_timeout,
-            provider_runtime_config.http_pool_config,
-            Arc::clone(&internal_gateway_verifier),
-        )
+            tenant_inflight_config: Some(provider_runtime_config.tenant_inflight_config),
+            estimated_instance_count: provider_runtime_config.estimated_instance_count,
+            stream_response_timeout: provider_runtime_config.stream_response_timeout,
+            response_max_bytes: dispatcher_response_max_bytes,
+            provider_response_timeout: provider_runtime_config.response_timeout,
+            provider_http_pool_config: provider_runtime_config.http_pool_config,
+            internal_gateway_verifier: Arc::clone(&internal_gateway_verifier),
+        })
     } else {
         let relays = build_openai_runtime_relays(
             provider_passthrough_config.clone(),
@@ -295,54 +358,51 @@ where
             false,
         )?;
         let relays = apply_provider_adapter_config(relays, provider_adapter_config.clone(), None)?;
-        let router = router_with_openai_runtime_routes(
+        let router = router_with_openai_runtime_routes(OpenAiRuntimeRoutesInput {
             base_router,
-            Arc::clone(&catalog),
-            Arc::clone(&api_key_hasher),
+            catalog: Arc::clone(&catalog),
+            api_key_hasher: Arc::clone(&api_key_hasher),
             relays,
-            usage_recorder.clone(),
-            Vec::new(),
-            provider_runtime_config.failure_strategy,
-            provider_runtime_config.default_retry_policy.clone(),
-            provider_passthrough_config.clone(),
-            provider_adapter_config.clone(),
-            None,
-            false,
-            invocation_sticky_store.clone(),
-            false,
-        );
-        router_with_invocation_runtime_routes(
-            router,
-            Arc::clone(&catalog),
-            Arc::clone(&api_key_hasher),
-            None,
-            invocation_sticky_store,
-            usage_recorder.clone(),
-            provider_adapter_config.clone(),
+            usage_recorder: usage_recorder.clone(),
+            invocation_plugins: Vec::new(),
+            failure_strategy: provider_runtime_config.failure_strategy,
+            default_retry_policy: provider_runtime_config.default_retry_policy.clone(),
+            include_openai_models_router: false,
+        });
+        router_with_invocation_runtime_routes(InvocationRuntimeRoutesInput {
+            base_router: router,
+            catalog: Arc::clone(&catalog),
+            api_key_hasher: Arc::clone(&api_key_hasher),
+            provider_secret_resolver: None,
+            sticky_store: invocation_sticky_store,
+            usage_recorder: usage_recorder.clone(),
+            provider_adapter_config: provider_adapter_config.clone(),
             query_string_api_key_policy,
             runtime_toml,
             body_max_bytes,
-            Some(provider_runtime_config.tenant_inflight_config),
-            provider_runtime_config.estimated_instance_count,
-            provider_runtime_config.stream_response_timeout,
-            dispatcher_response_max_bytes,
-            provider_runtime_config.response_timeout,
-            provider_runtime_config.http_pool_config,
-            Arc::clone(&internal_gateway_verifier),
-        )
+            tenant_inflight_config: Some(provider_runtime_config.tenant_inflight_config),
+            estimated_instance_count: provider_runtime_config.estimated_instance_count,
+            stream_response_timeout: provider_runtime_config.stream_response_timeout,
+            response_max_bytes: dispatcher_response_max_bytes,
+            provider_response_timeout: provider_runtime_config.response_timeout,
+            provider_http_pool_config: provider_runtime_config.http_pool_config,
+            internal_gateway_verifier: Arc::clone(&internal_gateway_verifier),
+        })
     };
     Ok(merge_relay_authenticated_openai_passthrough(
-        router,
-        catalog,
-        api_key_hasher,
-        provider_passthrough_config,
-        provider_adapter_config,
-        usage_recorder,
-        secret_resolver_configured,
-        query_string_api_key_policy,
-        body_max_bytes,
-        provider_runtime_config.response_timeout,
-        provider_runtime_config.http_pool_config,
+        RelayAuthenticatedOpenAiPassthroughInput {
+            router,
+            catalog,
+            api_key_hasher,
+            provider_passthrough_config,
+            provider_adapter_config,
+            usage_recorder,
+            secret_resolver_configured,
+            query_string_api_key_policy,
+            body_max_bytes,
+            provider_response_timeout: provider_runtime_config.response_timeout,
+            provider_http_pool_config: provider_runtime_config.http_pool_config,
+        },
     ))
 }
 
@@ -590,6 +650,18 @@ struct OpenAiRuntimeRelays {
     responses: Option<ResponseRelay>,
 }
 
+struct OpenAiRuntimeRoutesInput<C> {
+    base_router: Router,
+    catalog: Arc<C>,
+    api_key_hasher: ApiKeyHasher,
+    relays: OpenAiRuntimeRelays,
+    usage_recorder: Option<UsageRecorder>,
+    invocation_plugins: Vec<OpenAiInvocationPluginRef>,
+    failure_strategy: OpenAiRuntimeFailureStrategy,
+    default_retry_policy: ProviderRetryPolicy,
+    include_openai_models_router: bool,
+}
+
 pub fn router_with_product_catalog_and_api_key_hasher<C>(
     catalog: Arc<C>,
     api_key_hasher: ApiKeyHasher,
@@ -597,22 +669,17 @@ pub fn router_with_product_catalog_and_api_key_hasher<C>(
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
-    router_with_openai_runtime_routes(
-        router(),
+    router_with_openai_runtime_routes(OpenAiRuntimeRoutesInput {
+        base_router: router(),
         catalog,
         api_key_hasher,
-        OpenAiRuntimeRelays::default(),
-        None,
-        Vec::new(),
-        OpenAiRuntimeFailureStrategy::default(),
-        ProviderRetryPolicy::default(),
-        None,
-        None,
-        None,
-        false,
-        None,
-        true,
-    )
+        relays: OpenAiRuntimeRelays::default(),
+        usage_recorder: None,
+        invocation_plugins: Vec::new(),
+        failure_strategy: OpenAiRuntimeFailureStrategy::default(),
+        default_retry_policy: ProviderRetryPolicy::default(),
+        include_openai_models_router: true,
+    })
 }
 
 pub fn router_with_product_catalog_api_key_hasher_and_chat_completion_relay<C>(
@@ -623,27 +690,22 @@ pub fn router_with_product_catalog_api_key_hasher_and_chat_completion_relay<C>(
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
-    router_with_openai_runtime_routes(
-        router(),
+    router_with_openai_runtime_routes(OpenAiRuntimeRoutesInput {
+        base_router: router(),
         catalog,
         api_key_hasher,
-        OpenAiRuntimeRelays {
+        relays: OpenAiRuntimeRelays {
             chat: Some(chat_relay),
             chat_stream: None,
             embeddings: None,
             responses: None,
         },
-        None,
-        Vec::new(),
-        OpenAiRuntimeFailureStrategy::default(),
-        ProviderRetryPolicy::default(),
-        None,
-        None,
-        None,
-        false,
-        None,
-        true,
-    )
+        usage_recorder: None,
+        invocation_plugins: Vec::new(),
+        failure_strategy: OpenAiRuntimeFailureStrategy::default(),
+        default_retry_policy: ProviderRetryPolicy::default(),
+        include_openai_models_router: true,
+    })
 }
 
 pub fn router_with_product_catalog_api_key_hasher_and_chat_completion_streaming_relay<C>(
@@ -654,27 +716,22 @@ pub fn router_with_product_catalog_api_key_hasher_and_chat_completion_streaming_
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
-    router_with_openai_runtime_routes(
-        router(),
+    router_with_openai_runtime_routes(OpenAiRuntimeRoutesInput {
+        base_router: router(),
         catalog,
         api_key_hasher,
-        OpenAiRuntimeRelays {
+        relays: OpenAiRuntimeRelays {
             chat: None,
             chat_stream: Some(chat_stream_relay),
             embeddings: None,
             responses: None,
         },
-        None,
-        Vec::new(),
-        OpenAiRuntimeFailureStrategy::default(),
-        ProviderRetryPolicy::default(),
-        None,
-        None,
-        None,
-        false,
-        None,
-        true,
-    )
+        usage_recorder: None,
+        invocation_plugins: Vec::new(),
+        failure_strategy: OpenAiRuntimeFailureStrategy::default(),
+        default_retry_policy: ProviderRetryPolicy::default(),
+        include_openai_models_router: true,
+    })
 }
 
 pub fn router_with_product_catalog_api_key_hasher_and_embeddings_relay<C>(
@@ -685,27 +742,22 @@ pub fn router_with_product_catalog_api_key_hasher_and_embeddings_relay<C>(
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
-    router_with_openai_runtime_routes(
-        router(),
+    router_with_openai_runtime_routes(OpenAiRuntimeRoutesInput {
+        base_router: router(),
         catalog,
         api_key_hasher,
-        OpenAiRuntimeRelays {
+        relays: OpenAiRuntimeRelays {
             chat: None,
             chat_stream: None,
             embeddings: Some(embeddings_relay),
             responses: None,
         },
-        None,
-        Vec::new(),
-        OpenAiRuntimeFailureStrategy::default(),
-        ProviderRetryPolicy::default(),
-        None,
-        None,
-        None,
-        false,
-        None,
-        true,
-    )
+        usage_recorder: None,
+        invocation_plugins: Vec::new(),
+        failure_strategy: OpenAiRuntimeFailureStrategy::default(),
+        default_retry_policy: ProviderRetryPolicy::default(),
+        include_openai_models_router: true,
+    })
 }
 
 pub fn router_with_product_catalog_api_key_hasher_and_responses_relay<C>(
@@ -716,48 +768,39 @@ pub fn router_with_product_catalog_api_key_hasher_and_responses_relay<C>(
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
-    router_with_openai_runtime_routes(
-        router(),
+    router_with_openai_runtime_routes(OpenAiRuntimeRoutesInput {
+        base_router: router(),
         catalog,
         api_key_hasher,
-        OpenAiRuntimeRelays {
+        relays: OpenAiRuntimeRelays {
             chat: None,
             chat_stream: None,
             embeddings: None,
             responses: Some(responses_relay),
         },
-        None,
-        Vec::new(),
-        OpenAiRuntimeFailureStrategy::default(),
-        ProviderRetryPolicy::default(),
-        None,
-        None,
-        None,
-        false,
-        None,
-        true,
-    )
+        usage_recorder: None,
+        invocation_plugins: Vec::new(),
+        failure_strategy: OpenAiRuntimeFailureStrategy::default(),
+        default_retry_policy: ProviderRetryPolicy::default(),
+        include_openai_models_router: true,
+    })
 }
 
-fn router_with_openai_runtime_routes<C>(
-    base_router: Router,
-    catalog: Arc<C>,
-    api_key_hasher: ApiKeyHasher,
-    relays: OpenAiRuntimeRelays,
-    usage_recorder: Option<UsageRecorder>,
-    invocation_plugins: Vec<OpenAiInvocationPluginRef>,
-    failure_strategy: OpenAiRuntimeFailureStrategy,
-    default_retry_policy: ProviderRetryPolicy,
-    _provider_passthrough_config: Option<ProviderRelayConfig>,
-    _provider_adapter_config: Option<ProviderAdapterConfig>,
-    _provider_secret_resolver: Option<Arc<RefreshableProviderSecretMapResolver>>,
-    _prefer_secret_ref_openai_runtime: bool,
-    _sticky_store: Option<Arc<dyn StickyRouteStore>>,
-    include_openai_models_router: bool,
-) -> Router
+fn router_with_openai_runtime_routes<C>(input: OpenAiRuntimeRoutesInput<C>) -> Router
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
+    let OpenAiRuntimeRoutesInput {
+        base_router,
+        catalog,
+        api_key_hasher,
+        relays,
+        usage_recorder,
+        invocation_plugins,
+        failure_strategy,
+        default_retry_policy,
+        include_openai_models_router,
+    } = input;
     let chat_router = match (relays.chat, relays.chat_stream) {
         (Some(relay), Some(stream_relay)) => {
             if let Some(usage_recorder) = usage_recorder.clone() {
@@ -887,6 +930,19 @@ where
         .merge(chat_router)
 }
 
+struct GatewayRouterBootstrap<'a> {
+    config: DatabaseConfig,
+    api_key_config: Option<ApiKeySecurityConfig>,
+    provider_relay_config: Option<ProviderRelayConfig>,
+    provider_secret_map_config: Option<ProviderSecretMapConfig>,
+    usage_settlement_worker_config: UsageSettlementWorkerConfig,
+    startup_install_mode: StartupInstallMode,
+    runtime_toml: Option<&'a RuntimeTomlConfig>,
+    provider_adapter_config_override: Option<ProviderAdapterConfig>,
+    deployment_mode: Option<DeploymentMode>,
+    query_string_api_key_policy: QueryStringApiKeyPolicy,
+}
+
 pub async fn router_with_database_and_api_key_config(
     config: DatabaseConfig,
     api_key_config: Option<ApiKeySecurityConfig>,
@@ -931,17 +987,18 @@ pub async fn router_with_database_api_key_provider_configs_and_adapter_config(
     provider_secret_map_config: Option<ProviderSecretMapConfig>,
     provider_adapter_config: Option<ProviderAdapterConfig>,
 ) -> Result<Router, GatewayRouterError> {
-    router_with_database_api_key_provider_configs_usage_settlement_worker_config_startup_install_mode_and_runtime_toml(
+    router_with_database_bootstrap(GatewayRouterBootstrap {
         config,
         api_key_config,
         provider_relay_config,
         provider_secret_map_config,
-        resolve_usage_settlement_worker_config(None),
-        StartupInstallMode::Ensure,
-        None,
-        provider_adapter_config,
-        QueryStringApiKeyPolicy::default(),
-    )
+        usage_settlement_worker_config: resolve_usage_settlement_worker_config(None),
+        startup_install_mode: StartupInstallMode::Ensure,
+        runtime_toml: None,
+        provider_adapter_config_override: provider_adapter_config,
+        deployment_mode: None,
+        query_string_api_key_policy: QueryStringApiKeyPolicy::default(),
+    })
     .await
 }
 
@@ -953,17 +1010,18 @@ pub async fn router_with_database_api_key_provider_configs_adapter_config_and_st
     provider_adapter_config: Option<ProviderAdapterConfig>,
     startup_install_mode: StartupInstallMode,
 ) -> Result<Router, GatewayRouterError> {
-    router_with_database_api_key_provider_configs_usage_settlement_worker_config_startup_install_mode_and_runtime_toml(
+    router_with_database_bootstrap(GatewayRouterBootstrap {
         config,
         api_key_config,
         provider_relay_config,
         provider_secret_map_config,
-        resolve_usage_settlement_worker_config(None),
+        usage_settlement_worker_config: resolve_usage_settlement_worker_config(None),
         startup_install_mode,
-        None,
-        provider_adapter_config,
-        QueryStringApiKeyPolicy::default(),
-    )
+        runtime_toml: None,
+        provider_adapter_config_override: provider_adapter_config,
+        deployment_mode: None,
+        query_string_api_key_policy: QueryStringApiKeyPolicy::default(),
+    })
     .await
 }
 
@@ -993,17 +1051,18 @@ pub async fn router_with_database_api_key_provider_configs_usage_settlement_work
     usage_settlement_worker_config: UsageSettlementWorkerConfig,
     startup_install_mode: StartupInstallMode,
 ) -> Result<Router, GatewayRouterError> {
-    router_with_database_api_key_provider_configs_usage_settlement_worker_config_startup_install_mode_and_runtime_toml(
+    router_with_database_bootstrap(GatewayRouterBootstrap {
         config,
         api_key_config,
         provider_relay_config,
         provider_secret_map_config,
         usage_settlement_worker_config,
         startup_install_mode,
-        None,
-        None,
-        QueryStringApiKeyPolicy::default(),
-    )
+        runtime_toml: None,
+        provider_adapter_config_override: None,
+        deployment_mode: None,
+        query_string_api_key_policy: QueryStringApiKeyPolicy::default(),
+    })
     .await
 }
 
@@ -1016,34 +1075,25 @@ pub async fn router_with_database_api_key_provider_configs_usage_settlement_work
     startup_install_mode: StartupInstallMode,
     query_string_api_key_policy: QueryStringApiKeyPolicy,
 ) -> Result<Router, GatewayRouterError> {
-    router_with_database_api_key_provider_configs_usage_settlement_worker_config_startup_install_mode_and_runtime_toml(
+    router_with_database_bootstrap(GatewayRouterBootstrap {
         config,
         api_key_config,
         provider_relay_config,
         provider_secret_map_config,
         usage_settlement_worker_config,
         startup_install_mode,
-        None,
-        None,
+        runtime_toml: None,
+        provider_adapter_config_override: None,
+        deployment_mode: None,
         query_string_api_key_policy,
-    )
+    })
     .await
 }
 
-async fn router_with_database_api_key_provider_configs_usage_settlement_worker_config_startup_install_mode_and_runtime_toml(
-    config: DatabaseConfig,
-    api_key_config: Option<ApiKeySecurityConfig>,
-    provider_relay_config: Option<ProviderRelayConfig>,
-    provider_secret_map_config: Option<ProviderSecretMapConfig>,
-    usage_settlement_worker_config: UsageSettlementWorkerConfig,
-    startup_install_mode: StartupInstallMode,
-    runtime_toml: Option<&RuntimeTomlConfig>,
-    provider_adapter_config_override: Option<ProviderAdapterConfig>,
-    query_string_api_key_policy: QueryStringApiKeyPolicy,
+async fn router_with_database_bootstrap(
+    input: GatewayRouterBootstrap<'_>,
 ) -> Result<Router, GatewayRouterError> {
-    let deployment_mode = DeploymentMode::from_env_or_runtime_toml(runtime_toml)
-        .map_err(GatewayRouterError::Config)?;
-    router_with_database_api_key_provider_configs_usage_settlement_worker_config_startup_install_mode_runtime_toml_and_deployment_mode(
+    let GatewayRouterBootstrap {
         config,
         api_key_config,
         provider_relay_config,
@@ -1054,22 +1104,12 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
         provider_adapter_config_override,
         deployment_mode,
         query_string_api_key_policy,
-    )
-    .await
-}
-
-async fn router_with_database_api_key_provider_configs_usage_settlement_worker_config_startup_install_mode_runtime_toml_and_deployment_mode(
-    config: DatabaseConfig,
-    api_key_config: Option<ApiKeySecurityConfig>,
-    provider_relay_config: Option<ProviderRelayConfig>,
-    provider_secret_map_config: Option<ProviderSecretMapConfig>,
-    usage_settlement_worker_config: UsageSettlementWorkerConfig,
-    startup_install_mode: StartupInstallMode,
-    runtime_toml: Option<&RuntimeTomlConfig>,
-    provider_adapter_config_override: Option<ProviderAdapterConfig>,
-    deployment_mode: DeploymentMode,
-    query_string_api_key_policy: QueryStringApiKeyPolicy,
-) -> Result<Router, GatewayRouterError> {
+    } = input;
+    let deployment_mode = match deployment_mode {
+        Some(deployment_mode) => deployment_mode,
+        None => DeploymentMode::from_env_or_runtime_toml(runtime_toml)
+            .map_err(GatewayRouterError::Config)?,
+    };
     require_postgres_server_database(&config)?;
     let api_key_security_config = require_api_key_security_config(api_key_config)?;
     let api_key_hasher = build_api_key_hasher(&api_key_security_config)?;
@@ -1171,8 +1211,8 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
                 );
         let readiness_check =
             combine_accounting_retry_readiness(readiness_check, accounting_retry_health);
-        router_with_database_runtime_routes(
-            router_with_database_status_and_passthrough_placeholder(
+        router_with_database_runtime_routes(DatabaseRuntimeRoutesInput {
+            base_router: router_with_database_status_and_passthrough_placeholder(
                 Some(&config),
                 provider_secret_resolver.is_none() && provider_passthrough_config.is_none(),
                 readiness_check,
@@ -1180,16 +1220,16 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
             ),
             catalog,
             api_key_hasher,
-            provider_secret_resolver.clone(),
-            invocation_sticky,
-            Some(usage_recorder),
+            provider_secret_resolver: provider_secret_resolver.clone(),
+            invocation_sticky_store: invocation_sticky,
+            usage_recorder: Some(usage_recorder),
             provider_passthrough_config,
-            provider_adapter_config.clone(),
-            provider_runtime,
+            provider_adapter_config: provider_adapter_config.clone(),
+            provider_runtime_config: provider_runtime,
             query_string_api_key_policy,
             runtime_toml,
             request_limits_config,
-        )
+        })
     }
 }
 
@@ -1272,18 +1312,18 @@ pub async fn router_from_env() -> Result<Router, GatewayRouterError> {
     .map_err(GatewayRouterError::Config)?;
     match config {
         Some(config) => {
-            router_with_database_api_key_provider_configs_usage_settlement_worker_config_startup_install_mode_runtime_toml_and_deployment_mode(
+            router_with_database_bootstrap(GatewayRouterBootstrap {
                 config,
                 api_key_config,
                 provider_relay_config,
                 provider_secret_map_config,
                 usage_settlement_worker_config,
                 startup_install_mode,
-                runtime_toml.as_ref(),
-                None,
-                deployment_mode,
+                runtime_toml: runtime_toml.as_ref(),
+                provider_adapter_config_override: None,
+                deployment_mode: Some(deployment_mode),
                 query_string_api_key_policy,
-            )
+            })
             .await
         }
         None => Ok(router_without_database(deployment_mode)),
@@ -1328,34 +1368,44 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
         })?;
     let backend_router =
         sdkwork_routes_clawrouter_backend_api::router_with_postgres_shared_runtime(
-            context.database_config.clone(),
-            pool.clone(),
-            Arc::clone(&context.catalog),
-            context.api_key_security_config.clone(),
-            context.upstream_credential_security_config.clone(),
-            context.trusted_subject_config.clone(),
-            context.app_session_config.clone(),
-            context.deployment_mode,
-            context.cache_manager.clone(),
-            Arc::clone(&context.database_installer),
-            context.request_limits_config.clone(),
-            context.models_catalog_root.clone(),
+            sdkwork_routes_clawrouter_backend_api::PostgresSharedRuntime {
+                config: context.database_config.clone(),
+                pool: pool.clone(),
+                catalog: Arc::clone(&context.catalog),
+                api_key_security_config: context.api_key_security_config.clone(),
+                upstream_credential_security_config: context
+                    .upstream_credential_security_config
+                    .clone(),
+                trusted_subject_config: context.trusted_subject_config.clone(),
+                app_session_config: context.app_session_config.clone(),
+                deployment_mode: context.deployment_mode,
+                cache_manager: context.cache_manager.clone(),
+                database_installer: Arc::clone(&context.database_installer),
+                request_limits_config: context.request_limits_config,
+                models_catalog_root: context.models_catalog_root.clone(),
+            },
         )
         .map_err(anyhow::Error::new)?;
     let app_router = sdkwork_routes_clawrouter_app_api::router_with_postgres_shared_runtime(
-        context.database_config.clone(),
-        pool,
-        Arc::clone(&context.catalog),
-        context.api_key_security_config.clone(),
-        context.upstream_credential_security_config.clone(),
-        context.trusted_subject_config.clone(),
-        context.app_session_config.clone(),
-        context.payment_webhook_config.clone(),
-        context.deployment_mode,
-        context.request_limits_config.clone(),
-        Arc::clone(&context.app_runtime_gateway_client),
-        Arc::clone(&context.app_runtime_stream_bus),
-        context.model_ranking_refresh_worker_config.clone(),
+        sdkwork_routes_clawrouter_app_api::PostgresSharedRuntime {
+            config: context.database_config.clone(),
+            pool,
+            catalog: Arc::clone(&context.catalog),
+            api_key_security_config: context.api_key_security_config.clone(),
+            upstream_credential_security_config: context
+                .upstream_credential_security_config
+                .clone(),
+            trusted_subject_config: context.trusted_subject_config.clone(),
+            app_session_config: context.app_session_config.clone(),
+            payment_webhook_config: context.payment_webhook_config.clone(),
+            deployment_mode: context.deployment_mode,
+            request_limits_config: context.request_limits_config,
+            app_runtime_gateway_client: Arc::clone(&context.app_runtime_gateway_client),
+            app_runtime_stream_bus: Arc::clone(&context.app_runtime_stream_bus),
+            model_ranking_refresh_worker_config: context
+                .model_ranking_refresh_worker_config
+                .clone(),
+        },
     )
     .await
     .map_err(anyhow::Error::new)?;
@@ -1623,25 +1673,25 @@ async fn build_gateway_router_from_all_in_one_context(
     let readiness_check =
         combine_accounting_retry_readiness(readiness_check, accounting_retry_health);
 
-    router_with_database_runtime_routes(
-        router_with_database_status_and_passthrough_placeholder(
+    router_with_database_runtime_routes(DatabaseRuntimeRoutesInput {
+        base_router: router_with_database_status_and_passthrough_placeholder(
             Some(&context.database_config),
             true,
             readiness_check,
             Some(context.deployment_mode),
         ),
-        Arc::clone(&context.catalog),
+        catalog: Arc::clone(&context.catalog),
         api_key_hasher,
-        context.provider_secret_resolver.clone(),
-        Some(Arc::new(InvocationStickyObjectRouteStore::postgres(pool))),
-        Some(usage_recorder),
-        context.provider_relay_config.clone(),
-        context.provider_adapter_config.clone(),
-        context.provider_runtime_config.clone(),
-        context.query_string_api_key_policy,
-        runtime_toml.as_ref(),
-        context.request_limits_config,
-    )
+        provider_secret_resolver: context.provider_secret_resolver.clone(),
+        invocation_sticky_store: Some(Arc::new(InvocationStickyObjectRouteStore::postgres(pool))),
+        usage_recorder: Some(usage_recorder),
+        provider_passthrough_config: context.provider_relay_config.clone(),
+        provider_adapter_config: context.provider_adapter_config.clone(),
+        provider_runtime_config: context.provider_runtime_config.clone(),
+        query_string_api_key_policy: context.query_string_api_key_policy,
+        runtime_toml: runtime_toml.as_ref(),
+        request_limits_config: context.request_limits_config,
+    })
     .map_err(anyhow::Error::new)
 }
 

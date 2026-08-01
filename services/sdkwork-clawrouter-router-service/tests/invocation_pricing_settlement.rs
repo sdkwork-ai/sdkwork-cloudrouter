@@ -246,7 +246,7 @@ fn subject() -> InvocationSubject {
 }
 
 fn chat_invocation() -> Invocation {
-    let classification = OpenAiResourceClassifier::default()
+    let classification = OpenAiResourceClassifier
         .classify(&InvocationClassificationRequest::new(
             Method::POST,
             "/v1/chat/completions",
@@ -495,7 +495,7 @@ async fn settlement_produces_usage_commands_for_each_usage_line() {
         ),
     );
 
-    PricingSettlementInterceptor::default()
+    PricingSettlementInterceptor
         .after(&mut invocation)
         .await
         .expect("settlement");
@@ -571,7 +571,7 @@ async fn settlement_assigns_unique_usage_types_to_same_request_usage_lines() {
         .with_pricing_quote(output_quote),
     );
 
-    PricingSettlementInterceptor::default()
+    PricingSettlementInterceptor
         .after(&mut invocation)
         .await
         .expect("settlement");
@@ -671,7 +671,7 @@ async fn settlement_charges_embedding_images_per_image_without_token_projection(
         .with_pricing_quote(image_quote),
     );
 
-    PricingSettlementInterceptor::default()
+    PricingSettlementInterceptor
         .after(&mut invocation)
         .await
         .expect("settlement");
@@ -713,7 +713,7 @@ async fn pricing_after_requotes_usage_lines_for_final_failover_account() {
         .after(&mut invocation)
         .await
         .expect("final pricing");
-    PricingSettlementInterceptor::default()
+    PricingSettlementInterceptor
         .after(&mut invocation)
         .await
         .expect("settlement");
@@ -766,7 +766,7 @@ async fn settlement_prefers_line_level_adapter_quotes_over_meter_quotes() {
         .with_pricing_quote(quote),
     );
 
-    PricingSettlementInterceptor::default()
+    PricingSettlementInterceptor
         .after(&mut invocation)
         .await
         .expect("settlement");

@@ -212,6 +212,12 @@ pub async fn serve_with_runtime_config(
     bind_addr: &str,
     runtime_toml: Option<&sdkwork_claw_config::RuntimeTomlConfig>,
 ) -> anyhow::Result<()> {
+    sdkwork_claw_http::configure_http_metrics_for_runtime(
+        crate::SERVICE_NAME,
+        runtime_toml,
+        Some("postgresql"),
+    )
+    .map_err(anyhow::Error::msg)?;
     sdkwork_claw_observability::init_tracing_with_runtime_config(
         runtime_toml.map(|config| &config.observability),
     )
@@ -234,6 +240,12 @@ pub async fn serve_edge_server_with_runtime_config(
     config: EdgeServerConfig,
     runtime_toml: Option<&sdkwork_claw_config::RuntimeTomlConfig>,
 ) -> anyhow::Result<()> {
+    sdkwork_claw_http::configure_http_metrics_for_runtime(
+        crate::SERVICE_NAME,
+        runtime_toml,
+        Some("postgresql"),
+    )
+    .map_err(anyhow::Error::msg)?;
     sdkwork_claw_observability::init_tracing_with_runtime_config(
         runtime_toml.map(|config| &config.observability),
     )
@@ -260,6 +272,12 @@ pub async fn serve_all_in_one_edge_server_with_runtime_config(
     config: EdgeServerConfig,
     runtime_toml: Option<&sdkwork_claw_config::RuntimeTomlConfig>,
 ) -> anyhow::Result<()> {
+    sdkwork_claw_http::configure_http_metrics_for_runtime(
+        crate::SERVICE_NAME,
+        runtime_toml,
+        Some("postgresql"),
+    )
+    .map_err(anyhow::Error::msg)?;
     sdkwork_claw_observability::init_tracing_with_runtime_config(
         runtime_toml.map(|config| &config.observability),
     )
@@ -459,7 +477,7 @@ impl EdgeServerConfig {
             .portal_runtime_env
             .appbase_backend_api_base_url
             .as_deref()
-            .map_or(true, |value| value == previous_backend_api_base_url)
+            .is_none_or(|value| value == previous_backend_api_base_url)
         {
             self.portal_runtime_env.appbase_backend_api_base_url = Some(normalized);
         }
@@ -834,9 +852,7 @@ async fn forward_request(state: &EdgeServerState, request: Request) -> Result<Re
             if let Some(host) = trusted_forwarded_host.or(forwarded_host) {
                 headers.insert("x-forwarded-host", host);
             }
-            if let Some(proto) =
-                trusted_forwarded_proto.filter(|value| is_valid_forwarded_proto(value))
-            {
+            if let Some(proto) = trusted_forwarded_proto.filter(is_valid_forwarded_proto) {
                 headers.insert("x-forwarded-proto", proto);
             } else {
                 headers.insert("x-forwarded-proto", state.config.external_scheme.clone());
@@ -1121,8 +1137,8 @@ async fn generate_or_serve_sdk_archive(
     state: &EdgeServerState,
     request: &SdkReadmeRequest,
 ) -> Response {
-    if let Err(response) = validate_sdk_archive_request_identity(request) {
-        return response;
+    if let Err(message) = validate_sdk_archive_request_identity(request) {
+        return json_error_response(StatusCode::BAD_REQUEST, &message);
     }
 
     match generate_sdk_archive(state, request).await {
@@ -1587,14 +1603,11 @@ enum SdkArchiveFileNameError {
     UnsupportedArchive,
 }
 
-fn validate_sdk_archive_request_identity(request: &SdkReadmeRequest) -> Result<(), Response> {
+fn validate_sdk_archive_request_identity(request: &SdkReadmeRequest) -> Result<(), String> {
     let identity = request.package_name.as_deref().unwrap_or(&request.name);
-    sdk_archive_identity_slug(identity, "config.packageName")
-        .map_err(|message| json_error_response(StatusCode::BAD_REQUEST, &message))?;
-    sdk_archive_identity_slug(&request.language, "language")
-        .map_err(|message| json_error_response(StatusCode::BAD_REQUEST, &message))?;
-    sdk_archive_identity_slug(&request.version, "config.version")
-        .map_err(|message| json_error_response(StatusCode::BAD_REQUEST, &message))?;
+    sdk_archive_identity_slug(identity, "config.packageName")?;
+    sdk_archive_identity_slug(&request.language, "language")?;
+    sdk_archive_identity_slug(&request.version, "config.version")?;
     Ok(())
 }
 

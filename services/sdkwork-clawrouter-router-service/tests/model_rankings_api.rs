@@ -1,4 +1,4 @@
-mod common;
+pub mod common;
 use axum::body::Body;
 use axum::http::StatusCode;
 use sdkwork_clawrouter_router_service::domain::{DomainError, DomainResult};

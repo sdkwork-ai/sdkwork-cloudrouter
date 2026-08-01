@@ -176,7 +176,7 @@ impl RuntimeIdState {
     }
 
     fn is_healthy(&self) -> bool {
-        self.lease.as_ref().map_or(true, NodeLease::is_healthy)
+        self.lease.as_ref().is_none_or(NodeLease::is_healthy)
     }
 }
 
@@ -290,7 +290,7 @@ pub async fn bootstrap_claw_runtime_id_generator(
     if bootstrap
         .recovery_task
         .as_ref()
-        .map_or(true, tokio::task::JoinHandle::is_finished)
+        .is_none_or(tokio::task::JoinHandle::is_finished)
     {
         bootstrap.recovery_task = Some(spawn_runtime_id_lease_recovery(
             pool.clone(),

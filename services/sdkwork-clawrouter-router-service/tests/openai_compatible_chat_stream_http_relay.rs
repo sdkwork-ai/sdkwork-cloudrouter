@@ -33,9 +33,11 @@ async fn openai_compatible_chat_stream_relay_uses_provider_model_and_passes_thro
         axum::serve(listener, provider).await.unwrap();
     });
 
-    let endpoint =
-        UpstreamProviderEndpoint::new(format!("http://{addr}"), "sk-upstream-provider-secret")
-            .unwrap();
+    let endpoint = UpstreamProviderEndpoint::for_local_development(
+        format!("http://{addr}"),
+        "sk-upstream-provider-secret",
+    )
+    .unwrap();
     let relay = OpenAiCompatibleChatCompletionStreamRelay::new(endpoint);
     let request_body = json!({
         "model": "gpt-4o-mini",
@@ -88,6 +90,7 @@ async fn openai_compatible_chat_stream_relay_uses_provider_model_and_passes_thro
     );
     let mut expected_body = request_body;
     expected_body["model"] = json!("gpt-4o-mini");
+    expected_body["stream_options"]["include_usage"] = json!(true);
     assert_eq!(expected_body, captured[0].body);
 }
 
@@ -106,9 +109,11 @@ async fn openai_compatible_chat_stream_relay_does_not_retry_retryable_upstream_s
         axum::serve(listener, provider).await.unwrap();
     });
 
-    let endpoint =
-        UpstreamProviderEndpoint::new(format!("http://{addr}"), "sk-upstream-provider-secret")
-            .unwrap();
+    let endpoint = UpstreamProviderEndpoint::for_local_development(
+        format!("http://{addr}"),
+        "sk-upstream-provider-secret",
+    )
+    .unwrap();
     let relay = OpenAiCompatibleChatCompletionStreamRelay::new(endpoint);
     let response = relay
         .create_chat_completion_stream(ChatCompletionRelayRequest {

@@ -296,7 +296,7 @@ async fn finalize_product_router_with_federated_capabilities(
     }
 }
 
-fn router_with_runtime_stores_and_database_status(
+struct AppRouterRuntime<'a> {
     app_site_settings_store: Option<AppSiteSettingsRuntimeStore>,
     entity_uuid_generator: EntityUuidGen,
     trusted_subject_config: TrustedSubjectConfig,
@@ -320,12 +320,44 @@ fn router_with_runtime_stores_and_database_status(
     app_routing_read_store: Option<AppRoutingStore>,
     app_routing_strategy_store: Option<AppRoutingStrategyRuntimeStore>,
     model_catalog_router: Option<Router>,
-    config: Option<&DatabaseConfig>,
+    config: Option<&'a DatabaseConfig>,
     request_limits_config: RequestLimitsConfig,
     readiness_check: Option<sdkwork_claw_http::ReadinessCheckFn>,
     api_key_runtime: Option<AppApiKeyRuntimeDeps>,
     deployment_mode: DeploymentMode,
-) -> Router {
+}
+
+fn router_with_runtime_stores_and_database_status(runtime: AppRouterRuntime<'_>) -> Router {
+    let AppRouterRuntime {
+        app_site_settings_store,
+        entity_uuid_generator,
+        trusted_subject_config,
+        app_session_config,
+        payment_webhook_config,
+        payment_callback_store,
+        payment_intent_runtime_store,
+        payment_provider_registry,
+        dashboard_read_store,
+        settlements_dashboard_read_store,
+        settings_store,
+        usage_logs_read_store,
+        gateway_traces_read_store,
+        app_notification_store,
+        app_chat_store,
+        app_runtime_store,
+        app_runtime_execution_catalog,
+        app_runtime_chat_stream_relay,
+        app_runtime_gateway_client,
+        app_runtime_stream_bus,
+        app_routing_read_store,
+        app_routing_strategy_store,
+        model_catalog_router,
+        config,
+        request_limits_config,
+        readiness_check,
+        api_key_runtime,
+        deployment_mode,
+    } = runtime;
     let subject_boundary_config =
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
     let mut router = router_with_database_status(config, readiness_check, Some(deployment_mode));
@@ -570,59 +602,77 @@ pub async fn router_with_postgres_product_catalog(
     let subject_boundary_config =
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
     finalize_product_router_with_federated_capabilities(
-        router_with_runtime_stores_and_database_status(
-            Some(app_site_settings_store),
+        router_with_runtime_stores_and_database_status(AppRouterRuntime {
+            app_site_settings_store: Some(app_site_settings_store),
             entity_uuid_generator,
             trusted_subject_config,
             app_session_config,
-            Some(payment_webhook_config),
-            Some(payment_callback_store),
-            Some(payment_intent_runtime_store),
+            payment_webhook_config: Some(payment_webhook_config),
+            payment_callback_store: Some(payment_callback_store),
+            payment_intent_runtime_store: Some(payment_intent_runtime_store),
             payment_provider_registry,
-            Some(dashboard_read_store),
-            Some(settlements_dashboard_read_store),
-            Some(settings_store),
-            Some(usage_logs_read_store),
-            Some(gateway_traces_read_store),
-            Some(app_notification_store),
-            Some(app_chat_store),
-            Some(app_runtime_store),
-            None,
-            None,
-            None,
-            None,
-            Some(app_routing_read_store),
-            Some(app_routing_strategy_store),
-            Some(model_catalog_router),
-            Some(&database_config),
-            RequestLimitsConfig::default(),
-            None,
+            dashboard_read_store: Some(dashboard_read_store),
+            settlements_dashboard_read_store: Some(settlements_dashboard_read_store),
+            settings_store: Some(settings_store),
+            usage_logs_read_store: Some(usage_logs_read_store),
+            gateway_traces_read_store: Some(gateway_traces_read_store),
+            app_notification_store: Some(app_notification_store),
+            app_chat_store: Some(app_chat_store),
+            app_runtime_store: Some(app_runtime_store),
+            app_runtime_execution_catalog: None,
+            app_runtime_chat_stream_relay: None,
+            app_runtime_gateway_client: None,
+            app_runtime_stream_bus: None,
+            app_routing_read_store: Some(app_routing_read_store),
+            app_routing_strategy_store: Some(app_routing_strategy_store),
+            model_catalog_router: Some(model_catalog_router),
+            config: Some(&database_config),
+            request_limits_config: RequestLimitsConfig::default(),
+            readiness_check: None,
             api_key_runtime,
             deployment_mode,
-        ),
+        }),
         subject_boundary_config,
         Some(&database_config),
     )
     .await
 }
 
+pub struct PostgresSharedRuntime {
+    pub config: DatabaseConfig,
+    pub pool: PgPool,
+    pub catalog: Arc<RefreshableSqlPricingCatalog>,
+    pub api_key_security_config: ApiKeySecurityConfig,
+    pub upstream_credential_security_config: UpstreamCredentialSecurityConfig,
+    pub trusted_subject_config: TrustedSubjectConfig,
+    pub app_session_config: AppSessionConfig,
+    pub payment_webhook_config: PaymentWebhookConfig,
+    pub deployment_mode: DeploymentMode,
+    pub request_limits_config: RequestLimitsConfig,
+    pub app_runtime_gateway_client:
+        Arc<dyn sdkwork_clawrouter_router_service::ports::AppRuntimeGatewayClient + Send + Sync>,
+    pub app_runtime_stream_bus: Arc<dyn RuntimeStreamBus + Send + Sync>,
+    pub model_ranking_refresh_worker_config: ModelRankingRefreshWorkerConfig,
+}
+
 pub async fn router_with_postgres_shared_runtime(
-    config: DatabaseConfig,
-    pool: PgPool,
-    catalog: Arc<RefreshableSqlPricingCatalog>,
-    api_key_security_config: ApiKeySecurityConfig,
-    upstream_credential_security_config: UpstreamCredentialSecurityConfig,
-    trusted_subject_config: TrustedSubjectConfig,
-    app_session_config: AppSessionConfig,
-    payment_webhook_config: PaymentWebhookConfig,
-    deployment_mode: DeploymentMode,
-    request_limits_config: RequestLimitsConfig,
-    app_runtime_gateway_client: Arc<
-        dyn sdkwork_clawrouter_router_service::ports::AppRuntimeGatewayClient + Send + Sync,
-    >,
-    app_runtime_stream_bus: Arc<dyn RuntimeStreamBus + Send + Sync>,
-    model_ranking_refresh_worker_config: ModelRankingRefreshWorkerConfig,
+    runtime: PostgresSharedRuntime,
 ) -> Result<Router, ProductCatalogRouterError> {
+    let PostgresSharedRuntime {
+        config,
+        pool,
+        catalog,
+        api_key_security_config,
+        upstream_credential_security_config,
+        trusted_subject_config,
+        app_session_config,
+        payment_webhook_config,
+        deployment_mode,
+        request_limits_config,
+        app_runtime_gateway_client,
+        app_runtime_stream_bus,
+        model_ranking_refresh_worker_config,
+    } = runtime;
     let credential_secret_codec =
         credential_secret_codec_from_config(&upstream_credential_security_config)?;
     let model_rankings_store =
@@ -664,36 +714,36 @@ pub async fn router_with_postgres_shared_runtime(
     let subject_boundary_config =
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
     finalize_product_router_with_federated_capabilities(
-        router_with_runtime_stores_and_database_status(
-            Some(Arc::new(PostgresSiteSettingsStore::new(pool.clone()))),
+        router_with_runtime_stores_and_database_status(AppRouterRuntime {
+            app_site_settings_store: Some(Arc::new(PostgresSiteSettingsStore::new(pool.clone()))),
             entity_uuid_generator,
             trusted_subject_config,
             app_session_config,
-            Some(payment_webhook_config),
-            Some(payment_callback_store),
-            Some(payment_intent_runtime_store),
+            payment_webhook_config: Some(payment_webhook_config),
+            payment_callback_store: Some(payment_callback_store),
+            payment_intent_runtime_store: Some(payment_intent_runtime_store),
             payment_provider_registry,
-            Some(dashboard_read_store),
-            Some(settlements_dashboard_read_store),
-            Some(settings_store),
-            Some(usage_logs_read_store),
-            Some(gateway_traces_read_store),
-            Some(app_notification_store),
-            Some(app_chat_store),
-            Some(app_runtime_store),
-            Some(catalog),
-            None,
-            Some(app_runtime_gateway_client),
-            Some(app_runtime_stream_bus),
-            Some(app_routing_read_store),
-            Some(app_routing_strategy_store),
-            Some(model_catalog_router),
-            Some(&config),
+            dashboard_read_store: Some(dashboard_read_store),
+            settlements_dashboard_read_store: Some(settlements_dashboard_read_store),
+            settings_store: Some(settings_store),
+            usage_logs_read_store: Some(usage_logs_read_store),
+            gateway_traces_read_store: Some(gateway_traces_read_store),
+            app_notification_store: Some(app_notification_store),
+            app_chat_store: Some(app_chat_store),
+            app_runtime_store: Some(app_runtime_store),
+            app_runtime_execution_catalog: Some(catalog),
+            app_runtime_chat_stream_relay: None,
+            app_runtime_gateway_client: Some(app_runtime_gateway_client),
+            app_runtime_stream_bus: Some(app_runtime_stream_bus),
+            app_routing_read_store: Some(app_routing_read_store),
+            app_routing_strategy_store: Some(app_routing_strategy_store),
+            model_catalog_router: Some(model_catalog_router),
+            config: Some(&config),
             request_limits_config,
-            None,
+            readiness_check: None,
             api_key_runtime,
             deployment_mode,
-        ),
+        }),
         subject_boundary_config,
         Some(&config),
     )
@@ -772,19 +822,21 @@ async fn router_with_database_config_api_key_trusted_subject_app_session(
     deployment_mode: DeploymentMode,
 ) -> Result<Router, ProductCatalogRouterError> {
     router_with_database_config_api_key_trusted_subject_app_session_and_startup_install_mode(
-        config,
-        api_key_security_config,
-        trusted_subject_config,
-        app_session_config,
-        payment_webhook_config,
-        deployment_mode,
-        StartupInstallMode::Ensure,
-        None,
+        PostgresRuntimeBootstrap {
+            config,
+            api_key_security_config,
+            trusted_subject_config,
+            app_session_config,
+            payment_webhook_config,
+            deployment_mode,
+            startup_install_mode: StartupInstallMode::Ensure,
+            runtime_toml: None,
+        },
     )
     .await
 }
 
-async fn router_with_database_config_api_key_trusted_subject_app_session_and_startup_install_mode(
+struct PostgresRuntimeBootstrap<'a> {
     config: DatabaseConfig,
     api_key_security_config: ApiKeySecurityConfig,
     trusted_subject_config: TrustedSubjectConfig,
@@ -792,8 +844,22 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
     payment_webhook_config: PaymentWebhookConfig,
     deployment_mode: DeploymentMode,
     startup_install_mode: StartupInstallMode,
-    runtime_toml: Option<&RuntimeTomlConfig>,
+    runtime_toml: Option<&'a RuntimeTomlConfig>,
+}
+
+async fn router_with_database_config_api_key_trusted_subject_app_session_and_startup_install_mode(
+    bootstrap: PostgresRuntimeBootstrap<'_>,
 ) -> Result<Router, ProductCatalogRouterError> {
+    let PostgresRuntimeBootstrap {
+        config,
+        api_key_security_config,
+        trusted_subject_config,
+        app_session_config,
+        payment_webhook_config,
+        deployment_mode,
+        startup_install_mode,
+        runtime_toml,
+    } = bootstrap;
     sdkwork_claw_http::materialize_federated_database_env_from_config(&config);
     let subject_boundary_config =
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
@@ -907,36 +973,36 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
                     usage_settlement_worker_config,
                 );
     finalize_product_router_with_federated_capabilities(
-        router_with_runtime_stores_and_database_status(
-            Some(Arc::new(PostgresSiteSettingsStore::new(pool.clone()))),
+        router_with_runtime_stores_and_database_status(AppRouterRuntime {
+            app_site_settings_store: Some(Arc::new(PostgresSiteSettingsStore::new(pool.clone()))),
             entity_uuid_generator,
             trusted_subject_config,
             app_session_config,
-            Some(payment_webhook_config),
-            Some(payment_callback_store),
-            Some(payment_intent_runtime_store),
+            payment_webhook_config: Some(payment_webhook_config),
+            payment_callback_store: Some(payment_callback_store),
+            payment_intent_runtime_store: Some(payment_intent_runtime_store),
             payment_provider_registry,
-            Some(dashboard_read_store),
-            Some(settlements_dashboard_read_store),
-            Some(settings_store),
-            Some(usage_logs_read_store),
-            Some(gateway_traces_read_store),
-            Some(app_notification_store),
-            Some(app_chat_store),
-            Some(app_runtime_store),
-            Some(app_runtime_execution_catalog),
-            None,
-            Some(Arc::clone(&app_runtime_gateway_client)),
-            Some(Arc::clone(&app_runtime_stream_bus)),
-            Some(app_routing_read_store),
-            Some(app_routing_strategy_store),
-            Some(model_catalog_router),
-            Some(&config),
+            dashboard_read_store: Some(dashboard_read_store),
+            settlements_dashboard_read_store: Some(settlements_dashboard_read_store),
+            settings_store: Some(settings_store),
+            usage_logs_read_store: Some(usage_logs_read_store),
+            gateway_traces_read_store: Some(gateway_traces_read_store),
+            app_notification_store: Some(app_notification_store),
+            app_chat_store: Some(app_chat_store),
+            app_runtime_store: Some(app_runtime_store),
+            app_runtime_execution_catalog: Some(app_runtime_execution_catalog),
+            app_runtime_chat_stream_relay: None,
+            app_runtime_gateway_client: Some(Arc::clone(&app_runtime_gateway_client)),
+            app_runtime_stream_bus: Some(Arc::clone(&app_runtime_stream_bus)),
+            app_routing_read_store: Some(app_routing_read_store),
+            app_routing_strategy_store: Some(app_routing_strategy_store),
+            model_catalog_router: Some(model_catalog_router),
+            config: Some(&config),
             request_limits_config,
             readiness_check,
             api_key_runtime,
             deployment_mode,
-        ),
+        }),
         subject_boundary_config,
         Some(&config),
     )
@@ -987,14 +1053,16 @@ pub async fn router_from_env() -> Result<Router, ProductCatalogRouterError> {
     .map_err(ProductCatalogRouterError::Config)?;
     let router =
         router_with_database_config_api_key_trusted_subject_app_session_and_startup_install_mode(
-            config.clone(),
-            require_api_key_security_config(api_key_security_config)?,
-            require_trusted_subject_config(trusted_subject_config)?,
-            require_app_session_config(app_session_config)?,
-            require_payment_webhook_config(payment_webhook_config)?,
-            deployment_mode,
-            startup_install_mode,
-            runtime_toml.as_ref(),
+            PostgresRuntimeBootstrap {
+                config: config.clone(),
+                api_key_security_config: require_api_key_security_config(api_key_security_config)?,
+                trusted_subject_config: require_trusted_subject_config(trusted_subject_config)?,
+                app_session_config: require_app_session_config(app_session_config)?,
+                payment_webhook_config: require_payment_webhook_config(payment_webhook_config)?,
+                deployment_mode,
+                startup_install_mode,
+                runtime_toml: runtime_toml.as_ref(),
+            },
         )
         .await?;
     Ok(
@@ -1737,6 +1805,12 @@ pub async fn serve_with_runtime_config(
     bind_addr: &str,
     runtime_toml: Option<&sdkwork_claw_config::RuntimeTomlConfig>,
 ) -> anyhow::Result<()> {
+    sdkwork_claw_http::configure_http_metrics_for_runtime(
+        SERVICE_NAME,
+        runtime_toml,
+        Some("postgresql"),
+    )
+    .map_err(anyhow::Error::msg)?;
     sdkwork_claw_observability::init_tracing_with_runtime_config(
         runtime_toml.map(|config| &config.observability),
     )
@@ -1760,8 +1834,9 @@ mod tests {
     use sdkwork_clawrouter_router_service::ports::{
         ModelRankingRefreshOutcome, ModelRankingRefreshRunStatus,
     };
-    use std::sync::{Mutex, OnceLock};
+    use std::sync::OnceLock;
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
+    use tokio::sync::Mutex;
 
     #[test]
     fn app_runtime_stream_bus_in_memory_fallback_is_disallowed_for_cluster_deployments() {
@@ -1795,9 +1870,9 @@ mod tests {
         ));
     }
 
-    #[test]
-    fn app_runtime_catalog_refresh_defaults_to_low_pressure_interval() {
-        let _guard = env_guard().lock().unwrap();
+    #[tokio::test(flavor = "current_thread")]
+    async fn app_runtime_catalog_refresh_defaults_to_low_pressure_interval() {
+        let _guard = env_guard().lock().await;
         let saved_refresh_interval =
             std::env::var("SDKWORK_CLAW_PROVIDER_CATALOG_REFRESH_INTERVAL_MILLIS").ok();
         std::env::remove_var("SDKWORK_CLAW_PROVIDER_CATALOG_REFRESH_INTERVAL_MILLIS");
@@ -1811,9 +1886,9 @@ mod tests {
         assert_eq!(Duration::from_secs(60), interval);
     }
 
-    #[test]
-    fn model_ranking_refresh_worker_config_from_env_parses_runtime_policy() {
-        let _guard = env_guard().lock().unwrap();
+    #[tokio::test(flavor = "current_thread")]
+    async fn model_ranking_refresh_worker_config_from_env_parses_runtime_policy() {
+        let _guard = env_guard().lock().await;
         let names = [
             "SDKWORK_CLAW_MODEL_RANKING_REFRESH_WORKER_ENABLED",
             "SDKWORK_CLAW_MODEL_RANKING_TENANT_ID",
@@ -1858,7 +1933,7 @@ mod tests {
 
     #[tokio::test(flavor = "current_thread")]
     async fn router_from_env_rejects_zero_config_server_placeholder_postgres() {
-        let _guard = env_guard().lock().unwrap();
+        let _guard = env_guard().lock().await;
         let saved_database_url = std::env::var("SDKWORK_DATABASE_URL").ok();
         let saved_deployment_mode = std::env::var("SDKWORK_CLAW_DEPLOYMENT_MODE").ok();
         let saved_config_file = std::env::var("SDKWORK_CLAW_CONFIG_FILE").ok();
@@ -1922,7 +1997,7 @@ mod tests {
     #[tokio::test(flavor = "current_thread")]
     async fn router_from_env_rejects_static_or_invalid_server_snowflake_node_id_before_database_bootstrap(
     ) {
-        let _guard = env_guard().lock().unwrap();
+        let _guard = env_guard().lock().await;
         let saved_database_url = std::env::var("SDKWORK_DATABASE_URL").ok();
         let saved_deployment_mode = std::env::var("SDKWORK_CLAW_DEPLOYMENT_MODE").ok();
         let saved_config_file = std::env::var("SDKWORK_CLAW_CONFIG_FILE").ok();

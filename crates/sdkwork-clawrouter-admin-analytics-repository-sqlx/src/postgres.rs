@@ -7,7 +7,8 @@ use crate::error::{store_error, RepositoryError, RepositoryResult};
 use crate::modality;
 use crate::snapshot::{
     build_snapshot, vendor_from_catalog_key, AnalyticsModelRankRow, AnalyticsPieRow,
-    AnalyticsSummaryRow, AnalyticsTrendRow, AnalyticsUserRankRow, PI_LIMIT, USER_MODEL_LIMIT,
+    AnalyticsSnapshotInput, AnalyticsSummaryRow, AnalyticsTrendRow, AnalyticsUserRankRow, PI_LIMIT,
+    USER_MODEL_LIMIT,
 };
 use crate::types::{
     AdminAnalyticsQuery, AdminAnalyticsReadFuture, AdminAnalyticsReadStore, AdminAnalyticsSnapshot,
@@ -372,10 +373,10 @@ async fn load_snapshot(
     )
     .await?;
 
-    let snapshot = build_snapshot(
-        query.time_range,
-        query.start_time,
-        query.end_time,
+    let snapshot = build_snapshot(AnalyticsSnapshotInput {
+        time_range: query.time_range,
+        start_time: query.start_time,
+        end_time: query.end_time,
         limit,
         summary_row,
         trend_rows,
@@ -388,7 +389,7 @@ async fn load_snapshot(
         user_model_distributions,
         model_distribution_rows,
         modality_distribution_rows,
-    )?;
+    })?;
     transaction
         .commit()
         .await

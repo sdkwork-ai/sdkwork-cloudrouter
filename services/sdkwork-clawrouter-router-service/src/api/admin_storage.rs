@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
     json_success_list_response, platform_problem, problem_from_wire_code, success_envelope,
+    ApiResponseError,
 };
 use crate::domain::DomainError;
 use crate::ports::{
@@ -299,7 +300,7 @@ async fn create_provider(
 ) -> Response {
     let command = match validated_provider_create_command(scoped, &headers, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.create_provider(command).await {
@@ -321,7 +322,7 @@ async fn update_provider(
 ) -> Response {
     let command = match validated_provider_update_command(scoped, &headers, provider_id, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.update_provider(command).await {
@@ -342,7 +343,7 @@ async fn check_provider_health(
 ) -> Response {
     let command = match validated_provider_health_command(scoped, &headers, provider_id) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state.store.check_provider_health(command).await {
         Ok(mut item) => {
@@ -371,7 +372,7 @@ async fn create_bucket(
 ) -> Response {
     let command = match validated_bucket_create_command(scoped, &headers, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.create_bucket(command).await {
@@ -393,7 +394,7 @@ async fn update_bucket(
 ) -> Response {
     let command = match validated_bucket_update_command(scoped, &headers, bucket_id, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.update_bucket(command).await {
@@ -430,7 +431,7 @@ async fn set_default_bucket(
 ) -> Response {
     let command = match validated_default_bucket_command(scoped, &headers, logical_scope, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.set_default_bucket(command).await {
@@ -466,7 +467,7 @@ async fn create_quota_policy(
 ) -> Response {
     let command = match validated_quota_create_command(scoped, &headers, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.create_quota_policy(command).await {
@@ -547,7 +548,7 @@ async fn create_reconciliation_run(
 ) -> Response {
     let command = match validated_reconciliation_create_command(scoped, &headers, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.create_reconciliation_run(command).await {
@@ -579,7 +580,7 @@ async fn create_gc_job(
 ) -> Response {
     let command = match validated_gc_create_command(scoped, &headers, request) {
         Ok(command) => command,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.create_gc_job(command).await {
@@ -610,7 +611,7 @@ where
     };
     let query = match validated_list_query(scoped, query, scope_types) {
         Ok(query) => query,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match load(query).await {
         Ok(collection) => collection_response(collection),
@@ -648,13 +649,11 @@ fn validated_list_query(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     query: AdminStorageQuery,
     scope_types: Option<&'static [&'static str]>,
-) -> Result<ListAdminStorageRecordsQuery, Response> {
+) -> Result<ListAdminStorageRecordsQuery, ApiResponseError> {
     let subject = scoped.into();
     let limit = query.page_size.unwrap_or(DEFAULT_LIMIT);
     if !(1..=MAX_LIMIT).contains(&limit) {
-        return Err(bad_request(format!(
-            "page_size must be between 1 and {MAX_LIMIT}"
-        )));
+        return Err(bad_request(format!("page_size must be between 1 and {MAX_LIMIT}")).into());
     }
     let cursor = query
         .cursor
@@ -714,7 +713,7 @@ fn validated_provider_create_command(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     headers: &HeaderMap,
     request: CreateStorageProviderRequest,
-) -> Result<CreateStorageProviderCommand, Response> {
+) -> Result<CreateStorageProviderCommand, ApiResponseError> {
     let subject = scoped.into();
     let idempotency_key = required_header(headers, IDEMPOTENCY_KEY_HEADER)?;
     let provider_type =
@@ -749,7 +748,7 @@ fn validated_provider_update_command(
     _headers: &HeaderMap,
     provider_id: String,
     request: UpdateStorageStatusRequest,
-) -> Result<UpdateStorageProviderCommand, Response> {
+) -> Result<UpdateStorageProviderCommand, ApiResponseError> {
     let subject = scoped.into();
     let status =
         normalize_required_text(request.status, "status", MAX_TYPE_LEN)?.to_ascii_lowercase();
@@ -767,7 +766,7 @@ fn validated_provider_health_command(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: &HeaderMap,
     provider_id: String,
-) -> Result<CheckStorageProviderHealthCommand, Response> {
+) -> Result<CheckStorageProviderHealthCommand, ApiResponseError> {
     Ok(CheckStorageProviderHealthCommand {
         subject: scoped.into(),
         provider_id: normalize_required_text(provider_id, "providerId", MAX_ID_LEN)?,
@@ -779,7 +778,7 @@ fn validated_bucket_create_command(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     headers: &HeaderMap,
     request: CreateStorageBucketRequest,
-) -> Result<CreateStorageBucketCommand, Response> {
+) -> Result<CreateStorageBucketCommand, ApiResponseError> {
     let logical_scope =
         normalize_required_text(request.logical_scope, "logicalScope", MAX_TYPE_LEN)?;
     ensure_enum(&logical_scope, LOGICAL_SCOPES, "logicalScope")?;
@@ -830,7 +829,7 @@ fn validated_bucket_update_command(
     _headers: &HeaderMap,
     bucket_id: String,
     request: UpdateStorageStatusRequest,
-) -> Result<UpdateStorageBucketCommand, Response> {
+) -> Result<UpdateStorageBucketCommand, ApiResponseError> {
     let status =
         normalize_required_text(request.status, "status", MAX_TYPE_LEN)?.to_ascii_lowercase();
     ensure_enum(&status, RESOURCE_STATUSES, "status")?;
@@ -848,7 +847,7 @@ fn validated_default_bucket_command(
     _headers: &HeaderMap,
     logical_scope: String,
     request: SetStorageDefaultBucketRequest,
-) -> Result<SetStorageDefaultBucketCommand, Response> {
+) -> Result<SetStorageDefaultBucketCommand, ApiResponseError> {
     let logical_scope = normalize_required_text(logical_scope, "logicalScope", MAX_TYPE_LEN)?;
     ensure_enum(&logical_scope, LOGICAL_SCOPES, "logicalScope")?;
     Ok(SetStorageDefaultBucketCommand {
@@ -864,7 +863,7 @@ fn validated_quota_create_command(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     headers: &HeaderMap,
     request: CreateStorageQuotaPolicyRequest,
-) -> Result<CreateStorageQuotaPolicyCommand, Response> {
+) -> Result<CreateStorageQuotaPolicyCommand, ApiResponseError> {
     let scope_type = normalize_required_text(request.scope_type, "scopeType", MAX_TYPE_LEN)?;
     ensure_enum(&scope_type, QUOTA_SCOPE_TYPES, "scopeType")?;
     let quota_limit_bytes = match request.quota_limit_bytes {
@@ -878,17 +877,13 @@ fn validated_quota_create_command(
             .map_err(|_| bad_request("quotaLimitBytes must be a non-negative integer"))?,
     };
     if quota_limit_bytes < 0 {
-        return Err(bad_request(
-            "quotaLimitBytes must be a non-negative integer",
-        ));
+        return Err(bad_request("quotaLimitBytes must be a non-negative integer").into());
     }
     if request
         .single_file_limit_bytes
         .is_some_and(|value| value < 0)
     {
-        return Err(bad_request(
-            "singleFileLimitBytes must be a non-negative integer",
-        ));
+        return Err(bad_request("singleFileLimitBytes must be a non-negative integer").into());
     }
     Ok(CreateStorageQuotaPolicyCommand {
         subject: scoped.into(),
@@ -906,7 +901,7 @@ fn validated_reconciliation_create_command(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     headers: &HeaderMap,
     request: CreateStorageReconciliationRunRequest,
-) -> Result<CreateStorageReconciliationRunCommand, Response> {
+) -> Result<CreateStorageReconciliationRunCommand, ApiResponseError> {
     let run_type = request
         .run_type
         .or(request.check_mode)
@@ -927,7 +922,7 @@ fn validated_gc_create_command(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     headers: &HeaderMap,
     request: CreateStorageGarbageCollectionJobRequest,
-) -> Result<CreateStorageGarbageCollectionJobCommand, Response> {
+) -> Result<CreateStorageGarbageCollectionJobCommand, ApiResponseError> {
     let job_type = request
         .job_type
         .or_else(|| request.target.clone())
@@ -953,8 +948,8 @@ fn validated_gc_create_command(
     })
 }
 
-fn server_request_id() -> Result<String, Response> {
-    generate_server_request_id().map_err(request_id_error_response)
+fn server_request_id() -> Result<String, ApiResponseError> {
+    generate_server_request_id().map_err(|error| request_id_error_response(error).into())
 }
 
 fn request_id_error_response(error: RequestIdError) -> Response {
@@ -966,11 +961,12 @@ fn request_id_error_response(error: RequestIdError) -> Response {
     }
 }
 
-fn required_header(headers: &HeaderMap, name: &str) -> Result<String, Response> {
-    optional_header(headers, name)?.ok_or_else(|| bad_request(format!("{name} header is required")))
+fn required_header(headers: &HeaderMap, name: &str) -> Result<String, ApiResponseError> {
+    optional_header(headers, name)?
+        .ok_or_else(|| bad_request(format!("{name} header is required")).into())
 }
 
-fn optional_header(headers: &HeaderMap, name: &str) -> Result<Option<String>, Response> {
+fn optional_header(headers: &HeaderMap, name: &str) -> Result<Option<String>, ApiResponseError> {
     let Some(value) = headers.get(name) else {
         return Ok(None);
     };
@@ -984,16 +980,16 @@ fn normalize_required_text(
     value: String,
     field_name: &str,
     max_len: usize,
-) -> Result<String, Response> {
+) -> Result<String, ApiResponseError> {
     normalize_optional_text(Some(value), field_name, max_len)?
-        .ok_or_else(|| bad_request(format!("{field_name} is required")))
+        .ok_or_else(|| bad_request(format!("{field_name} is required")).into())
 }
 
 fn normalize_optional_text(
     value: Option<String>,
     field_name: &str,
     max_len: usize,
-) -> Result<Option<String>, Response> {
+) -> Result<Option<String>, ApiResponseError> {
     let Some(value) = value else {
         return Ok(None);
     };
@@ -1004,19 +1000,21 @@ fn normalize_optional_text(
     if value.chars().count() > max_len || !value.bytes().all(|byte| (0x20..=0x7e).contains(&byte)) {
         return Err(bad_request(format!(
             "{field_name} must be visible ASCII and at most {max_len} characters"
-        )));
+        ))
+        .into());
     }
     Ok(Some(value.to_owned()))
 }
 
-fn ensure_enum(value: &str, allowed: &[&str], field_name: &str) -> Result<(), Response> {
+fn ensure_enum(value: &str, allowed: &[&str], field_name: &str) -> Result<(), ApiResponseError> {
     if allowed.contains(&value) {
         return Ok(());
     }
     Err(bad_request(format!(
         "{field_name} must be one of {}",
         allowed.join(", ")
-    )))
+    ))
+    .into())
 }
 
 fn response_request_id(value: Option<&str>) -> String {

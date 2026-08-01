@@ -9,7 +9,7 @@ use serde::Deserialize;
 
 use crate::api::response::{
     json_success_list_response, normalize_list_search_query, offset_page_info,
-    parse_offset_list_query, problem_from_wire_code,
+    parse_offset_list_query, problem_from_wire_code, ApiResponseError,
 };
 use crate::domain::DomainError;
 use crate::ports::{
@@ -68,7 +68,7 @@ async fn fetch_transactions(
 ) -> Response {
     let query = match validated_query(scoped, &headers, query) {
         Ok(query) => query,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state
         .store
@@ -100,7 +100,7 @@ async fn fetch_billing_records(
 ) -> Response {
     let query = match validated_query(scoped, &headers, query) {
         Ok(query) => query,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
     match state
         .store
@@ -130,7 +130,7 @@ fn validated_query(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: &HeaderMap,
     query: AdminFinanceRequestQuery,
-) -> Result<ValidatedFinanceListQuery, Response> {
+) -> Result<ValidatedFinanceListQuery, ApiResponseError> {
     let subject = scoped.into();
     let pagination = parse_offset_list_query(query.page, query.page_size).map_err(bad_request)?;
 
@@ -151,7 +151,7 @@ fn normalize_optional_text(
     value: Option<String>,
     field_name: &str,
     max_len: usize,
-) -> Result<Option<String>, Response> {
+) -> Result<Option<String>, ApiResponseError> {
     let Some(value) = value else {
         return Ok(None);
     };
@@ -162,7 +162,8 @@ fn normalize_optional_text(
     if value.chars().count() > max_len || !value.bytes().all(|byte| (0x20..=0x7e).contains(&byte)) {
         return Err(bad_request(format!(
             "{field_name} must be visible ASCII and at most {max_len} characters"
-        )));
+        ))
+        .into());
     }
     Ok(Some(value.to_owned()))
 }

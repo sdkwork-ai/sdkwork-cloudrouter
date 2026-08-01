@@ -118,7 +118,7 @@ async fn fetch_settings(
         scoped.into()
     }) {
         Ok(subject) => subject,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
 
     match state.store.load_settings(subject).await {

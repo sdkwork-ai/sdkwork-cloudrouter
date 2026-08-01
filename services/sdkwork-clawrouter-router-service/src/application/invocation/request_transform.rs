@@ -35,7 +35,7 @@ impl InvocationInterceptor for RequestTransformInterceptor {
                 .account
                 .clone()
                 .ok_or_else(|| transform_error("request transform requires resolved account"))?;
-            let provider_request = ProviderRequestBuilder::default().build(
+            let provider_request = ProviderRequestBuilder.build(
                 invocation,
                 &account,
                 invocation.dispatch.resolved_secret.as_ref(),

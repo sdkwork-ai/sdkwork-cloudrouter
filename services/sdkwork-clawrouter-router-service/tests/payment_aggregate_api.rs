@@ -3,12 +3,12 @@ use std::sync::Arc;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::{
-    EntityUuidGenerator, InMemoryPaymentIntentRuntimeStore,
+    default_payment_provider_registry, EntityUuidGenerator, InMemoryPaymentIntentRuntimeStore,
 };
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use tower::ServiceExt;
 
-mod common;
+pub mod common;
 use common::InternalTrustedSubjectHeaders;
 
 struct TestUuidGenerator;
@@ -24,14 +24,18 @@ impl EntityUuidGenerator for TestUuidGenerator {
     }
 }
 
+fn payment_api_router(store: Arc<InMemoryPaymentIntentRuntimeStore>) -> axum::Router {
+    sdkwork_clawrouter_router_service::api::payment_aggregate_router_with_runtime_store_and_registry(
+        store,
+        Arc::new(TestUuidGenerator),
+        default_payment_provider_registry(),
+    )
+}
+
 #[tokio::test]
 async fn payment_aggregate_api_creates_payment_intent_and_records_route_decision() {
     let store = Arc::new(InMemoryPaymentIntentRuntimeStore::default());
-    let router =
-        sdkwork_clawrouter_router_service::api::payment_aggregate_router_with_runtime_store(
-            store.clone(),
-            Arc::new(TestUuidGenerator),
-        );
+    let router = payment_api_router(store.clone());
 
     let response = router
         .oneshot(trusted_json_request(
@@ -50,7 +54,7 @@ async fn payment_aggregate_api_creates_payment_intent_and_records_route_decision
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, response.status());
+    assert_eq!(StatusCode::CREATED, response.status());
     let payload = response_json(response).await;
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("order-api-1001", payload["data"]["item"]["merchantOrderNo"]);
@@ -62,11 +66,7 @@ async fn payment_aggregate_api_creates_payment_intent_and_records_route_decision
 #[tokio::test]
 async fn payment_aggregate_api_confirm_records_operation_attempt_and_returns_capability_error() {
     let store = Arc::new(InMemoryPaymentIntentRuntimeStore::default());
-    let router =
-        sdkwork_clawrouter_router_service::api::payment_aggregate_router_with_runtime_store(
-            store.clone(),
-            Arc::new(TestUuidGenerator),
-        );
+    let router = payment_api_router(store.clone());
 
     let create_response = router
         .clone()
@@ -109,11 +109,7 @@ async fn payment_aggregate_api_confirm_records_operation_attempt_and_returns_cap
 #[tokio::test]
 async fn payment_aggregate_api_capture_and_cancel_record_operation_attempts() {
     let store = Arc::new(InMemoryPaymentIntentRuntimeStore::default());
-    let router =
-        sdkwork_clawrouter_router_service::api::payment_aggregate_router_with_runtime_store(
-            store.clone(),
-            Arc::new(TestUuidGenerator),
-        );
+    let router = payment_api_router(store.clone());
 
     let create_response = router
         .clone()
@@ -161,11 +157,7 @@ async fn payment_aggregate_api_capture_and_cancel_record_operation_attempts() {
 #[tokio::test]
 async fn payment_aggregate_api_create_refund_records_failed_refund_runtime() {
     let store = Arc::new(InMemoryPaymentIntentRuntimeStore::default());
-    let router =
-        sdkwork_clawrouter_router_service::api::payment_aggregate_router_with_runtime_store(
-            store.clone(),
-            Arc::new(TestUuidGenerator),
-        );
+    let router = payment_api_router(store.clone());
 
     let create_response = router
         .clone()
@@ -236,11 +228,7 @@ async fn payment_aggregate_api_create_refund_records_failed_refund_runtime() {
 #[tokio::test]
 async fn payment_aggregate_api_rejects_refund_item_currency_mismatch() {
     let store = Arc::new(InMemoryPaymentIntentRuntimeStore::default());
-    let router =
-        sdkwork_clawrouter_router_service::api::payment_aggregate_router_with_runtime_store(
-            store.clone(),
-            Arc::new(TestUuidGenerator),
-        );
+    let router = payment_api_router(store.clone());
 
     let create_response = router
         .clone()
@@ -294,11 +282,7 @@ async fn payment_aggregate_api_rejects_refund_item_currency_mismatch() {
 #[tokio::test]
 async fn payment_aggregate_api_cancel_terminal_refund_returns_conflict() {
     let store = Arc::new(InMemoryPaymentIntentRuntimeStore::default());
-    let router =
-        sdkwork_clawrouter_router_service::api::payment_aggregate_router_with_runtime_store(
-            store.clone(),
-            Arc::new(TestUuidGenerator),
-        );
+    let router = payment_api_router(store.clone());
 
     let create_response = router
         .clone()

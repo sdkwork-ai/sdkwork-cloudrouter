@@ -46,9 +46,11 @@ async fn openai_compatible_relay_uses_provider_model_and_upstream_secret() {
         axum::serve(listener, provider).await.unwrap();
     });
 
-    let endpoint =
-        UpstreamProviderEndpoint::new(format!("http://{addr}"), "sk-upstream-provider-secret")
-            .unwrap();
+    let endpoint = UpstreamProviderEndpoint::for_local_development(
+        format!("http://{addr}"),
+        "sk-upstream-provider-secret",
+    )
+    .unwrap();
     let relay = OpenAiCompatibleChatCompletionRelay::new(endpoint);
     let request_body = json!({
         "model": "gpt-4o-mini",
@@ -130,10 +132,12 @@ async fn openai_compatible_relay_uses_provider_account_header_auth_profile() {
         name: "x-account-tier".to_owned(),
         value: "premium".to_owned(),
     });
-    let endpoint =
-        UpstreamProviderEndpoint::new(format!("http://{addr}"), "sk-upstream-provider-secret")
-            .unwrap()
-            .with_auth_profile(auth_profile.clone());
+    let endpoint = UpstreamProviderEndpoint::for_local_development(
+        format!("http://{addr}"),
+        "sk-upstream-provider-secret",
+    )
+    .unwrap()
+    .with_auth_profile(auth_profile.clone());
     let relay = OpenAiCompatibleChatCompletionRelay::new(endpoint);
     let response = relay
         .create_chat_completion(ChatCompletionRelayRequest {
@@ -187,7 +191,7 @@ async fn openai_compatible_relay_does_not_duplicate_openai_v1_base_path() {
         axum::serve(listener, provider).await.unwrap();
     });
 
-    let endpoint = UpstreamProviderEndpoint::new(
+    let endpoint = UpstreamProviderEndpoint::for_local_development(
         format!("http://{addr}/openai/v1"),
         "sk-upstream-provider-secret",
     )
@@ -242,9 +246,11 @@ async fn openai_compatible_relay_times_out_slow_upstream_responses_without_leaki
         axum::serve(listener, provider).await.unwrap();
     });
 
-    let endpoint =
-        UpstreamProviderEndpoint::new(format!("http://{addr}"), "sk-upstream-provider-secret")
-            .unwrap();
+    let endpoint = UpstreamProviderEndpoint::for_local_development(
+        format!("http://{addr}"),
+        "sk-upstream-provider-secret",
+    )
+    .unwrap();
     let relay = OpenAiCompatibleChatCompletionRelay::with_response_timeout(
         endpoint,
         Duration::from_millis(20),
@@ -295,9 +301,11 @@ async fn openai_compatible_relay_retries_retryable_upstream_status_once_without_
         axum::serve(listener, provider).await.unwrap();
     });
 
-    let endpoint =
-        UpstreamProviderEndpoint::new(format!("http://{addr}"), "sk-upstream-provider-secret")
-            .unwrap();
+    let endpoint = UpstreamProviderEndpoint::for_local_development(
+        format!("http://{addr}"),
+        "sk-upstream-provider-secret",
+    )
+    .unwrap();
     let relay = OpenAiCompatibleChatCompletionRelay::new(endpoint);
     let response = relay
         .create_chat_completion(ChatCompletionRelayRequest {
@@ -362,9 +370,11 @@ async fn openai_compatible_relay_uses_request_retry_policy_for_non_stream_json_a
         axum::serve(listener, provider).await.unwrap();
     });
 
-    let endpoint =
-        UpstreamProviderEndpoint::new(format!("http://{addr}"), "sk-upstream-provider-secret")
-            .unwrap();
+    let endpoint = UpstreamProviderEndpoint::for_local_development(
+        format!("http://{addr}"),
+        "sk-upstream-provider-secret",
+    )
+    .unwrap();
     let relay = OpenAiCompatibleChatCompletionRelay::new(endpoint);
     let response = relay
         .create_chat_completion(ChatCompletionRelayRequest {
@@ -416,9 +426,11 @@ async fn openai_compatible_relay_uses_configured_retryable_statuses_without_defa
         axum::serve(listener, provider).await.unwrap();
     });
 
-    let endpoint =
-        UpstreamProviderEndpoint::new(format!("http://{addr}"), "sk-upstream-provider-secret")
-            .unwrap();
+    let endpoint = UpstreamProviderEndpoint::for_local_development(
+        format!("http://{addr}"),
+        "sk-upstream-provider-secret",
+    )
+    .unwrap();
     let relay = OpenAiCompatibleChatCompletionRelay::new(endpoint);
     let response = relay
         .create_chat_completion(ChatCompletionRelayRequest {
@@ -473,9 +485,11 @@ async fn openai_compatible_relay_does_not_retry_non_retryable_upstream_status() 
         axum::serve(listener, provider).await.unwrap();
     });
 
-    let endpoint =
-        UpstreamProviderEndpoint::new(format!("http://{addr}"), "sk-upstream-provider-secret")
-            .unwrap();
+    let endpoint = UpstreamProviderEndpoint::for_local_development(
+        format!("http://{addr}"),
+        "sk-upstream-provider-secret",
+    )
+    .unwrap();
     let relay = OpenAiCompatibleChatCompletionRelay::new(endpoint);
     let response = relay
         .create_chat_completion(ChatCompletionRelayRequest {
@@ -530,9 +544,11 @@ async fn openai_compatible_relay_uses_request_provider_timeout_over_runtime_defa
         axum::serve(listener, provider).await.unwrap();
     });
 
-    let endpoint =
-        UpstreamProviderEndpoint::new(format!("http://{addr}"), "sk-upstream-provider-secret")
-            .unwrap();
+    let endpoint = UpstreamProviderEndpoint::for_local_development(
+        format!("http://{addr}"),
+        "sk-upstream-provider-secret",
+    )
+    .unwrap();
     let relay = OpenAiCompatibleChatCompletionRelay::with_response_timeout(
         endpoint,
         Duration::from_secs(5),
@@ -595,9 +611,11 @@ async fn openai_compatible_relay_times_out_slow_upstream_bodies_without_leaking_
             .unwrap();
     });
 
-    let endpoint =
-        UpstreamProviderEndpoint::new(format!("http://{addr}"), "sk-upstream-provider-secret")
-            .unwrap();
+    let endpoint = UpstreamProviderEndpoint::for_local_development(
+        format!("http://{addr}"),
+        "sk-upstream-provider-secret",
+    )
+    .unwrap();
     let relay = OpenAiCompatibleChatCompletionRelay::with_response_timeout(
         endpoint,
         Duration::from_millis(SLOW_UPSTREAM_BODY_TIMEOUT_MILLIS),
@@ -638,9 +656,11 @@ async fn openai_compatible_relay_times_out_slow_upstream_bodies_without_leaking_
 
 #[test]
 fn upstream_endpoint_debug_redacts_provider_secret() {
-    let endpoint =
-        UpstreamProviderEndpoint::new("http://127.0.0.1:8080", "sk-upstream-provider-secret")
-            .unwrap();
+    let endpoint = UpstreamProviderEndpoint::for_local_development(
+        "http://127.0.0.1:8080",
+        "sk-upstream-provider-secret",
+    )
+    .unwrap();
 
     assert!(!format!("{endpoint:?}").contains("sk-upstream-provider-secret"));
 }
@@ -662,15 +682,17 @@ fn upstream_endpoint_accepts_https_provider_urls_for_production_egress() {
 fn upstream_endpoint_rejects_invalid_or_unsupported_base_url_before_requests() {
     let invalid =
         UpstreamProviderEndpoint::new("not-a-url", "sk-upstream-provider-secret").unwrap_err();
-    assert!(invalid.to_string().contains("absolute http or https"));
+    assert!(invalid.to_string().contains("ssrf_blocked"));
+    assert!(invalid
+        .to_string()
+        .contains("outbound target URL is invalid"));
     assert!(!invalid.to_string().contains("sk-upstream-provider-secret"));
 
     let unsupported =
         UpstreamProviderEndpoint::new("ftp://127.0.0.1:8080", "sk-upstream-provider-secret")
             .unwrap_err();
-    assert!(unsupported
-        .to_string()
-        .contains("http or https provider URL"));
+    assert!(unsupported.to_string().contains("ssrf_blocked"));
+    assert!(unsupported.to_string().contains("must use HTTPS"));
     assert!(!unsupported
         .to_string()
         .contains("sk-upstream-provider-secret"));

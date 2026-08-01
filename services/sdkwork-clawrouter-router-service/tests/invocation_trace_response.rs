@@ -51,7 +51,7 @@ async fn trace_records_success_attempt_latency() {
             latency_ms: Some(37),
         });
 
-    TraceTelemetryInterceptor::default()
+    TraceTelemetryInterceptor
         .after(&mut invocation)
         .await
         .expect("trace");
@@ -68,7 +68,7 @@ async fn trace_masks_error_messages() {
         "provider rejected key sk-provider-secret",
     );
 
-    TraceTelemetryInterceptor::default()
+    TraceTelemetryInterceptor
         .on_error(&mut invocation, &error)
         .await
         .expect("trace");
@@ -88,7 +88,7 @@ async fn normalizes_success_response() {
     let mut invocation = invocation();
     invocation.dispatch = InvocationDispatch::json_response(200, json!({"id": "ok"}));
 
-    ResponseNormalizationInterceptor::default()
+    ResponseNormalizationInterceptor
         .after(&mut invocation)
         .await
         .expect("normalize");
@@ -117,7 +117,7 @@ async fn trace_ignores_body_status_code_for_direct_provider_success_response() {
         }),
     );
 
-    TraceTelemetryInterceptor::default()
+    TraceTelemetryInterceptor
         .after(&mut invocation)
         .await
         .expect("trace");
@@ -146,7 +146,7 @@ async fn normalizes_internal_adapter_response_to_provider_body() {
     );
     invocation.dispatch.mode = DispatchMode::InternalProviderAdapter;
 
-    ResponseNormalizationInterceptor::default()
+    ResponseNormalizationInterceptor
         .after(&mut invocation)
         .await
         .expect("normalize");
@@ -169,7 +169,7 @@ async fn normalizes_invocation_error_response() {
     let mut invocation = invocation();
     let error = InvocationError::new(InvocationErrorKind::Routing, "no route for sk-secret");
 
-    ResponseNormalizationInterceptor::default()
+    ResponseNormalizationInterceptor
         .on_error(&mut invocation, &error)
         .await
         .expect("normalize");

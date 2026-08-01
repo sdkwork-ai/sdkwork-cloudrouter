@@ -22,7 +22,7 @@ fn subject() -> InvocationSubject {
 }
 
 fn openai_invocation(method: Method, path: &str) -> Invocation {
-    let classification = OpenAiResourceClassifier::default()
+    let classification = OpenAiResourceClassifier
         .classify(&InvocationClassificationRequest::new(method.clone(), path))
         .expect("classification");
     let (mut resource, billing, routing) = classification.into_parts();
@@ -53,7 +53,7 @@ async fn extracts_openai_chat_usage_lines() {
         }),
     );
 
-    UsageExtractionInterceptor::default()
+    UsageExtractionInterceptor
         .after(&mut invocation)
         .await
         .expect("usage extraction");
@@ -88,7 +88,7 @@ async fn ignores_body_status_code_for_direct_provider_success_response() {
         }),
     );
 
-    UsageExtractionInterceptor::default()
+    UsageExtractionInterceptor
         .after(&mut invocation)
         .await
         .expect("usage extraction");
@@ -125,7 +125,7 @@ async fn extracts_openai_streaming_usage_lines_from_sse_chunks() {
         ),
     );
 
-    UsageExtractionInterceptor::default()
+    UsageExtractionInterceptor
         .after(&mut invocation)
         .await
         .expect("usage extraction");
@@ -165,7 +165,7 @@ async fn skips_streaming_usage_extraction_when_sse_has_no_usage_chunk() {
         ),
     );
 
-    UsageExtractionInterceptor::default()
+    UsageExtractionInterceptor
         .after(&mut invocation)
         .await
         .expect("usage extraction");
@@ -181,7 +181,7 @@ async fn skips_usage_extraction_for_provider_error_response() {
         json!({"error": {"message": "bad provider request"}}),
     );
 
-    UsageExtractionInterceptor::default()
+    UsageExtractionInterceptor
         .after(&mut invocation)
         .await
         .expect("usage extraction");
@@ -205,7 +205,7 @@ async fn extracts_responses_usage_lines() {
         }),
     );
 
-    UsageExtractionInterceptor::default()
+    UsageExtractionInterceptor
         .after(&mut invocation)
         .await
         .expect("usage extraction");
@@ -241,7 +241,7 @@ async fn extracts_embeddings_usage_line() {
         json!({"usage": {"prompt_tokens": 18, "total_tokens": 18}}),
     );
 
-    UsageExtractionInterceptor::default()
+    UsageExtractionInterceptor
         .after(&mut invocation)
         .await
         .expect("usage extraction");
@@ -259,7 +259,7 @@ async fn preserves_fixed_api_request_usage_line() {
     let mut invocation = openai_invocation(Method::POST, "/v1/files");
     invocation.billing = InvocationBilling::api_request(BillingMeter::ApiRequest);
 
-    UsageExtractionInterceptor::default()
+    UsageExtractionInterceptor
         .after(&mut invocation)
         .await
         .expect("usage extraction");
@@ -304,7 +304,7 @@ async fn extracts_adapter_usage_lines_from_standard_response_shape() {
         }),
     );
 
-    UsageExtractionInterceptor::default()
+    UsageExtractionInterceptor
         .after(&mut invocation)
         .await
         .expect("usage extraction");
@@ -360,7 +360,7 @@ async fn extracts_adapter_usage_lines_from_adapter_invocation_response_wrapper()
         }),
     );
 
-    UsageExtractionInterceptor::default()
+    UsageExtractionInterceptor
         .after(&mut invocation)
         .await
         .expect("usage extraction");
@@ -403,7 +403,7 @@ async fn skips_adapter_usage_extraction_when_adapter_wrapper_status_is_not_succe
         }),
     );
 
-    UsageExtractionInterceptor::default()
+    UsageExtractionInterceptor
         .after(&mut invocation)
         .await
         .expect("usage extraction");
@@ -426,7 +426,7 @@ async fn extracts_image_result_count() {
     invocation.dispatch =
         InvocationDispatch::json_response(200, json!({"data": [{"url": "a"}, {"url": "b"}]}));
 
-    UsageExtractionInterceptor::default()
+    UsageExtractionInterceptor
         .after(&mut invocation)
         .await
         .expect("usage extraction");
@@ -451,7 +451,7 @@ async fn extracts_audio_seconds_from_response_body() {
     invocation.dispatch =
         InvocationDispatch::json_response(200, json!({"usage": {"audio_seconds": "3.5"}}));
 
-    UsageExtractionInterceptor::default()
+    UsageExtractionInterceptor
         .after(&mut invocation)
         .await
         .expect("usage extraction");
@@ -480,7 +480,7 @@ async fn free_invocations_do_not_create_usage_lines() {
         InvocationBilling::free(),
     );
 
-    UsageExtractionInterceptor::default()
+    UsageExtractionInterceptor
         .after(&mut invocation)
         .await
         .expect("usage extraction");

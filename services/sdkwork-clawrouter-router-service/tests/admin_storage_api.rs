@@ -1,4 +1,4 @@
-mod common;
+pub mod common;
 
 use common::InternalTrustedSubjectHeaders;
 use std::sync::Arc;
@@ -101,7 +101,13 @@ async fn admin_storage_list_rejects_pagination_aliases_and_plain_cursors() {
         TestAdminStorageStore,
     ));
 
-    for query in ["pageSize=1", "limit=1", "page=1", "cursor=5"] {
+    for (key, value) in [
+        ("pageSize", "1"),
+        ("limit", "1"),
+        ("page", "1"),
+        ("cursor", "5"),
+    ] {
+        let query = format!("{key}={value}");
         let response = router
             .clone()
             .oneshot(trusted_request(

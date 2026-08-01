@@ -79,7 +79,7 @@ fn test_subject() -> sdkwork_clawrouter_router_service::application::InvocationS
 }
 
 fn classified_invocation(method: Method, path: &str, body: InvocationBody) -> Invocation {
-    let classification = OpenAiResourceClassifier::default()
+    let classification = OpenAiResourceClassifier
         .classify(&InvocationClassificationRequest::new(method.clone(), path))
         .expect("classification");
     let (resource, billing, routing) = classification.into_parts();

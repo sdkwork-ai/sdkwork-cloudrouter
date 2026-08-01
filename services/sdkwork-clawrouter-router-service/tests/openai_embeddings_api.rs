@@ -61,7 +61,8 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
                 Some("vault://providers/openrouter/account/embedding"),
             )
             .with_timeout_ms(30_000)
-            .with_retry_policy(ProviderRetryPolicy::new(3, vec![429, 503], 0).unwrap()),
+            .with_retry_policy(ProviderRetryPolicy::new(3, vec![429, 503], 0).unwrap())
+            .with_account_group_binding(10, 100, 100),
     );
     catalog.add_plan(PricingPlan::new(
         "standard",
@@ -117,7 +118,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
             r#"{"catalogKey":"openai/text-embedding-3-small"}"#,
             "openai/text-embedding-3-small",
         )
-        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
     );
     catalog
 }
@@ -152,7 +153,8 @@ fn catalog_with_embeddings_fallback_route(key_hash: String) -> InMemoryPricingCa
                 Some("vault://providers/openrouter/account/embedding-fallback"),
             )
             .with_timeout_ms(20_000)
-            .with_retry_policy(ProviderRetryPolicy::new(3, vec![429, 503], 0).unwrap()),
+            .with_retry_policy(ProviderRetryPolicy::new(3, vec![429, 503], 0).unwrap())
+            .with_account_group_binding(10, 200, 100),
     );
     catalog.add_price(
         ModelPrice::new_for_catalog_key(
@@ -175,8 +177,7 @@ fn catalog_with_embeddings_fallback_route(key_hash: String) -> InMemoryPricingCa
             r#"{"catalogKey":"openai/text-embedding-3-small"}"#,
             "openai/text-embedding-3-small",
         )
-        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)])
-        .with_fallback_chain(vec![RouteCandidate::new(3002, 50)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
     );
     catalog
 }
@@ -566,7 +567,7 @@ async fn openai_embeddings_invocation_plugins_cannot_override_account_before_rel
     assert!(payload["error"]["message"]
         .as_str()
         .unwrap()
-        .contains("plugin mutated selected upstream route"));
+        .contains("plugin mutated the selected upstream route"));
     assert_eq!(
         vec![
             "before_route_selection:text-embedding-3-small",
@@ -765,9 +766,11 @@ async fn openai_embeddings_records_usage_after_provider_success() {
     assert_eq!(6, command.modality);
     assert_eq!(1, command.usage_type);
     assert_eq!("embedding_input_token", command.billing_meter_code);
-    assert_eq!("0.026400", command.base_input_unit_price);
+    assert_eq!("0.024000", command.base_input_unit_price);
     assert_eq!("0.000000", command.base_output_unit_price);
     assert_eq!("0.000000", command.cache_read_unit_price);
+    assert_eq!("1.100000", command.rate_multiplier);
+    assert_eq!("1.200000", command.reference_multiplier);
     assert_eq!("0.000000026400", command.customer_charge_amount);
     assert_eq!("0.000000010000", command.upstream_cost_amount);
     assert_eq!("USD", command.currency);

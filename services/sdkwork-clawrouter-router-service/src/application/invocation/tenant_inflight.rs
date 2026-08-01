@@ -330,7 +330,7 @@ mod tests {
         let counter = LocalTenantInflightCounter::new(TenantInflightConfig { max_inflight: 5 });
         assert!(counter.try_acquire(7).await);
         counter.release(7).await;
-        assert_eq!(counter.counters.lock().unwrap().contains_key(&7), false);
+        assert!(!counter.counters.lock().unwrap().contains_key(&7));
     }
 
     #[test]

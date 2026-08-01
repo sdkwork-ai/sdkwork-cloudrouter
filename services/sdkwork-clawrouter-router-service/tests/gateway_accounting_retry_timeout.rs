@@ -6,7 +6,7 @@ use sdkwork_clawrouter_router_service::application::{
     GatewayAccountingRetryHealth, GatewayAccountingRetryRecorderConfig,
     RetryingGatewayUsageRecorder,
 };
-use sdkwork_clawrouter_router_service::domain::{DomainError, DomainResult};
+use sdkwork_clawrouter_router_service::domain::DomainError;
 use sdkwork_clawrouter_router_service::ports::{
     GatewayAccountingRetryDelivery, GatewayAccountingRetryEnvelope, GatewayAccountingRetryQueue,
     GatewayAccountingRetryQueueFuture, GatewayRequestTraceCommand, GatewayUsageRecordCommand,

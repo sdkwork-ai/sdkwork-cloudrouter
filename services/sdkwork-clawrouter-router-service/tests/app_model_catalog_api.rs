@@ -10,7 +10,7 @@ use sdkwork_clawrouter_router_service::domain::{
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use tower::ServiceExt;
 
-mod common;
+pub mod common;
 
 fn catalog() -> InMemoryPricingCatalog {
     let mut catalog = InMemoryPricingCatalog::default();

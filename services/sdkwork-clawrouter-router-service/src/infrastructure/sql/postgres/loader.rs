@@ -284,12 +284,14 @@ impl GatewayApiKeyManagementReadStore for PostgresPricingCatalogLoader {
             let rows = row_mapping::load_api_keys_paginated(
                 &self.pool,
                 &base_sql,
-                query.tenant_id,
-                query.organization_id,
-                query.user_id,
-                search.as_deref(),
-                query.page_size,
-                query.offset,
+                row_mapping::ApiKeyPageQuery {
+                    tenant_id: query.tenant_id,
+                    organization_id: query.organization_id,
+                    user_id: query.user_id,
+                    search: search.as_deref(),
+                    page_size: query.page_size,
+                    offset: query.offset,
+                },
             )
             .await
             .map_err(sqlx_load_error)?;

@@ -24,6 +24,19 @@ const DEFAULT_ACCOUNT_GROUP_NAME: &str = "Default";
 const DEFAULT_PRICING_PLAN_CODE: &str = "standard";
 const CASH_CURRENCY_CODE: &str = "USD";
 
+struct AdminUserAuditLog<'a> {
+    uuid: &'a str,
+    request_id: &'a str,
+    tenant_id: i64,
+    organization_id: i64,
+    operator_id: i64,
+    operator_type: i32,
+    action: &'a str,
+    target_type: i32,
+    target_id: i64,
+    change_summary: serde_json::Value,
+}
+
 #[derive(Debug, Clone)]
 pub struct PostgresAdminUserStore {
     pool: PgPool,
@@ -70,22 +83,24 @@ impl AdminUserStore for PostgresAdminUserStore {
             insert_cash_account(&mut tx, &command, user_id).await?;
             insert_audit_log(
                 &mut tx,
-                &command.audit_log_uuid,
-                &command.request_id,
-                command.subject.tenant_id,
-                command.subject.organization_id,
-                command.subject.operator_id,
-                command.subject.operator_type,
-                "create_user",
-                TARGET_TYPE_USER,
-                user_id,
-                serde_json::json!({
+                AdminUserAuditLog {
+                    uuid: &command.audit_log_uuid,
+                    request_id: &command.request_id,
+                    tenant_id: command.subject.tenant_id,
+                    organization_id: command.subject.organization_id,
+                    operator_id: command.subject.operator_id,
+                    operator_type: command.subject.operator_type,
+                    action: "create_user",
+                    target_type: TARGET_TYPE_USER,
+                    target_id: user_id,
+                    change_summary: serde_json::json!({
                     "action": "create_user",
                     "userId": user_id,
                     "email": &command.email,
                     "username": &command.username,
                     "initialBalance": command.initial_balance.to_fixed_string(4)
-                }),
+                    }),
+                },
             )
             .await?;
             let item = load_user_by_id(
@@ -124,22 +139,24 @@ impl AdminUserStore for PostgresAdminUserStore {
             }
             insert_audit_log(
                 &mut tx,
-                &command.audit_log_uuid,
-                &command.request_id,
-                command.subject.tenant_id,
-                command.subject.organization_id,
-                command.subject.operator_id,
-                command.subject.operator_type,
-                "update_user",
-                TARGET_TYPE_USER,
-                command.user_id,
-                serde_json::json!({
+                AdminUserAuditLog {
+                    uuid: &command.audit_log_uuid,
+                    request_id: &command.request_id,
+                    tenant_id: command.subject.tenant_id,
+                    organization_id: command.subject.organization_id,
+                    operator_id: command.subject.operator_id,
+                    operator_type: command.subject.operator_type,
+                    action: "update_user",
+                    target_type: TARGET_TYPE_USER,
+                    target_id: command.user_id,
+                    change_summary: serde_json::json!({
                     "action": "update_user",
                     "userId": command.user_id,
                     "usernameChanged": command.username.is_some(),
                     "group": &command.group,
                     "status": &command.status
-                }),
+                    }),
+                },
             )
             .await?;
             let item = load_user_by_id(
@@ -199,16 +216,17 @@ impl AdminUserStore for PostgresAdminUserStore {
             .await?;
             insert_audit_log(
                 &mut tx,
-                &command.audit_log_uuid,
-                &command.request_id,
-                command.subject.tenant_id,
-                command.subject.organization_id,
-                command.subject.operator_id,
-                command.subject.operator_type,
-                "adjust_user_balance",
-                TARGET_TYPE_ACCOUNT,
-                command.user_id,
-                serde_json::json!({
+                AdminUserAuditLog {
+                    uuid: &command.audit_log_uuid,
+                    request_id: &command.request_id,
+                    tenant_id: command.subject.tenant_id,
+                    organization_id: command.subject.organization_id,
+                    operator_id: command.subject.operator_id,
+                    operator_type: command.subject.operator_type,
+                    action: "adjust_user_balance",
+                    target_type: TARGET_TYPE_ACCOUNT,
+                    target_id: command.user_id,
+                    change_summary: serde_json::json!({
                     "action": "adjust_user_balance",
                     "userId": command.user_id,
                     "accountId": &account.id,
@@ -216,7 +234,8 @@ impl AdminUserStore for PostgresAdminUserStore {
                     "amount": command.amount.to_fixed_string(4),
                     "balanceBefore": balance_before.to_fixed_string(4),
                     "balanceAfter": balance_after.to_fixed_string(4)
-                }),
+                    }),
+                },
             )
             .await?;
             let item = load_user_by_id(
@@ -264,23 +283,25 @@ impl AdminUserStore for PostgresAdminUserStore {
             let api_key_id = insert_api_key(&mut tx, &command, group_id).await?;
             insert_audit_log(
                 &mut tx,
-                &command.audit_log_uuid,
-                &command.request_id,
-                command.subject.tenant_id,
-                command.subject.organization_id,
-                command.subject.operator_id,
-                command.subject.operator_type,
-                "create_user_api_key",
-                TARGET_TYPE_API_KEY,
-                api_key_id,
-                serde_json::json!({
+                AdminUserAuditLog {
+                    uuid: &command.audit_log_uuid,
+                    request_id: &command.request_id,
+                    tenant_id: command.subject.tenant_id,
+                    organization_id: command.subject.organization_id,
+                    operator_id: command.subject.operator_id,
+                    operator_type: command.subject.operator_type,
+                    action: "create_user_api_key",
+                    target_type: TARGET_TYPE_API_KEY,
+                    target_id: api_key_id,
+                    change_summary: serde_json::json!({
                     "action": "create_user_api_key",
                     "userId": command.user_id,
                     "apiKeyId": api_key_id,
                     "name": &command.name,
                     "keyPrefix": &command.key_prefix,
                     "storesSecretPlaintext": false
-                }),
+                    }),
+                },
             )
             .await?;
             let item = load_api_key_by_id(
@@ -311,19 +332,21 @@ impl AdminUserStore for PostgresAdminUserStore {
             if deleted {
                 insert_audit_log(
                     &mut tx,
-                    &command.audit_log_uuid,
-                    &command.request_id,
-                    command.subject.tenant_id,
-                    command.subject.organization_id,
-                    command.subject.operator_id,
-                    command.subject.operator_type,
-                    "delete_user_api_key",
-                    TARGET_TYPE_API_KEY,
-                    command.api_key_id,
-                    serde_json::json!({
+                    AdminUserAuditLog {
+                        uuid: &command.audit_log_uuid,
+                        request_id: &command.request_id,
+                        tenant_id: command.subject.tenant_id,
+                        organization_id: command.subject.organization_id,
+                        operator_id: command.subject.operator_id,
+                        operator_type: command.subject.operator_type,
+                        action: "delete_user_api_key",
+                        target_type: TARGET_TYPE_API_KEY,
+                        target_id: command.api_key_id,
+                        change_summary: serde_json::json!({
                         "action": "delete_user_api_key",
                         "apiKeyId": command.api_key_id
-                    }),
+                        }),
+                    },
                 )
                 .await?;
             }
@@ -1182,16 +1205,7 @@ async fn load_api_key_by_id(
 
 async fn insert_audit_log(
     tx: &mut Transaction<'_, Postgres>,
-    uuid: &str,
-    request_id: &str,
-    tenant_id: i64,
-    organization_id: i64,
-    operator_id: i64,
-    operator_type: i32,
-    action: &str,
-    target_type: i32,
-    target_id: i64,
-    change_summary: serde_json::Value,
+    audit: AdminUserAuditLog<'_>,
 ) -> DomainResult<()> {
     let id = next_claw_runtime_id("ops_audit_log")?;
     sqlx::query(
@@ -1202,16 +1216,16 @@ async fn insert_audit_log(
             ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11)
         "#,
     )
-    .bind(uuid)
-    .bind(tenant_id)
-    .bind(organization_id)
-    .bind(action)
-    .bind(target_type)
-    .bind(target_id)
-    .bind(request_id)
-    .bind(operator_id)
-    .bind(operator_type)
-    .bind(change_summary.to_string())
+    .bind(audit.uuid)
+    .bind(audit.tenant_id)
+    .bind(audit.organization_id)
+    .bind(audit.action)
+    .bind(audit.target_type)
+    .bind(audit.target_id)
+    .bind(audit.request_id)
+    .bind(audit.operator_id)
+    .bind(audit.operator_type)
+    .bind(audit.change_summary.to_string())
     .bind(id)
     .execute(&mut **tx)
     .await

@@ -140,8 +140,7 @@ impl AiRoutingIndex {
                             )
                     })
                     .collect::<Vec<_>>();
-                best_binding_sort_key(matched_bindings.into_iter())
-                    .map(|sort_key| (sort_key, route.clone()))
+                best_binding_sort_key(matched_bindings).map(|sort_key| (sort_key, route.clone()))
             })
             .collect::<Vec<_>>();
 
@@ -617,9 +616,9 @@ fn sorted_callable_routes(routes: Vec<UpstreamAccountRoute>) -> Vec<UpstreamAcco
     routes
 }
 
-fn sorted_bound_routes(
-    candidates: Vec<((i32, Reverse<i32>, i64), UpstreamAccountRoute)>,
-) -> Vec<UpstreamAccountRoute> {
+type BoundRouteCandidate = ((i32, Reverse<i32>, i64), UpstreamAccountRoute);
+
+fn sorted_bound_routes(candidates: Vec<BoundRouteCandidate>) -> Vec<UpstreamAccountRoute> {
     let mut candidates = candidates;
     candidates.sort_by_key(|(sort_key, route)| (sort_key.0, sort_key.1, route.account_id));
     candidates

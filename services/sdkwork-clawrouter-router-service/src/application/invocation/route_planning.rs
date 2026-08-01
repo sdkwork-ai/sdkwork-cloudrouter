@@ -10,7 +10,7 @@ use crate::application::{
     SelectedUpstreamAccountRoute, SelectedUpstreamModelRoute, UpstreamRouteSelector,
 };
 use crate::domain::{
-    provider_native_model_id, AiModel, BillingMeter, ModelUpstreamRoute, ProviderAuthProfile,
+    provider_native_model_id, AiModel, BillingMeter, ModelUpstreamRoute,
     ResolveModelMappingContext, UpstreamAccountRoute,
 };
 use crate::ports::UpstreamAccountRouteCatalog;
@@ -201,7 +201,7 @@ where
         auth_profile: account_route
             .as_ref()
             .map(|route| route.auth_profile.clone())
-            .unwrap_or_else(ProviderAuthProfile::default),
+            .unwrap_or_default(),
         timeout_ms: account_route.as_ref().and_then(|route| route.timeout_ms),
         retry_policy: account_route
             .as_ref()
@@ -469,8 +469,8 @@ where
 {
     catalog
         .shared_upstream_account_routes()
-        .into_iter()
-        .filter(|route| {
+        .iter()
+        .find(|route| {
             route.supplier_code == sticky_route.supplier_code
                 && route.account_id == sticky_route.account_id
                 && sticky_route
@@ -479,7 +479,6 @@ where
                     .map(|region| same_region(&route.region_code, region))
                     .unwrap_or(true)
         })
-        .next()
         .cloned()
 }
 

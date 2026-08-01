@@ -1,4 +1,4 @@
-mod common;
+pub mod common;
 use common::InternalTrustedSubjectHeaders;
 use std::sync::{Arc, Mutex};
 
@@ -198,7 +198,7 @@ impl AdminFirewallRuleStore for TestFirewallRuleStore {
                     item.tenant_id == query.subject.tenant_id
                         && item.organization_id == query.subject.organization_id
                         && item.deleted_at.is_none()
-                        && q.as_ref().map_or(true, |q| {
+                        && q.as_ref().is_none_or(|q| {
                             item.firewall_type.to_ascii_lowercase().contains(q)
                                 || item.value.to_ascii_lowercase().contains(q)
                                 || item.reason.to_ascii_lowercase().contains(q)

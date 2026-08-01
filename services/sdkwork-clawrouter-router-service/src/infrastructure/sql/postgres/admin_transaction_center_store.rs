@@ -663,7 +663,7 @@ async fn create_payment_provider_account(
         return Ok(item);
     }
 
-    let mut tx = pool.begin().await.map_err(|error| store_error(error))?;
+    let mut tx = pool.begin().await.map_err(store_error)?;
     let channel_scope = PaymentProviderAccountChannelScope {
         tenant_id: command.subject.tenant_id,
         organization_id: command.subject.organization_id,
@@ -759,7 +759,7 @@ async fn update_payment_provider_account(
         ));
     };
 
-    let mut tx = pool.begin().await.map_err(|error| store_error(error))?;
+    let mut tx = pool.begin().await.map_err(store_error)?;
     let channel_scope = PaymentProviderAccountChannelScope {
         tenant_id: command.subject.tenant_id,
         organization_id: command.subject.organization_id,
@@ -868,7 +868,7 @@ async fn update_payment_provider_account_status(
         ));
     };
 
-    let mut tx = pool.begin().await.map_err(|error| store_error(error))?;
+    let mut tx = pool.begin().await.map_err(store_error)?;
     let current_channel_scope = if command.status == "active" {
         load_payment_provider_account_channel_scope(
             &mut tx,
@@ -1095,7 +1095,7 @@ async fn delete_payment_provider_account(
         ));
     }
 
-    let mut tx = pool.begin().await.map_err(|error| store_error(error))?;
+    let mut tx = pool.begin().await.map_err(store_error)?;
     insert_payment_provider_account_mutation_audit(
         &mut tx,
         PaymentProviderAccountAuditInput {

@@ -2,9 +2,24 @@ use std::future::Future;
 use std::pin::Pin;
 
 use axum::body::Body;
+use serde_json::{Map, Value};
 
-use crate::domain::DomainResult;
+use crate::domain::{DomainError, DomainResult};
 use crate::ports::ChatCompletionRelayRequest;
+
+pub(crate) fn require_stream_usage(mut request_body: Value) -> DomainResult<Value> {
+    let object = request_body
+        .as_object_mut()
+        .ok_or_else(|| DomainError::new("chat stream request body must be a JSON object"))?;
+    let stream_options = object
+        .entry("stream_options".to_owned())
+        .or_insert_with(|| Value::Object(Map::new()));
+    let stream_options = stream_options.as_object_mut().ok_or_else(|| {
+        DomainError::new("chat stream request stream_options must be a JSON object")
+    })?;
+    stream_options.insert("include_usage".to_owned(), Value::Bool(true));
+    Ok(request_body)
+}
 
 pub type ChatCompletionStreamRelayFuture<'a> =
     Pin<Box<dyn Future<Output = DomainResult<ChatCompletionStreamRelayResponse>> + Send + 'a>>;

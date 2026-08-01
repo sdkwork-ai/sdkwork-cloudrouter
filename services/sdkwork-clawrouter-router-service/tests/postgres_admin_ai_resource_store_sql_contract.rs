@@ -1,17 +1,19 @@
 const POSTGRES_ADMIN_AI_RESOURCE_STORE: &str = include_str!(
     "../../../../sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx/src/postgres/admin_ai_resource_store.rs"
 );
-const POSTGRES_SCHEMA: &str = include_str!("../../../generated/schema/postgres/schema.sql");
+const MODELS_POSTGRES_BASELINE: &str = include_str!(
+    "../../../../sdkwork-models/database/ddl/baseline/postgres/0001_sdkwork-models_baseline.sql"
+);
 
 fn compact_sql(value: &str) -> String {
     value.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 fn postgres_table_definition(table_name: &str) -> &str {
-    POSTGRES_SCHEMA
+    MODELS_POSTGRES_BASELINE
         .split(&format!("CREATE TABLE IF NOT EXISTS {table_name}"))
         .nth(1)
-        .unwrap_or_else(|| panic!("generated Postgres schema must define {table_name}"))
+        .unwrap_or_else(|| panic!("sdkwork-models Postgres baseline must define {table_name}"))
         .split("CREATE ")
         .next()
         .unwrap_or_default()

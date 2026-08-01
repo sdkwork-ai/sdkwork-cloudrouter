@@ -1,4 +1,4 @@
-mod common;
+pub mod common;
 use common::web_framework_backend_request;
 
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -471,7 +471,7 @@ impl AdminAiResourceStore for TestAiResourceStore {
             let items = items
                 .into_iter()
                 .filter(|item| {
-                    q.as_ref().map_or(true, |q| {
+                    q.as_ref().is_none_or(|q| {
                         item.resource_code.to_ascii_lowercase().contains(q)
                             || item.display_name.to_ascii_lowercase().contains(q)
                     })
@@ -618,7 +618,7 @@ impl AdminAiResourceStore for TestAiResourceStore {
             let items = items
                 .into_iter()
                 .filter(|item| {
-                    q.as_ref().map_or(true, |q| {
+                    q.as_ref().is_none_or(|q| {
                         item.group_code.to_ascii_lowercase().contains(q)
                             || item.group_name.to_ascii_lowercase().contains(q)
                     })
@@ -676,7 +676,7 @@ impl AdminAiResourceStore for TestAiResourceStore {
             let items = items
                 .into_iter()
                 .filter(|item| {
-                    q.as_ref().map_or(true, |q| {
+                    q.as_ref().is_none_or(|q| {
                         item.resource_code.to_ascii_lowercase().contains(q)
                             || item.display_name.to_ascii_lowercase().contains(q)
                     })

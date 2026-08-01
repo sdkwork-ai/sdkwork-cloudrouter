@@ -640,7 +640,7 @@ No task may replace these chains with direct edits to generated output.
 - Modify: `services/sdkwork-clawrouter-router-service/src/application/invocation/metrics_interceptor.rs`
 - Modify: gateway health/readiness and trace propagation composition
 - Modify: `deployments/prometheus/claw-router-alerts.yaml`
-- Modify: `deployments/grafana/claw-router-slo-dashboard.json`
+- Modify: `deployments/grafana/claw-router-http-operations-dashboard.json`
 - Test: metric contract, cardinality, redaction, trace, readiness, dashboard, and alert fixtures
 
 - [ ] Add RED tests proving required invocation/security/financial signals are absent or use unsafe

@@ -47,12 +47,14 @@ async fn secret_ref_embeddings_relay_resolves_endpoint_and_secret_from_request_c
     });
 
     let secret_ref = "vault://providers/openrouter/account/main";
-    let relay = SecretRefOpenAiCompatibleEmbeddingsRelay::new(Arc::new(MapSecretResolver {
-        secrets: HashMap::from([(
-            secret_ref.to_owned(),
-            "sk-provider-from-secret-ref".to_owned(),
-        )]),
-    }));
+    let relay = SecretRefOpenAiCompatibleEmbeddingsRelay::for_local_development(Arc::new(
+        MapSecretResolver {
+            secrets: HashMap::from([(
+                secret_ref.to_owned(),
+                "sk-provider-from-secret-ref".to_owned(),
+            )]),
+        },
+    ));
 
     let request_body = json!({
         "model": "text-embedding-3-small",
@@ -112,9 +114,11 @@ async fn secret_ref_embeddings_relay_resolves_endpoint_and_secret_from_request_c
 #[tokio::test]
 async fn secret_ref_embeddings_relay_rejects_missing_endpoint_or_secret_ref_without_leaking_values()
 {
-    let relay = SecretRefOpenAiCompatibleEmbeddingsRelay::new(Arc::new(MapSecretResolver {
-        secrets: HashMap::new(),
-    }));
+    let relay = SecretRefOpenAiCompatibleEmbeddingsRelay::for_local_development(Arc::new(
+        MapSecretResolver {
+            secrets: HashMap::new(),
+        },
+    ));
 
     let missing_endpoint = relay
         .create_embedding(EmbeddingsRelayRequest {

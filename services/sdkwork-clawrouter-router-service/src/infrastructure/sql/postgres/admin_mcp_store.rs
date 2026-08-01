@@ -825,19 +825,19 @@ async fn create_binding(
     }
     let status = required_status_code(&command.status)?;
     let id = next_claw_runtime_id("ai_mcp_binding")?;
-    let snapshot = mcp_binding_snapshot(
-        command.server_id,
-        command.server_revision_id,
-        command.tool_id,
-        &command.owner_type,
-        command.owner_id,
-        &command.allowed_tools,
-        &command.denied_tools,
-        &command.policy_json,
-        command.priority,
-        command.enabled,
-        &command.status,
-    );
+    let snapshot = mcp_binding_snapshot(McpBindingSnapshot {
+        server_id: command.server_id,
+        server_revision_id: command.server_revision_id,
+        tool_id: command.tool_id,
+        owner_type: &command.owner_type,
+        owner_id: command.owner_id,
+        allowed_tools: &command.allowed_tools,
+        denied_tools: &command.denied_tools,
+        policy_json: &command.policy_json,
+        priority: command.priority,
+        enabled: command.enabled,
+        status: &command.status,
+    });
     sqlx::query(
         r#"
         INSERT INTO ai_mcp_binding
@@ -915,19 +915,19 @@ async fn update_binding(
     let enabled = command.enabled.unwrap_or(current.enabled);
     let status_text = command.status.unwrap_or(current.status);
     let status = required_status_code(&status_text)?;
-    let snapshot = mcp_binding_snapshot(
-        current.server_id,
+    let snapshot = mcp_binding_snapshot(McpBindingSnapshot {
+        server_id: current.server_id,
         server_revision_id,
         tool_id,
-        &owner_type,
+        owner_type: &owner_type,
         owner_id,
-        &allowed_tools,
-        &denied_tools,
-        &policy_json,
+        allowed_tools: &allowed_tools,
+        denied_tools: &denied_tools,
+        policy_json: &policy_json,
         priority,
         enabled,
-        &status_text,
-    );
+        status: &status_text,
+    });
     sqlx::query(
         r#"
         UPDATE ai_mcp_binding
@@ -1516,19 +1516,34 @@ async fn current_timestamp(pool: &PgPool) -> DomainResult<String> {
         .map_err(store_error)
 }
 
-fn mcp_binding_snapshot(
+struct McpBindingSnapshot<'a> {
     server_id: i64,
     server_revision_id: Option<i64>,
     tool_id: Option<i64>,
-    owner_type: &str,
+    owner_type: &'a str,
     owner_id: i64,
-    allowed_tools: &serde_json::Value,
-    denied_tools: &serde_json::Value,
-    policy_json: &serde_json::Value,
+    allowed_tools: &'a serde_json::Value,
+    denied_tools: &'a serde_json::Value,
+    policy_json: &'a serde_json::Value,
     priority: i32,
     enabled: bool,
-    status: &str,
-) -> serde_json::Value {
+    status: &'a str,
+}
+
+fn mcp_binding_snapshot(snapshot: McpBindingSnapshot<'_>) -> serde_json::Value {
+    let McpBindingSnapshot {
+        server_id,
+        server_revision_id,
+        tool_id,
+        owner_type,
+        owner_id,
+        allowed_tools,
+        denied_tools,
+        policy_json,
+        priority,
+        enabled,
+        status,
+    } = snapshot;
     serde_json::json!({
         "serverId": server_id,
         "serverRevisionId": server_revision_id,

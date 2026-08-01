@@ -119,7 +119,7 @@ async fn fetch_dashboard_overview(
         scoped.into()
     }) {
         Ok(subject) => subject,
-        Err(response) => return response,
+        Err(error) => return error.into_response(),
     };
 
     let validated_query = match validate_dashboard_overview_query(query) {

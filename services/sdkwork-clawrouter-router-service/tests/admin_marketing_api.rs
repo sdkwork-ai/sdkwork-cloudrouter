@@ -1,4 +1,4 @@
-mod common;
+pub mod common;
 use common::InternalTrustedSubjectHeaders;
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
@@ -73,13 +73,10 @@ async fn admin_marketing_route_lists_all_marketing_read_models() {
         "owner@example.com",
         promotion_codes["data"]["items"][1]["owner_user_id"]
     );
-    assert_eq!(
-        false,
-        promotion_codes["data"]["items"][0]
-            .as_object()
-            .unwrap()
-            .contains_key("code")
-    );
+    assert!(!promotion_codes["data"]["items"][0]
+        .as_object()
+        .unwrap()
+        .contains_key("code"));
 
     let redemptions = request_json(
         router.clone(),
@@ -229,7 +226,7 @@ async fn admin_marketing_promotion_routes_expose_standard_card_lifecycle_models(
     assert_eq!("single_use", code["code_type"]);
     assert_eq!("USD", code["currency_code"]);
     assert_eq!("available", code["status"]);
-    assert_eq!(false, code.as_object().unwrap().contains_key("code"));
+    assert!(!code.as_object().unwrap().contains_key("code"));
 
     let redemptions = request_json(
         router,
@@ -342,13 +339,10 @@ async fn admin_marketing_route_creates_deletes_generates_and_updates_codes() {
         .as_object()
         .unwrap()
         .contains_key("code_batch_no"));
-    assert_eq!(
-        false,
-        generate_promotion_coupon_stock["data"]["codes"][0]
-            .as_object()
-            .unwrap()
-            .contains_key("code")
-    );
+    assert!(!generate_promotion_coupon_stock["data"]["codes"][0]
+        .as_object()
+        .unwrap()
+        .contains_key("code"));
 
     let update_status = request_json(
         router.clone(),

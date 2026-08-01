@@ -16,6 +16,10 @@ spec:
       labels:
         app: sdkwork-clawrouter
         component: edge
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "3900"
     spec:
       # H-6 fix: graceful shutdown window must exceed the longest upstream
       # provider request. AI provider requests can take up to 120s (matching
@@ -75,7 +79,7 @@ spec:
               value: /etc/sdkwork/clawrouter.toml
             - name: SDKWORK_CLAW_EDGE_SERVER
               value: "true"
-            - name: SDKWORK_CLAW_SERVER_BIND
+            - name: SDKWORK_CLAW_GATEWAY_BIND
               value: 0.0.0.0:3900
             - name: SDKWORK_CLAW_EDGE_GATEWAY_BASE_URL
               value: http://sdkwork-clawrouter-edge-runtime:18080

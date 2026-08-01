@@ -360,7 +360,7 @@ fn decimal_string_cell(
 }
 
 fn decimal_value_string(value: &str, digits: u32, field_name: &str) -> Result<String, DomainError> {
-    DecimalValue::parse(&value)
+    DecimalValue::parse(value)
         .map(|amount| amount.to_fixed_string(digits))
         .map_err(|_| DomainError::new(format!("invalid {field_name}: {value}")))
 }

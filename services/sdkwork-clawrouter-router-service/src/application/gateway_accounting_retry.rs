@@ -652,12 +652,18 @@ async fn replay(
     match &envelope.payload {
         GatewayAccountingRetryPayload::Trace(command) => {
             recorder
-                .record_gateway_trace_with_context(command.clone(), envelope.context.clone())
+                .record_gateway_trace_with_context(
+                    command.as_ref().clone(),
+                    envelope.context.clone(),
+                )
                 .await
         }
         GatewayAccountingRetryPayload::Usage(command) => {
             recorder
-                .record_gateway_usage_with_context(command.clone(), envelope.context.clone())
+                .record_gateway_usage_with_context(
+                    command.as_ref().clone(),
+                    envelope.context.clone(),
+                )
                 .await
         }
     }
