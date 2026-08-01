@@ -361,7 +361,7 @@ async fn forward_provider_passthrough(
     axum::extract::State(runtime): axum::extract::State<ProviderPassthroughRuntime>,
     request: Request,
 ) -> Response {
-    if let Some(response) = reject_unsupported_provider_route(&request) {
+    if let Some(response) = runtime.unsupported_provider_route_response(&request) {
         return response;
     }
     match runtime.forward(request, None).await {
@@ -379,7 +379,7 @@ async fn authenticated_forward_provider_passthrough<C>(
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
-    if let Some(response) = reject_unsupported_provider_route(&request) {
+    if let Some(response) = state.runtime.unsupported_provider_route_response(&request) {
         return response;
     }
     let context = match authenticate_passthrough_api_key(&state, &headers, &uri) {
@@ -544,6 +544,34 @@ where
 }
 
 impl ProviderPassthroughRuntime {
+    fn unsupported_provider_route_response(&self, request: &Request) -> Option<Response> {
+        let response = reject_unsupported_provider_route(request)?;
+        (!self.has_exact_adapter_route_for_request(request)).then_some(response)
+    }
+
+    fn has_exact_adapter_route_for_request(&self, request: &Request) -> bool {
+        let Some(adapter) = self.adapter.as_ref() else {
+            return false;
+        };
+        let Some(target) = self.target_for_path(request.uri().path()) else {
+            return false;
+        };
+        let Ok(standard_path) = standard_path_from_passthrough_uri(request.uri()) else {
+            return false;
+        };
+        let lookup = ProviderAdapterLookup {
+            supplier_code: target.provider(),
+            method: request.method().as_str(),
+            standard_path: standard_path.as_str(),
+            capability: None,
+            endpoint_key: None,
+        };
+        matches!(
+            adapter.registry.resolve_standard_path(&lookup).mode,
+            ProviderInvocationMode::InternalHttpAdapter(_)
+        )
+    }
+
     fn from_config(config: ProviderRelayConfig) -> Self {
         Self::from_config_with_adapter(config, None)
     }

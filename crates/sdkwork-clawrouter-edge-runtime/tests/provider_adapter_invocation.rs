@@ -32,7 +32,7 @@ async fn gateway_adapter_transport_posts_stable_envelope_to_internal_adapter() {
     let fake = spawn_fake_adapter_server(StatusCode::OK).await;
     let route = adapter_route(fake.base_url.as_str());
     let transport =
-        sdkwork_clawrouter_edge_runtime::provider_adapter_transport::ProviderAdapterHttpTransport::new(
+        sdkwork_clawrouter_edge_runtime::provider_adapter_transport::ProviderAdapterHttpTransport::for_development(
             "test-token",
         );
 
@@ -61,7 +61,7 @@ async fn gateway_adapter_transport_maps_adapter_error_to_gateway_error() {
     let fake = spawn_fake_adapter_server(StatusCode::BAD_GATEWAY).await;
     let route = adapter_route(fake.base_url.as_str());
     let transport =
-        sdkwork_clawrouter_edge_runtime::provider_adapter_transport::ProviderAdapterHttpTransport::new(
+        sdkwork_clawrouter_edge_runtime::provider_adapter_transport::ProviderAdapterHttpTransport::for_development(
             "test-token",
         );
 

@@ -336,7 +336,7 @@ pub fn serialize_key_material(
     .to_string();
 
     let encrypted = sdkwork_utils_rust::aes_gcm_encrypt(encryption_key, plaintext.as_bytes())
-        .map_err(|e| SigningError::EncodingFailed(e))?;
+        .map_err(SigningError::EncodingFailed)?;
 
     Ok(serde_json::json!({
         "v": 1,
@@ -368,7 +368,7 @@ pub fn deserialize_key_material(
         .ok_or_else(|| SigningError::DecodingFailed("missing encrypted data".to_string()))?;
 
     let plaintext = sdkwork_utils_rust::aes_gcm_decrypt(encryption_key, encrypted_data)
-        .map_err(|e| SigningError::DecodingFailed(e))?;
+        .map_err(SigningError::DecodingFailed)?;
     let plaintext_str =
         String::from_utf8(plaintext).map_err(|e| SigningError::DecodingFailed(e.to_string()))?;
 

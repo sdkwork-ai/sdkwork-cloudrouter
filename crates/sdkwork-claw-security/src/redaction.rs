@@ -42,7 +42,7 @@ pub fn redact_url(url: impl AsRef<str>) -> String {
     }
     let after_scheme = &url[scheme_sep + 3..];
     let auth_end = after_scheme
-        .find(|c: char| c == '/' || c == '?' || c == '#')
+        .find(['/', '?', '#'])
         .unwrap_or(after_scheme.len());
     let authority = &after_scheme[..auth_end];
     let host_part = match authority.rfind('@') {

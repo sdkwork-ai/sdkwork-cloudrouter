@@ -80,6 +80,12 @@ impl ProviderAdapterRegistry {
             .filter_map(|route| {
                 let path_score =
                     path_match_score(route.standard_path_pattern.as_str(), lookup.standard_path)?;
+                if allow_exact_path_metadata_fallback
+                    && (lookup.capability.is_none() || lookup.endpoint_key.is_none())
+                    && path_score < 100
+                {
+                    return None;
+                }
                 let allow_metadata_fallback =
                     allow_exact_path_metadata_fallback && path_score >= 100;
                 if !optional_matches(

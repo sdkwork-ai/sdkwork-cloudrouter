@@ -106,6 +106,28 @@ fn standard_path_lookup_matches_endpoint_route_when_endpoint_key_is_unknown() {
 }
 
 #[test]
+fn standard_path_lookup_rejects_wildcard_route_when_metadata_is_unknown() {
+    let mut wildcard = vidu_route(10, AdapterRouteStatus::Enabled);
+    wildcard.capability = None;
+    wildcard.endpoint_key = None;
+    wildcard.standard_path_pattern = "/*".to_owned();
+    let registry = ProviderAdapterRegistry::new(vec![wildcard]);
+
+    let resolution = registry.resolve_standard_path(&ProviderAdapterLookup {
+        supplier_code: "tencent-cloud",
+        method: "POST",
+        standard_path: "/v1/undeclared-stream",
+        capability: None,
+        endpoint_key: None,
+    });
+
+    assert!(matches!(
+        resolution.mode,
+        ProviderInvocationMode::DirectHttp
+    ));
+}
+
+#[test]
 fn standard_path_lookup_allows_endpoint_alias_when_exact_path_matches() {
     let registry = ProviderAdapterRegistry::new(vec![openrouter_text2video_route(
         10,
