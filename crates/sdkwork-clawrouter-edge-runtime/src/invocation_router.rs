@@ -76,12 +76,6 @@ fn default_invocation_policy_guard() -> Arc<GatewayInvocationPolicyGuard> {
     invocation_policy_guard_from_rate_limiter(Arc::new(GatewayInvocationRateLimiter::new()))
 }
 
-pub fn invocation_policy_guard_from_runtime_toml(
-    runtime_toml: Option<&RuntimeTomlConfig>,
-) -> Arc<GatewayInvocationPolicyGuard> {
-    invocation_policy_guard_from_runtime_toml_with_instance_count(runtime_toml, 1)
-}
-
 /// Build a policy guard whose rate limiter divides local-fallback quotas by
 /// `estimated_instance_count` (H-8) when Redis is unavailable.
 ///

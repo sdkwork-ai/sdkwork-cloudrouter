@@ -2,8 +2,8 @@ import {
   SdkworkIamAuthRoutes,
 } from '@sdkwork/auth-pc-react';
 import { useTranslation } from 'react-i18next';
-import { getClawRouterIamRuntime } from '@sdkwork/clawroutes-pc-commons/runtime';
 import { resolveClawRouterAuthAppearance } from './clawRouterAuthAppearance';
+import { getClawRouterAuthRuntime } from './clawRouterAuthRuntime';
 import { ClawRouterAuthShell } from './ClawRouterAuthShell';
 import { useClawRouterAuthRuntimeConfig } from './clawRouterAuthConfig';
 import { clawRouterTauriAuthHostReadiness } from './clawRouterTauriAuthHost';
@@ -22,7 +22,7 @@ export function ClawRouterAuthRoutes() {
         appearance={resolveClawRouterAuthAppearance()}
         basePath="/auth"
         className="!bg-transparent"
-        getRuntime={getClawRouterIamRuntime}
+        getRuntime={getClawRouterAuthRuntime}
         homePath="/admin"
         locale={i18n.language}
         methodUnavailableMessage={AUTH_METHOD_UNAVAILABLE_MESSAGE}

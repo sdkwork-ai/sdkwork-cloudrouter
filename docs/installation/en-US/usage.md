@@ -49,7 +49,9 @@ Common modules:
 - `/admin/user`: users and API keys.
 - `/admin/group`: groups and policy bindings.
 - `/admin/model`: model catalog and publication state.
-- `/admin/channel`: providers, channels, credential references, and health.
+- `/admin/upstream`: AI suppliers, accounts, account groups, write-only
+  credential lifecycle, and health.
+- `/admin/payments/channels`: Payment channels and provider-account routing.
 - `/admin/ratelimit`: rate limits and risk controls.
 - `/admin/monitor`: instances, heartbeats, and alerts.
 - `/admin/marketing`, `/admin/finance`: commercialization and finance.

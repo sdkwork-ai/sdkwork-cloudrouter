@@ -13,13 +13,14 @@ use sdkwork_clawrouter_router_service::application::{
 };
 use sdkwork_clawrouter_router_service::domain::DomainError;
 use sdkwork_clawrouter_router_service::ports::{
-    AdminAiResourceGroupItem, AdminAiResourceGroupResourceItem, AdminAiResourceGroupResourcesPage,
-    AdminAiResourceItem, AdminAiResourceListPage, AdminAiResourceMemberItem,
-    AdminAiResourceReadFuture, AdminAiResourceStore, AdminAiResourceSubject,
-    CreateAdminAiResourceCommand, CreateAdminAiResourceGroupCommand,
-    DeleteAdminAiResourceGroupCommand, ListAdminAiResourceGroupResourcesQuery,
-    ListAdminAiResourceGroupsQuery, ListAdminAiResourcesQuery, UpdateAdminAiResourceCommand,
-    UpdateAdminAiResourceGroupCommand,
+    AdminAiResourceGroupItem, AdminAiResourceGroupListPage, AdminAiResourceGroupResourceItem,
+    AdminAiResourceGroupResourcesPage, AdminAiResourceItem, AdminAiResourceListPage,
+    AdminAiResourceMemberItem, AdminAiResourceReadFuture, AdminAiResourceStore,
+    AdminAiResourceSubject, CreateAdminAiResourceCommand, CreateAdminAiResourceGroupCommand,
+    DeleteAdminAiResourceGroupCommand, DeleteAdminAiResourceGroupMemberCommand,
+    ListAdminAiResourceGroupResourcesQuery, ListAdminAiResourceGroupsQuery,
+    ListAdminAiResourcesQuery, UpdateAdminAiResourceCommand, UpdateAdminAiResourceGroupCommand,
+    UpsertAdminAiResourceGroupMemberCommand,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -32,6 +33,7 @@ async fn admin_ai_resource_route_lists_resources_with_members() {
     );
 
     let response = router
+        .clone()
         .oneshot(backend_request(
             "GET",
             "/backend/v3/api/ai/resources",
@@ -124,7 +126,7 @@ async fn admin_ai_resource_group_route_manages_groups_and_static_all_api_resourc
         "api.custom.chat",
         create_payload["data"]["item"]["groupCode"]
     );
-    assert_eq!(1, create_payload["data"]["item"]["resourceCount"]);
+    assert_eq!("1", create_payload["data"]["item"]["resourceCount"]);
 
     let update_response = router
         .clone()
@@ -144,7 +146,7 @@ async fn admin_ai_resource_group_route_manages_groups_and_static_all_api_resourc
         "Custom Chat API v2",
         update_payload["data"]["item"]["groupName"]
     );
-    assert_eq!(1, update_payload["data"]["item"]["resourceCount"]);
+    assert_eq!("1", update_payload["data"]["item"]["resourceCount"]);
 
     let delete_response = router
         .oneshot(backend_request(
@@ -258,6 +260,7 @@ async fn admin_ai_resource_route_invalidates_routing_cache_after_successful_muta
     );
 
     let response = router
+        .clone()
         .oneshot(backend_request(
             "POST",
             "/backend/v3/api/ai/resources",
@@ -284,6 +287,53 @@ async fn admin_ai_resource_route_invalidates_routing_cache_after_successful_muta
             ROUTING_UPSTREAM_OBJECT_ROUTE_CACHE_NAMESPACE,
             "tenant:10:org:20:object:resp_123"
         )
+        .await
+        .unwrap()
+        .is_none());
+
+    manager
+        .set_json(
+            ROUTING_SNAPSHOT_CACHE_NAMESPACE,
+            "tenant:10:org:20",
+            serde_json::json!({ "status": "warm" }),
+        )
+        .await
+        .unwrap();
+    let upsert_response = router
+        .clone()
+        .oneshot(backend_request(
+            "PUT",
+            "/backend/v3/api/ai/resource_groups/3/resources/api.openai.responses",
+            Body::from(r#"{"itemRole":"optional","sortOrder":2}"#),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::OK, upsert_response.status());
+    assert!(manager
+        .get_json(ROUTING_SNAPSHOT_CACHE_NAMESPACE, "tenant:10:org:20")
+        .await
+        .unwrap()
+        .is_none());
+
+    manager
+        .set_json(
+            ROUTING_SNAPSHOT_CACHE_NAMESPACE,
+            "tenant:10:org:20",
+            serde_json::json!({ "status": "warm" }),
+        )
+        .await
+        .unwrap();
+    let delete_response = router
+        .oneshot(backend_request(
+            "DELETE",
+            "/backend/v3/api/ai/resource_groups/3/resources/api.openai.responses",
+            Body::empty(),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::NO_CONTENT, delete_response.status());
+    assert!(manager
+        .get_json(ROUTING_SNAPSHOT_CACHE_NAMESPACE, "tenant:10:org:20")
         .await
         .unwrap()
         .is_none());
@@ -521,7 +571,7 @@ impl AdminAiResourceStore for TestAiResourceStore {
     fn list_ai_resource_groups<'a>(
         &'a self,
         query: ListAdminAiResourceGroupsQuery,
-    ) -> AdminAiResourceReadFuture<'a, Vec<AdminAiResourceGroupItem>> {
+    ) -> AdminAiResourceReadFuture<'a, AdminAiResourceGroupListPage> {
         assert_eq!(
             AdminAiResourceSubject {
                 tenant_id: 100001,
@@ -531,8 +581,8 @@ impl AdminAiResourceStore for TestAiResourceStore {
             },
             query.subject
         );
-        Box::pin(async {
-            Ok(vec![
+        Box::pin(async move {
+            let items = vec![
                 AdminAiResourceGroupItem {
                     id: 1,
                     group_code: "api.all".to_owned(),
@@ -563,7 +613,24 @@ impl AdminAiResourceStore for TestAiResourceStore {
                     resource_count: 1,
                     dynamic: false,
                 },
-            ])
+            ];
+            let q = query.q.as_deref().map(str::to_ascii_lowercase);
+            let items = items
+                .into_iter()
+                .filter(|item| {
+                    q.as_ref().map_or(true, |q| {
+                        item.group_code.to_ascii_lowercase().contains(q)
+                            || item.group_name.to_ascii_lowercase().contains(q)
+                    })
+                })
+                .collect::<Vec<_>>();
+            let total_count = items.len() as i64;
+            let items = items
+                .into_iter()
+                .skip(query.normalized_offset() as usize)
+                .take(query.normalized_limit() as usize)
+                .collect();
+            Ok(AdminAiResourceGroupListPage { items, total_count })
         })
     }
 
@@ -686,6 +753,42 @@ impl AdminAiResourceStore for TestAiResourceStore {
         })
     }
 
+    fn upsert_ai_resource_group_member<'a>(
+        &'a self,
+        command: UpsertAdminAiResourceGroupMemberCommand,
+    ) -> AdminAiResourceReadFuture<'a, Option<AdminAiResourceGroupResourceItem>> {
+        assert_eq!(3, command.group_id);
+        assert_eq!("api.openai.responses", command.member.resource_code);
+        assert_eq!("optional", command.member.item_role);
+        assert_eq!(Some(2), command.member.sort_order);
+        Box::pin(async {
+            Ok(Some(AdminAiResourceGroupResourceItem {
+                id: 12,
+                resource_code: "api.openai.responses".to_owned(),
+                resource_type: "api_endpoint".to_owned(),
+                display_name: "OpenAI Responses".to_owned(),
+                vendor_code: Some("openai".to_owned()),
+                modality_code: Some("llm".to_owned()),
+                api_endpoint_code: Some("openai.responses".to_owned()),
+                catalog_key: None,
+                model: None,
+                provider_native_model: None,
+                status: "active".to_owned(),
+                sort_order: Some(2),
+                member_role: "optional".to_owned(),
+            }))
+        })
+    }
+
+    fn delete_ai_resource_group_member<'a>(
+        &'a self,
+        command: DeleteAdminAiResourceGroupMemberCommand,
+    ) -> AdminAiResourceReadFuture<'a, bool> {
+        assert_eq!(3, command.group_id);
+        assert_eq!("api.openai.responses", command.resource_code);
+        Box::pin(async { Ok(true) })
+    }
+
     fn delete_ai_resource_group<'a>(
         &'a self,
         command: DeleteAdminAiResourceGroupCommand,
@@ -727,8 +830,13 @@ impl AdminAiResourceStore for MissingMemberAiResourceStore {
     fn list_ai_resource_groups<'a>(
         &'a self,
         _query: ListAdminAiResourceGroupsQuery,
-    ) -> AdminAiResourceReadFuture<'a, Vec<AdminAiResourceGroupItem>> {
-        Box::pin(async { Ok(Vec::new()) })
+    ) -> AdminAiResourceReadFuture<'a, AdminAiResourceGroupListPage> {
+        Box::pin(async {
+            Ok(AdminAiResourceGroupListPage {
+                items: Vec::new(),
+                total_count: 0,
+            })
+        })
     }
 
     fn list_ai_resource_group_resources<'a>(
@@ -755,6 +863,20 @@ impl AdminAiResourceStore for MissingMemberAiResourceStore {
         _command: UpdateAdminAiResourceGroupCommand,
     ) -> AdminAiResourceReadFuture<'a, Option<AdminAiResourceGroupItem>> {
         Box::pin(async { Err(missing_member_error()) })
+    }
+
+    fn upsert_ai_resource_group_member<'a>(
+        &'a self,
+        _command: UpsertAdminAiResourceGroupMemberCommand,
+    ) -> AdminAiResourceReadFuture<'a, Option<AdminAiResourceGroupResourceItem>> {
+        Box::pin(async { Err(missing_member_error()) })
+    }
+
+    fn delete_ai_resource_group_member<'a>(
+        &'a self,
+        _command: DeleteAdminAiResourceGroupMemberCommand,
+    ) -> AdminAiResourceReadFuture<'a, bool> {
+        Box::pin(async { Ok(false) })
     }
 
     fn delete_ai_resource_group<'a>(

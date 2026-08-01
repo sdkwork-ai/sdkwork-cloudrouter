@@ -2,7 +2,7 @@
 //!
 //! This module provides comprehensive observability support including:
 //! - **Tracing**: Distributed tracing via OTLP exporter
-//! - **Metrics**: Prometheus-compatible metrics with OTLP export
+//! - **Metrics**: Prometheus-compatible metrics exposed by the HTTP runtime
 //! - **Logging**: Structured logging with trace context injection
 //! - **Health Metrics**: SLO/SLI indicators for production monitoring
 //!
@@ -46,9 +46,9 @@
 //!
 //! | Variable | Description | Default |
 //! |----------|-------------|--------|
-//! | `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP collector endpoint | `http://localhost:4317` |
+//! | `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP/HTTP collector endpoint | `http://localhost:4318` |
 //! | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | OTLP traces endpoint | `${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/traces` |
-//! | `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` | OTLP metrics endpoint | `${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/metrics` |
+//! | `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` | Reserved for a future metrics exporter; Prometheus remains the active metrics surface | Not consumed |
 //! | `OTEL_SERVICE_NAME` | Service name for tracing | `sdkwork-clawrouter` |
 //! | `METRICS_PORT` | Prometheus metrics endpoint port | `9090` |
 
@@ -56,13 +56,17 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+const SLO_LATENCY_SAMPLE_CAPACITY: usize = 10_000;
+const SLO_LATENCY_BUCKET_UPPER_US: [u64; 16] = [
+    100, 250, 500, 1_000, 2_500, 5_000, 10_000, 25_000, 50_000, 100_000, 250_000, 500_000,
+    1_000_000, 2_500_000, 5_000_000, 10_000_000,
+];
+
 /// OTLP exporter configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OtlpConfig {
     /// Enable OTLP tracing export.
     pub tracing_enabled: bool,
-    /// Enable OTLP metrics export.
-    pub metrics_enabled: bool,
     /// OTLP collector endpoint (gRPC).
     pub endpoint: String,
     /// Service name for traces.
@@ -79,8 +83,7 @@ impl Default for OtlpConfig {
     fn default() -> Self {
         Self {
             tracing_enabled: false,
-            metrics_enabled: true,
-            endpoint: "http://localhost:4317".to_string(),
+            endpoint: "http://localhost:4318".to_string(),
             service_name: "sdkwork-clawrouter".to_string(),
             sampling_rate: 1.0,
             export_timeout_secs: 30,
@@ -235,11 +238,8 @@ impl ObservabilityConfig {
                 tracing_enabled: std::env::var("OTEL_TRACING_ENABLED")
                     .map(|v| v == "true")
                     .unwrap_or(false),
-                metrics_enabled: std::env::var("OTEL_METRICS_ENABLED")
-                    .map(|v| v == "true")
-                    .unwrap_or(true),
                 endpoint: std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT")
-                    .unwrap_or_else(|_| "http://localhost:4317".to_string()),
+                    .unwrap_or_else(|_| "http://localhost:4318".to_string()),
                 service_name: std::env::var("OTEL_SERVICE_NAME")
                     .unwrap_or_else(|_| "sdkwork-clawrouter".to_string()),
                 sampling_rate: std::env::var("OTEL_TRACES_SAMPLER_ARG")
@@ -298,6 +298,14 @@ pub struct SloMetrics {
     pub current_rps: f64,
     /// Last update timestamp.
     pub last_updated: std::time::SystemTime,
+    #[doc(hidden)]
+    latency_bucket_counts: [u64; SLO_LATENCY_BUCKET_UPPER_US.len() + 1],
+    #[doc(hidden)]
+    latency_sample_count: usize,
+    #[doc(hidden)]
+    next_latency_sample_index: usize,
+    #[doc(hidden)]
+    latency_max_us: u64,
 }
 
 impl Default for SloMetrics {
@@ -311,6 +319,10 @@ impl Default for SloMetrics {
             p99_latency_ms: 0.0,
             current_rps: 0.0,
             last_updated: std::time::SystemTime::now(),
+            latency_bucket_counts: [0; SLO_LATENCY_BUCKET_UPPER_US.len() + 1],
+            latency_sample_count: 0,
+            next_latency_sample_index: 0,
+            latency_max_us: 0,
         }
     }
 }
@@ -375,7 +387,6 @@ impl SloMetrics {
 /// Metrics collector for SLO tracking.
 pub struct SloMetricsCollector {
     metrics: Arc<RwLock<SloMetrics>>,
-    window_start: std::time::Instant,
 }
 
 impl SloMetricsCollector {
@@ -383,7 +394,6 @@ impl SloMetricsCollector {
     pub fn new() -> Self {
         Self {
             metrics: Arc::new(RwLock::new(SloMetrics::default())),
-            window_start: std::time::Instant::now(),
         }
     }
 
@@ -392,8 +402,7 @@ impl SloMetricsCollector {
         let mut m = self.metrics.write().await;
         m.total_requests += 1;
         m.successful_requests += 1;
-        m.request_duration_us.push(duration_us as f64);
-        self.update_percentiles(&mut m);
+        self.record_duration(&mut m, duration_us);
         m.last_updated = std::time::SystemTime::now();
     }
 
@@ -402,8 +411,7 @@ impl SloMetricsCollector {
         let mut m = self.metrics.write().await;
         m.total_requests += 1;
         m.failed_requests += 1;
-        m.request_duration_us.push(duration_us as f64);
-        self.update_percentiles(&mut m);
+        self.record_duration(&mut m, duration_us);
         m.last_updated = std::time::SystemTime::now();
     }
 
@@ -418,25 +426,61 @@ impl SloMetricsCollector {
         self.metrics.read().await.clone()
     }
 
-    /// Calculate percentiles from duration samples.
-    fn update_percentiles(&self, metrics: &mut SloMetrics) {
-        if metrics.request_duration_us.len() < 2 {
-            return;
+    /// Record one duration in a fixed-size ring and histogram.
+    ///
+    /// Percentiles are derived from bounded histogram buckets, so request
+    /// recording never clones or sorts the sample window and memory remains
+    /// constant under sustained traffic.
+    fn record_duration(&self, metrics: &mut SloMetrics, duration_us: u64) {
+        let bucket = latency_bucket(duration_us);
+        metrics.latency_max_us = metrics.latency_max_us.max(duration_us);
+        if metrics.request_duration_us.len() < SLO_LATENCY_SAMPLE_CAPACITY {
+            metrics.request_duration_us.push(duration_us as f64);
+            metrics.latency_sample_count += 1;
+        } else {
+            let index = metrics.next_latency_sample_index;
+            let previous = metrics.request_duration_us[index] as u64;
+            metrics.latency_bucket_counts[latency_bucket(previous)] =
+                metrics.latency_bucket_counts[latency_bucket(previous)].saturating_sub(1);
+            metrics.request_duration_us[index] = duration_us as f64;
+            metrics.next_latency_sample_index = (index + 1) % SLO_LATENCY_SAMPLE_CAPACITY;
         }
+        metrics.latency_bucket_counts[bucket] += 1;
+        update_percentiles(metrics);
+    }
+}
 
-        let mut sorted = metrics.request_duration_us.clone();
-        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+fn latency_bucket(duration_us: u64) -> usize {
+    SLO_LATENCY_BUCKET_UPPER_US
+        .iter()
+        .position(|upper_bound| duration_us <= *upper_bound)
+        .unwrap_or(SLO_LATENCY_BUCKET_UPPER_US.len())
+}
 
-        let len = sorted.len();
-        metrics.p95_latency_ms = sorted[(len as f64 * 0.95) as usize] / 1000.0;
-        metrics.p99_latency_ms = sorted[(len as f64 * 0.99) as usize] / 1000.0;
+fn update_percentiles(metrics: &mut SloMetrics) {
+    if metrics.latency_sample_count == 0 {
+        metrics.p95_latency_ms = 0.0;
+        metrics.p99_latency_ms = 0.0;
+        return;
+    }
+    metrics.p95_latency_ms = percentile_from_buckets(metrics, 0.95);
+    metrics.p99_latency_ms = percentile_from_buckets(metrics, 0.99);
+}
 
-        // Keep only last 10000 samples to prevent memory growth
-        if metrics.request_duration_us.len() > 10000 {
-            let drain_count = metrics.request_duration_us.len() - 10000;
-            metrics.request_duration_us.drain(0..drain_count);
+fn percentile_from_buckets(metrics: &SloMetrics, percentile: f64) -> f64 {
+    let target = ((metrics.latency_sample_count as f64 * percentile).ceil() as u64).max(1);
+    let mut cumulative = 0_u64;
+    for (index, count) in metrics.latency_bucket_counts.iter().enumerate() {
+        cumulative += *count;
+        if cumulative >= target {
+            let upper_bound_us = SLO_LATENCY_BUCKET_UPPER_US
+                .get(index)
+                .copied()
+                .unwrap_or(metrics.latency_max_us);
+            return upper_bound_us as f64 / 1000.0;
         }
     }
+    metrics.latency_max_us as f64 / 1000.0
 }
 
 impl Default for SloMetricsCollector {

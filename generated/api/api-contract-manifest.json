@@ -231,11 +231,93 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts#fetchAllModels@/admin/model",
+      "key": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts#fetchInitializedCatalog@/admin/model",
+      "kind": "read",
+      "module": "sdkwork-models-pc-admin-catalog",
+      "openapi_exposed": false,
+      "operation": "fetchInitializedCatalog",
+      "operation_id": "models.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_pricing_import_snapshot"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/model",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/model_mappings",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts#fetchModelMappings@/admin/model/mappings",
       "kind": "read",
       "module": "sdkwork-models-pc-admin-catalog",
       "openapi_exposed": true,
-      "operation": "fetchAllModels",
+      "operation": "fetchModelMappings",
+      "operation_id": "modelMappings.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_model_mapping_rule",
+        "ai_model_mapping_rule_binding",
+        "ai_model_mapping_rule_item"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/model/mappings",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/models",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts#fetchModelOptionsPage@/admin/model/mappings",
+      "kind": "read",
+      "module": "sdkwork-models-pc-admin-catalog",
+      "openapi_exposed": false,
+      "operation": "fetchModelOptionsPage",
       "operation_id": "models.list",
       "path_params": [],
       "query_parameters": [
@@ -571,128 +653,6 @@
             "items",
             "pageInfo"
           ],
-          "type": "object"
-        }
-      },
-      "route": "/admin/model",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "intelligence",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "tag": "ai",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/models",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts#fetchInitializedCatalog@/admin/model",
-      "kind": "read",
-      "module": "sdkwork-models-pc-admin-catalog",
-      "openapi_exposed": false,
-      "operation": "fetchInitializedCatalog",
-      "operation_id": "models.list",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "ai_pricing_import_snapshot"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/model",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "intelligence",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "tag": "ai",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/model_mappings",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts#fetchModelMappings@/admin/model/mappings",
-      "kind": "read",
-      "module": "sdkwork-models-pc-admin-catalog",
-      "openapi_exposed": true,
-      "operation": "fetchModelMappings",
-      "operation_id": "modelMappings.list",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "ai_model_mapping_rule",
-        "ai_model_mapping_rule_binding",
-        "ai_model_mapping_rule_item"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/model/mappings",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "intelligence",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "tag": "ai",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/model_mapping_options",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts#fetchModelOptionsCatalog@/admin/model/mappings",
-      "kind": "read",
-      "module": "sdkwork-models-pc-admin-catalog",
-      "openapi_exposed": true,
-      "operation": "fetchModelOptionsCatalog",
-      "operation_id": "modelMappingOptions.list",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "ai_model_mapping_rule"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
           "type": "object"
         }
       },
@@ -1575,66 +1535,346 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts#fetchModels@/admin/model",
-      "kind": "read",
-      "module": "sdkwork-models-pc-admin-catalog",
-      "openapi_exposed": false,
-      "operation": "fetchModels",
-      "operation_id": "models.list",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "ai_pricing_import_snapshot"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/model",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "intelligence",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "tag": "ai",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/models",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
       "key": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts#fetchModelsPage@/admin/model",
       "kind": "read",
       "module": "sdkwork-models-pc-admin-catalog",
-      "openapi_exposed": false,
+      "openapi_exposed": true,
       "operation": "fetchModelsPage",
       "operation_id": "models.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        },
+        {
+          "explode": false,
+          "in": "query",
+          "name": "vendor_codes",
+          "required": false,
+          "schema": {
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 32,
+            "type": "array"
+          },
+          "style": "form"
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
-        "ai_pricing_import_snapshot"
+        "ai_model_vendor",
+        "ai_model",
+        "ai_model_capability",
+        "ai_model_pricing"
       ],
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminAiModelPage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminAiModelPage",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminAiModelItem",
+                "properties": {
+                  "apiFormat": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "calls": {
+                    "pattern": "^[0-9]+$",
+                    "type": "string"
+                  },
+                  "capabilityIntro": {
+                    "maxLength": 4096,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "contextTokens": {
+                    "format": "int32",
+                    "maximum": 100000000,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "description": {
+                    "maxLength": 2048,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "id": {
+                    "pattern": "^[1-9][0-9]*$",
+                    "type": "string"
+                  },
+                  "inputModalities": {
+                    "items": {
+                      "maxLength": 512,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "limitations": {
+                    "items": {
+                      "maxLength": 512,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "maxOutputTokens": {
+                    "format": "int32",
+                    "maximum": 100000000,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "modalities": {
+                    "items": {
+                      "maxLength": 512,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "model": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "name": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "outputModalities": {
+                    "items": {
+                      "maxLength": 512,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "regionPrices": {
+                    "items": {
+                      "additionalProperties": false,
+                      "name": "AdminAiModelRegionPrice",
+                      "properties": {
+                        "cacheReadPrice": {
+                          "pattern": "^(?:|[0-9]+(?:\\.[0-9]{1,12})?)$",
+                          "type": "string"
+                        },
+                        "cacheWritePrice": {
+                          "pattern": "^(?:|[0-9]+(?:\\.[0-9]{1,12})?)$",
+                          "type": "string"
+                        },
+                        "currency": {
+                          "pattern": "^[A-Z]{3}$",
+                          "type": "string"
+                        },
+                        "priceIn": {
+                          "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                          "type": "string"
+                        },
+                        "priceOut": {
+                          "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                          "type": "string"
+                        },
+                        "regionCode": {
+                          "maxLength": 64,
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "regionCode",
+                        "currency",
+                        "priceIn",
+                        "priceOut",
+                        "cacheReadPrice",
+                        "cacheWritePrice"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 200,
+                    "type": "array"
+                  },
+                  "releaseStage": {
+                    "format": "int32",
+                    "maximum": 3,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "replacementModel": {
+                    "maxLength": 256,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "routingState": {
+                    "format": "int32",
+                    "maximum": 2,
+                    "minimum": 0,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "shelfState": {
+                    "format": "int32",
+                    "maximum": 3,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "inactive"
+                    ],
+                    "type": "string"
+                  },
+                  "supportedLanguages": {
+                    "items": {
+                      "maxLength": 512,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "supportsJsonSchema": {
+                    "type": "boolean"
+                  },
+                  "supportsStreaming": {
+                    "type": "boolean"
+                  },
+                  "supportsTools": {
+                    "type": "boolean"
+                  },
+                  "trainingDataCutoff": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "type": {
+                    "enum": [
+                      "Chat",
+                      "Image",
+                      "Audio",
+                      "Embedding",
+                      "Music",
+                      "SoundEffect",
+                      "Video"
+                    ],
+                    "type": "string"
+                  },
+                  "useCases": {
+                    "items": {
+                      "maxLength": 512,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "vendorCode": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "vendorId": {
+                    "pattern": "^[1-9][0-9]*$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "vendorId",
+                  "vendorCode",
+                  "model",
+                  "displayName",
+                  "name",
+                  "type",
+                  "regionPrices",
+                  "status",
+                  "calls",
+                  "description",
+                  "modalities",
+                  "inputModalities",
+                  "outputModalities",
+                  "apiFormat",
+                  "capabilityIntro",
+                  "limitations",
+                  "supportedLanguages",
+                  "useCases",
+                  "trainingDataCutoff",
+                  "contextTokens",
+                  "maxOutputTokens",
+                  "supportsStreaming",
+                  "supportsTools",
+                  "supportsJsonSchema",
+                  "releaseStage",
+                  "shelfState",
+                  "routingState",
+                  "replacementModel"
+                ],
+                "type": "object"
+              },
+              "maxItems": 200,
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -2118,16 +2358,220 @@
       "query_parameters_declared": false,
       "read_sources": [
         "ai_resource_group",
-        "ai_resource_group_item"
+        "ai_resource_group_item",
+        "ai_resource"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "AdminAiResourceGroupCreateRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminAiResourceGroupCreateRequest",
+          "properties": {
+            "description": {
+              "maxLength": 512,
+              "nullable": true,
+              "type": "string"
+            },
+            "groupCode": {
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            },
+            "groupName": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "groupType": {
+              "enum": [
+                "api_group",
+                null
+              ],
+              "nullable": true,
+              "type": "string"
+            },
+            "members": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminAiResourceGroupMemberInput",
+                "properties": {
+                  "itemRole": {
+                    "enum": [
+                      "included",
+                      "optional",
+                      "fallback",
+                      null
+                    ],
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "resourceCode": {
+                    "maxLength": 192,
+                    "pattern": "^[A-Za-z0-9._:-]+$",
+                    "type": "string"
+                  },
+                  "sortOrder": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^(0|[1-9][0-9]*)$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  }
+                },
+                "required": [
+                  "resourceCode"
+                ],
+                "type": "object"
+              },
+              "maxItems": 512,
+              "type": "array"
+            },
+            "selectionMode": {
+              "enum": [
+                "manual",
+                "all",
+                "any",
+                "dynamic_all_api",
+                null
+              ],
+              "nullable": true,
+              "type": "string"
+            },
+            "sortOrder": {
+              "format": "int64",
+              "nullable": true,
+              "pattern": "^(0|[1-9][0-9]*)$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "disabled",
+                "inactive",
+                null
+              ],
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          "required": [
+            "groupCode",
+            "groupName"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminAiResourceGroupItem",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminAiResourceGroupItem",
+          "properties": {
+            "capabilities": {
+              "items": {
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9._:-]+$",
+                "type": "string"
+              },
+              "maxItems": 128,
+              "type": "array"
+            },
+            "capability": {
+              "maxLength": 128,
+              "nullable": true,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            },
+            "description": {
+              "maxLength": 512,
+              "nullable": true,
+              "type": "string"
+            },
+            "dynamic": {
+              "type": "boolean"
+            },
+            "groupCode": {
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            },
+            "groupName": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "groupType": {
+              "enum": [
+                "api_group"
+              ],
+              "type": "string"
+            },
+            "id": {
+              "format": "int64",
+              "pattern": "^[1-9][0-9]*$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "resourceCount": {
+              "format": "int64",
+              "pattern": "^(0|[1-9][0-9]*)$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "selectionMode": {
+              "enum": [
+                "manual",
+                "all",
+                "any",
+                "dynamic_all_api"
+              ],
+              "type": "string"
+            },
+            "sortOrder": {
+              "format": "int64",
+              "nullable": true,
+              "pattern": "^(0|[1-9][0-9]*)$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "disabled",
+                "inactive"
+              ],
+              "type": "string"
+            },
+            "vendorCodes": {
+              "items": {
+                "maxLength": 64,
+                "pattern": "^[A-Za-z0-9._:-]+$",
+                "type": "string"
+              },
+              "maxItems": 128,
+              "type": "array"
+            }
+          },
+          "required": [
+            "id",
+            "groupCode",
+            "groupName",
+            "groupType",
+            "selectionMode",
+            "vendorCodes",
+            "capabilities",
+            "status",
+            "resourceCount",
+            "dynamic"
+          ],
           "type": "object"
         }
       },
@@ -2164,7 +2608,8 @@
       "query_parameters": [],
       "query_parameters_declared": false,
       "read_sources": [
-        "ai_resource_group"
+        "ai_resource_group",
+        "ai_resource_group_item"
       ],
       "request_body_required": null,
       "request_id_header": false,
@@ -2192,64 +2637,24 @@
       ]
     },
     {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/resources",
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/ai/resource_groups/{groupId}/resources/{resourceCode}",
       "api_surface": "backend",
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts#fetchAssignableResources@/admin/model/resources",
-      "kind": "read",
+      "key": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts#deleteResourceGroupMember@/admin/model/resources",
+      "kind": "delete",
       "module": "sdkwork-models-pc-admin-resource",
       "openapi_exposed": true,
-      "operation": "fetchAssignableResources",
-      "operation_id": "resources.list",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "ai_resource",
-        "ai_resource_group_item"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/model/resources",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "intelligence",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
-      "tag": "ai",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/resource_groups/{groupIdOrCode}/resources",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts#fetchResourceGroupResources@/admin/model/resources",
-      "kind": "read",
-      "module": "sdkwork-models-pc-admin-resource",
-      "openapi_exposed": true,
-      "operation": "fetchResourceGroupResources",
-      "operation_id": "resourceGroups.resources.list",
+      "operation": "deleteResourceGroupMember",
+      "operation_id": "resourceGroups.resources.delete",
       "path_params": [
-        "groupIdOrCode"
+        "groupId",
+        "resourceCode"
       ],
       "query_parameters": [],
-      "query_parameters_declared": true,
+      "query_parameters_declared": false,
       "read_sources": [
         "ai_resource_group",
         "ai_resource_group_item",
@@ -2274,6 +2679,554 @@
       "sdk_family": "clawrouter-backend-sdk",
       "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
       "tag": "ai",
+      "write_tables": [
+        "ai_resource_group_item",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/resources",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts#fetchAssignableResourcesPage@/admin/model/resources",
+      "kind": "read",
+      "module": "sdkwork-models-pc-admin-resource",
+      "openapi_exposed": true,
+      "operation": "fetchAssignableResourcesPage",
+      "operation_id": "resources.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 200,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "resource_type",
+          "required": false,
+          "schema": {
+            "enum": [
+              "vendor",
+              "modality",
+              "api_endpoint",
+              "model_api",
+              "bundle"
+            ],
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_resource",
+        "ai_resource_group_item"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AiResourcesPage",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AiResourcesPage",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminAiResourceItem",
+                "properties": {
+                  "apiEndpointCode": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "pattern": "^[A-Za-z0-9._:-]+$",
+                    "type": "string"
+                  },
+                  "capabilities": {
+                    "items": {
+                      "maxLength": 128,
+                      "pattern": "^[A-Za-z0-9._:-]+$",
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "capability": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "pattern": "^[A-Za-z0-9._:-]+$",
+                    "type": "string"
+                  },
+                  "catalogKey": {
+                    "maxLength": 256,
+                    "nullable": true,
+                    "pattern": "^[\\x20-\\x7E]*$",
+                    "type": "string"
+                  },
+                  "compositionMode": {
+                    "enum": [
+                      "single",
+                      "any",
+                      "all"
+                    ],
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "id": {
+                    "format": "int64",
+                    "pattern": "^[1-9][0-9]*$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "members": {
+                    "items": {
+                      "additionalProperties": false,
+                      "name": "AdminAiResourceMemberItem",
+                      "properties": {
+                        "memberResourceCode": {
+                          "maxLength": 192,
+                          "pattern": "^[A-Za-z0-9._:-]+$",
+                          "type": "string"
+                        },
+                        "memberRole": {
+                          "enum": [
+                            "included",
+                            "optional",
+                            "fallback"
+                          ],
+                          "type": "string"
+                        },
+                        "parentResourceCode": {
+                          "maxLength": 192,
+                          "pattern": "^[A-Za-z0-9._:-]+$",
+                          "type": "string"
+                        },
+                        "required": {
+                          "type": "boolean"
+                        },
+                        "sortOrder": {
+                          "format": "int64",
+                          "nullable": true,
+                          "pattern": "^(0|[1-9][0-9]*)$",
+                          "type": "string",
+                          "x-sdkwork-int64-string": true,
+                          "x-sdkwork-rust-type": "i64"
+                        }
+                      },
+                      "required": [
+                        "parentResourceCode",
+                        "memberResourceCode",
+                        "memberRole",
+                        "required"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 512,
+                    "type": "array"
+                  },
+                  "modalityCode": {
+                    "maxLength": 64,
+                    "nullable": true,
+                    "pattern": "^[A-Za-z0-9._:-]+$",
+                    "type": "string"
+                  },
+                  "model": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "pattern": "^[\\x20-\\x7E]*$",
+                    "type": "string"
+                  },
+                  "providerNativeModel": {
+                    "maxLength": 256,
+                    "nullable": true,
+                    "pattern": "^[\\x20-\\x7E]*$",
+                    "type": "string"
+                  },
+                  "resourceCode": {
+                    "maxLength": 192,
+                    "pattern": "^[A-Za-z0-9._:-]+$",
+                    "type": "string"
+                  },
+                  "resourceType": {
+                    "enum": [
+                      "vendor",
+                      "modality",
+                      "api_endpoint",
+                      "model_api",
+                      "bundle"
+                    ],
+                    "type": "string"
+                  },
+                  "sortOrder": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^(0|[1-9][0-9]*)$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "disabled",
+                      "inactive"
+                    ],
+                    "type": "string"
+                  },
+                  "vendorCode": {
+                    "maxLength": 64,
+                    "nullable": true,
+                    "pattern": "^[A-Za-z0-9._:-]+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "resourceCode",
+                  "resourceType",
+                  "displayName",
+                  "capabilities",
+                  "compositionMode",
+                  "status",
+                  "members"
+                ],
+                "type": "object"
+              },
+              "maxItems": 200,
+              "type": "array"
+            },
+            "pageInfo": {
+              "additionalProperties": false,
+              "name": "OffsetPageInfo",
+              "properties": {
+                "hasMore": {
+                  "type": "boolean"
+                },
+                "mode": {
+                  "enum": [
+                    "offset"
+                  ],
+                  "type": "string"
+                },
+                "page": {
+                  "format": "int32",
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "pageSize": {
+                  "format": "int32",
+                  "maximum": 200,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "totalItems": {
+                  "format": "int64",
+                  "pattern": "^(0|[1-9][0-9]*)$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "totalPages": {
+                  "format": "int32",
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "mode",
+                "page",
+                "pageSize",
+                "totalItems",
+                "totalPages",
+                "hasMore"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/model/resources",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/resource_groups/{groupIdOrCode}/resources",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts#fetchResourceGroupResourcesPage@/admin/model/resources",
+      "kind": "read",
+      "module": "sdkwork-models-pc-admin-resource",
+      "openapi_exposed": true,
+      "operation": "fetchResourceGroupResourcesPage",
+      "operation_id": "resourceGroups.resources.list",
+      "path_params": [
+        "groupIdOrCode"
+      ],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 200,
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_resource_group",
+        "ai_resource_group_item",
+        "ai_resource"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AiResourceGroupResourcesPage",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AiResourceGroupResourcesPage",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminAiResourceGroupResourceItem",
+                "properties": {
+                  "apiEndpointCode": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "pattern": "^[A-Za-z0-9._:-]+$",
+                    "type": "string"
+                  },
+                  "catalogKey": {
+                    "maxLength": 256,
+                    "nullable": true,
+                    "pattern": "^[\\x20-\\x7E]*$",
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "id": {
+                    "format": "int64",
+                    "pattern": "^[1-9][0-9]*$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "memberRole": {
+                    "enum": [
+                      "included",
+                      "optional",
+                      "fallback"
+                    ],
+                    "type": "string"
+                  },
+                  "modalityCode": {
+                    "maxLength": 64,
+                    "nullable": true,
+                    "pattern": "^[A-Za-z0-9._:-]+$",
+                    "type": "string"
+                  },
+                  "model": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "pattern": "^[\\x20-\\x7E]*$",
+                    "type": "string"
+                  },
+                  "providerNativeModel": {
+                    "maxLength": 256,
+                    "nullable": true,
+                    "pattern": "^[\\x20-\\x7E]*$",
+                    "type": "string"
+                  },
+                  "resourceCode": {
+                    "maxLength": 192,
+                    "pattern": "^[A-Za-z0-9._:-]+$",
+                    "type": "string"
+                  },
+                  "resourceType": {
+                    "enum": [
+                      "vendor",
+                      "modality",
+                      "api_endpoint",
+                      "model_api",
+                      "bundle"
+                    ],
+                    "type": "string"
+                  },
+                  "sortOrder": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^(0|[1-9][0-9]*)$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "disabled",
+                      "inactive"
+                    ],
+                    "type": "string"
+                  },
+                  "vendorCode": {
+                    "maxLength": 64,
+                    "nullable": true,
+                    "pattern": "^[A-Za-z0-9._:-]+$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "resourceCode",
+                  "resourceType",
+                  "displayName",
+                  "status",
+                  "memberRole"
+                ],
+                "type": "object"
+              },
+              "maxItems": 200,
+              "type": "array"
+            },
+            "pageInfo": {
+              "additionalProperties": false,
+              "name": "OffsetPageInfo",
+              "properties": {
+                "hasMore": {
+                  "type": "boolean"
+                },
+                "mode": {
+                  "enum": [
+                    "offset"
+                  ],
+                  "type": "string"
+                },
+                "page": {
+                  "format": "int32",
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "pageSize": {
+                  "format": "int32",
+                  "maximum": 200,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "totalItems": {
+                  "format": "int64",
+                  "pattern": "^(0|[1-9][0-9]*)$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "totalPages": {
+                  "format": "int32",
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "mode",
+                "page",
+                "pageSize",
+                "totalItems",
+                "totalPages",
+                "hasMore"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/model/resources",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
+      "tag": "ai",
       "write_tables": []
     },
     {
@@ -2283,14 +3236,47 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts#fetchResourceGroups@/admin/model/resources",
+      "key": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts#fetchResourceGroupsPage@/admin/model/resources",
       "kind": "read",
       "module": "sdkwork-models-pc-admin-resource",
       "openapi_exposed": true,
-      "operation": "fetchResourceGroups",
+      "operation": "fetchResourceGroupsPage",
       "operation_id": "resourceGroups.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 200,
+            "type": "string"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai_resource_group",
@@ -2299,11 +3285,173 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AiResourceGroupsPage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AiResourceGroupsPage",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminAiResourceGroupItem",
+                "properties": {
+                  "capabilities": {
+                    "items": {
+                      "maxLength": 128,
+                      "pattern": "^[A-Za-z0-9._:-]+$",
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "capability": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "pattern": "^[A-Za-z0-9._:-]+$",
+                    "type": "string"
+                  },
+                  "description": {
+                    "maxLength": 512,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "dynamic": {
+                    "type": "boolean"
+                  },
+                  "groupCode": {
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9._:-]+$",
+                    "type": "string"
+                  },
+                  "groupName": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "groupType": {
+                    "enum": [
+                      "api_group"
+                    ],
+                    "type": "string"
+                  },
+                  "id": {
+                    "format": "int64",
+                    "pattern": "^[1-9][0-9]*$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "resourceCount": {
+                    "format": "int64",
+                    "pattern": "^(0|[1-9][0-9]*)$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "selectionMode": {
+                    "enum": [
+                      "manual",
+                      "all",
+                      "any",
+                      "dynamic_all_api"
+                    ],
+                    "type": "string"
+                  },
+                  "sortOrder": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^(0|[1-9][0-9]*)$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "disabled",
+                      "inactive"
+                    ],
+                    "type": "string"
+                  },
+                  "vendorCodes": {
+                    "items": {
+                      "maxLength": 64,
+                      "pattern": "^[A-Za-z0-9._:-]+$",
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "id",
+                  "groupCode",
+                  "groupName",
+                  "groupType",
+                  "selectionMode",
+                  "vendorCodes",
+                  "capabilities",
+                  "status",
+                  "resourceCount",
+                  "dynamic"
+                ],
+                "type": "object"
+              },
+              "maxItems": 200,
+              "type": "array"
+            },
+            "pageInfo": {
+              "additionalProperties": false,
+              "name": "OffsetPageInfo",
+              "properties": {
+                "hasMore": {
+                  "type": "boolean"
+                },
+                "mode": {
+                  "enum": [
+                    "offset"
+                  ],
+                  "type": "string"
+                },
+                "page": {
+                  "format": "int32",
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "pageSize": {
+                  "format": "int32",
+                  "maximum": 200,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "totalItems": {
+                  "format": "int64",
+                  "pattern": "^(0|[1-9][0-9]*)$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "totalPages": {
+                  "format": "int32",
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "mode",
+                "page",
+                "pageSize",
+                "totalItems",
+                "totalPages",
+                "hasMore"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -2337,16 +3485,217 @@
       "query_parameters_declared": false,
       "read_sources": [
         "ai_resource_group",
-        "ai_resource_group_item"
+        "ai_resource_group_item",
+        "ai_resource"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "AdminAiResourceGroupUpdateRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminAiResourceGroupUpdateRequest",
+          "properties": {
+            "description": {
+              "maxLength": 512,
+              "nullable": true,
+              "type": "string"
+            },
+            "groupCode": {
+              "maxLength": 128,
+              "nullable": true,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            },
+            "groupName": {
+              "maxLength": 128,
+              "nullable": true,
+              "type": "string"
+            },
+            "groupType": {
+              "enum": [
+                "api_group",
+                null
+              ],
+              "nullable": true,
+              "type": "string"
+            },
+            "members": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminAiResourceGroupMemberInput",
+                "properties": {
+                  "itemRole": {
+                    "enum": [
+                      "included",
+                      "optional",
+                      "fallback",
+                      null
+                    ],
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "resourceCode": {
+                    "maxLength": 192,
+                    "pattern": "^[A-Za-z0-9._:-]+$",
+                    "type": "string"
+                  },
+                  "sortOrder": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^(0|[1-9][0-9]*)$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  }
+                },
+                "required": [
+                  "resourceCode"
+                ],
+                "type": "object"
+              },
+              "maxItems": 512,
+              "type": "array"
+            },
+            "selectionMode": {
+              "enum": [
+                "manual",
+                "all",
+                "any",
+                "dynamic_all_api",
+                null
+              ],
+              "nullable": true,
+              "type": "string"
+            },
+            "sortOrder": {
+              "format": "int64",
+              "nullable": true,
+              "pattern": "^(0|[1-9][0-9]*)$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "disabled",
+                "inactive",
+                null
+              ],
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminAiResourceGroupItem",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminAiResourceGroupItem",
+          "properties": {
+            "capabilities": {
+              "items": {
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9._:-]+$",
+                "type": "string"
+              },
+              "maxItems": 128,
+              "type": "array"
+            },
+            "capability": {
+              "maxLength": 128,
+              "nullable": true,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            },
+            "description": {
+              "maxLength": 512,
+              "nullable": true,
+              "type": "string"
+            },
+            "dynamic": {
+              "type": "boolean"
+            },
+            "groupCode": {
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            },
+            "groupName": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "groupType": {
+              "enum": [
+                "api_group"
+              ],
+              "type": "string"
+            },
+            "id": {
+              "format": "int64",
+              "pattern": "^[1-9][0-9]*$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "resourceCount": {
+              "format": "int64",
+              "pattern": "^(0|[1-9][0-9]*)$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "selectionMode": {
+              "enum": [
+                "manual",
+                "all",
+                "any",
+                "dynamic_all_api"
+              ],
+              "type": "string"
+            },
+            "sortOrder": {
+              "format": "int64",
+              "nullable": true,
+              "pattern": "^(0|[1-9][0-9]*)$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "disabled",
+                "inactive"
+              ],
+              "type": "string"
+            },
+            "vendorCodes": {
+              "items": {
+                "maxLength": 64,
+                "pattern": "^[A-Za-z0-9._:-]+$",
+                "type": "string"
+              },
+              "maxItems": 128,
+              "type": "array"
+            }
+          },
+          "required": [
+            "id",
+            "groupCode",
+            "groupName",
+            "groupType",
+            "selectionMode",
+            "vendorCodes",
+            "capabilities",
+            "status",
+            "resourceCount",
+            "dynamic"
+          ],
           "type": "object"
         }
       },
@@ -2365,31 +3714,64 @@
       ]
     },
     {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/ai/resources",
+      "api_method": "PUT",
+      "api_path": "/backend/v3/api/ai/resource_groups/{groupId}/resources/{resourceCode}",
       "api_surface": "backend",
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "../sdkwork-models/crates/sdkwork-models-catalog-service/src/api/admin_ai_resource.rs#createAiResource@/admin/model/resources",
-      "kind": "create",
-      "module": "resources",
+      "key": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts#upsertResourceGroupMember@/admin/model/resources",
+      "kind": "update",
+      "module": "sdkwork-models-pc-admin-resource",
       "openapi_exposed": true,
-      "operation": "createAiResource",
-      "operation_id": "resources.create",
-      "path_params": [],
+      "operation": "upsertResourceGroupMember",
+      "operation_id": "resourceGroups.resources.update",
+      "path_params": [
+        "groupId",
+        "resourceCode"
+      ],
       "query_parameters": [],
       "query_parameters_declared": false,
       "read_sources": [
+        "ai_resource_group",
+        "ai_resource_group_item",
         "ai_resource"
       ],
       "request_body_required": true,
       "request_id_header": false,
       "request_schema": {
-        "name": "AdminAiResourceCreateRequest",
+        "name": "AdminAiResourceGroupMemberUpdateRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "AdminAiResourceCreateRequest",
+          "name": "AdminAiResourceGroupMemberUpdateRequest",
+          "properties": {
+            "itemRole": {
+              "enum": [
+                "included",
+                "optional",
+                "fallback",
+                null
+              ],
+              "nullable": true,
+              "type": "string"
+            },
+            "sortOrder": {
+              "format": "int64",
+              "nullable": true,
+              "pattern": "^(0|[1-9][0-9]*)$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminAiResourceGroupResourceItem",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminAiResourceGroupResourceItem",
           "properties": {
             "apiEndpointCode": {
               "maxLength": 128,
@@ -2403,60 +3785,25 @@
               "pattern": "^[\\x20-\\x7E]*$",
               "type": "string"
             },
-            "compositionMode": {
-              "enum": [
-                "single",
-                "any",
-                "all",
-                null
-              ],
-              "nullable": true,
-              "type": "string"
-            },
             "displayName": {
               "maxLength": 128,
               "minLength": 1,
               "type": "string"
             },
-            "members": {
-              "items": {
-                "additionalProperties": false,
-                "name": "AdminAiResourceMemberInput",
-                "properties": {
-                  "memberResourceCode": {
-                    "maxLength": 192,
-                    "pattern": "^[A-Za-z0-9._:-]+$",
-                    "type": "string"
-                  },
-                  "memberRole": {
-                    "enum": [
-                      "included",
-                      "optional",
-                      "fallback",
-                      null
-                    ],
-                    "nullable": true,
-                    "type": "string"
-                  },
-                  "required": {
-                    "type": "boolean"
-                  },
-                  "sortOrder": {
-                    "format": "int64",
-                    "nullable": true,
-                    "pattern": "^(0|[1-9][0-9]*)$",
-                    "type": "string",
-                    "x-sdkwork-int64-string": true,
-                    "x-sdkwork-rust-type": "i64"
-                  }
-                },
-                "required": [
-                  "memberResourceCode"
-                ],
-                "type": "object"
-              },
-              "maxItems": 512,
-              "type": "array"
+            "id": {
+              "format": "int64",
+              "pattern": "^[1-9][0-9]*$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "memberRole": {
+              "enum": [
+                "included",
+                "optional",
+                "fallback"
+              ],
+              "type": "string"
             },
             "modalityCode": {
               "maxLength": 64,
@@ -2503,10 +3850,8 @@
               "enum": [
                 "active",
                 "disabled",
-                "inactive",
-                null
+                "inactive"
               ],
-              "nullable": true,
               "type": "string"
             },
             "vendorCode": {
@@ -2517,214 +3862,26 @@
             }
           },
           "required": [
+            "id",
             "resourceCode",
             "resourceType",
-            "displayName"
+            "displayName",
+            "status",
+            "memberRole"
           ],
           "type": "object"
         }
       },
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
       "route": "/admin/model/resources",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
       "sdk_domain": "intelligence",
       "sdk_family": "clawrouter-backend-sdk",
-      "source": "../sdkwork-models/crates/sdkwork-models-catalog-service/src/api/admin_ai_resource.rs",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
       "tag": "ai",
       "write_tables": [
-        "ai_resource",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PUT",
-      "api_path": "/backend/v3/api/ai/resources/{resourceId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "../sdkwork-models/crates/sdkwork-models-catalog-service/src/api/admin_ai_resource.rs#updateAiResource@/admin/model/resources",
-      "kind": "update",
-      "module": "resources",
-      "openapi_exposed": true,
-      "operation": "updateAiResource",
-      "operation_id": "resources.update",
-      "path_params": [
-        "resourceId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "ai_resource"
-      ],
-      "request_body_required": true,
-      "request_id_header": false,
-      "request_schema": {
-        "name": "AdminAiResourceUpdateRequest",
-        "schema": {
-          "additionalProperties": false,
-          "name": "AdminAiResourceUpdateRequest",
-          "properties": {
-            "apiEndpointCode": {
-              "maxLength": 128,
-              "nullable": true,
-              "pattern": "^[A-Za-z0-9._:-]+$",
-              "type": "string"
-            },
-            "catalogKey": {
-              "maxLength": 256,
-              "nullable": true,
-              "pattern": "^[\\x20-\\x7E]*$",
-              "type": "string"
-            },
-            "compositionMode": {
-              "enum": [
-                "single",
-                "any",
-                "all",
-                null
-              ],
-              "nullable": true,
-              "type": "string"
-            },
-            "displayName": {
-              "maxLength": 128,
-              "nullable": true,
-              "type": "string"
-            },
-            "members": {
-              "items": {
-                "additionalProperties": false,
-                "name": "AdminAiResourceMemberInput",
-                "properties": {
-                  "memberResourceCode": {
-                    "maxLength": 192,
-                    "pattern": "^[A-Za-z0-9._:-]+$",
-                    "type": "string"
-                  },
-                  "memberRole": {
-                    "enum": [
-                      "included",
-                      "optional",
-                      "fallback",
-                      null
-                    ],
-                    "nullable": true,
-                    "type": "string"
-                  },
-                  "required": {
-                    "type": "boolean"
-                  },
-                  "sortOrder": {
-                    "format": "int64",
-                    "nullable": true,
-                    "pattern": "^(0|[1-9][0-9]*)$",
-                    "type": "string",
-                    "x-sdkwork-int64-string": true,
-                    "x-sdkwork-rust-type": "i64"
-                  }
-                },
-                "required": [
-                  "memberResourceCode"
-                ],
-                "type": "object"
-              },
-              "maxItems": 512,
-              "type": "array"
-            },
-            "modalityCode": {
-              "maxLength": 64,
-              "nullable": true,
-              "pattern": "^[A-Za-z0-9._:-]+$",
-              "type": "string"
-            },
-            "model": {
-              "maxLength": 128,
-              "nullable": true,
-              "pattern": "^[\\x20-\\x7E]*$",
-              "type": "string"
-            },
-            "providerNativeModel": {
-              "maxLength": 256,
-              "nullable": true,
-              "pattern": "^[\\x20-\\x7E]*$",
-              "type": "string"
-            },
-            "resourceCode": {
-              "maxLength": 192,
-              "nullable": true,
-              "pattern": "^[A-Za-z0-9._:-]+$",
-              "type": "string"
-            },
-            "resourceType": {
-              "enum": [
-                "vendor",
-                "modality",
-                "api_endpoint",
-                "model_api",
-                "bundle",
-                null
-              ],
-              "nullable": true,
-              "type": "string"
-            },
-            "sortOrder": {
-              "format": "int64",
-              "nullable": true,
-              "pattern": "^(0|[1-9][0-9]*)$",
-              "type": "string",
-              "x-sdkwork-int64-string": true,
-              "x-sdkwork-rust-type": "i64"
-            },
-            "status": {
-              "enum": [
-                "active",
-                "disabled",
-                "inactive",
-                null
-              ],
-              "nullable": true,
-              "type": "string"
-            },
-            "vendorCode": {
-              "maxLength": 64,
-              "nullable": true,
-              "pattern": "^[A-Za-z0-9._:-]+$",
-              "type": "string"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/model/resources",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "intelligence",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "../sdkwork-models/crates/sdkwork-models-catalog-service/src/api/admin_ai_resource.rs",
-      "tag": "ai",
-      "write_tables": [
-        "ai_resource",
+        "ai_resource_group_item",
         "ops_audit_log"
       ]
     },
@@ -7924,7 +9081,7 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#backendStorageProviderHealthCheck@/admin/storage/providers",
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#backendStorageProviderHealthCheck@/admin/storage/providers/{providerId}",
       "kind": "create",
       "module": "pc-admin-storage",
       "openapi_exposed": true,
@@ -7949,7 +9106,7 @@
           "type": "object"
         }
       },
-      "route": "/admin/storage/providers",
+      "route": "/admin/storage/providers/{providerId}",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -14245,6 +15402,586 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts#fetchModelByCatalogRouteId@/models",
+      "kind": "read",
+      "module": "pc-models",
+      "openapi_exposed": false,
+      "operation": "fetchModelByCatalogRouteId",
+      "operation_id": "models.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 200,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "billing_meter",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "vendor_code",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        {
+          "explode": false,
+          "in": "query",
+          "name": "vendor_codes",
+          "required": false,
+          "schema": {
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 200,
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "explode": false,
+          "in": "query",
+          "name": "modalities",
+          "required": false,
+          "schema": {
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 128,
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "explode": false,
+          "in": "query",
+          "name": "capabilities",
+          "required": false,
+          "schema": {
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 128,
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "explode": false,
+          "in": "query",
+          "name": "categories",
+          "required": false,
+          "schema": {
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 128,
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "explode": false,
+          "in": "query",
+          "name": "groups",
+          "required": false,
+          "schema": {
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 128,
+            "type": "array"
+          },
+          "style": "form"
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_model_vendor",
+        "ai_model",
+        "ai_model_capability",
+        "ai_model_pricing",
+        "ai_upstream_supplier",
+        "ai_upstream_account",
+        "ai_upstream_account_group",
+        "ai_upstream_account_group_member",
+        "ai_upstream_account_group_resource"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AppModelCatalogPage",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AppModelCatalogPage",
+          "properties": {
+            "groups": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AppModelCatalogGroup",
+                "properties": {
+                  "key": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "label": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "modelCount": {
+                    "format": "int32",
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "key",
+                  "label",
+                  "modelCount"
+                ],
+                "type": "object"
+              },
+              "maxItems": 100,
+              "type": "array"
+            },
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AppModelCatalogItem",
+                "properties": {
+                  "apiFormat": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "capabilities": {
+                    "items": {
+                      "maxLength": 64,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "capabilityIntro": {
+                    "maxLength": 4096,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "catalogKey": {
+                    "maxLength": 512,
+                    "minLength": 3,
+                    "type": "string"
+                  },
+                  "categories": {
+                    "items": {
+                      "maxLength": 64,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "contextTokens": {
+                    "format": "int32",
+                    "maximum": 100000000,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "description": {
+                    "maxLength": 2048,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "groups": {
+                    "items": {
+                      "maxLength": 64,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "inputModalities": {
+                    "items": {
+                      "maxLength": 64,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "limitations": {
+                    "items": {
+                      "maxLength": 512,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "maxOutputTokens": {
+                    "format": "int32",
+                    "maximum": 100000000,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "modalities": {
+                    "items": {
+                      "maxLength": 64,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "model": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "officialReferencePrices": {
+                    "items": {
+                      "additionalProperties": false,
+                      "name": "AppModelCatalogReferencePrice",
+                      "properties": {
+                        "billingMeter": {
+                          "maxLength": 64,
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "currency": {
+                          "pattern": "^[A-Z]{3}$",
+                          "type": "string"
+                        },
+                        "regionCode": {
+                          "maxLength": 64,
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "unitPrice": {
+                          "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "regionCode",
+                        "billingMeter",
+                        "unitPrice",
+                        "currency"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 200,
+                    "type": "array"
+                  },
+                  "outputModalities": {
+                    "items": {
+                      "maxLength": 64,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "priceAvailability": {
+                    "additionalProperties": false,
+                    "name": "AppModelCatalogPriceAvailability",
+                    "properties": {
+                      "reason": {
+                        "maxLength": 256,
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "status": {
+                        "enum": [
+                          "reference",
+                          "unavailable"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "status",
+                      "reason"
+                    ],
+                    "type": "object"
+                  },
+                  "providerCodes": {
+                    "items": {
+                      "maxLength": 64,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 200,
+                    "type": "array"
+                  },
+                  "releaseStage": {
+                    "format": "int32",
+                    "maximum": 3,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "replacementModel": {
+                    "maxLength": 256,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "routingState": {
+                    "format": "int32",
+                    "maximum": 2,
+                    "minimum": 0,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "shelfState": {
+                    "format": "int32",
+                    "maximum": 3,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "supportedLanguages": {
+                    "items": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "supportsJsonSchema": {
+                    "type": "boolean"
+                  },
+                  "supportsStreaming": {
+                    "type": "boolean"
+                  },
+                  "supportsTools": {
+                    "type": "boolean"
+                  },
+                  "trainingDataCutoff": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "useCases": {
+                    "items": {
+                      "maxLength": 512,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "vendor": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "vendorCode": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "catalogKey",
+                  "model",
+                  "displayName",
+                  "vendorCode",
+                  "vendor",
+                  "capabilities",
+                  "groups",
+                  "categories",
+                  "description",
+                  "modalities",
+                  "inputModalities",
+                  "outputModalities",
+                  "apiFormat",
+                  "capabilityIntro",
+                  "limitations",
+                  "supportedLanguages",
+                  "useCases",
+                  "trainingDataCutoff",
+                  "contextTokens",
+                  "maxOutputTokens",
+                  "supportsStreaming",
+                  "supportsTools",
+                  "supportsJsonSchema",
+                  "releaseStage",
+                  "shelfState",
+                  "routingState",
+                  "replacementModel",
+                  "providerCodes",
+                  "officialReferencePrices",
+                  "priceAvailability"
+                ],
+                "type": "object"
+              },
+              "maxItems": 200,
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "groups",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/models",
+      "route_scope": "public",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "clawrouter-app-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/ai/model_vendors",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts#fetchModelProviders@/models",
+      "kind": "read",
+      "module": "pc-models",
+      "openapi_exposed": false,
+      "operation": "fetchModelProviders",
+      "operation_id": "modelVendors.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_model_vendor",
+        "ai_model"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AppModelVendorCatalogResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AppModelVendorCatalogResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AppModelVendorOption",
+                "properties": {
+                  "code": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "label": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "modelCount": {
+                    "format": "int32",
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "label",
+                  "code",
+                  "modelCount"
+                ],
+                "type": "object"
+              },
+              "maxItems": 200,
+              "type": "array"
+            }
+          },
+          "required": [
+            "items"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/models",
+      "route_scope": "public",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "clawrouter-app-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/ai/models",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
       "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts#fetchModels@/models",
       "kind": "read",
       "module": "pc-models",
@@ -18682,46 +20419,6 @@
             "items",
             "pageInfo"
           ],
-          "type": "object"
-        }
-      },
-      "route": "/console/notifications",
-      "route_scope": "console",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "notification",
-      "sdk_family": "clawrouter-app-sdk",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts",
-      "tag": "notification",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/notification/notifications",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts#list@/console/notifications",
-      "kind": "read",
-      "module": "sdkwork-clawroutes-pc-commons",
-      "openapi_exposed": false,
-      "operation": "list",
-      "operation_id": "notifications.list",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
           "type": "object"
         }
       },
@@ -25025,9 +26722,9 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/storage/providers/{providerId}",
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/storage/providers",
       "kind": "update",
-      "module": "{providerId}",
+      "module": "providers",
       "openapi_exposed": true,
       "operation": "update",
       "operation_id": "oss.providers.update",
@@ -25077,7 +26774,7 @@
           "type": "object"
         }
       },
-      "route": "/admin/storage/providers/{providerId}",
+      "route": "/admin/storage/providers",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -25123,25 +26820,25 @@
   },
   "summary": {
     "api_method_counts": {
-      "DELETE": 19,
-      "GET": 129,
+      "DELETE": 20,
+      "GET": 128,
       "PATCH": 26,
-      "POST": 73,
+      "POST": 72,
       "PUT": 10
     },
     "api_surface_counts": {
-      "app": 86,
-      "backend": 171
+      "app": 87,
+      "backend": 169
     },
-    "operation_count": 257,
+    "operation_count": 256,
     "route_scope_counts": {
-      "admin": 171,
-      "console": 31,
-      "public": 55
+      "admin": 169,
+      "console": 30,
+      "public": 57
     },
     "sdk_client_counts": {
-      "SdkworkAppClient": 86,
-      "SdkworkBackendClient": 171
+      "SdkworkAppClient": 87,
+      "SdkworkBackendClient": 169
     }
   }
 }

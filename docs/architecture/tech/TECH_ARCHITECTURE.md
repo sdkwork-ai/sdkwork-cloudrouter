@@ -46,7 +46,7 @@ contracts without adding conditionals to the core selector.
 | Distributed coordination | Redis where the feature contract requires it | Circuit, idempotency, quota, sticky or cluster coordination |
 | Frontend | React and Vite workspace packages | UI calls package-owned service boundaries |
 | API contracts | Authored route/field contracts materialized to OpenAPI | Source of generated SDK families |
-| SDKs | `@sdkwork/clawrouter-app-sdk`, `@sdkwork/clawrouter-backend-sdk`, `@sdkwork/clawrouter-open-sdk` | No raw business HTTP in consumers |
+| SDKs | Claw Router app/backend/open SDKs plus declared dependency SDKs such as `@sdkwork/payment-backend-sdk` | No raw business HTTP, manual auth headers, dependency API copies, or generated transport edits in consumers |
 | Upstream transport | HTTPS provider adapters with bounded request/response behavior | Credentials are attached only after target validation |
 
 PostgreSQL is the sole authoritative server engine in standalone, split-service,
@@ -102,6 +102,22 @@ not deep-clone every route or hold a lock across `.await`.
 
 The core domain depends on adapter ports. Adding an adapter does not create a
 new supplier table, credential store, route DTO family, or frontend HTTP path.
+
+### Composed Payment Administration
+
+The `sdkwork-payment` repository owns the Payment backend OpenAPI authority,
+the generated/composed `@sdkwork/payment-backend-sdk`, the
+`@sdkwork/payment-pc-admin-provider` package, provider-account credentials,
+methods, channels, route rules, payment runtime records, webhook events, and
+reconciliation. Claw Router consumes those public boundaries; it does not copy
+Payment DTOs, generated transport, controllers, credential forms, or auth
+headers.
+
+The Claw Router admin-payments package owns host composition and one
+product-specific extension: provider inventory exposed through
+`@sdkwork/clawrouter-backend-sdk`. The current UI route for Payment channels is
+`/admin/payments/channels`. `/admin/channel` is retired and is neither a route
+nor an ownership authority.
 
 ### Persistence
 
@@ -251,6 +267,29 @@ Generated SDK output is never hand-edited. Management UI calls
 `@sdkwork/clawrouter-open-sdk`. Missing methods or incorrect DTOs are fixed at
 the contract or implementation authority and regenerated.
 
+Payment is an explicit dependency exception to the Claw-only list above:
+Payment-owned management operations use `@sdkwork/payment-backend-sdk` through
+the injected `@sdkwork/payment-service` boundary. The provider-account UI and
+controller come from `@sdkwork/payment-pc-admin-provider`. Only the
+Claw-specific provider inventory list uses the Claw backend SDK. This
+owner/dependency split is declared in both component specs and SDK manifests.
+
+### Frontend Pagination Sessions
+
+Interactive Payment tables request one bounded server page at a time. TypeScript
+uses generated SDK fields `page` and `pageSize`; generated transport serializes
+the HTTP query as `page` and `page_size`, and the UI renders server `pageInfo`.
+No list-all helper or client-side array slicing implements pagination.
+
+Payment controller lists use `createSdkWorkPagedListSession`. A monotonically
+increasing request version prevents an older list response from replacing a
+newer query result. Concurrent `loadMore` calls share one in-flight promise, so
+one continuation page is fetched and appended once. Reset and explicit item
+replacement invalidate outstanding responses. These are client consistency
+semantics only; they do not replace store-level SQL/keyset pagination,
+authorization, cancellation, or backend capacity limits required by
+`PAGINATION_SPEC.md`.
+
 ### Admin Analytics Read Model
 
 `GET /backend/v3/api/system/analytics/admin/overview` is owned by the backend
@@ -294,6 +333,33 @@ bounded chart projection is required.
   rotation.
 - Secret values are excluded from audit records, route explanations, provider
   errors, traces, and generated read DTOs.
+- Payment provider-account and certificate inputs are also write-only. Claw
+  Router never rehydrates them into browser state; the Payment service encrypts
+  replacements before PostgreSQL persistence. Read DTOs expose only presence,
+  storage mode, masked metadata, and lifecycle state.
+
+### Payment RBAC
+
+The admin shell permission `clawrouter.admin.access` controls visibility of the
+`/admin/payments/**` host route. It does not grant Payment mutations. The
+Payment IAM manifest and backend OpenAPI operation metadata own exact action
+permissions, and the Claw host passes the same effective permission scope into
+the provider UI capability map:
+
+| Action | Required permission |
+| --- | --- |
+| Create provider account | `commerce.payments.provider_accounts.create` |
+| Update provider account | `commerce.payments.provider_accounts.update` |
+| Test provider credentials | `commerce.payments.provider_accounts.test` |
+| Rotate provider credentials | `commerce.payments.provider_accounts.credentials.rotate` |
+| Create sub-merchant | `commerce.payments.sub_merchants.create` |
+| Update sub-merchant | `commerce.payments.sub_merchants.update` |
+| Delete sub-merchant | `commerce.payments.sub_merchants.delete` |
+
+Frontend capability checks remove or disable unavailable actions, but the
+Payment backend remains the authorization boundary. Production approval of the
+effective role assignments and denial behavior requires security review and
+negative authorization evidence.
 
 ### Egress And Runtime Safety
 
@@ -379,6 +445,8 @@ python -B -m tools.rust_backend_architecture_guardian
 python -B -m tools.schema_quality_gate
 python -B -m tools.clawrouter_sdk_guardian
 python -B -m tools.sdkwork_standard_alignment_guardian --strict
+node ../sdkwork-specs/tools/check-component-port-bindings.mjs --root .
+node ../sdkwork-specs/tools/check-permission-composition.mjs --root .
 node ../sdkwork-specs/tools/check-pagination.mjs --workspace .
 ```
 

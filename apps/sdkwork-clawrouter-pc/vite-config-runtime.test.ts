@@ -105,7 +105,7 @@ test("production chunks let Rollup keep qrcode with its CommonJS dependencies", 
   );
   assert.equal(
     output.manualChunks(
-      "E:/sdkwork-space/sdkwork-account/sdks/sdkwork-account-app-sdk/sdkwork-account-app-sdk-typescript/generated/server-openapi/src/api/wallet.ts",
+      "E:/sdkwork-space/sdkwork-account/sdks/sdkwork-account-app-sdk/sdkwork-account-app-sdk-typescript/src/index.ts",
       {} as never,
     ),
     "vendor-sdkwork-sdk",

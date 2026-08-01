@@ -115,12 +115,22 @@ function readI18nResourceFiles(): Array<{ relativePath: string; source: string }
   return readPortalSourceFiles("./packages/sdkwork-clawrouter-pc-i18n/src/resources/");
 }
 
+function includeI18nLocaleContext(file: { relativePath: string; source: string }): string {
+  if (file.relativePath.includes("/en-US/")) {
+    return `en: {\n${file.source}\n}`;
+  }
+  if (file.relativePath.includes("/zh-CN/")) {
+    return `zh: {\n${file.source}\n}`;
+  }
+  return file.source;
+}
+
 function readI18nResourceSource(): string {
   return [
     readPortalFile("./packages/sdkwork-clawrouter-pc-i18n/src/index.ts"),
-    ...readI18nResourceFiles().map((file) => file.source),
+    ...readI18nResourceFiles().map(includeI18nLocaleContext),
     ...readPortalSourceFiles("./packages/sdkwork-clawrouter-pc-admin-upstream/src/i18n/")
-      .map((file) => file.source),
+      .map(includeI18nLocaleContext),
   ].join("\n");
 }
 
@@ -396,10 +406,11 @@ test("portal exposes appbase auth routes as standalone React routes", () => {
   assert.doesNotMatch(authRouteSource, /SdkworkAuthPage/);
   assert.doesNotMatch(authRouteSource, /SdkworkAuthOAuthCallbackPage/);
   assert.doesNotMatch(authRouteSource, /clawRouterAuthController/);
+  assert.match(authRouteSource, /from '\.\/clawRouterAuthRuntime'/);
   assert.doesNotMatch(authRouteSource, /ClawRouterAuthOAuthCallbackRoute/);
   assert.match(authRouteSource, /basePath="\/auth"/);
   assert.match(authRouteSource, /locale=\{i18n\.language\}/);
-  assert.match(authRouteSource, /getRuntime=\{getClawRouterIamRuntime\}/);
+  assert.match(authRouteSource, /getRuntime=\{getClawRouterAuthRuntime\}/);
   assert.match(authRouteSource, /homePath="\/admin"/);
   assert.match(authRouteSource, /AUTH_METHOD_UNAVAILABLE_MESSAGE/);
   assert.match(authRouteSource, /methodUnavailableMessage=\{AUTH_METHOD_UNAVAILABLE_MESSAGE\}/);
@@ -422,6 +433,7 @@ test("authenticated auth routes default to admin while preserving an explicit re
 
 test("claw router auth controller reuses appbase runtime while preserving app SDK boundary", () => {
   const controllerSource = readPortalFile("./src/auth/clawRouterAuthController.ts");
+  const runtimeAdapterSource = readPortalFile("./src/auth/clawRouterAuthRuntime.ts");
   const routeSource = readPortalFile("./src/auth/ClawRouterAuthRoutes.tsx");
   const configSource = readPortalFile("./src/auth/clawRouterAuthConfig.ts");
   const settingsServiceSource = readPortalFile("./src/auth/clawRouterAuthSettingsService.ts");
@@ -430,7 +442,13 @@ test("claw router auth controller reuses appbase runtime while preserving app SD
   const sdkClientsSource = readPortalFile("./packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts");
 
   assert.match(controllerSource, /createSdkworkIamRuntimeAuthController/);
-  assert.match(controllerSource, /getClawRouterIamRuntime/);
+  assert.match(controllerSource, /getClawRouterAuthRuntime/);
+  assert.doesNotMatch(controllerSource, /getClawRouterIamRuntime/);
+  assert.match(runtimeAdapterSource, /getClawRouterIamRuntime/);
+  assert.match(runtimeAdapterSource, /SdkworkIamRuntimeAuthRuntimeLike/);
+  assert.match(runtimeAdapterSource, /toIamRegistrationInput/);
+  assert.match(runtimeAdapterSource, /toIamRefreshSessionInput/);
+  assert.doesNotMatch(runtimeAdapterSource, /as unknown as/);
   assert.match(iamRuntimeSource, /createSdkworkAppbasePcAuthRuntime/);
   assert.match(iamRuntimeSource, /createAppbaseAppClient:\s*getSdkworkAppbaseAppSdkClient/);
   assert.match(iamRuntimeSource, /credentialEntry:\s*\{[\s\S]*prepareTokens:\s*prepareClawRouterCredentialEntryTokens/u);
@@ -502,7 +520,8 @@ test("claw router auth controller reuses appbase runtime while preserving app SD
   assert.doesNotMatch(controllerSource, /\/app\/v3\/api/);
   assert.equal(existsSync(new URL("./src/auth/corePcReactCompat.ts", import.meta.url)), false);
   assert.match(routeSource, /SdkworkIamAuthRoutes/);
-  assert.match(routeSource, /getClawRouterIamRuntime/);
+  assert.match(routeSource, /getClawRouterAuthRuntime/);
+  assert.match(routeSource, /from '\.\/clawRouterAuthRuntime'/);
   assert.doesNotMatch(routeSource, /clawRouterAuthController/);
   assert.match(routeSource, /useClawRouterAuthRuntimeConfig/);
   assert.match(routeSource, /runtimeConfig=\{runtimeConfig\}/);
@@ -558,7 +577,7 @@ test("auth runtime config applies backend IAM settings without tenant or organiz
   assert.deepEqual(config.oauthProviders, ["github"]);
   assert.equal(config.oauthProviderRegion, "overseas");
   assert.equal(config.qrLoginEnabled, true);
-  assert.equal(config.qrLoginType, "wechat_official_account");
+  assert.equal("qrLoginType" in config, false);
   assert.deepEqual(config.recoveryMethods, ["email"]);
   assert.deepEqual(config.registerMethods, ["email", "phone"]);
   assert.deepEqual(config.verificationPolicy, {
@@ -609,20 +628,12 @@ test("auth runtime config fails closed when backend returns unsupported IAM runt
   }
 });
 
-test("auth runtime config maps compact backend QR login types to appbase QR login types", () => {
-  assert.equal(
-    mergeClawRouterAuthRuntimeConfig(authRuntimeSettingsFixture({ qrLoginType: "web" })).qrLoginType,
-    "sdkwork_app",
-  );
-  assert.equal(
-    mergeClawRouterAuthRuntimeConfig(authRuntimeSettingsFixture({ qrLoginType: "official" })).qrLoginType,
-    "wechat_official_account",
-  );
-  assert.equal(
-    mergeClawRouterAuthRuntimeConfig(authRuntimeSettingsFixture({ qrLoginType: "mini" })).qrLoginType,
-    "wechat_mini_program",
-  );
-  assert.equal(DEFAULT_CLAW_ROUTER_AUTH_RUNTIME_CONFIG.qrLoginType, "sdkwork_app");
+test("auth runtime config validates backend QR login types without exposing a retired client field", () => {
+  for (const qrLoginType of ["web", "official", "mini"] as const) {
+    const config = mergeClawRouterAuthRuntimeConfig(authRuntimeSettingsFixture({ qrLoginType }));
+    assert.equal("qrLoginType" in config, false);
+  }
+  assert.equal("qrLoginType" in DEFAULT_CLAW_ROUTER_AUTH_RUNTIME_CONFIG, false);
 });
 
 test("auth runtime config fails closed when backend omits verification policy flags", () => {
@@ -655,13 +666,13 @@ test("claw router app auth composes the appbase IAM OAuth dependency SDK without
   const appbaseAppOpenApiSource = readPortalFile("../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/openapi/sdkwork-iam-app-api.openapi.yaml");
   const appSdkAssemblySource = readPortalFile("../../sdks/clawrouter-app-sdk/sdk-manifest.json");
   const appSdkComponentSource = readPortalFile("../../sdks/clawrouter-app-sdk/specs/component.spec.json");
-  const appSdkSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/sdk.ts");
-  const backendSdkSystemSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/api/system.ts");
-  const backendSdkIndexSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/sdk.ts");
-  const backendSdkAuthSettingsUpdateSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/types/admin-auth-settings-update-request.ts");
+  const appSdkSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/sdk.ts");
+  const backendSdkSystemSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/api/system.ts");
+  const backendSdkIndexSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/sdk.ts");
+  const backendSdkAuthSettingsUpdateSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/types/admin-auth-settings-update-request.ts");
   const adminCoreSdkSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-core/src/sdk/index.ts");
-  const appSdkTypesSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/types/index.ts");
-  const backendSdkTypesSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/types/index.ts");
+  const appSdkTypesSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/types/index.ts");
+  const backendSdkTypesSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/types/index.ts");
   const appbaseAuthServiceSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-service.ts");
   const appbaseIamRuntimeSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-iam-runtime.ts");
   const appbaseIamSdkPortsSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-sdk-ports/src/index.ts");
@@ -844,7 +855,7 @@ test("claw router app auth composes the appbase IAM OAuth dependency SDK without
   );
   assert.match(backendSdkSystemSource, /async update\(body: AdminAuthSettingsUpdateRequest/);
   assert.match(backendSdkAuthSettingsUpdateSource, /qrLoginType\?: 'web' \| 'official' \| 'mini'/);
-  assert.match(backendSdkAuthSettingsUpdateSource, /wechat\?: Record<string, unknown>/);
+  assert.match(backendSdkAuthSettingsUpdateSource, /wechat\?: Record<string, JsonValue>/);
   assert.match(adminCoreSdkSource, /AdminAuthVerificationPolicy/);
   assert.match(adminCoreSdkSource, /mini: AdminAuthWechatMini\[\]/);
   assert.match(adminCoreSdkSource, /official: AdminAuthWechatOfficial\[\]/);
@@ -1092,7 +1103,7 @@ test("admin auth settings form preserves flexible OAuth providers and validates 
 });
 
 test("generated appbase app SDK surface satisfies the IAM SDK port contract", async () => {
-  const productSdkSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/sdk.ts");
+  const productSdkSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/server-openapi/src/sdk.ts");
   const iamSdkPortsSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-sdk-ports/src/index.ts");
   const authServiceSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-service.ts");
   const iamRuntimeSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-iam-runtime.ts");
@@ -2554,7 +2565,13 @@ test("portal serves the React external-store shim through an ESM compat module i
 
 test("portal typecheck remains scoped to claw router packages after appbase workspace reuse", () => {
   const packageJson = JSON.parse(readPortalFile("./package.json")) as { scripts: Record<string, string> };
+  const typecheckSource = readPortalFile("./scripts/typecheck-owned-sources.mjs");
 
-  assert.equal(packageJson.scripts.typecheck, "tsc -p tsconfig.typecheck.json --noEmit");
-  assert.equal(packageJson.scripts.lint, "tsc -p tsconfig.typecheck.json --noEmit");
+  assert.equal(packageJson.scripts.typecheck, "node scripts/typecheck-owned-sources.mjs");
+  assert.equal(packageJson.scripts.lint, "node scripts/typecheck-owned-sources.mjs");
+  assert.match(typecheckSource, /ts\.createProgram/);
+  assert.match(typecheckSource, /ts\.getPreEmitDiagnostics/);
+  assert.match(typecheckSource, /isOwnedSourcePath/);
+  assert.doesNotMatch(typecheckSource, /noUnusedLocals.*false/);
+  assert.doesNotMatch(typecheckSource, /noUnusedParameters.*false/);
 });

@@ -242,6 +242,8 @@ test("normalizeGeneratedSdkBaseUrl preserves raw origins and unrelated root-rela
 
 test("agents app SDK factory preserves the canonical app-api surface URL", async () => {
   const requestedUrls: string[] = [];
+  const tokenManager = getClawRouterGlobalTokenManager();
+  tokenManager.setTokens({ accessToken: "agents-test-access-token" });
   globalThis.fetch = async (input) => {
     requestedUrls.push(String(input));
     return new Response(
@@ -257,14 +259,17 @@ test("agents app SDK factory preserves the canonical app-api surface URL", async
   };
 
   try {
-    const sameOriginClient = createSdkworkAgentAppSdkClient();
+    const sameOriginClient = createSdkworkAgentAppSdkClient({ tokenManager });
     await sameOriginClient.ai.agents.list({ scope: "market", page: 1, pageSize: 20 });
 
     const hostedClient = createSdkworkAgentAppSdkClient({
       appBaseUrl: "https://tenant.example.com/router/app/v3/api",
+      tokenManager,
     });
     await hostedClient.ai.agents.list({ scope: "market", page: 1, pageSize: 20 });
   } finally {
+    tokenManager.clearTokens();
+    resetClawRouterSdkClients();
     globalThis.fetch = originalFetch;
   }
 
@@ -763,7 +768,45 @@ test("admin resource center collection metadata reads only the canonical pageSiz
     readAdminResourceCollectionMeta({ data: { total: 42, page: 2, pageSize: 20 } }),
     { total: 42, page: 2, pageSize: 20 },
   );
+  assert.deepEqual(
+    readAdminResourceCollectionMeta({
+      data: {
+        items: [],
+        pageInfo: {
+          mode: "offset",
+          page: 2,
+          pageSize: 20,
+          totalItems: "42",
+          totalPages: 3,
+          hasMore: true,
+        },
+      },
+    }),
+    { total: 42, totalPages: 3, hasMore: true, page: 2, pageSize: 20 },
+  );
+  assert.deepEqual(
+    readAdminResourceCollectionMeta({
+      data: {
+        items: [],
+        pageInfo: {
+          mode: "offset",
+          page: 1,
+          pageSize: 20,
+          totalItems: "9007199254740993",
+          totalPages: 450359962737050,
+          hasMore: true,
+        },
+      },
+    }),
+    { totalPages: 450359962737050, hasMore: true, page: 1, pageSize: 20 },
+  );
   assert.equal(readAdminResourceCollectionMeta({ data: { total: 42, page: 2, page_size: 20 } }), null);
+  assert.equal(readAdminResourceCollectionMeta({ data: { total: 42, page: 0, pageSize: 20 } }), null);
+  assert.equal(readAdminResourceCollectionMeta({ data: { total: 42, page: 1, pageSize: -1 } }), null);
+  assert.equal(
+    readAdminResourceCollectionMeta({ data: { total: 42, page: 1.5, pageSize: 20 } }),
+    null,
+  );
   assert.doesNotMatch(source, /pageSize\s*\?\?\s*data\.page_size/);
   assert.doesNotMatch(source, /data\.page_size/);
 });
@@ -864,10 +907,10 @@ test("console layout keeps readable navigation labels and valid logout markup", 
     "Dashboard",
     "Token management",
     "Call statistics",
-    "Recharge exchange",
+    "Wallet & top-up",
     "Bills and Reports",
     "Message Center",
-    "Account details",
+    "Account overview",
     "Configuration center",
     "Log out",
   ]) {
@@ -958,13 +1001,15 @@ test("console sidebar keeps dashboard top-level and groups the remaining menus b
   assert.doesNotMatch(source, /\bBot\b/);
 });
 
-test("console business routes mount T1 domain PC packages directly", () => {
+test("console business routes compose T1 domain PC packages through Claw Router extensions", () => {
   const appSource = readPortalSource("./src/App.tsx");
   const mountSource = readPortalSource("./src/console-business/consoleBusinessHostMount.tsx");
+  const walletSource = readPortalSource("./src/console-business/ClawRouterWalletPage.tsx");
 
   assert.match(appSource, /ClawRouterConsoleBusinessHostRoutes/);
   assert.match(appSource, /ClawRouterConsoleBusinessNavbarActions/);
-  assert.match(mountSource, /@sdkwork\/account-pc-wallet/);
+  assert.match(mountSource, /ClawRouterWalletPage/);
+  assert.match(walletSource, /@sdkwork\/account-pc-wallet/);
   assert.match(mountSource, /@sdkwork\/payment-pc-payment/);
   assert.doesNotMatch(appSource, /from '@sdkwork\/commerce-pc-host'/);
   assert.doesNotMatch(appSource, /ClawRouterConsoleCommerceHostRoutes/);
@@ -1303,6 +1348,7 @@ test("ensureSdkworkApiSuccess accepts generated SDK data objects and raw success
 
 test("createAppSession stores dual IAM tokens returned as generated SDK data objects", async () => {
   const captured: { url: string; method: string; headers: Record<string, string> }[] = [];
+  const tokenManager = getClawRouterGlobalTokenManager();
   Object.defineProperty(globalThis, "window", {
     configurable: true,
     enumerable: true,
@@ -1317,8 +1363,7 @@ test("createAppSession stores dual IAM tokens returned as generated SDK data obj
     });
     return new Response(
       JSON.stringify({
-        code: "2000",
-        msg: "success",
+        code: 0,
         data: {
           accessToken: "access-token-2026",
           authToken: "auth-token-2026",
@@ -1339,6 +1384,7 @@ test("createAppSession stores dual IAM tokens returned as generated SDK data obj
             userId: "user-2026",
           },
         },
+        traceId: "trace-create-session-2026",
       }),
       {
         status: 200,
@@ -1348,13 +1394,15 @@ test("createAppSession stores dual IAM tokens returned as generated SDK data obj
   }) as typeof fetch;
   clearStoredAppSessionToken();
   resetClawRouterSdkClients();
+  tokenManager.setTokens({ accessToken: "credential-entry-access-token" });
 
   try {
-    const result = await createAppSession();
+    const result = await createAppSession({ tokenManager });
 
     assert.equal(captured.length, 1);
     assert.equal(captured[0].url, "/app/v3/api/auth/sessions");
     assert.equal(captured[0].method, "POST");
+    assert.equal(captured[0].headers["access-token"], "credential-entry-access-token");
     assert.equal(captured[0].headers["x-request-id"], undefined);
     assert.equal(getStoredAppSessionAuthToken(), "auth-token-2026");
     assert.equal(getStoredAppSessionAccessToken(), "access-token-2026");
@@ -1366,6 +1414,7 @@ test("createAppSession stores dual IAM tokens returned as generated SDK data obj
     assert.deepEqual(loadStoredAppSessionToken()?.context?.standardRoleCodes, ["org_admin"]);
     assert.equal(hasStoredPortalSession(), true);
   } finally {
+    tokenManager.clearTokens();
     clearStoredAppSessionToken();
     resetClawRouterSdkClients();
     globalThis.fetch = originalFetch;
@@ -1420,10 +1469,7 @@ test("revokeAppSession deletes the persisted server session before clearing loca
       method: init?.method ?? "GET",
       headers: Object.fromEntries(new Headers(init?.headers).entries()),
     });
-    return new Response(JSON.stringify({ code: "2000", msg: "success", data: {} }), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    });
+    return new Response(null, { status: 204 });
   }) as typeof fetch;
   clearStoredAppSessionToken();
   resetClawRouterSdkClients();
@@ -1496,13 +1542,14 @@ test("portal admin access check authorizes the effective IAM permission scope wi
       if (url === "/app/v3/api/auth/sessions/current") {
         return new Response(
           JSON.stringify({
-            code: "2000",
+            code: 0,
             data: portalAdminSessionPayload(
               `access-${expectedState}-${permissionScope[0]}`,
               `auth-${expectedState}-${permissionScope[0]}`,
               `session-${expectedState}-${permissionScope[0]}`,
               { permissionScope: [...permissionScope] },
             ),
+            traceId: `trace-${expectedState}-${permissionScope[0]}`,
           }),
           {
             status: 200,
@@ -1514,6 +1561,13 @@ test("portal admin access check authorizes the effective IAM permission scope wi
     }) as typeof fetch;
     clearStoredAppSessionToken();
     resetClawRouterSdkClients();
+    storeAppSessionFromResult(
+      portalAdminSessionPayload(
+        `seed-access-${expectedState}-${permissionScope[0]}`,
+        `seed-auth-${expectedState}-${permissionScope[0]}`,
+        `seed-session-${expectedState}-${permissionScope[0]}`,
+      ),
+    );
 
     try {
       const state = await verifyCurrentPortalAdminAccess();
@@ -1602,15 +1656,25 @@ test("portal admin access check reports a current-session service failure", asyn
     const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     captured.push({ url, method: init?.method ?? "GET" });
     if (url === "/app/v3/api/auth/sessions/current") {
-      return new Response(JSON.stringify({ code: "4000", msg: "Invalid current-session response" }), {
-        status: 400,
-        headers: { "content-type": "application/json" },
+      return new Response(JSON.stringify({
+        code: 50301,
+        detail: "Current-session service is unavailable",
+        status: 503,
+        title: "Service unavailable",
+        traceId: "trace-current-session-failure",
+        type: "https://sdkwork.example/problems/service-unavailable",
+      }), {
+        status: 503,
+        headers: { "content-type": "application/problem+json" },
       });
     }
     throw new Error(`Unexpected SDK request ${init?.method ?? "GET"} ${url}`);
   }) as typeof fetch;
   clearStoredAppSessionToken();
   resetClawRouterSdkClients();
+  storeAppSessionFromResult(
+    portalAdminSessionPayload("access-service-failure", "auth-service-failure", "session-service-failure"),
+  );
 
   try {
     const state = await verifyCurrentPortalAdminAccess();
@@ -1618,7 +1682,7 @@ test("portal admin access check reports a current-session service failure", asyn
     assert.equal(state, "error");
     assert.deepEqual(
       captured.map((request) => `${request.method} ${request.url}`),
-      ["GET /app/v3/api/auth/sessions/current"],
+      Array.from({ length: 3 }, () => "GET /app/v3/api/auth/sessions/current"),
     );
   } finally {
     clearStoredAppSessionToken();

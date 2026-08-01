@@ -8,6 +8,9 @@ import { SdkworkBackendClient, type SdkworkBackendConfig } from '@sdkwork/clawro
 import { SdkworkDriveBackendClient as DriveBackendClient } from '@sdkwork/clawrouter-pc-core/sdk';
 import { SdkworkBackendClient as ModelsBackendClient } from '@sdkwork/models-backend-sdk';
 import { SdkworkAppClient as ModelsAppClient } from '@sdkwork/models-app-sdk';
+import { SdkworkBackendClient as MembershipBackendClient } from '@sdkwork/membership-backend-sdk';
+import { SdkworkBackendClient as PaymentBackendClient } from '@sdkwork/payment-backend-sdk';
+import { SdkworkBackendClient as PromotionBackendClient } from '@sdkwork/promotion-backend-sdk';
 import { SdkworkAiClient, type SdkworkAiConfig } from '@sdkwork/clawrouter-open-sdk';
 import {
   SdkworkGenerationsAppSdkClient as SdkworkGenerationsAppClient,
@@ -43,6 +46,10 @@ import {
   SdkworkBackendClient as SdkworkAppbaseBackendClient,
   type SdkworkBackendConfig as SdkworkAppbaseBackendConfig,
 } from '@sdkwork/iam-backend-sdk';
+import {
+  SdkworkAppClient as MessagingAppClient,
+  type SdkworkAppConfig as MessagingAppConfig,
+} from '@sdkwork/messaging-app-sdk';
 import {
   createDriveAppClient,
   type SdkworkAppConfig as SdkworkDriveAppConfig,
@@ -437,6 +444,7 @@ export type ClawRouterAppSdkClient = SdkworkAppClient;
 export type ClawRouterBackendSdkClient = SdkworkBackendClient;
 export type SdkworkAppbaseAppSdkClient = SdkworkAppbaseAppClient;
 export type SdkworkAppbaseBackendSdkClient = SdkworkAppbaseBackendClient;
+export type SdkworkMessagingAppSdkClient = MessagingAppClient;
 export type SdkworkGenerationsAppSdkClient = SdkworkGenerationsAppClient;
 export type SdkworkMemoryAppSdkClient = SdkworkMemoryAppClient;
 export type SdkworkPromptsAppSdkClient = PromptsAppClient;
@@ -444,6 +452,9 @@ export type SdkworkAgentAppSdkClient = SdkworkAgentAppClient;
 export type SdkworkAgentBackendSdkClient = SdkworkAgentBackendClient;
 export type SdkworkPromptsBackendSdkClient = SdkworkPromptsBackendClient;
 export type SdkworkDriveAppSdkClient = SdkworkDriveAppClient;
+export type SdkworkMembershipBackendSdkClient = MembershipBackendClient;
+export type SdkworkPaymentBackendSdkClient = PaymentBackendClient;
+export type SdkworkPromotionBackendSdkClient = PromotionBackendClient;
 export type SdkworkAccountAppSdkClient = AccountAppClient;
 export type SdkworkCatalogAppSdkClient = CatalogAppClient;
 export type SdkworkMembershipAppSdkClient = MembershipAppClient;
@@ -456,6 +467,10 @@ export type SdkworkMembershipAppSdkClientOptions = ClawRouterAppSdkClientOptions
 export type SdkworkOrderAppSdkClientOptions = ClawRouterAppSdkClientOptions;
 export type SdkworkPaymentAppSdkClientOptions = ClawRouterAppSdkClientOptions;
 export type SdkworkPromotionAppSdkClientOptions = ClawRouterAppSdkClientOptions;
+export type SdkworkMessagingAppSdkClientOptions = ClawRouterAppSdkClientOptions;
+export type SdkworkMembershipBackendSdkClientOptions = ClawRouterBackendSdkClientOptions;
+export type SdkworkPaymentBackendSdkClientOptions = ClawRouterBackendSdkClientOptions;
+export type SdkworkPromotionBackendSdkClientOptions = ClawRouterBackendSdkClientOptions;
 export type ClawRouterAiSdkClient = SdkworkAiClient;
 
 type ClawRouterSdkRuntimeHost = typeof globalThis & {
@@ -463,6 +478,7 @@ type ClawRouterSdkRuntimeHost = typeof globalThis & {
   __SDKWORK_CLAW_ROUTER_BACKEND_SDK_CLIENT__?: ClawRouterBackendSdkClient | null;
   __SDKWORK_APPBASE_APP_SDK_CLIENT__?: SdkworkAppbaseAppSdkClient | null;
   __SDKWORK_APPBASE_BACKEND_SDK_CLIENT__?: SdkworkAppbaseBackendSdkClient | null;
+  __SDKWORK_MESSAGING_APP_SDK_CLIENT__?: SdkworkMessagingAppSdkClient | null;
   __SDKWORK_GENERATIONS_APP_SDK_CLIENT__?: SdkworkGenerationsAppSdkClient | null;
   __SDKWORK_MEMORY_APP_SDK_CLIENT__?: SdkworkMemoryAppSdkClient | null;
   __SDKWORK_AGENT_APP_SDK_CLIENT__?: SdkworkAgentAppSdkClient | null;
@@ -498,6 +514,7 @@ let appClient: ClawRouterAppSdkClient | null = null;
 let backendClient: ClawRouterBackendSdkClient | null = null;
 let appbaseAppClient: SdkworkAppbaseAppClient | null = null;
 let appbaseBackendClient: SdkworkAppbaseBackendClient | null = null;
+let messagingAppClient: MessagingAppClient | null = null;
 let generationsAppClient: SdkworkGenerationsAppClient | null = null;
 let memoryAppClient: SdkworkMemoryAppClient | null = null;
 let promptsAppClient: PromptsAppClient | null = null;
@@ -506,6 +523,9 @@ let agentBackendClient: SdkworkAgentBackendClient | null = null;
 let promptsBackendClient: SdkworkPromptsBackendClient | null = null;
 let driveAppClient: SdkworkDriveAppClient | null = null;
 let driveBackendClient: DriveBackendSdkClient | null = null;
+let membershipBackendClient: MembershipBackendClient | null = null;
+let paymentBackendClient: PaymentBackendClient | null = null;
+let promotionBackendClient: PromotionBackendClient | null = null;
 let accountAppClient: AccountAppClient | null = null;
 let catalogAppClient: CatalogAppClient | null = null;
 let membershipAppClient: MembershipAppClient | null = null;
@@ -536,6 +556,12 @@ export function createSdkworkAppbaseBackendSdkClient(
   options: SdkworkAppbaseBackendSdkClientOptions = {},
 ): SdkworkAppbaseBackendClient {
   return attachClawRouterSdkSessionAuthBoundary(new SdkworkAppbaseBackendClient(buildAppbaseBackendConfig(options)));
+}
+
+export function createSdkworkMessagingAppSdkClient(
+  options: SdkworkMessagingAppSdkClientOptions = {},
+): MessagingAppClient {
+  return attachClawRouterSdkSessionAuthBoundary(new MessagingAppClient(buildMessagingAppConfig(options)));
 }
 
 export function createSdkworkGenerationsAppSdkClient(
@@ -572,6 +598,30 @@ export function createSdkworkPromptsBackendSdkClient(
   options: SdkworkPromptsBackendSdkClientOptions = {},
 ): SdkworkPromptsBackendClient {
   return attachClawRouterSdkSessionAuthBoundary(createPromptsBackendSdkClient(buildPromptsBackendConfig(options)));
+}
+
+export function createSdkworkMembershipBackendSdkClient(
+  options: SdkworkMembershipBackendSdkClientOptions = {},
+): MembershipBackendClient {
+  return attachClawRouterSdkSessionAuthBoundary(
+    new MembershipBackendClient(buildDependencyBackendConfig(options, 'VITE_SDKWORK_MEMBERSHIP_BACKEND_API_BASE_URL')),
+  );
+}
+
+export function createSdkworkPaymentBackendSdkClient(
+  options: SdkworkPaymentBackendSdkClientOptions = {},
+): PaymentBackendClient {
+  return attachClawRouterSdkSessionAuthBoundary(
+    new PaymentBackendClient(buildDependencyBackendConfig(options, 'VITE_SDKWORK_PAYMENT_BACKEND_API_BASE_URL')),
+  );
+}
+
+export function createSdkworkPromotionBackendSdkClient(
+  options: SdkworkPromotionBackendSdkClientOptions = {},
+): PromotionBackendClient {
+  return attachClawRouterSdkSessionAuthBoundary(
+    new PromotionBackendClient(buildDependencyBackendConfig(options, 'VITE_SDKWORK_PROMOTION_BACKEND_API_BASE_URL')),
+  );
 }
 
 export function createSdkworkDriveAppSdkClient(
@@ -727,6 +777,22 @@ export function getSdkworkAppbaseBackendSdkClient(
   return appbaseBackendClient;
 }
 
+export function getSdkworkMessagingAppSdkClient(
+  options: SdkworkMessagingAppSdkClientOptions = {},
+): MessagingAppClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkMessagingAppSdkClient(options);
+  }
+  const injected = readInjectedMessagingAppSdkClient();
+  if (injected) {
+    return attachClawRouterSdkSessionAuthBoundary(injected);
+  }
+  if (!messagingAppClient) {
+    messagingAppClient = createSdkworkMessagingAppSdkClient();
+  }
+  return messagingAppClient;
+}
+
 export function getSdkworkGenerationsAppSdkClient(
   options: SdkworkGenerationsAppSdkClientOptions = {},
 ): SdkworkGenerationsAppClient {
@@ -813,6 +879,42 @@ export function getSdkworkPromptsBackendSdkClient(
     promptsBackendClient = createSdkworkPromptsBackendSdkClient();
   }
   return promptsBackendClient;
+}
+
+export function getSdkworkMembershipBackendSdkClient(
+  options: SdkworkMembershipBackendSdkClientOptions = {},
+): MembershipBackendClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkMembershipBackendSdkClient(options);
+  }
+  if (!membershipBackendClient) {
+    membershipBackendClient = createSdkworkMembershipBackendSdkClient();
+  }
+  return membershipBackendClient;
+}
+
+export function getSdkworkPaymentBackendSdkClient(
+  options: SdkworkPaymentBackendSdkClientOptions = {},
+): PaymentBackendClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkPaymentBackendSdkClient(options);
+  }
+  if (!paymentBackendClient) {
+    paymentBackendClient = createSdkworkPaymentBackendSdkClient();
+  }
+  return paymentBackendClient;
+}
+
+export function getSdkworkPromotionBackendSdkClient(
+  options: SdkworkPromotionBackendSdkClientOptions = {},
+): PromotionBackendClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkPromotionBackendSdkClient(options);
+  }
+  if (!promotionBackendClient) {
+    promotionBackendClient = createSdkworkPromotionBackendSdkClient();
+  }
+  return promotionBackendClient;
 }
 
 export type DriveBackendSdkClient = DriveBackendClient;
@@ -945,6 +1047,7 @@ function resetClawRouterSdkClientCaches(): void {
   modelsBackendClient = null;
   appbaseAppClient = null;
   appbaseBackendClient = null;
+  messagingAppClient = null;
   generationsAppClient = null;
   memoryAppClient = null;
   agentAppClient = null;
@@ -952,6 +1055,9 @@ function resetClawRouterSdkClientCaches(): void {
   promptsBackendClient = null;
   driveAppClient = null;
   driveBackendClient = null;
+  membershipBackendClient = null;
+  paymentBackendClient = null;
+  promotionBackendClient = null;
   accountAppClient = null;
   catalogAppClient = null;
   membershipAppClient = null;
@@ -1162,6 +1268,30 @@ export function resolveRequiredAppbaseAppBaseUrl(options: SdkworkAppbaseAppSdkCl
     ?? APP_API_PREFIX;
 }
 
+function buildMessagingAppConfig(options: SdkworkMessagingAppSdkClientOptions): MessagingAppConfig {
+  return {
+    baseUrl: normalizeGeneratedSdkBaseUrl(
+      resolveRequiredMessagingAppBaseUrl(options),
+      APP_API_PREFIX,
+    ),
+    platform: options.platform ?? 'web',
+    tokenManager: resolveClawRouterSdkTokenManager(options.tokenManager),
+    timeout: options.timeout,
+  };
+}
+
+export function resolveRequiredMessagingAppBaseUrl(options: SdkworkMessagingAppSdkClientOptions): string {
+  const baseUrl = options.appBaseUrl
+    ?? readClawRouterRuntimeEnv('VITE_SDKWORK_MESSAGING_APP_API_BASE_URL')
+    ?? deriveDependencySurfaceBaseUrl('PORTAL_PUBLIC_SDK_BASE_URL', APP_API_PREFIX);
+  if (!baseUrl) {
+    throw new Error(
+      'Messaging App SDK requires VITE_SDKWORK_MESSAGING_APP_API_BASE_URL or PORTAL_PUBLIC_SDK_BASE_URL.',
+    );
+  }
+  return baseUrl;
+}
+
 function buildAppbaseBackendConfig(options: SdkworkAppbaseBackendSdkClientOptions): SdkworkAppbaseBackendConfig {
   return {
     baseUrl: normalizeGeneratedSdkBaseUrl(
@@ -1301,6 +1431,25 @@ function buildDriveBackendConfig(options: DriveBackendSdkClientOptions): Sdkwork
   };
 }
 
+function buildDependencyBackendConfig(
+  options: ClawRouterBackendSdkClientOptions,
+  baseUrlEnvName: string,
+): SdkworkBackendConfig {
+  return {
+    baseUrl: normalizeGeneratedSdkBaseUrl(
+      options.backendBaseUrl
+        ?? readClawRouterRuntimeEnv(baseUrlEnvName)
+        ?? readClawRouterRuntimeEnv('VITE_CLAWROUTER_BACKEND_API_BASE_URL')
+        ?? deriveDependencySurfaceBaseUrl('PORTAL_PUBLIC_SDK_BASE_URL', BACKEND_API_PREFIX)
+        ?? BACKEND_API_PREFIX,
+      BACKEND_API_PREFIX,
+    ),
+    platform: options.platform ?? 'web-admin',
+    tokenManager: resolveClawRouterSdkTokenManager(options.tokenManager),
+    timeout: options.timeout,
+  };
+}
+
 function buildAccountAppConfig(options: SdkworkAccountAppSdkClientOptions): AccountAppConfig {
   return buildDependencyAppConfig(options, 'VITE_SDKWORK_ACCOUNT_APP_API_BASE_URL');
 }
@@ -1376,6 +1525,9 @@ function hasRuntimeOverrides(
     | SdkworkPromptsAppSdkClientOptions
     | SdkworkAgentAppSdkClientOptions
     | SdkworkAgentBackendSdkClientOptions
+    | SdkworkMembershipBackendSdkClientOptions
+    | SdkworkPaymentBackendSdkClientOptions
+    | SdkworkPromotionBackendSdkClientOptions
     | SdkworkDriveAppSdkClientOptions
     | SdkworkAccountAppSdkClientOptions
     | SdkworkCatalogAppSdkClientOptions
@@ -1383,6 +1535,7 @@ function hasRuntimeOverrides(
     | SdkworkOrderAppSdkClientOptions
     | SdkworkPaymentAppSdkClientOptions
     | SdkworkPromotionAppSdkClientOptions
+    | SdkworkMessagingAppSdkClientOptions
     | ClawRouterAiSdkClientOptions,
 ): boolean {
   return Object.keys(options).length > 0;
@@ -1456,6 +1609,10 @@ function readInjectedAppbaseAppSdkClient(): SdkworkAppbaseAppSdkClient | undefin
 
 function readInjectedAppbaseBackendSdkClient(): SdkworkAppbaseBackendSdkClient | undefined {
   return (globalThis as ClawRouterSdkRuntimeHost).__SDKWORK_APPBASE_BACKEND_SDK_CLIENT__ ?? undefined;
+}
+
+function readInjectedMessagingAppSdkClient(): SdkworkMessagingAppSdkClient | undefined {
+  return (globalThis as ClawRouterSdkRuntimeHost).__SDKWORK_MESSAGING_APP_SDK_CLIENT__ ?? undefined;
 }
 
 function readInjectedGenerationsAppSdkClient(): SdkworkGenerationsAppSdkClient | undefined {

@@ -193,29 +193,6 @@ pub fn router_with_provider_passthrough_and_adapter_config_for_development(
     )
 }
 
-pub fn authenticated_gateway_passthrough_router_with_adapter_config<C>(
-    config: ProviderRelayConfig,
-    catalog: Arc<C>,
-    api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
-    adapter_config: Option<ProviderAdapterConfig>,
-    usage_recorder: Option<UsageRecorder>,
-) -> Router
-where
-    C: PricingCatalog + Send + Sync + 'static,
-{
-    authenticated_gateway_passthrough_router_with_adapter_config_and_query_string_api_key_policy(
-        config,
-        catalog,
-        api_key_hasher,
-        adapter_config,
-        usage_recorder,
-        QueryStringApiKeyPolicy::default(),
-        RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
-        default_provider_passthrough_response_timeout(),
-        ProviderRelayHttpPoolConfig::default(),
-    )
-}
-
 pub(crate) fn authenticated_gateway_passthrough_router_with_adapter_config_and_query_string_api_key_policy<
     C,
 >(

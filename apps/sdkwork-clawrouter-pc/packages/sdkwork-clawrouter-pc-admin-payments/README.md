@@ -2,7 +2,7 @@
 
 Domain: commerce
 Capability: payment
-Package type: node-package
+Package type: React backend-admin package
 Status: standardizing
 
 This README is the SDKWork module entrypoint for `sdkwork-clawrouter-pc-admin-payments`. The machine-readable component contract is `specs/component.spec.json`; canonical standards are under `../../../../../sdkwork-specs/`.
@@ -13,7 +13,18 @@ This README is the SDKWork module entrypoint for `sdkwork-clawrouter-pc-admin-pa
 
 ## Required SDK Surface
 
-- None declared in `specs/component.spec.json`.
+- `@sdkwork/payment-backend-sdk` owns provider accounts, methods, channels,
+  routing rules, intents, attempts, webhook events, reconciliation, credential
+  testing, credential rotation, and sub-merchants.
+- `@sdkwork/clawrouter-backend-sdk` owns the Claw Router payment-provider
+  inventory extension.
+- `@sdkwork/payment-pc-admin-provider` supplies the canonical provider account
+  controller and UI. Credentials are write-only, are never rehydrated into the
+  browser, and are encrypted by the Payment service before persistence.
+
+Interactive Payment lists use generated SDK `page`/`pageSize` parameters and
+render server `pageInfo`; the generated transport serializes `pageSize` as the
+HTTP `page_size` query parameter.
 
 ## Configuration
 
@@ -27,13 +38,20 @@ This component follows the deployment and runtime rules referenced by its `canon
 
 Do not add secrets, live tokens, manual auth headers, or app-local credential handling to this module. Protected API and SDK access must use the generated SDK or approved service boundary declared in the component contract.
 
+Provider-account create, update, readiness-test, rotation, and sub-merchant
+commands carry generated-SDK idempotency options. Read responses expose only
+credential-presence and storage metadata, never credential values.
+
 ## Extension Points
 
 Extension points are limited to public exports, runtime entrypoints, SDK clients, events, and config keys declared in `specs/component.spec.json`.
 
 ## Verification
 
-- `node apps/scripts/validate-component-specs.mjs --apps-root apps --json`
+- `pnpm --filter @sdkwork/clawrouter-pc-admin-payments typecheck`
+- `pnpm --filter @sdkwork/payment-pc-admin-provider typecheck`
+- `node --test apps/sdkwork-clawrouter-pc/sdk-composition-standard.test.mjs`
+- `node ../sdkwork-specs/tools/check-component-port-bindings.mjs --root .`
 
 ## Owner And Status
 

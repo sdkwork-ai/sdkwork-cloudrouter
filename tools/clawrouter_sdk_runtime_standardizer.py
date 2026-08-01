@@ -423,28 +423,46 @@ EMPTY_INTERFACE_PATTERN = re.compile(
     flags=re.MULTILINE,
 )
 
-BUILD_SCRIPT = r'''#!/usr/bin/env node
+COMPOSED_INDEX = "export * from '../generated/server-openapi/src/index';\n"
+
+COMPOSED_TSCONFIG = {
+    "compilerOptions": {
+        "target": "ES2020",
+        "module": "ESNext",
+        "lib": ["ES2020", "DOM", "DOM.Iterable"],
+        "strict": True,
+        "esModuleInterop": True,
+        "skipLibCheck": True,
+        "forceConsistentCasingInFileNames": True,
+        "noEmit": True,
+        "rootDir": ".",
+        "moduleResolution": "bundler",
+        "resolveJsonModule": True,
+        "isolatedModules": True,
+    },
+    "include": ["src/**/*"],
+    "exclude": ["node_modules", "dist"],
+}
+
+COMPOSED_BUILD_SCRIPT = r'''#!/usr/bin/env node
 import fs from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
 import path from 'node:path';
-import ts from 'typescript';
-import { rollup } from 'rollup';
 
 const projectDir = process.cwd();
-const srcDir = path.join(projectDir, 'src');
 const distDir = path.join(projectDir, 'dist');
-const tempDir = path.join(projectDir, '.sdkwork', 'build-runtime');
-const tempEsmDir = path.join(tempDir, 'esm');
+const generatedRoot = path.join(projectDir, 'generated', 'server-openapi');
+const generatedBuildScript = path.join(generatedRoot, 'custom', 'build-runtime.mjs');
+const generatedDistDir = path.join(generatedRoot, 'dist');
+
 async function main() {
   await removeDirectory(distDir);
-  await removeDirectory(tempDir);
-  await fs.mkdir(distDir, { recursive: true });
-
-  emitDeclarations();
-  emitRuntimeModules();
-  await removeTypeOnlyRuntimeReExports(path.join(tempEsmDir, 'index.js'));
-  await bundleRuntime(path.join(tempEsmDir, 'index.js'), 'es', path.join(distDir, 'index.js'));
-  await bundleRuntime(path.join(tempEsmDir, 'index.js'), 'cjs', path.join(distDir, 'index.cjs'));
-  await removeDirectory(tempDir);
+  await requireFile(generatedBuildScript);
+  runGeneratedBuild();
+  await requireFile(path.join(generatedDistDir, 'index.js'));
+  await requireFile(path.join(generatedDistDir, 'index.cjs'));
+  await requireFile(path.join(generatedDistDir, 'index.d.ts'));
+  await fs.cp(generatedDistDir, distDir, { recursive: true });
 }
 
 async function removeDirectory(target) {
@@ -456,131 +474,24 @@ async function removeDirectory(target) {
   });
 }
 
-function loadConfig(overrides) {
-  const configPath = ts.findConfigFile(projectDir, ts.sys.fileExists, 'tsconfig.json');
-  if (!configPath) {
-    throw new Error(`tsconfig.json not found under ${projectDir}`);
-  }
-
-  const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
-  if (configFile.error) {
-    throw new Error(formatDiagnostics([configFile.error]));
-  }
-
-  const parsed = ts.parseJsonConfigFileContent(configFile.config, ts.sys, projectDir, overrides, configPath);
-  if (parsed.errors.length > 0) {
-    throw new Error(formatDiagnostics(parsed.errors));
-  }
-
-  return parsed;
-}
-
-function emitDeclarations() {
-  const parsed = loadConfig({
-    declaration: true,
-    declarationMap: true,
-    emitDeclarationOnly: true,
-    noEmit: false,
-    noEmitOnError: true,
-    outDir: distDir,
-    rootDir: srcDir,
-    sourceMap: false,
-  });
-  emitProgram(parsed);
-}
-
-function emitRuntimeModules() {
-  const parsed = loadConfig({
-    declaration: false,
-    declarationMap: false,
-    emitDeclarationOnly: false,
-    module: ts.ModuleKind.ESNext,
-    noEmit: false,
-    noEmitOnError: true,
-    outDir: tempEsmDir,
-    rootDir: srcDir,
-    sourceMap: false,
-  });
-  emitProgram(parsed);
-}
-
-function emitProgram(parsed) {
-  const program = ts.createProgram(parsed.fileNames, parsed.options);
-  const emitResult = program.emit();
-  const diagnostics = ts.getPreEmitDiagnostics(program).concat(emitResult.diagnostics);
-  if (diagnostics.length > 0) {
-    throw new Error(formatDiagnostics(diagnostics));
+async function requireFile(filePath) {
+  const stat = await fs.stat(filePath).catch(() => null);
+  if (!stat?.isFile()) {
+    throw new Error(`Required generated SDK build artifact is missing: ${filePath}`);
   }
 }
 
-async function removeTypeOnlyRuntimeReExports(entryFile) {
-  const source = await fs.readFile(entryFile, 'utf-8');
-  const runtimeLines = source.split(/\r?\n/u).map((line) => {
-    if (line.trim() === "export * from './types';") {
-      return "export { DEFAULT_TIMEOUT, SUCCESS_CODES } from '@sdkwork/sdk-common';";
-    }
-    return line;
+function runGeneratedBuild() {
+  const result = spawnSync(process.execPath, [generatedBuildScript], {
+    cwd: generatedRoot,
+    stdio: 'inherit',
   });
-  await fs.writeFile(entryFile, runtimeLines.join('\n'), 'utf-8');
-}
-
-async function bundleRuntime(input, format, file) {
-  const bundle = await rollup({
-    input,
-    external: (source) => source.startsWith('@sdkwork/') || source.startsWith('#clawrouter-'),
-    plugins: [relativeExtensionResolver()],
-    onwarn(warning, warn) {
-      if (warning.code === 'EMPTY_BUNDLE') {
-        throw new Error(warning.message);
-      }
-      warn(warning);
-    },
-  });
-
-  try {
-    await bundle.write({
-      file,
-      format,
-      exports: 'named',
-      interop: 'auto',
-      sourcemap: false,
-    });
-  } finally {
-    await bundle.close();
+  if (result.error) {
+    throw result.error;
   }
-}
-
-function relativeExtensionResolver() {
-  return {
-    name: 'relative-extension-resolver',
-    async resolveId(source, importer) {
-      if (!importer || !source.startsWith('.')) {
-        return null;
-      }
-
-      const base = path.resolve(path.dirname(importer), source);
-      for (const candidate of [base, `${base}.js`, path.join(base, 'index.js')]) {
-        try {
-          const stat = await fs.stat(candidate);
-          if (stat.isFile()) {
-            return candidate;
-          }
-        } catch {
-          // Try the next candidate.
-        }
-      }
-
-      return null;
-    },
-  };
-}
-
-function formatDiagnostics(diagnostics) {
-  return ts.formatDiagnosticsWithColorAndContext(diagnostics, {
-    getCanonicalFileName: (fileName) => fileName,
-    getCurrentDirectory: () => projectDir,
-    getNewLine: () => '\n',
-  });
+  if ((result.status ?? 1) !== 0) {
+    throw new Error(`Generated SDK build failed with exit code ${result.status ?? 1}`);
+  }
 }
 
 main().catch((error) => {
@@ -1205,6 +1116,7 @@ class SdkRuntimeStandardizer:
                 "manualTransports": [],
             },
             **({"sdkDependencies": SDK_DEPENDENCIES[sdk_family]} if sdk_family in SDK_DEPENDENCIES else {}),
+            "dependencyApiExports": [],
             "languages": languages,
         }
 
@@ -1221,6 +1133,26 @@ class SdkRuntimeStandardizer:
             component_spec["contracts"] = contracts
         if sdk_family in SDK_DEPENDENCIES:
             contracts["sdkDependencies"] = SDK_DEPENDENCIES[sdk_family]
+        contracts["dependencyApiExports"] = []
+        public_exports = contracts.get("publicExports")
+        if isinstance(public_exports, list):
+            contracts["publicExports"] = [
+                item for item in public_exports if item != f"{SDK_PACKAGE_NAMES[sdk_family]}/domains"
+            ]
+        sdk_clients = contracts.get("sdkClients")
+        if isinstance(sdk_clients, list):
+            contracts["sdkClients"] = [
+                item for item in sdk_clients if item != "SdkworkClawrouterAppDomainsClient"
+            ]
+        verification = component_spec.get("verification")
+        if isinstance(verification, dict):
+            commands = verification.get("commands")
+            if isinstance(commands, list):
+                verification["commands"] = [
+                    item
+                    for item in commands
+                    if item != "node --test sdks/test/verify-clawrouter-domains-facade.test.mjs"
+                ]
         if self._read_json_or_none(component_spec_path) == component_spec:
             return []
         self._write_json(component_spec_path, component_spec)
@@ -1628,17 +1560,7 @@ class SdkRuntimeStandardizer:
         if not generated_paths:
             return updated
 
-        generated_paths.update(
-            {
-                "CHANGELOG.md",
-                "LICENSE",
-                "README.md",
-                "tsconfig.json",
-            }
-        )
-        for relative_path in sorted(generated_paths):
-            if not self._is_typescript_package_sync_path(relative_path):
-                continue
+        for relative_path in ("CHANGELOG.md", "LICENSE", "README.md"):
             source = generated_root / relative_path
             target = package_root / relative_path
             if not source.is_file():
@@ -1648,20 +1570,43 @@ class SdkRuntimeStandardizer:
                 shutil.copyfile(source, target)
                 updated.append(target)
 
+        source_root = package_root / "src"
+        source_entries = sorted(
+            path.relative_to(source_root).as_posix()
+            for path in source_root.rglob("*")
+        ) if source_root.is_dir() else []
+        index_path = source_root / "index.ts"
+        facade_is_current = (
+            source_entries == ["index.ts"]
+            and index_path.is_file()
+            and index_path.read_text(encoding="utf-8") == COMPOSED_INDEX
+        )
+        if source_root.exists() and not facade_is_current:
+            shutil.rmtree(source_root)
+            updated.append(source_root)
+        if not facade_is_current:
+            source_root.mkdir(parents=True, exist_ok=True)
+            index_path.write_text(COMPOSED_INDEX, encoding="utf-8", newline="\n")
+            updated.append(index_path)
+
+        tsconfig_path = package_root / "tsconfig.json"
+        if self._read_json_or_none(tsconfig_path) != COMPOSED_TSCONFIG:
+            self._write_json(tsconfig_path, COMPOSED_TSCONFIG)
+            updated.append(tsconfig_path)
+
+        control_root = package_root / ".sdkwork"
         for control_file in (
             "sdkwork-generator-changes.json",
             "sdkwork-generator-manifest.json",
             "sdkwork-generator-report.json",
         ):
-            source_control = generated_root / ".sdkwork" / control_file
-            target_control = package_root / ".sdkwork" / control_file
-            if source_control.is_file():
-                target_control.parent.mkdir(parents=True, exist_ok=True)
-                if not target_control.is_file() or target_control.read_bytes() != source_control.read_bytes():
-                    shutil.copyfile(source_control, target_control)
-                    updated.append(target_control)
-
-        updated.extend(self._remove_stale_typescript_package_generated_artifacts(package_root, generated_paths))
+            target_control = control_root / control_file
+            if target_control.is_file():
+                target_control.unlink()
+                updated.append(target_control)
+        if control_root.is_dir() and not any(control_root.iterdir()):
+            control_root.rmdir()
+            updated.append(control_root)
         return updated
 
     def _manifest_generated_paths(self, manifest: dict[str, Any] | None) -> set[str]:
@@ -1682,53 +1627,13 @@ class SdkRuntimeStandardizer:
                 paths.add(normalized)
         return paths
 
-    def _is_typescript_package_sync_path(self, relative_path: str) -> bool:
-        if relative_path.startswith("src/"):
-            return relative_path.endswith(".ts")
-        if relative_path.startswith("bin/"):
-            return Path(relative_path).suffix in {".mjs", ".ps1", ".sh", ".bat"}
-        if relative_path.startswith("custom/"):
-            return relative_path in {"custom/build-runtime.mjs", "custom/README.md"}
-        return relative_path in {
-            "CHANGELOG.md",
-            "LICENSE",
-            "README.md",
-            "tsconfig.json",
-        }
-
-    def _remove_stale_typescript_package_generated_artifacts(
-        self,
-        package_root: Path,
-        generated_paths: set[str],
-    ) -> list[Path]:
-        updated: list[Path] = []
-        for directory in (package_root / "src" / "api", package_root / "src" / "types"):
-            if not directory.is_dir():
-                continue
-            for source_path in sorted(directory.glob("*.ts")):
-                relative_path = source_path.relative_to(package_root).as_posix()
-                if relative_path in generated_paths:
-                    continue
-                source_path.unlink()
-                updated.append(source_path)
-                stem = source_path.stem
-                dist_relative_dir = directory.relative_to(package_root)
-                for stale_path in (
-                    package_root / "dist" / dist_relative_dir / f"{stem}.js",
-                    package_root / "dist" / dist_relative_dir / f"{stem}.cjs",
-                    package_root / "dist" / dist_relative_dir / f"{stem}.d.ts",
-                    package_root / "dist" / dist_relative_dir / f"{stem}.d.ts.map",
-                ):
-                    if stale_path.exists():
-                        stale_path.unlink()
-                        updated.append(stale_path)
-        return updated
-
     def _render_build_script(self, sdk_family: str) -> str:
-        return BUILD_SCRIPT
+        return COMPOSED_BUILD_SCRIPT
 
     def _standardize_sdk(self, sdk_family: str, base: Path) -> list[Path]:
         updated: list[Path] = []
+        generated_transport_base = base / "generated" / "server-openapi"
+        transport_base = generated_transport_base if generated_transport_base.is_dir() else base
         for retired_domains_root in (
             base / "generated" / "domains",
             base / "src" / "domains",
@@ -1777,6 +1682,7 @@ class SdkRuntimeStandardizer:
         package.pop("private", None)
         scripts["build"] = "node custom/build-runtime.mjs"
         scripts["dev"] = "node custom/build-runtime.mjs"
+        scripts["typecheck"] = "tsc --noEmit --project tsconfig.json"
         scripts["prepublishOnly"] = "npm run build"
 
         dev_dependencies = package.setdefault("devDependencies", {})
@@ -1789,11 +1695,7 @@ class SdkRuntimeStandardizer:
         dev_dependencies["typescript"] = SDK_TYPESCRIPT_VERSION
         dev_dependencies["rollup"] = SDK_ROLLUP_VERSION
 
-        dependencies = package.setdefault("dependencies", {})
-        if not isinstance(dependencies, dict):
-            dependencies = {}
-            package["dependencies"] = dependencies
-        dependencies["@sdkwork/sdk-common"] = SDK_COMMON_VERSION
+        package["dependencies"] = {"@sdkwork/sdk-common": SDK_COMMON_VERSION}
 
         if self._read_json_or_none(package_path) != package:
             self._write_json(package_path, package)
@@ -1827,22 +1729,11 @@ class SdkRuntimeStandardizer:
             self._write_json(metadata_path, metadata)
             updated.append(metadata_path)
 
-        manifest_path = base / ".sdkwork" / "sdkwork-generator-manifest.json"
-        manifest_path.parent.mkdir(parents=True, exist_ok=True)
-        generator_manifest = self._read_json_or_none(manifest_path)
-        if not self._is_sdk_generator_manifest(generator_manifest):
-            manifest = {
-                "generator": "../sdkwork-sdk-generator",
-                "language": "typescript",
-                "sdkType": SDK_TYPES[sdk_family],
-                "packageName": package.get("name"),
-                "version": package.get("version"),
-            }
-            if generator_manifest != manifest:
-                self._write_json(manifest_path, manifest)
-                updated.append(manifest_path)
+        generator_manifest = self._read_json_or_none(
+            transport_base / ".sdkwork" / "sdkwork-generator-manifest.json"
+        )
 
-        http_client_path = base / "src" / "http" / "client.ts"
+        http_client_path = transport_base / "src" / "http" / "client.ts"
         if http_client_path.is_file():
             source = http_client_path.read_text(encoding="utf-8")
             normalized = self._standardize_http_client_content_type(source)
@@ -1852,11 +1743,11 @@ class SdkRuntimeStandardizer:
                 http_client_path.write_text(normalized, encoding="utf-8", newline="\n")
                 updated.append(http_client_path)
 
-        types_dir = base / "src" / "types"
+        types_dir = transport_base / "src" / "types"
         if types_dir.is_dir():
             generated_type_stems = self._manifest_generated_type_stems(generator_manifest)
             if generated_type_stems is not None:
-                updated.extend(self._remove_unmanifested_type_artifacts(base, generated_type_stems))
+                updated.extend(self._remove_unmanifested_type_artifacts(transport_base, generated_type_stems))
             updated.extend(self._ensure_project_required_type_modules(types_dir))
             for type_path in sorted(types_dir.glob("*.ts")):
                 source = type_path.read_text(encoding="utf-8")
@@ -1878,14 +1769,14 @@ class SdkRuntimeStandardizer:
                     updated.append(type_index_path)
 
         if sdk_family == "clawrouter-backend-sdk":
-            skill_api_path = base / "src" / "api" / "skill.ts"
+            skill_api_path = transport_base / "src" / "api" / "skill.ts"
             if skill_api_path.is_file():
                 source = skill_api_path.read_text(encoding="utf-8")
                 normalized = self._standardize_backend_skill_api_method_names(source)
                 if normalized != source:
                     skill_api_path.write_text(normalized, encoding="utf-8", newline="\n")
                     updated.append(skill_api_path)
-            app_api_path = base / "src" / "api" / "app.ts"
+            app_api_path = transport_base / "src" / "api" / "app.ts"
             if app_api_path.is_file():
                 source = app_api_path.read_text(encoding="utf-8")
                 normalized = self._standardize_backend_app_api_method_names(source)
@@ -1893,7 +1784,7 @@ class SdkRuntimeStandardizer:
                     app_api_path.write_text(normalized, encoding="utf-8", newline="\n")
                     updated.append(app_api_path)
 
-        api_dir = base / "src" / "api"
+        api_dir = transport_base / "src" / "api"
         if api_dir.is_dir():
             api_index_path = api_dir / "index.ts"
             if api_index_path.is_file():
@@ -1912,7 +1803,7 @@ class SdkRuntimeStandardizer:
                     updated.append(api_path)
 
         if sdk_family == "clawrouter-app-sdk":
-            content_api_path = base / "src" / "api" / "content.ts"
+            content_api_path = transport_base / "src" / "api" / "content.ts"
             if content_api_path.is_file():
                 source = content_api_path.read_text(encoding="utf-8")
                 normalized = self._standardize_app_content_multipart_request_bodies(base, sdk_family, source)
@@ -1920,7 +1811,7 @@ class SdkRuntimeStandardizer:
                     content_api_path.write_text(normalized, encoding="utf-8", newline="\n")
                     updated.append(content_api_path)
 
-        publish_core_path = base / "bin" / "publish-core.mjs"
+        publish_core_path = transport_base / "bin" / "publish-core.mjs"
         if publish_core_path.is_file():
             source = publish_core_path.read_text(encoding="utf-8")
             normalized = self._standardize_publish_core_install_command(source)
@@ -1928,8 +1819,8 @@ class SdkRuntimeStandardizer:
                 publish_core_path.write_text(normalized, encoding="utf-8", newline="\n")
                 updated.append(publish_core_path)
 
-        updated.extend(self._remove_unexported_api_artifacts(base))
-        updated.extend(self._remove_trailing_whitespace(base, sdk_family))
+        updated.extend(self._remove_unexported_api_artifacts(transport_base))
+        updated.extend(self._remove_trailing_whitespace(transport_base, sdk_family))
 
         return updated
 

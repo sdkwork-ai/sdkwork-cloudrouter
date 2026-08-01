@@ -20,6 +20,10 @@ export const ADMIN_ROUTE_PERMISSION_HINTS: readonly AdminRoutePermissionHint[] =
   { pathPrefix: '/admin/cache', requiredPermission: 'clawrouter.system.read' },
   { pathPrefix: '/admin/runtime-region', requiredPermission: 'clawrouter.system.read' },
   { pathPrefix: '/admin/site', requiredPermission: 'clawrouter.admin.access' },
+  { pathPrefix: '/admin/memberships', requiredPermission: 'clawrouter.admin.access' },
+  { pathPrefix: '/admin/marketing', requiredPermission: 'clawrouter.admin.access' },
+  { pathPrefix: '/admin/payments', requiredPermission: 'clawrouter.admin.access' },
+  { pathPrefix: '/admin/storage', requiredPermission: 'clawrouter.admin.access' },
   { pathPrefix: '/admin/relay', requiredPermission: 'clawrouter.gateway.read' },
 ];
 

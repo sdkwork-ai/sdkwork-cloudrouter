@@ -5,6 +5,7 @@ from pathlib import Path
 
 from tools.clawrouter_sdk_guardian import ClawRouterSdkGuardian
 from tools.clawrouter_sdk_runtime_standardizer import (
+    COMPOSED_INDEX,
     sdk_derived_specs,
     sdk_generation_input_path_symbol,
     sdk_generation_input_spec,
@@ -26,6 +27,7 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
         package_dir = f"{sdk_dir}-typescript"
         family = root / "sdks" / sdk_dir
         base = family / package_dir
+        transport = base / "generated" / "server-openapi"
         (family / "openapi").mkdir(parents=True, exist_ok=True)
         (family / "bin").mkdir(parents=True, exist_ok=True)
         (family / "tests").mkdir(parents=True, exist_ok=True)
@@ -103,16 +105,17 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
             encoding="utf-8",
         )
         (family / "bin" / "verify-sdk.mjs").write_text("console.log('verify');\n", encoding="utf-8")
-        (base / "src" / "api").mkdir(parents=True, exist_ok=True)
-        (base / "src" / "types").mkdir(parents=True, exist_ok=True)
         (base / "src").mkdir(parents=True, exist_ok=True)
-        (base / ".sdkwork").mkdir(parents=True, exist_ok=True)
         (base / "custom").mkdir(parents=True, exist_ok=True)
+        (transport / "src" / "api").mkdir(parents=True, exist_ok=True)
+        (transport / "src" / "types").mkdir(parents=True, exist_ok=True)
+        (transport / ".sdkwork").mkdir(parents=True, exist_ok=True)
         (base / "package.json").write_text(
             json.dumps(
                 {
                     "name": package_name,
                     "version": "0.1.0",
+                    "sdkworkRole": "composed-facade",
                     "main": "./dist/index.cjs",
                     "module": "./dist/index.js",
                     "types": "./dist/index.d.ts",
@@ -145,7 +148,12 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
         (base / "README.md").write_text(f"# {package_name}\n", encoding="utf-8")
         (base / "custom" / "README.md").write_text("custom code lives here\n", encoding="utf-8")
         (base / "custom" / "build-runtime.mjs").write_text("console.log('build');\n", encoding="utf-8")
-        (base / ".sdkwork" / "sdkwork-generator-manifest.json").write_text("{}\n", encoding="utf-8")
+        (base / "src" / "index.ts").write_text(COMPOSED_INDEX, encoding="utf-8")
+        (transport / "package.json").write_text(
+            json.dumps({"name": f"{sdk_dir}-generated-typescript", "sdkworkRole": "transport"}) + "\n",
+            encoding="utf-8",
+        )
+        (transport / ".sdkwork" / "sdkwork-generator-manifest.json").write_text("{}\n", encoding="utf-8")
         sdk_source = f"export class {client_name} {{}}\n"
         if sdk_dir == "clawrouter-backend-sdk":
             sdk_source = (
@@ -156,13 +164,13 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
                 "  constructor() { this.ecosystem = createEcosystemApi(this.httpClient); }\n"
                 "}\n"
             )
-        (base / "src" / "sdk.ts").write_text(sdk_source, encoding="utf-8")
+        (transport / "src" / "sdk.ts").write_text(sdk_source, encoding="utf-8")
         if sdk_dir == "clawrouter-backend-sdk":
-            (base / "src" / "api" / "index.ts").write_text(
+            (transport / "src" / "api" / "index.ts").write_text(
                 "export { EcosystemApi } from './ecosystem';\n",
                 encoding="utf-8",
             )
-            (base / "src" / "api" / "ecosystem.ts").write_text(
+            (transport / "src" / "api" / "ecosystem.ts").write_text(
                 "export class EcosystemSkillsReviewApi { async approve() {} async reject() {} }\n"
                 "export class EcosystemSkillsPackageApi { async create() {} async list() {} async delete() {} async retrieve() {} async update() {} async disable() {} async enable() {} }\n"
                 "export class EcosystemSkillsCategoriesApi { async list() {} async create() {} }\n"
@@ -181,22 +189,22 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
                 encoding="utf-8",
             )
         else:
-            (base / "src" / "api" / "index.ts").write_text("export {};\n", encoding="utf-8")
-        (base / "src" / "api" / "paths.ts").write_text(api_prefix + "\n", encoding="utf-8")
+            (transport / "src" / "api" / "index.ts").write_text("export {};\n", encoding="utf-8")
+        (transport / "src" / "api" / "paths.ts").write_text(api_prefix + "\n", encoding="utf-8")
         type_exports: list[str] = []
-        (base / "src" / "types" / "common.ts").write_text(
+        (transport / "src" / "types" / "common.ts").write_text(
             "export type { Page, RequestConfig, RequestOptions, QueryParams } from '@sdkwork/sdk-common';\n",
             encoding="utf-8",
         )
         if sdk_dir == "clawrouter-app-sdk":
-            (base / "src" / "types" / "app-model-catalog-price-availability.ts").write_text(
+            (transport / "src" / "types" / "app-model-catalog-price-availability.ts").write_text(
                 "export interface AppModelCatalogPriceAvailability {\n"
                 "  reason?: string | null;\n"
                 "  status: 'reference' | 'unavailable';\n"
                 "}\n",
                 encoding="utf-8",
             )
-            (base / "src" / "types" / "app-model-catalog-item.ts").write_text(
+            (transport / "src" / "types" / "app-model-catalog-item.ts").write_text(
                 "import type { AppModelCatalogPriceAvailability } from './app-model-catalog-price-availability';\n\n"
                 "export interface AppModelCatalogItem {\n"
                 "  capabilities: string[];\n"
@@ -216,7 +224,7 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
                     "export type { AppModelCatalogPriceAvailability } from './app-model-catalog-price-availability';",
                 ]
             )
-        (base / "src" / "types" / "index.ts").write_text(
+        (transport / "src" / "types" / "index.ts").write_text(
             "\n".join(type_exports) + "\n" if type_exports else "export {};\n",
             encoding="utf-8",
         )
@@ -905,6 +913,49 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
                 result.messages,
             )
 
+    def test_reports_generated_transport_copied_into_composed_facade(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_sdk(
+                root,
+                "clawrouter-app-sdk",
+                "@sdkwork/clawrouter-app-sdk",
+                "app",
+                "SdkworkAppClient",
+                "/app/v3/api",
+            )
+            self.write_sdk(
+                root,
+                "clawrouter-backend-sdk",
+                "@sdkwork/clawrouter-backend-sdk",
+                "backend",
+                "SdkworkBackendClient",
+                "/backend/v3/api",
+            )
+            app_root = root / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript"
+            (app_root / "src" / "sdk.ts").write_text(
+                "export class SdkworkAppClient {}\n",
+                encoding="utf-8",
+            )
+            (app_root / ".sdkwork").mkdir(parents=True, exist_ok=True)
+            (app_root / ".sdkwork" / "sdkwork-generator-manifest.json").write_text(
+                "{}\n",
+                encoding="utf-8",
+            )
+            self.write_portal_sdk_boundary(root)
+
+            result = ClawRouterSdkGuardian(root=root).run()
+
+            self.assertFalse(result.ok)
+            self.assertIn(
+                "clawrouter-app-sdk-typescript composed src must contain only index.ts; generated transport belongs under generated/server-openapi",
+                result.messages,
+            )
+            self.assertIn(
+                "clawrouter-app-sdk-typescript composed root must not copy generated control-plane file .sdkwork/sdkwork-generator-manifest.json",
+                result.messages,
+            )
+
     def test_reports_unexported_generated_api_artifact(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -917,7 +968,14 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
                 "SdkworkBackendClient",
                 "/backend/v3/api",
             )
-            app = root / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript"
+            app = (
+                root
+                / "sdks"
+                / "clawrouter-app-sdk"
+                / "clawrouter-app-sdk-typescript"
+                / "generated"
+                / "server-openapi"
+            )
             (app / "src" / "api" / "index.ts").write_text(
                 "export { CouponsApi } from './coupons';\n",
                 encoding="utf-8",
@@ -949,7 +1007,14 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
                 "/backend/v3/api",
             )
             backend_types = (
-                root / "sdks" / "clawrouter-backend-sdk" / "clawrouter-backend-sdk-typescript" / "src" / "types"
+                root
+                / "sdks"
+                / "clawrouter-backend-sdk"
+                / "clawrouter-backend-sdk-typescript"
+                / "generated"
+                / "server-openapi"
+                / "src"
+                / "types"
             )
             (backend_types / "index.ts").write_text(
                 "export type { AdminSkillListResponse } from './admin-skill-list-response';\n",
@@ -985,7 +1050,16 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
                 "SdkworkBackendClient",
                 "/backend/v3/api",
             )
-            app_types = root / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "types"
+            app_types = (
+                root
+                / "sdks"
+                / "clawrouter-app-sdk"
+                / "clawrouter-app-sdk-typescript"
+                / "generated"
+                / "server-openapi"
+                / "src"
+                / "types"
+            )
             (app_types / "common.ts").write_text(
                 "export type { Page, PageResult, RequestConfig, RequestOptions, QueryParams } from '@sdkwork/sdk-common';\n",
                 encoding="utf-8",
@@ -1042,7 +1116,16 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
                 "SdkworkBackendClient",
                 "/backend/v3/api",
             )
-            app_types = root / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "types"
+            app_types = (
+                root
+                / "sdks"
+                / "clawrouter-app-sdk"
+                / "clawrouter-app-sdk-typescript"
+                / "generated"
+                / "server-openapi"
+                / "src"
+                / "types"
+            )
             (app_types / "index.ts").write_text(
                 "export type { NoData } from './no-data';\n",
                 encoding="utf-8",
@@ -1126,7 +1209,16 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
                 "SdkworkBackendClient",
                 "/backend/v3/api",
             )
-            app_types = root / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "types"
+            app_types = (
+                root
+                / "sdks"
+                / "clawrouter-app-sdk"
+                / "clawrouter-app-sdk-typescript"
+                / "generated"
+                / "server-openapi"
+                / "src"
+                / "types"
+            )
             (app_types / "app-model-catalog-item.ts").write_text(
                 "import type { AppModelCatalogPriceAvailability } from './app-model-catalog-price-availability';\n\n"
                 "export interface AppModelCatalogItem {\n"
@@ -1192,6 +1284,8 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
                 / "sdks"
                 / "clawrouter-app-sdk"
                 / "clawrouter-app-sdk-typescript"
+                / "generated"
+                / "server-openapi"
                 / "src"
                 / "api"
                 / "ai.ts"
@@ -1222,6 +1316,8 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
                 / "sdks"
                 / "clawrouter-app-sdk"
                 / "clawrouter-app-sdk-typescript"
+                / "generated"
+                / "server-openapi"
                 / "src"
                 / "api"
                 / "index.ts"
@@ -1265,6 +1361,8 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
                 / "sdks"
                 / "clawrouter-app-sdk"
                 / "clawrouter-app-sdk-typescript"
+                / "generated"
+                / "server-openapi"
                 / "src"
                 / "api"
                 / "ai.ts"
@@ -1287,6 +1385,8 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
                 / "sdks"
                 / "clawrouter-app-sdk"
                 / "clawrouter-app-sdk-typescript"
+                / "generated"
+                / "server-openapi"
                 / "src"
                 / "api"
                 / "index.ts"
@@ -1314,6 +1414,8 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
                 / "sdks"
                 / "clawrouter-backend-sdk"
                 / "clawrouter-backend-sdk-typescript"
+                / "generated"
+                / "server-openapi"
                 / "src"
                 / "api"
                 / "ecosystem.ts"

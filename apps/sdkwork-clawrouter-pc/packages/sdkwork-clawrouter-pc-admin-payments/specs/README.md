@@ -9,11 +9,11 @@ Root SDKWork standards remain authoritative. Local component specs can narrow or
 | Field | Value |
 | --- | --- |
 | Name | `sdkwork-clawrouter-pc-admin-payments` |
-| Type | `node-package` |
-| Root | `sdkwork-claw-router/apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments` |
-| Domain | `commerce` |
+| Type | `react-package` |
+| Root | `sdkwork-clawrouter/apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments` |
+| Domain | `payment` |
 | Capability | `payment` |
-| Languages | `javascript` |
+| Languages | `javascript`, `typescript` |
 | Status | `standardizing` |
 
 ## Contract Manifest
@@ -47,7 +47,12 @@ Root SDKWork standards remain authoritative. Local component specs can narrow or
 
 ## SDK Clients
 
-- No generated SDK client class is declared at this component boundary.
+- `@sdkwork/payment-backend-sdk` through the injected Payment backend service.
+- `@sdkwork/clawrouter-backend-sdk` for Claw Router-owned payment extensions.
+
+The provider-account surface composes the public
+`@sdkwork/payment-pc-admin-provider` package. It does not copy Payment DTOs,
+credential forms, transports, or generated SDK code into Claw Router.
 
 ## Local Extension Specs
 
@@ -55,4 +60,4 @@ Root SDKWork standards remain authoritative. Local component specs can narrow or
 
 ## Verification
 
-- `node apps/scripts/validate-component-specs.mjs --apps-root apps --json`
+- `node ../sdkwork-specs/tools/check-component-port-bindings.mjs --root .`

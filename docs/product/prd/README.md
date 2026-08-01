@@ -13,3 +13,8 @@ This directory owns the product Canon for the repository.
 - Do not create competing product roots such as `docs/product/PRD.md`; that path is retired and redirect-only.
 
 See `DOCUMENTATION_SPEC.md` section 2.2.
+
+## Superseded Stable Paths
+
+- [PRD-01-prd-sdkwork-clawrouter.md](PRD-01-prd-sdkwork-clawrouter.md) is a
+  redirect stub retained for existing links. It is not an active PRD shard.

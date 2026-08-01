@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from tools.clawrouter_sdk_runtime_standardizer import (
+    COMPOSED_INDEX,
     SDK_GENERATED_OPENAPI_PATHS,
     SdkRuntimeStandardizer,
     sdk_derived_specs,
@@ -162,6 +163,7 @@ class ClawRouterSdkGuardian:
         messages: list[str] = []
         family = self.sdk_root / expected.family_directory
         base = family / expected.typescript_directory
+        transport_base = base / "generated" / "server-openapi"
         messages.extend(self._check_sdk_family(expected, family))
         if not base.exists():
             return [*messages, f"generated TypeScript SDK is missing: {base}"]
@@ -172,6 +174,10 @@ class ClawRouterSdkGuardian:
         if package is not None and package.get("name") != expected.package_name:
             messages.append(f"{expected.typescript_directory} package.json name must be {expected.package_name}")
         if package is not None:
+            if package.get("sdkworkRole") != "composed-facade":
+                messages.append(
+                    f"{expected.typescript_directory} package.json sdkworkRole must be composed-facade"
+                )
             self._check_package_entry_files(expected.typescript_directory, base, package, messages)
             self._check_package_build_standard(expected.typescript_directory, base, package, messages)
 
@@ -184,26 +190,68 @@ class ClawRouterSdkGuardian:
 
         self._require_file(base / "README.md", messages)
         self._require_file(base / "custom" / "README.md", messages)
-        self._require_file(base / ".sdkwork" / "sdkwork-generator-manifest.json", messages)
+        self._check_composed_facade(expected.typescript_directory, base, messages)
         messages.extend(self._check_family_openapi_sync(expected, family))
 
-        sdk_source = self._read_text(base / "src" / "sdk.ts", messages)
+        if not transport_base.is_dir():
+            messages.append(
+                f"{expected.typescript_directory} generated transport is missing: generated/server-openapi"
+            )
+            return messages
+
+        transport_package = self._read_json(transport_base / "package.json", messages)
+        if transport_package is not None and transport_package.get("sdkworkRole") != "transport":
+            messages.append(
+                f"{expected.typescript_directory} generated/server-openapi package.json sdkworkRole must be transport"
+            )
+        self._require_file(
+            transport_base / ".sdkwork" / "sdkwork-generator-manifest.json",
+            messages,
+        )
+
+        sdk_source = self._read_text(transport_base / "src" / "sdk.ts", messages)
         if sdk_source is not None and expected.client_name not in sdk_source:
             messages.append(f"{expected.typescript_directory} src/sdk.ts must export {expected.client_name}")
 
-        self._require_file(base / "src" / "api" / "paths.ts", messages)
+        self._require_file(transport_base / "src" / "api" / "paths.ts", messages)
 
-        self._check_unexported_api_artifacts(expected.typescript_directory, base, messages)
-        self._check_type_index_exports(expected.typescript_directory, base, messages)
-        self._check_strict_public_types(expected.typescript_directory, base, messages)
+        self._check_unexported_api_artifacts(expected.typescript_directory, transport_base, messages)
+        self._check_type_index_exports(expected.typescript_directory, transport_base, messages)
+        self._check_strict_public_types(expected.typescript_directory, transport_base, messages)
         if expected.sdk_type in {"app", "backend"}:
-            self._check_standard_query_parameters(expected.typescript_directory, base, messages)
+            self._check_standard_query_parameters(expected.typescript_directory, transport_base, messages)
 
         if expected.sdk_type == "app":
-            self._check_public_app_model_catalog_types(expected.typescript_directory, base, messages)
+            self._check_public_app_model_catalog_types(expected.typescript_directory, transport_base, messages)
         if expected.sdk_type == "backend":
-            self._check_backend_ecosystem_skill_resource_tree(expected.typescript_directory, base, messages)
+            self._check_backend_ecosystem_skill_resource_tree(expected.typescript_directory, transport_base, messages)
         return messages
+
+    def _check_composed_facade(self, sdk_dir: str, base: Path, messages: list[str]) -> None:
+        source_root = base / "src"
+        source_files = (
+            sorted(path.relative_to(source_root).as_posix() for path in source_root.rglob("*") if path.is_file())
+            if source_root.is_dir()
+            else []
+        )
+        if source_files != ["index.ts"]:
+            messages.append(
+                f"{sdk_dir} composed src must contain only index.ts; generated transport belongs under generated/server-openapi"
+            )
+        index_source = self._read_text(source_root / "index.ts", messages)
+        if index_source is not None and index_source != COMPOSED_INDEX:
+            messages.append(
+                f"{sdk_dir} src/index.ts must be a thin re-export of generated/server-openapi/src/index"
+            )
+        for control_file in (
+            "sdkwork-generator-changes.json",
+            "sdkwork-generator-manifest.json",
+            "sdkwork-generator-report.json",
+        ):
+            if (base / ".sdkwork" / control_file).is_file():
+                messages.append(
+                    f"{sdk_dir} composed root must not copy generated control-plane file .sdkwork/{control_file}"
+                )
 
     def _check_family_openapi_sync(self, expected: ExpectedSdk, family: Path) -> list[str]:
         source_relative = SDK_GENERATED_OPENAPI_PATHS.get(expected.family_directory)

@@ -231,6 +231,20 @@
         }
       },
       {
+        "sdkFamily": "sdkwork-messaging-app-sdk",
+        "packageName": "@sdkwork/messaging-app-sdk",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "providedBy": "sdkwork-clawroutes-pc-commons/runtime",
+        "dependencyApiSurface": "sdkwork-messaging-app-sdk",
+        "runtimeIntegration": {
+          "mode": "external-service",
+          "sameOriginAllowed": false,
+          "requiredBaseUrlEnv": "VITE_SDKWORK_MESSAGING_APP_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL"
+        }
+      },
+      {
         "sdkFamily": "clawrouter-app-sdk",
         "packageName": "@sdkwork/clawrouter-pc-core",
         "surface": "app-api",

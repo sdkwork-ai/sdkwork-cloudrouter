@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pencil, Plus } from 'lucide-react';
+import { BottomPagination } from '@sdkwork/clawroutes-pc-commons';
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
 import { MembershipDrawer } from '../components/MembershipDrawer';
 import { MembershipEmptyState } from '../components/MembershipEmptyState';
@@ -8,6 +9,8 @@ import {
   MembershipIconActionButton,
   MembershipTableActions,
   MembershipTablePanel,
+  hasNextMembershipPage,
+  membershipPageLabel,
 } from '../components/MembershipPageControls';
 import { MembershipStatusBadge } from '../components/MembershipStatusBadge';
 import { MembershipPlanDrawerForm } from '../forms/MembershipPlanDrawerForm';
@@ -17,6 +20,7 @@ import {
   updateMembershipAdminPlan,
   type MembershipsAdminPlanItem,
   type MembershipsAdminPlanMutationInput,
+  type MembershipsAdminPageInfo,
 } from '../membershipsService';
 
 export function MembershipPlansPage() {
@@ -26,22 +30,45 @@ export function MembershipPlansPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [pageInfo, setPageInfo] = useState<MembershipsAdminPageInfo | null>(null);
+  const requestIdRef = useRef(0);
 
-  const loadPlans = useCallback(async () => {
+  const loadPlans = useCallback(async (
+    requestedPage: number,
+    requestedPageSize: number,
+  ) => {
+    const requestId = ++requestIdRef.current;
     setIsLoading(true);
     setError(null);
     try {
-      setPlans(await fetchMembershipAdminPlans());
+      const result = await fetchMembershipAdminPlans({
+        page: requestedPage,
+        pageSize: requestedPageSize,
+      });
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
+      setPlans(result.items);
+      setPageInfo(result.pageInfo);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : t('admin.commerce.memberships.plans.error', 'Membership levels could not be loaded'));
+      if (requestId === requestIdRef.current) {
+        setError(loadError instanceof Error ? loadError.message : t('admin.commerce.memberships.plans.error', 'Membership levels could not be loaded'));
+      }
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [t]);
 
   useEffect(() => {
-    void loadPlans();
-  }, [loadPlans]);
+    void loadPlans(page, pageSize);
+    return () => {
+      requestIdRef.current += 1;
+    };
+  }, [loadPlans, page, pageSize]);
 
   const openCreateDrawer = () => {
     setEditingPlan(null);
@@ -61,7 +88,7 @@ export function MembershipPlansPage() {
     }
     setIsDrawerOpen(false);
     setEditingPlan(null);
-    await loadPlans();
+    await loadPlans(page, pageSize);
   };
 
   return (
@@ -69,7 +96,7 @@ export function MembershipPlansPage() {
       <MembershipAdminPageShell
         isLoading={isLoading}
         error={error}
-        onRefresh={loadPlans}
+        onRefresh={() => loadPlans(page, pageSize)}
         actions={(
           <button type="button" onClick={openCreateDrawer} className="inline-flex items-center gap-1 rounded-md bg-lobster-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-lobster-700">
             <Plus className="h-3.5 w-3.5" />
@@ -77,7 +104,29 @@ export function MembershipPlansPage() {
           </button>
         )}
       >
-        <MembershipTablePanel>
+        <MembershipTablePanel
+          footer={(
+            <BottomPagination
+              disabled={isLoading}
+              hasNextPage={hasNextMembershipPage(pageInfo, page, plans.length, pageSize)}
+              itemCount={plans.length}
+              nextLabel={t('common.pagination.next', 'Next page')}
+              onNextPage={() => setPage((current) => current + 1)}
+              onPageSizeChange={(nextPageSize) => {
+                setPage(1);
+                setPageSize(nextPageSize);
+              }}
+              onPreviousPage={() => setPage((current) => Math.max(1, current - 1))}
+              page={page}
+              pageLabel={membershipPageLabel(t('common.pagination.page', 'Page'), page, pageInfo)}
+              pageSize={pageSize}
+              pageSizeLabel={t('common.pagination.rows', 'Rows')}
+              pageSizeOptions={[20, 50, 100]}
+              previousLabel={t('common.pagination.previous', 'Previous page')}
+              showingLabel={t('common.pagination.showing', 'Showing')}
+            />
+          )}
+        >
           {plans.length === 0 ? (
             <MembershipEmptyState title={t('admin.commerce.memberships.plans.empty', 'No membership levels')} />
           ) : (

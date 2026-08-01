@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { BottomPagination } from '@sdkwork/clawroutes-pc-commons';
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
 import { MembershipDrawer } from '../components/MembershipDrawer';
 import { MembershipEmptyState } from '../components/MembershipEmptyState';
@@ -9,6 +10,8 @@ import {
   MembershipTableActions,
   MembershipTablePanel,
   confirmMembershipAction,
+  hasNextMembershipPage,
+  membershipPageLabel,
 } from '../components/MembershipPageControls';
 import { MembershipStatusBadge } from '../components/MembershipStatusBadge';
 import { MembershipPackageGroupDrawerForm } from '../forms/MembershipPackageGroupDrawerForm';
@@ -19,6 +22,7 @@ import {
   updateMembershipAdminPackageGroup,
   type MembershipsAdminPackageGroup,
   type MembershipsAdminPackageGroupMutationInput,
+  type MembershipsAdminPageInfo,
 } from '../membershipsService';
 
 export function MembershipPackageGroupsPage() {
@@ -28,22 +32,45 @@ export function MembershipPackageGroupsPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [pageInfo, setPageInfo] = useState<MembershipsAdminPageInfo | null>(null);
+  const requestIdRef = useRef(0);
 
-  const loadGroups = useCallback(async () => {
+  const loadGroups = useCallback(async (
+    requestedPage: number,
+    requestedPageSize: number,
+  ) => {
+    const requestId = ++requestIdRef.current;
     setIsLoading(true);
     setError(null);
     try {
-      setGroups(await fetchMembershipAdminPackageGroups());
+      const result = await fetchMembershipAdminPackageGroups({
+        page: requestedPage,
+        pageSize: requestedPageSize,
+      });
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
+      setGroups(result.items);
+      setPageInfo(result.pageInfo);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : t('admin.commerce.memberships.groups.error', 'Package groups could not be loaded'));
+      if (requestId === requestIdRef.current) {
+        setError(loadError instanceof Error ? loadError.message : t('admin.commerce.memberships.groups.error', 'Package groups could not be loaded'));
+      }
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [t]);
 
   useEffect(() => {
-    void loadGroups();
-  }, [loadGroups]);
+    void loadGroups(page, pageSize);
+    return () => {
+      requestIdRef.current += 1;
+    };
+  }, [loadGroups, page, pageSize]);
 
   const openCreateDrawer = () => {
     setEditingGroup(null);
@@ -63,7 +90,7 @@ export function MembershipPackageGroupsPage() {
     }
     setIsDrawerOpen(false);
     setEditingGroup(null);
-    await loadGroups();
+    await loadGroups(page, pageSize);
   };
 
   const handleDeleteGroup = async (group: MembershipsAdminPackageGroup) => {
@@ -71,7 +98,12 @@ export function MembershipPackageGroupsPage() {
       return;
     }
     await deleteMembershipAdminPackageGroup(group.id);
-    await loadGroups();
+    const targetPage = groups.length === 1 && page > 1 ? page - 1 : page;
+    if (targetPage !== page) {
+      setPage(targetPage);
+      return;
+    }
+    await loadGroups(targetPage, pageSize);
   };
 
   return (
@@ -79,7 +111,7 @@ export function MembershipPackageGroupsPage() {
       <MembershipAdminPageShell
         isLoading={isLoading}
         error={error}
-        onRefresh={loadGroups}
+        onRefresh={() => loadGroups(page, pageSize)}
         actions={(
           <button type="button" onClick={openCreateDrawer} className="inline-flex items-center gap-1 rounded-md bg-lobster-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-lobster-700">
             <Plus className="h-3.5 w-3.5" />
@@ -87,7 +119,29 @@ export function MembershipPackageGroupsPage() {
           </button>
         )}
       >
-        <MembershipTablePanel>
+        <MembershipTablePanel
+          footer={(
+            <BottomPagination
+              disabled={isLoading}
+              hasNextPage={hasNextMembershipPage(pageInfo, page, groups.length, pageSize)}
+              itemCount={groups.length}
+              nextLabel={t('common.pagination.next', 'Next page')}
+              onNextPage={() => setPage((current) => current + 1)}
+              onPageSizeChange={(nextPageSize) => {
+                setPage(1);
+                setPageSize(nextPageSize);
+              }}
+              onPreviousPage={() => setPage((current) => Math.max(1, current - 1))}
+              page={page}
+              pageLabel={membershipPageLabel(t('common.pagination.page', 'Page'), page, pageInfo)}
+              pageSize={pageSize}
+              pageSizeLabel={t('common.pagination.rows', 'Rows')}
+              pageSizeOptions={[20, 50, 100]}
+              previousLabel={t('common.pagination.previous', 'Previous page')}
+              showingLabel={t('common.pagination.showing', 'Showing')}
+            />
+          )}
+        >
           {groups.length === 0 ? (
             <MembershipEmptyState title={t('admin.commerce.memberships.groups.empty', 'No package groups')} />
           ) : (

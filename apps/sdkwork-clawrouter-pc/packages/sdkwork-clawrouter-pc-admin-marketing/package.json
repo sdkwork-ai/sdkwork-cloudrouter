@@ -1,6 +1,7 @@
 {
   "name": "@sdkwork/clawrouter-pc-admin-marketing",
   "version": "1.0.0",
+  "private": true,
   "license": "SEE LICENSE IN ../../../../LICENSE",
   "type": "module",
   "main": "src/index.tsx",
@@ -9,9 +10,5 @@
   },
   "dependencies": {
     "@sdkwork/clawroutes-pc-commons": "workspace:*"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
   }
 }

@@ -49,7 +49,8 @@ http://127.0.0.1:3900/admin
 - `/admin/user`：用户和 API key 管理。
 - `/admin/group`：分组和策略绑定。
 - `/admin/model`：模型目录和发布状态。
-- `/admin/channel`：供应商、渠道、凭据引用和健康检查。
+- `/admin/upstream`：AI 供应商、账号、账号组、只写凭据生命周期和健康状态。
+- `/admin/payments/channels`：支付渠道与支付供应商账号路由。
 - `/admin/ratelimit`：限流和风控。
 - `/admin/monitor`：实例、心跳和告警。
 - `/admin/marketing`、`/admin/finance`：商业化和账务。

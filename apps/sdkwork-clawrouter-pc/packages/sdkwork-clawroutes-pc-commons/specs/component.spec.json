@@ -125,11 +125,20 @@
       "./api-result",
       "./sdk-clients",
       "./sdk-request-boundary",
+      "./model-catalog-identity",
       "./components/BusinessState",
+      "./components/AdminTableShell",
+      "./components/BottomPagination",
+      "./components/AiResourceSelectorModal",
       "./components/ConfirmDialog",
       "./components/CopyButton",
+      "./clipboard",
+      "./media-resource",
       "./idempotency",
-      "./utils/env"
+      "./utils/env",
+      "./session-jwt-claims",
+      "./sdkwork-utils",
+      "./domain-service-providers"
     ],
     "runtimeEntrypoints": [
       "package.json#scripts.dev",
@@ -219,6 +228,23 @@
           "mode": "external-service",
           "sameOriginAllowed": false,
           "requiredBaseUrlEnv": "VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "tokenManager": "claw-router-global"
+        }
+      },
+      {
+        "sdkFamily": "sdkwork-messaging-app-sdk",
+        "packageName": "@sdkwork/messaging-app-sdk",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "sourceExport": "./sdk-clients",
+        "factory": "createSdkworkMessagingAppSdkClient",
+        "getter": "getSdkworkMessagingAppSdkClient",
+        "dependencyApiSurface": "sdkwork-messaging-app-sdk",
+        "runtimeIntegration": {
+          "mode": "external-service",
+          "sameOriginAllowed": false,
+          "requiredBaseUrlEnv": "VITE_SDKWORK_MESSAGING_APP_API_BASE_URL",
           "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
           "tokenManager": "claw-router-global"
         }
@@ -327,6 +353,60 @@
           "sameOriginAllowed": true,
           "baseUrlEnv": "VITE_SDKWORK_PROMOTION_APP_API_BASE_URL",
           "fallbackBaseUrlEnv": "VITE_CLAWROUTER_APP_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "tokenManager": "claw-router-global"
+        }
+      },
+      {
+        "sdkFamily": "sdkwork-membership-backend-sdk",
+        "packageName": "@sdkwork/membership-backend-sdk",
+        "surface": "backend-api",
+        "apiPrefix": "/backend/v3/api",
+        "sourceExport": "./sdk-clients",
+        "factory": "createSdkworkMembershipBackendSdkClient",
+        "getter": "getSdkworkMembershipBackendSdkClient",
+        "dependencyApiSurface": "sdkwork-membership-backend-sdk",
+        "runtimeIntegration": {
+          "mode": "dependency-backend-api",
+          "sameOriginAllowed": true,
+          "baseUrlEnv": "VITE_SDKWORK_MEMBERSHIP_BACKEND_API_BASE_URL",
+          "fallbackBaseUrlEnv": "VITE_CLAWROUTER_BACKEND_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "tokenManager": "claw-router-global"
+        }
+      },
+      {
+        "sdkFamily": "sdkwork-payment-backend-sdk",
+        "packageName": "@sdkwork/payment-backend-sdk",
+        "surface": "backend-api",
+        "apiPrefix": "/backend/v3/api",
+        "sourceExport": "./sdk-clients",
+        "factory": "createSdkworkPaymentBackendSdkClient",
+        "getter": "getSdkworkPaymentBackendSdkClient",
+        "dependencyApiSurface": "sdkwork-payment-backend-sdk",
+        "runtimeIntegration": {
+          "mode": "dependency-backend-api",
+          "sameOriginAllowed": true,
+          "baseUrlEnv": "VITE_SDKWORK_PAYMENT_BACKEND_API_BASE_URL",
+          "fallbackBaseUrlEnv": "VITE_CLAWROUTER_BACKEND_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "tokenManager": "claw-router-global"
+        }
+      },
+      {
+        "sdkFamily": "sdkwork-promotion-backend-sdk",
+        "packageName": "@sdkwork/promotion-backend-sdk",
+        "surface": "backend-api",
+        "apiPrefix": "/backend/v3/api",
+        "sourceExport": "./sdk-clients",
+        "factory": "createSdkworkPromotionBackendSdkClient",
+        "getter": "getSdkworkPromotionBackendSdkClient",
+        "dependencyApiSurface": "sdkwork-promotion-backend-sdk",
+        "runtimeIntegration": {
+          "mode": "dependency-backend-api",
+          "sameOriginAllowed": true,
+          "baseUrlEnv": "VITE_SDKWORK_PROMOTION_BACKEND_API_BASE_URL",
+          "fallbackBaseUrlEnv": "VITE_CLAWROUTER_BACKEND_API_BASE_URL",
           "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
           "tokenManager": "claw-router-global"
         }

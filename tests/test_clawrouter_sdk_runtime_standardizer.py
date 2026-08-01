@@ -51,7 +51,10 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
             ):
                 base = self.write_minimal_typescript_sdk(root, sdk_dir, package_name)
                 (base / "custom").mkdir(parents=True, exist_ok=True)
-                (base / "src" / "http").mkdir(parents=True, exist_ok=True)
+                generated = base / "generated" / "server-openapi"
+                (generated / ".sdkwork").mkdir(parents=True, exist_ok=True)
+                (generated / "src" / "http").mkdir(parents=True, exist_ok=True)
+                (generated / "src").mkdir(parents=True, exist_ok=True)
                 (base / "package.json").write_text(
                     json.dumps(
                         {
@@ -75,7 +78,25 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
                     + "\n",
                     encoding="utf-8",
                 )
-                (base / "src" / "http" / "client.ts").write_text(
+                (generated / "package.json").write_text(
+                    json.dumps({"name": f"{sdk_dir}-generated-typescript", "sdkworkRole": "transport"}) + "\n",
+                    encoding="utf-8",
+                )
+                (generated / "src" / "index.ts").write_text("export * from './http/client';\n", encoding="utf-8")
+                (generated / ".sdkwork" / "sdkwork-generator-manifest.json").write_text(
+                    json.dumps(
+                        {
+                            "generator": "@sdkwork/sdk-generator",
+                            "generatedFiles": [
+                                {"path": "src/index.ts"},
+                                {"path": "src/http/client.ts"},
+                            ],
+                        }
+                    )
+                    + "\n",
+                    encoding="utf-8",
+                )
+                (generated / "src" / "http" / "client.ts").write_text(
                     "import type { QueryParams } from '@sdkwork/sdk-common';\n"
                     "export class HttpClient {\n"
                     "  async request<T>(path: string, options: unknown = {}): Promise<T> { throw new Error('stub'); }\n"
@@ -103,8 +124,8 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
                         base / "custom" / "build-runtime.mjs",
                         base / "custom" / "README.md",
                         base / "sdkwork-sdk.json",
-                        base / ".sdkwork" / "sdkwork-generator-manifest.json",
-                        base / "src" / "http" / "client.ts",
+                        base / "src" / "index.ts",
+                        generated / "src" / "http" / "client.ts",
                     }.issubset(updated_paths)
                 )
                 package = json.loads((base / "package.json").read_text(encoding="utf-8"))
@@ -116,16 +137,19 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
                 self.assertNotIn("vite", package["devDependencies"])
                 self.assertNotIn("vite-plugin-dts", package["devDependencies"])
                 build_runtime = (base / "custom" / "build-runtime.mjs").read_text(encoding="utf-8")
-                self.assertIn("rollup", build_runtime)
-                self.assertIn("await removeTypeOnlyRuntimeReExports(path.join(tempEsmDir, 'index.js'));", build_runtime)
-                self.assertIn("async function removeTypeOnlyRuntimeReExports(entryFile) {", build_runtime)
-                self.assertIn("line.trim() === \"export * from './types';\"", build_runtime)
-                self.assertIn("source.split(/\\r?\\n/u)", build_runtime)
-                self.assertIn("runtimeLines.join('\\n')", build_runtime)
+                self.assertIn("spawnSync(process.execPath, [generatedBuildScript]", build_runtime)
+                self.assertIn("await fs.cp(generatedDistDir, distDir, { recursive: true });", build_runtime)
+                self.assertNotIn("rollup", build_runtime)
+                self.assertNotIn("removeTypeOnlyRuntimeReExports", build_runtime)
                 self.assertNotIn("stageDomainTransport", build_runtime)
                 self.assertNotIn("generated/domains", build_runtime)
                 self.assertNotIn("domains-generated", build_runtime)
-                http_client = (base / "src" / "http" / "client.ts").read_text(encoding="utf-8")
+                self.assertEqual(
+                    "export * from '../generated/server-openapi/src/index';\n",
+                    (base / "src" / "index.ts").read_text(encoding="utf-8"),
+                )
+                self.assertFalse((base / ".sdkwork").exists())
+                http_client = (generated / "src" / "http" / "client.ts").read_text(encoding="utf-8")
                 self.assertIn("contentType?: string", http_client)
                 self.assertIn("headers: this.withContentType(headers, contentType)", http_client)
 
@@ -237,7 +261,7 @@ export class HttpClient {
             self.assertTrue(set(retired_roots).issubset(set(updated)))
             self.assertTrue(all(not retired_root.exists() for retired_root in retired_roots))
 
-    def test_syncs_typescript_package_root_from_generated_server_openapi(self) -> None:
+    def test_materializes_thin_typescript_facade_from_generated_server_openapi(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             base = self.write_minimal_typescript_sdk(
@@ -280,6 +304,7 @@ export class HttpClient {
                     {
                         "generator": "@sdkwork/sdk-generator",
                         "generatedFiles": [
+                            {"path": "src/index.ts"},
                             {"path": "src/sdk.ts"},
                             {"path": "src/api/index.ts"},
                             {"path": "src/types/index.ts"},
@@ -287,6 +312,10 @@ export class HttpClient {
                     }
                 )
                 + "\n",
+                encoding="utf-8",
+            )
+            (generated / "src" / "index.ts").write_text(
+                "export { SdkworkBackendClient } from './sdk';\n",
                 encoding="utf-8",
             )
             (generated / "src" / "sdk.ts").write_text(
@@ -330,8 +359,14 @@ export class HttpClient {
             self.assertFalse((base / "src" / "api" / "legacy-provider.ts").exists())
             self.assertFalse((base / "src" / "types" / "legacy-provider-account.ts").exists())
             self.assertEqual(
+                "export * from '../generated/server-openapi/src/index';\n",
+                (base / "src" / "index.ts").read_text(encoding="utf-8"),
+            )
+            self.assertEqual(["index.ts"], [path.name for path in (base / "src").iterdir()])
+            self.assertFalse((base / ".sdkwork").exists())
+            self.assertEqual(
                 "export class SdkworkBackendClient {}\n",
-                (base / "src" / "sdk.ts").read_text(encoding="utf-8"),
+                (generated / "src" / "sdk.ts").read_text(encoding="utf-8"),
             )
             self.assertIn("fresh sdk readme", (base / "README.md").read_text(encoding="utf-8"))
             package = json.loads((base / "package.json").read_text(encoding="utf-8"))

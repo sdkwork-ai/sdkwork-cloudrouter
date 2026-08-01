@@ -10,9 +10,9 @@ Root SDKWork standards remain authoritative. Local component specs can narrow or
 | --- | --- |
 | Name | `sdkwork-clawrouter-pc-admin-marketing` |
 | Type | `node-package` |
-| Root | `sdkwork-claw-router/apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing` |
-| Domain | `platform` |
-| Capability | `router` |
+| Root | `sdkwork-clawrouter/apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing` |
+| Domain | `promotion` |
+| Capability | `promotion` |
 | Languages | `typescript` |
 | Status | `standardizing` |
 
@@ -44,7 +44,8 @@ Root SDKWork standards remain authoritative. Local component specs can narrow or
 
 ## SDK Clients
 
-- No generated SDK client class is declared at this component boundary.
+- `@sdkwork/promotion-backend-sdk` for Promotion-owned administration.
+- `@sdkwork/clawrouter-backend-sdk` for Claw Router promotion extensions.
 
 ## Local Extension Specs
 

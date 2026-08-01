@@ -2,6 +2,85 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
 
+import {
+  clearStoredAppSessionToken,
+  storeAppSessionFromResult,
+} from "./packages/sdkwork-clawroutes-pc-commons/src/app-session-token.ts";
+import { resetClawRouterSdkClients } from "./packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts";
+import { backendPromotionOffersList } from "./packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts";
+import {
+  fetchMembershipAdminPackageGroups,
+  fetchMembershipAdminPackages,
+  fetchMembershipAdminPlans,
+} from "./packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts";
+
+const originalFetch = globalThis.fetch;
+const originalWindowDescriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
+
+type CapturedCommerceRequest = {
+  url: string;
+  method: string;
+};
+
+async function withCommerceSdkResponder<T>(
+  responder: (request: CapturedCommerceRequest) => unknown,
+  run: (captured: CapturedCommerceRequest[]) => Promise<T>,
+): Promise<T> {
+  const captured: CapturedCommerceRequest[] = [];
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    enumerable: true,
+    value: { dispatchEvent: () => true },
+  });
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const request = {
+      url: typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
+      method: init?.method ?? "GET",
+    };
+    captured.push(request);
+    return new Response(JSON.stringify({ code: "2000", data: responder(request) }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  }) as typeof fetch;
+  clearStoredAppSessionToken();
+  storeAppSessionFromResult({
+    code: "2000",
+    data: { accessToken: "commerce-test-access-token", authToken: "commerce-test-auth-token" },
+  });
+  resetClawRouterSdkClients();
+
+  try {
+    return await run(captured);
+  } finally {
+    clearStoredAppSessionToken();
+    resetClawRouterSdkClients();
+    globalThis.fetch = originalFetch;
+    if (originalWindowDescriptor) {
+      Object.defineProperty(globalThis, "window", originalWindowDescriptor);
+    } else {
+      delete (globalThis as { window?: Window }).window;
+    }
+  }
+}
+
+function assertCanonicalPageQuery(
+  request: CapturedCommerceRequest,
+  expectedPath: string,
+  page: string,
+  pageSize: string,
+): URLSearchParams {
+  const url = new URL(request.url, "http://sdkwork.test");
+  assert.equal(request.method, "GET");
+  assert.equal(url.pathname, expectedPath);
+  assert.equal(url.searchParams.get("page"), page);
+  assert.equal(url.searchParams.get("page_size"), pageSize);
+  for (const forbiddenName of ["pageSize", "limit", "page_no", "pageNo", "per_page", "size"]) {
+    assert.equal(url.searchParams.has(forbiddenName), false, `${forbiddenName} must not be sent on the wire`);
+  }
+  return url.searchParams;
+}
+
 function readPortalFile(relativePath: string): string {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8");
 }
@@ -9,6 +88,141 @@ function readPortalFile(relativePath: string): string {
 function portalFileExists(relativePath: string): boolean {
   return existsSync(new URL(relativePath, import.meta.url));
 }
+
+test("marketing service sends canonical pagination through the generated promotion SDK and preserves pageInfo", async () => {
+  const serverPageInfo = {
+    mode: "offset",
+    page: 3,
+    pageSize: 50,
+    totalItems: "121",
+    totalPages: 3,
+    hasMore: false,
+  };
+
+  await withCommerceSdkResponder(
+    () => ({ items: [{ id: "offer-1" }], pageInfo: serverPageInfo }),
+    async (captured) => {
+      const result = await backendPromotionOffersList({ page: 3, pageSize: 50, status: "active" });
+
+      assert.equal(captured.length, 1);
+      const query = assertCanonicalPageQuery(
+        captured[0],
+        "/backend/v3/api/promotions/offers",
+        "3",
+        "50",
+      );
+      assert.equal(query.get("status"), "active");
+      assert.deepEqual(result.pageInfo, serverPageInfo);
+      assert.deepEqual(result.items, [{ id: "offer-1" }]);
+    },
+  );
+});
+
+test("membership package services request one generated SDK page and preserve server pageInfo", async () => {
+  const pageInfoByPath = new Map<string, Record<string, unknown>>();
+  const responseByPath = new Map<string, unknown[]>([
+    ["/backend/v3/api/memberships/package_groups", [{
+      id: "group-1",
+      code: "monthly",
+      name: "Monthly",
+      billingCycle: "month",
+      durationDays: "30",
+      sortWeight: "10",
+      status: "active",
+      packageCount: "4",
+    }]],
+    ["/backend/v3/api/memberships/packages", [{
+      id: "package-1",
+      code: "monthly-pro",
+      packageGroupId: "group-1",
+      planId: "plan-1",
+      name: "Monthly Pro",
+      priceAmount: "69.90",
+      currencyCode: "CNY",
+      durationDays: "30",
+      status: "active",
+    }]],
+    ["/backend/v3/api/memberships/plans", [{
+      id: "plan-1",
+      code: "pro",
+      name: "Pro",
+      rank: "1",
+      status: "active",
+      benefits: [],
+      updatedAt: "2026-07-31T00:00:00Z",
+    }]],
+  ]);
+
+  await withCommerceSdkResponder(
+    ({ url }) => {
+      const path = new URL(url, "http://sdkwork.test").pathname;
+      const pageInfo = {
+        mode: "offset",
+        page: 2,
+        pageSize: 20,
+        totalItems: path.endsWith("package_groups") ? "24" : "21",
+        totalPages: 2,
+        hasMore: false,
+      };
+      pageInfoByPath.set(path, pageInfo);
+      return { items: responseByPath.get(path) ?? [], pageInfo };
+    },
+    async (captured) => {
+      const [groups, packages, plans] = await Promise.all([
+        fetchMembershipAdminPackageGroups({ page: 2, pageSize: 20, status: "active" }),
+        fetchMembershipAdminPackages({
+          page: 2,
+          pageSize: 20,
+          packageGroupId: "group-1",
+          planId: "plan-1",
+          status: "active",
+        }),
+        fetchMembershipAdminPlans({ page: 2, pageSize: 20, status: "active" }),
+      ]);
+
+      assert.equal(captured.length, 3);
+      const requestsByPath = new Map(captured.map((request) => [
+        new URL(request.url, "http://sdkwork.test").pathname,
+        request,
+      ]));
+      const groupRequest = requestsByPath.get("/backend/v3/api/memberships/package_groups");
+      const packageRequest = requestsByPath.get("/backend/v3/api/memberships/packages");
+      const planRequest = requestsByPath.get("/backend/v3/api/memberships/plans");
+      assert.ok(groupRequest);
+      assert.ok(packageRequest);
+      assert.ok(planRequest);
+      const groupQuery = assertCanonicalPageQuery(
+        groupRequest,
+        "/backend/v3/api/memberships/package_groups",
+        "2",
+        "20",
+      );
+      const packageQuery = assertCanonicalPageQuery(
+        packageRequest,
+        "/backend/v3/api/memberships/packages",
+        "2",
+        "20",
+      );
+      const planQuery = assertCanonicalPageQuery(
+        planRequest,
+        "/backend/v3/api/memberships/plans",
+        "2",
+        "20",
+      );
+      assert.equal(groupQuery.get("status"), "active");
+      assert.equal(packageQuery.get("package_group_id"), "group-1");
+      assert.equal(packageQuery.get("plan_id"), "plan-1");
+      assert.equal(packageQuery.get("status"), "active");
+      assert.equal(planQuery.get("status"), "active");
+      assert.deepEqual(groups.pageInfo, pageInfoByPath.get("/backend/v3/api/memberships/package_groups"));
+      assert.deepEqual(packages.pageInfo, pageInfoByPath.get("/backend/v3/api/memberships/packages"));
+      assert.deepEqual(plans.pageInfo, pageInfoByPath.get("/backend/v3/api/memberships/plans"));
+      assert.equal(groups.items[0]?.packageCount, 4);
+      assert.equal(packages.items[0]?.groupId, "group-1");
+      assert.equal(plans.items[0]?.benefitCount, 0);
+    },
+  );
+});
 
 test("console business host mounts T1 domain wallet, membership, coupon, checkout, and payment routes", () => {
   const appSource = readPortalFile("./src/App.tsx");
@@ -145,7 +359,7 @@ test("Compute Credits balances and activity use the Token Bank account", () => {
   assert.match(providerSource, /return getSdkworkAccountService\(\)/);
   assert.match(providerSource, /billing:\s*accountClient\.billing/);
   assert.match(providerSource, /tokenBank:\s*accountClient\.tokenBank/);
-  assert.match(dashboardSource, /accountService\.tokenBank\.account\.retrieve\(\)/);
+  assert.match(dashboardSource, /getClawRouterAccountAppService\(\)\.tokenBank\.account\.retrieve\(\)/);
   assert.match(dashboardSource, /tokenBankAvailable\s*=\s*readTokenBankAvailableAmount\(tokenBankResult\.value\)/);
   assert.match(dashboardSource, /Promise\.allSettled/);
   assert.doesNotMatch(dashboardSource, /DASHBOARD_(?:DATA_UNAVAILABLE|PARTIAL_DATA)_WARNING/);
@@ -400,7 +614,8 @@ test("app bootstrap wires T1 domain service providers from independent owner SDK
 test("federated commerce runtime mounts the complete Order gateway assembly", () => {
   const runtimeSource = readPortalFile("../../crates/sdkwork-routes-clawrouter-app-api/src/commerce_runtime.rs");
 
-  assert.match(runtimeSource, /sdkwork_api_order_assembly::ApiAssembly::from_database_pool/);
+  assert.match(runtimeSource, /sdkwork_api_order_assembly::OrderAssemblyContract::database_module/);
+  assert.match(runtimeSource, /sdkwork_api_order_assembly::assemble_app_api_contribution_with_pool/);
   assert.match(runtimeSource, /\.merge\(order_assembly\.router\)/);
   assert.doesNotMatch(runtimeSource, /sdkwork_routes_order_app_api::/);
 });

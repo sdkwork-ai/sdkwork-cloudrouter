@@ -55,13 +55,15 @@ mod usage_logs_read_store;
 mod usage_settlement_store;
 
 pub use admin_ai_resource_store::{
-    AdminAiResourceGroupItem, AdminAiResourceGroupMemberCommand, AdminAiResourceGroupResourceItem,
-    AdminAiResourceGroupResourcesPage, AdminAiResourceItem, AdminAiResourceListPage,
-    AdminAiResourceMemberCommand, AdminAiResourceMemberItem, AdminAiResourceReadFuture,
-    AdminAiResourceStore, AdminAiResourceSubject, CreateAdminAiResourceCommand,
-    CreateAdminAiResourceGroupCommand, DeleteAdminAiResourceGroupCommand,
+    AdminAiResourceGroupItem, AdminAiResourceGroupListPage, AdminAiResourceGroupMemberCommand,
+    AdminAiResourceGroupResourceItem, AdminAiResourceGroupResourcesPage, AdminAiResourceItem,
+    AdminAiResourceListPage, AdminAiResourceMemberCommand, AdminAiResourceMemberItem,
+    AdminAiResourceReadFuture, AdminAiResourceStore, AdminAiResourceSubject,
+    CreateAdminAiResourceCommand, CreateAdminAiResourceGroupCommand,
+    DeleteAdminAiResourceGroupCommand, DeleteAdminAiResourceGroupMemberCommand,
     ListAdminAiResourceGroupResourcesQuery, ListAdminAiResourceGroupsQuery,
     ListAdminAiResourcesQuery, UpdateAdminAiResourceCommand, UpdateAdminAiResourceGroupCommand,
+    UpsertAdminAiResourceGroupMemberCommand,
 };
 pub use admin_analytics_read_store::{
     AdminAnalyticsInsight, AdminAnalyticsModelRankItem, AdminAnalyticsModelRankings,

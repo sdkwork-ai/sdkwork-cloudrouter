@@ -139,11 +139,8 @@ export class DashboardService {
   static async fetchDashboardOverview(timeRange: DashboardTimeRange): Promise<DashboardSnapshot> {
     const params = buildTimeRangeParams(timeRange);
     const [overviewResult, tokenBankResult] = await Promise.allSettled([
-      Promise.resolve().then(() => retrieveDashboardOverview(getClawRouterAppSdkClient(), params)),
-      Promise.resolve().then(() => {
-        const accountService = getClawRouterAccountAppService();
-        return accountService.tokenBank.account.retrieve();
-      }),
+      loadDashboardOverview(params),
+      loadTokenBankAccount(),
     ]);
     let snapshot = createInitialDashboardSnapshot(timeRange);
 
@@ -177,6 +174,14 @@ export class DashboardService {
       },
     };
   }
+}
+
+async function loadDashboardOverview(params: Record<string, string>): Promise<unknown> {
+  return retrieveDashboardOverview(getClawRouterAppSdkClient(), params);
+}
+
+async function loadTokenBankAccount(): Promise<unknown> {
+  return getClawRouterAccountAppService().tokenBank.account.retrieve();
 }
 
 async function retrieveDashboardOverview(

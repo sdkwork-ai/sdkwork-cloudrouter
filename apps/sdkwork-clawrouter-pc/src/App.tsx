@@ -135,16 +135,7 @@ export default function App() {
     <BrowserRouter>
       <SdkworkSessionAuthBrowserRoot
         copy={{
-          businessCodeLabel: t('shared.sessionAuth.businessCodeLabel'),
           close: t('shared.sessionAuth.close'),
-          codeLabel: t('shared.sessionAuth.codeLabel'),
-          description: t('shared.sessionAuth.description'),
-          detailsTitle: t('shared.sessionAuth.detailsTitle'),
-          httpStatusLabel: t('shared.sessionAuth.httpStatusLabel'),
-          login: t('shared.sessionAuth.login'),
-          messageLabel: t('shared.sessionAuth.messageLabel'),
-          pathLabel: t('shared.sessionAuth.pathLabel'),
-          title: t('shared.sessionAuth.title'),
         }}
       >
       <ScrollToTop />

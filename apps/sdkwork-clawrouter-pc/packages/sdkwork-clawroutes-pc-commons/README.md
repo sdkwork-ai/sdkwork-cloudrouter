@@ -22,7 +22,8 @@ This README is the SDKWork module entrypoint for `sdkwork-clawroutes-pc-commons`
 
 ## Required SDK Surface
 
-- None declared in `specs/component.spec.json`.
+- Generated product, appbase, Messaging, business-domain, and open SDK clients are declared in `specs/component.spec.json` and composed by `./sdk-clients`.
+- Messaging verification uses `@sdkwork/messaging-app-sdk` with the shared global token manager. Its base URL must come from `VITE_SDKWORK_MESSAGING_APP_API_BASE_URL` or `PORTAL_PUBLIC_SDK_BASE_URL`; it never falls back to the Claw Router product API URL.
 
 ## Configuration
 

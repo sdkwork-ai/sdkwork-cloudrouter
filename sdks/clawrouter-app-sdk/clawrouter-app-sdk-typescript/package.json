@@ -22,15 +22,10 @@
   "scripts": {
     "build": "node custom/build-runtime.mjs",
     "dev": "node custom/build-runtime.mjs",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
-    "@sdkwork/account-app-sdk": "workspace:*",
-    "@sdkwork/catalog-app-sdk": "workspace:*",
-    "@sdkwork/membership-app-sdk": "workspace:*",
-    "@sdkwork/order-app-sdk": "workspace:*",
-    "@sdkwork/payment-app-sdk": "workspace:*",
-    "@sdkwork/promotion-app-sdk": "workspace:*",
     "@sdkwork/sdk-common": "workspace:*"
   },
   "devDependencies": {

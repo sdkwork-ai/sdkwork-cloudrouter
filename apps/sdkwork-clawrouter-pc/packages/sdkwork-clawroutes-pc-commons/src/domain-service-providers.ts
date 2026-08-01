@@ -42,6 +42,7 @@ import {
   getSdkworkMembershipAppSdkClient,
   getSdkworkOrderAppSdkClient,
   getSdkworkPaymentAppSdkClient,
+  getSdkworkPaymentBackendSdkClient,
   getSdkworkPromotionAppSdkClient,
   type SdkworkAccountAppSdkClient,
   type SdkworkMembershipAppSdkClient,
@@ -104,6 +105,7 @@ export function configureClawRouterDomainServiceProviders(): void {
   const membershipClient = getSdkworkMembershipAppSdkClient();
   const orderClient = getSdkworkOrderAppSdkClient();
   const paymentClient = getSdkworkPaymentAppSdkClient();
+  const paymentBackendClient = getSdkworkPaymentBackendSdkClient();
   const promotionClient = getSdkworkPromotionAppSdkClient();
   const orderAppService = createSdkworkOrderAppService({
     appClient: orderClient,
@@ -117,6 +119,7 @@ export function configureClawRouterDomainServiceProviders(): void {
   }));
   configureSdkworkPaymentAppServiceProvider(() => createSdkworkPaymentAppService({
     appClient: { commerce: buildPaymentCommercePort(paymentClient) } as PaymentAppSdkClient,
+    backendClient: paymentBackendClient,
   }));
   configureSdkworkOrderAppServiceProvider(() => orderAppService);
   membershipCheckoutService = createSdkworkMembershipCheckoutService({

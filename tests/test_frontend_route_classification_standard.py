@@ -10,6 +10,11 @@ from typing import Any
 import yaml
 
 from tools.frontend_contract_guardian import FrontendContractGuardian
+from tools.relay_retired_admin_surfaces import (
+    is_relay_retired_admin_operation_route,
+    is_relay_retired_admin_portal_route,
+    is_relay_retired_admin_source,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -139,24 +144,73 @@ class FrontendRouteClassificationStandardTest(unittest.TestCase):
         expected_packages = {
             "/admin/analytics": "@sdkwork/clawrouter-pc-admin-analytics",
             "/admin/cache": "@sdkwork/clawrouter-pc-admin-cache",
-            "/admin/channel": "@sdkwork/clawrouter-pc-admin-channel",
             "/admin/dashboard": "@sdkwork/clawrouter-pc-admin-dashboard",
-            "/admin/group": "@sdkwork/clawrouter-pc-admin-group",
             "/admin/model": "@sdkwork/models-pc-admin-catalog",
             "/admin/model/mappings": "@sdkwork/models-pc-admin-catalog",
             "/admin/model/resources": "@sdkwork/models-pc-admin-resource",
-            "/admin/model/sites": "@sdkwork/clawrouter-pc-admin-relay-site",
+            "/admin/marketing/:sectionId?": "@sdkwork/clawrouter-pc-admin-marketing",
+            "/admin/memberships/:sectionId?": "@sdkwork/clawrouter-pc-admin-memberships",
             "/admin/monitor": "@sdkwork/clawrouter-pc-admin-monitor",
             "/admin/ratelimit": "@sdkwork/clawrouter-pc-admin-ratelimit",
             "/admin/record": "@sdkwork/clawrouter-pc-admin-record",
+            "/admin/payments/:sectionId?": "@sdkwork/clawrouter-pc-admin-payments",
             "/admin/runtime-region": "@sdkwork/clawrouter-pc-admin-runtime-region",
             "/admin/service-nodes": "@sdkwork/clawrouter-pc-admin-service-nodes",
             "/admin/settings": "@sdkwork/clawrouter-pc-admin-site",
             "/admin/site": "@sdkwork/clawrouter-pc-admin-site",
+            "/admin/storage/:sectionId?": "@sdkwork/clawrouter-pc-admin-storage",
+            "/admin/upstream": "@sdkwork/clawrouter-pc-admin-upstream",
         }
 
         self.assertTrue(set(expected_packages) <= actual_routes)
         self.assertEqual(expected_packages, {route: actual_route_packages[route] for route in expected_packages})
+
+    def test_active_admin_section_hosts_are_not_treated_as_retired_surfaces(self) -> None:
+        contract = yaml.safe_load(CONTRACT_PATH.read_text(encoding="utf-8"))
+        self.assertIsInstance(contract, dict)
+        contract_routes = {
+            entry["route"]
+            for entry in contract.get("routes", [])
+            if isinstance(entry, dict) and isinstance(entry.get("route"), str)
+        }
+        operations = [
+            entry
+            for entry in contract.get("frontend_operations", [])
+            if isinstance(entry, dict) and isinstance(entry.get("route"), str)
+        ]
+        host_packages = {
+            "/admin/marketing/:sectionId?": "sdkwork-clawrouter-pc-admin-marketing",
+            "/admin/memberships/:sectionId?": "sdkwork-clawrouter-pc-admin-memberships",
+            "/admin/payments/:sectionId?": "sdkwork-clawrouter-pc-admin-payments",
+            "/admin/storage/:sectionId?": "sdkwork-clawrouter-pc-admin-storage",
+        }
+
+        for host_route, package_segment in host_packages.items():
+            route_prefix = host_route.removesuffix("/:sectionId?")
+            with self.subTest(route=host_route):
+                self.assertIn(host_route, contract_routes)
+                self.assertFalse(is_relay_retired_admin_portal_route(host_route))
+                self.assertFalse(is_relay_retired_admin_operation_route(host_route))
+                self.assertFalse(
+                    is_relay_retired_admin_source(
+                        f"apps/sdkwork-clawrouter-pc/packages/{package_segment}/src/service.ts"
+                    )
+                )
+                logical_operation_routes = {
+                    entry["route"]
+                    for entry in operations
+                    if entry["route"].startswith(route_prefix)
+                }
+                self.assertTrue(logical_operation_routes)
+                self.assertNotIn(host_route, logical_operation_routes)
+                self.assertEqual(
+                    [],
+                    sorted(
+                        route
+                        for route in contract_routes
+                        if route.startswith(f"{route_prefix}/") and route != host_route
+                    ),
+                )
 
     def test_sdk_backed_routes_have_frontend_operation_contract_and_expected_sdk_surface(self) -> None:
         classification = self._classification()

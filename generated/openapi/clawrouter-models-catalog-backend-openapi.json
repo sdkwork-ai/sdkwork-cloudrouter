@@ -329,79 +329,340 @@
         ],
         "type": "object"
       },
-      "AdminAiResourceCreateRequest": {
+      "AdminAiResourceGroupCreateRequest": {
         "additionalProperties": false,
-        "description": "Admin ai resource create request schema exposed by Claw Router.",
-        "name": "AdminAiResourceCreateRequest",
+        "description": "Admin ai resource group create request schema exposed by Claw Router.",
+        "name": "AdminAiResourceGroupCreateRequest",
+        "properties": {
+          "description": {
+            "description": "Description field on admin ai resource group create request.",
+            "maxLength": 512,
+            "nullable": true,
+            "type": "string"
+          },
+          "groupCode": {
+            "description": "Group code field on admin ai resource group create request.",
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9._:-]+$",
+            "type": "string"
+          },
+          "groupName": {
+            "description": "Group name field on admin ai resource group create request.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "groupType": {
+            "description": "Group type field on admin ai resource group create request.",
+            "enum": [
+              "api_group",
+              null
+            ],
+            "nullable": true,
+            "type": "string"
+          },
+          "members": {
+            "description": "Members field on admin ai resource group create request.",
+            "items": {
+              "$ref": "#/components/schemas/AdminAiResourceGroupMemberInput"
+            },
+            "maxItems": 512,
+            "type": "array"
+          },
+          "selectionMode": {
+            "description": "Selection mode field on admin ai resource group create request.",
+            "enum": [
+              "manual",
+              "all",
+              "any",
+              "dynamic_all_api",
+              null
+            ],
+            "nullable": true,
+            "type": "string"
+          },
+          "sortOrder": {
+            "description": "Sort order field on admin ai resource group create request.",
+            "format": "int64",
+            "nullable": true,
+            "pattern": "^(0|[1-9][0-9]*)$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "status": {
+            "description": "Status field on admin ai resource group create request.",
+            "enum": [
+              "active",
+              "disabled",
+              "inactive",
+              null
+            ],
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "groupCode",
+          "groupName"
+        ],
+        "type": "object"
+      },
+      "AdminAiResourceGroupItem": {
+        "additionalProperties": false,
+        "description": "Admin ai resource group item schema exposed by Claw Router.",
+        "properties": {
+          "capabilities": {
+            "description": "Capabilities field on admin ai resource group item.",
+            "items": {
+              "description": "Capabilities field on admin ai resource group item.",
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            },
+            "maxItems": 128,
+            "type": "array"
+          },
+          "capability": {
+            "description": "Capability field on admin ai resource group item.",
+            "maxLength": 128,
+            "nullable": true,
+            "pattern": "^[A-Za-z0-9._:-]+$",
+            "type": "string"
+          },
+          "description": {
+            "description": "Description field on admin ai resource group item.",
+            "maxLength": 512,
+            "nullable": true,
+            "type": "string"
+          },
+          "dynamic": {
+            "description": "Dynamic field on admin ai resource group item.",
+            "type": "boolean"
+          },
+          "groupCode": {
+            "description": "Group code field on admin ai resource group item.",
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9._:-]+$",
+            "type": "string"
+          },
+          "groupName": {
+            "description": "Group name field on admin ai resource group item.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "groupType": {
+            "description": "Group type field on admin ai resource group item.",
+            "enum": [
+              "api_group"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on admin ai resource group item.",
+            "format": "int64",
+            "pattern": "^[1-9][0-9]*$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "resourceCount": {
+            "description": "Resource count field on admin ai resource group item.",
+            "format": "int64",
+            "pattern": "^(0|[1-9][0-9]*)$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "selectionMode": {
+            "description": "Selection mode field on admin ai resource group item.",
+            "enum": [
+              "manual",
+              "all",
+              "any",
+              "dynamic_all_api"
+            ],
+            "type": "string"
+          },
+          "sortOrder": {
+            "description": "Sort order field on admin ai resource group item.",
+            "format": "int64",
+            "nullable": true,
+            "pattern": "^(0|[1-9][0-9]*)$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "status": {
+            "description": "Status field on admin ai resource group item.",
+            "enum": [
+              "active",
+              "disabled",
+              "inactive"
+            ],
+            "type": "string"
+          },
+          "vendorCodes": {
+            "description": "Vendor codes field on admin ai resource group item.",
+            "items": {
+              "description": "Vendor codes field on admin ai resource group item.",
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            },
+            "maxItems": 128,
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "groupCode",
+          "groupName",
+          "groupType",
+          "selectionMode",
+          "vendorCodes",
+          "capabilities",
+          "status",
+          "resourceCount",
+          "dynamic"
+        ],
+        "type": "object"
+      },
+      "AdminAiResourceGroupMemberInput": {
+        "additionalProperties": false,
+        "description": "Admin ai resource group member input schema exposed by Claw Router.",
+        "properties": {
+          "itemRole": {
+            "description": "Item role field on admin ai resource group member input.",
+            "enum": [
+              "included",
+              "optional",
+              "fallback",
+              null
+            ],
+            "nullable": true,
+            "type": "string"
+          },
+          "resourceCode": {
+            "description": "Resource code field on admin ai resource group member input.",
+            "maxLength": 192,
+            "pattern": "^[A-Za-z0-9._:-]+$",
+            "type": "string"
+          },
+          "sortOrder": {
+            "description": "Sort order field on admin ai resource group member input.",
+            "format": "int64",
+            "nullable": true,
+            "pattern": "^(0|[1-9][0-9]*)$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          }
+        },
+        "required": [
+          "resourceCode"
+        ],
+        "type": "object"
+      },
+      "AdminAiResourceGroupMemberUpdateRequest": {
+        "additionalProperties": false,
+        "description": "Admin ai resource group member update request schema exposed by Claw Router.",
+        "name": "AdminAiResourceGroupMemberUpdateRequest",
+        "properties": {
+          "itemRole": {
+            "description": "Item role field on admin ai resource group member update request.",
+            "enum": [
+              "included",
+              "optional",
+              "fallback",
+              null
+            ],
+            "nullable": true,
+            "type": "string"
+          },
+          "sortOrder": {
+            "description": "Sort order field on admin ai resource group member update request.",
+            "format": "int64",
+            "nullable": true,
+            "pattern": "^(0|[1-9][0-9]*)$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          }
+        },
+        "type": "object"
+      },
+      "AdminAiResourceGroupResourceItem": {
+        "additionalProperties": false,
+        "description": "Admin ai resource group resource item schema exposed by Claw Router.",
         "properties": {
           "apiEndpointCode": {
-            "description": "Api endpoint code field on admin ai resource create request.",
+            "description": "Api endpoint code field on admin ai resource group resource item.",
             "maxLength": 128,
             "nullable": true,
             "pattern": "^[A-Za-z0-9._:-]+$",
             "type": "string"
           },
           "catalogKey": {
-            "description": "Catalog key field on admin ai resource create request.",
+            "description": "Catalog key field on admin ai resource group resource item.",
             "maxLength": 256,
             "nullable": true,
             "pattern": "^[\\x20-\\x7E]*$",
             "type": "string"
           },
-          "compositionMode": {
-            "description": "Composition mode field on admin ai resource create request.",
-            "enum": [
-              "single",
-              "any",
-              "all",
-              null
-            ],
-            "nullable": true,
-            "type": "string"
-          },
           "displayName": {
-            "description": "Display name field on admin ai resource create request.",
+            "description": "Display name field on admin ai resource group resource item.",
             "maxLength": 128,
             "minLength": 1,
             "type": "string"
           },
-          "members": {
-            "description": "Members field on admin ai resource create request.",
-            "items": {
-              "$ref": "#/components/schemas/AdminAiResourceMemberInput"
-            },
-            "maxItems": 512,
-            "type": "array"
+          "id": {
+            "description": "Id field on admin ai resource group resource item.",
+            "format": "int64",
+            "pattern": "^[1-9][0-9]*$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "memberRole": {
+            "description": "Member role field on admin ai resource group resource item.",
+            "enum": [
+              "included",
+              "optional",
+              "fallback"
+            ],
+            "type": "string"
           },
           "modalityCode": {
-            "description": "Modality code field on admin ai resource create request.",
+            "description": "Modality code field on admin ai resource group resource item.",
             "maxLength": 64,
             "nullable": true,
             "pattern": "^[A-Za-z0-9._:-]+$",
             "type": "string"
           },
           "model": {
-            "description": "Model field on admin ai resource create request.",
+            "description": "Model field on admin ai resource group resource item.",
             "maxLength": 128,
             "nullable": true,
             "pattern": "^[\\x20-\\x7E]*$",
             "type": "string"
           },
           "providerNativeModel": {
-            "description": "Provider native model field on admin ai resource create request.",
+            "description": "Provider native model field on admin ai resource group resource item.",
             "maxLength": 256,
             "nullable": true,
             "pattern": "^[\\x20-\\x7E]*$",
             "type": "string"
           },
           "resourceCode": {
-            "description": "Resource code field on admin ai resource create request.",
+            "description": "Resource code field on admin ai resource group resource item.",
             "maxLength": 192,
             "pattern": "^[A-Za-z0-9._:-]+$",
             "type": "string"
           },
           "resourceType": {
-            "description": "Resource type field on admin ai resource create request.",
+            "description": "Resource type field on admin ai resource group resource item.",
             "enum": [
               "vendor",
               "modality",
@@ -412,7 +673,7 @@
             "type": "string"
           },
           "sortOrder": {
-            "description": "Sort order field on admin ai resource create request.",
+            "description": "Sort order field on admin ai resource group resource item.",
             "format": "int64",
             "nullable": true,
             "pattern": "^(0|[1-9][0-9]*)$",
@@ -421,7 +682,96 @@
             "x-sdkwork-rust-type": "i64"
           },
           "status": {
-            "description": "Status field on admin ai resource create request.",
+            "description": "Status field on admin ai resource group resource item.",
+            "enum": [
+              "active",
+              "disabled",
+              "inactive"
+            ],
+            "type": "string"
+          },
+          "vendorCode": {
+            "description": "Vendor code field on admin ai resource group resource item.",
+            "maxLength": 64,
+            "nullable": true,
+            "pattern": "^[A-Za-z0-9._:-]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "resourceCode",
+          "resourceType",
+          "displayName",
+          "status",
+          "memberRole"
+        ],
+        "type": "object"
+      },
+      "AdminAiResourceGroupUpdateRequest": {
+        "additionalProperties": false,
+        "description": "Admin ai resource group update request schema exposed by Claw Router.",
+        "name": "AdminAiResourceGroupUpdateRequest",
+        "properties": {
+          "description": {
+            "description": "Description field on admin ai resource group update request.",
+            "maxLength": 512,
+            "nullable": true,
+            "type": "string"
+          },
+          "groupCode": {
+            "description": "Group code field on admin ai resource group update request.",
+            "maxLength": 128,
+            "nullable": true,
+            "pattern": "^[A-Za-z0-9._:-]+$",
+            "type": "string"
+          },
+          "groupName": {
+            "description": "Group name field on admin ai resource group update request.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "groupType": {
+            "description": "Group type field on admin ai resource group update request.",
+            "enum": [
+              "api_group",
+              null
+            ],
+            "nullable": true,
+            "type": "string"
+          },
+          "members": {
+            "description": "Members field on admin ai resource group update request.",
+            "items": {
+              "$ref": "#/components/schemas/AdminAiResourceGroupMemberInput"
+            },
+            "maxItems": 512,
+            "type": "array"
+          },
+          "selectionMode": {
+            "description": "Selection mode field on admin ai resource group update request.",
+            "enum": [
+              "manual",
+              "all",
+              "any",
+              "dynamic_all_api",
+              null
+            ],
+            "nullable": true,
+            "type": "string"
+          },
+          "sortOrder": {
+            "description": "Sort order field on admin ai resource group update request.",
+            "format": "int64",
+            "nullable": true,
+            "pattern": "^(0|[1-9][0-9]*)$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "status": {
+            "description": "Status field on admin ai resource group update request.",
             "enum": [
               "active",
               "disabled",
@@ -430,149 +780,117 @@
             ],
             "nullable": true,
             "type": "string"
-          },
-          "vendorCode": {
-            "description": "Vendor code field on admin ai resource create request.",
-            "maxLength": 64,
-            "nullable": true,
-            "pattern": "^[A-Za-z0-9._:-]+$",
-            "type": "string"
           }
         },
-        "required": [
-          "resourceCode",
-          "resourceType",
-          "displayName"
-        ],
         "type": "object"
       },
-      "AdminAiResourceMemberInput": {
+      "AdminAiResourceItem": {
         "additionalProperties": false,
-        "description": "Admin ai resource member input schema exposed by Claw Router.",
-        "properties": {
-          "memberResourceCode": {
-            "description": "Member resource code field on admin ai resource member input.",
-            "maxLength": 192,
-            "pattern": "^[A-Za-z0-9._:-]+$",
-            "type": "string"
-          },
-          "memberRole": {
-            "description": "Member role field on admin ai resource member input.",
-            "enum": [
-              "included",
-              "optional",
-              "fallback",
-              null
-            ],
-            "nullable": true,
-            "type": "string"
-          },
-          "required": {
-            "description": "Required field on admin ai resource member input.",
-            "type": "boolean"
-          },
-          "sortOrder": {
-            "description": "Sort order field on admin ai resource member input.",
-            "format": "int64",
-            "nullable": true,
-            "pattern": "^(0|[1-9][0-9]*)$",
-            "type": "string",
-            "x-sdkwork-int64-string": true,
-            "x-sdkwork-rust-type": "i64"
-          }
-        },
-        "required": [
-          "memberResourceCode"
-        ],
-        "type": "object"
-      },
-      "AdminAiResourceUpdateRequest": {
-        "additionalProperties": false,
-        "description": "Admin ai resource update request schema exposed by Claw Router.",
-        "name": "AdminAiResourceUpdateRequest",
+        "description": "Admin ai resource item schema exposed by Claw Router.",
         "properties": {
           "apiEndpointCode": {
-            "description": "Api endpoint code field on admin ai resource update request.",
+            "description": "Api endpoint code field on admin ai resource item.",
+            "maxLength": 128,
+            "nullable": true,
+            "pattern": "^[A-Za-z0-9._:-]+$",
+            "type": "string"
+          },
+          "capabilities": {
+            "description": "Capabilities field on admin ai resource item.",
+            "items": {
+              "description": "Capabilities field on admin ai resource item.",
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            },
+            "maxItems": 128,
+            "type": "array"
+          },
+          "capability": {
+            "description": "Capability field on admin ai resource item.",
             "maxLength": 128,
             "nullable": true,
             "pattern": "^[A-Za-z0-9._:-]+$",
             "type": "string"
           },
           "catalogKey": {
-            "description": "Catalog key field on admin ai resource update request.",
+            "description": "Catalog key field on admin ai resource item.",
             "maxLength": 256,
             "nullable": true,
             "pattern": "^[\\x20-\\x7E]*$",
             "type": "string"
           },
           "compositionMode": {
-            "description": "Composition mode field on admin ai resource update request.",
+            "description": "Composition mode field on admin ai resource item.",
             "enum": [
               "single",
               "any",
-              "all",
-              null
+              "all"
             ],
-            "nullable": true,
             "type": "string"
           },
           "displayName": {
-            "description": "Display name field on admin ai resource update request.",
+            "description": "Display name field on admin ai resource item.",
             "maxLength": 128,
-            "nullable": true,
+            "minLength": 1,
             "type": "string"
           },
+          "id": {
+            "description": "Id field on admin ai resource item.",
+            "format": "int64",
+            "pattern": "^[1-9][0-9]*$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
           "members": {
-            "description": "Members field on admin ai resource update request.",
+            "description": "Members field on admin ai resource item.",
             "items": {
-              "$ref": "#/components/schemas/AdminAiResourceMemberInput"
+              "$ref": "#/components/schemas/AdminAiResourceMemberItem"
             },
             "maxItems": 512,
             "type": "array"
           },
           "modalityCode": {
-            "description": "Modality code field on admin ai resource update request.",
+            "description": "Modality code field on admin ai resource item.",
             "maxLength": 64,
             "nullable": true,
             "pattern": "^[A-Za-z0-9._:-]+$",
             "type": "string"
           },
           "model": {
-            "description": "Model field on admin ai resource update request.",
+            "description": "Model field on admin ai resource item.",
             "maxLength": 128,
             "nullable": true,
             "pattern": "^[\\x20-\\x7E]*$",
             "type": "string"
           },
           "providerNativeModel": {
-            "description": "Provider native model field on admin ai resource update request.",
+            "description": "Provider native model field on admin ai resource item.",
             "maxLength": 256,
             "nullable": true,
             "pattern": "^[\\x20-\\x7E]*$",
             "type": "string"
           },
           "resourceCode": {
-            "description": "Resource code field on admin ai resource update request.",
+            "description": "Resource code field on admin ai resource item.",
             "maxLength": 192,
-            "nullable": true,
             "pattern": "^[A-Za-z0-9._:-]+$",
             "type": "string"
           },
           "resourceType": {
-            "description": "Resource type field on admin ai resource update request.",
+            "description": "Resource type field on admin ai resource item.",
             "enum": [
               "vendor",
               "modality",
               "api_endpoint",
               "model_api",
-              "bundle",
-              null
+              "bundle"
             ],
-            "nullable": true,
             "type": "string"
           },
           "sortOrder": {
-            "description": "Sort order field on admin ai resource update request.",
+            "description": "Sort order field on admin ai resource item.",
             "format": "int64",
             "nullable": true,
             "pattern": "^(0|[1-9][0-9]*)$",
@@ -581,24 +899,79 @@
             "x-sdkwork-rust-type": "i64"
           },
           "status": {
-            "description": "Status field on admin ai resource update request.",
+            "description": "Status field on admin ai resource item.",
             "enum": [
               "active",
               "disabled",
-              "inactive",
-              null
+              "inactive"
             ],
-            "nullable": true,
             "type": "string"
           },
           "vendorCode": {
-            "description": "Vendor code field on admin ai resource update request.",
+            "description": "Vendor code field on admin ai resource item.",
             "maxLength": 64,
             "nullable": true,
             "pattern": "^[A-Za-z0-9._:-]+$",
             "type": "string"
           }
         },
+        "required": [
+          "id",
+          "resourceCode",
+          "resourceType",
+          "displayName",
+          "capabilities",
+          "compositionMode",
+          "status",
+          "members"
+        ],
+        "type": "object"
+      },
+      "AdminAiResourceMemberItem": {
+        "additionalProperties": false,
+        "description": "Admin ai resource member item schema exposed by Claw Router.",
+        "properties": {
+          "memberResourceCode": {
+            "description": "Member resource code field on admin ai resource member item.",
+            "maxLength": 192,
+            "pattern": "^[A-Za-z0-9._:-]+$",
+            "type": "string"
+          },
+          "memberRole": {
+            "description": "Member role field on admin ai resource member item.",
+            "enum": [
+              "included",
+              "optional",
+              "fallback"
+            ],
+            "type": "string"
+          },
+          "parentResourceCode": {
+            "description": "Parent resource code field on admin ai resource member item.",
+            "maxLength": 192,
+            "pattern": "^[A-Za-z0-9._:-]+$",
+            "type": "string"
+          },
+          "required": {
+            "description": "Required field on admin ai resource member item.",
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "description": "Sort order field on admin ai resource member item.",
+            "format": "int64",
+            "nullable": true,
+            "pattern": "^(0|[1-9][0-9]*)$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          }
+        },
+        "required": [
+          "parentResourceCode",
+          "memberResourceCode",
+          "memberRole",
+          "required"
+        ],
         "type": "object"
       },
       "AdminModelVendorItem": {
@@ -692,6 +1065,90 @@
         },
         "required": [
           "items"
+        ],
+        "type": "object"
+      },
+      "AiResourceGroupResourcesPage": {
+        "additionalProperties": false,
+        "description": "Ai resource group resources page schema exposed by Claw Router.",
+        "name": "AiResourceGroupResourcesPage",
+        "properties": {
+          "items": {
+            "description": "Items field on ai resource group resources page.",
+            "items": {
+              "$ref": "#/components/schemas/AdminAiResourceGroupResourceItem"
+            },
+            "maxItems": 200,
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OffsetPageInfo"
+              }
+            ],
+            "description": "Page info field on ai resource group resources page."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
+      "AiResourceGroupsPage": {
+        "additionalProperties": false,
+        "description": "Ai resource groups page schema exposed by Claw Router.",
+        "name": "AiResourceGroupsPage",
+        "properties": {
+          "items": {
+            "description": "Items field on ai resource groups page.",
+            "items": {
+              "$ref": "#/components/schemas/AdminAiResourceGroupItem"
+            },
+            "maxItems": 200,
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OffsetPageInfo"
+              }
+            ],
+            "description": "Page info field on ai resource groups page."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
+      "AiResourcesPage": {
+        "additionalProperties": false,
+        "description": "Ai resources page schema exposed by Claw Router.",
+        "name": "AiResourcesPage",
+        "properties": {
+          "items": {
+            "description": "Items field on ai resources page.",
+            "items": {
+              "$ref": "#/components/schemas/AdminAiResourceItem"
+            },
+            "maxItems": 200,
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OffsetPageInfo"
+              }
+            ],
+            "description": "Page info field on ai resources page."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
         ],
         "type": "object"
       },
@@ -798,33 +1255,6 @@
             "description": "Null JSON value."
           }
         ]
-      },
-      "ModelMappingOptionsListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by model mapping options list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Model mapping options list result schema exposed by Claw Router.",
-        "x-operation-id": "modelMappingOptions.list"
       },
       "ModelMappingsCreateResult": {
         "allOf": [
@@ -1968,6 +2398,59 @@
         "properties": {},
         "type": "object"
       },
+      "OffsetPageInfo": {
+        "additionalProperties": false,
+        "description": "Offset page info schema exposed by Claw Router.",
+        "properties": {
+          "hasMore": {
+            "description": "Has more field on offset page info.",
+            "type": "boolean"
+          },
+          "mode": {
+            "description": "Mode field on offset page info.",
+            "enum": [
+              "offset"
+            ],
+            "type": "string"
+          },
+          "page": {
+            "description": "Page field on offset page info.",
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "pageSize": {
+            "description": "Page size field on offset page info.",
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "totalItems": {
+            "description": "Total items field on offset page info.",
+            "format": "int64",
+            "pattern": "^(0|[1-9][0-9]*)$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "totalPages": {
+            "description": "Total pages field on offset page info.",
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "mode",
+          "page",
+          "pageSize",
+          "totalItems",
+          "totalPages",
+          "hasMore"
+        ],
+        "type": "object"
+      },
       "PageInfo": {
         "additionalProperties": false,
         "properties": {
@@ -2075,10 +2558,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/AdminAiResourceGroupItem"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on resource groups create result."
               }
             },
             "required": [
@@ -2102,10 +2585,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/AiResourceGroupsPage"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on resource groups list result."
               }
             },
             "required": [
@@ -2129,10 +2612,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/AiResourceGroupResourcesPage"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on resource groups resources list result."
               }
             },
             "required": [
@@ -2143,6 +2626,33 @@
         ],
         "description": "Resource groups resources list result schema exposed by Claw Router.",
         "x-operation-id": "resourceGroups.resources.list"
+      },
+      "ResourceGroupsResourcesUpdateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by resource groups resources update result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminAiResourceGroupResourceItem"
+                  }
+                ],
+                "description": "Data field on resource groups resources update result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Resource groups resources update result schema exposed by Claw Router.",
+        "x-operation-id": "resourceGroups.resources.update"
       },
       "ResourceGroupsUpdateResult": {
         "allOf": [
@@ -2156,10 +2666,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/AdminAiResourceGroupItem"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on resource groups update result."
               }
             },
             "required": [
@@ -2170,33 +2680,6 @@
         ],
         "description": "Resource groups update result schema exposed by Claw Router.",
         "x-operation-id": "resourceGroups.update"
-      },
-      "ResourcesCreateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by resources create result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Resources create result schema exposed by Claw Router.",
-        "x-operation-id": "resources.create"
       },
       "ResourcesListResult": {
         "allOf": [
@@ -2210,10 +2693,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/AiResourcesPage"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on resources list result."
               }
             },
             "required": [
@@ -2224,33 +2707,6 @@
         ],
         "description": "Resources list result schema exposed by Claw Router.",
         "x-operation-id": "resources.list"
-      },
-      "ResourcesUpdateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by resources update result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Resources update result schema exposed by Claw Router.",
-        "x-operation-id": "resources.update"
       },
       "SdkWorkApiResponse": {
         "additionalProperties": false,
@@ -2417,89 +2873,6 @@
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "openapi": "3.1.2",
   "paths": {
-    "/backend/v3/api/ai/model_mapping_options": {
-      "get": {
-        "description": "List model options catalog. Reads ai_model_mapping_rule. Writes none. File targets none.",
-        "operationId": "modelMappingOptions.list",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ModelMappingOptionsListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "List model options catalog",
-        "tags": [
-          "ai"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "ai_model_mapping_rule"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "intelligence",
-        "x-sdkwork-api-authority": "sdkwork-models-backend-api",
-        "x-sdkwork-domain": "intelligence",
-        "x-sdkwork-owner": "sdkwork-models",
-        "x-sdkwork-resource": "modelMappingOptions",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-        "x-write-tables": []
-      }
-    },
     "/backend/v3/api/ai/model_mappings": {
       "get": {
         "description": "List model mappings. Reads ai_model_mapping_rule, ai_model_mapping_rule_binding, ai_model_mapping_rule_item. Writes none. File targets none.",
@@ -3592,7 +3965,7 @@
     },
     "/backend/v3/api/ai/models": {
       "get": {
-        "description": "List all models. Reads ai_model_vendor, ai_model, ai_model_capability, ai_model_pricing. Writes none. File targets none.",
+        "description": "List models page. Reads ai_model_vendor, ai_model, ai_model_capability, ai_model_pricing. Writes none. File targets none.",
         "operationId": "models.list",
         "parameters": [
           {
@@ -3706,7 +4079,7 @@
             "AuthToken": []
           }
         ],
-        "summary": "List all models",
+        "summary": "List models page",
         "tags": [
           "ai"
         ],
@@ -4081,9 +4454,45 @@
     },
     "/backend/v3/api/ai/resource_groups": {
       "get": {
-        "description": "List resource groups. Reads ai_resource_group, ai_resource_group_item. Writes none. File targets none.",
+        "description": "List resource groups page. Reads ai_resource_group, ai_resource_group_item. Writes none. File targets none.",
         "operationId": "resourceGroups.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -4142,7 +4551,7 @@
             "AuthToken": []
           }
         ],
-        "summary": "List resource groups",
+        "summary": "List resource groups page",
         "tags": [
           "ai"
         ],
@@ -4163,9 +4572,20 @@
         "x-write-tables": []
       },
       "post": {
-        "description": "Create resource group. Reads ai_resource_group, ai_resource_group_item. Writes ai_resource_group, ai_resource_group_item, ops_audit_log. File targets none.",
+        "description": "Create resource group. Reads ai_resource_group, ai_resource_group_item, ai_resource. Writes ai_resource_group, ai_resource_group_item, ops_audit_log. File targets none.",
         "operationId": "resourceGroups.create",
         "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminAiResourceGroupCreateRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for create resource group.",
+          "required": true
+        },
         "responses": {
           "201": {
             "content": {
@@ -4232,7 +4652,8 @@
         "x-file-targets": [],
         "x-read-sources": [
           "ai_resource_group",
-          "ai_resource_group_item"
+          "ai_resource_group_item",
+          "ai_resource"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -4251,7 +4672,7 @@
     },
     "/backend/v3/api/ai/resource_groups/{groupIdOrCode}/resources": {
       "get": {
-        "description": "List resource group resources. Reads ai_resource_group, ai_resource_group_item, ai_resource. Writes none. File targets none.",
+        "description": "List resource group resources page. Reads ai_resource_group, ai_resource_group_item, ai_resource. Writes none. File targets none.",
         "operationId": "resourceGroups.resources.list",
         "parameters": [
           {
@@ -4260,6 +4681,41 @@
             "name": "groupIdOrCode",
             "required": true,
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 200,
               "type": "string"
             }
           }
@@ -4322,7 +4778,7 @@
             "AuthToken": []
           }
         ],
-        "summary": "List resource group resources",
+        "summary": "List resource group resources page",
         "tags": [
           "ai"
         ],
@@ -4346,7 +4802,7 @@
     },
     "/backend/v3/api/ai/resource_groups/{groupId}": {
       "delete": {
-        "description": "Delete resource group. Reads ai_resource_group. Writes ai_resource_group, ai_resource_group_item, ops_audit_log. File targets none.",
+        "description": "Delete resource group. Reads ai_resource_group, ai_resource_group_item. Writes ai_resource_group, ai_resource_group_item, ops_audit_log. File targets none.",
         "operationId": "resourceGroups.delete",
         "parameters": [
           {
@@ -4417,7 +4873,8 @@
         "x-contract-kind": "delete",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai_resource_group"
+          "ai_resource_group",
+          "ai_resource_group_item"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -4434,7 +4891,7 @@
         ]
       },
       "patch": {
-        "description": "Update resource group. Reads ai_resource_group, ai_resource_group_item. Writes ai_resource_group, ai_resource_group_item, ops_audit_log. File targets none.",
+        "description": "Update resource group. Reads ai_resource_group, ai_resource_group_item, ai_resource. Writes ai_resource_group, ai_resource_group_item, ops_audit_log. File targets none.",
         "operationId": "resourceGroups.update",
         "parameters": [
           {
@@ -4447,6 +4904,17 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminAiResourceGroupUpdateRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for update resource group.",
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
@@ -4513,7 +4981,8 @@
         "x-file-targets": [],
         "x-read-sources": [
           "ai_resource_group",
-          "ai_resource_group_item"
+          "ai_resource_group_item",
+          "ai_resource"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -4530,11 +4999,279 @@
         ]
       }
     },
+    "/backend/v3/api/ai/resource_groups/{groupId}/resources/{resourceCode}": {
+      "delete": {
+        "description": "Delete resource group member. Reads ai_resource_group, ai_resource_group_item, ai_resource. Writes ai_resource_group_item, ops_audit_log. File targets none.",
+        "operationId": "resourceGroups.resources.delete",
+        "parameters": [
+          {
+            "description": "Group id path parameter.",
+            "in": "path",
+            "name": "groupId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Resource code path parameter.",
+            "in": "path",
+            "name": "resourceCode",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Delete resource group member",
+        "tags": [
+          "ai"
+        ],
+        "x-contract-kind": "delete",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_resource_group",
+          "ai_resource_group_item",
+          "ai_resource"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-models-backend-api",
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-models",
+        "x-sdkwork-resource": "resourceGroups.resources",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
+        "x-write-tables": [
+          "ai_resource_group_item",
+          "ops_audit_log"
+        ]
+      },
+      "put": {
+        "description": "Upsert resource group member. Reads ai_resource_group, ai_resource_group_item, ai_resource. Writes ai_resource_group_item, ops_audit_log. File targets none.",
+        "operationId": "resourceGroups.resources.update",
+        "parameters": [
+          {
+            "description": "Group id path parameter.",
+            "in": "path",
+            "name": "groupId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Resource code path parameter.",
+            "in": "path",
+            "name": "resourceCode",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminAiResourceGroupMemberUpdateRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for upsert resource group member.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceGroupsResourcesUpdateResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Upsert resource group member",
+        "tags": [
+          "ai"
+        ],
+        "x-contract-kind": "update",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_resource_group",
+          "ai_resource_group_item",
+          "ai_resource"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-models-backend-api",
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-models",
+        "x-sdkwork-resource": "resourceGroups.resources",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
+        "x-write-tables": [
+          "ai_resource_group_item",
+          "ops_audit_log"
+        ]
+      }
+    },
     "/backend/v3/api/ai/resources": {
       "get": {
-        "description": "List assignable resources. Reads ai_resource, ai_resource_group_item. Writes none. File targets none.",
+        "description": "List assignable resources page. Reads ai_resource, ai_resource_group_item. Writes none. File targets none.",
         "operationId": "resources.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Resource type query parameter.",
+            "in": "query",
+            "name": "resource_type",
+            "required": false,
+            "schema": {
+              "enum": [
+                "vendor",
+                "modality",
+                "api_endpoint",
+                "model_api",
+                "bundle"
+              ],
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -4593,7 +5330,7 @@
             "AuthToken": []
           }
         ],
-        "summary": "List assignable resources",
+        "summary": "List assignable resources page",
         "tags": [
           "ai"
         ],
@@ -4612,208 +5349,6 @@
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
         "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
         "x-write-tables": []
-      },
-      "post": {
-        "description": "Create ai resource. Reads ai_resource. Writes ai_resource, ops_audit_log. File targets none.",
-        "operationId": "resources.create",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminAiResourceCreateRequest"
-              }
-            }
-          },
-          "description": "Typed request payload for create ai resource.",
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResourcesCreateResult"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Create ai resource",
-        "tags": [
-          "ai"
-        ],
-        "x-contract-kind": "create",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "ai_resource"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "intelligence",
-        "x-sdkwork-api-authority": "sdkwork-models-backend-api",
-        "x-sdkwork-domain": "intelligence",
-        "x-sdkwork-owner": "sdkwork-models",
-        "x-sdkwork-resource": "resources",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "../sdkwork-models/crates/sdkwork-models-catalog-service/src/api/admin_ai_resource.rs",
-        "x-write-tables": [
-          "ai_resource",
-          "ops_audit_log"
-        ]
-      }
-    },
-    "/backend/v3/api/ai/resources/{resourceId}": {
-      "put": {
-        "description": "Update ai resource. Reads ai_resource. Writes ai_resource, ops_audit_log. File targets none.",
-        "operationId": "resources.update",
-        "parameters": [
-          {
-            "description": "Resource id path parameter.",
-            "in": "path",
-            "name": "resourceId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminAiResourceUpdateRequest"
-              }
-            }
-          },
-          "description": "Typed request payload for update ai resource.",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResourcesUpdateResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Update ai resource",
-        "tags": [
-          "ai"
-        ],
-        "x-contract-kind": "update",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "ai_resource"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "intelligence",
-        "x-sdkwork-api-authority": "sdkwork-models-backend-api",
-        "x-sdkwork-domain": "intelligence",
-        "x-sdkwork-owner": "sdkwork-models",
-        "x-sdkwork-resource": "resources",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "../sdkwork-models/crates/sdkwork-models-catalog-service/src/api/admin_ai_resource.rs",
-        "x-write-tables": [
-          "ai_resource",
-          "ops_audit_log"
-        ]
       }
     }
   },

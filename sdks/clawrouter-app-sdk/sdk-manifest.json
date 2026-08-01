@@ -47,6 +47,17 @@
       }
     },
     {
+      "workspace": "sdkwork-messaging-app-sdk",
+      "role": "messaging-app-verification-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/app/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/messaging-app-sdk"
+      }
+    },
+    {
       "workspace": "sdkwork-account-app-sdk",
       "role": "account-app-capability",
       "required": true,
@@ -135,80 +146,7 @@
       }
     }
   ],
-  "dependencyApiExports": [
-    {
-      "workspace": "sdkwork-account-app-sdk",
-      "sdkFamily": "sdkwork-account-app-sdk",
-      "apiAuthority": "sdkwork-account-app-api",
-      "surface": "app-api",
-      "apiPrefix": "/app/v3/api",
-      "exportMode": "composed-wrapper",
-      "visibility": "public",
-      "methodSelector": "SdkworkClawrouterAppDomainsClient.account",
-      "packageExport": "./domains",
-      "runtimeRequired": false
-    },
-    {
-      "workspace": "sdkwork-catalog-app-sdk",
-      "sdkFamily": "sdkwork-catalog-app-sdk",
-      "apiAuthority": "sdkwork-catalog-app-api",
-      "surface": "app-api",
-      "apiPrefix": "/app/v3/api",
-      "exportMode": "composed-wrapper",
-      "visibility": "public",
-      "methodSelector": "SdkworkClawrouterAppDomainsClient.catalog",
-      "packageExport": "./domains",
-      "runtimeRequired": false
-    },
-    {
-      "workspace": "sdkwork-membership-app-sdk",
-      "sdkFamily": "sdkwork-membership-app-sdk",
-      "apiAuthority": "sdkwork-membership-app-api",
-      "surface": "app-api",
-      "apiPrefix": "/app/v3/api",
-      "exportMode": "composed-wrapper",
-      "visibility": "public",
-      "methodSelector": "SdkworkClawrouterAppDomainsClient.membership",
-      "packageExport": "./domains",
-      "runtimeRequired": false
-    },
-    {
-      "workspace": "sdkwork-order-app-sdk",
-      "sdkFamily": "sdkwork-order-app-sdk",
-      "apiAuthority": "sdkwork-order-app-api",
-      "surface": "app-api",
-      "apiPrefix": "/app/v3/api",
-      "exportMode": "composed-wrapper",
-      "visibility": "public",
-      "methodSelector": "SdkworkClawrouterAppDomainsClient.order",
-      "packageExport": "./domains",
-      "runtimeRequired": false
-    },
-    {
-      "workspace": "sdkwork-payment-app-sdk",
-      "sdkFamily": "sdkwork-payment-app-sdk",
-      "apiAuthority": "sdkwork-payment-app-api",
-      "surface": "app-api",
-      "apiPrefix": "/app/v3/api",
-      "exportMode": "composed-wrapper",
-      "visibility": "public",
-      "methodSelector": "SdkworkClawrouterAppDomainsClient.payment",
-      "packageExport": "./domains",
-      "runtimeRequired": false
-    },
-    {
-      "workspace": "sdkwork-promotion-app-sdk",
-      "sdkFamily": "sdkwork-promotion-app-sdk",
-      "apiAuthority": "sdkwork-promotion-app-api",
-      "surface": "app-api",
-      "apiPrefix": "/app/v3/api",
-      "exportMode": "composed-wrapper",
-      "visibility": "public",
-      "methodSelector": "SdkworkClawrouterAppDomainsClient.promotion",
-      "packageExport": "./domains",
-      "runtimeRequired": false
-    }
-  ],
+  "dependencyApiExports": [],
   "languages": [
     {
       "language": "typescript",

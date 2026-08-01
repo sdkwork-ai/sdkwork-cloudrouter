@@ -47,6 +47,54 @@ class FrontendOperationAuditTest(unittest.TestCase):
         fragment.write_text(textwrap.dedent(content).strip() + "\n", encoding="utf-8")
         return fragment
 
+    def write_backend_admin_operation_fragment(self, root: Path, content: str) -> Path:
+        fragment = root / "docs" / "schema-registry" / "frontend-field-contracts" / "operations" / "backend-admin-commerce.yaml"
+        fragment.parent.mkdir(parents=True, exist_ok=True)
+        fragment.write_text(textwrap.dedent(content).strip() + "\n", encoding="utf-8")
+        return fragment
+
+    def write_backend_sdk_authority(self, root: Path) -> None:
+        self.write_file(
+            root,
+            "sdks/clawrouter-backend-sdk/sdk-manifest.json",
+            """
+            {
+              "sdkFamily": "clawrouter-backend-sdk",
+              "authoritySpec": "openapi/clawrouter-backend-sdk.openapi.json",
+              "sdkDependencies": [
+                {"workspace": "sdkwork-membership-backend-sdk"}
+              ]
+            }
+            """,
+        )
+        self.write_file(
+            root,
+            "authorities/membership/sdk-manifest.json",
+            """
+            {
+              "sdkFamily": "sdkwork-membership-backend-sdk",
+              "authoritySpec": "openapi/membership.json"
+            }
+            """,
+        )
+        self.write_file(
+            root,
+            "authorities/membership/openapi/membership.json",
+            """
+            {
+              "openapi": "3.1.2",
+              "paths": {
+                "/backend/v3/api/memberships/plans": {
+                  "get": {"operationId": "plans.list"}
+                },
+                "/backend/v3/api/memberships/packages": {
+                  "get": {"operationId": "packages.list"}
+                }
+              }
+            }
+            """,
+        )
+
     def test_backend_route_manifest_operations_are_not_required_to_have_frontend_services(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -461,6 +509,159 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     api_path: /app/v3/api/catalog/products
                     sdk_domain: commerce
                     read_sources: [commerce_product_spu]
+                """,
+            )
+
+            result = FrontendOperationAudit(root=root).validate()
+
+            self.assertTrue(result.ok, result.messages)
+
+    def test_validates_bound_dependency_operation_against_sdk_authority(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_backend_sdk_authority(root)
+            self.write_file(
+                root,
+                "apps/sdkwork-clawrouter-pc/packages/demo/src/membershipService.ts",
+                """
+                import { getSdkworkMembershipBackendSdkClient } from '@sdkwork/clients';
+
+                export async function listMembershipPlans(): Promise<unknown> {
+                  return getSdkworkMembershipBackendSdkClient().memberships.plans.list();
+                }
+                """,
+            )
+            self.write_contract(
+                root,
+                """
+                routes:
+                  - route: /admin/memberships/:sectionId?
+                    required_tables: [memberships]
+                frontend_operations: []
+                """,
+            )
+            self.write_backend_admin_operation_fragment(
+                root,
+                """
+                frontend_operation_sdk_authorities:
+                  sdkwork-membership-backend-sdk:
+                    manifest: authorities/membership/sdk-manifest.json
+                frontend_operations:
+                  - route: /admin/memberships/plans
+                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/membershipService.ts
+                    operation: listMembershipPlans
+                    kind: read
+                    api_surface: backend
+                    api_method: GET
+                    api_path: /backend/v3/api/memberships/plans
+                    sdk_operations:
+                      - sdk_family: sdkwork-membership-backend-sdk
+                        operation_id: plans.list
+                    read_sources: [memberships]
+                """,
+            )
+
+            result = FrontendOperationAudit(root=root).validate()
+
+            self.assertTrue(result.ok, result.messages)
+
+    def test_reports_dependency_operation_path_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_backend_sdk_authority(root)
+            self.write_file(
+                root,
+                "apps/sdkwork-clawrouter-pc/packages/demo/src/membershipService.ts",
+                """
+                import { getSdkworkMembershipBackendSdkClient } from '@sdkwork/clients';
+
+                export async function listMembershipPlans(): Promise<unknown> {
+                  return getSdkworkMembershipBackendSdkClient().memberships.plans.list();
+                }
+                """,
+            )
+            self.write_contract(
+                root,
+                """
+                routes:
+                  - route: /admin/memberships/:sectionId?
+                    required_tables: [memberships]
+                frontend_operations: []
+                """,
+            )
+            self.write_backend_admin_operation_fragment(
+                root,
+                """
+                frontend_operation_sdk_authorities:
+                  sdkwork-membership-backend-sdk:
+                    manifest: authorities/membership/sdk-manifest.json
+                frontend_operations:
+                  - route: /admin/memberships/plans
+                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/membershipService.ts
+                    operation: listMembershipPlans
+                    kind: read
+                    api_surface: backend
+                    api_method: GET
+                    api_path: /backend/v3/api/memberships/packages
+                    sdk_operations:
+                      - sdk_family: sdkwork-membership-backend-sdk
+                        operation_id: plans.list
+                    read_sources: [memberships]
+                """,
+            )
+
+            result = FrontendOperationAudit(root=root).validate()
+
+            self.assertFalse(result.ok)
+            self.assertIn(
+                "path /backend/v3/api/memberships/packages does not match sdkwork-membership-backend-sdk authority /backend/v3/api/memberships/plans",
+                "\n".join(result.messages),
+            )
+
+    def test_accepts_explicit_multi_operation_sdk_composition(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_backend_sdk_authority(root)
+            self.write_file(
+                root,
+                "apps/sdkwork-clawrouter-pc/packages/demo/src/membershipService.ts",
+                """
+                import { getSdkworkMembershipBackendSdkClient } from '@sdkwork/clients';
+
+                export async function loadMembershipCatalog(): Promise<unknown> {
+                  const client = getSdkworkMembershipBackendSdkClient().memberships;
+                  return Promise.all([client.plans.list(), client.packages.list()]);
+                }
+                """,
+            )
+            self.write_contract(
+                root,
+                """
+                routes:
+                  - route: /admin/memberships/:sectionId?
+                    required_tables: [memberships]
+                frontend_operations: []
+                """,
+            )
+            self.write_backend_admin_operation_fragment(
+                root,
+                """
+                frontend_operation_sdk_authorities:
+                  sdkwork-membership-backend-sdk:
+                    manifest: authorities/membership/sdk-manifest.json
+                frontend_operations:
+                  - route: /admin/memberships/packages
+                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/membershipService.ts
+                    operation: loadMembershipCatalog
+                    operation_scope: composition
+                    kind: read
+                    api_surface: backend
+                    sdk_operations:
+                      - sdk_family: sdkwork-membership-backend-sdk
+                        operation_id: plans.list
+                      - sdk_family: sdkwork-membership-backend-sdk
+                        operation_id: packages.list
+                    read_sources: [memberships]
                 """,
             )
 
@@ -1135,6 +1336,45 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     api_path: /app/v3/api/iam/users/current
                     sdk_domain: iam
                     read_sources: [iam_user]
+                """,
+            )
+
+            result = FrontendOperationAudit(root=root).validate()
+
+            self.assertTrue(result.ok, result.messages)
+
+    def test_accepts_clawrouter_app_sdk_for_clawrouter_owned_iam_settings(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_file(
+                root,
+                "apps/sdkwork-clawrouter-pc/packages/demo/src/settingsService.ts",
+                """
+                import { getClawRouterAppSdkClient } from 'sdkwork-clawroutes-pc-commons/runtime';
+
+                export class SettingsService {
+                  static async fetchSettings(): Promise<unknown> {
+                    return getClawRouterAppSdkClient().iam.users.settings.retrieve();
+                  }
+                }
+                """,
+            )
+            self.write_contract(
+                root,
+                """
+                routes:
+                  - route: /console/settings
+                    required_tables: [iam_user_preference]
+                frontend_operations:
+                  - route: /console/settings
+                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/settingsService.ts
+                    operation: fetchSettings
+                    kind: read
+                    api_surface: app
+                    api_method: GET
+                    api_path: /app/v3/api/iam/users/settings
+                    sdk_domain: iam
+                    read_sources: [iam_user_preference]
                 """,
             )
 

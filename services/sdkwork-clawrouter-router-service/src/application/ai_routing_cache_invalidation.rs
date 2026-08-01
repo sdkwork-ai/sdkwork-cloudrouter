@@ -1,12 +1,13 @@
 use std::sync::Arc;
 
 use crate::ports::{
-    AdminAiResourceGroupItem, AdminAiResourceGroupResourcesPage, AdminAiResourceItem,
-    AdminAiResourceListPage, AdminAiResourceReadFuture, AdminAiResourceStore,
-    CreateAdminAiResourceCommand, CreateAdminAiResourceGroupCommand,
-    DeleteAdminAiResourceGroupCommand, ListAdminAiResourceGroupResourcesQuery,
+    AdminAiResourceGroupItem, AdminAiResourceGroupListPage, AdminAiResourceGroupResourceItem,
+    AdminAiResourceGroupResourcesPage, AdminAiResourceItem, AdminAiResourceListPage,
+    AdminAiResourceReadFuture, AdminAiResourceStore, CreateAdminAiResourceCommand,
+    CreateAdminAiResourceGroupCommand, DeleteAdminAiResourceGroupCommand,
+    DeleteAdminAiResourceGroupMemberCommand, ListAdminAiResourceGroupResourcesQuery,
     ListAdminAiResourceGroupsQuery, ListAdminAiResourcesQuery, UpdateAdminAiResourceCommand,
-    UpdateAdminAiResourceGroupCommand,
+    UpdateAdminAiResourceGroupCommand, UpsertAdminAiResourceGroupMemberCommand,
 };
 use sdkwork_models_contract_service::{
     AdminAiModelItem, AdminAiModelListPage, AdminModelCatalogSyncItem, AdminModelCommandFuture,
@@ -100,7 +101,7 @@ impl AdminAiResourceStore for AiRoutingCacheInvalidatingAdminAiResourceStore {
     fn list_ai_resource_groups<'a>(
         &'a self,
         query: ListAdminAiResourceGroupsQuery,
-    ) -> AdminAiResourceReadFuture<'a, Vec<AdminAiResourceGroupItem>> {
+    ) -> AdminAiResourceReadFuture<'a, AdminAiResourceGroupListPage> {
         self.inner.list_ai_resource_groups(query)
     }
 
@@ -132,6 +133,32 @@ impl AdminAiResourceStore for AiRoutingCacheInvalidatingAdminAiResourceStore {
                 self.invalidator.invalidate_routing_facts().await?;
             }
             Ok(item)
+        })
+    }
+
+    fn upsert_ai_resource_group_member<'a>(
+        &'a self,
+        command: UpsertAdminAiResourceGroupMemberCommand,
+    ) -> AdminAiResourceReadFuture<'a, Option<AdminAiResourceGroupResourceItem>> {
+        Box::pin(async move {
+            let item = self.inner.upsert_ai_resource_group_member(command).await?;
+            if item.is_some() {
+                self.invalidator.invalidate_routing_facts().await?;
+            }
+            Ok(item)
+        })
+    }
+
+    fn delete_ai_resource_group_member<'a>(
+        &'a self,
+        command: DeleteAdminAiResourceGroupMemberCommand,
+    ) -> AdminAiResourceReadFuture<'a, bool> {
+        Box::pin(async move {
+            let deleted = self.inner.delete_ai_resource_group_member(command).await?;
+            if deleted {
+                self.invalidator.invalidate_routing_facts().await?;
+            }
+            Ok(deleted)
         })
     }
 

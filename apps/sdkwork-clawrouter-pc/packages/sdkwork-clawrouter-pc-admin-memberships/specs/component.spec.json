@@ -6,10 +6,10 @@
     "displayName": "SDKWork Claw Router Admin Memberships",
     "version": "0.0.1",
     "type": "node-package",
-    "root": "sdkwork-claw-router/apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships",
-    "domain": "iam",
+    "root": "sdkwork-clawrouter/apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships",
+    "domain": "membership",
     "declaredDomain": null,
-    "capability": "router",
+    "capability": "membership",
     "surface": "backend-admin",
     "status": "standardizing",
     "languages": [
@@ -115,6 +115,19 @@
     ],
     "runtimeEntrypoints": [],
     "sdkClients": [],
+    "sdkDependencies": [
+      {
+        "workspace": "sdkwork-membership-backend-sdk",
+        "surface": "backend-api",
+        "credentialMode": "authenticated-backend-admin"
+      },
+      {
+        "workspace": "clawrouter-backend-sdk",
+        "surface": "backend-api",
+        "credentialMode": "authenticated-backend-admin",
+        "role": "clawrouter-recharge-extension"
+      }
+    ],
     "events": [],
     "configKeys": [],
     "routeManifest": null
@@ -127,7 +140,7 @@
   },
   "verification": {
     "commands": [
-      "node apps/scripts/validate-component-specs.mjs --apps-root apps --json"
+      "node ../sdkwork-specs/tools/check-component-port-bindings.mjs --root ."
     ]
   },
   "metadata": {

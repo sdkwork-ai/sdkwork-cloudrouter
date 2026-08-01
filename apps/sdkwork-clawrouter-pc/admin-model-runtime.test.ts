@@ -3,7 +3,10 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
 
-import { clearStoredAppSessionToken } from "./packages/sdkwork-clawroutes-pc-commons/src/app-session-token.ts";
+import {
+  clearStoredAppSessionToken,
+  storeAppSessionFromResult,
+} from "./packages/sdkwork-clawroutes-pc-commons/src/app-session-token.ts";
 import { resetClawRouterSdkClients } from "./packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts";
 import {
   KNOWN_VENDORS as ADMIN_KNOWN_VENDORS,
@@ -151,12 +154,18 @@ async function withBackendSdkFetch<T>(
       body,
     });
     const result = handler(url, init);
-    return new Response(JSON.stringify({ code: "2000", data: result }), {
+    return new Response(JSON.stringify({ code: 0, data: result, traceId: "test-trace-id" }), {
       status: 200,
       headers: { "content-type": "application/json" },
     });
   }) as typeof fetch;
   clearStoredAppSessionToken();
+  storeAppSessionFromResult({
+    accessToken: "test-access-token",
+    authToken: "test-auth-token",
+    expiresAt: Math.floor(Date.now() / 1000) + 3600,
+    sessionId: "test-session",
+  });
   resetClawRouterSdkClients();
 
   try {
@@ -2467,15 +2476,17 @@ test("admin model resource page exposes group CRUD and static all-api safeguards
 
   for (const expected of [
     "data-admin-model-resource-page",
-    "ResourceGroupService.fetchResourceGroups()",
-    "ResourceGroupService.fetchResourceGroupResources(selectedGroup.groupCode)",
-    "ResourceGroupService.fetchResourceGroupResources('api.all')",
-    "ResourceGroupService.createResourceGroup(input as ResourceGroupCreateInput)",
-    "ResourceGroupService.updateResourceGroup(form.id, input)",
+    "ResourceGroupService.fetchResourceGroupsPage({",
+    "ResourceGroupService.fetchResourceGroupResourcesPage(selectedGroup.groupCode, {",
+    "ResourceGroupService.fetchAssignableResourcesPage({",
+    "resourceType: 'api_endpoint'",
+    "ResourceGroupService.createResourceGroup(input)",
+    "ResourceGroupService.updateResourceGroup(form.id, metadataInput)",
     "ResourceGroupService.deleteResourceGroup(deleteTarget.id)",
+    "ResourceGroupService.upsertResourceGroupMember(selectedGroup.id, {",
+    "ResourceGroupService.deleteResourceGroupMember(selectedGroup.id, resourceCode)",
     "disabled={selectedGroup.dynamic || selectedGroup.groupCode === 'api.all'}",
     "disabled={form.groupCode === 'api.all'}",
-    "selectionMode: form.groupCode === 'api.all' ? 'all' : 'manual'",
     "data-admin-model-resource-sidebar",
     "data-admin-model-resource-sidebar-header",
     "data-admin-model-resource-sidebar-list",
@@ -2488,18 +2499,20 @@ test("admin model resource page exposes group CRUD and static all-api safeguards
     "data-admin-model-resource-group-drawer-resources",
     "data-admin-model-resource-group-form-resource-table",
     "BottomPagination",
+    "groupPageInfo.hasMore",
     "resourcePage",
     "resourcePageSize",
-    "paginatedResources",
+    "resourcePageInfo.hasMore",
     "setResourcePage(1)",
     "AiResourceSelectorModal",
-    "selectionMode=\"multiple\"",
-    "selectedCodes={form.memberCodes}",
-    "setResourceSelectorOpen(true)",
-    "setForm({ ...form, memberCodes: codes })",
-    "w-[80vw] max-w-[80vw]",
-    "flex min-h-0 h-full w-full flex-col bg-slate-50 dark:bg-[#121212] rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-white/5",
-    "setSelectedGroupCode(nextGroups.find(group => group.groupCode === 'api.all')?.groupCode",
+    "selectedCodes={selectorDraftCodes}",
+    "onClose={closeResourceSelector}",
+    "onConfirm={() => void confirmResourceSelector()}",
+    "requestSequence !== groupRequestSequence.current",
+    "requestSequence !== resourceRequestSequence.current",
+    "requestSequence !== selectorRequestSequence.current",
+    "mergeSelectorOptionCache",
+    "maxLength={MAX_SEARCH_LENGTH}",
   ]) {
     assert.ok(source.includes(expected), `missing resource management marker: ${expected}`);
   }
@@ -2514,15 +2527,15 @@ test("admin model resource page exposes group CRUD and static all-api safeguards
   assert.match(source, /data-admin-model-resource-main-panel[\s\S]*className="flex min-h-0 flex-1 flex-col overflow-hidden/);
   assert.match(source, /data-admin-model-resource-table-scroll[\s\S]*className="min-h-0 flex-1 overflow-auto/);
   assert.match(source, /data-admin-model-resource-pagination[\s\S]*<BottomPagination/);
-  assert.match(source, /itemCount=\{paginatedResources\.length\}/);
-  assert.match(source, /hasNextPage=\{resourcePage \* resourcePageSize < filteredResources\.length\}/);
+  assert.match(source, /itemCount=\{groupResources\.length\}/);
+  assert.match(source, /hasNextPage=\{resourcePageInfo\.hasMore\}/);
   assert.match(source, /onPreviousPage=\{\(\) => setResourcePage\(\(current\) => Math\.max\(1, current - 1\)\)\}/);
   assert.match(source, /onNextPage=\{\(\) => setResourcePage\(\(current\) => current \+ 1\)\}/);
   assert.match(source, /onPageSizeChange=\{\(nextPageSize\) => \{/);
   assert.match(source, /setResourcePageSize\(nextPageSize\)/);
-  assert.match(source, /filteredResources\.length === 0/);
-  assert.match(source, /paginatedResources\.map\(\(resource\) =>/);
-  assert.doesNotMatch(source, /filteredResources\.map\(resource =>/);
+  assert.match(source, /groupResources\.length === 0/);
+  assert.match(source, /groupResources\.map\(\(resource\) =>/);
+  assert.doesNotMatch(source, /groupResources\.slice|selectorOptions\.slice|allResources\.slice/);
   const sidebarHeaderStart = source.indexOf("data-admin-model-resource-sidebar-header");
   const mainStart = source.indexOf("data-admin-model-resource-main");
   assert.notEqual(sidebarHeaderStart, -1, "resource group sidebar header marker must exist");
@@ -2530,11 +2543,14 @@ test("admin model resource page exposes group CRUD and static all-api safeguards
   assert.ok(sidebarHeaderStart < mainStart, "resource group sidebar header must be before main area");
   const sidebarHeader = source.slice(sidebarHeaderStart, mainStart);
   assert.match(sidebarHeader, /t\('admin\.model\.resources\.sidebarTitle'\)/);
+  assert.match(sidebarHeader, /t\('admin\.model\.resources\.groupSearch'\)/);
   assert.match(sidebarHeader, /onClick=\{startCreate\}/);
-  assert.match(sidebarHeader, /void loadGroups\(\);/);
-  assert.match(sidebarHeader, /void loadAllResources\(\);/);
+  assert.match(sidebarHeader, /onClick=\{refreshPage\}/);
   assert.match(sidebarHeader, /<Plus className="[^"]*\b(?:w-4 h-4|h-4 w-4)\b[^"]*"/);
   assert.match(sidebarHeader, /<RefreshCw className="[^"]*\b(?:w-4 h-4|h-4 w-4)\b[^"]*"/);
+
+  assert.doesNotMatch(source, /fetchResourceGroups\(|fetchAssignableResources\(|fetchResourceGroupResourcesForUpdate/);
+  assert.doesNotMatch(source, /updateResourceGroup\(selectedGroup\.id,\s*\{\s*members:/);
 
   assert.match(source, /\{deleteTarget && \(\s*<ConfirmDialog/);
   assert.match(source, /isBusy=\{saving\}/);
@@ -2562,7 +2578,7 @@ test("admin model resource page exposes group CRUD and static all-api safeguards
   }
 });
 
-test("admin model resource group detail panel manages members with multi-select resource picker", () => {
+test("admin model resource group detail panel uses paginated single-member mutations", () => {
   const source = readFileSync(
     resolve(PORTAL_ROOT, "../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceAdmin.tsx"),
     "utf8",
@@ -2573,25 +2589,26 @@ test("admin model resource group detail panel manages members with multi-select 
     "data-admin-model-resource-add-resource",
     "data-admin-model-resource-table",
     "data-admin-model-resource-row-action",
-    "resourceAssignmentSelectorOpen",
-    "resourceAssignmentDraftCodes",
-    "allResourceOptions",
-    "resourceOptionsByCode",
-    "setResourceAssignmentDraftCodes(resources.map(resource => resource.resourceCode))",
-    "selectedCodes={resourceAssignmentDraftCodes}",
-    "onClose={() => void saveResourceAssignmentDraft()}",
-    "ResourceGroupService.updateResourceGroup(selectedGroup.id, {",
-    "members: memberCodes.map((resourceCode, index) => ({",
+    "selectorContext",
+    "selectorDraftCodes",
+    "selectorOptions",
+    "openResourceSelector('assignment', [])",
+    "selectedCodes={selectorDraftCodes}",
+    "onClose={closeResourceSelector}",
+    "onConfirm={() => void confirmResourceSelector()}",
+    "ResourceGroupService.upsertResourceGroupMember(selectedGroup.id, {",
+    "ResourceGroupService.deleteResourceGroupMember(selectedGroup.id, resourceCode)",
     "disabled={!canManageSelectedGroupResources || loadingResources || saving}",
-    "selectionMode=\"multiple\"",
+    "selectionMode={selectorContext === 'assignment' ? 'single' : 'multiple'}",
     "t('admin.model.resources.actions.addResource')",
     "t('admin.model.resources.form.resourceSelectorTitle')",
   ]) {
     assert.ok(source.includes(expected), `missing resource group member management marker: ${expected}`);
   }
-  assert.doesNotMatch(source, /options=\{assignableResources\}/);
-  assert.doesNotMatch(source, /options=\{assignableResourceOptions\}/);
-  assert.match(source, /options=\{allResourceOptions\}/);
+  assert.match(source, /options=\{selectorOptions\}/);
+  assert.match(source, /resourceType: 'api_endpoint'/);
+  assert.doesNotMatch(source, /fetchResourceGroupResourcesForUpdate|fetchAssignableResources\(/);
+  assert.doesNotMatch(source, /updateResourceGroup\(selectedGroup\.id,\s*\{\s*members:/);
 
   const mainTableStart = source.indexOf("data-admin-model-resource-table");
   const drawerTableStart = source.indexOf("data-admin-model-resource-group-form-resource-table");
@@ -2603,33 +2620,69 @@ test("admin model resource group detail panel manages members with multi-select 
   assert.match(mainTableSource, /onClick=\{\(\) => void removeSelectedGroupResource\(resource\.resourceCode\)\}/);
 });
 
+test("shared AI resource selector keeps server search, pagination, cancel, and confirm distinct", () => {
+  const source = readFileSync(
+    resolve(PORTAL_ROOT, "packages/sdkwork-clawroutes-pc-commons/src/components/AiResourceSelectorModal.tsx"),
+    "utf8",
+  );
+
+  for (const expected of [
+    "const serverSearch = onSearchQueryChange !== undefined",
+    "const filteredResourceOptions = serverSearch ? options",
+    "onClick={onClose}",
+    "onClick={onConfirm ?? onClose}",
+    "disabled={loading || Boolean(error) || confirmDisabled}",
+    "page={pagination.page}",
+    "onPageSizeChange={pagination.onPageSizeChange}",
+    "text={resourceSearchQuery.trim() ? labels.emptySearch : labels.empty}",
+    "onAction={onRetry}",
+  ]) {
+    assert.ok(source.includes(expected), `missing AI resource selector marker: ${expected}`);
+  }
+});
+
 test("admin model resource group service calls generated backend SDK resource group paths", async () => {
   await withBackendSdkFetch(
     (url, init) => {
       const method = init?.method ?? "GET";
-      if (url === "/backend/v3/api/ai/resource_groups" && method === "GET") {
+      const requestUrl = new URL(url, "http://sdkwork.test");
+      if (requestUrl.pathname === "/backend/v3/api/ai/resource_groups" && method === "GET") {
+        assert.equal(requestUrl.searchParams.get("page"), "2");
+        assert.equal(requestUrl.searchParams.get("page_size"), "10");
+        assert.equal(requestUrl.searchParams.get("q"), "custom");
         return {
           items: [
             {
-              id: "group-all",
-              groupCode: "api.all",
-              groupName: "全部API",
+              id: "101",
+              groupCode: "api.custom.chat",
+              groupName: "Custom Chat",
               groupType: "api_group",
-              selectionMode: "all",
-              description: "All seeded API resources",
-              sortOrder: 1,
+              selectionMode: "manual",
+              description: "Custom endpoints",
+              sortOrder: "22",
               status: "active",
-              resourceCount: 2,
+              resourceCount: "1",
               dynamic: false,
             },
           ],
+          pageInfo: {
+            mode: "offset",
+            page: 2,
+            pageSize: 10,
+            totalItems: "11",
+            totalPages: 2,
+            hasMore: false,
+          },
         };
       }
-      if (url === "/backend/v3/api/ai/resource_groups/api.all/resources" && method === "GET") {
+      if (requestUrl.pathname === "/backend/v3/api/ai/resource_groups/api.custom.chat/resources" && method === "GET") {
+        assert.equal(requestUrl.searchParams.get("page"), "1");
+        assert.equal(requestUrl.searchParams.get("page_size"), "20");
+        assert.equal(requestUrl.searchParams.get("q"), "chat");
         return {
           items: [
             {
-              id: "resource-chat",
+              id: "201",
               resourceCode: "api.openai.chat_completions",
               resourceType: "api_endpoint",
               displayName: "OpenAI Chat API",
@@ -2640,17 +2693,29 @@ test("admin model resource group service calls generated backend SDK resource gr
               model: null,
               providerNativeModel: null,
               status: "active",
-              sortOrder: 10,
+              sortOrder: "10",
               memberRole: "included",
             },
           ],
+          pageInfo: {
+            mode: "offset",
+            page: 1,
+            pageSize: 20,
+            totalItems: "1",
+            totalPages: 1,
+            hasMore: false,
+          },
         };
       }
-      if (url === "/backend/v3/api/ai/resources" && method === "GET") {
+      if (requestUrl.pathname === "/backend/v3/api/ai/resources" && method === "GET") {
+        assert.equal(requestUrl.searchParams.get("page"), "1");
+        assert.equal(requestUrl.searchParams.get("page_size"), "20");
+        assert.equal(requestUrl.searchParams.get("q"), "responses");
+        assert.equal(requestUrl.searchParams.get("resource_type"), "api_endpoint");
         return {
           items: [
             {
-              id: "resource-assignable-chat",
+              id: "202",
               resourceCode: "api.openai.responses",
               resourceType: "api_endpoint",
               displayName: "OpenAI Responses API",
@@ -2663,9 +2728,17 @@ test("admin model resource group service calls generated backend SDK resource gr
               status: "active",
             },
           ],
+          pageInfo: {
+            mode: "offset",
+            page: 1,
+            pageSize: 20,
+            totalItems: "1",
+            totalPages: 1,
+            hasMore: false,
+          },
         };
       }
-      if (url === "/backend/v3/api/ai/resource_groups" && method === "POST") {
+      if (requestUrl.pathname === "/backend/v3/api/ai/resource_groups" && method === "POST") {
         assert.deepEqual(JSON.parse(String(init?.body)), {
           groupCode: "api.custom.chat",
           groupName: "Custom Chat",
@@ -2684,79 +2757,122 @@ test("admin model resource group service calls generated backend SDK resource gr
         });
         return {
           item: {
-            id: "group-custom-chat",
+            id: "101",
             groupCode: "api.custom.chat",
             groupName: "Custom Chat",
             groupType: "api_group",
             selectionMode: "manual",
             description: "Custom endpoints",
-            sortOrder: 22,
+            sortOrder: "22",
             status: "active",
-            resourceCount: 1,
+            resourceCount: "1",
             dynamic: false,
           },
         };
       }
-      if (url === "/backend/v3/api/ai/resource_groups/group-custom-chat" && method === "PATCH") {
+      if (requestUrl.pathname === "/backend/v3/api/ai/resource_groups/101" && method === "PATCH") {
         assert.deepEqual(JSON.parse(String(init?.body)), {
           groupName: "Custom Chat Updated",
-          members: [],
         });
         return {
           item: {
-            id: "group-custom-chat",
+            id: "101",
             groupCode: "api.custom.chat",
             groupName: "Custom Chat Updated",
             groupType: "api_group",
             selectionMode: "manual",
             description: "Custom endpoints",
-            sortOrder: 22,
+            sortOrder: "22",
             status: "active",
-            resourceCount: 0,
+            resourceCount: "1",
             dynamic: false,
           },
         };
       }
-      if (url === "/backend/v3/api/ai/resource_groups/group-custom-chat" && method === "DELETE") {
-        return { deleted: true };
+      if (requestUrl.pathname === "/backend/v3/api/ai/resource_groups/101/resources/api.openai.responses" && method === "PUT") {
+        assert.deepEqual(JSON.parse(String(init?.body)), {
+          itemRole: "included",
+        });
+        return {
+          item: {
+            id: "203",
+            resourceCode: "api.openai.responses",
+            resourceType: "api_endpoint",
+            displayName: "OpenAI Responses API",
+            vendorCode: "openai",
+            modalityCode: "llm",
+            apiEndpointCode: "openai.responses",
+            catalogKey: "openai.responses",
+            model: "gpt-5",
+            providerNativeModel: "gpt-5",
+            status: "active",
+            sortOrder: null,
+            memberRole: "included",
+          },
+        };
+      }
+      if (requestUrl.pathname === "/backend/v3/api/ai/resource_groups/101/resources/api.openai.responses" && method === "DELETE") {
+        return null;
+      }
+      if (requestUrl.pathname === "/backend/v3/api/ai/resource_groups/101" && method === "DELETE") {
+        return null;
       }
       throw new Error(`Unexpected SDK request ${method} ${url}`);
     },
     async (captured) => {
-      const groups = await ResourceGroupService.fetchResourceGroups();
-      const resources = await ResourceGroupService.fetchResourceGroupResources("api.all");
-      const assignableResources = await ResourceGroupService.fetchAssignableResources();
+      const groups = await ResourceGroupService.fetchResourceGroupsPage({
+        page: 2,
+        pageSize: 10,
+        q: " custom ",
+      });
+      const resources = await ResourceGroupService.fetchResourceGroupResourcesPage("api.custom.chat", {
+        page: 1,
+        pageSize: 20,
+        q: " chat ",
+      });
+      const assignableResources = await ResourceGroupService.fetchAssignableResourcesPage({
+        page: 1,
+        pageSize: 20,
+        q: " responses ",
+        resourceType: "api_endpoint",
+      });
       const created = await ResourceGroupService.createResourceGroup({
         groupCode: "API.Custom.Chat",
         groupName: " Custom Chat ",
         groupType: "api_group",
         selectionMode: "manual",
         description: " Custom endpoints ",
-        sortOrder: 22,
+        sortOrder: "22",
         status: "active",
         members: [
           {
             resourceCode: "API.OpenAI.Chat_Completions",
             itemRole: "included",
-            sortOrder: 1,
+            sortOrder: "1",
           },
         ],
       });
-      const updated = await ResourceGroupService.updateResourceGroup("group-custom-chat", {
+      const updated = await ResourceGroupService.updateResourceGroup("101", {
         groupName: "Custom Chat Updated",
-        members: [],
       });
-      const deleted = await ResourceGroupService.deleteResourceGroup("group-custom-chat");
+      const member = await ResourceGroupService.upsertResourceGroupMember("101", {
+        resourceCode: "API.OpenAI.Responses",
+        itemRole: "included",
+      });
+      await ResourceGroupService.deleteResourceGroupMember("101", "API.OpenAI.Responses");
+      await ResourceGroupService.deleteResourceGroup("101");
 
-      assert.equal(groups.length, 1);
-      assert.equal(groups[0].groupCode, "api.all");
-      assert.equal(groups[0].selectionMode, "all");
-      assert.equal(groups[0].dynamic, false);
-      assert.equal(groups[0].resourceCount, 2);
-      assert.equal(resources[0].resourceCode, "api.openai.chat_completions");
-      assert.equal(resources[0].memberRole, "included");
-      assert.deepEqual(assignableResources[0], {
-        id: "resource-assignable-chat",
+      assert.equal(groups.items.length, 1);
+      assert.equal(groups.items[0].groupCode, "api.custom.chat");
+      assert.equal(groups.items[0].selectionMode, "manual");
+      assert.equal(groups.items[0].dynamic, false);
+      assert.equal(groups.items[0].resourceCount, "1");
+      assert.equal(groups.pageInfo.totalItems, "11");
+      assert.equal(resources.items[0].resourceCode, "api.openai.chat_completions");
+      assert.equal(resources.items[0].memberRole, "included");
+      assert.equal(resources.pageInfo.mode, "offset");
+      assert.deepEqual(assignableResources.items[0], {
+        id: "202",
         resourceCode: "api.openai.responses",
         resourceType: "api_endpoint",
         displayName: "OpenAI Responses API",
@@ -2771,16 +2887,19 @@ test("admin model resource group service calls generated backend SDK resource gr
       assert.equal(created.groupCode, "api.custom.chat");
       assert.equal(created.dynamic, false);
       assert.equal(updated.groupName, "Custom Chat Updated");
-      assert.equal(deleted, true);
+      assert.equal(member.resourceCode, "api.openai.responses");
+      assert.equal(member.memberRole, "included");
       assert.deepEqual(
-        captured.map((request) => `${request.method} ${request.url}`),
+        captured.map((request) => `${request.method} ${new URL(request.url, "http://sdkwork.test").pathname}`),
         [
           "GET /backend/v3/api/ai/resource_groups",
-          "GET /backend/v3/api/ai/resource_groups/api.all/resources",
+          "GET /backend/v3/api/ai/resource_groups/api.custom.chat/resources",
           "GET /backend/v3/api/ai/resources",
           "POST /backend/v3/api/ai/resource_groups",
-          "PATCH /backend/v3/api/ai/resource_groups/group-custom-chat",
-          "DELETE /backend/v3/api/ai/resource_groups/group-custom-chat",
+          "PATCH /backend/v3/api/ai/resource_groups/101",
+          "PUT /backend/v3/api/ai/resource_groups/101/resources/api.openai.responses",
+          "DELETE /backend/v3/api/ai/resource_groups/101/resources/api.openai.responses",
+          "DELETE /backend/v3/api/ai/resource_groups/101",
         ],
       );
       for (const request of captured) {
@@ -2803,17 +2922,25 @@ test("admin model resource group service fails closed on malformed resource grou
               groupType: "provider_group",
               selectionMode: "manual",
               status: "active",
-              resourceCount: 0,
+              resourceCount: "0",
               dynamic: false,
             },
           ],
+          pageInfo: {
+            mode: "offset",
+            page: 1,
+            pageSize: 20,
+            totalItems: "1",
+            totalPages: 1,
+            hasMore: false,
+          },
         };
       }
       throw new Error(`Unexpected SDK request ${init?.method ?? "GET"} ${url}`);
     },
     async () => {
       await assert.rejects(
-        () => ResourceGroupService.fetchResourceGroups(),
+        () => ResourceGroupService.fetchResourceGroupsPage(),
         /Unsupported AI resource group type: provider_group/,
       );
     },

@@ -6,12 +6,16 @@ import {
   readRequiredApiItems,
   readString,
   readMediaResource,
+  readMediaResourceUrl,
   type ClawRouterMediaResource,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
-import { getClawRouterBackendSdkClient } from '@sdkwork/clawroutes-pc-commons/sdk-clients';
+import {
+  getClawRouterBackendSdkClient,
+  getSdkworkMembershipBackendSdkClient,
+} from '@sdkwork/clawroutes-pc-commons/sdk-clients';
 
-type BackendMembershipsService = ReturnType<typeof getClawRouterBackendSdkClient>['memberships'];
+type BackendMembershipsService = ReturnType<typeof getSdkworkMembershipBackendSdkClient>['memberships'];
 type BackendRechargesService = ReturnType<typeof getClawRouterBackendSdkClient>['recharges'];
 type RechargeSettingsUpdateInput = Parameters<BackendRechargesService['settings']['update']>[0];
 
@@ -139,20 +143,38 @@ export interface MembershipsAdminPackageMutationInput {
 }
 
 export interface MembershipsAdminMembersListParams {
+  page?: number;
+  pageSize?: number;
   userId?: string;
   planId?: string;
   status?: string;
 }
 
 export interface MembershipsAdminEntitlementsListParams {
+  page?: number;
+  pageSize?: number;
   membershipId?: string;
   planId?: string;
   status?: string;
 }
 
 export interface MembershipsAdminPackagesListParams {
+  page?: number;
+  pageSize?: number;
   packageGroupId?: string;
   planId?: string;
+  status?: string;
+}
+
+export interface MembershipsAdminPackageGroupsListParams {
+  page?: number;
+  pageSize?: number;
+  status?: string;
+}
+
+export interface MembershipsAdminPlansListParams {
+  page?: number;
+  pageSize?: number;
   status?: string;
 }
 
@@ -162,149 +184,126 @@ export interface MembershipsAdminMemberStatusInput {
   status: MembershipsAdminMemberStatus;
 }
 
-export interface MembershipsAdminPackageCatalog {
-  groups: MembershipsAdminPackageGroup[];
-  packages: MembershipsAdminPackageItem[];
-  plans: MembershipsAdminPlanItem[];
+export interface MembershipsAdminPageInfo {
+  mode: 'offset' | 'cursor';
+  page?: number;
+  pageSize?: number;
+  totalItems?: string;
+  totalPages?: number;
+  nextCursor?: string | null;
+  hasMore?: boolean;
 }
 
-export type MembershipPackageGroupMoveDirection = 'up' | 'down';
-
-export function sortMembershipAdminPackageGroups(
-  groups: MembershipsAdminPackageGroup[],
-): MembershipsAdminPackageGroup[] {
-  return [...groups].sort(compareMembershipAdminPackageGroups);
+export interface MembershipsAdminPage<T> {
+  items: T[];
+  pageInfo: MembershipsAdminPageInfo;
 }
 
-export function moveMembershipAdminPackageGroup(
-  groups: MembershipsAdminPackageGroup[],
-  packageGroupId: string,
-  direction: MembershipPackageGroupMoveDirection,
-): MembershipsAdminPackageGroup[] {
-  const sortedGroups = sortMembershipAdminPackageGroups(groups);
-  const currentIndex = sortedGroups.findIndex((group) => group.id === packageGroupId);
-  const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-  if (currentIndex < 0 || targetIndex < 0 || targetIndex >= sortedGroups.length) {
-    return sortedGroups;
-  }
-
-  const reorderedGroups = [...sortedGroups];
-  const [movedGroup] = reorderedGroups.splice(currentIndex, 1);
-  if (!movedGroup) {
-    return sortedGroups;
-  }
-  reorderedGroups.splice(targetIndex, 0, movedGroup);
-  return reorderedGroups.map((group, index) => ({
-    ...group,
-    sortWeight: (index + 1) * 10,
-  }));
+async function backendMembershipsPlansList(params?: Parameters<BackendMembershipsService['plans']['list']>[0]) {
+  return getSdkworkMembershipBackendSdkClient().memberships.plans.list(params);
 }
 
-export async function backendMembershipsPlansList(params?: Parameters<BackendMembershipsService['plans']['management']['list']>[0]) {
-  return getClawRouterBackendSdkClient().memberships.plans.management.list(params);
-}
-
-export async function backendMembershipsPlansCreate(
+async function backendMembershipsPlansCreate(
   body: Parameters<BackendMembershipsService['plans']['create']>[0],
 ) {
-  return getClawRouterBackendSdkClient().memberships.plans.create(body);
+  return getSdkworkMembershipBackendSdkClient().memberships.plans.create(body);
 }
 
-export async function backendMembershipsPlansUpdate(
+async function backendMembershipsPlansUpdate(
   planId: string,
   body: Parameters<BackendMembershipsService['plans']['update']>[1],
 ) {
-  return getClawRouterBackendSdkClient().memberships.plans.update(
+  return getSdkworkMembershipBackendSdkClient().memberships.plans.update(
     planId,
     body,
   );
 }
 
-export async function backendMembershipsPackageGroupsList(params?: Parameters<BackendMembershipsService['packageGroups']['management']['list']>[0]) {
-  return getClawRouterBackendSdkClient().memberships.packageGroups.management.list(params);
+async function backendMembershipsPackageGroupsList(params?: Parameters<BackendMembershipsService['packageGroups']['list']>[0]) {
+  return getSdkworkMembershipBackendSdkClient().memberships.packageGroups.list(params);
 }
 
-export async function backendMembershipsPackageGroupsCreate(
+async function backendMembershipsPackageGroupsCreate(
   body: Parameters<BackendMembershipsService['packageGroups']['create']>[0],
 ) {
-  return getClawRouterBackendSdkClient().memberships.packageGroups.create(body);
+  return getSdkworkMembershipBackendSdkClient().memberships.packageGroups.create(body);
 }
 
-export async function backendMembershipsPackageGroupsUpdate(
+async function backendMembershipsPackageGroupsUpdate(
   packageGroupId: string,
   body: Parameters<BackendMembershipsService['packageGroups']['update']>[1],
 ) {
-  return getClawRouterBackendSdkClient().memberships.packageGroups.update(
+  return getSdkworkMembershipBackendSdkClient().memberships.packageGroups.update(
     packageGroupId,
     body,
   );
 }
 
-export async function backendMembershipsPackageGroupsDelete(
+async function backendMembershipsPackageGroupsDelete(
   packageGroupId: string,
 ) {
-  return getClawRouterBackendSdkClient().memberships.packageGroups.delete(
+  return getSdkworkMembershipBackendSdkClient().memberships.packageGroups.delete(
     packageGroupId,
   );
 }
 
-export async function backendMembershipsPackagesList(params?: Parameters<BackendMembershipsService['packages']['management']['list']>[0]) {
-  return getClawRouterBackendSdkClient().memberships.packages.management.list(params);
+async function backendMembershipsPackagesList(params?: Parameters<BackendMembershipsService['packages']['list']>[0]) {
+  return getSdkworkMembershipBackendSdkClient().memberships.packages.list(params);
 }
 
-export async function backendMembershipsPackagesCreate(
+async function backendMembershipsPackagesCreate(
   body: Parameters<BackendMembershipsService['packages']['create']>[0],
 ) {
-  return getClawRouterBackendSdkClient().memberships.packages.create(body);
+  return getSdkworkMembershipBackendSdkClient().memberships.packages.create(body);
 }
 
-export async function backendMembershipsPackagesUpdate(
+async function backendMembershipsPackagesUpdate(
   packageId: string,
   body: Parameters<BackendMembershipsService['packages']['update']>[1],
 ) {
-  return getClawRouterBackendSdkClient().memberships.packages.update(
+  return getSdkworkMembershipBackendSdkClient().memberships.packages.update(
     packageId,
     body,
   );
 }
 
-export async function backendMembershipsPackagesDelete(
+async function backendMembershipsPackagesDelete(
   packageId: string,
 ) {
-  return getClawRouterBackendSdkClient().memberships.packages.delete(
+  return getSdkworkMembershipBackendSdkClient().memberships.packages.delete(
     packageId,
   );
 }
 
-export async function backendMembershipsMembersList(params?: Parameters<BackendMembershipsService['members']['list']>[0]) {
-  return getClawRouterBackendSdkClient().memberships.members.list(params);
+async function backendMembershipsMembersList(params?: Parameters<BackendMembershipsService['members']['list']>[0]) {
+  return getSdkworkMembershipBackendSdkClient().memberships.members.list(params);
 }
 
-export async function backendMembershipsMembersStatusUpdate(
+async function backendMembershipsMembersStatusUpdate(
   membershipId: string,
-  body: Parameters<BackendMembershipsService['members']['update']>[1],
+  body: Parameters<BackendMembershipsService['members']['status']['update']>[1],
 ) {
-  return getClawRouterBackendSdkClient().memberships.members.update(
+  return getSdkworkMembershipBackendSdkClient().memberships.members.status.update(
     membershipId,
     body,
   );
 }
 
-export async function backendMembershipsEntitlementsList(params?: Parameters<BackendMembershipsService['entitlements']['list']>[0]) {
-  return getClawRouterBackendSdkClient().memberships.entitlements.list(params);
+async function backendMembershipsEntitlementsList(params?: Parameters<BackendMembershipsService['entitlements']['list']>[0]) {
+  return getSdkworkMembershipBackendSdkClient().memberships.entitlements.list(params);
 }
 
-export async function backendMembershipsRechargePackagesList(params?: Parameters<BackendRechargesService['packages']['management']['list']>[0]) {
+async function backendMembershipsRechargePackagesList(params?: Parameters<BackendRechargesService['packages']['management']['list']>[0]) {
   return getClawRouterBackendSdkClient().recharges.packages.management.list(params);
 }
 
-export async function backendMembershipsRechargePackagesCreate(
+async function backendMembershipsRechargePackagesCreate(
   body: Parameters<BackendRechargesService['packages']['create']>[0],
 ) {
   return getClawRouterBackendSdkClient().recharges.packages.create(body);
 }
 
-export async function backendMembershipsRechargePackagesUpdate(
+async function backendMembershipsRechargePackagesUpdate(
   packageId: string,
   body: Parameters<BackendRechargesService['packages']['update']>[1],
 ) {
@@ -314,7 +313,7 @@ export async function backendMembershipsRechargePackagesUpdate(
   );
 }
 
-export async function backendMembershipsRechargePackagesDelete(
+async function backendMembershipsRechargePackagesDelete(
   packageId: string,
 ) {
   return getClawRouterBackendSdkClient().recharges.packages.delete(
@@ -322,66 +321,29 @@ export async function backendMembershipsRechargePackagesDelete(
   );
 }
 
-export async function backendMembershipsRechargeSettingsRetrieve() {
+async function backendMembershipsRechargeSettingsRetrieve() {
   return getClawRouterBackendSdkClient().recharges.settings.management.retrieve();
 }
 
-export async function backendMembershipsRechargeSettingsUpdate(
+async function backendMembershipsRechargeSettingsUpdate(
   body: Parameters<BackendRechargesService['settings']['update']>[0],
 ) {
   return getClawRouterBackendSdkClient().recharges.settings.update(body);
 }
 
-export async function fetchMembershipAdminPackageCatalog(): Promise<MembershipsAdminPackageCatalog> {
-  const [packagesResult, groupsResult, plansResult] = await Promise.all([
-    backendMembershipsPackagesList(),
-    backendMembershipsPackageGroupsList(),
-    backendMembershipsPlansList(),
-  ]);
-
-  const rawPackages = readRequiredApiItems(packagesResult, 'Membership packages could not be loaded');
-  const normalizedPackages = rawPackages.map(normalizeAdminPackage);
-  const groupMap = new Map<string, MembershipsAdminPackageGroup>();
-
-  readRequiredApiItems(groupsResult, 'Membership package groups could not be loaded')
-    .map(normalizeAdminPackageGroup)
-    .forEach((group) => {
-      groupMap.set(group.id, group);
-    });
-
-  normalizedPackages.forEach((pkg) => {
-    const group = groupMap.get(pkg.groupId);
-    if (group) {
-      group.packageCount++;
-    }
+export async function fetchMembershipAdminPackageGroups(
+  params: MembershipsAdminPackageGroupsListParams,
+): Promise<MembershipsAdminPage<MembershipsAdminPackageGroup>> {
+  const result = await backendMembershipsPackageGroupsList({
+    page: requiredListPage(params.page),
+    pageSize: requiredListPageSize(params.pageSize),
+    status: params.status,
   });
-
-  const groups = sortMembershipAdminPackageGroups(Array.from(groupMap.values()));
-  const rawPlans = readRequiredApiItems(plansResult, 'Membership plans could not be loaded');
   return {
-    groups,
-    packages: normalizedPackages,
-    plans: rawPlans.map(normalizeAdminPlan),
+    items: readRequiredApiItems(result, 'Membership package groups could not be loaded')
+      .map(normalizeAdminPackageGroup),
+    pageInfo: result.pageInfo,
   };
-}
-
-export async function fetchMembershipAdminPackageGroups(): Promise<MembershipsAdminPackageGroup[]> {
-  const [groupsResult, packagesResult] = await Promise.all([
-    backendMembershipsPackageGroupsList(),
-    backendMembershipsPackagesList(),
-  ]);
-  const groups = readRequiredApiItems(groupsResult, 'Membership package groups could not be loaded')
-    .map(normalizeAdminPackageGroup);
-  const packageCounts = new Map<string, number>();
-  readRequiredApiItems(packagesResult, 'Membership packages could not be loaded')
-    .map(normalizeAdminPackage)
-    .forEach((pkg) => {
-      packageCounts.set(pkg.groupId, (packageCounts.get(pkg.groupId) ?? 0) + 1);
-    });
-  return sortMembershipAdminPackageGroups(groups.map((group) => ({
-    ...group,
-    packageCount: packageCounts.get(group.id) ?? 0,
-  })));
 }
 
 export async function createMembershipAdminPackageGroup(
@@ -411,17 +373,19 @@ export async function deleteMembershipAdminPackageGroup(packageGroupId: string):
 }
 
 export async function fetchMembershipAdminPackages(
-  params: MembershipsAdminPackagesListParams = {},
-): Promise<MembershipsAdminPackageItem[]> {
+  params: MembershipsAdminPackagesListParams,
+): Promise<MembershipsAdminPage<MembershipsAdminPackageItem>> {
   const result = await backendMembershipsPackagesList({
+    page: requiredListPage(params.page),
+    pageSize: requiredListPageSize(params.pageSize),
+    packageGroupId: params.packageGroupId,
     planId: params.planId,
     status: params.status,
   });
-  const packages = readRequiredApiItems(result, 'Membership packages could not be loaded').map(normalizeAdminPackage);
-  if (!params.packageGroupId) {
-    return packages;
-  }
-  return packages.filter((item) => item.groupId === params.packageGroupId);
+  return {
+    items: readRequiredApiItems(result, 'Membership packages could not be loaded').map(normalizeAdminPackage),
+    pageInfo: result.pageInfo,
+  };
 }
 
 export async function createMembershipAdminPackage(
@@ -450,9 +414,18 @@ export async function deleteMembershipAdminPackage(packageId: string): Promise<v
   );
 }
 
-export async function fetchMembershipAdminPlans(): Promise<MembershipsAdminPlanItem[]> {
-  const result = await backendMembershipsPlansList();
-  return readRequiredApiItems(result, 'Membership plans could not be loaded').map(normalizeAdminPlan);
+export async function fetchMembershipAdminPlans(
+  params: MembershipsAdminPlansListParams,
+): Promise<MembershipsAdminPage<MembershipsAdminPlanItem>> {
+  const result = await backendMembershipsPlansList({
+    page: requiredListPage(params.page),
+    pageSize: requiredListPageSize(params.pageSize),
+    status: params.status,
+  });
+  return {
+    items: readRequiredApiItems(result, 'Membership plans could not be loaded').map(normalizeAdminPlan),
+    pageInfo: result.pageInfo,
+  };
 }
 
 export async function createMembershipAdminPlan(input: MembershipsAdminPlanCreateInput): Promise<MembershipsAdminPlanItem> {
@@ -475,15 +448,18 @@ export async function updateMembershipAdminPlan(
 
 export async function fetchMembershipAdminMembers(
   params: MembershipsAdminMembersListParams = {},
-): Promise<MembershipsAdminRecord[]> {
+): Promise<MembershipsAdminPage<MembershipsAdminRecord>> {
   const result = await backendMembershipsMembersList({
-    page: 1,
-    pageSize: 100,
+    page: requiredListPage(params.page),
+    pageSize: requiredListPageSize(params.pageSize),
     userId: params.userId,
     planId: params.planId,
     status: params.status,
   });
-  return readRequiredApiItems(result, 'Members could not be loaded') as MembershipsAdminRecord[];
+  return {
+    items: readRequiredApiItems(result, 'Members could not be loaded') as MembershipsAdminRecord[],
+    pageInfo: result.pageInfo,
+  };
 }
 
 export async function updateMembershipAdminMemberStatus(
@@ -499,15 +475,18 @@ export async function updateMembershipAdminMemberStatus(
 
 export async function fetchMembershipAdminEntitlements(
   params: MembershipsAdminEntitlementsListParams = {},
-): Promise<MembershipsAdminRecord[]> {
+): Promise<MembershipsAdminPage<MembershipsAdminRecord>> {
   const result = await backendMembershipsEntitlementsList({
-    page: 1,
-    pageSize: 100,
+    page: requiredListPage(params.page),
+    pageSize: requiredListPageSize(params.pageSize),
     membershipId: params.membershipId,
     planId: params.planId,
     status: params.status,
   });
-  return readRequiredApiItems(result, 'Entitlements could not be loaded') as MembershipsAdminRecord[];
+  return {
+    items: readRequiredApiItems(result, 'Entitlements could not be loaded') as MembershipsAdminRecord[],
+    pageInfo: result.pageInfo,
+  };
 }
 
 export async function fetchMembershipAdminRechargePackages(): Promise<MembershipsAdminRechargePackageItem[]> {
@@ -593,28 +572,6 @@ function normalizeAdminPackageGroup(value: unknown): MembershipsAdminPackageGrou
   };
 }
 
-function compareMembershipAdminPackageGroups(
-  left: MembershipsAdminPackageGroup,
-  right: MembershipsAdminPackageGroup,
-): number {
-  const weightComparison = left.sortWeight - right.sortWeight;
-  if (weightComparison !== 0) {
-    return weightComparison;
-  }
-
-  const nameComparison = left.name.localeCompare(right.name);
-  if (nameComparison !== 0) {
-    return nameComparison;
-  }
-
-  const codeComparison = left.code.localeCompare(right.code);
-  if (codeComparison !== 0) {
-    return codeComparison;
-  }
-
-  return left.id.localeCompare(right.id);
-}
-
 function normalizeAdminRechargePackage(value: unknown): MembershipsAdminRechargePackageItem {
   const item = isRecord(value) ? value as ApiRecord : {} as ApiRecord;
   const id = requireRecordString(item, 'id', 'Recharge package id is required');
@@ -696,6 +653,18 @@ function requiredNonNegativeInteger(value: number | undefined, fieldName: string
   return value;
 }
 
+function requiredListPage(value: number | undefined): number {
+  return requiredPositiveInteger(value ?? 1, 'page');
+}
+
+function requiredListPageSize(value: number | undefined): number {
+  const pageSize = requiredPositiveInteger(value ?? 20, 'pageSize');
+  if (pageSize > 200) {
+    throw new Error('pageSize must not exceed 200');
+  }
+  return pageSize;
+}
+
 function requiredPositiveInt64String(value: number | undefined, fieldName: string): string {
   return String(requiredPositiveInteger(value, fieldName));
 }
@@ -742,24 +711,53 @@ function requiredMembershipMemberStatus(value: string | undefined): MembershipsA
 }
 
 function buildPlanMutationRequest(input: MembershipsAdminPlanMutationInput) {
-  const rank = optionalNonNegativeInt64String(input.rank, 'rank');
+  const rank = requiredNonNegativeInt64String(input.rank ?? 0, 'rank');
   return {
     code: requiredMembershipCode(input.code, 'code'),
     name: requiredMembershipText(input.name, 'name'),
     rank,
     status: requiredResourceStatus(input.status, 'status'),
-    benefits: (input.benefits ?? []).map(buildPlanBenefitMutationRequest),
+    benefits: buildPlanBenefitMutationRequests(input.benefits ?? []),
   };
 }
 
-function buildPlanBenefitMutationRequest(input: MembershipsAdminPlanBenefitInput) {
+function buildPlanBenefitMutationRequests(
+  inputs: MembershipsAdminPlanBenefitInput[],
+) {
+  const allocatedIds = new Set<number>();
+  for (const input of inputs) {
+    if (input.id === undefined) {
+      continue;
+    }
+    const id = requiredNonNegativeInteger(input.id, 'benefit id');
+    if (allocatedIds.has(id)) {
+      throw new Error(`benefit id ${id} must be unique`);
+    }
+    allocatedIds.add(id);
+  }
+
+  let nextId = 1;
+  return inputs.map((input) => {
+    while (allocatedIds.has(nextId)) {
+      nextId++;
+    }
+    const id = input.id ?? nextId++;
+    allocatedIds.add(id);
+    return buildPlanBenefitMutationRequest(input, id);
+  });
+}
+
+function buildPlanBenefitMutationRequest(
+  input: MembershipsAdminPlanBenefitInput,
+  id: number,
+) {
   return {
-    id: optionalNonNegativeInt64String(input.id, 'benefit id'),
+    id: requiredNonNegativeInt64String(id, 'benefit id'),
     name: requiredMembershipText(input.name, 'benefit name'),
     benefitKey: optionalBoundedText(input.benefitKey),
     type: optionalBoundedText(input.type),
     description: optionalBoundedText(input.description),
-    icon: input.icon,
+    icon: readMediaResourceUrl(input.icon) || undefined,
     usageLimit: optionalNonNegativeInt64String(input.usageLimit, 'usageLimit'),
     usedCount: optionalNonNegativeInt64String(input.usedCount, 'usedCount'),
     claimed: input.claimed ?? false,

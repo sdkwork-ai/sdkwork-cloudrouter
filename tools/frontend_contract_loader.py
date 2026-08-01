@@ -33,7 +33,7 @@ class _FlowDict(dict[str, Any]):
 DEFAULT_CONTRACT_SNAPSHOT = Path("docs") / "schema-registry" / "frontend-field-contracts.yaml"
 DEFAULT_CONTRACT_INDEX = Path("docs") / "schema-registry" / "frontend-field-contracts" / "index.yaml"
 MERGEABLE_LIST_SECTIONS = {"frontend_models", "frontend_operations", "routes"}
-MERGEABLE_MAPPING_SECTIONS = {"x_response_entities"}
+MERGEABLE_MAPPING_SECTIONS = {"frontend_operation_sdk_authorities", "x_response_entities"}
 METADATA_KEYS = {"schema", "version", "source", "rule"}
 FLOW_SEQUENCE_KEYS = {"enum", "required"}
 FLOW_SCHEMA_KEYS = {

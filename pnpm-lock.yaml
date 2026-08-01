@@ -697,6 +697,9 @@ importers:
 
   ../sdkwork-appbase/packages/pc-react/notification/sdkwork-notification-pc-react:
     dependencies:
+      '@sdkwork/appbase-pc-react':
+        specifier: workspace:*
+        version: link:../../foundation/sdkwork-appbase-pc-react
       '@sdkwork/utils':
         specifier: workspace:*
         version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
@@ -1663,6 +1666,12 @@ importers:
         specifier: workspace:*
         version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
 
+  ../sdkwork-messaging/sdks/sdkwork-messaging-app-sdk/sdkwork-messaging-app-sdk-typescript:
+    dependencies:
+      '@sdkwork/sdk-common':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+
   ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog:
     dependencies:
       '@sdkwork/clawroutes-pc-commons':
@@ -1948,6 +1957,8 @@ importers:
         specifier: workspace:*
         version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
 
+  ../sdkwork-payment/apps/sdkwork-payment-common/packages/sdkwork-payment-contracts: {}
+
   ../sdkwork-payment/apps/sdkwork-payment-common/packages/sdkwork-payment-sdk-ports: {}
 
   ../sdkwork-payment/apps/sdkwork-payment-common/packages/sdkwork-payment-service:
@@ -1958,6 +1969,68 @@ importers:
       '@sdkwork/utils':
         specifier: workspace:*
         version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
+
+  ../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-admin-core:
+    dependencies:
+      '@sdkwork/i18n-pc-react':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-i18n-pc-react
+      '@sdkwork/payment-contracts':
+        specifier: workspace:*
+        version: link:../../../sdkwork-payment-common/packages/sdkwork-payment-contracts
+      '@sdkwork/payment-sdk-ports':
+        specifier: workspace:*
+        version: link:../../../sdkwork-payment-common/packages/sdkwork-payment-sdk-ports
+      '@sdkwork/payment-service':
+        specifier: workspace:*
+        version: link:../../../sdkwork-payment-common/packages/sdkwork-payment-service
+      '@sdkwork/ui-pc-react':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-ui/sdkwork-ui-pc-react
+      lucide-react:
+        specifier: 'catalog:'
+        version: 0.546.0(react@19.2.4)
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
+
+  ../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-admin-provider:
+    dependencies:
+      '@sdkwork/payment-contracts':
+        specifier: workspace:*
+        version: link:../../../sdkwork-payment-common/packages/sdkwork-payment-contracts
+      '@sdkwork/payment-pc-admin-core':
+        specifier: workspace:*
+        version: link:../sdkwork-payment-pc-admin-core
+      '@sdkwork/payment-service':
+        specifier: workspace:*
+        version: link:../../../sdkwork-payment-common/packages/sdkwork-payment-service
+      '@sdkwork/ui-pc-react':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-ui/sdkwork-ui-pc-react
+      '@sdkwork/utils':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.4
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.4(react@19.2.4)
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.5(@types/node@25.9.4)(jiti@2.7.0)(jsdom@29.1.1)(lightningcss@1.32.0)(tsx@4.22.4)
 
   ../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-payment:
     dependencies:
@@ -2605,6 +2678,9 @@ importers:
       '@sdkwork/image-pc-generation':
         specifier: workspace:*
         version: link:../../../sdkwork-image/apps/sdkwork-image-pc/packages/sdkwork-image-pc-generation
+      '@sdkwork/membership-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../sdkwork-membership/sdks/sdkwork-membership-backend-sdk/sdkwork-membership-backend-sdk-typescript
       '@sdkwork/membership-pc-membership':
         specifier: workspace:*
         version: link:../../../sdkwork-membership/apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-membership
@@ -2614,6 +2690,9 @@ importers:
       '@sdkwork/memory-app-sdk':
         specifier: workspace:*
         version: link:../../../sdkwork-memory/sdks/sdkwork-memory-app-sdk/sdkwork-memory-app-sdk-typescript
+      '@sdkwork/messaging-app-sdk':
+        specifier: workspace:*
+        version: link:../../../sdkwork-messaging/sdks/sdkwork-messaging-app-sdk/sdkwork-messaging-app-sdk-typescript
       '@sdkwork/models-pc-admin-catalog':
         specifier: workspace:*
         version: link:../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog
@@ -2635,9 +2714,21 @@ importers:
       '@sdkwork/order-pc-recharge':
         specifier: workspace:*
         version: link:../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-recharge
+      '@sdkwork/payment-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../sdkwork-payment/sdks/sdkwork-payment-backend-sdk/sdkwork-payment-backend-sdk-typescript
+      '@sdkwork/payment-pc-admin-core':
+        specifier: workspace:*
+        version: link:../../../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-admin-core
+      '@sdkwork/payment-pc-admin-provider':
+        specifier: workspace:*
+        version: link:../../../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-admin-provider
       '@sdkwork/payment-pc-payment':
         specifier: workspace:*
         version: link:../../../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-payment
+      '@sdkwork/promotion-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../sdkwork-promotion/sdks/sdkwork-promotion-backend-sdk/sdkwork-promotion-backend-sdk-typescript
       '@sdkwork/promotion-pc-coupon':
         specifier: workspace:*
         version: link:../../../sdkwork-promotion/apps/sdkwork-promotion-pc/packages/sdkwork-promotion-pc-coupon
@@ -2936,6 +3027,28 @@ importers:
       '@sdkwork/clawroutes-pc-commons':
         specifier: workspace:*
         version: link:../sdkwork-clawroutes-pc-commons
+      '@sdkwork/payment-pc-admin-provider':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-admin-provider
+      '@sdkwork/payment-service':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-payment/apps/sdkwork-payment-common/packages/sdkwork-payment-service
+      lucide-react:
+        specifier: 'catalog:'
+        version: 0.546.0(react@19.2.4)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.4
+      react-i18next:
+        specifier: 'catalog:'
+        version: 17.0.8(i18next@26.3.3(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
 
   apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit:
     dependencies:
@@ -3325,6 +3438,9 @@ importers:
       '@sdkwork/iam-service':
         specifier: workspace:*
         version: link:../../../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-service
+      '@sdkwork/membership-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-membership/sdks/sdkwork-membership-backend-sdk/sdkwork-membership-backend-sdk-typescript
       '@sdkwork/membership-sdk-ports':
         specifier: workspace:*
         version: link:../../../../../sdkwork-membership/apps/sdkwork-membership-common/packages/sdkwork-membership-sdk-ports
@@ -3334,6 +3450,9 @@ importers:
       '@sdkwork/memory-app-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-memory/sdks/sdkwork-memory-app-sdk/sdkwork-memory-app-sdk-typescript
+      '@sdkwork/messaging-app-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-messaging/sdks/sdkwork-messaging-app-sdk/sdkwork-messaging-app-sdk-typescript
       '@sdkwork/models-app-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-models/sdks/sdkwork-models-app-sdk/sdkwork-models-app-sdk-typescript
@@ -3346,12 +3465,18 @@ importers:
       '@sdkwork/order-service':
         specifier: workspace:*
         version: link:../../../../../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-service
+      '@sdkwork/payment-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-payment/sdks/sdkwork-payment-backend-sdk/sdkwork-payment-backend-sdk-typescript
       '@sdkwork/payment-sdk-ports':
         specifier: workspace:*
         version: link:../../../../../sdkwork-payment/apps/sdkwork-payment-common/packages/sdkwork-payment-sdk-ports
       '@sdkwork/payment-service':
         specifier: workspace:*
         version: link:../../../../../sdkwork-payment/apps/sdkwork-payment-common/packages/sdkwork-payment-service
+      '@sdkwork/promotion-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-promotion/sdks/sdkwork-promotion-backend-sdk/sdkwork-promotion-backend-sdk-typescript
       '@sdkwork/promotion-sdk-ports':
         specifier: workspace:*
         version: link:../../../../../sdkwork-promotion/apps/sdkwork-promotion-common/packages/sdkwork-promotion-sdk-ports
@@ -3383,24 +3508,6 @@ importers:
 
   sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript:
     dependencies:
-      '@sdkwork/account-app-sdk':
-        specifier: workspace:*
-        version: link:../../../../sdkwork-account/sdks/sdkwork-account-app-sdk/sdkwork-account-app-sdk-typescript
-      '@sdkwork/catalog-app-sdk':
-        specifier: workspace:*
-        version: link:../../../../sdkwork-catalog/sdks/sdkwork-catalog-app-sdk/sdkwork-catalog-app-sdk-typescript
-      '@sdkwork/membership-app-sdk':
-        specifier: workspace:*
-        version: link:../../../../sdkwork-membership/sdks/sdkwork-membership-app-sdk/sdkwork-membership-app-sdk-typescript
-      '@sdkwork/order-app-sdk':
-        specifier: workspace:*
-        version: link:../../../../sdkwork-order/sdks/sdkwork-order-app-sdk/sdkwork-order-app-sdk-typescript
-      '@sdkwork/payment-app-sdk':
-        specifier: workspace:*
-        version: link:../../../../sdkwork-payment/sdks/sdkwork-payment-app-sdk/sdkwork-payment-app-sdk-typescript
-      '@sdkwork/promotion-app-sdk':
-        specifier: workspace:*
-        version: link:../../../../sdkwork-promotion/sdks/sdkwork-promotion-app-sdk/sdkwork-promotion-app-sdk-typescript
       '@sdkwork/sdk-common':
         specifier: workspace:*
         version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript

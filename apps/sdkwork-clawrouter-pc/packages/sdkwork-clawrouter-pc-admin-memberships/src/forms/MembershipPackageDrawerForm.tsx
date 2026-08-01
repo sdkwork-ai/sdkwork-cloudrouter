@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   MembershipFormActions,
   MembershipFormFrame,
@@ -37,9 +38,19 @@ interface MembershipPackageDrawerFormProps {
   groups: MembershipsAdminPackageGroup[];
   plans: MembershipsAdminPlanItem[];
   defaultGroupId?: string | null;
+  groupPagination?: MembershipReferencePagination;
+  planPagination?: MembershipReferencePagination;
   translationKeyPrefix?: string;
   onCancel: () => void;
   onSubmit: (input: MembershipsAdminPackageMutationInput) => Promise<void>;
+}
+
+interface MembershipReferencePagination {
+  page: number;
+  hasNextPage: boolean;
+  isLoading: boolean;
+  onNextPage: () => void;
+  onPreviousPage: () => void;
 }
 
 export function MembershipPackageDrawerForm({
@@ -48,6 +59,8 @@ export function MembershipPackageDrawerForm({
   groups,
   plans,
   defaultGroupId,
+  groupPagination,
+  planPagination,
   translationKeyPrefix = 'admin.commerce.memberships.packages',
   onCancel,
   onSubmit,
@@ -71,6 +84,14 @@ export function MembershipPackageDrawerForm({
     baseDurationDayOptions,
     durationDays,
     t(`${translationKeyPrefix}.form.durationOptionDays`, '{{days}} days', { days: durationDays }),
+  );
+  const groupOptions = includeCurrentOption(
+    groups.map((group) => ({ value: group.id, label: group.name })),
+    packageGroupId,
+  );
+  const planOptions = includeCurrentOption(
+    plans.map((plan) => ({ value: plan.id, label: plan.name })),
+    planId,
   );
 
   const handleSubmit = async () => {
@@ -105,16 +126,32 @@ export function MembershipPackageDrawerForm({
         label={t(`${translationKeyPrefix}.form.group`, 'Package Group')}
         value={packageGroupId}
         placeholder={t(`${translationKeyPrefix}.form.selectGroup`, 'Select group')}
-        options={groups.map((group) => ({ value: group.id, label: group.name }))}
+        options={groupOptions}
         onChange={setPackageGroupId}
       />
+      {groupPagination ? (
+        <MembershipReferencePageControls
+          pagination={groupPagination}
+          previousLabel={t('common.pagination.previous', 'Previous page')}
+          nextLabel={t('common.pagination.next', 'Next page')}
+          pageLabel={t('common.pagination.page', 'Page')}
+        />
+      ) : null}
       <MembershipSelectField
         label={t(`${translationKeyPrefix}.form.plan`, 'Plan')}
         value={planId}
         placeholder={t(`${translationKeyPrefix}.form.selectPlan`, 'Select plan')}
-        options={plans.map((plan) => ({ value: plan.id, label: plan.name }))}
+        options={planOptions}
         onChange={setPlanId}
       />
+      {planPagination ? (
+        <MembershipReferencePageControls
+          pagination={planPagination}
+          previousLabel={t('common.pagination.previous', 'Previous page')}
+          nextLabel={t('common.pagination.next', 'Next page')}
+          pageLabel={t('common.pagination.page', 'Page')}
+        />
+      ) : null}
       <div className="grid grid-cols-2 gap-4">
         <MembershipTextField label={t(`${translationKeyPrefix}.form.price`, 'Price')} value={priceAmount} onChange={setPriceAmount} placeholder="69.90" />
         <MembershipSelectField
@@ -151,6 +188,46 @@ export function MembershipPackageDrawerForm({
         onSubmit={handleSubmit}
       />
     </MembershipFormFrame>
+  );
+}
+
+function MembershipReferencePageControls({
+  pagination,
+  previousLabel,
+  nextLabel,
+  pageLabel,
+}: {
+  pagination: MembershipReferencePagination;
+  previousLabel: string;
+  nextLabel: string;
+  pageLabel: string;
+}) {
+  return (
+    <div className="flex items-center justify-end gap-2">
+      <button
+        type="button"
+        aria-label={previousLabel}
+        title={previousLabel}
+        disabled={pagination.isLoading || pagination.page <= 1}
+        onClick={pagination.onPreviousPage}
+        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-white/10"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+      <span className="min-w-16 text-center text-xs text-slate-500 dark:text-slate-400">
+        {pageLabel} {pagination.page}
+      </span>
+      <button
+        type="button"
+        aria-label={nextLabel}
+        title={nextLabel}
+        disabled={pagination.isLoading || !pagination.hasNextPage}
+        onClick={pagination.onNextPage}
+        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-white/10"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    </div>
   );
 }
 

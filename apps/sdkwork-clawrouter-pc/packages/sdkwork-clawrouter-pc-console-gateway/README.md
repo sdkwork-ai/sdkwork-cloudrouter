@@ -34,7 +34,7 @@ Extension points are limited to public exports, runtime entrypoints, SDK clients
 
 ## Verification
 
-- `node apps/scripts/validate-component-specs.mjs --apps-root apps --json`
+- `node ../sdkwork-specs/tools/check-component-port-bindings.mjs --root .`
 - `node --import ./scripts/register-portal-workspace-resolver.mjs --import tsx --test --test-name-pattern="console gateway" console-app-runtime.test.ts` from `apps/sdkwork-clawrouter-pc`
 - `pnpm exec vitest run packages/sdkwork-clawrouter-pc-console-gateway/src/GatewayView.test.tsx` from `apps/sdkwork-clawrouter-pc`
 - `python -B -m unittest tests.test_console_gateway_backend_runtime_standard` from the repository root

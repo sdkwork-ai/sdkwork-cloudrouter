@@ -21,14 +21,13 @@ Generated SDK transport output, live credentials, private customer data, runtime
 - `python -B tools/architecture_standard_guardian.py`
 - `pnpm check:alignment:audit`
 
-## Canon Documents
+## Canon And Active Documents
 
 | Document | Path |
 | --- | --- |
 | Product PRD | [product/prd/PRD.md](product/prd/PRD.md) |
 | Upstream supplier PRD | [product/prd/PRD-UPSTREAM-SUPPLIER.md](product/prd/PRD-UPSTREAM-SUPPLIER.md) |
 | Technical architecture | [architecture/tech/TECH_ARCHITECTURE.md](architecture/tech/TECH_ARCHITECTURE.md) |
-| Historical standard alignment audit | [standard-alignment-audit.md](standard-alignment-audit.md) |
 | Active production-readiness requirement | [product/requirements/REQ-2026-0001-commercial-production-readiness.md](product/requirements/REQ-2026-0001-commercial-production-readiness.md) |
 | Active readiness revalidation | [engineering/reviews/REVIEW-20260714-production-readiness-revalidation.md](engineering/reviews/REVIEW-20260714-production-readiness-revalidation.md) |
 | Schema registry catalog | [schema-registry/table-catalog.md](schema-registry/table-catalog.md) |
@@ -37,6 +36,21 @@ Generated SDK transport output, live credentials, private customer data, runtime
 | Commercial pricing | [commercial/PRICING.md](commercial/PRICING.md) |
 | Service Level Agreement | [legal/SLA.md](legal/SLA.md) |
 | Edition tier matrix | [legal/TIER_MATRIX.md](legal/TIER_MATRIX.md) |
+
+## Superseded Redirects
+
+The following stable paths are retained only as redirect stubs. They are not
+current product, route, schema, or architecture authorities:
+
+- [product/prd/PRD-01-prd-sdkwork-clawrouter.md](product/prd/PRD-01-prd-sdkwork-clawrouter.md)
+- [architecture/tech/TECH-12-featuresmodules.md](architecture/tech/TECH-12-featuresmodules.md)
+- [architecture/tech/TECH-13-schemaregistry-design.md](architecture/tech/TECH-13-schemaregistry-design.md)
+- [architecture/tech/TECH-16-design.md](architecture/tech/TECH-16-design.md)
+- [architecture/tech/TECH-usage.md](architecture/tech/TECH-usage.md)
+- [architecture/tech/TECH-usage-2.md](architecture/tech/TECH-usage-2.md)
+- [standard-alignment-audit.md](standard-alignment-audit.md)
+
+Active versus superseded status is registered in [INDEX.yaml](INDEX.yaml).
 
 ## Document Domains
 
@@ -56,4 +70,6 @@ Generated SDK transport output, live credentials, private customer data, runtime
 ## Index
 
 See [INDEX.yaml](INDEX.yaml) for the machine-readable document registry. Every
-REQ-*, ADR-*, TECH-*, and PLAN-* document must be registered there before merge.
+new or modified REQ-*, ADR-*, TECH-*, and PLAN-* document must be registered
+there before merge. A superseded stable path must be marked `superseded` and
+must point readers to its current authority.

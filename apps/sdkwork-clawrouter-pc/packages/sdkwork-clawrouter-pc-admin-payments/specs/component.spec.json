@@ -5,9 +5,9 @@
     "name": "sdkwork-clawrouter-pc-admin-payments",
     "displayName": "SDKWork Claw Router Admin Payments",
     "version": "0.0.1",
-    "type": "node-package",
-    "root": "sdkwork-claw-router/apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments",
-    "domain": "commerce",
+    "type": "react-package",
+    "root": "sdkwork-clawrouter/apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments",
+    "domain": "payment",
     "declaredDomain": null,
     "capability": "payment",
     "surface": "backend-admin",
@@ -129,20 +129,36 @@
       "src/index.tsx"
     ],
     "runtimeEntrypoints": [],
-    "sdkClients": [],
+    "sdkClients": [
+      "@sdkwork/payment-backend-sdk",
+      "@sdkwork/clawrouter-backend-sdk"
+    ],
+    "sdkDependencies": [
+      {
+        "workspace": "sdkwork-payment-backend-sdk",
+        "surface": "backend-api",
+        "credentialMode": "authenticated-backend-admin"
+      },
+      {
+        "workspace": "clawrouter-backend-sdk",
+        "surface": "backend-api",
+        "credentialMode": "authenticated-backend-admin",
+        "role": "clawrouter-payment-extension"
+      }
+    ],
     "events": [],
     "configKeys": [],
     "routeManifest": null
   },
   "integration": {
     "authority": "Root SDKWork specs remain authoritative. Local specs may extend but must not contradict them.",
-    "dependencyPolicy": "Consumers integrate through public package exports, declared runtime entrypoints, generated SDK clients, or documented adapters only.",
+    "dependencyPolicy": "Provider account workflows compose @sdkwork/payment-pc-admin-provider through its public export; Claw Router product extensions remain behind @sdkwork/clawrouter-backend-sdk.",
     "sdkPolicy": "Generated SDK clients are injected through service/runtime boundaries; reusable UI must not create raw HTTP clients or manual auth headers.",
     "languagePolicy": "Language-specific packages follow their native manifest and build tools while preserving the same component contract."
   },
   "verification": {
     "commands": [
-      "node apps/scripts/validate-component-specs.mjs --apps-root apps --json"
+      "node ../sdkwork-specs/tools/check-component-port-bindings.mjs --root ."
     ]
   },
   "metadata": {

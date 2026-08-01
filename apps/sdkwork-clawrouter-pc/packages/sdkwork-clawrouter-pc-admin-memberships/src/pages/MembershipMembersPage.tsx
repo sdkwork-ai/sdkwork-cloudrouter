@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pencil } from 'lucide-react';
+import { BottomPagination } from '@sdkwork/clawroutes-pc-commons';
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
 import { MembershipDrawer } from '../components/MembershipDrawer';
 import { MembershipEmptyState } from '../components/MembershipEmptyState';
@@ -8,6 +9,8 @@ import {
   MembershipIconActionButton,
   MembershipTableActions,
   MembershipTablePanel,
+  hasNextMembershipPage,
+  membershipPageLabel,
 } from '../components/MembershipPageControls';
 import { MembershipStatusBadge } from '../components/MembershipStatusBadge';
 import { MembershipMemberStatusDrawerForm } from '../forms/MembershipMemberStatusDrawerForm';
@@ -15,6 +18,7 @@ import {
   fetchMembershipAdminMembers,
   updateMembershipAdminMemberStatus,
   type MembershipsAdminMemberStatus,
+  type MembershipsAdminPageInfo,
   type MembershipsAdminRecord,
 } from '../membershipsService';
 
@@ -24,18 +28,23 @@ export function MembershipMembersPage() {
   const [editingMember, setEditingMember] = useState<MembershipsAdminRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [pageInfo, setPageInfo] = useState<MembershipsAdminPageInfo | null>(null);
 
   const loadMembers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      setMembers(await fetchMembershipAdminMembers());
+      const result = await fetchMembershipAdminMembers({ page, pageSize });
+      setMembers(result.items);
+      setPageInfo(result.pageInfo);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : t('admin.commerce.memberships.members.error', 'Membership records could not be loaded'));
     } finally {
       setIsLoading(false);
     }
-  }, [t]);
+  }, [page, pageSize, t]);
 
   useEffect(() => {
     void loadMembers();
@@ -57,7 +66,29 @@ export function MembershipMembersPage() {
         error={error}
         onRefresh={loadMembers}
       >
-        <MembershipTablePanel>
+        <MembershipTablePanel
+          footer={(
+            <BottomPagination
+              disabled={isLoading}
+              hasNextPage={hasNextMembershipPage(pageInfo, page, members.length, pageSize)}
+              itemCount={members.length}
+              nextLabel={t('common.pagination.next', 'Next page')}
+              onNextPage={() => setPage((current) => current + 1)}
+              onPageSizeChange={(nextPageSize) => {
+                setPage(1);
+                setPageSize(nextPageSize);
+              }}
+              onPreviousPage={() => setPage((current) => Math.max(1, current - 1))}
+              page={page}
+              pageLabel={membershipPageLabel(t('common.pagination.page', 'Page'), page, pageInfo)}
+              pageSize={pageSize}
+              pageSizeLabel={t('common.pagination.rows', 'Rows')}
+              pageSizeOptions={[20, 50, 100]}
+              previousLabel={t('common.pagination.previous', 'Previous page')}
+              showingLabel={t('common.pagination.showing', 'Showing')}
+            />
+          )}
+        >
           {members.length === 0 ? (
             <MembershipEmptyState title={t('admin.commerce.memberships.empty', 'No membership records')} />
           ) : (

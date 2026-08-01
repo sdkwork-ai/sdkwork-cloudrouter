@@ -1688,7 +1688,7 @@ frontend_operations:
   read_sources:
   - ai_model_vendor
   - ai_model
-  response_schema:
+  response_schema: &app_model_vendor_catalog_response
     name: AppModelVendorCatalogResponse
     type: object
     additionalProperties: false
@@ -1726,7 +1726,7 @@ frontend_operations:
   - ai_upstream_account_group
   - ai_upstream_account_group_member
   - ai_upstream_account_group_resource
-  response_schema:
+  response_schema: &app_model_catalog_page
     name: AppModelCatalogPage
     type: object
     additionalProperties: false
@@ -1833,7 +1833,7 @@ frontend_operations:
             label: { type: string, minLength: 1, maxLength: 128 }
             modelCount: { type: integer, format: int32, minimum: 0 }
       pageInfo: { $ref: '#/components/schemas/PageInfo' }
-  query_parameters:
+  query_parameters: &app_model_catalog_query
   - name: page
     schema: { type: integer, format: int32, minimum: 1, default: 1 }
   - name: page_size
@@ -1879,6 +1879,43 @@ frontend_operations:
       type: array
       maxItems: 128
       items: { type: string, minLength: 1, maxLength: 64 }
+- route: /models
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts
+  operation: fetchModelByCatalogRouteId
+  operation_id: ai.models.get
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/ai/models
+  sdk_domain: ai
+  read_sources:
+  - ai_model_vendor
+  - ai_model
+  - ai_model_capability
+  - ai_model_pricing
+  - ai_upstream_supplier
+  - ai_upstream_account
+  - ai_upstream_account_group
+  - ai_upstream_account_group_member
+  - ai_upstream_account_group_resource
+  response_schema: *app_model_catalog_page
+  query_parameters: *app_model_catalog_query
+  openapi_exposed: false
+- route: /models
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts
+  operation: fetchModelProviders
+  operation_id: ai.model.vendors.get
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/ai/model_vendors
+  sdk_domain: ai
+  read_sources:
+  - ai_model_vendor
+  - ai_model
+  response_schema: *app_model_vendor_catalog_response
+  query_parameters: []
+  openapi_exposed: false
 - route: /playground
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: listModelCatalog
@@ -3436,22 +3473,6 @@ frontend_operations:
   - name: page_size
     schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
 - route: /console/notifications
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts
-  operation: list
-  operation_id: notification.notifications.get
-  kind: read
-  api_surface: app
-  api_method: GET
-  api_path: /app/v3/api/notification/notifications
-  sdk_domain: notification
-  read_sources:
-  - ops_audit_log
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
-  openapi_exposed: false
-- route: /console/notifications
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-messages/src/messagesService.ts
   operation: acknowledge
   operation_id: notification.notifications.byId.acknowledge.post
@@ -4140,21 +4161,6 @@ frontend_operations:
   operation_scope: app_shell
 - route: /admin/model/mappings
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
-  operation: fetchModelOptionsCatalog
-  operation_id: ai.model.mapping.options.get
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/ai/model_mapping_options
-  sdk_domain: ai
-  read_sources:
-  - ai_model_mapping_rule
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
-- route: /admin/model/mappings
-  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   operation: fetchModelMappings
   operation_id: ai.model.mappings.get
   kind: read
@@ -4593,7 +4599,7 @@ frontend_operations:
   - ops_audit_log
 - route: /admin/model
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
-  operation: fetchAllModels
+  operation: fetchModelsPage
   operation_id: ai.models.get
   kind: read
   api_surface: backend
@@ -4605,7 +4611,7 @@ frontend_operations:
   - ai_model
   - ai_model_capability
   - ai_model_pricing
-  response_schema:
+  response_schema: &admin_ai_model_page
     name: AdminAiModelPage
     type: object
     additionalProperties: false
@@ -4682,7 +4688,7 @@ frontend_operations:
             routingState: { type: integer, format: int32, minimum: 0, maximum: 2, nullable: true }
             replacementModel: { type: string, maxLength: 256, nullable: true }
       pageInfo: { $ref: '#/components/schemas/PageInfo' }
-  query_parameters:
+  query_parameters: &admin_ai_model_query
   - name: page
     schema: { type: integer, format: int32, minimum: 1, default: 1 }
   - name: page_size
@@ -4696,41 +4702,26 @@ frontend_operations:
       type: array
       maxItems: 32
       items: { type: string, minLength: 1, maxLength: 64 }
+- route: /admin/model/mappings
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
+  operation: fetchModelOptionsPage
+  operation_id: ai.models.get
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/ai/models
+  sdk_domain: ai
+  read_sources:
+  - ai_model_vendor
+  - ai_model
+  - ai_model_capability
+  - ai_model_pricing
+  response_schema: *admin_ai_model_page
+  query_parameters: *admin_ai_model_query
+  openapi_exposed: false
 - route: /admin/model
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   operation: fetchInitializedCatalog
-  operation_id: ai.models.get
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/ai/models
-  sdk_domain: ai
-  read_sources:
-  - ai_pricing_import_snapshot
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
-  openapi_exposed: false
-- route: /admin/model
-  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
-  operation: fetchModels
-  operation_id: ai.models.get
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/ai/models
-  sdk_domain: ai
-  read_sources:
-  - ai_pricing_import_snapshot
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
-  openapi_exposed: false
-- route: /admin/model
-  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
-  operation: fetchModelsPage
   operation_id: ai.models.get
   kind: read
   api_surface: backend
@@ -4814,8 +4805,8 @@ frontend_operations:
   - ops_audit_log
 - route: /admin/model/resources
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
-  operation: fetchResourceGroups
-  operation_id: ai.resource.groups.get
+  operation: fetchResourceGroupsPage
+  operation_id: resourceGroups.list
   kind: read
   api_surface: backend
   api_method: GET
@@ -4825,33 +4816,62 @@ frontend_operations:
   - ai_resource_group
   - ai_resource_group_item
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: AiResourceGroupsPage
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        maxItems: 200
+        items: &admin_ai_resource_group_item
+          name: AdminAiResourceGroupItem
+          type: object
+          additionalProperties: false
+          required: [id, groupCode, groupName, groupType, selectionMode, vendorCodes, capabilities, status, resourceCount, dynamic]
+          properties:
+            id: { type: string, format: int64, pattern: '^[1-9][0-9]*$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            groupCode: { type: string, maxLength: 128, pattern: '^[A-Za-z0-9._:-]+$' }
+            groupName: { type: string, minLength: 1, maxLength: 128 }
+            groupType: { type: string, enum: [api_group] }
+            selectionMode: { type: string, enum: [manual, all, any, dynamic_all_api] }
+            description: { type: [string, 'null'], maxLength: 512 }
+            vendorCodes:
+              type: array
+              maxItems: 128
+              items: { type: string, maxLength: 64, pattern: '^[A-Za-z0-9._:-]+$' }
+            capability: { type: [string, 'null'], maxLength: 128, pattern: '^[A-Za-z0-9._:-]+$' }
+            capabilities:
+              type: array
+              maxItems: 128
+              items: { type: string, maxLength: 128, pattern: '^[A-Za-z0-9._:-]+$' }
+            sortOrder: { type: [string, 'null'], format: int64, pattern: '^(0|[1-9][0-9]*)$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            status: { type: string, enum: [active, disabled, inactive] }
+            resourceCount: { type: string, format: int64, pattern: '^(0|[1-9][0-9]*)$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            dynamic: { type: boolean }
+      pageInfo: &admin_ai_resource_offset_page_info
+        name: OffsetPageInfo
+        type: object
+        additionalProperties: false
+        required: [mode, page, pageSize, totalItems, totalPages, hasMore]
+        properties:
+          mode: { type: string, enum: [offset] }
+          page: { type: integer, format: int32, minimum: 1 }
+          pageSize: { type: integer, format: int32, minimum: 1, maximum: 200 }
+          totalItems: { type: string, format: int64, pattern: '^(0|[1-9][0-9]*)$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+          totalPages: { type: integer, format: int32, minimum: 0 }
+          hasMore: { type: boolean }
+  query_parameters: &admin_ai_resource_group_list_query
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: q
+    schema: { type: string, maxLength: 200 }
 - route: /admin/model/resources
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
-  operation: createResourceGroup
-  operation_id: ai.resource.groups.post
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/ai/resource_groups
-  sdk_domain: ai
-  read_sources:
-  - ai_resource_group
-  - ai_resource_group_item
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - ai_resource_group
-  - ai_resource_group_item
-  - ops_audit_log
-- route: /admin/model/resources
-  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
-  operation: fetchResourceGroupResources
-  operation_id: ai.resource.groups.byId.resources.get
+  operation: fetchResourceGroupResourcesPage
+  operation_id: resourceGroups.resources.list
   kind: read
   api_surface: backend
   api_method: GET
@@ -4862,51 +4882,39 @@ frontend_operations:
   - ai_resource_group_item
   - ai_resource
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: AiResourceGroupResourcesPage
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        maxItems: 200
+        items: &admin_ai_resource_group_resource_item
+          name: AdminAiResourceGroupResourceItem
+          type: object
+          additionalProperties: false
+          required: [id, resourceCode, resourceType, displayName, status, memberRole]
+          properties:
+            id: { type: string, format: int64, pattern: '^[1-9][0-9]*$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            resourceCode: { type: string, maxLength: 192, pattern: '^[A-Za-z0-9._:-]+$' }
+            resourceType: { type: string, enum: [vendor, modality, api_endpoint, model_api, bundle] }
+            displayName: { type: string, minLength: 1, maxLength: 128 }
+            vendorCode: { type: [string, 'null'], maxLength: 64, pattern: '^[A-Za-z0-9._:-]+$' }
+            modalityCode: { type: [string, 'null'], maxLength: 64, pattern: '^[A-Za-z0-9._:-]+$' }
+            apiEndpointCode: { type: [string, 'null'], maxLength: 128, pattern: '^[A-Za-z0-9._:-]+$' }
+            catalogKey: { type: [string, 'null'], maxLength: 256, pattern: '^[\x20-\x7E]*$' }
+            model: { type: [string, 'null'], maxLength: 128, pattern: '^[\x20-\x7E]*$' }
+            providerNativeModel: { type: [string, 'null'], maxLength: 256, pattern: '^[\x20-\x7E]*$' }
+            status: { type: string, enum: [active, disabled, inactive] }
+            sortOrder: { type: [string, 'null'], format: int64, pattern: '^(0|[1-9][0-9]*)$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            memberRole: { type: string, enum: [included, optional, fallback] }
+      pageInfo: *admin_ai_resource_offset_page_info
+  query_parameters: *admin_ai_resource_group_list_query
 - route: /admin/model/resources
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
-  operation: deleteResourceGroup
-  operation_id: ai.resource.groups.byId.delete
-  kind: delete
-  api_surface: backend
-  api_method: DELETE
-  api_path: /backend/v3/api/ai/resource_groups/{groupId}
-  sdk_domain: ai
-  read_sources:
-  - ai_resource_group
-  response_schema:
-    name: NoData
-    properties: {}
-  write_tables:
-  - ai_resource_group
-  - ai_resource_group_item
-  - ops_audit_log
-- route: /admin/model/resources
-  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
-  operation: updateResourceGroup
-  operation_id: ai.resource.groups.byId.patch
-  kind: update
-  api_surface: backend
-  api_method: PATCH
-  api_path: /backend/v3/api/ai/resource_groups/{groupId}
-  sdk_domain: ai
-  read_sources:
-  - ai_resource_group
-  - ai_resource_group_item
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - ai_resource_group
-  - ai_resource_group_item
-  - ops_audit_log
-- route: /admin/model/resources
-  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
-  operation: fetchAssignableResources
-  operation_id: ai.resources.get
+  operation: fetchAssignableResourcesPage
+  operation_id: resources.list
   kind: read
   api_surface: backend
   api_method: GET
@@ -4916,105 +4924,203 @@ frontend_operations:
   - ai_resource
   - ai_resource_group_item
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
-- route: /admin/model/resources
-  source: ../sdkwork-models/crates/sdkwork-models-catalog-service/src/api/admin_ai_resource.rs
-  operation: createAiResource
-  operation_id: ai.resources.post
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/ai/resources
-  sdk_domain: ai
-  read_sources:
-  - ai_resource
-  response_schema:
-    name: NoData
-    properties: {}
-  request_schema:
-    name: AdminAiResourceCreateRequest
+    name: AiResourcesPage
     type: object
     additionalProperties: false
-    required: [resourceCode, resourceType, displayName]
+    required: [items, pageInfo]
     properties:
-      resourceCode: { type: string, maxLength: 192, pattern: '^[A-Za-z0-9._:-]+$' }
-      resourceType: { type: string, enum: [vendor, modality, api_endpoint, model_api, bundle] }
-      displayName: { type: string, minLength: 1, maxLength: 128 }
-      vendorCode: { type: [string, 'null'], maxLength: 64, pattern: '^[A-Za-z0-9._:-]+$' }
-      modalityCode: { type: [string, 'null'], maxLength: 64, pattern: '^[A-Za-z0-9._:-]+$' }
-      apiEndpointCode: { type: [string, 'null'], maxLength: 128, pattern: '^[A-Za-z0-9._:-]+$' }
-      catalogKey: { type: [string, 'null'], maxLength: 256, pattern: '^[\x20-\x7E]*$' }
-      model: { type: [string, 'null'], maxLength: 128, pattern: '^[\x20-\x7E]*$' }
-      providerNativeModel: { type: [string, 'null'], maxLength: 256, pattern: '^[\x20-\x7E]*$' }
-      compositionMode: { type: [string, 'null'], enum: [single, any, all, null] }
-      status: { type: [string, 'null'], enum: [active, disabled, inactive, null] }
-      sortOrder: { type: [string, 'null'], format: int64, pattern: '^(0|[1-9][0-9]*)$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
-      members:
+      items:
         type: array
-        maxItems: 512
+        maxItems: 200
         items:
-          name: AdminAiResourceMemberInput
+          name: AdminAiResourceItem
           type: object
           additionalProperties: false
-          required: [memberResourceCode]
+          required: [id, resourceCode, resourceType, displayName, capabilities, compositionMode, status, members]
           properties:
-            memberResourceCode: { type: string, maxLength: 192, pattern: '^[A-Za-z0-9._:-]+$' }
-            memberRole: { type: [string, 'null'], enum: [included, optional, fallback, null] }
-            required: { type: boolean }
+            id: { type: string, format: int64, pattern: '^[1-9][0-9]*$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            resourceCode: { type: string, maxLength: 192, pattern: '^[A-Za-z0-9._:-]+$' }
+            resourceType: { type: string, enum: [vendor, modality, api_endpoint, model_api, bundle] }
+            displayName: { type: string, minLength: 1, maxLength: 128 }
+            vendorCode: { type: [string, 'null'], maxLength: 64, pattern: '^[A-Za-z0-9._:-]+$' }
+            modalityCode: { type: [string, 'null'], maxLength: 64, pattern: '^[A-Za-z0-9._:-]+$' }
+            apiEndpointCode: { type: [string, 'null'], maxLength: 128, pattern: '^[A-Za-z0-9._:-]+$' }
+            catalogKey: { type: [string, 'null'], maxLength: 256, pattern: '^[\x20-\x7E]*$' }
+            model: { type: [string, 'null'], maxLength: 128, pattern: '^[\x20-\x7E]*$' }
+            providerNativeModel: { type: [string, 'null'], maxLength: 256, pattern: '^[\x20-\x7E]*$' }
+            capability: { type: [string, 'null'], maxLength: 128, pattern: '^[A-Za-z0-9._:-]+$' }
+            capabilities:
+              type: array
+              maxItems: 128
+              items: { type: string, maxLength: 128, pattern: '^[A-Za-z0-9._:-]+$' }
+            compositionMode: { type: string, enum: [single, any, all] }
+            status: { type: string, enum: [active, disabled, inactive] }
             sortOrder: { type: [string, 'null'], format: int64, pattern: '^(0|[1-9][0-9]*)$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
-  request_body_required: true
-  write_tables:
-  - ai_resource
-  - ops_audit_log
+            members:
+              type: array
+              maxItems: 512
+              items:
+                name: AdminAiResourceMemberItem
+                type: object
+                additionalProperties: false
+                required: [parentResourceCode, memberResourceCode, memberRole, required]
+                properties:
+                  parentResourceCode: { type: string, maxLength: 192, pattern: '^[A-Za-z0-9._:-]+$' }
+                  memberResourceCode: { type: string, maxLength: 192, pattern: '^[A-Za-z0-9._:-]+$' }
+                  memberRole: { type: string, enum: [included, optional, fallback] }
+                  required: { type: boolean }
+                  sortOrder: { type: [string, 'null'], format: int64, pattern: '^(0|[1-9][0-9]*)$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+      pageInfo: *admin_ai_resource_offset_page_info
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: q
+    schema: { type: string, maxLength: 200 }
+  - name: resource_type
+    schema: { type: string, enum: [vendor, modality, api_endpoint, model_api, bundle] }
 - route: /admin/model/resources
-  source: ../sdkwork-models/crates/sdkwork-models-catalog-service/src/api/admin_ai_resource.rs
-  operation: updateAiResource
-  operation_id: ai.resources.byId.put
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
+  operation: upsertResourceGroupMember
+  operation_id: resourceGroups.resources.update
   kind: update
   api_surface: backend
   api_method: PUT
-  api_path: /backend/v3/api/ai/resources/{resourceId}
+  api_path: /backend/v3/api/ai/resource_groups/{groupId}/resources/{resourceCode}
   sdk_domain: ai
   read_sources:
+  - ai_resource_group
+  - ai_resource_group_item
+  - ai_resource
+  response_schema: *admin_ai_resource_group_resource_item
+  request_schema:
+    name: AdminAiResourceGroupMemberUpdateRequest
+    type: object
+    additionalProperties: false
+    properties:
+      itemRole: { type: [string, 'null'], enum: [included, optional, fallback, null] }
+      sortOrder: { type: [string, 'null'], format: int64, pattern: '^(0|[1-9][0-9]*)$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+  request_body_required: true
+  write_tables:
+  - ai_resource_group_item
+  - ops_audit_log
+- route: /admin/model/resources
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
+  operation: deleteResourceGroupMember
+  operation_id: resourceGroups.resources.delete
+  kind: delete
+  api_surface: backend
+  api_method: DELETE
+  api_path: /backend/v3/api/ai/resource_groups/{groupId}/resources/{resourceCode}
+  sdk_domain: ai
+  read_sources:
+  - ai_resource_group
+  - ai_resource_group_item
   - ai_resource
   response_schema:
     name: NoData
     properties: {}
+  write_tables:
+  - ai_resource_group_item
+  - ops_audit_log
+- route: /admin/model/resources
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
+  operation: createResourceGroup
+  operation_id: resourceGroups.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/ai/resource_groups
+  sdk_domain: ai
+  read_sources:
+  - ai_resource_group
+  - ai_resource_group_item
+  - ai_resource
+  response_schema: *admin_ai_resource_group_item
   request_schema:
-    name: AdminAiResourceUpdateRequest
+    name: AdminAiResourceGroupCreateRequest
     type: object
     additionalProperties: false
+    required: [groupCode, groupName]
     properties:
-      resourceCode: { type: [string, 'null'], maxLength: 192, pattern: '^[A-Za-z0-9._:-]+$' }
-      resourceType: { type: [string, 'null'], enum: [vendor, modality, api_endpoint, model_api, bundle, null] }
-      displayName: { type: [string, 'null'], maxLength: 128 }
-      vendorCode: { type: [string, 'null'], maxLength: 64, pattern: '^[A-Za-z0-9._:-]+$' }
-      modalityCode: { type: [string, 'null'], maxLength: 64, pattern: '^[A-Za-z0-9._:-]+$' }
-      apiEndpointCode: { type: [string, 'null'], maxLength: 128, pattern: '^[A-Za-z0-9._:-]+$' }
-      catalogKey: { type: [string, 'null'], maxLength: 256, pattern: '^[\x20-\x7E]*$' }
-      model: { type: [string, 'null'], maxLength: 128, pattern: '^[\x20-\x7E]*$' }
-      providerNativeModel: { type: [string, 'null'], maxLength: 256, pattern: '^[\x20-\x7E]*$' }
-      compositionMode: { type: [string, 'null'], enum: [single, any, all, null] }
-      status: { type: [string, 'null'], enum: [active, disabled, inactive, null] }
+      groupCode: { type: string, maxLength: 128, pattern: '^[A-Za-z0-9._:-]+$' }
+      groupName: { type: string, minLength: 1, maxLength: 128 }
+      groupType: { type: [string, 'null'], enum: [api_group, null] }
+      selectionMode: { type: [string, 'null'], enum: [manual, all, any, dynamic_all_api, null] }
+      description: { type: [string, 'null'], maxLength: 512 }
       sortOrder: { type: [string, 'null'], format: int64, pattern: '^(0|[1-9][0-9]*)$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+      status: { type: [string, 'null'], enum: [active, disabled, inactive, null] }
       members:
         type: array
         maxItems: 512
-        items:
-          name: AdminAiResourceMemberInput
+        items: &admin_ai_resource_group_member_input
+          name: AdminAiResourceGroupMemberInput
           type: object
           additionalProperties: false
-          required: [memberResourceCode]
+          required: [resourceCode]
           properties:
-            memberResourceCode: { type: string, maxLength: 192, pattern: '^[A-Za-z0-9._:-]+$' }
-            memberRole: { type: [string, 'null'], enum: [included, optional, fallback, null] }
-            required: { type: boolean }
+            resourceCode: { type: string, maxLength: 192, pattern: '^[A-Za-z0-9._:-]+$' }
+            itemRole: { type: [string, 'null'], enum: [included, optional, fallback, null] }
             sortOrder: { type: [string, 'null'], format: int64, pattern: '^(0|[1-9][0-9]*)$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
   request_body_required: true
   write_tables:
+  - ai_resource_group
+  - ai_resource_group_item
+  - ops_audit_log
+- route: /admin/model/resources
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
+  operation: updateResourceGroup
+  operation_id: resourceGroups.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/ai/resource_groups/{groupId}
+  sdk_domain: ai
+  read_sources:
+  - ai_resource_group
+  - ai_resource_group_item
   - ai_resource
+  response_schema: *admin_ai_resource_group_item
+  request_schema:
+    name: AdminAiResourceGroupUpdateRequest
+    type: object
+    additionalProperties: false
+    properties:
+      groupCode: { type: [string, 'null'], maxLength: 128, pattern: '^[A-Za-z0-9._:-]+$' }
+      groupName: { type: [string, 'null'], maxLength: 128 }
+      groupType: { type: [string, 'null'], enum: [api_group, null] }
+      selectionMode: { type: [string, 'null'], enum: [manual, all, any, dynamic_all_api, null] }
+      description: { type: [string, 'null'], maxLength: 512 }
+      sortOrder: { type: [string, 'null'], format: int64, pattern: '^(0|[1-9][0-9]*)$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+      status: { type: [string, 'null'], enum: [active, disabled, inactive, null] }
+      members:
+        type: array
+        maxItems: 512
+        items: *admin_ai_resource_group_member_input
+  request_body_required: true
+  write_tables:
+  - ai_resource_group
+  - ai_resource_group_item
+  - ops_audit_log
+- route: /admin/model/resources
+  source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
+  operation: deleteResourceGroup
+  operation_id: resourceGroups.delete
+  kind: delete
+  api_surface: backend
+  api_method: DELETE
+  api_path: /backend/v3/api/ai/resource_groups/{groupId}
+  sdk_domain: ai
+  read_sources:
+  - ai_resource_group
+  - ai_resource_group_item
+  response_schema:
+    name: NoData
+    properties: {}
+  write_tables:
+  - ai_resource_group
+  - ai_resource_group_item
   - ops_audit_log
 - route: /admin/ratelimit
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
@@ -7528,7 +7634,7 @@ frontend_operations:
         type: boolean
         nullable: true
   idempotency_required: true
-- route: /admin/storage/providers/{providerId}
+- route: /admin/storage/providers
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: update
   operation_id: oss.providers.update
@@ -7560,7 +7666,7 @@ frontend_operations:
         type: string
         minLength: 1
         maxLength: 512
-- route: /admin/storage/providers
+- route: /admin/storage/providers/{providerId}
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
   operation: backendStorageProviderHealthCheck
   operation_id: providers.healthCheck
@@ -7789,7 +7895,7 @@ frontend_operations:
     maxLength: 64
 - route: /admin/marketing/referrals
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts
-  operation: list
+  operation: fetchReferralStats
   operation_id: marketing.referralStats.list
   kind: read
   api_surface: backend
@@ -7920,6 +8026,9 @@ frontend_models:
   - modelCount
   - priceCount
   - rankingCount
+  - voiceCount
+  - voiceBindingCount
+  - videoProfileCount
   - requestedCatalogVersion
   - snapshotId
   - source
@@ -8052,24 +8161,19 @@ frontend_models:
   - ai_model_vendor
 - route: /admin/model/mappings
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
-  interface: ModelMappingModelOptionsCatalog
+  interface: ModelMappingModelOptionsPage
   fields:
-  - vendors
-  - vendors.id
-  - vendors.vendorCode
-  - vendors.name
-  - vendors.status
-  - vendors.color
-  - vendors.description
-  - models
-  - models.id
-  - models.vendorId
-  - models.vendorCode
-  - models.model
-  - models.displayName
-  - models.name
-  - models.type
-  - models.status
+  - items
+  - items.id
+  - items.vendorId
+  - items.vendorCode
+  - items.model
+  - items.displayName
+  - items.name
+  - items.type
+  - items.status
+  - totalCount
+  - hasMore
   data_sources:
   - ai_model
   - ai_model_vendor
@@ -8454,7 +8558,7 @@ frontend_models:
   - timeRange
   - startTime
   - endTime
-  - limit
+  - rankingSize
   data_sources:
   - ai_usage
   - ai_request_trace
@@ -8562,16 +8666,29 @@ frontend_models:
   - instanceName
   - scannedItems
   - returnedItems
-  - limit
-  - hasMore
   - scanComplete
-  - nextCursor
+  - pageInfo
+  - pageInfo.mode
+  - pageInfo.pageSize
+  - pageInfo.hasMore
+  - pageInfo.nextCursor
   - items
   - items.key
   - items.namespace
   - items.instanceName
   - items.status
   - items.expiresInSeconds
+  data_sources:
+  - ops_config_snapshot
+  - ops_audit_log
+- route: /admin/cache
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
+  interface: CachePageInfo
+  fields:
+  - mode
+  - pageSize
+  - hasMore
+  - nextCursor
   data_sources:
   - ops_config_snapshot
   - ops_audit_log
@@ -8710,10 +8827,10 @@ frontend_models:
   - traffic.time
   - traffic.tokens
   - traffic.requests
-  - traffic.cost
+  - traffic.points
   - traffic.chartTokens
   - traffic.chartRequests
-  - traffic.chartCost
+  - traffic.chartPoints
   - modelDistribution
   - modelDistribution.name
   - modelDistribution.value
@@ -8781,13 +8898,30 @@ frontend_models:
   - time
   - tokens
   - requests
-  - cost
+  - points
   - chartTokens
   - chartRequests
-  - chartCost
+  - chartPoints
   data_sources:
   - ai_request_trace
   - ai_usage
+- route: /admin/dashboard
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts
+  interface: InstallationStatusResponse
+  fields:
+  - status
+  - schemaVersion
+  - catalogVersion
+  - catalogSource
+  - externalCatalog
+  - lastCatalogRefreshStatus
+  - environment
+  - seedProfile
+  - changed
+  data_sources:
+  - ai_upstream_supplier
+  - ai_model
+  - ops_gateway_instance
 - route: /admin/monitor
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts
   interface: Alert
@@ -8826,6 +8960,29 @@ frontend_models:
   data_sources:
   - ops_gateway_instance
   - ops_gateway_heartbeat
+- route: /admin/monitor
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts
+  interface: MonitorListFilters
+  fields:
+  - page
+  - pageSize
+  - q
+  - searchQuery
+  data_sources:
+  - ops_alert_event
+  - ops_metric_snapshot
+  - ops_gateway_instance
+- route: /admin/ratelimit
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  interface: RateLimitListFilters
+  fields:
+  - page
+  - pageSize
+  - q
+  - searchQuery
+  data_sources:
+  - iam_gateway_risk_rule
+  - ai_quota_policy
 - route: /admin/ratelimit
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
   interface: FirewallCreateInput
@@ -9146,38 +9303,16 @@ frontend_models:
   - ops_notification_delivery
 - route: /console/usage
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-usage/src/usageService.ts
-  interface: UsageLog
+  interface: UsageLogPage
   fields:
-  - id
-  - requestId
-  - time
-  - tokenName
-  - group
-  - type
-  - model
-  - providerNativeModel
-  - requestedModelCatalogKey
-  - regionCode
-  - status
-  - httpStatus
-  - errorCode
-  - errorType
-  - errorMessage
-  - totalTime
-  - ttft
-  - isStream
-  - inputTokens
-  - cacheReadTokens
-  - outputTokens
-  - cost
-  - multiplier
-  - baseInputPrice
-  - baseOutputPrice
-  - cacheReadPrice
-  - path
-  - reasoningEffort
-  - ip
-  - userAgent
+  - items
+  - pageInfo
+  - pageInfo.mode
+  - pageInfo.page
+  - pageInfo.pageSize
+  - pageInfo.totalItems
+  - pageInfo.totalPages
+  - pageInfo.hasMore
   data_sources:
   - ai_request_trace
   - ai_usage
@@ -9296,6 +9431,11 @@ frontend_models:
   - groups.key
   - groups.label
   - groups.modelCount
+  - pageInfo
+  - pageInfo.total
+  - pageInfo.page
+  - pageInfo.pageSize
+  - pageInfo.hasMore
   data_sources:
   - ai_model_vendor
   - ai_model
@@ -9314,13 +9454,34 @@ frontend_models:
   - categories
   - groups
   - searchQuery
-  - limit
-  - offset
+  - page
+  - pageSize
   data_sources:
   - ai_model_vendor
   - ai_model
   - ai_model_capability
   - ai_model_pricing
+- route: /models
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts
+  interface: ModelCatalogPageInfo
+  fields:
+  - total
+  - page
+  - pageSize
+  - hasMore
+  data_sources:
+  - ai_model_vendor
+  - ai_model
+- route: /models
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts
+  interface: ModelCatalogProvider
+  fields:
+  - code
+  - label
+  - modelCount
+  data_sources:
+  - ai_model_vendor
+  - ai_model
 - route: /models
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/runtimeModelCatalog.ts
   interface: RuntimeModelCatalogItem
@@ -9539,7 +9700,10 @@ routes:
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
 - route: /admin/model
   required_tables:
+  - ai_model_vendor
   - ai_model
+  - ai_model_capability
+  - ai_model_pricing
   - ai_model_rank_snapshot
   - ai_pricing_import_snapshot
   - ai_pricing_plan
@@ -9552,6 +9716,10 @@ routes:
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
 - route: /admin/model/mappings
   required_tables:
+  - ai_model_vendor
+  - ai_model
+  - ai_model_capability
+  - ai_model_pricing
   - ai_model_mapping_rule
   - ai_model_mapping_rule_binding
   - ai_model_mapping_rule_item
@@ -9767,8 +9935,15 @@ routes:
   dependency_sdk_family: sdkwork-documents-app-sdk
 - route: /models
   required_tables:
+  - ai_model_vendor
+  - ai_model
+  - ai_model_capability
+  - ai_model_pricing
+  - ai_upstream_supplier
+  - ai_upstream_account
   - ai_upstream_account_group
   - ai_upstream_account_group_member
+  - ai_upstream_account_group_resource
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-app-sdk
 - route: /models/:id
@@ -9809,6 +9984,7 @@ routes:
   dependency_sdk_family: sdkwork-documents-app-sdk
 - route: /rankings
   required_tables:
+  - ai_model_vendor
   - ai_model
   - ai_model_rank_snapshot
   - ops_audit_log
@@ -9819,179 +9995,29 @@ routes:
   - ops_audit_log
   dependency_owned: true
   dependency_sdk_family: sdkwork-documents-app-sdk
-- route: /admin/marketing
+- route: /admin/memberships/:sectionId?
   required_tables:
+  - memberships
+  - recharges
   - ops_audit_log
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/marketing/budget-ledger
-  required_tables:
-  - commerce_usage_settlement
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/marketing/discount-allocations
-  required_tables:
-  - commerce_usage_settlement
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/marketing/discount-applications
+- route: /admin/marketing/:sectionId?
   required_tables:
   - commerce_usage_settlement
   - commerce_usage_statement
+  - growth_referral_stats
+  - promotions
   - ops_audit_log
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/marketing/events
+- route: /admin/payments/:sectionId?
   required_tables:
-  - commerce_usage_settlement
+  - payments
   - ops_audit_log
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/marketing/external-bindings
-  required_tables:
-  - commerce_usage_settlement
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/marketing/offers
-  required_tables:
-  - commerce_usage_settlement
-  - commerce_usage_statement
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/marketing/promotion-code-redemptions
-  required_tables:
-  - commerce_usage_settlement
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/marketing/promotion-codes
-  required_tables:
-  - commerce_usage_settlement
-  - commerce_usage_statement
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/marketing/promotion-coupon-ledger
-  required_tables:
-  - commerce_usage_settlement
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/marketing/promotion-coupon-stocks
-  required_tables:
-  - commerce_usage_settlement
-  - commerce_usage_statement
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/marketing/referrals
-  required_tables:
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/marketing/user-coupons
-  required_tables:
-  - commerce_usage_settlement
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/payments
-  required_tables:
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/payments/attempts
-  required_tables:
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/payments/channels
-  required_tables:
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/payments/intents
-  required_tables:
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/payments/methods
-  required_tables:
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/payments/provider-accounts
-  required_tables:
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/payments/providers
-  required_tables:
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/payments/reconciliation-runs
-  required_tables:
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/payments/route-rules
-  required_tables:
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/payments/webhook-events
-  required_tables:
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/storage
-  required_tables:
-  - storage
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/storage/buckets
-  required_tables:
-  - storage
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/storage/defaultBuckets
-  required_tables:
-  - storage
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/storage/garbageCollection
-  required_tables:
-  - storage
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/storage/providers
-  required_tables:
-  - storage
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/storage/quotas
-  required_tables:
-  - storage
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/storage/reconciliation
-  required_tables:
-  - storage
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/storage/usage
+- route: /admin/storage/:sectionId?
   required_tables:
   - storage
   - ops_audit_log

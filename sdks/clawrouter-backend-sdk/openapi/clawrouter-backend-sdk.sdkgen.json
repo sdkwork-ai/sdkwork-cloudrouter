@@ -4344,33 +4344,6 @@
         ],
         "type": "object"
       },
-      "ModelMappingOptionsListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by model mapping options list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Model mapping options list result schema exposed by Claw Router.",
-        "x-operation-id": "modelMappingOptions.list"
-      },
       "MonitorAlertPage": {
         "additionalProperties": false,
         "description": "MonitorAlertPage contract.",
@@ -9216,89 +9189,6 @@
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "openapi": "3.1.2",
   "paths": {
-    "/backend/v3/api/ai/model_mapping_options": {
-      "get": {
-        "description": "List model options catalog. Reads ai_model_mapping_rule. Writes none. File targets none.",
-        "operationId": "modelMappingOptions.list",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ModelMappingOptionsListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "List model options catalog",
-        "tags": [
-          "ai"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "ai_model_mapping_rule"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "intelligence",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.backend",
-        "x-sdkwork-domain": "intelligence",
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-resource": "modelMappingOptions",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-        "x-write-tables": []
-      }
-    },
     "/backend/v3/api/ai/upstream_account_groups": {
       "get": {
         "description": "List upstream account groups. Reads ai_upstream_account_group. Writes none. File targets none.",

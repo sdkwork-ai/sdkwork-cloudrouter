@@ -67,6 +67,12 @@
       "require": "./src/components/BottomPagination.tsx",
       "default": "./src/components/BottomPagination.tsx"
     },
+    "./components/AiResourceSelectorModal": {
+      "types": "./src/components/AiResourceSelectorModal.tsx",
+      "import": "./src/components/AiResourceSelectorModal.tsx",
+      "require": "./src/components/AiResourceSelectorModal.tsx",
+      "default": "./src/components/AiResourceSelectorModal.tsx"
+    },
     "./components/ConfirmDialog": {
       "types": "./src/components/ConfirmDialog.tsx",
       "import": "./src/components/ConfirmDialog.tsx",
@@ -133,12 +139,16 @@
     "@sdkwork/clawrouter-pc-core": "workspace:*",
     "@sdkwork/iam-app-sdk": "workspace:*",
     "@sdkwork/iam-backend-sdk": "workspace:*",
+    "@sdkwork/messaging-app-sdk": "workspace:*",
     "@sdkwork/auth-runtime-pc-react": "workspace:*",
     "@sdkwork/clawrouter-app-sdk": "workspace:*",
     "@sdkwork/documents-app-sdk": "workspace:*",
     "@sdkwork/clawrouter-backend-sdk": "workspace:*",
     "@sdkwork/models-backend-sdk": "workspace:*",
     "@sdkwork/models-app-sdk": "workspace:*",
+    "@sdkwork/membership-backend-sdk": "workspace:*",
+    "@sdkwork/payment-backend-sdk": "workspace:*",
+    "@sdkwork/promotion-backend-sdk": "workspace:*",
     "@sdkwork/clawrouter-open-sdk": "workspace:*",
     "@sdkwork/drive-app-sdk": "workspace:*",
     "@sdkwork/account-sdk-ports": "workspace:*",

@@ -177,7 +177,7 @@ function normalizeMediaChecksumAlgorithm(
   value: string,
   fieldName: string,
 ): ClawRouterMediaChecksumAlgorithm {
-  const normalized = trim(value).toLowerCase().replaceAll('-', '');
+  const normalized = trim(value).toLowerCase().replace(/-/g, '');
   if (normalized === 'sha256' || normalized === 'md5' || normalized === 'etag') {
     return normalized;
   }

@@ -54,9 +54,9 @@ export const CLAWROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly ClawRouterAdminRoute
   route('settings', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-site', ['clawrouter-backend-sdk'], 'clawrouter.admin.access', <ClawRouterAuthSettingsPage />),
   route('runtime-region', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-runtime-region', ['clawrouter-backend-sdk'], 'clawrouter.system.read', <RuntimeRegionAdmin />),
   route('site', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-site', ['clawrouter-backend-sdk'], 'clawrouter.admin.access', <ClawRouterSiteSettingsPage />),
-  route('memberships/:sectionId?', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-memberships', ['clawrouter-backend-sdk'], 'clawrouter.admin.access', <AdminSectionRoute component={MembershipsAdmin} />),
-  route('marketing/:sectionId?', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-marketing', ['clawrouter-backend-sdk'], 'clawrouter.admin.access', <AdminSectionRoute component={MarketingAdmin} />),
-  route('payments/:sectionId?', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-payments', ['clawrouter-backend-sdk'], 'clawrouter.admin.access', <AdminSectionRoute component={PaymentsAdmin} />),
+  route('memberships/:sectionId?', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-memberships', ['sdkwork-membership-backend-sdk', 'clawrouter-backend-sdk'], 'clawrouter.admin.access', <AdminSectionRoute component={MembershipsAdmin} />),
+  route('marketing/:sectionId?', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-marketing', ['sdkwork-promotion-backend-sdk', 'clawrouter-backend-sdk'], 'clawrouter.admin.access', <AdminSectionRoute component={MarketingAdmin} />),
+  route('payments/:sectionId?', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-payments', ['sdkwork-payment-backend-sdk', 'clawrouter-backend-sdk'], 'clawrouter.admin.access', <AdminSectionRoute component={PaymentsAdmin} />),
   route('storage/:sectionId?', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-storage', ['clawrouter-backend-sdk'], 'clawrouter.admin.access', <AdminSectionRoute component={StorageAdmin} />),
 ];
 

@@ -235,6 +235,7 @@ test('frontend field contract exposes standalone business centers and excludes r
   const contractSource = readPortalFile('../../docs/schema-registry/frontend-field-contracts.yaml');
 
   for (const retiredPrefix of [
+    '/admin/channel',
     '/admin/catalog',
     '/admin/orders',
     '/admin/wallet',
@@ -255,10 +256,10 @@ test('frontend field contract exposes standalone business centers and excludes r
     );
   }
 
-  assert.match(contractSource, /^- route: \/admin\/channel$/m);
   assert.match(contractSource, /^- route: \/admin\/cache$/m);
   assert.match(contractSource, /^- route: \/admin\/memberships\//m);
   assert.match(contractSource, /^- route: \/admin\/marketing\//m);
+  assert.match(contractSource, /^- route: \/admin\/payments\/channels$/m);
   assert.match(contractSource, /^- route: \/admin\/payments\//m);
   assert.match(contractSource, /^- route: \/admin\/storage\//m);
 });

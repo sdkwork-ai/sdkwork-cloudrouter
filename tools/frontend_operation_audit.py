@@ -159,6 +159,10 @@ class FrontendOperationAudit:
         "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/"
     )
     APPBASE_APP_DEPENDENCY_DOMAINS = frozenset({"auth", "iam", "appbase"})
+    CLAWROUTER_OWNED_IAM_APP_API_PATH_PREFIXES = (
+        "/app/v3/api/iam/api_keys",
+        "/app/v3/api/iam/users/settings",
+    )
     APPBASE_APP_SERVICE_CLIENT = "getSdkworkAppbaseAppSdkClient"
     APPBASE_BACKEND_SERVICE_CLIENT = "getSdkworkAppbaseBackendSdkClient"
     APPBASE_APP_SERVICE_PATTERN = re.compile(r"\bgetSdkworkAppbaseAppSdkClient\s*\(")
@@ -257,7 +261,13 @@ class FrontendOperationAudit:
         / "frontend-field-contracts"
         / "operations"
         / "app-commerce-catalog.yaml",
+        Path("docs")
+        / "schema-registry"
+        / "frontend-field-contracts"
+        / "operations"
+        / "backend-admin-commerce.yaml",
     )
+    SDK_AUTHORITY_REGISTRY = "frontend_operation_sdk_authorities"
 
     def __init__(
         self,
@@ -294,6 +304,7 @@ class FrontendOperationAudit:
                         "api_surface": contract.get("api_surface"),
                         "api_method": contract.get("api_method"),
                         "api_path": contract.get("api_path"),
+                        "sdk_operations": contract.get("sdk_operations", []),
                         "read_sources": contract.get("read_sources", []),
                         "write_tables": contract.get("write_tables", []),
                         "file_targets": contract.get("file_targets", []),
@@ -358,6 +369,7 @@ class FrontendOperationAudit:
         expected: set[str] = set()
         messages: list[str] = []
         source_text_cache: dict[str, str | None] = {}
+        sdk_authority_cache: dict[str, tuple[dict[str, tuple[str, str]], list[str]]] = {}
         for entry in entries:
             if not isinstance(entry, dict):
                 continue
@@ -371,6 +383,11 @@ class FrontendOperationAudit:
             if isinstance(source, str) and is_relay_retired_admin_source(source):
                 continue
             route = entry.get("route")
+            route_contract = (
+                self._resolve_route_contract(route, route_tables)
+                if isinstance(route, str)
+                else None
+            )
             kind = entry.get("kind")
             api_surface = entry.get("api_surface")
             api_method = entry.get("api_method")
@@ -378,6 +395,7 @@ class FrontendOperationAudit:
             operation_scope = entry.get("operation_scope")
             sdk_domain = entry.get("sdk_domain")
             is_app_shell_operation = operation_scope == "app_shell"
+            is_composition = operation_scope == "composition"
             if not isinstance(source, str) or not isinstance(operation, str):
                 messages.append("frontend_operations entries must include source and operation")
                 continue
@@ -386,7 +404,7 @@ class FrontendOperationAudit:
 
             if not isinstance(route, str):
                 messages.append(f"frontend operation {key} must declare route")
-            elif route not in route_tables:
+            elif route_contract is None:
                 messages.append(f"frontend operation {key} references route without route contract: {route}")
             if not isinstance(kind, str) or kind not in self.VALID_KINDS:
                 messages.append(f"frontend operation {key} kind must be one of {', '.join(sorted(self.VALID_KINDS))}")
@@ -394,15 +412,31 @@ class FrontendOperationAudit:
                 messages.append(f"frontend operation {key} must declare api_surface")
             elif api_surface not in self.VALID_API_SURFACES:
                 messages.append(f"frontend operation {key} api_surface must be one of {', '.join(sorted(self.VALID_API_SURFACES))}")
-            if not isinstance(api_method, str):
+            if is_composition and api_method is not None:
+                messages.append(f"frontend operation {key} composition must not declare a single api_method")
+            elif not is_composition and not isinstance(api_method, str):
                 messages.append(f"frontend operation {key} must declare api_method")
-            elif isinstance(kind, str) and kind in self.KIND_METHODS:
+            elif isinstance(api_method, str) and isinstance(kind, str) and kind in self.KIND_METHODS:
                 normalized_method = api_method.upper()
                 allowed_methods = self._allowed_methods(kind, api_surface)
                 if normalized_method not in allowed_methods:
                     messages.append(f"frontend operation {key} kind {kind} does not allow api_method {normalized_method}")
-            if not isinstance(api_path, str):
+            if is_composition and api_path is not None:
+                messages.append(f"frontend operation {key} composition must not declare a single api_path")
+            elif not is_composition and not isinstance(api_path, str):
                 messages.append(f"frontend operation {key} must declare api_path")
+            messages.extend(
+                self._validate_sdk_operation_bindings(
+                    entry=entry,
+                    key=key,
+                    kind=kind,
+                    api_method=api_method,
+                    api_path=api_path,
+                    is_composition=is_composition,
+                    contract=contract,
+                    authority_cache=sdk_authority_cache,
+                )
+            )
             if isinstance(route, str) and isinstance(api_surface, str):
                 if (
                     route.startswith("/admin")
@@ -446,12 +480,12 @@ class FrontendOperationAudit:
                 read_sources
                 and not is_app_shell_operation
                 and isinstance(route, str)
-                and route in route_tables
+                and route_contract is not None
             ):
                 for read_source in read_sources:
-                    if read_source not in route_tables[route]:
+                    if read_source not in route_tables[route_contract]:
                         messages.append(
-                            f"frontend operation {key} read_source {read_source} is not declared in route {route} required_tables"
+                            f"frontend operation {key} read_source {read_source} is not declared in route {route_contract} required_tables"
                         )
 
             if not valid_write_tables:
@@ -472,6 +506,7 @@ class FrontendOperationAudit:
                         sdk_domain=sdk_domain,
                         source_operation=entry,
                     )
+                    and not self._is_external_sdk_operation(entry)
                 ):
                     messages.append(f"frontend operation {key} kind {kind} must declare non-empty write_tables")
                 elif (
@@ -479,12 +514,12 @@ class FrontendOperationAudit:
                     and write_tables
                     and not is_app_shell_operation
                     and isinstance(route, str)
-                    and route in route_tables
+                    and route_contract is not None
                 ):
                     for write_table in write_tables:
-                        if write_table not in route_tables[route]:
+                        if write_table not in route_tables[route_contract]:
                             messages.append(
-                                f"frontend operation {key} write_table {write_table} is not declared in route {route} required_tables"
+                                f"frontend operation {key} write_table {write_table} is not declared in route {route_contract} required_tables"
                             )
             elif valid_write_tables and write_tables:
                 messages.append(f"frontend operation {key} kind read must not declare write_tables")
@@ -625,6 +660,8 @@ class FrontendOperationAudit:
 
         merged = dict(contract)
         merged_entries = list(entries)
+        merged_authorities = dict(contract.get(self.SDK_AUTHORITY_REGISTRY, {})) \
+            if isinstance(contract.get(self.SDK_AUTHORITY_REGISTRY), dict) else {}
         existing_keys = {
             f"{entry.get('source')}#{entry.get('operation')}"
             for entry in merged_entries
@@ -640,6 +677,13 @@ class FrontendOperationAudit:
             if not isinstance(fragment, dict):
                 continue
             fragment_entries = fragment.get("frontend_operations", [])
+            fragment_authorities = fragment.get(self.SDK_AUTHORITY_REGISTRY, {})
+            if isinstance(fragment_authorities, dict):
+                for family, authority in fragment_authorities.items():
+                    existing_authority = merged_authorities.get(family)
+                    if existing_authority is not None and existing_authority != authority:
+                        raise ValueError(f"conflicting frontend operation SDK authority: {family}")
+                    merged_authorities[family] = authority
             if not isinstance(fragment_entries, list):
                 continue
             for entry in fragment_entries:
@@ -655,6 +699,8 @@ class FrontendOperationAudit:
                 merged_entries.append(entry)
                 existing_keys.add(key)
         merged["frontend_operations"] = merged_entries
+        if merged_authorities:
+            merged[self.SDK_AUTHORITY_REGISTRY] = merged_authorities
         return merged
 
     def _frontend_operation_contract_index(self) -> dict[str, dict[str, Any]]:
@@ -714,6 +760,256 @@ class FrontendOperationAudit:
             methods.add("POST")
         return methods
 
+    def _validate_sdk_operation_bindings(
+        self,
+        *,
+        entry: dict[str, Any],
+        key: str,
+        kind: Any,
+        api_method: Any,
+        api_path: Any,
+        is_composition: bool,
+        contract: dict[str, Any],
+        authority_cache: dict[str, tuple[dict[str, tuple[str, str]], list[str]]],
+    ) -> list[str]:
+        raw_bindings = entry.get("sdk_operations")
+        if raw_bindings is None:
+            if is_composition:
+                return [f"frontend operation {key} composition must declare sdk_operations"]
+            return []
+        if not isinstance(raw_bindings, list):
+            return [f"frontend operation {key} sdk_operations must be a list"]
+        if is_composition and len(raw_bindings) < 2:
+            return [f"frontend operation {key} composition must bind at least two SDK operations"]
+        if not is_composition and len(raw_bindings) != 1:
+            return [f"frontend operation {key} must bind exactly one SDK operation"]
+
+        messages: list[str] = []
+        for index, binding in enumerate(raw_bindings):
+            binding_key = f"{key} sdk_operations[{index}]"
+            if not isinstance(binding, dict):
+                messages.append(f"frontend operation {binding_key} must be a mapping")
+                continue
+            family = binding.get("sdk_family")
+            operation_id = binding.get("operation_id")
+            if not isinstance(family, str) or not family:
+                messages.append(f"frontend operation {binding_key} must declare sdk_family")
+                continue
+            if not isinstance(operation_id, str) or not operation_id:
+                messages.append(f"frontend operation {binding_key} must declare operation_id")
+                continue
+
+            was_cached = family in authority_cache
+            if not was_cached:
+                authority_cache[family] = self._load_sdk_authority_operations(
+                    family=family,
+                    contract=contract,
+                )
+            operations, authority_errors = authority_cache[family]
+            if authority_errors:
+                if not was_cached:
+                    messages.extend(authority_errors)
+                continue
+            authority_operation = operations.get(operation_id)
+            if authority_operation is None:
+                messages.append(
+                    f"frontend operation {binding_key} references missing {family} operation_id: {operation_id}"
+                )
+                continue
+
+            authority_method, authority_path = authority_operation
+            if is_composition:
+                if isinstance(kind, str) and kind == "read" and authority_method not in self._allowed_methods(kind, "backend"):
+                    messages.append(
+                        f"frontend operation {binding_key} read composition references non-read "
+                        f"{authority_method} {authority_path}"
+                    )
+                continue
+            if isinstance(api_method, str) and api_method.upper() != authority_method:
+                messages.append(
+                    f"frontend operation {binding_key} method {api_method.upper()} does not match "
+                    f"{family} authority {authority_method}"
+                )
+            if isinstance(api_path, str) and api_path != authority_path:
+                messages.append(
+                    f"frontend operation {binding_key} path {api_path} does not match "
+                    f"{family} authority {authority_path}"
+                )
+        return messages
+
+    def _load_sdk_authority_operations(
+        self,
+        *,
+        family: str,
+        contract: dict[str, Any],
+    ) -> tuple[dict[str, tuple[str, str]], list[str]]:
+        registry = contract.get(self.SDK_AUTHORITY_REGISTRY)
+        if not isinstance(registry, dict):
+            return {}, [f"frontend operation SDK authority registry is missing for family: {family}"]
+        descriptor = registry.get(family)
+        if not isinstance(descriptor, dict):
+            return {}, [f"frontend operation SDK authority is missing for family: {family}"]
+        manifest_reference = descriptor.get("manifest")
+        if not isinstance(manifest_reference, str) or not manifest_reference:
+            return {}, [f"frontend operation SDK authority {family} must declare manifest"]
+
+        manifest_candidate = Path(manifest_reference)
+        if manifest_candidate.is_absolute():
+            return {}, [f"frontend operation SDK authority {family} manifest must be workspace-relative"]
+        manifest_path = (self.root / manifest_candidate).resolve()
+        workspace_root = self.root.parent.resolve()
+        if manifest_path != workspace_root and workspace_root not in manifest_path.parents:
+            return {}, [f"frontend operation SDK authority {family} manifest escapes the SDKWork workspace"]
+        if manifest_path.name != "sdk-manifest.json" or not manifest_path.is_file():
+            return {}, [f"frontend operation SDK authority {family} manifest is missing: {manifest_reference}"]
+
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            return {}, [f"frontend operation SDK authority {family} manifest is invalid: {exc}"]
+        if not isinstance(manifest, dict):
+            return {}, [f"frontend operation SDK authority {family} manifest root must be a mapping"]
+        manifest_family = manifest.get("sdkFamily") or manifest.get("workspace")
+        if manifest_family != family:
+            return {}, [
+                f"frontend operation SDK authority {family} manifest declares family: {manifest_family}"
+            ]
+
+        dependency_error = self._validate_declared_backend_sdk_dependency(
+            family=family,
+            manifest_path=manifest_path,
+        )
+        if dependency_error is not None:
+            return {}, [dependency_error]
+
+        authority_reference = manifest.get("authoritySpec")
+        if not isinstance(authority_reference, str) or not authority_reference:
+            return {}, [f"frontend operation SDK authority {family} manifest must declare authoritySpec"]
+        authority_path = (manifest_path.parent / authority_reference).resolve()
+        if manifest_path.parent.resolve() not in authority_path.parents:
+            return {}, [f"frontend operation SDK authority {family} authoritySpec escapes its SDK family"]
+        if not authority_path.is_file():
+            return {}, [
+                f"frontend operation SDK authority {family} authoritySpec is missing: {authority_reference}"
+            ]
+
+        try:
+            if authority_path.suffix.lower() in {".yaml", ".yml"}:
+                authority = yaml.safe_load(authority_path.read_text(encoding="utf-8"))
+            else:
+                authority = json.loads(authority_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            return {}, [f"frontend operation SDK authority {family} authoritySpec is invalid: {exc}"]
+        if not isinstance(authority, dict) or not isinstance(authority.get("paths"), dict):
+            return {}, [f"frontend operation SDK authority {family} authoritySpec must declare paths"]
+
+        operations: dict[str, tuple[str, str]] = {}
+        errors: list[str] = []
+        for api_path, path_item in authority["paths"].items():
+            if not isinstance(api_path, str) or not isinstance(path_item, dict):
+                continue
+            for method, operation in path_item.items():
+                normalized_method = str(method).upper()
+                if normalized_method not in {"GET", "POST", "PUT", "PATCH", "DELETE"}:
+                    continue
+                if not isinstance(operation, dict):
+                    continue
+                operation_id = operation.get("operationId")
+                if not isinstance(operation_id, str) or not operation_id:
+                    continue
+                existing = operations.get(operation_id)
+                candidate = (normalized_method, api_path)
+                if existing is not None and existing != candidate:
+                    errors.append(
+                        f"frontend operation SDK authority {family} has duplicate operation_id: {operation_id}"
+                    )
+                    continue
+                operations[operation_id] = candidate
+        if not operations:
+            errors.append(f"frontend operation SDK authority {family} authoritySpec has no operations")
+        return operations, errors
+
+    def _validate_declared_backend_sdk_dependency(
+        self,
+        *,
+        family: str,
+        manifest_path: Path,
+    ) -> str | None:
+        owner_manifest_path = self.root / "sdks" / "clawrouter-backend-sdk" / "sdk-manifest.json"
+        if not owner_manifest_path.is_file():
+            return "Claw Router backend SDK manifest is missing"
+        try:
+            owner_manifest = json.loads(owner_manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            return f"Claw Router backend SDK manifest is invalid: {exc}"
+        if not isinstance(owner_manifest, dict):
+            return "Claw Router backend SDK manifest root must be a mapping"
+
+        owner_family = owner_manifest.get("sdkFamily") or owner_manifest.get("workspace")
+        if family == owner_family:
+            if manifest_path != owner_manifest_path.resolve():
+                return f"frontend operation SDK authority {family} must use the application-owned manifest"
+            return None
+        dependencies = owner_manifest.get("sdkDependencies", [])
+        declared_families = {
+            dependency.get("workspace")
+            for dependency in dependencies
+            if isinstance(dependency, dict) and isinstance(dependency.get("workspace"), str)
+        } if isinstance(dependencies, list) else set()
+        if family not in declared_families:
+            return f"frontend operation SDK authority {family} is not declared in clawrouter-backend-sdk sdkDependencies"
+        return None
+
+    def _sdk_operation_families(self, source_operation: dict[str, Any] | None) -> list[str]:
+        if not isinstance(source_operation, dict):
+            return []
+        bindings = source_operation.get("sdk_operations")
+        if not isinstance(bindings, list):
+            return []
+        families: list[str] = []
+        for binding in bindings:
+            if not isinstance(binding, dict):
+                continue
+            family = binding.get("sdk_family")
+            if isinstance(family, str) and family and family not in families:
+                families.append(family)
+        return families
+
+    def _sdk_client_factory(self, family: str) -> str | None:
+        if family == "clawrouter-backend-sdk":
+            return "getClawRouterBackendSdkClient"
+        match = re.fullmatch(r"sdkwork-([a-z0-9-]+)-backend-sdk", family)
+        if match is None:
+            return None
+        domain = "".join(part[:1].upper() + part[1:] for part in match.group(1).split("-") if part)
+        return f"getSdkwork{domain}BackendSdkClient" if domain else None
+
+    def _is_external_sdk_operation(self, source_operation: dict[str, Any] | None) -> bool:
+        return any(family != "clawrouter-backend-sdk" for family in self._sdk_operation_families(source_operation))
+
+    def _resolve_route_contract(
+        self,
+        route: str,
+        route_tables: dict[str, set[str]],
+    ) -> str | None:
+        if route in route_tables:
+            return route
+
+        parameterized_hosts = sorted(
+            (
+                candidate
+                for candidate in route_tables
+                if candidate.endswith("/:sectionId?")
+            ),
+            key=len,
+            reverse=True,
+        )
+        for candidate in parameterized_hosts:
+            prefix = candidate.removesuffix("/:sectionId?")
+            if route == prefix or route.startswith(f"{prefix}/"):
+                return candidate
+        return None
+
     def _source_text(self, source: str, cache: dict[str, str | None]) -> str | None:
         if source in cache:
             return cache[source]
@@ -734,6 +1030,14 @@ class FrontendOperationAudit:
         source_text: str,
         source_text_cache: dict[str, str | None],
     ) -> bool:
+        sdk_families = self._sdk_operation_families(source_operation)
+        if sdk_families:
+            factories = [self._sdk_client_factory(family) for family in sdk_families]
+            return all(
+                factory is not None
+                and re.search(rf"\b{re.escape(factory)}\s*\(", source_text) is not None
+                for factory in factories
+            )
         if self._is_appbase_dependency_operation(
             api_surface=api_surface,
             sdk_domain=sdk_domain,
@@ -992,6 +1296,11 @@ class FrontendOperationAudit:
     ) -> bool:
         if api_surface not in {"app", "backend"}:
             return False
+        if self._is_clawrouter_owned_iam_app_operation(
+            api_surface=api_surface,
+            source_operation=source_operation,
+        ):
+            return False
         if isinstance(sdk_domain, str) and sdk_domain in self.APPBASE_APP_DEPENDENCY_DOMAINS:
             return True
         if not isinstance(source_operation, dict):
@@ -1005,6 +1314,22 @@ class FrontendOperationAudit:
             or api_path.startswith("/backend/v3/api/iam/oauth/")
         )
 
+    def _is_clawrouter_owned_iam_app_operation(
+        self,
+        *,
+        api_surface: str,
+        source_operation: dict[str, Any] | None,
+    ) -> bool:
+        if api_surface != "app" or not isinstance(source_operation, dict):
+            return False
+        api_path = source_operation.get("api_path")
+        if not isinstance(api_path, str):
+            return False
+        return any(
+            api_path == prefix or api_path.startswith(f"{prefix}/")
+            for prefix in self.CLAWROUTER_OWNED_IAM_APP_API_PATH_PREFIXES
+        )
+
     def _sdk_boundary_error_message(
         self,
         key: str,
@@ -1012,6 +1337,13 @@ class FrontendOperationAudit:
         sdk_domain: Any,
         source_operation: dict[str, Any] | None,
     ) -> str:
+        sdk_families = self._sdk_operation_families(source_operation)
+        if sdk_families:
+            factories = [self._sdk_client_factory(family) or family for family in sdk_families]
+            return (
+                f"frontend operation {key} must use bound SDK client factories: "
+                f"{', '.join(factories)}"
+            )
         if self._is_commerce_dependency_operation(sdk_domain=sdk_domain, source_operation=source_operation):
             return (
                 f"frontend operation {key} must use getClawRouterBackendSdkClient().<domain>, "
@@ -1064,7 +1396,11 @@ class FrontendOperationAudit:
                 f"frontend operation {key} must use {self.MODELS_BACKEND_SDK_CLIENT} "
                 f"for models dependency {api_surface} api_surface"
             )
-        if isinstance(sdk_domain, str) and sdk_domain in self.APPBASE_APP_DEPENDENCY_DOMAINS:
+        if self._is_appbase_dependency_operation(
+            api_surface=api_surface,
+            sdk_domain=sdk_domain,
+            source_operation=source_operation,
+        ):
             sdk_client = (
                 self.APPBASE_BACKEND_SERVICE_CLIENT
                 if api_surface == "backend"

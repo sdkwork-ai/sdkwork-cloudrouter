@@ -1,4 +1,5 @@
 use std::sync::Mutex;
+use std::time::Instant;
 
 use axum::body::Body;
 
@@ -11,6 +12,10 @@ pub struct InvocationTelemetry {
     pub error_type: Option<String>,
     pub error_message_masked: Option<String>,
     pub normalized_response: Option<InvocationNormalizedResponse>,
+    /// Ephemeral pipeline timing state. It is never serialized or exported as
+    /// a label and is consumed exactly once by the metrics interceptor.
+    #[doc(hidden)]
+    pub pipeline_started_at: Option<Instant>,
 }
 
 #[derive(Debug)]

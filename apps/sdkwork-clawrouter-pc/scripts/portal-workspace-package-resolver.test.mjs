@@ -9,7 +9,7 @@ import {
 
 const portalRoot = path.resolve(import.meta.dirname, '..');
 
-test('resolver falls back to generated server-openapi source when SDK dist is missing', () => {
+test('resolver falls back to the composed SDK facade when dist is missing', () => {
   const importer = fileURLToPath(
     new URL('../packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts', import.meta.url),
   );

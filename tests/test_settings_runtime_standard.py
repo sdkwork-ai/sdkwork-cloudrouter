@@ -4,7 +4,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ROUTER_SERVICE = ROOT / "services" / "sdkwork-clawrouter-router-service"
-APP_SDK = ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src"
+APP_SDK = (
+    ROOT
+    / "sdks"
+    / "clawrouter-app-sdk"
+    / "clawrouter-app-sdk-typescript"
+    / "generated"
+    / "server-openapi"
+    / "src"
+)
 
 
 class SettingsRuntimeStandardTest(unittest.TestCase):

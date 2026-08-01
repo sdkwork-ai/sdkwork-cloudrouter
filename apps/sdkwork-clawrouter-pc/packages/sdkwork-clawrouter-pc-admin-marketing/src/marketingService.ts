@@ -1,13 +1,18 @@
 import {
   getClawRouterBackendSdkClient,
+  getSdkworkPromotionBackendSdkClient,
   isRecord,
+  readApiData,
   readRequiredApiItems,
   readRequiredNumber,
   readRequiredString,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
 
-type BackendPromotionsService = ReturnType<typeof getClawRouterBackendSdkClient>['promotions'];
+type BackendPromotionsService = ReturnType<typeof getSdkworkPromotionBackendSdkClient>['promotions'];
+type ClawBackendPromotionsService = ReturnType<typeof getClawRouterBackendSdkClient>['promotions'];
+type ClawBackendMarketingService = ReturnType<typeof getClawRouterBackendSdkClient>['system']['marketing'];
+type PromotionPage = ApiRecord & { items: ApiRecord[]; pageInfo: ApiRecord };
 
 export interface ReferralStat {
   id: string;
@@ -19,88 +24,93 @@ export interface ReferralStat {
 }
 
 export class MarketingService {
-  static async fetchReferralStats(): Promise<ReferralStat[]> {
-    const result = await getClawRouterBackendSdkClient().system.marketing.referralStats.list();
-    return readRequiredApiItems(result, 'Failed to fetch referral stats')
-      .map(normalizeReferralStat);
+  static async fetchReferralStats(
+    params?: Parameters<ClawBackendMarketingService['referralStats']['list']>[0],
+  ): Promise<ApiRecord & { items: ReferralStat[]; pageInfo: ApiRecord }> {
+    const result = await getClawRouterBackendSdkClient().system.marketing.referralStats.list(params);
+    const page = readRequiredPromotionPage(result, 'Failed to fetch referral stats');
+    return {
+      ...page,
+      items: page.items.map(normalizeReferralStat),
+    };
   }
 }
 
 export async function backendPromotionOffersList(
-  params?: Parameters<BackendPromotionsService['offers']['management']['list']>[0],
+  params?: Parameters<BackendPromotionsService['offers']['list']>[0],
 ) {
-  const result = await getClawRouterBackendSdkClient().promotions.offers.management.list(params);
-  return readRequiredPromotionItems(result, 'Promotion offer records are required');
+  const result = await getSdkworkPromotionBackendSdkClient().promotions.offers.list(params);
+  return readRequiredPromotionPage(result, 'Promotion offer records are required');
 }
 
 export async function backendPromotionCouponStocksList(
   params?: Parameters<BackendPromotionsService['couponStocks']['list']>[0],
 ) {
-  const result = await getClawRouterBackendSdkClient().promotions.couponStocks.list(params);
-  return readRequiredPromotionItems(result, 'Promotion coupon stock records are required');
+  const result = await getSdkworkPromotionBackendSdkClient().promotions.couponStocks.list(params);
+  return readRequiredPromotionPage(result, 'Promotion coupon stock records are required');
 }
 
 export async function backendPromotionCodesList(
   params?: Parameters<BackendPromotionsService['codes']['list']>[0],
 ) {
-  const result = await getClawRouterBackendSdkClient().promotions.codes.list(params);
-  return readRequiredPromotionItems(result, 'Promotion code records are required');
+  const result = await getSdkworkPromotionBackendSdkClient().promotions.codes.list(params);
+  return readRequiredPromotionPage(result, 'Promotion code records are required');
 }
 
 export async function backendPromotionDiscountApplicationsList(
   params?: Parameters<BackendPromotionsService['discountApplications']['list']>[0],
 ) {
-  const result = await getClawRouterBackendSdkClient().promotions.discountApplications.list(params);
-  return readRequiredPromotionItems(result, 'Promotion discount application records are required');
+  const result = await getSdkworkPromotionBackendSdkClient().promotions.discountApplications.list(params);
+  return readRequiredPromotionPage(result, 'Promotion discount application records are required');
 }
 
 export async function backendPromotionDiscountAllocationsList(
-  params?: Parameters<BackendPromotionsService['discountAllocations']['list']>[0],
+  params?: Parameters<ClawBackendPromotionsService['discountAllocations']['list']>[0],
 ) {
   const result = await getClawRouterBackendSdkClient().promotions.discountAllocations.list(params);
-  return readRequiredPromotionItems(result, 'Promotion discount allocation records are required');
+  return readRequiredPromotionPage(result, 'Promotion discount allocation records are required');
 }
 
 export async function backendPromotionCodeRedemptionsList(
-  params?: Parameters<BackendPromotionsService['codes']['redemptions']['list']>[0],
+  params?: Parameters<ClawBackendPromotionsService['codes']['redemptions']['list']>[0],
 ) {
   const result = await getClawRouterBackendSdkClient().promotions.codes.redemptions.list(params);
-  return readRequiredPromotionItems(result, 'Promotion code redemption records are required');
+  return readRequiredPromotionPage(result, 'Promotion code redemption records are required');
 }
 
 export async function backendPromotionUserCouponsList(
-  params?: Parameters<BackendPromotionsService['userCoupons']['management']['list']>[0],
+  params?: Parameters<BackendPromotionsService['userCoupons']['list']>[0],
 ) {
-  const result = await getClawRouterBackendSdkClient().promotions.userCoupons.management.list(params);
-  return readRequiredPromotionItems(result, 'Promotion user coupon records are required');
+  const result = await getSdkworkPromotionBackendSdkClient().promotions.userCoupons.list(params);
+  return readRequiredPromotionPage(result, 'Promotion user coupon records are required');
 }
 
 export async function backendPromotionCouponLedgerEntriesList(
   params?: Parameters<BackendPromotionsService['couponLedgerEntries']['list']>[0],
 ) {
-  const result = await getClawRouterBackendSdkClient().promotions.couponLedgerEntries.list(params);
-  return readRequiredPromotionItems(result, 'Promotion coupon ledger records are required');
+  const result = await getSdkworkPromotionBackendSdkClient().promotions.couponLedgerEntries.list(params);
+  return readRequiredPromotionPage(result, 'Promotion coupon ledger records are required');
 }
 
 export async function backendPromotionBudgetLedgerEntriesList(
-  params?: Parameters<BackendPromotionsService['budgetLedgerEntries']['list']>[0],
+  params?: Parameters<ClawBackendPromotionsService['budgetLedgerEntries']['list']>[0],
 ) {
   const result = await getClawRouterBackendSdkClient().promotions.budgetLedgerEntries.list(params);
-  return readRequiredPromotionItems(result, 'Promotion budget ledger records are required');
+  return readRequiredPromotionPage(result, 'Promotion budget ledger records are required');
 }
 
 export async function backendPromotionExternalBindingsList(
-  params?: Parameters<BackendPromotionsService['externalBindings']['list']>[0],
+  params?: Parameters<ClawBackendPromotionsService['externalBindings']['list']>[0],
 ) {
   const result = await getClawRouterBackendSdkClient().promotions.externalBindings.list(params);
-  return readRequiredPromotionItems(result, 'Promotion external binding records are required');
+  return readRequiredPromotionPage(result, 'Promotion external binding records are required');
 }
 
 export async function backendPromotionEventsList(
-  params?: Parameters<BackendPromotionsService['events']['list']>[0],
+  params?: Parameters<ClawBackendPromotionsService['events']['list']>[0],
 ) {
   const result = await getClawRouterBackendSdkClient().promotions.events.list(params);
-  return readRequiredPromotionItems(result, 'Promotion event records are required');
+  return readRequiredPromotionPage(result, 'Promotion event records are required');
 }
 
 function normalizeReferralStat(value: unknown): ReferralStat {
@@ -122,6 +132,18 @@ function readRequiredPromotionItems(result: unknown, message: string): ApiRecord
       readRequiredString(item, 'id', 'Promotion record id is required');
       return item;
     });
+}
+
+function readRequiredPromotionPage(result: unknown, message: string): PromotionPage {
+  const payload = readApiData(result);
+  if (!isRecord(payload) || !isRecord(payload['pageInfo'])) {
+    throw new Error(`${message}: pageInfo is required`);
+  }
+  return {
+    ...payload,
+    items: readRequiredPromotionItems(payload, message),
+    pageInfo: payload['pageInfo'],
+  };
 }
 
 function readRequiredRecord(value: unknown, message: string): ApiRecord {

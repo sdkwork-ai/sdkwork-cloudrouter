@@ -11,9 +11,11 @@ export type AdminResourceLoadParams = {
 };
 
 export type AdminResourceCollectionMeta = {
-  total: number;
   page: number;
   pageSize: number;
+  total?: number;
+  totalPages?: number;
+  hasMore?: boolean;
 };
 
 export type AdminResourceColumn = {
@@ -156,12 +158,16 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
   const recordRowActions = activeSection.rowActions ?? [];
   const hasRecordActions = Boolean(onRecordOpen) || recordRowActions.length > 0;
   const tableColumnCount = activeSection.columns.length + (hasRecordActions ? 1 : 0);
-  const totalPages = activeState.collectionMeta
-    ? Math.max(1, Math.ceil(activeState.collectionMeta.total / activePageState.pageSize))
-    : 1;
-  const hasNextPage = activeState.collectionMeta
-    ? activePageState.page < totalPages
-    : activeState.records.length >= activePageState.pageSize;
+  const declaredTotalPages = activeState.collectionMeta?.totalPages
+    ?? (activeState.collectionMeta?.total !== undefined
+      ? Math.max(1, Math.ceil(activeState.collectionMeta.total / activePageState.pageSize))
+      : undefined);
+  const hasNextPage = activeState.collectionMeta?.hasMore
+    ?? (declaredTotalPages !== undefined
+      ? activePageState.page < declaredTotalPages
+      : activeState.records.length >= activePageState.pageSize);
+  const totalPages = declaredTotalPages
+    ?? Math.max(1, activePageState.page + (hasNextPage ? 1 : 0));
 
   const loadSection = useCallback(async (
     section: AdminResourceSection<TSectionId, TGroup>,
@@ -501,13 +507,25 @@ export function readAdminResourceCollectionMeta(value: unknown): AdminResourceCo
   if (!isAdminResourceRecord(data)) {
     return null;
   }
-  const total = readFiniteNumber(data.total);
-  const page = readFiniteNumber(data.page);
-  const pageSize = readFiniteNumber(data.pageSize);
-  if (total === null || page === null || pageSize === null) {
+  const pageInfo = isAdminResourceRecord(data.pageInfo) ? data.pageInfo : data;
+  const page = readPositiveSafeInteger(pageInfo.page);
+  const pageSize = readPositiveSafeInteger(pageInfo.pageSize);
+  if (page === null || pageSize === null) {
     return null;
   }
-  return { total, page, pageSize };
+  const result: AdminResourceCollectionMeta = { page, pageSize };
+  const total = readSafeCount(pageInfo.totalItems ?? pageInfo.total);
+  const totalPages = readSafeCount(pageInfo.totalPages);
+  if (total !== null) {
+    result.total = total;
+  }
+  if (totalPages !== null) {
+    result.totalPages = totalPages;
+  }
+  if (typeof pageInfo.hasMore === 'boolean') {
+    result.hasMore = pageInfo.hasMore;
+  }
+  return result;
 }
 
 export function readAdminResourcePayload(value: unknown): unknown {
@@ -529,6 +547,16 @@ function readFiniteNumber(value: unknown): number | null {
     return Number.isFinite(parsed) ? parsed : null;
   }
   return null;
+}
+
+function readSafeCount(value: unknown): number | null {
+  const parsed = readFiniteNumber(value);
+  return parsed !== null && Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function readPositiveSafeInteger(value: unknown): number | null {
+  const parsed = readSafeCount(value);
+  return parsed !== null && parsed > 0 ? parsed : null;
 }
 
 export function isAdminResourceRecord(value: unknown): value is AdminResourceRecord {

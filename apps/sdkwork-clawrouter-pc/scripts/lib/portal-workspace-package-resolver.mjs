@@ -318,26 +318,6 @@ function resolveSrcFallback(packageRoot, parsedSpecifier, entry) {
     return composedFacadeIndex;
   }
 
-  const composedIndex = path.resolve(packageRoot, 'generated/server-openapi/src/index.ts');
-  if (!parsedSpecifier.subpath && fs.existsSync(composedIndex)) {
-    return composedIndex;
-  }
-
-  if (parsedSpecifier.subpath) {
-    const composedSubpathRoot = path.resolve(
-      packageRoot,
-      'generated/server-openapi/src',
-      parsedSpecifier.subpath,
-    );
-    const composedSubpath = firstExistingFile([
-      `${composedSubpathRoot}.tsx`,
-      `${composedSubpathRoot}.ts`,
-    ]);
-    if (composedSubpath) {
-      return composedSubpath;
-    }
-  }
-
   return null;
 }
 

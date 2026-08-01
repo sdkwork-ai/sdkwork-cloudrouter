@@ -1216,7 +1216,11 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
                 "/backend/v3/api/ai/upstream_account_groups",
                 "upstreamAccountGroups.list",
             ),
-            "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts#fetchModels@/admin/model": (
+            "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts#fetchModelsPage@/admin/model": (
+                "/backend/v3/api/ai/models",
+                "models.list",
+            ),
+            "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts#fetchModelOptionsPage@/admin/model/mappings": (
                 "/backend/v3/api/ai/models",
                 "models.list",
             ),

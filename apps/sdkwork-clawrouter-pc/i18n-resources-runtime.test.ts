@@ -31,8 +31,14 @@ test('claw router i18n resources compose the canonical upstream administration c
   assert.equal(resources.zh.translation['admin.upstream.views.accountGroups'], '账号分组');
   assert.equal(resources.en.translation['admin.upstream.supplier.type.relay'], 'Relay supplier');
   assert.equal(resources.zh.translation['admin.upstream.supplier.type.relay'], '中转站供应商');
-  assert.equal(resources.en.translation['admin.upstream.account.credentials.oneTimeSecret'], 'One-time secret');
-  assert.equal(resources.zh.translation['admin.upstream.account.credentials.oneTimeSecret'], '一次性凭证原文');
+  assert.equal(
+    resources.en.translation['admin.upstream.account.credentials.secretHint'],
+    'Encrypted at rest. The plaintext is never returned after submission.',
+  );
+  assert.equal(
+    resources.zh.translation['admin.upstream.account.credentials.secretHint'],
+    '密文存储，提交后不会再次返回凭证原文。',
+  );
   assert.equal(resources.en.translation['admin.upstream.accountGroup.form.saleMultiplier'], 'Sale multiplier');
   assert.equal(resources.zh.translation['admin.upstream.accountGroup.form.saleMultiplier'], '销售倍率');
   assert.equal(resources.en.translation['common.status.active'], 'Active');

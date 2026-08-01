@@ -227,7 +227,8 @@
         }
       }
     ],
-    "routeManifest": null
+    "routeManifest": null,
+    "dependencyApiExports": []
   },
   "integration": {
     "authority": "Root SDKWork specs remain authoritative. Local specs may extend but must not contradict them.",
@@ -237,7 +238,7 @@
   },
   "verification": {
     "commands": [
-      "node apps/scripts/validate-component-specs.mjs --apps-root apps --json"
+      "node ../sdkwork-specs/tools/check-component-port-bindings.mjs --root ."
     ]
   },
   "metadata": {

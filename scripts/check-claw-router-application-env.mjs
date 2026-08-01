@@ -351,9 +351,6 @@ function assertReleaseEdgeGeneratedEnvMatchesKeyOrder() {
 }
 
 function assertReleaseEnvironmentContractMatchesEdgeKeyOrder() {
-  if (RELEASE_ENVIRONMENT_CONTRACT.version !== 4) {
-    throw new Error('release-environment-contract.mjs must stay on version 4 for edge private env alignment');
-  }
   for (const key of CLAW_ROUTER_RELEASE_EDGE_ENV_KEY_ORDER) {
     if (!RELEASE_ENVIRONMENT_CONTRACT.optionalEdgePrivateEnv.includes(key)) {
       throw new Error(`release-environment-contract optionalEdgePrivateEnv must include ${key}`);

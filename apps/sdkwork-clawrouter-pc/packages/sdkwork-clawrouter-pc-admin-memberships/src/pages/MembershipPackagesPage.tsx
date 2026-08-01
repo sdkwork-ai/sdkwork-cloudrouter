@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowDown, ArrowUp, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react';
+import { BottomPagination } from '@sdkwork/clawroutes-pc-commons';
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
 import { MembershipDialog } from '../components/MembershipDialog';
 import { MembershipDrawer } from '../components/MembershipDrawer';
@@ -10,6 +11,8 @@ import {
   MembershipTableActions,
   MembershipTablePanel,
   confirmMembershipAction,
+  hasNextMembershipPage,
+  membershipPageLabel,
 } from '../components/MembershipPageControls';
 import { MembershipStatusBadge } from '../components/MembershipStatusBadge';
 import { MembershipPackageDrawerForm } from '../forms/MembershipPackageDrawerForm';
@@ -19,15 +22,16 @@ import {
   createMembershipAdminPackageGroup,
   deleteMembershipAdminPackage,
   deleteMembershipAdminPackageGroup,
-  fetchMembershipAdminPackageCatalog,
-  moveMembershipAdminPackageGroup as moveMembershipPackageGroup,
+  fetchMembershipAdminPackageGroups,
+  fetchMembershipAdminPackages,
+  fetchMembershipAdminPlans,
   updateMembershipAdminPackage,
   updateMembershipAdminPackageGroup,
-  type MembershipPackageGroupMoveDirection,
   type MembershipsAdminPackageGroup,
   type MembershipsAdminPackageGroupMutationInput,
   type MembershipsAdminPackageItem,
   type MembershipsAdminPackageMutationInput,
+  type MembershipsAdminPageInfo,
   type MembershipsAdminPlanItem,
 } from '../membershipsService';
 
@@ -41,45 +45,120 @@ export function MembershipPackagesPage() {
   const [editingGroup, setEditingGroup] = useState<MembershipsAdminPackageGroup | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
-  const [movingGroupId, setMovingGroupId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isReferenceLoading, setIsReferenceLoading] = useState(true);
+  const [isPackageLoading, setIsPackageLoading] = useState(false);
+  const [referenceError, setReferenceError] = useState<string | null>(null);
+  const [packageError, setPackageError] = useState<string | null>(null);
+  const [groupPage, setGroupPage] = useState(1);
+  const [groupPageInfo, setGroupPageInfo] = useState<MembershipsAdminPageInfo | null>(null);
+  const [planPage, setPlanPage] = useState(1);
+  const [planPageInfo, setPlanPageInfo] = useState<MembershipsAdminPageInfo | null>(null);
+  const [packagePage, setPackagePage] = useState(1);
+  const [packagePageSize, setPackagePageSize] = useState(20);
+  const [packagePageInfo, setPackagePageInfo] = useState<MembershipsAdminPageInfo | null>(null);
+  const referenceRequestIdRef = useRef(0);
+  const packageRequestIdRef = useRef(0);
+  const referencePageSize = 20;
 
-  const loadCatalog = useCallback(async (preferredGroupId?: string | null) => {
-    setIsLoading(true);
-    setError(null);
+  const loadReferenceData = useCallback(async (
+    requestedGroupPage: number,
+    requestedPlanPage: number,
+    preferredGroupId?: string,
+  ) => {
+    const requestId = ++referenceRequestIdRef.current;
+    setIsReferenceLoading(true);
+    setReferenceError(null);
     try {
-      const catalog = await fetchMembershipAdminPackageCatalog();
-      setGroups(catalog.groups);
-      setPackages(catalog.packages);
-      setPlans(catalog.plans);
+      const [groupResult, planResult] = await Promise.all([
+        fetchMembershipAdminPackageGroups({ page: requestedGroupPage, pageSize: referencePageSize }),
+        fetchMembershipAdminPlans({ page: requestedPlanPage, pageSize: referencePageSize }),
+      ]);
+      if (requestId !== referenceRequestIdRef.current) {
+        return;
+      }
+      setGroups(groupResult.items);
+      setGroupPageInfo(groupResult.pageInfo);
+      setPlans(planResult.items);
+      setPlanPageInfo(planResult.pageInfo);
       setSelectedGroupId((current) => {
-        const candidateGroupId = preferredGroupId === undefined ? current : preferredGroupId;
-        if (candidateGroupId && catalog.groups.some((group) => group.id === candidateGroupId)) {
-          return candidateGroupId;
+        const requestedGroupId = preferredGroupId ?? current;
+        if (requestedGroupId && groupResult.items.some((group) => group.id === requestedGroupId)) {
+          return requestedGroupId;
         }
-        return catalog.groups[0]?.id ?? null;
+        return groupResult.items[0]?.id ?? null;
       });
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : t('admin.commerce.memberships.packages.error', 'Membership packages could not be loaded'));
+      if (requestId === referenceRequestIdRef.current) {
+        setReferenceError(loadError instanceof Error ? loadError.message : t('admin.commerce.memberships.packages.error', 'Membership packages could not be loaded'));
+      }
     } finally {
-      setIsLoading(false);
+      if (requestId === referenceRequestIdRef.current) {
+        setIsReferenceLoading(false);
+      }
     }
   }, [t]);
 
+  const loadPackages = useCallback(async (
+    requestedPage: number,
+    requestedGroupId: string | null,
+  ) => {
+    const requestId = ++packageRequestIdRef.current;
+    if (!requestedGroupId) {
+      setPackages([]);
+      setPackagePageInfo(null);
+      setPackageError(null);
+      setIsPackageLoading(false);
+      return;
+    }
+    setIsPackageLoading(true);
+    setPackageError(null);
+    try {
+      const result = await fetchMembershipAdminPackages({
+        page: requestedPage,
+        pageSize: packagePageSize,
+        packageGroupId: requestedGroupId,
+      });
+      if (requestId !== packageRequestIdRef.current) {
+        return;
+      }
+      setPackages(result.items);
+      setPackagePageInfo(result.pageInfo);
+    } catch (loadError) {
+      if (requestId === packageRequestIdRef.current) {
+        setPackageError(loadError instanceof Error ? loadError.message : t('admin.commerce.memberships.packages.error', 'Membership packages could not be loaded'));
+      }
+    } finally {
+      if (requestId === packageRequestIdRef.current) {
+        setIsPackageLoading(false);
+      }
+    }
+  }, [packagePageSize, t]);
+
+  const refreshPage = useCallback(async () => {
+    await Promise.all([
+      loadReferenceData(groupPage, planPage),
+      loadPackages(packagePage, selectedGroupId),
+    ]);
+  }, [groupPage, loadPackages, loadReferenceData, packagePage, planPage, selectedGroupId]);
+
   useEffect(() => {
-    void loadCatalog();
-  }, [loadCatalog]);
+    void loadReferenceData(groupPage, planPage);
+    return () => {
+      referenceRequestIdRef.current += 1;
+    };
+  }, [groupPage, loadReferenceData, planPage]);
+
+  useEffect(() => {
+    void loadPackages(packagePage, selectedGroupId);
+    return () => {
+      packageRequestIdRef.current += 1;
+    };
+  }, [loadPackages, packagePage, selectedGroupId]);
 
   const selectedGroup = useMemo(
     () => groups.find((group) => group.id === selectedGroupId) ?? null,
     [groups, selectedGroupId],
   );
-  const visiblePackages = useMemo(
-    () => packages.filter((item) => !selectedGroupId || item.groupId === selectedGroupId),
-    [packages, selectedGroupId],
-  );
-
   const openCreateDrawer = () => {
     setEditingPackage(null);
     setIsDrawerOpen(true);
@@ -108,7 +187,7 @@ export function MembershipPackagesPage() {
     }
     setIsDrawerOpen(false);
     setEditingPackage(null);
-    await loadCatalog();
+    await loadPackages(packagePage, selectedGroupId);
   };
 
   const handleSaveGroup = async (input: MembershipsAdminPackageGroupMutationInput) => {
@@ -117,7 +196,13 @@ export function MembershipPackagesPage() {
       : await createMembershipAdminPackageGroup(input);
     setIsGroupDialogOpen(false);
     setEditingGroup(null);
-    await loadCatalog(savedGroup.id);
+    setSelectedGroupId(savedGroup.id);
+    const targetGroupPage = editingGroup ? groupPage : 1;
+    if (targetGroupPage !== groupPage) {
+      setGroupPage(targetGroupPage);
+      return;
+    }
+    await loadReferenceData(targetGroupPage, planPage, savedGroup.id);
   };
 
   const handleDeletePackage = async (item: MembershipsAdminPackageItem) => {
@@ -125,7 +210,12 @@ export function MembershipPackagesPage() {
       return;
     }
     await deleteMembershipAdminPackage(item.id);
-    await loadCatalog();
+    const targetPage = packages.length === 1 && packagePage > 1 ? packagePage - 1 : packagePage;
+    if (targetPage !== packagePage) {
+      setPackagePage(targetPage);
+      return;
+    }
+    await loadPackages(targetPage, selectedGroupId);
   };
 
   const handleDeleteGroup = async (group: MembershipsAdminPackageGroup) => {
@@ -133,38 +223,24 @@ export function MembershipPackagesPage() {
       return;
     }
     await deleteMembershipAdminPackageGroup(group.id);
-    await loadCatalog(selectedGroupId === group.id ? null : selectedGroupId);
-  };
-
-  const handleMoveGroup = async (
-    group: MembershipsAdminPackageGroup,
-    direction: MembershipPackageGroupMoveDirection,
-  ) => {
-    const movedGroups = moveMembershipPackageGroup(groups, group.id, direction);
-    const changedGroups = movedGroups.filter((movedGroup) => {
-      const currentGroup = groups.find((item) => item.id === movedGroup.id);
-      return currentGroup?.sortWeight !== movedGroup.sortWeight;
-    });
-    if (changedGroups.length === 0) {
+    if (selectedGroupId === group.id) {
+      setSelectedGroupId(null);
+      setPackagePage(1);
+    }
+    const targetGroupPage = groups.length === 1 && groupPage > 1 ? groupPage - 1 : groupPage;
+    if (targetGroupPage !== groupPage) {
+      setGroupPage(targetGroupPage);
       return;
     }
-
-    setMovingGroupId(group.id);
-    try {
-      await Promise.all(changedGroups.map((group) => updateMembershipAdminPackageGroup(group.id, buildPackageGroupMutationInput(group))));
-      setGroups(movedGroups);
-      await loadCatalog(group.id);
-    } finally {
-      setMovingGroupId(null);
-    }
+    await loadReferenceData(targetGroupPage, planPage);
   };
 
   return (
     <>
       <MembershipAdminPageShell
-        isLoading={isLoading}
-        error={error}
-        onRefresh={loadCatalog}
+        isLoading={isReferenceLoading || isPackageLoading}
+        error={packageError ?? referenceError}
+        onRefresh={refreshPage}
         actions={(
           <button
             type="button"
@@ -177,7 +253,7 @@ export function MembershipPackagesPage() {
         )}
       >
         <div className="grid min-h-[560px] gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <div className="rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5">
+          <div className="flex min-h-0 flex-col rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5">
             <div data-admin-membership-package-groups-header className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-white/10">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t('admin.commerce.memberships.groups.title', 'Package Groups')}</h3>
               <div data-admin-membership-package-group-add>
@@ -188,10 +264,10 @@ export function MembershipPackagesPage() {
                 />
               </div>
             </div>
-            <div className="max-h-[520px] overflow-y-auto p-2">
+            <div className="min-h-0 flex-1 overflow-y-auto p-2">
               {groups.length === 0 ? (
                 <MembershipEmptyState title={t('admin.commerce.memberships.groups.empty', 'No package groups')} />
-              ) : groups.map((group, index) => (
+              ) : groups.map((group) => (
                 <div
                   key={group.id}
                   className={`flex items-center gap-1 rounded-lg transition-colors ${
@@ -202,7 +278,10 @@ export function MembershipPackagesPage() {
                 >
                   <button
                     type="button"
-                    onClick={() => setSelectedGroupId(group.id)}
+                    onClick={() => {
+                      setPackagePage(1);
+                      setSelectedGroupId(group.id);
+                    }}
                     className="flex min-w-0 flex-1 items-center justify-between px-3 py-2.5 text-left"
                   >
                     <span className="min-w-0">
@@ -212,22 +291,6 @@ export function MembershipPackagesPage() {
                     <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
                   </button>
                   <div className="flex shrink-0 items-center gap-1 pr-2">
-                    <div data-admin-membership-package-group-move-up>
-                      <MembershipIconActionButton
-                        label={t('common.actions.moveUp', 'Move up')}
-                        icon={<ArrowUp className="h-4 w-4" />}
-                        disabled={index === 0 || movingGroupId === group.id}
-                        onClick={() => void handleMoveGroup(group, 'up')}
-                      />
-                    </div>
-                    <div data-admin-membership-package-group-move-down>
-                      <MembershipIconActionButton
-                        label={t('common.actions.moveDown', 'Move down')}
-                        icon={<ArrowDown className="h-4 w-4" />}
-                        disabled={index === groups.length - 1 || movingGroupId === group.id}
-                        onClick={() => void handleMoveGroup(group, 'down')}
-                      />
-                    </div>
                     <div data-admin-membership-package-group-edit>
                       <MembershipIconActionButton
                         label={t('common.actions.edit', 'Edit')}
@@ -247,16 +310,55 @@ export function MembershipPackagesPage() {
                 </div>
               ))}
             </div>
+            <div className="flex items-center justify-between border-t border-slate-200 px-3 py-2 dark:border-white/10">
+              <MembershipIconActionButton
+                label={t('common.pagination.previous', 'Previous page')}
+                icon={<ChevronLeft className="h-4 w-4" />}
+                disabled={isReferenceLoading || groupPage <= 1}
+                onClick={() => setGroupPage((current) => Math.max(1, current - 1))}
+              />
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                {membershipPageLabel(t('common.pagination.page', 'Page'), groupPage, groupPageInfo)}
+              </span>
+              <MembershipIconActionButton
+                label={t('common.pagination.next', 'Next page')}
+                icon={<ChevronRight className="h-4 w-4" />}
+                disabled={isReferenceLoading || !hasNextMembershipPage(groupPageInfo, groupPage, groups.length, referencePageSize)}
+                onClick={() => setGroupPage((current) => current + 1)}
+              />
+            </div>
           </div>
 
-          <MembershipTablePanel>
+          <MembershipTablePanel
+            footer={(
+              <BottomPagination
+                disabled={isPackageLoading}
+                hasNextPage={hasNextMembershipPage(packagePageInfo, packagePage, packages.length, packagePageSize)}
+                itemCount={packages.length}
+                nextLabel={t('common.pagination.next', 'Next page')}
+                onNextPage={() => setPackagePage((current) => current + 1)}
+                onPageSizeChange={(nextPageSize) => {
+                  setPackagePage(1);
+                  setPackagePageSize(nextPageSize);
+                }}
+                onPreviousPage={() => setPackagePage((current) => Math.max(1, current - 1))}
+                page={packagePage}
+                pageLabel={membershipPageLabel(t('common.pagination.page', 'Page'), packagePage, packagePageInfo)}
+                pageSize={packagePageSize}
+                pageSizeLabel={t('common.pagination.rows', 'Rows')}
+                pageSizeOptions={[20, 50, 100]}
+                previousLabel={t('common.pagination.previous', 'Previous page')}
+                showingLabel={t('common.pagination.showing', 'Showing')}
+              />
+            )}
+          >
             <div className="border-b border-slate-200 px-4 py-3 dark:border-white/10">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
                 {selectedGroup?.name ?? t('admin.commerce.memberships.packages.table.packages', 'Packages')}
               </h3>
               {selectedGroup?.description ? <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{selectedGroup.description}</p> : null}
             </div>
-            {visiblePackages.length === 0 ? (
+            {packages.length === 0 ? (
               <MembershipEmptyState title={t('admin.commerce.memberships.packages.emptyGroup', 'No packages in this group')} />
             ) : (
               <table className="w-full text-sm">
@@ -271,7 +373,7 @@ export function MembershipPackagesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {visiblePackages.map((item) => (
+                  {packages.map((item) => (
                     <tr key={item.id} className="border-b border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5">
                       <td className="px-4 py-2.5">
                         <div className="font-medium text-slate-900 dark:text-white">{item.name || item.packageNo}</div>
@@ -309,6 +411,20 @@ export function MembershipPackagesPage() {
           groups={groups}
           plans={plans}
           defaultGroupId={selectedGroupId}
+          groupPagination={{
+            page: groupPage,
+            hasNextPage: hasNextMembershipPage(groupPageInfo, groupPage, groups.length, referencePageSize),
+            isLoading: isReferenceLoading,
+            onNextPage: () => setGroupPage((current) => current + 1),
+            onPreviousPage: () => setGroupPage((current) => Math.max(1, current - 1)),
+          }}
+          planPagination={{
+            page: planPage,
+            hasNextPage: hasNextMembershipPage(planPageInfo, planPage, plans.length, referencePageSize),
+            isLoading: isReferenceLoading,
+            onNextPage: () => setPlanPage((current) => current + 1),
+            onPreviousPage: () => setPlanPage((current) => Math.max(1, current - 1)),
+          }}
           onCancel={() => setIsDrawerOpen(false)}
           onSubmit={handleSavePackage}
         />
@@ -330,18 +446,4 @@ export function MembershipPackagesPage() {
       </MembershipDialog>
     </>
   );
-}
-
-function buildPackageGroupMutationInput(
-  group: MembershipsAdminPackageGroup,
-): MembershipsAdminPackageGroupMutationInput {
-  return {
-    code: group.code,
-    name: group.name,
-    description: group.description,
-    billingCycle: group.billingCycle,
-    durationDays: group.durationDays,
-    sortWeight: group.sortWeight,
-    status: group.status === 'inactive' || group.status === 'disabled' ? group.status : 'active',
-  };
 }

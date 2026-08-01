@@ -5,12 +5,14 @@ type MembershipIconActionTone = 'default' | 'danger';
 interface MembershipTablePanelProps {
   children: ReactNode;
   className?: string;
+  footer?: ReactNode;
 }
 
-export function MembershipTablePanel({ children, className }: MembershipTablePanelProps) {
+export function MembershipTablePanel({ children, className, footer }: MembershipTablePanelProps) {
   return (
-    <div className={['min-h-0 flex-1 overflow-auto rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5', className].filter(Boolean).join(' ')}>
-      {children}
+    <div className={['flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5', className].filter(Boolean).join(' ')}>
+      <div className="min-h-0 flex-1 overflow-auto">{children}</div>
+      {footer}
     </div>
   );
 }
@@ -59,4 +61,34 @@ export function MembershipIconActionButton({
 
 export function confirmMembershipAction(message: string): boolean {
   return window.confirm(message);
+}
+
+interface MembershipPageInfoLike {
+  hasMore?: boolean;
+  totalPages?: number;
+}
+
+export function hasNextMembershipPage(
+  pageInfo: MembershipPageInfoLike | null,
+  page: number,
+  itemCount: number,
+  pageSize: number,
+): boolean {
+  if (typeof pageInfo?.hasMore === 'boolean') {
+    return pageInfo.hasMore;
+  }
+  if (typeof pageInfo?.totalPages === 'number') {
+    return page < pageInfo.totalPages;
+  }
+  return itemCount >= pageSize;
+}
+
+export function membershipPageLabel(
+  label: string,
+  page: number,
+  pageInfo: MembershipPageInfoLike | null,
+): string {
+  return typeof pageInfo?.totalPages === 'number'
+    ? `${label} ${page} / ${pageInfo.totalPages}`
+    : `${label} ${page}`;
 }

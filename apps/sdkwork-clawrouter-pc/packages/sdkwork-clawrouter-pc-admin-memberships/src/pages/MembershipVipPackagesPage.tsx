@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { BottomPagination } from '@sdkwork/clawroutes-pc-commons';
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
 import { MembershipDrawer } from '../components/MembershipDrawer';
 import { MembershipEmptyState } from '../components/MembershipEmptyState';
@@ -9,17 +10,22 @@ import {
   MembershipTableActions,
   MembershipTablePanel,
   confirmMembershipAction,
+  hasNextMembershipPage,
+  membershipPageLabel,
 } from '../components/MembershipPageControls';
 import { MembershipStatusBadge } from '../components/MembershipStatusBadge';
 import { MembershipPackageDrawerForm } from '../forms/MembershipPackageDrawerForm';
 import {
   createMembershipAdminPackage,
   deleteMembershipAdminPackage,
-  fetchMembershipAdminPackageCatalog,
+  fetchMembershipAdminPackageGroups,
+  fetchMembershipAdminPackages,
+  fetchMembershipAdminPlans,
   updateMembershipAdminPackage,
   type MembershipsAdminPackageGroup,
   type MembershipsAdminPackageItem,
   type MembershipsAdminPackageMutationInput,
+  type MembershipsAdminPageInfo,
   type MembershipsAdminPlanItem,
 } from '../membershipsService';
 
@@ -30,32 +36,103 @@ export function MembershipVipPackagesPage() {
   const [plans, setPlans] = useState<MembershipsAdminPlanItem[]>([]);
   const [editingPackage, setEditingPackage] = useState<MembershipsAdminPackageItem | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isReferenceLoading, setIsReferenceLoading] = useState(true);
+  const [isPackageLoading, setIsPackageLoading] = useState(true);
+  const [referenceError, setReferenceError] = useState<string | null>(null);
+  const [packageError, setPackageError] = useState<string | null>(null);
+  const [groupPage, setGroupPage] = useState(1);
+  const [groupPageInfo, setGroupPageInfo] = useState<MembershipsAdminPageInfo | null>(null);
+  const [planPage, setPlanPage] = useState(1);
+  const [planPageInfo, setPlanPageInfo] = useState<MembershipsAdminPageInfo | null>(null);
+  const [packagePage, setPackagePage] = useState(1);
+  const [packagePageSize, setPackagePageSize] = useState(20);
+  const [packagePageInfo, setPackagePageInfo] = useState<MembershipsAdminPageInfo | null>(null);
+  const referenceRequestIdRef = useRef(0);
+  const packageRequestIdRef = useRef(0);
+  const referencePageSize = 20;
 
   const groupNameById = useMemo(() => new Map(groups.map((group) => [group.id, group.name])), [groups]);
   const planNameById = useMemo(() => new Map(plans.map((plan) => [plan.id, plan.name])), [plans]);
 
-  const loadPackages = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const loadReferenceData = useCallback(async (
+    requestedGroupPage: number,
+    requestedPlanPage: number,
+  ) => {
+    const requestId = ++referenceRequestIdRef.current;
+    setIsReferenceLoading(true);
+    setReferenceError(null);
     try {
-      const catalog = await fetchMembershipAdminPackageCatalog();
-      setGroups(catalog.groups);
-      setPackages(catalog.packages);
-      setPlans(catalog.plans);
+      const [groupResult, planResult] = await Promise.all([
+        fetchMembershipAdminPackageGroups({ page: requestedGroupPage, pageSize: referencePageSize }),
+        fetchMembershipAdminPlans({ page: requestedPlanPage, pageSize: referencePageSize }),
+      ]);
+      if (requestId !== referenceRequestIdRef.current) {
+        return;
+      }
+      setGroups(groupResult.items);
+      setGroupPageInfo(groupResult.pageInfo);
+      setPlans(planResult.items);
+      setPlanPageInfo(planResult.pageInfo);
     } catch (loadError) {
-      setError(loadError instanceof Error
-        ? loadError.message
-        : t('admin.commerce.memberships.vipPackages.error', 'VIP packages could not be loaded'));
+      if (requestId === referenceRequestIdRef.current) {
+        setReferenceError(loadError instanceof Error
+          ? loadError.message
+          : t('admin.commerce.memberships.vipPackages.error', 'VIP packages could not be loaded'));
+      }
     } finally {
-      setIsLoading(false);
+      if (requestId === referenceRequestIdRef.current) {
+        setIsReferenceLoading(false);
+      }
     }
   }, [t]);
 
+  const loadPackages = useCallback(async (requestedPage: number) => {
+    const requestId = ++packageRequestIdRef.current;
+    setIsPackageLoading(true);
+    setPackageError(null);
+    try {
+      const result = await fetchMembershipAdminPackages({
+        page: requestedPage,
+        pageSize: packagePageSize,
+      });
+      if (requestId !== packageRequestIdRef.current) {
+        return;
+      }
+      setPackages(result.items);
+      setPackagePageInfo(result.pageInfo);
+    } catch (loadError) {
+      if (requestId === packageRequestIdRef.current) {
+        setPackageError(loadError instanceof Error
+          ? loadError.message
+          : t('admin.commerce.memberships.vipPackages.error', 'VIP packages could not be loaded'));
+      }
+    } finally {
+      if (requestId === packageRequestIdRef.current) {
+        setIsPackageLoading(false);
+      }
+    }
+  }, [packagePageSize, t]);
+
+  const refreshPage = useCallback(async () => {
+    await Promise.all([
+      loadReferenceData(groupPage, planPage),
+      loadPackages(packagePage),
+    ]);
+  }, [groupPage, loadPackages, loadReferenceData, packagePage, planPage]);
+
   useEffect(() => {
-    void loadPackages();
-  }, [loadPackages]);
+    void loadReferenceData(groupPage, planPage);
+    return () => {
+      referenceRequestIdRef.current += 1;
+    };
+  }, [groupPage, loadReferenceData, planPage]);
+
+  useEffect(() => {
+    void loadPackages(packagePage);
+    return () => {
+      packageRequestIdRef.current += 1;
+    };
+  }, [loadPackages, packagePage]);
 
   const openCreateDrawer = () => {
     setEditingPackage(null);
@@ -75,7 +152,7 @@ export function MembershipVipPackagesPage() {
     }
     setIsDrawerOpen(false);
     setEditingPackage(null);
-    await loadPackages();
+    await loadPackages(packagePage);
   };
 
   const handleDeletePackage = async (item: MembershipsAdminPackageItem) => {
@@ -83,15 +160,20 @@ export function MembershipVipPackagesPage() {
       return;
     }
     await deleteMembershipAdminPackage(item.id);
-    await loadPackages();
+    const targetPage = packages.length === 1 && packagePage > 1 ? packagePage - 1 : packagePage;
+    if (targetPage !== packagePage) {
+      setPackagePage(targetPage);
+      return;
+    }
+    await loadPackages(targetPage);
   };
 
   return (
     <>
       <MembershipAdminPageShell
-        isLoading={isLoading}
-        error={error}
-        onRefresh={loadPackages}
+        isLoading={isReferenceLoading || isPackageLoading}
+        error={packageError ?? referenceError}
+        onRefresh={refreshPage}
         actions={(
           <button
             type="button"
@@ -114,7 +196,29 @@ export function MembershipVipPackagesPage() {
             </p>
           </div>
 
-          <MembershipTablePanel>
+          <MembershipTablePanel
+            footer={(
+              <BottomPagination
+                disabled={isPackageLoading}
+                hasNextPage={hasNextMembershipPage(packagePageInfo, packagePage, packages.length, packagePageSize)}
+                itemCount={packages.length}
+                nextLabel={t('common.pagination.next', 'Next page')}
+                onNextPage={() => setPackagePage((current) => current + 1)}
+                onPageSizeChange={(nextPageSize) => {
+                  setPackagePage(1);
+                  setPackagePageSize(nextPageSize);
+                }}
+                onPreviousPage={() => setPackagePage((current) => Math.max(1, current - 1))}
+                page={packagePage}
+                pageLabel={membershipPageLabel(t('common.pagination.page', 'Page'), packagePage, packagePageInfo)}
+                pageSize={packagePageSize}
+                pageSizeLabel={t('common.pagination.rows', 'Rows')}
+                pageSizeOptions={[20, 50, 100]}
+                previousLabel={t('common.pagination.previous', 'Previous page')}
+                showingLabel={t('common.pagination.showing', 'Showing')}
+              />
+            )}
+          >
             {packages.length === 0 ? (
               <MembershipEmptyState title={t('admin.commerce.memberships.vipPackages.empty', 'No VIP packages')} />
             ) : (
@@ -178,6 +282,20 @@ export function MembershipVipPackagesPage() {
           groups={groups}
           plans={plans}
           defaultGroupId={groups[0]?.id ?? null}
+          groupPagination={{
+            page: groupPage,
+            hasNextPage: hasNextMembershipPage(groupPageInfo, groupPage, groups.length, referencePageSize),
+            isLoading: isReferenceLoading,
+            onNextPage: () => setGroupPage((current) => current + 1),
+            onPreviousPage: () => setGroupPage((current) => Math.max(1, current - 1)),
+          }}
+          planPagination={{
+            page: planPage,
+            hasNextPage: hasNextMembershipPage(planPageInfo, planPage, plans.length, referencePageSize),
+            isLoading: isReferenceLoading,
+            onNextPage: () => setPlanPage((current) => current + 1),
+            onPreviousPage: () => setPlanPage((current) => Math.max(1, current - 1)),
+          }}
           translationKeyPrefix="admin.commerce.memberships.vipPackages"
           onCancel={() => setIsDrawerOpen(false)}
           onSubmit={handleSavePackage}

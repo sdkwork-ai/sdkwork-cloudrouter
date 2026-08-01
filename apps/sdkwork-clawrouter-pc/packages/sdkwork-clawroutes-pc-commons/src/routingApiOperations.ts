@@ -4,8 +4,7 @@ import type {
   AppRoutingRequestTraceListResponse,
   AppRoutingUsageSnapshot,
 } from '@sdkwork/clawrouter-app-sdk';
-
-const DEFAULT_ROUTING_PAGE_SIZE = 20;
+import { normalizeOffsetListQuery } from '@sdkwork/utils/pagination';
 
 interface RoutingListParams {
   page?: number;
@@ -14,10 +13,16 @@ interface RoutingListParams {
 }
 
 function routingListParams(params: RoutingListParams = {}) {
+  const pagination = normalizeOffsetListQuery({
+    ...(params.page === undefined ? {} : { page: params.page }),
+    ...(params.pageSize === undefined ? {} : { page_size: params.pageSize }),
+  });
+  const q = params.q?.trim();
+
   return {
-    page: params.page === undefined ? undefined : String(params.page),
-    pageSize: params.pageSize === undefined ? String(DEFAULT_ROUTING_PAGE_SIZE) : String(params.pageSize),
-    q: params.q,
+    page: pagination.page,
+    pageSize: pagination.page_size,
+    ...(q ? { q } : {}),
   };
 }
 

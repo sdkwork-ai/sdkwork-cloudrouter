@@ -10,7 +10,6 @@ import {
   readDecimalString,
   readRequiredNonNegativeInt64String,
   readRequiredString,
-  readRequiredNonNegativeNumber,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
 

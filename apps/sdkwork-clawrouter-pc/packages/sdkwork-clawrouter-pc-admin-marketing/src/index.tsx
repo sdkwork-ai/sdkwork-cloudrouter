@@ -13,7 +13,11 @@ import {
   TrendingUp,
   WalletCards,
 } from 'lucide-react';
-import { AdminResourceCenter, type AdminResourceSection } from '@sdkwork/clawroutes-pc-commons';
+import {
+  AdminResourceCenter,
+  type AdminResourceLoadParams,
+  type AdminResourceSection,
+} from '@sdkwork/clawroutes-pc-commons';
 import {
   MarketingService,
   backendPromotionBudgetLedgerEntriesList,
@@ -48,7 +52,10 @@ type MarketingAdminProps = {
   sectionId?: string;
 };
 
-const DEFAULT_PAGE_PARAMS = { page: 1, pageSize: 100 };
+const MARKETING_LIST_PAGINATION = {
+  initialPageSize: 20,
+  pageSizeOptions: [20, 50, 100],
+};
 const DEFAULT_MARKETING_SECTION_ID: MarketingAdminTab = 'promotionOffers';
 
 function resolveMarketingSectionId(sectionId: string | undefined): MarketingAdminTab {
@@ -72,14 +79,14 @@ function resolveMarketingSectionId(sectionId: string | undefined): MarketingAdmi
 }
 
 function buildMarketingSections(t: ReturnType<typeof useTranslation>['t']): AdminResourceSection<MarketingAdminTab, MarketingAdminGroup>[] {
-  return [
+  const sections: AdminResourceSection<MarketingAdminTab, MarketingAdminGroup>[] = [
     {
       id: 'promotionOffers',
       title: t('admin.marketing.promotions.offers.title', 'Promotion Offers'),
       description: t('admin.marketing.promotions.offers.desc', 'Canonical promotion definitions with type, lifecycle state, validity, audience, and scope policy.'),
       icon: <BadgePercent className="h-4 w-4" />,
       group: t('admin.marketing.promotions.group.design', 'Offer Design'),
-      load: () => backendPromotionOffersList(DEFAULT_PAGE_PARAMS),
+      load: (params) => backendPromotionOffersList(params),
       columns: [
         { key: 'offer_no', label: t('admin.col.offer', 'Offer') },
         { key: 'offer_code', label: t('admin.col.offerCode', 'Code') },
@@ -99,7 +106,7 @@ function buildMarketingSections(t: ReturnType<typeof useTranslation>['t']): Admi
       description: t('admin.marketing.promotions.stocks.desc', 'Issuable stock pools with code mode, issue channel, availability, activation state, resend policy, and lifecycle status.'),
       icon: <Boxes className="h-4 w-4" />,
       group: t('admin.marketing.promotions.group.issuance', 'Issuance'),
-      load: () => backendPromotionCouponStocksList(DEFAULT_PAGE_PARAMS),
+      load: (params) => backendPromotionCouponStocksList(params),
       columns: [
         { key: 'stock_no', label: t('admin.col.stock', 'Stock') },
         { key: 'code_mode', label: t('admin.col.codeMode', 'Code Mode') },
@@ -119,7 +126,7 @@ function buildMarketingSections(t: ReturnType<typeof useTranslation>['t']): Admi
       description: t('admin.marketing.promotions.promotionCodes.desc', 'Hashed promotion exchange codes with safe suffix display, claim-code binding, stock identity, activation, resend, and claim state.'),
       icon: <Barcode className="h-4 w-4" />,
       group: t('admin.marketing.promotions.group.issuance', 'Issuance'),
-      load: () => backendPromotionCodesList(DEFAULT_PAGE_PARAMS),
+      load: (params) => backendPromotionCodesList(params),
       columns: [
         { key: 'code_no', label: t('admin.col.codeNo', 'Code No') },
         { key: 'promotion_code_last4', label: t('admin.col.code', 'Code') },
@@ -140,7 +147,7 @@ function buildMarketingSections(t: ReturnType<typeof useTranslation>['t']): Admi
       description: t('admin.marketing.promotions.promotionCodeRedemptions.desc', 'Promotion code exchange outcomes that create user coupon instances or direct benefits and write lifecycle evidence.'),
       icon: <Ticket className="h-4 w-4" />,
       group: t('admin.marketing.promotions.group.issuance', 'Issuance'),
-      load: () => backendPromotionCodeRedemptionsList(DEFAULT_PAGE_PARAMS),
+      load: (params) => backendPromotionCodeRedemptionsList(params),
       columns: [
         { key: 'redemption_no', label: t('admin.col.redemption', 'Redemption') },
         { key: 'submitted_code_suffix', label: t('admin.col.code', 'Code') },
@@ -160,7 +167,7 @@ function buildMarketingSections(t: ReturnType<typeof useTranslation>['t']): Admi
       description: t('admin.marketing.promotions.userCoupons.desc', 'Wallet coupon instances with claim, lock, application, settlement, return, expiry, and disable lifecycle state.'),
       icon: <WalletCards className="h-4 w-4" />,
       group: t('admin.marketing.promotions.group.wallet', 'Wallet Lifecycle'),
-      load: () => backendPromotionUserCouponsList(DEFAULT_PAGE_PARAMS),
+      load: (params) => backendPromotionUserCouponsList(params),
       columns: [
         { key: 'coupon_no', label: t('admin.col.coupon', 'Coupon') },
         { key: 'coupon_code_suffix', label: t('admin.col.code', 'Code') },
@@ -181,7 +188,7 @@ function buildMarketingSections(t: ReturnType<typeof useTranslation>['t']): Admi
       description: t('admin.marketing.promotions.discountApplications.desc', 'Checkout reservations, applications, settlements, releases, and reversals tied to orders and payments.'),
       icon: <ReceiptText className="h-4 w-4" />,
       group: t('admin.marketing.promotions.group.redemption', 'Redemption'),
-      load: () => backendPromotionDiscountApplicationsList(DEFAULT_PAGE_PARAMS),
+      load: (params) => backendPromotionDiscountApplicationsList(params),
       columns: [
         { key: 'application_no', label: t('admin.col.application', 'Application') },
         { key: 'order_no', label: t('admin.col.order', 'Order') },
@@ -200,7 +207,7 @@ function buildMarketingSections(t: ReturnType<typeof useTranslation>['t']): Admi
       description: t('admin.marketing.promotions.discountAllocations.desc', 'Immutable item-level discount evidence for refunds, invoice allocation, accounting, and analytics.'),
       icon: <ListTree className="h-4 w-4" />,
       group: t('admin.marketing.promotions.group.redemption', 'Redemption'),
-      load: () => backendPromotionDiscountAllocationsList(),
+      load: (params) => backendPromotionDiscountAllocationsList(params),
       columns: [
         { key: 'application_id', label: t('admin.col.application', 'Application') },
         { key: 'order_id', label: t('admin.col.order', 'Order') },
@@ -219,7 +226,7 @@ function buildMarketingSections(t: ReturnType<typeof useTranslation>['t']): Admi
       description: t('admin.marketing.promotions.promotionCouponLedger.desc', 'Append-only evidence for stock creation, claim, lock, release, redeem, return, expire, disable, and adjustment.'),
       icon: <FileClock className="h-4 w-4" />,
       group: t('admin.marketing.promotions.group.ledger', 'Ledger'),
-      load: () => backendPromotionCouponLedgerEntriesList(),
+      load: (params) => backendPromotionCouponLedgerEntriesList(params),
       columns: [
         { key: 'ledger_no', label: t('admin.col.entry', 'Entry') },
         { key: 'business_type', label: t('admin.col.type', 'Type') },
@@ -238,7 +245,7 @@ function buildMarketingSections(t: ReturnType<typeof useTranslation>['t']): Admi
       description: t('admin.marketing.promotions.budgetLedger.desc', 'Append-only budget reserve, release, consume, reverse, and adjustment records.'),
       icon: <WalletCards className="h-4 w-4" />,
       group: t('admin.marketing.promotions.group.ledger', 'Ledger'),
-      load: () => backendPromotionBudgetLedgerEntriesList(),
+      load: (params) => backendPromotionBudgetLedgerEntriesList(params),
       columns: [
         { key: 'ledger_no', label: t('admin.col.entry', 'Entry') },
         { key: 'budget_account_id', label: t('admin.col.budget', 'Budget') },
@@ -257,7 +264,7 @@ function buildMarketingSections(t: ReturnType<typeof useTranslation>['t']): Admi
       description: t('admin.marketing.promotions.externalBindings.desc', 'WeChat, Alipay, partner, and payment-platform card bindings with platform IDs, safe claim-code suffix, and sync state.'),
       icon: <Link2 className="h-4 w-4" />,
       group: t('admin.marketing.promotions.group.integration', 'Integration'),
-      load: () => backendPromotionExternalBindingsList(),
+      load: (params) => backendPromotionExternalBindingsList(params),
       columns: [
         { key: 'binding_no', label: t('admin.col.binding', 'Binding') },
         { key: 'platform', label: t('admin.col.platform', 'Platform') },
@@ -277,7 +284,7 @@ function buildMarketingSections(t: ReturnType<typeof useTranslation>['t']): Admi
       description: t('admin.marketing.promotions.events.desc', 'Outbox events for lifecycle publishing, retry, dead-letter handling, and downstream synchronization.'),
       icon: <RadioTower className="h-4 w-4" />,
       group: t('admin.marketing.promotions.group.integration', 'Integration'),
-      load: () => backendPromotionEventsList(),
+      load: (params) => backendPromotionEventsList(params),
       columns: [
         { key: 'event_no', label: t('admin.col.event', 'Event') },
         { key: 'event_type', label: t('admin.col.type', 'Type') },
@@ -297,7 +304,7 @@ function buildMarketingSections(t: ReturnType<typeof useTranslation>['t']): Admi
       description: t('admin.commerce.marketing.referralStats.desc', 'Invite links, successful invitations, revenue contribution, and awarded bonuses.'),
       icon: <TrendingUp className="h-4 w-4" />,
       group: t('admin.marketing.promotions.group.growth', 'Growth'),
-      load: () => MarketingService.fetchReferralStats(),
+      load: (params) => MarketingService.fetchReferralStats(params),
       columns: [
         { key: 'inviter', label: t('admin.commerce.marketing.referralStats.col.inviter', 'Inviter') },
         { key: 'link', label: t('admin.commerce.marketing.referralStats.col.link', 'Referral Link') },
@@ -308,6 +315,17 @@ function buildMarketingSections(t: ReturnType<typeof useTranslation>['t']): Admi
       searchFields: ['id', 'inviter', 'link', 'total_revenue', 'bonus_awarded'],
     },
   ];
+  return sections.map((section) => withMarketingPagination(section));
+}
+
+function withMarketingPagination<TSectionId extends MarketingAdminTab>(
+  section: AdminResourceSection<TSectionId, MarketingAdminGroup>,
+): AdminResourceSection<TSectionId, MarketingAdminGroup> {
+  return {
+    ...section,
+    load: (params?: AdminResourceLoadParams) => section.load(params),
+    pagination: MARKETING_LIST_PAGINATION,
+  };
 }
 
 export function MarketingAdmin({ sectionId }: MarketingAdminProps = {}) {

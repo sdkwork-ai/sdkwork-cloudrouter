@@ -49,6 +49,11 @@ evidence.
   process uses a database-leased, fenced Snowflake node and stops issuing IDs
   or reporting ready when lease ownership cannot be proven.
 - Generate app, backend, and open SDK families from reviewed API authorities.
+- Compose Payment as a dependency-owned commercial capability instead of
+  copying its provider-account, channel, intent, webhook, reconciliation, or
+  credential lifecycle into Claw Router. Claw Router may add only
+  product-owned inventory and presentation extensions through declared SDK
+  boundaries.
 - Produce usage, routing-decision, health, audit, and settlement facts required
   for commercial reconciliation.
 - Bound every persisted pricing snapshot to 16 KiB, every durable accounting
@@ -129,6 +134,15 @@ is recorded in
 - Usage, finance, notification, settings, monitoring, and audit capabilities
   required to operate the gateway.
 
+Payment administration is a composed dependency capability. Provider-account
+creation and updates, credential testing and rotation, sub-merchant commands,
+methods, channels, routing rules, intents, attempts, webhook events, and
+reconciliation remain owned by the Payment product. Claw Router contributes
+only its product-specific provider inventory extension and host navigation.
+Credential inputs are write-only, and every mutation requires its exact
+effective Payment permission; access to the enclosing admin route is not write
+authorization.
+
 ### Operational Analytics
 
 The admin analytics overview is a PostgreSQL-backed read model exposed by
@@ -174,6 +188,11 @@ from tenant-scoped `ai_usage` and `ai_request_trace` facts.
 8. An operator requests a bounded analytics window and compares exact usage,
    cost, error, user, and model aggregates from one consistent database
    snapshot without loading an unbounded tenant result set into memory.
+9. A Payment administrator with the exact effective permission creates or
+   updates a provider account, tests or rotates its write-only credentials, or
+   maintains a sub-merchant. A user with route access but without that action
+   permission sees no enabled mutation path, and the backend remains the final
+   authorization authority.
 
 ## 6. Success Metrics
 
@@ -187,6 +206,7 @@ These are launch targets and require production-like evidence.
 | List/search operations using bounded store-level pagination | 100% |
 | Retired upstream aggregates in production code and current contracts | 0 |
 | API operations traceable to authority OpenAPI and generated SDK | 100% |
+| Payment mutations with matching IAM, OpenAPI, SDK, and UI capability permission codes | 100% |
 | Usage and settlement writes covered by transaction/idempotency evidence | 100% |
 | Usage pricing snapshots over 16 KiB or retry envelopes over 32 KiB admitted | 0 |
 | Admin analytics responses with bounded UTC windows, rankings, and exact string numerics | 100% |
@@ -204,6 +224,7 @@ backup/restore, and multi-replica tests. They are not inferred from design.
 | Phase | Exit condition | Status |
 | --- | --- | --- |
 | Domain convergence | Supplier/account/account-group model, PostgreSQL schema, APIs, SDKs, UI, tests, and docs agree | In progress |
+| Payment composition convergence | Payment owner SDK, Claw extension boundary, write-only credentials, exact action RBAC, server pagination, and docs agree | In progress |
 | Chat persistence convergence | Eight-table PostgreSQL authority, API/SDK pagination, concurrency, readiness, recovery, and docs agree | In progress |
 | Production hardening | Security, streaming, financial, load, recovery, observability, and HA gates pass | Planned |
 | Commercial beta | Clean release candidate, signed artifacts, runbooks, support controls, and reviewed evidence | Planned |

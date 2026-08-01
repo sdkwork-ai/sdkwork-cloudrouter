@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::OnceLock;
 use std::time::Instant;
 
 use prometheus::{HistogramVec, IntCounterVec, Opts};
@@ -11,7 +10,7 @@ use super::{
 /// Singleton Prometheus metrics shared across all pipeline instances.
 struct MetricsState {
     invocation_total: IntCounterVec,
-    invocation_duration_ms: HistogramVec,
+    invocation_duration_seconds: HistogramVec,
     invocation_errors_total: IntCounterVec,
 }
 
@@ -28,18 +27,17 @@ fn metrics_state() -> &'static MetricsState {
         )
         .expect("clawrouter_invocation_total metric construction must not fail");
 
-        let invocation_duration_ms = HistogramVec::new(
+        let invocation_duration_seconds = HistogramVec::new(
             prometheus::HistogramOpts::new(
-                "clawrouter_invocation_duration_ms",
-                "End-to-end invocation latency in milliseconds.",
+                "clawrouter_invocation_duration_seconds",
+                "End-to-end invocation latency in seconds.",
             )
             .buckets(vec![
-                5.0, 10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1_000.0, 2_500.0, 5_000.0, 10_000.0,
-                30_000.0,
+                0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0,
             ]),
             &["provider", "surface"],
         )
-        .expect("clawrouter_invocation_duration_ms metric construction must not fail");
+        .expect("clawrouter_invocation_duration_seconds metric construction must not fail");
 
         let invocation_errors_total = IntCounterVec::new(
             Opts::new(
@@ -53,12 +51,12 @@ fn metrics_state() -> &'static MetricsState {
         // Register with the default Prometheus registry.
         // Errors (already registered) are safe to ignore — the existing metric is reused.
         let _ = prometheus::register(Box::new(invocation_total.clone()));
-        let _ = prometheus::register(Box::new(invocation_duration_ms.clone()));
+        let _ = prometheus::register(Box::new(invocation_duration_seconds.clone()));
         let _ = prometheus::register(Box::new(invocation_errors_total.clone()));
 
         MetricsState {
             invocation_total,
-            invocation_duration_ms,
+            invocation_duration_seconds,
             invocation_errors_total,
         }
     })
@@ -72,42 +70,13 @@ fn metrics_state() -> &'static MetricsState {
 #[derive(Clone)]
 pub struct MetricsInterceptor {
     state: &'static MetricsState,
-    start_times: Arc<Mutex<HashMap<String, Instant>>>,
 }
 
 impl MetricsInterceptor {
     pub fn new() -> Self {
         Self {
             state: metrics_state(),
-            start_times: Arc::new(Mutex::new(HashMap::new())),
         }
-    }
-
-    fn record_start(&self, request_id: &str) {
-        let mut start_times = match self.start_times.lock() {
-            Ok(guard) => guard,
-            Err(poisoned) => poisoned.into_inner(),
-        };
-        start_times.insert(request_id.to_owned(), Instant::now());
-
-        // Prevent unbounded growth: if the map exceeds 10k entries, drop the oldest 25%.
-        if start_times.len() > 10_000 {
-            let mut entries: Vec<(String, Instant)> =
-                start_times.iter().map(|(k, v)| (k.clone(), *v)).collect();
-            entries.sort_by_key(|(_, ts)| *ts);
-            let drop_count = entries.len() / 4 + 1;
-            for (key, _) in entries.into_iter().take(drop_count) {
-                start_times.remove(&key);
-            }
-        }
-    }
-
-    fn take_start(&self, request_id: &str) -> Option<Instant> {
-        let mut start_times = match self.start_times.lock() {
-            Ok(guard) => guard,
-            Err(poisoned) => poisoned.into_inner(),
-        };
-        start_times.remove(request_id)
     }
 
     fn provider_label(invocation: &Invocation) -> &str {
@@ -158,7 +127,8 @@ impl MetricsInterceptor {
             .unwrap_or(500)
     }
 
-    fn record_completion(&self, invocation: &Invocation) {
+    fn record_completion(&self, invocation: &mut Invocation) {
+        let started = invocation.telemetry.pipeline_started_at.take();
         let provider = Self::provider_label(invocation);
         let surface = Self::surface_label(invocation);
         let status_code = Self::effective_status_code(invocation);
@@ -169,12 +139,11 @@ impl MetricsInterceptor {
             .with_label_values(&[provider, surface, status_class])
             .inc();
 
-        if let Some(started) = self.take_start(&invocation.request.request_id) {
-            let elapsed_ms = started.elapsed().as_millis() as f64;
+        if let Some(started) = started {
             self.state
-                .invocation_duration_ms
+                .invocation_duration_seconds
                 .with_label_values(&[provider, surface])
-                .observe(elapsed_ms);
+                .observe(started.elapsed().as_secs_f64());
         }
     }
 
@@ -204,7 +173,7 @@ impl InvocationInterceptor for MetricsInterceptor {
 
     fn before<'a>(&'a self, invocation: &'a mut Invocation) -> InvocationFuture<'a, ()> {
         Box::pin(async move {
-            self.record_start(&invocation.request.request_id);
+            invocation.telemetry.pipeline_started_at = Some(Instant::now());
             Ok(())
         })
     }

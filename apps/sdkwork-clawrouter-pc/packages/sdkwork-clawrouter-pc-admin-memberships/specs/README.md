@@ -10,10 +10,10 @@ Root SDKWork standards remain authoritative. Local component specs can narrow or
 | --- | --- |
 | Name | `sdkwork-clawrouter-pc-admin-memberships` |
 | Type | `node-package` |
-| Root | `sdkwork-claw-router/apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships` |
-| Domain | `platform` |
-| Capability | `router` |
-| Languages | `javascript` |
+| Root | `sdkwork-clawrouter/apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships` |
+| Domain | `membership` |
+| Capability | `membership` |
+| Languages | `javascript`, `typescript` |
 | Status | `standardizing` |
 
 ## Contract Manifest
@@ -44,7 +44,8 @@ Root SDKWork standards remain authoritative. Local component specs can narrow or
 
 ## SDK Clients
 
-- No generated SDK client class is declared at this component boundary.
+- `@sdkwork/membership-backend-sdk` for Membership-owned administration.
+- `@sdkwork/clawrouter-backend-sdk` for the Claw Router recharge extension.
 
 ## Local Extension Specs
 
@@ -52,4 +53,4 @@ Root SDKWork standards remain authoritative. Local component specs can narrow or
 
 ## Verification
 
-- `node apps/scripts/validate-component-specs.mjs --apps-root apps --json`
+- `node ../sdkwork-specs/tools/check-component-port-bindings.mjs --root .`

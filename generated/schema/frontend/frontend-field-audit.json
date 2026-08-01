@@ -283,25 +283,20 @@
         "ai_model_vendor"
       ],
       "fields": [
-        "vendors",
-        "vendors.id",
-        "vendors.vendorCode",
-        "vendors.name",
-        "vendors.status",
-        "vendors.color",
-        "vendors.description",
-        "models",
-        "models.id",
-        "models.vendorId",
-        "models.vendorCode",
-        "models.model",
-        "models.displayName",
-        "models.name",
-        "models.type",
-        "models.status"
+        "items",
+        "items.id",
+        "items.vendorId",
+        "items.vendorCode",
+        "items.model",
+        "items.displayName",
+        "items.name",
+        "items.type",
+        "items.status",
+        "totalCount",
+        "hasMore"
       ],
       "file_targets": [],
-      "interface": "ModelMappingModelOptionsCatalog",
+      "interface": "ModelMappingModelOptionsPage",
       "route": "/admin/model/mappings",
       "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts"
     },
@@ -1045,7 +1040,10 @@
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "ops_config_snapshot",
+        "ops_audit_log"
+      ],
       "fields": [
         "mode",
         "pageSize",
@@ -1054,7 +1052,7 @@
       ],
       "file_targets": [],
       "interface": "CachePageInfo",
-      "route": null,
+      "route": "/admin/cache",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts"
     },
     {
@@ -1080,455 +1078,6 @@
       "interface": "CacheSummary",
       "route": "/admin/cache",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_model_mapping_rule",
-        "ai_model_mapping_rule_item"
-      ],
-      "fields": [
-        "sourceModel",
-        "targetModel",
-        "targetVendorCode"
-      ],
-      "file_targets": [],
-      "interface": "AccountModelMappingInput",
-      "route": "/admin/channel",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_resource",
-        "ai_resource_group_item"
-      ],
-      "fields": [
-        "id",
-        "resourceCode",
-        "resourceType",
-        "displayName",
-        "vendorCode",
-        "modalityCode",
-        "apiEndpointCode",
-        "catalogKey",
-        "model",
-        "providerNativeModel",
-        "capability",
-        "capabilities",
-        "compositionMode",
-        "status",
-        "sortOrder",
-        "members",
-        "members.parentResourceCode",
-        "members.memberResourceCode",
-        "members.memberRole",
-        "members.required",
-        "members.sortOrder"
-      ],
-      "file_targets": [],
-      "interface": "AiResource",
-      "route": "/admin/channel",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_resource",
-        "ai_resource_group_item",
-        "ops_audit_log"
-      ],
-      "fields": [
-        "resourceCode",
-        "resourceType",
-        "displayName",
-        "vendorCode",
-        "modalityCode",
-        "apiEndpointCode",
-        "catalogKey",
-        "model",
-        "providerNativeModel",
-        "compositionMode",
-        "status",
-        "sortOrder",
-        "members",
-        "members.memberResourceCode",
-        "members.memberRole",
-        "members.required",
-        "members.sortOrder"
-      ],
-      "file_targets": [],
-      "interface": "AiResourceCreateInput",
-      "route": "/admin/model/resources",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_resource_group_item"
-      ],
-      "fields": [
-        "parentResourceCode",
-        "memberResourceCode",
-        "memberRole",
-        "required",
-        "sortOrder"
-      ],
-      "file_targets": [],
-      "interface": "AiResourceMember",
-      "route": "/admin/channel",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_resource_group_item"
-      ],
-      "fields": [
-        "memberResourceCode",
-        "memberRole",
-        "required",
-        "sortOrder"
-      ],
-      "file_targets": [],
-      "interface": "AiResourceMemberInput",
-      "route": "/admin/channel",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_resource",
-        "ai_resource_group_item",
-        "ops_audit_log"
-      ],
-      "fields": [
-        "resourceCode",
-        "resourceType",
-        "displayName",
-        "vendorCode",
-        "modalityCode",
-        "apiEndpointCode",
-        "catalogKey",
-        "model",
-        "providerNativeModel",
-        "compositionMode",
-        "status",
-        "sortOrder",
-        "members",
-        "members.memberResourceCode",
-        "members.memberRole",
-        "members.required",
-        "members.sortOrder"
-      ],
-      "file_targets": [],
-      "interface": "AiResourceUpdateInput",
-      "route": "/admin/model/resources",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts"
-    },
-    {
-      "data_sources": [],
-      "fields": [
-        "resourceGroups",
-        "total"
-      ],
-      "file_targets": [],
-      "interface": "ChannelAiResourceGroupListPage",
-      "route": null,
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts"
-    },
-    {
-      "data_sources": [],
-      "fields": [
-        "resources",
-        "resources.id",
-        "resources.resourceCode",
-        "resources.resourceType",
-        "resources.displayName",
-        "resources.vendorCode",
-        "resources.modalityCode",
-        "resources.apiEndpointCode",
-        "resources.catalogKey",
-        "resources.model",
-        "resources.providerNativeModel",
-        "resources.capability",
-        "resources.capabilities",
-        "resources.compositionMode",
-        "resources.status",
-        "resources.sortOrder",
-        "resources.members",
-        "resources.members.parentResourceCode",
-        "resources.members.memberResourceCode",
-        "resources.members.memberRole",
-        "resources.members.required",
-        "resources.members.sortOrder",
-        "total"
-      ],
-      "file_targets": [],
-      "interface": "ChannelAiResourceListPage",
-      "route": null,
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_channel",
-        "ai_channel_credential",
-        "ai_provider",
-        "ai_channel_resource"
-      ],
-      "fields": [
-        "name",
-        "vendor",
-        "channelType",
-        "protocol",
-        "accessType",
-        "credentialRotation",
-        "credentials",
-        "credentials.name",
-        "credentials.baseUrl",
-        "credentials.apiKey",
-        "credentials.secretRef",
-        "credentials.priority",
-        "credentials.weight",
-        "credentials.status",
-        "expiresAt",
-        "capabilities",
-        "resourceCodes",
-        "timeoutMs",
-        "retryPolicy",
-        "circuitBreakerPolicy",
-        "weight",
-        "status"
-      ],
-      "file_targets": [],
-      "interface": "ChannelCreateInput",
-      "route": "/admin/channel",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_channel_credential"
-      ],
-      "fields": [
-        "name",
-        "baseUrl",
-        "apiKey",
-        "secretRef",
-        "priority",
-        "weight",
-        "status"
-      ],
-      "file_targets": [],
-      "interface": "ChannelCredentialInput",
-      "route": "/admin/channel",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_channel_credential"
-      ],
-      "fields": [
-        "id",
-        "credentialId",
-        "name",
-        "baseUrl",
-        "secretRef",
-        "apiKey",
-        "maskedLabel",
-        "priority",
-        "weight",
-        "status",
-        "errors"
-      ],
-      "file_targets": [],
-      "interface": "ChannelCredentialItem",
-      "route": "/admin/channel",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_channel",
-        "ai_channel_credential",
-        "ai_provider",
-        "ai_channel_resource",
-        "integration_provider_health_snapshot"
-      ],
-      "fields": [
-        "id",
-        "channelId",
-        "name",
-        "vendor",
-        "channelType",
-        "protocol",
-        "accessType",
-        "credentialRotation",
-        "credentials",
-        "credentials.id",
-        "credentials.credentialId",
-        "credentials.name",
-        "credentials.baseUrl",
-        "credentials.secretRef",
-        "credentials.apiKey",
-        "credentials.maskedLabel",
-        "credentials.priority",
-        "credentials.weight",
-        "credentials.status",
-        "credentials.errors",
-        "createdAt",
-        "expiresAt",
-        "capabilities",
-        "resourceCodes",
-        "isMultimodal",
-        "timeoutMs",
-        "retryPolicy",
-        "circuitBreakerPolicy",
-        "weight",
-        "status",
-        "balance",
-        "errors"
-      ],
-      "file_targets": [],
-      "interface": "ChannelItem",
-      "route": "/admin/channel",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_model_vendor",
-        "ai_model"
-      ],
-      "fields": [
-        "catalogKey",
-        "model",
-        "displayName",
-        "vendorCode",
-        "regionCode"
-      ],
-      "file_targets": [],
-      "interface": "ChannelModelCatalogItem",
-      "route": "/admin/channel",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts"
-    },
-    {
-      "data_sources": [],
-      "fields": [
-        "models",
-        "models.catalogKey",
-        "models.model",
-        "models.displayName",
-        "models.vendorCode",
-        "models.regionCode",
-        "total"
-      ],
-      "file_targets": [],
-      "interface": "ChannelModelCatalogListPage",
-      "route": null,
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_channel",
-        "ai_channel_credential",
-        "ai_channel_resource",
-        "ai_channel",
-        "integration_provider_health_snapshot",
-        "ops_config_snapshot",
-        "ops_audit_log"
-      ],
-      "fields": [
-        "channelId",
-        "success",
-        "status",
-        "latency",
-        "item",
-        "item.id",
-        "item.channelId",
-        "item.name",
-        "item.vendor",
-        "item.channelType",
-        "item.protocol",
-        "item.accessType",
-        "item.credentialRotation",
-        "item.credentials",
-        "item.credentials.id",
-        "item.credentials.credentialId",
-        "item.credentials.name",
-        "item.credentials.baseUrl",
-        "item.credentials.secretRef",
-        "item.credentials.apiKey",
-        "item.credentials.maskedLabel",
-        "item.credentials.priority",
-        "item.credentials.weight",
-        "item.credentials.status",
-        "item.credentials.errors",
-        "item.createdAt",
-        "item.expiresAt",
-        "item.capabilities",
-        "item.resourceCodes",
-        "item.isMultimodal",
-        "item.timeoutMs",
-        "item.retryPolicy",
-        "item.circuitBreakerPolicy",
-        "item.weight",
-        "item.status",
-        "item.balance",
-        "item.errors"
-      ],
-      "file_targets": [],
-      "interface": "ChannelTestResult",
-      "route": "/admin/channel",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_channel",
-        "ai_channel_credential",
-        "ai_provider",
-        "ai_channel_resource"
-      ],
-      "fields": [
-        "name",
-        "vendor",
-        "channelType",
-        "protocol",
-        "accessType",
-        "credentialRotation",
-        "credentials",
-        "credentials.name",
-        "credentials.baseUrl",
-        "credentials.apiKey",
-        "credentials.secretRef",
-        "credentials.priority",
-        "credentials.weight",
-        "credentials.status",
-        "expiresAt",
-        "capabilities",
-        "resourceCodes",
-        "timeoutMs",
-        "retryPolicy",
-        "circuitBreakerPolicy",
-        "weight",
-        "status"
-      ],
-      "file_targets": [],
-      "interface": "ChannelUpdateInput",
-      "route": "/admin/channel",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_channel",
-        "ai_model_mapping_rule",
-        "ai_model_mapping_rule_binding",
-        "ai_model_mapping_rule_item"
-      ],
-      "fields": [
-        "channelId",
-        "channelName",
-        "accountVendorCode",
-        "mappings",
-        "mappings.sourceModel",
-        "mappings.targetModel",
-        "mappings.targetVendorCode"
-      ],
-      "file_targets": [],
-      "interface": "ReplaceAccountModelMappingsInput",
-      "route": "/admin/channel",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts"
     },
     {
       "data_sources": [
@@ -1568,10 +1117,10 @@
         "traffic.time",
         "traffic.tokens",
         "traffic.requests",
-        "traffic.cost",
+        "traffic.points",
         "traffic.chartTokens",
         "traffic.chartRequests",
-        "traffic.chartCost",
+        "traffic.chartPoints",
         "modelDistribution",
         "modelDistribution.name",
         "modelDistribution.value",
@@ -1612,7 +1161,11 @@
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "ai_upstream_supplier",
+        "ai_model",
+        "ops_gateway_instance"
+      ],
       "fields": [
         "status",
         "schemaVersion",
@@ -1626,7 +1179,7 @@
       ],
       "file_targets": [],
       "interface": "InstallationStatusResponse",
-      "route": null,
+      "route": "/admin/dashboard",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts"
     },
     {
@@ -1677,10 +1230,10 @@
         "time",
         "tokens",
         "requests",
-        "cost",
+        "points",
         "chartTokens",
         "chartRequests",
-        "chartCost"
+        "chartPoints"
       ],
       "file_targets": [],
       "interface": "TrafficData",
@@ -1690,460 +1243,334 @@
     {
       "data_sources": [],
       "fields": [
-        "resources",
-        "resources.id",
-        "resources.resourceCode",
-        "resources.displayName",
-        "resources.resourceType",
-        "resources.vendorCode",
-        "resources.modalityCode",
-        "resources.apiEndpointCode",
-        "resources.catalogKey",
-        "resources.model",
-        "resources.providerNativeModel",
-        "resources.status",
-        "total"
-      ],
-      "file_targets": [],
-      "interface": "AssignableAiResourceListPage",
-      "route": null,
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts"
-    },
-    {
-      "data_sources": [],
-      "fields": [
-        "channels",
-        "channels.id",
-        "channels.name",
-        "channels.providerCode",
-        "channels.providerName",
-        "channels.channelCode",
-        "channels.resourceCodes",
-        "channels.apiScope",
-        "channels.capabilities",
-        "channels.status",
-        "channels.healthStatus",
-        "total"
-      ],
-      "file_targets": [],
-      "interface": "AssignableChannelListPage",
-      "route": null,
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts"
-    },
-    {
-      "data_sources": [],
-      "fields": [
-        "resourceGroups",
-        "resourceGroups.id",
-        "resourceGroups.groupCode",
-        "resourceGroups.groupName",
-        "resourceGroups.groupType",
-        "resourceGroups.selectionMode",
-        "resourceGroups.description",
-        "resourceGroups.resourceCount",
-        "resourceGroups.status",
-        "total"
-      ],
-      "file_targets": [],
-      "interface": "AssignableResourceGroupListPage",
-      "route": null,
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_resource"
-      ],
-      "fields": [
         "id",
-        "resourceCode",
-        "displayName",
-        "resourceType",
-        "vendorCode",
-        "modalityCode",
-        "apiEndpointCode",
-        "catalogKey",
-        "model",
-        "providerNativeModel",
+        "inviter",
+        "total_invited",
+        "total_revenue",
+        "bonus_awarded",
+        "link"
+      ],
+      "file_targets": [],
+      "interface": "ReferralStat",
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "membershipId",
+        "planId",
         "status"
       ],
       "file_targets": [],
-      "interface": "GroupAiResourceOption",
-      "route": "/admin/group",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts"
+      "interface": "MembershipsAdminEntitlementsListParams",
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
-      "data_sources": [
-        "ai_channel_group_member",
-        "ai_provider",
-        "ai_channel",
-        "ai_channel_group_resource"
+      "data_sources": [],
+      "fields": [
+        "status"
       ],
+      "file_targets": [],
+      "interface": "MembershipsAdminMemberStatusInput",
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "userId",
+        "planId",
+        "status"
+      ],
+      "file_targets": [],
+      "interface": "MembershipsAdminMembersListParams",
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "groups",
+        "groups.id",
+        "groups.code",
+        "groups.name",
+        "groups.description",
+        "groups.planId",
+        "groups.billingCycle",
+        "groups.durationDays",
+        "groups.sortWeight",
+        "groups.status",
+        "groups.packageCount",
+        "packages",
+        "packages.id",
+        "packages.packageNo",
+        "packages.groupId",
+        "packages.planId",
+        "packages.skuId",
+        "packages.name",
+        "packages.priceAmount",
+        "packages.currencyCode",
+        "packages.durationDays",
+        "packages.recurrenceCycle",
+        "packages.status",
+        "plans",
+        "plans.id",
+        "plans.planNo",
+        "plans.levelCode",
+        "plans.name",
+        "plans.rank",
+        "plans.status",
+        "plans.benefitCount",
+        "plans.benefits",
+        "plans.benefits.id",
+        "plans.benefits.name",
+        "plans.benefits.benefitKey",
+        "plans.benefits.type",
+        "plans.benefits.description",
+        "plans.benefits.icon",
+        "plans.benefits.usageLimit",
+        "plans.benefits.usedCount",
+        "plans.benefits.claimed",
+        "plans.updatedAt"
+      ],
+      "file_targets": [],
+      "interface": "MembershipsAdminPackageCatalog",
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
+    },
+    {
+      "data_sources": [],
       "fields": [
         "id",
-        "channelGroupId",
-        "channelId",
-        "channelName",
-        "providerCode",
-        "providerName",
-        "channelCode",
-        "resourceCodes",
-        "apiScope",
-        "capabilities",
-        "priority",
-        "weight",
+        "code",
+        "name",
+        "description",
+        "planId",
+        "billingCycle",
+        "durationDays",
+        "sortWeight",
         "status",
-        "healthStatus"
+        "packageCount"
       ],
       "file_targets": [],
-      "interface": "GroupChannelBindingData",
-      "route": "/admin/group",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts"
+      "interface": "MembershipsAdminPackageGroup",
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
-      "data_sources": [
-        "ai_channel_group_member",
-        "ai_channel"
-      ],
+      "data_sources": [],
       "fields": [
-        "channelId",
-        "priority",
-        "weight",
-        "status",
-        "resourceCodes",
-        "apiScope",
-        "capabilities"
+        "code",
+        "name",
+        "description",
+        "billingCycle",
+        "durationDays",
+        "sortWeight",
+        "status"
       ],
       "file_targets": [],
-      "interface": "GroupChannelBindingInput",
-      "route": "/admin/group",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts"
+      "interface": "MembershipsAdminPackageGroupMutationInput",
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
-      "data_sources": [
-        "ai_provider",
-        "ai_channel",
-        "ai_channel_group_resource"
+      "data_sources": [],
+      "fields": [
+        "id",
+        "packageNo",
+        "groupId",
+        "planId",
+        "skuId",
+        "name",
+        "priceAmount",
+        "currencyCode",
+        "durationDays",
+        "recurrenceCycle",
+        "status"
       ],
+      "file_targets": [],
+      "interface": "MembershipsAdminPackageItem",
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "code",
+        "packageGroupId",
+        "planId",
+        "name",
+        "priceAmount",
+        "currencyCode",
+        "durationDays",
+        "status"
+      ],
+      "file_targets": [],
+      "interface": "MembershipsAdminPackageMutationInput",
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "packageGroupId",
+        "planId",
+        "status"
+      ],
+      "file_targets": [],
+      "interface": "MembershipsAdminPackagesListParams",
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
+    },
+    {
+      "data_sources": [],
       "fields": [
         "id",
         "name",
-        "providerCode",
-        "providerName",
-        "channelCode",
-        "resourceCodes",
-        "apiScope",
-        "capabilities",
-        "status",
-        "healthStatus"
-      ],
-      "file_targets": [],
-      "interface": "GroupChannelOption",
-      "route": "/admin/group",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_channel_group",
-        "ai_pricing_plan"
-      ],
-      "fields": [
-        "groupName",
-        "priceReferenceMode",
-        "rateMultiplier",
-        "officialPriceMultiplier",
-        "groupType",
-        "capacity",
-        "status",
-        "resourceGroupCodes",
-        "resourceCodes"
-      ],
-      "file_targets": [],
-      "interface": "GroupCreateInput",
-      "route": "/admin/group",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_channel_group",
-        "ai_channel_group_metric_snapshot",
-        "ai_pricing_plan"
-      ],
-      "fields": [
-        "id",
-        "groupCode",
-        "groupName",
-        "providerCode",
-        "priceReferenceMode",
-        "rateMultiplier",
-        "officialPriceMultiplier",
-        "groupType",
-        "accountCount",
-        "capacity",
-        "usage",
-        "resourceGroupCodes",
-        "resourceCodes",
-        "status"
-      ],
-      "file_targets": [],
-      "interface": "GroupData",
-      "route": "/admin/group",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_resource_group"
-      ],
-      "fields": [
-        "id",
-        "groupCode",
-        "groupName",
-        "groupType",
-        "selectionMode",
+        "benefitKey",
+        "type",
         "description",
-        "resourceCount",
+        "icon",
+        "usageLimit",
+        "usedCount",
+        "claimed"
+      ],
+      "file_targets": [],
+      "interface": "MembershipsAdminPlanBenefitInput",
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "code",
+        "name",
+        "rank",
+        "status",
+        "benefits",
+        "benefits.id",
+        "benefits.name",
+        "benefits.benefitKey",
+        "benefits.type",
+        "benefits.description",
+        "benefits.icon",
+        "benefits.usageLimit",
+        "benefits.usedCount",
+        "benefits.claimed"
+      ],
+      "file_targets": [],
+      "interface": "MembershipsAdminPlanCreateInput",
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "id",
+        "planNo",
+        "levelCode",
+        "name",
+        "rank",
+        "status",
+        "benefitCount",
+        "benefits",
+        "benefits.id",
+        "benefits.name",
+        "benefits.benefitKey",
+        "benefits.type",
+        "benefits.description",
+        "benefits.icon",
+        "benefits.usageLimit",
+        "benefits.usedCount",
+        "benefits.claimed",
+        "updatedAt"
+      ],
+      "file_targets": [],
+      "interface": "MembershipsAdminPlanItem",
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "code",
+        "name",
+        "rank",
+        "status",
+        "benefits",
+        "benefits.id",
+        "benefits.name",
+        "benefits.benefitKey",
+        "benefits.type",
+        "benefits.description",
+        "benefits.icon",
+        "benefits.usageLimit",
+        "benefits.usedCount",
+        "benefits.claimed"
+      ],
+      "file_targets": [],
+      "interface": "MembershipsAdminPlanMutationInput",
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "id",
+        "packageNo",
+        "name",
+        "skuId",
+        "priceAmount",
+        "currencyCode",
+        "bonusPoints",
+        "grantAmount",
+        "points",
+        "status",
+        "updatedAt"
+      ],
+      "file_targets": [],
+      "interface": "MembershipsAdminRechargePackageItem",
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "priceAmount",
+        "currencyCode",
+        "bonusPoints",
         "status"
       ],
       "file_targets": [],
-      "interface": "GroupResourceGroupOption",
-      "route": "/admin/group",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts"
+      "interface": "MembershipsAdminRechargePackageMutationInput",
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
-      "data_sources": [
-        "ai_channel_group",
-        "ai_channel_group_member",
-        "ai_channel_group_resource",
-        "ai_channel",
-        "ai_provider"
-      ],
+      "data_sources": [],
       "fields": [
-        "source",
-        "effectiveResourceCodes",
-        "configuredResourceGroupAccessCount",
-        "routableBindingCount"
+        "baseCurrencyCode",
+        "basePointsPerCny",
+        "currencyToCnyRates"
       ],
       "file_targets": [],
-      "interface": "GroupRouteExplainResult",
-      "route": "/admin/group",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts"
+      "interface": "MembershipsAdminRechargeSettingsItem",
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
-      "data_sources": [
-        "ai_channel_group_member",
-        "ai_channel"
-      ],
+      "data_sources": [],
       "fields": [
-        "resourceCodes",
-        "apiScope",
-        "capabilities",
-        "status",
-        "healthStatus"
+        "baseCurrencyCode",
+        "basePointsPerCny",
+        "currencyToCnyRates"
       ],
       "file_targets": [],
-      "interface": "GroupRoutePreflightBinding",
-      "route": "/admin/group",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_channel_group",
-        "ai_channel_group_member",
-        "ai_channel_group_resource",
-        "ai_channel"
-      ],
-      "fields": [
-        "code",
-        "severity",
-        "messageKey",
-        "details"
-      ],
-      "file_targets": [],
-      "interface": "GroupRoutePreflightIssue",
-      "route": "/admin/group",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_channel_group",
-        "ai_channel_group_member",
-        "ai_channel_group_resource",
-        "ai_channel"
-      ],
-      "fields": [
-        "ready",
-        "issueCodes",
-        "issues",
-        "issues.code",
-        "issues.severity",
-        "issues.messageKey",
-        "issues.details",
-        "resourceCodes",
-        "resourceGroupCodes",
-        "configuredResourceAccessCount",
-        "apiScope",
-        "capabilities",
-        "activeHealthyBindingCount"
-      ],
-      "file_targets": [],
-      "interface": "GroupRoutePreflightResult",
-      "route": "/admin/group",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_channel_group",
-        "ai_channel",
-        "ai_provider_route",
-        "ai_model_provider_route",
-        "ai_routing_policy",
-        "ai_routing_rule",
-        "ai_pricing_plan"
-      ],
-      "fields": [
-        "kind",
-        "providerCode",
-        "channelId",
-        "channelGroupId",
-        "channelGroupCode",
-        "pricingPlanCode",
-        "policyId",
-        "ruleId",
-        "apiCode",
-        "catalogKey",
-        "requestedModel",
-        "providerModel",
-        "regionCode",
-        "credentialId",
-        "credentialRotation",
-        "timeoutMs"
-      ],
-      "file_targets": [],
-      "interface": "GroupRuntimeRouteExplainCandidate",
-      "route": "/admin/group",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_provider_route",
-        "ai_model_provider_route",
-        "ai_model_pricing",
-        "ai_routing_policy",
-        "ai_routing_rule"
-      ],
-      "fields": [
-        "code",
-        "severity",
-        "message"
-      ],
-      "file_targets": [],
-      "interface": "GroupRuntimeRouteExplainIssue",
-      "route": "/admin/group",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_api_key",
-        "ai_channel_group",
-        "ai_resource",
-        "ai_model",
-        "ai_model_pricing"
-      ],
-      "fields": [
-        "apiKeyId",
-        "channelGroupId",
-        "resourceCode",
-        "catalogKey",
-        "model",
-        "apiCode",
-        "capability",
-        "billingMeter",
-        "routeKey"
-      ],
-      "file_targets": [],
-      "interface": "GroupRuntimeRouteExplainRequest",
-      "route": "/admin/group",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_api_key",
-        "ai_channel_group",
-        "ai_channel_group_member",
-        "ai_model_provider_route",
-        "ai_provider_route",
-        "ai_routing_policy",
-        "ai_routing_rule",
-        "ai_model_pricing",
-        "ai_pricing_plan"
-      ],
-      "fields": [
-        "source",
-        "ready",
-        "resourceCode",
-        "catalogKey",
-        "model",
-        "apiCode",
-        "capability",
-        "billingMeter",
-        "apiKeyId",
-        "channelGroupId",
-        "groupCode",
-        "pricingPlanCode",
-        "candidateCount",
-        "selectedCandidates",
-        "selectedCandidates.kind",
-        "selectedCandidates.providerCode",
-        "selectedCandidates.channelId",
-        "selectedCandidates.channelGroupId",
-        "selectedCandidates.channelGroupCode",
-        "selectedCandidates.pricingPlanCode",
-        "selectedCandidates.policyId",
-        "selectedCandidates.ruleId",
-        "selectedCandidates.apiCode",
-        "selectedCandidates.catalogKey",
-        "selectedCandidates.requestedModel",
-        "selectedCandidates.providerModel",
-        "selectedCandidates.regionCode",
-        "selectedCandidates.credentialId",
-        "selectedCandidates.credentialRotation",
-        "selectedCandidates.timeoutMs",
-        "blockedReasons",
-        "blockedReasons.code",
-        "blockedReasons.severity",
-        "blockedReasons.message",
-        "warnings",
-        "warnings.code",
-        "warnings.severity",
-        "warnings.message",
-        "policyId",
-        "ruleId",
-        "policySnapshotVersion"
-      ],
-      "file_targets": [],
-      "interface": "GroupRuntimeRouteExplainResult",
-      "route": "/admin/group",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_channel_group",
-        "ai_pricing_plan"
-      ],
-      "fields": [
-        "groupName",
-        "priceReferenceMode",
-        "rateMultiplier",
-        "officialPriceMultiplier",
-        "groupType",
-        "capacity",
-        "status",
-        "resourceGroupCodes",
-        "resourceCodes"
-      ],
-      "file_targets": [],
-      "interface": "GroupUpdateInput",
-      "route": "/admin/group",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts"
+      "interface": "MembershipsAdminRechargeSettingsUpdateInput",
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
       "data_sources": [
@@ -2164,7 +1591,11 @@
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "ops_alert_event",
+        "ops_metric_snapshot",
+        "ops_gateway_instance"
+      ],
       "fields": [
         "page",
         "pageSize",
@@ -2173,7 +1604,7 @@
       ],
       "file_targets": [],
       "interface": "MonitorListFilters",
-      "route": null,
+      "route": "/admin/monitor",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts"
     },
     {
@@ -2279,11 +1710,11 @@
     {
       "data_sources": [
         "ai_quota_policy",
-        "ai_channel_group"
+        "ai_upstream_account_group"
       ],
       "fields": [
         "model",
-        "channelGroup",
+        "accountGroup",
         "rpm",
         "tpm"
       ],
@@ -2295,14 +1726,14 @@
     {
       "data_sources": [
         "ai_quota_policy",
-        "ai_channel_group"
+        "ai_upstream_account_group"
       ],
       "fields": [
         "id",
         "model",
-        "channelGroup",
-        "channelGroupId",
-        "channelGroupName",
+        "accountGroup",
+        "accountGroupId",
+        "accountGroupName",
         "rpm",
         "tpm",
         "status"
@@ -2313,7 +1744,10 @@
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "iam_gateway_risk_rule",
+        "ai_quota_policy"
+      ],
       "fields": [
         "page",
         "pageSize",
@@ -2322,7 +1756,7 @@
       ],
       "file_targets": [],
       "interface": "RateLimitListFilters",
-      "route": null,
+      "route": "/admin/ratelimit",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts"
     },
     {
@@ -2408,143 +1842,14 @@
     },
     {
       "data_sources": [
-        "ai_channel",
-        "ai_site",
-        "ai_site_service"
-      ],
-      "fields": [
-        "id",
-        "channelCode",
-        "channelName",
-        "providerCode",
-        "siteCode",
-        "siteServiceCode",
-        "siteChannelRole",
-        "healthStatus",
-        "status"
-      ],
-      "file_targets": [],
-      "interface": "SiteChannelItem",
-      "route": "/admin/model/sites",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_site",
-        "ai_site_service",
-        "ops_audit_log"
-      ],
-      "fields": [
-        "siteId",
-        "status",
-        "healthStatus",
-        "latencyMs",
-        "checkedAt",
-        "message"
-      ],
-      "file_targets": [],
-      "interface": "SiteConnectionCheckResult",
-      "route": "/admin/model/sites",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_site",
-        "ai_site_service"
-      ],
-      "fields": [
-        "siteName",
-        "displayName",
-        "description",
-        "baseUrl",
-        "websiteUrl",
-        "docsUrl",
-        "logo",
-        "domains",
-        "vendorCodes",
-        "siteType",
-        "ownerKind",
-        "regionCode",
-        "environment",
-        "status",
-        "credentialRef",
-        "maskedLabel"
-      ],
-      "file_targets": [],
-      "interface": "SiteCreateInput",
-      "route": "/admin/model/sites",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_site",
-        "ai_site_service"
-      ],
-      "fields": [
-        "id",
-        "siteCode",
-        "siteName",
-        "displayName",
-        "description",
-        "baseUrl",
-        "websiteUrl",
-        "docsUrl",
-        "logo",
-        "domains",
-        "vendorCodes",
-        "siteType",
-        "ownerKind",
-        "regionCode",
-        "environment",
-        "healthStatus",
-        "lastLatencyMs",
-        "consecutiveErrorCount",
-        "lastCheckedAt",
-        "lastSyncAt",
-        "sortOrder",
-        "status"
-      ],
-      "file_targets": [],
-      "interface": "SiteItem",
-      "route": "/admin/model/sites",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_site",
-        "ai_site_service"
-      ],
-      "fields": [
-        "siteCode",
-        "siteName",
-        "displayName",
-        "description",
-        "baseUrl",
-        "websiteUrl",
-        "docsUrl",
-        "logo",
-        "domains",
-        "vendorCodes",
-        "siteType",
-        "ownerKind",
-        "regionCode",
-        "environment",
-        "status",
-        "credentialRef",
-        "maskedLabel"
-      ],
-      "file_targets": [],
-      "interface": "SiteUpdateInput",
-      "route": "/admin/model/sites",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts"
-    },
-    {
-      "data_sources": [
         "ops_gateway_instance"
       ],
       "fields": [
         "id",
         "name",
+        "deploymentProfile",
+        "baseUrl",
+        "domains",
         "domain",
         "ip",
         "remark",
@@ -2562,19 +1867,10 @@
         "ops_gateway_instance"
       ],
       "fields": [
-        "deleted"
-      ],
-      "file_targets": [],
-      "interface": "ServiceNodeDeleteOutcome",
-      "route": "/admin/service-nodes",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts"
-    },
-    {
-      "data_sources": [
-        "ops_gateway_instance"
-      ],
-      "fields": [
         "name",
+        "deploymentProfile",
+        "baseUrl",
+        "domains",
         "domain",
         "ip",
         "remark",
@@ -2600,9 +1896,24 @@
     },
     {
       "data_sources": [
+        "ai_upstream_account_group"
+      ],
+      "fields": [
+        "id",
+        "code",
+        "name",
+        "rate"
+      ],
+      "file_targets": [],
+      "interface": "AccountGroup",
+      "route": "/console/api-keys",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts"
+    },
+    {
+      "data_sources": [
         "iam_gateway_api_key",
-        "ai_channel_group",
-        "ai_channel_group_metric_snapshot",
+        "ai_upstream_account_group",
+        "ai_upstream_account_group_metric_snapshot",
         "iam_gateway_access_policy",
         "ai_quota_policy",
         "ai_model_pricing",
@@ -2613,9 +1924,8 @@
         "name",
         "displayName",
         "maskedKey",
-        "copyableKey",
-        "channelGroup",
-        "channelGroupName",
+        "accountGroup",
+        "accountGroupName",
         "rate",
         "quota",
         "usedQuota",
@@ -2633,30 +1943,13 @@
     },
     {
       "data_sources": [
-        "ai_channel_group",
-        "ai_channel_group_metric_snapshot",
-        "ai_pricing_plan"
-      ],
-      "fields": [
-        "id",
-        "code",
-        "name",
-        "rate"
-      ],
-      "file_targets": [],
-      "interface": "ChannelGroup",
-      "route": "/console/api-keys",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts"
-    },
-    {
-      "data_sources": [
-        "ai_channel_group",
+        "ai_upstream_account_group",
         "iam_gateway_access_policy",
         "ai_quota_policy"
       ],
       "fields": [
         "name",
-        "channelGroup",
+        "accountGroup",
         "quota",
         "isUnlimitedQuota",
         "modalities",
@@ -2679,9 +1972,8 @@
         "key.name",
         "key.displayName",
         "key.maskedKey",
-        "key.copyableKey",
-        "key.channelGroup",
-        "key.channelGroupName",
+        "key.accountGroup",
+        "key.accountGroupName",
         "key.rate",
         "key.quota",
         "key.usedQuota",
@@ -2771,74 +2063,6 @@
     },
     {
       "data_sources": [
-        "ai_request_trace",
-        "ops_gateway_instance"
-      ],
-      "fields": [
-        "id",
-        "time",
-        "ip",
-        "endpoint",
-        "method",
-        "status",
-        "duration",
-        "channel"
-      ],
-      "file_targets": [],
-      "interface": "GatewayTrace",
-      "route": "/console/gateway",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-gateway/src/gatewayService.ts"
-    },
-    {
-      "data_sources": [],
-      "fields": [
-        "cursor",
-        "pageSize",
-        "q"
-      ],
-      "file_targets": [],
-      "interface": "GatewayTraceListOptions",
-      "route": null,
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-gateway/src/gatewayService.ts"
-    },
-    {
-      "data_sources": [],
-      "fields": [
-        "items",
-        "items.id",
-        "items.time",
-        "items.ip",
-        "items.endpoint",
-        "items.method",
-        "items.status",
-        "items.duration",
-        "items.channel",
-        "pageInfo",
-        "pageInfo.mode",
-        "pageInfo.pageSize",
-        "pageInfo.hasMore",
-        "pageInfo.nextCursor"
-      ],
-      "file_targets": [],
-      "interface": "GatewayTracePage",
-      "route": null,
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-gateway/src/gatewayService.ts"
-    },
-    {
-      "data_sources": [],
-      "fields": [
-        "mode",
-        "pageSize",
-        "hasMore",
-        "nextCursor"
-      ],
-      "file_targets": [],
-      "interface": "GatewayTracePageInfo",
-      "route": null,
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-gateway/src/gatewayService.ts"
-    },
-    {
-      "data_sources": [
         "iam_user_preference",
         "integration_webhook_endpoint",
         "ops_notification_delivery"
@@ -2862,42 +2086,20 @@
         "ai_request_trace",
         "ai_usage",
         "ai_routing_decision_log",
-        "ai_channel_group"
+        "ai_upstream_account_group"
       ],
       "fields": [
-        "id",
-        "requestId",
-        "time",
-        "tokenName",
-        "group",
-        "type",
-        "model",
-        "providerNativeModel",
-        "requestedModelCatalogKey",
-        "regionCode",
-        "status",
-        "httpStatus",
-        "errorCode",
-        "errorType",
-        "errorMessage",
-        "totalTime",
-        "ttft",
-        "isStream",
-        "inputTokens",
-        "cacheReadTokens",
-        "outputTokens",
-        "cost",
-        "multiplier",
-        "baseInputPrice",
-        "baseOutputPrice",
-        "cacheReadPrice",
-        "path",
-        "reasoningEffort",
-        "ip",
-        "userAgent"
+        "items",
+        "pageInfo",
+        "pageInfo.mode",
+        "pageInfo.page",
+        "pageInfo.pageSize",
+        "pageInfo.totalItems",
+        "pageInfo.totalPages",
+        "pageInfo.hasMore"
       ],
       "file_targets": [],
-      "interface": "UsageLog",
+      "interface": "UsageLogPage",
       "route": "/console/usage",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-usage/src/usageService.ts"
     },
@@ -3034,7 +2236,7 @@
     },
     {
       "data_sources": [
-        "ai_channel_group"
+        "ai_upstream_account_group"
       ],
       "fields": [
         "key",
@@ -3047,7 +2249,10 @@
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "ai_model_vendor",
+        "ai_model"
+      ],
       "fields": [
         "total",
         "page",
@@ -3056,7 +2261,22 @@
       ],
       "file_targets": [],
       "interface": "ModelCatalogPageInfo",
-      "route": null,
+      "route": "/models",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts"
+    },
+    {
+      "data_sources": [
+        "ai_model_vendor",
+        "ai_model"
+      ],
+      "fields": [
+        "code",
+        "label",
+        "modelCount"
+      ],
+      "file_targets": [],
+      "interface": "ModelCatalogProvider",
+      "route": "/models",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts"
     },
     {
@@ -3065,8 +2285,8 @@
         "ai_model",
         "ai_model_capability",
         "ai_model_pricing",
-        "ai_channel_group",
-        "ai_channel_group_member"
+        "ai_upstream_account_group",
+        "ai_upstream_account_group_member"
       ],
       "fields": [
         "models",
@@ -3272,6 +2492,7 @@
         "vendorCode",
         "modality",
         "searchQuery",
+        "page",
         "pageSize"
       ],
       "file_targets": [],
@@ -3319,7 +2540,7 @@
     }
   ],
   "summary": {
-    "interface_count": 137,
-    "source_file_count": 26
+    "interface_count": 110,
+    "source_file_count": 24
   }
 }
