@@ -29,7 +29,8 @@ use crate::api::openai_runtime::{
 };
 use crate::api::openai_usage::{
     build_request_trace_command, provider_error_code_from_body, provider_error_message_from_body,
-    provider_error_type_from_body, record_request_trace, OpenAiUsageRecorder,
+    provider_error_type_from_body, provider_usage_plugin_error_from_fault, record_request_trace,
+    OpenAiUsageRecorder,
 };
 use crate::application::{ApiKeySecretHasher, AuthenticatedApiKeyContext};
 use crate::domain::{BillingMeter, ProviderRetryPolicy, RoutingCapability};
@@ -712,7 +713,6 @@ where
             Err(RouteRelayFailure::Terminal(response))
         };
     }
-    notify_route_success(plugins, invocation_context, route, &outcome).await;
     if let Some(usage_recording) = usage_recording {
         if let Err(fault) = usage_recording
             .record_after_success(invocation_context, route, &outcome)
@@ -732,16 +732,12 @@ where
             )
             .await;
             notify_route_fault(plugins, invocation_context, route, &fault).await;
-            let error = OpenAiInvocationPluginError::new(
-                StatusCode::BAD_GATEWAY,
-                "provider_usage_record_failed",
-                "server_error",
-                fault.message,
-            );
+            let error = provider_usage_plugin_error_from_fault(fault);
             notify_error(plugins, invocation_context, Some(route), &error).await;
             return Err(RouteRelayFailure::Terminal(error.into_openai_response()));
         }
     }
+    notify_route_success(plugins, invocation_context, route, &outcome).await;
     notify_after_relay_observers(plugins, invocation_context, route, &outcome).await;
     Ok((status, Json(response.body)).into_response())
 }

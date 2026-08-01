@@ -23,15 +23,15 @@ async fn migration_repairs_legacy_columns_when_0003_history_already_exists() {
         "{}.iam_gateway_api_key_account_group",
         quote_identifier(&context.fallback_schema)
     );
-    sqlx::query(&format!(
+    sqlx::query(sqlx::AssertSqlSafe(format!(
         "CREATE TABLE {fallback_binding_table} (id BIGINT PRIMARY KEY)"
-    ))
+    )))
     .execute(&context.pool)
     .await
     .unwrap();
-    sqlx::query(&format!(
+    sqlx::query(sqlx::AssertSqlSafe(format!(
         "INSERT INTO {fallback_binding_table} (id) VALUES (999)"
-    ))
+    )))
     .execute(&context.pool)
     .await
     .unwrap();
@@ -101,17 +101,18 @@ async fn migration_repairs_legacy_columns_when_0003_history_already_exists() {
         decision.get::<Option<i64>, _>("selected_credential_id")
     );
 
-    let fallback_decoy_id =
-        sqlx::query_scalar::<_, i64>(&format!("SELECT id FROM {fallback_binding_table}"))
-            .fetch_one(&context.pool)
-            .await
-            .unwrap();
+    let fallback_decoy_id = sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(format!(
+        "SELECT id FROM {fallback_binding_table}"
+    )))
+    .fetch_one(&context.pool)
+    .await
+    .unwrap();
     assert_eq!(999_i64, fallback_decoy_id);
 
     for table in ["ai_request_trace", "ai_usage"] {
-        let row = sqlx::query(&format!(
+        let row = sqlx::query(sqlx::AssertSqlSafe(format!(
             "SELECT supplier_id, account_id FROM {table} WHERE id = 1"
-        ))
+        )))
         .fetch_one(&context.pool)
         .await
         .unwrap();
@@ -161,14 +162,18 @@ impl PostgresMigrationTestContext {
             .connect(&database_url)
             .await
             .unwrap();
-        sqlx::query(&format!("CREATE SCHEMA {quoted_schema}"))
-            .execute(&admin_pool)
-            .await
-            .unwrap();
-        sqlx::query(&format!("CREATE SCHEMA {quoted_fallback_schema}"))
-            .execute(&admin_pool)
-            .await
-            .unwrap();
+        sqlx::query(sqlx::AssertSqlSafe(format!(
+            "CREATE SCHEMA {quoted_schema}"
+        )))
+        .execute(&admin_pool)
+        .await
+        .unwrap();
+        sqlx::query(sqlx::AssertSqlSafe(format!(
+            "CREATE SCHEMA {quoted_fallback_schema}"
+        )))
+        .execute(&admin_pool)
+        .await
+        .unwrap();
         admin_pool.close().await;
 
         let schema_for_connections = schema.clone();
@@ -179,11 +184,11 @@ impl PostgresMigrationTestContext {
                 let schema = schema_for_connections.clone();
                 let fallback_schema = fallback_schema_for_connections.clone();
                 Box::pin(async move {
-                    sqlx::query(&format!(
+                    sqlx::query(sqlx::AssertSqlSafe(format!(
                         "SET search_path TO {}, {}",
                         quote_identifier(&schema),
                         quote_identifier(&fallback_schema)
-                    ))
+                    )))
                     .execute(&mut *connection)
                     .await?;
                     Ok(())
@@ -214,17 +219,17 @@ impl PostgresMigrationTestContext {
             .connect(&database_url)
             .await
             .unwrap();
-        sqlx::query(&format!(
+        sqlx::query(sqlx::AssertSqlSafe(format!(
             "DROP SCHEMA IF EXISTS {} CASCADE",
             quote_identifier(&schema)
-        ))
+        )))
         .execute(&admin_pool)
         .await
         .unwrap();
-        sqlx::query(&format!(
+        sqlx::query(sqlx::AssertSqlSafe(format!(
             "DROP SCHEMA IF EXISTS {} CASCADE",
             quote_identifier(&fallback_schema)
-        ))
+        )))
         .execute(&admin_pool)
         .await
         .unwrap();

@@ -162,7 +162,7 @@ async fn list_providers(
     query: ListAdminStorageRecordsQuery,
 ) -> DomainResult<AdminStorageCollection> {
     let status_label = resource_status_label_sql("p.status");
-    let rows = sqlx::query(&format!(
+    let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
         r#"
         SELECT
             CAST(p.id AS TEXT) AS id,
@@ -188,7 +188,7 @@ async fn list_providers(
         ORDER BY p.id DESC
         LIMIT $5
         "#
-    ))
+    )))
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
@@ -377,7 +377,7 @@ async fn list_buckets(
     query: ListAdminStorageRecordsQuery,
 ) -> DomainResult<AdminStorageCollection> {
     let status_label = resource_status_label_sql("b.status");
-    let rows = sqlx::query(&format!(
+    let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
         r#"
         SELECT
             CAST(b.id AS TEXT) AS id,
@@ -415,7 +415,7 @@ async fn list_buckets(
         ORDER BY b.id DESC
         LIMIT $6
         "#
-    ))
+    )))
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
@@ -559,7 +559,7 @@ async fn list_default_buckets(
     query: ListAdminStorageRecordsQuery,
 ) -> DomainResult<AdminStorageCollection> {
     let status_label = resource_status_label_sql("d.status");
-    let rows = sqlx::query(&format!(
+    let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
         r#"
         SELECT
             CAST(d.id AS TEXT) AS id,
@@ -589,7 +589,7 @@ async fn list_default_buckets(
         ORDER BY d.id DESC
         LIMIT $6
         "#
-    ))
+    )))
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
@@ -673,7 +673,7 @@ async fn list_quota_policies(
     query: ListAdminStorageRecordsQuery,
 ) -> DomainResult<AdminStorageCollection> {
     let status_label = resource_status_label_sql("q.status");
-    let rows = sqlx::query(&format!(
+    let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
         r#"
         SELECT
             CAST(q.id AS TEXT) AS id,
@@ -701,7 +701,7 @@ async fn list_quota_policies(
         ORDER BY q.id DESC
         LIMIT $7
         "#
-    ))
+    )))
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
@@ -896,7 +896,7 @@ async fn list_reconciliation_runs(
     query: ListAdminStorageRecordsQuery,
 ) -> DomainResult<AdminStorageCollection> {
     let status_label = job_status_label_sql("r.status");
-    let rows = sqlx::query(&format!(
+    let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
         r#"
         SELECT
             CAST(r.id AS TEXT) AS id,
@@ -930,7 +930,7 @@ async fn list_reconciliation_runs(
         ORDER BY r.id DESC
         LIMIT $6
         "#
-    ))
+    )))
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
@@ -1021,7 +1021,7 @@ async fn list_gc_jobs(
     query: ListAdminStorageRecordsQuery,
 ) -> DomainResult<AdminStorageCollection> {
     let status_label = job_status_label_sql("g.status");
-    let rows = sqlx::query(&format!(
+    let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
         r#"
         SELECT
             CAST(g.id AS TEXT) AS id,
@@ -1041,7 +1041,7 @@ async fn list_gc_jobs(
         ORDER BY g.id DESC
         LIMIT $5
         "#
-    ))
+    )))
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
@@ -1196,12 +1196,12 @@ fn find_loaded_record(
 
 async fn existing_idempotent_id(
     pool: &PgPool,
-    table: &str,
+    table: &'static str,
     tenant_id: i64,
     organization_id: i64,
     idempotency_key: &str,
 ) -> DomainResult<Option<i64>> {
-    sqlx::query_scalar(&format!(
+    sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
         r#"
         SELECT id
         FROM {table}
@@ -1210,7 +1210,7 @@ async fn existing_idempotent_id(
           AND idempotency_key = $3
         LIMIT 1
         "#
-    ))
+    )))
     .bind(tenant_id)
     .bind(organization_id)
     .bind(idempotency_key)

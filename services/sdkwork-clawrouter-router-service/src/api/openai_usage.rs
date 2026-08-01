@@ -101,10 +101,8 @@ where
             return Ok(());
         }
         let body = outcome.response_body.as_ref().ok_or_else(|| {
-            OpenAiInvocationPluginError::new(
-                StatusCode::BAD_GATEWAY,
-                "provider_usage_record_failed",
-                "server_error",
+            provider_usage_missing_error(
+                context.endpoint,
                 format!(
                     "provider {} response body is missing for usage recording",
                     endpoint_label(context.endpoint)
@@ -112,7 +110,13 @@ where
             )
         })?;
         if body.get("usage").filter(|usage| !usage.is_null()).is_none() {
-            observe_provider_usage_missing(context.endpoint, false);
+            return Err(provider_usage_missing_error(
+                context.endpoint,
+                format!(
+                    "provider {} response is missing usage",
+                    endpoint_label(context.endpoint)
+                ),
+            ));
         }
         let usage =
             usage_from_response(context.endpoint, body).map_err(provider_usage_record_error)?;
@@ -142,7 +146,13 @@ where
     ) -> Result<(), OpenAiInvocationFault> {
         self.record_after_relay(context, route, outcome)
             .await
-            .map_err(|error| OpenAiInvocationFault::usage_recording(error.message))
+            .map_err(|error| {
+                if error.code == "provider_usage_missing" {
+                    OpenAiInvocationFault::provider_usage_missing(error.message)
+                } else {
+                    OpenAiInvocationFault::usage_recording(error.message)
+                }
+            })
     }
 }
 
@@ -901,6 +911,30 @@ pub(crate) fn provider_usage_record_error(error: DomainError) -> OpenAiInvocatio
     )
 }
 
+pub(crate) fn provider_usage_plugin_error_from_fault(
+    fault: OpenAiInvocationFault,
+) -> OpenAiInvocationPluginError {
+    let code = if fault.error_code == "provider_usage_missing" {
+        "provider_usage_missing"
+    } else {
+        "provider_usage_record_failed"
+    };
+    OpenAiInvocationPluginError::new(StatusCode::BAD_GATEWAY, code, "server_error", fault.message)
+}
+
+fn provider_usage_missing_error(
+    endpoint: OpenAiInvocationEndpoint,
+    message: impl Into<String>,
+) -> OpenAiInvocationPluginError {
+    observe_provider_usage_missing(endpoint, false);
+    OpenAiInvocationPluginError::new(
+        StatusCode::BAD_GATEWAY,
+        "provider_usage_missing",
+        "server_error",
+        message,
+    )
+}
+
 pub(crate) fn observe_provider_usage_missing(endpoint: OpenAiInvocationEndpoint, streaming: bool) {
     provider_usage_missing_counter()
         .with_label_values(&[
@@ -916,10 +950,9 @@ fn provider_usage_missing_counter() -> prometheus::IntCounterVec {
         .get_or_init(|| {
             let metric = prometheus::IntCounterVec::new(
                 prometheus::Opts::new(
-                    "gateway_missing_usage_total",
+                    "clawrouter_gateway_missing_usage_total",
                     "Successful provider responses missing required usage facts.",
-                )
-                .namespace("clawrouter"),
+                ),
                 &["endpoint", "streaming"],
             )
             .expect("provider missing usage metric");

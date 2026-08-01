@@ -42,7 +42,7 @@ impl AppChatStore for PostgresAppChatStore {
                 "#,
                 true,
             );
-            let rows = sqlx::query(&sql)
+            let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
                 .bind(subject.tenant_id)
                 .bind(subject.organization_id)
                 .bind(subject.user_id)
@@ -83,7 +83,7 @@ impl AppChatStore for PostgresAppChatStore {
                 "#,
                 false,
             );
-            let row = sqlx::query(&sql)
+            let row = sqlx::query(sqlx::AssertSqlSafe(sql))
                 .bind(subject.tenant_id)
                 .bind(subject.organization_id)
                 .bind(subject.user_id)
@@ -1957,7 +1957,7 @@ async fn insert_item(
     .map_err(sql_error)
 }
 
-fn conversation_select_sql(extra: &str, include_total: bool) -> String {
+fn conversation_select_sql(extra: &'static str, include_total: bool) -> String {
     let total_expr = if include_total {
         ", COUNT(*) OVER() AS total"
     } else {

@@ -42,7 +42,7 @@ Day-2 operations, capacity, and change-management runbooks.
 | Production operations (health, shutdown, password rate limit, supply chain) | [../../deployments/runbooks/production-operations.md](../../deployments/runbooks/production-operations.md) | P0 | Historical date only; no current-candidate evidence |
 | Database migration rollback (Flyway down / PITR) | [database-migration-rollback.md](database-migration-rollback.md) | P1 | Historical date only; no current-candidate evidence |
 | Rate limit / circuit break tuning | [rate-limit-circuit-break.md](rate-limit-circuit-break.md) | P1 | Historical date only; no current-candidate evidence |
-| HTTP/SLO, metrics, readiness, memory, and OOM alerts | [observability-alert-response.md](observability-alert-response.md) | P0/P1 | Not executed for current candidate |
+| HTTP/SLO, accounting integrity, metrics, readiness, memory, and OOM alerts | [observability-alert-response.md](observability-alert-response.md) | P0/P1 | Not executed for current candidate |
 
 ### Security (安全)
 

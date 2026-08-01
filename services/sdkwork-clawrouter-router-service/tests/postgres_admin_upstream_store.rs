@@ -455,10 +455,12 @@ impl PostgresTestContext {
             .connect(&database_url)
             .await
             .expect("connect PostgreSQL admin pool");
-        sqlx::query(&format!("CREATE SCHEMA {quoted_schema}"))
-            .execute(&admin_pool)
-            .await
-            .expect("create test schema");
+        sqlx::query(sqlx::AssertSqlSafe(format!(
+            "CREATE SCHEMA {quoted_schema}"
+        )))
+        .execute(&admin_pool)
+        .await
+        .expect("create test schema");
         admin_pool.close().await;
 
         let schema_for_connections = schema.clone();
@@ -467,9 +469,12 @@ impl PostgresTestContext {
             .after_connect(move |connection, _metadata| {
                 let schema = schema_for_connections.clone();
                 Box::pin(async move {
-                    sqlx::query(&format!("SET search_path TO {}", quote_identifier(&schema)))
-                        .execute(&mut *connection)
-                        .await?;
+                    sqlx::query(sqlx::AssertSqlSafe(format!(
+                        "SET search_path TO {}",
+                        quote_identifier(&schema)
+                    )))
+                    .execute(&mut *connection)
+                    .await?;
                     Ok(())
                 })
             })
@@ -503,10 +508,10 @@ impl PostgresTestContext {
             .connect(&self.database_url)
             .await
             .expect("reconnect PostgreSQL admin pool");
-        sqlx::query(&format!(
+        sqlx::query(sqlx::AssertSqlSafe(format!(
             "DROP SCHEMA IF EXISTS {} CASCADE",
             quote_identifier(&self.schema)
-        ))
+        )))
         .execute(&admin_pool)
         .await
         .expect("drop test schema");

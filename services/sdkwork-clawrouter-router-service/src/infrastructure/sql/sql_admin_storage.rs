@@ -1,4 +1,4 @@
-pub(crate) fn resource_status_label_sql(column: &str) -> String {
+pub(crate) fn resource_status_label_sql(column: &'static str) -> String {
     format!(
         "CASE LOWER(CAST({column} AS TEXT)) \
          WHEN '1' THEN 'active' \
@@ -8,7 +8,7 @@ pub(crate) fn resource_status_label_sql(column: &str) -> String {
     )
 }
 
-pub(crate) fn job_status_label_sql(column: &str) -> String {
+pub(crate) fn job_status_label_sql(column: &'static str) -> String {
     format!(
         "CASE LOWER(CAST({column} AS TEXT)) \
          WHEN '1' THEN 'created' \

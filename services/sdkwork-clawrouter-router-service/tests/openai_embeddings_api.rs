@@ -812,7 +812,7 @@ async fn openai_embeddings_rejects_usage_recording_when_success_response_omits_u
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(
-        "provider_usage_record_failed",
+        "provider_usage_missing",
         payload["error"]["code"].as_str().unwrap()
     );
     assert!(usage_captured.lock().unwrap().is_empty());

@@ -20,6 +20,7 @@ RUNBOOK_URL = (
 )
 
 RUNTIME_METRICS = {
+    "clawrouter_gateway_missing_usage_total",
     "sdkwork_http_requests_labeled_total",
     "sdkwork_http_request_duration_seconds_bucket",
     "sdkwork_http_metric_series_dropped_total",
@@ -32,7 +33,7 @@ EXTERNAL_METRICS = {
     "kube_pod_container_status_last_terminated_reason",
 }
 METRIC_REFERENCE = re.compile(
-    r"\b(?:sdkwork|http|container|kube)_[a-z0-9_]+"
+    r"\b(?:clawrouter|sdkwork|http|container|kube)_[a-z0-9_]+"
     r"(?:_total|_bucket|_bytes|_reason)\b|\bup\b"
 )
 
@@ -65,6 +66,7 @@ class ObservabilityRuntimeContractTest(unittest.TestCase):
         references = set(METRIC_REFERENCE.findall("\n".join(expressions)))
         self.assertEqual(
             {
+                "clawrouter_gateway_missing_usage_total",
                 "sdkwork_http_requests_labeled_total",
                 "sdkwork_http_request_duration_seconds_bucket",
             },
@@ -112,7 +114,15 @@ class ObservabilityRuntimeContractTest(unittest.TestCase):
         claw_metrics = (
             ROOT / "crates" / "sdkwork-claw-http" / "src" / "metrics.rs"
         ).read_text(encoding="utf-8")
-        runtime_source = framework_metrics + claw_metrics
+        router_metrics = (
+            ROOT
+            / "services"
+            / "sdkwork-clawrouter-router-service"
+            / "src"
+            / "api"
+            / "openai_usage.rs"
+        ).read_text(encoding="utf-8")
+        runtime_source = framework_metrics + claw_metrics + router_metrics
         for metric in RUNTIME_METRICS:
             with self.subTest(metric=metric):
                 self.assertIn(metric, runtime_source)
@@ -121,6 +131,8 @@ class ObservabilityRuntimeContractTest(unittest.TestCase):
         self.assertNotIn("operationId=", framework_metrics)
         self.assertIn("REQUEST_SERIES_SHARDS: usize = 64", framework_metrics)
         self.assertIn("DEFAULT_MAX_LABELED_REQUEST_SERIES: usize = 4_096", framework_metrics)
+        self.assertIn('&["endpoint", "streaming"]', router_metrics)
+        self.assertNotIn("tenant_id", router_metrics[router_metrics.index("provider_usage_missing_counter"):])
 
     def test_kubernetes_scrape_ports_match_process_bind_contracts(self) -> None:
         root = ROOT / "deployments" / "kubernetes"
@@ -140,6 +152,8 @@ class ObservabilityRuntimeContractTest(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertIn("sdkwork_http_requests_labeled_total", runbook)
+        self.assertIn("clawrouter_gateway_missing_usage_total", runbook)
+        self.assertIn("provider_usage_missing", runbook)
         self.assertIn("OOMKilled", runbook)
         self.assertIn(RUNBOOK.name, index)
 

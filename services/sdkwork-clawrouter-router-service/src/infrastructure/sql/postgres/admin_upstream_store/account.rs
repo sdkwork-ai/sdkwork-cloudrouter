@@ -96,7 +96,7 @@ pub(super) async fn list(
         LIMIT $4 OFFSET $5
         "#
     );
-    let rows = sqlx::query(&sql)
+    let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(query.subject.tenant_id)
         .bind(query.subject.organization_id)
         .bind(pattern.as_deref())
@@ -134,7 +134,7 @@ pub(super) async fn get(
           AND account.id = $3 AND account.deleted_at IS NULL
         "#
     );
-    sqlx::query(&sql)
+    sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(account_id)
@@ -316,7 +316,7 @@ pub(super) async fn list_credentials(
         LIMIT $5 OFFSET $6
         "#
     );
-    let rows = sqlx::query(&sql)
+    let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(query.subject.tenant_id)
         .bind(query.subject.organization_id)
         .bind(account_id)
@@ -955,7 +955,7 @@ async fn get_in_transaction(
           AND account.id = $3 AND account.deleted_at IS NULL
         "#
     );
-    sqlx::query(&sql)
+    sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(account_id)
@@ -980,7 +980,7 @@ async fn get_credential_in_transaction(
           AND account_id = $3 AND id = $4 AND deleted_at IS NULL
         "#
     );
-    sqlx::query(&sql)
+    sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(account_id)

@@ -235,7 +235,7 @@ async fn list_firewall_rules(
         LIMIT $5 OFFSET $6
         "#,
     );
-    let rows = sqlx::query(&sql)
+    let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(query.subject.tenant_id)
         .bind(query.subject.organization_id)
         .bind(FIREWALL_RULE_CATEGORY)
@@ -451,7 +451,7 @@ async fn load_firewall_rule_by_id(
         LIMIT 1
         "#,
     );
-    let row = sqlx::query(&sql)
+    let row = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(id)
         .bind(tenant_id)
         .bind(organization_id)
@@ -533,7 +533,7 @@ async fn insert_audit_log(
     Ok(())
 }
 
-fn firewall_rule_select_sql(predicate: &str) -> String {
+fn firewall_rule_select_sql(predicate: &'static str) -> String {
     format!(
         r#"
         SELECT

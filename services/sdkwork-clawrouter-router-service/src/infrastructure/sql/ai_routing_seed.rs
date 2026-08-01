@@ -1526,7 +1526,10 @@ async fn postgres_resource_group_item_count(
     Ok(row.get::<i64, _>("count"))
 }
 
-async fn postgres_string_set(pool: &PgPool, query: &str) -> Result<BTreeSet<String>, sqlx::Error> {
+async fn postgres_string_set(
+    pool: &PgPool,
+    query: &'static str,
+) -> Result<BTreeSet<String>, sqlx::Error> {
     let rows = sqlx::query(query).fetch_all(pool).await?;
     Ok(rows
         .into_iter()

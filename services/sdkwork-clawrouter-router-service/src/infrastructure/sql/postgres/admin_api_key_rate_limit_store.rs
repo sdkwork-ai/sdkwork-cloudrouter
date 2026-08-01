@@ -146,7 +146,7 @@ async fn list_api_key_rate_limits(
         LIMIT $5 OFFSET $6
         "#,
     );
-    let rows = sqlx::query(&sql)
+    let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(query.subject.tenant_id)
         .bind(query.subject.organization_id)
         .bind(API_KEY_SUBJECT_TYPE)
@@ -398,7 +398,7 @@ async fn load_api_key_rate_limit_by_id(
         LIMIT 1
         "#,
     );
-    let row = sqlx::query(&sql)
+    let row = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(id)
         .bind(tenant_id)
         .bind(organization_id)
@@ -481,7 +481,7 @@ async fn insert_audit_log(
     Ok(())
 }
 
-fn api_key_rate_limit_select_sql(predicate: &str) -> String {
+fn api_key_rate_limit_select_sql(predicate: &'static str) -> String {
     format!(
         r#"
         SELECT

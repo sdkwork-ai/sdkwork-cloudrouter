@@ -1664,7 +1664,7 @@ async fn list_recharge_packages(
         limit_bind + 1
     ));
 
-    let mut query_builder = sqlx::query(&sql)
+    let mut query_builder = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(query.subject.tenant_id)
         .bind(query.subject.organization_id);
     if let Some(status) = query.status {

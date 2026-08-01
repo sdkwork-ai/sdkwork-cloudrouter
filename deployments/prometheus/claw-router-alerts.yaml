@@ -215,6 +215,20 @@ groups:
           description: "Traffic is present, but no non-5xx response has been observed for 5 minutes."
           runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
+  - name: clawrouter-accounting-integrity
+    interval: 30s
+    rules:
+      - alert: ClawRouterProviderUsageMissing
+        expr: sum(increase(clawrouter_gateway_missing_usage_total[5m])) > 0
+        for: 1m
+        labels:
+          severity: critical
+          category: accounting-integrity
+        annotations:
+          summary: "A successful provider response omitted required usage"
+          description: "At least one provider response could not produce an authoritative usage fact. The request trace requires reconciliation; zero usage must not be inferred."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"
+
   - name: clawrouter-infrastructure
     interval: 30s
     rules:

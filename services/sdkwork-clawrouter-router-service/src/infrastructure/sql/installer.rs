@@ -631,7 +631,9 @@ async fn postgres_string_values(
     column: &'static str,
 ) -> Result<BTreeSet<String>, sqlx::Error> {
     let query = format!("SELECT DISTINCT {column} AS value FROM {table}");
-    let rows = sqlx::query(&query).fetch_all(pool).await?;
+    let rows = sqlx::query(sqlx::AssertSqlSafe(query))
+        .fetch_all(pool)
+        .await?;
     Ok(rows
         .into_iter()
         .filter_map(|row| row.try_get::<String, _>("value").ok())

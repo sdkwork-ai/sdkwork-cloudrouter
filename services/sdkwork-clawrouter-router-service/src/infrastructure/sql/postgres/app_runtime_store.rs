@@ -45,7 +45,7 @@ impl AppRuntimeStore for PostgresAppRuntimeStore {
                 "#,
                 true,
             );
-            let rows = sqlx::query(&sql)
+            let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
                 .bind(subject.tenant_id)
                 .bind(subject.organization_id)
                 .bind(subject.user_id)
@@ -794,7 +794,7 @@ async fn load_invocation_row_by_uuid(
     invocation_id: &str,
 ) -> DomainResult<Option<sqlx::postgres::PgRow>> {
     let sql = invocation_select_sql("AND uuid = $4 LIMIT 1", false);
-    sqlx::query(&sql)
+    sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(subject.user_id)
@@ -810,7 +810,7 @@ async fn load_invocation_row_by_uuid_for_update_in_tx(
     invocation_id: &str,
 ) -> DomainResult<Option<sqlx::postgres::PgRow>> {
     let sql = invocation_select_sql("AND uuid = $4 LIMIT 1 FOR UPDATE", false);
-    sqlx::query(&sql)
+    sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(subject.user_id)
@@ -1087,7 +1087,7 @@ async fn validate_context_agent_step(
         .ok_or_else(|| DomainError::not_found("agent run step was not found"))
 }
 
-fn invocation_select_sql(extra: &str, include_total: bool) -> String {
+fn invocation_select_sql(extra: &'static str, include_total: bool) -> String {
     let total_expr = if include_total {
         ", COUNT(*) OVER() AS total"
     } else {

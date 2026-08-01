@@ -7,9 +7,9 @@ Specs: `OBSERVABILITY_SPEC.md`, `HEALTH_CHECK_SPEC.md`, `DOCUMENTATION_SPEC.md`
 
 ## Scope
 
-Use this runbook for HTTP availability burn, control-plane latency, scrape loss,
-readiness failure, bounded metric-series saturation, high container memory, and
-OOMKilled alerts emitted by
+Use this runbook for HTTP availability burn, control-plane latency, provider
+usage integrity, scrape loss, readiness failure, bounded metric-series
+saturation, high container memory, and OOMKilled alerts emitted by
 [`deployments/prometheus/claw-router-alerts.yaml`](../../deployments/prometheus/claw-router-alerts.yaml).
 The alert rules operate on runtime metrics exposed by `GET /metrics`; metrics
 are operational projections and are never billing or audit authorities.
@@ -65,6 +65,27 @@ are operational projections and are never billing or audit authorities.
   bounded code, never a larger unreviewed cardinality ceiling.
 - Treat any credential, raw tenant/user/request identifier, signed URL, prompt,
   or object key in a metric label as a security incident.
+
+## Missing Provider Usage
+
+- `clawrouter_gateway_missing_usage_total` is a low-cardinality counter grouped
+  only by the fixed OpenAI endpoint and streaming mode. Any increase means a
+  successful provider response omitted the usage facts required for billing.
+- Locate the persisted request trace with `provider_error_code` equal to
+  `provider_usage_missing`, then correlate its `traceId` with redacted runtime
+  logs. Use the trace to identify the supplier and account; never add account,
+  tenant, user, request, or trace identifiers to metric labels.
+- Confirm the outbound streaming request forced
+  `stream_options.include_usage=true`. If it did, quarantine or de-prioritize
+  the non-conforming provider route and compare the raw provider protocol only
+  inside an approved restricted evidence store.
+- Do not create a zero-token usage row, zero-value settlement, or synthetic
+  provider usage event. Mark the invocation for reconciliation and compare it
+  with the provider statement. Where a funds reservation exists, retain it
+  until an explicit, durable reconciliation result is available.
+- Resolve only after the faulty route is contained, the reconciliation owner is
+  recorded, and the counter remains unchanged for two complete alert windows
+  under representative traffic.
 
 ## Memory And OOM
 

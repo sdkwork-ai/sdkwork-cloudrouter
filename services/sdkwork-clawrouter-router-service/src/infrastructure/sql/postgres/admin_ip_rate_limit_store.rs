@@ -143,7 +143,7 @@ async fn list_ip_rate_limits(
         LIMIT $7 OFFSET $8
         "#,
     );
-    let rows = sqlx::query(&sql)
+    let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(query.subject.tenant_id)
         .bind(query.subject.organization_id)
         .bind(RATE_LIMIT_RULE_CATEGORY)
@@ -345,7 +345,7 @@ async fn load_ip_rate_limit_by_id(
         LIMIT 1
         "#,
     );
-    let row = sqlx::query(&sql)
+    let row = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(id)
         .bind(tenant_id)
         .bind(organization_id)
@@ -430,7 +430,7 @@ async fn insert_audit_log(
     Ok(())
 }
 
-fn ip_rate_limit_select_sql(predicate: &str) -> String {
+fn ip_rate_limit_select_sql(predicate: &'static str) -> String {
     format!(
         r#"
         SELECT

@@ -34,8 +34,9 @@ use crate::api::openai_runtime::{
 use crate::api::openai_usage::{
     build_request_trace_command, build_usage_record_command_builder, chat_usage_billing_profile,
     chat_usage_from_stream_event, observe_provider_usage_missing, provider_error_code_from_body,
-    provider_error_message_from_body, provider_error_type_from_body, record_request_trace,
-    GatewayUsageRecordCommandBuilder, OpenAiTokenUsage, OpenAiUsageRecorder,
+    provider_error_message_from_body, provider_error_type_from_body,
+    provider_usage_plugin_error_from_fault, record_request_trace, GatewayUsageRecordCommandBuilder,
+    OpenAiTokenUsage, OpenAiUsageRecorder,
 };
 use crate::application::ApiKeySecretHasher;
 use crate::domain::{BillingMeter, ProviderRetryPolicy, RoutingCapability};
@@ -46,6 +47,7 @@ use crate::ports::{
 };
 
 const MAX_STREAM_USAGE_EVENT_BUFFER_BYTES: usize = 256 * 1024;
+const MAX_SSE_EVENT_DELIMITER_BYTES: usize = 4;
 const PROVIDER_STREAM_USAGE_MISSING_MESSAGE: &str =
     "provider streaming chat completion response is missing terminal usage";
 
@@ -1257,7 +1259,6 @@ where
             Err(RouteRelayFailure::Terminal(response))
         };
     }
-    notify_route_success(plugins, invocation_context, route, &relay_outcome).await;
     if let Some(usage_recording) = usage_recording {
         if let Err(fault) = usage_recording
             .record_after_success(invocation_context, route, &relay_outcome)
@@ -1277,16 +1278,12 @@ where
             )
             .await;
             notify_route_fault(plugins, invocation_context, route, &fault).await;
-            let error = OpenAiInvocationPluginError::new(
-                StatusCode::BAD_GATEWAY,
-                "provider_usage_record_failed",
-                "server_error",
-                fault.message,
-            );
+            let error = provider_usage_plugin_error_from_fault(fault);
             notify_error(plugins, invocation_context, Some(route), &error).await;
             return Err(RouteRelayFailure::Terminal(error.into_openai_response()));
         }
     }
+    notify_route_success(plugins, invocation_context, route, &relay_outcome).await;
     notify_after_relay_observers(plugins, invocation_context, route, &relay_outcome).await;
     Ok((status, Json(response.body)).into_response())
 }
@@ -1299,7 +1296,7 @@ struct StreamingUsageRecordingBody {
     invocation_context: OpenAiInvocationContext,
     route: ResolvedOpenAiUpstreamRoute,
     relay_outcome: OpenAiInvocationRelayOutcome,
-    event_buffer: String,
+    event_buffer: Vec<u8>,
     usage: Option<OpenAiTokenUsage>,
     recording: Option<GatewayUsageRecordFuture<'static>>,
     recording_is_trace_only: bool,
@@ -1327,7 +1324,7 @@ impl StreamingUsageRecordingBody {
             invocation_context,
             route,
             relay_outcome,
-            event_buffer: String::new(),
+            event_buffer: Vec::new(),
             usage: None,
             recording: None,
             recording_is_trace_only: false,
@@ -1339,24 +1336,70 @@ impl StreamingUsageRecordingBody {
     }
 
     fn observe_chunk(&mut self, chunk: &Bytes) {
-        if self.event_buffer.len().saturating_add(chunk.len()) > MAX_STREAM_USAGE_EVENT_BUFFER_BYTES
-        {
-            self.event_buffer.clear();
-            self.terminal_error = Some(format!(
-                "provider streaming usage event exceeds {MAX_STREAM_USAGE_EVENT_BUFFER_BYTES} bytes"
-            ));
+        if self.terminal_error.is_some() {
             return;
         }
-        let text = String::from_utf8_lossy(chunk);
-        self.event_buffer.push_str(&text);
-        while let Some((boundary, boundary_len)) = next_sse_event_boundary(&self.event_buffer) {
-            let event = self.event_buffer[..boundary].to_owned();
-            self.event_buffer.drain(..boundary + boundary_len);
-            self.observe_event(&event);
+        let maximum_probe_bytes =
+            MAX_STREAM_USAGE_EVENT_BUFFER_BYTES + MAX_SSE_EVENT_DELIMITER_BYTES;
+        let mut remaining = chunk.as_ref();
+        while !remaining.is_empty() {
+            let available = maximum_probe_bytes.saturating_sub(self.event_buffer.len());
+            if available == 0 {
+                self.reject_oversized_event();
+                return;
+            }
+            let take = available.min(remaining.len());
+            self.event_buffer.extend_from_slice(&remaining[..take]);
+            remaining = &remaining[take..];
+            self.observe_buffered_events();
+            if self.terminal_error.is_some() {
+                return;
+            }
+            if self.event_buffer.len() > MAX_STREAM_USAGE_EVENT_BUFFER_BYTES {
+                self.reject_oversized_event();
+                return;
+            }
         }
     }
 
-    fn observe_event(&mut self, event: &str) {
+    fn observe_buffered_events(&mut self) {
+        let mut consumed = 0;
+        while let Some((boundary, boundary_len)) =
+            next_sse_event_boundary(&self.event_buffer[consumed..])
+        {
+            if boundary > MAX_STREAM_USAGE_EVENT_BUFFER_BYTES {
+                self.reject_oversized_event();
+                return;
+            }
+            let event_end = consumed + boundary;
+            let event = self.event_buffer[consumed..event_end].to_vec();
+            consumed = event_end + boundary_len;
+            self.observe_event(&event);
+            if self.terminal_error.is_some() {
+                self.event_buffer.clear();
+                return;
+            }
+        }
+        if consumed > 0 {
+            let retained = self.event_buffer.len() - consumed;
+            self.event_buffer.copy_within(consumed.., 0);
+            self.event_buffer.truncate(retained);
+        }
+    }
+
+    fn reject_oversized_event(&mut self) {
+        self.event_buffer.clear();
+        self.terminal_error = Some(format!(
+            "provider streaming usage event exceeds {MAX_STREAM_USAGE_EVENT_BUFFER_BYTES} bytes"
+        ));
+    }
+
+    fn observe_event(&mut self, event: &[u8]) {
+        let Ok(event) = std::str::from_utf8(event) else {
+            self.terminal_error =
+                Some("provider streaming usage event contains invalid UTF-8".to_owned());
+            return;
+        };
         let data = event
             .lines()
             .filter_map(|line| line.strip_prefix("data:"))
@@ -1396,6 +1439,10 @@ impl StreamingUsageRecordingBody {
                 streaming = true,
                 error_code = "provider_usage_missing",
                 reconciliation_required = true,
+                supplier_code = %self.route.supplier_code,
+                account_id = self.route.account_id,
+                request_id = %self.invocation_context.request_id,
+                trace_id = self.invocation_context.trace_id.as_deref().unwrap_or_default(),
                 "{PROVIDER_STREAM_USAGE_MISSING_MESSAGE}"
             );
             let command = command_builder
@@ -1572,11 +1619,17 @@ impl StreamingUsageRecordingBody {
     }
 }
 
-fn next_sse_event_boundary(buffer: &str) -> Option<(usize, usize)> {
-    [("\r\n\r\n", 4_usize), ("\n\n", 2_usize), ("\r\r", 2_usize)]
-        .into_iter()
-        .filter_map(|(needle, len)| buffer.find(needle).map(|index| (index, len)))
-        .min_by_key(|(index, _)| *index)
+fn next_sse_event_boundary(buffer: &[u8]) -> Option<(usize, usize)> {
+    (0..buffer.len()).find_map(|index| {
+        let suffix = &buffer[index..];
+        if suffix.starts_with(b"\r\n\r\n") {
+            Some((index, 4))
+        } else if suffix.starts_with(b"\n\n") || suffix.starts_with(b"\r\r") {
+            Some((index, 2))
+        } else {
+            None
+        }
+    })
 }
 
 impl HttpBody for StreamingUsageRecordingBody {

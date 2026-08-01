@@ -33,7 +33,7 @@ pub(super) async fn list(
         LIMIT {MAX_NESTED_ITEMS}
         "#
     );
-    let rows = sqlx::query(&sql)
+    let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(supplier_id)
@@ -219,7 +219,7 @@ async fn list_in_transaction(
         LIMIT {MAX_NESTED_ITEMS}
         "#
     );
-    let rows = sqlx::query(&sql)
+    let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(supplier_id)

@@ -2192,22 +2192,25 @@ impl ChatCompletionRelay for FailingPrimaryRelay {
 #[derive(Debug)]
 struct RecordingStreamRelay {
     captured: Arc<Mutex<Vec<ChatCompletionRelayRequest>>>,
-    body: &'static str,
+    body: String,
 }
 
 impl RecordingStreamRelay {
     fn new(captured: Arc<Mutex<Vec<ChatCompletionRelayRequest>>>) -> Self {
         Self {
             captured,
-            body: "data: {\"id\":\"chatcmpl-stream\",\"choices\":[{\"delta\":{\"content\":\"pong\"}}]}\n\ndata: {\"id\":\"chatcmpl-stream\",\"choices\":[],\"usage\":{\"prompt_tokens\":1,\"completion_tokens\":1,\"total_tokens\":2}}\n\ndata: [DONE]\n\n",
+            body: "data: {\"id\":\"chatcmpl-stream\",\"choices\":[{\"delta\":{\"content\":\"pong\"}}]}\n\ndata: {\"id\":\"chatcmpl-stream\",\"choices\":[],\"usage\":{\"prompt_tokens\":1,\"completion_tokens\":1,\"total_tokens\":2}}\n\ndata: [DONE]\n\n".to_owned(),
         }
     }
 
     fn with_body(
         captured: Arc<Mutex<Vec<ChatCompletionRelayRequest>>>,
-        body: &'static str,
+        body: impl Into<String>,
     ) -> Self {
-        Self { captured, body }
+        Self {
+            captured,
+            body: body.into(),
+        }
     }
 }
 
@@ -2226,11 +2229,12 @@ impl ChatCompletionStreamRelay for RecordingStreamRelay {
         >,
     > {
         self.captured.lock().unwrap().push(request);
-        Box::pin(async {
+        let body = self.body.clone();
+        Box::pin(async move {
             Ok(ChatCompletionStreamRelayResponse::new(
                 200,
                 Some("text/event-stream".to_owned()),
-                axum::body::Body::from(self.body),
+                axum::body::Body::from(body),
             ))
         })
     }
@@ -3574,14 +3578,19 @@ async fn openai_chat_completions_rejects_usage_recording_when_success_response_o
         Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
     let usage_captured = Arc::new(Mutex::new(Vec::new()));
-    let recorder = Arc::new(RecordingUsageRecorder::new(Arc::clone(&usage_captured)));
-    let router =
-        sdkwork_clawrouter_router_service::api::openai_chat_completions_router_with_relay_and_usage_recorder(
-            Arc::new(catalog_with_hashed_api_key(key_hash)),
-            hasher,
-            Arc::new(MissingUsageRelay),
-            recorder,
-        );
+    let trace_captured = Arc::new(Mutex::new(Vec::new()));
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let recorder = Arc::new(RecordingUsageRecorder::with_traces(
+        Arc::clone(&usage_captured),
+        Arc::clone(&trace_captured),
+    ));
+    let router = sdkwork_clawrouter_router_service::api::openai_chat_completions_router_with_relay_and_usage_recorder_and_plugins(
+        Arc::new(catalog_with_hashed_api_key(key_hash)),
+        hasher,
+        Arc::new(MissingUsageRelay),
+        recorder,
+        vec![Arc::new(RecordingInvocationPlugin::new(Arc::clone(&events)))],
+    );
 
     let response = router
         .oneshot(
@@ -3604,10 +3613,20 @@ async fn openai_chat_completions_rejects_usage_recording_when_success_response_o
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(
-        "provider_usage_record_failed",
+        "provider_usage_missing",
         payload["error"]["code"].as_str().unwrap()
     );
     assert!(usage_captured.lock().unwrap().is_empty());
+    let traces = trace_captured.lock().unwrap();
+    assert_eq!(1, traces.len());
+    assert_eq!(
+        Some("provider_usage_missing"),
+        traces[0].provider_error_code.as_deref()
+    );
+    let events = events.lock().unwrap();
+    assert!(events.contains(&"route_fault:openrouter:provider_usage_missing".to_owned()));
+    assert!(!events.contains(&"route_success:openrouter:200".to_owned()));
+    assert!(!events.contains(&"after_relay:200".to_owned()));
 }
 
 #[tokio::test]
@@ -3852,6 +3871,126 @@ async fn openai_chat_completions_records_stream_usage_from_crlf_sse_events() {
     assert_eq!(8, command.total_tokens);
     assert_eq!("0.000004554000", command.customer_charge_amount);
     assert_eq!("0.000002530000", command.upstream_cost_amount);
+}
+
+#[tokio::test]
+async fn openai_chat_completions_accepts_large_chunks_composed_of_bounded_sse_events() {
+    let hasher =
+        Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let relay_captured = Arc::new(Mutex::new(Vec::new()));
+    let usage_captured = Arc::new(Mutex::new(Vec::new()));
+    let mut stream_body = String::with_capacity(300 * 1024);
+    while stream_body.len() <= 256 * 1024 {
+        stream_body.push_str(
+            "data: {\"id\":\"chatcmpl-aggregate\",\"choices\":[{\"delta\":{\"content\":\"x\"}}]}\n\n",
+        );
+    }
+    stream_body.push_str(
+        "data: {\"id\":\"chatcmpl-aggregate\",\"choices\":[],\"usage\":{\"prompt_tokens\":3,\"completion_tokens\":5,\"total_tokens\":8}}\n\ndata: [DONE]\n\n",
+    );
+    let stream_relay = Arc::new(RecordingStreamRelay::with_body(
+        Arc::clone(&relay_captured),
+        stream_body,
+    ));
+    let recorder = Arc::new(RecordingUsageRecorder::new(Arc::clone(&usage_captured)));
+    let router =
+        sdkwork_clawrouter_router_service::api::openai_chat_completions_router_with_relays_and_usage_recorder(
+            Arc::new(catalog_with_hashed_api_key(key_hash)),
+            hasher,
+            Arc::new(RecordingRelay::new(Arc::new(Mutex::new(Vec::new())))),
+            stream_relay,
+            recorder,
+        );
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/chat/completions")
+                .header("authorization", "Bearer sk-live-secret")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"model":"gpt-4o-mini","messages":[{"role":"user","content":"ping"}],"stream":true}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::OK, response.status());
+    let body = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .unwrap();
+    assert!(body.len() > 256 * 1024);
+    let captured = usage_captured.lock().unwrap();
+    assert_eq!(1, captured.len());
+    assert_eq!(8, captured[0].total_tokens);
+}
+
+#[tokio::test]
+async fn openai_chat_completions_rejects_oversized_single_sse_event_without_unbounded_buffering() {
+    let hasher =
+        Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let relay_captured = Arc::new(Mutex::new(Vec::new()));
+    let usage_captured = Arc::new(Mutex::new(Vec::new()));
+    let trace_captured = Arc::new(Mutex::new(Vec::new()));
+    let stream_body = format!(
+        "data: {{\"padding\":\"{}\"}}\n\n",
+        "x".repeat(256 * 1024 + 1)
+    );
+    let stream_relay = Arc::new(RecordingStreamRelay::with_body(
+        Arc::clone(&relay_captured),
+        stream_body,
+    ));
+    let recorder = Arc::new(RecordingUsageRecorder::with_traces(
+        Arc::clone(&usage_captured),
+        Arc::clone(&trace_captured),
+    ));
+    let router =
+        sdkwork_clawrouter_router_service::api::openai_chat_completions_router_with_relays_and_usage_recorder(
+            Arc::new(catalog_with_hashed_api_key(key_hash)),
+            hasher,
+            Arc::new(RecordingRelay::new(Arc::new(Mutex::new(Vec::new())))),
+            stream_relay,
+            recorder,
+        );
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/chat/completions")
+                .header("authorization", "Bearer sk-live-secret")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"model":"gpt-4o-mini","messages":[{"role":"user","content":"ping"}],"stream":true}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::OK, response.status());
+    let error = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .unwrap_err();
+    assert!(
+        error.to_string().contains("exceeds 262144 bytes"),
+        "{error}"
+    );
+    assert!(usage_captured.lock().unwrap().is_empty());
+    let traces = trace_captured.lock().unwrap();
+    assert_eq!(1, traces.len());
+    assert_eq!(
+        Some("provider_usage_record_failed"),
+        traces[0].provider_error_code.as_deref()
+    );
+    assert!(traces[0]
+        .error_message_masked
+        .as_deref()
+        .is_some_and(|message| message.contains("exceeds 262144 bytes")));
 }
 
 #[tokio::test]

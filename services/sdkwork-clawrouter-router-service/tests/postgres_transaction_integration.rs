@@ -206,14 +206,18 @@ impl PostgresTestContext {
             .connect(&database_url)
             .await
             .unwrap();
-        sqlx::query(&format!("DROP SCHEMA IF EXISTS {quoted_schema} CASCADE"))
-            .execute(&admin_pool)
-            .await
-            .unwrap();
-        sqlx::query(&format!("CREATE SCHEMA {quoted_schema}"))
-            .execute(&admin_pool)
-            .await
-            .unwrap();
+        sqlx::query(sqlx::AssertSqlSafe(format!(
+            "DROP SCHEMA IF EXISTS {quoted_schema} CASCADE"
+        )))
+        .execute(&admin_pool)
+        .await
+        .unwrap();
+        sqlx::query(sqlx::AssertSqlSafe(format!(
+            "CREATE SCHEMA {quoted_schema}"
+        )))
+        .execute(&admin_pool)
+        .await
+        .unwrap();
         admin_pool.close().await;
 
         let schema_for_connections = schema.clone();
@@ -222,9 +226,12 @@ impl PostgresTestContext {
             .after_connect(move |connection, _metadata| {
                 let schema = schema_for_connections.clone();
                 Box::pin(async move {
-                    sqlx::query(&format!("SET search_path TO {}", quote_identifier(&schema)))
-                        .execute(&mut *connection)
-                        .await?;
+                    sqlx::query(sqlx::AssertSqlSafe(format!(
+                        "SET search_path TO {}",
+                        quote_identifier(&schema)
+                    )))
+                    .execute(&mut *connection)
+                    .await?;
                     Ok(())
                 })
             })
@@ -252,10 +259,10 @@ impl PostgresTestContext {
             .connect(&database_url)
             .await
             .unwrap();
-        sqlx::query(&format!(
+        sqlx::query(sqlx::AssertSqlSafe(format!(
             "DROP SCHEMA IF EXISTS {} CASCADE",
             quote_identifier(&schema)
-        ))
+        )))
         .execute(&admin_pool)
         .await
         .unwrap();
@@ -657,7 +664,7 @@ fn usage_command(request_id: &str, http_status: u16) -> GatewayUsageRecordComman
     }
 }
 
-async fn scalar_i64(pool: &PgPool, sql: &str) -> i64 {
+async fn scalar_i64(pool: &PgPool, sql: &'static str) -> i64 {
     sqlx::query(sql)
         .fetch_one(pool)
         .await

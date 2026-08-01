@@ -630,7 +630,7 @@ async fn list_payment_provider_accounts(
         LIMIT $6 OFFSET $7
         "#,
     );
-    let rows = sqlx::query(&payment_provider_accounts_sql)
+    let rows = sqlx::query(sqlx::AssertSqlSafe(payment_provider_accounts_sql))
         .bind(query.subject.tenant_id)
         .bind(query.subject.organization_id)
         .bind(query.status.as_deref())
@@ -1341,7 +1341,7 @@ async fn load_payment_provider_account_by_id(
         LIMIT 1
         "#,
     );
-    let row = sqlx::query(&payment_provider_account_sql)
+    let row = sqlx::query(sqlx::AssertSqlSafe(payment_provider_account_sql))
         .bind(tenant_id)
         .bind(organization_id)
         .bind(id)
@@ -1841,7 +1841,10 @@ async fn list_payment_reconciliation_runs(
     collection_from_rows(rows, &query)
 }
 
-fn payment_provider_account_json_sql(total_projection: &str, suffix: &str) -> String {
+fn payment_provider_account_json_sql(
+    total_projection: &'static str,
+    suffix: &'static str,
+) -> String {
     let total_projection = if total_projection.trim().is_empty() {
         String::new()
     } else {

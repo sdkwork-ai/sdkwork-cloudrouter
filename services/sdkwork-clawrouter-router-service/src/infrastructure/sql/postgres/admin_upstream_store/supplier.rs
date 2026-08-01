@@ -93,7 +93,7 @@ pub(super) async fn list(
         LIMIT $4 OFFSET $5
         "#
     );
-    let rows = sqlx::query(&sql)
+    let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(query.subject.tenant_id)
         .bind(query.subject.organization_id)
         .bind(pattern.as_deref())
@@ -129,7 +129,7 @@ pub(super) async fn get(
           AND supplier.deleted_at IS NULL
         "#
     );
-    sqlx::query(&sql)
+    sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(supplier_id)
@@ -225,7 +225,7 @@ pub(super) async fn delete(
               AND supplier_id = $5 AND deleted_at IS NULL
             "#
         );
-        sqlx::query(&sql)
+        sqlx::query(sqlx::AssertSqlSafe(sql))
             .bind(&requested_at)
             .bind(subject.operator_id)
             .bind(subject.tenant_id)
@@ -498,7 +498,7 @@ async fn get_in_transaction(
           AND supplier.id = $3 AND supplier.deleted_at IS NULL
         "#
     );
-    sqlx::query(&sql)
+    sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(supplier_id)

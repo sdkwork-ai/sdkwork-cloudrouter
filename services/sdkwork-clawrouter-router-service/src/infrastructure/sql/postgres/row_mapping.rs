@@ -443,7 +443,7 @@ pub async fn load_api_keys_paginated(
         LIMIT $5 OFFSET $6
         "#
     );
-    let rows = sqlx::query(&sql)
+    let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(page.tenant_id)
         .bind(page.organization_id)
         .bind(page.user_id)
@@ -478,7 +478,7 @@ pub async fn count_api_keys_paginated(
           )
         "#
     );
-    sqlx::query_scalar(&sql)
+    sqlx::query_scalar(sqlx::AssertSqlSafe(sql))
         .bind(tenant_id)
         .bind(organization_id)
         .bind(user_id)
