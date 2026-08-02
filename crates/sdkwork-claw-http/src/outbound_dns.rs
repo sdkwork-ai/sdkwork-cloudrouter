@@ -43,29 +43,36 @@ impl Service<Name> for OutboundDnsResolver {
         let policy = self.policy;
         Box::pin(async move {
             let addresses = resolution.await?.collect::<Vec<_>>();
-            if addresses.is_empty() {
-                return Err(io::Error::new(
-                    io::ErrorKind::NotFound,
-                    "outbound target DNS resolution returned no addresses",
-                ));
-            }
-            if addresses
-                .iter()
-                .any(|address| validate_resolved_outbound_ip(address.ip(), policy).is_err())
-            {
-                return Err(io::Error::new(
-                    io::ErrorKind::PermissionDenied,
-                    "outbound target DNS resolution returned a forbidden address",
-                ));
-            }
-            Ok(addresses.into_iter())
+            validate_resolved_addresses(addresses, policy)
         })
     }
 }
 
+fn validate_resolved_addresses(
+    addresses: Vec<SocketAddr>,
+    policy: OutboundTargetPolicy,
+) -> Result<std::vec::IntoIter<SocketAddr>, io::Error> {
+    if addresses.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "outbound target DNS resolution returned no addresses",
+        ));
+    }
+    if addresses
+        .iter()
+        .any(|address| validate_resolved_outbound_ip(address.ip(), policy).is_err())
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            "outbound target DNS resolution returned a forbidden address",
+        ));
+    }
+    Ok(addresses.into_iter())
+}
+
 #[cfg(test)]
 mod tests {
-    use super::OutboundDnsResolver;
+    use super::{validate_resolved_addresses, OutboundDnsResolver};
     use hyper_util::client::legacy::connect::dns::Name;
     use sdkwork_claw_security::OutboundTargetPolicy;
     use std::str::FromStr;
@@ -92,5 +99,18 @@ mod tests {
             .collect::<Vec<_>>();
 
         assert!(!addresses.is_empty());
+    }
+
+    #[test]
+    fn production_rejects_a_mixed_public_and_private_dns_answer() {
+        let addresses = vec![
+            "8.8.8.8:443".parse().unwrap(),
+            "10.0.0.8:443".parse().unwrap(),
+        ];
+
+        let error = validate_resolved_addresses(addresses, OutboundTargetPolicy::Production)
+            .unwrap_err();
+
+        assert_eq!(std::io::ErrorKind::PermissionDenied, error.kind());
     }
 }

@@ -1,43 +1,14 @@
 import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
-import type { PaymentProviderAccountStatusUpdateRequest } from '../types';
-export class PaymentsWebhookEventsReplaysApi {
-  private client: HttpClient;
 
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
+import type { PaymentProviderInventoryListResponse } from '../types';
 
-
-/** Create */
-  async create(eventId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(backendApiPath(`/payments/webhook_events/${serializePathParameter(eventId, { name: 'eventId', style: 'simple', explode: false })}/replays`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, sdkworkUnwrapKind: 'data' });
-  }
-}
-
-export class PaymentsWebhookEventsApi {
-  private client: HttpClient;
-  public readonly replays: PaymentsWebhookEventsReplaysApi;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-    this.replays = new PaymentsWebhookEventsReplaysApi(client);
-  }
-
-}
 
 export interface PaymentsProvidersListParams {
   page?: number;
   pageSize?: number;
-  status?: string;
-  providerCode?: string;
-  providerAccountId?: string;
-  methodCode?: string;
-  countryCode?: string;
-  currencyCode?: string;
-  orderId?: string;
-  intentId?: string;
-  businessDate?: string;
+  status?: 'active' | 'inactive' | 'disabled';
+  providerCode?: 'wechat_pay' | 'alipay' | 'stripe' | 'paypal' | 'apple_pay' | 'google_pay';
 }
 
 export class PaymentsProvidersApi {
@@ -48,140 +19,25 @@ export class PaymentsProvidersApi {
   }
 
 
-/** List */
-  async list(params?: PaymentsProvidersListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+/** Backend payments providers list */
+  async list(params?: PaymentsProvidersListParams, requestOptions?: ApiRequestOptions): Promise<PaymentProviderInventoryListResponse> {
     const query = buildQueryString([
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
       { name: 'provider_code', value: params?.providerCode, style: 'form', explode: true, allowReserved: false },
-      { name: 'provider_account_id', value: params?.providerAccountId, style: 'form', explode: true, allowReserved: false },
-      { name: 'method_code', value: params?.methodCode, style: 'form', explode: true, allowReserved: false },
-      { name: 'country_code', value: params?.countryCode, style: 'form', explode: true, allowReserved: false },
-      { name: 'currency_code', value: params?.currencyCode, style: 'form', explode: true, allowReserved: false },
-      { name: 'order_id', value: params?.orderId, style: 'form', explode: true, allowReserved: false },
-      { name: 'intent_id', value: params?.intentId, style: 'form', explode: true, allowReserved: false },
-      { name: 'business_date', value: params?.businessDate, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/payments/providers`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
-  }
-
-/** Update */
-  async update(providerCode: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(backendApiPath(`/payments/providers/${serializePathParameter(providerCode, { name: 'providerCode', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, sdkworkUnwrapKind: 'data' });
-  }
-}
-
-export interface PaymentsProviderAccountsStatusUpdateParams {
-  idempotencyKey: string;
-}
-
-export class PaymentsProviderAccountsStatusApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Update */
-  async update(providerAccountId: string, body: PaymentProviderAccountStatusUpdateRequest, params: PaymentsProviderAccountsStatusUpdateParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    const requestHeaders = buildRequestHeaders(
-      {
-        'Idempotency-Key': { value: params.idempotencyKey, style: 'simple', explode: false },
-      },
-      {}
-    );
-    return this.client.request<Record<string, never>>(backendApiPath(`/payments/provider_accounts/${serializePathParameter(providerAccountId, { name: 'providerAccountId', style: 'simple', explode: false })}/status`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
-  }
-}
-
-export class PaymentsProviderAccountsApi {
-  private client: HttpClient;
-  public readonly status: PaymentsProviderAccountsStatusApi;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-    this.status = new PaymentsProviderAccountsStatusApi(client);
-  }
-
-
-/** Delete */
-  async delete(providerAccountId: string, requestOptions?: ApiRequestOptions): Promise<void> {
-    return this.client.request<void>(backendApiPath(`/payments/provider_accounts/${serializePathParameter(providerAccountId, { name: 'providerAccountId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
-  }
-}
-
-export interface PaymentsDisputesListParams {
-  page?: number;
-  pageSize?: number;
-  status?: string;
-  providerCode?: string;
-  providerAccountId?: string;
-  methodCode?: string;
-  countryCode?: string;
-  currencyCode?: string;
-  orderId?: string;
-  intentId?: string;
-  businessDate?: string;
-}
-
-export class PaymentsDisputesApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** List */
-  async list(params?: PaymentsDisputesListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    const query = buildQueryString([
-      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
-      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
-      { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
-      { name: 'provider_code', value: params?.providerCode, style: 'form', explode: true, allowReserved: false },
-      { name: 'provider_account_id', value: params?.providerAccountId, style: 'form', explode: true, allowReserved: false },
-      { name: 'method_code', value: params?.methodCode, style: 'form', explode: true, allowReserved: false },
-      { name: 'country_code', value: params?.countryCode, style: 'form', explode: true, allowReserved: false },
-      { name: 'currency_code', value: params?.currencyCode, style: 'form', explode: true, allowReserved: false },
-      { name: 'order_id', value: params?.orderId, style: 'form', explode: true, allowReserved: false },
-      { name: 'intent_id', value: params?.intentId, style: 'form', explode: true, allowReserved: false },
-      { name: 'business_date', value: params?.businessDate, style: 'form', explode: true, allowReserved: false },
-    ]);
-    return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/payments/disputes`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
-  }
-}
-
-export class PaymentsChannelsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Update */
-  async update(channelId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(backendApiPath(`/payments/channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<PaymentProviderInventoryListResponse>(appendQueryString(backendApiPath(`/payments/providers`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 
 export class PaymentsApi {
   private client: HttpClient;
-  public readonly channels: PaymentsChannelsApi;
-  public readonly disputes: PaymentsDisputesApi;
-  public readonly providerAccounts: PaymentsProviderAccountsApi;
   public readonly providers: PaymentsProvidersApi;
-  public readonly webhookEvents: PaymentsWebhookEventsApi;
 
   constructor(client: HttpClient) {
     this.client = client;
-    this.channels = new PaymentsChannelsApi(client);
-    this.disputes = new PaymentsDisputesApi(client);
-    this.providerAccounts = new PaymentsProviderAccountsApi(client);
     this.providers = new PaymentsProvidersApi(client);
-    this.webhookEvents = new PaymentsWebhookEventsApi(client);
   }
 
 }
@@ -198,77 +54,7 @@ function appendQueryString(path: string, rawQueryString: string): string {
   return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
 }
 
-interface PathParameterSpec {
-  name: string;
-  style: string;
-  explode: boolean;
-}
 
-function serializePathParameter(value: unknown, spec: PathParameterSpec): string {
-  if (value === undefined || value === null) {
-    return '';
-  }
-
-  const style = spec.style || 'simple';
-  if (Array.isArray(value)) {
-    return serializePathArray(spec.name, value, style, spec.explode);
-  }
-  if (typeof value === 'object') {
-    return serializePathObject(spec.name, value as Record<string, unknown>, style, spec.explode);
-  }
-  return pathPrefix(spec.name, style, false) + encodePathValue(serializePathPrimitive(value));
-}
-
-function serializePathArray(name: string, values: unknown[], style: string, explode: boolean): string {
-  const serialized = values
-    .filter((item) => item !== undefined && item !== null)
-    .map((item) => encodePathValue(serializePathPrimitive(item)));
-  if (serialized.length === 0) {
-    return pathPrefix(name, style, false);
-  }
-  if (style === 'matrix') {
-    return explode
-      ? serialized.map((item) => `;${name}=${item}`).join('')
-      : `;${name}=${serialized.join(',')}`;
-  }
-  return pathPrefix(name, style, false) + serialized.join(explode ? '.' : ',');
-}
-
-function serializePathObject(name: string, value: Record<string, unknown>, style: string, explode: boolean): string {
-  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== undefined && entryValue !== null);
-  if (entries.length === 0) {
-    return pathPrefix(name, style, true);
-  }
-  if (style === 'matrix') {
-    return explode
-      ? entries.map(([key, entryValue]) => `;${encodePathValue(key)}=${encodePathValue(serializePathPrimitive(entryValue))}`).join('')
-      : `;${name}=${entries.flatMap(([key, entryValue]) => [encodePathValue(key), encodePathValue(serializePathPrimitive(entryValue))]).join(',')}`;
-  }
-  const serialized = explode
-    ? entries.map(([key, entryValue]) => `${encodePathValue(key)}=${encodePathValue(serializePathPrimitive(entryValue))}`).join(style === 'label' ? '.' : ',')
-    : entries.flatMap(([key, entryValue]) => [encodePathValue(key), encodePathValue(serializePathPrimitive(entryValue))]).join(',');
-  return pathPrefix(name, style, true) + serialized;
-}
-
-function pathPrefix(name: string, style: string, _objectValue: boolean): string {
-  if (style === 'label') return '.';
-  if (style === 'matrix') return `;${name}`;
-  return '';
-}
-
-function encodePathValue(value: string): string {
-  return encodeURIComponent(value);
-}
-
-function serializePathPrimitive(value: unknown): string {
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-  if (typeof value === 'object') {
-    return JSON.stringify(value);
-  }
-  return String(value);
-}
 interface QueryParameterSpec {
   name: string;
   value: unknown;
@@ -420,79 +206,4 @@ function encodeQueryValue(value: string, allowReserved: boolean): string {
     .replace(/%2C/gi, ',')
     .replace(/%3B/gi, ';')
     .replace(/%3D/gi, '=');
-}
-function buildRequestHeaders(
-  headers: Record<string, HeaderParameterSpec | undefined>,
-  cookies: Record<string, HeaderParameterSpec | undefined> = {},
-): Record<string, string> | undefined {
-  const requestHeaders: Record<string, string> = {};
-
-  for (const [name, parameter] of Object.entries(headers)) {
-    const serialized = serializeParameterValue(parameter);
-    if (serialized !== undefined) {
-      requestHeaders[name] = serialized;
-    }
-  }
-
-  const cookieHeader = buildCookieHeader(cookies);
-  if (cookieHeader) {
-    requestHeaders.Cookie = requestHeaders.Cookie
-      ? `${requestHeaders.Cookie}; ${cookieHeader}`
-      : cookieHeader;
-  }
-
-  return Object.keys(requestHeaders).length > 0 ? requestHeaders : undefined;
-}
-
-interface HeaderParameterSpec {
-  value: unknown;
-  style: string;
-  explode: boolean;
-  contentType?: string;
-}
-
-function buildCookieHeader(cookies: Record<string, HeaderParameterSpec | undefined>): string | undefined {
-  const pairs: string[] = [];
-  for (const [name, parameter] of Object.entries(cookies)) {
-    const serialized = serializeParameterValue(parameter);
-    if (serialized !== undefined) {
-      pairs.push(`${encodeURIComponent(name)}=${encodeURIComponent(serialized)}`);
-    }
-  }
-  return pairs.length > 0 ? pairs.join('; ') : undefined;
-}
-
-function serializeParameterValue(parameter: HeaderParameterSpec | undefined): string | undefined {
-  const value = parameter?.value;
-  if (value === undefined || value === null) {
-    return undefined;
-  }
-  if (parameter?.contentType) {
-    return JSON.stringify(value);
-  }
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-  if (Array.isArray(value)) {
-    return value.map((item) => serializeHeaderPrimitive(item)).join(',');
-  }
-  if (typeof value === 'object' && value !== null) {
-    return serializeHeaderObject(value as Record<string, unknown>, parameter?.explode === true);
-  }
-  return serializeHeaderPrimitive(value);
-}
-
-function serializeHeaderObject(value: Record<string, unknown>, explode: boolean): string {
-  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== undefined && entryValue !== null);
-  if (explode) {
-    return entries.map(([key, entryValue]) => `${key}=${serializeHeaderPrimitive(entryValue)}`).join(',');
-  }
-  return entries.flatMap(([key, entryValue]) => [key, serializeHeaderPrimitive(entryValue)]).join(',');
-}
-
-function serializeHeaderPrimitive(value: unknown): string {
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-  return String(value);
 }

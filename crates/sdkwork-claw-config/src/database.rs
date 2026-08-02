@@ -169,11 +169,11 @@ impl DatabaseConfig {
 
     fn from_canonical_database_env() -> Result<Option<Self>, String> {
         use sdkwork_database_config::workspace_database::{
-            reject_retired_database_env, workspace_database_env_is_configured,
+            reject_retired_database_env, workspace_postgres_env_is_configured,
         };
 
         reject_retired_database_env().map_err(|error| error.to_string())?;
-        if !workspace_database_env_is_configured() {
+        if !workspace_postgres_env_is_configured() {
             return Ok(None);
         }
 

@@ -79,16 +79,18 @@ pub struct AppChatUsageSnapshot {
     pub currency: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppChatMessageList {
     pub items: Vec<AppChatMessageItem>,
-    #[serde(with = "sdkwork_utils_rust::serde_int64")]
-    pub total: i64,
-    #[serde(with = "sdkwork_utils_rust::serde_int64")]
-    pub page_no: i64,
-    #[serde(with = "sdkwork_utils_rust::serde_int64")]
+    pub next_cursor: Option<AppChatMessageCursor>,
+    pub has_more: bool,
     pub page_size: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AppChatMessageCursor {
+    pub message_no: i64,
+    pub id: i64,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -195,7 +197,7 @@ pub trait AppChatStore {
         &'a self,
         subject: AppChatSubject,
         conversation_id: String,
-        page: i64,
+        cursor: Option<AppChatMessageCursor>,
         page_size: i64,
     ) -> AppChatFuture<'a, AppChatMessageList>;
 

@@ -7,6 +7,11 @@ metadata:
     component: edge
 spec:
   replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: sdkwork-clawrouter
@@ -21,14 +26,8 @@ spec:
         prometheus.io/path: /metrics
         prometheus.io/port: "3900"
     spec:
-      # H-6 fix: graceful shutdown window must exceed the longest upstream
-      # provider request. AI provider requests can take up to 120s (matching
-      # the gateway/upstream timeout), so the previous 60s window caused
-      # SIGTERM to interrupt in-flight requests during rolling deploys. The
-      # new value is 120s provider timeout + 10s buffer = 130s, and is still
-      # well below the AWS ALB deregistration delay default of 300s used as a
-      # cross-industry reference. Keep this value >= the configured provider
-      # timeout whenever that timeout is raised.
+      automountServiceAccountToken: false
+      # Covers the 120-second upstream stream timeout plus shutdown overhead.
       terminationGracePeriodSeconds: 130
       securityContext:
         runAsNonRoot: true
@@ -47,7 +46,7 @@ spec:
       containers:
         - name: edge
           image: registry.sdkwork.com/apps/sdkwork-clawrouter:0.3.0
-          command: ["sdkwork-clawrouter-standalone-gateway"]
+          command: ["sdkwork-clawrouter-edge-runtime"]
           ports:
             - containerPort: 3900
               name: http
@@ -82,16 +81,19 @@ spec:
             - name: SDKWORK_CLAW_GATEWAY_BIND
               value: 0.0.0.0:3900
             - name: SDKWORK_CLAW_EDGE_GATEWAY_BASE_URL
-              value: http://sdkwork-clawrouter-edge-runtime:18080
+              value: http://sdkwork-api-clawrouter-standalone-gateway:18080
             - name: SDKWORK_CLAW_EDGE_BACKEND_API_BASE_URL
               value: http://sdkwork-clawrouter-admin-api:18081
             - name: SDKWORK_CLAW_EDGE_APP_API_BASE_URL
               value: http://sdkwork-clawrouter-app-api:18082
-            - name: SDKWORK_CLAW_REDIS_URL
-              valueFrom:
-                secretKeyRef:
-                  name: sdkwork-clawrouter-config
-                  key: redis-url
+            - name: SDKWORK_CLAW_EDGE_PORTAL_BASE_URL
+              value: http://sdkwork-clawrouter-app-api:18082
+            - name: SDKWORK_CLAW_EDGE_EXTERNAL_SCHEME
+              value: https
+            - name: SDKWORK_CLAW_EDGE_TRUST_FORWARDED_HEADERS
+              value: "true"
+            - name: SDKWORK_CLAW_EDGE_UPSTREAM_REQUEST_TIMEOUT_MILLIS
+              value: "120000"
           resources:
             # H-7 fix: align requests/limits with Google SRE Book capacity
             # guidance (SRE Book, "Capacity Planning" + "Monitoring Distributed

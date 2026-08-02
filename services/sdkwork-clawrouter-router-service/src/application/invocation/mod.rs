@@ -49,7 +49,8 @@ pub use classification::{
 };
 pub use dispatch::{
     DispatchMode, InvocationAdapterTarget, InvocationDispatch, InvocationDispatchResponse,
-    InvocationProviderRequest, InvocationShape, ResolvedProviderSecret,
+    InvocationProviderRequest, InvocationResponseMemoryGuard, InvocationShape,
+    ResolvedProviderSecret,
 };
 pub use dispatch_executor::DispatchExecutor;
 pub use error::{InvocationError, InvocationErrorKind};
@@ -79,7 +80,7 @@ pub use routing::{
 };
 pub use secrets::SecretResolutionInterceptor;
 pub use settlement::PricingSettlementInterceptor;
-pub use state::{Invocation, InvocationId, InvocationRequest};
+pub use state::{Invocation, InvocationCancellationSignal, InvocationId, InvocationRequest};
 pub use sticky::{StickyCommitInterceptor, StickyResolutionInterceptor};
 pub use subject::{InvocationAuthType, InvocationSubject};
 pub use telemetry::{InvocationNormalizedResponse, InvocationTelemetry};

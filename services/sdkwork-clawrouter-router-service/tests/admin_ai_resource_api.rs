@@ -120,8 +120,13 @@ async fn admin_ai_resource_group_route_manages_groups_and_static_all_api_resourc
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::CREATED, create_response.status());
+    let create_status = create_response.status();
     let create_payload = json_payload(create_response).await;
+    assert_eq!(
+        StatusCode::CREATED,
+        create_status,
+        "unexpected create response: {create_payload}"
+    );
     assert_eq!(
         "api.custom.chat",
         create_payload["data"]["item"]["groupCode"]
@@ -183,8 +188,13 @@ async fn admin_ai_resource_route_creates_and_updates_resources() {
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::CREATED, create_response.status());
+    let create_status = create_response.status();
     let create_payload = json_payload(create_response).await;
+    assert_eq!(
+        StatusCode::CREATED,
+        create_status,
+        "unexpected create response: {create_payload}"
+    );
     assert_eq!(0, create_payload["code"].as_i64().unwrap());
     assert_eq!(
         "bundle.openrouter.openai.standard",
@@ -428,6 +438,10 @@ impl AdminAiResourceStore for TestAiResourceStore {
                     catalog_key: None,
                     model: None,
                     provider_native_model: None,
+                    access_channel_kind: None,
+                    base_url: None,
+                    supported_agent_provider_ids: Vec::new(),
+                    description: Some("OpenAI model provider".to_owned()),
                     capability: Some("network".to_owned()),
                     capabilities: vec![
                         "llm".to_owned(),
@@ -453,6 +467,10 @@ impl AdminAiResourceStore for TestAiResourceStore {
                     catalog_key: None,
                     model: None,
                     provider_native_model: None,
+                    access_channel_kind: None,
+                    base_url: None,
+                    supported_agent_provider_ids: Vec::new(),
+                    description: Some("OpenRouter OpenAI model bundle".to_owned()),
                     capability: Some("llm".to_owned()),
                     capabilities: vec!["llm".to_owned(), "chat".to_owned()],
                     composition_mode: "all".to_owned(),
@@ -518,6 +536,10 @@ impl AdminAiResourceStore for TestAiResourceStore {
                 catalog_key: command.catalog_key,
                 model: command.model,
                 provider_native_model: command.provider_native_model,
+                access_channel_kind: command.access_channel_kind,
+                base_url: command.base_url,
+                supported_agent_provider_ids: command.supported_agent_provider_ids,
+                description: command.description,
                 capability: None,
                 capabilities: Vec::new(),
                 composition_mode: command.composition_mode,
@@ -558,6 +580,12 @@ impl AdminAiResourceStore for TestAiResourceStore {
                 catalog_key: None,
                 model: None,
                 provider_native_model: None,
+                access_channel_kind: command.access_channel_kind,
+                base_url: command.base_url,
+                supported_agent_provider_ids: command
+                    .supported_agent_provider_ids
+                    .unwrap_or_default(),
+                description: command.description.flatten(),
                 capability: Some("llm".to_owned()),
                 capabilities: vec!["llm".to_owned(), "chat".to_owned()],
                 composition_mode: "all".to_owned(),

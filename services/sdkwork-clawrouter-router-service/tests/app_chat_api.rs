@@ -7,10 +7,10 @@ use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::EntityUuidGenerator;
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use sdkwork_clawrouter_router_service::ports::{
-    AppChatConversationItem, AppChatConversationList, AppChatFuture, AppChatMessageItem,
-    AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnItem, AppChatTurnOutcome,
-    AppChatUsageSnapshot, CompleteAppChatTurnCommand, CreateAppChatConversationCommand,
-    CreateAppChatTurnCommand,
+    AppChatConversationItem, AppChatConversationList, AppChatFuture, AppChatMessageCursor,
+    AppChatMessageItem, AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnItem,
+    AppChatTurnOutcome, AppChatUsageSnapshot, CompleteAppChatTurnCommand,
+    CreateAppChatConversationCommand, CreateAppChatTurnCommand,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -172,6 +172,180 @@ async fn app_chat_list_rejects_forbidden_or_ambiguous_pagination_parameters() {
     }
 
     assert!(store.list_subjects.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn app_chat_list_messages_uses_cursor_mode_and_passes_decoded_cursor_to_store() {
+    let store = Arc::new(TestAppChatStore::default());
+    let router = sdkwork_clawrouter_router_service::api::app_chat_router_with_store(
+        store.clone(),
+        Arc::new(SequentialUuidGenerator::new(Vec::new())),
+    );
+    let request_cursor = sdkwork_utils_rust::base64url_encode(br#"{"message_no":20,"id":8001}"#);
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(format!(
+                    "/app/v3/api/chat/conversations/chat-conversation-1/messages?cursor={request_cursor}&page_size=7"
+                ))
+                .internal_trusted_subject(100001, 0, 30)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::OK, response.status());
+    let payload = response_json(response).await;
+    assert_eq!(0, payload["code"].as_i64().unwrap());
+    assert_eq!("cursor", payload["data"]["pageInfo"]["mode"]);
+    assert_eq!(7, payload["data"]["pageInfo"]["pageSize"]);
+    assert_eq!(true, payload["data"]["pageInfo"]["hasMore"]);
+    assert_eq!(1, payload["data"]["items"].as_array().unwrap().len());
+    let next_cursor = payload["data"]["pageInfo"]["nextCursor"].as_str().unwrap();
+    assert!(!next_cursor.contains('{'));
+    let decoded: Value =
+        serde_json::from_slice(&sdkwork_utils_rust::base64url_decode(next_cursor).unwrap())
+            .unwrap();
+    assert_eq!(41, decoded["message_no"]);
+    assert_eq!(9001, decoded["id"]);
+
+    let queries = store.message_list_queries.lock().unwrap();
+    assert_eq!(1, queries.len());
+    assert_eq!(100001, queries[0].subject.tenant_id);
+    assert_eq!(0, queries[0].subject.organization_id);
+    assert_eq!(30, queries[0].subject.user_id);
+    assert_eq!("chat-conversation-1", queries[0].conversation_id);
+    assert_eq!(7, queries[0].page_size);
+    assert_eq!(
+        Some(AppChatMessageCursor {
+            message_no: 20,
+            id: 8001,
+        }),
+        queries[0].cursor
+    );
+}
+
+#[tokio::test]
+async fn app_chat_list_messages_returns_an_exhausted_empty_cursor_page() {
+    let store = Arc::new(TestAppChatStore::default());
+    *store.message_page_exhausted.lock().unwrap() = true;
+    *store.message_page_empty.lock().unwrap() = true;
+    let router = sdkwork_clawrouter_router_service::api::app_chat_router_with_store(
+        store.clone(),
+        Arc::new(SequentialUuidGenerator::new(Vec::new())),
+    );
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri("/app/v3/api/chat/conversations/chat-conversation-1/messages")
+                .internal_trusted_subject(100001, 0, 30)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::OK, response.status());
+    let payload = response_json(response).await;
+    assert_eq!("cursor", payload["data"]["pageInfo"]["mode"]);
+    assert_eq!(20, payload["data"]["pageInfo"]["pageSize"]);
+    assert_eq!(false, payload["data"]["pageInfo"]["hasMore"]);
+    assert!(payload["data"]["pageInfo"]["nextCursor"].is_null());
+    assert!(payload["data"]["items"].as_array().unwrap().is_empty());
+
+    let queries = store.message_list_queries.lock().unwrap();
+    assert_eq!(1, queries.len());
+    assert_eq!(None, queries[0].cursor);
+    assert_eq!(20, queries[0].page_size);
+}
+
+#[tokio::test]
+async fn app_chat_list_messages_rejects_noncanonical_ambiguous_and_invalid_cursor_queries() {
+    let store = Arc::new(TestAppChatStore::default());
+    let router = sdkwork_clawrouter_router_service::api::app_chat_router_with_store(
+        store.clone(),
+        Arc::new(SequentialUuidGenerator::new(Vec::new())),
+    );
+    let valid_cursor = sdkwork_utils_rust::base64url_encode(br#"{"message_no":20,"id":8001}"#);
+    let zero_message_no = sdkwork_utils_rust::base64url_encode(br#"{"message_no":0,"id":8001}"#);
+    let negative_id = sdkwork_utils_rust::base64url_encode(br#"{"message_no":20,"id":-1}"#);
+    let queries = vec![
+        "page=1".to_owned(),
+        "pageSize=20".to_owned(),
+        "limit=20".to_owned(),
+        "page_no=1".to_owned(),
+        "pageNo=1".to_owned(),
+        "per_page=20".to_owned(),
+        "size=20".to_owned(),
+        "page_size=201".to_owned(),
+        "page_size=20&page_size=21".to_owned(),
+        format!("cursor={valid_cursor}&cursor={valid_cursor}"),
+        "cursor=".to_owned(),
+        "cursor=not-base64url".to_owned(),
+        "cursor=0".to_owned(),
+        format!("cursor={zero_message_no}"),
+        format!("cursor={negative_id}"),
+        format!("cursor={}", "x".repeat(1025)),
+    ];
+
+    for query in queries {
+        let response = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri(format!(
+                        "/app/v3/api/chat/conversations/chat-conversation-1/messages?{query}"
+                    ))
+                    .internal_trusted_subject(100001, 0, 30)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(StatusCode::BAD_REQUEST, response.status(), "query: {query}");
+        let payload = response_json(response).await;
+        assert_eq!(40003, payload["code"].as_i64().unwrap(), "query: {query}");
+        assert_eq!(None, payload.get("message"), "query: {query}");
+    }
+
+    assert!(store.message_list_queries.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn app_chat_list_messages_fails_closed_when_store_cursor_does_not_advance() {
+    let store = Arc::new(TestAppChatStore::default());
+    *store.message_page_stalled.lock().unwrap() = true;
+    let router = sdkwork_clawrouter_router_service::api::app_chat_router_with_store(
+        store,
+        Arc::new(SequentialUuidGenerator::new(Vec::new())),
+    );
+    let cursor = sdkwork_utils_rust::base64url_encode(br#"{"message_no":20,"id":8001}"#);
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(format!(
+                    "/app/v3/api/chat/conversations/chat-conversation-1/messages?cursor={cursor}"
+                ))
+                .internal_trusted_subject(100001, 0, 30)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::INTERNAL_SERVER_ERROR, response.status());
+    let payload = response_json(response).await;
+    assert_eq!(50001, payload["code"].as_i64().unwrap());
+    assert_eq!("An internal error occurred", payload["detail"]);
 }
 
 #[tokio::test]
@@ -458,6 +632,18 @@ struct TestAppChatStore {
     create_turn_commands: Mutex<Vec<CreateAppChatTurnCommand>>,
     complete_turn_commands: Mutex<Vec<CompleteAppChatTurnCommand>>,
     list_subjects: Mutex<Vec<AppChatSubject>>,
+    message_list_queries: Mutex<Vec<CapturedMessageListQuery>>,
+    message_page_empty: Mutex<bool>,
+    message_page_exhausted: Mutex<bool>,
+    message_page_stalled: Mutex<bool>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct CapturedMessageListQuery {
+    subject: AppChatSubject,
+    conversation_id: String,
+    cursor: Option<AppChatMessageCursor>,
+    page_size: i64,
 }
 
 impl AppChatStore for TestAppChatStore {
@@ -501,32 +687,46 @@ impl AppChatStore for TestAppChatStore {
 
     fn list_messages<'a>(
         &'a self,
-        _subject: AppChatSubject,
-        _conversation_id: String,
-        _page: i64,
-        _page_size: i64,
+        subject: AppChatSubject,
+        conversation_id: String,
+        cursor: Option<AppChatMessageCursor>,
+        page_size: i64,
     ) -> AppChatFuture<'a, AppChatMessageList> {
-        Box::pin(async {
+        Box::pin(async move {
+            let requested_cursor = cursor.clone();
+            self.message_list_queries
+                .lock()
+                .unwrap()
+                .push(CapturedMessageListQuery {
+                    subject,
+                    conversation_id,
+                    cursor,
+                    page_size,
+                });
+            let has_more = !*self.message_page_exhausted.lock().unwrap();
+            let stalled = *self.message_page_stalled.lock().unwrap();
+            let items = if *self.message_page_empty.lock().unwrap() {
+                Vec::new()
+            } else {
+                vec![sample_message()]
+            };
             Ok(AppChatMessageList {
-                items: vec![AppChatMessageItem {
-                    id: "chat-message-user-1".to_owned(),
-                    conversation_id: "chat-conversation-1".to_owned(),
-                    turn_id: Some("chat-turn-1".to_owned()),
-                    role: "user".to_owned(),
-                    direction: "input".to_owned(),
-                    content: "Design the chat schema".to_owned(),
-                    status: "completed".to_owned(),
-                    model: None,
-                    provider: None,
-                    runtime: None,
-                    runtime_invocation_id: None,
-                    usage_link_id: None,
-                    usage: None,
-                    created_at: "2026-05-18T00:00:00Z".to_owned(),
-                }],
-                total: 1,
-                page_no: 1,
-                page_size: 100,
+                items,
+                next_cursor: has_more.then(|| {
+                    if stalled {
+                        requested_cursor.unwrap_or(AppChatMessageCursor {
+                            message_no: 41,
+                            id: 9001,
+                        })
+                    } else {
+                        AppChatMessageCursor {
+                            message_no: 41,
+                            id: 9001,
+                        }
+                    }
+                }),
+                has_more,
+                page_size,
             })
         })
     }
@@ -634,6 +834,25 @@ fn sample_conversation() -> AppChatConversationItem {
         turn_count: 1,
         created_at: "2026-05-18T00:00:00Z".to_owned(),
         updated_at: "2026-05-18T00:00:00Z".to_owned(),
+    }
+}
+
+fn sample_message() -> AppChatMessageItem {
+    AppChatMessageItem {
+        id: "chat-message-user-1".to_owned(),
+        conversation_id: "chat-conversation-1".to_owned(),
+        turn_id: Some("chat-turn-1".to_owned()),
+        role: "user".to_owned(),
+        direction: "input".to_owned(),
+        content: "Design the chat schema".to_owned(),
+        status: "completed".to_owned(),
+        model: None,
+        provider: None,
+        runtime: None,
+        runtime_invocation_id: None,
+        usage_link_id: None,
+        usage: None,
+        created_at: "2026-05-18T00:00:00Z".to_owned(),
     }
 }
 

@@ -63,11 +63,12 @@ struct AdminTransactionCenterState {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct TransactionCenterListQueryRequest {
     page: Option<i64>,
     page_size: Option<i64>,
     status: Option<String>,
-    supplier_code: Option<String>,
+    provider_code: Option<String>,
     provider_account_id: Option<String>,
     method_code: Option<String>,
     country_code: Option<String>,
@@ -640,7 +641,7 @@ fn validated_list_query(
         status: normalize_optional_text(query.status, "status", MAX_QUERY_STATUS_LEN)?
             .map(|value| value.to_ascii_lowercase()),
         supplier_code: normalize_optional_enum(
-            query.supplier_code,
+            query.provider_code,
             "providerCode",
             MAX_CODE_LEN,
             PAYMENT_PROVIDER_CODES,

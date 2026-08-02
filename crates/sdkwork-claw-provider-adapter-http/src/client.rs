@@ -8,6 +8,7 @@ use hyper_rustls::HttpsConnector;
 use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
+use sdkwork_claw_http::OutboundDnsResolver;
 use sdkwork_claw_provider_adapter_contract::{
     AdapterInvocationRequest, AdapterInvocationResponse, ProviderAdapterManifest,
 };
@@ -17,7 +18,7 @@ use sdkwork_claw_security::{
 };
 
 type AdapterRequestBody = Full<Bytes>;
-type AdapterConnector = HttpsConnector<HttpConnector>;
+type AdapterConnector = HttpsConnector<HttpConnector<OutboundDnsResolver>>;
 type AdapterClient = Client<AdapterConnector, AdapterRequestBody>;
 
 /// Default timeout for adapter HTTP requests (including body read).
@@ -83,6 +84,10 @@ pub struct ProviderAdapterHttpError {
 }
 
 impl ProviderAdapterHttpClient {
+    /// Maximum wire bytes buffered for a non-streaming adapter response.
+    /// Callers that perform process-wide admission use the same authority.
+    pub const MAX_BUFFERED_RESPONSE_BYTES: usize = MAX_ADAPTER_BUFFERED_RESPONSE_BYTES;
+
     pub fn new(gateway_token: impl Into<String>) -> Self {
         Self::with_outbound_target_policy(gateway_token, OutboundTargetPolicy::Production)
     }
@@ -431,7 +436,8 @@ fn adapter_manifest_uri(
 }
 
 fn build_adapter_client(outbound_target_policy: OutboundTargetPolicy) -> AdapterClient {
-    let mut http_connector = HttpConnector::new();
+    let mut http_connector =
+        HttpConnector::new_with_resolver(OutboundDnsResolver::new(outbound_target_policy));
     http_connector.set_connect_timeout(Some(DEFAULT_CONNECT_TIMEOUT));
     http_connector.enforce_http(false);
     let connector = match outbound_target_policy {

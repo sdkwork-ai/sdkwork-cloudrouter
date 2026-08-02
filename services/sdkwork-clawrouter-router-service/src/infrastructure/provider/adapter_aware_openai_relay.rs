@@ -8,6 +8,7 @@ use std::sync::Arc;
 
 use crate::domain::{DomainError, DomainResult, ProviderAuthProfile, ProviderAuthType};
 use crate::ports::ProviderSecretResolver;
+use super::response_memory_budget::ProviderResponseMemoryBudgetError;
 
 pub(crate) type ProviderSecretResolverRef = Arc<dyn ProviderSecretResolver + Send + Sync>;
 
@@ -125,6 +126,17 @@ pub(crate) fn adapter_http_error(error: ProviderAdapterHttpError) -> DomainError
         "provider adapter invocation failed{status}: {}",
         error.message
     ))
+}
+
+pub(crate) fn provider_response_memory_error(
+    error: ProviderResponseMemoryBudgetError,
+) -> DomainError {
+    let code = if error.is_saturated() {
+        "provider_response_memory_saturated"
+    } else {
+        "provider_response_memory_config_invalid"
+    };
+    DomainError::new(format!("{code}: {error}"))
 }
 
 fn adapter_secret(

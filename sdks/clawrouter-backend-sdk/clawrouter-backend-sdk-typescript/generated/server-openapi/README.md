@@ -27,7 +27,7 @@ client.setAuthToken('your-auth-token');
 client.setAccessToken('your-access-token');
 
 // Use the SDK
-const result = await client.ai.modelMappingOptions.list();
+const result = await client.recharges.orders.management.list();
 ```
 
 ## Authentication
@@ -56,9 +56,7 @@ const client = new SdkworkBackendClient({
 
 - `client.ai` - ai API
 - `client.system` - system API
-- `client.memberships` - memberships API
 - `client.payments` - payments API
-- `client.promotions` - promotions API
 - `client.recharges` - recharges API
 - `client.storage` - storage API
 
@@ -67,8 +65,13 @@ const client = new SdkworkBackendClient({
 ### ai
 
 ```typescript
-// List model options catalog
-const result = await client.ai.modelMappingOptions.list();
+// List upstream account groups
+const params = {
+  page: 1,
+  page_size: 2,
+  q: 'q',
+};
+const result = await client.ai.upstreamAccountGroups.list(params);
 ```
 
 ### system
@@ -78,46 +81,17 @@ const result = await client.ai.modelMappingOptions.list();
 const result = await client.system.auth.settings.retrieve();
 ```
 
-### memberships
-
-```typescript
-// Update
-const membershipId = '1';
-const body = {
-  status: 'active',
-};
-const result = await client.memberships.members.update(membershipId, body);
-```
-
 ### payments
 
 ```typescript
-// List
+// Backend payments providers list
 const params = {
   page: 1,
   page_size: 2,
-  status: 'status',
-  provider_code: 'provider_code',
-  provider_account_id: 'provider_account_id',
-  method_code: 'method_code',
-  country_code: 'country_code',
-  currency_code: 'currency_code',
-  order_id: 'order_id',
-  intent_id: 'intent_id',
-  business_date: 'business_date',
+  status: 'active',
+  provider_code: 'wechat_pay',
 };
-const result = await client.payments.disputes.list(params);
-```
-
-### promotions
-
-```typescript
-// List
-const params = {
-  page: 1,
-  page_size: 2,
-};
-const result = await client.promotions.budgetLedgerEntries.list(params);
+const result = await client.payments.providers.list(params);
 ```
 
 ### recharges
@@ -149,7 +123,7 @@ const result = await client.storage.oss.buckets.list(params);
 import { SdkworkBackendClient, NetworkError, TimeoutError, AuthenticationError } from '@sdkwork/clawrouter-backend-sdk';
 
 try {
-  const result = await client.ai.modelMappingOptions.list();
+  const result = await client.recharges.orders.management.list();
 } catch (error) {
   if (error instanceof AuthenticationError) {
     console.error('Authentication failed:', error.message);

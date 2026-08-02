@@ -1,12 +1,23 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: sdkwork-clawrouter-db-upgrade
+  name: sdkwork-clawrouter-db-upgrade-0-3-0
+  labels:
+    app: sdkwork-clawrouter
+    component: migration
+    app.kubernetes.io/version: 0.3.0
 spec:
   backoffLimit: 1
+  activeDeadlineSeconds: 600
   template:
+    metadata:
+      labels:
+        app: sdkwork-clawrouter
+        component: migration
+        app.kubernetes.io/version: 0.3.0
     spec:
       restartPolicy: Never
+      automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -34,6 +45,18 @@ spec:
               value: container
             - name: SDKWORK_CLAW_CONFIG_FILE
               value: /etc/sdkwork/clawrouter.toml
+            - name: SDKWORK_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sdkwork-clawrouter-config
+                  key: database-migrator-url
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
           volumeMounts:
             - name: config
               mountPath: /etc/sdkwork

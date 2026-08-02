@@ -5,11 +5,66 @@ use sqlx::{PgPool, Postgres, Row, Transaction};
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::ports::{
-    AppChatConversationItem, AppChatConversationList, AppChatFuture, AppChatMessageItem,
-    AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnItem, AppChatTurnOutcome,
-    AppChatUsageSnapshot, CompleteAppChatTurnCommand, CreateAppChatConversationCommand,
-    CreateAppChatTurnCommand,
+    AppChatConversationItem, AppChatConversationList, AppChatFuture, AppChatMessageCursor,
+    AppChatMessageItem, AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnItem,
+    AppChatTurnOutcome, AppChatUsageSnapshot, CompleteAppChatTurnCommand,
+    CreateAppChatConversationCommand, CreateAppChatTurnCommand,
 };
+
+const MAX_CHAT_MESSAGE_PAGE_SIZE: i64 = 200;
+const LIST_CHAT_MESSAGES: &str = r#"
+SELECT
+    m.uuid,
+    c.conversation_code,
+    t.uuid AS turn_uuid,
+    m.role,
+    m.direction,
+    m.content_text,
+    m.status,
+    m.model,
+    m.provider,
+    m.runtime,
+    m.runtime_invocation_id,
+    m.usage_link_id,
+    u.uuid AS usage_link_uuid,
+    u.input_tokens AS usage_input_tokens,
+    u.output_tokens AS usage_output_tokens,
+    u.cached_tokens AS usage_cached_tokens,
+    u.reasoning_tokens AS usage_reasoning_tokens,
+    u.total_tokens AS usage_total_tokens,
+    CAST(u.cost_amount AS TEXT) AS usage_cost_amount,
+    u.currency AS usage_currency,
+    CAST(m.created_at AS TEXT) AS created_at,
+    m.message_no AS cursor_message_no,
+    m.id AS cursor_id
+FROM ai_chat_message m
+INNER JOIN ai_chat_conversation c
+  ON c.id = m.conversation_id
+ AND c.tenant_id = m.tenant_id
+ AND c.organization_id = m.organization_id
+ AND c.user_id = m.user_id
+LEFT JOIN ai_chat_turn t
+  ON t.id = m.turn_id
+ AND t.tenant_id = m.tenant_id
+ AND t.organization_id = m.organization_id
+ AND t.user_id = m.user_id
+LEFT JOIN ai_runtime_usage_link u
+  ON u.uuid = m.usage_link_id
+ AND u.tenant_id = m.tenant_id
+ AND u.organization_id = m.organization_id
+ AND u.user_id = m.user_id
+WHERE m.tenant_id = $1
+  AND m.organization_id = $2
+  AND m.user_id = $3
+  AND c.conversation_code = $4
+  AND m.status <> 'deleted'
+  AND (
+      $5::bigint IS NULL
+      OR (m.message_no, m.id) < ($5, $6)
+  )
+ORDER BY m.message_no DESC, m.id DESC
+LIMIT $7
+"#;
 
 #[derive(Debug, Clone)]
 pub struct PostgresAppChatStore {
@@ -166,86 +221,36 @@ impl AppChatStore for PostgresAppChatStore {
         &'a self,
         subject: AppChatSubject,
         conversation_id: String,
-        page: i64,
+        cursor: Option<AppChatMessageCursor>,
         page_size: i64,
     ) -> AppChatFuture<'a, AppChatMessageList> {
         Box::pin(async move {
-            let page = page.max(1);
-            let page_size = page_size.max(1);
-            let offset = (page - 1) * page_size;
-            let rows = sqlx::query(
-                r#"
-                SELECT
-                    m.uuid,
-                    c.conversation_code,
-                    t.uuid AS turn_uuid,
-                    m.role,
-                    m.direction,
-                    m.content_text,
-                    m.status,
-                    m.model,
-                    m.provider,
-                    m.runtime,
-                    m.runtime_invocation_id,
-                    m.usage_link_id,
-                    u.uuid AS usage_link_uuid,
-                    u.input_tokens AS usage_input_tokens,
-                    u.output_tokens AS usage_output_tokens,
-                    u.cached_tokens AS usage_cached_tokens,
-                    u.reasoning_tokens AS usage_reasoning_tokens,
-                    u.total_tokens AS usage_total_tokens,
-                    CAST(u.cost_amount AS TEXT) AS usage_cost_amount,
-                    u.currency AS usage_currency,
-                    CAST(m.created_at AS TEXT) AS created_at,
-                    COUNT(*) OVER() AS total
-                FROM ai_chat_message m
-                INNER JOIN ai_chat_conversation c
-                  ON c.id = m.conversation_id
-                 AND c.tenant_id = m.tenant_id
-                 AND c.organization_id = m.organization_id
-                 AND c.user_id = m.user_id
-                LEFT JOIN ai_chat_turn t
-                  ON t.id = m.turn_id
-                 AND t.tenant_id = m.tenant_id
-                 AND t.organization_id = m.organization_id
-                 AND t.user_id = m.user_id
-                LEFT JOIN ai_runtime_usage_link u
-                 ON u.uuid = m.usage_link_id
-                 AND u.tenant_id = m.tenant_id
-                 AND u.organization_id = m.organization_id
-                 AND u.user_id = m.user_id
-                WHERE m.tenant_id = $1
-                  AND m.organization_id = $2
-                  AND m.user_id = $3
-                  AND c.conversation_code = $4
-                  AND m.status <> 'deleted'
-                ORDER BY m.message_no ASC, m.id ASC
-                LIMIT $5 OFFSET $6
-                "#,
-            )
-            .bind(subject.tenant_id)
-            .bind(subject.organization_id)
-            .bind(subject.user_id)
-            .bind(conversation_id)
-            .bind(page_size)
-            .bind(offset)
-            .fetch_all(&self.pool)
-            .await
-            .map_err(sql_error)?;
-            let total = rows
-                .first()
-                .and_then(|row| row.try_get::<i64, _>("total").ok())
-                .unwrap_or(0);
-            let items = rows
-                .into_iter()
-                .map(row_to_message)
-                .collect::<DomainResult<Vec<_>>>()?;
-            Ok(AppChatMessageList {
-                items,
-                total,
-                page_no: page,
-                page_size,
-            })
+            if !(1..=MAX_CHAT_MESSAGE_PAGE_SIZE).contains(&page_size) {
+                return Err(DomainError::new("chat message page size is invalid"));
+            }
+            let cursor_message_no = cursor.as_ref().map(|value| value.message_no);
+            let cursor_id = cursor.as_ref().map(|value| value.id);
+            if cursor
+                .as_ref()
+                .is_some_and(|value| value.message_no <= 0 || value.id <= 0)
+            {
+                return Err(DomainError::new("chat message cursor is invalid"));
+            }
+            let fetch_limit = page_size
+                .checked_add(1)
+                .ok_or_else(|| DomainError::new("chat message page size is invalid"))?;
+            let rows = sqlx::query(LIST_CHAT_MESSAGES)
+                .bind(subject.tenant_id)
+                .bind(subject.organization_id)
+                .bind(subject.user_id)
+                .bind(conversation_id)
+                .bind(cursor_message_no)
+                .bind(cursor_id)
+                .bind(fetch_limit)
+                .fetch_all(&self.pool)
+                .await
+                .map_err(sql_error)?;
+            map_chat_message_page(rows, page_size)
         })
     }
 
@@ -2006,6 +2011,39 @@ fn row_to_conversation(row: sqlx::postgres::PgRow) -> DomainResult<AppChatConver
         turn_count: integer_cell(&row, "turn_count"),
         created_at: string_cell(&row, "created_at"),
         updated_at: string_cell(&row, "updated_at"),
+    })
+}
+
+fn map_chat_message_page(
+    rows: Vec<sqlx::postgres::PgRow>,
+    page_size: i64,
+) -> DomainResult<AppChatMessageList> {
+    let page_size_usize = usize::try_from(page_size)
+        .map_err(|_| DomainError::new("chat message page size is invalid"))?;
+    let has_more = rows.len() > page_size_usize;
+    let mut items = Vec::with_capacity(rows.len().min(page_size_usize));
+    let mut last_cursor = None;
+
+    for row in rows.into_iter().take(page_size_usize) {
+        let cursor = AppChatMessageCursor {
+            message_no: integer_cell(&row, "cursor_message_no"),
+            id: integer_cell(&row, "cursor_id"),
+        };
+        if cursor.message_no <= 0 || cursor.id <= 0 {
+            return Err(DomainError::new(
+                "invalid chat message cursor values from database row",
+            ));
+        }
+        items.push(row_to_message(row)?);
+        last_cursor = Some(cursor);
+    }
+    items.reverse();
+
+    Ok(AppChatMessageList {
+        items,
+        next_cursor: has_more.then_some(last_cursor).flatten(),
+        has_more,
+        page_size,
     })
 }
 

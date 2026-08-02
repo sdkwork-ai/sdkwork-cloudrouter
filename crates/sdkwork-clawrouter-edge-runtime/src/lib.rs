@@ -1,4 +1,5 @@
 pub mod edge_server;
+mod edge_server_runtime_config;
 mod gateway_api_key_auth;
 mod internal_gateway_replay_store;
 mod invocation_dispatcher;
@@ -21,6 +22,9 @@ pub use edge_server::{
     serve_all_in_one_edge_server_with_runtime_config, serve_edge_server,
     serve_edge_server_with_runtime_config, serve_with_runtime_config, EdgeInProcessUpstreams,
     EdgeServerConfig,
+};
+pub use edge_server_runtime_config::{
+    edge_server_config_from_env_or_runtime_toml, edge_server_enabled,
 };
 pub use invocation_dispatcher::InvocationHttpDispatcher;
 pub use invocation_router::{

@@ -1094,6 +1094,7 @@ impl CachedResponsePayload {
             body_bytes: self.body_bytes.clone(),
             content_type: self.content_type.clone(),
             stream_body: Mutex::new(None),
+            memory_guard: None,
         }
     }
 }

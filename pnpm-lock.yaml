@@ -108,7 +108,7 @@ importers:
         specifier: workspace:*
         version: link:../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-application-bootstrap
       '@sdkwork/sdk-common':
-        specifier: link:../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+        specifier: workspace:*
         version: link:../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
 
   ../sdkwork-account/apps/sdkwork-account-common/packages/sdkwork-account-contracts: {}

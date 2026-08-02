@@ -1016,7 +1016,7 @@ async fn app_runtime_stream_cancel_on_another_node_stops_provider_execution() {
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/complete")
+                .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/completions")
                 .header("content-type", "application/json")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
@@ -1447,7 +1447,7 @@ async fn app_runtime_complete_invocation_updates_status_and_response_snapshot() 
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/complete")
+                .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/completions")
                 .header("content-type", "application/json")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
@@ -1498,7 +1498,7 @@ async fn app_runtime_cancel_complete_preserves_existing_completed_terminal_event
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/complete")
+                .uri("/app/v3/api/runtime/invocations/runtime-invocation-1/completions")
                 .header("content-type", "application/json")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(

@@ -13,6 +13,9 @@ use sdkwork_claw_security::{redact_url, validate_outbound_base_url, OutboundTarg
 use serde_json::Value;
 use std::time::Duration;
 
+use super::response_memory_budget::{
+    ProviderResponseMemoryBudget, ProviderResponseMemoryBudgetError,
+};
 use crate::domain::{
     provider_native_model_id, DomainError, DomainResult, ProviderAuthProfile, ProviderAuthType,
     ProviderRetryPolicy,
@@ -112,6 +115,7 @@ struct ProviderRelayRuntime {
     response_timeout: Duration,
     stream_response_timeout: Duration,
     response_max_bytes: u64,
+    response_memory_budget: ProviderResponseMemoryBudget,
     default_retry_policy: ProviderRetryPolicy,
 }
 
@@ -146,12 +150,33 @@ impl ProviderRelayRuntime {
         pool_config: ProviderRelayHttpPoolConfig,
         target_policy: OutboundTargetPolicy,
     ) -> Self {
+        Self::with_default_retry_policy_and_memory_budget(
+            response_timeout,
+            stream_response_timeout,
+            response_max_bytes,
+            default_retry_policy,
+            pool_config,
+            target_policy,
+            ProviderResponseMemoryBudget::with_default_limit(),
+        )
+    }
+
+    fn with_default_retry_policy_and_memory_budget(
+        response_timeout: Duration,
+        stream_response_timeout: Duration,
+        response_max_bytes: u64,
+        default_retry_policy: ProviderRetryPolicy,
+        pool_config: ProviderRelayHttpPoolConfig,
+        target_policy: OutboundTargetPolicy,
+        response_memory_budget: ProviderResponseMemoryBudget,
+    ) -> Self {
         Self {
             client: build_provider_client(pool_config, target_policy),
             target_policy,
             response_timeout,
             stream_response_timeout,
             response_max_bytes,
+            response_memory_budget,
             default_retry_policy,
         }
     }
@@ -167,6 +192,7 @@ impl ProviderRelayRuntime {
             response_timeout,
             stream_response_timeout: self.stream_response_timeout,
             response_max_bytes: self.response_max_bytes,
+            response_memory_budget: self.response_memory_budget.clone(),
             default_retry_policy: self.default_retry_policy.clone(),
         }
     }
@@ -295,6 +321,10 @@ impl UpstreamProviderEndpoint {
         let response = send_provider_request(&runtime, request).await?;
         let latency_ms = u64::try_from(started_at.elapsed().as_millis()).unwrap_or(u64::MAX);
         let status_code = response.status().as_u16();
+        let _memory_guard = runtime
+            .response_memory_budget
+            .try_reserve(UPSTREAM_VERIFICATION_RESPONSE_MAX_BYTES as u64)
+            .map_err(provider_response_memory_error)?;
         let bytes = tokio::time::timeout(
             response_timeout,
             Limited::new(
@@ -1103,6 +1133,33 @@ impl SecretRefOpenAiCompatibleEmbeddingsRelay {
     }
 }
 
+macro_rules! impl_shared_response_memory_budget {
+    ($($relay:ty),+ $(,)?) => {
+        $(
+            impl $relay {
+                pub fn with_shared_response_memory_budget(
+                    mut self,
+                    response_memory_budget: ProviderResponseMemoryBudget,
+                ) -> Self {
+                    self.runtime.response_memory_budget = response_memory_budget;
+                    self
+                }
+            }
+        )+
+    };
+}
+
+impl_shared_response_memory_budget!(
+    OpenAiCompatibleChatCompletionRelay,
+    OpenAiCompatibleChatCompletionStreamRelay,
+    SecretRefOpenAiCompatibleChatCompletionRelay,
+    SecretRefOpenAiCompatibleChatCompletionStreamRelay,
+    OpenAiCompatibleResponsesRelay,
+    OpenAiCompatibleEmbeddingsRelay,
+    SecretRefOpenAiCompatibleResponsesRelay,
+    SecretRefOpenAiCompatibleEmbeddingsRelay,
+);
+
 impl ResponsesRelay for SecretRefOpenAiCompatibleResponsesRelay {
     fn create_response<'a>(&'a self, request: ResponsesRelayRequest) -> ResponsesRelayFuture<'a> {
         Box::pin(async move {
@@ -1237,7 +1294,7 @@ async fn send_chat_completion_with_runtime(
         &request.provider_model,
         "chat completion",
     )?;
-    let (status_code, body) = send_openai_json_with_runtime(
+    let (status_code, body, memory_guard) = send_openai_json_with_runtime(
         runtime,
         endpoint,
         endpoint.chat_completions_uri()?,
@@ -1247,7 +1304,7 @@ async fn send_chat_completion_with_runtime(
     )
     .await?;
 
-    Ok(ChatCompletionRelayResponse::json(status_code, body))
+    Ok(ChatCompletionRelayResponse::json(status_code, body).with_memory_guard(memory_guard))
 }
 
 async fn send_chat_completion_stream_with_runtime(
@@ -1310,7 +1367,7 @@ async fn send_response_with_runtime(
 ) -> DomainResult<ResponsesRelayResponse> {
     let body =
         upstream_model_request_body(request.request_body, &request.provider_model, "responses")?;
-    let (status_code, body) = send_openai_json_with_runtime(
+    let (status_code, body, memory_guard) = send_openai_json_with_runtime(
         runtime,
         endpoint,
         endpoint.responses_uri()?,
@@ -1320,7 +1377,7 @@ async fn send_response_with_runtime(
     )
     .await?;
 
-    Ok(ResponsesRelayResponse::json(status_code, body))
+    Ok(ResponsesRelayResponse::json(status_code, body).with_memory_guard(memory_guard))
 }
 
 async fn send_embedding_with_runtime(
@@ -1330,7 +1387,7 @@ async fn send_embedding_with_runtime(
 ) -> DomainResult<EmbeddingsRelayResponse> {
     let body =
         upstream_model_request_body(request.request_body, &request.provider_model, "embeddings")?;
-    let (status_code, body) = send_openai_json_with_runtime(
+    let (status_code, body, memory_guard) = send_openai_json_with_runtime(
         runtime,
         endpoint,
         endpoint.embeddings_uri()?,
@@ -1340,7 +1397,7 @@ async fn send_embedding_with_runtime(
     )
     .await?;
 
-    Ok(EmbeddingsRelayResponse::json(status_code, body))
+    Ok(EmbeddingsRelayResponse::json(status_code, body).with_memory_guard(memory_guard))
 }
 
 async fn send_openai_json_with_runtime(
@@ -1350,7 +1407,7 @@ async fn send_openai_json_with_runtime(
     request_body: Value,
     request_label: &str,
     retry_policy: Option<ProviderRetryPolicy>,
-) -> DomainResult<(u16, Value)> {
+) -> DomainResult<(u16, Value, crate::ports::ProviderResponseMemoryGuard)> {
     let body = upstream_request_body(request_body, request_label)?;
     let body_bytes = Bytes::from(body.to_string());
     let retry_policy = retry_policy.unwrap_or_else(|| runtime.default_retry_policy.clone());
@@ -1385,6 +1442,10 @@ async fn send_openai_json_with_runtime(
 
         let response = send_provider_request(runtime, http_request).await?;
         let status_code = response.status().as_u16();
+        let memory_guard = runtime
+            .response_memory_budget
+            .try_reserve(runtime.response_max_bytes)
+            .map_err(provider_response_memory_error)?;
         // H-3: bound the response body to defend against oversized/trickling
         // upstream responses. `Limited` aborts collection once the configured
         // byte cap is exceeded.
@@ -1420,18 +1481,29 @@ async fn send_openai_json_with_runtime(
         );
 
         if attempt < retry_policy.max_attempts && retry_policy.is_retryable_status(status_code) {
+            drop(body);
+            drop(memory_guard);
             if retry_policy.backoff_ms > 0 {
                 tokio::time::sleep(Duration::from_millis(retry_policy.backoff_ms)).await;
             }
             continue;
         }
 
-        return Ok((status_code, body));
+        return Ok((status_code, body, memory_guard));
     }
 
     Err(DomainError::new(
         "upstream provider retry policy is invalid",
     ))
+}
+
+fn provider_response_memory_error(error: ProviderResponseMemoryBudgetError) -> DomainError {
+    let code = if error.is_saturated() {
+        "provider_response_memory_saturated"
+    } else {
+        "provider_response_memory_config_invalid"
+    };
+    DomainError::new(format!("{code}: {error}"))
 }
 
 async fn send_provider_request(

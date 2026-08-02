@@ -66,14 +66,8 @@ export type { MediaChecksum } from './media-checksum';
 export type { MediaKind } from './media-kind';
 export type { MediaResource } from './media-resource';
 export type { MediaSource } from './media-source';
-export type { MembershipPackageGroupMutationRequest } from './membership-package-group-mutation-request';
-export type { MembershipPackageMutationRequest } from './membership-package-mutation-request';
-export type { MembershipPlanMutationRequest } from './membership-plan-mutation-request';
-export type { MembershipStatusUpdateRequest } from './membership-status-update-request';
-
 export type { ModelLimitRuleItem } from './model-limit-rule-item';
 export type { ModelLimitRulePage } from './model-limit-rule-page';
-
 export type { MonitorAlertPage } from './monitor-alert-page';
 
 export type { MonitorNodePage } from './monitor-node-page';
@@ -81,8 +75,8 @@ export type { MonitorNodePage } from './monitor-node-page';
 export type { MonitorPerformancePage } from './monitor-performance-page';
 
 export type { PageInfo } from './page-info';
-export type { PaymentProviderAccountStatusUpdateRequest } from './payment-provider-account-status-update-request';
-
+export type { PaymentProviderInventoryItem } from './payment-provider-inventory-item';
+export type { PaymentProviderInventoryListResponse } from './payment-provider-inventory-list-response';
 export type { ProblemDetail } from './problem-detail';
 
 export type { RechargePackageMutationRequest } from './recharge-package-mutation-request';

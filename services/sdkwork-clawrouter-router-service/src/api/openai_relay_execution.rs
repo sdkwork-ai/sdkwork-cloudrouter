@@ -1,5 +1,8 @@
 use std::sync::Arc;
 
+use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
+use axum::Json;
 use serde_json::Value;
 
 use crate::api::openai_invocation::{OpenAiInvocationContext, OpenAiInvocationPluginRef};
@@ -9,7 +12,19 @@ use crate::api::openai_runtime::{
 use crate::api::openai_usage::OpenAiUsageRecorder;
 use crate::application::AuthenticatedApiKeyContext;
 use crate::domain::ProviderRetryPolicy;
-use crate::ports::GatewayUsageRecorder;
+use crate::ports::{GatewayUsageRecorder, ProviderResponseMemoryGuard};
+
+pub(crate) fn guarded_openai_json_response(
+    status: StatusCode,
+    body: Value,
+    memory_guard: Option<ProviderResponseMemoryGuard>,
+) -> Response {
+    let response = (status, Json(body)).into_response();
+    match memory_guard {
+        Some(memory_guard) => memory_guard.wrap_response(response),
+        None => response,
+    }
+}
 
 pub(crate) struct OpenAiRelayExecution<'a, C, R> {
     pub usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,

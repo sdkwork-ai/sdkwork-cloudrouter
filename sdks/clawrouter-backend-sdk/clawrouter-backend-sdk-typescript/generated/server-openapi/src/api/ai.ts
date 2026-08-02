@@ -1,6 +1,9 @@
 import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
+
 import type { CreateUpstreamAccountCredentialRequest, CreateUpstreamAccountGroupRequest, CreateUpstreamAccountRequest, CreateUpstreamSupplierRequest, ExplainUpstreamAccountGroupRouteRequest, ReplaceUpstreamAccountGroupMembersRequest, ReplaceUpstreamAccountGroupResourcesRequest, ReplaceUpstreamSupplierAuthMethodsRequest, ReplaceUpstreamSupplierEndpointsRequest, ReplaceUpstreamSupplierResourcesRequest, UpdateUpstreamAccountGroupRequest, UpdateUpstreamAccountRequest, UpdateUpstreamSupplierRequest, UpstreamAccount, UpstreamAccountCredential, UpstreamAccountCredentialListResponse, UpstreamAccountGroup, UpstreamAccountGroupListResponse, UpstreamAccountGroupMemberCollection, UpstreamAccountGroupMemberListResponse, UpstreamAccountGroupResourceCollection, UpstreamAccountGroupResourceListResponse, UpstreamAccountGroupRouteExplanation, UpstreamAccountListResponse, UpstreamAccountVerification, UpstreamSupplier, UpstreamSupplierAuthMethodCollection, UpstreamSupplierAuthMethodListResponse, UpstreamSupplierEndpointCollection, UpstreamSupplierEndpointListResponse, UpstreamSupplierListResponse, UpstreamSupplierResourceCollection, UpstreamSupplierResourceListResponse, VerifyUpstreamAccountRequest } from '../types';
+
+
 export interface AiUpstreamSuppliersResourcesUpdateParams {
   ifMatch: string;
 }
@@ -438,30 +441,14 @@ export class AiUpstreamAccountGroupsApi {
   }
 }
 
-export class AiModelMappingOptionsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** List model options catalog */
-  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(backendApiPath(`/ai/model_mapping_options`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
-  }
-}
-
 export class AiApi {
   private client: HttpClient;
-  public readonly modelMappingOptions: AiModelMappingOptionsApi;
   public readonly upstreamAccountGroups: AiUpstreamAccountGroupsApi;
   public readonly upstreamAccounts: AiUpstreamAccountsApi;
   public readonly upstreamSuppliers: AiUpstreamSuppliersApi;
 
   constructor(client: HttpClient) {
     this.client = client;
-    this.modelMappingOptions = new AiModelMappingOptionsApi(client);
     this.upstreamAccountGroups = new AiUpstreamAccountGroupsApi(client);
     this.upstreamAccounts = new AiUpstreamAccountsApi(client);
     this.upstreamSuppliers = new AiUpstreamSuppliersApi(client);

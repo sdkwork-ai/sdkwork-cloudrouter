@@ -26,6 +26,8 @@ const HTML_MODULE_SCRIPT_PATTERN = /<script\b(?=[^>]*\btype=["']module["'])(?=[^
 const RUNTIME_ENV_SCRIPT_PATH = '/runtime-env.js';
 const DEFAULT_PORTAL_DEV_PORT = 3901;
 const DEFAULT_BROWSER_DEV_PROXY_GATEWAY_TARGET = 'http://127.0.0.1:3900';
+const LOCAL_ROUTE_PACKAGE_PATTERN =
+  /\/packages\/(sdkwork-clawrouter-pc-(?:(?:admin|console)-(?!core(?:\/|$)|shell(?:\/|$))[^/]+|downloads|home|models|playground|rankings))\//u;
 const BROWSER_DEV_PROXY_ENV_KEYS = {
   openApi: 'SDKWORK_CLAW_BROWSER_DEV_PROXY_OPEN_API_ORIGIN',
   backendApi: 'SDKWORK_CLAW_BROWSER_DEV_PROXY_BACKEND_API_ORIGIN',
@@ -694,6 +696,10 @@ export default defineConfig(({mode}) => {
               return 'vendor-react';
             }
             const normalizedId = id.replaceAll('\\', '/');
+            const localRoutePackage = normalizedId.match(LOCAL_ROUTE_PACKAGE_PATTERN)?.[1];
+            if (localRoutePackage) {
+              return `route-${localRoutePackage.replace('sdkwork-clawrouter-pc-', '')}`;
+            }
             const normalizedAppbaseRoot = normalizePath(appbaseRoot);
             const normalizedIamRoot = normalizePath(iamRoot);
             const normalizedSdkworkCoreRoot = normalizePath(sdkworkCoreRoot);

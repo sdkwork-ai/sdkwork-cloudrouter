@@ -7,6 +7,11 @@ metadata:
     component: gateway
 spec:
   replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: sdkwork-clawrouter
@@ -21,7 +26,9 @@ spec:
         prometheus.io/path: /metrics
         prometheus.io/port: "18080"
     spec:
-      terminationGracePeriodSeconds: 60
+      automountServiceAccountToken: false
+      # Covers the 120-second provider stream timeout plus shutdown overhead.
+      terminationGracePeriodSeconds: 130
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -74,7 +81,7 @@ spec:
             - name: SDKWORK_CLAW_REDIS_URL
               valueFrom:
                 secretKeyRef:
-                  name: sdkwork-clawrouter-config
+                  name: sdkwork-clawrouter-redis-auth
                   key: redis-url
             - name: SDKWORK_CLAW_USAGE_SETTLEMENT_WORKER_ENABLED
               value: "true"

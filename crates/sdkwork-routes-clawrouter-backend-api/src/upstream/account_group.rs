@@ -328,9 +328,10 @@ async fn replace_members(
         )
         .await
     {
-        Ok(items) => {
-            collection_item_response(items.into_iter().map(MemberResponse::from).collect())
-        }
+        Ok(items) => collection_item_response(
+            group_id,
+            items.into_iter().map(MemberResponse::from).collect(),
+        ),
         Err(error) => domain_error(error),
     }
 }
@@ -384,9 +385,10 @@ async fn replace_resources(
         )
         .await
     {
-        Ok(items) => {
-            collection_item_response(items.into_iter().map(ResourceResponse::from).collect())
-        }
+        Ok(items) => collection_item_response(
+            group_id,
+            items.into_iter().map(ResourceResponse::from).collect(),
+        ),
         Err(error) => domain_error(error),
     }
 }

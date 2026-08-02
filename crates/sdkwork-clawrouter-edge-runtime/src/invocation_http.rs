@@ -440,6 +440,7 @@ fn normalized_response_to_http(
         body_bytes,
         content_type,
         stream_body,
+        memory_guard,
     } = normalized;
     let status = StatusCode::from_u16(status_code).unwrap_or(StatusCode::BAD_GATEWAY);
 
@@ -459,7 +460,12 @@ fn normalized_response_to_http(
 
     let body = body_bytes
         .or_else(|| body.map(|body| serde_json::to_vec(&body).unwrap_or_else(|_| b"{}".to_vec())));
-    let mut response = Response::new(Body::from(body.unwrap_or_default()));
+    let body = body.unwrap_or_default();
+    let body = match memory_guard {
+        Some(memory_guard) => memory_guard.wrap_body(body),
+        None => Body::from(body),
+    };
+    let mut response = Response::new(body);
     *response.status_mut() = status;
     if let Some(content_type) = content_type
         .as_deref()

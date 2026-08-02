@@ -153,9 +153,8 @@ struct SetStorageDefaultBucketRequest {
 struct CreateStorageQuotaPolicyRequest {
     scope_type: String,
     scope_id: String,
-    quota_limit_bytes: Option<i64>,
-    quota_limit: Option<String>,
-    single_file_limit_bytes: Option<i64>,
+    quota_limit_bytes: String,
+    single_file_limit_bytes: Option<String>,
     enforcement: Option<String>,
 }
 
@@ -866,34 +865,34 @@ fn validated_quota_create_command(
 ) -> Result<CreateStorageQuotaPolicyCommand, ApiResponseError> {
     let scope_type = normalize_required_text(request.scope_type, "scopeType", MAX_TYPE_LEN)?;
     ensure_enum(&scope_type, QUOTA_SCOPE_TYPES, "scopeType")?;
-    let quota_limit_bytes = match request.quota_limit_bytes {
-        Some(value) => value,
-        None => request
-            .quota_limit
-            .as_deref()
-            .ok_or_else(|| bad_request("quotaLimitBytes is required"))?
-            .trim()
-            .parse::<i64>()
-            .map_err(|_| bad_request("quotaLimitBytes must be a non-negative integer"))?,
-    };
-    if quota_limit_bytes < 0 {
-        return Err(bad_request("quotaLimitBytes must be a non-negative integer").into());
-    }
-    if request
+    let quota_limit_bytes =
+        parse_non_negative_i64_string(&request.quota_limit_bytes, "quotaLimitBytes")?;
+    let single_file_limit_bytes = request
         .single_file_limit_bytes
-        .is_some_and(|value| value < 0)
-    {
-        return Err(bad_request("singleFileLimitBytes must be a non-negative integer").into());
-    }
+        .as_deref()
+        .map(|value| parse_non_negative_i64_string(value, "singleFileLimitBytes"))
+        .transpose()?;
     Ok(CreateStorageQuotaPolicyCommand {
         subject: scoped.into(),
         scope_type,
         scope_id: normalize_required_text(request.scope_id, "scopeId", MAX_ID_LEN)?,
         quota_limit_bytes,
-        single_file_limit_bytes: request.single_file_limit_bytes,
+        single_file_limit_bytes,
         enforcement: normalize_optional_text(request.enforcement, "enforcement", MAX_TYPE_LEN)?,
         idempotency_key: required_header(headers, IDEMPOTENCY_KEY_HEADER)?,
         request_id: Some(server_request_id()?),
+    })
+}
+
+fn parse_non_negative_i64_string(value: &str, field_name: &str) -> Result<i64, ApiResponseError> {
+    let value = value.trim();
+    if value.is_empty() || value.len() > 19 || !value.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Err(
+            bad_request(format!("{field_name} must be a non-negative int64 string")).into(),
+        );
+    }
+    value.parse::<i64>().map_err(|_| {
+        bad_request(format!("{field_name} must be a non-negative int64 string")).into()
     })
 }
 

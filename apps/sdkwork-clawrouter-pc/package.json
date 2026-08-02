@@ -81,8 +81,8 @@
   "scripts": {
     "check:dependencies": "node scripts/check-portal-deps.mjs",
     "predev": "node ../../scripts/ensure-claw-router-env.mjs --lifecycle dev",
-    "dev": "pnpm dev:standalone",
-    "dev:browser": "pnpm dev:browser:postgres:standalone",
+    "dev": "pnpm check:dependencies && vite --configLoader native",
+    "dev:browser": "pnpm check:dependencies && vite --configLoader native",
     "dev:desktop": "pnpm dev:desktop:postgres:standalone",
     "dev:server": "pnpm exec sdkwork-app dev --root ../.. --runtime-target server --deployment-profile standalone",
     "topology:plan:server": "node ../../scripts/run-claw-router-application.mjs plan",

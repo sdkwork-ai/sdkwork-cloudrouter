@@ -64,6 +64,7 @@ pub(super) struct ListQuery {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct CollectionItem<T> {
+    id: String,
     items: Vec<T>,
 }
 
@@ -314,8 +315,14 @@ pub(super) fn item_response<T: Serialize>(status: StatusCode, item: T) -> Respon
     success_response(status, SdkWorkResourceData { item })
 }
 
-pub(super) fn collection_item_response<T: Serialize>(items: Vec<T>) -> Response {
-    item_response(StatusCode::OK, CollectionItem { items })
+pub(super) fn collection_item_response<T: Serialize>(parent_id: i64, items: Vec<T>) -> Response {
+    item_response(
+        StatusCode::OK,
+        CollectionItem {
+            id: parent_id.to_string(),
+            items,
+        },
+    )
 }
 
 pub(super) fn no_content_response() -> Response {

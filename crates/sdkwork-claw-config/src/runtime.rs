@@ -263,6 +263,10 @@ pub struct ProviderRelayRuntimeSectionConfig {
     /// Maximum bytes accepted from a non-streaming provider response body.
     /// Defaults to 64 MiB (67108864). Exceeding the limit aborts the response.
     pub provider_response_max_bytes: Option<u64>,
+    /// Process-wide memory admission budget for buffered provider responses.
+    /// This remains separate from the per-response wire-size limit because
+    /// JSON decoding and response normalization can amplify resident memory.
+    pub provider_response_memory_budget_bytes: Option<u64>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]

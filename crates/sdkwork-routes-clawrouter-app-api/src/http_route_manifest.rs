@@ -16,19 +16,19 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "ai",
         "gateway.traces.list",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/ai/generations",
         "ai",
         "generations.list",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Post,
         "/app/v3/api/ai/generations/images/text_to_image",
         "ai",
         "generations.images.textToImage.create",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/ai/generations/workspace",
         "ai",
@@ -64,37 +64,37 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "ai",
         "usage.logs.list",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/chat/conversations",
         "chat",
         "conversations.list",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Post,
         "/app/v3/api/chat/conversations",
         "chat",
         "conversations.create",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/chat/conversations/{conversationId}",
         "chat",
         "conversations.retrieve",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/chat/conversations/{conversationId}/messages",
         "chat",
         "conversations.messages.list",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Post,
         "/app/v3/api/chat/conversations/{conversationId}/turns",
         "chat",
         "conversations.turns.create",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Post,
         "/app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response",
         "chat",
@@ -136,37 +136,37 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "iam",
         "users.settings.update",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/memory/entries/{entryId}",
         "memory",
         "entries.retrieve",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/memory/spaces",
         "memory",
         "spaces.list",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Post,
         "/app/v3/api/memory/spaces",
         "memory",
         "spaces.create",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/memory/spaces/{spaceId}",
         "memory",
         "spaces.retrieve",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/memory/spaces/{spaceId}/entries",
         "memory",
         "spaces.entries.list",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Post,
         "/app/v3/api/memory/spaces/{spaceId}/entries",
         "memory",
@@ -190,55 +190,55 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "notification",
         "notifications.popupSeen.create",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/runtime/invocations",
         "runtime",
         "invocations.list",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Post,
         "/app/v3/api/runtime/invocations",
         "runtime",
         "invocations.create",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/runtime/invocations/{invocationId}",
         "runtime",
         "invocations.retrieve",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/runtime/invocations/{invocationId}/artifacts",
         "runtime",
         "invocations.artifacts.list",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Post,
         "/app/v3/api/runtime/invocations/{invocationId}/artifacts",
         "runtime",
         "invocations.artifacts.create",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Post,
         "/app/v3/api/runtime/invocations/{invocationId}/complete",
         "runtime",
         "invocations.complete",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/runtime/invocations/{invocationId}/events",
         "runtime",
         "invocations.events.list",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Post,
         "/app/v3/api/runtime/invocations/{invocationId}/events",
         "runtime",
         "invocations.events.create",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/runtime/invocations/{invocationId}/events/stream",
         "runtime",
@@ -287,8 +287,37 @@ mod tests {
         );
     }
 
+    fn assert_dual_token_route(method: &str, path: &str) {
+        let manifest = super::http_route_manifest();
+        let route = manifest
+            .match_route(method, path)
+            .unwrap_or_else(|| panic!("{method} {path} must be registered"));
+        assert_eq!(
+            RouteAuth::DualToken,
+            route.auth,
+            "{method} {path} must require dual-token authentication"
+        );
+        assert!(
+            !resolve_public_path(
+                method,
+                path,
+                &WebRequestContextProfile::default(),
+                Some(&manifest),
+            ),
+            "{method} {path} must not resolve as a public path",
+        );
+    }
+
     #[test]
     fn public_catalog_routes_allow_anonymous_access() {
         assert_public_route("GET", "/app/v3/api/system/site/runtime");
+    }
+
+    #[test]
+    fn user_owned_chat_routes_require_dual_token_authentication() {
+        assert_dual_token_route(
+            "GET",
+            "/app/v3/api/chat/conversations/{conversationId}/messages",
+        );
     }
 }

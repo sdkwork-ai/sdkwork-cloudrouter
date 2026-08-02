@@ -210,14 +210,14 @@ async fn admin_storage_route_exposes_provider_bucket_quota_and_job_commands() {
         trusted_json_request(
             "POST",
             "/backend/v3/api/storage/quotas",
-            r#"{"scopeType":"organization","scopeId":"20","quotaLimitBytes":1099511627776,"singleFileLimitBytes":10737418240,"enforcement":"hard"}"#,
+            r#"{"scopeType":"organization","scopeId":"20","quotaLimitBytes":"1099511627776","singleFileLimitBytes":"10737418240","enforcement":"hard"}"#,
         ),
     )
     .await;
     assert_eq!(0, quota["code"].as_i64().unwrap());
     assert_eq!("quota-created", quota["data"]["quotaPolicy"]["id"]);
     assert_eq!(
-        1099511627776_i64,
+        "1099511627776",
         quota["data"]["quotaPolicy"]["quotaLimitBytes"]
     );
 
@@ -489,7 +489,7 @@ fn provider_record(id: &str) -> AdminStorageJsonRecord {
         ("supportsLifecycle", json!(true)),
         ("supportsObjectLock", json!(false)),
         ("status", json!("active")),
-        ("health", json!("healthy")),
+        ("healthStatus", json!("healthy")),
     ])
 }
 
@@ -518,6 +518,7 @@ fn default_bucket_record(id: &str) -> AdminStorageJsonRecord {
         ("providerCode", json!("aws-primary")),
         ("providerType", json!("aws_s3")),
         ("region", json!("us-east-1")),
+        ("reason", json!("default tenant private route")),
         ("status", json!("active")),
         ("updatedAt", json!("2026-05-25T00:00:00Z")),
     ])
@@ -528,9 +529,9 @@ fn quota_record(id: &str) -> AdminStorageJsonRecord {
         ("id", json!(id)),
         ("scopeType", json!("organization")),
         ("scopeId", json!("20")),
-        ("quotaLimitBytes", json!(1099511627776_i64)),
-        ("usedBytes", json!(1073741824_i64)),
-        ("singleFileLimitBytes", json!(10737418240_i64)),
+        ("quotaLimitBytes", json!("1099511627776")),
+        ("usedBytes", json!("1073741824")),
+        ("singleFileLimitBytes", json!("10737418240")),
         ("enforcement", json!("hard")),
         ("status", json!("active")),
     ])
@@ -542,9 +543,9 @@ fn usage_record(id: &str) -> AdminStorageJsonRecord {
         ("scopeType", json!("organization")),
         ("scopeId", json!("20")),
         ("scope", json!("organization:20")),
-        ("usedBytes", json!(1073741824_i64)),
-        ("reservedBytes", json!(0)),
-        ("fileCount", json!(42)),
+        ("usedBytes", json!("1073741824")),
+        ("reservedBytes", json!("0")),
+        ("fileCount", json!("42")),
         ("snapshotAt", json!("2026-05-25T00:00:00Z")),
     ])
 }
@@ -554,7 +555,7 @@ fn usage_ledger_record(id: &str) -> AdminStorageJsonRecord {
         ("id", json!(id)),
         ("scopeType", json!("user")),
         ("scopeId", json!("30")),
-        ("deltaBytes", json!(4096)),
+        ("deltaBytes", json!("4096")),
         ("occurredAt", json!("2026-05-25T00:00:00Z")),
     ])
 }
@@ -565,9 +566,9 @@ fn usage_snapshot_record(id: &str) -> AdminStorageJsonRecord {
         ("scopeType", json!("tenant")),
         ("scopeId", json!("10")),
         ("scope", json!("tenant:10")),
-        ("usedBytes", json!(1073741824_i64)),
-        ("reservedBytes", json!(0)),
-        ("fileCount", json!(42)),
+        ("usedBytes", json!("1073741824")),
+        ("reservedBytes", json!("0")),
+        ("fileCount", json!("42")),
         ("snapshotAt", json!("2026-05-25T00:00:00Z")),
     ])
 }
@@ -583,7 +584,7 @@ fn reconciliation_record(id: &str) -> AdminStorageJsonRecord {
         ("runType", json!("metadata")),
         ("scope", json!("provider-created/bucket-created")),
         ("issues", json!("0")),
-        ("issueCount", json!(0)),
+        ("issueCount", json!("0")),
         ("dryRun", json!(true)),
         ("status", json!("created")),
     ])

@@ -346,10 +346,10 @@ class FrontendOperationAuditTest(unittest.TestCase):
                 "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
                 """
                 import { createSdkworkIamRuntimeAuthController } from '@sdkwork/auth-pc-react';
-                import { getClawRouterIamRuntime } from 'sdkwork-clawroutes-pc-commons/runtime';
+                import { getClawRouterAuthRuntime } from './clawRouterAuthRuntime';
 
                 export const clawRouterAuthController = createSdkworkIamRuntimeAuthController({
-                  getRuntime: getClawRouterIamRuntime,
+                  getRuntime: getClawRouterAuthRuntime,
                 });
                 """,
             )
@@ -370,6 +370,35 @@ class FrontendOperationAuditTest(unittest.TestCase):
             self.assertNotIn("checkLoginQrCodeStatus", operations)
             self.assertNotIn("confirmLoginQrCode", operations)
             self.assertNotIn("callbackLoginQrCode", operations)
+
+    def test_current_auth_controller_factory_is_appbase_oauth_sdk_boundary(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts"
+            source_text = """
+                import { createSdkworkIamRuntimeAuthController } from '@sdkwork/auth-pc-react';
+                import { getClawRouterAuthRuntime } from './clawRouterAuthRuntime';
+
+                export const clawRouterAuthController = createSdkworkIamRuntimeAuthController({
+                  getRuntime: getClawRouterAuthRuntime,
+                });
+            """
+            operation = {
+                "api_method": "POST",
+                "api_path": "/app/v3/api/oauth/authorization_urls",
+                "sdk_domain": "oauth",
+            }
+
+            uses_boundary = FrontendOperationAudit(root=root)._source_uses_generated_sdk_boundary(
+                api_surface="app",
+                sdk_domain="oauth",
+                source_operation=operation,
+                source=source,
+                source_text=source_text,
+                source_text_cache={},
+            )
+
+            self.assertTrue(uses_boundary)
 
     def test_reports_unregistered_service_operation(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

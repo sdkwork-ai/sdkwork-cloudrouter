@@ -166,7 +166,7 @@ frontend_operations:
     api_method: GET
     api_path: /backend/v3/api/recharges/packages
     sdk_operations:
-      - { sdk_family: clawrouter-backend-sdk, operation_id: packages.management.list }
+      - { sdk_family: clawrouter-backend-sdk, operation_id: packages.list }
     read_sources: [recharges]
   - route: /admin/memberships/rechargePackages
     source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
@@ -209,7 +209,7 @@ frontend_operations:
     api_method: GET
     api_path: /backend/v3/api/recharges/settings
     sdk_operations:
-      - { sdk_family: clawrouter-backend-sdk, operation_id: settings.management.retrieve }
+      - { sdk_family: clawrouter-backend-sdk, operation_id: settings.retrieve }
     read_sources: [recharges]
   - route: /admin/memberships/rechargePackages
     source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
@@ -262,26 +262,6 @@ frontend_operations:
     sdk_operations:
       - { sdk_family: sdkwork-promotion-backend-sdk, operation_id: discountApplications.list }
     read_sources: [promotions]
-  - route: /admin/marketing/discountAllocations
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts
-    operation: backendPromotionDiscountAllocationsList
-    kind: read
-    api_surface: backend
-    api_method: GET
-    api_path: /backend/v3/api/promotions/discount_allocations
-    sdk_operations:
-      - { sdk_family: clawrouter-backend-sdk, operation_id: promotions.discountAllocations.list }
-    read_sources: [promotions]
-  - route: /admin/marketing/promotionCodeRedemptions
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts
-    operation: backendPromotionCodeRedemptionsList
-    kind: read
-    api_surface: backend
-    api_method: GET
-    api_path: /backend/v3/api/promotions/codes/redemptions
-    sdk_operations:
-      - { sdk_family: clawrouter-backend-sdk, operation_id: promotions.codes.redemptions.list }
-    read_sources: [promotions]
   - route: /admin/marketing/userCoupons
     source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts
     operation: backendPromotionUserCouponsList
@@ -301,36 +281,6 @@ frontend_operations:
     api_path: /backend/v3/api/promotions/coupon_ledger_entries
     sdk_operations:
       - { sdk_family: sdkwork-promotion-backend-sdk, operation_id: couponLedgerEntries.list }
-    read_sources: [promotions]
-  - route: /admin/marketing/budgetLedger
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts
-    operation: backendPromotionBudgetLedgerEntriesList
-    kind: read
-    api_surface: backend
-    api_method: GET
-    api_path: /backend/v3/api/promotions/budget_ledger_entries
-    sdk_operations:
-      - { sdk_family: clawrouter-backend-sdk, operation_id: promotions.budgetLedgerEntries.list }
-    read_sources: [promotions]
-  - route: /admin/marketing/externalBindings
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts
-    operation: backendPromotionExternalBindingsList
-    kind: read
-    api_surface: backend
-    api_method: GET
-    api_path: /backend/v3/api/promotions/external_bindings
-    sdk_operations:
-      - { sdk_family: clawrouter-backend-sdk, operation_id: promotions.externalBindings.list }
-    read_sources: [promotions]
-  - route: /admin/marketing/promotionEvents
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts
-    operation: backendPromotionEventsList
-    kind: read
-    api_surface: backend
-    api_method: GET
-    api_path: /backend/v3/api/promotions/events
-    sdk_operations:
-      - { sdk_family: clawrouter-backend-sdk, operation_id: promotions.events.list }
     read_sources: [promotions]
   - route: /admin/payments/providers
     source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts

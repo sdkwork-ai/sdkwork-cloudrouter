@@ -7,9 +7,10 @@ use sdkwork_claw_provider_adapter_registry::{
 };
 
 use super::adapter_aware_openai_relay::{
-    adapter_http_error, build_openai_adapter_invocation, OpenAiAdapterEndpoint,
-    OpenAiAdapterInvocationParts, ProviderSecretResolverRef,
+    adapter_http_error, build_openai_adapter_invocation, provider_response_memory_error,
+    OpenAiAdapterEndpoint, OpenAiAdapterInvocationParts, ProviderSecretResolverRef,
 };
+use super::response_memory_budget::ProviderResponseMemoryBudget;
 use crate::domain::DomainResult;
 use crate::ports::{
     ResponsesRelay, ResponsesRelayFuture, ResponsesRelayRequest, ResponsesRelayResponse,
@@ -29,6 +30,7 @@ pub struct AdapterAwareResponsesRelay {
     adapter_registry: Arc<ProviderAdapterRegistry>,
     adapter_client: ProviderAdapterHttpClient,
     provider_secret_resolver: Option<ProviderSecretResolverRef>,
+    response_memory_budget: ProviderResponseMemoryBudget,
 }
 
 impl AdapterAwareResponsesRelay {
@@ -42,11 +44,20 @@ impl AdapterAwareResponsesRelay {
             adapter_registry,
             adapter_client,
             provider_secret_resolver: None,
+            response_memory_budget: ProviderResponseMemoryBudget::with_default_limit(),
         }
     }
 
     pub fn with_secret_resolver(mut self, resolver: ProviderSecretResolverRef) -> Self {
         self.provider_secret_resolver = Some(resolver);
+        self
+    }
+
+    pub fn with_shared_response_memory_budget(
+        mut self,
+        response_memory_budget: ProviderResponseMemoryBudget,
+    ) -> Self {
+        self.response_memory_budget = response_memory_budget;
         self
     }
 }
@@ -71,27 +82,24 @@ impl ResponsesRelay for AdapterAwareResponsesRelay {
                         request,
                         self.provider_secret_resolver.as_ref(),
                     )?;
+                    let memory_guard = self
+                        .response_memory_budget
+                        .try_reserve(ProviderAdapterHttpClient::MAX_BUFFERED_RESPONSE_BYTES as u64)
+                        .map_err(provider_response_memory_error)?;
                     let response = self
                         .adapter_client
                         .invoke(&route, invocation)
                         .await
                         .map_err(adapter_http_error)?;
-                    let (status_code, body) = match response {
-                        AdapterInvokeResult::Buffered(resp) => (resp.status_code, resp.body),
-                        AdapterInvokeResult::Streaming {
-                            status_code,
-                            stream_body,
-                            ..
-                        } => {
-                            let bytes = axum::body::to_bytes(stream_body, 16 * 1024 * 1024)
-                                .await
-                                .unwrap_or_default();
-                            let body =
-                                serde_json::from_slice(&bytes).unwrap_or(serde_json::Value::Null);
-                            (status_code, body)
-                        }
-                    };
-                    Ok(ResponsesRelayResponse::json(status_code, body))
+                    match response {
+                        AdapterInvokeResult::Buffered(response) => Ok(
+                            ResponsesRelayResponse::json(response.status_code, response.body)
+                                .with_memory_guard(memory_guard),
+                        ),
+                        AdapterInvokeResult::Streaming { .. } => Err(crate::domain::DomainError::new(
+                            "provider adapter returned a streaming body for a non-streaming responses request",
+                        )),
+                    }
                 }
             }
         })

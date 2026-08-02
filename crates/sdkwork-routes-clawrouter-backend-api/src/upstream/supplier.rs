@@ -383,9 +383,10 @@ async fn replace_endpoints(
         )
         .await
     {
-        Ok(items) => {
-            collection_item_response(items.into_iter().map(EndpointResponse::from).collect())
-        }
+        Ok(items) => collection_item_response(
+            supplier_id,
+            items.into_iter().map(EndpointResponse::from).collect(),
+        ),
         Err(error) => domain_error(error),
     }
 }
@@ -441,9 +442,10 @@ async fn replace_auth_methods(
         )
         .await
     {
-        Ok(items) => {
-            collection_item_response(items.into_iter().map(AuthMethodResponse::from).collect())
-        }
+        Ok(items) => collection_item_response(
+            supplier_id,
+            items.into_iter().map(AuthMethodResponse::from).collect(),
+        ),
         Err(error) => domain_error(error),
     }
 }
@@ -497,9 +499,10 @@ async fn replace_resources(
         )
         .await
     {
-        Ok(items) => {
-            collection_item_response(items.into_iter().map(ResourceResponse::from).collect())
-        }
+        Ok(items) => collection_item_response(
+            supplier_id,
+            items.into_iter().map(ResourceResponse::from).collect(),
+        ),
         Err(error) => domain_error(error),
     }
 }

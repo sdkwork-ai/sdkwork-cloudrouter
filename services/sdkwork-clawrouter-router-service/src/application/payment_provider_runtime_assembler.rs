@@ -6,10 +6,10 @@ use serde_json::Map;
 use super::{
     AlipayOpenApiClient, AlipayPaymentProviderAdapter, AlipaySigner, PayPalPaymentProviderAdapter,
     PaymentAdapterFuture, PaymentAdapterOperation, PaymentProviderAccountCredentialRefs,
-    PaymentProviderAccountCredentialResolver, PaymentProviderAdapter, PaymentProviderRegistry,
-    PaymentProviderRegistryError, PaymentProviderResolvedCredentials,
-    PaymentProviderSecretResolver, StripePaymentProviderAdapter, WeChatPayApiClient,
-    WeChatPayCrypto, WeChatPayProviderAdapter,
+    PaymentProviderAccountCredentialResolver, PaymentProviderAdapter,
+    PaymentProviderAdapterIdentity, PaymentProviderRegistry, PaymentProviderRegistryError,
+    PaymentProviderResolvedCredentials, PaymentProviderSecretResolver,
+    StripePaymentProviderAdapter, WeChatPayApiClient, WeChatPayCrypto, WeChatPayProviderAdapter,
 };
 
 pub trait PaymentProviderAdapterFactory: Send + Sync {
@@ -285,6 +285,17 @@ impl PaymentProviderRuntimeAssembler {
         let credentials = self.credential_resolver.resolve(account).await?;
         let adapter = self.adapter_factory.build_adapter(credentials).await?;
         registry.try_with_adapter(adapter.capabilities().supplier_code, adapter)
+    }
+
+    pub async fn resolve_and_register_account(
+        &self,
+        registry: PaymentProviderRegistry,
+        identity: PaymentProviderAdapterIdentity,
+        account: PaymentProviderAccountCredentialRefs,
+    ) -> Result<PaymentProviderRegistry, PaymentProviderRegistryError> {
+        let credentials = self.credential_resolver.resolve(account).await?;
+        let adapter = self.adapter_factory.build_adapter(credentials).await?;
+        registry.try_with_account_adapter(identity, adapter)
     }
 
     pub async fn resolve_many_and_register(

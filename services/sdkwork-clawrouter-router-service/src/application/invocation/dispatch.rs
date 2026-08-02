@@ -6,6 +6,8 @@ use axum::http::{HeaderMap, HeaderName, Method};
 use sdkwork_claw_provider_adapter_contract::AdapterInvocationShape;
 use serde_json::Value;
 
+pub type InvocationResponseMemoryGuard = crate::ports::ProviderResponseMemoryGuard;
+
 #[derive(Clone, PartialEq, Eq)]
 pub struct InvocationAdapterTarget {
     pub supplier_code: String,
@@ -63,6 +65,8 @@ pub struct InvocationDispatchResponse {
     /// Streaming response body for SSE/streaming requests.
     /// Wrapped in Mutex for Sync safety. Clone creates a new empty Mutex.
     pub stream_body: Mutex<Option<Body>>,
+    /// Opaque process-memory reservation retained through HTTP body delivery.
+    pub memory_guard: Option<InvocationResponseMemoryGuard>,
 }
 
 impl Clone for InvocationDispatchResponse {
@@ -73,6 +77,7 @@ impl Clone for InvocationDispatchResponse {
             body_bytes: self.body_bytes.clone(),
             content_type: self.content_type.clone(),
             stream_body: Mutex::new(None),
+            memory_guard: self.memory_guard.clone(),
         }
     }
 }
@@ -94,6 +99,7 @@ impl InvocationDispatchResponse {
             body_bytes: None,
             content_type: Some("application/json".to_owned()),
             stream_body: Mutex::new(None),
+            memory_guard: None,
         }
     }
 
@@ -104,6 +110,7 @@ impl InvocationDispatchResponse {
             body_bytes: Some(body.into()),
             content_type,
             stream_body: Mutex::new(None),
+            memory_guard: None,
         }
     }
 
@@ -114,6 +121,7 @@ impl InvocationDispatchResponse {
             body_bytes: None,
             content_type: None,
             stream_body: Mutex::new(None),
+            memory_guard: None,
         }
     }
 
@@ -125,7 +133,13 @@ impl InvocationDispatchResponse {
             body_bytes: None,
             content_type,
             stream_body: Mutex::new(Some(body)),
+            memory_guard: None,
         }
+    }
+
+    pub fn with_memory_guard(mut self, memory_guard: InvocationResponseMemoryGuard) -> Self {
+        self.memory_guard = Some(memory_guard);
+        self
     }
 
     /// Take the stream body out, if present.

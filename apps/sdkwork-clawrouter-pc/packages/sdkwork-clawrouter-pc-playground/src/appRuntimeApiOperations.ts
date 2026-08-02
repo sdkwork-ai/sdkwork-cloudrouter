@@ -33,6 +33,11 @@ interface PageParams {
   pageSize?: number;
 }
 
+interface CursorPageParams {
+  cursor?: string;
+  pageSize?: number;
+}
+
 const DEFAULT_PAGE_SIZE = 20;
 
 export interface ChatConversationCreateBody {
@@ -196,7 +201,7 @@ export async function retrieveChatConversation(
 
 export async function listChatMessages(
   conversationId: string,
-  params: PageParams = { pageSize: DEFAULT_PAGE_SIZE },
+  params: CursorPageParams = { pageSize: DEFAULT_PAGE_SIZE },
   sdkClient?: ClawRouterAppSdkClient,
 ): Promise<unknown> {
   const client = appClient(sdkClient);

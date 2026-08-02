@@ -5,29 +5,39 @@ This example targets a distributed **cloud** production deployment (`SDKWORK_CLA
 ## Prerequisites
 
 - PostgreSQL reachable from the cluster
-- Redis reachable from the cluster (required for cloud/server deployment profiles)
-- Secrets mounted for database password, API key pepper, session signing secrets, trusted-subject secret, and Redis URL
+- Managed Redis reachable from the cluster (required for cloud/server deployment profiles)
+- Cilium installed with `CiliumNetworkPolicy` and DNS proxy support enabled
+- `sdkwork-clawrouter-redis-auth` provisioned by an external secret controller;
+  never apply the placeholder Redis credentials to a production namespace
+- `sdkwork-clawrouter-config` mounted with `clawrouter.toml`, the runtime
+  database identity, and the separately privileged
+  `database-migrator-url`, API key pepper, session signing material,
+  trusted-subject secret, and Redis URL
 - Ingress controller (for example NGINX) and TLS issuer when using `claw-router-ingress.yaml`
 
 ## Apply
 
 ```bash
-kubectl apply -f deployments/kubernetes/claw-router-redis.yaml
+kubectl apply -f deployments/kubernetes/claw-router-network-policy.yaml
+kubectl apply -f deployments/kubernetes/claw-router-egress-cilium-policy.yaml
+kubectl apply -f deployments/kubernetes/claw-router-migration-job.yaml
+kubectl wait --for=condition=complete job/sdkwork-clawrouter-db-upgrade-0-3-0 --timeout=600s
 kubectl apply -f deployments/kubernetes/claw-router-gateway.yaml
 kubectl apply -f deployments/kubernetes/claw-router-app-api.yaml
 kubectl apply -f deployments/kubernetes/claw-router-admin-api.yaml
 kubectl apply -f deployments/kubernetes/claw-router-edge.yaml
 kubectl apply -f deployments/kubernetes/claw-router-ingress.yaml
-kubectl apply -f deployments/kubernetes/claw-router-migration-job.yaml
 ```
 
-Run the one-shot database upgrade job before scaling write-heavy replicas:
+The migration Job name is release-versioned. Every release must update the Job
+name, image version, and wait target together. A completed Job from an older
+release is not migration evidence for a newer image. The Job uses a dedicated
+migrator credential; runtime workloads must not receive schema-owner privileges.
 
-```bash
-kubectl wait --for=condition=complete job/sdkwork-clawrouter-db-upgrade --timeout=600s
-```
-
-Redis is **required** for distributed rate limiting when running more than one gateway or edge replica. Configure `SDKWORK_CLAW_REDIS_URL` in the `sdkwork-clawrouter-config` secret (for example `redis://sdkwork-clawrouter-redis:6379/0`).
+Redis is **required** for distributed rate limiting when running more than one
+gateway replica. `SDKWORK_CLAW_REDIS_URL` is read from the
+`sdkwork-clawrouter-redis-auth` Secret. Production uses a managed TLS endpoint;
+`claw-router-redis.yaml` is a non-production integration fixture only.
 
 Gateway handles OpenAI-compatible invocation (`/v1/*`) on port **18080**. Edge (port **3900**) proxies portal traffic and upstream app/backend APIs.
 
@@ -92,13 +102,19 @@ Edge `resources` follow Google SRE Book capacity-planning guidance: CPU `request
 
 ## Network Policy
 
-`claw-router-network-policy.yaml` implements zero-trust segmentation: a default deny-all NetworkPolicy plus explicit per-component ingress rules. Egress is allowed only for DNS, Postgres, in-cluster Redis (including sentinel gossip on port 26379), internal service-to-service traffic, and HTTPS egress to upstream AI providers.
-
-HTTPS egress for upstream providers (OpenAI, Anthropic, Google, Alibaba DashScope, Tencent Cloud) is pinned to a dedicated `egress-gateway` namespace via a `namespaceSelector` + `podSelector` `to` rule. Native Kubernetes `NetworkPolicy` cannot perform FQDN-based filtering, so operators must deploy an L7-aware policy engine (Istio, Cilium, or equivalent) in the `egress-gateway` namespace that enforces the documented FQDN allowlist. If an L7 egress gateway is not available, replace the `to` selector with `to.ipBlock` entries listing resolved provider CIDRs (weaker, requires continuous DNS-to-CIDR refresh). Leaving the rule without a `to` selector is forbidden because it would permit egress to any HTTPS endpoint.
+`claw-router-network-policy.yaml` provides default deny, CoreDNS-only DNS,
+PostgreSQL, Redis, and internal service rules. Provider HTTPS is owned by
+`claw-router-egress-cilium-policy.yaml`, which allows only the declared provider
+FQDNs and denies private, link-local, metadata, documentation, multicast, and
+reserved DNS answers on port 443. A custom provider cannot be activated until
+its reviewed hostname is added to that policy and the policy rollout succeeds.
+Clusters without Cilium must supply and verify an equivalent DNS-aware policy;
+the deleted Envoy example is not a supported fallback.
 
 ## Migration
 
-Prefer the Kubernetes Job in `claw-router-ingress.yaml` for first rollout. For manual upgrades:
+Use the versioned Kubernetes Job before starting the release workload. For a
+manual operator-controlled upgrade with the same dedicated migrator identity:
 
 ```bash
 clawrouterctl upgrade --config-file /etc/sdkwork/clawrouter.toml

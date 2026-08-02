@@ -18,7 +18,9 @@ use sdkwork_claw_security::{validate_outbound_url, OutboundTargetPolicy};
 use sdkwork_clawrouter_router_service::application::{
     Invocation, InvocationAccount, InvocationBody, InvocationDispatchResponse,
 };
-use sdkwork_clawrouter_router_service::infrastructure::provider::ProviderRelayHttpPoolConfig;
+use sdkwork_clawrouter_router_service::infrastructure::provider::{
+    ProviderRelayHttpPoolConfig, ProviderResponseMemoryBudget, ProviderResponseMemoryBudgetError,
+};
 use sdkwork_clawrouter_router_service::ports::{
     InvocationDispatchError, InvocationDispatcher, InvocationDispatcherFuture,
 };
@@ -36,6 +38,7 @@ pub struct InvocationHttpDispatcher {
     outbound_target_policy: OutboundTargetPolicy,
     response_max_bytes: NonZeroUsize,
     response_timeout: Duration,
+    response_memory_budget: ProviderResponseMemoryBudget,
 }
 
 impl InvocationHttpDispatcher {
@@ -97,12 +100,54 @@ impl InvocationHttpDispatcher {
         response_timeout: Duration,
         http_pool_config: ProviderRelayHttpPoolConfig,
     ) -> Self {
+        let response_memory_budget = ProviderResponseMemoryBudget::with_default_limit();
         Self {
             client: build_invocation_http_client(outbound_target_policy, http_pool_config),
             outbound_target_policy,
             response_max_bytes,
             response_timeout,
+            response_memory_budget,
         }
+    }
+
+    /// Creates a production dispatcher with an explicit process-wide memory
+    /// budget. Invalid response-limit/budget combinations fail at bootstrap.
+    pub fn with_provider_runtime_and_memory_budget(
+        response_max_bytes: NonZeroUsize,
+        response_memory_budget_bytes: NonZeroUsize,
+        response_timeout: Duration,
+        http_pool_config: ProviderRelayHttpPoolConfig,
+    ) -> Result<Self, String> {
+        let response_memory_budget =
+            ProviderResponseMemoryBudget::new(response_memory_budget_bytes)
+                .map_err(|error| error.to_string())?;
+        Self::with_provider_runtime_and_shared_memory_budget(
+            response_max_bytes,
+            response_memory_budget,
+            response_timeout,
+            http_pool_config,
+        )
+    }
+
+    pub fn with_provider_runtime_and_shared_memory_budget(
+        response_max_bytes: NonZeroUsize,
+        response_memory_budget: ProviderResponseMemoryBudget,
+        response_timeout: Duration,
+        http_pool_config: ProviderRelayHttpPoolConfig,
+    ) -> Result<Self, String> {
+        response_memory_budget
+            .validate_response_limit(response_max_bytes.get() as u64)
+            .map_err(|error| error.to_string())?;
+        Ok(Self {
+            client: build_invocation_http_client(
+                OutboundTargetPolicy::Production,
+                http_pool_config,
+            ),
+            outbound_target_policy: OutboundTargetPolicy::Production,
+            response_max_bytes,
+            response_timeout,
+            response_memory_budget,
+        })
     }
 }
 
@@ -198,6 +243,11 @@ impl InvocationDispatcher for InvocationHttpDispatcher {
                 ));
             }
 
+            let memory_guard = self
+                .response_memory_budget
+                .try_reserve(self.response_max_bytes.get() as u64)
+                .map_err(provider_response_memory_error)?;
+
             let body = collect_bounded_provider_response_body(
                 account,
                 status_code,
@@ -221,14 +271,13 @@ impl InvocationDispatcher for InvocationHttpDispatcher {
                 })?;
                 let mut response = InvocationDispatchResponse::json(status_code, body);
                 response.content_type = content_type;
-                return Ok(response);
+                return Ok(response.with_memory_guard(memory_guard));
             }
 
-            Ok(InvocationDispatchResponse::bytes(
-                status_code,
-                body.to_vec(),
-                content_type,
-            ))
+            Ok(
+                InvocationDispatchResponse::bytes(status_code, body.to_vec(), content_type)
+                    .with_memory_guard(memory_guard),
+            )
         })
     }
 }
@@ -316,6 +365,26 @@ fn provider_response_too_large_error(status_code: u16, limit: usize) -> Invocati
         Some(status_code),
         false,
     )
+}
+
+fn provider_response_memory_error(
+    error: ProviderResponseMemoryBudgetError,
+) -> InvocationDispatchError {
+    if error.is_saturated() {
+        dispatch_error(
+            "provider_response_memory_saturated",
+            error.to_string(),
+            Some(503),
+            true,
+        )
+    } else {
+        dispatch_error(
+            "provider_response_memory_config_invalid",
+            error.to_string(),
+            None,
+            false,
+        )
+    }
 }
 
 fn timeout_duration(timeout_ms: u64) -> Option<Duration> {
@@ -592,5 +661,59 @@ mod tests {
         );
 
         assert_eq!(timeout, dispatcher.response_timeout);
+    }
+
+    #[test]
+    fn process_memory_budget_rejects_concurrent_reservations_at_capacity() {
+        let budget = ProviderResponseMemoryBudget::new(
+            NonZeroUsize::new(16).expect("nonzero process memory budget"),
+        )
+        .expect("test process memory budget must be valid");
+        let response_limit = NonZeroUsize::new(4).expect("nonzero response limit");
+
+        let first = budget
+            .try_reserve(response_limit.get() as u64)
+            .expect("first response must reserve the full test budget");
+        let saturated = budget
+            .try_reserve(response_limit.get() as u64)
+            .expect_err("a second reservation must fail closed while capacity is held");
+        assert!(saturated.is_saturated());
+
+        drop(first);
+        assert!(budget.try_reserve(response_limit.get() as u64).is_ok());
+    }
+
+    #[test]
+    fn cloned_response_retains_the_same_memory_reservation() {
+        let budget = ProviderResponseMemoryBudget::new(
+            NonZeroUsize::new(16).expect("nonzero process memory budget"),
+        )
+        .expect("test process memory budget must be valid");
+        let response_limit = NonZeroUsize::new(4).expect("nonzero response limit");
+        let guard = budget
+            .try_reserve(response_limit.get() as u64)
+            .expect("first response must reserve capacity");
+        let response =
+            InvocationDispatchResponse::bytes(200, b"body".to_vec(), None).with_memory_guard(guard);
+        let normalized_copy = response.clone();
+        drop(response);
+
+        assert!(budget.try_reserve(response_limit.get() as u64).is_err());
+        drop(normalized_copy);
+        assert!(budget.try_reserve(response_limit.get() as u64).is_ok());
+    }
+
+    #[test]
+    fn explicit_runtime_rejects_response_limit_above_process_budget() {
+        let error = InvocationHttpDispatcher::with_provider_runtime_and_memory_budget(
+            NonZeroUsize::new(5).expect("nonzero response limit"),
+            NonZeroUsize::new(16).expect("nonzero process budget"),
+            Duration::from_secs(1),
+            ProviderRelayHttpPoolConfig::default(),
+        )
+        .err()
+        .expect("response memory amplification must fit the process budget");
+
+        assert!(error.contains("requires a 20 byte memory reservation"));
     }
 }

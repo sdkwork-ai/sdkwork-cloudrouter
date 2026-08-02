@@ -42,6 +42,7 @@ This SDK family is owner-only. Dependency-owned routes are consumed through decl
 | Workspace | Role | Mode | API prefix | Generated transport policy |
 | --- | --- | --- | --- | --- |
 | `sdkwork-iam-app-sdk` | `appbase-app-capability` | `consumer-sdk` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `sdkwork-messaging-app-sdk` | `messaging-app-verification-capability` | `consumer-sdk` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
 | `sdkwork-account-app-sdk` | `account-app-capability` | `consumer-sdk` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
 | `sdkwork-membership-app-sdk` | `membership-app-capability` | `consumer-sdk` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
 | `sdkwork-catalog-app-sdk` | `catalog-app-capability` | `consumer-sdk` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
@@ -63,6 +64,8 @@ Package names:
 - `kotlin`: `com.sdkwork:sdkwork-iam-app-sdk`
 - `go`: `github.com/sdkwork/sdkwork-iam-app-sdk`
 - `python`: `sdkwork-iam-app-sdk`
+- `sdkwork-messaging-app-sdk`
+- `typescript`: `@sdkwork/messaging-app-sdk`
 - `sdkwork-account-app-sdk`
 - `typescript`: `@sdkwork/account-app-sdk`
 - `sdkwork-membership-app-sdk`

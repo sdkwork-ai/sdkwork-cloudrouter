@@ -91,6 +91,20 @@ test("production chunks let Rollup keep qrcode with its CommonJS dependencies", 
   assert.equal(typeof output.manualChunks, "function");
   assert.equal(
     output.manualChunks(
+      "E:/sdkwork-space/sdkwork-clawrouter/apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/AdminDashboardPage.tsx",
+      {} as never,
+    ),
+    "route-admin-dashboard",
+  );
+  assert.equal(
+    output.manualChunks(
+      "E:/sdkwork-space/sdkwork-clawrouter/apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-core/src/index.ts",
+      {} as never,
+    ),
+    undefined,
+  );
+  assert.equal(
+    output.manualChunks(
       "C:/workspace/node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/browser.js",
       {} as never,
     ),
@@ -689,11 +703,11 @@ test("portal scripts run dependency preflight before Vite entrypoints", () => {
   assert.equal(portalPackage.scripts.prebuild, "node ../../scripts/ensure-claw-router-env.mjs --lifecycle build");
   assert.equal(
     portalPackage.scripts.dev,
-    "pnpm dev:standalone",
+    "pnpm check:dependencies && vite --configLoader native",
   );
   assert.equal(
     portalPackage.scripts["dev:browser"],
-    "pnpm dev:browser:postgres:standalone",
+    "pnpm check:dependencies && vite --configLoader native",
   );
   assert.equal(
     portalPackage.scripts["_sdkwork:client:browser"],

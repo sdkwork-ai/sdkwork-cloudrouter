@@ -5,9 +5,9 @@ use super::provider_adapter_dispatch::validate_provider_adapter_target;
 use super::provider_request::ProviderRequestBuilder;
 use super::{
     BillingMode, BillingQuantitySource, DispatchMode, Invocation, InvocationAccount,
-    InvocationDispatchResponse, InvocationError, InvocationErrorKind, InvocationFuture,
-    InvocationInterceptor, InvocationRouteAttempt, InvocationRouteCandidate, InvocationShape,
-    InvocationSurface, ResolvedProviderSecret,
+    InvocationCancellationSignal, InvocationDispatchResponse, InvocationError, InvocationErrorKind,
+    InvocationFuture, InvocationInterceptor, InvocationRouteAttempt, InvocationRouteCandidate,
+    InvocationShape, InvocationSurface, ResolvedProviderSecret,
 };
 use crate::domain::AiRouteFailureStrategy;
 use crate::ports::{
@@ -58,6 +58,7 @@ impl InvocationInterceptor for DispatchExecutor {
 
     fn before<'a>(&'a self, invocation: &'a mut Invocation) -> InvocationFuture<'a, ()> {
         Box::pin(async move {
+            let cancellation_signal = invocation.request.cancellation_signal();
             match invocation.dispatch.mode {
                 DispatchMode::SyntheticLocalResponse => return Ok(()),
                 DispatchMode::NoopFree => {
@@ -84,6 +85,7 @@ impl InvocationInterceptor for DispatchExecutor {
             let mut last_error: Option<InvocationError> = None;
             let mut last_response: Option<InvocationDispatchResponse> = None;
             for (index, candidate) in candidates.iter().enumerate() {
+                ensure_dispatch_active(&cancellation_signal)?;
                 let account = account_from_candidate(candidate)?;
                 apply_candidate_resource(invocation, candidate);
                 invocation.account = Some(account.clone());
@@ -97,6 +99,7 @@ impl InvocationInterceptor for DispatchExecutor {
                 let mut exhausted_retryable = false;
                 let mut dispatch_started = false;
                 for attempt_no in 1..=max_attempts {
+                    ensure_dispatch_active(&cancellation_signal)?;
                     if let Err(error) = refresh_provider_request(
                         invocation,
                         &account,
@@ -118,7 +121,14 @@ impl InvocationInterceptor for DispatchExecutor {
                     }
                     let started = Instant::now();
                     dispatch_started = true;
-                    match self.dispatcher.dispatch(invocation, &account).await {
+                    let dispatch_result = tokio::select! {
+                        result = self.dispatcher.dispatch(invocation, &account) => result,
+                        _ = cancellation_signal.wait_for_tenant_lease_loss() => {
+                            return Err(tenant_lease_loss_error());
+                        }
+                    };
+                    ensure_dispatch_active(&cancellation_signal)?;
+                    match dispatch_result {
                         Ok(response) if response_is_success(invocation, &response) => {
                             let status_code = effective_response_status_code(invocation, &response);
                             invocation.routing.attempted_routes.push(success_attempt(
@@ -174,8 +184,9 @@ impl InvocationInterceptor for DispatchExecutor {
                             }
                         }
                     }
-                    sleep_before_retry(candidate).await;
+                    sleep_before_retry(candidate, &cancellation_signal).await?;
                 }
+                ensure_dispatch_active(&cancellation_signal)?;
                 if !should_try_next(
                     invocation.routing.failure_strategy,
                     exhausted_retryable,
@@ -400,16 +411,22 @@ fn should_retry_candidate(max_attempts: usize, attempt_no: usize, retryable: boo
     retryable && attempt_no < max_attempts
 }
 
-async fn sleep_before_retry(candidate: &InvocationRouteCandidate) {
+async fn sleep_before_retry(
+    candidate: &InvocationRouteCandidate,
+    cancellation_signal: &InvocationCancellationSignal,
+) -> Result<(), InvocationError> {
     let Some(backoff_ms) = candidate
         .retry_policy
         .as_ref()
         .map(|policy| policy.backoff_ms)
         .filter(|backoff_ms| *backoff_ms > 0)
     else {
-        return;
+        return ensure_dispatch_active(cancellation_signal);
     };
-    tokio::time::sleep(Duration::from_millis(backoff_ms)).await;
+    tokio::select! {
+        _ = tokio::time::sleep(Duration::from_millis(backoff_ms)) => Ok(()),
+        _ = cancellation_signal.wait_for_tenant_lease_loss() => Err(tenant_lease_loss_error()),
+    }
 }
 
 fn should_try_next(
@@ -482,4 +499,21 @@ fn provider_status_message(status_code: u16, retryable: bool) -> String {
 
 fn dispatch_error(message: impl Into<String>) -> InvocationError {
     InvocationError::new(InvocationErrorKind::Dispatch, message)
+}
+
+fn ensure_dispatch_active(
+    cancellation_signal: &InvocationCancellationSignal,
+) -> Result<(), InvocationError> {
+    if cancellation_signal.is_tenant_lease_lost() {
+        Err(tenant_lease_loss_error())
+    } else {
+        Ok(())
+    }
+}
+
+fn tenant_lease_loss_error() -> InvocationError {
+    InvocationError::new(
+        InvocationErrorKind::RateLimit,
+        "tenant in-flight lease ownership was lost",
+    )
 }

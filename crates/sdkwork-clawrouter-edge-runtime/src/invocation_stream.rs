@@ -6,8 +6,8 @@ use axum::body::{Body, Bytes};
 use futures_util::stream::{self, BoxStream};
 use futures_util::StreamExt;
 use sdkwork_clawrouter_router_service::application::{
-    DeferredStreamInvocation, StreamTerminalOutcome, StreamingUsageAccumulator,
-    StreamingUsageFormat,
+    DeferredStreamInvocation, InvocationCancellationSignal, StreamTerminalOutcome,
+    StreamingUsageAccumulator, StreamingUsageFormat,
 };
 use tokio::sync::{mpsc, oneshot};
 use tokio::time::{timeout_at, Instant as TokioInstant};
@@ -57,6 +57,7 @@ pub(crate) fn wrap_invocation_stream(
     deferred: DeferredStreamInvocation,
     timeouts: InvocationStreamTimeouts,
 ) -> Body {
+    let cancellation_signal = deferred.cancellation_signal();
     let (completion, mut terminal_receiver) = StreamCompletion::new();
     tokio::spawn(async move {
         let outcome = terminal_receiver
@@ -78,6 +79,7 @@ pub(crate) fn wrap_invocation_stream(
             timeouts,
             demand_receiver,
             producer_completion,
+            cancellation_signal,
         )
         .await;
     });
@@ -248,10 +250,21 @@ async fn run_stream_producer(
     timeouts: InvocationStreamTimeouts,
     mut demand_receiver: mpsc::Receiver<oneshot::Sender<StreamEvent>>,
     completion: StreamCompletion,
+    cancellation_signal: InvocationCancellationSignal,
 ) {
     let mut state = StreamProducerState::new(body, usage_format, timeouts);
     loop {
-        let response_sender = match timeout_at(state.total_deadline, demand_receiver.recv()).await {
+        let demand_result = tokio::select! {
+            biased;
+            _ = cancellation_signal.wait_for_tenant_lease_loss() => {
+                completion.complete(StreamTerminalOutcome::LeaseLost {
+                    ttft_ms: state.ttft_ms(),
+                });
+                return;
+            }
+            result = timeout_at(state.total_deadline, demand_receiver.recv()) => result,
+        };
+        let response_sender = match demand_result {
             Ok(Some(sender)) => sender,
             Ok(None) => {
                 completion.complete(StreamTerminalOutcome::Cancelled {
@@ -271,6 +284,13 @@ async fn run_stream_producer(
         let (deadline, timeout_stage) = state.next_upstream_deadline();
         let mut response_sender = response_sender;
         let next_frame = tokio::select! {
+            biased;
+            _ = cancellation_signal.wait_for_tenant_lease_loss() => {
+                completion.complete(StreamTerminalOutcome::LeaseLost {
+                    ttft_ms: state.ttft_ms(),
+                });
+                return;
+            }
             result = timeout_at(deadline, state.upstream.next()) => result,
             _ = response_sender.closed() => {
                 completion.complete(StreamTerminalOutcome::Cancelled {

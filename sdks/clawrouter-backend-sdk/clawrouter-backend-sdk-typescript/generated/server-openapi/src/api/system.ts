@@ -644,7 +644,7 @@ export class SystemMarketingReferralStatsApi {
   }
 
 
-/** List */
+/** List referral stats */
   async list(params?: SystemMarketingReferralStatsListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
     const query = buildQueryString([
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },

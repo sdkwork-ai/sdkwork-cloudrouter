@@ -15,6 +15,7 @@ mod payment_adapter;
 mod payment_intent_runtime;
 mod payment_provider_account_resolver;
 mod payment_provider_registry;
+mod payment_provider_route_resolver;
 mod payment_provider_runtime_assembler;
 mod payment_provider_runtime_bootstrap;
 mod payment_reconciliation_runtime;
@@ -75,13 +76,14 @@ pub use invocation::{
     IdempotencyConfig, IdempotencyInterceptor, IdempotencyKeyStatus, IdempotencyLockAcquisition,
     IdempotencyStore, IdempotencyStoreEntry, IdempotencyStoreError, Invocation, InvocationAccount,
     InvocationAdapterTarget, InvocationAuthType, InvocationBilling, InvocationBody,
-    InvocationClassification, InvocationClassificationRequest, InvocationDispatch,
-    InvocationDispatchResponse, InvocationError, InvocationErrorKind, InvocationFuture,
-    InvocationId, InvocationInterceptor, InvocationNormalizedResponse, InvocationPipeline,
-    InvocationPipelineExecution, InvocationPricingQuote, InvocationProviderRequest,
-    InvocationRequest, InvocationResource, InvocationResourceClassifier, InvocationRouteAttempt,
-    InvocationRouteCandidate, InvocationRouteCandidateKind, InvocationRoutePlan, InvocationRouting,
-    InvocationShape, InvocationSubject, InvocationSurface, InvocationTelemetry, InvocationUsage,
+    InvocationCancellationSignal, InvocationClassification, InvocationClassificationRequest,
+    InvocationDispatch, InvocationDispatchResponse, InvocationError, InvocationErrorKind,
+    InvocationFuture, InvocationId, InvocationInterceptor, InvocationNormalizedResponse,
+    InvocationPipeline, InvocationPipelineExecution, InvocationPricingQuote,
+    InvocationProviderRequest, InvocationRequest, InvocationResource, InvocationResourceClassifier,
+    InvocationResponseMemoryGuard, InvocationRouteAttempt, InvocationRouteCandidate,
+    InvocationRouteCandidateKind, InvocationRoutePlan, InvocationRouting, InvocationShape,
+    InvocationSubject, InvocationSurface, InvocationTelemetry, InvocationUsage,
     InvocationUsageLine, InvocationUsageLineRole, MetricsInterceptor, OpenAiResourceClassifier,
     PayloadExtractionInterceptor, PricingFinalizationInterceptor, PricingPreflightInterceptor,
     PricingSettlementInterceptor, ProviderAdapterDispatchInterceptor,
@@ -120,7 +122,12 @@ pub use payment_provider_account_resolver::{
 pub use payment_provider_registry::{
     default_payment_provider_registry, production_payment_provider_registry,
     resolve_payment_provider_registry_for_deployment, sandbox_payment_provider_registry,
-    PaymentProviderRegistry, PaymentProviderRegistryError,
+    PaymentProviderAdapterIdentity, PaymentProviderRegistry, PaymentProviderRegistryError,
+};
+pub use payment_provider_route_resolver::{
+    PaymentProviderRouteResolver, PaymentProviderRouteResolverFuture,
+    RegistryPaymentProviderRouteResolver, ResolvePaymentProviderRouteQuery,
+    ResolvedPaymentProviderRoute, UnavailablePaymentProviderRouteResolver,
 };
 pub use payment_provider_runtime_assembler::{
     ConfigurablePaymentProviderAdapterFactory, DefaultPaymentProviderAdapterFactory,

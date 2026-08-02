@@ -597,7 +597,7 @@ fn app_runtime_router_with_state(
             get(get_invocation),
         )
         .route(
-            "/app/v3/api/runtime/invocations/{invocation_id}/complete",
+            "/app/v3/api/runtime/invocations/{invocation_id}/completions",
             axum::routing::post(complete_invocation),
         )
         .route(

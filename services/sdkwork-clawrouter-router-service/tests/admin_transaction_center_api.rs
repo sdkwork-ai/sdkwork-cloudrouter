@@ -77,6 +77,43 @@ async fn admin_transaction_center_provider_accounts_use_standard_list_create_del
     );
 }
 
+#[tokio::test]
+async fn admin_transaction_center_provider_inventory_uses_canonical_filters_and_rejects_aliases() {
+    let store = Arc::new(TestAdminTransactionCenterStore::default());
+    let router = sdkwork_clawrouter_router_service::api::admin_transaction_center_router_with_store(
+        store.clone(),
+    );
+
+    let providers = request_json(
+        router.clone(),
+        signed_request(
+            "GET",
+            "/backend/v3/api/payments/providers?page=1&page_size=20&provider_code=stripe&status=active",
+            "",
+        ),
+        StatusCode::OK,
+    )
+    .await;
+    assert_eq!("stripe", providers["data"]["items"][0]["providerCode"]);
+
+    {
+        let queries = store.provider_queries.lock().unwrap();
+        assert_eq!(1, queries.len());
+        assert_eq!(Some("stripe"), queries[0].supplier_code.as_deref());
+        assert_eq!(Some("active"), queries[0].status.as_deref());
+    }
+
+    for alias in ["pageSize", "limit", "page_no", "pageNo", "per_page", "size"] {
+        let path = format!("/backend/v3/api/payments/providers?{alias}=20");
+        let response = router
+            .clone()
+            .oneshot(signed_request("GET", &path, ""))
+            .await
+            .unwrap();
+        assert_eq!(StatusCode::BAD_REQUEST, response.status(), "alias {alias}");
+    }
+}
+
 fn signed_request(method: &str, path: &str, body: &str) -> Request<Body> {
     Request::builder()
         .method(method)
@@ -122,6 +159,7 @@ async fn json_payload(response: axum::response::Response) -> Value {
 #[derive(Default)]
 struct TestAdminTransactionCenterStore {
     commands: Mutex<Vec<&'static str>>,
+    provider_queries: Mutex<Vec<ListAdminTransactionRecordsQuery>>,
 }
 
 impl AdminTransactionCenterStore for TestAdminTransactionCenterStore {
@@ -227,9 +265,20 @@ impl AdminTransactionCenterStore for TestAdminTransactionCenterStore {
         &'a self,
         query: ListAdminTransactionRecordsQuery,
     ) -> AdminTransactionCenterFuture<'a, AdminTransactionCollection> {
+        self.provider_queries.lock().unwrap().push(query.clone());
         Box::pin(async move {
             Ok(test_page(
-                Vec::new(),
+                vec![record(json!({
+                    "id": "provider-stripe",
+                    "providerCode": "stripe",
+                    "displayName": "Stripe",
+                    "providerType": "official",
+                    "supportedCountries": ["US"],
+                    "supportedCurrencies": ["USD"],
+                    "capabilities": ["payment_intent"],
+                    "status": "active",
+                    "sortOrder": 30
+                }))],
                 query.page_no,
                 query.page_size,
                 query.offset,

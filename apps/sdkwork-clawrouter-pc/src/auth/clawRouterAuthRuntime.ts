@@ -1,5 +1,8 @@
 import type { SdkworkIamRuntimeAuthRuntimeLike } from '@sdkwork/auth-pc-react';
-import { getClawRouterIamRuntime } from '@sdkwork/clawroutes-pc-commons/runtime';
+import {
+  getClawRouterIamRuntime,
+  getClawRouterMessagingVerificationService,
+} from '@sdkwork/clawroutes-pc-commons/runtime';
 import type {
   IamCreateRegistrationInput,
   IamRefreshSessionInput,
@@ -27,6 +30,7 @@ export function getClawRouterAuthRuntime(): SdkworkIamRuntimeAuthRuntimeLike {
         },
       },
       iam: runtime.service.iam,
+      messaging: getClawRouterMessagingVerificationService(),
       oauth: {
         ...runtime.service.oauth,
         deviceAuthorizations: {

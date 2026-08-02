@@ -1241,7 +1241,9 @@
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "growth_referral_stats"
+      ],
       "fields": [
         "id",
         "inviter",
@@ -1252,96 +1254,57 @@
       ],
       "file_targets": [],
       "interface": "ReferralStat",
-      "route": null,
+      "route": "/admin/marketing/:sectionId?",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "memberships"
+      ],
       "fields": [
+        "page",
+        "pageSize",
         "membershipId",
         "planId",
         "status"
       ],
       "file_targets": [],
       "interface": "MembershipsAdminEntitlementsListParams",
-      "route": null,
+      "route": "/admin/memberships/:sectionId?",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "memberships"
+      ],
       "fields": [
         "status"
       ],
       "file_targets": [],
       "interface": "MembershipsAdminMemberStatusInput",
-      "route": null,
+      "route": "/admin/memberships/:sectionId?",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "memberships"
+      ],
       "fields": [
+        "page",
+        "pageSize",
         "userId",
         "planId",
         "status"
       ],
       "file_targets": [],
       "interface": "MembershipsAdminMembersListParams",
-      "route": null,
+      "route": "/admin/memberships/:sectionId?",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
-      "data_sources": [],
-      "fields": [
-        "groups",
-        "groups.id",
-        "groups.code",
-        "groups.name",
-        "groups.description",
-        "groups.planId",
-        "groups.billingCycle",
-        "groups.durationDays",
-        "groups.sortWeight",
-        "groups.status",
-        "groups.packageCount",
-        "packages",
-        "packages.id",
-        "packages.packageNo",
-        "packages.groupId",
-        "packages.planId",
-        "packages.skuId",
-        "packages.name",
-        "packages.priceAmount",
-        "packages.currencyCode",
-        "packages.durationDays",
-        "packages.recurrenceCycle",
-        "packages.status",
-        "plans",
-        "plans.id",
-        "plans.planNo",
-        "plans.levelCode",
-        "plans.name",
-        "plans.rank",
-        "plans.status",
-        "plans.benefitCount",
-        "plans.benefits",
-        "plans.benefits.id",
-        "plans.benefits.name",
-        "plans.benefits.benefitKey",
-        "plans.benefits.type",
-        "plans.benefits.description",
-        "plans.benefits.icon",
-        "plans.benefits.usageLimit",
-        "plans.benefits.usedCount",
-        "plans.benefits.claimed",
-        "plans.updatedAt"
+      "data_sources": [
+        "memberships"
       ],
-      "file_targets": [],
-      "interface": "MembershipsAdminPackageCatalog",
-      "route": null,
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
-    },
-    {
-      "data_sources": [],
       "fields": [
         "id",
         "code",
@@ -1356,11 +1319,13 @@
       ],
       "file_targets": [],
       "interface": "MembershipsAdminPackageGroup",
-      "route": null,
+      "route": "/admin/memberships/:sectionId?",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "memberships"
+      ],
       "fields": [
         "code",
         "name",
@@ -1372,11 +1337,27 @@
       ],
       "file_targets": [],
       "interface": "MembershipsAdminPackageGroupMutationInput",
-      "route": null,
+      "route": "/admin/memberships/:sectionId?",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "memberships"
+      ],
+      "fields": [
+        "page",
+        "pageSize",
+        "status"
+      ],
+      "file_targets": [],
+      "interface": "MembershipsAdminPackageGroupsListParams",
+      "route": "/admin/memberships/:sectionId?",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
+    },
+    {
+      "data_sources": [
+        "memberships"
+      ],
       "fields": [
         "id",
         "packageNo",
@@ -1392,11 +1373,13 @@
       ],
       "file_targets": [],
       "interface": "MembershipsAdminPackageItem",
-      "route": null,
+      "route": "/admin/memberships/:sectionId?",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "memberships"
+      ],
       "fields": [
         "code",
         "packageGroupId",
@@ -1409,23 +1392,47 @@
       ],
       "file_targets": [],
       "interface": "MembershipsAdminPackageMutationInput",
-      "route": null,
+      "route": "/admin/memberships/:sectionId?",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "memberships"
+      ],
       "fields": [
+        "page",
+        "pageSize",
         "packageGroupId",
         "planId",
         "status"
       ],
       "file_targets": [],
       "interface": "MembershipsAdminPackagesListParams",
-      "route": null,
+      "route": "/admin/memberships/:sectionId?",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "memberships"
+      ],
+      "fields": [
+        "mode",
+        "page",
+        "pageSize",
+        "totalItems",
+        "totalPages",
+        "nextCursor",
+        "hasMore"
+      ],
+      "file_targets": [],
+      "interface": "MembershipsAdminPageInfo",
+      "route": "/admin/memberships/:sectionId?",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
+    },
+    {
+      "data_sources": [
+        "memberships"
+      ],
       "fields": [
         "id",
         "name",
@@ -1439,11 +1446,13 @@
       ],
       "file_targets": [],
       "interface": "MembershipsAdminPlanBenefitInput",
-      "route": null,
+      "route": "/admin/memberships/:sectionId?",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "memberships"
+      ],
       "fields": [
         "code",
         "name",
@@ -1462,11 +1471,13 @@
       ],
       "file_targets": [],
       "interface": "MembershipsAdminPlanCreateInput",
-      "route": null,
+      "route": "/admin/memberships/:sectionId?",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "memberships"
+      ],
       "fields": [
         "id",
         "planNo",
@@ -1489,11 +1500,13 @@
       ],
       "file_targets": [],
       "interface": "MembershipsAdminPlanItem",
-      "route": null,
+      "route": "/admin/memberships/:sectionId?",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "memberships"
+      ],
       "fields": [
         "code",
         "name",
@@ -1512,11 +1525,27 @@
       ],
       "file_targets": [],
       "interface": "MembershipsAdminPlanMutationInput",
-      "route": null,
+      "route": "/admin/memberships/:sectionId?",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "memberships"
+      ],
+      "fields": [
+        "page",
+        "pageSize",
+        "status"
+      ],
+      "file_targets": [],
+      "interface": "MembershipsAdminPlansListParams",
+      "route": "/admin/memberships/:sectionId?",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
+    },
+    {
+      "data_sources": [
+        "recharges"
+      ],
       "fields": [
         "id",
         "packageNo",
@@ -1532,11 +1561,13 @@
       ],
       "file_targets": [],
       "interface": "MembershipsAdminRechargePackageItem",
-      "route": null,
+      "route": "/admin/memberships/:sectionId?",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "recharges"
+      ],
       "fields": [
         "priceAmount",
         "currencyCode",
@@ -1545,11 +1576,13 @@
       ],
       "file_targets": [],
       "interface": "MembershipsAdminRechargePackageMutationInput",
-      "route": null,
+      "route": "/admin/memberships/:sectionId?",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "recharges"
+      ],
       "fields": [
         "baseCurrencyCode",
         "basePointsPerCny",
@@ -1557,11 +1590,13 @@
       ],
       "file_targets": [],
       "interface": "MembershipsAdminRechargeSettingsItem",
-      "route": null,
+      "route": "/admin/memberships/:sectionId?",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
-      "data_sources": [],
+      "data_sources": [
+        "recharges"
+      ],
       "fields": [
         "baseCurrencyCode",
         "basePointsPerCny",
@@ -1569,7 +1604,7 @@
       ],
       "file_targets": [],
       "interface": "MembershipsAdminRechargeSettingsUpdateInput",
-      "route": null,
+      "route": "/admin/memberships/:sectionId?",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
@@ -2540,7 +2575,7 @@
     }
   ],
   "summary": {
-    "interface_count": 110,
+    "interface_count": 112,
     "source_file_count": 24
   }
 }

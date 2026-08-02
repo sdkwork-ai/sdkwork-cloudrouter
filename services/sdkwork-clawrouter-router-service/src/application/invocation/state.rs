@@ -1,4 +1,9 @@
+use std::fmt::{Debug, Formatter};
+use std::sync::atomic::{AtomicU8, Ordering};
+use std::sync::Arc;
+
 use axum::http::{HeaderMap, Method};
+use tokio::sync::Notify;
 
 use super::{
     InvocationAccount, InvocationBilling, InvocationBody, InvocationDispatch, InvocationResource,
@@ -8,6 +13,80 @@ use crate::domain::AiRouteStrategy;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InvocationId(pub String);
+
+const INVOCATION_ACTIVE: u8 = 0;
+const INVOCATION_TENANT_LEASE_LOST: u8 = 1;
+
+/// Server-owned cancellation signal shared by the invocation pipeline and
+/// streaming transport. The state is monotonic so a confirmed lease loss can
+/// never be cleared by a transient recovery or a stale task.
+#[derive(Clone, Default)]
+pub struct InvocationCancellationSignal {
+    inner: Arc<InvocationCancellationState>,
+}
+
+#[derive(Default)]
+struct InvocationCancellationState {
+    state: AtomicU8,
+    changed: Notify,
+}
+
+impl InvocationCancellationSignal {
+    pub fn is_tenant_lease_lost(&self) -> bool {
+        self.inner.state.load(Ordering::Acquire) == INVOCATION_TENANT_LEASE_LOST
+    }
+
+    pub async fn wait_for_tenant_lease_loss(&self) {
+        loop {
+            if self.is_tenant_lease_lost() {
+                return;
+            }
+            let changed = self.inner.changed.notified();
+            tokio::pin!(changed);
+            changed.as_mut().enable();
+            if self.is_tenant_lease_lost() {
+                return;
+            }
+            changed.await;
+        }
+    }
+
+    pub(crate) fn mark_tenant_lease_lost(&self) -> bool {
+        if self
+            .inner
+            .state
+            .compare_exchange(
+                INVOCATION_ACTIVE,
+                INVOCATION_TENANT_LEASE_LOST,
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            )
+            .is_ok()
+        {
+            self.inner.changed.notify_waiters();
+            true
+        } else {
+            false
+        }
+    }
+}
+
+impl Debug for InvocationCancellationSignal {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("InvocationCancellationSignal")
+            .field("tenant_lease_lost", &self.is_tenant_lease_lost())
+            .finish()
+    }
+}
+
+impl PartialEq for InvocationCancellationSignal {
+    fn eq(&self, other: &Self) -> bool {
+        self.is_tenant_lease_lost() == other.is_tenant_lease_lost()
+    }
+}
+
+impl Eq for InvocationCancellationSignal {}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct InvocationRequest {
@@ -25,6 +104,11 @@ pub struct InvocationRequest {
     /// the idempotency lease acquired for this invocation. It is never
     /// serialized to clients or emitted in logs.
     pub(crate) idempotency_owner_token: Option<String>,
+    /// Ephemeral server-owned token for the tenant in-flight lease. Keeping
+    /// ownership on the invocation avoids request-id collisions between
+    /// concurrent callers and makes terminal release exactly-once.
+    pub(crate) tenant_inflight_owner_token: Option<String>,
+    cancellation_signal: InvocationCancellationSignal,
     pub client_ip: Option<String>,
 }
 
@@ -43,6 +127,8 @@ impl InvocationRequest {
             trace_id: None,
             idempotency_key: None,
             idempotency_owner_token: None,
+            tenant_inflight_owner_token: None,
+            cancellation_signal: InvocationCancellationSignal::default(),
             client_ip: None,
         }
     }
@@ -61,6 +147,27 @@ impl InvocationRequest {
         let query = query.into();
         self.query = (!query.trim().is_empty()).then_some(query);
         self
+    }
+
+    pub fn cancellation_signal(&self) -> InvocationCancellationSignal {
+        self.cancellation_signal.clone()
+    }
+}
+
+#[cfg(test)]
+mod cancellation_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn cancellation_signal_is_monotonic_and_wakes_waiters() {
+        let signal = InvocationCancellationSignal::default();
+        let waiter = signal.clone();
+        let task = tokio::spawn(async move { waiter.wait_for_tenant_lease_loss().await });
+
+        assert!(signal.mark_tenant_lease_lost());
+        assert!(!signal.mark_tenant_lease_lost());
+        task.await.expect("lease-loss waiter must wake");
+        assert!(signal.is_tenant_lease_lost());
     }
 }
 

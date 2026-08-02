@@ -15,11 +15,27 @@ async fn main() -> anyhow::Result<()> {
             .and_then(|config| config.runtime.deployment_mode.clone()),
     )
     .map_err(anyhow::Error::msg)?;
-    sdkwork_clawrouter_edge_runtime::serve_with_runtime_config(
-        config.bind_addr(),
-        runtime_toml.as_ref(),
-    )
-    .await
+    if sdkwork_clawrouter_edge_runtime::edge_server_enabled(runtime_toml.as_ref())
+        .map_err(anyhow::Error::msg)?
+    {
+        let edge_config =
+            sdkwork_clawrouter_edge_runtime::edge_server_config_from_env_or_runtime_toml(
+                runtime_toml.as_ref(),
+            )
+            .map_err(anyhow::Error::msg)?;
+        sdkwork_clawrouter_edge_runtime::serve_edge_server_with_runtime_config(
+            config.bind_addr(),
+            edge_config,
+            runtime_toml.as_ref(),
+        )
+        .await
+    } else {
+        sdkwork_clawrouter_edge_runtime::serve_with_runtime_config(
+            config.bind_addr(),
+            runtime_toml.as_ref(),
+        )
+        .await
+    }
 }
 
 fn runtime_config_from_env_or_toml(

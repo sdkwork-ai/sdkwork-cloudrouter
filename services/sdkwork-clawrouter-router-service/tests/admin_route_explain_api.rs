@@ -113,6 +113,11 @@ async fn route_explain_response_omits_credential_metadata() {
 
     assert_eq!(StatusCode::OK, response.status());
     let body = payload(response).await;
+    assert_eq!("10", body["data"]["item"]["id"]);
+    assert_eq!(
+        body["data"]["item"]["accountGroupId"],
+        body["data"]["item"]["id"]
+    );
     assert_eq!("runtime_selector", body["data"]["item"]["source"]);
     assert!(body["data"]["item"]["ready"].as_bool().is_some());
     let serialized = body.to_string();

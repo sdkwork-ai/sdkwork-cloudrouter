@@ -29,6 +29,7 @@ import {
   getSdkworkGenerationsAppSdkClient,
   getSdkworkMembershipAppSdkClient,
   getSdkworkMemoryAppSdkClient,
+  getSdkworkMessagingAppSdkClient,
   getSdkworkPromptsAppSdkClient,
   getSdkworkAgentAppSdkClient,
   getSdkworkOrderAppSdkClient,
@@ -36,6 +37,7 @@ import {
   getSdkworkPromotionAppSdkClient,
   resetClawRouterSdkClients,
 } from './sdk-clients.ts';
+import { resetClawRouterMessagingVerificationService } from './messaging-verification-service.ts';
 import { normalizeGeneratedSdkBaseUrl } from './sdk-base-url.ts';
 import { readClawRouterRuntimeEnv } from './utils/env.ts';
 
@@ -66,6 +68,7 @@ export function createClawRouterIamRuntimeComposition(): SdkworkAppbasePcAuthRun
     },
     hooks: {
       onSessionChanged: () => {
+        resetClawRouterMessagingVerificationService();
         resetClawRouterSdkClients();
       },
     },
@@ -74,6 +77,7 @@ export function createClawRouterIamRuntimeComposition(): SdkworkAppbasePcAuthRun
       getSdkworkDriveAppSdkClient(),
       getSdkworkGenerationsAppSdkClient(),
       getSdkworkMemoryAppSdkClient(),
+      getSdkworkMessagingAppSdkClient(),
       getSdkworkPromptsAppSdkClient(),
       getSdkworkAgentAppSdkClient(),
       getSdkworkAccountAppSdkClient(),
@@ -106,15 +110,18 @@ export function getClawRouterIamRuntime(): IamRuntime {
 
 export function resetClawRouterIamRuntime(): void {
   runtimeComposition = null;
+  resetClawRouterMessagingVerificationService();
 }
 
 function clearClawRouterIamRuntimeSession(): void {
   clearStoredAppSessionToken();
+  resetClawRouterMessagingVerificationService();
   resetClawRouterSdkClients();
 }
 
 function commitClawRouterIamRuntimeSession(session: unknown): PortalIamBridgeSession | undefined {
   const stored = storeAppSessionFromResult(session);
+  resetClawRouterMessagingVerificationService();
   resetClawRouterSdkClients();
   return toPortalIamBridgeSession(stored) ?? undefined;
 }

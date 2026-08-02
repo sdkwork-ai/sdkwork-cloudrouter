@@ -2660,6 +2660,7 @@ dependencies = [
  "hyper",
  "hyper-rustls",
  "hyper-util",
+ "sdkwork-claw-http",
  "sdkwork-claw-provider-adapter",
  "sdkwork-claw-provider-adapter-contract",
  "sdkwork-claw-provider-adapter-registry",
@@ -3345,6 +3346,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "tracing",
+ "url",
 ]
 
 [[package]]
@@ -3708,6 +3710,8 @@ dependencies = [
  "sdkwork-clawrouter-admin-monitor-repository-sqlx",
  "sdkwork-clawrouter-database-host",
  "sdkwork-clawrouter-router-service",
+ "sdkwork-commerce-promotion-repository-sqlx",
+ "sdkwork-commerce-promotion-service",
  "sdkwork-database-config",
  "sdkwork-database-sqlx",
  "sdkwork-iam-web-adapter",
@@ -3715,6 +3719,7 @@ dependencies = [
  "sdkwork-models-contract-service",
  "sdkwork-routes-iam-backend-api",
  "sdkwork-routes-models-catalog-backend-api",
+ "sdkwork-routes-promotion-backend-api",
  "sdkwork-utils-rust",
  "sdkwork-web-axum",
  "sdkwork-web-contract",
@@ -4003,6 +4008,25 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlx",
+]
+
+[[package]]
+name = "sdkwork-routes-promotion-backend-api"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "sdkwork-commerce-promotion-service",
+ "sdkwork-contract-service",
+ "sdkwork-iam-context-service",
+ "sdkwork-iam-web-adapter",
+ "sdkwork-promotion-service-host",
+ "sdkwork-utils-rust",
+ "sdkwork-web-axum",
+ "sdkwork-web-bootstrap",
+ "sdkwork-web-core",
+ "serde",
+ "serde_json",
+ "tracing",
 ]
 
 [[package]]

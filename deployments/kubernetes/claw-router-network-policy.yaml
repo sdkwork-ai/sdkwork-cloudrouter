@@ -176,7 +176,14 @@ spec:
     - Egress
   egress:
     # DNS
-    - ports:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
         - protocol: UDP
           port: 53
         - protocol: TCP
@@ -208,44 +215,5 @@ spec:
           port: 18081
         - protocol: TCP
           port: 18082
-    # HTTPS egress for upstream provider APIs (OpenAI, Anthropic, etc.)
-    #
-    # H-2 security fix: the previous rule had no `to` selector, which allowed
-    # egress to ANY destination IP on port 443 and broke the zero-trust
-    # segmentation enforced by `sdkwork-clawrouter-default-deny`. Native
-    # Kubernetes NetworkPolicy cannot perform FQDN-based filtering, so this
-    # rule now pins HTTPS egress to the dedicated `egress-gateway` namespace
-    # and its labeled proxy pods. Operators must run an L7-aware policy engine
-    # (Istio, Cilium, or equivalent) in that namespace that enforces an FQDN
-    # allowlist for the upstream AI providers below.
-    #
-    # Expected upstream provider FQDN allowlist (enforced at the egress
-    # gateway, NOT by this NetworkPolicy, because Kubernetes NetworkPolicy
-    # only sees IP:port):
-    #   - api.openai.com
-    #   - api.anthropic.com
-    #   - generativelanguage.googleapis.com
-    #   - dashscope.aliyuncs.com
-    #   - tcloudmarket.tencentcloudapi.com
-    #
-    # Deployment options when an L7 egress gateway is not available:
-    #   1. Stand up the `egress-gateway` namespace containing proxy pods
-    #      labeled `app: egress-gateway` and apply a Cilium `CiliumNetworkPolicy`
-    #      or Istio `AuthorizationPolicy` that allows only the FQDNs above; or
-    #   2. Replace the `to` selector below with one or more `to.ipBlock`
-    #      entries listing the resolved provider CIDRs. Provider IPs are
-    #      dynamic and region-specific, so this option requires a continuous
-    #      DNS-to-CIDR refresh process and is weaker than FQDN allowlisting.
-    #
-    # Leaving the rule without a `to` selector is forbidden because it would
-    # permit data exfiltration to any HTTPS endpoint.
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: egress-gateway
-          podSelector:
-            matchLabels:
-              app: egress-gateway
-      ports:
-        - protocol: TCP
-          port: 443
+    # Provider HTTPS is intentionally absent here. The required Cilium FQDN
+    # policy owns that allowlist without opening a generic port-443 escape.

@@ -2,6 +2,7 @@ import {
   isRecord,
   normalizeRechargeSettings,
   normalizeCurrencyCode,
+  readRequiredNonNegativeInt64String,
   readRequiredApiItem,
   readRequiredApiItems,
   readString,
@@ -67,9 +68,9 @@ export interface MembershipsAdminRechargePackageItem {
   skuId: string;
   priceAmount: string;
   currencyCode: string;
-  bonusPoints: number;
-  grantAmount: number;
-  points: number;
+  bonusPoints: string;
+  grantAmount: string;
+  points: string;
   status: string;
   updatedAt: string;
 }
@@ -575,8 +576,16 @@ function normalizeAdminPackageGroup(value: unknown): MembershipsAdminPackageGrou
 function normalizeAdminRechargePackage(value: unknown): MembershipsAdminRechargePackageItem {
   const item = isRecord(value) ? value as ApiRecord : {} as ApiRecord;
   const id = requireRecordString(item, 'id', 'Recharge package id is required');
-  const bonusPoints = readNumber(item, 'bonusPoints', 0);
-  const grantAmount = readNumber(item, 'grantAmount', readNumber(item, 'points', 0));
+  const bonusPoints = readRequiredNonNegativeInt64String(
+    item,
+    'bonusPoints',
+    'Recharge package bonus points are required',
+  );
+  const grantAmount = readRequiredNonNegativeInt64String(
+    item,
+    'grantAmount',
+    'Recharge package grant amount is required',
+  );
   return {
     id,
     packageNo: readString(item, 'packageNo').trim() || id,
@@ -586,7 +595,7 @@ function normalizeAdminRechargePackage(value: unknown): MembershipsAdminRecharge
     currencyCode: readString(item, 'currencyCode').trim() || 'CNY',
     bonusPoints,
     grantAmount,
-    points: readNumber(item, 'points', grantAmount),
+    points: readRequiredNonNegativeInt64String(item, 'points', 'Recharge package points are required'),
     status: readString(item, 'status').trim() || 'active',
     updatedAt: readString(item, 'updatedAt').trim(),
   };

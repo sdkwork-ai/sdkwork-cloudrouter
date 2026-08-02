@@ -38,12 +38,13 @@ use sdkwork_clawrouter_router_service::infrastructure::provider::{
     AdapterAwareChatCompletionRelay, AdapterAwareChatCompletionStreamRelay,
     AdapterAwareEmbeddingsRelay, AdapterAwareResponsesRelay, OpenAiCompatibleChatCompletionRelay,
     OpenAiCompatibleChatCompletionStreamRelay, OpenAiCompatibleEmbeddingsRelay,
-    OpenAiCompatibleResponsesRelay, ProviderRelayHttpPoolConfig,
+    OpenAiCompatibleResponsesRelay, ProviderRelayHttpPoolConfig, ProviderResponseMemoryBudget,
     RefreshableProviderSecretMapResolver, SecretRefOpenAiCompatibleChatCompletionRelay,
     SecretRefOpenAiCompatibleChatCompletionStreamRelay, SecretRefOpenAiCompatibleEmbeddingsRelay,
     SecretRefOpenAiCompatibleResponsesRelay, UpstreamProviderEndpoint,
-    DEFAULT_PROVIDER_RESPONSE_MAX_BYTES, DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS,
-    DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS, MAX_PROVIDER_RESPONSE_MAX_BYTES,
+    DEFAULT_PROVIDER_RESPONSE_MAX_BYTES, DEFAULT_PROVIDER_RESPONSE_MEMORY_BUDGET_BYTES,
+    DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS, DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS,
+    MAX_PROVIDER_RESPONSE_MAX_BYTES, MAX_PROVIDER_RESPONSE_MEMORY_BUDGET_BYTES,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::catalog::{
     RefreshableSqlPricingCatalog, SqlPricingCatalogSnapshotSummary,
@@ -167,12 +168,15 @@ struct InvocationRuntimeRoutesInput<'a, C> {
     estimated_instance_count: u32,
     stream_response_timeout: Duration,
     response_max_bytes: NonZeroUsize,
+    response_memory_budget: ProviderResponseMemoryBudget,
     provider_response_timeout: Duration,
     provider_http_pool_config: ProviderRelayHttpPoolConfig,
     internal_gateway_verifier: Arc<InternalGatewayRequestVerifier>,
 }
 
-fn router_with_invocation_runtime_routes<C>(input: InvocationRuntimeRoutesInput<'_, C>) -> Router
+fn router_with_invocation_runtime_routes<C>(
+    input: InvocationRuntimeRoutesInput<'_, C>,
+) -> Result<Router, GatewayRouterError>
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
@@ -191,6 +195,7 @@ where
         estimated_instance_count,
         stream_response_timeout,
         response_max_bytes,
+        response_memory_budget,
         provider_response_timeout,
         provider_http_pool_config,
         internal_gateway_verifier,
@@ -202,15 +207,18 @@ where
     let redis_config = sdkwork_claw_config::RedisConfig::from_env_or_runtime_toml(runtime_toml)
         .ok()
         .flatten();
-    base_router.merge(
+    let dispatcher = InvocationHttpDispatcher::with_provider_runtime_and_shared_memory_budget(
+        response_max_bytes,
+        response_memory_budget,
+        provider_response_timeout,
+        provider_http_pool_config,
+    )
+    .map_err(GatewayRouterError::Config)?;
+    Ok(base_router.merge(
         crate::invocation_router::invocation_router_with_full_pipeline_provider_adapter_tenant_inflight_and_query_string_api_key_policy(
             catalog,
             api_key_hasher,
-            Arc::new(InvocationHttpDispatcher::with_provider_runtime(
-                response_max_bytes,
-                provider_response_timeout,
-                provider_http_pool_config,
-            )),
+            Arc::new(dispatcher),
             crate::invocation_router::InvocationRouterOptions {
                 secret_resolver,
                 sticky_store,
@@ -231,7 +239,7 @@ where
                 ..crate::invocation_router::InvocationRouterOptions::default()
             },
         ),
-    )
+    ))
 }
 
 struct RelayAuthenticatedOpenAiPassthroughInput<C> {
@@ -346,10 +354,11 @@ where
             estimated_instance_count: provider_runtime_config.estimated_instance_count,
             stream_response_timeout: provider_runtime_config.stream_response_timeout,
             response_max_bytes: dispatcher_response_max_bytes,
+            response_memory_budget: provider_runtime_config.response_memory_budget.clone(),
             provider_response_timeout: provider_runtime_config.response_timeout,
             provider_http_pool_config: provider_runtime_config.http_pool_config,
             internal_gateway_verifier: Arc::clone(&internal_gateway_verifier),
-        })
+        })?
     } else {
         let relays = build_openai_runtime_relays(
             provider_passthrough_config.clone(),
@@ -357,7 +366,12 @@ where
             provider_runtime_config.clone(),
             false,
         )?;
-        let relays = apply_provider_adapter_config(relays, provider_adapter_config.clone(), None)?;
+        let relays = apply_provider_adapter_config(
+            relays,
+            provider_adapter_config.clone(),
+            None,
+            provider_runtime_config.response_memory_budget.clone(),
+        )?;
         let router = router_with_openai_runtime_routes(OpenAiRuntimeRoutesInput {
             base_router,
             catalog: Arc::clone(&catalog),
@@ -384,10 +398,11 @@ where
             estimated_instance_count: provider_runtime_config.estimated_instance_count,
             stream_response_timeout: provider_runtime_config.stream_response_timeout,
             response_max_bytes: dispatcher_response_max_bytes,
+            response_memory_budget: provider_runtime_config.response_memory_budget.clone(),
             provider_response_timeout: provider_runtime_config.response_timeout,
             provider_http_pool_config: provider_runtime_config.http_pool_config,
             internal_gateway_verifier: Arc::clone(&internal_gateway_verifier),
-        })
+        })?
     };
     Ok(merge_relay_authenticated_openai_passthrough(
         RelayAuthenticatedOpenAiPassthroughInput {
@@ -2189,6 +2204,9 @@ fn build_openai_runtime_relays(
                     provider_runtime.response_max_bytes,
                     provider_runtime.default_retry_policy.clone(),
                     provider_runtime.http_pool_config,
+                )
+                .with_shared_response_memory_budget(
+                    provider_runtime.response_memory_budget.clone(),
                 ),
             )),
             chat_stream: Some(Arc::new(
@@ -2199,6 +2217,9 @@ fn build_openai_runtime_relays(
                     provider_runtime.response_max_bytes,
                     provider_runtime.default_retry_policy.clone(),
                     provider_runtime.http_pool_config,
+                )
+                .with_shared_response_memory_budget(
+                    provider_runtime.response_memory_budget.clone(),
                 ),
             )),
             embeddings: Some(Arc::new(
@@ -2209,16 +2230,24 @@ fn build_openai_runtime_relays(
                     provider_runtime.response_max_bytes,
                     provider_runtime.default_retry_policy.clone(),
                     provider_runtime.http_pool_config,
+                )
+                .with_shared_response_memory_budget(
+                    provider_runtime.response_memory_budget.clone(),
                 ),
             )),
-            responses: Some(Arc::new(OpenAiCompatibleResponsesRelay::with_full_runtime(
-                endpoint,
-                provider_runtime.response_timeout,
-                provider_runtime.stream_response_timeout,
-                provider_runtime.response_max_bytes,
-                provider_runtime.default_retry_policy,
-                provider_runtime.http_pool_config,
-            ))),
+            responses: Some(Arc::new(
+                OpenAiCompatibleResponsesRelay::with_full_runtime(
+                    endpoint,
+                    provider_runtime.response_timeout,
+                    provider_runtime.stream_response_timeout,
+                    provider_runtime.response_max_bytes,
+                    provider_runtime.default_retry_policy,
+                    provider_runtime.http_pool_config,
+                )
+                .with_shared_response_memory_budget(
+                    provider_runtime.response_memory_budget.clone(),
+                ),
+            )),
         });
     }
 
@@ -2242,7 +2271,8 @@ fn secret_ref_openai_runtime_relays(
                 provider_runtime.response_max_bytes,
                 provider_runtime.default_retry_policy.clone(),
                 provider_runtime.http_pool_config,
-            ),
+            )
+            .with_shared_response_memory_budget(provider_runtime.response_memory_budget.clone()),
         )),
         chat_stream: Some(Arc::new(
             SecretRefOpenAiCompatibleChatCompletionStreamRelay::with_full_runtime(
@@ -2252,7 +2282,8 @@ fn secret_ref_openai_runtime_relays(
                 provider_runtime.response_max_bytes,
                 provider_runtime.default_retry_policy.clone(),
                 provider_runtime.http_pool_config,
-            ),
+            )
+            .with_shared_response_memory_budget(provider_runtime.response_memory_budget.clone()),
         )),
         embeddings: Some(Arc::new(
             SecretRefOpenAiCompatibleEmbeddingsRelay::with_full_runtime(
@@ -2262,7 +2293,8 @@ fn secret_ref_openai_runtime_relays(
                 provider_runtime.response_max_bytes,
                 provider_runtime.default_retry_policy.clone(),
                 provider_runtime.http_pool_config,
-            ),
+            )
+            .with_shared_response_memory_budget(provider_runtime.response_memory_budget.clone()),
         )),
         responses: Some(Arc::new(
             SecretRefOpenAiCompatibleResponsesRelay::with_full_runtime(
@@ -2272,7 +2304,8 @@ fn secret_ref_openai_runtime_relays(
                 provider_runtime.response_max_bytes,
                 provider_runtime.default_retry_policy,
                 provider_runtime.http_pool_config,
-            ),
+            )
+            .with_shared_response_memory_budget(provider_runtime.response_memory_budget.clone()),
         )),
     }
 }
@@ -2281,6 +2314,7 @@ fn apply_provider_adapter_config(
     mut relays: OpenAiRuntimeRelays,
     provider_adapter_config: Option<ProviderAdapterConfig>,
     provider_secret_resolver: Option<Arc<dyn ProviderSecretResolver + Send + Sync>>,
+    response_memory_budget: ProviderResponseMemoryBudget,
 ) -> Result<OpenAiRuntimeRelays, GatewayRouterError> {
     let Some(provider_adapter_config) = provider_adapter_config else {
         return Ok(relays);
@@ -2306,7 +2340,8 @@ fn apply_provider_adapter_config(
             chat_relay,
             Arc::clone(&registry),
             adapter_client.clone(),
-        );
+        )
+        .with_shared_response_memory_budget(response_memory_budget.clone());
         let adapter_relay = if let Some(resolver) = provider_secret_resolver.clone() {
             adapter_relay.with_secret_resolver(resolver)
         } else {
@@ -2338,7 +2373,8 @@ fn apply_provider_adapter_config(
             responses_relay,
             Arc::clone(&registry),
             adapter_client.clone(),
-        );
+        )
+        .with_shared_response_memory_budget(response_memory_budget.clone());
         let adapter_relay = if let Some(resolver) = provider_secret_resolver.clone() {
             adapter_relay.with_secret_resolver(resolver)
         } else {
@@ -2354,7 +2390,8 @@ fn apply_provider_adapter_config(
             ));
         };
         let adapter_relay =
-            AdapterAwareEmbeddingsRelay::new(embeddings_relay, registry, adapter_client);
+            AdapterAwareEmbeddingsRelay::new(embeddings_relay, registry, adapter_client)
+                .with_shared_response_memory_budget(response_memory_budget);
         let adapter_relay = if let Some(resolver) = provider_secret_resolver {
             adapter_relay.with_secret_resolver(resolver)
         } else {
@@ -2482,6 +2519,7 @@ struct ProviderRelayRuntimeConfig {
     response_timeout: Duration,
     stream_response_timeout: Duration,
     response_max_bytes: u64,
+    response_memory_budget: ProviderResponseMemoryBudget,
     http_pool_config: ProviderRelayHttpPoolConfig,
     default_retry_policy: ProviderRetryPolicy,
     catalog_refresh_interval: Duration,
@@ -2497,6 +2535,7 @@ fn provider_relay_runtime_config_from_env_or_toml(
     const RESPONSE_TIMEOUT: &str = "SDKWORK_CLAW_PROVIDER_RESPONSE_TIMEOUT_MILLIS";
     const STREAM_RESPONSE_TIMEOUT: &str = "SDKWORK_CLAW_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS";
     const RESPONSE_MAX_BYTES: &str = "SDKWORK_CLAW_PROVIDER_RESPONSE_MAX_BYTES";
+    const RESPONSE_MEMORY_BUDGET_BYTES: &str = "SDKWORK_CLAW_PROVIDER_RESPONSE_MEMORY_BUDGET_BYTES";
     const RETRY_MAX_ATTEMPTS: &str = "SDKWORK_CLAW_PROVIDER_RETRY_MAX_ATTEMPTS";
     const RETRY_STATUS_CODES: &str = "SDKWORK_CLAW_PROVIDER_RETRYABLE_STATUS_CODES";
     const RETRY_BACKOFF: &str = "SDKWORK_CLAW_PROVIDER_RETRY_BACKOFF_MILLIS";
@@ -2530,6 +2569,31 @@ fn provider_relay_runtime_config_from_env_or_toml(
         runtime_toml.and_then(|config| config.provider_relay.runtime.provider_response_max_bytes),
         DEFAULT_PROVIDER_RESPONSE_MAX_BYTES,
     )?;
+    let response_memory_budget_bytes = parse_positive_u64_config(
+        RESPONSE_MEMORY_BUDGET_BYTES,
+        runtime_toml.and_then(|config| {
+            config
+                .provider_relay
+                .runtime
+                .provider_response_memory_budget_bytes
+        }),
+        DEFAULT_PROVIDER_RESPONSE_MEMORY_BUDGET_BYTES as u64,
+    )?;
+    if response_memory_budget_bytes > MAX_PROVIDER_RESPONSE_MEMORY_BUDGET_BYTES as u64 {
+        return Err(format!(
+            "{RESPONSE_MEMORY_BUDGET_BYTES} must not exceed {MAX_PROVIDER_RESPONSE_MEMORY_BUDGET_BYTES}"
+        ));
+    }
+    let response_memory_budget_usize = usize::try_from(response_memory_budget_bytes)
+        .map_err(|_| format!("{RESPONSE_MEMORY_BUDGET_BYTES} exceeds addressable memory"))?;
+    let response_memory_budget = ProviderResponseMemoryBudget::new(
+        NonZeroUsize::new(response_memory_budget_usize)
+            .ok_or_else(|| format!("{RESPONSE_MEMORY_BUDGET_BYTES} must be positive"))?,
+    )
+    .map_err(|error| error.to_string())?;
+    response_memory_budget
+        .validate_response_limit(response_max_bytes)
+        .map_err(|error| error.to_string())?;
     let retry_max_attempts = parse_positive_usize_config(
         RETRY_MAX_ATTEMPTS,
         runtime_toml.and_then(|config| config.provider_relay.retry.max_attempts),
@@ -2643,6 +2707,7 @@ fn provider_relay_runtime_config_from_env_or_toml(
         response_timeout: Duration::from_millis(response_timeout_millis),
         stream_response_timeout: Duration::from_millis(stream_response_timeout_millis),
         response_max_bytes,
+        response_memory_budget,
         http_pool_config,
         default_retry_policy,
         catalog_refresh_interval: Duration::from_millis(catalog_refresh_interval_millis),

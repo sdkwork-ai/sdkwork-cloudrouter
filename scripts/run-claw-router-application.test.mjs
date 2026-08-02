@@ -4101,6 +4101,7 @@ test('production build creates portal assets and Rust edge release artifact', as
     'portal production assets',
     'SDK archive artifacts',
     'Rust standalone gateway release binary',
+    'Rust cloud edge release binary',
   ]);
   assert.equal(plan[0].command, 'python');
   assert.deepEqual(plan[0].args, ['-B', '-m', 'tools.clawrouter_gateway_openapi_generator']);
@@ -4123,9 +4124,23 @@ test('production build creates portal assets and Rust edge release artifact', as
   ]);
   assert.equal(plan[6].command, 'cargo.exe');
   assert.equal(plan[6].env.CARGO_TARGET_DIR, 'target-codex');
+  assert.deepEqual(plan[7].args, [
+    'build',
+    '-p',
+    'sdkwork-clawrouter-edge-runtime',
+    '--bin',
+    'sdkwork-clawrouter-edge-runtime',
+    '--release',
+  ]);
+  assert.equal(plan[7].command, 'cargo.exe');
+  assert.equal(plan[7].env.CARGO_TARGET_DIR, 'target-codex');
   assert.ok(
     module.renderProductionBuildPlan(plan, { CARGO_TARGET_DIR: 'target-codex' }, 'win32', workspaceRoot)
       .some((line) => line.includes('target-codex') && line.includes('sdkwork-api-clawrouter-standalone-gateway.exe')),
+  );
+  assert.ok(
+    module.renderProductionBuildPlan(plan, { CARGO_TARGET_DIR: 'target-codex' }, 'win32', workspaceRoot)
+      .some((line) => line.includes('target-codex') && line.includes('sdkwork-clawrouter-edge-runtime.exe')),
   );
   assert.ok(
     module.renderProductionBuildPlan(plan, { CARGO_TARGET_DIR: 'target-codex' }, 'win32', workspaceRoot)

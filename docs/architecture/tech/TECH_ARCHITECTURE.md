@@ -153,11 +153,20 @@ Scoped unique indexes remain the final collision guard. Counter underflow and
 `BIGINT` exhaustion fail closed. Conversation previews are bounded to the
 schema's 1024-character limit before persistence.
 
-List reads apply subject predicates and SQL `LIMIT`/`OFFSET`; the HTTP boundary
-rejects non-canonical aliases and page sizes outside `1..=200`. Cursor/keyset
-pagination and production-like query-plan evidence for high-volume message
-history remain release gates under `PAGINATION_SPEC.md`; bounded offset behavior
-must not be described as proof of large-history scalability.
+Conversation lists use bounded offset pagination for their low-volume navigation
+surface. High-volume message history uses an opaque `(message_no, id)` cursor,
+the scoped backward tuple keyset predicate, stable descending database seek,
+and `LIMIT page_size + 1`; each bounded page is normalized to chronological
+order before it leaves the repository. It does not issue `OFFSET` or a
+total-count window. The first page therefore contains the latest context, while
+the HTTP boundary accepts only `cursor` and `page_size`, caps pages at 200, and
+the generated Claw Router App SDK exposes `pageInfo.nextCursor` for bounded
+earlier-window reads. The mounted `/playground` UI is the composed Agents
+Workbench and uses the separately owned Agents session/message APIs; it does
+not claim to consume the Claw Router Chat history endpoint. The existing scoped
+conversation/message indexes cover the seek prefix.
+Production-like `EXPLAIN (ANALYZE, BUFFERS)` evidence remains a release gate for
+the target PostgreSQL data distribution.
 
 Readiness checks the materialized table inventory, lifecycle installation
 state, critical Chat columns and scoped indexes, database connectivity, and the

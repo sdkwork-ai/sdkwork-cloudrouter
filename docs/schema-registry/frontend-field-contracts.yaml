@@ -320,8 +320,9 @@ frontend_operations:
         name: UpstreamSupplierEndpointCollection
         type: object
         additionalProperties: false
-        required: [items]
+        required: [id, items]
         properties:
+          id: { type: string, maxLength: 32 }
           items:
             type: array
             items:
@@ -425,8 +426,9 @@ frontend_operations:
         name: UpstreamSupplierAuthMethodCollection
         type: object
         additionalProperties: false
-        required: [items]
+        required: [id, items]
         properties:
+          id: { type: string, maxLength: 32 }
           items:
             type: array
             items:
@@ -529,8 +531,9 @@ frontend_operations:
         name: UpstreamSupplierResourceCollection
         type: object
         additionalProperties: false
-        required: [items]
+        required: [id, items]
         properties:
+          id: { type: string, maxLength: 32 }
           items:
             type: array
             items:
@@ -906,8 +909,9 @@ frontend_operations:
         name: UpstreamAccountVerification
         type: object
         additionalProperties: false
-        required: [accountId, supplierCode, endpointId, credentialId, success, statusCode, latencyMs, verifiedAt, message]
+        required: [id, accountId, supplierCode, endpointId, credentialId, success, statusCode, latencyMs, verifiedAt, message]
         properties:
+          id: { type: string, maxLength: 32 }
           accountId: { type: string, maxLength: 32 }
           supplierCode: { type: string, maxLength: 128 }
           endpointId: { type: string, maxLength: 32 }
@@ -1163,8 +1167,9 @@ frontend_operations:
         name: UpstreamAccountGroupMemberCollection
         type: object
         additionalProperties: false
-        required: [items]
+        required: [id, items]
         properties:
+          id: { type: string, maxLength: 32 }
           items:
             type: array
             items:
@@ -1258,8 +1263,9 @@ frontend_operations:
         name: UpstreamAccountGroupResourceCollection
         type: object
         additionalProperties: false
-        required: [items]
+        required: [id, items]
         properties:
+          id: { type: string, maxLength: 32 }
           items:
             type: array
             items:
@@ -1321,8 +1327,9 @@ frontend_operations:
         name: UpstreamAccountGroupRouteExplanation
         type: object
         additionalProperties: false
-        required: [source, ready, resourceCode, catalogKey, model, apiCode, capability, billingMeter, apiKeyId, accountGroupId, groupCode, pricingPlanCode, candidateCount, selectedCandidates, blockedReasons, warnings, policyId, ruleId, policySnapshotVersion]
+        required: [id, source, ready, resourceCode, catalogKey, model, apiCode, capability, billingMeter, apiKeyId, accountGroupId, groupCode, pricingPlanCode, candidateCount, selectedCandidates, blockedReasons, warnings, policyId, ruleId, policySnapshotVersion]
         properties:
+          id: { type: string, maxLength: 32 }
           source: { type: string, maxLength: 64 }
           ready: { type: boolean }
           resourceCode: { type: string, maxLength: 128 }
@@ -2185,6 +2192,86 @@ frontend_operations:
     schema: { type: string, format: date-time, maxLength: 64 }
   - name: end_time
     schema: { type: string, format: date-time, maxLength: 64 }
+- route: /auth/login
+  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  operation: sendVerifyCode
+  operation_id: messaging.verificationCodes.create
+  kind: create
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/messaging/verification_codes
+  sdk_domain: messaging
+  description: >-
+    Sends the current login, registration, or password-recovery challenge through
+    the dependency-owned Messaging App SDK. The runtime adapter maps IAM scene
+    and verification type fields to sceneCode and channel and retains only the
+    bounded, expiring codeId correlation required for a later verification call.
+  read_sources:
+  - messaging_verification_policy
+  response_schema:
+    name: MessagingVerificationCodeResponse
+    type: object
+    additionalProperties: false
+    required: [codeId, expiresAt, requestId]
+    properties:
+      codeId: { type: string, minLength: 1, maxLength: 256 }
+      expiresAt: { type: string, format: date-time, maxLength: 64 }
+      status: { type: string, enum: [pending, verified, failed, locked, expired] }
+      requestId: { type: string, minLength: 1, maxLength: 128 }
+  request_schema:
+    name: MessagingVerificationCodeCreateRequest
+    type: object
+    additionalProperties: false
+    required: [sceneCode, target, channel]
+    properties:
+      sceneCode: { type: string, enum: [BIND_EMAIL, BIND_PHONE, LOGIN, REGISTER, RESET_PASSWORD], maxLength: 160 }
+      target: { type: string, minLength: 1, maxLength: 320, writeOnly: true, x-sensitive: true }
+      channel: { type: string, enum: [sms, email] }
+  request_body_required: true
+  idempotency_required: true
+  write_tables:
+  - messaging_verification_challenge
+  - messaging_outbound_message
+  - messaging_outbound_delivery
+- route: /auth/login
+  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  operation: verifyCode
+  operation_id: messaging.verificationCodes.verify
+  kind: action
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/messaging/verification_codes/verify
+  sdk_domain: messaging
+  description: >-
+    Verifies the submitted code against the dependency-owned Messaging challenge
+    identified by the bounded runtime correlation cache; raw codes are never
+    retained in client state.
+  read_sources:
+  - messaging_verification_challenge
+  - messaging_verification_policy
+  response_schema:
+    name: MessagingVerificationCodeVerifyResponse
+    type: object
+    additionalProperties: false
+    required: [verified, status, requestId]
+    properties:
+      verified: { type: boolean }
+      status: { type: string, enum: [pending, verified, failed, locked, expired] }
+      remainingAttempts: { type: integer, format: int32, minimum: 0 }
+      requestId: { type: string, minLength: 1, maxLength: 128 }
+  request_schema:
+    name: MessagingVerificationCodeVerifyRequest
+    type: object
+    additionalProperties: false
+    required: [codeId, code]
+    properties:
+      codeId: { type: string, minLength: 1, maxLength: 256 }
+      code: { type: string, minLength: 4, maxLength: 12, writeOnly: true, x-sensitive: true }
+  request_body_required: true
+  idempotency_required: true
+  write_tables:
+  - messaging_verification_challenge
+  - messaging_verification_attempt
 - route: /auth/forgot-password
   source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
   operation: requestPasswordReset
@@ -2452,7 +2539,6 @@ frontend_operations:
   sdk_domain: chat
   read_sources:
   - ai_chat_conversation
-  - ai_agent_session
   response_schema:
     name: ChatConversationListResponse
     type: object
@@ -2498,8 +2584,7 @@ frontend_operations:
   api_path: /app/v3/api/chat/conversations
   sdk_domain: chat
   read_sources:
-  - ai_request_trace
-  - ai_usage
+  - ai_chat_conversation
   response_schema:
     name: NoData
     properties: {}
@@ -2516,7 +2601,7 @@ frontend_operations:
   api_path: /app/v3/api/chat/conversations
   sdk_domain: chat
   read_sources:
-  - ai_agent_session
+  - ai_chat_conversation
   response_schema:
     name: ChatConversationCreateResponse
     type: object
@@ -2547,11 +2632,13 @@ frontend_operations:
   kind: read
   api_surface: app
   api_method: GET
-  api_path: /app/v3/api/chat/conversations/{completionId}/messages
+  api_path: /app/v3/api/chat/conversations/{conversationId}/messages
   sdk_domain: chat
   read_sources:
-  - ai_request_trace
-  - ai_usage
+  - ai_chat_conversation
+  - ai_chat_turn
+  - ai_chat_message
+  - ai_runtime_usage_link
   response_schema:
     name: NoData
     properties: {}
@@ -2569,13 +2656,12 @@ frontend_operations:
   sdk_domain: chat
   read_sources:
   - ai_chat_conversation
-  - ai_agent_session
   response_schema:
     name: ChatConversationItem
     $ref: '#/components/schemas/ChatConversationItem'
   query_parameters: []
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: crates/sdkwork-routes-clawrouter-app-api/src/http_route_manifest.rs
   operation: listChatMessages
   operation_id: chat.conversations.byId.messages.get
   kind: read
@@ -2583,14 +2669,17 @@ frontend_operations:
   api_method: GET
   api_path: /app/v3/api/chat/conversations/{conversationId}/messages
   sdk_domain: chat
+  description: >-
+    P1 high-volume Chat message history using opaque cursor pagination. The
+    first bounded page contains the latest messages, each response page is in
+    chronological conversation order, and nextCursor seeks an earlier window.
+    The only supported pagination inputs are cursor and page_size; the default
+    page size is 20 and the maximum is 200.
   read_sources:
   - ai_chat_conversation
   - ai_chat_turn
-  - ai_chat_item
   - ai_chat_message
-  - ai_chat_message_part
   - ai_runtime_usage_link
-  - ai_runtime_artifact
   response_schema:
     name: ChatMessageListResponse
     type: object
@@ -2635,10 +2724,30 @@ frontend_operations:
       pageInfo:
         $ref: '#/components/schemas/PageInfo'
   query_parameters:
-  - name: page
-    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: cursor
+    schema: { type: string, maxLength: 1024 }
   - name: page_size
     schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+- route: /playground
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  operation: listChatMessages
+  operation_id: chat.conversations.byId.messages.get
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/chat/conversations/{conversationId}/messages
+  sdk_domain: chat
+  read_sources:
+  - ai_chat_conversation
+  - ai_chat_turn
+  - ai_chat_message
+  - ai_runtime_usage_link
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: []
+  operation_scope: app_shell
+  openapi_exposed: false
 - route: /playground
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: createChatTurn
@@ -2650,7 +2759,6 @@ frontend_operations:
   sdk_domain: chat
   read_sources:
   - ai_chat_conversation
-  - ai_agent_session
   response_schema:
     name: ChatTurnOutcome
     type: object
@@ -2694,11 +2802,6 @@ frontend_operations:
   - ai_chat_item
   - ai_chat_message
   - ai_chat_message_part
-  - ai_chat_context_snapshot
-  - ai_runtime_invocation
-  - ai_runtime_invocation_event
-  - ai_runtime_usage_link
-  - ai_runtime_artifact
 - route: /playground
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: completeChatTurnResponse
@@ -2712,6 +2815,8 @@ frontend_operations:
   - ai_chat_conversation
   - ai_chat_turn
   - ai_chat_item
+  - ai_chat_message
+  - ai_chat_message_part
   - ai_runtime_invocation
   - ai_usage
   response_schema:
@@ -2749,6 +2854,7 @@ frontend_operations:
   - ai_chat_item
   - ai_chat_message
   - ai_chat_message_part
+  - ai_chat_context_snapshot
   - ai_runtime_usage_link
 - route: /playground
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundService.ts
@@ -3904,11 +4010,11 @@ frontend_operations:
 - route: /playground
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: completeRuntimeInvocation
-  operation_id: runtime.invocations.byId.complete.post
+  operation_id: invocations.completions.create
   kind: action
   api_surface: app
   api_method: POST
-  api_path: /app/v3/api/runtime/invocations/{invocationId}/complete
+  api_path: /app/v3/api/runtime/invocations/{invocationId}/completions
   sdk_domain: runtime
   read_sources:
   - ai_runtime_invocation
@@ -3941,11 +4047,11 @@ frontend_operations:
 - route: /playground
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/components/chat/chatService.ts
   operation: cancelRuntimeInvocation
-  operation_id: runtime.invocations.byId.complete.post
+  operation_id: invocations.completions.create
   kind: action
   api_surface: app
   api_method: POST
-  api_path: /app/v3/api/runtime/invocations/{invocationId}/complete
+  api_path: /app/v3/api/runtime/invocations/{invocationId}/completions
   sdk_domain: runtime
   read_sources:
   - ai_runtime_invocation
@@ -3960,11 +4066,11 @@ frontend_operations:
 - route: /playground
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/components/chat/chatService.ts
   operation: resumeMessage
-  operation_id: runtime.invocations.byId.complete.post
+  operation_id: invocations.completions.create
   kind: action
   api_surface: app
   api_method: POST
-  api_path: /app/v3/api/runtime/invocations/{invocationId}/complete
+  api_path: /app/v3/api/runtime/invocations/{invocationId}/completions
   sdk_domain: runtime
   read_sources:
   - ai_chat_conversation
@@ -6189,29 +6295,6 @@ frontend_operations:
   - { name: user_id, type: string, required: false, maxLength: 128 }
   - { name: plan_id, type: string, required: false, maxLength: 128 }
   - { name: status, type: string, required: false, maxLength: 32 }
-- route: /admin/memberships/members/{membershipId}
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: update
-  operation_id: memberships.members.update
-  kind: update
-  api_surface: backend
-  api_method: PATCH
-  api_path: /backend/v3/api/memberships/members/{membershipId}
-  read_sources:
-  - memberships
-  response_schema:
-    name: NoData
-    properties: {}
-  request_schema:
-    name: MembershipStatusUpdateRequest
-    type: object
-    additionalProperties: false
-    required: [status]
-    properties:
-      status: { type: string, enum: [active, inactive, expired, suspended, cancelled] }
-  request_body_required: true
-  write_tables:
-  - ops_audit_log
 - route: /admin/memberships/package_groups
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: list
@@ -6273,23 +6356,6 @@ frontend_operations:
   response_schema:
     name: NoData
     properties: {}
-  write_tables:
-  - ops_audit_log
-- route: /admin/memberships/package_groups/{packageGroupId}
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: update
-  operation_id: memberships.packageGroups.update
-  kind: update
-  api_surface: backend
-  api_method: PATCH
-  api_path: /backend/v3/api/memberships/package_groups/{packageGroupId}
-  read_sources:
-  - memberships
-  response_schema:
-    name: NoData
-    properties: {}
-  request_schema: *membership_package_group_mutation
-  request_body_required: true
   write_tables:
   - ops_audit_log
 - route: /admin/memberships/packages
@@ -6357,23 +6423,6 @@ frontend_operations:
     properties: {}
   write_tables:
   - ops_audit_log
-- route: /admin/memberships/packages/{packageId}
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: update
-  operation_id: memberships.packages.update
-  kind: update
-  api_surface: backend
-  api_method: PATCH
-  api_path: /backend/v3/api/memberships/packages/{packageId}
-  read_sources:
-  - memberships
-  response_schema:
-    name: NoData
-    properties: {}
-  request_schema: *membership_package_mutation
-  request_body_required: true
-  write_tables:
-  - ops_audit_log
 - route: /admin/memberships/plans
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: list
@@ -6421,23 +6470,6 @@ frontend_operations:
         items:
           type: object
           additionalProperties: true
-  request_body_required: true
-  write_tables:
-  - ops_audit_log
-- route: /admin/memberships/plans/{planId}
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: update
-  operation_id: memberships.plans.update
-  kind: update
-  api_surface: backend
-  api_method: PATCH
-  api_path: /backend/v3/api/memberships/plans/{planId}
-  read_sources:
-  - memberships
-  response_schema:
-    name: NoData
-    properties: {}
-  request_schema: *membership_plan_mutation
   request_body_required: true
   write_tables:
   - ops_audit_log
@@ -6498,36 +6530,6 @@ frontend_operations:
   request_body_required: false
   write_tables:
   - ops_audit_log
-- route: /admin/payments/channels/{channelId}
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: update
-  operation_id: payments.channels.update
-  kind: update
-  api_surface: backend
-  api_method: PATCH
-  api_path: /backend/v3/api/payments/channels/{channelId}
-  read_sources:
-  - payments
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - ops_audit_log
-- route: /admin/payments/disputes
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: payments.disputes.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/payments/disputes
-  read_sources:
-  - payments
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: *payment_admin_list_query
 - route: /admin/payments/intents
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: list
@@ -6654,21 +6656,6 @@ frontend_operations:
   - ops_audit_log
 - route: /admin/payments/provider_accounts/{providerAccountId}
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: delete
-  operation_id: payments.providerAccounts.delete
-  kind: delete
-  api_surface: backend
-  api_method: DELETE
-  api_path: /backend/v3/api/payments/provider_accounts/{providerAccountId}
-  read_sources:
-  - payments
-  response_schema:
-    name: NoData
-    properties: {}
-  write_tables:
-  - ops_audit_log
-- route: /admin/payments/provider_accounts/{providerAccountId}
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: update
   operation_id: payments.providerAccounts.update
   kind: update
@@ -6685,62 +6672,62 @@ frontend_operations:
   request_body_required: true
   write_tables:
   - ops_audit_log
-- route: /admin/payments/provider_accounts/{providerAccountId}/status
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: update
-  operation_id: payments.providerAccounts.status.update
-  kind: update
-  api_surface: backend
-  api_method: PATCH
-  api_path: /backend/v3/api/payments/provider_accounts/{providerAccountId}/status
-  read_sources:
-  - payments
-  idempotency_required: true
-  response_schema:
-    name: NoData
-    properties: {}
-  request_schema:
-    name: PaymentProviderAccountStatusUpdateRequest
-    type: object
-    additionalProperties: false
-    required: [status]
-    properties:
-      status: { type: string, enum: [active, inactive, disabled] }
-      clientRequestNo: { type: string, maxLength: 128 }
-      note: { type: string, maxLength: 512 }
-  request_body_required: true
-  write_tables:
-  - ops_audit_log
 - route: /admin/payments/providers
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: payments.providers.list
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts
+  operation: backendPaymentsProvidersList
+  operation_id: providers.list
   kind: read
   api_surface: backend
   api_method: GET
   api_path: /backend/v3/api/payments/providers
+  sdk_domain: payments
   read_sources:
-  - payments
+  - commerce_payment_provider
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: *payment_admin_list_query
-- route: /admin/payments/providers/{providerCode}
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: update
-  operation_id: payments.providers.update
-  kind: update
-  api_surface: backend
-  api_method: PATCH
-  api_path: /backend/v3/api/payments/providers/{providerCode}
-  read_sources:
-  - payments
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - ops_audit_log
+    name: PaymentProviderInventoryListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: PaymentProviderInventoryItem
+          type: object
+          additionalProperties: false
+          required: [id, providerCode, displayName, providerType, supportedCountries, supportedCurrencies, capabilities, status, sortOrder]
+          properties:
+            id: { type: string, minLength: 1, maxLength: 128 }
+            providerCode: { type: string, enum: [wechat_pay, alipay, stripe, paypal, apple_pay, google_pay] }
+            displayName: { type: string, minLength: 1, maxLength: 200 }
+            providerType: { type: string, minLength: 1, maxLength: 64 }
+            supportedCountries:
+              type: array
+              maxItems: 256
+              items: { type: string, pattern: '^[A-Z]{2}$' }
+            supportedCurrencies:
+              type: array
+              maxItems: 256
+              items: { type: string, pattern: '^[A-Z]{3}$' }
+            capabilities:
+              type: array
+              maxItems: 32
+              items: { type: string, enum: [payment_intent, payment_query, payment_close, refund, webhook, reconciliation] }
+            status: { type: string, enum: [active, inactive, disabled] }
+            sortOrder: { type: integer, format: int32, minimum: 0 }
+            createdAt: { type: [string, 'null'], format: date-time }
+            updatedAt: { type: [string, 'null'], format: date-time }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: status
+    schema: { type: string, enum: [active, inactive, disabled] }
+  - name: provider_code
+    schema: { type: string, enum: [wechat_pay, alipay, stripe, paypal, apple_pay, google_pay] }
 - route: /admin/payments/reconciliation_runs
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: list
@@ -6831,40 +6818,6 @@ frontend_operations:
     name: NoData
     properties: {}
   query_parameters: *payment_admin_list_query
-- route: /admin/payments/webhook_events/{eventId}/replays
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: create
-  operation_id: payments.webhookEvents.replays.create
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/payments/webhook_events/{eventId}/replays
-  read_sources:
-  - payments
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - ops_audit_log
-- route: /admin/promotions/budget_ledger_entries
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: promotions.budgetLedgerEntries.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/promotions/budget_ledger_entries
-  read_sources:
-  - promotions
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: &promotion_admin_list_query
-  - name: page
-    schema: { type: integer, minimum: 1 }
-  - name: page_size
-    schema: { type: integer, minimum: 1, maximum: 200 }
 - route: /admin/promotions/codes
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: list
@@ -6878,37 +6831,11 @@ frontend_operations:
   response_schema:
     name: NoData
     properties: {}
-  query_parameters: *promotion_admin_list_query
-- route: /admin/promotions/codes
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: create
-  operation_id: promotions.codes.create
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/promotions/codes
-  read_sources:
-  - promotions
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - ops_audit_log
-- route: /admin/promotions/codes/redemptions
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: promotions.codes.redemptions.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/promotions/codes/redemptions
-  read_sources:
-  - promotions
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: *promotion_admin_list_query
+  query_parameters: &promotion_admin_list_query
+  - name: page
+    schema: { type: integer, minimum: 1 }
+  - name: page_size
+    schema: { type: integer, minimum: 1, maximum: 200 }
 - route: /admin/promotions/coupon_ledger_entries
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: list
@@ -6953,20 +6880,6 @@ frontend_operations:
   request_body_required: false
   write_tables:
   - ops_audit_log
-- route: /admin/promotions/discount_allocations
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: promotions.discountAllocations.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/promotions/discount_allocations
-  read_sources:
-  - promotions
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: *promotion_admin_list_query
 - route: /admin/promotions/discount_applications
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: list
@@ -6975,34 +6888,6 @@ frontend_operations:
   api_surface: backend
   api_method: GET
   api_path: /backend/v3/api/promotions/discount_applications
-  read_sources:
-  - promotions
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: *promotion_admin_list_query
-- route: /admin/promotions/events
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: promotions.events.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/promotions/events
-  read_sources:
-  - promotions
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: *promotion_admin_list_query
-- route: /admin/promotions/external_bindings
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: promotions.externalBindings.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/promotions/external_bindings
   read_sources:
   - promotions
   response_schema:
@@ -7069,38 +6954,65 @@ frontend_operations:
     name: NoData
     properties: {}
   query_parameters: *promotion_admin_list_query
-- route: /admin/recharges/orders
+- route: /admin/billing/recharges/records
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: list
-  operation_id: orders.management.list
+  operation_id: rechargeRecords.list
   kind: read
   api_surface: backend
   api_method: GET
-  api_path: /backend/v3/api/recharges/orders
+  api_path: /backend/v3/api/billing/recharges/records
   read_sources:
   - recharges
   response_schema:
-    name: NoData
-    properties: {}
+    name: AdminRechargeRecordListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: AdminRechargeRecord
+          type: object
+          additionalProperties: false
+          required: [id, tradeNo, userId, user, amount, usdCredited, method, status, time]
+          properties:
+            id: { type: string, maxLength: 32 }
+            tradeNo: { type: string, maxLength: 128 }
+            userId: { type: string, maxLength: 32 }
+            user: { type: string, maxLength: 320 }
+            amount: { type: string, maxLength: 64 }
+            usdCredited: { type: string, maxLength: 64 }
+            method: { type: string, maxLength: 64 }
+            status: { type: string, maxLength: 64 }
+            time: { type: string, maxLength: 64 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
   query_parameters: []
-- route: /admin/recharges/orders/{orderId}
+- route: /admin/billing/recharges/records/{orderNo}
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: retrieve
-  operation_id: orders.management.retrieve
+  operation_id: rechargeRecords.retrieve
   kind: read
   api_surface: backend
   api_method: GET
-  api_path: /backend/v3/api/recharges/orders/{orderId}
+  api_path: /backend/v3/api/billing/recharges/records/{orderNo}
   read_sources:
   - recharges
   response_schema:
-    name: NoData
-    properties: {}
+    name: AdminRechargeRecordResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        $ref: '#/components/schemas/AdminRechargeRecord'
   query_parameters: []
 - route: /admin/recharges/packages
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: list
-  operation_id: packages.management.list
+  operation_id: packages.list
   kind: read
   api_surface: backend
   api_method: GET
@@ -7108,8 +7020,32 @@ frontend_operations:
   read_sources:
   - recharges
   response_schema:
-    name: NoData
-    properties: {}
+    name: AdminRechargePackageListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: AdminRechargePackage
+          type: object
+          additionalProperties: false
+          required: [id, packageNo, name, skuId, priceAmount, currencyCode, bonusPoints, grantAmount, points, status, updatedAt]
+          properties:
+            id: { type: string, maxLength: 32 }
+            packageNo: { type: string, maxLength: 128 }
+            name: { type: string, maxLength: 200 }
+            skuId: { type: string, maxLength: 64 }
+            priceAmount: { type: string, pattern: '^[0-9]+(\.[0-9]{1,8})?$' }
+            currencyCode: { type: string, minLength: 3, maxLength: 16 }
+            bonusPoints: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            grantAmount: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            points: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            status: { type: string, enum: [active, inactive] }
+            updatedAt: { type: string, maxLength: 64 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
   query_parameters:
   - name: page
     schema: { type: integer, minimum: 1 }
@@ -7127,8 +7063,16 @@ frontend_operations:
   read_sources:
   - recharges
   response_schema:
-    name: NoData
-    properties: {}
+    name: AdminRechargeSettings
+    type: object
+    additionalProperties: false
+    required: [baseCurrencyCode, basePointsPerCny, currencyToCnyRates]
+    properties:
+      baseCurrencyCode: { type: string, minLength: 3, maxLength: 16 }
+      basePointsPerCny: { type: string, pattern: '^[0-9]+(\.[0-9]{1,8})?$' }
+      currencyToCnyRates:
+        type: object
+        additionalProperties: { type: string, pattern: '^[0-9]+(\.[0-9]{1,8})?$' }
   request_schema: &recharge_package_mutation
     name: RechargePackageMutationRequest
     type: object
@@ -7177,7 +7121,7 @@ frontend_operations:
 - route: /admin/recharges/settings
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: retrieve
-  operation_id: settings.management.retrieve
+  operation_id: settings.retrieve
   kind: read
   api_surface: backend
   api_method: GET
@@ -7226,8 +7170,43 @@ frontend_operations:
   read_sources:
   - storage
   response_schema:
-    name: NoData
-    properties: {}
+    name: AdminStorageBucketListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: AdminStorageBucket
+          type: object
+          additionalProperties: false
+          required: [id, bucketName, logicalScope, providerId, providerCode, providerType, region, bucketRegion, dataResidencyRegion, objectKeyPrefix, storageClass, defaultStorageClass, encryption, defaultEncryptionMode, kmsKeyRef, versioningEnabled, objectLockEnabled, lifecycleEnabled, publicAccessBlocked, status, createdAt, updatedAt]
+          properties:
+            id: { type: string, maxLength: 128 }
+            bucketName: { type: string, maxLength: 128 }
+            logicalScope: { type: string, maxLength: 64 }
+            providerId: { type: string, maxLength: 128 }
+            providerCode: { type: string, maxLength: 96 }
+            providerType: { type: string, maxLength: 64 }
+            region: { type: string, maxLength: 64 }
+            bucketRegion: { type: string, maxLength: 64 }
+            dataResidencyRegion: { type: string, maxLength: 64 }
+            objectKeyPrefix: { type: string, maxLength: 512 }
+            storageClass: { type: string, maxLength: 64 }
+            defaultStorageClass: { type: string, maxLength: 64 }
+            encryption: { type: string, maxLength: 64 }
+            defaultEncryptionMode: { type: string, maxLength: 64 }
+            kmsKeyRef: { type: string, maxLength: 256 }
+            versioningEnabled: { type: boolean }
+            objectLockEnabled: { type: boolean }
+            lifecycleEnabled: { type: boolean }
+            publicAccessBlocked: { type: boolean }
+            status: { type: string, maxLength: 64 }
+            createdAt: { type: string, maxLength: 64 }
+            updatedAt: { type: string, maxLength: 64 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
   query_parameters:
   - name: cursor
     type: string
@@ -7387,8 +7366,32 @@ frontend_operations:
   read_sources:
   - storage
   response_schema:
-    name: NoData
-    properties: {}
+    name: AdminStorageDefaultBucketListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: AdminStorageDefaultBucket
+          type: object
+          additionalProperties: false
+          required: [id, logicalScope, bucketId, bucketName, providerId, providerCode, providerType, region, reason, status, updatedAt]
+          properties:
+            id: { type: string, maxLength: 128 }
+            logicalScope: { type: string, maxLength: 64 }
+            bucketId: { type: string, maxLength: 128 }
+            bucketName: { type: string, maxLength: 128 }
+            providerId: { type: string, maxLength: 128 }
+            providerCode: { type: string, maxLength: 96 }
+            providerType: { type: string, maxLength: 64 }
+            region: { type: string, maxLength: 64 }
+            reason: { type: string, maxLength: 512 }
+            status: { type: string, maxLength: 64 }
+            updatedAt: { type: string, maxLength: 64 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
   query_parameters:
   - name: cursor
     type: string
@@ -7458,8 +7461,31 @@ frontend_operations:
   read_sources:
   - storage
   response_schema:
-    name: NoData
-    properties: {}
+    name: AdminStorageGarbageCollectionJobListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: AdminStorageGarbageCollectionJob
+          type: object
+          additionalProperties: false
+          required: [id, jobId, jobType, target, retention, candidateCount, dryRun, status, createdAt, completedAt]
+          properties:
+            id: { type: string, maxLength: 128 }
+            jobId: { type: string, maxLength: 128 }
+            jobType: { type: string, maxLength: 64 }
+            target: { type: string, maxLength: 64 }
+            retention: { type: string, maxLength: 64 }
+            candidateCount: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            dryRun: { type: boolean }
+            status: { type: string, maxLength: 64 }
+            createdAt: { type: string, maxLength: 64 }
+            completedAt: { type: string, maxLength: 64 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
   query_parameters:
   - name: cursor
     type: string
@@ -7542,8 +7568,36 @@ frontend_operations:
   read_sources:
   - storage
   response_schema:
-    name: NoData
-    properties: {}
+    name: AdminStorageProviderListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: AdminStorageProvider
+          type: object
+          additionalProperties: false
+          required: [id, providerCode, providerType, endpointUrl, region, credentialRef, pathStyleEnabled, supportsMultipart, supportsLifecycle, supportsObjectLock, status, healthStatus, lastHealthCheckAt, createdAt, updatedAt]
+          properties:
+            id: { type: string, maxLength: 128 }
+            providerCode: { type: string, maxLength: 96 }
+            providerType: { type: string, maxLength: 64 }
+            endpointUrl: { type: string, maxLength: 512 }
+            region: { type: string, maxLength: 64 }
+            credentialRef: { type: string, maxLength: 256 }
+            pathStyleEnabled: { type: boolean }
+            supportsMultipart: { type: boolean }
+            supportsLifecycle: { type: boolean }
+            supportsObjectLock: { type: boolean }
+            status: { type: string, maxLength: 64 }
+            healthStatus: { type: string, maxLength: 64 }
+            lastHealthCheckAt: { type: string, maxLength: 64 }
+            createdAt: { type: string, maxLength: 64 }
+            updatedAt: { type: string, maxLength: 64 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
   query_parameters:
   - name: cursor
     type: string
@@ -7693,8 +7747,31 @@ frontend_operations:
   read_sources:
   - storage
   response_schema:
-    name: NoData
-    properties: {}
+    name: AdminStorageQuotaPolicyListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: AdminStorageQuotaPolicy
+          type: object
+          additionalProperties: false
+          required: [id, scopeType, scopeId, quotaLimitBytes, usedBytes, singleFileLimitBytes, enforcement, status, createdAt, updatedAt]
+          properties:
+            id: { type: string, maxLength: 128 }
+            scopeType: { type: string, maxLength: 64 }
+            scopeId: { type: string, maxLength: 128 }
+            quotaLimitBytes: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            usedBytes: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            singleFileLimitBytes: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            enforcement: { type: string, maxLength: 64 }
+            status: { type: string, maxLength: 64 }
+            createdAt: { type: string, maxLength: 64 }
+            updatedAt: { type: string, maxLength: 64 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
   query_parameters:
   - name: cursor
     type: string
@@ -7759,13 +7836,17 @@ frontend_operations:
         minLength: 1
         maxLength: 128
       quotaLimitBytes:
-        type: integer
+        type: string
         format: int64
-        minimum: 0
+        pattern: '^[0-9]+$'
+        x-sdkwork-int64-string: true
+        x-sdkwork-rust-type: i64
       singleFileLimitBytes:
-        type: integer
+        type: string
         format: int64
-        minimum: 0
+        pattern: '^[0-9]+$'
+        x-sdkwork-int64-string: true
+        x-sdkwork-rust-type: i64
         nullable: true
       enforcement:
         type: string
@@ -7783,8 +7864,35 @@ frontend_operations:
   read_sources:
   - storage
   response_schema:
-    name: NoData
-    properties: {}
+    name: AdminStorageReconciliationRunListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: AdminStorageReconciliationRun
+          type: object
+          additionalProperties: false
+          required: [id, runId, providerId, providerCode, bucketId, bucketName, runType, scope, issues, issueCount, dryRun, status, startedAt, completedAt]
+          properties:
+            id: { type: string, maxLength: 128 }
+            runId: { type: string, maxLength: 128 }
+            providerId: { type: string, maxLength: 128 }
+            providerCode: { type: string, maxLength: 96 }
+            bucketId: { type: string, maxLength: 128 }
+            bucketName: { type: string, maxLength: 128 }
+            runType: { type: string, maxLength: 64 }
+            scope: { type: string, maxLength: 320 }
+            issues: { type: string, maxLength: 32 }
+            issueCount: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            dryRun: { type: boolean }
+            status: { type: string, maxLength: 64 }
+            startedAt: { type: string, maxLength: 64 }
+            completedAt: { type: string, maxLength: 64 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
   query_parameters:
   - name: cursor
     type: string
@@ -7863,8 +7971,29 @@ frontend_operations:
   read_sources:
   - storage
   response_schema:
-    name: NoData
-    properties: {}
+    name: AdminStorageUsageListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: AdminStorageUsage
+          type: object
+          additionalProperties: false
+          required: [id, scopeType, scopeId, scope, usedBytes, reservedBytes, fileCount, snapshotAt]
+          properties:
+            id: { type: string, maxLength: 128 }
+            scopeType: { type: string, maxLength: 64 }
+            scopeId: { type: string, maxLength: 128 }
+            scope: { type: string, maxLength: 320 }
+            usedBytes: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            reservedBytes: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            fileCount: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            snapshotAt: { type: string, maxLength: 64 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
   query_parameters:
   - name: cursor
     type: string
@@ -7896,16 +8025,35 @@ frontend_operations:
 - route: /admin/marketing/referrals
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts
   operation: fetchReferralStats
-  operation_id: marketing.referralStats.list
+  operation_id: referralStats.list
   kind: read
   api_surface: backend
   api_method: GET
-  api_path: /backend/v3/api/marketing/referral_stats
+  api_path: /backend/v3/api/billing/referrals/stats
   read_sources:
   - growth_referral_stats
   response_schema:
-    name: NoData
-    properties: {}
+    name: AdminReferralStatListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: AdminReferralStat
+          type: object
+          additionalProperties: false
+          required: [id, inviter, totalInvited, totalRevenue, bonusAwarded, link]
+          properties:
+            id: { type: string, maxLength: 32 }
+            inviter: { type: string, maxLength: 320 }
+            totalInvited: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            totalRevenue: { type: string, maxLength: 64 }
+            bonusAwarded: { type: string, maxLength: 64 }
+            link: { type: string, format: uri, maxLength: 2048 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
   query_parameters:
   - name: page
     schema: { type: integer, minimum: 1 }
@@ -9647,6 +9795,273 @@ frontend_models:
   data_sources:
   - ops_notification_message
   - ops_notification_delivery
+- route: /admin/marketing/:sectionId?
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts
+  interface: ReferralStat
+  fields:
+  - id
+  - inviter
+  - totalInvited
+  - totalRevenue
+  - bonusAwarded
+  - link
+  data_sources:
+  - growth_referral_stats
+- route: /admin/memberships/:sectionId?
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminEntitlementsListParams
+  fields:
+  - page
+  - pageSize
+  - membershipId
+  - planId
+  - status
+  data_sources:
+  - memberships
+- route: /admin/memberships/:sectionId?
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminMemberStatusInput
+  fields:
+  - status
+  data_sources:
+  - memberships
+- route: /admin/memberships/:sectionId?
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminMembersListParams
+  fields:
+  - page
+  - pageSize
+  - userId
+  - planId
+  - status
+  data_sources:
+  - memberships
+- route: /admin/memberships/:sectionId?
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPackageGroup
+  fields:
+  - id
+  - code
+  - name
+  - description
+  - planId
+  - billingCycle
+  - durationDays
+  - sortWeight
+  - status
+  - packageCount
+  data_sources:
+  - memberships
+- route: /admin/memberships/:sectionId?
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPackageGroupMutationInput
+  fields:
+  - code
+  - name
+  - description
+  - billingCycle
+  - durationDays
+  - sortWeight
+  - status
+  data_sources:
+  - memberships
+- route: /admin/memberships/:sectionId?
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPackageGroupsListParams
+  fields:
+  - page
+  - pageSize
+  - status
+  data_sources:
+  - memberships
+- route: /admin/memberships/:sectionId?
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPackageItem
+  fields:
+  - id
+  - packageNo
+  - groupId
+  - planId
+  - skuId
+  - name
+  - priceAmount
+  - currencyCode
+  - durationDays
+  - recurrenceCycle
+  - status
+  data_sources:
+  - memberships
+- route: /admin/memberships/:sectionId?
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPackageMutationInput
+  fields:
+  - code
+  - packageGroupId
+  - planId
+  - name
+  - priceAmount
+  - currencyCode
+  - durationDays
+  - status
+  data_sources:
+  - memberships
+- route: /admin/memberships/:sectionId?
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPackagesListParams
+  fields:
+  - page
+  - pageSize
+  - packageGroupId
+  - planId
+  - status
+  data_sources:
+  - memberships
+- route: /admin/memberships/:sectionId?
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPageInfo
+  fields:
+  - mode
+  - page
+  - pageSize
+  - totalItems
+  - totalPages
+  - nextCursor
+  - hasMore
+  data_sources:
+  - memberships
+- route: /admin/memberships/:sectionId?
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPlanBenefitInput
+  fields:
+  - id
+  - name
+  - benefitKey
+  - type
+  - description
+  - icon
+  - usageLimit
+  - usedCount
+  - claimed
+  data_sources:
+  - memberships
+- route: /admin/memberships/:sectionId?
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPlanCreateInput
+  fields:
+  - code
+  - name
+  - rank
+  - status
+  - benefits
+  - benefits.id
+  - benefits.name
+  - benefits.benefitKey
+  - benefits.type
+  - benefits.description
+  - benefits.icon
+  - benefits.usageLimit
+  - benefits.usedCount
+  - benefits.claimed
+  data_sources:
+  - memberships
+- route: /admin/memberships/:sectionId?
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPlanItem
+  fields:
+  - id
+  - planNo
+  - levelCode
+  - name
+  - rank
+  - status
+  - benefitCount
+  - benefits
+  - benefits.id
+  - benefits.name
+  - benefits.benefitKey
+  - benefits.type
+  - benefits.description
+  - benefits.icon
+  - benefits.usageLimit
+  - benefits.usedCount
+  - benefits.claimed
+  - updatedAt
+  data_sources:
+  - memberships
+- route: /admin/memberships/:sectionId?
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPlanMutationInput
+  fields:
+  - code
+  - name
+  - rank
+  - status
+  - benefits
+  - benefits.id
+  - benefits.name
+  - benefits.benefitKey
+  - benefits.type
+  - benefits.description
+  - benefits.icon
+  - benefits.usageLimit
+  - benefits.usedCount
+  - benefits.claimed
+  data_sources:
+  - memberships
+- route: /admin/memberships/:sectionId?
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminPlansListParams
+  fields:
+  - page
+  - pageSize
+  - status
+  data_sources:
+  - memberships
+- route: /admin/memberships/:sectionId?
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminRechargePackageItem
+  fields:
+  - id
+  - packageNo
+  - name
+  - skuId
+  - priceAmount
+  - currencyCode
+  - bonusPoints
+  - grantAmount
+  - points
+  - status
+  - updatedAt
+  data_sources:
+  - recharges
+- route: /admin/memberships/:sectionId?
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminRechargePackageMutationInput
+  fields:
+  - priceAmount
+  - currencyCode
+  - bonusPoints
+  - status
+  data_sources:
+  - recharges
+- route: /admin/memberships/:sectionId?
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminRechargeSettingsItem
+  fields:
+  - baseCurrencyCode
+  - basePointsPerCny
+  - currencyToCnyRates
+  data_sources:
+  - recharges
+- route: /admin/memberships/:sectionId?
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  interface: MembershipsAdminRechargeSettingsUpdateInput
+  fields:
+  - baseCurrencyCode
+  - basePointsPerCny
+  - currencyToCnyRates
+  data_sources:
+  - recharges
 routes:
 - route: /
   required_tables:
@@ -9795,6 +10210,11 @@ routes:
   - iam_credential
   - iam_security_event
   - iam_audit_event
+  - messaging_verification_policy
+  - messaging_verification_challenge
+  - messaging_verification_attempt
+  - messaging_outbound_message
+  - messaging_outbound_delivery
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-app-sdk
 - route: /auth/login
@@ -9806,6 +10226,11 @@ routes:
   - iam_session
   - iam_security_event
   - iam_audit_event
+  - messaging_verification_policy
+  - messaging_verification_challenge
+  - messaging_verification_attempt
+  - messaging_outbound_message
+  - messaging_outbound_delivery
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-app-sdk
 - route: /auth/oauth/callback/:provider
@@ -9827,6 +10252,11 @@ routes:
   - iam_session
   - iam_security_event
   - iam_audit_event
+  - messaging_verification_policy
+  - messaging_verification_challenge
+  - messaging_verification_attempt
+  - messaging_outbound_message
+  - messaging_outbound_delivery
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-app-sdk
 - route: /c/:conversationId
@@ -10013,6 +10443,7 @@ routes:
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
 - route: /admin/payments/:sectionId?
   required_tables:
+  - commerce_payment_provider
   - payments
   - ops_audit_log
   dependency_owned: true

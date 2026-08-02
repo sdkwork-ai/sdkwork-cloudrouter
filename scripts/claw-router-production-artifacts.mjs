@@ -15,6 +15,11 @@ function productionGatewayBinaryName(platform = process.platform) {
   return `sdkwork-api-clawrouter-standalone-gateway${suffix}`;
 }
 
+function productionEdgeBinaryName(platform = process.platform) {
+  const suffix = platform === 'win32' ? '.exe' : '';
+  return `sdkwork-clawrouter-edge-runtime${suffix}`;
+}
+
 function productionGatewayBinaryPath({
   env = process.env,
   platform = process.platform,
@@ -27,7 +32,21 @@ function productionGatewayBinaryPath({
   );
 }
 
+function productionEdgeBinaryPath({
+  env = process.env,
+  platform = process.platform,
+  workspaceRoot = process.cwd(),
+} = {}) {
+  return path.join(
+    productionTargetDir({ env, workspaceRoot }),
+    'release',
+    productionEdgeBinaryName(platform),
+  );
+}
+
 export {
+  productionEdgeBinaryName,
+  productionEdgeBinaryPath,
   productionGatewayBinaryName,
   productionGatewayBinaryPath,
   productionTargetDir,

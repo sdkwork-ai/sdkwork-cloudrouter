@@ -5,11 +5,7 @@ import {
   Barcode,
   Boxes,
   FileClock,
-  Link2,
-  ListTree,
-  RadioTower,
   ReceiptText,
-  Ticket,
   TrendingUp,
   WalletCards,
 } from 'lucide-react';
@@ -20,15 +16,10 @@ import {
 } from '@sdkwork/clawroutes-pc-commons';
 import {
   MarketingService,
-  backendPromotionBudgetLedgerEntriesList,
-  backendPromotionCodeRedemptionsList,
   backendPromotionCodesList,
   backendPromotionCouponLedgerEntriesList,
   backendPromotionCouponStocksList,
-  backendPromotionDiscountAllocationsList,
   backendPromotionDiscountApplicationsList,
-  backendPromotionEventsList,
-  backendPromotionExternalBindingsList,
   backendPromotionOffersList,
   backendPromotionUserCouponsList,
 } from './marketingService';
@@ -37,14 +28,9 @@ type MarketingAdminTab =
   | 'promotionOffers'
   | 'promotionCouponStocks'
   | 'promotionCodes'
-  | 'promotionCodeRedemptions'
   | 'userCoupons'
   | 'discountApplications'
-  | 'discountAllocations'
   | 'promotionCouponLedger'
-  | 'budgetLedger'
-  | 'externalBindings'
-  | 'promotionEvents'
   | 'referrals';
 type MarketingAdminGroup = string;
 
@@ -63,14 +49,9 @@ function resolveMarketingSectionId(sectionId: string | undefined): MarketingAdmi
     sectionId === 'promotionOffers'
     || sectionId === 'promotionCouponStocks'
     || sectionId === 'promotionCodes'
-    || sectionId === 'promotionCodeRedemptions'
     || sectionId === 'userCoupons'
     || sectionId === 'discountApplications'
-    || sectionId === 'discountAllocations'
     || sectionId === 'promotionCouponLedger'
-    || sectionId === 'budgetLedger'
-    || sectionId === 'externalBindings'
-    || sectionId === 'promotionEvents'
     || sectionId === 'referrals'
   ) {
     return sectionId;
@@ -142,26 +123,6 @@ function buildMarketingSections(t: ReturnType<typeof useTranslation>['t']): Admi
       searchFields: ['code_no', 'promotion_code_last4', 'claim_code_suffix', 'stock_id', 'code_type', 'currency_code', 'activation_status', 'status'],
     },
     {
-      id: 'promotionCodeRedemptions',
-      title: t('admin.marketing.promotions.promotionCodeRedemptions.title', 'Promotion Code Redemptions'),
-      description: t('admin.marketing.promotions.promotionCodeRedemptions.desc', 'Promotion code exchange outcomes that create user coupon instances or direct benefits and write lifecycle evidence.'),
-      icon: <Ticket className="h-4 w-4" />,
-      group: t('admin.marketing.promotions.group.issuance', 'Issuance'),
-      load: (params) => backendPromotionCodeRedemptionsList(params),
-      columns: [
-        { key: 'redemption_no', label: t('admin.col.redemption', 'Redemption') },
-        { key: 'submitted_code_suffix', label: t('admin.col.code', 'Code') },
-        { key: 'stock_id', label: t('admin.col.stock', 'Stock') },
-        { key: 'owner_user_id', label: t('admin.col.user', 'User') },
-        { key: 'currency_code', label: t('admin.col.currency', 'Currency') },
-        { key: 'result_status', label: t('admin.col.result', 'Result') },
-        { key: 'failure_code', label: t('admin.col.failureCode', 'Failure') },
-        { key: 'redemption_channel', label: t('admin.col.channel', 'Channel') },
-        { key: 'occurred_at', label: t('admin.col.occurredAt', 'Occurred At') },
-      ],
-      searchFields: ['redemption_no', 'submitted_code_suffix', 'stock_id', 'owner_user_id', 'currency_code', 'result_status', 'failure_code', 'redemption_channel'],
-    },
-    {
       id: 'userCoupons',
       title: t('admin.marketing.promotions.userCoupons.title', 'User Coupons'),
       description: t('admin.marketing.promotions.userCoupons.desc', 'Wallet coupon instances with claim, lock, application, settlement, return, expiry, and disable lifecycle state.'),
@@ -202,25 +163,6 @@ function buildMarketingSections(t: ReturnType<typeof useTranslation>['t']): Admi
       searchFields: ['application_no', 'order_no', 'order_id', 'user_coupon_id', 'currency_code', 'status', 'failure_code'],
     },
     {
-      id: 'discountAllocations',
-      title: t('admin.marketing.promotions.discountAllocations.title', 'Discount Allocations'),
-      description: t('admin.marketing.promotions.discountAllocations.desc', 'Immutable item-level discount evidence for refunds, invoice allocation, accounting, and analytics.'),
-      icon: <ListTree className="h-4 w-4" />,
-      group: t('admin.marketing.promotions.group.redemption', 'Redemption'),
-      load: (params) => backendPromotionDiscountAllocationsList(params),
-      columns: [
-        { key: 'application_id', label: t('admin.col.application', 'Application') },
-        { key: 'order_id', label: t('admin.col.order', 'Order') },
-        { key: 'order_item_id', label: t('admin.col.orderItem', 'Order Item') },
-        { key: 'sku_id', label: t('admin.col.sku', 'SKU') },
-        { key: 'allocation_amount_minor', label: t('admin.col.discount', 'Discount'), align: 'right' },
-        { key: 'currency_code', label: t('admin.col.currency', 'Currency') },
-        { key: 'allocation_ratio_bps', label: t('admin.col.ratio', 'Ratio'), align: 'right' },
-        { key: 'created_at', label: t('admin.col.created', 'Created') },
-      ],
-      searchFields: ['application_id', 'order_id', 'order_item_id', 'sku_id', 'currency_code'],
-    },
-    {
       id: 'promotionCouponLedger',
       title: t('admin.marketing.promotions.promotionCouponLedger.title', 'Promotion Coupon Ledger'),
       description: t('admin.marketing.promotions.promotionCouponLedger.desc', 'Append-only evidence for stock creation, claim, lock, release, redeem, return, expire, disable, and adjustment.'),
@@ -240,65 +182,6 @@ function buildMarketingSections(t: ReturnType<typeof useTranslation>['t']): Admi
       searchFields: ['ledger_no', 'business_type', 'direction', 'stock_id', 'user_coupon_id', 'source_type', 'source_id'],
     },
     {
-      id: 'budgetLedger',
-      title: t('admin.marketing.promotions.budgetLedger.title', 'Budget Ledger'),
-      description: t('admin.marketing.promotions.budgetLedger.desc', 'Append-only budget reserve, release, consume, reverse, and adjustment records.'),
-      icon: <WalletCards className="h-4 w-4" />,
-      group: t('admin.marketing.promotions.group.ledger', 'Ledger'),
-      load: (params) => backendPromotionBudgetLedgerEntriesList(params),
-      columns: [
-        { key: 'ledger_no', label: t('admin.col.entry', 'Entry') },
-        { key: 'budget_account_id', label: t('admin.col.budget', 'Budget') },
-        { key: 'business_type', label: t('admin.col.type', 'Type') },
-        { key: 'direction', label: t('admin.col.direction', 'Direction') },
-        { key: 'amount_delta_minor', label: t('admin.col.amount', 'Amount'), align: 'right' },
-        { key: 'balance_amount_minor', label: t('admin.col.balance', 'Balance'), align: 'right' },
-        { key: 'currency_code', label: t('admin.col.currency', 'Currency') },
-        { key: 'occurred_at', label: t('admin.col.occurredAt', 'Occurred At') },
-      ],
-      searchFields: ['ledger_no', 'budget_account_id', 'business_type', 'direction', 'currency_code', 'source_type', 'source_id'],
-    },
-    {
-      id: 'externalBindings',
-      title: t('admin.marketing.promotions.externalBindings.title', 'External Bindings'),
-      description: t('admin.marketing.promotions.externalBindings.desc', 'WeChat, Alipay, partner, and payment-platform card bindings with platform IDs, safe claim-code suffix, and sync state.'),
-      icon: <Link2 className="h-4 w-4" />,
-      group: t('admin.marketing.promotions.group.integration', 'Integration'),
-      load: (params) => backendPromotionExternalBindingsList(params),
-      columns: [
-        { key: 'binding_no', label: t('admin.col.binding', 'Binding') },
-        { key: 'platform', label: t('admin.col.platform', 'Platform') },
-        { key: 'platform_template_id', label: t('admin.col.platformTemplate', 'Template') },
-        { key: 'platform_stock_id', label: t('admin.col.platformStock', 'Stock') },
-        { key: 'platform_coupon_id', label: t('admin.col.platformCoupon', 'Coupon') },
-        { key: 'claim_code_suffix', label: t('admin.col.claimCode', 'Claim Code') },
-        { key: 'external_currency_code', label: t('admin.col.currency', 'Currency') },
-        { key: 'sync_status', label: t('admin.col.syncStatus', 'Sync Status') },
-        { key: 'last_sync_at', label: t('admin.col.syncedAt', 'Synced At') },
-      ],
-      searchFields: ['binding_no', 'platform', 'platform_template_id', 'platform_stock_id', 'platform_coupon_id', 'claim_code_suffix', 'external_currency_code', 'sync_status'],
-    },
-    {
-      id: 'promotionEvents',
-      title: t('admin.marketing.promotions.events.title', 'Promotion Events'),
-      description: t('admin.marketing.promotions.events.desc', 'Outbox events for lifecycle publishing, retry, dead-letter handling, and downstream synchronization.'),
-      icon: <RadioTower className="h-4 w-4" />,
-      group: t('admin.marketing.promotions.group.integration', 'Integration'),
-      load: (params) => backendPromotionEventsList(params),
-      columns: [
-        { key: 'event_no', label: t('admin.col.event', 'Event') },
-        { key: 'event_type', label: t('admin.col.type', 'Type') },
-        { key: 'aggregate_type', label: t('admin.col.aggregate', 'Aggregate') },
-        { key: 'aggregate_id', label: t('admin.col.aggregateId', 'Aggregate ID') },
-        { key: 'event_version', label: t('admin.col.version', 'Version'), align: 'right' },
-        { key: 'status', label: t('admin.col.status', 'Status') },
-        { key: 'occurred_at', label: t('admin.col.occurredAt', 'Occurred At') },
-        { key: 'published_at', label: t('admin.col.publishedAt', 'Published At') },
-        { key: 'next_retry_at', label: t('admin.col.nextRetryAt', 'Next Retry') },
-      ],
-      searchFields: ['event_no', 'event_type', 'aggregate_type', 'aggregate_id', 'status'],
-    },
-    {
       id: 'referrals',
       title: t('admin.commerce.marketing.referralStats.title', 'Referral Stats'),
       description: t('admin.commerce.marketing.referralStats.desc', 'Invite links, successful invitations, revenue contribution, and awarded bonuses.'),
@@ -308,11 +191,11 @@ function buildMarketingSections(t: ReturnType<typeof useTranslation>['t']): Admi
       columns: [
         { key: 'inviter', label: t('admin.commerce.marketing.referralStats.col.inviter', 'Inviter') },
         { key: 'link', label: t('admin.commerce.marketing.referralStats.col.link', 'Referral Link') },
-        { key: 'total_invited', label: t('admin.commerce.marketing.referralStats.col.invited', 'Invited'), align: 'right' },
-        { key: 'total_revenue', label: t('admin.commerce.marketing.referralStats.col.revenue', 'Revenue'), align: 'right' },
-        { key: 'bonus_awarded', label: t('admin.commerce.marketing.referralStats.col.bonus', 'Bonus'), align: 'right' },
+        { key: 'totalInvited', label: t('admin.commerce.marketing.referralStats.col.invited', 'Invited'), align: 'right' },
+        { key: 'totalRevenue', label: t('admin.commerce.marketing.referralStats.col.revenue', 'Revenue'), align: 'right' },
+        { key: 'bonusAwarded', label: t('admin.commerce.marketing.referralStats.col.bonus', 'Bonus'), align: 'right' },
       ],
-      searchFields: ['id', 'inviter', 'link', 'total_revenue', 'bonus_awarded'],
+      searchFields: ['id', 'inviter', 'link', 'totalRevenue', 'bonusAwarded'],
     },
   ];
   return sections.map((section) => withMarketingPagination(section));

@@ -1,0 +1,67 @@
+# This policy is required by the production Kubernetes profile. It relies on
+# Cilium's DNS-aware policy engine; native Kubernetes NetworkPolicy cannot
+# enforce provider FQDN allowlists.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: sdkwork-clawrouter-provider-egress
+  labels:
+    app: sdkwork-clawrouter
+spec:
+  endpointSelector:
+    matchLabels:
+      app: sdkwork-clawrouter
+      component: gateway
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+    - toFQDNs:
+        - matchName: api.openai.com
+        - matchName: api.anthropic.com
+        - matchName: generativelanguage.googleapis.com
+        - matchName: dashscope.aliyuncs.com
+        - matchName: hunyuan.tencentcloudapi.com
+        - matchName: tcloudmarket.tencentcloudapi.com
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+  # DNS answers for approved names must never open an HTTPS path to internal,
+  # link-local, metadata, documentation, multicast, or reserved destinations.
+  egressDeny:
+    - toCIDRSet:
+        - cidr: 0.0.0.0/8
+        - cidr: 10.0.0.0/8
+        - cidr: 100.64.0.0/10
+        - cidr: 127.0.0.0/8
+        - cidr: 169.254.0.0/16
+        - cidr: 172.16.0.0/12
+        - cidr: 192.0.0.0/24
+        - cidr: 192.0.2.0/24
+        - cidr: 192.168.0.0/16
+        - cidr: 198.18.0.0/15
+        - cidr: 198.51.100.0/24
+        - cidr: 203.0.113.0/24
+        - cidr: 224.0.0.0/4
+        - cidr: 240.0.0.0/4
+        - cidr: ::/128
+        - cidr: ::1/128
+        - cidr: fc00::/7
+        - cidr: fe80::/10
+        - cidr: 2001:db8::/32
+        - cidr: ff00::/8
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP

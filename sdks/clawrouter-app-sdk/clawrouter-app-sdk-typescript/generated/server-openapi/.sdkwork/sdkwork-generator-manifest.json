@@ -60,7 +60,7 @@
     },
     {
       "path": "src/api/chat.ts",
-      "sha256": "ea6444f6543806775f0d09bd4b784a8a56ea27cdc74ffb614aadac7d7b2e47b3"
+      "sha256": "18c55fc9cf29054132ef8474a62079ecd9c3e55661c2b5a59bab293a3c315aa2"
     },
     {
       "path": "src/api/iam.ts",

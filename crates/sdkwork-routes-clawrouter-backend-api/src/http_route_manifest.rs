@@ -6,12 +6,6 @@ use sdkwork_web_core::HttpRouteManifest;
 const HTTP_ROUTES: &[HttpRoute] = &[
     HttpRoute::dual_token(
         HttpMethod::Get,
-        "/backend/v3/api/ai/model_mapping_options",
-        "ai",
-        "modelMappingOptions.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
         "/backend/v3/api/ai/upstream_account_groups",
         "ai",
         "upstreamAccountGroups.list",
@@ -195,6 +189,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/backend/v3/api/marketing/referral_stats",
         "system",
         "marketing.referralStats.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/backend/v3/api/payments/providers",
+        "payments",
+        "providers.list",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,

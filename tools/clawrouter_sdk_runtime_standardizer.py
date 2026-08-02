@@ -180,6 +180,17 @@ SDK_DEPENDENCIES = {
             },
         },
         {
+            "workspace": "sdkwork-messaging-app-sdk",
+            "role": "messaging-app-verification-capability",
+            "required": True,
+            "dependencyMode": "consumer-sdk",
+            "apiPrefix": "/app/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "@sdkwork/messaging-app-sdk",
+            },
+        },
+        {
             "workspace": "sdkwork-account-app-sdk",
             "role": "account-app-capability",
             "required": True,

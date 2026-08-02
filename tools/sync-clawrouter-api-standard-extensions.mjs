@@ -108,10 +108,8 @@ function inferExternalProtocolId(routePath) {
 }
 
 function inferAuth(operation) {
-  const routeScope = String(operation["x-route-scope"] ?? "").trim().toLowerCase();
-  if (routeScope === "public") {
-    return { mode: "public", required: false };
-  }
+  // x-route-scope classifies the frontend route (public/console/admin); it is
+  // not an authentication profile. OpenAPI security is the route authority.
   const security = Array.isArray(operation.security) ? operation.security : [];
   if (security.length === 0) {
     return { mode: "public", required: false };

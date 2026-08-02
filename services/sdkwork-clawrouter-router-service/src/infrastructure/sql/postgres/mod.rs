@@ -30,6 +30,7 @@ pub(crate) mod model_catalog_import;
 mod openai_invocation_telemetry_plugin;
 mod payment_callback_store;
 mod payment_intent_runtime_store;
+mod payment_provider_route_resolver;
 mod payment_reconciliation_runtime_store;
 mod row_mapping;
 mod runtime_region_settings_store;
@@ -69,6 +70,9 @@ pub use loader::PostgresPricingCatalogLoader;
 pub use openai_invocation_telemetry_plugin::PostgresOpenAiInvocationTelemetryPlugin;
 pub use payment_callback_store::PostgresPaymentCallbackStore;
 pub use payment_intent_runtime_store::PostgresPaymentIntentRuntimeStore;
+pub use payment_provider_route_resolver::{
+    payment_provider_route_resolver_for_postgres, PostgresPaymentProviderRouteResolver,
+};
 pub use payment_reconciliation_runtime_store::PostgresPaymentReconciliationRuntimeStore;
 pub use runtime_region_settings_store::PostgresRuntimeRegionSettingsStore;
 pub use settings_store::PostgresSettingsStore;

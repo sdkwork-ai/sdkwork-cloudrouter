@@ -47,6 +47,11 @@ ROUTE_CONTRACT_SUPPLEMENTS: tuple[dict[str, Any], ...] = (
             "iam_session",
             "iam_security_event",
             "iam_audit_event",
+            "messaging_verification_policy",
+            "messaging_verification_challenge",
+            "messaging_verification_attempt",
+            "messaging_outbound_message",
+            "messaging_outbound_delivery",
             "ops_config_snapshot",
         ],
         "dependency_owned": True,
@@ -60,6 +65,11 @@ ROUTE_CONTRACT_SUPPLEMENTS: tuple[dict[str, Any], ...] = (
             "iam_credential",
             "iam_security_event",
             "iam_audit_event",
+            "messaging_verification_policy",
+            "messaging_verification_challenge",
+            "messaging_verification_attempt",
+            "messaging_outbound_message",
+            "messaging_outbound_delivery",
         ],
         "dependency_owned": True,
         "dependency_sdk_family": "sdkwork-clawrouter-app-sdk",
@@ -73,6 +83,11 @@ ROUTE_CONTRACT_SUPPLEMENTS: tuple[dict[str, Any], ...] = (
             "iam_session",
             "iam_security_event",
             "iam_audit_event",
+            "messaging_verification_policy",
+            "messaging_verification_challenge",
+            "messaging_verification_attempt",
+            "messaging_outbound_message",
+            "messaging_outbound_delivery",
         ],
         "dependency_owned": True,
         "dependency_sdk_family": "sdkwork-clawrouter-app-sdk",
@@ -132,20 +147,6 @@ OPERATION_ID_OVERRIDES = {
         "fetchSettings",
     ): "users.settings.retrieve",
 }
-
-AUTHORED_OPERATION_CONTRACT_FIELDS = {
-    (
-        "apps/sdkwork-clawrouter-pc/packages/"
-        "sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts",
-        "fetchSites",
-    ): ("operation_id", "response_schema", "query_parameters"),
-    (
-        "apps/sdkwork-clawrouter-pc/packages/"
-        "sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts",
-        "fetchSiteChannels",
-    ): ("operation_id", "response_schema", "query_parameters"),
-}
-
 
 def _operation_priority(entry: dict[str, Any]) -> tuple[int, str]:
     source = str(entry.get("source", "")).replace("\\", "/")
@@ -245,8 +246,6 @@ def _merge_contract_operations(
 ) -> list[dict[str, Any]]:
     merged: dict[str, dict[str, Any]] = {}
     for entry in authority_operations:
-        if is_route_manifest_bootstrap_source(str(entry.get("source", ""))):
-            continue
         if _is_retired_dependency_api_operation(entry):
             continue
         route = entry.get("route")
@@ -264,19 +263,8 @@ def _merge_contract_operations(
         key = _contract_operation_key(entry)
         if key is not None:
             authored = merged.get(key)
-            source = str(entry.get("source", "")).replace("\\", "/")
-            operation = str(entry.get("operation", ""))
-            preserved_fields = AUTHORED_OPERATION_CONTRACT_FIELDS.get((source, operation), ())
-            if authored is not None and preserved_fields:
-                entry = {
-                    **entry,
-                    **{
-                        field: authored[field]
-                        for field in preserved_fields
-                        if field in authored
-                    },
-                }
-            merged[key] = entry
+            if authored is not None:
+                merged[key] = {**entry, **authored}
     return _finalize_openapi_exposure(list(merged.values()))
 
 

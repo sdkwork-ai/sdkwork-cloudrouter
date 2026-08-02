@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::num::NonZeroUsize;
 use std::sync::{Arc, Mutex};
 
 use axum::body::Body;
@@ -20,7 +21,10 @@ use sdkwork_clawrouter_router_service::domain::{
     UpstreamAccountRoute,
 };
 use sdkwork_clawrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
-use sdkwork_clawrouter_router_service::infrastructure::provider::ProviderSecretMapResolver;
+use sdkwork_clawrouter_router_service::infrastructure::provider::{
+    ProviderResponseMemoryBudget, ProviderSecretMapResolver,
+    PROVIDER_RESPONSE_MEMORY_RESERVATION_MULTIPLIER,
+};
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use sdkwork_clawrouter_router_service::ports::{
     ChatCompletionRelay, ChatCompletionRelayRequest, ChatCompletionStreamRelay,
@@ -177,6 +181,125 @@ async fn openai_chat_registry_hit_calls_internal_adapter_without_direct_relay() 
     }
     let payload = response_json(response).await;
     assert_eq!("chatcmpl-adapter", payload["id"]);
+}
+
+#[tokio::test]
+async fn openai_chat_adapter_fails_closed_when_shared_response_memory_is_saturated() {
+    let fake_adapter = spawn_fake_adapter_server().await;
+    let direct_calls = Arc::new(Mutex::new(Vec::new()));
+    let relay = Arc::new(RecordingRelay {
+        captured: Arc::clone(&direct_calls),
+    });
+    let response_limit =
+        sdkwork_claw_provider_adapter_http::ProviderAdapterHttpClient::MAX_BUFFERED_RESPONSE_BYTES;
+    let budget_bytes = response_limit
+        .checked_mul(PROVIDER_RESPONSE_MEMORY_RESERVATION_MULTIPLIER)
+        .expect("adapter response reservation must fit usize");
+    let response_memory_budget = ProviderResponseMemoryBudget::new(
+        NonZeroUsize::new(budget_bytes).expect("test memory budget must be nonzero"),
+    )
+    .expect("test memory budget must be valid");
+    let _held_memory_guard = response_memory_budget
+        .try_reserve(response_limit as u64)
+        .expect("test must hold the entire shared response budget");
+    let adapter_relay =
+        sdkwork_clawrouter_router_service::infrastructure::provider::AdapterAwareChatCompletionRelay::new(
+            relay,
+            Arc::new(ProviderAdapterRegistry::new(vec![adapter_route(
+                fake_adapter.base_url.as_str(),
+            )])),
+            sdkwork_claw_provider_adapter_http::ProviderAdapterHttpClient::for_development("test-token"),
+        )
+        .with_secret_resolver(provider_secret_resolver(
+            "vault://providers/openrouter/account/main",
+            "sk-openrouter-main",
+        ))
+        .with_shared_response_memory_budget(response_memory_budget);
+    let hasher =
+        Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
+    let key_hash = hasher.hash_secret("sk-standard-secret").unwrap();
+    let router = sdkwork_clawrouter_router_service::api::openai_chat_completions_router_with_relay(
+        Arc::new(catalog_with_hashed_api_key(key_hash)),
+        hasher,
+        Arc::new(adapter_relay),
+    );
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/chat/completions")
+                .header("authorization", "Bearer sk-standard-secret")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"model":"gpt-4o-mini","messages":[{"role":"user","content":"ping"}]}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::BAD_GATEWAY, response.status());
+    assert!(direct_calls.lock().unwrap().is_empty());
+    assert!(fake_adapter.calls.lock().unwrap().is_empty());
+    let payload = response_json(response).await;
+    assert!(payload["error"]["message"]
+        .as_str()
+        .expect("OpenAI-compatible error.message must be a string")
+        .contains("provider_response_memory_saturated"));
+}
+
+#[tokio::test]
+async fn openai_chat_non_streaming_request_rejects_streaming_adapter_response() {
+    let fake_adapter = spawn_streaming_adapter_server().await;
+    let direct_calls = Arc::new(Mutex::new(Vec::new()));
+    let relay = Arc::new(RecordingRelay {
+        captured: Arc::clone(&direct_calls),
+    });
+    let adapter_relay =
+        sdkwork_clawrouter_router_service::infrastructure::provider::AdapterAwareChatCompletionRelay::new(
+            relay,
+            Arc::new(ProviderAdapterRegistry::new(vec![adapter_route(
+                fake_adapter.base_url.as_str(),
+            )])),
+            sdkwork_claw_provider_adapter_http::ProviderAdapterHttpClient::for_development("test-token"),
+        )
+        .with_secret_resolver(provider_secret_resolver(
+            "vault://providers/openrouter/account/main",
+            "sk-openrouter-main",
+        ));
+    let hasher =
+        Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
+    let key_hash = hasher.hash_secret("sk-standard-secret").unwrap();
+    let router = sdkwork_clawrouter_router_service::api::openai_chat_completions_router_with_relay(
+        Arc::new(catalog_with_hashed_api_key(key_hash)),
+        hasher,
+        Arc::new(adapter_relay),
+    );
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/chat/completions")
+                .header("authorization", "Bearer sk-standard-secret")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"model":"gpt-4o-mini","messages":[{"role":"user","content":"ping"}]}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::BAD_GATEWAY, response.status());
+    assert!(direct_calls.lock().unwrap().is_empty());
+    assert_eq!(1, fake_adapter.calls.lock().unwrap().len());
+    let payload = response_json(response).await;
+    assert!(payload["error"]["message"]
+        .as_str()
+        .expect("OpenAI-compatible error.message must be a string")
+        .contains("streaming body for a non-streaming chat completion"));
 }
 
 #[tokio::test]
@@ -400,6 +523,25 @@ async fn spawn_fake_adapter_server() -> FakeAdapterServer {
     }
 }
 
+async fn spawn_streaming_adapter_server() -> FakeAdapterServer {
+    let calls = Arc::new(Mutex::new(Vec::new()));
+    let app = Router::new()
+        .route(
+            "/providers/openrouter/v1/chat/completions",
+            post(capture_streaming_adapter_invocation),
+        )
+        .with_state(Arc::clone(&calls));
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        axum::serve(listener, app).await.unwrap();
+    });
+    FakeAdapterServer {
+        base_url: format!("http://{addr}"),
+        calls,
+    }
+}
+
 async fn capture_adapter_invocation(
     State(calls): State<Arc<Mutex<Vec<AdapterInvocationRequest>>>>,
     headers: HeaderMap,
@@ -420,6 +562,24 @@ async fn capture_adapter_invocation(
             "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2}
         }),
     ))
+}
+
+async fn capture_streaming_adapter_invocation(
+    State(calls): State<Arc<Mutex<Vec<AdapterInvocationRequest>>>>,
+    headers: HeaderMap,
+    Json(body): Json<AdapterInvocationRequest>,
+) -> impl IntoResponse {
+    assert_eq!(
+        Some("Bearer test-token"),
+        headers
+            .get(axum::http::header::AUTHORIZATION)
+            .and_then(|value| value.to_str().ok())
+    );
+    calls.lock().unwrap().push(body);
+    (
+        [(axum::http::header::CONTENT_TYPE, "text/event-stream")],
+        "data: {\"id\":\"chatcmpl-unexpected-stream\"}\n\ndata: [DONE]\n\n",
+    )
 }
 
 async fn response_json(response: axum::response::Response) -> serde_json::Value {

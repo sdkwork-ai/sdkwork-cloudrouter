@@ -4,22 +4,21 @@ import {
   isRecord,
   readApiData,
   readRequiredApiItems,
-  readRequiredNumber,
+  readRequiredNonNegativeInt64String,
   readRequiredString,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
 
 type BackendPromotionsService = ReturnType<typeof getSdkworkPromotionBackendSdkClient>['promotions'];
-type ClawBackendPromotionsService = ReturnType<typeof getClawRouterBackendSdkClient>['promotions'];
 type ClawBackendMarketingService = ReturnType<typeof getClawRouterBackendSdkClient>['system']['marketing'];
 type PromotionPage = ApiRecord & { items: ApiRecord[]; pageInfo: ApiRecord };
 
 export interface ReferralStat {
   id: string;
   inviter: string;
-  total_invited: number;
-  total_revenue: string;
-  bonus_awarded: string;
+  totalInvited: string;
+  totalRevenue: string;
+  bonusAwarded: string;
   link: string;
 }
 
@@ -64,20 +63,6 @@ export async function backendPromotionDiscountApplicationsList(
   return readRequiredPromotionPage(result, 'Promotion discount application records are required');
 }
 
-export async function backendPromotionDiscountAllocationsList(
-  params?: Parameters<ClawBackendPromotionsService['discountAllocations']['list']>[0],
-) {
-  const result = await getClawRouterBackendSdkClient().promotions.discountAllocations.list(params);
-  return readRequiredPromotionPage(result, 'Promotion discount allocation records are required');
-}
-
-export async function backendPromotionCodeRedemptionsList(
-  params?: Parameters<ClawBackendPromotionsService['codes']['redemptions']['list']>[0],
-) {
-  const result = await getClawRouterBackendSdkClient().promotions.codes.redemptions.list(params);
-  return readRequiredPromotionPage(result, 'Promotion code redemption records are required');
-}
-
 export async function backendPromotionUserCouponsList(
   params?: Parameters<BackendPromotionsService['userCoupons']['list']>[0],
 ) {
@@ -92,35 +77,14 @@ export async function backendPromotionCouponLedgerEntriesList(
   return readRequiredPromotionPage(result, 'Promotion coupon ledger records are required');
 }
 
-export async function backendPromotionBudgetLedgerEntriesList(
-  params?: Parameters<ClawBackendPromotionsService['budgetLedgerEntries']['list']>[0],
-) {
-  const result = await getClawRouterBackendSdkClient().promotions.budgetLedgerEntries.list(params);
-  return readRequiredPromotionPage(result, 'Promotion budget ledger records are required');
-}
-
-export async function backendPromotionExternalBindingsList(
-  params?: Parameters<ClawBackendPromotionsService['externalBindings']['list']>[0],
-) {
-  const result = await getClawRouterBackendSdkClient().promotions.externalBindings.list(params);
-  return readRequiredPromotionPage(result, 'Promotion external binding records are required');
-}
-
-export async function backendPromotionEventsList(
-  params?: Parameters<ClawBackendPromotionsService['events']['list']>[0],
-) {
-  const result = await getClawRouterBackendSdkClient().promotions.events.list(params);
-  return readRequiredPromotionPage(result, 'Promotion event records are required');
-}
-
 function normalizeReferralStat(value: unknown): ReferralStat {
   const item = readRequiredRecord(value, 'Referral stat record is required');
   return {
     id: readRequiredString(item, 'id', 'Referral stat id is required'),
     inviter: readRequiredString(item, 'inviter', 'Referral inviter is required'),
-    total_invited: readRequiredNumber(item, 'total_invited', 'Referral invited total is required'),
-    total_revenue: readRequiredString(item, 'total_revenue', 'Referral revenue is required'),
-    bonus_awarded: readRequiredString(item, 'bonus_awarded', 'Referral bonus is required'),
+    totalInvited: readRequiredNonNegativeInt64String(item, 'totalInvited', 'Referral invited total is required'),
+    totalRevenue: readRequiredString(item, 'totalRevenue', 'Referral revenue is required'),
+    bonusAwarded: readRequiredString(item, 'bonusAwarded', 'Referral bonus is required'),
     link: readRequiredString(item, 'link', 'Referral link is required'),
   };
 }

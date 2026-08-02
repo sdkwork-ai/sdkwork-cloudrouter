@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "6f726d4f2b99d04712d72cd6a3165a06927061943516e45b5ad270acdba391ce",
+  "changeFingerprint": "7f44601a3e31d795ead5a417b639e44908dd4f25cf59748503aa7c90e3c72a84",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -32,10 +32,8 @@
           "src/api/ai.ts",
           "src/api/base.ts",
           "src/api/index.ts",
-          "src/api/memberships.ts",
           "src/api/paths.ts",
           "src/api/payments.ts",
-          "src/api/promotions.ts",
           "src/api/recharges.ts",
           "src/api/storage.ts",
           "src/api/system.ts",
@@ -108,17 +106,14 @@
           "src/types/media-kind.ts",
           "src/types/media-resource.ts",
           "src/types/media-source.ts",
-          "src/types/membership-package-group-mutation-request.ts",
-          "src/types/membership-package-mutation-request.ts",
-          "src/types/membership-plan-mutation-request.ts",
-          "src/types/membership-status-update-request.ts",
           "src/types/model-limit-rule-item.ts",
           "src/types/model-limit-rule-page.ts",
           "src/types/monitor-alert-page.ts",
           "src/types/monitor-node-page.ts",
           "src/types/monitor-performance-page.ts",
           "src/types/page-info.ts",
-          "src/types/payment-provider-account-status-update-request.ts",
+          "src/types/payment-provider-inventory-item.ts",
+          "src/types/payment-provider-inventory-list-response.ts",
           "src/types/problem-detail.ts",
           "src/types/recharge-package-mutation-request.ts",
           "src/types/recharge-settings-update-request.ts",
@@ -349,10 +344,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 262,
-    "models": 232,
-    "apis": 7,
-    "types": 234
+    "totalFiles": 241,
+    "models": 213,
+    "apis": 5,
+    "types": 215
   },
   "warnings": [
     {
@@ -365,23 +360,7 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/ai.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/system.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/memberships.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/payments.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/promotions.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -415,12 +394,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 164,
+    "writtenFiles": 159,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "6f726d4f2b99d04712d72cd6a3165a06927061943516e45b5ad270acdba391ce",
+    "changeFingerprint": "7f44601a3e31d795ead5a417b639e44908dd4f25cf59748503aa7c90e3c72a84",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -436,10 +415,8 @@
         "src/api/ai.ts",
         "src/api/base.ts",
         "src/api/index.ts",
-        "src/api/memberships.ts",
         "src/api/paths.ts",
         "src/api/payments.ts",
-        "src/api/promotions.ts",
         "src/api/recharges.ts",
         "src/api/storage.ts",
         "src/api/system.ts",
@@ -510,17 +487,14 @@
         "src/types/media-kind.ts",
         "src/types/media-resource.ts",
         "src/types/media-source.ts",
-        "src/types/membership-package-group-mutation-request.ts",
-        "src/types/membership-package-mutation-request.ts",
-        "src/types/membership-plan-mutation-request.ts",
-        "src/types/membership-status-update-request.ts",
         "src/types/model-limit-rule-item.ts",
         "src/types/model-limit-rule-page.ts",
         "src/types/monitor-alert-page.ts",
         "src/types/monitor-node-page.ts",
         "src/types/monitor-performance-page.ts",
         "src/types/page-info.ts",
-        "src/types/payment-provider-account-status-update-request.ts",
+        "src/types/payment-provider-inventory-item.ts",
+        "src/types/payment-provider-inventory-list-response.ts",
         "src/types/problem-detail.ts",
         "src/types/recharge-package-mutation-request.ts",
         "src/types/recharge-settings-update-request.ts",
@@ -615,10 +589,8 @@
             "src/api/ai.ts",
             "src/api/base.ts",
             "src/api/index.ts",
-            "src/api/memberships.ts",
             "src/api/paths.ts",
             "src/api/payments.ts",
-            "src/api/promotions.ts",
             "src/api/recharges.ts",
             "src/api/storage.ts",
             "src/api/system.ts",
@@ -691,17 +663,14 @@
             "src/types/media-kind.ts",
             "src/types/media-resource.ts",
             "src/types/media-source.ts",
-            "src/types/membership-package-group-mutation-request.ts",
-            "src/types/membership-package-mutation-request.ts",
-            "src/types/membership-plan-mutation-request.ts",
-            "src/types/membership-status-update-request.ts",
             "src/types/model-limit-rule-item.ts",
             "src/types/model-limit-rule-page.ts",
             "src/types/monitor-alert-page.ts",
             "src/types/monitor-node-page.ts",
             "src/types/monitor-performance-page.ts",
             "src/types/page-info.ts",
-            "src/types/payment-provider-account-status-update-request.ts",
+            "src/types/payment-provider-inventory-item.ts",
+            "src/types/payment-provider-inventory-list-response.ts",
             "src/types/problem-detail.ts",
             "src/types/recharge-package-mutation-request.ts",
             "src/types/recharge-settings-update-request.ts",

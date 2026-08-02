@@ -6541,7 +6541,7 @@
     },
     "/app/v3/api/chat/conversations": {
       "get": {
-        "description": "List chat conversations. Reads ai_chat_conversation, ai_agent_session. Writes none. File targets none.",
+        "description": "List chat conversations. Reads ai_chat_conversation. Writes none. File targets none.",
         "operationId": "conversations.list",
         "parameters": [
           {
@@ -6635,8 +6635,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai_chat_conversation",
-          "ai_agent_session"
+          "ai_chat_conversation"
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "chat",
@@ -6646,7 +6645,7 @@
         "x-write-tables": []
       },
       "post": {
-        "description": "Create chat conversation. Reads ai_agent_session. Writes ai_chat_conversation. File targets none.",
+        "description": "Create chat conversation. Reads ai_chat_conversation. Writes ai_chat_conversation. File targets none.",
         "operationId": "conversations.create",
         "parameters": [],
         "requestBody": {
@@ -6725,7 +6724,7 @@
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai_agent_session"
+          "ai_chat_conversation"
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "chat",
@@ -6739,7 +6738,7 @@
     },
     "/app/v3/api/chat/conversations/{conversationId}": {
       "get": {
-        "description": "Retrieve chat conversation. Reads ai_chat_conversation, ai_agent_session. Writes none. File targets none.",
+        "description": "Retrieve chat conversation. Reads ai_chat_conversation. Writes none. File targets none.",
         "operationId": "conversations.retrieve",
         "parameters": [
           {
@@ -6817,8 +6816,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai_chat_conversation",
-          "ai_agent_session"
+          "ai_chat_conversation"
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "chat",
@@ -6830,7 +6828,7 @@
     },
     "/app/v3/api/chat/conversations/{conversationId}/messages": {
       "get": {
-        "description": "List chat messages. Reads ai_chat_conversation, ai_chat_turn, ai_chat_item, ai_chat_message, ai_chat_message_part, ai_runtime_usage_link, ai_runtime_artifact. Writes none. File targets none.",
+        "description": "P1 high-volume Chat message history using opaque cursor pagination. The first bounded page contains the latest messages, each response page is in chronological conversation order, and nextCursor seeks an earlier window. The only supported pagination inputs are cursor and page_size; the default page size is 20 and the maximum is 200. Reads ai_chat_conversation, ai_chat_turn, ai_chat_message, ai_runtime_usage_link. Writes none. File targets none.",
         "operationId": "conversations.messages.list",
         "parameters": [
           {
@@ -6843,15 +6841,13 @@
             }
           },
           {
-            "description": "Page query parameter.",
+            "description": "Cursor query parameter.",
             "in": "query",
-            "name": "page",
+            "name": "cursor",
             "required": false,
             "schema": {
-              "default": 1,
-              "format": "int32",
-              "minimum": 1,
-              "type": "integer"
+              "maxLength": 1024,
+              "type": "string"
             }
           },
           {
@@ -6935,23 +6931,20 @@
         "x-read-sources": [
           "ai_chat_conversation",
           "ai_chat_turn",
-          "ai_chat_item",
           "ai_chat_message",
-          "ai_chat_message_part",
-          "ai_runtime_usage_link",
-          "ai_runtime_artifact"
+          "ai_runtime_usage_link"
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "chat",
         "x-sdkwork-domain": "chat",
         "x-sdkwork-resource": "conversations.messages",
-        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+        "x-source-file": "crates/sdkwork-routes-clawrouter-app-api/src/http_route_manifest.rs",
         "x-write-tables": []
       }
     },
     "/app/v3/api/chat/conversations/{conversationId}/turns": {
       "post": {
-        "description": "Create chat turn. Reads ai_chat_conversation, ai_agent_session. Writes ai_chat_turn, ai_chat_item, ai_chat_message, ai_chat_message_part, ai_chat_context_snapshot, ai_runtime_invocation, ai_runtime_invocation_event, ai_runtime_usage_link, ai_runtime_artifact. File targets none.",
+        "description": "Create chat turn. Reads ai_chat_conversation. Writes ai_chat_turn, ai_chat_item, ai_chat_message, ai_chat_message_part. File targets none.",
         "operationId": "conversations.turns.create",
         "parameters": [
           {
@@ -7040,8 +7033,7 @@
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai_chat_conversation",
-          "ai_agent_session"
+          "ai_chat_conversation"
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "chat",
@@ -7052,18 +7044,13 @@
           "ai_chat_turn",
           "ai_chat_item",
           "ai_chat_message",
-          "ai_chat_message_part",
-          "ai_chat_context_snapshot",
-          "ai_runtime_invocation",
-          "ai_runtime_invocation_event",
-          "ai_runtime_usage_link",
-          "ai_runtime_artifact"
+          "ai_chat_message_part"
         ]
       }
     },
     "/app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response": {
       "post": {
-        "description": "Complete chat turn response. Reads ai_chat_conversation, ai_chat_turn, ai_chat_item, ai_runtime_invocation, ai_usage. Writes ai_chat_turn, ai_chat_item, ai_chat_message, ai_chat_message_part, ai_runtime_usage_link. File targets none.",
+        "description": "Complete chat turn response. Reads ai_chat_conversation, ai_chat_turn, ai_chat_item, ai_chat_message, ai_chat_message_part, ai_runtime_invocation, ai_usage. Writes ai_chat_turn, ai_chat_item, ai_chat_message, ai_chat_message_part, ai_chat_context_snapshot, ai_runtime_usage_link. File targets none.",
         "operationId": "conversations.turns.response.create",
         "parameters": [
           {
@@ -7164,6 +7151,8 @@
           "ai_chat_conversation",
           "ai_chat_turn",
           "ai_chat_item",
+          "ai_chat_message",
+          "ai_chat_message_part",
           "ai_runtime_invocation",
           "ai_usage"
         ],
@@ -7177,6 +7166,7 @@
           "ai_chat_item",
           "ai_chat_message",
           "ai_chat_message_part",
+          "ai_chat_context_snapshot",
           "ai_runtime_usage_link"
         ]
       }

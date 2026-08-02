@@ -556,26 +556,15 @@ async fn list_payment_providers(
         r#"
         SELECT json_build_object(
             'id', id,
-            'tenant_id', tenant_id,
-            'organization_id', organization_id,
-            'supplier_code', supplier_code,
             'providerCode', supplier_code,
-            'display_name', display_name,
             'displayName', display_name,
-            'provider_type', provider_type,
             'providerType', provider_type,
-            'supported_countries', supported_countries,
             'supportedCountries', COALESCE(NULLIF(supported_countries::text, '')::json, '[]'::json),
-            'supported_currencies', supported_currencies,
             'supportedCurrencies', COALESCE(NULLIF(supported_currencies::text, '')::json, '[]'::json),
-            'supported_methods', supported_methods,
             'capabilities', '["payment_intent","payment_query","payment_close","refund","webhook","reconciliation"]'::json,
             'status', status,
-            'sort_order', sort_order,
             'sortOrder', sort_order,
-            'created_at', created_at,
             'createdAt', created_at,
-            'updated_at', updated_at,
             'updatedAt', updated_at
         ) AS item,
         COUNT(*) OVER() AS total

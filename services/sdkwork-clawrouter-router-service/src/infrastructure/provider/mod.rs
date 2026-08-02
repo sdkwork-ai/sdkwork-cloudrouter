@@ -5,6 +5,7 @@ mod adapter_aware_openai_relay;
 mod adapter_aware_responses_relay;
 mod openai_compatible_relay;
 mod provider_secret_map_resolver;
+mod response_memory_budget;
 
 pub use adapter_aware_chat_completion_relay::AdapterAwareChatCompletionRelay;
 pub use adapter_aware_chat_completion_stream_relay::AdapterAwareChatCompletionStreamRelay;
@@ -22,4 +23,9 @@ pub use openai_compatible_relay::{
 };
 pub use provider_secret_map_resolver::{
     ProviderSecretMapResolver, RefreshableProviderSecretMapResolver,
+};
+pub use response_memory_budget::{
+    ProviderResponseMemoryBudget, ProviderResponseMemoryBudgetError,
+    DEFAULT_PROVIDER_RESPONSE_MEMORY_BUDGET_BYTES, MAX_PROVIDER_RESPONSE_MEMORY_BUDGET_BYTES,
+    PROVIDER_RESPONSE_MEMORY_RESERVATION_MULTIPLIER,
 };

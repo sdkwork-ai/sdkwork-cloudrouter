@@ -57,6 +57,8 @@ use sdkwork_clawrouter_router_service::ports::{
     SiteSettingsStore, UpstreamAccountRouteCatalog,
 };
 use sdkwork_database_sqlx::DatabasePool;
+use sdkwork_commerce_promotion_repository_sqlx::PostgresPromotionAdminRepository;
+use sdkwork_commerce_promotion_service::{PromotionAdminRepositoryPort, PromotionAdminService};
 use sdkwork_models_catalog_repository_sqlx::{
     PostgresAdminAiResourceStore as CatalogPostgresAdminAiResourceStore,
     PostgresModelCatalogAdminStore, PostgresModelRankingRefreshStore,
@@ -756,6 +758,11 @@ pub fn router_with_postgres_shared_runtime(
         Arc::new(PostgresModelRankingRefreshStore::new(pool.clone()));
     let admin_access_checker = AdminAccessChecker(pool.clone());
 
+    let promotion_repository: Arc<dyn PromotionAdminRepositoryPort> =
+        Arc::new(PostgresPromotionAdminRepository::new(pool));
+    let promotion_router = sdkwork_routes_promotion_backend_api::build_backend_promotion_router(
+        Arc::new(PromotionAdminService::new(promotion_repository)),
+    );
     Ok(router_with_product_catalog_and_runtime(
         catalog,
         AdminRouterRuntime {
@@ -797,7 +804,8 @@ pub fn router_with_postgres_shared_runtime(
             request_limits_config,
             readiness_check: None,
         },
-    ))
+    )
+    .merge(promotion_router))
 }
 
 pub async fn router_with_database_config(

@@ -129,6 +129,7 @@ struct CredentialResponse {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct AccountVerificationResponse {
+    id: String,
     account_id: String,
     supplier_code: String,
     endpoint_id: String,
@@ -706,8 +707,10 @@ impl From<AdminUpstreamAccountCredentialItem> for CredentialResponse {
 
 impl From<AdminUpstreamAccountVerificationItem> for AccountVerificationResponse {
     fn from(item: AdminUpstreamAccountVerificationItem) -> Self {
+        let account_id = item.account_id.to_string();
         Self {
-            account_id: item.account_id.to_string(),
+            id: account_id.clone(),
+            account_id,
             supplier_code: item.supplier_code,
             endpoint_id: item.endpoint_id.to_string(),
             credential_id: item.credential_id.to_string(),
@@ -761,6 +764,8 @@ mod tests {
         let payload = serde_json::to_value(response).unwrap();
         let serialized = payload.to_string();
 
+        assert_eq!("11", payload["id"]);
+        assert_eq!(payload["accountId"], payload["id"]);
         assert_eq!("13", payload["credentialId"]);
         assert!(!serialized.contains("credentialRef"));
         assert!(!serialized.contains("rawSecret"));

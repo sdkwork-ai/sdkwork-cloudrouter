@@ -45,6 +45,7 @@ struct AdminRouteExplainRequest {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct AdminRouteExplainResponse {
+    id: String,
     source: &'static str,
     ready: bool,
     resource_code: String,
@@ -192,6 +193,7 @@ where
 
     Json(success_envelope(AdminRouteExplainItemEnvelope {
         item: AdminRouteExplainResponse {
+            id: normalized.context.group_id.to_string(),
             source: "runtime_selector",
             ready: blocked_reasons.is_empty(),
             resource_code: normalized.resource_code,

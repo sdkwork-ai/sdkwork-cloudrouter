@@ -44,6 +44,7 @@ mod payment_callback_store;
 mod pricing_catalog;
 mod provider_adapter_route_resolver;
 mod provider_secret_resolver;
+mod response_memory;
 mod responses_relay;
 mod runtime_region_settings_store;
 mod settings_store;
@@ -125,16 +126,11 @@ pub use admin_marketing_store::{
     AdminExchangeRuleItem, AdminMarketingCommandFuture, AdminMarketingListPage,
     AdminMarketingStore, AdminMarketingSubject, AdminPaymentAttemptItem, AdminRechargePackageItem,
     AdminRechargePackageStatus, AdminRechargeRecordItem, AdminRechargeSettingsItem,
-    AdminReferralStatItem, CreateAdminRechargePackageCommand, CreatePromotionOfferCommand,
-    DeleteAdminRechargePackageCommand, DeletePromotionOfferCommand,
-    GeneratePromotionCouponStockCommand, ListAdminExchangeRulesQuery,
-    ListAdminPaymentAttemptsQuery, ListAdminRechargePackagesQuery, ListAdminRechargeRecordsQuery,
-    ListAdminReferralStatsQuery, ListPromotionCodeRedemptionsQuery, ListPromotionCodesQuery,
-    ListPromotionCouponStocksQuery, ListPromotionOffersQuery, LoadAdminRechargeRecordQuery,
-    PromotionCodeItem, PromotionCodeRedemptionItem, PromotionCouponStockItem, PromotionOfferItem,
+    AdminReferralStatItem, CreateAdminRechargePackageCommand, DeleteAdminRechargePackageCommand,
+    ListAdminExchangeRulesQuery, ListAdminPaymentAttemptsQuery, ListAdminRechargePackagesQuery,
+    ListAdminRechargeRecordsQuery, ListAdminReferralStatsQuery, LoadAdminRechargeRecordQuery,
     RechargeSettingsUpdateCommand, UpdateAdminExchangeRuleCommand,
-    UpdateAdminRechargePackageCommand, UpdatePromotionCodeStatusCommand,
-    UpdatePromotionOfferCommand,
+    UpdateAdminRechargePackageCommand,
 };
 pub use admin_mcp_store::{
     AdminMcpBindingItem, AdminMcpCommandFuture, AdminMcpDiscoveryResult, AdminMcpHealthCheckItem,
@@ -214,10 +210,10 @@ pub use api_key_management_read_store::{
     GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery,
 };
 pub use app_chat_store::{
-    AppChatConversationItem, AppChatConversationList, AppChatFuture, AppChatMessageItem,
-    AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnItem, AppChatTurnOutcome,
-    AppChatUsageSnapshot, CompleteAppChatTurnCommand, CreateAppChatConversationCommand,
-    CreateAppChatTurnCommand,
+    AppChatConversationItem, AppChatConversationList, AppChatFuture, AppChatMessageCursor,
+    AppChatMessageItem, AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnItem,
+    AppChatTurnOutcome, AppChatUsageSnapshot, CompleteAppChatTurnCommand,
+    CreateAppChatConversationCommand, CreateAppChatTurnCommand,
 };
 pub use app_gateway_traces_read_store::{
     AppGatewayTraceItem, AppGatewayTracesCursor, AppGatewayTracesPage, AppGatewayTracesQuery,
@@ -311,6 +307,7 @@ pub use payment_callback_store::{
 pub use pricing_catalog::PricingCatalog;
 pub use provider_adapter_route_resolver::ProviderAdapterRouteResolver;
 pub use provider_secret_resolver::ProviderSecretResolver;
+pub use response_memory::ProviderResponseMemoryGuard;
 pub use responses_relay::{
     ResponsesRelay, ResponsesRelayFuture, ResponsesRelayRequest, ResponsesRelayResponse,
 };

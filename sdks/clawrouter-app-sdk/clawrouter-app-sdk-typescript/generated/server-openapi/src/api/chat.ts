@@ -35,7 +35,7 @@ export class ChatConversationsTurnsApi {
 }
 
 export interface ChatConversationsMessagesListParams {
-  page?: number;
+  cursor?: string;
   pageSize?: number;
 }
 
@@ -50,7 +50,7 @@ export class ChatConversationsMessagesApi {
 /** List chat messages */
   async list(conversationId: string, params?: ChatConversationsMessagesListParams, requestOptions?: ApiRequestOptions): Promise<ChatMessageListResponse> {
     const query = buildQueryString([
-      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.request<ChatMessageListResponse>(appendQueryString(appApiPath(`/chat/conversations/${serializePathParameter(conversationId, { name: 'conversationId', style: 'simple', explode: false })}/messages`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });

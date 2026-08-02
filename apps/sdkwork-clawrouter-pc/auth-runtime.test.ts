@@ -20,6 +20,9 @@ import {
   loadStoredAppSessionToken,
   storeAppSessionFromResult,
 } from "./packages/sdkwork-clawroutes-pc-commons/src/app-session-token.ts";
+import {
+  createClawRouterMessagingVerificationService,
+} from "./packages/sdkwork-clawroutes-pc-commons/src/messaging-verification-service.ts";
 
 type AuthSettingsPageModule = typeof import("./packages/sdkwork-clawrouter-pc-admin-site/src/ClawRouterAuthSettingsPage.tsx");
 
@@ -446,6 +449,8 @@ test("claw router auth controller reuses appbase runtime while preserving app SD
   assert.doesNotMatch(controllerSource, /getClawRouterIamRuntime/);
   assert.match(runtimeAdapterSource, /getClawRouterIamRuntime/);
   assert.match(runtimeAdapterSource, /SdkworkIamRuntimeAuthRuntimeLike/);
+  assert.match(runtimeAdapterSource, /getClawRouterMessagingVerificationService/);
+  assert.match(runtimeAdapterSource, /messaging:\s*getClawRouterMessagingVerificationService\(\)/);
   assert.match(runtimeAdapterSource, /toIamRegistrationInput/);
   assert.match(runtimeAdapterSource, /toIamRefreshSessionInput/);
   assert.doesNotMatch(runtimeAdapterSource, /as unknown as/);
@@ -461,6 +466,7 @@ test("claw router auth controller reuses appbase runtime while preserving app SD
   assert.match(iamRuntimeSource, /getClawRouterAppSdkClient\(\)/);
   assert.match(iamRuntimeSource, /getSdkworkDriveAppSdkClient\(\)/);
   assert.match(iamRuntimeSource, /getSdkworkGenerationsAppSdkClient\(\)/);
+  assert.match(iamRuntimeSource, /getSdkworkMessagingAppSdkClient\(\)/);
   for (const capability of ['Account', 'Catalog', 'Membership', 'Order', 'Payment', 'Promotion']) {
     assert.match(iamRuntimeSource, new RegExp(`getSdkwork${capability}AppSdkClient\\(\\)`));
   }
@@ -469,11 +475,13 @@ test("claw router auth controller reuses appbase runtime while preserving app SD
   assert.match(sdkClientsSource, /from '@sdkwork\/drive-app-sdk'/);
   assert.match(sdkClientsSource, /createDriveAppClient/);
   assert.match(sdkClientsSource, /VITE_SDKWORK_DRIVE_APP_API_BASE_URL/);
+  assert.match(sdkClientsSource, /VITE_SDKWORK_MESSAGING_APP_API_BASE_URL/);
   assert.match(iamRuntimeSource, /tokenManager,/);
   assert.equal((sdkClientsSource.match(/createTokenManager\(\)/g) ?? []).length, 1);
   assert.match(sdkClientsSource, /function buildAppConfig\(options: ClawRouterAppSdkClientOptions\): SdkworkAppConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
   assert.match(sdkClientsSource, /function buildBackendConfig\(options: ClawRouterBackendSdkClientOptions\): SdkworkBackendConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
   assert.match(sdkClientsSource, /function buildAppbaseAppConfig\(options: SdkworkAppbaseAppSdkClientOptions\): SdkworkAppbaseAppConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
+  assert.match(sdkClientsSource, /function buildMessagingAppConfig\(options: SdkworkMessagingAppSdkClientOptions\): MessagingAppConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
   assert.match(sdkClientsSource, /function buildGenerationsAppConfig\(options: SdkworkGenerationsAppSdkClientOptions\): SdkworkGenerationsAppConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
   assert.match(sdkClientsSource, /function buildDriveAppConfig\(options: SdkworkDriveAppSdkClientOptions\): SdkworkDriveAppConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
   assert.match(sdkClientsSource, /function buildDependencyAppConfig\([\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
@@ -518,6 +526,10 @@ test("claw router auth controller reuses appbase runtime while preserving app SD
   assert.doesNotMatch(controllerSource, /\bfetch\s*\(/);
   assert.doesNotMatch(controllerSource, /\baxios\b/);
   assert.doesNotMatch(controllerSource, /\/app\/v3\/api/);
+  assert.doesNotMatch(
+    runtimeAdapterSource,
+    /\bfetch\s*\(|\baxios\b|['"]Authorization['"]|\bAuthorization\s*:|['"]Access-Token['"]/,
+  );
   assert.equal(existsSync(new URL("./src/auth/corePcReactCompat.ts", import.meta.url)), false);
   assert.match(routeSource, /SdkworkIamAuthRoutes/);
   assert.match(routeSource, /getClawRouterAuthRuntime/);
@@ -566,6 +578,251 @@ test("claw router auth controller reuses appbase runtime while preserving app SD
   assert.match(routeSource, /methodUnavailableMessage=\{AUTH_METHOD_UNAVAILABLE_MESSAGE\}/);
   assert.doesNotMatch(routeSource, /surfaceAppearance/);
   assert.doesNotMatch(configSource, /leftRailMode:\s*'qr-only'/);
+});
+
+test("messaging verification adapter maps IAM inputs to generated SDK requests", async () => {
+  const now = Date.parse("2026-08-02T10:00:00.000Z");
+  const createCalls: Array<{
+    body: Record<string, unknown>;
+    params: { idempotencyKey: string };
+  }> = [];
+  const verifyCalls: Array<{
+    body: Record<string, unknown>;
+    params: { idempotencyKey: string };
+  }> = [];
+  const client = {
+    create: async (body: Record<string, unknown>, params: { idempotencyKey: string }) => {
+      createCalls.push({ body, params });
+      return {
+        codeId: "challenge-1",
+        expiresAt: "2026-08-02T10:05:00.000Z",
+        requestId: "request-create-1",
+        status: "pending" as const,
+      };
+    },
+    verify: async (body: Record<string, unknown>, params: { idempotencyKey: string }) => {
+      verifyCalls.push({ body, params });
+      return {
+        requestId: "request-verify-1",
+        status: "verified" as const,
+        verified: true,
+      };
+    },
+  };
+  const service = createClawRouterMessagingVerificationService({
+    getClient: () => client,
+    now: () => now,
+  });
+
+  await service.verificationCodes.create({
+    scene: "RESET_PASSWORD",
+    target: "  ADA@EXAMPLE.TEST  ",
+    verifyType: "EMAIL",
+  });
+  const verification = await service.verificationCodes.verify({
+    code: " 123456 ",
+    scene: "RESET_PASSWORD",
+    target: "ada@example.test",
+    verifyType: "EMAIL",
+  });
+
+  assert.deepEqual(createCalls[0]?.body, {
+    channel: "email",
+    sceneCode: "RESET_PASSWORD",
+    target: "ada@example.test",
+  });
+  assert.match(
+    createCalls[0]?.params.idempotencyKey ?? "",
+    /^messaging-verification-code-create-[0-9a-f-]{36}$/u,
+  );
+  assert.deepEqual(verifyCalls[0]?.body, {
+    code: "123456",
+    codeId: "challenge-1",
+  });
+  assert.match(
+    verifyCalls[0]?.params.idempotencyKey ?? "",
+    /^messaging-verification-code-verify-[0-9a-f-]{36}$/u,
+  );
+  assert.equal(verification.verified, true);
+});
+
+test("messaging verification adapter replaces an older challenge for the same IAM target", async () => {
+  let createCount = 0;
+  const verifiedCodeIds: string[] = [];
+  const service = createClawRouterMessagingVerificationService({
+    getClient: () => ({
+      create: async () => {
+        createCount += 1;
+        return {
+          codeId: `challenge-${createCount}`,
+          expiresAt: "2026-08-02T10:05:00.000Z",
+          requestId: `request-create-${createCount}`,
+          status: "pending" as const,
+        };
+      },
+      verify: async (body: Record<string, unknown>) => {
+        verifiedCodeIds.push(String(body.codeId));
+        return {
+          requestId: "request-verify",
+          status: "verified" as const,
+          verified: true,
+        };
+      },
+    }),
+    now: () => Date.parse("2026-08-02T10:00:00.000Z"),
+  });
+  const target = {
+    scene: "REGISTER",
+    target: "+15555550123",
+    verifyType: "PHONE",
+  };
+
+  await service.verificationCodes.create(target);
+  await service.verificationCodes.create(target);
+  await service.verificationCodes.verify({ ...target, code: "123456" });
+
+  assert.deepEqual(verifiedCodeIds, ["challenge-2"]);
+});
+
+test("messaging verification adapter rejects a superseded concurrent create response", async () => {
+  type ChallengeResponse = {
+    codeId: string;
+    expiresAt: string;
+    requestId: string;
+    status: "pending";
+  };
+  let createCount = 0;
+  let resolveFirstCreate: ((response: ChallengeResponse) => void) | undefined;
+  const firstCreateResult = new Promise<ChallengeResponse>((resolve) => {
+    resolveFirstCreate = resolve;
+  });
+  const verifiedCodeIds: string[] = [];
+  const service = createClawRouterMessagingVerificationService({
+    getClient: () => ({
+      create: async () => {
+        createCount += 1;
+        if (createCount === 1) {
+          return firstCreateResult;
+        }
+        return {
+          codeId: "concurrent-2",
+          expiresAt: "2026-08-02T10:05:00.000Z",
+          requestId: "request-create-2",
+          status: "pending" as const,
+        };
+      },
+      verify: async (body: Record<string, unknown>) => {
+        verifiedCodeIds.push(String(body.codeId));
+        return {
+          requestId: "request-verify",
+          status: "verified" as const,
+          verified: true,
+        };
+      },
+    }),
+    now: () => Date.parse("2026-08-02T10:00:00.000Z"),
+  });
+  const target = {
+    scene: "REGISTER",
+    target: "concurrent@example.test",
+    verifyType: "EMAIL",
+  };
+
+  const firstCreate = service.verificationCodes.create(target);
+  await service.verificationCodes.create(target);
+  resolveFirstCreate?.({
+    codeId: "concurrent-1",
+    expiresAt: "2026-08-02T10:05:00.000Z",
+    requestId: "request-create-1",
+    status: "pending",
+  });
+
+  await assert.rejects(firstCreate, /superseded by a newer request/u);
+  await service.verificationCodes.verify({ ...target, code: "123456" });
+  assert.deepEqual(verifiedCodeIds, ["concurrent-2"]);
+});
+
+test("messaging verification adapter rejects expired challenges without calling the SDK", async () => {
+  let now = Date.parse("2026-08-02T10:00:00.000Z");
+  let verifyCalls = 0;
+  const service = createClawRouterMessagingVerificationService({
+    getClient: () => ({
+      create: async () => ({
+        codeId: "expiring-challenge",
+        expiresAt: "2026-08-02T10:00:01.000Z",
+        requestId: "request-create",
+        status: "pending" as const,
+      }),
+      verify: async () => {
+        verifyCalls += 1;
+        return {
+          requestId: "request-verify",
+          status: "verified" as const,
+          verified: true,
+        };
+      },
+    }),
+    now: () => now,
+  });
+  const target = {
+    scene: "LOGIN",
+    target: "ada@example.test",
+    verifyType: "EMAIL",
+  };
+
+  await service.verificationCodes.create(target);
+  now += 2_000;
+
+  await assert.rejects(
+    service.verificationCodes.verify({ ...target, code: "123456" }),
+    /No active messaging verification challenge/u,
+  );
+  assert.equal(verifyCalls, 0);
+});
+
+test("messaging verification adapter bounds retained challenge memory", async () => {
+  let createCount = 0;
+  const verifiedCodeIds: string[] = [];
+  const service = createClawRouterMessagingVerificationService({
+    getClient: () => ({
+      create: async () => {
+        createCount += 1;
+        return {
+          codeId: `bounded-${createCount}`,
+          expiresAt: "2026-08-02T10:05:00.000Z",
+          requestId: `request-create-${createCount}`,
+          status: "pending" as const,
+        };
+      },
+      verify: async (body: Record<string, unknown>) => {
+        verifiedCodeIds.push(String(body.codeId));
+        return {
+          requestId: `request-verify-${verifiedCodeIds.length}`,
+          status: "verified" as const,
+          verified: true,
+        };
+      },
+    }),
+    maxChallenges: 2,
+    now: () => Date.parse("2026-08-02T10:00:00.000Z"),
+  });
+  const input = (target: string) => ({
+    scene: "LOGIN",
+    target,
+    verifyType: "EMAIL",
+  });
+
+  await service.verificationCodes.create(input("first@example.test"));
+  await service.verificationCodes.create(input("second@example.test"));
+  await service.verificationCodes.create(input("third@example.test"));
+
+  await assert.rejects(
+    service.verificationCodes.verify({ ...input("first@example.test"), code: "123456" }),
+    /No active messaging verification challenge/u,
+  );
+  await service.verificationCodes.verify({ ...input("second@example.test"), code: "123456" });
+  await service.verificationCodes.verify({ ...input("third@example.test"), code: "123456" });
+  assert.deepEqual(verifiedCodeIds, ["bounded-2", "bounded-3"]);
 });
 
 test("auth runtime config applies backend IAM settings without tenant or organization being required", () => {

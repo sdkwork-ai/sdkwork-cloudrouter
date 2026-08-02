@@ -43,6 +43,7 @@ impl InvocationInterceptor for ResponseNormalizationInterceptor {
                     body_bytes: None,
                     content_type: None,
                     stream_body: Mutex::new(None),
+                    memory_guard: None,
                 });
             invocation.telemetry.normalized_response = Some(normalized);
             Ok(())
@@ -68,6 +69,7 @@ impl InvocationInterceptor for ResponseNormalizationInterceptor {
                 body_bytes: None,
                 content_type: Some("application/json".to_owned()),
                 stream_body: Mutex::new(None),
+                memory_guard: None,
             });
             Ok(())
         })
@@ -95,6 +97,7 @@ fn normalize_dispatch_response(
             body_bytes: None,
             content_type: response.content_type.clone(),
             stream_body: Mutex::new(stream_body),
+            memory_guard: response.memory_guard.clone(),
         };
     }
     InvocationNormalizedResponse {
@@ -108,6 +111,7 @@ fn normalize_dispatch_response(
                 .map(|_| "application/json".to_owned())
         }),
         stream_body: Mutex::new(None),
+        memory_guard: response.memory_guard.clone(),
     }
 }
 
@@ -140,6 +144,7 @@ fn normalize_adapter_response(
         body_bytes: None,
         content_type,
         stream_body: Mutex::new(None),
+        memory_guard: response.memory_guard.clone(),
     })
 }
 

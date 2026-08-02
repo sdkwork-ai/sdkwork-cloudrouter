@@ -38,6 +38,7 @@ export * from './iam-runtime.ts';
 export * from './json-value.ts';
 export * from './load-error.ts';
 export * from './media-resource.ts';
+export * from './messaging-verification-service.ts';
 export * from './notificationService.ts';
 export * from './portal-auth.ts';
 export * from './portal-session.ts';

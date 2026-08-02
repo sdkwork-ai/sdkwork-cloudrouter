@@ -3,6 +3,8 @@ use std::time::Instant;
 
 use axum::body::Body;
 
+use super::InvocationResponseMemoryGuard;
+
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct InvocationTelemetry {
     pub trace_id: Option<String>,
@@ -26,6 +28,8 @@ pub struct InvocationNormalizedResponse {
     pub content_type: Option<String>,
     /// Streaming response body. Wrapped in Mutex for Sync safety.
     pub stream_body: Mutex<Option<Body>>,
+    /// Opaque process-memory reservation retained through HTTP body delivery.
+    pub memory_guard: Option<InvocationResponseMemoryGuard>,
 }
 
 impl Clone for InvocationNormalizedResponse {
@@ -36,6 +40,7 @@ impl Clone for InvocationNormalizedResponse {
             body_bytes: self.body_bytes.clone(),
             content_type: self.content_type.clone(),
             stream_body: Mutex::new(None),
+            memory_guard: self.memory_guard.clone(),
         }
     }
 }

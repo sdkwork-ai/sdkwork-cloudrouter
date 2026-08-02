@@ -5362,11 +5362,11 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts#list@/admin/marketing/referrals",
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts#fetchReferralStats@/admin/marketing/referrals",
       "kind": "read",
       "module": "pc-admin-marketing",
       "openapi_exposed": true,
-      "operation": "list",
+      "operation": "fetchReferralStats",
       "operation_id": "marketing.referralStats.list",
       "path_params": [],
       "query_parameters": [
@@ -5681,6 +5681,208 @@
       "sdk_family": "clawrouter-backend-sdk",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts",
       "tag": "system",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/payments/providers",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts#backendPaymentsProvidersList@/admin/payments/providers",
+      "kind": "read",
+      "module": "pc-admin-payments",
+      "openapi_exposed": true,
+      "operation": "backendPaymentsProvidersList",
+      "operation_id": "providers.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "enum": [
+              "active",
+              "inactive",
+              "disabled"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_code",
+          "required": false,
+          "schema": {
+            "enum": [
+              "wechat_pay",
+              "alipay",
+              "stripe",
+              "paypal",
+              "apple_pay",
+              "google_pay"
+            ],
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "commerce_payment_provider"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "PaymentProviderInventoryListResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "PaymentProviderInventoryListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "PaymentProviderInventoryItem",
+                "properties": {
+                  "capabilities": {
+                    "items": {
+                      "enum": [
+                        "payment_intent",
+                        "payment_query",
+                        "payment_close",
+                        "refund",
+                        "webhook",
+                        "reconciliation"
+                      ],
+                      "type": "string"
+                    },
+                    "maxItems": 32,
+                    "type": "array"
+                  },
+                  "createdAt": {
+                    "format": "date-time",
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "providerCode": {
+                    "enum": [
+                      "wechat_pay",
+                      "alipay",
+                      "stripe",
+                      "paypal",
+                      "apple_pay",
+                      "google_pay"
+                    ],
+                    "type": "string"
+                  },
+                  "providerType": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "sortOrder": {
+                    "format": "int32",
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "inactive",
+                      "disabled"
+                    ],
+                    "type": "string"
+                  },
+                  "supportedCountries": {
+                    "items": {
+                      "pattern": "^[A-Z]{2}$",
+                      "type": "string"
+                    },
+                    "maxItems": 256,
+                    "type": "array"
+                  },
+                  "supportedCurrencies": {
+                    "items": {
+                      "pattern": "^[A-Z]{3}$",
+                      "type": "string"
+                    },
+                    "maxItems": 256,
+                    "type": "array"
+                  },
+                  "updatedAt": {
+                    "format": "date-time",
+                    "nullable": true,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "providerCode",
+                  "displayName",
+                  "providerType",
+                  "supportedCountries",
+                  "supportedCurrencies",
+                  "capabilities",
+                  "status",
+                  "sortOrder"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/providers",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
+      "tag": "payments",
       "write_tables": []
     },
     {
@@ -16502,6 +16704,8 @@
         "ai_chat_conversation",
         "ai_chat_turn",
         "ai_chat_item",
+        "ai_chat_message",
+        "ai_chat_message_part",
         "ai_runtime_invocation",
         "ai_usage"
       ],
@@ -16634,6 +16838,7 @@
         "ai_chat_item",
         "ai_chat_message",
         "ai_chat_message_part",
+        "ai_chat_context_snapshot",
         "ai_runtime_usage_link"
       ]
     },
@@ -16782,7 +16987,7 @@
       "query_parameters": [],
       "query_parameters_declared": false,
       "read_sources": [
-        "ai_agent_session"
+        "ai_chat_conversation"
       ],
       "request_body_required": true,
       "request_id_header": false,
@@ -16875,8 +17080,7 @@
       "query_parameters": [],
       "query_parameters_declared": false,
       "read_sources": [
-        "ai_chat_conversation",
-        "ai_agent_session"
+        "ai_chat_conversation"
       ],
       "request_body_required": true,
       "request_id_header": false,
@@ -17014,12 +17218,7 @@
         "ai_chat_turn",
         "ai_chat_item",
         "ai_chat_message",
-        "ai_chat_message_part",
-        "ai_chat_context_snapshot",
-        "ai_runtime_invocation",
-        "ai_runtime_invocation_event",
-        "ai_runtime_usage_link",
-        "ai_runtime_artifact"
+        "ai_chat_message_part"
       ]
     },
     {
@@ -17504,8 +17703,7 @@
       ],
       "query_parameters_declared": true,
       "read_sources": [
-        "ai_chat_conversation",
-        "ai_agent_session"
+        "ai_chat_conversation"
       ],
       "request_body_required": null,
       "request_id_header": false,
@@ -17641,211 +17839,28 @@
       "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts#listChatMessages@/playground",
       "kind": "read",
       "module": "pc-playground",
-      "openapi_exposed": true,
+      "openapi_exposed": false,
       "operation": "listChatMessages",
       "operation_id": "conversations.messages.list",
       "path_params": [
         "conversationId"
       ],
-      "query_parameters": [
-        {
-          "in": "query",
-          "name": "page",
-          "required": false,
-          "schema": {
-            "default": 1,
-            "format": "int32",
-            "minimum": 1,
-            "type": "integer"
-          }
-        },
-        {
-          "in": "query",
-          "name": "page_size",
-          "required": false,
-          "schema": {
-            "default": 20,
-            "format": "int32",
-            "maximum": 200,
-            "minimum": 1,
-            "type": "integer"
-          }
-        }
-      ],
+      "query_parameters": [],
       "query_parameters_declared": true,
       "read_sources": [
         "ai_chat_conversation",
         "ai_chat_turn",
-        "ai_chat_item",
         "ai_chat_message",
-        "ai_chat_message_part",
-        "ai_runtime_usage_link",
-        "ai_runtime_artifact"
+        "ai_runtime_usage_link"
       ],
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "ChatMessageListResponse",
+        "name": "NoData",
         "schema": {
           "additionalProperties": false,
-          "name": "ChatMessageListResponse",
-          "properties": {
-            "items": {
-              "items": {
-                "additionalProperties": false,
-                "name": "ChatMessageItem",
-                "properties": {
-                  "content": {
-                    "maxLength": 65536,
-                    "type": "string"
-                  },
-                  "conversationId": {
-                    "maxLength": 128,
-                    "minLength": 1,
-                    "type": "string"
-                  },
-                  "createdAt": {
-                    "maxLength": 64,
-                    "type": "string"
-                  },
-                  "direction": {
-                    "maxLength": 64,
-                    "type": "string"
-                  },
-                  "id": {
-                    "maxLength": 128,
-                    "minLength": 1,
-                    "type": "string"
-                  },
-                  "model": {
-                    "maxLength": 128,
-                    "nullable": true,
-                    "type": "string"
-                  },
-                  "provider": {
-                    "maxLength": 128,
-                    "nullable": true,
-                    "type": "string"
-                  },
-                  "role": {
-                    "maxLength": 64,
-                    "type": "string"
-                  },
-                  "runtime": {
-                    "maxLength": 128,
-                    "nullable": true,
-                    "type": "string"
-                  },
-                  "runtimeInvocationId": {
-                    "maxLength": 128,
-                    "nullable": true,
-                    "type": "string"
-                  },
-                  "status": {
-                    "maxLength": 64,
-                    "type": "string"
-                  },
-                  "turnId": {
-                    "maxLength": 128,
-                    "nullable": true,
-                    "type": "string"
-                  },
-                  "usage": {
-                    "additionalProperties": false,
-                    "name": "ChatUsageSnapshot",
-                    "nullable": true,
-                    "properties": {
-                      "cachedTokens": {
-                        "format": "int64",
-                        "pattern": "^[0-9]+$",
-                        "type": "string",
-                        "x-sdkwork-int64-string": true,
-                        "x-sdkwork-rust-type": "i64"
-                      },
-                      "costAmount": {
-                        "nullable": true,
-                        "pattern": "^[0-9]+(?:\\.[0-9]{1,9})?$",
-                        "type": "string"
-                      },
-                      "currency": {
-                        "maxLength": 16,
-                        "nullable": true,
-                        "type": "string"
-                      },
-                      "inputTokens": {
-                        "format": "int64",
-                        "pattern": "^[0-9]+$",
-                        "type": "string",
-                        "x-sdkwork-int64-string": true,
-                        "x-sdkwork-rust-type": "i64"
-                      },
-                      "outputTokens": {
-                        "format": "int64",
-                        "pattern": "^[0-9]+$",
-                        "type": "string",
-                        "x-sdkwork-int64-string": true,
-                        "x-sdkwork-rust-type": "i64"
-                      },
-                      "reasoningTokens": {
-                        "format": "int64",
-                        "pattern": "^[0-9]+$",
-                        "type": "string",
-                        "x-sdkwork-int64-string": true,
-                        "x-sdkwork-rust-type": "i64"
-                      },
-                      "totalTokens": {
-                        "format": "int64",
-                        "pattern": "^[0-9]+$",
-                        "type": "string",
-                        "x-sdkwork-int64-string": true,
-                        "x-sdkwork-rust-type": "i64"
-                      }
-                    },
-                    "required": [
-                      "inputTokens",
-                      "outputTokens",
-                      "cachedTokens",
-                      "reasoningTokens",
-                      "totalTokens",
-                      "costAmount",
-                      "currency"
-                    ],
-                    "type": "object"
-                  },
-                  "usageLinkId": {
-                    "maxLength": 128,
-                    "nullable": true,
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "id",
-                  "conversationId",
-                  "turnId",
-                  "role",
-                  "direction",
-                  "content",
-                  "status",
-                  "model",
-                  "provider",
-                  "runtime",
-                  "runtimeInvocationId",
-                  "usageLinkId",
-                  "usage",
-                  "createdAt"
-                ],
-                "type": "object"
-              },
-              "type": "array"
-            },
-            "pageInfo": {
-              "$ref": "#/components/schemas/PageInfo"
-            }
-          },
-          "required": [
-            "items",
-            "pageInfo"
-          ],
+          "name": "NoData",
+          "properties": {},
           "type": "object"
         }
       },
@@ -18666,8 +18681,7 @@
       "query_parameters": [],
       "query_parameters_declared": true,
       "read_sources": [
-        "ai_chat_conversation",
-        "ai_agent_session"
+        "ai_chat_conversation"
       ],
       "request_body_required": null,
       "request_id_header": false,
@@ -18913,7 +18927,7 @@
     },
     {
       "api_method": "GET",
-      "api_path": "/app/v3/api/chat/conversations/{completionId}/messages",
+      "api_path": "/app/v3/api/chat/conversations/{conversationId}/messages",
       "api_surface": "app",
       "file_targets": [],
       "idempotency_required": false,
@@ -18925,13 +18939,15 @@
       "operation": "fetchMessages",
       "operation_id": "conversations.messages.list",
       "path_params": [
-        "completionId"
+        "conversationId"
       ],
       "query_parameters": [],
       "query_parameters_declared": true,
       "read_sources": [
-        "ai_request_trace",
-        "ai_usage"
+        "ai_chat_conversation",
+        "ai_chat_turn",
+        "ai_chat_message",
+        "ai_runtime_usage_link"
       ],
       "request_body_required": null,
       "request_id_header": false,
@@ -18971,8 +18987,7 @@
       "query_parameters": [],
       "query_parameters_declared": true,
       "read_sources": [
-        "ai_request_trace",
-        "ai_usage"
+        "ai_chat_conversation"
       ],
       "request_body_required": null,
       "request_id_header": false,
@@ -21938,6 +21953,230 @@
     },
     {
       "api_method": "GET",
+      "api_path": "/app/v3/api/chat/conversations/{conversationId}/messages",
+      "api_surface": "app",
+      "description": "P1 high-volume Chat message history using opaque cursor pagination. The first bounded page contains the latest messages, each response page is in chronological conversation order, and nextCursor seeks an earlier window. The only supported pagination inputs are cursor and page_size; the default page size is 20 and the maximum is 200.",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "crates/sdkwork-routes-clawrouter-app-api/src/http_route_manifest.rs#listChatMessages@/playground",
+      "kind": "read",
+      "module": "playground",
+      "openapi_exposed": true,
+      "operation": "listChatMessages",
+      "operation_id": "conversations.messages.list",
+      "path_params": [
+        "conversationId"
+      ],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "cursor",
+          "required": false,
+          "schema": {
+            "maxLength": 1024,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_chat_conversation",
+        "ai_chat_turn",
+        "ai_chat_message",
+        "ai_runtime_usage_link"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "ChatMessageListResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "ChatMessageListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "ChatMessageItem",
+                "properties": {
+                  "content": {
+                    "maxLength": 65536,
+                    "type": "string"
+                  },
+                  "conversationId": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "direction": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "model": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "provider": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "role": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "runtime": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "runtimeInvocationId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "status": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "turnId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "usage": {
+                    "additionalProperties": false,
+                    "name": "ChatUsageSnapshot",
+                    "nullable": true,
+                    "properties": {
+                      "cachedTokens": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "costAmount": {
+                        "nullable": true,
+                        "pattern": "^[0-9]+(?:\\.[0-9]{1,9})?$",
+                        "type": "string"
+                      },
+                      "currency": {
+                        "maxLength": 16,
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "inputTokens": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "outputTokens": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "reasoningTokens": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "totalTokens": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      }
+                    },
+                    "required": [
+                      "inputTokens",
+                      "outputTokens",
+                      "cachedTokens",
+                      "reasoningTokens",
+                      "totalTokens",
+                      "costAmount",
+                      "currency"
+                    ],
+                    "type": "object"
+                  },
+                  "usageLinkId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "conversationId",
+                  "turnId",
+                  "role",
+                  "direction",
+                  "content",
+                  "status",
+                  "model",
+                  "provider",
+                  "runtime",
+                  "runtimeInvocationId",
+                  "usageLinkId",
+                  "usage",
+                  "createdAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/playground",
+      "route_scope": "public",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "chat",
+      "sdk_family": "clawrouter-app-sdk",
+      "source": "crates/sdkwork-routes-clawrouter-app-api/src/http_route_manifest.rs",
+      "tag": "chat",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
       "api_path": "/app/v3/api/ai/routing/account_groups",
       "api_surface": "app",
       "file_targets": [],
@@ -22698,92 +22937,6 @@
     },
     {
       "api_method": "POST",
-      "api_path": "/backend/v3/api/payments/webhook_events/{eventId}/replays",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/admin/payments/webhook_events/{eventId}/replays",
-      "kind": "create",
-      "module": "replays",
-      "openapi_exposed": true,
-      "operation": "create",
-      "operation_id": "payments.webhookEvents.replays.create",
-      "path_params": [
-        "eventId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "payments"
-      ],
-      "request_body_required": false,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/payments/webhook_events/{eventId}/replays",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "commerce",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "payments",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/promotions/codes",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/admin/promotions/codes",
-      "kind": "create",
-      "module": "codes",
-      "openapi_exposed": true,
-      "operation": "create",
-      "operation_id": "promotions.codes.create",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "promotions"
-      ],
-      "request_body_required": false,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/promotions/codes",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "promotion",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "promotions",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
       "api_path": "/backend/v3/api/promotions/coupon_stocks",
       "api_surface": "backend",
       "file_targets": [],
@@ -23028,50 +23181,6 @@
       "sdk_family": "clawrouter-backend-sdk",
       "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
       "tag": "memberships",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/payments/provider_accounts/{providerAccountId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#delete@/admin/payments/provider_accounts/{providerAccountId}",
-      "kind": "delete",
-      "module": "{providerAccountId}",
-      "openapi_exposed": true,
-      "operation": "delete",
-      "operation_id": "payments.providerAccounts.delete",
-      "path_params": [
-        "providerAccountId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "payments"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/payments/provider_accounts/{providerAccountId}",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "commerce",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "payments",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -23766,138 +23875,6 @@
     },
     {
       "api_method": "GET",
-      "api_path": "/backend/v3/api/payments/disputes",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/payments/disputes",
-      "kind": "read",
-      "module": "disputes",
-      "openapi_exposed": true,
-      "operation": "list",
-      "operation_id": "payments.disputes.list",
-      "path_params": [],
-      "query_parameters": [
-        {
-          "in": "query",
-          "name": "page",
-          "required": false,
-          "schema": {
-            "minimum": 1,
-            "type": "integer"
-          }
-        },
-        {
-          "in": "query",
-          "name": "page_size",
-          "required": false,
-          "schema": {
-            "maximum": 200,
-            "minimum": 1,
-            "type": "integer"
-          }
-        },
-        {
-          "in": "query",
-          "name": "status",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "provider_code",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "provider_account_id",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "method_code",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "country_code",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "currency_code",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "order_id",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "intent_id",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "business_date",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "payments"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/payments/disputes",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "commerce",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "payments",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
       "api_path": "/backend/v3/api/payments/intents",
       "api_surface": "backend",
       "file_targets": [],
@@ -24283,138 +24260,6 @@
         }
       },
       "route": "/admin/payments/provider_accounts",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "commerce",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "payments",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/payments/providers",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/payments/providers",
-      "kind": "read",
-      "module": "providers",
-      "openapi_exposed": true,
-      "operation": "list",
-      "operation_id": "payments.providers.list",
-      "path_params": [],
-      "query_parameters": [
-        {
-          "in": "query",
-          "name": "page",
-          "required": false,
-          "schema": {
-            "minimum": 1,
-            "type": "integer"
-          }
-        },
-        {
-          "in": "query",
-          "name": "page_size",
-          "required": false,
-          "schema": {
-            "maximum": 200,
-            "minimum": 1,
-            "type": "integer"
-          }
-        },
-        {
-          "in": "query",
-          "name": "status",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "provider_code",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "provider_account_id",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "method_code",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "country_code",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "currency_code",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "order_id",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "intent_id",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "business_date",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "payments"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/payments/providers",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -24822,66 +24667,6 @@
     },
     {
       "api_method": "GET",
-      "api_path": "/backend/v3/api/promotions/budget_ledger_entries",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/promotions/budget_ledger_entries",
-      "kind": "read",
-      "module": "budget_ledger_entries",
-      "openapi_exposed": true,
-      "operation": "list",
-      "operation_id": "promotions.budgetLedgerEntries.list",
-      "path_params": [],
-      "query_parameters": [
-        {
-          "in": "query",
-          "name": "page",
-          "required": false,
-          "schema": {
-            "minimum": 1,
-            "type": "integer"
-          }
-        },
-        {
-          "in": "query",
-          "name": "page_size",
-          "required": false,
-          "schema": {
-            "maximum": 200,
-            "minimum": 1,
-            "type": "integer"
-          }
-        }
-      ],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "promotions"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/promotions/budget_ledger_entries",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "promotion",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "promotions",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
       "api_path": "/backend/v3/api/promotions/codes",
       "api_surface": "backend",
       "file_targets": [],
@@ -24931,66 +24716,6 @@
         }
       },
       "route": "/admin/promotions/codes",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "promotion",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "promotions",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/promotions/codes/redemptions",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/promotions/codes/redemptions",
-      "kind": "read",
-      "module": "redemptions",
-      "openapi_exposed": true,
-      "operation": "list",
-      "operation_id": "promotions.codes.redemptions.list",
-      "path_params": [],
-      "query_parameters": [
-        {
-          "in": "query",
-          "name": "page",
-          "required": false,
-          "schema": {
-            "minimum": 1,
-            "type": "integer"
-          }
-        },
-        {
-          "in": "query",
-          "name": "page_size",
-          "required": false,
-          "schema": {
-            "maximum": 200,
-            "minimum": 1,
-            "type": "integer"
-          }
-        }
-      ],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "promotions"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/promotions/codes/redemptions",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -25122,66 +24847,6 @@
     },
     {
       "api_method": "GET",
-      "api_path": "/backend/v3/api/promotions/discount_allocations",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/promotions/discount_allocations",
-      "kind": "read",
-      "module": "discount_allocations",
-      "openapi_exposed": true,
-      "operation": "list",
-      "operation_id": "promotions.discountAllocations.list",
-      "path_params": [],
-      "query_parameters": [
-        {
-          "in": "query",
-          "name": "page",
-          "required": false,
-          "schema": {
-            "minimum": 1,
-            "type": "integer"
-          }
-        },
-        {
-          "in": "query",
-          "name": "page_size",
-          "required": false,
-          "schema": {
-            "maximum": 200,
-            "minimum": 1,
-            "type": "integer"
-          }
-        }
-      ],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "promotions"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/promotions/discount_allocations",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "promotion",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "promotions",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
       "api_path": "/backend/v3/api/promotions/discount_applications",
       "api_surface": "backend",
       "file_targets": [],
@@ -25231,126 +24896,6 @@
         }
       },
       "route": "/admin/promotions/discount_applications",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "promotion",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "promotions",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/promotions/events",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/promotions/events",
-      "kind": "read",
-      "module": "events",
-      "openapi_exposed": true,
-      "operation": "list",
-      "operation_id": "promotions.events.list",
-      "path_params": [],
-      "query_parameters": [
-        {
-          "in": "query",
-          "name": "page",
-          "required": false,
-          "schema": {
-            "minimum": 1,
-            "type": "integer"
-          }
-        },
-        {
-          "in": "query",
-          "name": "page_size",
-          "required": false,
-          "schema": {
-            "maximum": 200,
-            "minimum": 1,
-            "type": "integer"
-          }
-        }
-      ],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "promotions"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/promotions/events",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "promotion",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "promotions",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/promotions/external_bindings",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/promotions/external_bindings",
-      "kind": "read",
-      "module": "external_bindings",
-      "openapi_exposed": true,
-      "operation": "list",
-      "operation_id": "promotions.externalBindings.list",
-      "path_params": [],
-      "query_parameters": [
-        {
-          "in": "query",
-          "name": "page",
-          "required": false,
-          "schema": {
-            "minimum": 1,
-            "type": "integer"
-          }
-        },
-        {
-          "in": "query",
-          "name": "page_size",
-          "required": false,
-          "schema": {
-            "maximum": 200,
-            "minimum": 1,
-            "type": "integer"
-          }
-        }
-      ],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "promotions"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/promotions/external_bindings",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -25714,406 +25259,6 @@
     },
     {
       "api_method": "PATCH",
-      "api_path": "/backend/v3/api/memberships/members/{membershipId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/memberships/members/{membershipId}",
-      "kind": "update",
-      "module": "{membershipId}",
-      "openapi_exposed": true,
-      "operation": "update",
-      "operation_id": "memberships.members.update",
-      "path_params": [
-        "membershipId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "memberships"
-      ],
-      "request_body_required": true,
-      "request_id_header": false,
-      "request_schema": {
-        "name": "MembershipStatusUpdateRequest",
-        "schema": {
-          "additionalProperties": false,
-          "name": "MembershipStatusUpdateRequest",
-          "properties": {
-            "status": {
-              "enum": [
-                "active",
-                "inactive",
-                "expired",
-                "suspended",
-                "cancelled"
-              ],
-              "type": "string"
-            }
-          },
-          "required": [
-            "status"
-          ],
-          "type": "object"
-        }
-      },
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/memberships/members/{membershipId}",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "commerce",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "memberships",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/memberships/package_groups/{packageGroupId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/memberships/package_groups/{packageGroupId}",
-      "kind": "update",
-      "module": "{packageGroupId}",
-      "openapi_exposed": true,
-      "operation": "update",
-      "operation_id": "memberships.packageGroups.update",
-      "path_params": [
-        "packageGroupId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "memberships"
-      ],
-      "request_body_required": true,
-      "request_id_header": false,
-      "request_schema": {
-        "name": "MembershipPackageGroupMutationRequest",
-        "schema": {
-          "additionalProperties": false,
-          "name": "MembershipPackageGroupMutationRequest",
-          "properties": {
-            "billingCycle": {
-              "maxLength": 32,
-              "minLength": 1,
-              "type": "string"
-            },
-            "code": {
-              "maxLength": 64,
-              "minLength": 1,
-              "type": "string"
-            },
-            "description": {
-              "maxLength": 512,
-              "type": "string"
-            },
-            "durationDays": {
-              "pattern": "^[0-9]+$",
-              "type": "string"
-            },
-            "name": {
-              "maxLength": 128,
-              "minLength": 1,
-              "type": "string"
-            },
-            "sortWeight": {
-              "pattern": "^[0-9]+$",
-              "type": "string"
-            },
-            "status": {
-              "enum": [
-                "active",
-                "inactive",
-                "disabled"
-              ],
-              "type": "string"
-            }
-          },
-          "required": [
-            "code",
-            "name",
-            "billingCycle",
-            "durationDays",
-            "status"
-          ],
-          "type": "object"
-        }
-      },
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/memberships/package_groups/{packageGroupId}",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "commerce",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "memberships",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/memberships/packages/{packageId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/memberships/packages/{packageId}",
-      "kind": "update",
-      "module": "{packageId}",
-      "openapi_exposed": true,
-      "operation": "update",
-      "operation_id": "memberships.packages.update",
-      "path_params": [
-        "packageId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "memberships"
-      ],
-      "request_body_required": true,
-      "request_id_header": false,
-      "request_schema": {
-        "name": "MembershipPackageMutationRequest",
-        "schema": {
-          "additionalProperties": false,
-          "name": "MembershipPackageMutationRequest",
-          "properties": {
-            "code": {
-              "maxLength": 64,
-              "minLength": 1,
-              "type": "string"
-            },
-            "currencyCode": {
-              "maxLength": 16,
-              "minLength": 3,
-              "type": "string"
-            },
-            "durationDays": {
-              "pattern": "^[0-9]+$",
-              "type": "string"
-            },
-            "name": {
-              "maxLength": 128,
-              "minLength": 1,
-              "type": "string"
-            },
-            "packageGroupId": {
-              "maxLength": 128,
-              "minLength": 1,
-              "type": "string"
-            },
-            "planId": {
-              "maxLength": 128,
-              "minLength": 1,
-              "type": "string"
-            },
-            "priceAmount": {
-              "pattern": "^[0-9]+(\\\\.[0-9]{1,8})?$",
-              "type": "string"
-            },
-            "status": {
-              "enum": [
-                "active",
-                "inactive",
-                "disabled"
-              ],
-              "type": "string"
-            }
-          },
-          "required": [
-            "code",
-            "packageGroupId",
-            "planId",
-            "name",
-            "priceAmount",
-            "currencyCode",
-            "durationDays",
-            "status"
-          ],
-          "type": "object"
-        }
-      },
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/memberships/packages/{packageId}",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "commerce",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "memberships",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/memberships/plans/{planId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/memberships/plans/{planId}",
-      "kind": "update",
-      "module": "{planId}",
-      "openapi_exposed": true,
-      "operation": "update",
-      "operation_id": "memberships.plans.update",
-      "path_params": [
-        "planId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "memberships"
-      ],
-      "request_body_required": true,
-      "request_id_header": false,
-      "request_schema": {
-        "name": "MembershipPlanMutationRequest",
-        "schema": {
-          "additionalProperties": false,
-          "name": "MembershipPlanMutationRequest",
-          "properties": {
-            "benefits": {
-              "items": {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              "type": "array"
-            },
-            "code": {
-              "maxLength": 64,
-              "minLength": 1,
-              "type": "string"
-            },
-            "name": {
-              "maxLength": 128,
-              "minLength": 1,
-              "type": "string"
-            },
-            "rank": {
-              "pattern": "^[0-9]+$",
-              "type": "string"
-            },
-            "status": {
-              "enum": [
-                "active",
-                "inactive",
-                "disabled"
-              ],
-              "type": "string"
-            }
-          },
-          "required": [
-            "code",
-            "name",
-            "status"
-          ],
-          "type": "object"
-        }
-      },
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/memberships/plans/{planId}",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "commerce",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "memberships",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/payments/channels/{channelId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/payments/channels/{channelId}",
-      "kind": "update",
-      "module": "{channelId}",
-      "openapi_exposed": true,
-      "operation": "update",
-      "operation_id": "payments.channels.update",
-      "path_params": [
-        "channelId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "payments"
-      ],
-      "request_body_required": false,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/payments/channels/{channelId}",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "commerce",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "payments",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
       "api_path": "/backend/v3/api/payments/methods/{methodId}",
       "api_surface": "backend",
       "file_targets": [],
@@ -26275,123 +25420,6 @@
         }
       },
       "route": "/admin/payments/provider_accounts/{providerAccountId}",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "commerce",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "payments",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/payments/provider_accounts/{providerAccountId}/status",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": true,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/payments/provider_accounts/{providerAccountId}/status",
-      "kind": "update",
-      "module": "status",
-      "openapi_exposed": true,
-      "operation": "update",
-      "operation_id": "payments.providerAccounts.status.update",
-      "path_params": [
-        "providerAccountId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "payments"
-      ],
-      "request_body_required": true,
-      "request_id_header": false,
-      "request_schema": {
-        "name": "PaymentProviderAccountStatusUpdateRequest",
-        "schema": {
-          "additionalProperties": false,
-          "name": "PaymentProviderAccountStatusUpdateRequest",
-          "properties": {
-            "clientRequestNo": {
-              "maxLength": 128,
-              "type": "string"
-            },
-            "note": {
-              "maxLength": 512,
-              "type": "string"
-            },
-            "status": {
-              "enum": [
-                "active",
-                "inactive",
-                "disabled"
-              ],
-              "type": "string"
-            }
-          },
-          "required": [
-            "status"
-          ],
-          "type": "object"
-        }
-      },
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/payments/provider_accounts/{providerAccountId}/status",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "commerce",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "payments",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/payments/providers/{providerCode}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/payments/providers/{providerCode}",
-      "kind": "update",
-      "module": "{providerCode}",
-      "openapi_exposed": true,
-      "operation": "update",
-      "operation_id": "payments.providers.update",
-      "path_params": [
-        "providerCode"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "payments"
-      ],
-      "request_body_required": false,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/payments/providers/{providerCode}",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -26820,25 +25848,25 @@
   },
   "summary": {
     "api_method_counts": {
-      "DELETE": 20,
-      "GET": 128,
-      "PATCH": 26,
-      "POST": 72,
+      "DELETE": 19,
+      "GET": 123,
+      "PATCH": 19,
+      "POST": 70,
       "PUT": 10
     },
     "api_surface_counts": {
-      "app": 87,
-      "backend": 169
+      "app": 88,
+      "backend": 153
     },
-    "operation_count": 256,
+    "operation_count": 241,
     "route_scope_counts": {
-      "admin": 169,
+      "admin": 153,
       "console": 30,
-      "public": 57
+      "public": 58
     },
     "sdk_client_counts": {
-      "SdkworkAppClient": 87,
-      "SdkworkBackendClient": 169
+      "SdkworkAppClient": 88,
+      "SdkworkBackendClient": 153
     }
   }
 }

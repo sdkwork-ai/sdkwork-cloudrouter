@@ -20,8 +20,8 @@ fn transaction_center_postgres_provider_json_projection_tolerates_blank_text_col
         );
     }
     assert!(
-        POSTGRES_STORE.contains("'supported_methods', supported_methods"),
-        "postgres provider projection must keep the raw supported_methods record field"
+        !POSTGRES_STORE.contains("'supported_methods', supported_methods"),
+        "product provider inventory must not expose the database-only supported_methods field"
     );
     assert!(
         POSTGRES_STORE
@@ -280,6 +280,35 @@ fn transaction_center_payment_provider_and_method_projections_match_generated_it
         source.contains("NULLIF(provider, 'wallet_balance')"),
         "postgres payment method projection must expose wallet_balance providerCode as null to match the SDK enum"
     );
+}
+
+#[test]
+fn transaction_center_payment_provider_projection_exposes_only_canonical_api_fields() {
+    let provider_projection = POSTGRES_STORE
+        .split("async fn list_payment_providers")
+        .nth(1)
+        .unwrap_or_default()
+        .split("async fn list_payment_provider_accounts")
+        .next()
+        .unwrap_or_default();
+    for forbidden in [
+        "'tenant_id'",
+        "'organization_id'",
+        "'supplier_code'",
+        "'display_name'",
+        "'provider_type'",
+        "'supported_countries'",
+        "'supported_currencies'",
+        "'supported_methods'",
+        "'sort_order'",
+        "'created_at'",
+        "'updated_at'",
+    ] {
+        assert!(
+            !provider_projection.contains(forbidden),
+            "product provider inventory must not expose non-canonical field {forbidden}"
+        );
+    }
 }
 
 #[test]

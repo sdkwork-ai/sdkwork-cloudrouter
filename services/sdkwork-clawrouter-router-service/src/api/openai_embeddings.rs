@@ -4,10 +4,8 @@ use std::time::Instant;
 use axum::body::Bytes;
 use axum::extract::State;
 use axum::http::{HeaderMap, StatusCode, Uri};
-use axum::response::IntoResponse;
 use axum::response::Response;
 use axum::routing::post;
-use axum::Json;
 use axum::Router;
 use sdkwork_claw_http::ApiKeyIdentity;
 use serde_json::Value;
@@ -21,7 +19,9 @@ use crate::api::openai_invocation::{
     OpenAiInvocationFault, OpenAiInvocationPluginError, OpenAiInvocationPluginRef,
     OpenAiInvocationRelayOutcome,
 };
-use crate::api::openai_relay_execution::{OpenAiRelayExecution, OpenAiRouteRelayExecution};
+use crate::api::openai_relay_execution::{
+    guarded_openai_json_response, OpenAiRelayExecution, OpenAiRouteRelayExecution,
+};
 use crate::api::openai_runtime::{
     authenticate_api_key, provider_relay_attempt_retry_policy, resolve_openai_upstream_route_plan,
     route_http_status_is_retryable, OpenAiRouteError, OpenAiRuntimeFailureStrategy,
@@ -706,7 +706,7 @@ where
         .await;
         notify_route_fault(plugins, invocation_context, route, &fault).await;
         notify_after_relay_observers(plugins, invocation_context, route, &outcome).await;
-        let response = (status, Json(response.body)).into_response();
+        let response = guarded_openai_json_response(status, response.body, response.memory_guard);
         return if retryable {
             Err(RouteRelayFailure::Retryable(response))
         } else {
@@ -739,5 +739,9 @@ where
     }
     notify_route_success(plugins, invocation_context, route, &outcome).await;
     notify_after_relay_observers(plugins, invocation_context, route, &outcome).await;
-    Ok((status, Json(response.body)).into_response())
+    Ok(guarded_openai_json_response(
+        status,
+        response.body,
+        response.memory_guard,
+    ))
 }

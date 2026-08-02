@@ -8,7 +8,7 @@
           "dependencies": {
                     "@sdkwork/app-topology": "workspace:*",
                     "@sdkwork/iam-application-bootstrap": "workspace:*",
-                    "@sdkwork/sdk-common": "link:../sdkwork-sdk-commons/sdkwork-sdk-common-typescript"
+                    "@sdkwork/sdk-common": "workspace:*"
           },
           "scripts": {
                     "workflow:materialize-client-env": "node ../sdkwork-specs/tools/materialize-client-env.mjs --root .",

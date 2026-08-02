@@ -176,7 +176,7 @@ async fn list_providers(
             COALESCE(p.supports_lifecycle, false) AS "supportsLifecycle",
             COALESCE(p.supports_object_lock, false) AS "supportsObjectLock",
             {status_label} AS status,
-            COALESCE(p.health_status, 'unknown') AS health,
+            COALESCE(p.health_status, 'unknown') AS "healthStatus",
             CAST(COALESCE(p.last_health_check_at::text, '') AS TEXT) AS "lastHealthCheckAt",
             CAST(p.created_at AS TEXT) AS "createdAt",
             CAST(p.updated_at AS TEXT) AS "updatedAt"
@@ -570,6 +570,7 @@ async fn list_default_buckets(
             p.supplier_code AS "providerCode",
             p.provider_type AS "providerType",
             COALESCE(b.bucket_region, p.region, '') AS region,
+            COALESCE(d.reason, '') AS reason,
             {status_label} AS status,
             CAST(d.updated_at AS TEXT) AS "updatedAt"
         FROM storage_default_bucket_policy d
@@ -679,9 +680,9 @@ async fn list_quota_policies(
             CAST(q.id AS TEXT) AS id,
             q.scope_type AS "scopeType",
             q.scope_id AS "scopeId",
-            q.quota_limit_bytes AS "quotaLimitBytes",
-            COALESCE(u.used_logical_bytes, 0) AS "usedBytes",
-            COALESCE(q.single_file_limit_bytes, 0) AS "singleFileLimitBytes",
+            CAST(q.quota_limit_bytes AS TEXT) AS "quotaLimitBytes",
+            CAST(COALESCE(u.used_logical_bytes, 0) AS TEXT) AS "usedBytes",
+            CAST(COALESCE(q.single_file_limit_bytes, 0) AS TEXT) AS "singleFileLimitBytes",
             COALESCE(q.enforcement, '') AS enforcement,
             {status_label} AS status,
             CAST(q.created_at AS TEXT) AS "createdAt",
@@ -790,9 +791,9 @@ async fn list_usage_counters(
             scope_type AS "scopeType",
             scope_id AS "scopeId",
             scope_type || ':' || scope_id AS scope,
-            used_logical_bytes AS "usedBytes",
-            COALESCE(reserved_bytes, 0) AS "reservedBytes",
-            file_count AS "fileCount",
+            CAST(used_logical_bytes AS TEXT) AS "usedBytes",
+            CAST(COALESCE(reserved_bytes, 0) AS TEXT) AS "reservedBytes",
+            CAST(file_count AS TEXT) AS "fileCount",
             CAST(updated_at AS TEXT) AS "snapshotAt"
         FROM storage_usage_counter
         WHERE tenant_id = $1
@@ -827,8 +828,8 @@ async fn list_usage_ledger(
             scope_type AS "scopeType",
             scope_id AS "scopeId",
             usage_event_type AS "eventType",
-            delta_logical_bytes AS "deltaBytes",
-            COALESCE(delta_file_count, 0) AS "deltaFileCount",
+            CAST(delta_logical_bytes AS TEXT) AS "deltaBytes",
+            CAST(COALESCE(delta_file_count, 0) AS TEXT) AS "deltaFileCount",
             COALESCE(reason, '') AS reason,
             CAST(occurred_at AS TEXT) AS "occurredAt"
         FROM storage_usage_ledger
@@ -865,9 +866,9 @@ async fn list_usage_snapshots(
             scope_id AS "scopeId",
             scope_type || ':' || scope_id AS scope,
             snapshot_type AS "snapshotType",
-            used_logical_bytes AS "usedBytes",
-            COALESCE(reserved_bytes, 0) AS "reservedBytes",
-            file_count AS "fileCount",
+            CAST(used_logical_bytes AS TEXT) AS "usedBytes",
+            CAST(COALESCE(reserved_bytes, 0) AS TEXT) AS "reservedBytes",
+            CAST(file_count AS TEXT) AS "fileCount",
             CAST(snapshot_at AS TEXT) AS "snapshotAt"
         FROM storage_usage_snapshot
         WHERE tenant_id = $1
@@ -908,7 +909,7 @@ async fn list_reconciliation_runs(
             r.run_type AS "runType",
             COALESCE(p.supplier_code, '') || '/' || COALESCE(b.bucket_name, '') AS scope,
             CAST(COALESCE(r.missing_object_count, 0) + COALESCE(r.orphan_object_count, 0) + COALESCE(r.checksum_mismatch_count, 0) AS TEXT) AS issues,
-            COALESCE(r.missing_object_count, 0) + COALESCE(r.orphan_object_count, 0) + COALESCE(r.checksum_mismatch_count, 0) AS "issueCount",
+            CAST(COALESCE(r.missing_object_count, 0) + COALESCE(r.orphan_object_count, 0) + COALESCE(r.checksum_mismatch_count, 0) AS TEXT) AS "issueCount",
             COALESCE(r.dry_run, true) AS "dryRun",
             {status_label} AS status,
             CAST(r.started_at AS TEXT) AS "startedAt",
@@ -1028,7 +1029,7 @@ async fn list_gc_jobs(
             CAST(g.id AS TEXT) AS "jobId",
             g.job_type AS "jobType",
             CAST(COALESCE(g.criteria_json::text, '') AS TEXT) AS "criteriaJson",
-            g.candidate_count AS "candidateCount",
+            CAST(g.candidate_count AS TEXT) AS "candidateCount",
             {status_label} AS status,
             COALESCE(g.dry_run, true) AS "dryRun",
             CAST(g.created_at AS TEXT) AS "createdAt",
@@ -1432,12 +1433,6 @@ fn row_to_record(
                     serde_json::Value::String(string_cell(row, name)?),
                 );
             }
-            Field::Integer(name) => {
-                record.insert(
-                    name.to_owned(),
-                    serde_json::Value::from(integer_cell(row, name)?),
-                );
-            }
             Field::Bool(name) => {
                 record.insert(
                     name.to_owned(),
@@ -1541,28 +1536,6 @@ fn string_cell(row: &sqlx::postgres::PgRow, column: &str) -> DomainResult<String
     )))
 }
 
-fn integer_cell(row: &sqlx::postgres::PgRow, column: &str) -> DomainResult<i64> {
-    if let Ok(value) = row.try_get::<i64, _>(column) {
-        return Ok(value);
-    }
-    if let Ok(value) = row.try_get::<Option<i64>, _>(column) {
-        return Ok(value.unwrap_or_default());
-    }
-    if let Ok(value) = row.try_get::<i32, _>(column) {
-        return Ok(i64::from(value));
-    }
-    if let Ok(value) = row.try_get::<Option<i32>, _>(column) {
-        return Ok(value.map(i64::from).unwrap_or_default());
-    }
-    let value = string_cell(row, column)?;
-    if value.trim().is_empty() {
-        return Ok(0);
-    }
-    value
-        .parse::<i64>()
-        .map_err(|error| DomainError::new(format!("invalid storage integer {column}: {error}")))
-}
-
 fn bool_cell(row: &sqlx::postgres::PgRow, column: &str) -> DomainResult<bool> {
     if let Ok(value) = row.try_get::<bool, _>(column) {
         return Ok(value);
@@ -1589,7 +1562,6 @@ fn store_error(error: sqlx::Error) -> DomainError {
 #[derive(Clone, Copy)]
 enum Field {
     String(&'static str),
-    Integer(&'static str),
     Bool(&'static str),
     GcComputed,
 }
@@ -1606,7 +1578,7 @@ const PROVIDER_FIELDS: &[Field] = &[
     Field::Bool("supportsLifecycle"),
     Field::Bool("supportsObjectLock"),
     Field::String("status"),
-    Field::String("health"),
+    Field::String("healthStatus"),
     Field::String("lastHealthCheckAt"),
     Field::String("createdAt"),
     Field::String("updatedAt"),
@@ -1646,6 +1618,7 @@ const DEFAULT_BUCKET_FIELDS: &[Field] = &[
     Field::String("providerCode"),
     Field::String("providerType"),
     Field::String("region"),
+    Field::String("reason"),
     Field::String("status"),
     Field::String("updatedAt"),
 ];
@@ -1654,9 +1627,9 @@ const QUOTA_FIELDS: &[Field] = &[
     Field::String("id"),
     Field::String("scopeType"),
     Field::String("scopeId"),
-    Field::Integer("quotaLimitBytes"),
-    Field::Integer("usedBytes"),
-    Field::Integer("singleFileLimitBytes"),
+    Field::String("quotaLimitBytes"),
+    Field::String("usedBytes"),
+    Field::String("singleFileLimitBytes"),
     Field::String("enforcement"),
     Field::String("status"),
     Field::String("createdAt"),
@@ -1668,9 +1641,9 @@ const USAGE_FIELDS: &[Field] = &[
     Field::String("scopeType"),
     Field::String("scopeId"),
     Field::String("scope"),
-    Field::Integer("usedBytes"),
-    Field::Integer("reservedBytes"),
-    Field::Integer("fileCount"),
+    Field::String("usedBytes"),
+    Field::String("reservedBytes"),
+    Field::String("fileCount"),
     Field::String("snapshotAt"),
 ];
 
@@ -1679,8 +1652,8 @@ const USAGE_LEDGER_FIELDS: &[Field] = &[
     Field::String("scopeType"),
     Field::String("scopeId"),
     Field::String("eventType"),
-    Field::Integer("deltaBytes"),
-    Field::Integer("deltaFileCount"),
+    Field::String("deltaBytes"),
+    Field::String("deltaFileCount"),
     Field::String("reason"),
     Field::String("occurredAt"),
 ];
@@ -1691,9 +1664,9 @@ const USAGE_SNAPSHOT_FIELDS: &[Field] = &[
     Field::String("scopeId"),
     Field::String("scope"),
     Field::String("snapshotType"),
-    Field::Integer("usedBytes"),
-    Field::Integer("reservedBytes"),
-    Field::Integer("fileCount"),
+    Field::String("usedBytes"),
+    Field::String("reservedBytes"),
+    Field::String("fileCount"),
     Field::String("snapshotAt"),
 ];
 
@@ -1707,7 +1680,7 @@ const RECONCILIATION_FIELDS: &[Field] = &[
     Field::String("runType"),
     Field::String("scope"),
     Field::String("issues"),
-    Field::Integer("issueCount"),
+    Field::String("issueCount"),
     Field::Bool("dryRun"),
     Field::String("status"),
     Field::String("startedAt"),

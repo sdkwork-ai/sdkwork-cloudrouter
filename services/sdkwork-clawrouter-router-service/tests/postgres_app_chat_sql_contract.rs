@@ -23,6 +23,44 @@ fn assert_sql_excludes(sql: &str, forbidden: &str) {
     );
 }
 
+fn chat_message_list_sql() -> &'static str {
+    let start = POSTGRES_APP_CHAT_STORE
+        .find("const LIST_CHAT_MESSAGES")
+        .expect("chat message list SQL constant must exist");
+    let end = POSTGRES_APP_CHAT_STORE[start..]
+        .find("pub struct PostgresAppChatStore")
+        .map(|offset| start + offset)
+        .expect("chat message list SQL constant must end before the store type");
+    &POSTGRES_APP_CHAT_STORE[start..end]
+}
+
+#[test]
+fn postgres_chat_message_history_uses_bounded_keyset_pagination() {
+    let sql = chat_message_list_sql();
+    for expected in [
+        "m.message_no AS cursor_message_no",
+        "m.id AS cursor_id",
+        "$5::bigint IS NULL OR (m.message_no, m.id) < ($5, $6)",
+        "ORDER BY m.message_no DESC, m.id DESC",
+        "LIMIT $7",
+    ] {
+        assert_sql_contains(sql, expected);
+    }
+    assert_sql_excludes(sql, "OFFSET");
+    assert_sql_excludes(sql, "COUNT(*) OVER()");
+
+    for expected in [
+        "let fetch_limit = page_size .checked_add(1)",
+        ".bind(fetch_limit)",
+        "let has_more = rows.len() > page_size_usize",
+        "rows.into_iter().take(page_size_usize)",
+        "Vec::with_capacity(rows.len().min(page_size_usize))",
+        "items.reverse()",
+    ] {
+        assert_sql_contains(POSTGRES_APP_CHAT_STORE, expected);
+    }
+}
+
 #[test]
 fn postgres_chat_usage_link_insert_persists_trusted_product_user_id() {
     for expected in [

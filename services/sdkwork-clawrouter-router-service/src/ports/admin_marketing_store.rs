@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::future::Future;
 use std::pin::Pin;
 
-use serde::Serialize;
+use serde::{Serialize, Serializer};
 
 use crate::domain::DomainResult;
 
@@ -23,38 +23,6 @@ pub struct AdminMarketingListPage<T> {
     pub total: i64,
     pub page_no: i64,
     pub page_size: i64,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ListPromotionOffersQuery {
-    pub subject: AdminMarketingSubject,
-    pub page_no: i64,
-    pub page_size: i64,
-    pub offset: i64,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ListPromotionCouponStocksQuery {
-    pub subject: AdminMarketingSubject,
-    pub page_no: i64,
-    pub page_size: i64,
-    pub offset: i64,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ListPromotionCodesQuery {
-    pub subject: AdminMarketingSubject,
-    pub page_no: i64,
-    pub page_size: i64,
-    pub offset: i64,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ListPromotionCodeRedemptionsQuery {
-    pub subject: AdminMarketingSubject,
-    pub page_no: i64,
-    pub page_size: i64,
-    pub offset: i64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -137,68 +105,6 @@ pub enum AdminRechargePackageStatus {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CreatePromotionOfferCommand {
-    pub subject: AdminMarketingSubject,
-    pub offer_uuid: String,
-    pub audit_log_uuid: String,
-    pub name: String,
-    pub discount_type: String,
-    pub value: String,
-    pub amount_cents: i64,
-    pub discount_value: Option<String>,
-    pub status: String,
-    pub request_id: String,
-    pub requested_at: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct DeletePromotionOfferCommand {
-    pub subject: AdminMarketingSubject,
-    pub offer_id: String,
-    pub audit_log_uuid: String,
-    pub request_id: String,
-    pub requested_at: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct UpdatePromotionOfferCommand {
-    pub subject: AdminMarketingSubject,
-    pub offer_id: String,
-    pub audit_log_uuid: String,
-    pub name: String,
-    pub discount_type: String,
-    pub value: String,
-    pub amount_cents: i64,
-    pub discount_value: Option<String>,
-    pub status: String,
-    pub request_id: String,
-    pub requested_at: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct GeneratePromotionCouponStockCommand {
-    pub subject: AdminMarketingSubject,
-    pub stock_uuid: String,
-    pub audit_log_uuid: String,
-    pub offer_id: String,
-    pub name: String,
-    pub total_quantity: i64,
-    pub code_prefix: String,
-    pub request_id: String,
-    pub requested_at: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct UpdatePromotionCodeStatusCommand {
-    pub subject: AdminMarketingSubject,
-    pub code_id: String,
-    pub status: String,
-    pub audit_log_uuid: String,
-    pub request_id: String,
-    pub requested_at: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CreateAdminRechargePackageCommand {
     pub subject: AdminMarketingSubject,
     pub package_uuid: String,
@@ -239,59 +145,12 @@ pub struct DeleteAdminRechargePackageCommand {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PromotionOfferItem {
-    pub id: String,
-    pub name: String,
-    #[serde(rename = "type")]
-    pub discount_type: String,
-    pub value: String,
-    pub status: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PromotionCouponStockItem {
-    pub id: String,
-    pub offer_id: String,
-    pub name: String,
-    pub total_quantity: i64,
-    pub code_prefix: String,
-    pub created_at: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PromotionCodeItem {
-    pub id: String,
-    pub stock_id: String,
-    pub promotion_code: String,
-    pub status: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub used_by: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub used_at: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PromotionCodeRedemptionItem {
-    pub id: String,
-    pub owner_user_id: String,
-    pub user: String,
-    pub submitted_code: String,
-    pub amount: String,
-    pub occurred_at: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct AdminRechargeRecordItem {
     pub id: String,
     pub trade_no: String,
     pub user_id: String,
     pub user: String,
     pub amount: String,
-    #[serde(rename = "usd_credited")]
     pub usd_credited: String,
     pub method: String,
     pub status: String,
@@ -307,8 +166,11 @@ pub struct AdminRechargePackageItem {
     pub sku_id: String,
     pub price_amount: String,
     pub currency_code: String,
+    #[serde(serialize_with = "serialize_i64_as_string")]
     pub bonus_points: i64,
+    #[serde(serialize_with = "serialize_i64_as_string")]
     pub grant_amount: i64,
+    #[serde(serialize_with = "serialize_i64_as_string")]
     pub points: i64,
     pub status: String,
     pub updated_at: String,
@@ -344,61 +206,25 @@ pub struct AdminPaymentAttemptItem {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AdminReferralStatItem {
     pub id: String,
     pub inviter: String,
+    #[serde(serialize_with = "serialize_i64_as_string")]
     pub total_invited: i64,
     pub total_revenue: String,
     pub bonus_awarded: String,
     pub link: String,
 }
 
+fn serialize_i64_as_string<S>(value: &i64, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.serialize_str(&value.to_string())
+}
+
 pub trait AdminMarketingStore {
-    fn list_promotion_offers<'a>(
-        &'a self,
-        query: ListPromotionOffersQuery,
-    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<PromotionOfferItem>>;
-
-    fn create_promotion_offer<'a>(
-        &'a self,
-        command: CreatePromotionOfferCommand,
-    ) -> AdminMarketingCommandFuture<'a, PromotionOfferItem>;
-
-    fn delete_promotion_offer<'a>(
-        &'a self,
-        command: DeletePromotionOfferCommand,
-    ) -> AdminMarketingCommandFuture<'a, bool>;
-
-    fn update_promotion_offer<'a>(
-        &'a self,
-        command: UpdatePromotionOfferCommand,
-    ) -> AdminMarketingCommandFuture<'a, PromotionOfferItem>;
-
-    fn list_promotion_coupon_stocks<'a>(
-        &'a self,
-        query: ListPromotionCouponStocksQuery,
-    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<PromotionCouponStockItem>>;
-
-    fn generate_promotion_coupon_stock<'a>(
-        &'a self,
-        command: GeneratePromotionCouponStockCommand,
-    ) -> AdminMarketingCommandFuture<'a, (PromotionCouponStockItem, Vec<PromotionCodeItem>)>;
-
-    fn list_promotion_codes<'a>(
-        &'a self,
-        query: ListPromotionCodesQuery,
-    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<PromotionCodeItem>>;
-
-    fn update_promotion_code_status<'a>(
-        &'a self,
-        command: UpdatePromotionCodeStatusCommand,
-    ) -> AdminMarketingCommandFuture<'a, bool>;
-
-    fn list_promotion_code_redemptions<'a>(
-        &'a self,
-        query: ListPromotionCodeRedemptionsQuery,
-    ) -> AdminMarketingCommandFuture<'a, AdminMarketingListPage<PromotionCodeRedemptionItem>>;
-
     fn list_recharge_records<'a>(
         &'a self,
         query: ListAdminRechargeRecordsQuery,

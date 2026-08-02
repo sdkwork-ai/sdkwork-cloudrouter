@@ -158,7 +158,7 @@ class FrontendOperationAudit:
     CLAWROUTER_PORTAL_RANKINGS_SOURCE_PREFIX = (
         "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/"
     )
-    APPBASE_APP_DEPENDENCY_DOMAINS = frozenset({"auth", "iam", "appbase"})
+    APPBASE_APP_DEPENDENCY_DOMAINS = frozenset({"auth", "iam", "oauth", "appbase"})
     CLAWROUTER_OWNED_IAM_APP_API_PATH_PREFIXES = (
         "/app/v3/api/iam/api_keys",
         "/app/v3/api/iam/users/settings",
@@ -222,7 +222,7 @@ class FrontendOperationAudit:
     )
     APPBASE_IAM_RUNTIME_PATTERN = re.compile(r"\bgetClawRouterIamRuntime\s*\(\s*\)\s*\.service\b")
     APPBASE_IAM_CONTROLLER_PATTERN = re.compile(
-        r"\bcreateSdkworkIamRuntimeAuthController\s*\([\s\S]*\bgetRuntime\s*:\s*getClawRouterIamRuntime\b"
+        r"\bcreateSdkworkIamRuntimeAuthController\s*\([\s\S]*\bgetRuntime\s*:\s*getClawRouterAuthRuntime\b"
     )
     APPBASE_IAM_CONTROLLER_OPERATIONS = (
         "bootstrap",

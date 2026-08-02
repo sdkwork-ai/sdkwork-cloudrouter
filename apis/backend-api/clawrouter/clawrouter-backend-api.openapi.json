@@ -3937,315 +3937,6 @@
         ],
         "type": "string"
       },
-      "MembershipPackageGroupMutationRequest": {
-        "additionalProperties": false,
-        "description": "Membership package group mutation request schema exposed by Claw Router.",
-        "name": "MembershipPackageGroupMutationRequest",
-        "properties": {
-          "billingCycle": {
-            "description": "Billing cycle field on membership package group mutation request.",
-            "maxLength": 32,
-            "minLength": 1,
-            "type": "string"
-          },
-          "code": {
-            "description": "Code field on membership package group mutation request.",
-            "maxLength": 64,
-            "minLength": 1,
-            "type": "string"
-          },
-          "description": {
-            "description": "Description field on membership package group mutation request.",
-            "maxLength": 512,
-            "type": "string"
-          },
-          "durationDays": {
-            "description": "Duration days field on membership package group mutation request.",
-            "pattern": "^[0-9]+$",
-            "type": "string"
-          },
-          "name": {
-            "description": "Name field on membership package group mutation request.",
-            "maxLength": 128,
-            "minLength": 1,
-            "type": "string"
-          },
-          "sortWeight": {
-            "description": "Sort weight field on membership package group mutation request.",
-            "pattern": "^[0-9]+$",
-            "type": "string"
-          },
-          "status": {
-            "description": "Status field on membership package group mutation request.",
-            "enum": [
-              "active",
-              "inactive",
-              "disabled"
-            ],
-            "type": "string"
-          }
-        },
-        "required": [
-          "code",
-          "name",
-          "billingCycle",
-          "durationDays",
-          "status"
-        ],
-        "type": "object"
-      },
-      "MembershipPackageMutationRequest": {
-        "additionalProperties": false,
-        "description": "Membership package mutation request schema exposed by Claw Router.",
-        "name": "MembershipPackageMutationRequest",
-        "properties": {
-          "code": {
-            "description": "Code field on membership package mutation request.",
-            "maxLength": 64,
-            "minLength": 1,
-            "type": "string"
-          },
-          "currencyCode": {
-            "description": "Currency code field on membership package mutation request.",
-            "maxLength": 16,
-            "minLength": 3,
-            "type": "string"
-          },
-          "durationDays": {
-            "description": "Duration days field on membership package mutation request.",
-            "pattern": "^[0-9]+$",
-            "type": "string"
-          },
-          "name": {
-            "description": "Name field on membership package mutation request.",
-            "maxLength": 128,
-            "minLength": 1,
-            "type": "string"
-          },
-          "packageGroupId": {
-            "description": "Package group id field on membership package mutation request.",
-            "maxLength": 128,
-            "minLength": 1,
-            "type": "string"
-          },
-          "planId": {
-            "description": "Plan id field on membership package mutation request.",
-            "maxLength": 128,
-            "minLength": 1,
-            "type": "string"
-          },
-          "priceAmount": {
-            "description": "Price amount field on membership package mutation request.",
-            "pattern": "^[0-9]+(\\\\.[0-9]{1,8})?$",
-            "type": "string"
-          },
-          "status": {
-            "description": "Status field on membership package mutation request.",
-            "enum": [
-              "active",
-              "inactive",
-              "disabled"
-            ],
-            "type": "string"
-          }
-        },
-        "required": [
-          "code",
-          "packageGroupId",
-          "planId",
-          "name",
-          "priceAmount",
-          "currencyCode",
-          "durationDays",
-          "status"
-        ],
-        "type": "object"
-      },
-      "MembershipPlanMutationRequest": {
-        "additionalProperties": false,
-        "description": "Membership plan mutation request schema exposed by Claw Router.",
-        "name": "MembershipPlanMutationRequest",
-        "properties": {
-          "benefits": {
-            "description": "Benefits field on membership plan mutation request.",
-            "items": {
-              "additionalProperties": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/JsonValue"
-                  }
-                ],
-                "description": "Benefits field on membership plan mutation request."
-              },
-              "description": "Benefits field on membership plan mutation request.",
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "code": {
-            "description": "Code field on membership plan mutation request.",
-            "maxLength": 64,
-            "minLength": 1,
-            "type": "string"
-          },
-          "name": {
-            "description": "Name field on membership plan mutation request.",
-            "maxLength": 128,
-            "minLength": 1,
-            "type": "string"
-          },
-          "rank": {
-            "description": "Rank field on membership plan mutation request.",
-            "pattern": "^[0-9]+$",
-            "type": "string"
-          },
-          "status": {
-            "description": "Status field on membership plan mutation request.",
-            "enum": [
-              "active",
-              "inactive",
-              "disabled"
-            ],
-            "type": "string"
-          }
-        },
-        "required": [
-          "code",
-          "name",
-          "status"
-        ],
-        "type": "object"
-      },
-      "MembershipStatusUpdateRequest": {
-        "additionalProperties": false,
-        "description": "Membership status update request schema exposed by Claw Router.",
-        "name": "MembershipStatusUpdateRequest",
-        "properties": {
-          "status": {
-            "description": "Status field on membership status update request.",
-            "enum": [
-              "active",
-              "inactive",
-              "expired",
-              "suspended",
-              "cancelled"
-            ],
-            "type": "string"
-          }
-        },
-        "required": [
-          "status"
-        ],
-        "type": "object"
-      },
-      "MembershipsMembersUpdateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by memberships members update result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Memberships members update result schema exposed by Claw Router.",
-        "x-operation-id": "memberships.members.update"
-      },
-      "MembershipsPackageGroupsUpdateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by memberships package groups update result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Memberships package groups update result schema exposed by Claw Router.",
-        "x-operation-id": "memberships.packageGroups.update"
-      },
-      "MembershipsPackagesUpdateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by memberships packages update result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Memberships packages update result schema exposed by Claw Router.",
-        "x-operation-id": "memberships.packages.update"
-      },
-      "MembershipsPlansUpdateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by memberships plans update result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Memberships plans update result schema exposed by Claw Router.",
-        "x-operation-id": "memberships.plans.update"
-      },
       "ModelLimitRuleItem": {
         "additionalProperties": false,
         "description": "ModelLimitRuleItem contract.",
@@ -5010,197 +4701,144 @@
         ],
         "type": "object"
       },
-      "PaymentProviderAccountStatusUpdateRequest": {
+      "PaymentProviderInventoryItem": {
         "additionalProperties": false,
-        "description": "Payment provider account status update request schema exposed by Claw Router.",
-        "name": "PaymentProviderAccountStatusUpdateRequest",
+        "description": "Payment provider inventory item schema exposed by Claw Router.",
         "properties": {
-          "clientRequestNo": {
-            "description": "Client request no field on payment provider account status update request.",
-            "maxLength": 128,
+          "capabilities": {
+            "description": "Capabilities field on payment provider inventory item.",
+            "items": {
+              "description": "Capabilities field on payment provider inventory item.",
+              "enum": [
+                "payment_intent",
+                "payment_query",
+                "payment_close",
+                "refund",
+                "webhook",
+                "reconciliation"
+              ],
+              "type": "string"
+            },
+            "maxItems": 32,
+            "type": "array"
+          },
+          "createdAt": {
+            "description": "Created at field on payment provider inventory item.",
+            "format": "date-time",
+            "nullable": true,
             "type": "string"
           },
-          "note": {
-            "description": "Note field on payment provider account status update request.",
-            "maxLength": 512,
+          "displayName": {
+            "description": "Display name field on payment provider inventory item.",
+            "maxLength": 200,
+            "minLength": 1,
             "type": "string"
+          },
+          "id": {
+            "description": "Id field on payment provider inventory item.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "providerCode": {
+            "description": "Provider code field on payment provider inventory item.",
+            "enum": [
+              "wechat_pay",
+              "alipay",
+              "stripe",
+              "paypal",
+              "apple_pay",
+              "google_pay"
+            ],
+            "type": "string"
+          },
+          "providerType": {
+            "description": "Provider type field on payment provider inventory item.",
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "sortOrder": {
+            "description": "Sort order field on payment provider inventory item.",
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
           },
           "status": {
-            "description": "Status field on payment provider account status update request.",
+            "description": "Status field on payment provider inventory item.",
             "enum": [
               "active",
               "inactive",
               "disabled"
             ],
             "type": "string"
+          },
+          "supportedCountries": {
+            "description": "Supported countries field on payment provider inventory item.",
+            "items": {
+              "description": "Supported countries field on payment provider inventory item.",
+              "pattern": "^[A-Z]{2}$",
+              "type": "string"
+            },
+            "maxItems": 256,
+            "type": "array"
+          },
+          "supportedCurrencies": {
+            "description": "Supported currencies field on payment provider inventory item.",
+            "items": {
+              "description": "Supported currencies field on payment provider inventory item.",
+              "pattern": "^[A-Z]{3}$",
+              "type": "string"
+            },
+            "maxItems": 256,
+            "type": "array"
+          },
+          "updatedAt": {
+            "description": "Updated at field on payment provider inventory item.",
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
           }
         },
         "required": [
-          "status"
+          "id",
+          "providerCode",
+          "displayName",
+          "providerType",
+          "supportedCountries",
+          "supportedCurrencies",
+          "capabilities",
+          "status",
+          "sortOrder"
         ],
         "type": "object"
       },
-      "PaymentsChannelsUpdateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by payments channels update result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
+      "PaymentProviderInventoryListResponse": {
+        "additionalProperties": false,
+        "description": "Payment provider inventory list response schema exposed by Claw Router.",
+        "name": "PaymentProviderInventoryListResponse",
+        "properties": {
+          "items": {
+            "description": "Items field on payment provider inventory list response.",
+            "items": {
+              "$ref": "#/components/schemas/PaymentProviderInventoryItem"
             },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Payments channels update result schema exposed by Claw Router.",
-        "x-operation-id": "payments.channels.update"
-      },
-      "PaymentsDisputesListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
+            "type": "array"
           },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by payments disputes list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
               }
-            },
-            "required": [
-              "data"
             ],
-            "type": "object"
+            "description": "Page info field on payment provider inventory list response."
           }
+        },
+        "required": [
+          "items",
+          "pageInfo"
         ],
-        "description": "Payments disputes list result schema exposed by Claw Router.",
-        "x-operation-id": "payments.disputes.list"
-      },
-      "PaymentsProviderAccountsStatusUpdateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by payments provider accounts status update result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Payments provider accounts status update result schema exposed by Claw Router.",
-        "x-operation-id": "payments.providerAccounts.status.update"
-      },
-      "PaymentsProvidersListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by payments providers list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Payments providers list result schema exposed by Claw Router.",
-        "x-operation-id": "payments.providers.list"
-      },
-      "PaymentsProvidersUpdateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by payments providers update result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Payments providers update result schema exposed by Claw Router.",
-        "x-operation-id": "payments.providers.update"
-      },
-      "PaymentsWebhookEventsReplaysCreateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by payments webhook events replays create result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Payments webhook events replays create result schema exposed by Claw Router.",
-        "x-operation-id": "payments.webhookEvents.replays.create"
+        "type": "object"
       },
       "ProblemDetail": {
         "additionalProperties": true,
@@ -5255,168 +4893,6 @@
         ],
         "type": "object"
       },
-      "PromotionsBudgetLedgerEntriesListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by promotions budget ledger entries list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Promotions budget ledger entries list result schema exposed by Claw Router.",
-        "x-operation-id": "promotions.budgetLedgerEntries.list"
-      },
-      "PromotionsCodesCreateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by promotions codes create result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Promotions codes create result schema exposed by Claw Router.",
-        "x-operation-id": "promotions.codes.create"
-      },
-      "PromotionsCodesRedemptionsListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by promotions codes redemptions list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Promotions codes redemptions list result schema exposed by Claw Router.",
-        "x-operation-id": "promotions.codes.redemptions.list"
-      },
-      "PromotionsDiscountAllocationsListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by promotions discount allocations list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Promotions discount allocations list result schema exposed by Claw Router.",
-        "x-operation-id": "promotions.discountAllocations.list"
-      },
-      "PromotionsEventsListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by promotions events list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Promotions events list result schema exposed by Claw Router.",
-        "x-operation-id": "promotions.events.list"
-      },
-      "PromotionsExternalBindingsListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by promotions external bindings list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Promotions external bindings list result schema exposed by Claw Router.",
-        "x-operation-id": "promotions.externalBindings.list"
-      },
       "ProvidersHealthCheckResult": {
         "allOf": [
           {
@@ -5443,6 +4919,33 @@
         ],
         "description": "Providers health check result schema exposed by Claw Router.",
         "x-operation-id": "providers.healthCheck"
+      },
+      "ProvidersListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by providers list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PaymentProviderInventoryListResponse"
+                  }
+                ],
+                "description": "Data field on providers list result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Providers list result schema exposed by Claw Router.",
+        "x-operation-id": "providers.list"
       },
       "RateLimitsApiKeysCreateResult": {
         "allOf": [
@@ -12378,7 +11881,7 @@
     },
     "/backend/v3/api/marketing/referral_stats": {
       "get": {
-        "description": "List. Reads growth_referral_stats. Writes none. File targets none.",
+        "description": "List referral stats. Reads growth_referral_stats. Writes none. File targets none.",
         "operationId": "marketing.referralStats.list",
         "parameters": [
           {
@@ -12461,7 +11964,7 @@
             "AuthToken": []
           }
         ],
-        "summary": "List",
+        "summary": "List referral stats",
         "tags": [
           "system"
         ],
@@ -12478,897 +11981,10 @@
         "x-write-tables": []
       }
     },
-    "/backend/v3/api/memberships/members/{membershipId}": {
-      "patch": {
-        "description": "Update. Reads memberships. Writes ops_audit_log. File targets none.",
-        "operationId": "memberships.members.update",
-        "parameters": [
-          {
-            "description": "Membership id path parameter.",
-            "in": "path",
-            "name": "membershipId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MembershipStatusUpdateRequest"
-              }
-            }
-          },
-          "description": "Typed request payload for update.",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MembershipsMembersUpdateResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Update",
-        "tags": [
-          "memberships"
-        ],
-        "x-contract-kind": "update",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "memberships"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "commerce",
-        "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "memberships.members",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [
-          "ops_audit_log"
-        ]
-      }
-    },
-    "/backend/v3/api/memberships/package_groups/{packageGroupId}": {
-      "patch": {
-        "description": "Update. Reads memberships. Writes ops_audit_log. File targets none.",
-        "operationId": "memberships.packageGroups.update",
-        "parameters": [
-          {
-            "description": "Package group id path parameter.",
-            "in": "path",
-            "name": "packageGroupId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MembershipPackageGroupMutationRequest"
-              }
-            }
-          },
-          "description": "Typed request payload for update.",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MembershipsPackageGroupsUpdateResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Update",
-        "tags": [
-          "memberships"
-        ],
-        "x-contract-kind": "update",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "memberships"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "commerce",
-        "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "memberships.packageGroups",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [
-          "ops_audit_log"
-        ]
-      }
-    },
-    "/backend/v3/api/memberships/packages/{packageId}": {
-      "patch": {
-        "description": "Update. Reads memberships. Writes ops_audit_log. File targets none.",
-        "operationId": "memberships.packages.update",
-        "parameters": [
-          {
-            "description": "Package id path parameter.",
-            "in": "path",
-            "name": "packageId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MembershipPackageMutationRequest"
-              }
-            }
-          },
-          "description": "Typed request payload for update.",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MembershipsPackagesUpdateResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Update",
-        "tags": [
-          "memberships"
-        ],
-        "x-contract-kind": "update",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "memberships"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "commerce",
-        "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "memberships.packages",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [
-          "ops_audit_log"
-        ]
-      }
-    },
-    "/backend/v3/api/memberships/plans/{planId}": {
-      "patch": {
-        "description": "Update. Reads memberships. Writes ops_audit_log. File targets none.",
-        "operationId": "memberships.plans.update",
-        "parameters": [
-          {
-            "description": "Plan id path parameter.",
-            "in": "path",
-            "name": "planId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MembershipPlanMutationRequest"
-              }
-            }
-          },
-          "description": "Typed request payload for update.",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MembershipsPlansUpdateResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Update",
-        "tags": [
-          "memberships"
-        ],
-        "x-contract-kind": "update",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "memberships"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "commerce",
-        "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "memberships.plans",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [
-          "ops_audit_log"
-        ]
-      }
-    },
-    "/backend/v3/api/payments/channels/{channelId}": {
-      "patch": {
-        "description": "Update. Reads payments. Writes ops_audit_log. File targets none.",
-        "operationId": "payments.channels.update",
-        "parameters": [
-          {
-            "description": "Channel id path parameter.",
-            "in": "path",
-            "name": "channelId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaymentsChannelsUpdateResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Update",
-        "tags": [
-          "payments"
-        ],
-        "x-contract-kind": "update",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "payments"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "commerce",
-        "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "payments.channels",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [
-          "ops_audit_log"
-        ]
-      }
-    },
-    "/backend/v3/api/payments/disputes": {
-      "get": {
-        "description": "List. Reads payments. Writes none. File targets none.",
-        "operationId": "payments.disputes.list",
-        "parameters": [
-          {
-            "description": "Page query parameter.",
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Page size query parameter.",
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "maximum": 200,
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Status query parameter.",
-            "in": "query",
-            "name": "status",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Provider code query parameter.",
-            "in": "query",
-            "name": "provider_code",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Provider account id query parameter.",
-            "in": "query",
-            "name": "provider_account_id",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Method code query parameter.",
-            "in": "query",
-            "name": "method_code",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Country code query parameter.",
-            "in": "query",
-            "name": "country_code",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Currency code query parameter.",
-            "in": "query",
-            "name": "currency_code",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Order id query parameter.",
-            "in": "query",
-            "name": "order_id",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Intent id query parameter.",
-            "in": "query",
-            "name": "intent_id",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Business date query parameter.",
-            "in": "query",
-            "name": "business_date",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaymentsDisputesListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "List",
-        "tags": [
-          "payments"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "payments"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "commerce",
-        "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "payments.disputes",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
-      }
-    },
-    "/backend/v3/api/payments/provider_accounts/{providerAccountId}": {
-      "delete": {
-        "description": "Delete. Reads payments. Writes ops_audit_log. File targets none.",
-        "operationId": "payments.providerAccounts.delete",
-        "parameters": [
-          {
-            "description": "Provider account id path parameter.",
-            "in": "path",
-            "name": "providerAccountId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Delete",
-        "tags": [
-          "payments"
-        ],
-        "x-contract-kind": "delete",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "payments"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "commerce",
-        "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "payments.providerAccounts",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [
-          "ops_audit_log"
-        ]
-      }
-    },
-    "/backend/v3/api/payments/provider_accounts/{providerAccountId}/status": {
-      "patch": {
-        "description": "Update. Reads payments. Writes ops_audit_log. File targets none.",
-        "operationId": "payments.providerAccounts.status.update",
-        "parameters": [
-          {
-            "description": "Provider account id path parameter.",
-            "in": "path",
-            "name": "providerAccountId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Required stable idempotency key for this write operation.",
-            "in": "header",
-            "name": "Idempotency-Key",
-            "required": true,
-            "schema": {
-              "maxLength": 128,
-              "minLength": 1,
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PaymentProviderAccountStatusUpdateRequest"
-              }
-            }
-          },
-          "description": "Typed request payload for update.",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaymentsProviderAccountsStatusUpdateResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Update",
-        "tags": [
-          "payments"
-        ],
-        "x-contract-kind": "update",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "payments"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "commerce",
-        "x-sdkwork-domain": "commerce",
-        "x-sdkwork-idempotent": true,
-        "x-sdkwork-resource": "payments.providerAccounts.status",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [
-          "ops_audit_log"
-        ]
-      }
-    },
     "/backend/v3/api/payments/providers": {
       "get": {
-        "description": "List. Reads payments. Writes none. File targets none.",
-        "operationId": "payments.providers.list",
+        "description": "Backend payments providers list. Reads commerce_payment_provider. Writes none. File targets none.",
+        "operationId": "providers.list",
         "parameters": [
           {
             "description": "Page query parameter.",
@@ -13376,6 +11992,8 @@
             "name": "page",
             "required": false,
             "schema": {
+              "default": 1,
+              "format": "int32",
               "minimum": 1,
               "type": "integer"
             }
@@ -13386,6 +12004,8 @@
             "name": "page_size",
             "required": false,
             "schema": {
+              "default": 20,
+              "format": "int32",
               "maximum": 200,
               "minimum": 1,
               "type": "integer"
@@ -13397,6 +12017,11 @@
             "name": "status",
             "required": false,
             "schema": {
+              "enum": [
+                "active",
+                "inactive",
+                "disabled"
+              ],
               "type": "string"
             }
           },
@@ -13406,69 +12031,14 @@
             "name": "provider_code",
             "required": false,
             "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Provider account id query parameter.",
-            "in": "query",
-            "name": "provider_account_id",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Method code query parameter.",
-            "in": "query",
-            "name": "method_code",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Country code query parameter.",
-            "in": "query",
-            "name": "country_code",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Currency code query parameter.",
-            "in": "query",
-            "name": "currency_code",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Order id query parameter.",
-            "in": "query",
-            "name": "order_id",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Intent id query parameter.",
-            "in": "query",
-            "name": "intent_id",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Business date query parameter.",
-            "in": "query",
-            "name": "business_date",
-            "required": false,
-            "schema": {
+              "enum": [
+                "wechat_pay",
+                "alipay",
+                "stripe",
+                "paypal",
+                "apple_pay",
+                "google_pay"
+              ],
               "type": "string"
             }
           }
@@ -13478,7 +12048,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaymentsProvidersListResult"
+                  "$ref": "#/components/schemas/ProvidersListResult"
                 }
               }
             },
@@ -13531,796 +12101,20 @@
             "AuthToken": []
           }
         ],
-        "summary": "List",
+        "summary": "Backend payments providers list",
         "tags": [
           "payments"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "payments"
+          "commerce_payment_provider"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
         "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "payments.providers",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
-      }
-    },
-    "/backend/v3/api/payments/providers/{providerCode}": {
-      "patch": {
-        "description": "Update. Reads payments. Writes ops_audit_log. File targets none.",
-        "operationId": "payments.providers.update",
-        "parameters": [
-          {
-            "description": "Provider code path parameter.",
-            "in": "path",
-            "name": "providerCode",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaymentsProvidersUpdateResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Update",
-        "tags": [
-          "payments"
-        ],
-        "x-contract-kind": "update",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "payments"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "commerce",
-        "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "payments.providers",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [
-          "ops_audit_log"
-        ]
-      }
-    },
-    "/backend/v3/api/payments/webhook_events/{eventId}/replays": {
-      "post": {
-        "description": "Create. Reads payments. Writes ops_audit_log. File targets none.",
-        "operationId": "payments.webhookEvents.replays.create",
-        "parameters": [
-          {
-            "description": "Event id path parameter.",
-            "in": "path",
-            "name": "eventId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaymentsWebhookEventsReplaysCreateResult"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Create",
-        "tags": [
-          "payments"
-        ],
-        "x-contract-kind": "create",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "payments"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "commerce",
-        "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "payments.webhookEvents.replays",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [
-          "ops_audit_log"
-        ]
-      }
-    },
-    "/backend/v3/api/promotions/budget_ledger_entries": {
-      "get": {
-        "description": "List. Reads promotions. Writes none. File targets none.",
-        "operationId": "promotions.budgetLedgerEntries.list",
-        "parameters": [
-          {
-            "description": "Page query parameter.",
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Page size query parameter.",
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "maximum": 200,
-              "minimum": 1,
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PromotionsBudgetLedgerEntriesListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "List",
-        "tags": [
-          "promotions"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "promotions"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "promotion",
-        "x-sdkwork-domain": "promotion",
-        "x-sdkwork-resource": "promotions.budgetLedgerEntries",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
-      }
-    },
-    "/backend/v3/api/promotions/codes": {
-      "post": {
-        "description": "Create. Reads promotions. Writes ops_audit_log. File targets none.",
-        "operationId": "promotions.codes.create",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PromotionsCodesCreateResult"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Create",
-        "tags": [
-          "promotions"
-        ],
-        "x-contract-kind": "create",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "promotions"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "promotion",
-        "x-sdkwork-domain": "promotion",
-        "x-sdkwork-resource": "promotions.codes",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [
-          "ops_audit_log"
-        ]
-      }
-    },
-    "/backend/v3/api/promotions/codes/redemptions": {
-      "get": {
-        "description": "List. Reads promotions. Writes none. File targets none.",
-        "operationId": "promotions.codes.redemptions.list",
-        "parameters": [
-          {
-            "description": "Page query parameter.",
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Page size query parameter.",
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "maximum": 200,
-              "minimum": 1,
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PromotionsCodesRedemptionsListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "List",
-        "tags": [
-          "promotions"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "promotions"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "promotion",
-        "x-sdkwork-domain": "promotion",
-        "x-sdkwork-resource": "promotions.codes.redemptions",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
-      }
-    },
-    "/backend/v3/api/promotions/discount_allocations": {
-      "get": {
-        "description": "List. Reads promotions. Writes none. File targets none.",
-        "operationId": "promotions.discountAllocations.list",
-        "parameters": [
-          {
-            "description": "Page query parameter.",
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Page size query parameter.",
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "maximum": 200,
-              "minimum": 1,
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PromotionsDiscountAllocationsListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "List",
-        "tags": [
-          "promotions"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "promotions"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "promotion",
-        "x-sdkwork-domain": "promotion",
-        "x-sdkwork-resource": "promotions.discountAllocations",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
-      }
-    },
-    "/backend/v3/api/promotions/events": {
-      "get": {
-        "description": "List. Reads promotions. Writes none. File targets none.",
-        "operationId": "promotions.events.list",
-        "parameters": [
-          {
-            "description": "Page query parameter.",
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Page size query parameter.",
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "maximum": 200,
-              "minimum": 1,
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PromotionsEventsListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "List",
-        "tags": [
-          "promotions"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "promotions"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "promotion",
-        "x-sdkwork-domain": "promotion",
-        "x-sdkwork-resource": "promotions.events",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
-      }
-    },
-    "/backend/v3/api/promotions/external_bindings": {
-      "get": {
-        "description": "List. Reads promotions. Writes none. File targets none.",
-        "operationId": "promotions.externalBindings.list",
-        "parameters": [
-          {
-            "description": "Page query parameter.",
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Page size query parameter.",
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "maximum": 200,
-              "minimum": 1,
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PromotionsExternalBindingsListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "List",
-        "tags": [
-          "promotions"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "promotions"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "promotion",
-        "x-sdkwork-domain": "promotion",
-        "x-sdkwork-resource": "promotions.externalBindings",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-sdkwork-resource": "providers",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
         "x-write-tables": []
       }
     },

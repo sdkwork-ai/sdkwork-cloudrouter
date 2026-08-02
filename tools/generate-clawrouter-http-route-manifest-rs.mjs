@@ -120,15 +120,44 @@ mod tests {
                 method,
                 path,
                 &WebRequestContextProfile::default(),
-                Some(manifest),
+                Some(&manifest),
             ),
             "{method} {path} must resolve as a public path",
+        );
+    }
+
+    fn assert_dual_token_route(method: &str, path: &str) {
+        let manifest = super::http_route_manifest();
+        let route = manifest
+            .match_route(method, path)
+            .unwrap_or_else(|| panic!("{method} {path} must be registered"));
+        assert_eq!(
+            RouteAuth::DualToken,
+            route.auth,
+            "{method} {path} must require dual-token authentication"
+        );
+        assert!(
+            !resolve_public_path(
+                method,
+                path,
+                &WebRequestContextProfile::default(),
+                Some(&manifest),
+            ),
+            "{method} {path} must not resolve as a public path",
         );
     }
 
     #[test]
     fn public_catalog_routes_allow_anonymous_access() {
         assert_public_route("GET", "/app/v3/api/system/site/runtime");
+    }
+
+    #[test]
+    fn user_owned_chat_routes_require_dual_token_authentication() {
+        assert_dual_token_route(
+            "GET",
+            "/app/v3/api/chat/conversations/{conversationId}/messages",
+        );
     }
 }
 `

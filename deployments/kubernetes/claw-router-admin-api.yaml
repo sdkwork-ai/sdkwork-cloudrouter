@@ -7,6 +7,11 @@ metadata:
     component: admin-api
 spec:
   replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: sdkwork-clawrouter
@@ -21,6 +26,7 @@ spec:
         prometheus.io/path: /metrics
         prometheus.io/port: "18081"
     spec:
+      automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext:
         runAsNonRoot: true
@@ -74,7 +80,7 @@ spec:
             - name: SDKWORK_CLAW_REDIS_URL
               valueFrom:
                 secretKeyRef:
-                  name: sdkwork-clawrouter-config
+                  name: sdkwork-clawrouter-redis-auth
                   key: redis-url
           resources:
             requests:

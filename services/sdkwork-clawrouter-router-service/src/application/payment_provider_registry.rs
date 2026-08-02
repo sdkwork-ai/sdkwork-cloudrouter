@@ -84,13 +84,57 @@ impl std::error::Error for PaymentProviderRegistryError {}
 #[derive(Clone)]
 pub struct PaymentProviderRegistry {
     adapters: HashMap<&'static str, Arc<dyn PaymentProviderAdapter>>,
+    account_adapters: HashMap<PaymentProviderAdapterIdentity, Arc<dyn PaymentProviderAdapter>>,
     aliases: HashMap<&'static str, &'static str>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PaymentProviderAdapterIdentity {
+    pub tenant_id: String,
+    pub organization_id: String,
+    pub provider_account_id: String,
+    pub supplier_code: String,
+}
+
+impl PaymentProviderAdapterIdentity {
+    pub fn new(
+        tenant_id: impl Into<String>,
+        organization_id: impl Into<String>,
+        provider_account_id: impl Into<String>,
+        supplier_code: impl Into<String>,
+    ) -> Result<Self, PaymentProviderRegistryError> {
+        let tenant_id = tenant_id.into();
+        let organization_id = organization_id.into();
+        let provider_account_id = provider_account_id.into();
+        let supplier_code = normalize_supplier_code(&supplier_code.into());
+        for (field, value) in [
+            ("tenant_id", tenant_id.as_str()),
+            ("organization_id", organization_id.as_str()),
+            ("provider_account_id", provider_account_id.as_str()),
+            ("supplier_code", supplier_code.as_str()),
+        ] {
+            if value.trim().is_empty() {
+                return Err(PaymentProviderRegistryError::InvalidProviderRequest {
+                    supplier_code: supplier_code.clone(),
+                    operation: PaymentAdapterOperation::Capabilities,
+                    message: format!("payment provider adapter identity {field} is required"),
+                });
+            }
+        }
+        Ok(Self {
+            tenant_id,
+            organization_id,
+            provider_account_id,
+            supplier_code,
+        })
+    }
 }
 
 impl PaymentProviderRegistry {
     pub fn empty() -> Self {
         Self {
             adapters: HashMap::new(),
+            account_adapters: HashMap::new(),
             aliases: default_payment_provider_aliases(),
         }
     }
@@ -139,6 +183,45 @@ impl PaymentProviderRegistry {
         Ok(self)
     }
 
+    pub fn try_with_account_adapter(
+        mut self,
+        identity: PaymentProviderAdapterIdentity,
+        adapter: Arc<dyn PaymentProviderAdapter>,
+    ) -> Result<Self, PaymentProviderRegistryError> {
+        let canonical = self.canonical_supplier_code(&identity.supplier_code);
+        if canonical != identity.supplier_code {
+            return Err(PaymentProviderRegistryError::InvalidProviderRequest {
+                supplier_code: identity.supplier_code,
+                operation: PaymentAdapterOperation::Capabilities,
+                message: format!(
+                    "payment provider account adapter must use canonical provider code {canonical}"
+                ),
+            });
+        }
+        let adapter_supplier_code = adapter.capabilities().supplier_code;
+        if adapter_supplier_code != canonical {
+            return Err(PaymentProviderRegistryError::InvalidProviderRequest {
+                supplier_code: canonical,
+                operation: PaymentAdapterOperation::Capabilities,
+                message: format!(
+                    "payment provider account adapter code mismatch: got {adapter_supplier_code}"
+                ),
+            });
+        }
+        if self.account_adapters.contains_key(&identity) {
+            return Err(PaymentProviderRegistryError::InvalidProviderRequest {
+                supplier_code: canonical,
+                operation: PaymentAdapterOperation::Capabilities,
+                message: format!(
+                    "payment provider account adapter is already registered: {}/{}/{}",
+                    identity.tenant_id, identity.organization_id, identity.provider_account_id
+                ),
+            });
+        }
+        self.account_adapters.insert(identity, adapter);
+        Ok(self)
+    }
+
     pub fn resolve(
         &self,
         supplier_code: &str,
@@ -155,6 +238,35 @@ impl PaymentProviderRegistry {
                 supplier_code: canonical.to_owned(),
             }
         })
+    }
+
+    pub fn resolve_account(
+        &self,
+        identity: &PaymentProviderAdapterIdentity,
+    ) -> Result<Arc<dyn PaymentProviderAdapter>, PaymentProviderRegistryError> {
+        let mut identity = identity.clone();
+        identity.supplier_code = self.canonical_supplier_code(&identity.supplier_code);
+        self.account_adapters
+            .get(&identity)
+            .cloned()
+            .ok_or_else(|| PaymentProviderRegistryError::UnsupportedProvider {
+                supplier_code: format!(
+                    "{}/{}/{}/{}",
+                    identity.tenant_id,
+                    identity.organization_id,
+                    identity.provider_account_id,
+                    identity.supplier_code
+                ),
+            })
+    }
+
+    pub fn canonical_supplier_code(&self, supplier_code: &str) -> String {
+        let normalized = normalize_supplier_code(supplier_code);
+        self.aliases
+            .get(normalized.as_str())
+            .copied()
+            .unwrap_or(normalized.as_str())
+            .to_owned()
     }
 
     pub fn supported_supplier_codes(&self) -> Vec<&'static str> {
@@ -180,6 +292,7 @@ pub fn sandbox_payment_provider_registry() -> PaymentProviderRegistry {
 
     PaymentProviderRegistry {
         adapters,
+        account_adapters: HashMap::new(),
         aliases: default_payment_provider_aliases(),
     }
 }
