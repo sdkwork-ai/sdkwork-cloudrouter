@@ -626,6 +626,7 @@ impl AdminModelStore for TestAdminModelStore {
                 organization_id: command.subject.organization_id,
                 vendor_id: command.vendor_id,
                 vendor_code: "acme_ai".to_owned(),
+                vendor_name: "Acme AI".to_owned(),
                 catalog_key: format!("acme_ai/{}", model),
                 model,
                 display_name: display_name.clone(),

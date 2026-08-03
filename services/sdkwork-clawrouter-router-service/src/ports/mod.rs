@@ -63,7 +63,8 @@ pub use admin_ai_resource_store::{
     CreateAdminAiResourceCommand, CreateAdminAiResourceGroupCommand,
     DeleteAdminAiResourceGroupCommand, DeleteAdminAiResourceGroupMemberCommand,
     ListAdminAiResourceGroupResourcesQuery, ListAdminAiResourceGroupsQuery,
-    ListAdminAiResourcesQuery, UpdateAdminAiResourceCommand, UpdateAdminAiResourceGroupCommand,
+    ListAdminAiResourcesQuery, ReplaceAdminAiResourceHierarchyCommand,
+    UpdateAdminAiResourceCommand, UpdateAdminAiResourceGroupCommand,
     UpsertAdminAiResourceGroupMemberCommand,
 };
 pub use admin_analytics_read_store::{

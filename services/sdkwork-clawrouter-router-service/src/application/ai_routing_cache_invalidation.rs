@@ -6,7 +6,8 @@ use crate::ports::{
     AdminAiResourceReadFuture, AdminAiResourceStore, CreateAdminAiResourceCommand,
     CreateAdminAiResourceGroupCommand, DeleteAdminAiResourceGroupCommand,
     DeleteAdminAiResourceGroupMemberCommand, ListAdminAiResourceGroupResourcesQuery,
-    ListAdminAiResourceGroupsQuery, ListAdminAiResourcesQuery, UpdateAdminAiResourceCommand,
+    ListAdminAiResourceGroupsQuery, ListAdminAiResourcesQuery,
+    ReplaceAdminAiResourceHierarchyCommand, UpdateAdminAiResourceCommand,
     UpdateAdminAiResourceGroupCommand, UpsertAdminAiResourceGroupMemberCommand,
 };
 use sdkwork_models_contract_service::{
@@ -94,6 +95,17 @@ impl AdminAiResourceStore for AiRoutingCacheInvalidatingAdminAiResourceStore {
             if item.is_some() {
                 self.invalidator.invalidate_routing_facts().await?;
             }
+            Ok(item)
+        })
+    }
+
+    fn replace_ai_resource_hierarchy<'a>(
+        &'a self,
+        command: ReplaceAdminAiResourceHierarchyCommand,
+    ) -> AdminAiResourceReadFuture<'a, AdminAiResourceItem> {
+        Box::pin(async move {
+            let item = self.inner.replace_ai_resource_hierarchy(command).await?;
+            self.invalidator.invalidate_routing_facts().await?;
             Ok(item)
         })
     }

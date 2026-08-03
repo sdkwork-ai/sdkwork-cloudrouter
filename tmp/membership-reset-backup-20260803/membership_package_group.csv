@@ -1,0 +1,5 @@
+id,uuid,tenant_id,organization_id,external_id,group_no,name,description,billing_cycle,duration_days,display_channel,sort_weight,status,version,deleted_at,created_at,updated_at
+package-group-annual,,100001,0,1,annual,连续包年,9.7折,year,365,app,1,active,0,,2026-07-13 13:03:39.412135+08,2026-07-14 11:35:44.764243+08
+package-group-monthly,,100001,0,2,monthly,连续包月,9.9折,month,30,app,2,active,0,,2026-07-13 13:03:39.412135+08,2026-07-14 11:35:44.767983+08
+package-group-quarterly,,100001,0,3,quarterly,连续包季,9.8折,quarter,90,app,3,active,0,,2026-07-13 13:03:39.412135+08,2026-07-14 11:35:44.77198+08
+package-group-single,,100001,0,4,single,单月购买,,month,30,app,4,active,0,,2026-07-13 13:03:39.412135+08,2026-07-14 11:35:44.775596+08

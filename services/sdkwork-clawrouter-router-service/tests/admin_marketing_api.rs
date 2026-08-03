@@ -141,9 +141,9 @@ async fn admin_marketing_route_mutates_owned_marketing_resources() {
     );
     assert_eq!("12.00", create_package["data"]["item"]["priceAmount"]);
     assert_eq!("CNY", create_package["data"]["item"]["currencyCode"]);
-    assert_eq!(30, create_package["data"]["item"]["bonusPoints"]);
-    assert_eq!(150, create_package["data"]["item"]["grantAmount"]);
-    assert_eq!(150, create_package["data"]["item"]["points"]);
+    assert_eq!("30", create_package["data"]["item"]["bonusPoints"]);
+    assert_eq!("150", create_package["data"]["item"]["grantAmount"]);
+    assert_eq!("150", create_package["data"]["item"]["points"]);
 
     let update_recharge_settings = request_json(
         router.clone(),
@@ -175,9 +175,9 @@ async fn admin_marketing_route_mutates_owned_marketing_resources() {
     );
     assert_eq!("20.00", update_package["data"]["item"]["priceAmount"]);
     assert_eq!("USD", update_package["data"]["item"]["currencyCode"]);
-    assert_eq!(50, update_package["data"]["item"]["bonusPoints"]);
-    assert_eq!(1550, update_package["data"]["item"]["grantAmount"]);
-    assert_eq!(1550, update_package["data"]["item"]["points"]);
+    assert_eq!("50", update_package["data"]["item"]["bonusPoints"]);
+    assert_eq!("1550", update_package["data"]["item"]["grantAmount"]);
+    assert_eq!("1550", update_package["data"]["item"]["points"]);
 
     let update_exchange_rule = request_json(
         router.clone(),

@@ -1080,6 +1080,188 @@
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/package_groups",
+      "operationId": "packageGroups.list",
+      "tags": [
+        "memberships"
+      ],
+      "auth": {
+        "mode": "public",
+        "required": false
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-clawrouter",
+        "apiAuthority": "sdkwork-clawrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-app-api",
+        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/package_groups/{packageGroupId}",
+      "operationId": "packageGroups.retrieve",
+      "tags": [
+        "memberships"
+      ],
+      "auth": {
+        "mode": "public",
+        "required": false
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-clawrouter",
+        "apiAuthority": "sdkwork-clawrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-app-api",
+        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/package_groups/{packageGroupId}/packages",
+      "operationId": "packageGroups.packages.list",
+      "tags": [
+        "memberships"
+      ],
+      "auth": {
+        "mode": "public",
+        "required": false
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-clawrouter",
+        "apiAuthority": "sdkwork-clawrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-app-api",
+        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/packages",
+      "operationId": "packages.list",
+      "tags": [
+        "memberships"
+      ],
+      "auth": {
+        "mode": "public",
+        "required": false
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-clawrouter",
+        "apiAuthority": "sdkwork-clawrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-app-api",
+        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/packages/{packageId}",
+      "operationId": "packages.retrieve",
+      "tags": [
+        "memberships"
+      ],
+      "auth": {
+        "mode": "public",
+        "required": false
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-clawrouter",
+        "apiAuthority": "sdkwork-clawrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-app-api",
+        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/plans",
+      "operationId": "plans.list",
+      "tags": [
+        "memberships"
+      ],
+      "auth": {
+        "mode": "public",
+        "required": false
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-clawrouter",
+        "apiAuthority": "sdkwork-clawrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-app-api",
+        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/benefits",
+      "operationId": "benefits.list",
+      "tags": [
+        "memberships"
+      ],
+      "auth": {
+        "mode": "public",
+        "required": false
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-clawrouter",
+        "apiAuthority": "sdkwork-clawrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-clawrouter-app-api",
+        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
     }
   ]
 }

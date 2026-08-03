@@ -1,0 +1,2 @@
+id,uuid,tenant_id,organization_id,period_no,subscription_id,subject_type,subject_id,plan_id,plan_version_id,starts_at,ends_at,status,source_order_id,source_payment_intent_id,request_no,idempotency_key,created_at,updated_at
+seed-membership-period-user-1,,100001,0,seed-membership-period-user-1,seed-membership-subscription-user-1,user,1,plan-standard,plan-standard-v1,2026-06-28 08:00:00+08,2027-06-29 08:00:00+08,active,,,seed-membership-period-user-1,seed-membership-period-user-1,2026-06-28 08:00:00+08,2026-07-13 13:03:39.453424+08

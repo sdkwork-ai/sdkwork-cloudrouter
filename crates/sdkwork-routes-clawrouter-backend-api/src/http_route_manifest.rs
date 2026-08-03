@@ -186,9 +186,9 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
-        "/backend/v3/api/marketing/referral_stats",
-        "system",
-        "marketing.referralStats.list",
+        "/backend/v3/api/billing/referrals/stats",
+        "billing",
+        "referralStats.list",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -198,21 +198,21 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
-        "/backend/v3/api/recharges/orders",
-        "recharges",
-        "orders.management.list",
+        "/backend/v3/api/billing/recharges/records",
+        "billing",
+        "rechargeRecords.list",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
-        "/backend/v3/api/recharges/orders/{orderId}",
-        "recharges",
-        "orders.management.retrieve",
+        "/backend/v3/api/billing/recharges/records/{orderNo}",
+        "billing",
+        "rechargeRecords.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
         "/backend/v3/api/recharges/packages",
         "recharges",
-        "packages.management.list",
+        "packages.list",
     ),
     HttpRoute::dual_token(
         HttpMethod::Post,
@@ -236,7 +236,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/backend/v3/api/recharges/settings",
         "recharges",
-        "settings.management.retrieve",
+        "settings.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Put,

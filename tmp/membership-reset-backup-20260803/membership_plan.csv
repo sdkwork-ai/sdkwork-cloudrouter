@@ -1,0 +1,6 @@
+id,uuid,tenant_id,organization_id,plan_no,plan_code,name,rank,description,status,version,deleted_at,created_at,updated_at
+plan-free,,100001,0,free,free,免费版,0,体验核心功能，每日赠送算力元。,active,0,,2026-07-13 13:03:39.36378+08,2026-07-14 11:35:44.543558+08
+plan-basic,,100001,0,basic,basic,基础版,1,面向个人创作者，解锁基础AI能力。,active,0,,2026-07-13 13:03:39.36378+08,2026-07-14 11:35:44.549458+08
+plan-standard,,100001,0,standard,standard,标准版,2,面向专业创作者，解锁全部AI模型。,active,0,,2026-07-13 13:03:39.36378+08,2026-07-14 11:35:44.555545+08
+plan-premium,,100001,0,premium,premium,巅峰版,3,面向团队和重度用户，享受专属通道。,active,0,,2026-07-13 13:03:39.36378+08,2026-07-14 11:35:44.559455+08
+plan-super,,100001,0,super,super,超级版,4,顶级VIP通道、最大配额与专属特效。,active,0,,2026-07-14 11:35:44.470599+08,2026-07-14 11:35:44.564978+08

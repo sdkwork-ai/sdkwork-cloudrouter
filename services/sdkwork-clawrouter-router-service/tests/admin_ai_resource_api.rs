@@ -19,7 +19,8 @@ use sdkwork_clawrouter_router_service::ports::{
     AdminAiResourceSubject, CreateAdminAiResourceCommand, CreateAdminAiResourceGroupCommand,
     DeleteAdminAiResourceGroupCommand, DeleteAdminAiResourceGroupMemberCommand,
     ListAdminAiResourceGroupResourcesQuery, ListAdminAiResourceGroupsQuery,
-    ListAdminAiResourcesQuery, UpdateAdminAiResourceCommand, UpdateAdminAiResourceGroupCommand,
+    ListAdminAiResourcesQuery, ReplaceAdminAiResourceHierarchyCommand,
+    UpdateAdminAiResourceCommand, UpdateAdminAiResourceGroupCommand,
     UpsertAdminAiResourceGroupMemberCommand,
 };
 use serde_json::Value;
@@ -440,7 +441,13 @@ impl AdminAiResourceStore for TestAiResourceStore {
                     provider_native_model: None,
                     access_channel_kind: None,
                     base_url: None,
+                    default_vendor_code: None,
+                    default_model_id: None,
                     supported_agent_provider_ids: Vec::new(),
+                    context_tokens: None,
+                    max_output_tokens: None,
+                    tool_call_rounds: None,
+                    supports_multimodal: None,
                     description: Some("OpenAI model provider".to_owned()),
                     capability: Some("network".to_owned()),
                     capabilities: vec![
@@ -469,7 +476,13 @@ impl AdminAiResourceStore for TestAiResourceStore {
                     provider_native_model: None,
                     access_channel_kind: None,
                     base_url: None,
+                    default_vendor_code: None,
+                    default_model_id: None,
                     supported_agent_provider_ids: Vec::new(),
+                    context_tokens: None,
+                    max_output_tokens: None,
+                    tool_call_rounds: None,
+                    supports_multimodal: None,
                     description: Some("OpenRouter OpenAI model bundle".to_owned()),
                     capability: Some("llm".to_owned()),
                     capabilities: vec!["llm".to_owned(), "chat".to_owned()],
@@ -538,7 +551,13 @@ impl AdminAiResourceStore for TestAiResourceStore {
                 provider_native_model: command.provider_native_model,
                 access_channel_kind: command.access_channel_kind,
                 base_url: command.base_url,
+                default_vendor_code: command.default_vendor_code,
+                default_model_id: command.default_model_id,
                 supported_agent_provider_ids: command.supported_agent_provider_ids,
+                context_tokens: None,
+                max_output_tokens: None,
+                tool_call_rounds: None,
+                supports_multimodal: None,
                 description: command.description,
                 capability: None,
                 capabilities: Vec::new(),
@@ -582,9 +601,15 @@ impl AdminAiResourceStore for TestAiResourceStore {
                 provider_native_model: None,
                 access_channel_kind: command.access_channel_kind,
                 base_url: command.base_url,
+                default_vendor_code: command.default_vendor_code,
+                default_model_id: command.default_model_id,
                 supported_agent_provider_ids: command
                     .supported_agent_provider_ids
                     .unwrap_or_default(),
+                context_tokens: None,
+                max_output_tokens: None,
+                tool_call_rounds: None,
+                supports_multimodal: None,
                 description: command.description.flatten(),
                 capability: Some("llm".to_owned()),
                 capabilities: vec!["llm".to_owned(), "chat".to_owned()],
@@ -593,6 +618,48 @@ impl AdminAiResourceStore for TestAiResourceStore {
                 sort_order: Some(5),
                 members: Vec::new(),
             }))
+        })
+    }
+
+    fn replace_ai_resource_hierarchy<'a>(
+        &'a self,
+        command: ReplaceAdminAiResourceHierarchyCommand,
+    ) -> AdminAiResourceReadFuture<'a, AdminAiResourceItem> {
+        Box::pin(async move {
+            assert_eq!(
+                "bundle.openrouter.openai.standard",
+                command.root_resource_code
+            );
+            assert_eq!(1, command.nodes.len());
+            let node = &command.nodes[0];
+            Ok(AdminAiResourceItem {
+                id: 5,
+                resource_code: node.resource_code.clone(),
+                resource_type: node.resource_type.clone(),
+                display_name: node.display_name.clone(),
+                vendor_code: node.vendor_code.clone(),
+                modality_code: node.modality_code.clone(),
+                api_endpoint_code: node.api_endpoint_code.clone(),
+                catalog_key: node.catalog_key.clone(),
+                model: node.model.clone(),
+                provider_native_model: node.provider_native_model.clone(),
+                access_channel_kind: node.access_channel_kind.clone(),
+                base_url: node.base_url.clone(),
+                default_vendor_code: node.default_vendor_code.clone(),
+                default_model_id: node.default_model_id.clone(),
+                supported_agent_provider_ids: node.supported_agent_provider_ids.clone(),
+                context_tokens: node.context_tokens,
+                max_output_tokens: node.max_output_tokens,
+                tool_call_rounds: node.tool_call_rounds,
+                supports_multimodal: node.supports_multimodal,
+                description: node.description.clone(),
+                capability: None,
+                capabilities: Vec::new(),
+                composition_mode: node.composition_mode.clone(),
+                status: node.status.clone(),
+                sort_order: node.sort_order,
+                members: Vec::new(),
+            })
         })
     }
 
@@ -852,6 +919,13 @@ impl AdminAiResourceStore for MissingMemberAiResourceStore {
         &'a self,
         _command: UpdateAdminAiResourceCommand,
     ) -> AdminAiResourceReadFuture<'a, Option<AdminAiResourceItem>> {
+        Box::pin(async { Err(missing_member_error()) })
+    }
+
+    fn replace_ai_resource_hierarchy<'a>(
+        &'a self,
+        _command: ReplaceAdminAiResourceHierarchyCommand,
+    ) -> AdminAiResourceReadFuture<'a, AdminAiResourceItem> {
         Box::pin(async { Err(missing_member_error()) })
     }
 

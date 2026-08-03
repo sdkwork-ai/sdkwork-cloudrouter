@@ -6,6 +6,7 @@ pub use sdkwork_models_contract_service::{
     CreateAdminAiResourceCommand, CreateAdminAiResourceGroupCommand,
     DeleteAdminAiResourceGroupCommand, DeleteAdminAiResourceGroupMemberCommand,
     ListAdminAiResourceGroupResourcesQuery, ListAdminAiResourceGroupsQuery,
-    ListAdminAiResourcesQuery, UpdateAdminAiResourceCommand, UpdateAdminAiResourceGroupCommand,
+    ListAdminAiResourcesQuery, ReplaceAdminAiResourceHierarchyCommand,
+    UpdateAdminAiResourceCommand, UpdateAdminAiResourceGroupCommand,
     UpsertAdminAiResourceGroupMemberCommand,
 };
