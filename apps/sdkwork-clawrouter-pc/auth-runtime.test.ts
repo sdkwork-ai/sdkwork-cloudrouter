@@ -482,6 +482,8 @@ test("claw router auth controller reuses appbase runtime while preserving app SD
   assert.match(sdkClientsSource, /function buildBackendConfig\(options: ClawRouterBackendSdkClientOptions\): SdkworkBackendConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
   assert.match(sdkClientsSource, /function buildAppbaseAppConfig\(options: SdkworkAppbaseAppSdkClientOptions\): SdkworkAppbaseAppConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
   assert.match(sdkClientsSource, /function buildMessagingAppConfig\(options: SdkworkMessagingAppSdkClientOptions\): MessagingAppConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
+  assert.doesNotMatch(sdkClientsSource, /Messaging App SDK requires/);
+  assert.match(sdkClientsSource, /function resolveRequiredMessagingAppBaseUrl\([\s\S]*?\?\? APP_API_PREFIX/u);
   assert.match(sdkClientsSource, /function buildGenerationsAppConfig\(options: SdkworkGenerationsAppSdkClientOptions\): SdkworkGenerationsAppConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
   assert.match(sdkClientsSource, /function buildDriveAppConfig\(options: SdkworkDriveAppSdkClientOptions\): SdkworkDriveAppConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
   assert.match(sdkClientsSource, /function buildDependencyAppConfig\([\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);

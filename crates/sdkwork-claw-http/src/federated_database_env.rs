@@ -21,6 +21,7 @@ pub fn ensure_workspace_database_env_from_config(database_config: &DatabaseConfi
 /// resolve the same database URL/engine as the product installer.
 const FEDERATED_CAPABILITY_REPO_DIRS: &[(&str, &str)] = &[
     ("ACCOUNT", "sdkwork-account"),
+    ("AGENTS", "sdkwork-agents"),
     ("CATALOG", "sdkwork-catalog"),
     ("INVOICE", "sdkwork-invoice"),
     ("MEMBERSHIP", "sdkwork-membership"),

@@ -1281,15 +1281,11 @@ function buildMessagingAppConfig(options: SdkworkMessagingAppSdkClientOptions): 
 }
 
 export function resolveRequiredMessagingAppBaseUrl(options: SdkworkMessagingAppSdkClientOptions): string {
-  const baseUrl = options.appBaseUrl
+  return options.appBaseUrl
     ?? readClawRouterRuntimeEnv('VITE_SDKWORK_MESSAGING_APP_API_BASE_URL')
-    ?? deriveDependencySurfaceBaseUrl('PORTAL_PUBLIC_SDK_BASE_URL', APP_API_PREFIX);
-  if (!baseUrl) {
-    throw new Error(
-      'Messaging App SDK requires VITE_SDKWORK_MESSAGING_APP_API_BASE_URL or PORTAL_PUBLIC_SDK_BASE_URL.',
-    );
-  }
-  return baseUrl;
+    ?? readClawRouterRuntimeEnv('VITE_CLAWROUTER_APP_API_BASE_URL')
+    ?? deriveDependencySurfaceBaseUrl('PORTAL_PUBLIC_SDK_BASE_URL', APP_API_PREFIX)
+    ?? APP_API_PREFIX;
 }
 
 function buildAppbaseBackendConfig(options: SdkworkAppbaseBackendSdkClientOptions): SdkworkAppbaseBackendConfig {

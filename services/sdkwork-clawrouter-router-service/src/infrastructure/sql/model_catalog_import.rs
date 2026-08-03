@@ -1471,6 +1471,8 @@ pub(crate) fn bundled_pricing_dictionary_rows(
             supports_streaming: model.supports_streaming,
             supports_tools: model.supports_tools,
             supports_json_schema: model.supports_json_schema,
+            usage_scopes_json: json_array(&model.usage_scopes),
+            coding_visible: model.coding_visible,
             release_stage: Some(release_stage_code(&model.release_stage)),
             shelf_state: Some(shelf_state_code(&model.shelf_state)),
             routing_state: Some(routing_state_code(&model.routing_state)),

@@ -89,6 +89,8 @@ SELECT
     COALESCE(supports_streaming, false) AS supports_streaming,
     COALESCE(supports_tools, false) AS supports_tools,
     COALESCE(supports_json_schema, false) AS supports_json_schema,
+    COALESCE(usage_scopes::text, '[]') AS usage_scopes_json,
+    COALESCE(coding_visible, false) AS coding_visible,
     release_stage,
     shelf_state,
     routing_state,

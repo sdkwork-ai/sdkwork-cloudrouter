@@ -5,6 +5,7 @@ import {
   BACKEND_API_PREFIX,
   OPEN_API_PREFIX,
   requiresClientContextSelectorSanitization,
+  resolveRequiredMessagingAppBaseUrl,
   sanitizeSdkHttpRequestOptions,
 } from './sdk-clients.ts';
 
@@ -38,4 +39,15 @@ test('sanitizeSdkHttpRequestOptions leaves backend admin filters intact', () => 
       params: { tenantId: '100001', page: '1' },
     },
   );
+});
+
+test('resolveRequiredMessagingAppBaseUrl honors an explicit messaging app base URL', () => {
+  assert.equal(
+    resolveRequiredMessagingAppBaseUrl({ appBaseUrl: 'https://messaging.example.test' }),
+    'https://messaging.example.test',
+  );
+});
+
+test('resolveRequiredMessagingAppBaseUrl falls back to the common app base when messaging is not configured', () => {
+  assert.equal(resolveRequiredMessagingAppBaseUrl({}), APP_API_PREFIX);
 });

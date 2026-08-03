@@ -48,6 +48,8 @@ pub async fn load_models(
             supports_streaming: row.try_get("supports_streaming")?,
             supports_tools: row.try_get("supports_tools")?,
             supports_json_schema: row.try_get("supports_json_schema")?,
+            usage_scopes_json: row.try_get("usage_scopes_json")?,
+            coding_visible: row.try_get("coding_visible")?,
             release_stage: row.try_get("release_stage")?,
             shelf_state: row.try_get("shelf_state")?,
             routing_state: row.try_get("routing_state")?,

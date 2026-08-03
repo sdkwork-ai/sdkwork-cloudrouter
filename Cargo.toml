@@ -246,6 +246,8 @@ sdkwork_routes_membership_app_api = { package = "sdkwork-routes-membership-app-a
 sdkwork_membership_service_host = { package = "sdkwork-membership-service-host", path = "../sdkwork-membership/crates/sdkwork-membership-service-host" }
 sdkwork_membership_database_host = { package = "sdkwork-membership-database-host", path = "../sdkwork-membership/crates/sdkwork-membership-database-host" }
 sdkwork_api_order_assembly = { package = "sdkwork-api-order-assembly", path = "../sdkwork-order/crates/sdkwork-api-order-assembly" }
+sdkwork_api_agents_assembly = { package = "sdkwork-api-agents-assembly", path = "../sdkwork-agents/crates/sdkwork-api-agents-assembly" }
+sdkwork_agents_database_host = { package = "sdkwork-agents-database-host", path = "../sdkwork-agents/crates/sdkwork-agents-database-host" }
 sdkwork_routes_shop_app_api = { package = "sdkwork-routes-shop-app-api", path = "../sdkwork-shop/crates/sdkwork-routes-shop-app-api" }
 sdkwork_shop_service_host = { package = "sdkwork-shop-service-host", path = "../sdkwork-shop/crates/sdkwork-shop-service-host" }
 sdkwork_shop_database_host = { package = "sdkwork-shop-database-host", path = "../sdkwork-shop/crates/sdkwork-shop-database-host" }
@@ -282,3 +284,10 @@ p256 = { version = "0.13", features = ["ecdsa"] }
 ed25519-dalek = { version = "2", features = ["rand_core"] }
 rand = "0.8"
 thiserror = "1.0"
+
+# SDKWork agents/kernel websocket upstream forks (same patch as sdkwork-agents
+# workspace): codex app-server-client requires the proxy feature supplied by
+# these forks; version requirements not satisfied by the fork keep crates.io.
+[patch.crates-io]
+tokio-tungstenite = { git = "https://github.com/openai-oss-forks/tokio-tungstenite", rev = "0e5b2d73aa18dd9f0a50ee9ff199d5aef7594186" }
+tungstenite = { git = "https://github.com/openai-oss-forks/tungstenite-rs", rev = "4fffad30fe373adbdcffab9545e9e9bf4f2fc19f" }

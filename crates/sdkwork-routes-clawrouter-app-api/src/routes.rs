@@ -284,7 +284,14 @@ async fn finalize_product_router_with_federated_capabilities(
     .await
     .map_err(ProductCatalogRouterError::Config)?;
     if let Some(database_config) = database_config {
-        crate::commerce_runtime::merge_federated_commerce_app_routers(
+        let router = crate::commerce_runtime::merge_federated_commerce_app_routers(
+            router,
+            database_config,
+            subject_boundary_config.clone(),
+        )
+        .await
+        .map_err(ProductCatalogRouterError::Config)?;
+        crate::agents_runtime::merge_federated_agents_app_router(
             router,
             database_config,
             subject_boundary_config,

@@ -1,5 +1,6 @@
 #![forbid(unsafe_code)]
 
+mod agents_runtime;
 mod commerce_runtime;
 mod http_route_manifest;
 mod invoice_runtime;
