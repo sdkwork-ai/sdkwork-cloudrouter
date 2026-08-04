@@ -118,8 +118,8 @@ fn catalog() -> InMemoryPricingCatalog {
 
 fn admin_web_context(path: &str, method: &str) -> WebRequestContext {
     let principal = WebRequestPrincipal::builder()
-        .tenant_id("100001")
-        .organization_id(Some("100001".to_owned()))
+        .tenant_id("10")
+        .organization_id(Some("20".to_owned()))
         .login_scope(WebLoginScope::Organization)
         .user_id("2")
         .session_id(Some("session-test".to_owned()))
@@ -175,7 +175,7 @@ async fn injected_product_catalog_route_overrides_manifest_fallback() {
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("2000", payload["code"]);
+    assert_eq!(0, payload["code"]);
     assert_eq!("gpt-4o-mini", payload["data"]["items"][0]["model"]);
     assert_eq!(
         "available",
@@ -210,43 +210,43 @@ async fn runtime_route_explain_uses_selector_and_masks_provider_secrets() {
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("2000", payload["code"]);
-    assert_eq!("runtime_selector", payload["data"]["source"]);
-    assert_eq!(true, payload["data"]["ready"]);
-    assert_eq!(1, payload["data"]["candidateCount"]);
-    assert_eq!("200", payload["data"]["policyId"]);
-    assert_eq!("202", payload["data"]["ruleId"]);
+    assert_eq!(0, payload["code"]);
+    assert_eq!("runtime_selector", payload["data"]["item"]["source"]);
+    assert_eq!(true, payload["data"]["item"]["ready"]);
+    assert_eq!(1, payload["data"]["item"]["candidateCount"]);
+    assert_eq!("200", payload["data"]["item"]["policyId"]);
+    assert_eq!("202", payload["data"]["item"]["ruleId"]);
     assert_eq!(
         "api.openai.chat_completions",
-        payload["data"]["resourceCode"]
+        payload["data"]["item"]["resourceCode"]
     );
-    assert_eq!("openai/gpt-4o-mini", payload["data"]["catalogKey"]);
-    assert_eq!(serde_json::json!([]), payload["data"]["blockedReasons"]);
-    assert_eq!(serde_json::json!([]), payload["data"]["warnings"]);
+    assert_eq!("openai/gpt-4o-mini", payload["data"]["item"]["catalogKey"]);
+    assert_eq!(serde_json::json!([]), payload["data"]["item"]["blockedReasons"]);
+    assert_eq!(serde_json::json!([]), payload["data"]["item"]["warnings"]);
     assert_eq!(
         1,
-        payload["data"]["selectedCandidates"]
+        payload["data"]["item"]["selectedCandidates"]
             .as_array()
             .unwrap()
             .len()
     );
-    assert_eq!("model", payload["data"]["selectedCandidates"][0]["kind"]);
+    assert_eq!("model", payload["data"]["item"]["selectedCandidates"][0]["kind"]);
     assert_eq!(
         "openrouter",
-        payload["data"]["selectedCandidates"][0]["providerCode"]
+        payload["data"]["item"]["selectedCandidates"][0]["providerCode"]
     );
     assert_eq!(
         "3001",
-        payload["data"]["selectedCandidates"][0]["channelId"]
+        payload["data"]["item"]["selectedCandidates"][0]["channelId"]
     );
     assert_eq!(
         "gpt-4o-mini",
-        payload["data"]["selectedCandidates"][0]["providerModel"]
+        payload["data"]["item"]["selectedCandidates"][0]["providerModel"]
     );
-    assert!(payload["data"]["selectedCandidates"][0]
+    assert!(payload["data"]["item"]["selectedCandidates"][0]
         .get("secretRef")
         .is_none());
-    assert!(payload["data"]["selectedCandidates"][0]
+    assert!(payload["data"]["item"]["selectedCandidates"][0]
         .get("baseUrl")
         .is_none());
 }
@@ -278,17 +278,17 @@ async fn runtime_route_explain_reports_selector_pricing_blocking_reason() {
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("2000", payload["code"]);
-    assert_eq!("runtime_selector", payload["data"]["source"]);
-    assert_eq!(false, payload["data"]["ready"]);
-    assert_eq!(0, payload["data"]["candidateCount"]);
-    assert_eq!(serde_json::json!([]), payload["data"]["selectedCandidates"]);
+    assert_eq!(0, payload["code"]);
+    assert_eq!("runtime_selector", payload["data"]["item"]["source"]);
+    assert_eq!(false, payload["data"]["item"]["ready"]);
+    assert_eq!(0, payload["data"]["item"]["candidateCount"]);
+    assert_eq!(serde_json::json!([]), payload["data"]["item"]["selectedCandidates"]);
     assert_eq!(
         "pricing.unavailable",
-        payload["data"]["blockedReasons"][0]["code"]
+        payload["data"]["item"]["blockedReasons"][0]["code"]
     );
-    assert_eq!("blocking", payload["data"]["blockedReasons"][0]["severity"]);
-    assert!(payload["data"]["blockedReasons"][0]["message"]
+    assert_eq!("blocking", payload["data"]["item"]["blockedReasons"][0]["severity"]);
+    assert!(payload["data"]["item"]["blockedReasons"][0]["message"]
         .as_str()
         .unwrap()
         .contains("pricing is not available"));
@@ -321,17 +321,17 @@ async fn runtime_route_explain_reports_selector_route_blocking_reason() {
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("2000", payload["code"]);
-    assert_eq!("runtime_selector", payload["data"]["source"]);
-    assert_eq!(false, payload["data"]["ready"]);
-    assert_eq!(0, payload["data"]["candidateCount"]);
-    assert_eq!(serde_json::json!([]), payload["data"]["selectedCandidates"]);
+    assert_eq!(0, payload["code"]);
+    assert_eq!("runtime_selector", payload["data"]["item"]["source"]);
+    assert_eq!(false, payload["data"]["item"]["ready"]);
+    assert_eq!(0, payload["data"]["item"]["candidateCount"]);
+    assert_eq!(serde_json::json!([]), payload["data"]["item"]["selectedCandidates"]);
     assert_eq!(
         "route.unavailable",
-        payload["data"]["blockedReasons"][0]["code"]
+        payload["data"]["item"]["blockedReasons"][0]["code"]
     );
-    assert_eq!("blocking", payload["data"]["blockedReasons"][0]["severity"]);
-    assert!(payload["data"]["blockedReasons"][0]["message"]
+    assert_eq!("blocking", payload["data"]["item"]["blockedReasons"][0]["severity"]);
+    assert!(payload["data"]["item"]["blockedReasons"][0]["message"]
         .as_str()
         .unwrap()
         .contains("provider route is not available"));
