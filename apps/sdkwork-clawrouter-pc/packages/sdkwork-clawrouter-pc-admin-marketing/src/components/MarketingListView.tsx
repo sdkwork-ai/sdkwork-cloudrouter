@@ -282,7 +282,7 @@ export function exportMarketingCsv<T extends object>(
 ): void {
   const escapeCell = (value: unknown) => {
     const text = value === null || value === undefined ? '' : String(value);
-    return `"${text.replaceAll('"', '""')}"`;
+    return `"${text.replace(/"/g, '""')}"`;
   };
   const header = columns.map((column) => escapeCell(column.label)).join(',');
   const rows = records.map((record) => columns

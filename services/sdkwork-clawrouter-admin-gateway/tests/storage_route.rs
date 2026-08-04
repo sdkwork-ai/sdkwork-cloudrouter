@@ -19,7 +19,7 @@ fn admin_api_database_runtime_does_not_mount_local_storage_center() {
 }
 
 #[tokio::test]
-async fn default_router_does_not_mount_drive_storage_routes_locally() {
+async fn default_router_acknowledges_storage_contract_without_serving_it_locally() {
     for path in [
         "/backend/v3/api/storage/providers",
         "/backend/v3/api/storage/buckets",
@@ -31,8 +31,30 @@ async fn default_router_does_not_mount_drive_storage_routes_locally() {
     ] {
         let (status, payload) = contract_call(Method::GET, path).await;
 
-        assert_eq!(StatusCode::NOT_FOUND, status, "{path}");
-        assert_eq!(Value::Null, payload, "{path}");
+        assert_eq!(StatusCode::NOT_IMPLEMENTED, status, "{path}");
+        // 契约路由以结构化 problem detail 声明“已收录但未实现”：存储管理面由
+        // clawrouter 生产运行时（PostgresAdminStorageStore）挂载，裸默认路由不本地实现。
+        let object = payload
+            .as_object()
+            .unwrap_or_else(|| panic!("{path}: problem detail expected"));
+        assert_eq!(
+            501,
+            object.get("status").and_then(Value::as_u64).unwrap_or_default(),
+            "{path}"
+        );
+        assert_eq!(
+            "Not implemented",
+            object.get("title").and_then(Value::as_str).unwrap_or_default(),
+            "{path}"
+        );
+        assert!(
+            object
+                .get("detail")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .contains(path),
+            "{path}: detail must carry the contract path"
+        );
     }
 }
 

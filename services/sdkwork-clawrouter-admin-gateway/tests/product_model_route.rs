@@ -93,7 +93,7 @@ fn catalog() -> InMemoryPricingCatalog {
             r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
             "openai/gpt-4o-mini",
         )
-        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
     );
     catalog.add_price(ModelPrice::new_for_catalog_key(
         "openai/gpt-4o-mini",
@@ -233,11 +233,11 @@ async fn runtime_route_explain_uses_selector_and_masks_provider_secrets() {
     assert_eq!("model", payload["data"]["item"]["selectedCandidates"][0]["kind"]);
     assert_eq!(
         "openrouter",
-        payload["data"]["item"]["selectedCandidates"][0]["providerCode"]
+        payload["data"]["item"]["selectedCandidates"][0]["supplierCode"]
     );
     assert_eq!(
         "3001",
-        payload["data"]["item"]["selectedCandidates"][0]["channelId"]
+        payload["data"]["item"]["selectedCandidates"][0]["accountId"]
     );
     assert_eq!(
         "gpt-4o-mini",
@@ -265,7 +265,7 @@ async fn runtime_route_explain_reports_selector_pricing_blocking_reason() {
                 ))
                 .header("content-type", "application/json")
                 .body(Body::from(
-                    r#"{"apiKeyId":"100","accountGroupId":"10","resourceCode":"api.openai.chat_completions","catalogKey":"openai/gpt-not-configured","model":"gpt-not-configured","apiCode":"openai.chat_completions","capability":"chat","billingMeter":"llm_input_token"}"#,
+                    r#"{"apiKeyId":"100","accountGroupId":"10","resourceCode":"api.openai.chat_completions","catalogKey":"openai/gpt-4o-mini","model":"gpt-4o-mini","apiCode":"openai.chat_completions","capability":"chat","billingMeter":"llm_output_token"}"#,
                 ))
                 .unwrap(),
         )
@@ -334,5 +334,5 @@ async fn runtime_route_explain_reports_selector_route_blocking_reason() {
     assert!(payload["data"]["item"]["blockedReasons"][0]["message"]
         .as_str()
         .unwrap()
-        .contains("provider route is not available"));
+        .contains("no upstream account routes are configured"));
 }

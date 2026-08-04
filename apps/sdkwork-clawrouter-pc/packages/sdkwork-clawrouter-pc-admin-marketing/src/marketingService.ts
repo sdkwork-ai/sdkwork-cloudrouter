@@ -7,17 +7,15 @@ import {
   readRequiredNonNegativeInt64String,
   readRequiredString,
   type ApiRecord,
+  type SdkworkPromotionCouponStock,
+  type SdkworkPromotionCouponStockRequest,
+  type SdkworkPromotionCodeBatch,
+  type SdkworkPromotionCodeBatchRequest,
+  type SdkworkPromotionDistributionRequest,
+  type SdkworkPromotionDistributionTask,
+  type SdkworkPromotionOffer,
+  type SdkworkPromotionOfferRequest,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
-import type {
-  CouponStock,
-  CouponStockRequest,
-  PromotionCodeBatch,
-  PromotionCodeBatchRequest,
-  PromotionDistributionRequest,
-  PromotionDistributionTask,
-  PromotionOffer,
-  PromotionOfferRequest,
-} from '@sdkwork/promotion-backend-sdk';
 
 type BackendPromotionsService = ReturnType<typeof getSdkworkPromotionBackendSdkClient>['promotions'];
 type ClawBackendReferralStatsService = ReturnType<typeof getClawRouterBackendSdkClient>['billing']['referralStats'];
@@ -94,21 +92,21 @@ export async function backendPromotionCouponLedgerEntriesList(
   return readRequiredPromotionPage(result, 'Promotion coupon ledger records are required');
 }
 
-export async function createPromotionOffer(input: PromotionOfferRequest): Promise<PromotionOffer> {
+export async function createPromotionOffer(input: SdkworkPromotionOfferRequest): Promise<SdkworkPromotionOffer> {
   const result = await getSdkworkPromotionBackendSdkClient().promotions.offers.create(input);
-  return readRequiredItem<PromotionOffer>(result, 'Created promotion offer is required');
+  return readRequiredItem<SdkworkPromotionOffer>(result, 'Created promotion offer is required');
 }
 
-export async function createPromotionCouponStock(input: CouponStockRequest): Promise<CouponStock> {
+export async function createPromotionCouponStock(input: SdkworkPromotionCouponStockRequest): Promise<SdkworkPromotionCouponStock> {
   const result = await getSdkworkPromotionBackendSdkClient().promotions.couponStocks.create(input);
-  return readRequiredItem<CouponStock>(result, 'Created coupon stock is required');
+  return readRequiredItem<SdkworkPromotionCouponStock>(result, 'Created coupon stock is required');
 }
 
 export async function createPromotionCodeBatch(
-  input: PromotionCodeBatchRequest,
-): Promise<PromotionCodeBatch> {
+  input: SdkworkPromotionCodeBatchRequest,
+): Promise<SdkworkPromotionCodeBatch> {
   const result = await getSdkworkPromotionBackendSdkClient().promotions.codeBatches.create(input);
-  return readRequiredItem<PromotionCodeBatch>(result, 'Created code batch is required');
+  return readRequiredItem<SdkworkPromotionCodeBatch>(result, 'Created code batch is required');
 }
 
 export async function backendPromotionDistributionTasksList(
@@ -127,9 +125,9 @@ export async function fetchPromotionOverview(): Promise<ApiRecord> {
   return payload;
 }
 
-export async function retrievePromotionOffer(offerId: string): Promise<PromotionOffer> {
+export async function retrievePromotionOffer(offerId: string): Promise<SdkworkPromotionOffer> {
   const result = await getSdkworkPromotionBackendSdkClient().promotions.offers.retrieve(offerId);
-  return readRequiredItem<PromotionOffer>(result, 'Promotion offer is required');
+  return readRequiredItem<SdkworkPromotionOffer>(result, 'Promotion offer is required');
 }
 
 export async function deletePromotionOffer(offerId: string): Promise<void> {
@@ -137,17 +135,17 @@ export async function deletePromotionOffer(offerId: string): Promise<void> {
 }
 
 export async function createPromotionDistributionTask(
-  input: PromotionDistributionRequest,
-): Promise<PromotionDistributionTask> {
+  input: SdkworkPromotionDistributionRequest,
+): Promise<SdkworkPromotionDistributionTask> {
   const result = await getSdkworkPromotionBackendSdkClient().promotions.distributionTasks.create(input);
-  return readRequiredItem<PromotionDistributionTask>(result, 'Created distribution task is required');
+  return readRequiredItem<SdkworkPromotionDistributionTask>(result, 'Created distribution task is required');
 }
 
 export function buildDistributionTaskRequest(
   stockId: string,
   ownerUserIds: string[],
   idempotencyKey: string,
-): PromotionDistributionRequest {
+): SdkworkPromotionDistributionRequest {
   return { stockId, ownerUserIds, idempotencyKey };
 }
 
@@ -198,9 +196,9 @@ export interface CouponOfferCreateFormValues {
 }
 
 export interface CouponOfferCreateRequests {
-  offerRequest: PromotionOfferRequest;
-  stockRequest: CouponStockRequest;
-  codeBatchRequest?: PromotionCodeBatchRequest;
+  offerRequest: SdkworkPromotionOfferRequest;
+  stockRequest: SdkworkPromotionCouponStockRequest;
+  codeBatchRequest?: SdkworkPromotionCodeBatchRequest;
 }
 
 export function buildCouponOfferCreateRequests(
@@ -219,7 +217,7 @@ export function buildCouponOfferCreateRequests(
         dailyQuota: values.dailyQuota ?? '0',
         totalQuota: values.totalQuota ?? '0',
       };
-  const offerRequest: PromotionOfferRequest = {
+  const offerRequest: SdkworkPromotionOfferRequest = {
     offerType: values.offerType,
     displayName: values.displayName,
     description: values.description || null,
@@ -237,7 +235,7 @@ export function buildCouponOfferCreateRequests(
     currencyCode: values.currencyCode,
     couponBenefit,
   };
-  const stockRequest: CouponStockRequest = {
+  const stockRequest: SdkworkPromotionCouponStockRequest = {
     offerId: '',
     stockType: values.stockType,
     codeIssueMode: values.codeIssueMode,
@@ -248,7 +246,7 @@ export function buildCouponOfferCreateRequests(
     claimEndsAt: values.claimEndsAt ? toIsoString(values.claimEndsAt) : null,
     status: values.status,
   };
-  const codeBatchRequest: PromotionCodeBatchRequest | undefined = values.codeIssueMode === 'BATCH'
+  const codeBatchRequest: SdkworkPromotionCodeBatchRequest | undefined = values.codeIssueMode === 'BATCH'
     ? {
         stockId: '',
         codeType: 'PUBLIC',
@@ -266,14 +264,14 @@ export function buildCouponOfferCreateRequests(
 export async function createCouponOffer(
   values: CouponOfferCreateFormValues,
   idempotencyKey: string,
-): Promise<{ offer: PromotionOffer; stock: CouponStock; codeBatch?: PromotionCodeBatch }> {
+): Promise<{ offer: SdkworkPromotionOffer; stock: SdkworkPromotionCouponStock; codeBatch?: SdkworkPromotionCodeBatch }> {
   const requests = buildCouponOfferCreateRequests(values, idempotencyKey);
   const offer = await createPromotionOffer(requests.offerRequest);
   const stock = await createPromotionCouponStock({
     ...requests.stockRequest,
     offerId: offer.id,
   });
-  let codeBatch: PromotionCodeBatch | undefined;
+  let codeBatch: SdkworkPromotionCodeBatch | undefined;
   if (requests.codeBatchRequest) {
     codeBatch = await createPromotionCodeBatch({
       ...requests.codeBatchRequest,
@@ -296,7 +294,7 @@ export interface CodeBatchCreateFormValues {
 export function buildCodeBatchCreateRequest(
   values: CodeBatchCreateFormValues,
   idempotencyKey: string,
-): PromotionCodeBatchRequest {
+): SdkworkPromotionCodeBatchRequest {
   return {
     stockId: values.stockId,
     codeType: values.codeType,

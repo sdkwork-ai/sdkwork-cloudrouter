@@ -455,6 +455,16 @@ export type SdkworkDriveAppSdkClient = SdkworkDriveAppClient;
 export type SdkworkMembershipBackendSdkClient = MembershipBackendClient;
 export type SdkworkPaymentBackendSdkClient = PaymentBackendClient;
 export type SdkworkPromotionBackendSdkClient = PromotionBackendClient;
+export type {
+  CouponStock as SdkworkPromotionCouponStock,
+  CouponStockRequest as SdkworkPromotionCouponStockRequest,
+  PromotionCodeBatch as SdkworkPromotionCodeBatch,
+  PromotionCodeBatchRequest as SdkworkPromotionCodeBatchRequest,
+  PromotionDistributionRequest as SdkworkPromotionDistributionRequest,
+  PromotionDistributionTask as SdkworkPromotionDistributionTask,
+  PromotionOffer as SdkworkPromotionOffer,
+  PromotionOfferRequest as SdkworkPromotionOfferRequest,
+} from '@sdkwork/promotion-backend-sdk';
 export type SdkworkAccountAppSdkClient = AccountAppClient;
 export type SdkworkCatalogAppSdkClient = CatalogAppClient;
 export type SdkworkMembershipAppSdkClient = MembershipAppClient;
