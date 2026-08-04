@@ -84,7 +84,7 @@ Characteristics:
 - macOS service packages start through a launchd runner that executes `ensure` and `refresh-catalog --force` before the gateway.
 - Windows `.msi` packages install runtime files and service metadata for host-specific service registration.
 - Uses PostgreSQL by default and stores protected service overrides in `/etc/sdkwork/router/cloudrouter.env` on Linux.
-- Stores PostgreSQL password material in `/etc/sdkwork/router/database.secret` by default, or directly in protected TOML when the TOML file is managed as a secret-bearing file.
+- Stores PostgreSQL password material in `/etc/sdkwork/database/database.secret` by default, or directly in protected TOML when the TOML file is managed as a secret-bearing file.
 - Provides `/etc/sdkwork/router/redis.secret` for Redis password material when Redis authentication is used.
 - Linux service packages keep `/etc/sdkwork/router` read-only to the running process and allow writes only to data and log directories.
 - Native installer manifests include `nativeInstall` with final paths, service metadata, permissions, and operator commands.

@@ -646,7 +646,7 @@ fn server_runtime_validation_rejects_placeholder_postgres_host_and_password() {
         // Known dev/example passwords leaked by previous .env templates.
         "postgresql://sdkwork_ai_dev:sdkworkdev123@db.internal:5432/sdkwork_ai_dev?sslmode=require",
         "postgresql://postgres:postgres_admin_pass@db.internal:5432/postgres?sslmode=require",
-        "postgresql://sdkwork_cloudrouter_test:sdkwork_cloudrouter_test_password@db.internal:5432/sdkwork_cloudrouter_test?sslmode=require",
+        "postgresql://sdkwork_ai_test:sdkwork_ai_test_password@db.internal:5432/sdkwork_ai_test?sslmode=require",
     ] {
         let config = DatabaseConfig::from_url(url).unwrap();
         match config.validate_for_runtime_profile_at(RuntimeConfigProfile::Server, &location) {

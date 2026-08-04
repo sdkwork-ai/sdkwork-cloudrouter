@@ -83,20 +83,20 @@ Use this path for a long-running server on Ubuntu or Debian:
 ```bash
 sudo apt install ./cloudrouter-linux-x64-server-0.3.0.deb
 sudo editor /etc/sdkwork/router/cloudrouter.toml
-sudo editor /etc/sdkwork/router/database.secret
+sudo editor /etc/sdkwork/database/database.secret
 sudo systemctl start cloudrouter
 curl http://127.0.0.1:3900/healthz
 curl http://127.0.0.1:3900/readyz
 ```
 
-The `.deb` package creates the `sdkwork` system user, `/etc/sdkwork/router/cloudrouter.toml`, `/etc/sdkwork/router/cloudrouter.env`, `/etc/sdkwork/router/database.secret`, `/var/lib/sdkwork/router`, `/var/log/sdkwork/router`, and the systemd unit. On systemd hosts it enables `cloudrouter.service` during installation but does not start it until the operator configures PostgreSQL. The first service start runs `cloudrouterctl ensure` and `cloudrouterctl refresh-catalog --force` automatically from `ExecStartPre`. The generated systemd unit uses a restricted runtime profile with `NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome=true`, systemd-managed state/log/config directories, kernel and control-group protections, native syscall architecture filtering, and `LimitNOFILE=65535`. The service can write data and logs, while `/etc/sdkwork/router` remains read-only to the running process.
+The `.deb` package creates the `sdkwork` system user, `/etc/sdkwork/router/cloudrouter.toml`, `/etc/sdkwork/router/cloudrouter.env`, `/etc/sdkwork/database/database.secret`, `/var/lib/sdkwork/router`, `/var/log/sdkwork/router`, and the systemd unit. On systemd hosts it enables `cloudrouter.service` during installation but does not start it until the operator configures PostgreSQL. The first service start runs `cloudrouterctl ensure` and `cloudrouterctl refresh-catalog --force` automatically from `ExecStartPre`. The generated systemd unit uses a restricted runtime profile with `NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome=true`, systemd-managed state/log/config directories, kernel and control-group protections, native syscall architecture filtering, and `LimitNOFILE=65535`. The service can write data and logs, while `/etc/sdkwork/router` remains read-only to the running process.
 
 The post-install output prints a short configuration summary with the runtime TOML, service environment file, PostgreSQL password file, service name, and first-start commands:
 
 ```text
 Runtime TOML: /etc/sdkwork/router/cloudrouter.toml
 Service environment: /etc/sdkwork/router/cloudrouter.env
-PostgreSQL password file: /etc/sdkwork/router/database.secret
+PostgreSQL password file: /etc/sdkwork/database/database.secret
 Systemd service: cloudrouter.service
 ```
 
@@ -109,7 +109,7 @@ host = "db.example.com"
 port = 5432
 database = "sdkwork_ai_prod"
 username = "sdkwork_ai_prod"
-password_file = "/etc/sdkwork/router/database.secret"
+password_file = "/etc/sdkwork/database/database.secret"
 # password = "change-me"
 ssl_mode = "require"
 max_connections = 16
@@ -201,11 +201,11 @@ gateway_invocation_body_max_bytes = 1048576
 deployment_mode = "server"
 ```
 
-Edit `/etc/sdkwork/router/cloudrouter.toml` before first start. For most service deployments, keep the password in `/etc/sdkwork/router/database.secret`:
+Edit `/etc/sdkwork/router/cloudrouter.toml` before first start. For most service deployments, keep the password in `/etc/sdkwork/database/database.secret`:
 
 ```bash
-sudo install -o root -g sdkwork -m 0640 /dev/null /etc/sdkwork/router/database.secret
-sudo editor /etc/sdkwork/router/database.secret
+sudo install -o root -g sdkwork -m 0640 /dev/null /etc/sdkwork/database/database.secret
+sudo editor /etc/sdkwork/database/database.secret
 ```
 
 The package-created `database.secret` contains the placeholder `change-me`.
@@ -241,7 +241,7 @@ The `.deb` post-install script creates:
 - `/usr/lib/sdkwork/router`
 - `/etc/sdkwork/router`
 - `/etc/sdkwork/router/cloudrouter.env`
-- `/etc/sdkwork/router/database.secret`
+- `/etc/sdkwork/database/database.secret`
 - `/var/lib/sdkwork/router`
 - `/var/log/sdkwork/router`
 - `/lib/systemd/system/cloudrouter.service` for `service` packages
@@ -265,7 +265,7 @@ sudo apt install ./cloudrouter-linux-x64-desktop-0.3.0.deb
 /usr/bin/cloudrouter
 ```
 
-The desktop profile uses the current OS user's config and data directories and does not require PostgreSQL unless you explicitly configure it. The Linux desktop `.deb` installs the shared template under `/usr/share/sdkwork/router/config/cloudrouter.toml.example`; it does not create `/etc/sdkwork/router/cloudrouter.toml`, `/etc/sdkwork/router/database.secret`, or a systemd service.
+The desktop profile uses the current OS user's config and data directories and does not require PostgreSQL unless you explicitly configure it. The Linux desktop `.deb` installs the shared template under `/usr/share/sdkwork/router/config/cloudrouter.toml.example`; it does not create `/etc/sdkwork/router/cloudrouter.toml`, `/etc/sdkwork/database/database.secret`, or a systemd service.
 
 ### Windows Desktop Or Service Files
 
@@ -381,7 +381,7 @@ Release packages include the runtime files needed to start Cloud Router:
 
 `archive` and `container` release assets remain portable `.tar.gz` or `.zip` packages.
 
-Every package manifest includes an `installConfiguration` section with the runtime TOML, template, database policy, required fields, password path, first-start commands, and next steps. Native installer manifests also include `nativeInstall`, a machine-readable final install layout covering paths such as `/usr/bin/cloudrouter`, `/usr/lib/sdkwork/router/portal/dist`, `/etc/sdkwork/router/cloudrouter.toml`, `/etc/sdkwork/router/database.secret`, `/lib/systemd/system/cloudrouter.service`, service startup policy, permissions, and operator commands. Use these fields for deployment automation instead of scraping `INSTALL.md`.
+Every package manifest includes an `installConfiguration` section with the runtime TOML, template, database policy, required fields, password path, first-start commands, and next steps. Native installer manifests also include `nativeInstall`, a machine-readable final install layout covering paths such as `/usr/bin/cloudrouter`, `/usr/lib/sdkwork/router/portal/dist`, `/etc/sdkwork/router/cloudrouter.toml`, `/etc/sdkwork/database/database.secret`, `/lib/systemd/system/cloudrouter.service`, service startup policy, permissions, and operator commands. Use these fields for deployment automation instead of scraping `INSTALL.md`.
 
 Never package or commit `.env.release`. Archive deployments may generate it on the target host, while Linux service deployments use `/etc/sdkwork/router/cloudrouter.env` for protected process overrides and `/etc/sdkwork/router/cloudrouter.toml` for the primary runtime configuration. Keep `PORTAL_PUBLIC_*` values browser-safe; do not put database passwords, provider secrets, or admin credentials in `PORTAL_PUBLIC_*` variables.
 
@@ -569,7 +569,7 @@ Service and container deployments must mount runtime configuration, logs, and mu
 2. Back up the database and runtime configuration.
 3. Stop the old service.
 4. Install or extract the new release package.
-5. Preserve target-local `/etc/sdkwork/router/cloudrouter.env`, `/etc/sdkwork/router/database.secret`, `.env.release` if used by archive deployments, and runtime TOML files.
+5. Preserve target-local `/etc/sdkwork/router/cloudrouter.env`, `/etc/sdkwork/database/database.secret`, `.env.release` if used by archive deployments, and runtime TOML files.
 6. For Linux service packages, start the service and let systemd run `ensure` and `refresh-catalog --force`.
 7. For archive/manual deployments, run `cloudrouterctl ensure` and `cloudrouterctl refresh-catalog --force`.
 8. Start the new version and check `/healthz` and `/readyz`.
@@ -583,4 +583,4 @@ Service and container deployments must mount runtime configuration, logs, and mu
 - `catalog_error`: model catalog path, version, or content validation failed.
 - `commerce_error`: commerce bootstrap schema or seed initialization failed.
 - `/healthz` succeeds but `/readyz` fails: the edge process is up, but gateway/admin/app/portal upstreams or database dependencies are not ready.
-- Linux service exits immediately: check `/etc/sdkwork/router/cloudrouter.toml`, `/etc/sdkwork/router/database.secret`, `/etc/sdkwork/router/cloudrouter.env`, and `journalctl -u cloudrouter`.
+- Linux service exits immediately: check `/etc/sdkwork/router/cloudrouter.toml`, `/etc/sdkwork/database/database.secret`, `/etc/sdkwork/router/cloudrouter.env`, and `journalctl -u cloudrouter`.

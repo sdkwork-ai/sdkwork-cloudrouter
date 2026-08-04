@@ -17,6 +17,10 @@ const INSTALLER_BINARY_BASENAME = 'cloudrouterctl';
 const POSIX_INSTALL_ROOT = '/opt/sdkwork/router';
 const LINUX_SERVICE_RUNTIME_ROOT = '/usr/lib/sdkwork/router';
 const LINUX_SERVICE_CONFIG_ROOT = '/etc/sdkwork/router';
+// ENVIRONMENT_SPEC section 7.3: production/staging database config resolves
+// from the workspace shared directory /etc/sdkwork/database/ on Linux.
+const LINUX_SERVICE_DATABASE_SECRET_ROOT = '/etc/sdkwork/database';
+const LINUX_SERVICE_DATABASE_SECRET_FILE = `${LINUX_SERVICE_DATABASE_SECRET_ROOT}/database.secret`;
 const LINUX_SERVICE_DATA_ROOT = '/var/lib/sdkwork/router';
 const LINUX_SERVICE_LOG_ROOT = '/var/log/sdkwork/router';
 const LINUX_SHARED_ROOT = '/usr/share/sdkwork/router';
@@ -417,7 +421,7 @@ function postgresPasswordFileFor(platform, deploymentMode, locations) {
     return `${MACOS_SERVICE_ROOT}/database.secret`;
   }
   if (locations.configFile === `${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml`) {
-    return `${LINUX_SERVICE_CONFIG_ROOT}/database.secret`;
+    return LINUX_SERVICE_DATABASE_SECRET_FILE;
   }
   return `${locations.dataDirectory}/database.secret`;
 }
@@ -892,6 +896,8 @@ export {
   INSTALL_PACKAGE_SCHEMA_VERSION,
   INTERNAL_PROJECT_NAME,
   LINUX_SERVICE_CONFIG_ROOT,
+  LINUX_SERVICE_DATABASE_SECRET_FILE,
+  LINUX_SERVICE_DATABASE_SECRET_ROOT,
   LINUX_SERVICE_DATA_ROOT,
   LINUX_SERVICE_LOG_ROOT,
   LINUX_SERVICE_RUNTIME_ROOT,

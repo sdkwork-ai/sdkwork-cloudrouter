@@ -41,7 +41,7 @@ Use `etc/nginx/NGINX_SAMPLE.conf` as the canonical template and see
 `etc/nginx/sdkwork/` for full-domain examples.
 
 The package creates the default TOML, `/etc/sdkwork/router/cloudrouter.env`,
-`/etc/sdkwork/router/database.secret`, `/etc/sdkwork/router/redis.secret`, data/log directories, enables
+`/etc/sdkwork/database/database.secret`, `/etc/sdkwork/router/redis.secret`, data/log directories, enables
 `cloudrouter.service` on systemd hosts, and runs initialization from systemd
 before startup. Configure PostgreSQL before starting the service. The running
 service can write `/var/lib/sdkwork/router` and `/var/log/sdkwork/router`; it reads

@@ -19,6 +19,7 @@ import {
 } from './lib/cloud-router-edge-env-contract.mjs';
 import {
   LINUX_SERVICE_CONFIG_ROOT,
+  LINUX_SERVICE_DATABASE_SECRET_FILE,
   LINUX_SERVICE_DATA_ROOT,
   redisPolicyFor,
 } from './plan-cloud-router-install-packages.mjs';
@@ -494,7 +495,7 @@ function runtimeConfigPasswordFileForMode(deploymentMode, configFile, dataDirect
   }
   const normalizedConfigFile = toPortablePath(configFile);
   if (normalizedConfigFile === `${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml`) {
-    return `${LINUX_SERVICE_CONFIG_ROOT}/database.secret`;
+    return LINUX_SERVICE_DATABASE_SECRET_FILE;
   }
   const normalizedDataDirectory = toPortablePath(dataDirectory);
   if (normalizedConfigFile.endsWith('/cloudrouter.toml')) {

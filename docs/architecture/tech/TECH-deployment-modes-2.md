@@ -79,7 +79,7 @@ macOS 原生 `.pkg` 启动：
 - macOS service 包通过 launchd runner 启动，runner 会在 gateway 前执行 `ensure` 和 `refresh-catalog --force`。
 - Windows `.msi` 包安装运行文件和服务元数据，实际服务注册由目标主机部署系统配置。
 - 默认使用 PostgreSQL，Linux 服务覆盖项保存在 `/etc/sdkwork/router/cloudrouter.env`。
-- PostgreSQL 密码默认放在 `/etc/sdkwork/router/database.secret`，也可以在受保护 TOML 中直接配置 `password`。
+- PostgreSQL 密码默认放在 `/etc/sdkwork/database/database.secret`，也可以在受保护 TOML 中直接配置 `password`。
 - 如 Redis 启用了认证，可使用 `/etc/sdkwork/router/redis.secret` 保存 Redis 密码。
 - Linux service 包会让运行中的服务只读访问 `/etc/sdkwork/router`，只允许写入数据和日志目录。
 - 原生安装包 manifest 包含 `nativeInstall`，记录最终路径、服务元数据、权限和运维命令。

@@ -46,7 +46,7 @@ Recommended order for archive/manual deployments:
 6. Start `cloudrouter`.
 7. Check `/healthz` and `/readyz`.
 
-For Linux `service` deployments, the `.deb` creates the default runtime TOML, `/etc/sdkwork/router/cloudrouter.env`, and `/etc/sdkwork/router/database.secret`. The systemd unit runs `ensure` and `refresh-catalog --force` automatically before the gateway starts. The service can write `/var/lib/sdkwork/router` and `/var/log/sdkwork/router`; `/etc/sdkwork/router` is read-only to the running process.
+For Linux `service` deployments, the `.deb` creates the default runtime TOML, `/etc/sdkwork/router/cloudrouter.env`, and `/etc/sdkwork/database/database.secret`. The systemd unit runs `ensure` and `refresh-catalog --force` automatically before the gateway starts. The service can write `/var/lib/sdkwork/router` and `/var/log/sdkwork/router`; `/etc/sdkwork/router` is read-only to the running process.
 
 Linux service packages should follow this order:
 
@@ -121,7 +121,7 @@ host = "db.example.com"
 port = 5432
 database = "sdkwork_ai_prod"
 username = "sdkwork_ai_prod"
-password_file = "/etc/sdkwork/router/database.secret"
+password_file = "/etc/sdkwork/database/database.secret"
 # password = "change-me"
 ssl_mode = "require"
 max_connections = 16
@@ -228,7 +228,7 @@ payment_callback_body_max_bytes = 65536
 deployment_mode = "server"
 ```
 
-The `.deb` package creates `/etc/sdkwork/router/database.secret` with the placeholder value `change-me`. Replace that file with the real PostgreSQL password before starting `cloudrouter`; startup rejects server configurations that still use `db.example.com` or `change-me`.
+The `.deb` package creates `/etc/sdkwork/database/database.secret` with the placeholder value `change-me`. Replace that file with the real PostgreSQL password before starting `cloudrouter`; startup rejects server configurations that still use `db.example.com` or `change-me`.
 
 Redis is enabled and required by default for server/service/container
 deployments. Configure `[redis].host`, `[redis].port`, and `[redis].database`

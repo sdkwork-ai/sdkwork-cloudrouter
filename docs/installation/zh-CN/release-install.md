@@ -82,20 +82,20 @@ pnpm install:package:build -- --package-id linux-x64-service
 ```bash
 sudo apt install ./cloudrouter-linux-x64-server-0.3.0.deb
 sudo editor /etc/sdkwork/router/cloudrouter.toml
-sudo editor /etc/sdkwork/router/database.secret
+sudo editor /etc/sdkwork/database/database.secret
 sudo systemctl start cloudrouter
 curl http://127.0.0.1:3900/healthz
 curl http://127.0.0.1:3900/readyz
 ```
 
-`.deb` 包会创建 `sdkwork` 系统用户、`/etc/sdkwork/router/cloudrouter.toml`、`/etc/sdkwork/router/cloudrouter.env`、`/etc/sdkwork/router/database.secret`、`/var/lib/sdkwork/router`、`/var/log/sdkwork/router` 和 systemd unit。在 systemd 主机上，安装过程会启用但不会立即启动 `cloudrouter.service`。首次启动会通过 `ExecStartPre` 自动执行 `cloudrouterctl ensure` 和 `cloudrouterctl refresh-catalog --force`。生成的 systemd unit 默认使用受限运行配置，包括 `NoNewPrivileges`、`ProtectSystem=strict`、`ProtectHome=true`、systemd 管理的 state/log/config 目录、内核和 control group 保护、原生系统调用架构过滤，以及 `LimitNOFILE=65535`。运行中的服务只能写入数据和日志目录，`/etc/sdkwork/router` 对服务进程保持只读。
+`.deb` 包会创建 `sdkwork` 系统用户、`/etc/sdkwork/router/cloudrouter.toml`、`/etc/sdkwork/router/cloudrouter.env`、`/etc/sdkwork/database/database.secret`、`/var/lib/sdkwork/router`、`/var/log/sdkwork/router` 和 systemd unit。在 systemd 主机上，安装过程会启用但不会立即启动 `cloudrouter.service`。首次启动会通过 `ExecStartPre` 自动执行 `cloudrouterctl ensure` 和 `cloudrouterctl refresh-catalog --force`。生成的 systemd unit 默认使用受限运行配置，包括 `NoNewPrivileges`、`ProtectSystem=strict`、`ProtectHome=true`、systemd 管理的 state/log/config 目录、内核和 control group 保护、原生系统调用架构过滤，以及 `LimitNOFILE=65535`。运行中的服务只能写入数据和日志目录，`/etc/sdkwork/router` 对服务进程保持只读。
 
 安装后输出会打印一段配置摘要，直接列出运行时 TOML、服务环境文件、PostgreSQL 密码文件、服务名和首次启动命令：
 
 ```text
 Runtime TOML: /etc/sdkwork/router/cloudrouter.toml
 Service environment: /etc/sdkwork/router/cloudrouter.env
-PostgreSQL password file: /etc/sdkwork/router/database.secret
+PostgreSQL password file: /etc/sdkwork/database/database.secret
 Systemd service: cloudrouter.service
 ```
 
@@ -108,7 +108,7 @@ host = "db.example.com"
 port = 5432
 database = "sdkwork_ai_prod"
 username = "sdkwork_ai_prod"
-password_file = "/etc/sdkwork/router/database.secret"
+password_file = "/etc/sdkwork/database/database.secret"
 # password = "change-me"
 ssl_mode = "require"
 max_connections = 16
@@ -200,7 +200,7 @@ gateway_invocation_body_max_bytes = 1048576
 deployment_mode = "server"
 ```
 
-首次启动前请编辑 `/etc/sdkwork/router/cloudrouter.toml`。推荐把数据库密码保存在 `/etc/sdkwork/router/database.secret`。如果 TOML 文件本身由密钥系统保护，也可以直接配置 `password`：
+首次启动前请编辑 `/etc/sdkwork/router/cloudrouter.toml`。推荐把数据库密码保存在 `/etc/sdkwork/database/database.secret`。如果 TOML 文件本身由密钥系统保护，也可以直接配置 `password`：
 
 `.deb` 包创建的 `database.secret` 初始内容是占位值 `change-me`。启动服务前必须替换为真实 PostgreSQL 密码；server 配置仍使用 `db.example.com` 或 `change-me` 时会被启动校验拒绝。`password_file` 可以是绝对路径、相对 `cloudrouter.toml` 所在目录的路径，也可以使用 `${VAR}`、`$VAR`、`%VAR%` 或 `~` 展开，用于平台 Secret 路径。
 
@@ -228,7 +228,7 @@ deployment_mode = "server"
 - `/usr/lib/sdkwork/router`
 - `/etc/sdkwork/router`
 - `/etc/sdkwork/router/cloudrouter.env`
-- `/etc/sdkwork/router/database.secret`
+- `/etc/sdkwork/database/database.secret`
 - `/var/lib/sdkwork/router`
 - `/var/log/sdkwork/router`
 - `service` 包会安装 `/lib/systemd/system/cloudrouter.service`
@@ -252,7 +252,7 @@ sudo apt install ./cloudrouter-linux-x64-desktop-0.3.0.deb
 /usr/bin/cloudrouter
 ```
 
-`desktop` 模式使用当前 OS 用户的配置和数据目录，默认不要求 PostgreSQL。Linux desktop `.deb` 会把共享模板安装到 `/usr/share/sdkwork/router/config/cloudrouter.toml.example`，不会创建 `/etc/sdkwork/router/cloudrouter.toml`、`/etc/sdkwork/router/database.secret` 或 systemd 服务。
+`desktop` 模式使用当前 OS 用户的配置和数据目录，默认不要求 PostgreSQL。Linux desktop `.deb` 会把共享模板安装到 `/usr/share/sdkwork/router/config/cloudrouter.toml.example`，不会创建 `/etc/sdkwork/router/cloudrouter.toml`、`/etc/sdkwork/database/database.secret` 或 systemd 服务。
 
 ### Windows 桌面或服务文件
 
@@ -368,7 +368,7 @@ release 包包含运行 Cloud Router 所需文件：
 
 `archive` 和 `container` release 资产仍然是可移植 `.tar.gz` 或 `.zip`。
 
-每个包的 `install-manifest.json` 都包含 `installConfiguration`，记录运行时 TOML、模板、数据库策略、必填字段、密码路径、首次启动命令和后续步骤。原生安装包还包含 `nativeInstall`，用机器可读方式描述最终安装布局，例如 `/usr/bin/cloudrouter`、`/usr/lib/sdkwork/router/portal/dist`、`/etc/sdkwork/router/cloudrouter.toml`、`/etc/sdkwork/router/database.secret`、`/lib/systemd/system/cloudrouter.service`、服务启动策略、权限和运维命令。部署自动化应读取这些字段，而不是解析 `INSTALL.md`。
+每个包的 `install-manifest.json` 都包含 `installConfiguration`，记录运行时 TOML、模板、数据库策略、必填字段、密码路径、首次启动命令和后续步骤。原生安装包还包含 `nativeInstall`，用机器可读方式描述最终安装布局，例如 `/usr/bin/cloudrouter`、`/usr/lib/sdkwork/router/portal/dist`、`/etc/sdkwork/router/cloudrouter.toml`、`/etc/sdkwork/database/database.secret`、`/lib/systemd/system/cloudrouter.service`、服务启动策略、权限和运维命令。部署自动化应读取这些字段，而不是解析 `INSTALL.md`。
 
 不要把 `.env.release` 打包或提交。归档部署可以在目标机器上生成它；Linux service 部署使用 `/etc/sdkwork/router/cloudrouter.env` 保存受保护的进程覆盖项，并使用 `/etc/sdkwork/router/cloudrouter.toml` 作为主要运行时配置。`PORTAL_PUBLIC_*` 只能放浏览器可见配置，不要放数据库密码、供应商密钥或管理员凭据。
 
@@ -556,7 +556,7 @@ docker run --rm -p 3900:3900 \
 2. 备份数据库和运行时配置。
 3. 停止旧版本服务。
 4. 安装或解压新 release 包。
-5. 保留目标机器上的 `/etc/sdkwork/router/cloudrouter.env`、`/etc/sdkwork/router/database.secret`、归档部署可能使用的 `.env.release` 和运行时 TOML。
+5. 保留目标机器上的 `/etc/sdkwork/router/cloudrouter.env`、`/etc/sdkwork/database/database.secret`、归档部署可能使用的 `.env.release` 和运行时 TOML。
 6. Linux service 包直接启动服务，让 systemd 自动执行 `ensure` 和 `refresh-catalog --force`。
 7. archive/manual 部署手动执行 `cloudrouterctl ensure` 和 `cloudrouterctl refresh-catalog --force`。
 8. 启动新版本并检查 `/healthz` 和 `/readyz`。
@@ -570,4 +570,4 @@ docker run --rm -p 3900:3900 \
 - `catalog_error`：模型目录路径、版本或内容校验失败。
 - `commerce_error`：Commerce bootstrap schema 或种子数据初始化失败。
 - `/healthz` 成功但 `/readyz` 失败：edge 进程已启动，但 gateway/admin/app/portal upstream 或数据库未就绪。
-- Linux 服务启动后立即退出：检查 `/etc/sdkwork/router/cloudrouter.toml`、`/etc/sdkwork/router/database.secret`、`/etc/sdkwork/router/cloudrouter.env` 和 `journalctl -u cloudrouter`。
+- Linux 服务启动后立即退出：检查 `/etc/sdkwork/router/cloudrouter.toml`、`/etc/sdkwork/database/database.secret`、`/etc/sdkwork/router/cloudrouter.env` 和 `journalctl -u cloudrouter`。

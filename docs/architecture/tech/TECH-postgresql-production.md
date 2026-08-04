@@ -10,12 +10,12 @@ The native Linux service package creates the standard paths:
 ```text
 /etc/sdkwork/router/cloudrouter.toml
 /etc/sdkwork/router/cloudrouter.env
-/etc/sdkwork/router/database.secret
+/etc/sdkwork/database/database.secret
 /var/lib/sdkwork/router
 /var/log/sdkwork/router
 ```
 
-The service reads `/etc/sdkwork/router/cloudrouter.toml` and `/etc/sdkwork/router/cloudrouter.env`. PostgreSQL credentials should be kept in `/etc/sdkwork/router/database.secret` with restricted permissions.
+The service reads `/etc/sdkwork/router/cloudrouter.toml` and `/etc/sdkwork/router/cloudrouter.env`. PostgreSQL credentials should be kept in `/etc/sdkwork/database/database.secret` with restricted permissions.
 
 ## 2. PostgreSQL Database And User
 
@@ -31,11 +31,11 @@ For managed PostgreSQL, create the equivalent user, database, and network allowl
 
 ## 3. Password File
 
-Write the real password to `/etc/sdkwork/router/database.secret`:
+Write the real password to `/etc/sdkwork/database/database.secret`:
 
 ```bash
-sudo install -o root -g sdkwork -m 0640 /dev/null /etc/sdkwork/router/database.secret
-sudo editor /etc/sdkwork/router/database.secret
+sudo install -o root -g sdkwork -m 0640 /dev/null /etc/sdkwork/database/database.secret
+sudo editor /etc/sdkwork/database/database.secret
 ```
 
 The file must contain only the database password. Replace the package placeholder value `change-me` before starting the service.
@@ -51,7 +51,7 @@ host = "db.example.com"
 port = 5432
 database = "sdkwork_ai_prod"
 username = "sdkwork_ai_prod"
-password_file = "/etc/sdkwork/router/database.secret"
+password_file = "/etc/sdkwork/database/database.secret"
 ssl_mode = "require"
 max_connections = 16
 ```
@@ -85,7 +85,7 @@ curl http://127.0.0.1:3900/readyz
 Manually verify database connectivity when needed:
 
 ```bash
-PGPASSWORD="$(sudo cat /etc/sdkwork/router/database.secret)" \
+PGPASSWORD="$(sudo cat /etc/sdkwork/database/database.secret)" \
   psql -h db.example.com -p 5432 -U sdkwork_ai_prod -d sdkwork_ai_prod -c "select 1;"
 ```
 
@@ -97,7 +97,7 @@ Development, production, and desktop runtime data must stay separate:
 | --- | --- | --- | --- |
 | Database default | PostgreSQL through `.env.postgres.example` or `.env.postgres` | PostgreSQL through protected TOML and secret files | SQLite |
 | Config entrypoint | default dev profile or `.env.postgres` override | `/etc/sdkwork/router/cloudrouter.toml` | `~/.sdkwork/router/config/cloudrouter.toml` |
-| Password storage | local untracked `.env.postgres` | `/etc/sdkwork/router/database.secret` | no PostgreSQL password by default |
+| Password storage | local untracked `.env.postgres` | `/etc/sdkwork/database/database.secret` | no PostgreSQL password by default |
 | Startup command | `pnpm dev:server` | native service, container, or packaged runtime | desktop package or explicit SQLite dev command |
 | Data file | external local PostgreSQL | external managed PostgreSQL | `~/.sdkwork/router/data/cloudrouter.sqlite` |
 | SSL mode | usually `disable` | usually `require` | not applicable by default |

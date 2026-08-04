@@ -72,7 +72,7 @@ impl DatabaseConfig {
     pub const SERVER_DEFAULT_POSTGRES_USERNAME: &'static str = "sdkwork_ai_prod";
     pub const SERVER_DEFAULT_POSTGRES_PASSWORD: &'static str = "change-me";
     pub const SERVER_DEFAULT_POSTGRES_PASSWORD_FILE: &'static str =
-        "/etc/sdkwork/router/database.secret";
+        "/etc/sdkwork/database/database.secret";
     pub const SERVER_DEFAULT_POSTGRES_SSL_MODE: &'static str = "require";
 
     pub fn from_url(url: impl Into<String>) -> Result<Self, String> {
@@ -790,7 +790,7 @@ const KNOWN_PLACEHOLDER_POSTGRES_PASSWORDS: &[&str] = &[
     "<CHANGE-ME>",
     "sdkworkdev123",
     "postgres_admin_pass",
-    "sdkwork_cloudrouter_test_password",
+    "sdkwork_ai_test_password",
 ];
 
 fn is_workspace_development_postgres_url(parsed: &url::Url) -> bool {

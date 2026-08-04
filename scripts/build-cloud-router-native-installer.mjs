@@ -34,6 +34,8 @@ import {
   DEFAULT_VERSION,
   PACKAGE_NAME,
   LINUX_SERVICE_CONFIG_ROOT,
+  LINUX_SERVICE_DATABASE_SECRET_FILE,
+  LINUX_SERVICE_DATABASE_SECRET_ROOT,
   LINUX_SERVICE_DATA_ROOT,
   LINUX_SERVICE_LOG_ROOT,
   LINUX_SERVICE_RUNTIME_ROOT,
@@ -386,7 +388,7 @@ function createLinuxNativeInstallLayout(packageItem) {
 
   if (isService) {
     files.serviceEnvironment = `${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.env`;
-    files.passwordFile = `${LINUX_SERVICE_CONFIG_ROOT}/database.secret`;
+    files.passwordFile = LINUX_SERVICE_DATABASE_SECRET_FILE;
     files.redisPasswordFile = `${LINUX_SERVICE_CONFIG_ROOT}/redis.secret`;
     files.systemdUnit = '/lib/systemd/system/cloudrouter.service';
   }
@@ -415,7 +417,8 @@ function createLinuxNativeInstallLayout(packageItem) {
         { path: `${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml.example`, owner: 'root', group: 'sdkwork', mode: '0640' },
         { path: `${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example`, owner: 'root', group: 'sdkwork', mode: '0640' },
         { path: `${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.env`, owner: 'root', group: 'sdkwork', mode: '0640' },
-        { path: `${LINUX_SERVICE_CONFIG_ROOT}/database.secret`, owner: 'root', group: 'sdkwork', mode: '0640' },
+        { path: LINUX_SERVICE_DATABASE_SECRET_ROOT, owner: 'root', group: 'sdkwork', mode: '0750' },
+        { path: LINUX_SERVICE_DATABASE_SECRET_FILE, owner: 'root', group: 'sdkwork', mode: '0640' },
         { path: `${LINUX_SERVICE_CONFIG_ROOT}/redis.secret`, owner: 'root', group: 'sdkwork', mode: '0640' },
         { path: LINUX_SERVICE_DATA_ROOT, owner: 'sdkwork', group: 'sdkwork', mode: '0750' },
         { path: LINUX_SERVICE_LOG_ROOT, owner: 'sdkwork', group: 'sdkwork', mode: '0750' },
@@ -431,7 +434,7 @@ function createLinuxNativeInstallLayout(packageItem) {
       ? {
         configure: [
           `sudo editor ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml`,
-          `sudo editor ${LINUX_SERVICE_CONFIG_ROOT}/database.secret`,
+          `sudo editor ${LINUX_SERVICE_DATABASE_SECRET_FILE}`,
         ],
         start: 'sudo systemctl start cloudrouter',
         status: 'sudo systemctl status cloudrouter --no-pager',
@@ -663,11 +666,11 @@ function createDebianPostinst(plan) {
     'if ! id -u sdkwork >/dev/null 2>&1; then',
     `  useradd --system --gid sdkwork --home-dir ${LINUX_SERVICE_DATA_ROOT} --shell /usr/sbin/nologin sdkwork`,
     'fi',
-    `mkdir -p ${LINUX_SERVICE_CONFIG_ROOT} ${LINUX_SERVICE_DATA_ROOT} ${LINUX_SERVICE_LOG_ROOT}`,
+    `mkdir -p ${LINUX_SERVICE_CONFIG_ROOT} ${LINUX_SERVICE_DATABASE_SECRET_ROOT} ${LINUX_SERVICE_DATA_ROOT} ${LINUX_SERVICE_LOG_ROOT}`,
     `chown root:root ${LINUX_NATIVE_INSTALL_ROOT} ${LINUX_NATIVE_INSTALL_ROOT}/bin ${LINUX_NATIVE_BIN_DIR}/${plan.package.binaryName} ${LINUX_NATIVE_BIN_DIR}/${plan.package.installerBinaryName}`,
     `chmod 0755 ${LINUX_NATIVE_INSTALL_ROOT} ${LINUX_NATIVE_INSTALL_ROOT}/bin ${LINUX_NATIVE_BIN_DIR}/${plan.package.binaryName} ${LINUX_NATIVE_BIN_DIR}/${plan.package.installerBinaryName}`,
-    `chown root:sdkwork ${LINUX_SERVICE_CONFIG_ROOT}`,
-    `chmod 0750 ${LINUX_SERVICE_CONFIG_ROOT}`,
+    `chown root:sdkwork ${LINUX_SERVICE_CONFIG_ROOT} ${LINUX_SERVICE_DATABASE_SECRET_ROOT}`,
+    `chmod 0750 ${LINUX_SERVICE_CONFIG_ROOT} ${LINUX_SERVICE_DATABASE_SECRET_ROOT}`,
     `if [ -f ${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example ]; then`,
     `  chown root:sdkwork ${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example || true`,
     `  chmod 0640 ${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example || true`,
@@ -699,12 +702,12 @@ function createDebianPostinst(plan) {
     `  chown root:sdkwork ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.env || true`,
     `  chmod 0640 ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.env || true`,
     'fi',
-    `if [ ! -f ${LINUX_SERVICE_CONFIG_ROOT}/database.secret ]; then`,
-    `  printf "%s\\n" "change-me" > ${LINUX_SERVICE_CONFIG_ROOT}/database.secret`,
+    `if [ ! -f ${LINUX_SERVICE_DATABASE_SECRET_FILE} ]; then`,
+    `  printf "%s\\n" "change-me" > ${LINUX_SERVICE_DATABASE_SECRET_FILE}`,
     'fi',
-    `if [ -f ${LINUX_SERVICE_CONFIG_ROOT}/database.secret ]; then`,
-    `  chown root:sdkwork ${LINUX_SERVICE_CONFIG_ROOT}/database.secret || true`,
-    `  chmod 0640 ${LINUX_SERVICE_CONFIG_ROOT}/database.secret || true`,
+    `if [ -f ${LINUX_SERVICE_DATABASE_SECRET_FILE} ]; then`,
+    `  chown root:sdkwork ${LINUX_SERVICE_DATABASE_SECRET_FILE} || true`,
+    `  chmod 0640 ${LINUX_SERVICE_DATABASE_SECRET_FILE} || true`,
     'fi',
     `if [ ! -f ${LINUX_SERVICE_CONFIG_ROOT}/redis.secret ]; then`,
     `  : > ${LINUX_SERVICE_CONFIG_ROOT}/redis.secret`,
@@ -768,14 +771,14 @@ function debianInstallSummaryLines(plan) {
     `Package: ${plan.package.id}`,
     `Runtime TOML: ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml`,
     `Service environment: ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.env`,
-    `PostgreSQL password file: ${LINUX_SERVICE_CONFIG_ROOT}/database.secret`,
+    `PostgreSQL password file: ${LINUX_SERVICE_DATABASE_SECRET_FILE}`,
     `Redis password file: ${LINUX_SERVICE_CONFIG_ROOT}/redis.secret`,
     'Systemd service: cloudrouter.service',
     'Redis is enabled and required by default for server deployments; configure [redis] before first startup.',
     '',
     'Before first start:',
     `  sudo editor ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml`,
-    `  sudo editor ${LINUX_SERVICE_CONFIG_ROOT}/database.secret`,
+    `  sudo editor ${LINUX_SERVICE_DATABASE_SECRET_FILE}`,
     '  sudo systemctl start cloudrouter',
     '  sudo systemctl status cloudrouter --no-pager',
     '  sudo journalctl -u cloudrouter -f',

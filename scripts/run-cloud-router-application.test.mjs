@@ -1311,8 +1311,8 @@ test('installation documentation covers release, source, initialization, usage, 
   assert.ok(postgresqlIndex.includes('do not start a product backend service. Packaged desktop runtime and'));
   assert.ok(postgresqlIndex.includes('desktop local data profile stores SQLite under `~/.sdkwork/router/data/cloudrouter.sqlite`'));
   assert.ok(postgresqlProduction.includes('/etc/sdkwork/router/cloudrouter.toml'));
-  assert.ok(postgresqlProduction.includes('/etc/sdkwork/router/database.secret'));
-  assert.ok(postgresqlProduction.includes('password_file = "/etc/sdkwork/router/database.secret"'));
+  assert.ok(postgresqlProduction.includes('/etc/sdkwork/database/database.secret'));
+  assert.ok(postgresqlProduction.includes('password_file = "/etc/sdkwork/database/database.secret"'));
   assert.ok(postgresqlProduction.includes('SDKWORK_DATABASE_URL'));
   assert.ok(postgresqlProduction.includes('Desktop local runtime'));
   assert.ok(postgresqlProduction.includes('~/.sdkwork/router/data/cloudrouter.sqlite'));
@@ -4341,7 +4341,7 @@ test('install package planner covers platforms, architectures, modes, fast init,
   assert.equal(linuxArchive.databasePolicy.defaultPort, 5432);
   assert.equal(linuxArchive.databasePolicy.defaultDatabase, defaultProdPostgresDatabase);
   assert.equal(linuxArchive.databasePolicy.defaultUsername, defaultProdPostgresUsername);
-  assert.equal(linuxArchive.databasePolicy.passwordFile.path, '/etc/sdkwork/router/database.secret');
+  assert.equal(linuxArchive.databasePolicy.passwordFile.path, '/etc/sdkwork/database/database.secret');
 
   const macosDesktop = plan.packages.find((item) =>
     item.platform === 'macos' && item.architecture === 'arm64' && item.deploymentMode === 'desktop'
@@ -4642,7 +4642,7 @@ test('install package builder emits service and container deployment packages fr
     assert.ok(serviceConfigTemplate.includes('host = "db.example.com"'));
     assert.ok(serviceConfigTemplate.includes(`database = "${defaultProdPostgresDatabase}"`));
     assert.ok(serviceConfigTemplate.includes(`username = "${defaultProdPostgresUsername}"`));
-    assert.ok(serviceConfigTemplate.includes('password_file = "/etc/sdkwork/router/database.secret"'));
+    assert.ok(serviceConfigTemplate.includes('password_file = "/etc/sdkwork/database/database.secret"'));
     assert.ok(serviceConfigTemplate.includes('[redis]'));
     assert.ok(serviceConfigTemplate.includes('enabled = true'));
     assert.ok(serviceConfigTemplate.includes('host = "redis.example.com"'));
@@ -4758,9 +4758,9 @@ test('install package builder emits service and container deployment packages fr
     assert.ok(serviceInstallGuide.includes('/usr/bin/cloudrouterctl ensure'));
     assert.ok(serviceInstallGuide.includes('/etc/sdkwork/router/cloudrouter.toml'));
     assert.ok(serviceInstallGuide.includes('Configuration Files'));
-    assert.ok(serviceInstallGuide.includes('PostgreSQL password file: /etc/sdkwork/router/database.secret'));
+    assert.ok(serviceInstallGuide.includes('PostgreSQL password file: /etc/sdkwork/database/database.secret'));
     assert.ok(serviceInstallGuide.includes('First Start'));
-    assert.ok(serviceInstallGuide.includes('sudo editor /etc/sdkwork/router/database.secret'));
+    assert.ok(serviceInstallGuide.includes('sudo editor /etc/sdkwork/database/database.secret'));
     assert.ok(serviceInstallGuide.includes('sudo systemctl start cloudrouter'));
     assert.ok(serviceInstallGuide.includes('sudo journalctl -u cloudrouter -f'));
     assert.ok(!serviceInstallGuide.includes('.env.release must be packaged'));
@@ -5107,7 +5107,7 @@ test('native installer builder emits apt-installable Debian packages for Linux s
     assert.equal(result.manifest.nativeInstall.files.runtimeConfig, '/etc/sdkwork/router/cloudrouter.toml');
     assert.equal(result.manifest.nativeInstall.files.runtimeConfigTemplate, '/etc/sdkwork/router/cloudrouter.toml.example');
     assert.equal(result.manifest.nativeInstall.files.serviceEnvironment, '/etc/sdkwork/router/cloudrouter.env');
-    assert.equal(result.manifest.nativeInstall.files.passwordFile, '/etc/sdkwork/router/database.secret');
+    assert.equal(result.manifest.nativeInstall.files.passwordFile, '/etc/sdkwork/database/database.secret');
     assert.equal(result.manifest.nativeInstall.files.redisPasswordFile, '/etc/sdkwork/router/redis.secret');
     assert.equal(result.manifest.nativeInstall.files.installManifest, '/usr/share/sdkwork/router/install-manifest.json');
     assert.equal(result.manifest.nativeInstall.files.releaseEnvTemplate, '/etc/sdkwork/router/.env.release.example');
@@ -5152,7 +5152,7 @@ test('native installer builder emits apt-installable Debian packages for Linux s
       && item.mode === '0640'
     ));
     assert.ok(result.manifest.nativeInstall.permissions.some((item) =>
-      item.path === '/etc/sdkwork/router/database.secret'
+      item.path === '/etc/sdkwork/database/database.secret'
       && item.owner === 'root'
       && item.group === 'sdkwork'
       && item.mode === '0640'
@@ -5178,7 +5178,7 @@ test('native installer builder emits apt-installable Debian packages for Linux s
     assert.ok(controlText.includes('Architecture: amd64'));
     const postinstText = readTarEntryText(controlTar, './postinst');
     assert.ok(postinstText.includes('/etc/sdkwork/router/cloudrouter.env'));
-    assert.ok(postinstText.includes('/etc/sdkwork/router/database.secret'));
+    assert.ok(postinstText.includes('/etc/sdkwork/database/database.secret'));
     assert.ok(postinstText.includes('/etc/sdkwork/router/redis.secret'));
     assert.ok(postinstText.includes('chown root:root /usr/lib/sdkwork/router /usr/lib/sdkwork/router/bin /usr/bin/cloudrouter /usr/bin/cloudrouterctl'));
     assert.ok(postinstText.includes('chmod 0755 /usr/lib/sdkwork/router /usr/lib/sdkwork/router/bin /usr/bin/cloudrouter /usr/bin/cloudrouterctl'));
@@ -5192,11 +5192,11 @@ test('native installer builder emits apt-installable Debian packages for Linux s
     assert.ok(postinstText.includes('CloudRouter installation summary'));
     assert.ok(postinstText.includes('Runtime TOML: /etc/sdkwork/router/cloudrouter.toml'));
     assert.ok(postinstText.includes('Service environment: /etc/sdkwork/router/cloudrouter.env'));
-    assert.ok(postinstText.includes('PostgreSQL password file: /etc/sdkwork/router/database.secret'));
+    assert.ok(postinstText.includes('PostgreSQL password file: /etc/sdkwork/database/database.secret'));
     assert.ok(postinstText.includes('Redis password file: /etc/sdkwork/router/redis.secret'));
     assert.ok(postinstText.includes('Redis is enabled and required by default for server deployments; configure [redis] before first startup.'));
     assert.ok(postinstText.includes('sudo editor /etc/sdkwork/router/cloudrouter.toml'));
-    assert.ok(postinstText.includes('sudo editor /etc/sdkwork/router/database.secret'));
+    assert.ok(postinstText.includes('sudo editor /etc/sdkwork/database/database.secret'));
     assert.ok(postinstText.includes('sudo systemctl start cloudrouter'));
     assert.ok(postinstText.includes('systemctl daemon-reload'));
     assert.ok(postinstText.includes('systemctl enable cloudrouter.service'));
@@ -5346,7 +5346,7 @@ test('native installer builder keeps Linux desktop packages user-scoped and self
     assert.ok(postinstText.includes('Desktop config file: ~/.sdkwork/router/config/cloudrouter.toml'));
     assert.ok(postinstText.includes('Database: SQLite'));
     assert.ok(postinstText.includes('chmod 0755 /usr/lib/sdkwork/router /usr/lib/sdkwork/router/bin /usr/bin/cloudrouter /usr/bin/cloudrouterctl'));
-    assert.ok(!postinstText.includes('/etc/sdkwork/router/database.secret'));
+    assert.ok(!postinstText.includes('/etc/sdkwork/database/database.secret'));
     assert.ok(!postinstText.includes('SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE=server'));
     assert.ok(!postinstText.includes('systemctl enable cloudrouter.service'));
 
@@ -6470,7 +6470,7 @@ test('postgres integration runner can plan an ephemeral Docker database', async 
   ]);
   assert.equal(
     plan.steps[2].env.SDKWORK_DATABASE_URL,
-    'postgres://sdkwork_cloudrouter_test:sdkwork_cloudrouter_test_password@127.0.0.1:15439/sdkwork_cloudrouter_test',
+    'postgres://sdkwork_ai_test:sdkwork_ai_test_password@127.0.0.1:15439/sdkwork_ai_test',
   );
   assert.deepEqual(plan.steps[3].args.slice(-2), ['--volumes', '--remove-orphans']);
 });
@@ -7586,7 +7586,7 @@ test('global and application environment contracts document Cloud Router runtime
   assert.ok(environmentSpec.includes('SDKWORK_DATABASE_SSL_MODE=disable'));
   assert.ok(environmentSpec.includes('SDKWORK_DATABASE_ADMIN_SSL_MODE=disable'));
   assert.ok(environmentSpec.includes('`DATABASE_PROVIDER` and `DATABASE_SSLMODE` are not standard names'));
-  assert.ok(environmentSpec.includes('password_file = "/etc/sdkwork/router/database.secret"'));
+  assert.ok(environmentSpec.includes('password_file = "/etc/sdkwork/database/database.secret"'));
   assert.ok(environmentSpec.includes('[redis]'));
   assert.ok(environmentSpec.includes('enabled = true'));
   assert.ok(environmentSpec.includes('host = "redis.example.com"'));

@@ -86,7 +86,7 @@ Ubuntu/Debian service 包：
 ```bash
 sudo apt install ./cloudrouter-linux-x64-server-0.3.0.deb
 sudo editor /etc/sdkwork/router/cloudrouter.toml
-sudo editor /etc/sdkwork/router/database.secret
+sudo editor /etc/sdkwork/database/database.secret
 sudo systemctl start cloudrouter
 curl http://127.0.0.1:3900/healthz
 curl http://127.0.0.1:3900/readyz
@@ -106,7 +106,7 @@ sudo systemctl reload nginx
 `http://127.0.0.1:3900`。通用模板使用 `etc/nginx/NGINX_SAMPLE.conf`，
 完整域名示例放在 `etc/nginx/sdkwork/`。
 
-Debian service 包会创建 `/etc/sdkwork/router/cloudrouter.toml`、`/etc/sdkwork/router/cloudrouter.env`、`/etc/sdkwork/router/database.secret`、`/etc/sdkwork/router/redis.secret`、数据目录和日志目录，在 systemd 主机上启用但不会立即启动 `cloudrouter.service`。请先配置 PostgreSQL 和 Redis，再启动服务。systemd unit 会在 gateway 启动前自动执行初始化和 catalog 刷新，并使用文件系统、内核、control group、系统调用架构和打开文件数等 systemd 限制。安装后输出会直接打印运行时 TOML、服务环境文件、PostgreSQL 密码文件、Redis 密码文件、systemd 服务名和首次启动命令。安装清单还包含 `nativeInstall` 布局，方便部署自动化和售后诊断读取最终路径。Redis 已纳入 `cloudrouter.toml` 标准配置，server 部署默认启用并要求配置；desktop 包仍保持 Redis 可选且默认关闭。
+Debian service 包会创建 `/etc/sdkwork/router/cloudrouter.toml`、`/etc/sdkwork/router/cloudrouter.env`、`/etc/sdkwork/database/database.secret`、`/etc/sdkwork/router/redis.secret`、数据目录和日志目录，在 systemd 主机上启用但不会立即启动 `cloudrouter.service`。请先配置 PostgreSQL 和 Redis，再启动服务。systemd unit 会在 gateway 启动前自动执行初始化和 catalog 刷新，并使用文件系统、内核、control group、系统调用架构和打开文件数等 systemd 限制。安装后输出会直接打印运行时 TOML、服务环境文件、PostgreSQL 密码文件、Redis 密码文件、systemd 服务名和首次启动命令。安装清单还包含 `nativeInstall` 布局，方便部署自动化和售后诊断读取最终路径。Redis 已纳入 `cloudrouter.toml` 标准配置，server 部署默认启用并要求配置；desktop 包仍保持 Redis 可选且默认关闭。
 
 Linux 原生 desktop 包：
 

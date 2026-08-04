@@ -86,7 +86,7 @@ Quick Ubuntu/Debian service install from a release asset:
 ```bash
 sudo apt install ./cloudrouter-linux-x64-server-0.3.0.deb
 sudo editor /etc/sdkwork/router/cloudrouter.toml
-sudo editor /etc/sdkwork/router/database.secret
+sudo editor /etc/sdkwork/database/database.secret
 sudo systemctl start cloudrouter
 curl http://127.0.0.1:3900/healthz
 curl http://127.0.0.1:3900/readyz
@@ -110,7 +110,7 @@ examples. See the release install guide for certificate path conventions under
 `/opt/certs/letsencrypt/live/<cert-name>`.
 
 The `.deb` package creates `/etc/sdkwork/router/cloudrouter.toml`,
-`/etc/sdkwork/router/cloudrouter.env`, `/etc/sdkwork/router/database.secret`,
+`/etc/sdkwork/router/cloudrouter.env`, `/etc/sdkwork/database/database.secret`,
 `/var/lib/sdkwork/router`, and the
 `sdkwork` system user. The Linux systemd service runs `cloudrouterctl
 ensure` and `refresh-catalog --force` automatically before the gateway starts,
@@ -122,7 +122,7 @@ The package post-install step prints the runtime TOML, service environment,
 PostgreSQL password file, systemd service name, and the exact first-start
 commands so the operator can configure the service without hunting through
 package contents.
-The generated `/etc/sdkwork/router/database.secret` contains the placeholder
+The generated `/etc/sdkwork/database/database.secret` contains the placeholder
 `change-me`; replace it with the real PostgreSQL password before starting the
 service. Startup rejects default placeholder hosts or passwords.
 
@@ -832,7 +832,7 @@ host = "db.example.com"
 port = 5432
 database = "sdkwork_ai_prod"
 username = "sdkwork_ai_prod"
-password_file = "/etc/sdkwork/router/database.secret"
+password_file = "/etc/sdkwork/database/database.secret"
 # password = "change-me"
 ssl_mode = "require"
 max_connections = 16
@@ -1154,7 +1154,7 @@ control-group protections, native syscall architecture filtering, and
 `/usr/lib/sdkwork/router` and `/etc/sdkwork/router` stay read-only to the service
 process after installation.
 Operators configure PostgreSQL through
-`/etc/sdkwork/router/cloudrouter.toml`, `/etc/sdkwork/router/database.secret`, or a
+`/etc/sdkwork/router/cloudrouter.toml`, `/etc/sdkwork/database/database.secret`, or a
 protected override in `/etc/sdkwork/router/cloudrouter.env`, then start the service.
 Windows `.msi` packages keep binaries under `%ProgramFiles%/sdkwork/router` and
 shared templates under `%ProgramData%/sdkwork/router`; native manifests

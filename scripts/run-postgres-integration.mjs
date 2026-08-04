@@ -95,7 +95,7 @@ function postgresDockerTestPort(env = process.env) {
 }
 
 function postgresDockerDatabaseUrl(env = process.env) {
-  return `postgres://sdkwork_cloudrouter_test:sdkwork_cloudrouter_test_password@127.0.0.1:${postgresDockerTestPort(env)}/sdkwork_cloudrouter_test`;
+  return `postgres://sdkwork_ai_test:sdkwork_ai_test_password@127.0.0.1:${postgresDockerTestPort(env)}/sdkwork_ai_test`;
 }
 
 function hasPostgresDatabaseUrl(env = process.env) {

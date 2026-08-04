@@ -12,6 +12,7 @@ import {
   DEFAULT_VERSION,
   INTERNAL_PROJECT_NAME,
   LINUX_SERVICE_CONFIG_ROOT,
+  LINUX_SERVICE_DATABASE_SECRET_FILE,
   LINUX_SERVICE_DATA_ROOT,
   LINUX_SERVICE_LOG_ROOT,
   LINUX_SERVICE_RUNTIME_ROOT,
@@ -766,7 +767,7 @@ function installConfigurationCommands(packageItem) {
   if (packageItem.platform === 'linux' && packageItem.deploymentMode === 'service') {
     return {
       editConfig: `sudo editor ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml`,
-      editDatabasePassword: `sudo editor ${LINUX_SERVICE_CONFIG_ROOT}/database.secret`,
+      editDatabasePassword: `sudo editor ${LINUX_SERVICE_DATABASE_SECRET_FILE}`,
       start: 'sudo systemctl start cloudrouter',
       status: 'sudo systemctl status cloudrouter --no-pager',
       logs: 'sudo journalctl -u cloudrouter -f',
