@@ -103,6 +103,9 @@ async fn secret_ref_chat_stream_relay_resolves_endpoint_and_secret_from_request_
     );
     let mut expected_body = request_body;
     expected_body["model"] = json!("gpt-4o-mini");
+    // 流式中继契约：上游请求必须携带 stream_options.include_usage=true，
+    // 保证按量计费所需的 usage 统计数据随流返回。
+    expected_body["stream_options"] = json!({"include_usage": true});
     assert_eq!(expected_body, captured[0].body);
 }
 

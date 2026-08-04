@@ -9,7 +9,7 @@ use sdkwork_clawrouter_router_service::infrastructure::provider::{
     OpenAiCompatibleResponsesRelay, UpstreamProviderEndpoint,
 };
 use sdkwork_clawrouter_router_service::ports::{
-    ResponsesRelay, ResponsesRelayRequest, ResponsesRelayResponse,
+    ResponsesRelay, ResponsesRelayRequest,
 };
 use serde_json::json;
 
@@ -67,23 +67,25 @@ async fn openai_compatible_responses_relay_uses_provider_model_and_upstream_secr
         .await
         .unwrap();
 
+    assert_eq!(200, response.status_code);
     assert_eq!(
-        ResponsesRelayResponse::json(
-            200,
-            json!({
-                "id": "resp-upstream",
-                "object": "response",
-                "model": "gpt-4.1-mini",
-                "output": [
-                    {
-                        "type": "message",
-                        "role": "assistant",
-                        "content": [{"type": "output_text", "text": "pong"}]
-                    }
-                ]
-            }),
-        ),
-        response
+        json!({
+            "id": "resp-upstream",
+            "object": "response",
+            "model": "gpt-4.1-mini",
+            "output": [
+                {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [{"type": "output_text", "text": "pong"}]
+                }
+            ]
+        }),
+        response.body
+    );
+    assert!(
+        response.memory_guard.is_some(),
+        "relay response must carry the provider response memory guard"
     );
 
     let captured = captured.lock().unwrap();

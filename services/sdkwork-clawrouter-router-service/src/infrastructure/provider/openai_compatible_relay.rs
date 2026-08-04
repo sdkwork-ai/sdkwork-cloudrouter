@@ -583,6 +583,30 @@ impl OpenAiCompatibleChatCompletionRelay {
             ),
         }
     }
+    /// Build a relay with an explicitly isolated provider response memory
+    /// budget instead of the process-wide default reservation pool. Callers
+    /// that must not contend with other relay instances (per-tenant hosts,
+    /// concurrent test binaries) provide their own budget here.
+    pub fn with_isolated_response_memory_budget(
+        endpoint: UpstreamProviderEndpoint,
+        response_timeout: Duration,
+        response_max_bytes: u64,
+        response_memory_budget: ProviderResponseMemoryBudget,
+    ) -> Self {
+        let target_policy = endpoint.target_policy;
+        Self {
+            endpoint,
+            runtime: ProviderRelayRuntime::with_default_retry_policy_and_memory_budget(
+                response_timeout,
+                DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT,
+                response_max_bytes,
+                ProviderRetryPolicy::default(),
+                ProviderRelayHttpPoolConfig::default(),
+                target_policy,
+                response_memory_budget,
+            ),
+        }
+    }
 }
 
 #[derive(Clone)]

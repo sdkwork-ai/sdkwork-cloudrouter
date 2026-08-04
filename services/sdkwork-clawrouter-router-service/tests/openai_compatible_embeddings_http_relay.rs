@@ -9,7 +9,7 @@ use sdkwork_clawrouter_router_service::infrastructure::provider::{
     OpenAiCompatibleEmbeddingsRelay, UpstreamProviderEndpoint,
 };
 use sdkwork_clawrouter_router_service::ports::{
-    EmbeddingsRelay, EmbeddingsRelayRequest, EmbeddingsRelayResponse,
+    EmbeddingsRelay, EmbeddingsRelayRequest,
 };
 use serde_json::json;
 
@@ -67,19 +67,21 @@ async fn openai_compatible_embeddings_relay_uses_provider_model_and_upstream_sec
         .await
         .unwrap();
 
+    assert_eq!(200, response.status_code);
     assert_eq!(
-        EmbeddingsRelayResponse::json(
-            200,
-            json!({
-                "object": "list",
-                "model": "text-embedding-3-small",
-                "data": [
-                    {"object": "embedding", "index": 0, "embedding": [0.1, 0.2, 0.3]}
-                ],
-                "usage": {"prompt_tokens": 1, "total_tokens": 1}
-            }),
-        ),
-        response
+        json!({
+            "object": "list",
+            "model": "text-embedding-3-small",
+            "data": [
+                {"object": "embedding", "index": 0, "embedding": [0.1, 0.2, 0.3]}
+            ],
+            "usage": {"prompt_tokens": 1, "total_tokens": 1}
+        }),
+        response.body
+    );
+    assert!(
+        response.memory_guard.is_some(),
+        "relay response must carry the provider response memory guard"
     );
 
     let captured = captured.lock().unwrap();

@@ -9,15 +9,37 @@ use sdkwork_clawrouter_router_service::domain::{
     ProviderAuthHeader, ProviderAuthProfile, ProviderRetryPolicy,
 };
 use sdkwork_clawrouter_router_service::infrastructure::provider::{
-    OpenAiCompatibleChatCompletionRelay, UpstreamProviderEndpoint,
+    OpenAiCompatibleChatCompletionRelay, ProviderResponseMemoryBudget, UpstreamProviderEndpoint,
 };
 use sdkwork_clawrouter_router_service::ports::{
-    ChatCompletionRelay, ChatCompletionRelayRequest, ChatCompletionRelayResponse,
+    ChatCompletionRelay, ChatCompletionRelayRequest,
 };
 use serde_json::json;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 const SLOW_UPSTREAM_RESPONSE_DELAY_MILLIS: u64 = 50;
+/// Builds a relay whose provider response reservations are isolated per test.
+/// Concurrent `#[tokio::test]` cases share the process-wide default budget
+/// otherwise, which saturates at two in-flight 256MiB reservations.
+fn test_relay(endpoint: UpstreamProviderEndpoint) -> OpenAiCompatibleChatCompletionRelay {
+    test_relay_with_response_timeout(endpoint, Duration::from_secs(60))
+}
+
+fn test_relay_with_response_timeout(
+    endpoint: UpstreamProviderEndpoint,
+    response_timeout: Duration,
+) -> OpenAiCompatibleChatCompletionRelay {
+    OpenAiCompatibleChatCompletionRelay::with_isolated_response_memory_budget(
+        endpoint,
+        response_timeout,
+        64 * 1024 * 1024,
+        ProviderResponseMemoryBudget::new(
+            std::num::NonZeroUsize::new(256 * 1024 * 1024).expect("nonzero test budget"),
+        )
+        .expect("valid test budget"),
+    )
+}
+
 const SLOW_UPSTREAM_BODY_TIMEOUT_MILLIS: u64 = 300;
 const SLOW_UPSTREAM_BODY_DELAY_MILLIS: u64 = 450;
 
@@ -51,7 +73,7 @@ async fn openai_compatible_relay_uses_provider_model_and_upstream_secret() {
         "sk-upstream-provider-secret",
     )
     .unwrap();
-    let relay = OpenAiCompatibleChatCompletionRelay::new(endpoint);
+    let relay = test_relay(endpoint);
     let request_body = json!({
         "model": "gpt-4o-mini",
         "messages": [{"role": "user", "content": "ping"}],
@@ -85,23 +107,25 @@ async fn openai_compatible_relay_uses_provider_model_and_upstream_secret() {
         .await
         .unwrap();
 
+    assert_eq!(200, response.status_code);
     assert_eq!(
-        ChatCompletionRelayResponse::json(
-            200,
-            json!({
-                "id": "chatcmpl-upstream",
-                "object": "chat.completion",
-                "model": "gpt-4o-mini",
-                "choices": [
-                    {
-                        "index": 0,
-                        "message": {"role": "assistant", "content": "pong"},
-                        "finish_reason": "stop"
-                    }
-                ]
-            }),
-        ),
-        response
+        json!({
+            "id": "chatcmpl-upstream",
+            "object": "chat.completion",
+            "model": "gpt-4o-mini",
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {"role": "assistant", "content": "pong"},
+                    "finish_reason": "stop"
+                }
+            ]
+        }),
+        response.body
+    );
+    assert!(
+        response.memory_guard.is_some(),
+        "relay response must carry the provider response memory guard"
     );
 
     let captured = captured.lock().unwrap();
@@ -138,7 +162,7 @@ async fn openai_compatible_relay_uses_provider_account_header_auth_profile() {
     )
     .unwrap()
     .with_auth_profile(auth_profile.clone());
-    let relay = OpenAiCompatibleChatCompletionRelay::new(endpoint);
+    let relay = test_relay(endpoint);
     let response = relay
         .create_chat_completion(ChatCompletionRelayRequest {
             api_key_id: 101,
@@ -196,7 +220,7 @@ async fn openai_compatible_relay_does_not_duplicate_openai_v1_base_path() {
         "sk-upstream-provider-secret",
     )
     .unwrap();
-    let relay = OpenAiCompatibleChatCompletionRelay::new(endpoint);
+    let relay = test_relay(endpoint);
     let response = relay
         .create_chat_completion(ChatCompletionRelayRequest {
             api_key_id: 101,
@@ -251,10 +275,7 @@ async fn openai_compatible_relay_times_out_slow_upstream_responses_without_leaki
         "sk-upstream-provider-secret",
     )
     .unwrap();
-    let relay = OpenAiCompatibleChatCompletionRelay::with_response_timeout(
-        endpoint,
-        Duration::from_millis(20),
-    );
+    let relay = test_relay_with_response_timeout(endpoint, Duration::from_millis(20));
     let error = relay
         .create_chat_completion(ChatCompletionRelayRequest {
             api_key_id: 101,
@@ -306,7 +327,7 @@ async fn openai_compatible_relay_retries_retryable_upstream_status_once_without_
         "sk-upstream-provider-secret",
     )
     .unwrap();
-    let relay = OpenAiCompatibleChatCompletionRelay::new(endpoint);
+    let relay = test_relay(endpoint);
     let response = relay
         .create_chat_completion(ChatCompletionRelayRequest {
             api_key_id: 101,
@@ -375,7 +396,7 @@ async fn openai_compatible_relay_uses_request_retry_policy_for_non_stream_json_a
         "sk-upstream-provider-secret",
     )
     .unwrap();
-    let relay = OpenAiCompatibleChatCompletionRelay::new(endpoint);
+    let relay = test_relay(endpoint);
     let response = relay
         .create_chat_completion(ChatCompletionRelayRequest {
             api_key_id: 101,
@@ -431,7 +452,7 @@ async fn openai_compatible_relay_uses_configured_retryable_statuses_without_defa
         "sk-upstream-provider-secret",
     )
     .unwrap();
-    let relay = OpenAiCompatibleChatCompletionRelay::new(endpoint);
+    let relay = test_relay(endpoint);
     let response = relay
         .create_chat_completion(ChatCompletionRelayRequest {
             api_key_id: 101,
@@ -490,7 +511,7 @@ async fn openai_compatible_relay_does_not_retry_non_retryable_upstream_status() 
         "sk-upstream-provider-secret",
     )
     .unwrap();
-    let relay = OpenAiCompatibleChatCompletionRelay::new(endpoint);
+    let relay = test_relay(endpoint);
     let response = relay
         .create_chat_completion(ChatCompletionRelayRequest {
             api_key_id: 101,
@@ -549,10 +570,7 @@ async fn openai_compatible_relay_uses_request_provider_timeout_over_runtime_defa
         "sk-upstream-provider-secret",
     )
     .unwrap();
-    let relay = OpenAiCompatibleChatCompletionRelay::with_response_timeout(
-        endpoint,
-        Duration::from_secs(5),
-    );
+    let relay = test_relay_with_response_timeout(endpoint, Duration::from_secs(5));
     let error = relay
         .create_chat_completion(ChatCompletionRelayRequest {
             api_key_id: 101,
@@ -616,7 +634,7 @@ async fn openai_compatible_relay_times_out_slow_upstream_bodies_without_leaking_
         "sk-upstream-provider-secret",
     )
     .unwrap();
-    let relay = OpenAiCompatibleChatCompletionRelay::with_response_timeout(
+    let relay = test_relay_with_response_timeout(
         endpoint,
         Duration::from_millis(SLOW_UPSTREAM_BODY_TIMEOUT_MILLIS),
     );

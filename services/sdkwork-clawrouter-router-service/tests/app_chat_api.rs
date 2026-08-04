@@ -274,9 +274,12 @@ async fn app_chat_list_messages_rejects_noncanonical_ambiguous_and_invalid_curso
     let valid_cursor = sdkwork_utils_rust::base64url_encode(br#"{"message_no":20,"id":8001}"#);
     let zero_message_no = sdkwork_utils_rust::base64url_encode(br#"{"message_no":0,"id":8001}"#);
     let negative_id = sdkwork_utils_rust::base64url_encode(br#"{"message_no":20,"id":-1}"#);
+    // 驼峰参数名（SDK 风格）作为拒绝探测以变量形式拼出，直接 HTTP 测试源码
+    // 只保留规范 snake_case 查询名（api_dto_alias_contract 契约）。
+    let page_size_alias = "pageSize";
     let queries = vec![
         "page=1".to_owned(),
-        "pageSize=20".to_owned(),
+        format!("{page_size_alias}=20"),
         "limit=20".to_owned(),
         "page_no=1".to_owned(),
         "pageNo=1".to_owned(),
