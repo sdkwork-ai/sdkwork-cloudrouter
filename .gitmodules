@@ -1,0 +1,6 @@
+[submodule "external/sub2api"]
+	path = external/sub2api
+	url = https://github.com/Wei-Shaw/sub2api.git
+[submodule "external/cc-switch"]
+	path = external/cc-switch
+	url = https://github.com/farion1231/cc-switch.git

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle2, ChevronRight, ChevronDown, Zap, Search, Cpu, Info, User } from 'lucide-react';
 import { AdminTableShell, BusinessStateTableRow } from '@sdkwork/clawroutes-pc-commons';
+import { formatMoney } from '@sdkwork/clawroutes-pc-commons/sdkwork-utils';
 import {
   formatDecimalAmount,
   formatUserAgentDeviceLabel,
@@ -9,8 +10,20 @@ import {
 import { RecordService, LogRecord } from './recordService';
 
 import { useTranslation } from 'react-i18next';
+
+const RECORD_COST_DECIMAL_DIGITS = 6;
+
 export function RecordAdmin() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const displayLocale = i18n.resolvedLanguage ?? i18n.language ?? 'en-US';
+  const formatCostAmount = (value: string) =>
+    formatMoney(value, {
+      currency: 'USD',
+      locale: displayLocale,
+      mode: 'decimal',
+      minFractionDigits: RECORD_COST_DECIMAL_DIGITS,
+      maxFractionDigits: RECORD_COST_DECIMAL_DIGITS,
+    }) ?? formatDecimalAmount(value, RECORD_COST_DECIMAL_DIGITS);
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const [logs, setLogs] = useState<LogRecord[]>([]);
   const [total, setTotal] = useState(0);
@@ -79,7 +92,7 @@ export function RecordAdmin() {
         <div className="flex items-center gap-3 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-white/10 rounded-lg p-1.5 shadow-sm text-sm shrink-0">
           <div className="px-3 py-1 flex items-center gap-1.5 border-r border-slate-200 dark:border-white/10">
             <span className="text-slate-500">{t("admin.record.index.text.pdja6l", "当前页消耗:")}</span>
-            <span className="font-bold text-rose-500 flex items-center"><Zap className="w-3.5 h-3.5 mr-0.5" /> {formatDecimalAmount(pageCost, 6)}</span>
+            <span className="font-bold text-rose-500 flex items-center"><Zap className="w-3.5 h-3.5 mr-0.5" /> {formatCostAmount(pageCost)}</span>
           </div>
           <div className="px-3 py-1 flex items-center gap-1.5 border-r border-slate-200 dark:border-white/10">
             <span className="text-slate-500">{t("admin.record.index.text.14mbkqd", "当前页请求:")}</span>
@@ -323,7 +336,7 @@ export function RecordAdmin() {
                       </td>
                       <td className="px-4 py-3.5 text-right font-mono font-medium text-rose-600 dark:text-rose-500 flex items-center justify-end gap-1 min-h-[48px] align-top pt-4 justify-self-end w-full text-xs">
                         <Zap className="w-3.5 h-3.5 text-amber-500" />
-                        {formatDecimalAmount(log.cost, 6)}
+                        {formatCostAmount(log.cost)}
                       </td>
                       <td className="px-4 py-3.5 text-center align-top pt-4">
                         <span className="font-mono text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white cursor-pointer border-b border-dashed border-slate-300 dark:border-white/20">
@@ -340,13 +353,13 @@ export function RecordAdmin() {
                       </td>
                       <td className="px-4 py-2 align-top pt-3 text-[11px] leading-relaxed">
                         <div className="text-slate-500 dark:text-slate-400">
-                          {t("admin.record.index.text.1rb6v97", "分组倍率")}<span className="text-slate-800 dark:text-slate-300 font-mono">{formatDecimalAmount(log.multiplier, 6)}x</span>
+                          {t("admin.record.index.text.1rb6v97", "分组倍率")}<span className="text-slate-800 dark:text-slate-300 font-mono">{formatCostAmount(log.multiplier)}x</span>
                         </div>
                         <div className="flex items-center gap-1 whitespace-nowrap text-slate-500">
-                          {t("admin.record.index.text.1qtojr9", "输入")}<Zap className="w-3 h-3 text-rose-500/70" /> {formatDecimalAmount(log.baseInputPrice, 6)} / 1M
+                          {t("admin.record.index.text.1qtojr9", "输入")}<Zap className="w-3 h-3 text-rose-500/70" /> {formatCostAmount(log.baseInputPrice)} / 1M
                         </div>
                         <div className="flex items-center gap-1 whitespace-nowrap text-slate-500">
-                          {t("admin.record.index.text.1a1rmgf", "缓存读")}<Zap className="w-3 h-3 text-rose-500/70" /> {formatDecimalAmount(log.cacheReadPrice, 6)} / 1M
+                          {t("admin.record.index.text.1a1rmgf", "缓存读")}<Zap className="w-3 h-3 text-rose-500/70" /> {formatCostAmount(log.cacheReadPrice)} / 1M
                         </div>
                       </td>
                     </tr>
@@ -375,32 +388,32 @@ export function RecordAdmin() {
                               <div className="font-mono text-[11px] py-0.5 text-slate-500 dark:text-slate-400">{log.cacheReadTokens}</div>
 
                               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 py-1 px-3 bg-white dark:bg-white/5 rounded border border-slate-200 dark:border-white/5 w-fit shadow-sm dark:shadow-none">
-                                <span>{t("admin.record.index.text.tcl9fi", "输入价格")}<Zap className="w-3 h-3 inline-block text-rose-500 -mt-0.5" /> {formatDecimalAmount(log.baseInputPrice, 6)} / 1M tokens,</span>
-                                <span>{t("admin.record.index.text.1m2duf7", "输出价格")}<Zap className="w-3 h-3 inline-block text-rose-500 -mt-0.5" /> {formatDecimalAmount(log.baseOutputPrice, 6)} / 1M tokens,</span>
-                                <span>{t("admin.record.index.text.1llhgaw", "缓存读取价格")}<Zap className="w-3 h-3 inline-block text-rose-500 -mt-0.5" /> {formatDecimalAmount(log.cacheReadPrice, 6)} / 1M tokens,</span>
-                                <span>{t("admin.record.index.text.1rb6v97", "分组倍率")}{formatDecimalAmount(log.multiplier, 6)}x</span>
+                                <span>{t("admin.record.index.text.tcl9fi", "输入价格")}<Zap className="w-3 h-3 inline-block text-rose-500 -mt-0.5" /> {formatCostAmount(log.baseInputPrice)} / 1M tokens,</span>
+                                <span>{t("admin.record.index.text.1m2duf7", "输出价格")}<Zap className="w-3 h-3 inline-block text-rose-500 -mt-0.5" /> {formatCostAmount(log.baseOutputPrice)} / 1M tokens,</span>
+                                <span>{t("admin.record.index.text.1llhgaw", "缓存读取价格")}<Zap className="w-3 h-3 inline-block text-rose-500 -mt-0.5" /> {formatCostAmount(log.cacheReadPrice)} / 1M tokens,</span>
+                                <span>{t("admin.record.index.text.1rb6v97", "分组倍率")}{formatCostAmount(log.multiplier)}x</span>
                               </div>
 
                               <div className="mt-1 flex flex-col gap-1.5 p-3 bg-white dark:bg-[#1a1a1a] rounded-lg border border-slate-200 dark:border-white/5 font-mono text-[11px] shadow-sm dark:shadow-none">
-                                <div className="text-slate-500 dark:text-slate-400">{t("admin.record.index.text.k5zbm4", "输入价格:")}<Zap className="w-3 h-3 inline-block text-rose-500/80 -mt-0.5" /> {formatDecimalAmount(log.baseInputPrice, 6)} / 1M tokens</div>
-                                <div className="text-slate-500 dark:text-slate-400">{t("admin.record.index.text.1t3kubf", "输出价格:")}<Zap className="w-3 h-3 inline-block text-rose-500/80 -mt-0.5" /> {formatDecimalAmount(log.baseOutputPrice, 6)} / 1M tokens</div>
-                                <div className="text-slate-500 dark:text-slate-400 mb-1">{t("admin.record.index.text.1fjtnna", "缓存读取价格:")}<Zap className="w-3 h-3 inline-block text-rose-500/80 -mt-0.5" /> {formatDecimalAmount(log.cacheReadPrice, 6)} / 1M tokens</div>
+                                <div className="text-slate-500 dark:text-slate-400">{t("admin.record.index.text.k5zbm4", "输入价格:")}<Zap className="w-3 h-3 inline-block text-rose-500/80 -mt-0.5" /> {formatCostAmount(log.baseInputPrice)} / 1M tokens</div>
+                                <div className="text-slate-500 dark:text-slate-400">{t("admin.record.index.text.1t3kubf", "输出价格:")}<Zap className="w-3 h-3 inline-block text-rose-500/80 -mt-0.5" /> {formatCostAmount(log.baseOutputPrice)} / 1M tokens</div>
+                                <div className="text-slate-500 dark:text-slate-400 mb-1">{t("admin.record.index.text.1fjtnna", "缓存读取价格:")}<Zap className="w-3 h-3 inline-block text-rose-500/80 -mt-0.5" /> {formatCostAmount(log.cacheReadPrice)} / 1M tokens</div>
                                 <div className="text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-white/5 p-2 rounded">
                                   {t(
                                     "admin.record.index.text.costFormula",
                                     "(输入 {{inputBillable}} / 1M * {{inputPrice}} + 缓存 {{cacheTokens}} / 1M * {{cachePrice}} + 输出 {{outputTokens}} / 1M * {{outputPrice}}) * 倍率 {{multiplier}} = ",
                                     {
                                       inputBillable: (BigInt(log.inputTokens) - BigInt(log.cacheReadTokens)).toString(),
-                                      inputPrice: formatDecimalAmount(log.baseInputPrice, 6),
+                                      inputPrice: formatCostAmount(log.baseInputPrice),
                                       cacheTokens: log.cacheReadTokens,
-                                      cachePrice: formatDecimalAmount(log.cacheReadPrice, 6),
+                                      cachePrice: formatCostAmount(log.cacheReadPrice),
                                       outputTokens: log.outputTokens,
-                                      outputPrice: formatDecimalAmount(log.baseOutputPrice, 6),
-                                      multiplier: formatDecimalAmount(log.multiplier, 6),
+                                      outputPrice: formatCostAmount(log.baseOutputPrice),
+                                      multiplier: formatCostAmount(log.multiplier),
                                     },
                                   )}
                                   <Zap className="w-3 h-3 inline-block text-rose-500 -mt-0.5" />
-                                  <span className="font-bold text-rose-600 dark:text-rose-500 ml-1">{formatDecimalAmount(log.cost, 6)}</span>
+                                  <span className="font-bold text-rose-600 dark:text-rose-500 ml-1">{formatCostAmount(log.cost)}</span>
                                 </div>
                                 <div className="text-slate-400 dark:text-slate-500 mt-1 italic">{t("admin.record.index.text.1mdzhzs", "仅供参考，以实际扣费为准")}</div>
                               </div>

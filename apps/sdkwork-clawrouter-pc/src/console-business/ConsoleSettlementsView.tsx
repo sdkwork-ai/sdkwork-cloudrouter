@@ -27,6 +27,7 @@ import {
   type SdkworkOrderMessagesOverrides,
   type SdkworkOrderVisualTone,
 } from '@sdkwork/order-pc-order';
+import { formatMoney } from '@sdkwork/clawroutes-pc-commons/sdkwork-utils';
 
 import { resolveConsoleOrderLocale } from './consoleCommerceLocale.ts';
 
@@ -173,7 +174,6 @@ function SettlementsPageContent({ controller }: { controller: SdkworkOrderContro
   const state = useSdkworkOrderControllerState(controller);
   const {
     copy,
-    formatCurrencyCny,
     formatFilter,
     formatStatus,
     formatTimestamp,
@@ -204,9 +204,9 @@ function SettlementsPageContent({ controller }: { controller: SdkworkOrderContro
       icon: CircleDollarSign,
       label: copy.stats.totalAmount,
       tone: 'accent',
-      value: formatCurrencyCny(state.dashboard.statistics.totalAmountCny),
+      value: formatMoney(state.dashboard.statistics.totalAmountCny, { currency: 'CNY', locale, mode: 'symbol' }) ?? '--',
     },
-  ], [copy, state.dashboard.statistics, formatCurrencyCny]);
+  ], [copy, state.dashboard.statistics, locale]);
 
   useEffect(() => {
     if (!state.isBootstrapped && !state.isLoading && !state.lastError) {
@@ -368,7 +368,7 @@ function SettlementsPageContent({ controller }: { controller: SdkworkOrderContro
                               {formatTimestamp(order.createdAt)}
                             </td>
                             <td className="whitespace-nowrap px-4 py-3.5 text-right text-sm font-semibold tabular-nums text-[var(--sdk-color-text-primary)]">
-                              {formatCurrencyCny(order.totalAmountCny)}
+                              {formatMoney(order.totalAmountCny, { currency: 'CNY', locale, mode: 'symbol' }) ?? '--'}
                             </td>
                           </tr>
                         );

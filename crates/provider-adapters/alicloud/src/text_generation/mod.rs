@@ -31,7 +31,7 @@ pub fn endpoint_manifest() -> ProviderAdapterEndpoint {
         Some(CAPABILITY.to_owned()),
         "POST",
         STANDARD_PATH,
-        AdapterInvocationShape::SyncRequest,
+        AdapterInvocationShape::SyncJson,
     )
 }
 
@@ -49,7 +49,7 @@ impl EndpointAdapter for AliCloudBailianTextGenerationAdapter {
     }
 
     fn invocation_shape(&self) -> AdapterInvocationShape {
-        AdapterInvocationShape::SyncRequest
+        AdapterInvocationShape::SyncJson
     }
 
     fn invoke<'a>(

@@ -8,7 +8,7 @@ use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
 use sdkwork_claw_config::ProviderRelayHttpPoolSectionConfig;
-use sdkwork_claw_http::OutboundDnsResolver;
+use sdkwork_claw_http::{ensure_rustls_crypto_provider, OutboundDnsResolver};
 use sdkwork_claw_security::{redact_url, validate_outbound_base_url, OutboundTargetPolicy};
 use serde_json::Value;
 use std::time::Duration;
@@ -1523,6 +1523,7 @@ fn build_provider_client(
     pool_config: ProviderRelayHttpPoolConfig,
     target_policy: OutboundTargetPolicy,
 ) -> ProviderClient {
+    ensure_rustls_crypto_provider();
     // C-5: tune the upstream connection pool. H-1: production uses an
     // HTTPS-only connector; local development must be selected explicitly.
     //

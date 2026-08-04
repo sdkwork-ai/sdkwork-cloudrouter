@@ -115,7 +115,7 @@ async fn admin_user_api_key_command_route_serves_backend_iam_api_key_commands() 
         .unwrap();
     assert_eq!(StatusCode::CREATED, create_key_response.status());
     let create_key_payload = json_payload(create_key_response).await;
-    assert_eq!("sk-claw-test-secret", create_key_payload["data"]["rawKey"]);
+    assert_eq!("sk-test-secret", create_key_payload["data"]["rawKey"]);
 
     let delete_key_response = router
         .oneshot(signed_request(
@@ -220,10 +220,10 @@ async fn admin_user_route_creates_updates_adjusts_and_deletes() {
         .unwrap();
     assert_eq!(StatusCode::CREATED, create_key_response.status());
     let create_key_payload = json_payload(create_key_response).await;
-    assert_eq!("sk-claw-test-secret", create_key_payload["data"]["rawKey"]);
+    assert_eq!("sk-test-secret", create_key_payload["data"]["rawKey"]);
     assert_eq!("Console Key", create_key_payload["data"]["key"]["name"]);
     assert_eq!(
-        "sk-claw-test-sec********cret",
+        "sk-test-secret********cret",
         create_key_payload["data"]["key"]["key"]
     );
 
@@ -339,8 +339,8 @@ impl GatewayApiKeyCommandStore for TestApiKeyCommandStore {
                 command.organization_id,
                 &command.code,
                 &command.pricing_plan_code,
-                command.rate_multiplier,
-                command.official_price_multiplier,
+                command.cost_multiplier,
+                command.sale_multiplier,
             )
             .with_name(&command.name))
         })
@@ -363,6 +363,7 @@ impl GatewayApiKeyCommandStore for TestApiKeyCommandStore {
                     key_prefix: command.key_prefix,
                     key_display_masked: command.key_display_masked,
                     key_hash: command.key_hash,
+                    raw_key: Some(command.raw_key),
                     policy_id: None,
                     quota_policy_id: None,
                     created_at: command.created_at,
@@ -507,7 +508,7 @@ impl AdminUserStore for TestAdminUserStore {
                 return Err(DomainError::not_found("user was not found"));
             }
             self.commands.lock().unwrap().push("create_api_key");
-            assert_eq!("hash:sk-claw-test-secret", command.key_hash);
+            assert_eq!("hash:sk-test-secret", command.key_hash);
             Ok(AdminUserApiKeyItem {
                 id: 101,
                 user_id: command.user_id,
@@ -567,6 +568,6 @@ impl sdkwork_clawrouter_router_service::application::EntityUuidGenerator for Tes
 
 impl ApiKeySecretGenerator for TestSecretGenerator {
     fn generate_api_key_secret(&self) -> DomainResult<String> {
-        Ok("sk-claw-test-secret".to_owned())
+        Ok("sk-test-secret".to_owned())
     }
 }

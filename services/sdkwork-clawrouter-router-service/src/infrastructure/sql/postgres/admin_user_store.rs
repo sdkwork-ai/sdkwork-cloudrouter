@@ -947,7 +947,7 @@ async fn ensure_default_upstream_account_group(
     let row = sqlx::query_scalar(
         r#"
         INSERT INTO ai_upstream_account_group
-            (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, group_name, group_code, description, group_type, environment, pricing_plan_id, pricing_plan_code, rate_multiplier, official_price_multiplier, billing_type, capacity_limit, allowed_origin, metadata, id)
+            (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, group_name, group_code, description, group_type, environment, pricing_plan_id, pricing_plan_code, cost_multiplier, sale_multiplier, billing_type, capacity_limit, allowed_origin, metadata, id)
         VALUES
             ($1, $2, $3, 1, 1, $4::timestamptz, $4::timestamptz, 0, $5, $6, '', 'default', 1, $7, $8, '1.000000'::numeric, '1.000000'::numeric, 1, 0, '{}'::jsonb, '{}'::jsonb, $9)
         ON CONFLICT (tenant_id, organization_id, group_code)
@@ -957,8 +957,8 @@ async fn ensure_default_upstream_account_group(
             group_name = COALESCE(NULLIF(ai_upstream_account_group.group_name, ''), EXCLUDED.group_name),
             pricing_plan_id = COALESCE(ai_upstream_account_group.pricing_plan_id, EXCLUDED.pricing_plan_id),
             pricing_plan_code = COALESCE(NULLIF(ai_upstream_account_group.pricing_plan_code, ''), EXCLUDED.pricing_plan_code),
-            rate_multiplier = COALESCE(ai_upstream_account_group.rate_multiplier, EXCLUDED.rate_multiplier),
-            official_price_multiplier = COALESCE(ai_upstream_account_group.official_price_multiplier, EXCLUDED.official_price_multiplier),
+            cost_multiplier = COALESCE(ai_upstream_account_group.cost_multiplier, EXCLUDED.cost_multiplier),
+            sale_multiplier = COALESCE(ai_upstream_account_group.sale_multiplier, EXCLUDED.sale_multiplier),
             updated_at = EXCLUDED.updated_at
         RETURNING id
         "#,

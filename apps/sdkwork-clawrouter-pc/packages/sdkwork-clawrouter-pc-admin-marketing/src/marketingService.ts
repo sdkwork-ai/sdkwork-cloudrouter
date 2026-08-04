@@ -8,9 +8,19 @@ import {
   readRequiredString,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
+import type {
+  CouponStock,
+  CouponStockRequest,
+  PromotionCodeBatch,
+  PromotionCodeBatchRequest,
+  PromotionDistributionRequest,
+  PromotionDistributionTask,
+  PromotionOffer,
+  PromotionOfferRequest,
+} from '@sdkwork/promotion-backend-sdk';
 
 type BackendPromotionsService = ReturnType<typeof getSdkworkPromotionBackendSdkClient>['promotions'];
-type ClawBackendMarketingService = ReturnType<typeof getClawRouterBackendSdkClient>['system']['marketing'];
+type ClawBackendReferralStatsService = ReturnType<typeof getClawRouterBackendSdkClient>['billing']['referralStats'];
 type PromotionPage = ApiRecord & { items: ApiRecord[]; pageInfo: ApiRecord };
 
 export interface ReferralStat {
@@ -24,9 +34,9 @@ export interface ReferralStat {
 
 export class MarketingService {
   static async fetchReferralStats(
-    params?: Parameters<ClawBackendMarketingService['referralStats']['list']>[0],
+    params?: Parameters<ClawBackendReferralStatsService['list']>[0],
   ): Promise<ApiRecord & { items: ReferralStat[]; pageInfo: ApiRecord }> {
-    const result = await getClawRouterBackendSdkClient().system.marketing.referralStats.list(params);
+    const result = await getClawRouterBackendSdkClient().billing.referralStats.list(params);
     const page = readRequiredPromotionPage(result, 'Failed to fetch referral stats');
     return {
       ...page,
@@ -37,44 +47,340 @@ export class MarketingService {
 
 export async function backendPromotionOffersList(
   params?: Parameters<BackendPromotionsService['offers']['list']>[0],
-) {
+): Promise<PromotionPage> {
   const result = await getSdkworkPromotionBackendSdkClient().promotions.offers.list(params);
   return readRequiredPromotionPage(result, 'Promotion offer records are required');
 }
 
 export async function backendPromotionCouponStocksList(
   params?: Parameters<BackendPromotionsService['couponStocks']['list']>[0],
-) {
+): Promise<PromotionPage> {
   const result = await getSdkworkPromotionBackendSdkClient().promotions.couponStocks.list(params);
   return readRequiredPromotionPage(result, 'Promotion coupon stock records are required');
 }
 
 export async function backendPromotionCodesList(
   params?: Parameters<BackendPromotionsService['codes']['list']>[0],
-) {
+): Promise<PromotionPage> {
   const result = await getSdkworkPromotionBackendSdkClient().promotions.codes.list(params);
   return readRequiredPromotionPage(result, 'Promotion code records are required');
 }
 
-export async function backendPromotionDiscountApplicationsList(
-  params?: Parameters<BackendPromotionsService['discountApplications']['list']>[0],
-) {
-  const result = await getSdkworkPromotionBackendSdkClient().promotions.discountApplications.list(params);
-  return readRequiredPromotionPage(result, 'Promotion discount application records are required');
+export async function backendPromotionCodeBatchesList(
+  params?: Parameters<BackendPromotionsService['codeBatches']['list']>[0],
+): Promise<PromotionPage> {
+  const result = await getSdkworkPromotionBackendSdkClient().promotions.codeBatches.list(params);
+  return readRequiredPromotionPage(result, 'Promotion code batch records are required');
 }
 
 export async function backendPromotionUserCouponsList(
   params?: Parameters<BackendPromotionsService['userCoupons']['list']>[0],
-) {
+): Promise<PromotionPage> {
   const result = await getSdkworkPromotionBackendSdkClient().promotions.userCoupons.list(params);
   return readRequiredPromotionPage(result, 'Promotion user coupon records are required');
 }
 
+export async function backendPromotionDiscountApplicationsList(
+  params?: Parameters<BackendPromotionsService['discountApplications']['list']>[0],
+): Promise<PromotionPage> {
+  const result = await getSdkworkPromotionBackendSdkClient().promotions.discountApplications.list(params);
+  return readRequiredPromotionPage(result, 'Promotion discount application records are required');
+}
+
 export async function backendPromotionCouponLedgerEntriesList(
   params?: Parameters<BackendPromotionsService['couponLedgerEntries']['list']>[0],
-) {
+): Promise<PromotionPage> {
   const result = await getSdkworkPromotionBackendSdkClient().promotions.couponLedgerEntries.list(params);
   return readRequiredPromotionPage(result, 'Promotion coupon ledger records are required');
+}
+
+export async function createPromotionOffer(input: PromotionOfferRequest): Promise<PromotionOffer> {
+  const result = await getSdkworkPromotionBackendSdkClient().promotions.offers.create(input);
+  return readRequiredItem<PromotionOffer>(result, 'Created promotion offer is required');
+}
+
+export async function createPromotionCouponStock(input: CouponStockRequest): Promise<CouponStock> {
+  const result = await getSdkworkPromotionBackendSdkClient().promotions.couponStocks.create(input);
+  return readRequiredItem<CouponStock>(result, 'Created coupon stock is required');
+}
+
+export async function createPromotionCodeBatch(
+  input: PromotionCodeBatchRequest,
+): Promise<PromotionCodeBatch> {
+  const result = await getSdkworkPromotionBackendSdkClient().promotions.codeBatches.create(input);
+  return readRequiredItem<PromotionCodeBatch>(result, 'Created code batch is required');
+}
+
+export async function backendPromotionDistributionTasksList(
+  params?: Parameters<BackendPromotionsService['distributionTasks']['list']>[0],
+): Promise<PromotionPage> {
+  const result = await getSdkworkPromotionBackendSdkClient().promotions.distributionTasks.list(params);
+  return readRequiredPromotionPage(result, 'Promotion distribution task records are required');
+}
+
+export async function fetchPromotionOverview(): Promise<ApiRecord> {
+  const result = await getSdkworkPromotionBackendSdkClient().promotions.overview.retrieve();
+  const payload = readApiData(result);
+  if (!isRecord(payload)) {
+    throw new Error('Promotion overview is required');
+  }
+  return payload;
+}
+
+export async function retrievePromotionOffer(offerId: string): Promise<PromotionOffer> {
+  const result = await getSdkworkPromotionBackendSdkClient().promotions.offers.retrieve(offerId);
+  return readRequiredItem<PromotionOffer>(result, 'Promotion offer is required');
+}
+
+export async function deletePromotionOffer(offerId: string): Promise<void> {
+  await getSdkworkPromotionBackendSdkClient().promotions.offers.delete(offerId);
+}
+
+export async function createPromotionDistributionTask(
+  input: PromotionDistributionRequest,
+): Promise<PromotionDistributionTask> {
+  const result = await getSdkworkPromotionBackendSdkClient().promotions.distributionTasks.create(input);
+  return readRequiredItem<PromotionDistributionTask>(result, 'Created distribution task is required');
+}
+
+export function buildDistributionTaskRequest(
+  stockId: string,
+  ownerUserIds: string[],
+  idempotencyKey: string,
+): PromotionDistributionRequest {
+  return { stockId, ownerUserIds, idempotencyKey };
+}
+
+export async function updatePromotionOfferStatus(offerId: string, status: 'active' | 'disabled'): Promise<void> {
+  await getSdkworkPromotionBackendSdkClient().promotions.offers.status.update(offerId, { status });
+}
+
+export type CouponOfferBenefitKind = 'token_bank_credit' | 'subscription';
+export type CouponCodeIssueMode = 'REALTIME' | 'BATCH';
+export type CouponStockType = 'LIMITED' | 'UNLIMITED';
+
+export interface CouponOfferCreateFormValues {
+  displayName: string;
+  offerType: string;
+  description?: string;
+  audienceScope: string;
+  combinability: string;
+  goodsScope: string;
+  priority: number;
+  startsAt: string;
+  endsAt?: string;
+  status: 'active' | 'disabled';
+  benefitKind: CouponOfferBenefitKind;
+  discountType: string;
+  discountValue: string;
+  minimumAmount: string;
+  maximumDiscountAmount?: string;
+  currencyCode: string;
+  grantAmount?: string;
+  productId?: string;
+  skuId?: string;
+  packageId?: string;
+  period?: 'day' | 'week' | 'month' | 'year';
+  durationDays?: string;
+  dailyQuota?: string;
+  totalQuota?: string;
+  stockType: CouponStockType;
+  codeIssueMode: CouponCodeIssueMode;
+  totalQuantity: string;
+  perUserLimit: number;
+  claimStartsAt?: string;
+  claimEndsAt?: string;
+  batchQuantity?: string;
+  batchCodeLength?: number;
+  batchCodePrefix?: string;
+  batchStartsAt?: string;
+  batchExpiresAt?: string;
+}
+
+export interface CouponOfferCreateRequests {
+  offerRequest: PromotionOfferRequest;
+  stockRequest: CouponStockRequest;
+  codeBatchRequest?: PromotionCodeBatchRequest;
+}
+
+export function buildCouponOfferCreateRequests(
+  values: CouponOfferCreateFormValues,
+  idempotencyKey: string,
+): CouponOfferCreateRequests {
+  const couponBenefit = values.benefitKind === 'token_bank_credit'
+    ? { kind: 'token_bank_credit' as const, grantAmount: values.grantAmount ?? '' }
+    : {
+        kind: 'subscription' as const,
+        productId: values.productId ?? '',
+        skuId: values.skuId ?? '',
+        packageId: values.packageId ?? '',
+        period: values.period ?? 'month',
+        durationDays: values.durationDays ?? '0',
+        dailyQuota: values.dailyQuota ?? '0',
+        totalQuota: values.totalQuota ?? '0',
+      };
+  const offerRequest: PromotionOfferRequest = {
+    offerType: values.offerType,
+    displayName: values.displayName,
+    description: values.description || null,
+    audienceScope: values.audienceScope,
+    combinability: values.combinability,
+    goodsScope: values.goodsScope,
+    priority: values.priority,
+    startsAt: toIsoString(values.startsAt),
+    endsAt: values.endsAt ? toIsoString(values.endsAt) : null,
+    status: values.status,
+    discountType: values.discountType,
+    discountValue: values.discountValue,
+    minimumAmount: values.minimumAmount,
+    maximumDiscountAmount: values.maximumDiscountAmount || null,
+    currencyCode: values.currencyCode,
+    couponBenefit,
+  };
+  const stockRequest: CouponStockRequest = {
+    offerId: '',
+    stockType: values.stockType,
+    codeIssueMode: values.codeIssueMode,
+    // UNLIMITED 库存总量仅作统计，传 0
+    totalQuantity: values.stockType === 'UNLIMITED' ? '0' : values.totalQuantity,
+    perUserLimit: values.perUserLimit,
+    claimStartsAt: values.claimStartsAt ? toIsoString(values.claimStartsAt) : null,
+    claimEndsAt: values.claimEndsAt ? toIsoString(values.claimEndsAt) : null,
+    status: values.status,
+  };
+  const codeBatchRequest: PromotionCodeBatchRequest | undefined = values.codeIssueMode === 'BATCH'
+    ? {
+        stockId: '',
+        codeType: 'PUBLIC',
+        quantity: values.batchQuantity ?? '',
+        codeLength: values.batchCodeLength ?? 16,
+        codePrefix: values.batchCodePrefix ?? '',
+        startsAt: values.batchStartsAt ? toIsoString(values.batchStartsAt) : null,
+        expiresAt: values.batchExpiresAt ? toIsoString(values.batchExpiresAt) : null,
+        idempotencyKey,
+      }
+    : undefined;
+  return { offerRequest, stockRequest, codeBatchRequest };
+}
+
+export async function createCouponOffer(
+  values: CouponOfferCreateFormValues,
+  idempotencyKey: string,
+): Promise<{ offer: PromotionOffer; stock: CouponStock; codeBatch?: PromotionCodeBatch }> {
+  const requests = buildCouponOfferCreateRequests(values, idempotencyKey);
+  const offer = await createPromotionOffer(requests.offerRequest);
+  const stock = await createPromotionCouponStock({
+    ...requests.stockRequest,
+    offerId: offer.id,
+  });
+  let codeBatch: PromotionCodeBatch | undefined;
+  if (requests.codeBatchRequest) {
+    codeBatch = await createPromotionCodeBatch({
+      ...requests.codeBatchRequest,
+      stockId: stock.id,
+    });
+  }
+  return { offer, stock, codeBatch };
+}
+
+export interface CodeBatchCreateFormValues {
+  stockId: string;
+  codeType: string;
+  quantity: string;
+  codeLength: number;
+  codePrefix: string;
+  startsAt?: string;
+  expiresAt?: string;
+}
+
+export function buildCodeBatchCreateRequest(
+  values: CodeBatchCreateFormValues,
+  idempotencyKey: string,
+): PromotionCodeBatchRequest {
+  return {
+    stockId: values.stockId,
+    codeType: values.codeType,
+    quantity: values.quantity,
+    codeLength: values.codeLength,
+    codePrefix: values.codePrefix,
+    startsAt: values.startsAt ? toIsoString(values.startsAt) : null,
+    expiresAt: values.expiresAt ? toIsoString(values.expiresAt) : null,
+    idempotencyKey,
+  };
+}
+
+/** ISO 时间 → 本地 datetime-local 输入值（YYYY-MM-DDTHH:mm）。 */
+export function toDatetimeLocal(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+/** 将后端优惠券记录映射为创建表单初始值（用于复制优惠券）。 */
+export function offerRecordToFormValues(record: ApiRecord): CouponOfferCreateFormValues {
+  const benefit = isRecord(record['coupon_benefit']) ? record['coupon_benefit'] : null;
+  const benefitKind: CouponOfferBenefitKind = benefit?.['kind'] === 'subscription' ? 'subscription' : 'token_bank_credit';
+  return {
+    displayName: `${String(record['display_name'] ?? '')} (Copy)`,
+    offerType: String(record['offer_type'] ?? 'COUPON'),
+    description: record['description'] ? String(record['description']) : '',
+    audienceScope: String(record['audience_scope'] ?? 'ALL'),
+    combinability: String(record['combinability'] ?? 'EXCLUSIVE'),
+    goodsScope: String(record['goods_scope'] ?? 'ALL'),
+    priority: Number(record['priority'] ?? 100),
+    startsAt: toDatetimeLocal(String(record['starts_at'] ?? '')),
+    endsAt: record['ends_at'] ? toDatetimeLocal(String(record['ends_at'])) : '',
+    status: record['status'] === 'disabled' ? 'disabled' : 'active',
+    benefitKind,
+    discountType: String(record['discount_type'] ?? 'FIXED'),
+    discountValue: String(record['discount_value'] ?? ''),
+    minimumAmount: String(record['minimum_amount'] ?? '0'),
+    maximumDiscountAmount: record['maximum_discount_amount'] ? String(record['maximum_discount_amount']) : '',
+    currencyCode: String(record['currency_code'] ?? 'CNY'),
+    grantAmount: benefitKind === 'token_bank_credit' && benefit ? String(benefit['grantAmount'] ?? '') : '',
+    productId: benefitKind === 'subscription' && benefit ? String(benefit['productId'] ?? '') : '',
+    skuId: benefitKind === 'subscription' && benefit ? String(benefit['skuId'] ?? '') : '',
+    packageId: benefitKind === 'subscription' && benefit ? String(benefit['packageId'] ?? '') : '',
+    period: benefitKind === 'subscription' && benefit
+      ? (benefit['period'] as 'day' | 'week' | 'month' | 'year' | undefined) ?? 'month'
+      : 'month',
+    durationDays: benefitKind === 'subscription' && benefit ? String(benefit['durationDays'] ?? '') : '30',
+    dailyQuota: benefitKind === 'subscription' && benefit ? String(benefit['dailyQuota'] ?? '') : '',
+    totalQuota: benefitKind === 'subscription' && benefit ? String(benefit['totalQuota'] ?? '') : '',
+    stockType: 'LIMITED',
+    codeIssueMode: 'REALTIME',
+    totalQuantity: '',
+    perUserLimit: 1,
+    claimStartsAt: '',
+    claimEndsAt: '',
+  };
+}
+
+export function toIsoString(datetimeLocal: string): string {
+  const date = new Date(datetimeLocal);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error('Invalid date time value');
+  }
+  return date.toISOString();
+}
+
+/** 生成幂等键：优先 crypto.randomUUID（安全上下文），非安全上下文回退随机串。 */
+export function createIdempotencyKey(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `mk-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
+export function maskPromotionCode(value: string): string {
+  const length = value.length;
+  if (length <= 8) {
+    return '****';
+  }
+  return `${value.slice(0, 4)}****${value.slice(length - 4)}`;
 }
 
 function normalizeReferralStat(value: unknown): ReferralStat {
@@ -108,6 +414,14 @@ function readRequiredPromotionPage(result: unknown, message: string): PromotionP
     items: readRequiredPromotionItems(payload, message),
     pageInfo: payload['pageInfo'],
   };
+}
+
+function readRequiredItem<T>(result: unknown, message: string): T {
+  const payload = readApiData(result);
+  if (!isRecord(payload)) {
+    throw new Error(`${message}: item is required`);
+  }
+  return payload as T;
 }
 
 function readRequiredRecord(value: unknown, message: string): ApiRecord {

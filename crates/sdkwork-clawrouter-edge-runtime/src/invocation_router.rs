@@ -28,6 +28,7 @@ use sdkwork_clawrouter_router_service::ports::{
     ProviderSecretResolver, StickyRouteStore, UpstreamAccountRouteCatalog,
 };
 
+use crate::call_chain::CallChainInterceptor;
 use crate::invocation_http::handle_invocation;
 use crate::invocation_provider_adapter::InvocationProviderAdapterResolver;
 use crate::invocation_stream::DEFAULT_STREAM_TOTAL_TIMEOUT;
@@ -109,6 +110,9 @@ pub struct InvocationRouterOptions<'a> {
     pub stream_response_timeout: Duration,
     pub query_string_api_key_policy: QueryStringApiKeyPolicy,
     pub internal_gateway_verifier: Option<Arc<InternalGatewayRequestVerifier>>,
+    /// Open-API guard chain (IP access + concurrency) inserted before the
+    /// tenant in-flight bound. `None` keeps the chain off entirely.
+    pub call_chain: Option<CallChainInterceptor>,
 }
 
 impl Default for InvocationRouterOptions<'_> {
@@ -126,6 +130,7 @@ impl Default for InvocationRouterOptions<'_> {
             stream_response_timeout: DEFAULT_STREAM_TOTAL_TIMEOUT,
             query_string_api_key_policy: QueryStringApiKeyPolicy::default(),
             internal_gateway_verifier: None,
+            call_chain: None,
         }
     }
 }
@@ -152,6 +157,7 @@ where
         stream_response_timeout,
         query_string_api_key_policy,
         internal_gateway_verifier,
+        call_chain,
     } = options;
     let adapter_resolver = provider_adapter_config
         .and_then(InvocationProviderAdapterResolver::from_config)
@@ -165,6 +171,7 @@ where
         adapter_resolver,
         redis_config,
         tenant_inflight_config,
+        call_chain,
     });
     invocation_router_with_state(InvocationRouterState {
         catalog,
@@ -404,6 +411,7 @@ struct InvocationPipelineInput<'a, C> {
     adapter_resolver: Option<Arc<dyn ProviderAdapterRouteResolver>>,
     redis_config: Option<&'a RedisConfig>,
     tenant_inflight_config: Option<TenantInflightConfig>,
+    call_chain: Option<CallChainInterceptor>,
 }
 
 fn invocation_pipeline_with_redis<C>(input: InvocationPipelineInput<'_, C>) -> InvocationPipeline
@@ -419,6 +427,7 @@ where
         adapter_resolver,
         redis_config,
         tenant_inflight_config,
+        call_chain,
     } = input;
     let idempotency = IdempotencyInterceptor::try_with_redis_config(
         sdkwork_clawrouter_router_service::application::IdempotencyConfig::default(),
@@ -464,6 +473,13 @@ where
     pipeline = pipeline.with_interceptor(PricingPreflightInterceptor::new(Arc::clone(&catalog)));
 
     pipeline = pipeline.with_interceptor(ResponseNormalizationInterceptor);
+
+    // Open-API guard chain (IP access lists + global/per-API-key concurrency
+    // bulkhead). Runs just before the tenant in-flight bound so both
+    // concurrency budgets describe actual in-flight provider requests.
+    if let Some(call_chain) = call_chain {
+        pipeline = pipeline.with_interceptor(call_chain);
+    }
 
     // H-9: bound per-tenant in-flight provider requests just before dispatch so
     // a tenant cannot exhaust the gateway's provider connection pool. The slot

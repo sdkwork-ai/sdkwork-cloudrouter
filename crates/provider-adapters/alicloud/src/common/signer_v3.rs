@@ -237,8 +237,8 @@ mod tests {
 
     #[test]
     fn epoch_to_iso8601_known_value() {
-        // 2026-06-27T00:00:00Z = 1783056000 seconds since epoch
-        let result = epoch_to_iso8601_utc(1_783_056_000);
+        // 2026-06-27T00:00:00Z = 1782518400 seconds since epoch
+        let result = epoch_to_iso8601_utc(1_782_518_400);
         assert_eq!(result, "2026-06-27T00:00:00Z");
     }
 }

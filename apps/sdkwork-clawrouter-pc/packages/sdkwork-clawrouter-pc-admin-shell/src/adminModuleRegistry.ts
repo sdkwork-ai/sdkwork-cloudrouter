@@ -4,6 +4,7 @@ import {
   BadgePercent,
   BarChart3,
   Boxes,
+  Building2,
   CloudCog,
   CreditCard,
   Crown,
@@ -15,6 +16,7 @@ import {
   Globe2,
   HardDrive,
   Home,
+  Layers3,
   LayoutDashboard,
   Network,
   Package,
@@ -22,11 +24,13 @@ import {
   Recycle,
   RefreshCcw,
   Server,
+  Send,
   Settings,
   ShieldAlert,
   ShieldCheck,
   TicketPercent,
   Users,
+  UsersRound,
   WalletCards,
   Wrench,
   type LucideIcon,
@@ -150,7 +154,9 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
         itemBlock({ path: '/admin/model/mappings', labelKey: 'admin.menu.modelMappings', icon: ArrowRightLeft, iconColor: 'text-indigo-500' }),
       ]),
       groupBlock('admin.menu.home.upstreamManagement', [
-        itemBlock({ path: '/admin/upstream', labelKey: 'admin.menu.upstream', icon: Network, iconColor: 'text-cyan-500' }),
+        itemBlock({ path: '/admin/upstream/suppliers', labelKey: 'admin.menu.upstream.suppliers', icon: Building2, iconColor: 'text-cyan-500' }),
+        itemBlock({ path: '/admin/upstream/accounts', labelKey: 'admin.menu.upstream.accounts', icon: UsersRound, iconColor: 'text-violet-500' }),
+        itemBlock({ path: '/admin/upstream/account-groups', labelKey: 'admin.menu.upstream.accountGroups', icon: Layers3, iconColor: 'text-amber-500' }),
       ]),
       groupBlock('admin.menu.home.dataManagement', [
         itemBlock({ path: '/admin/record', labelKey: 'admin.menu.records', icon: Activity }),
@@ -182,11 +188,15 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
       groupBlock('admin.menu.marketing.design', [
         itemBlock({ path: '/admin/marketing/promotionOffers', labelKey: 'admin.menu.marketing.offers', icon: BadgePercent }),
         itemBlock({ path: '/admin/marketing/promotionCouponStocks', labelKey: 'admin.menu.marketing.couponStocks', icon: Boxes }),
+      ]),
+      groupBlock('admin.menu.marketing.codes', [
+        itemBlock({ path: '/admin/marketing/codeBatches', labelKey: 'admin.menu.marketing.codeBatches', icon: Layers3 }),
         itemBlock({ path: '/admin/marketing/promotionCodes', labelKey: 'admin.menu.marketing.codes', icon: TicketPercent }),
       ]),
       groupBlock('admin.menu.marketing.lifecycle', [
         itemBlock({ path: '/admin/marketing/userCoupons', labelKey: 'admin.menu.marketing.userCoupons', icon: WalletCards }),
         itemBlock({ path: '/admin/marketing/discountApplications', labelKey: 'admin.menu.marketing.discountApplications', icon: ReceiptText }),
+        itemBlock({ path: '/admin/marketing/distributionTasks', labelKey: 'admin.menu.marketing.distributionTasks', icon: Send }),
       ]),
       groupBlock('admin.menu.marketing.growth', [
         itemBlock({ path: '/admin/marketing/promotionCouponLedger', labelKey: 'admin.menu.marketing.couponLedger', icon: Database }),

@@ -180,6 +180,7 @@ pub struct RedisSectionConfig {
 pub struct SecuritySectionConfig {
     pub api_key_pepper: Option<String>,
     pub api_key_pepper_file: Option<String>,
+    pub api_key_secret_storage: Option<String>,
     pub upstream_credential_key_ring: Option<String>,
     pub upstream_credential_key_ring_file: Option<String>,
     pub internal_gateway_signing_secret: Option<String>,
@@ -240,6 +241,10 @@ pub struct ProviderRelayRateLimitSectionConfig {
     pub estimated_instance_count: Option<u32>,
     /// Maximum in-flight provider requests per tenant. Defaults to 100.
     pub tenant_max_inflight_requests: Option<u32>,
+    /// Gray-flag: when `true`, the per-tenant in-flight bound is enforced by
+    /// the open-API call chain (tenant scope of the chain concurrency stage)
+    /// instead of the legacy `TenantInflightInterceptor`. Defaults to `false`.
+    pub tenant_inflight_use_chain_stage: Option<bool>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]

@@ -579,7 +579,7 @@ test("admin searchable list toolbars keep search before primary create actions",
       primaryAction: "data-admin-user-primary-action",
     },
     {
-      file: "./packages/sdkwork-clawrouter-pc-admin-upstream/src/supplierTab.tsx",
+      file: "./packages/sdkwork-clawrouter-pc-admin-upstream/src/suppliersPage.tsx",
       toolbar: "data-admin-upstream-toolbar",
       search: "data-admin-upstream-search",
       primaryAction: "data-admin-upstream-primary-action",

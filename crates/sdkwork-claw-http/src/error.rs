@@ -42,12 +42,17 @@ pub fn not_implemented_response(
     );
     let mut problem = SdkWorkProblemDetail::platform_enriched(
         SdkWorkResultCode::InternalError,
-        detail,
+        detail.clone(),
         trace_id,
         routing,
     );
     problem.status = 501;
     problem.title = "Not implemented".to_owned();
+    // The not-implemented envelope is a designed public contract response:
+    // its `detail` carries the structured operation binding (operation,
+    // surface, api path) instead of an internal failure message, so it must
+    // not be replaced by the client-safe detail policy.
+    problem.detail = Some(detail);
     (
         axum::http::StatusCode::NOT_IMPLEMENTED,
         [(header::CONTENT_TYPE, "application/problem+json")],

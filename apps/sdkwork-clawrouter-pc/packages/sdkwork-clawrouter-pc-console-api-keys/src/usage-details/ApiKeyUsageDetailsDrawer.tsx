@@ -60,7 +60,7 @@ export function ApiKeyUsageDetailsDrawer({
               {t('console.apiKeys.usageDetailsTitle', '使用详情')}
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-              <span className="font-semibold text-slate-700 dark:text-slate-200">{apiKey.displayName}</span>
+              <span className="font-semibold text-slate-700 dark:text-slate-200">{apiKey.displayName || t('console.apiKeys.unnamed', '令牌 #{{id}}', { id: apiKey.id })}</span>
               <span className="font-mono">{apiKey.maskedKey}</span>
               <span>{apiKey.accountGroupName ?? apiKey.accountGroup}</span>
             </div>
@@ -130,7 +130,7 @@ export function ApiKeyUsageDetailsDrawer({
                         {t('console.apiKeys.usageDetails.quickConfig', '快速配置')}
                       </div>
                       <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                        {t('console.apiKeys.usageDetails.secretPlaceholder', '此配置片段包含管理接口返回的完整 API Key。')}
+                        {t('console.apiKeys.usageDetails.secretPlaceholder', '此配置片段包含管理接口返回的完整令牌。')}
                       </div>
                     </div>
                     <CopyButton

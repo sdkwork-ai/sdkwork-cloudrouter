@@ -2,14 +2,16 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Globe, Key, Database, X, Lock, Gauge, Trash2, Loader2, AlertTriangle } from 'lucide-react';
 import { AdminTableShell, BottomPagination, BusinessStateTableRow, ConfirmDialog } from '@sdkwork/clawroutes-pc-commons';
-import { RateLimitService, FirewallRule } from './ratelimitService';
+import { RateLimitService, FirewallRule, type ChainPolicy } from './ratelimitService';
 import {
   rateLimitQueryKeys,
+  useChainPolicyQuery,
   useFirewallRulesQuery,
   useIpRateLimitsQuery,
   useModelRateLimitsQuery,
   useRateLimitDashboardQuery,
   useTokenRateLimitsQuery,
+  useUpdateChainPolicyMutation,
 } from './ratelimitQueries';
 import {
   createFirewallInputFromForm,
@@ -27,6 +29,7 @@ const RATELIMIT_TABS = [
   { id: 'token', label: (t: TranslationFunction) => t("admin.ratelimit.index.text.2fpnam", "令牌限额"), icon: <Key className="w-4 h-4" /> },
   { id: 'model', label: (t: TranslationFunction) => t("admin.ratelimit.index.text.1xzz6og", "模型频控策略"), icon: <Database className="w-4 h-4" /> },
   { id: 'firewall', label: (t: TranslationFunction) => t("admin.ratelimit.index.text.1tmo5ay", "黑白名单(WAF)"), icon: <Lock className="w-4 h-4" /> },
+  { id: 'chain', label: (t: TranslationFunction) => t("admin.ratelimit.index.text.1chain", "调用链"), icon: <Gauge className="w-4 h-4" /> },
 ];
 
 function RateLimitTableShell({
@@ -123,6 +126,8 @@ export function RateLimitAdmin() {
         return <ModelRateLimitView />;
       case 'firewall':
         return <FirewallView />;
+      case 'chain':
+        return <ChainPolicyView />;
       default:
         return null;
     }
@@ -218,7 +223,7 @@ function RiskDashboardView() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
           { title: t("admin.ratelimit.index.text.1hlr3sa", "生效 IP 限流"), value: activeIpLimits, detail: t("admin.ratelimit.index.text.ipRuleCount", "{{count}} 条 IP 规则", { count: snapshot?.ipLimitsTotal ?? ipLimits.length }), icon: Globe, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-500/10' },
-          { title: t("admin.ratelimit.index.text.s7fzhe", "耗尽令牌限额"), value: exhaustedTokenLimits, detail: t("admin.ratelimit.index.text.apiKeyRuleCount", "{{count}} 条 API Key 规则", { count: snapshot?.tokenLimitsTotal ?? tokenLimits.length }), icon: Key, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-500/10' },
+          { title: t("admin.ratelimit.index.text.s7fzhe", "耗尽令牌限额"), value: exhaustedTokenLimits, detail: t("admin.ratelimit.index.text.apiKeyRuleCount", "{{count}} 条令牌规则", { count: snapshot?.tokenLimitsTotal ?? tokenLimits.length }), icon: Key, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-500/10' },
           { title: t("admin.ratelimit.index.text.10f9m11", "强制模型频控"), value: activeModelLimits, detail: t("admin.ratelimit.index.text.modelRuleCount", "{{count}} 条模型规则", { count: snapshot?.modelLimitsTotal ?? modelLimits.length }), icon: Database, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-500/10' },
           { title: t("admin.ratelimit.index.text.z0wwym", "WAF 名单规则"), value: totalFirewallRules, detail: t("admin.ratelimit.index.text.totalRuleCount", "{{count}} 条总规则", { count: totalConfiguredRules }), icon: Lock, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-500/10' },
         ].map(item => (
@@ -428,7 +433,7 @@ function IpRateLimitView() {
   );
 }
 
-// 3. 令牌与API Key限流
+// 3. 令牌限流
 function TokenRateLimitView() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -463,11 +468,11 @@ function TokenRateLimitView() {
       <div className="p-5 border-b border-slate-200 dark:border-white/10 flex justify-between items-center bg-slate-50/50 dark:bg-[#121212]/50">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
           <Key className="w-5 h-5 text-slate-400" />
-          {t("admin.ratelimit.index.text.w3ra7a", "API 密钥限速配置")}</h3>
+          {t("admin.ratelimit.index.text.w3ra7a", "令牌限速配置")}</h3>
         <div className="flex gap-3">
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input type="text" placeholder={t("admin.ratelimit.index.text.wh25hh", "搜索 API 密钥或账户...")} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="bg-white dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 rounded-lg pl-9 pr-4 py-1.5 text-sm focus:outline-none focus:border-red-500 w-64 text-slate-900 dark:text-white" />
+            <input type="text" placeholder={t("admin.ratelimit.index.text.wh25hh", "搜索令牌或账户...")} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="bg-white dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 rounded-lg pl-9 pr-4 py-1.5 text-sm focus:outline-none focus:border-red-500 w-64 text-slate-900 dark:text-white" />
           </div>
           <button onClick={() => setIsModalOpen(true)} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
             <Plus className="w-4 h-4" /> {t("admin.ratelimit.index.text.1lq4o49", "自定义限速")}</button>
@@ -488,7 +493,7 @@ function TokenRateLimitView() {
         <table className="w-full text-left text-sm text-slate-600 dark:text-slate-400">
           <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-[#121212] border-b border-slate-200 dark:border-white/10">
             <tr>
-              <th className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{t("admin.ratelimit.index.text.1pwu3yg", "API Key (前缀)")}</th>
+              <th className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{t("admin.ratelimit.index.text.1pwu3yg", "令牌 (前缀)")}</th>
               <th className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{t("admin.ratelimit.index.text.4qn97v", "关联用户")}</th>
               <th className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{t("admin.ratelimit.index.text.16yndh7", "每秒限速 (RPS)")}</th>
               <th className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{t("admin.ratelimit.index.text.qple4c", "并发缓冲 (Burst)")}</th>
@@ -549,7 +554,7 @@ function TokenRateLimitView() {
                   <input required name="user" type="text" placeholder={t("admin.ratelimit.index.text.bziph8", "例如: bob@corp.com")} className="w-full bg-slate-50 dark:bg-black border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500 text-slate-900 dark:text-white" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">{t("admin.ratelimit.index.text.q55c8v", "API Key (留空影响所有此用户的Key)")}</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">{t("admin.ratelimit.index.text.q55c8v", "令牌 (留空影响所有此用户的令牌)")}</label>
                   <input required name="keyPrefix" type="text" placeholder="sk-proj-..." className="w-full bg-slate-50 dark:bg-black border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500 text-slate-900 dark:text-white font-mono" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -911,4 +916,201 @@ function FirewallView() {
       )}
     </div>
   );
+}
+
+// 调用链：全局并发控制 + IP 白名单/黑名单（构建块式配置）
+function ChainPolicyView() {
+  const { t } = useTranslation();
+  const { data: policy, error, isLoading, isFetching, refetch } = useChainPolicyQuery();
+  const updateMutation = useUpdateChainPolicyMutation();
+  const [maxInflight, setMaxInflight] = useState('');
+  const [allowlistText, setAllowlistText] = useState('');
+  const [denylistText, setDenylistText] = useState('');
+  const [concurrencyEnabled, setConcurrencyEnabled] = useState(true);
+  const [ipAccessEnabled, setIpAccessEnabled] = useState(true);
+  const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
+
+  useEffect(() => {
+    if (!policy) {
+      return;
+    }
+    setMaxInflight(policy.concurrency?.maxInflight ? String(policy.concurrency.maxInflight) : '');
+    setAllowlistText((policy.ipAccess?.allowlist ?? []).join('\n'));
+    setDenylistText((policy.ipAccess?.denylist ?? []).join('\n'));
+    setConcurrencyEnabled(!policy.stages?.disabled?.includes('concurrency'));
+    setIpAccessEnabled(!policy.stages?.disabled?.includes('ip_access'));
+  }, [policy]);
+
+  const loadError = error ? getLoadErrorMessage(error, 'Failed to load chain policy.') : null;
+
+  if (isLoading && !policy) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center text-slate-500">
+        <Loader2 className="w-8 h-8 mb-3 animate-spin text-red-500" />
+        <span className="text-sm">Loading call chain policy...</span>
+      </div>
+    );
+  }
+
+  const onSave = () => {
+    const input: ChainPolicy = {
+      concurrency: {
+        maxInflight: maxInflight.trim() ? maxInflight.trim() : null,
+      },
+      ipAccess: {
+        mode: 'open',
+        allowlist: splitIpLines(allowlistText),
+        denylist: splitIpLines(denylistText),
+      },
+      stages: {
+        disabled: [
+          ...(concurrencyEnabled ? [] : ['concurrency']),
+          ...(ipAccessEnabled ? [] : ['ip_access']),
+        ],
+      },
+    };
+    updateMutation.mutate(input, {
+      onSuccess: () => {
+        setMessage({ kind: 'ok', text: t("admin.ratelimit.index.text.chainSaved", "调用链配置已保存") });
+      },
+      onError: (saveError) => {
+        setMessage({
+          kind: 'error',
+          text: getLoadErrorMessage(saveError, 'Failed to save chain policy.'),
+        });
+      },
+    });
+  };
+
+  return (
+    <div className="flex-1 overflow-auto p-5">
+      <div className="max-w-3xl space-y-5">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+            <Gauge className="w-5 h-5 text-red-500" />
+            {t("admin.ratelimit.index.text.chainTitle", "调用链配置（全局）")}
+          </h3>
+          <p className="text-sm text-slate-500 mt-1">
+            {t("admin.ratelimit.index.text.chainDesc", "配置开放 API 的调用链守卫：并发上限与 IP 白名单/黑名单。单个 API Key 可在 Console 中按 Key 覆盖。")}
+          </p>
+        </div>
+
+        {loadError && (
+          <div className="flex items-center justify-between rounded-lg border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 p-3">
+            <span className="text-sm text-red-600 dark:text-red-400">{loadError}</span>
+            <button type="button" onClick={() => void refetch()} className="text-sm font-medium text-red-600 hover:underline">
+              {t('common.actions.retry')}
+            </button>
+          </div>
+        )}
+
+        {message && (
+          <div className={`rounded-lg border p-3 text-sm ${
+            message.kind === 'ok'
+              ? 'border-green-200 bg-green-50 text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-400'
+              : 'border-red-200 bg-red-50 text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400'
+          }`}>
+            {message.text}
+          </div>
+        )}
+
+        <div className="rounded-xl border border-slate-200 dark:border-white/10 p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-slate-900 dark:text-white">
+                {t("admin.ratelimit.index.text.chainConcurrency", "并发控制")}
+              </div>
+              <div className="text-xs text-slate-500 mt-0.5">
+                {t("admin.ratelimit.index.text.chainConcurrencyDesc", "全局同时处理中的请求上限（0 表示不限制）")}
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+              <input
+                type="checkbox"
+                checked={concurrencyEnabled}
+                onChange={(event) => setConcurrencyEnabled(event.target.checked)}
+                className="accent-red-600"
+              />
+              {t("admin.ratelimit.index.text.chainEnabled", "启用")}
+            </label>
+          </div>
+          <input
+            type="number"
+            min={0}
+            value={maxInflight}
+            disabled={!concurrencyEnabled}
+            onChange={(event) => setMaxInflight(event.target.value)}
+            placeholder={t("admin.ratelimit.index.text.chainMaxInflight", "如 100")}
+            className="w-56 rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-[#1a1a1a] px-3 py-2 text-sm text-slate-900 dark:text-white disabled:opacity-50"
+          />
+        </div>
+
+        <div className="rounded-xl border border-slate-200 dark:border-white/10 p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-slate-900 dark:text-white">
+                {t("admin.ratelimit.index.text.chainIpAccess", "IP 白名单 / 黑名单")}
+              </div>
+              <div className="text-xs text-slate-500 mt-0.5">
+                {t("admin.ratelimit.index.text.chainIpAccessDesc", "黑名单恒优先拒绝；支持精确 IP 与 CIDR（IPv4/IPv6），每行一条")}
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+              <input
+                type="checkbox"
+                checked={ipAccessEnabled}
+                onChange={(event) => setIpAccessEnabled(event.target.checked)}
+                className="accent-red-600"
+              />
+              {t("admin.ratelimit.index.text.chainEnabled", "启用")}
+            </label>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label className="block">
+              <span className="text-xs font-medium text-slate-500">{t("admin.ratelimit.index.text.chainAllowlist", "白名单（留空 = 不限制）")}</span>
+              <textarea
+                value={allowlistText}
+                disabled={!ipAccessEnabled}
+                onChange={(event) => setAllowlistText(event.target.value)}
+                rows={6}
+                placeholder={'192.168.1.0/24\n10.0.0.5'}
+                className="mt-1 w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-[#1a1a1a] px-3 py-2 text-sm text-slate-900 dark:text-white disabled:opacity-50 font-mono"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-medium text-slate-500">{t("admin.ratelimit.index.text.chainDenylist", "黑名单")}</span>
+              <textarea
+                value={denylistText}
+                disabled={!ipAccessEnabled}
+                onChange={(event) => setDenylistText(event.target.value)}
+                rows={6}
+                placeholder={'203.0.113.7'}
+                className="mt-1 w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-[#1a1a1a] px-3 py-2 text-sm text-slate-900 dark:text-white disabled:opacity-50 font-mono"
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={updateMutation.isPending}
+            className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-red-700 transition-colors disabled:opacity-60"
+          >
+            {updateMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+            {t('common.actions.save')}
+          </button>
+          {isFetching && <span className="text-xs text-slate-400">Syncing...</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function splitIpLines(text: string): string[] {
+  return text
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
 }

@@ -10,6 +10,7 @@ use hyper_rustls::HttpsConnector;
 use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
+use sdkwork_claw_http::ensure_rustls_crypto_provider;
 use serde_json::{json, Value};
 
 use super::{
@@ -872,6 +873,7 @@ fn invalid_response(
 }
 
 fn build_wechat_pay_http_client() -> WeChatPayHttpClient {
+    ensure_rustls_crypto_provider();
     let connector = hyper_rustls::HttpsConnectorBuilder::new()
         .with_webpki_roots()
         .https_or_http()

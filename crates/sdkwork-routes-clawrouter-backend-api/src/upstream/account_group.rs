@@ -24,6 +24,8 @@ use super::supplier::ResourceResponse;
 const MAX_CODE_LENGTH: usize = 128;
 const MAX_NAME_LENGTH: usize = 200;
 const MAX_DESCRIPTION_LENGTH: usize = 4_000;
+const MAX_VENDOR_CODE_LENGTH: usize = 64;
+const SUPPORTED_MODALITIES: [&str; 5] = ["text", "audio", "image", "video", "music"];
 const ACCOUNT_GROUP_CREATE_IDEMPOTENCY_SCOPE: i64 = 1_000_003;
 
 #[derive(Debug, Deserialize)]
@@ -39,6 +41,8 @@ struct AccountGroupCreateRequest {
     cost_multiplier: Option<String>,
     sale_multiplier: Option<String>,
     environment: Option<i32>,
+    vendor_code: Option<String>,
+    modalities: Option<Vec<String>>,
     status: Option<i32>,
 }
 
@@ -54,6 +58,8 @@ struct AccountGroupUpdateRequest {
     cost_multiplier: Option<String>,
     sale_multiplier: Option<String>,
     environment: Option<i32>,
+    vendor_code: Option<String>,
+    modalities: Option<Vec<String>>,
     status: Option<i32>,
 }
 
@@ -105,6 +111,8 @@ struct AccountGroupResponse {
     cost_multiplier: String,
     sale_multiplier: String,
     environment: Option<i32>,
+    vendor_code: Option<String>,
+    modalities: Vec<String>,
     status: i32,
     version: String,
     updated_at: String,
@@ -427,6 +435,8 @@ fn create_command(
             "saleMultiplier",
         )?,
         environment: request.environment,
+        vendor_code: vendor_code(request.vendor_code)?,
+        modalities: modalities(request.modalities)?,
         status: status(request.status.unwrap_or(1))?,
         requested_at: requested_at(),
     })
@@ -480,6 +490,14 @@ fn update_command(
             .transpose()?
             .unwrap_or(existing.sale_multiplier),
         environment: request.environment.or(existing.environment),
+        vendor_code: match request.vendor_code {
+            Some(value) => vendor_code(Some(value))?,
+            None => existing.vendor_code,
+        },
+        modalities: match request.modalities {
+            Some(values) => modalities(Some(values))?,
+            None => existing.modalities,
+        },
         status: status(request.status.unwrap_or(existing.status))?,
         requested_at: requested_at(),
     })
@@ -587,6 +605,36 @@ fn fallback_mode(value: String) -> RequestResult<String> {
     Ok(value)
 }
 
+fn vendor_code(value: Option<String>) -> RequestResult<Option<String>> {
+    match value {
+        None => Ok(None),
+        Some(value) => optional_text(Some(value), "vendorCode", MAX_VENDOR_CODE_LENGTH),
+    }
+}
+
+fn modalities(values: Option<Vec<String>>) -> RequestResult<Vec<String>> {
+    let Some(values) = values else {
+        return Ok(Vec::new());
+    };
+    let mut seen: Vec<String> = Vec::new();
+    for value in values {
+        let normalized = value.trim().to_lowercase();
+        if !SUPPORTED_MODALITIES.iter().any(|modality| *modality == normalized) {
+            return Err(problem(
+                SdkWorkResultCode::InvalidParameter,
+                format!(
+                    "modalities must be a subset of {}",
+                    SUPPORTED_MODALITIES.join(", ")
+                ),
+            ));
+        }
+        if !seen.contains(&normalized) {
+            seen.push(normalized);
+        }
+    }
+    Ok(seen)
+}
+
 fn status(value: i32) -> RequestResult<i32> {
     if !matches!(value, 0 | 1) {
         return Err(problem(
@@ -632,6 +680,8 @@ impl From<AdminUpstreamAccountGroupItem> for AccountGroupResponse {
             cost_multiplier: item.cost_multiplier,
             sale_multiplier: item.sale_multiplier,
             environment: item.environment,
+            vendor_code: item.vendor_code,
+            modalities: item.modalities,
             status: item.status,
             version: item.version.to_string(),
             updated_at: item.updated_at,

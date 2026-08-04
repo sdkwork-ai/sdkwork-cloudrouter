@@ -10,6 +10,7 @@ pub mod outbound_dns;
 pub mod query_string;
 pub mod readiness;
 pub mod router;
+pub mod rustls_provider;
 pub mod shutdown;
 #[cfg(test)]
 pub mod signing_service;
@@ -94,3 +95,4 @@ pub use web_framework_compat::{
 pub use web_security::{
     claw_service_security_policy, resolve_claw_web_environment_from_process_env,
 };
+pub use rustls_provider::ensure_rustls_crypto_provider;

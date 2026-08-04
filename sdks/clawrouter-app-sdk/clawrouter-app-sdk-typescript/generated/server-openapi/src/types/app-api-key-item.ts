@@ -4,6 +4,8 @@ export interface AppApiKeyItem {
   accountGroup: string;
   /** Display name snapshot for the bound upstream account group. */
   accountGroupName: string;
+  /** Route binding group codes (priority order), including the default group. */
+  accountGroups: string[];
   /** Created field on app api key item. */
   created: string;
   /** Whether this key is the current console default for backend runtime API key selection. */
@@ -24,6 +26,8 @@ export interface AppApiKeyItem {
   quota: string;
   /** Rate field on app api key item. */
   rate?: string | null;
+  /** Raw key field on app api key item. */
+  rawKey?: string | null;
   /** Status field on app api key item. */
   status: 'enabled' | 'disabled';
   /** Used quota field on app api key item. */

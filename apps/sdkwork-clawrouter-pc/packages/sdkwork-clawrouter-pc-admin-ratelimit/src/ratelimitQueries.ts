@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   RATE_LIMIT_DASHBOARD_SAMPLE_PAGE_SIZE,
@@ -12,6 +12,7 @@ export const rateLimitQueryKeys = {
   tokenLimits: (filters: RateLimitListFilters = {}) => [...rateLimitQueryKeys.all, 'token-limits', filters] as const,
   modelLimits: (filters: RateLimitListFilters = {}) => [...rateLimitQueryKeys.all, 'model-limits', filters] as const,
   firewalls: (filters: RateLimitListFilters = {}) => [...rateLimitQueryKeys.all, 'firewalls', filters] as const,
+  chainPolicy: () => [...rateLimitQueryKeys.all, 'chain-policy'] as const,
   dashboard: () => [...rateLimitQueryKeys.all, 'dashboard'] as const,
 };
 
@@ -69,5 +70,27 @@ export function useFirewallRulesQuery(filters: RateLimitListFilters = {}) {
   return useQuery({
     queryKey: rateLimitQueryKeys.firewalls(filters),
     queryFn: () => RateLimitService.fetchFirewalls(filters),
+  });
+}
+
+export function useChainPolicyQuery() {
+  return useQuery({
+    queryKey: rateLimitQueryKeys.chainPolicy(),
+    queryFn: () => RateLimitService.fetchChainPolicy(),
+    // Aligned with the backend resolver's CHAIN_POLICY_CACHE_TTL_SECS (30s):
+    // the gateway picks up config changes within one TTL, so stale reads are
+    // never worse than the enforcement window itself.
+    staleTime: 30_000,
+  });
+}
+
+export function useUpdateChainPolicyMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: import('./ratelimitService').ChainPolicy) =>
+      RateLimitService.updateChainPolicy(input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: rateLimitQueryKeys.chainPolicy() });
+    },
   });
 }

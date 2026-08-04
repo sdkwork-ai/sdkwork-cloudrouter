@@ -1,10 +1,12 @@
 mod ai_route_taxonomy;
 mod ai_routing_cache_invalidation;
 mod alipay_payment_adapter;
+mod api_key_secret_codec;
 mod api_key_secret_generator;
 mod cache_runtime;
 mod category_seed;
 mod gateway_accounting_retry;
+mod gateway_chain_policy;
 mod gateway_invocation_policy;
 mod gateway_invocation_rate_limit;
 mod iam_runtime_context;
@@ -44,6 +46,9 @@ pub use alipay_payment_adapter::{
     AlipayPaymentProviderConfig, AlipaySigner,
 };
 pub use api_key_secret_generator::{ApiKeySecretGenerator, EntityUuidGenerator};
+pub use api_key_secret_codec::{
+    ApiKeySecretCodec, ApiKeySecretContext, ApiKeySecretStorageConfig, EncodedApiKeySecret,
+};
 pub use cache_runtime::{
     default_desktop_cache_manager, default_desktop_cache_runtime, default_service_cache_manager,
     default_service_cache_runtime, CacheBackend, CacheBackendCursor, CacheBackendFuture,
@@ -63,6 +68,9 @@ pub use category_seed::{
 pub use gateway_accounting_retry::{
     GatewayAccountingRetryHealth, GatewayAccountingRetryRecorderConfig,
     GatewayAccountingRetryWorker, GatewayAccountingRetryWorkerConfig, RetryingGatewayUsageRecorder,
+};
+pub use gateway_chain_policy::{
+    validate_chain_policy, GatewayChainPolicyResolver, CHAIN_POLICY_CACHE_TTL_SECS,
 };
 pub use gateway_invocation_policy::{
     client_ip_allowed_by_allowlist, GatewayInvocationPolicyGuard, GatewayInvocationPolicyViolation,

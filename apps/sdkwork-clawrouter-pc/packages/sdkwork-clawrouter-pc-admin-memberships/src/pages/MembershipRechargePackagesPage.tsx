@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pencil, Plus, Save, Trash2 } from 'lucide-react';
+import { formatMoney, formatMoneyDigits } from '@sdkwork/clawroutes-pc-commons/sdkwork-utils';
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
 import { MembershipDrawer } from '../components/MembershipDrawer';
 import {
@@ -40,7 +41,8 @@ type RechargeSettingsDraft = {
 };
 
 export function MembershipRechargePackagesPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const displayLocale = i18n.resolvedLanguage ?? i18n.language ?? 'en-US';
   const [packages, setPackages] = useState<MembershipsAdminRechargePackageItem[]>([]);
   const [settings, setSettings] = useState<MembershipsAdminRechargeSettingsItem | null>(null);
   const [editingPackage, setEditingPackage] = useState<MembershipsAdminRechargePackageItem | null>(null);
@@ -283,9 +285,11 @@ export function MembershipRechargePackagesPage() {
                 <div className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
                   {previewExamples.map((item) => (
                     <div key={`${item.currencyCode}-${item.amount}`} className="flex items-center justify-between gap-4">
-                      <span>{item.currencyCode} {item.amount}</span>
+                      <span>
+                        {formatMoney(item.amount, { currency: item.currencyCode, locale: displayLocale, mode: 'symbol' }) ?? `${item.currencyCode} ${item.amount}`}
+                      </span>
                       <span className="font-semibold text-lobster-600 dark:text-lobster-300">
-                        {item.grantAmount.toLocaleString()} pts
+                        {formatMoneyDigits(item.grantAmount, 'USD', displayLocale, 'decimal', 0, 0)} pts
                       </span>
                     </div>
                   ))}
@@ -330,9 +334,13 @@ export function MembershipRechargePackagesPage() {
                       <div className="font-medium text-slate-900 dark:text-white">{item.name || item.packageNo}</div>
                       <div className="text-xs text-slate-400">{item.packageNo}</div>
                     </td>
-                    <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">{item.priceAmount} {item.currencyCode}</td>
+                    <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">
+                      {formatMoney(item.priceAmount, { currency: item.currencyCode, locale: displayLocale, mode: 'symbol' }) ?? `${item.priceAmount} ${item.currencyCode}`}
+                    </td>
                     <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">{item.bonusPoints}</td>
-                    <td className="px-4 py-2.5 text-right font-semibold text-lobster-600 dark:text-lobster-300">{item.grantAmount}</td>
+                    <td className="px-4 py-2.5 text-right font-semibold text-lobster-600 dark:text-lobster-300">
+                      {formatMoneyDigits(item.grantAmount, 'USD', displayLocale, 'decimal', 0, 0)}
+                    </td>
                     <td className="px-4 py-2.5"><MembershipStatusBadge status={item.status} /></td>
                     <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{item.updatedAt}</td>
                     <td className="px-4 py-2.5">

@@ -71,6 +71,7 @@ use sqlx::PgPool;
 use tokio::sync::Notify;
 use tokio::time::{sleep, Duration};
 
+use crate::call_chain::CallChainInterceptor;
 use crate::edge_server::EdgeInProcessUpstreams;
 use crate::internal_gateway_replay_store::RedisInternalGatewayReplayStore;
 use crate::invocation_sticky_store::InvocationStickyObjectRouteStore;
@@ -172,6 +173,7 @@ struct InvocationRuntimeRoutesInput<'a, C> {
     provider_response_timeout: Duration,
     provider_http_pool_config: ProviderRelayHttpPoolConfig,
     internal_gateway_verifier: Arc<InternalGatewayRequestVerifier>,
+    call_chain: Option<CallChainInterceptor>,
 }
 
 fn router_with_invocation_runtime_routes<C>(
@@ -199,6 +201,7 @@ where
         provider_response_timeout,
         provider_http_pool_config,
         internal_gateway_verifier,
+        call_chain,
     } = input;
     let secret_resolver = provider_secret_resolver.map(|resolver| {
         let resolver: Arc<dyn ProviderSecretResolver + Send + Sync> = resolver;
@@ -236,6 +239,7 @@ where
                 stream_response_timeout,
                 query_string_api_key_policy,
                 internal_gateway_verifier: Some(internal_gateway_verifier),
+                call_chain,
                 ..crate::invocation_router::InvocationRouterOptions::default()
             },
         ),
@@ -311,6 +315,7 @@ struct DatabaseRuntimeRoutesInput<'a, C> {
     query_string_api_key_policy: QueryStringApiKeyPolicy,
     runtime_toml: Option<&'a RuntimeTomlConfig>,
     request_limits_config: RequestLimitsConfig,
+    call_chain: Option<CallChainInterceptor>,
 }
 
 fn router_with_database_runtime_routes<C>(
@@ -332,12 +337,17 @@ where
         query_string_api_key_policy,
         runtime_toml,
         request_limits_config,
+        call_chain,
     } = input;
     let internal_gateway_verifier = build_internal_gateway_request_verifier(runtime_toml)?;
     let dispatcher_response_max_bytes =
         invocation_response_max_bytes(provider_runtime_config.response_max_bytes)?;
     let body_max_bytes = gateway_invocation_body_max_bytes(request_limits_config);
     let secret_resolver_configured = provider_secret_resolver.is_some();
+    // When the call chain owns the tenant scope (gray flag), the legacy
+    // TenantInflightInterceptor is not registered.
+    let tenant_inflight_config = (!provider_runtime_config.tenant_inflight_use_chain_stage)
+        .then_some(provider_runtime_config.tenant_inflight_config);
     let router = if secret_resolver_configured {
         router_with_invocation_runtime_routes(InvocationRuntimeRoutesInput {
             base_router,
@@ -350,7 +360,7 @@ where
             query_string_api_key_policy,
             runtime_toml,
             body_max_bytes,
-            tenant_inflight_config: Some(provider_runtime_config.tenant_inflight_config),
+            tenant_inflight_config,
             estimated_instance_count: provider_runtime_config.estimated_instance_count,
             stream_response_timeout: provider_runtime_config.stream_response_timeout,
             response_max_bytes: dispatcher_response_max_bytes,
@@ -358,6 +368,7 @@ where
             provider_response_timeout: provider_runtime_config.response_timeout,
             provider_http_pool_config: provider_runtime_config.http_pool_config,
             internal_gateway_verifier: Arc::clone(&internal_gateway_verifier),
+            call_chain: call_chain.clone(),
         })?
     } else {
         let relays = build_openai_runtime_relays(
@@ -394,7 +405,7 @@ where
             query_string_api_key_policy,
             runtime_toml,
             body_max_bytes,
-            tenant_inflight_config: Some(provider_runtime_config.tenant_inflight_config),
+            tenant_inflight_config,
             estimated_instance_count: provider_runtime_config.estimated_instance_count,
             stream_response_timeout: provider_runtime_config.stream_response_timeout,
             response_max_bytes: dispatcher_response_max_bytes,
@@ -402,6 +413,7 @@ where
             provider_response_timeout: provider_runtime_config.response_timeout,
             provider_http_pool_config: provider_runtime_config.http_pool_config,
             internal_gateway_verifier: Arc::clone(&internal_gateway_verifier),
+            call_chain,
         })?
     };
     Ok(merge_relay_authenticated_openai_passthrough(
@@ -1105,6 +1117,82 @@ pub async fn router_with_database_api_key_provider_configs_usage_settlement_work
     .await
 }
 
+/// Builds the open-API guard chain backed by the database chain-policy store
+/// (global + per-API-key config) and a distributed concurrency store when
+/// Redis is enabled (memory otherwise, with a degraded-mode warning).
+fn build_gateway_call_chain<C>(
+    pool: &PgPool,
+    catalog: &Arc<C>,
+    redis_config: Option<&sdkwork_claw_config::RedisConfig>,
+    tenant_inflight_config: Option<TenantInflightConfig>,
+    use_chain_tenant_scope: bool,
+) -> Option<CallChainInterceptor>
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    let store: Arc<dyn sdkwork_web_core::ConcurrentAdmissionStore> = match redis_config {
+        Some(config) if config.enabled() => {
+            match sdkwork_web_store_redis::shared_concurrent_admission_store(
+                config.url(),
+                // Dedicated namespace so call-chain budgets never collide
+                // with the standard HTTP chain's concurrent admission keys.
+                "clawrouter:callchain",
+            ) {
+                Ok(store) => store,
+                Err(error) => {
+                    tracing::warn!(
+                        error = ?error,
+                        "call chain concurrency store failed to connect to redis; falling back to per-node memory store"
+                    );
+                    sdkwork_web_core::memory_concurrent_admission_store()
+                }
+            }
+        }
+        _ => sdkwork_web_core::memory_concurrent_admission_store(),
+    };
+    let chain_policy_store: Arc<
+        dyn sdkwork_clawrouter_router_service::ports::GatewayChainPolicyStore,
+    > = Arc::new(
+        sdkwork_clawrouter_router_service::infrastructure::sql::postgres::PostgresGatewayChainPolicyStore::new(
+            pool.clone(),
+        ),
+    );
+    // Gray migration: when the tenant in-flight bound is delegated to the
+    // chain, seed the built-in defaults with the legacy tenant budget
+    // (default 100) so behavior is equivalent, and enable the tenant scope.
+    let mut defaults = sdkwork_web_chain::ChainPolicy::default();
+    let mut scopes: Vec<sdkwork_web_chain::ConcurrencyScope> = vec![
+        sdkwork_web_chain::ConcurrencyScope::Global,
+        sdkwork_web_chain::ConcurrencyScope::ApiKey,
+    ];
+    if use_chain_tenant_scope {
+        scopes.push(sdkwork_web_chain::ConcurrencyScope::Tenant);
+        if let Some(config) = tenant_inflight_config {
+            defaults.concurrency = Some(sdkwork_web_chain::ConcurrencyPolicy {
+                max_inflight: None,
+                max_inflight_per_scope: Some(
+                    [("tenant".to_owned(), config.max_inflight)].into_iter().collect(),
+                ),
+            });
+        }
+    }
+    let resolver: Arc<dyn sdkwork_web_chain::PolicyResolver> = Arc::new(
+        sdkwork_clawrouter_router_service::application::GatewayChainPolicyResolver::new(
+            Arc::clone(catalog),
+            chain_policy_store,
+            defaults,
+        ),
+    );
+    let stage = sdkwork_web_chain::ConcurrencyStage::new(store).with_scopes(scopes);
+    let chain = sdkwork_web_chain::CallChainBuilder::new()
+        .with_stage(Arc::new(sdkwork_web_chain::IpAccessStage::new()))
+        .with_stage(Arc::new(stage))
+        .with_policy_resolver(resolver)
+        .build()
+        .expect("standard call chain stages are unique");
+    Some(CallChainInterceptor::new(chain))
+}
+
 async fn router_with_database_bootstrap(
     input: GatewayRouterBootstrap<'_>,
 ) -> Result<Router, GatewayRouterError> {
@@ -1226,6 +1314,16 @@ async fn router_with_database_bootstrap(
                 );
         let readiness_check =
             combine_accounting_retry_readiness(readiness_check, accounting_retry_health);
+        let redis_config = sdkwork_claw_config::RedisConfig::from_env_or_runtime_toml(runtime_toml)
+            .ok()
+            .flatten();
+        let call_chain = build_gateway_call_chain(
+            &pool,
+            &catalog,
+            redis_config.as_ref(),
+            Some(provider_runtime.tenant_inflight_config),
+            provider_runtime.tenant_inflight_use_chain_stage,
+        );
         router_with_database_runtime_routes(DatabaseRuntimeRoutesInput {
             base_router: router_with_database_status_and_passthrough_placeholder(
                 Some(&config),
@@ -1244,6 +1342,7 @@ async fn router_with_database_bootstrap(
             query_string_api_key_policy,
             runtime_toml,
             request_limits_config,
+            call_chain,
         })
     }
 }
@@ -1381,11 +1480,28 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
         .ok_or_else(|| {
             anyhow::Error::msg("all-in-one runtime requires a PostgreSQL database pool")
         })?;
+    // Federated commerce capabilities (promotion/order/membership/payment)
+    // share one commerce database. The promotion admin repository is backed
+    // by that commerce pool, so bootstrap the payment service host here and
+    // hand its pool to the backend shared runtime.
+    let payment_host = std::sync::Arc::new(
+        sdkwork_payment_service_host::PaymentServiceHost::from_env()
+            .await
+            .map_err(anyhow::Error::msg)?,
+    );
+    let commerce_pool = payment_host
+        .database_pool()
+        .as_postgres()
+        .cloned()
+        .ok_or_else(|| {
+            anyhow::Error::msg("all-in-one commerce runtime requires a PostgreSQL database pool")
+        })?;
     let backend_router =
         sdkwork_routes_clawrouter_backend_api::router_with_postgres_shared_runtime(
             sdkwork_routes_clawrouter_backend_api::PostgresSharedRuntime {
                 config: context.database_config.clone(),
                 pool: pool.clone(),
+                commerce_pool,
                 catalog: Arc::clone(&context.catalog),
                 api_key_security_config: context.api_key_security_config.clone(),
                 upstream_credential_security_config: context
@@ -1687,6 +1803,16 @@ async fn build_gateway_router_from_all_in_one_context(
         );
     let readiness_check =
         combine_accounting_retry_readiness(readiness_check, accounting_retry_health);
+    let redis_config = sdkwork_claw_config::RedisConfig::from_env_or_runtime_toml(runtime_toml.as_ref())
+        .ok()
+        .flatten();
+    let call_chain = build_gateway_call_chain(
+        &pool,
+        &context.catalog,
+        redis_config.as_ref(),
+        Some(context.provider_runtime_config.tenant_inflight_config),
+        context.provider_runtime_config.tenant_inflight_use_chain_stage,
+    );
 
     router_with_database_runtime_routes(DatabaseRuntimeRoutesInput {
         base_router: router_with_database_status_and_passthrough_placeholder(
@@ -1706,6 +1832,7 @@ async fn build_gateway_router_from_all_in_one_context(
         query_string_api_key_policy: context.query_string_api_key_policy,
         runtime_toml: runtime_toml.as_ref(),
         request_limits_config: context.request_limits_config,
+        call_chain,
     })
     .map_err(anyhow::Error::new)
 }
@@ -2527,6 +2654,9 @@ struct ProviderRelayRuntimeConfig {
     failure_strategy: OpenAiRuntimeFailureStrategy,
     tenant_inflight_config: TenantInflightConfig,
     estimated_instance_count: u32,
+    /// Gray-flag: per-tenant in-flight bound enforced by the call chain's
+    /// tenant concurrency scope instead of `TenantInflightInterceptor`.
+    tenant_inflight_use_chain_stage: bool,
 }
 
 fn provider_relay_runtime_config_from_env_or_toml(
@@ -2702,6 +2832,12 @@ fn provider_relay_runtime_config_from_env_or_toml(
     let tenant_inflight_config = TenantInflightConfig {
         max_inflight: tenant_max_inflight,
     };
+    const TENANT_INFLIGHT_USE_CHAIN_STAGE: &str = "SDKWORK_CLAW_PROVIDER_TENANT_INFLIGHT_USE_CHAIN_STAGE";
+    let tenant_inflight_use_chain_stage = parse_optional_bool_config(
+        TENANT_INFLIGHT_USE_CHAIN_STAGE,
+        rate_limit_section.and_then(|section| section.tenant_inflight_use_chain_stage),
+        false,
+    )?;
 
     Ok(ProviderRelayRuntimeConfig {
         response_timeout: Duration::from_millis(response_timeout_millis),
@@ -2717,6 +2853,7 @@ fn provider_relay_runtime_config_from_env_or_toml(
         failure_strategy,
         tenant_inflight_config,
         estimated_instance_count,
+        tenant_inflight_use_chain_stage,
     })
 }
 
@@ -2730,6 +2867,25 @@ fn parse_positive_u32_config(
         return Err(format!("{name} must be a positive integer"));
     }
     Ok(parsed)
+}
+
+/// Env-over-TOML boolean with a default. Env values accept `1/0/true/false`.
+fn parse_optional_bool_config(
+    name: &str,
+    config_value: Option<bool>,
+    default: bool,
+) -> Result<bool, String> {
+    match std::env::var(name) {
+        Ok(value) => {
+            let value = value.trim().to_ascii_lowercase();
+            match value.as_str() {
+                "1" | "true" | "yes" | "on" => Ok(true),
+                "0" | "false" | "no" | "off" | "" => Ok(false),
+                _ => Err(format!("{name} must be a boolean")),
+            }
+        }
+        Err(_) => Ok(config_value.unwrap_or(default)),
+    }
 }
 
 fn parse_openai_runtime_failure_strategy(

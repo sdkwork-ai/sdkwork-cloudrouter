@@ -21,14 +21,18 @@ test('claw router i18n resources compose the canonical upstream administration c
     upstreamAccountGroupMessages,
   ]);
 
-  assert.equal(resources.en.translation['admin.menu.upstream'], 'Upstream Routing');
-  assert.equal(resources.zh.translation['admin.menu.upstream'], '上游路由');
+  assert.equal(resources.en.translation['admin.menu.upstream.suppliers'], 'Upstream Suppliers');
+  assert.equal(resources.zh.translation['admin.menu.upstream.suppliers'], '上游供应商');
+  assert.equal(resources.en.translation['admin.menu.upstream.accounts'], 'Upstream Accounts');
+  assert.equal(resources.zh.translation['admin.menu.upstream.accounts'], '上游账号');
+  assert.equal(resources.en.translation['admin.menu.upstream.accountGroups'], 'Account Groups');
+  assert.equal(resources.zh.translation['admin.menu.upstream.accountGroups'], '账号分组');
   assert.equal(resources.en.translation['admin.menu.home.upstreamManagement'], 'Upstream Management');
   assert.equal(resources.zh.translation['admin.menu.home.upstreamManagement'], '上游管理');
-  assert.equal(resources.en.translation['admin.upstream.views.suppliers'], 'Upstream suppliers');
-  assert.equal(resources.zh.translation['admin.upstream.views.suppliers'], '上游供应商');
-  assert.equal(resources.en.translation['admin.upstream.views.accountGroups'], 'Account groups');
-  assert.equal(resources.zh.translation['admin.upstream.views.accountGroups'], '账号分组');
+  assert.equal(resources.en.translation['admin.upstream.suppliers.title'], 'Upstream suppliers');
+  assert.equal(resources.zh.translation['admin.upstream.suppliers.title'], '上游供应商');
+  assert.equal(resources.en.translation['admin.upstream.accountGroups.title'], 'Account groups');
+  assert.equal(resources.zh.translation['admin.upstream.accountGroups.title'], '账号分组');
   assert.equal(resources.en.translation['admin.upstream.supplier.type.relay'], 'Relay supplier');
   assert.equal(resources.zh.translation['admin.upstream.supplier.type.relay'], '中转站供应商');
   assert.equal(

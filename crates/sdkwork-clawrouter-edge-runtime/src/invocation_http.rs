@@ -655,6 +655,13 @@ pub(crate) fn response_from_invocation_error(error: &InvocationError) -> Respons
         header::CONTENT_TYPE,
         HeaderValue::from_static("application/json"),
     );
+    if status == StatusCode::TOO_MANY_REQUESTS {
+        if let Some(retry_after) = error.retry_after_secs {
+            if let Ok(value) = HeaderValue::from_str(&retry_after.to_string()) {
+                response.headers_mut().insert(header::RETRY_AFTER, value);
+            }
+        }
+    }
     response
 }
 

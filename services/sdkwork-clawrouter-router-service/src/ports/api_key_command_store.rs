@@ -10,6 +10,12 @@ pub type ApiKeyCommandStoreFuture<'a, T> =
     Pin<Box<dyn Future<Output = DomainResult<T>> + Send + 'a>>;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AccountGroupBindingInput {
+    pub group_id: i64,
+    pub priority: i32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CreateGatewayApiKeyCommand {
     pub api_key_uuid: String,
     pub access_policy_uuid: String,
@@ -22,9 +28,15 @@ pub struct CreateGatewayApiKeyCommand {
     pub operator_type: i32,
     pub name: String,
     pub group_id: i64,
+    /// Route bindings for `iam_gateway_api_key_account_group` (binding_role='route'),
+    /// including the default group; written together with the api key row.
+    pub account_group_bindings: Vec<AccountGroupBindingInput>,
     pub key_prefix: String,
     pub key_display_masked: String,
     pub key_hash: String,
+    /// Raw key material generated at creation; persisted per the configured
+    /// secret storage mode (plaintext by default, ciphertext when enabled).
+    pub raw_key: String,
     pub hash_alg: String,
     pub secret_version: i64,
     pub request_id: String,
@@ -48,6 +60,8 @@ pub struct UpdateGatewayApiKeyCommand {
     pub api_key_id: i64,
     pub name: Option<String>,
     pub group_id: Option<i64>,
+    /// `Some` replaces all route bindings (binding_role='route') for the key.
+    pub account_group_bindings: Option<Vec<AccountGroupBindingInput>>,
     pub requested_at: String,
     pub request_id: String,
     pub access_policy_uuid: String,
@@ -116,8 +130,8 @@ pub struct EnsureDefaultUpstreamAccountGroupCommand {
     pub code: String,
     pub name: String,
     pub pricing_plan_code: String,
-    pub rate_multiplier: DecimalValue,
-    pub official_price_multiplier: DecimalValue,
+    pub cost_multiplier: DecimalValue,
+    pub sale_multiplier: DecimalValue,
     pub requested_at: String,
 }
 

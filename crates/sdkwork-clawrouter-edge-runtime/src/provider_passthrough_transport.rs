@@ -14,6 +14,7 @@ use sdkwork_claw_config::{
     ProviderPassthroughAuth, ProviderPassthroughAuthType, ProviderPassthroughHeader,
 };
 use sdkwork_claw_http::{upsert_query_parameter, OutboundDnsResolver};
+use sdkwork_claw_http::ensure_rustls_crypto_provider;
 use sdkwork_claw_security::{validate_outbound_url, OutboundTargetPolicy};
 use sdkwork_clawrouter_router_service::infrastructure::provider::ProviderRelayHttpPoolConfig;
 use std::collections::HashSet;
@@ -108,6 +109,7 @@ pub(crate) fn build_provider_passthrough_client(
     outbound_target_policy: OutboundTargetPolicy,
     pool_config: ProviderRelayHttpPoolConfig,
 ) -> PassthroughClient {
+    ensure_rustls_crypto_provider();
     let mut http_connector =
         HttpConnector::new_with_resolver(OutboundDnsResolver::new(outbound_target_policy));
     http_connector.set_connect_timeout(Some(pool_config.connect_timeout));

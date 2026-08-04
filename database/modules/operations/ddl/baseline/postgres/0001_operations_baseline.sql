@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-clawrouter.tables.yaml.
 -- Registry version: 0.4.0.
--- Registry SHA-256: edfc49473778989d55fabbfe5adec6d498cb8f6ebffc31daeb3ebb56c15d70f8.
+-- Registry SHA-256: 68adaff94451c089d37f4be3b45c66d13b1d93c1f3aa9d2411c48ec4d3cfa03f.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.

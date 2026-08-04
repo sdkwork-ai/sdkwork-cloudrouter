@@ -953,6 +953,11 @@ estimated_instance_count = 1
 # Maximum in-flight provider requests per tenant (H-9). Defaults to 100.
 # Exceeding the limit returns HTTP 429 and records an InvocationErrorKind::RateLimit.
 tenant_max_inflight_requests = 100
+# Gray-flag: delegate the per-tenant in-flight bound to the open-API call
+# chain (tenant scope of the chain concurrency stage, configured via the
+# "调用链" admin surface) instead of the legacy TenantInflightInterceptor.
+# Defaults to false; enable after validating parity on staging.
+# tenant_inflight_use_chain_stage = true
 
 [paths]
 data_directory = "/var/lib/sdkwork/router"

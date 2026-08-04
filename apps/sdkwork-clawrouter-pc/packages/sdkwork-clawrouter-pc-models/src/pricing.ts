@@ -1,3 +1,4 @@
+import { formatMoney } from '@sdkwork/clawroutes-pc-commons/sdkwork-utils';
 import type { Model, ModelPricing } from './data/models';
 
 export function formatModelPrice(pricing: ModelPricing, field: 'input' | 'output' | 'cachedInput'): string {
@@ -8,7 +9,18 @@ export function formatModelPrice(pricing: ModelPricing, field: 'input' | 'output
   if (value === undefined) {
     return '-';
   }
-  return `${currencySymbol(pricing.currency)}${formatPriceAmount(value)}`;
+  const fractionDigits = value < 0.1 ? 3 : 2;
+  const formatted = formatMoney(value, {
+    currency: pricing.currency,
+    locale: 'en-US',
+    mode: 'symbol',
+    minFractionDigits: fractionDigits,
+    maxFractionDigits: fractionDigits,
+  });
+  if (formatted !== null) {
+    return formatted;
+  }
+  return `${pricing.currency.trim().toUpperCase()} ${value.toFixed(fractionDigits)}`;
 }
 
 export function modelPricingUnitLabel(model: Model): string {
@@ -52,19 +64,4 @@ export function isModelPricingFieldUnavailable(
     return true;
   }
   return pricing[field] === undefined;
-}
-
-function formatPriceAmount(value: number): string {
-  return value.toFixed(value < 0.1 ? 3 : 2);
-}
-
-function currencySymbol(currency: string): string {
-  switch (currency.trim().toUpperCase()) {
-    case 'CNY':
-      return '¥';
-    case 'USD':
-      return '$';
-    default:
-      return `${currency.trim().toUpperCase()} `;
-  }
 }

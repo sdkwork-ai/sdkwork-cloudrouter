@@ -121,6 +121,15 @@
             "minLength": 1,
             "type": "string"
           },
+          "accountGroups": {
+            "description": "Route binding group codes (priority order), including the default group.",
+            "items": {
+              "description": "Account groups field on app api key item.",
+              "maxLength": 128,
+              "type": "string"
+            },
+            "type": "array"
+          },
           "created": {
             "description": "Created field on app api key item.",
             "maxLength": 64,
@@ -185,6 +194,12 @@
             "nullable": true,
             "type": "string"
           },
+          "rawKey": {
+            "description": "Raw key field on app api key item.",
+            "maxLength": 1024,
+            "nullable": true,
+            "type": "string"
+          },
           "status": {
             "description": "Status field on app api key item.",
             "enum": [
@@ -206,6 +221,7 @@
           "maskedKey",
           "accountGroup",
           "accountGroupName",
+          "accountGroups",
           "quota",
           "usedQuota",
           "modalities",
@@ -298,6 +314,22 @@
             "x-sdkwork-int64-string": true,
             "x-sdkwork-rust-type": "i64"
           },
+          "modalities": {
+            "description": "Modalities field on app routing account group.",
+            "items": {
+              "description": "Modalities field on app routing account group.",
+              "enum": [
+                "text",
+                "audio",
+                "image",
+                "video",
+                "music"
+              ],
+              "maxLength": 16,
+              "type": "string"
+            },
+            "type": "array"
+          },
           "resourceCodes": {
             "description": "Resource codes field on app routing account group.",
             "items": {
@@ -332,6 +364,12 @@
               "enabled",
               "disabled"
             ],
+            "type": "string"
+          },
+          "vendorCode": {
+            "description": "Vendor code field on app routing account group.",
+            "maxLength": 64,
+            "nullable": true,
             "type": "string"
           }
         },
@@ -1662,10 +1700,128 @@
         "name": "CreateApiKeyRequest",
         "properties": {
           "accountGroup": {
-            "description": "Upstream account group code authorized for this API key.",
+            "description": "Upstream account group code authorized for this API key. Replaced by accountGroups when provided.",
             "maxLength": 64,
             "minLength": 1,
             "type": "string"
+          },
+          "accountGroups": {
+            "description": "Route binding group codes (binding_role='route'); the first entry becomes the default group. Replaces accountGroup when provided.",
+            "items": {
+              "description": "Account groups field on create api key request.",
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "nullable": true,
+            "type": "array"
+          },
+          "chain": {
+            "additionalProperties": false,
+            "description": "Per-API-key call-chain policy applied at creation time.",
+            "nullable": true,
+            "properties": {
+              "concurrency": {
+                "additionalProperties": false,
+                "description": "Concurrency field on create api key request.",
+                "properties": {
+                  "maxInflight": {
+                    "description": "Max inflight field on create api key request.",
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "maxInflightPerScope": {
+                    "additionalProperties": {
+                      "description": "Chain field on create api key request.",
+                      "format": "int64",
+                      "pattern": "^[0-9]+$",
+                      "type": "string",
+                      "x-sdkwork-int64-string": true,
+                      "x-sdkwork-rust-type": "i64"
+                    },
+                    "description": "Max inflight per scope field on create api key request.",
+                    "nullable": true,
+                    "type": "object"
+                  }
+                },
+                "type": "object"
+              },
+              "ipAccess": {
+                "additionalProperties": false,
+                "description": "Ip access field on create api key request.",
+                "properties": {
+                  "allowlist": {
+                    "description": "Allowlist field on create api key request.",
+                    "items": {
+                      "description": "Chain field on create api key request.",
+                      "maxLength": 256,
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  },
+                  "denylist": {
+                    "description": "Denylist field on create api key request.",
+                    "items": {
+                      "description": "Chain field on create api key request.",
+                      "maxLength": 256,
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  },
+                  "mode": {
+                    "description": "Mode field on create api key request.",
+                    "enum": [
+                      "open",
+                      "allowlistOnly"
+                    ],
+                    "nullable": true,
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "policyName": {
+                "description": "Policy name field on create api key request.",
+                "maxLength": 128,
+                "nullable": true,
+                "type": "string"
+              },
+              "stages": {
+                "additionalProperties": false,
+                "description": "Stages field on create api key request.",
+                "properties": {
+                  "disabled": {
+                    "description": "Disabled field on create api key request.",
+                    "items": {
+                      "description": "Chain field on create api key request.",
+                      "maxLength": 64,
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  },
+                  "enabledOnly": {
+                    "description": "Enabled only field on create api key request.",
+                    "items": {
+                      "description": "Chain field on create api key request.",
+                      "maxLength": 64,
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "type": "object"
           },
           "defaultForRuntime": {
             "description": "Create this key as the default backend runtime API key.",
@@ -1716,7 +1872,6 @@
         },
         "required": [
           "name",
-          "accountGroup",
           "quota",
           "isUnlimitedQuota",
           "modalities",
@@ -2871,14 +3026,14 @@
         "description": "Invocations artifacts list result schema exposed by Claw Router.",
         "x-operation-id": "invocations.artifacts.list"
       },
-      "InvocationsCompleteResult": {
+      "InvocationsCompletionsCreateResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by invocations complete result.",
+            "description": "Object schema used by invocations completions create result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -2886,7 +3041,7 @@
                     "$ref": "#/components/schemas/RuntimeInvocationResponse"
                   }
                 ],
-                "description": "Data field on invocations complete result."
+                "description": "Data field on invocations completions create result."
               }
             },
             "required": [
@@ -2895,8 +3050,8 @@
             "type": "object"
           }
         ],
-        "description": "Invocations complete result schema exposed by Claw Router.",
-        "x-operation-id": "invocations.complete"
+        "description": "Invocations completions create result schema exposed by Claw Router.",
+        "x-operation-id": "invocations.completions.create"
       },
       "InvocationsCreateResult": {
         "allOf": [
@@ -4994,6 +5149,124 @@
             "minLength": 1,
             "type": "string"
           },
+          "accountGroups": {
+            "description": "Route binding group codes; Some replaces all route bindings (first entry becomes the default group). Replaces accountGroup when provided.",
+            "items": {
+              "description": "Account groups field on update api key request.",
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "nullable": true,
+            "type": "array"
+          },
+          "chain": {
+            "additionalProperties": false,
+            "description": "Per-API-key call-chain policy (concurrency limits, IP allow/deny lists, stage switches). Some upserts the key's chain policy; omitted leaves it unchanged.",
+            "nullable": true,
+            "properties": {
+              "concurrency": {
+                "additionalProperties": false,
+                "description": "Concurrency field on update api key request.",
+                "properties": {
+                  "maxInflight": {
+                    "description": "Max inflight field on update api key request.",
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "maxInflightPerScope": {
+                    "additionalProperties": {
+                      "description": "Chain field on update api key request.",
+                      "format": "int64",
+                      "pattern": "^[0-9]+$",
+                      "type": "string",
+                      "x-sdkwork-int64-string": true,
+                      "x-sdkwork-rust-type": "i64"
+                    },
+                    "description": "Max inflight per scope field on update api key request.",
+                    "nullable": true,
+                    "type": "object"
+                  }
+                },
+                "type": "object"
+              },
+              "ipAccess": {
+                "additionalProperties": false,
+                "description": "Ip access field on update api key request.",
+                "properties": {
+                  "allowlist": {
+                    "description": "Allowlist field on update api key request.",
+                    "items": {
+                      "description": "Chain field on update api key request.",
+                      "maxLength": 256,
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  },
+                  "denylist": {
+                    "description": "Denylist field on update api key request.",
+                    "items": {
+                      "description": "Chain field on update api key request.",
+                      "maxLength": 256,
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  },
+                  "mode": {
+                    "description": "Mode field on update api key request.",
+                    "enum": [
+                      "open",
+                      "allowlistOnly"
+                    ],
+                    "nullable": true,
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "policyName": {
+                "description": "Policy name field on update api key request.",
+                "maxLength": 128,
+                "nullable": true,
+                "type": "string"
+              },
+              "stages": {
+                "additionalProperties": false,
+                "description": "Stages field on update api key request.",
+                "properties": {
+                  "disabled": {
+                    "description": "Disabled field on update api key request.",
+                    "items": {
+                      "description": "Chain field on update api key request.",
+                      "maxLength": 64,
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  },
+                  "enabledOnly": {
+                    "description": "Enabled only field on update api key request.",
+                    "items": {
+                      "description": "Chain field on update api key request.",
+                      "maxLength": 64,
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "type": "object"
+          },
           "defaultForRuntime": {
             "description": "Marks this API key as the default backend runtime API key for Playground and app runtime calls.",
             "type": "boolean"
@@ -5588,14 +5861,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "dashboard.overview",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.dashboard_overview.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/gateway/traces": {
@@ -5708,14 +5974,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "gateway.traces",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-gateway/src/gatewayService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.gateway_traces.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/generations": {
@@ -5795,14 +6054,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "generations",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.generations.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/generations/images/text_to_image": {
@@ -5884,14 +6136,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationsService.ts",
         "x-write-tables": [
           "ai_usage"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.generations_images_textToImage.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/ai/generations/workspace": {
@@ -5971,14 +6216,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "generations.workspace",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationsService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.generations_workspace.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/routing/account_groups": {
@@ -6098,14 +6336,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "routing.accountGroups",
         "x-source-file": "crates/sdkwork-routes-clawrouter-app-api/src/http_route_manifest.rs",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.routing_accountGroups.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/routing/api_keys": {
@@ -6224,14 +6455,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "routing.apiKeys",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.routing_apiKeys.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/routing/request_traces": {
@@ -6350,14 +6574,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "routing.requestTraces",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.routing_requestTraces.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/routing/usage": {
@@ -6439,14 +6656,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "routing.usage",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.routing_usage.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/usage/logs": {
@@ -6599,14 +6809,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "usage.logs",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-usage/src/usageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.usage_logs.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/chat/conversations": {
@@ -6712,14 +6915,7 @@
         "x-sdkwork-domain": "chat",
         "x-sdkwork-resource": "conversations",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.conversations.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create chat conversation. Reads ai_chat_conversation. Writes ai_chat_conversation. File targets none.",
@@ -6810,14 +7006,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [
           "ai_chat_conversation"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.conversations.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/chat/conversations/{conversationId}": {
@@ -6907,14 +7096,7 @@
         "x-sdkwork-domain": "chat",
         "x-sdkwork-resource": "conversations",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.conversations.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/chat/conversations/{conversationId}/messages": {
@@ -7030,14 +7212,7 @@
         "x-sdkwork-domain": "chat",
         "x-sdkwork-resource": "conversations.messages",
         "x-source-file": "crates/sdkwork-routes-clawrouter-app-api/src/http_route_manifest.rs",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.conversations_messages.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/chat/conversations/{conversationId}/turns": {
@@ -7143,14 +7318,7 @@
           "ai_chat_item",
           "ai_chat_message",
           "ai_chat_message_part"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.conversations_turns.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response": {
@@ -7273,14 +7441,7 @@
           "ai_chat_message_part",
           "ai_chat_context_snapshot",
           "ai_runtime_usage_link"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.conversations_turns_response.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/iam/api_keys": {
@@ -7402,14 +7563,7 @@
         "x-sdkwork-domain": "iam",
         "x-sdkwork-resource": "apiKeys",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.apiKeys.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create key. Reads ai_upstream_account_group. Writes ai_upstream_account_group, iam_gateway_api_key, iam_gateway_access_policy, ai_quota_policy, ops_audit_log. File targets none.",
@@ -7517,14 +7671,7 @@
           "iam_gateway_access_policy",
           "ai_quota_policy",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.apiKeys.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/iam/api_keys/{apiKeyId}": {
@@ -7610,14 +7757,7 @@
         "x-write-tables": [
           "iam_gateway_api_key",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.apiKeys.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       },
       "patch": {
         "description": "Update key. Reads iam_gateway_api_key, ai_upstream_account_group, iam_gateway_access_policy, ai_quota_policy. Writes iam_gateway_api_key, iam_gateway_access_policy, ai_quota_policy, ops_audit_log. File targets none.",
@@ -7724,14 +7864,7 @@
           "iam_gateway_access_policy",
           "ai_quota_policy",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.apiKeys.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/iam/users/settings": {
@@ -7813,14 +7946,7 @@
         "x-sdkwork-domain": "iam",
         "x-sdkwork-resource": "users.settings",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-settings/src/settingsService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.users_settings.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update settings. Reads iam_user_preference, integration_webhook_endpoint. Writes iam_user_preference, integration_webhook_endpoint. File targets none.",
@@ -7913,14 +8039,7 @@
         "x-write-tables": [
           "iam_user_preference",
           "integration_webhook_endpoint"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.users_settings.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/memory/entries/{entryId}": {
@@ -8010,14 +8129,7 @@
         "x-sdkwork-domain": "memory",
         "x-sdkwork-resource": "entries",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.entries.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/memory/spaces": {
@@ -8097,14 +8209,7 @@
         "x-sdkwork-domain": "memory",
         "x-sdkwork-resource": "spaces",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.spaces.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create memory space. Reads ai_agent. Writes ai_agent. File targets none.",
@@ -8184,14 +8289,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [
           "ai_agent"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.spaces.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/memory/spaces/{spaceId}": {
@@ -8281,14 +8379,7 @@
         "x-sdkwork-domain": "memory",
         "x-sdkwork-resource": "spaces",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.spaces.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/memory/spaces/{spaceId}/entries": {
@@ -8378,14 +8469,7 @@
         "x-sdkwork-domain": "memory",
         "x-sdkwork-resource": "spaces.entries",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.spaces_entries.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create memory entry. Reads ai_agent. Writes ai_agent. File targets none.",
@@ -8475,14 +8559,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [
           "ai_agent"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.spaces_entries.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/notification/notifications": {
@@ -8609,14 +8686,7 @@
         "x-sdkwork-domain": "notification",
         "x-sdkwork-resource": "notifications",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.notifications.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/notification/notifications/{notificationId}/acknowledge": {
@@ -8719,14 +8789,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.notifications_acknowledge.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/notification/notifications/{notificationId}/popup_seen": {
@@ -8829,14 +8892,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.notifications_popupSeen.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/runtime/invocations": {
@@ -9002,14 +9058,7 @@
         "x-sdkwork-domain": "runtime",
         "x-sdkwork-resource": "invocations",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.invocations.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create runtime invocation. Reads ai_chat_conversation, ai_chat_turn, ai_agent_session. Writes ai_runtime_invocation. File targets none.",
@@ -9102,14 +9151,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [
           "ai_runtime_invocation"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.invocations.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}": {
@@ -9199,14 +9241,7 @@
         "x-sdkwork-domain": "runtime",
         "x-sdkwork-resource": "invocations",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.invocations.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}/artifacts": {
@@ -9322,14 +9357,7 @@
         "x-sdkwork-domain": "runtime",
         "x-sdkwork-resource": "invocations.artifacts",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.invocations_artifacts.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create runtime artifact. Reads ai_runtime_invocation. Writes ai_runtime_artifact. File targets none.",
@@ -9430,20 +9458,13 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [
           "ai_runtime_artifact"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.invocations_artifacts.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
-    "/app/v3/api/runtime/invocations/{invocationId}/complete": {
+    "/app/v3/api/runtime/invocations/{invocationId}/completions": {
       "post": {
         "description": "Complete runtime invocation. Reads ai_runtime_invocation. Writes ai_runtime_invocation. File targets none.",
-        "operationId": "invocations.complete",
+        "operationId": "invocations.completions.create",
         "parameters": [
           {
             "description": "Invocation id path parameter.",
@@ -9467,15 +9488,15 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InvocationsCompleteResult"
+                  "$ref": "#/components/schemas/InvocationsCompletionsCreateResult"
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -9536,18 +9557,11 @@
         "x-route-scope": "public",
         "x-sdk-domain": "runtime",
         "x-sdkwork-domain": "runtime",
-        "x-sdkwork-resource": "invocations",
+        "x-sdkwork-resource": "invocations.completions",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [
           "ai_runtime_invocation"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.invocations.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}/events": {
@@ -9663,14 +9677,7 @@
         "x-sdkwork-domain": "runtime",
         "x-sdkwork-resource": "invocations.events",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.invocations_events.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create runtime event. Reads ai_runtime_invocation. Writes ai_runtime_invocation_event. File targets none.",
@@ -9771,14 +9778,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [
           "ai_runtime_invocation_event"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.invocations_events.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}/events/stream": {
@@ -9883,14 +9883,7 @@
         "x-sdkwork-domain": "runtime",
         "x-sdkwork-resource": "invocations.events.stream",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.invocations_events_stream.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/system/site/runtime": {
@@ -9987,13 +9980,7 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "site.runtime",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/siteBranding.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-app-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
-        "x-sdkwork-permission": "clawrouter.site_runtime.read"
+        "x-write-tables": []
       }
     }
   },
@@ -10025,6 +10012,10 @@
     {
       "description": "memory operations exposed by Claw Router.",
       "name": "memory"
+    },
+    {
+      "description": "messaging operations exposed by Claw Router.",
+      "name": "messaging"
     },
     {
       "description": "notification operations exposed by Claw Router.",

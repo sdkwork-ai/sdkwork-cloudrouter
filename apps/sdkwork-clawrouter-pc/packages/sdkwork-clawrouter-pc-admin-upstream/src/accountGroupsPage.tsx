@@ -27,6 +27,7 @@ import {
   StatusBadge,
   TableState,
   textAreaClass,
+  UpstreamPageShell,
 } from './components';
 
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
@@ -34,7 +35,18 @@ type TranslationFunction = ReturnType<typeof useTranslation>['t'];
 const emptyMember = (accountId = ''): UpstreamAccountGroupMemberInput => ({ accountId, enabled: true, priority: 100, routingWeight: 100, status: 1 });
 const emptyResource = (): UpstreamResourceEntitlementInput => ({ resourceCode: '', resourceGroupCode: '', grantType: 'allow', priority: 100, status: 1 });
 
-export function AccountGroupTab() {
+export function UpstreamAccountGroupAdmin() {
+  return (
+    <UpstreamPageShell
+      titleKey="admin.upstream.accountGroups.title"
+      subtitleKey="admin.upstream.accountGroups.subtitle"
+    >
+      <AccountGroupAdminPanel />
+    </UpstreamPageShell>
+  );
+}
+
+export function AccountGroupAdminPanel() {
   const { t } = useTranslation();
   const [items, setItems] = useState<UpstreamAccountGroup[]>([]);
   const [accounts, setAccounts] = useState<UpstreamAccount[]>([]);

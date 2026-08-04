@@ -14,6 +14,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { BusinessStatePanel, BusinessStateTableRow } from '@sdkwork/clawroutes-pc-commons';
+import { formatMoney } from '@sdkwork/clawroutes-pc-commons/sdkwork-utils';
 import {
   formatLocalizedDecimalAmount,
   formatUserAgentDeviceLabel,
@@ -25,6 +26,7 @@ import { formatUsageLogLocalTime } from './usageFormatting';
 
 const DEFAULT_PAGE_SIZE = 20;
 const SPEND_DECIMAL_DIGITS = 9;
+const DISPLAY_DECIMAL_DIGITS = 2;
 
 type UsageLogStatus = 'all' | 'success' | 'error';
 
@@ -111,7 +113,13 @@ export function UsageView() {
   const visibleEnd = usageLogs.length > 0 ? visibleStart + usageLogs.length - 1 : 0;
   const displayLocale = i18n.resolvedLanguage ?? i18n.language ?? 'en-US';
   const formatDisplayAmount = (value: string) =>
-    formatLocalizedDecimalAmount(value, displayLocale, 2, 2);
+    formatMoney(value, {
+      currency: 'USD',
+      locale: displayLocale,
+      mode: 'decimal',
+      minFractionDigits: DISPLAY_DECIMAL_DIGITS,
+      maxFractionDigits: DISPLAY_DECIMAL_DIGITS,
+    }) ?? formatLocalizedDecimalAmount(value, displayLocale, DISPLAY_DECIMAL_DIGITS, DISPLAY_DECIMAL_DIGITS);
 
   const pageStats = useMemo(() => {
     if (usageLogs.length === 0) {

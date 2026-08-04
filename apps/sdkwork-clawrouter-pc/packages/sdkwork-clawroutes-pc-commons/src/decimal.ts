@@ -1,3 +1,4 @@
+import { formatMoney } from '@sdkwork/utils/money';
 import { readString, type ApiRecord } from './api-result.ts';
 
 const DEFAULT_DECIMAL_DIGITS = 6;
@@ -82,25 +83,15 @@ export function formatLocalizedCurrencyAmount(
   locale: string,
   currency = 'USD',
 ): string {
-  const formatter = new Intl.NumberFormat(locale, {
-    style: 'currency',
+  const formatted = formatMoney(value, {
     currency,
-    currencyDisplay: 'narrowSymbol',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    locale,
+    mode: 'symbol',
   });
-  const parts = formatter.formatToParts(0);
-  const numericPartTypes = new Set(['integer', 'group', 'decimal', 'fraction']);
-  const firstNumericIndex = parts.findIndex((part) => numericPartTypes.has(part.type));
-  let lastNumericIndex = firstNumericIndex;
-  parts.forEach((part, index) => {
-    if (numericPartTypes.has(part.type)) {
-      lastNumericIndex = index;
-    }
-  });
-  const prefix = parts.slice(0, firstNumericIndex).map((part) => part.value).join('');
-  const suffix = parts.slice(lastNumericIndex + 1).map((part) => part.value).join('');
-  return `${prefix}${formatLocalizedDecimalAmount(value, locale, 2, 2)}${suffix}`;
+  if (formatted === null) {
+    throw new Error('currency amount must use a supported ISO 4217 code');
+  }
+  return formatted;
 }
 
 export function formatLocalizedCompactDecimalAmount(value: string, locale: string): string {

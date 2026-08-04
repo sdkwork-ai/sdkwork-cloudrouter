@@ -29,6 +29,11 @@ Current migrations:
   nullability, validated constraints, and soft-delete-aware unique indexes with
   the materialized Claw Router contract. It fails closed on null, scope, range,
   relationship, or uniqueness violations instead of rewriting business data.
+- `0009_account_group_vendor_modalities.up.sql` adds optional model vendor
+  binding (`vendor_code`, NULL = not vendor-bound) and the supported modality
+  set (`modalities` JSONB array of text/audio/image/video/music) to
+  `ai_upstream_account_group`, with a vendor lookup index. It is a
+  column-addition-only migration with no row backfill.
 
 ## Naming
 

@@ -96,6 +96,29 @@ export function TableState({ loading, empty, colSpan }: { loading: boolean; empt
   );
 }
 
+export function UpstreamPageShell({
+  titleKey,
+  subtitleKey,
+  children,
+}: {
+  titleKey: string;
+  subtitleKey: string;
+  children: ReactNode;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex h-full min-h-0 flex-col gap-4 p-4 sm:p-6" data-admin-upstream>
+      <header className="flex shrink-0 flex-col gap-3 border-b border-slate-200 pb-4 dark:border-white/10">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t(titleKey)}</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t(subtitleKey)}</p>
+        </div>
+      </header>
+      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+    </div>
+  );
+}
+
 export function Modal({
   title,
   description,

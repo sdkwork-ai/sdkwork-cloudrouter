@@ -5357,7 +5357,7 @@
     },
     {
       "api_method": "GET",
-      "api_path": "/backend/v3/api/marketing/referral_stats",
+      "api_path": "/backend/v3/api/billing/referrals/stats",
       "api_surface": "backend",
       "file_targets": [],
       "idempotency_required": false,
@@ -5367,7 +5367,7 @@
       "module": "pc-admin-marketing",
       "openapi_exposed": true,
       "operation": "fetchReferralStats",
-      "operation_id": "marketing.referralStats.list",
+      "operation_id": "referralStats.list",
       "path_params": [],
       "query_parameters": [
         {
@@ -5397,11 +5397,65 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminReferralStatListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminReferralStatListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminReferralStat",
+                "properties": {
+                  "bonusAwarded": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 32,
+                    "type": "string"
+                  },
+                  "inviter": {
+                    "maxLength": 320,
+                    "type": "string"
+                  },
+                  "link": {
+                    "format": "uri",
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  "totalInvited": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "totalRevenue": {
+                    "maxLength": 64,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "inviter",
+                  "totalInvited",
+                  "totalRevenue",
+                  "bonusAwarded",
+                  "link"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -5409,10 +5463,10 @@
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "system",
+      "sdk_domain": "commerce",
       "sdk_family": "clawrouter-backend-sdk",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
-      "tag": "system",
+      "tag": "billing",
       "write_tables": []
     },
     {
@@ -6361,6 +6415,182 @@
     },
     {
       "api_method": "GET",
+      "api_path": "/backend/v3/api/system/chains/policy/keys/{apiKeyId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts#fetchApiKeyChainPolicy@/admin/ratelimit",
+      "kind": "read",
+      "module": "pc-admin-ratelimit",
+      "openapi_exposed": true,
+      "operation": "fetchApiKeyChainPolicy",
+      "operation_id": "chains.policy.apiKey.retrieve",
+      "path_params": [
+        "apiKeyId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "iam_gateway_chain_policy"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "ChainPolicyResult",
+        "schema": {
+          "additionalProperties": false,
+          "name": "ChainPolicyResult",
+          "properties": {
+            "item": {
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "format": "int64",
+                  "pattern": "^-?[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "payload": {
+                  "additionalProperties": true,
+                  "description": "camelCase ChainPolicy document (concurrency, ipAccess, stages).",
+                  "type": "object"
+                },
+                "policyName": {
+                  "type": "string"
+                },
+                "scopeId": {
+                  "format": "int64",
+                  "pattern": "^-?[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "scopeType": {
+                  "format": "int32",
+                  "type": "integer"
+                },
+                "updatedAt": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "scopeType",
+                "scopeId",
+                "policyName",
+                "payload",
+                "updatedAt"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "item"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/ratelimit",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "system",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts",
+      "tag": "system",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/system/chains/policy",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts#fetchChainPolicy@/admin/ratelimit",
+      "kind": "read",
+      "module": "pc-admin-ratelimit",
+      "openapi_exposed": true,
+      "operation": "fetchChainPolicy",
+      "operation_id": "chains.policy.retrieve",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "iam_gateway_chain_policy"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "ChainPolicyResult",
+        "schema": {
+          "additionalProperties": false,
+          "name": "ChainPolicyResult",
+          "properties": {
+            "item": {
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "format": "int64",
+                  "pattern": "^-?[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "payload": {
+                  "additionalProperties": true,
+                  "description": "camelCase ChainPolicy document (concurrency, ipAccess, stages).",
+                  "type": "object"
+                },
+                "policyName": {
+                  "type": "string"
+                },
+                "scopeId": {
+                  "format": "int64",
+                  "pattern": "^-?[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "scopeType": {
+                  "format": "int32",
+                  "type": "integer"
+                },
+                "updatedAt": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "scopeType",
+                "scopeId",
+                "policyName",
+                "payload",
+                "updatedAt"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "item"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/ratelimit",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "system",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts",
+      "tag": "system",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
       "api_path": "/backend/v3/api/system/firewalls/rules",
       "api_surface": "backend",
       "file_targets": [],
@@ -6759,6 +6989,192 @@
       "tag": "system",
       "write_tables": [
         "iam_gateway_risk_rule",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/system/chains/policy",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts#updateChainPolicy@/admin/ratelimit",
+      "kind": "update",
+      "module": "pc-admin-ratelimit",
+      "openapi_exposed": true,
+      "operation": "updateChainPolicy",
+      "operation_id": "chains.policy.update",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "iam_gateway_chain_policy"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "ChainPolicyInput",
+        "schema": {
+          "additionalProperties": false,
+          "name": "ChainPolicyInput",
+          "properties": {
+            "concurrency": {
+              "additionalProperties": false,
+              "properties": {
+                "maxInflight": {
+                  "format": "int64",
+                  "nullable": true,
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "maxInflightPerScope": {
+                  "additionalProperties": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "nullable": true,
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "type": "object"
+            },
+            "ipAccess": {
+              "additionalProperties": false,
+              "properties": {
+                "allowlist": {
+                  "items": {
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "nullable": true,
+                  "type": "array"
+                },
+                "denylist": {
+                  "items": {
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "nullable": true,
+                  "type": "array"
+                },
+                "mode": {
+                  "enum": [
+                    "open",
+                    "allowlistOnly"
+                  ],
+                  "nullable": true,
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "type": "object"
+            },
+            "policyName": {
+              "maxLength": 128,
+              "nullable": true,
+              "type": "string"
+            },
+            "stages": {
+              "additionalProperties": false,
+              "properties": {
+                "disabled": {
+                  "items": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "nullable": true,
+                  "type": "array"
+                },
+                "enabledOnly": {
+                  "items": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "nullable": true,
+                  "type": "array"
+                }
+              },
+              "required": [],
+              "type": "object"
+            }
+          },
+          "required": [],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "ChainPolicyResult",
+        "schema": {
+          "additionalProperties": false,
+          "name": "ChainPolicyResult",
+          "properties": {
+            "item": {
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "format": "int64",
+                  "pattern": "^-?[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "payload": {
+                  "additionalProperties": true,
+                  "description": "camelCase ChainPolicy document (concurrency, ipAccess, stages).",
+                  "type": "object"
+                },
+                "policyName": {
+                  "type": "string"
+                },
+                "scopeId": {
+                  "format": "int64",
+                  "pattern": "^-?[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "scopeType": {
+                  "format": "int32",
+                  "type": "integer"
+                },
+                "updatedAt": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "scopeType",
+                "scopeId",
+                "policyName",
+                "payload",
+                "updatedAt"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "item"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/ratelimit",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "system",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts",
+      "tag": "system",
+      "write_tables": [
+        "iam_gateway_chain_policy",
         "ops_audit_log"
       ]
     },
@@ -8806,11 +9222,137 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminStorageBucketListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminStorageBucketListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminStorageBucket",
+                "properties": {
+                  "bucketName": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "bucketRegion": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "dataResidencyRegion": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "defaultEncryptionMode": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "defaultStorageClass": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "encryption": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "kmsKeyRef": {
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "lifecycleEnabled": {
+                    "type": "boolean"
+                  },
+                  "logicalScope": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "objectKeyPrefix": {
+                    "maxLength": 512,
+                    "type": "string"
+                  },
+                  "objectLockEnabled": {
+                    "type": "boolean"
+                  },
+                  "providerCode": {
+                    "maxLength": 96,
+                    "type": "string"
+                  },
+                  "providerId": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "providerType": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "publicAccessBlocked": {
+                    "type": "boolean"
+                  },
+                  "region": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "status": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "storageClass": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "updatedAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "versioningEnabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "id",
+                  "bucketName",
+                  "logicalScope",
+                  "providerId",
+                  "providerCode",
+                  "providerType",
+                  "region",
+                  "bucketRegion",
+                  "dataResidencyRegion",
+                  "objectKeyPrefix",
+                  "storageClass",
+                  "defaultStorageClass",
+                  "encryption",
+                  "defaultEncryptionMode",
+                  "kmsKeyRef",
+                  "versioningEnabled",
+                  "objectLockEnabled",
+                  "lifecycleEnabled",
+                  "publicAccessBlocked",
+                  "status",
+                  "createdAt",
+                  "updatedAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -8973,11 +9515,86 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminStorageDefaultBucketListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminStorageDefaultBucketListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminStorageDefaultBucket",
+                "properties": {
+                  "bucketId": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "bucketName": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "logicalScope": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "providerCode": {
+                    "maxLength": 96,
+                    "type": "string"
+                  },
+                  "providerId": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "providerType": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "reason": {
+                    "maxLength": 512,
+                    "type": "string"
+                  },
+                  "region": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "status": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "updatedAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "logicalScope",
+                  "bucketId",
+                  "bucketName",
+                  "providerId",
+                  "providerCode",
+                  "providerType",
+                  "region",
+                  "reason",
+                  "status",
+                  "updatedAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -9153,11 +9770,83 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminStorageGarbageCollectionJobListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminStorageGarbageCollectionJobListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminStorageGarbageCollectionJob",
+                "properties": {
+                  "candidateCount": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "completedAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "dryRun": {
+                    "type": "boolean"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "jobId": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "jobType": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "retention": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "status": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "target": {
+                    "maxLength": 64,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "jobId",
+                  "jobType",
+                  "target",
+                  "retention",
+                  "candidateCount",
+                  "dryRun",
+                  "status",
+                  "createdAt",
+                  "completedAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -9401,11 +10090,102 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminStorageProviderListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminStorageProviderListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminStorageProvider",
+                "properties": {
+                  "createdAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "credentialRef": {
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "endpointUrl": {
+                    "maxLength": 512,
+                    "type": "string"
+                  },
+                  "healthStatus": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "lastHealthCheckAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "pathStyleEnabled": {
+                    "type": "boolean"
+                  },
+                  "providerCode": {
+                    "maxLength": 96,
+                    "type": "string"
+                  },
+                  "providerType": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "region": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "status": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "supportsLifecycle": {
+                    "type": "boolean"
+                  },
+                  "supportsMultipart": {
+                    "type": "boolean"
+                  },
+                  "supportsObjectLock": {
+                    "type": "boolean"
+                  },
+                  "updatedAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "providerCode",
+                  "providerType",
+                  "endpointUrl",
+                  "region",
+                  "credentialRef",
+                  "pathStyleEnabled",
+                  "supportsMultipart",
+                  "supportsLifecycle",
+                  "supportsObjectLock",
+                  "status",
+                  "healthStatus",
+                  "lastHealthCheckAt",
+                  "createdAt",
+                  "updatedAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -9592,11 +10372,90 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminStorageQuotaPolicyListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminStorageQuotaPolicyListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminStorageQuotaPolicy",
+                "properties": {
+                  "createdAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "enforcement": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "quotaLimitBytes": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "scopeId": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "scopeType": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "singleFileLimitBytes": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "status": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "updatedAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "usedBytes": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  }
+                },
+                "required": [
+                  "id",
+                  "scopeType",
+                  "scopeId",
+                  "quotaLimitBytes",
+                  "usedBytes",
+                  "singleFileLimitBytes",
+                  "enforcement",
+                  "status",
+                  "createdAt",
+                  "updatedAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -9767,11 +10626,103 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminStorageReconciliationRunListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminStorageReconciliationRunListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminStorageReconciliationRun",
+                "properties": {
+                  "bucketId": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "bucketName": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "completedAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "dryRun": {
+                    "type": "boolean"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "issueCount": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "issues": {
+                    "maxLength": 32,
+                    "type": "string"
+                  },
+                  "providerCode": {
+                    "maxLength": 96,
+                    "type": "string"
+                  },
+                  "providerId": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "runId": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "runType": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "scope": {
+                    "maxLength": 320,
+                    "type": "string"
+                  },
+                  "startedAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "status": {
+                    "maxLength": 64,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "runId",
+                  "providerId",
+                  "providerCode",
+                  "bucketId",
+                  "bucketName",
+                  "runType",
+                  "scope",
+                  "issues",
+                  "issueCount",
+                  "dryRun",
+                  "status",
+                  "startedAt",
+                  "completedAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -9866,11 +10817,80 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminStorageUsageListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminStorageUsageListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminStorageUsage",
+                "properties": {
+                  "fileCount": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "reservedBytes": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "scope": {
+                    "maxLength": 320,
+                    "type": "string"
+                  },
+                  "scopeId": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "scopeType": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "snapshotAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "usedBytes": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  }
+                },
+                "required": [
+                  "id",
+                  "scopeType",
+                  "scopeId",
+                  "scope",
+                  "usedBytes",
+                  "reservedBytes",
+                  "fileCount",
+                  "snapshotAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -10251,6 +11271,21 @@
               "nullable": true,
               "type": "string"
             },
+            "modalities": {
+              "items": {
+                "enum": [
+                  "text",
+                  "audio",
+                  "image",
+                  "video",
+                  "music"
+                ],
+                "maxLength": 16,
+                "type": "string"
+              },
+              "nullable": true,
+              "type": "array"
+            },
             "priority": {
               "format": "int32",
               "minimum": 0,
@@ -10277,6 +11312,12 @@
               "format": "int32",
               "nullable": true,
               "type": "integer"
+            },
+            "vendorCode": {
+              "description": "Model vendor code this group is bound to; null means the group is not vendor-bound.",
+              "maxLength": 64,
+              "nullable": true,
+              "type": "string"
             }
           },
           "required": [
@@ -10797,6 +11838,10 @@
                   "maxLength": 128,
                   "type": "string"
                 },
+                "id": {
+                  "maxLength": 32,
+                  "type": "string"
+                },
                 "model": {
                   "maxLength": 256,
                   "nullable": true,
@@ -10927,6 +11972,7 @@
                 }
               },
               "required": [
+                "id",
                 "source",
                 "ready",
                 "resourceCode",
@@ -11589,6 +12635,20 @@
                     "maxLength": 32,
                     "type": "string"
                   },
+                  "modalities": {
+                    "items": {
+                      "enum": [
+                        "text",
+                        "audio",
+                        "image",
+                        "video",
+                        "music"
+                      ],
+                      "maxLength": 16,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
                   "priority": {
                     "format": "int32",
                     "minimum": 0,
@@ -11618,6 +12678,12 @@
                   },
                   "uuid": {
                     "maxLength": 64,
+                    "type": "string"
+                  },
+                  "vendorCode": {
+                    "description": "Model vendor code this group is bound to; null means the group is not vendor-bound.",
+                    "maxLength": 64,
+                    "nullable": true,
                     "type": "string"
                   },
                   "version": {
@@ -12636,6 +13702,21 @@
               "nullable": true,
               "type": "string"
             },
+            "modalities": {
+              "items": {
+                "enum": [
+                  "text",
+                  "audio",
+                  "image",
+                  "video",
+                  "music"
+                ],
+                "maxLength": 16,
+                "type": "string"
+              },
+              "nullable": true,
+              "type": "array"
+            },
             "priority": {
               "format": "int32",
               "minimum": 0,
@@ -12662,6 +13743,12 @@
               "format": "int32",
               "nullable": true,
               "type": "integer"
+            },
+            "vendorCode": {
+              "description": "Model vendor code this group is bound to; null means the group is not vendor-bound.",
+              "maxLength": 64,
+              "nullable": true,
+              "type": "string"
             }
           },
           "required": [],
@@ -12790,6 +13877,10 @@
               "additionalProperties": false,
               "name": "UpstreamAccountGroupMemberCollection",
               "properties": {
+                "id": {
+                  "maxLength": 32,
+                  "type": "string"
+                },
                 "items": {
                   "items": {
                     "$ref": "#/components/schemas/UpstreamAccountGroupMember"
@@ -12798,6 +13889,7 @@
                 }
               },
               "required": [
+                "id",
                 "items"
               ],
               "type": "object"
@@ -12915,6 +14007,10 @@
               "additionalProperties": false,
               "name": "UpstreamAccountGroupResourceCollection",
               "properties": {
+                "id": {
+                  "maxLength": 32,
+                  "type": "string"
+                },
                 "items": {
                   "items": {
                     "$ref": "#/components/schemas/UpstreamResourceEntitlement"
@@ -12923,6 +14019,7 @@
                 }
               },
               "required": [
+                "id",
                 "items"
               ],
               "type": "object"
@@ -13200,6 +14297,10 @@
               "additionalProperties": false,
               "name": "UpstreamSupplierAuthMethodCollection",
               "properties": {
+                "id": {
+                  "maxLength": 32,
+                  "type": "string"
+                },
                 "items": {
                   "items": {
                     "$ref": "#/components/schemas/UpstreamSupplierAuthMethod"
@@ -13208,6 +14309,7 @@
                 }
               },
               "required": [
+                "id",
                 "items"
               ],
               "type": "object"
@@ -13347,6 +14449,10 @@
               "additionalProperties": false,
               "name": "UpstreamSupplierEndpointCollection",
               "properties": {
+                "id": {
+                  "maxLength": 32,
+                  "type": "string"
+                },
                 "items": {
                   "items": {
                     "$ref": "#/components/schemas/UpstreamSupplierEndpoint"
@@ -13355,6 +14461,7 @@
                 }
               },
               "required": [
+                "id",
                 "items"
               ],
               "type": "object"
@@ -13471,6 +14578,10 @@
               "additionalProperties": false,
               "name": "UpstreamSupplierResourceCollection",
               "properties": {
+                "id": {
+                  "maxLength": 32,
+                  "type": "string"
+                },
                 "items": {
                   "items": {
                     "$ref": "#/components/schemas/UpstreamResourceEntitlement"
@@ -13479,6 +14590,7 @@
                 }
               },
               "required": [
+                "id",
                 "items"
               ],
               "type": "object"
@@ -13583,6 +14695,10 @@
                   "maxLength": 32,
                   "type": "string"
                 },
+                "id": {
+                  "maxLength": 32,
+                  "type": "string"
+                },
                 "latencyMs": {
                   "maxLength": 32,
                   "type": "string"
@@ -13609,6 +14725,7 @@
                 }
               },
               "required": [
+                "id",
                 "accountId",
                 "supplierCode",
                 "endpointId",
@@ -13671,10 +14788,115 @@
           "name": "CreateApiKeyRequest",
           "properties": {
             "accountGroup": {
-              "description": "Upstream account group code authorized for this API key.",
+              "description": "Upstream account group code authorized for this API key. Replaced by accountGroups when provided.",
               "maxLength": 64,
               "minLength": 1,
               "type": "string"
+            },
+            "accountGroups": {
+              "description": "Route binding group codes (binding_role='route'); the first entry becomes the default group. Replaces accountGroup when provided.",
+              "items": {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              "maxItems": 100,
+              "nullable": true,
+              "type": "array"
+            },
+            "chain": {
+              "additionalProperties": false,
+              "description": "Per-API-key call-chain policy applied at creation time.",
+              "nullable": true,
+              "properties": {
+                "concurrency": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "maxInflight": {
+                      "format": "int64",
+                      "nullable": true,
+                      "pattern": "^[0-9]+$",
+                      "type": "string",
+                      "x-sdkwork-int64-string": true,
+                      "x-sdkwork-rust-type": "i64"
+                    },
+                    "maxInflightPerScope": {
+                      "additionalProperties": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "nullable": true,
+                      "type": "object"
+                    }
+                  },
+                  "required": [],
+                  "type": "object"
+                },
+                "ipAccess": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "allowlist": {
+                      "items": {
+                        "maxLength": 256,
+                        "type": "string"
+                      },
+                      "nullable": true,
+                      "type": "array"
+                    },
+                    "denylist": {
+                      "items": {
+                        "maxLength": 256,
+                        "type": "string"
+                      },
+                      "nullable": true,
+                      "type": "array"
+                    },
+                    "mode": {
+                      "enum": [
+                        "open",
+                        "allowlistOnly"
+                      ],
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "type": "object"
+                },
+                "policyName": {
+                  "maxLength": 128,
+                  "nullable": true,
+                  "type": "string"
+                },
+                "stages": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "disabled": {
+                      "items": {
+                        "maxLength": 64,
+                        "type": "string"
+                      },
+                      "nullable": true,
+                      "type": "array"
+                    },
+                    "enabledOnly": {
+                      "items": {
+                        "maxLength": 64,
+                        "type": "string"
+                      },
+                      "nullable": true,
+                      "type": "array"
+                    }
+                  },
+                  "required": [],
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "type": "object"
             },
             "defaultForRuntime": {
               "description": "Create this key as the default backend runtime API key.",
@@ -13723,7 +14945,6 @@
           },
           "required": [
             "name",
-            "accountGroup",
             "quota",
             "isUnlimitedQuota",
             "modalities",
@@ -13754,6 +14975,14 @@
                   "maxLength": 128,
                   "minLength": 1,
                   "type": "string"
+                },
+                "accountGroups": {
+                  "description": "Route binding group codes (priority order), including the default group.",
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "type": "array"
                 },
                 "created": {
                   "maxLength": 64,
@@ -13809,6 +15038,12 @@
                   "nullable": true,
                   "type": "string"
                 },
+                "rawKey": {
+                  "description": "Raw API key material when the deployment stores it (plaintext or decrypted ciphertext); null for legacy keys without a stored secret.",
+                  "maxLength": 1024,
+                  "nullable": true,
+                  "type": "string"
+                },
                 "status": {
                   "enum": [
                     "enabled",
@@ -13828,6 +15063,7 @@
                 "maskedKey",
                 "accountGroup",
                 "accountGroupName",
+                "accountGroups",
                 "quota",
                 "usedQuota",
                 "modalities",
@@ -14026,7 +15262,7 @@
             "items": {
               "items": {
                 "additionalProperties": false,
-                "description": "API key metadata. Secret material is never returned by list operations.",
+                "description": "API key metadata. Raw key material is returned when the deployment stores it (plaintext or decrypted ciphertext); legacy keys without a stored secret return null.",
                 "name": "AppApiKeyItem",
                 "properties": {
                   "accountGroup": {
@@ -14039,6 +15275,14 @@
                     "maxLength": 128,
                     "minLength": 1,
                     "type": "string"
+                  },
+                  "accountGroups": {
+                    "description": "Route binding group codes (priority order), including the default group.",
+                    "items": {
+                      "maxLength": 128,
+                      "type": "string"
+                    },
+                    "type": "array"
                   },
                   "created": {
                     "maxLength": 64,
@@ -14094,6 +15338,12 @@
                     "nullable": true,
                     "type": "string"
                   },
+                  "rawKey": {
+                    "description": "Raw API key material when the deployment stores it (plaintext or decrypted ciphertext); null for legacy keys without a stored secret.",
+                    "maxLength": 1024,
+                    "nullable": true,
+                    "type": "string"
+                  },
                   "status": {
                     "enum": [
                       "enabled",
@@ -14113,6 +15363,7 @@
                   "maskedKey",
                   "accountGroup",
                   "accountGroupName",
+                  "accountGroups",
                   "quota",
                   "usedQuota",
                   "modalities",
@@ -14185,6 +15436,111 @@
               "minLength": 1,
               "type": "string"
             },
+            "accountGroups": {
+              "description": "Route binding group codes; Some replaces all route bindings (first entry becomes the default group). Replaces accountGroup when provided.",
+              "items": {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              "maxItems": 100,
+              "nullable": true,
+              "type": "array"
+            },
+            "chain": {
+              "additionalProperties": false,
+              "description": "Per-API-key call-chain policy (concurrency limits, IP allow/deny lists, stage switches). Some upserts the key's chain policy; omitted leaves it unchanged.",
+              "nullable": true,
+              "properties": {
+                "concurrency": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "maxInflight": {
+                      "format": "int64",
+                      "nullable": true,
+                      "pattern": "^[0-9]+$",
+                      "type": "string",
+                      "x-sdkwork-int64-string": true,
+                      "x-sdkwork-rust-type": "i64"
+                    },
+                    "maxInflightPerScope": {
+                      "additionalProperties": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "nullable": true,
+                      "type": "object"
+                    }
+                  },
+                  "required": [],
+                  "type": "object"
+                },
+                "ipAccess": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "allowlist": {
+                      "items": {
+                        "maxLength": 256,
+                        "type": "string"
+                      },
+                      "nullable": true,
+                      "type": "array"
+                    },
+                    "denylist": {
+                      "items": {
+                        "maxLength": 256,
+                        "type": "string"
+                      },
+                      "nullable": true,
+                      "type": "array"
+                    },
+                    "mode": {
+                      "enum": [
+                        "open",
+                        "allowlistOnly"
+                      ],
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "type": "object"
+                },
+                "policyName": {
+                  "maxLength": 128,
+                  "nullable": true,
+                  "type": "string"
+                },
+                "stages": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "disabled": {
+                      "items": {
+                        "maxLength": 64,
+                        "type": "string"
+                      },
+                      "nullable": true,
+                      "type": "array"
+                    },
+                    "enabledOnly": {
+                      "items": {
+                        "maxLength": 64,
+                        "type": "string"
+                      },
+                      "nullable": true,
+                      "type": "array"
+                    }
+                  },
+                  "required": [],
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "type": "object"
+            },
             "defaultForRuntime": {
               "description": "Marks this API key as the default backend runtime API key for Playground and app runtime calls.",
               "type": "boolean"
@@ -14256,6 +15612,14 @@
                   "minLength": 1,
                   "type": "string"
                 },
+                "accountGroups": {
+                  "description": "Route binding group codes (priority order), including the default group.",
+                  "items": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
                 "created": {
                   "maxLength": 64,
                   "type": "string"
@@ -14310,6 +15674,12 @@
                   "nullable": true,
                   "type": "string"
                 },
+                "rawKey": {
+                  "description": "Raw API key material when the deployment stores it (plaintext or decrypted ciphertext); null for legacy keys without a stored secret.",
+                  "maxLength": 1024,
+                  "nullable": true,
+                  "type": "string"
+                },
                 "status": {
                   "enum": [
                     "enabled",
@@ -14329,6 +15699,7 @@
                 "maskedKey",
                 "accountGroup",
                 "accountGroupName",
+                "accountGroups",
                 "quota",
                 "usedQuota",
                 "modalities",
@@ -16844,7 +18215,7 @@
     },
     {
       "api_method": "POST",
-      "api_path": "/app/v3/api/runtime/invocations/{invocationId}/complete",
+      "api_path": "/app/v3/api/runtime/invocations/{invocationId}/completions",
       "api_surface": "app",
       "file_targets": [],
       "idempotency_required": false,
@@ -16854,7 +18225,7 @@
       "module": "pc-playground",
       "openapi_exposed": true,
       "operation": "completeRuntimeInvocation",
-      "operation_id": "invocations.complete",
+      "operation_id": "invocations.completions.create",
       "path_params": [
         "invocationId"
       ],
@@ -18883,7 +20254,7 @@
     },
     {
       "api_method": "POST",
-      "api_path": "/app/v3/api/runtime/invocations/{invocationId}/complete",
+      "api_path": "/app/v3/api/runtime/invocations/{invocationId}/completions",
       "api_surface": "app",
       "file_targets": [],
       "idempotency_required": false,
@@ -18893,7 +20264,7 @@
       "module": "pc-playground",
       "openapi_exposed": false,
       "operation": "cancelRuntimeInvocation",
-      "operation_id": "invocations.complete",
+      "operation_id": "invocations.completions.create",
       "path_params": [
         "invocationId"
       ],
@@ -19012,7 +20383,7 @@
     },
     {
       "api_method": "POST",
-      "api_path": "/app/v3/api/runtime/invocations/{invocationId}/complete",
+      "api_path": "/app/v3/api/runtime/invocations/{invocationId}/completions",
       "api_surface": "app",
       "file_targets": [],
       "idempotency_required": false,
@@ -19022,7 +20393,7 @@
       "module": "pc-playground",
       "openapi_exposed": false,
       "operation": "resumeMessage",
-      "operation_id": "invocations.complete",
+      "operation_id": "invocations.completions.create",
       "path_params": [
         "invocationId"
       ],
@@ -21558,6 +22929,121 @@
     },
     {
       "api_method": "POST",
+      "api_path": "/app/v3/api/messaging/verification_codes",
+      "api_surface": "app",
+      "description": "Sends the current login, registration, or password-recovery challenge through the dependency-owned Messaging App SDK. The runtime adapter maps IAM scene and verification type fields to sceneCode and channel and retains only the bounded, expiring codeId correlation required for a later verification call.",
+      "file_targets": [],
+      "idempotency_required": true,
+      "if_match_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts#sendVerifyCode@/auth/login",
+      "kind": "create",
+      "module": "login",
+      "openapi_exposed": true,
+      "operation": "sendVerifyCode",
+      "operation_id": "messaging.verificationCodes.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "messaging_verification_policy"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "MessagingVerificationCodeCreateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "MessagingVerificationCodeCreateRequest",
+          "properties": {
+            "channel": {
+              "enum": [
+                "sms",
+                "email"
+              ],
+              "type": "string"
+            },
+            "sceneCode": {
+              "enum": [
+                "BIND_EMAIL",
+                "BIND_PHONE",
+                "LOGIN",
+                "REGISTER",
+                "RESET_PASSWORD"
+              ],
+              "maxLength": 160,
+              "type": "string"
+            },
+            "target": {
+              "maxLength": 320,
+              "minLength": 1,
+              "type": "string",
+              "writeOnly": true
+            }
+          },
+          "required": [
+            "sceneCode",
+            "target",
+            "channel"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "MessagingVerificationCodeResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "MessagingVerificationCodeResponse",
+          "properties": {
+            "codeId": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "expiresAt": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "requestId": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "pending",
+                "verified",
+                "failed",
+                "locked",
+                "expired"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "codeId",
+            "expiresAt",
+            "requestId"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/auth/login",
+      "route_scope": "public",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "messaging",
+      "sdk_family": "clawrouter-app-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
+      "tag": "messaging",
+      "write_tables": [
+        "messaging_verification_challenge",
+        "messaging_outbound_message",
+        "messaging_outbound_delivery"
+      ]
+    },
+    {
+      "api_method": "POST",
       "api_path": "/app/v3/api/auth/sessions",
       "api_surface": "app",
       "file_targets": [],
@@ -21869,6 +23355,105 @@
       "write_tables": [
         "iam_session",
         "iam_security_event"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/app/v3/api/messaging/verification_codes/verify",
+      "api_surface": "app",
+      "description": "Verifies the submitted code against the dependency-owned Messaging challenge identified by the bounded runtime correlation cache; raw codes are never retained in client state.",
+      "file_targets": [],
+      "idempotency_required": true,
+      "if_match_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts#verifyCode@/auth/login",
+      "kind": "action",
+      "module": "login",
+      "openapi_exposed": true,
+      "operation": "verifyCode",
+      "operation_id": "messaging.verificationCodes.verify",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "messaging_verification_challenge",
+        "messaging_verification_policy"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "MessagingVerificationCodeVerifyRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "MessagingVerificationCodeVerifyRequest",
+          "properties": {
+            "code": {
+              "maxLength": 12,
+              "minLength": 4,
+              "type": "string",
+              "writeOnly": true
+            },
+            "codeId": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "codeId",
+            "code"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "MessagingVerificationCodeVerifyResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "MessagingVerificationCodeVerifyResponse",
+          "properties": {
+            "remainingAttempts": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "requestId": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "pending",
+                "verified",
+                "failed",
+                "locked",
+                "expired"
+              ],
+              "type": "string"
+            },
+            "verified": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "verified",
+            "status",
+            "requestId"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/auth/login",
+      "route_scope": "public",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "messaging",
+      "sdk_family": "clawrouter-app-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
+      "tag": "messaging",
+      "write_tables": [
+        "messaging_verification_challenge",
+        "messaging_verification_attempt"
       ]
     },
     {
@@ -22285,6 +23870,20 @@
                     "x-sdkwork-int64-string": true,
                     "x-sdkwork-rust-type": "i64"
                   },
+                  "modalities": {
+                    "items": {
+                      "enum": [
+                        "text",
+                        "audio",
+                        "image",
+                        "video",
+                        "music"
+                      ],
+                      "maxLength": 16,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
                   "resourceCodes": {
                     "items": {
                       "maxLength": 128,
@@ -22312,6 +23911,12 @@
                       "enabled",
                       "disabled"
                     ],
+                    "type": "string"
+                  },
+                  "vendorCode": {
+                    "description": "Model vendor code this group is bound to; null means the group is not vendor-bound.",
+                    "maxLength": 64,
+                    "nullable": true,
                     "type": "string"
                   }
                 },
@@ -23077,11 +24682,33 @@
         }
       },
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminRechargeSettings",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminRechargeSettings",
+          "properties": {
+            "baseCurrencyCode": {
+              "maxLength": 16,
+              "minLength": 3,
+              "type": "string"
+            },
+            "basePointsPerCny": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,8})?$",
+              "type": "string"
+            },
+            "currencyToCnyRates": {
+              "additionalProperties": {
+                "pattern": "^[0-9]+(\\.[0-9]{1,8})?$",
+                "type": "string"
+              },
+              "type": "object"
+            }
+          },
+          "required": [
+            "baseCurrencyCode",
+            "basePointsPerCny",
+            "currencyToCnyRates"
+          ],
           "type": "object"
         }
       },
@@ -23228,6 +24855,111 @@
       "write_tables": [
         "ops_audit_log"
       ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/billing/recharges/records",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/billing/recharges/records",
+      "kind": "read",
+      "module": "records",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "rechargeRecords.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "recharges"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AdminRechargeRecordListResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminRechargeRecordListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminRechargeRecord",
+                "properties": {
+                  "amount": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 32,
+                    "type": "string"
+                  },
+                  "method": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "status": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "time": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "tradeNo": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "usdCredited": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "user": {
+                    "maxLength": 320,
+                    "type": "string"
+                  },
+                  "userId": {
+                    "maxLength": 32,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "tradeNo",
+                  "userId",
+                  "user",
+                  "amount",
+                  "usdCredited",
+                  "method",
+                  "status",
+                  "time"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/billing/recharges/records",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "billing",
+      "write_tables": []
     },
     {
       "api_method": "GET",
@@ -25027,46 +26759,6 @@
     },
     {
       "api_method": "GET",
-      "api_path": "/backend/v3/api/recharges/orders",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/recharges/orders",
-      "kind": "read",
-      "module": "orders",
-      "openapi_exposed": true,
-      "operation": "list",
-      "operation_id": "orders.management.list",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "recharges"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/recharges/orders",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "commerce",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "recharges",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
       "api_path": "/backend/v3/api/recharges/packages",
       "api_surface": "backend",
       "file_targets": [],
@@ -25077,7 +26769,7 @@
       "module": "packages",
       "openapi_exposed": true,
       "operation": "list",
-      "operation_id": "packages.management.list",
+      "operation_id": "packages.list",
       "path_params": [],
       "query_parameters": [
         {
@@ -25115,11 +26807,99 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminRechargePackageListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminRechargePackageListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminRechargePackage",
+                "properties": {
+                  "bonusPoints": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "currencyCode": {
+                    "maxLength": 16,
+                    "minLength": 3,
+                    "type": "string"
+                  },
+                  "grantAmount": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "id": {
+                    "maxLength": 32,
+                    "type": "string"
+                  },
+                  "name": {
+                    "maxLength": 200,
+                    "type": "string"
+                  },
+                  "packageNo": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "points": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "priceAmount": {
+                    "pattern": "^[0-9]+(\\.[0-9]{1,8})?$",
+                    "type": "string"
+                  },
+                  "skuId": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "inactive"
+                    ],
+                    "type": "string"
+                  },
+                  "updatedAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "packageNo",
+                  "name",
+                  "skuId",
+                  "priceAmount",
+                  "currencyCode",
+                  "bonusPoints",
+                  "grantAmount",
+                  "points",
+                  "status",
+                  "updatedAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -25131,6 +26911,55 @@
       "sdk_family": "clawrouter-backend-sdk",
       "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
       "tag": "recharges",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/billing/recharges/records/{orderNo}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#retrieve@/admin/billing/recharges/records/{orderNo}",
+      "kind": "read",
+      "module": "{orderNo}",
+      "openapi_exposed": true,
+      "operation": "retrieve",
+      "operation_id": "rechargeRecords.retrieve",
+      "path_params": [
+        "orderNo"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "recharges"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AdminRechargeRecordResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminRechargeRecordResponse",
+          "properties": {
+            "item": {
+              "$ref": "#/components/schemas/AdminRechargeRecord"
+            }
+          },
+          "required": [
+            "item"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/billing/recharges/records/{orderNo}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "billing",
       "write_tables": []
     },
     {
@@ -25177,48 +27006,6 @@
     },
     {
       "api_method": "GET",
-      "api_path": "/backend/v3/api/recharges/orders/{orderId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#retrieve@/admin/recharges/orders/{orderId}",
-      "kind": "read",
-      "module": "{orderId}",
-      "openapi_exposed": true,
-      "operation": "retrieve",
-      "operation_id": "orders.management.retrieve",
-      "path_params": [
-        "orderId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "recharges"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/recharges/orders/{orderId}",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "commerce",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "recharges",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
       "api_path": "/backend/v3/api/recharges/settings",
       "api_surface": "backend",
       "file_targets": [],
@@ -25229,7 +27016,7 @@
       "module": "settings",
       "openapi_exposed": true,
       "operation": "retrieve",
-      "operation_id": "settings.management.retrieve",
+      "operation_id": "settings.retrieve",
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": true,
@@ -25849,24 +27636,24 @@
   "summary": {
     "api_method_counts": {
       "DELETE": 19,
-      "GET": 123,
-      "PATCH": 19,
-      "POST": 70,
+      "GET": 125,
+      "PATCH": 20,
+      "POST": 72,
       "PUT": 10
     },
     "api_surface_counts": {
-      "app": 88,
-      "backend": 153
+      "app": 90,
+      "backend": 156
     },
-    "operation_count": 241,
+    "operation_count": 246,
     "route_scope_counts": {
-      "admin": 153,
+      "admin": 156,
       "console": 30,
-      "public": 58
+      "public": 60
     },
     "sdk_client_counts": {
-      "SdkworkAppClient": 88,
-      "SdkworkBackendClient": 153
+      "SdkworkAppClient": 90,
+      "SdkworkBackendClient": 156
     }
   }
 }

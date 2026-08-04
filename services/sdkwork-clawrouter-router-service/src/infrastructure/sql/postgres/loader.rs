@@ -2,9 +2,12 @@ use std::collections::BTreeMap;
 
 use sqlx::PgPool;
 
-use crate::application::{UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext};
+use crate::application::{
+    ApiKeySecretContext, ApiKeySecretStorageConfig, UpstreamCredentialSecretCodec,
+    UpstreamCredentialSecretContext,
+};
 use crate::domain::{
-    DomainError, DomainResult, DEFAULT_PROVIDER_CIRCUIT_BREAKER_RECOVERY_WINDOW_SECONDS,
+    DomainError, DomainResult, GatewayApiKey, DEFAULT_PROVIDER_CIRCUIT_BREAKER_RECOVERY_WINDOW_SECONDS,
 };
 use crate::infrastructure::sql::catalog::{PricingCatalogRows, SqlPricingCatalogSnapshot};
 use crate::infrastructure::sql::model_catalog_import::{
@@ -20,10 +23,13 @@ use crate::ports::{
     GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery,
 };
 
+const API_KEY_SECRET_MODE_CIPHERTEXT: &str = "ciphertext";
+
 pub struct PostgresPricingCatalogLoader {
     pool: PgPool,
     credential_secret_codec:
         Option<std::sync::Arc<dyn UpstreamCredentialSecretCodec + Send + Sync>>,
+    api_key_secret_storage: Option<ApiKeySecretStorageConfig>,
     circuit_breaker_recovery_window_seconds: i64,
 }
 
@@ -32,6 +38,7 @@ impl PostgresPricingCatalogLoader {
         Self {
             pool,
             credential_secret_codec: None,
+            api_key_secret_storage: None,
             circuit_breaker_recovery_window_seconds:
                 default_circuit_breaker_recovery_window_seconds(),
         }
@@ -44,6 +51,21 @@ impl PostgresPricingCatalogLoader {
         Self {
             pool,
             credential_secret_codec: Some(credential_secret_codec),
+            api_key_secret_storage: None,
+            circuit_breaker_recovery_window_seconds:
+                default_circuit_breaker_recovery_window_seconds(),
+        }
+    }
+
+    pub fn with_credential_secret_codec_and_api_key_secret_storage(
+        pool: PgPool,
+        credential_secret_codec: std::sync::Arc<dyn UpstreamCredentialSecretCodec + Send + Sync>,
+        api_key_secret_storage: ApiKeySecretStorageConfig,
+    ) -> Self {
+        Self {
+            pool,
+            credential_secret_codec: Some(credential_secret_codec),
+            api_key_secret_storage: Some(api_key_secret_storage),
             circuit_breaker_recovery_window_seconds:
                 default_circuit_breaker_recovery_window_seconds(),
         }
@@ -54,9 +76,7 @@ impl PostgresPricingCatalogLoader {
         self
     }
 
-    pub async fn load_snapshot(
-        &self,
-    ) -> Result<SqlPricingCatalogSnapshot, PostgresCatalogLoadError> {
+    pub async fn load_rows(&self) -> Result<PricingCatalogRows, PostgresCatalogLoadError> {
         let dictionary = runtime_pricing_dictionary_rows()?;
         // M-4: wrap all catalog SELECTs in a single transaction so the
         // pointer-swapped snapshot reflects one consistent database state.
@@ -142,6 +162,13 @@ impl PostgresPricingCatalogLoader {
             prices: database_rows.prices,
         };
         tx.commit().await.map_err(PostgresCatalogLoadError::from)?;
+        Ok(rows)
+    }
+
+    pub async fn load_snapshot(
+        &self,
+    ) -> Result<SqlPricingCatalogSnapshot, PostgresCatalogLoadError> {
+        let rows = self.load_rows().await?;
         let managed_provider_secrets = managed_provider_secrets_from_rows(
             &rows.upstream_account_routes,
             self.credential_secret_codec.as_deref(),
@@ -264,10 +291,23 @@ impl GatewayApiKeyManagementReadStore for PostgresPricingCatalogLoader {
         &'a self,
     ) -> ApiKeyManagementReadFuture<'a, GatewayApiKeyManagementSnapshot> {
         Box::pin(async move {
-            let snapshot = self.load_snapshot().await.map_err(postgres_load_error)?;
-            Ok(GatewayApiKeyManagementSnapshot::from_pricing_catalog(
-                &snapshot,
-            ))
+            let rows = self.load_rows().await.map_err(postgres_load_error)?;
+            let api_key_rows = rows.api_keys.clone();
+            let managed_provider_secrets = managed_provider_secrets_from_rows(
+                &rows.upstream_account_routes,
+                self.credential_secret_codec.as_deref(),
+            )?;
+            let snapshot = SqlPricingCatalogSnapshot::from_rows_and_managed_provider_secrets(
+                rows,
+                managed_provider_secrets,
+            )?;
+            let mut management = GatewayApiKeyManagementSnapshot::from_pricing_catalog(&snapshot);
+            attach_api_key_raw_keys(
+                &mut management.api_keys,
+                &api_key_rows,
+                self.api_key_secret_storage.as_ref(),
+            )?;
+            Ok(management)
         })
     }
 
@@ -305,10 +345,16 @@ impl GatewayApiKeyManagementReadStore for PostgresPricingCatalogLoader {
             )
             .await
             .map_err(sqlx_load_error)?;
-            let items = rows
-                .into_iter()
+            let mut items = rows
+                .iter()
+                .cloned()
                 .map(GatewayApiKeyRow::try_into_domain)
                 .collect::<DomainResult<Vec<_>>>()?;
+            attach_api_key_raw_keys(
+                &mut items,
+                &rows,
+                self.api_key_secret_storage.as_ref(),
+            )?;
             Ok(GatewayApiKeyListPage {
                 items,
                 total,
@@ -334,12 +380,96 @@ fn gateway_api_keys_base_sql() -> String {
         .to_owned()
 }
 
+/// Attaches raw key material to API key domain items from their persisted
+/// secret columns. Plaintext rows pass through directly; ciphertext rows are
+/// decrypted with the configured api key secret storage. Keys without a stored
+/// secret (legacy rows or deployments without storage wiring) keep `None`.
+///
+/// Decryption failures degrade per row instead of failing the whole read:
+/// the affected key keeps `raw_key: None` (masked display) and the failure is
+/// logged. This keeps management surfaces available when the api key pepper
+/// rotates or a single ciphertext row is damaged; AEAD still guarantees
+/// tampered ciphertexts can never be mis-decrypted into a wrong plaintext.
+fn attach_api_key_raw_keys(
+    keys: &mut [GatewayApiKey],
+    rows: &[GatewayApiKeyRow],
+    storage: Option<&ApiKeySecretStorageConfig>,
+) -> DomainResult<()> {
+    for row in rows {
+        let raw_key = if row.key_secret_mode == API_KEY_SECRET_MODE_CIPHERTEXT {
+            let Some(storage) = storage else {
+                tracing::warn!(
+                    api_key_id = row.id,
+                    "api key secret storage is not configured for ciphertext rows; raw key is unavailable"
+                );
+                continue;
+            };
+            let ciphertext = match row.key_secret_ciphertext.as_deref() {
+                Some(ciphertext) => ciphertext,
+                None => {
+                    tracing::warn!(
+                        api_key_id = row.id,
+                        "api key secret ciphertext is missing; raw key is unavailable"
+                    );
+                    continue;
+                }
+            };
+            let key_id = match row.key_secret_key_id.as_deref() {
+                Some(key_id) => key_id,
+                None => {
+                    tracing::warn!(
+                        api_key_id = row.id,
+                        "api key secret key id is missing; raw key is unavailable"
+                    );
+                    continue;
+                }
+            };
+            match storage.codec().decode_secret(
+                ApiKeySecretContext::new(row.tenant_id, row.organization_id, row.id),
+                key_id,
+                ciphertext,
+            ) {
+                Ok(plaintext) => plaintext,
+                Err(error) => {
+                    tracing::warn!(
+                        api_key_id = row.id,
+                        %error,
+                        "failed to decrypt api key secret; raw key is unavailable"
+                    );
+                    continue;
+                }
+            }
+        } else {
+            match row
+                .key_secret_plaintext
+                .as_deref()
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+            {
+                Some(plaintext) => plaintext.to_owned(),
+                None => continue,
+            }
+        };
+        if let Some(key) = keys.iter_mut().find(|key| key.id == row.id) {
+            key.raw_key = Some(raw_key);
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
-    use super::managed_provider_secrets_from_rows;
-    use crate::application::{UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext};
-    use crate::infrastructure::crypto::RingAeadCredentialSecretCodec;
-    use crate::infrastructure::sql::rows::UpstreamAccountRouteRow;
+    use super::{attach_api_key_raw_keys, managed_provider_secrets_from_rows};
+    use crate::application::{
+        ApiKeySecretContext, ApiKeySecretStorageConfig, UpstreamCredentialSecretCodec,
+        UpstreamCredentialSecretContext,
+    };
+    use crate::domain::GatewayApiKey;
+    use crate::infrastructure::crypto::{
+        RingAeadApiKeySecretCodec, RingAeadCredentialSecretCodec,
+    };
+    use crate::infrastructure::sql::rows::{GatewayApiKeyRow, UpstreamAccountRouteRow};
+    use sdkwork_claw_config::ApiKeySecretStorageMode;
 
     #[test]
     fn managed_upstream_credentials_are_decrypted_only_at_the_loader_boundary() {
@@ -390,5 +520,124 @@ mod tests {
         );
         assert!(!secrets.contains_key(&encoded.ciphertext));
         assert!(managed_provider_secrets_from_rows(&rows, None).is_err());
+    }
+
+    fn api_key_row(
+        id: i64,
+        mode: &str,
+        plaintext: Option<&str>,
+        ciphertext: Option<&str>,
+        key_id: Option<&str>,
+    ) -> GatewayApiKeyRow {
+        GatewayApiKeyRow {
+            id,
+            tenant_id: 10,
+            organization_id: 20,
+            user_id: 30,
+            group_id: 501,
+            account_group_bindings_json: "[]".to_owned(),
+            name: format!("Key {id}"),
+            key_prefix: format!("sk-{id}"),
+            key_display_masked: format!("sk-{id}********abcd"),
+            key_hash: format!("hash:{id}"),
+            key_secret_mode: mode.to_owned(),
+            key_secret_plaintext: plaintext.map(str::to_owned),
+            key_secret_ciphertext: ciphertext.map(str::to_owned),
+            key_secret_key_id: key_id.map(str::to_owned),
+            policy_id: None,
+            quota_policy_id: None,
+            created_at: "2026-05-17 10:00:00".to_owned(),
+            expire_at: None,
+            status_code: 1,
+            default_for_runtime: false,
+        }
+    }
+
+    fn api_key_domain(id: i64) -> GatewayApiKey {
+        GatewayApiKey::new(id, 501, &format!("sk-{id}"), &format!("hash:{id}"))
+    }
+
+    fn plaintext_storage() -> ApiKeySecretStorageConfig {
+        ApiKeySecretStorageConfig::new(
+            ApiKeySecretStorageMode::Plaintext,
+            std::sync::Arc::new(
+                RingAeadApiKeySecretCodec::new("0123456789abcdef0123456789abcdef").unwrap(),
+            ),
+        )
+    }
+
+    fn ciphertext_storage(pepper: &str) -> ApiKeySecretStorageConfig {
+        ApiKeySecretStorageConfig::new(
+            ApiKeySecretStorageMode::Ciphertext,
+            std::sync::Arc::new(RingAeadApiKeySecretCodec::new(pepper).unwrap()),
+        )
+    }
+
+    #[test]
+    fn api_key_raw_keys_attach_plaintext_rows_directly() {
+        let rows = vec![api_key_row(1, "plaintext", Some("sk-plain-1"), None, None)];
+        let mut keys = vec![api_key_domain(1)];
+
+        attach_api_key_raw_keys(&mut keys, &rows, Some(&plaintext_storage())).unwrap();
+
+        assert_eq!(Some("sk-plain-1".to_owned()), keys[0].raw_key);
+    }
+
+    #[test]
+    fn api_key_raw_keys_leave_legacy_rows_masked() {
+        let rows = vec![api_key_row(1, "plaintext", None, None, None)];
+        let mut keys = vec![api_key_domain(1)];
+
+        attach_api_key_raw_keys(&mut keys, &rows, Some(&plaintext_storage())).unwrap();
+
+        assert_eq!(None, keys[0].raw_key);
+    }
+
+    #[test]
+    fn api_key_raw_keys_decrypt_ciphertext_rows_with_the_matching_codec() {
+        let storage = ciphertext_storage("0123456789abcdef0123456789abcdef");
+        let encoded = storage
+            .codec()
+            .encode_secret(ApiKeySecretContext::new(10, 20, 1), "sk-cipher-1")
+            .unwrap();
+        let rows = vec![api_key_row(
+            1,
+            "ciphertext",
+            None,
+            Some(&encoded.ciphertext),
+            Some(&encoded.key_id),
+        )];
+        let mut keys = vec![api_key_domain(1)];
+
+        attach_api_key_raw_keys(&mut keys, &rows, Some(&storage)).unwrap();
+
+        assert_eq!(Some("sk-cipher-1".to_owned()), keys[0].raw_key);
+    }
+
+    #[test]
+    fn api_key_raw_keys_degrade_per_row_when_decryption_fails() {
+        // A different pepper (e.g. after rotation) must degrade to masked
+        // instead of failing the whole management read.
+        let rows = vec![
+            api_key_row(1, "plaintext", Some("sk-plain-1"), None, None),
+            api_key_row(2, "ciphertext", None, Some("v1:deadbeef:deadbeef"), Some("key-x")),
+        ];
+        let mut keys = vec![api_key_domain(1), api_key_domain(2)];
+
+        attach_api_key_raw_keys(&mut keys, &rows, Some(&ciphertext_storage("fedcba9876543210fedcba9876543210")))
+            .unwrap();
+
+        assert_eq!(Some("sk-plain-1".to_owned()), keys[0].raw_key);
+        assert_eq!(None, keys[1].raw_key);
+    }
+
+    #[test]
+    fn api_key_raw_keys_without_storage_wiring_stay_masked() {
+        let rows = vec![api_key_row(1, "ciphertext", None, Some("v1:aa:bb"), Some("key-x"))];
+        let mut keys = vec![api_key_domain(1)];
+
+        attach_api_key_raw_keys(&mut keys, &rows, None).unwrap();
+
+        assert_eq!(None, keys[0].raw_key);
     }
 }

@@ -526,7 +526,7 @@ export function DashboardAdmin() {
           <table className="w-full text-left text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">
             <thead className="bg-slate-50 dark:bg-white/[0.02] border-y border-slate-200 dark:border-white/5 text-xs font-semibold text-slate-500 dark:text-slate-400">
               <tr>
-                <th className="px-4 py-3">{t("admin.dashboard.index.text.1i45bsn", "调用方 (用户/API Key)")}</th>
+                <th className="px-4 py-3">{t("admin.dashboard.index.text.1i45bsn", "调用方 (用户/令牌)")}</th>
                 <th className="px-4 py-3">{t("admin.dashboard.index.text.1uqn9fe", "请求目标 (模型)")}</th>
                 <th className="px-4 py-3">{t("admin.dashboard.index.text.pptmtb", "计费模式")}</th>
                 <th className="px-4 py-3">{t("admin.dashboard.index.text.1i0melp", "消耗计费量 (In / Out | Count)")}</th>

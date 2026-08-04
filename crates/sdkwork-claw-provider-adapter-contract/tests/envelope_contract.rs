@@ -51,7 +51,7 @@ fn adapter_invocation_request_serializes_stable_gateway_envelope() {
         "/vidu/ent/v2/start-end2video"
     );
     assert_eq!(serialized["invocation"]["shape"], "async_task_start");
-    assert_eq!(serialized["subject"]["tenantId"], 10);
+    assert_eq!(serialized["subject"]["tenantId"], 100001);
     assert_eq!(serialized["provider"]["providerCode"], "vidu-official");
     assert_eq!(serialized["provider"]["regionCode"], "global");
     assert_eq!(serialized["secret"]["type"], "gateway_resolved");

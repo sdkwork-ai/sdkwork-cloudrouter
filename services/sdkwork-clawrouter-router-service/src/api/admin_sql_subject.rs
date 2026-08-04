@@ -45,6 +45,7 @@ macro_rules! impl_admin_port_subject_from_sql_scope {
 }
 
 impl_admin_port_subject_from_sql_scope!(crate::ports::AdminRecordSubject);
+impl_admin_port_subject_from_sql_scope!(crate::ports::AdminChainPolicySubject);
 impl_admin_port_subject_from_sql_scope!(crate::ports::AdminUserSubject);
 impl_admin_port_subject_from_sql_scope!(crate::ports::AdminStorageSubject);
 impl_admin_port_subject_from_sql_scope!(crate::ports::AdminTransactionCenterSubject);

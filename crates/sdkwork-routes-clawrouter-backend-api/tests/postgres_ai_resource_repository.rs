@@ -32,6 +32,11 @@ async fn postgres_admin_ai_resource_read_models_decode_int4_status_columns() {
             subject,
             q: None,
             resource_type: None,
+            status: None,
+            access_channel_kind: None,
+            vendor_code: None,
+            agent_provider_id: None,
+            require_valid_access_channel_metadata: false,
             limit: None,
             offset: None,
         })
@@ -98,11 +103,11 @@ impl PostgresTestContext {
             .connect(&database_url)
             .await
             .unwrap();
-        sqlx::query(&format!("DROP SCHEMA IF EXISTS {quoted_schema} CASCADE"))
+        sqlx::query(sqlx::AssertSqlSafe(format!("DROP SCHEMA IF EXISTS {quoted_schema} CASCADE")))
             .execute(&admin_pool)
             .await
             .unwrap();
-        sqlx::query(&format!("CREATE SCHEMA {quoted_schema}"))
+        sqlx::query(sqlx::AssertSqlSafe(format!("CREATE SCHEMA {quoted_schema}")))
             .execute(&admin_pool)
             .await
             .unwrap();
@@ -114,7 +119,7 @@ impl PostgresTestContext {
             .after_connect(move |connection, _metadata| {
                 let schema = schema_for_connections.clone();
                 Box::pin(async move {
-                    sqlx::query(&format!("SET search_path TO {}", quote_identifier(&schema)))
+                    sqlx::query(sqlx::AssertSqlSafe(format!("SET search_path TO {}", quote_identifier(&schema))))
                         .execute(&mut *connection)
                         .await?;
                     Ok(())
@@ -143,10 +148,10 @@ impl PostgresTestContext {
             .connect(&database_url)
             .await
             .unwrap();
-        sqlx::query(&format!(
+        sqlx::query(sqlx::AssertSqlSafe(format!(
             "DROP SCHEMA IF EXISTS {} CASCADE",
             quote_identifier(&schema)
-        ))
+        )))
         .execute(&admin_pool)
         .await
         .unwrap();

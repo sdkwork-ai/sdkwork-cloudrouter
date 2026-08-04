@@ -8,7 +8,7 @@ use hyper_rustls::HttpsConnector;
 use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
-use sdkwork_claw_http::OutboundDnsResolver;
+use sdkwork_claw_http::{ensure_rustls_crypto_provider, OutboundDnsResolver};
 use sdkwork_claw_provider_adapter_contract::{
     AdapterInvocationRequest, AdapterInvocationResponse, ProviderAdapterManifest,
 };
@@ -436,6 +436,7 @@ fn adapter_manifest_uri(
 }
 
 fn build_adapter_client(outbound_target_policy: OutboundTargetPolicy) -> AdapterClient {
+    ensure_rustls_crypto_provider();
     let mut http_connector =
         HttpConnector::new_with_resolver(OutboundDnsResolver::new(outbound_target_policy));
     http_connector.set_connect_timeout(Some(DEFAULT_CONNECT_TIMEOUT));

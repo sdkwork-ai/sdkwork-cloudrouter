@@ -10,6 +10,7 @@ use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
 use sdkwork_claw_config::InternalGatewaySecurityConfig;
+use sdkwork_claw_http::ensure_rustls_crypto_provider;
 use sdkwork_claw_security::{
     InternalGatewayRequestSigner, SignedInternalGatewayRequest, INTERNAL_GATEWAY_ROUTE_PREFIX,
     X_SDKWORK_INTERNAL_ACCOUNT_GROUP_ID, X_SDKWORK_INTERNAL_API_KEY_ID,
@@ -236,6 +237,7 @@ fn parse_gateway_header_value(name: &str, value: &str) -> DomainResult<HeaderVal
 }
 
 fn build_gateway_client() -> GatewayClient {
+    ensure_rustls_crypto_provider();
     let connector = hyper_rustls::HttpsConnectorBuilder::new()
         .with_webpki_roots()
         .https_or_http()

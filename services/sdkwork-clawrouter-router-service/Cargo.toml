@@ -19,6 +19,7 @@ http-body-util.workspace = true
 hyper.workspace = true
 hyper-rustls.workspace = true
 hyper-util.workspace = true
+ipnet = "2"
 prometheus.workspace = true
 ring.workspace = true
 redis.workspace = true
@@ -53,6 +54,7 @@ sdkwork-iam-bootstrap.workspace = true
 sdkwork-iam-web-adapter.workspace = true
 sdkwork-clawrouter-database-host = { path = "../../crates/sdkwork-clawrouter-database-host" }
 sdkwork-utils-rust.workspace = true
+sdkwork-web-chain.workspace = true
 sdkwork-web-core.workspace = true
 sdkwork-web-store-redis.workspace = true
 

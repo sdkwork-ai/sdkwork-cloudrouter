@@ -60,6 +60,23 @@ fn snapshot_query_set_is_complete_and_uses_only_postgresql_upstream_authorities(
 }
 
 #[test]
+fn api_key_query_projects_secret_storage_columns() {
+    let sql = PricingCatalogSql::load_api_keys();
+
+    for projection in [
+        "key_secret_mode",
+        "key_secret_plaintext",
+        "key_secret_ciphertext",
+        "key_secret_key_id",
+    ] {
+        assert!(
+            sql.contains(projection),
+            "api key query must project {projection}"
+        );
+    }
+}
+
+#[test]
 fn upstream_account_route_query_projects_the_complete_callable_route() {
     let sql = PricingCatalogSql::load_upstream_account_routes();
 

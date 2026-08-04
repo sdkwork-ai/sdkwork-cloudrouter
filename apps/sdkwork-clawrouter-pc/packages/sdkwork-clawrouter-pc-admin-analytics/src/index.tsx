@@ -17,10 +17,10 @@ import {
 } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { BusinessStatePanel, BusinessStateTableRow } from '@sdkwork/clawroutes-pc-commons/components/BusinessState';
+import { formatMoney } from '@sdkwork/clawroutes-pc-commons/sdkwork-utils';
 import {
   decimalNumber,
   formatLocalizedCompactDecimalAmount,
-  formatLocalizedCurrencyAmount,
   formatLocalizedDecimalAmount,
   formatLocalizedInteger,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
@@ -841,7 +841,13 @@ function formatDecimal(value: string | number, locale: string): string {
 }
 
 function formatCurrency(value: string, locale: string): string {
-  return formatLocalizedCurrencyAmount(value, locale, 'USD');
+  return (
+    formatMoney(value, {
+      currency: 'USD',
+      locale,
+      mode: 'symbol',
+    }) ?? `$${formatLocalizedDecimalAmount(value, locale, 2, 2)}`
+  );
 }
 
 function formatPercent(value: string, locale: string): string {

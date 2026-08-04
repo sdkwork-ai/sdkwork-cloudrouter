@@ -16,6 +16,8 @@ export interface UpstreamAccountGroup {
   groupType: string;
   /** Id field on upstream account group. */
   id: string;
+  /** Modalities field on upstream account group. */
+  modalities?: ('text' | 'audio' | 'image' | 'video' | 'music')[];
   /** Priority field on upstream account group. */
   priority: number;
   /** Routing strategy field on upstream account group. */
@@ -28,6 +30,8 @@ export interface UpstreamAccountGroup {
   updatedAt: string;
   /** Uuid field on upstream account group. */
   uuid: string;
+  /** Vendor code field on upstream account group. */
+  vendorCode?: string | null;
   /** Version field on upstream account group. */
   version: string;
 }

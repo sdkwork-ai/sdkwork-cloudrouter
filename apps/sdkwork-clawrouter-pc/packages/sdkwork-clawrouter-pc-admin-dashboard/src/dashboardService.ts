@@ -1,3 +1,4 @@
+import { formatMoney } from '@sdkwork/clawroutes-pc-commons/sdkwork-utils';
 import {
   getClawRouterBackendSdkClient,
   isRecord,
@@ -496,15 +497,15 @@ function formatInteger(value: string | number): string {
 }
 
 export function formatChargeAmount(value: string): string {
-  const decimalSeparatorIndex = value.indexOf('.');
-  if (decimalSeparatorIndex < 0) {
-    return value;
-  }
-
-  const integerPart = value.slice(0, decimalSeparatorIndex);
-  const fractionPart = value.slice(decimalSeparatorIndex + 1);
-  const trimmedFraction = fractionPart.replace(/0+$/, '');
-  return trimmedFraction.length > 0 ? `${integerPart}.${trimmedFraction}` : integerPart;
+  return (
+    formatMoney(value, {
+      currency: 'USD',
+      locale: 'en-US',
+      mode: 'decimal',
+      minFractionDigits: 0,
+      maxFractionDigits: 6,
+    }) ?? value
+  );
 }
 
 export function formatCompactAxisValue(value: number): string {
@@ -512,7 +513,15 @@ export function formatCompactAxisValue(value: number): string {
 }
 
 function formatDecimal(value: string): string {
-  return formatLocalizedDecimalAmount(value, 'en-US', 2, 0);
+  return (
+    formatMoney(value, {
+      currency: 'USD',
+      locale: 'en-US',
+      mode: 'decimal',
+      minFractionDigits: 0,
+      maxFractionDigits: 2,
+    }) ?? formatLocalizedDecimalAmount(value, 'en-US', 2, 0)
+  );
 }
 
 function formatPercent(value: string): string {

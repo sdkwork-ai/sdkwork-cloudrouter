@@ -26,6 +26,7 @@ async fn app_api_key_create_ensures_default_group_when_missing() {
         command_store.clone(),
         Arc::new(TestHasher),
         Arc::new(TestSecretGenerator),
+        None,
     );
 
     let response = router
@@ -42,8 +43,8 @@ async fn app_api_key_create_ensures_default_group_when_missing() {
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("default", payload["data"]["item"]["accountGroup"]);
     assert_eq!("Default", payload["data"]["item"]["accountGroupName"]);
-    assert_eq!("sk-claw-test-secret", payload["data"]["rawKey"]);
-    assert!(payload["data"]["item"].get("rawKey").is_none());
+    assert_eq!("sk-test-secret", payload["data"]["rawKey"]);
+    assert_eq!("sk-test-secret", payload["data"]["item"]["rawKey"]);
 
     let commands = command_store.commands.lock().unwrap();
     assert_eq!(1, commands.len());
@@ -62,6 +63,7 @@ async fn app_api_key_update_rebinds_key_to_available_group_for_owner() {
         command_store,
         Arc::new(TestHasher),
         Arc::new(TestSecretGenerator),
+        None,
     );
 
     let response = router
@@ -79,7 +81,8 @@ async fn app_api_key_update_rebinds_key_to_available_group_for_owner() {
     assert_eq!("701", payload["data"]["item"]["id"]);
     assert_eq!("Updated Console Key", payload["data"]["item"]["name"]);
     assert_eq!("premium", payload["data"]["item"]["accountGroup"]);
-    assert!(payload["data"]["item"].get("rawKey").is_none());
+    // Updated keys keep their stored raw key material (merged from the existing row).
+    assert_eq!("sk-test-secret-raw", payload["data"]["item"]["rawKey"]);
 }
 
 #[tokio::test]
@@ -91,6 +94,7 @@ async fn app_api_key_update_marks_one_owner_key_as_runtime_default() {
         command_store,
         Arc::new(TestHasher),
         Arc::new(TestSecretGenerator),
+        None,
     );
 
     let response = router
@@ -110,7 +114,7 @@ async fn app_api_key_update_marks_one_owner_key_as_runtime_default() {
 }
 
 #[tokio::test]
-async fn app_api_key_list_never_returns_raw_key_material() {
+async fn app_api_key_list_returns_stored_raw_key_material() {
     let read_store = Arc::new(TestApiKeyReadStore::with_owner_key());
     let command_store = Arc::new(TestApiKeyCommandStore::default());
     let router = sdkwork_clawrouter_router_service::api::app_api_key_router_with_read_store_and_command_store(
@@ -118,6 +122,7 @@ async fn app_api_key_list_never_returns_raw_key_material() {
         command_store,
         Arc::new(TestHasher),
         Arc::new(TestSecretGenerator),
+        None,
     );
 
     let response = router
@@ -129,9 +134,12 @@ async fn app_api_key_list_never_returns_raw_key_material() {
     let payload = json_payload(response).await;
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("701", payload["data"]["items"][0]["id"]);
-    assert!(payload["data"]["items"][0].get("rawKey").is_none());
     assert_eq!(
-        "sk-claw-test********CRET",
+        "sk-test-secret-raw",
+        payload["data"]["items"][0]["rawKey"]
+    );
+    assert_eq!(
+        "sk-test********CRET",
         payload["data"]["items"][0]["maskedKey"]
     );
     assert_eq!("default", payload["data"]["items"][0]["accountGroup"]);
@@ -151,6 +159,7 @@ async fn app_api_key_delete_revokes_owner_key() {
         command_store,
         Arc::new(TestHasher),
         Arc::new(TestSecretGenerator),
+        None,
     );
 
     let response = router
@@ -235,9 +244,10 @@ impl GatewayApiKeyManagementReadStore for TestApiKeyReadStore {
                     user_id: 30,
                     default_account_group_id: 501,
                     name: "Console Key".to_owned(),
-                    key_prefix: "sk-claw-test".to_owned(),
-                    key_display_masked: "sk-claw-test********CRET".to_owned(),
-                    key_hash: "hash:sk-claw-test-secret".to_owned(),
+                    key_prefix: "sk-test".to_owned(),
+                    key_display_masked: "sk-test********CRET".to_owned(),
+                    key_hash: "hash:sk-test-secret".to_owned(),
+                    raw_key: Some("sk-test-secret-raw".to_owned()),
                     policy_id: None,
                     quota_policy_id: Some(801),
                     created_at: "2026-05-17 10:00:00".to_owned(),
@@ -336,8 +346,8 @@ impl GatewayApiKeyCommandStore for TestApiKeyCommandStore {
                 command.organization_id,
                 &command.code,
                 &command.pricing_plan_code,
-                command.rate_multiplier,
-                command.official_price_multiplier,
+                command.cost_multiplier,
+                command.sale_multiplier,
             )
             .with_name(&command.name))
         })
@@ -360,6 +370,7 @@ impl GatewayApiKeyCommandStore for TestApiKeyCommandStore {
                     key_prefix: command.key_prefix,
                     key_display_masked: command.key_display_masked,
                     key_hash: command.key_hash,
+                    raw_key: Some(command.raw_key),
                     policy_id: None,
                     quota_policy_id: Some(801),
                     created_at: command.created_at,
@@ -391,9 +402,10 @@ impl GatewayApiKeyCommandStore for TestApiKeyCommandStore {
                     user_id: command.user_id,
                     default_account_group_id: command.group_id.unwrap_or(501),
                     name: command.name.unwrap_or_else(|| "Console Key".to_owned()),
-                    key_prefix: "sk-claw-test".to_owned(),
-                    key_display_masked: "sk-claw-test********CRET".to_owned(),
-                    key_hash: "hash:sk-claw-test-secret".to_owned(),
+                    key_prefix: "sk-test".to_owned(),
+                    key_display_masked: "sk-test********CRET".to_owned(),
+                    key_hash: "hash:sk-test-secret".to_owned(),
+                    raw_key: None,
                     policy_id: None,
                     quota_policy_id: Some(801),
                     created_at: "2026-05-17 10:00:00".to_owned(),
@@ -444,6 +456,6 @@ impl sdkwork_clawrouter_router_service::application::EntityUuidGenerator for Tes
 
 impl ApiKeySecretGenerator for TestSecretGenerator {
     fn generate_api_key_secret(&self) -> DomainResult<String> {
-        Ok("sk-claw-test-secret".to_owned())
+        Ok("sk-test-secret".to_owned())
     }
 }

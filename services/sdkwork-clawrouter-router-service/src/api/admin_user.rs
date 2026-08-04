@@ -19,9 +19,9 @@ use crate::api::response::{
 use crate::application::{ApiKeySecretGenerator, ApiKeySecretHasher};
 use crate::domain::{DecimalValue, DomainError, GatewayApiKey};
 use crate::ports::{
-    AdjustAdminUserBalanceCommand, AdminUserApiKeyItem, AdminUserItem, AdminUserStore,
-    AdminUserSubject, CreateAdminUserApiKeyCommand, CreateAdminUserCommand,
-    CreateGatewayApiKeyCommand, DeleteAdminUserApiKeyCommand,
+    AccountGroupBindingInput, AdjustAdminUserBalanceCommand, AdminUserApiKeyItem,
+    AdminUserItem, AdminUserStore, AdminUserSubject, CreateAdminUserApiKeyCommand,
+    CreateAdminUserCommand, CreateGatewayApiKeyCommand, DeleteAdminUserApiKeyCommand,
     DeleteGatewayApiKeyForOrganizationCommand, EnsureDefaultUpstreamAccountGroupCommand,
     GatewayApiKeyCommandStore, ListAdminUserApiKeysQuery, ListAdminUsersQuery,
     UpdateAdminUserCommand,
@@ -568,8 +568,8 @@ async fn create_backend_api_key(
             code: DEFAULT_ACCOUNT_GROUP_CODE.to_owned(),
             name: DEFAULT_ACCOUNT_GROUP_NAME.to_owned(),
             pricing_plan_code: DEFAULT_PRICING_PLAN_CODE.to_owned(),
-            rate_multiplier: DecimalValue::ONE,
-            official_price_multiplier: DecimalValue::ONE,
+            cost_multiplier: DecimalValue::ONE,
+            sale_multiplier: DecimalValue::ONE,
             requested_at: requested_at.clone(),
         })
         .await
@@ -748,9 +748,14 @@ fn build_backend_create_api_key_command(
         operator_type: subject.operator_type,
         name,
         group_id,
+        account_group_bindings: vec![AccountGroupBindingInput {
+            group_id,
+            priority: 100,
+        }],
         key_prefix: key_prefix(raw_key),
         key_display_masked: mask_created_key(raw_key),
         key_hash,
+        raw_key: raw_key.to_owned(),
         hash_alg: HASH_ALG_HMAC_SHA256.to_owned(),
         secret_version: SECRET_VERSION,
         request_id,

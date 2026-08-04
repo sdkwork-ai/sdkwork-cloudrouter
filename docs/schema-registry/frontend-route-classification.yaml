@@ -259,6 +259,9 @@ routes:
   api_surface: backend
   operation_routes:
   - /admin/upstream
+  - /admin/upstream/suppliers
+  - /admin/upstream/accounts
+  - /admin/upstream/account-groups
   evidence:
   - apps/sdkwork-clawrouter-pc/src/App.tsx
   - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts

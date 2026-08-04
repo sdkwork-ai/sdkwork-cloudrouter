@@ -1,6 +1,7 @@
 import { Wallet } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@sdkwork/ui-pc-react';
+import { formatMoney } from '@sdkwork/clawroutes-pc-commons/sdkwork-utils';
 import {
   useSdkworkWalletIntl,
   type SdkworkWalletOverview,
@@ -17,8 +18,9 @@ export function ClawRouterTokenBankBalancePanel({
   onOpenWithdraw,
   overview,
 }: ClawRouterTokenBankBalancePanelProps) {
-  const { t } = useTranslation();
-  const { formatCurrencyCny, formatTokenBank } = useSdkworkWalletIntl();
+  const { t, i18n } = useTranslation();
+  const displayLocale = i18n.resolvedLanguage ?? i18n.language ?? 'en-US';
+  const { formatTokenBank } = useSdkworkWalletIntl();
 
   return (
     <section className="overflow-hidden rounded-[var(--sdk-radius-panel)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)]">
@@ -72,7 +74,7 @@ export function ClawRouterTokenBankBalancePanel({
             {t('console.tokenBank.balance.cashAvailable')}
           </dt>
           <dd className="mt-1 text-sm font-medium tabular-nums text-[var(--sdk-color-text-primary)]">
-            {formatCurrencyCny(overview.account.cashAvailable)}
+            {formatMoney(overview.account.cashAvailable, { currency: 'CNY', locale: displayLocale, mode: 'symbol' }) ?? '--'}
           </dd>
         </div>
       </dl>

@@ -1,28 +1,35 @@
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
+use crate::application::{ApiKeySecretContext, ApiKeySecretStorageConfig};
 use crate::domain::{
-    DomainError, DomainResult, GatewayAccessPolicy, GatewayApiKey, QuotaPolicy,
-    UpstreamAccountGroup,
+    DomainError, DomainResult, GatewayAccessPolicy, GatewayApiKey,
+    GatewayApiKeyAccountGroupBinding, QuotaPolicy, UpstreamAccountGroup,
 };
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
-    ApiKeyCommandStoreFuture, CreateGatewayApiKeyCommand, CreatedGatewayApiKey,
-    DeleteGatewayApiKeyCommand, DeleteGatewayApiKeyForOrganizationCommand,
-    EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore,
-    UpdateGatewayApiKeyCommand, UpdatedGatewayApiKey,
+    AccountGroupBindingInput, ApiKeyCommandStoreFuture, CreateGatewayApiKeyCommand,
+    CreatedGatewayApiKey, DeleteGatewayApiKeyCommand,
+    DeleteGatewayApiKeyForOrganizationCommand, EnsureDefaultUpstreamAccountGroupCommand,
+    GatewayApiKeyCommandStore, UpdateGatewayApiKeyCommand, UpdatedGatewayApiKey,
 };
 
 const API_KEY_STATUS_REVOKED: i32 = 4;
+const API_KEY_SECRET_MODE_PLAINTEXT: &str = "plaintext";
+const API_KEY_SECRET_MODE_CIPHERTEXT: &str = "ciphertext";
 
 #[derive(Clone)]
 pub struct PostgresGatewayApiKeyCommandStore {
     pool: PgPool,
+    secret_storage: ApiKeySecretStorageConfig,
 }
 
 impl PostgresGatewayApiKeyCommandStore {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
+    pub fn new(pool: PgPool, secret_storage: ApiKeySecretStorageConfig) -> Self {
+        Self {
+            pool,
+            secret_storage,
+        }
     }
 }
 
@@ -64,8 +71,22 @@ impl GatewayApiKeyCommandStore for PostgresGatewayApiKeyCommandStore {
                 &command,
                 access_policy.as_ref().map(|policy| policy.id),
                 quota_policy.as_ref().map(|policy| policy.id),
+                &self.secret_storage,
             )
             .await?;
+            let api_key_id = api_key.id;
+            let api_key = api_key.with_account_group_bindings(
+                replace_account_group_bindings(
+                    &mut tx,
+                    command.tenant_id,
+                    command.organization_id,
+                    command.user_id,
+                    api_key_id,
+                    &command.account_group_bindings,
+                    &command.created_at,
+                )
+                .await?,
+            );
             insert_audit_log(&mut tx, &command, api_key.id).await?;
             tx.commit()
                 .await
@@ -143,7 +164,7 @@ async fn ensure_default_upstream_account_group(
     let group = sqlx::query(
         r#"
         INSERT INTO ai_upstream_account_group
-            (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, group_name, group_code, description, group_type, environment, pricing_plan_id, pricing_plan_code, rate_multiplier, official_price_multiplier, billing_type, capacity_limit, allowed_origin, metadata)
+            (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, group_name, group_code, description, group_type, environment, pricing_plan_id, pricing_plan_code, cost_multiplier, sale_multiplier, billing_type, capacity_limit, allowed_origin, metadata)
         VALUES
             ($1, $2, $3, $4, 1, 1, $5::timestamptz, $6::timestamptz, 0, $7, $8, '', 'default', 1, $9, $10, $11::numeric, $12::numeric, 1, 0, '{}'::jsonb, '{}'::jsonb)
         ON CONFLICT (tenant_id, organization_id, group_code)
@@ -153,8 +174,8 @@ async fn ensure_default_upstream_account_group(
             group_name = COALESCE(NULLIF(ai_upstream_account_group.group_name, ''), EXCLUDED.group_name),
             pricing_plan_id = COALESCE(ai_upstream_account_group.pricing_plan_id, EXCLUDED.pricing_plan_id),
             pricing_plan_code = COALESCE(NULLIF(ai_upstream_account_group.pricing_plan_code, ''), EXCLUDED.pricing_plan_code),
-            rate_multiplier = COALESCE(ai_upstream_account_group.rate_multiplier, EXCLUDED.rate_multiplier),
-            official_price_multiplier = COALESCE(ai_upstream_account_group.official_price_multiplier, EXCLUDED.official_price_multiplier),
+            cost_multiplier = COALESCE(ai_upstream_account_group.cost_multiplier, EXCLUDED.cost_multiplier),
+            sale_multiplier = COALESCE(ai_upstream_account_group.sale_multiplier, EXCLUDED.sale_multiplier),
             updated_at = EXCLUDED.updated_at
         RETURNING
             id,
@@ -163,8 +184,8 @@ async fn ensure_default_upstream_account_group(
             COALESCE(NULLIF(group_name, ''), COALESCE(group_code, '')) AS name,
             COALESCE(group_code, '') AS code,
             COALESCE(NULLIF(pricing_plan_code, ''), $10) AS pricing_plan_code,
-            COALESCE(rate_multiplier::text, '1.000000') AS rate_multiplier,
-            COALESCE(official_price_multiplier::text, '1.000000') AS official_price_multiplier
+            COALESCE(cost_multiplier::text, '1.000000') AS cost_multiplier,
+            COALESCE(sale_multiplier::text, '1.000000') AS sale_multiplier
         "#,
     )
     .bind(group_id)
@@ -177,8 +198,8 @@ async fn ensure_default_upstream_account_group(
     .bind(&command.code)
     .bind(pricing_plan_id)
     .bind(&command.pricing_plan_code)
-    .bind(command.rate_multiplier.to_fixed_string(6))
-    .bind(command.official_price_multiplier.to_fixed_string(6))
+    .bind(command.cost_multiplier.to_fixed_string(6))
+    .bind(command.sale_multiplier.to_fixed_string(6))
     .fetch_one(&mut **tx)
     .await
     .map_err(|error| store_error("failed to ensure default channel group", error))?;
@@ -229,12 +250,10 @@ fn upstream_account_group_from_row(
         &row.try_get::<String, _>("pricing_plan_code")
             .map_err(row_error)?,
         crate::domain::DecimalValue::parse(
-            &row.try_get::<String, _>("rate_multiplier")
-                .map_err(row_error)?,
+            &row.try_get::<String, _>("cost_multiplier").map_err(row_error)?,
         )?,
         crate::domain::DecimalValue::parse(
-            &row.try_get::<String, _>("official_price_multiplier")
-                .map_err(row_error)?,
+            &row.try_get::<String, _>("sale_multiplier").map_err(row_error)?,
         )?,
     )
     .with_name(&row.try_get::<String, _>("name").map_err(row_error)?))
@@ -350,15 +369,18 @@ async fn insert_api_key(
     command: &CreateGatewayApiKeyCommand,
     policy_id: Option<i64>,
     quota_policy_id: Option<i64>,
+    secret_storage: &ApiKeySecretStorageConfig,
 ) -> DomainResult<GatewayApiKey> {
     let metadata = api_key_metadata_json(command)?;
     let id = next_claw_runtime_id("gateway api key creation")?;
+    let (secret_mode, secret_plaintext, secret_ciphertext, secret_key_id) =
+        encode_api_key_secret_for_storage(secret_storage, command, id)?;
     sqlx::query(
         r#"
         INSERT INTO iam_gateway_api_key
-            (id, uuid, tenant_id, organization_id, user_id, account_group_id, name, key_prefix, key_display_masked, key_hash, hash_alg, secret_version, idempotency_key, policy_id, quota_policy_id, status, created_at, updated_at, expire_at, last_revealed_at, metadata)
+            (id, uuid, tenant_id, organization_id, user_id, account_group_id, name, key_prefix, key_display_masked, key_hash, hash_alg, secret_version, key_secret_mode, key_secret_plaintext, key_secret_ciphertext, key_secret_key_id, idempotency_key, policy_id, quota_policy_id, status, created_at, updated_at, expire_at, last_revealed_at, metadata)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 1, $16::timestamptz, $17::timestamptz, $18::timestamptz, CURRENT_TIMESTAMP, $19::jsonb)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, 1, $20::timestamptz, $21::timestamptz, $22::timestamptz, CURRENT_TIMESTAMP, $23::jsonb)
         "#,
     )
     .bind(id)
@@ -373,6 +395,10 @@ async fn insert_api_key(
     .bind(&command.key_hash)
     .bind(&command.hash_alg)
     .bind(command.secret_version)
+    .bind(secret_mode)
+    .bind(secret_plaintext)
+    .bind(secret_ciphertext)
+    .bind(secret_key_id)
     .bind(&command.idempotency_key)
     .bind(policy_id)
     .bind(quota_policy_id)
@@ -394,6 +420,7 @@ async fn insert_api_key(
         key_prefix: command.key_prefix.clone(),
         key_display_masked: command.key_display_masked.clone(),
         key_hash: command.key_hash.clone(),
+        raw_key: Some(command.raw_key.clone()),
         policy_id,
         quota_policy_id,
         created_at: command.created_at.clone(),
@@ -402,6 +429,156 @@ async fn insert_api_key(
         default_for_runtime: command.default_for_runtime,
         account_group_bindings: Vec::new(),
     })
+}
+
+/// Replaces all route bindings for an api key (binding_role='route') with the
+/// given set. Returns the resolved bindings (with group codes) so callers can
+/// attach them to the returned `GatewayApiKey`.
+async fn replace_account_group_bindings(
+    tx: &mut Transaction<'_, Postgres>,
+    tenant_id: i64,
+    organization_id: i64,
+    user_id: i64,
+    api_key_id: i64,
+    bindings: &[AccountGroupBindingInput],
+    requested_at: &str,
+) -> DomainResult<Vec<GatewayApiKeyAccountGroupBinding>> {
+    sqlx::query(
+        r#"
+        DELETE FROM iam_gateway_api_key_account_group
+        WHERE tenant_id = $1 AND organization_id = $2
+          AND api_key_id = $3 AND binding_role = 'route'
+          AND deleted_at IS NULL
+        "#,
+    )
+    .bind(tenant_id)
+    .bind(organization_id)
+    .bind(api_key_id)
+    .execute(&mut **tx)
+    .await
+    .map_err(|error| store_error("failed to clear api key account group bindings", error))?;
+
+    let mut resolved = Vec::with_capacity(bindings.len());
+    for binding in bindings {
+        let row = sqlx::query(
+            r#"
+            SELECT
+                COALESCE(group_code, '') AS group_code,
+                COALESCE(pricing_plan_code, '') AS pricing_plan_code
+            FROM ai_upstream_account_group
+            WHERE tenant_id = $1 AND organization_id = $2
+              AND id = $3 AND deleted_at IS NULL
+            "#,
+        )
+        .bind(tenant_id)
+        .bind(organization_id)
+        .bind(binding.group_id)
+        .fetch_optional(&mut **tx)
+        .await
+        .map_err(|error| store_error("failed to load account group for api key binding", error))?
+        .ok_or_else(|| {
+            DomainError::new(format!(
+                "account group {} is not available for api key binding",
+                binding.group_id
+            ))
+        })?;
+        let group_code: String = row.try_get("group_code").map_err(row_error)?;
+        let pricing_plan_code: String = row.try_get("pricing_plan_code").map_err(row_error)?;
+        let priority = binding.priority.max(0);
+        sqlx::query(
+            r#"
+            INSERT INTO iam_gateway_api_key_account_group
+                (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, user_id, api_key_id, account_group_id, account_group_code, binding_role, routing_strategy, priority, weight, effective_from, effective_to)
+            VALUES
+                ($1, $2, $3, $4, 0, 1, $5::timestamptz, $5::timestamptz, 0, '{}'::jsonb, $6, $7, $8, $9, 'route', 'auto', $10, 100, NULL, NULL)
+            ON CONFLICT (tenant_id, organization_id, api_key_id, account_group_id, binding_role) WHERE deleted_at IS NULL
+            DO UPDATE SET
+                account_group_code = EXCLUDED.account_group_code,
+                priority = EXCLUDED.priority,
+                weight = EXCLUDED.weight,
+                status = 1,
+                deleted_at = NULL,
+                updated_at = EXCLUDED.updated_at
+            "#,
+        )
+        .bind(next_claw_runtime_id("api key account group binding")?)
+        .bind(format!("api-key-{api_key_id}-group-{}", binding.group_id))
+        .bind(tenant_id)
+        .bind(organization_id)
+        .bind(requested_at)
+        .bind(user_id)
+        .bind(api_key_id)
+        .bind(binding.group_id)
+        .bind(&group_code)
+        .bind(priority)
+        .execute(&mut **tx)
+        .await
+        .map_err(|error| store_error("failed to insert api key account group binding", error))?;
+        resolved.push(GatewayApiKeyAccountGroupBinding::new(
+            binding.group_id,
+            &group_code,
+            &pricing_plan_code,
+            priority,
+            100,
+        ));
+    }
+    Ok(resolved)
+}
+
+/// Soft-deletes all route bindings for a revoked api key.
+async fn soft_delete_account_group_bindings(
+    tx: &mut Transaction<'_, Postgres>,
+    tenant_id: i64,
+    organization_id: i64,
+    api_key_id: i64,
+    requested_at: &str,
+    deleted_by: i64,
+) -> DomainResult<()> {
+    sqlx::query(
+        r#"
+        UPDATE iam_gateway_api_key_account_group
+        SET deleted_at = $1::timestamp AT TIME ZONE 'UTC',
+            deleted_by = $2,
+            status = 0,
+            updated_at = $1::timestamp AT TIME ZONE 'UTC'
+        WHERE tenant_id = $3 AND organization_id = $4
+          AND api_key_id = $5 AND binding_role = 'route'
+          AND deleted_at IS NULL
+        "#,
+    )
+    .bind(requested_at)
+    .bind(deleted_by)
+    .bind(tenant_id)
+    .bind(organization_id)
+    .bind(api_key_id)
+    .execute(&mut **tx)
+    .await
+    .map_err(|error| store_error("failed to soft-delete api key account group bindings", error))?;
+    Ok(())
+}
+
+fn encode_api_key_secret_for_storage(
+    secret_storage: &ApiKeySecretStorageConfig,
+    command: &CreateGatewayApiKeyCommand,
+    api_key_id: i64,
+) -> DomainResult<(String, Option<String>, Option<String>, Option<String>)> {    if !secret_storage.is_ciphertext() {
+        return Ok((
+            API_KEY_SECRET_MODE_PLAINTEXT.to_owned(),
+            Some(command.raw_key.clone()),
+            None,
+            None,
+        ));
+    }
+    let encoded = secret_storage.codec().encode_secret(
+        ApiKeySecretContext::new(command.tenant_id, command.organization_id, api_key_id),
+        &command.raw_key,
+    )?;
+    Ok((
+        API_KEY_SECRET_MODE_CIPHERTEXT.to_owned(),
+        None,
+        Some(encoded.ciphertext),
+        Some(encoded.key_id),
+    ))
 }
 
 async fn clear_runtime_default_api_keys_for_create(
@@ -549,6 +726,20 @@ async fn update_api_key(
     .await
     .map_err(|error| store_error("failed to update api key", error))?;
 
+    if let Some(bindings) = &command.account_group_bindings {
+        let updated_bindings = replace_account_group_bindings(
+            tx,
+            command.tenant_id,
+            command.organization_id,
+            command.user_id,
+            command.api_key_id,
+            bindings,
+            &command.requested_at,
+        )
+        .await?;
+        api_key = api_key.with_account_group_bindings(updated_bindings);
+    }
+
     insert_update_audit_log(tx, command, &api_key).await?;
     Ok(Some(UpdatedGatewayApiKey {
         api_key,
@@ -686,6 +877,7 @@ fn gateway_api_key_from_row(row: sqlx::postgres::PgRow) -> DomainResult<GatewayA
             .try_get::<String, _>("key_display_masked")
             .map_err(row_error)?,
         key_hash: row.try_get::<String, _>("key_hash").map_err(row_error)?,
+        raw_key: None,
         policy_id: row
             .try_get::<Option<i64>, _>("policy_id")
             .map_err(row_error)?,
@@ -937,6 +1129,17 @@ async fn revoke_api_key(
     .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to revoke api key", error))?;
+    if result.rows_affected() > 0 {
+        soft_delete_account_group_bindings(
+            tx,
+            command.tenant_id,
+            command.organization_id,
+            command.api_key_id,
+            &command.requested_at,
+            command.operator_id,
+        )
+        .await?;
+    }
     Ok(result.rows_affected() > 0)
 }
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react';
 import { BottomPagination } from '@sdkwork/clawroutes-pc-commons';
+import { formatMoney } from '@sdkwork/clawroutes-pc-commons/sdkwork-utils';
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
 import { MembershipDialog } from '../components/MembershipDialog';
 import { MembershipDrawer } from '../components/MembershipDrawer';
@@ -36,7 +37,8 @@ import {
 } from '../membershipsService';
 
 export function MembershipPackagesPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const displayLocale = i18n.resolvedLanguage ?? i18n.language ?? 'en-US';
   const [groups, setGroups] = useState<MembershipsAdminPackageGroup[]>([]);
   const [packages, setPackages] = useState<MembershipsAdminPackageItem[]>([]);
   const [plans, setPlans] = useState<MembershipsAdminPlanItem[]>([]);
@@ -380,7 +382,9 @@ export function MembershipPackagesPage() {
                         <div className="text-xs text-slate-400">{item.packageNo}</div>
                       </td>
                       <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{item.planId}</td>
-                      <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">{item.priceAmount} {item.currencyCode}</td>
+                      <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">
+                        {formatMoney(item.priceAmount, { currency: item.currencyCode, locale: displayLocale, mode: 'symbol' }) ?? `${item.priceAmount} ${item.currencyCode}`}
+                      </td>
                       <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{item.durationDays}d</td>
                       <td className="px-4 py-2.5"><MembershipStatusBadge status={item.status} /></td>
                       <td className="px-4 py-2.5">

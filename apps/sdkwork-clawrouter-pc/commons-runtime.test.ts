@@ -148,7 +148,7 @@ test("createClientOperationToken fails closed when secure randomness is unavaila
 test("formatRechargeCurrencyAmount prefers currency symbols for standard recharge currencies", () => {
   assert.equal(formatRechargeCurrencyAmount("29.90", "CNY"), "¥29.90");
   assert.equal(formatRechargeCurrencyAmount("100", "USD"), "$100.00");
-  assert.equal(formatRechargeCurrencyAmount("5", "EUR"), "EUR 5.00");
+  assert.equal(formatRechargeCurrencyAmount("5", "EUR"), "€5.00");
   assert.equal(formatRechargeCurrencyAmount("0", "CNY"), "¥0.00");
 });
 

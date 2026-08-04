@@ -40,6 +40,14 @@ frontend_operations:
             fallbackMode: { type: string, maxLength: 64 }
             costMultiplier: { type: string, maxLength: 64 }
             saleMultiplier: { type: string, maxLength: 64 }
+            vendorCode:
+              type: string
+              nullable: true
+              maxLength: 64
+              description: Model vendor code this group is bound to; null means the group is not vendor-bound.
+            modalities:
+              type: array
+              items: { type: string, enum: [text, audio, image, video, music], maxLength: 16 }
             status: { type: string, enum: [enabled, disabled] }
             authorized: { type: boolean }
             memberAccountCount: { type: integer, format: int64, minimum: 0 }
@@ -972,6 +980,14 @@ frontend_operations:
             costMultiplier: { type: string, maxLength: 64 }
             saleMultiplier: { type: string, maxLength: 64 }
             environment: { type: integer, format: int32, nullable: true }
+            vendorCode:
+              type: string
+              nullable: true
+              maxLength: 64
+              description: Model vendor code this group is bound to; null means the group is not vendor-bound.
+            modalities:
+              type: array
+              items: { type: string, enum: [text, audio, image, video, music], maxLength: 16 }
             status: { type: integer, format: int32 }
             version: { type: string, maxLength: 32 }
             updatedAt: { type: string, format: date-time }
@@ -1019,6 +1035,15 @@ frontend_operations:
       costMultiplier: { type: string, maxLength: 64, nullable: true }
       saleMultiplier: { type: string, maxLength: 64, nullable: true }
       environment: { type: integer, format: int32, nullable: true }
+      vendorCode:
+        type: string
+        nullable: true
+        maxLength: 64
+        description: Model vendor code this group is bound to; null means the group is not vendor-bound.
+      modalities:
+        type: array
+        nullable: true
+        items: { type: string, enum: [text, audio, image, video, music], maxLength: 16 }
       status: { type: integer, format: int32, nullable: true }
   write_tables:
   - ai_upstream_account_group
@@ -1080,6 +1105,15 @@ frontend_operations:
       costMultiplier: { type: string, maxLength: 64, nullable: true }
       saleMultiplier: { type: string, maxLength: 64, nullable: true }
       environment: { type: integer, format: int32, nullable: true }
+      vendorCode:
+        type: string
+        nullable: true
+        maxLength: 64
+        description: Model vendor code this group is bound to; null means the group is not vendor-bound.
+      modalities:
+        type: array
+        nullable: true
+        items: { type: string, enum: [text, audio, image, video, music], maxLength: 16 }
       status: { type: integer, format: int32, nullable: true }
   write_tables:
   - ai_upstream_account_group
@@ -2951,17 +2985,26 @@ frontend_operations:
           name: AppApiKeyItem
           type: object
           additionalProperties: false
-          required: [id, name, maskedKey, accountGroup, accountGroupName, quota, usedQuota, modalities, ipLimit, created, expires, status, defaultForRuntime]
+          required: [id, name, maskedKey, accountGroup, accountGroupName, accountGroups, quota, usedQuota, modalities, ipLimit, created, expires, status, defaultForRuntime]
           properties:
             id: { type: string, minLength: 1, maxLength: 128 }
             name: { type: string, minLength: 1, maxLength: 128 }
             maskedKey: { type: string, minLength: 1, maxLength: 256 }
+            rawKey:
+              type: string
+              nullable: true
+              maxLength: 1024
+              description: Raw API key material when the deployment stores it (plaintext or decrypted ciphertext); null for legacy keys without a stored secret.
             accountGroup: { type: string, minLength: 1, maxLength: 128 }
             accountGroupName:
               type: string
               minLength: 1
               maxLength: 128
               description: Display name snapshot for the bound upstream account group.
+            accountGroups:
+              type: array
+              items: { type: string, maxLength: 128 }
+              description: Route binding group codes (priority order), including the default group.
             rate: { type: string, nullable: true, maxLength: 64 }
             quota: { type: string, minLength: 1, maxLength: 64 }
             usedQuota: { type: string, minLength: 1, maxLength: 64 }
@@ -2975,7 +3018,7 @@ frontend_operations:
             defaultForRuntime:
               type: boolean
               description: Whether this key is the current console default for backend runtime API key selection.
-          description: API key metadata. Secret material is never returned by list operations.
+          description: API key metadata. Raw key material is returned when the deployment stores it (plaintext or decrypted ciphertext); legacy keys without a stored secret return null.
       pageInfo:
         $ref: '#/components/schemas/PageInfo'
   query_parameters:
@@ -3004,7 +3047,7 @@ frontend_operations:
   - ops_audit_log
   request_schema:
     name: CreateApiKeyRequest
-    required: [name, accountGroup, quota, isUnlimitedQuota, modalities, ipLimit, expires]
+    required: [name, quota, isUnlimitedQuota, modalities, ipLimit, expires]
     properties:
       name:
         type: string
@@ -3015,7 +3058,13 @@ frontend_operations:
         type: string
         minLength: 1
         maxLength: 64
-        description: Upstream account group code authorized for this API key.
+        description: Upstream account group code authorized for this API key. Replaced by accountGroups when provided.
+      accountGroups:
+        type: array
+        nullable: true
+        maxItems: 100
+        items: { type: string, minLength: 1, maxLength: 64 }
+        description: Route binding group codes (binding_role='route'); the first entry becomes the default group. Replaces accountGroup when provided.
       quota:
         type: string
         format: decimal
@@ -3039,6 +3088,54 @@ frontend_operations:
       defaultForRuntime:
         type: boolean
         description: Create this key as the default backend runtime API key.
+      chain:
+        type: object
+        nullable: true
+        additionalProperties: false
+        required: []
+        description: Per-API-key call-chain policy applied at creation time.
+        properties:
+          policyName: { type: string, maxLength: 128, nullable: true }
+          concurrency:
+            type: object
+            additionalProperties: false
+            required: []
+            properties:
+              maxInflight: { type: integer, format: int64, minimum: 0, nullable: true }
+              maxInflightPerScope:
+                type: object
+                additionalProperties:
+                  type: integer
+                  format: int64
+                  minimum: 0
+                nullable: true
+          ipAccess:
+            type: object
+            additionalProperties: false
+            required: []
+            properties:
+              mode: { type: string, enum: [open, allowlistOnly], nullable: true }
+              allowlist:
+                type: array
+                items: { type: string, maxLength: 256 }
+                nullable: true
+              denylist:
+                type: array
+                items: { type: string, maxLength: 256 }
+                nullable: true
+          stages:
+            type: object
+            additionalProperties: false
+            required: []
+            properties:
+              enabledOnly:
+                type: array
+                items: { type: string, maxLength: 64 }
+                nullable: true
+              disabled:
+                type: array
+                items: { type: string, maxLength: 64 }
+                nullable: true
   response_schema:
     name: CreateApiKeyResponse
     required: [item, rawKey]
@@ -3047,17 +3144,26 @@ frontend_operations:
         name: AppApiKeyItem
         type: object
         additionalProperties: false
-        required: [id, name, maskedKey, accountGroup, accountGroupName, quota, usedQuota, modalities, ipLimit, created, expires, status, defaultForRuntime]
+        required: [id, name, maskedKey, accountGroup, accountGroupName, accountGroups, quota, usedQuota, modalities, ipLimit, created, expires, status, defaultForRuntime]
         properties:
           id: { type: string, minLength: 1, maxLength: 128 }
           name: { type: string, minLength: 1, maxLength: 128 }
           maskedKey: { type: string, minLength: 1, maxLength: 256 }
+          rawKey:
+            type: string
+            nullable: true
+            maxLength: 1024
+            description: Raw API key material when the deployment stores it (plaintext or decrypted ciphertext); null for legacy keys without a stored secret.
           accountGroup: { type: string, minLength: 1, maxLength: 128 }
           accountGroupName:
             type: string
             minLength: 1
             maxLength: 128
             description: Display name snapshot for the bound upstream account group.
+          accountGroups:
+            type: array
+            items: { type: string, maxLength: 128 }
+            description: Route binding group codes (priority order), including the default group.
           rate: { type: string, nullable: true, maxLength: 64 }
           quota: { type: string, minLength: 1, maxLength: 64 }
           usedQuota: { type: string, minLength: 1, maxLength: 64 }
@@ -3110,6 +3216,12 @@ frontend_operations:
         minLength: 1
         maxLength: 64
         description: Upstream account group code to bind to this key.
+      accountGroups:
+        type: array
+        nullable: true
+        maxItems: 100
+        items: { type: string, minLength: 1, maxLength: 64 }
+        description: Route binding group codes; Some replaces all route bindings (first entry becomes the default group). Replaces accountGroup when provided.
       quota:
         type: string
         format: decimal
@@ -3133,6 +3245,54 @@ frontend_operations:
       defaultForRuntime:
         type: boolean
         description: Marks this API key as the default backend runtime API key for Playground and app runtime calls.
+      chain:
+        type: object
+        nullable: true
+        additionalProperties: false
+        required: []
+        description: Per-API-key call-chain policy (concurrency limits, IP allow/deny lists, stage switches). Some upserts the key's chain policy; omitted leaves it unchanged.
+        properties:
+          policyName: { type: string, maxLength: 128, nullable: true }
+          concurrency:
+            type: object
+            additionalProperties: false
+            required: []
+            properties:
+              maxInflight: { type: integer, format: int64, minimum: 0, nullable: true }
+              maxInflightPerScope:
+                type: object
+                additionalProperties:
+                  type: integer
+                  format: int64
+                  minimum: 0
+                nullable: true
+          ipAccess:
+            type: object
+            additionalProperties: false
+            required: []
+            properties:
+              mode: { type: string, enum: [open, allowlistOnly], nullable: true }
+              allowlist:
+                type: array
+                items: { type: string, maxLength: 256 }
+                nullable: true
+              denylist:
+                type: array
+                items: { type: string, maxLength: 256 }
+                nullable: true
+          stages:
+            type: object
+            additionalProperties: false
+            required: []
+            properties:
+              enabledOnly:
+                type: array
+                items: { type: string, maxLength: 64 }
+                nullable: true
+              disabled:
+                type: array
+                items: { type: string, maxLength: 64 }
+                nullable: true
   response_schema:
     name: UpdateApiKeyResponse
     required: [item]
@@ -3141,17 +3301,26 @@ frontend_operations:
         name: AppApiKeyItem
         type: object
         additionalProperties: false
-        required: [id, name, maskedKey, accountGroup, accountGroupName, quota, usedQuota, modalities, ipLimit, created, expires, status, defaultForRuntime]
+        required: [id, name, maskedKey, accountGroup, accountGroupName, accountGroups, quota, usedQuota, modalities, ipLimit, created, expires, status, defaultForRuntime]
         properties:
           id: { type: string, minLength: 1, maxLength: 128 }
           name: { type: string, minLength: 1, maxLength: 128 }
           maskedKey: { type: string, minLength: 1, maxLength: 256 }
+          rawKey:
+            type: string
+            nullable: true
+            maxLength: 1024
+            description: Raw API key material when the deployment stores it (plaintext or decrypted ciphertext); null for legacy keys without a stored secret.
           accountGroup: { type: string, minLength: 1, maxLength: 128 }
           accountGroupName:
             type: string
             minLength: 1
             maxLength: 128
             description: Display name snapshot for the bound upstream account group.
+          accountGroups:
+            type: array
+            items: { type: string, maxLength: 128 }
+            description: Route binding group codes (priority order), including the default group.
           rate: { type: string, nullable: true, maxLength: 64 }
           quota: { type: string, minLength: 1, maxLength: 64 }
           usedQuota: { type: string, minLength: 1, maxLength: 64 }
@@ -8059,6 +8228,158 @@ frontend_operations:
     schema: { type: integer, minimum: 1 }
   - name: page_size
     schema: { type: integer, minimum: 1, maximum: 200 }
+- route: /admin/ratelimit
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  operation: fetchChainPolicy
+  operation_id: chains.policy.retrieve
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/system/chains/policy
+  query_parameters: []
+  sdk_domain: system
+  read_sources:
+  - iam_gateway_chain_policy
+  response_schema:
+    name: ChainPolicyResult
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        type: object
+        additionalProperties: false
+        required: [id, scopeType, scopeId, policyName, payload, updatedAt]
+        properties:
+          id: { type: integer, format: int64 }
+          scopeType: { type: integer, format: int32 }
+          scopeId: { type: integer, format: int64 }
+          policyName: { type: string }
+          updatedAt: { type: string }
+          payload:
+            type: object
+            additionalProperties: true
+            description: camelCase ChainPolicy document (concurrency, ipAccess, stages).
+- route: /admin/ratelimit
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  operation: updateChainPolicy
+  operation_id: chains.policy.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/system/chains/policy
+  query_parameters: []
+  sdk_domain: system
+  read_sources:
+  - iam_gateway_chain_policy
+  response_schema:
+    name: ChainPolicyResult
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        type: object
+        additionalProperties: false
+        required: [id, scopeType, scopeId, policyName, payload, updatedAt]
+        properties:
+          id: { type: integer, format: int64 }
+          scopeType: { type: integer, format: int32 }
+          scopeId: { type: integer, format: int64 }
+          policyName: { type: string }
+          updatedAt: { type: string }
+          payload:
+            type: object
+            additionalProperties: true
+            description: camelCase ChainPolicy document (concurrency, ipAccess, stages).
+  request_schema:
+    name: ChainPolicyInput
+    type: object
+    additionalProperties: false
+    required: []
+    properties:
+      policyName: { type: string, maxLength: 128, nullable: true }
+      concurrency:
+        type: object
+        additionalProperties: false
+        required: []
+        properties:
+          maxInflight: { type: integer, format: int64, minimum: 0, nullable: true }
+          maxInflightPerScope:
+            type: object
+            additionalProperties:
+              type: integer
+              format: int64
+              minimum: 0
+            nullable: true
+      ipAccess:
+        type: object
+        additionalProperties: false
+        required: []
+        properties:
+          mode: { type: string, enum: [open, allowlistOnly], nullable: true }
+          allowlist:
+            type: array
+            items: { type: string, maxLength: 256 }
+            nullable: true
+          denylist:
+            type: array
+            items: { type: string, maxLength: 256 }
+            nullable: true
+      stages:
+        type: object
+        additionalProperties: false
+        required: []
+        properties:
+          enabledOnly:
+            type: array
+            items: { type: string, maxLength: 64 }
+            nullable: true
+          disabled:
+            type: array
+            items: { type: string, maxLength: 64 }
+            nullable: true
+  write_tables:
+  - iam_gateway_chain_policy
+  - ops_audit_log
+- route: /admin/ratelimit
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  operation: fetchApiKeyChainPolicy
+  operation_id: chains.policy.apiKey.retrieve
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/system/chains/policy/keys/{apiKeyId}
+  query_parameters: []
+  sdk_domain: system
+  read_sources:
+  - iam_gateway_chain_policy
+  response_schema:
+    name: ChainPolicyResult
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        type: object
+        additionalProperties: false
+        required: [id, scopeType, scopeId, policyName, payload, updatedAt]
+        properties:
+          id: { type: integer, format: int64 }
+          scopeType: { type: integer, format: int32 }
+          scopeId: { type: integer, format: int64 }
+          policyName: { type: string }
+          updatedAt: { type: string }
+          payload:
+            type: object
+            additionalProperties: true
+            description: camelCase ChainPolicy document (concurrency, ipAccess, stages).
+  path_parameters:
+  - name: apiKeyId
+    schema: { type: integer, format: int64 }
+
+routes:
+
 frontend_models:
 - route: /admin/model
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
@@ -9315,6 +9636,7 @@ frontend_models:
   - name
   - displayName
   - maskedKey
+  - rawKey
   - accountGroup
   - accountGroupName
   - rate
@@ -9341,6 +9663,7 @@ frontend_models:
   - id
   - code
   - name
+  - description
   - rate
   data_sources:
   - ai_upstream_account_group
@@ -9369,6 +9692,7 @@ frontend_models:
   - key.name
   - key.displayName
   - key.maskedKey
+  - key.rawKey
   - key.accountGroup
   - key.accountGroupName
   - key.rate
@@ -10062,7 +10386,7 @@ frontend_models:
   - currencyToCnyRates
   data_sources:
   - recharges
-routes:
+
 - route: /
   required_tables:
   - ops_audit_log

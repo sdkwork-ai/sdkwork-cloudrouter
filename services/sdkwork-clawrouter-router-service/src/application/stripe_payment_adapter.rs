@@ -11,6 +11,7 @@ use hyper_rustls::HttpsConnector;
 use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
+use sdkwork_claw_http::ensure_rustls_crypto_provider;
 use serde_json::{json, Value};
 use sha2::Sha256;
 
@@ -1061,6 +1062,7 @@ fn invalid_response(
 }
 
 fn build_stripe_http_client() -> StripeHttpClient {
+    ensure_rustls_crypto_provider();
     let connector = hyper_rustls::HttpsConnectorBuilder::new()
         .with_webpki_roots()
         .https_or_http()

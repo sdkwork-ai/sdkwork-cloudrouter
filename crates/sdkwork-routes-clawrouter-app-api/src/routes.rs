@@ -13,12 +13,13 @@ use sdkwork_claw_http::AppSubjectBoundaryConfig;
 use sdkwork_clawrouter_database_host::connect_claw_router_database;
 use sdkwork_clawrouter_router_service::application::{
     bootstrap_payment_provider_registry, payment_runtime_environment, ApiKeySecretHasher,
-    EntityUuidGenerator, InMemoryRuntimeStreamBus, ModelRankingRefreshWorker,
-    ModelRankingRefreshWorkerConfig, ModelRankingsService, PaymentAggregateRuntimeStore,
-    PaymentProviderRegistry, RuntimeStreamBus, UpstreamCredentialSecretCodec,
+    ApiKeySecretStorageConfig, EntityUuidGenerator, InMemoryRuntimeStreamBus,
+    ModelRankingRefreshWorker, ModelRankingRefreshWorkerConfig, ModelRankingsService,
+    PaymentAggregateRuntimeStore, PaymentProviderRegistry, RuntimeStreamBus,
+    UpstreamCredentialSecretCodec,
 };
 use sdkwork_clawrouter_router_service::infrastructure::crypto::{
-    HmacSha256ApiKeySecretHasher, RingAeadCredentialSecretCodec,
+    HmacSha256ApiKeySecretHasher, RingAeadApiKeySecretCodec, RingAeadCredentialSecretCodec,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::catalog::{
     RefreshableSqlPricingCatalog, SqlPricingCatalogSnapshotSummary,
@@ -28,9 +29,10 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::pool::connect_standard_database_pool;
 use sdkwork_clawrouter_router_service::infrastructure::sql::postgres::{
-    PostgresAdminTransactionCenterStore, PostgresAppChatStore, PostgresAppGatewayTracesReadStore,
-    PostgresAppNotificationStore, PostgresAppRoutingReadStore, PostgresAppRoutingStrategyStore,
-    PostgresAppRuntimeStore, PostgresCatalogLoadError, PostgresDashboardOverviewReadStore,
+    PostgresAdminChainPolicyStore, PostgresAdminTransactionCenterStore, PostgresAppChatStore,
+    PostgresAppGatewayTracesReadStore, PostgresAppNotificationStore,
+    PostgresAppRoutingReadStore, PostgresAppRoutingStrategyStore, PostgresAppRuntimeStore,
+    PostgresCatalogLoadError, PostgresDashboardOverviewReadStore,
     PostgresGatewayApiKeyCommandStore, PostgresPaymentCallbackStore,
     PostgresPaymentIntentRuntimeStore, PostgresPricingCatalogLoader, PostgresSettingsStore,
     PostgresSiteSettingsStore, PostgresUsageLogsReadStore,
@@ -42,8 +44,8 @@ use sdkwork_clawrouter_router_service::ports::AdminTransactionCenterSubject;
 use sdkwork_clawrouter_router_service::ports::ChatCompletionStreamRelay;
 use sdkwork_clawrouter_router_service::ports::UpstreamAccountRouteCatalog;
 use sdkwork_clawrouter_router_service::ports::{
-    AppChatStore, AppGatewayTracesReadStore, AppNotificationStore, AppRoutingReadStore,
-    AppRoutingStrategyStore, AppRuntimeStore, DashboardOverviewReadStore,
+    AdminChainPolicyStore, AppChatStore, AppGatewayTracesReadStore, AppNotificationStore,
+    AppRoutingReadStore, AppRoutingStrategyStore, AppRuntimeStore, DashboardOverviewReadStore,
     GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore, ModelRankingRefreshOutcome,
     ModelRankingRefreshRunStatus, ModelRankingRefreshStore, ModelRankingsCacheInvalidation,
     ModelRankingsReadModelStore, PaymentCallbackStore, SettingsStore,
@@ -78,6 +80,7 @@ struct AppApiKeyRuntimeDeps {
     read_store: Arc<dyn GatewayApiKeyManagementReadStore + Send + Sync>,
     command_store: Arc<dyn GatewayApiKeyCommandStore + Send + Sync>,
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
+    chain_policy_store: Option<Arc<dyn AdminChainPolicyStore + Send + Sync>>,
 }
 
 fn app_api_key_runtime_deps_for_postgres(
@@ -87,13 +90,26 @@ fn app_api_key_runtime_deps_for_postgres(
 ) -> Result<AppApiKeyRuntimeDeps, ProductCatalogRouterError> {
     let api_key_hasher = HmacSha256ApiKeySecretHasher::new(api_key_security_config.pepper_secret())
         .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?;
+    let api_key_secret_codec = RingAeadApiKeySecretCodec::new(api_key_security_config.pepper_secret())
+        .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?;
+    let api_key_secret_storage = ApiKeySecretStorageConfig::new(
+        api_key_security_config.secret_storage_mode(),
+        Arc::new(api_key_secret_codec),
+    );
     Ok(AppApiKeyRuntimeDeps {
-        read_store: Arc::new(PostgresPricingCatalogLoader::with_credential_secret_codec(
+        read_store: Arc::new(
+            PostgresPricingCatalogLoader::with_credential_secret_codec_and_api_key_secret_storage(
+                pool.clone(),
+                credential_secret_codec.clone(),
+                api_key_secret_storage.clone(),
+            ),
+        ),
+        command_store: Arc::new(PostgresGatewayApiKeyCommandStore::new(
             pool.clone(),
-            credential_secret_codec.clone(),
+            api_key_secret_storage,
         )),
-        command_store: Arc::new(PostgresGatewayApiKeyCommandStore::new(pool)),
         api_key_hasher: Arc::new(api_key_hasher),
+        chain_policy_store: Some(Arc::new(PostgresAdminChainPolicyStore::new(pool))),
     })
 }
 
@@ -532,6 +548,7 @@ fn router_with_runtime_stores_and_database_status(runtime: AppRouterRuntime<'_>)
                 api_key_runtime.command_store,
                 api_key_runtime.api_key_hasher,
                 Arc::new(OsApiKeySecretGenerator),
+                None,
             ),
             subject_boundary_config.clone(),
         );

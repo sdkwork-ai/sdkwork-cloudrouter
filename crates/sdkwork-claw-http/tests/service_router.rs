@@ -2337,12 +2337,12 @@ async fn service_router_surface_openapi_documents_local_business_centers_only() 
         (
             "get",
             "/backend/v3/api/payments/providers",
-            "payments.providers.list",
+            "providers.list",
         ),
         (
             "get",
             "/backend/v3/api/recharges/packages",
-            "packages.management.list",
+            "packages.list",
         ),
         (
             "get",
@@ -2408,12 +2408,12 @@ async fn service_router_backend_openapi_documents_local_standalone_business_cent
         (
             "get",
             "/backend/v3/api/payments/providers",
-            "payments.providers.list",
+            "providers.list",
         ),
         (
             "get",
             "/backend/v3/api/recharges/packages",
-            "packages.management.list",
+            "packages.list",
         ),
         (
             "get",

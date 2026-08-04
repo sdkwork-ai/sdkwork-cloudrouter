@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-clawrouter.tables.yaml.
 -- Registry version: 0.4.0.
--- Registry SHA-256: edfc49473778989d55fabbfe5adec6d498cb8f6ebffc31daeb3ebb56c15d70f8.
+-- Registry SHA-256: 6734e8b6c09bcd81a449492347efce95790c8f0358614a35cf73c738093f51a4.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -1200,6 +1200,8 @@ CREATE TABLE IF NOT EXISTS ai_upstream_account_group (
     billing_type INTEGER,
     capacity_limit BIGINT,
     allowed_origin JSONB,
+    vendor_code VARCHAR(64),
+    modalities JSONB NOT NULL DEFAULT '[]'::jsonb,
     CONSTRAINT ck_ai_upstream_account_group_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
     CONSTRAINT ck_ai_upstream_account_group_routing_strategy CHECK (routing_strategy IN ('weighted', 'round_robin', 'least_latency', 'least_cost', 'failover')),
     CONSTRAINT ck_ai_upstream_account_group_fallback_mode CHECK (fallback_mode IN ('none', 'sequential', 'same_supplier', 'cross_supplier')),
@@ -1211,6 +1213,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_tenant_code ON ai
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_scope_id ON ai_upstream_account_group (tenant_id, organization_id, id);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_tenant_status_updated ON ai_upstream_account_group (tenant_id, organization_id, status, updated_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_pricing ON ai_upstream_account_group (tenant_id, organization_id, pricing_plan_id, status, updated_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_vendor ON ai_upstream_account_group (tenant_id, organization_id, vendor_code, status, id);
 
 CREATE TABLE IF NOT EXISTS ai_upstream_account_group_member (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -1579,6 +1582,10 @@ CREATE TABLE IF NOT EXISTS iam_gateway_api_key (
     key_hash VARCHAR(128) NOT NULL,
     hash_alg VARCHAR(32) NOT NULL,
     secret_version BIGINT NOT NULL,
+    key_secret_mode VARCHAR(16) NOT NULL DEFAULT 'plaintext',
+    key_secret_plaintext TEXT,
+    key_secret_ciphertext TEXT,
+    key_secret_key_id VARCHAR(64),
     idempotency_key VARCHAR(128) NOT NULL,
     policy_id BIGINT,
     quota_policy_id BIGINT,
@@ -1638,6 +1645,31 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_account_group_uuid ON i
 CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_account_group_binding ON iam_gateway_api_key_account_group (tenant_id, organization_id, api_key_id, account_group_id, binding_role) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_iam_gateway_api_key_account_group_active ON iam_gateway_api_key_account_group (tenant_id, organization_id, api_key_id, status, priority, weight, id);
 CREATE INDEX IF NOT EXISTS idx_iam_gateway_api_key_account_group_group ON iam_gateway_api_key_account_group (tenant_id, organization_id, account_group_id, status, priority, id);
+
+CREATE TABLE IF NOT EXISTS iam_gateway_chain_policy (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    policy_name VARCHAR(128),
+    scope_type INTEGER,
+    scope_id BIGINT,
+    payload JSONB,
+    effective_from TIMESTAMPTZ,
+    effective_to TIMESTAMPTZ,
+    CONSTRAINT ck_iam_gateway_chain_policy_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_chain_policy_scope ON iam_gateway_chain_policy (tenant_id, organization_id, scope_type, scope_id, status) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_iam_gateway_chain_policy_scope_status ON iam_gateway_chain_policy (tenant_id, organization_id, scope_type, scope_id, status);
 
 CREATE TABLE IF NOT EXISTS iam_gateway_risk_rule (
     id BIGINT NOT NULL PRIMARY KEY,

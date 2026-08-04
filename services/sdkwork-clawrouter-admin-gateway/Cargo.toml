@@ -21,6 +21,7 @@ sdkwork-clawrouter-standalone-gateway.workspace = true
 sdkwork-claw-http.workspace = true
 sdkwork-clawrouter-router-service.workspace = true
 sdkwork-claw-test-support.workspace = true
+sdkwork-web-core.workspace = true
 serde_json.workspace = true
 sqlx.workspace = true
 tower.workspace = true

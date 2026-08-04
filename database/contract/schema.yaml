@@ -6376,6 +6376,16 @@ tables:
         required: false
         postgres_type: JSONB
         constraints: ''
+      vendor_code:
+        type: string(64)
+        required: false
+        postgres_type: VARCHAR(64)
+        constraints: ''
+      modalities:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '[]'::jsonb
     constraints:
       - name: pk_ai_upstream_account_group
         type: primary_key
@@ -6444,6 +6454,15 @@ tables:
           - pricing_plan_id
           - status
           - updated_at
+          - id
+        unique: false
+        where: null
+      - name: idx_ai_upstream_account_group_vendor
+        columns:
+          - tenant_id
+          - organization_id
+          - vendor_code
+          - status
           - id
         unique: false
         where: null

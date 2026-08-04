@@ -457,6 +457,7 @@ impl RoutingRuleRow {
     }
 }
 
+#[derive(Clone)]
 pub struct GatewayApiKeyRow {
     pub id: i64,
     pub tenant_id: i64,
@@ -468,6 +469,10 @@ pub struct GatewayApiKeyRow {
     pub key_prefix: String,
     pub key_display_masked: String,
     pub key_hash: String,
+    pub key_secret_mode: String,
+    pub key_secret_plaintext: Option<String>,
+    pub key_secret_ciphertext: Option<String>,
+    pub key_secret_key_id: Option<String>,
     pub policy_id: Option<i64>,
     pub quota_policy_id: Option<i64>,
     pub created_at: String,
@@ -493,6 +498,7 @@ impl GatewayApiKeyRow {
             key_prefix: self.key_prefix,
             key_display_masked: self.key_display_masked,
             key_hash: self.key_hash,
+            raw_key: None,
             policy_id: self.policy_id,
             quota_policy_id: self.quota_policy_id,
             created_at: self.created_at,

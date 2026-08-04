@@ -32,17 +32,17 @@ fn read_not_implemented_data(payload: &Value) -> Value {
 #[tokio::test]
 async fn backend_contract_routes_return_standard_not_implemented_envelope() {
     let cases = [
-        (Method::GET, "/backend/v3/api/ai/models", "list"),
-        (Method::POST, "/backend/v3/api/ai/models/sync", "sync"),
+        (Method::GET, "/backend/v3/api/ai/models", "fetchInitializedCatalog"),
+        (Method::POST, "/backend/v3/api/ai/models/sync", "syncVendorsAndModels"),
         (
             Method::PATCH,
-            "/backend/v3/api/content/announcements/notice-001",
-            "update",
+            "/backend/v3/api/ai/models/model-001",
+            "updateModel",
         ),
     ];
 
     for (method, path, operation) in cases {
-        let (status, payload) = call(method, path).await;
+        let (status, payload) = call(method.clone(), path).await;
         let data = read_not_implemented_data(&payload);
 
         assert_eq!(StatusCode::NOT_IMPLEMENTED, status, "{path}");

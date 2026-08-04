@@ -16,7 +16,7 @@ impl ApiKeySecretGenerator for OsApiKeySecretGenerator {
     fn generate_api_key_secret(&self) -> DomainResult<String> {
         let mut bytes = [0_u8; 32];
         fill_random_bytes(&mut bytes)?;
-        Ok(format!("sk-claw-{}", hex::encode(bytes)))
+        Ok(format!("sk-{}", hex::encode(bytes)))
     }
 }
 

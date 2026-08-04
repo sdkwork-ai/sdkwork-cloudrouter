@@ -73,6 +73,18 @@
       "require": "./src/components/AiResourceSelectorModal.tsx",
       "default": "./src/components/AiResourceSelectorModal.tsx"
     },
+    "./components/GroupSelector": {
+      "types": "./src/components/GroupSelector.tsx",
+      "import": "./src/components/GroupSelector.tsx",
+      "require": "./src/components/GroupSelector.tsx",
+      "default": "./src/components/GroupSelector.tsx"
+    },
+    "./components/GroupPicker": {
+      "types": "./src/components/GroupPicker.tsx",
+      "import": "./src/components/GroupPicker.tsx",
+      "require": "./src/components/GroupPicker.tsx",
+      "default": "./src/components/GroupPicker.tsx"
+    },
     "./components/ConfirmDialog": {
       "types": "./src/components/ConfirmDialog.tsx",
       "import": "./src/components/ConfirmDialog.tsx",

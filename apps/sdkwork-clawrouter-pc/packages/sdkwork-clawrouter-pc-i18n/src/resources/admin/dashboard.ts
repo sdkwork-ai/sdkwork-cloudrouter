@@ -70,7 +70,7 @@ export const adminDashboardMessages = {
     "admin.dashboard.index.text.113w1g1": "语音",
     "admin.dashboard.index.text.13upnw7": "平台实时调用流水 (Live Traces)",
     "admin.dashboard.index.text.19174dl": "查看完整日志",
-    "admin.dashboard.index.text.1i45bsn": "调用方 (用户/API Key)",
+    "admin.dashboard.index.text.1i45bsn": "调用方 (用户/令牌)",
     "admin.dashboard.index.text.1uqn9fe": "请求目标 (模型)",
     "admin.dashboard.index.text.pptmtb": "计费模式",
     "admin.dashboard.index.text.1i0melp": "消耗计费量 (In / Out | Count)",

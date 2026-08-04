@@ -1,6 +1,7 @@
 import { ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@sdkwork/ui-pc-react';
+import { formatMoney } from '@sdkwork/clawroutes-pc-commons/sdkwork-utils';
 import {
   useSdkworkWalletIntl,
   type SdkworkWalletQuickPanelProps,
@@ -13,13 +14,13 @@ export function ClawRouterNavbarWalletQuickPanel({
   onWithdraw,
   overview,
 }: SdkworkWalletQuickPanelProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const displayLocale = i18n.resolvedLanguage ?? i18n.language ?? 'en-US';
   const isAuthenticated = usePortalIamSession();
   const { onNavigate, walletPath } = useConsoleBusinessNavigation();
   const {
     copy,
     formatAccountLevelSummary,
-    formatCurrencyCny,
     formatTokenBank,
     formatTokenBankDelta,
   } = useSdkworkWalletIntl();
@@ -47,7 +48,7 @@ export function ClawRouterNavbarWalletQuickPanel({
         </p>
         <div className="mt-3 flex gap-4 text-xs text-[var(--sdk-color-text-muted)]">
           <span>
-            {copy.quickPanel.cashAvailableLabel}: {formatCurrencyCny(overview.account.cashAvailable)}
+            {copy.quickPanel.cashAvailableLabel}: {formatMoney(overview.account.cashAvailable, { currency: 'CNY', locale: displayLocale, mode: 'symbol' }) ?? '--'}
           </span>
         </div>
       </div>

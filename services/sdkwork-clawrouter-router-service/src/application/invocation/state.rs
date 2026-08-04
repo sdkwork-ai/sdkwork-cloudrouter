@@ -171,7 +171,14 @@ mod cancellation_tests {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+/// The shared invocation state flowing through the pipeline.
+///
+/// `call_chain` carries the running [`sdkwork_web_chain::ChainContext`]
+/// (concurrency leases, effective policy) so chain stages can release their
+/// resources in `after`/`on_error` exactly once per invocation. The type is
+/// not `Clone`/`PartialEq` because the chain context holds stage-private
+/// `Any` state; nothing in the codebase clones or compares whole invocations.
+#[derive(Debug)]
 pub struct Invocation {
     pub id: InvocationId,
     pub request: InvocationRequest,
@@ -183,6 +190,10 @@ pub struct Invocation {
     pub dispatch: InvocationDispatch,
     pub usage: InvocationUsage,
     pub telemetry: InvocationTelemetry,
+    /// Running call-chain context (effective policy + stage state), set by
+    /// the call-chain interceptor in `before` and consumed by `after` /
+    /// `on_error` for exactly-once release.
+    pub call_chain: Option<sdkwork_web_chain::ChainContext>,
 }
 
 fn split_path_query(value: &str) -> (String, Option<String>) {
@@ -228,6 +239,7 @@ impl Invocation {
                 trace_id,
                 ..InvocationTelemetry::default()
             },
+            call_chain: None,
         }
     }
 }

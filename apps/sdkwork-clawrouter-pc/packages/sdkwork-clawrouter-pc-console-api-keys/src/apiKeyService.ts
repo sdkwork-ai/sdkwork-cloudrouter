@@ -30,8 +30,11 @@ export interface ApiKey {
   name: SdkAppApiKeyListResponse['items'][number]['name'];
   displayName: string;
   maskedKey: string & SdkAppApiKeyListResponse['items'][number]['maskedKey'];
+  rawKey: string | null;
   accountGroup: string;
   accountGroupName: string | null;
+  /** 路由绑定分组 code 数组（priority 序，含默认分组） */
+  accountGroups: string[];
   rate: SdkAppApiKeyListResponse['items'][number]['rate'];
   quota: SdkAppApiKeyListResponse['items'][number]['quota'];
   usedQuota: SdkAppApiKeyListResponse['items'][number]['usedQuota'];
@@ -47,12 +50,18 @@ export interface AccountGroup {
   id: string;
   code: string;
   name: string;
+  description: string | null;
   rate: string | null;
+  vendorCode: string | null;
+  modalities: string[];
 }
 
 export interface CreateApiKeyInput {
   name: string;
-  accountGroup: string;
+  /** 按 Key 的调用链策略（可选）：maxInflight 为字符串形式的整数（int64-as-string） */
+  chain?: UpdateApiKeyRequest['chain'];
+  /** 路由绑定分组 code 数组；第一个为默认分组 */
+  accountGroups: string[];
   quota: string;
   isUnlimitedQuota: boolean;
   modalities: string[];
@@ -205,7 +214,7 @@ function readApiKeyListPageTotal(data: ApiRecord): number {
 function toCreateApiKeyRequest(input: CreateApiKeyInput): CreateApiKeyRequest {
   const request = {
     name: requiredText(input.name, 'name'),
-    accountGroup: optionalText(input.accountGroup) ?? DEFAULT_ACCOUNT_GROUP,
+    accountGroups: normalizeAccountGroups(input.accountGroups),
     quota: decimalQuota(input.quota),
     isUnlimitedQuota: Boolean(input.isUnlimitedQuota),
     modalities: toApiKeyModalities(input.modalities),
@@ -223,8 +232,8 @@ function toUpdateApiKeyRequest(input: UpdateApiKeyInput): UpdateApiKeyRequest {
   if (input.name !== undefined) {
     request.name = requiredText(input.name, 'name');
   }
-  if (input.accountGroup !== undefined) {
-    request.accountGroup = optionalText(input.accountGroup) ?? DEFAULT_ACCOUNT_GROUP;
+  if (input.accountGroups !== undefined) {
+    request.accountGroups = normalizeAccountGroups(input.accountGroups);
   }
   if (input.quota !== undefined) {
     request.quota = decimalQuota(input.quota);
@@ -244,7 +253,60 @@ function toUpdateApiKeyRequest(input: UpdateApiKeyInput): UpdateApiKeyRequest {
   if (input.defaultForRuntime !== undefined) {
     request.defaultForRuntime = Boolean(input.defaultForRuntime);
   }
+  if (input.chain !== undefined) {
+    request.chain = normalizeChainInput(input.chain);
+  }
   return request as UpdateApiKeyRequest;
+}
+
+function normalizeChainInput(chain: NonNullable<UpdateApiKeyRequest['chain']>): UpdateApiKeyRequest['chain'] {
+  return {
+    concurrency: chain.concurrency
+      ? {
+          maxInflight: chain.concurrency.maxInflight == null
+            ? undefined
+            : String(chain.concurrency.maxInflight),
+          maxInflightPerScope: chain.concurrency.maxInflightPerScope
+            ? Object.fromEntries(
+                Object.entries(chain.concurrency.maxInflightPerScope).map(([scope, limit]) => [
+                  scope,
+                  String(limit),
+                ]),
+              )
+            : undefined,
+        }
+      : undefined,
+    ipAccess: chain.ipAccess
+      ? {
+          mode: chain.ipAccess.mode || undefined,
+          allowlist: chain.ipAccess.allowlist ?? undefined,
+          denylist: chain.ipAccess.denylist ?? undefined,
+        }
+      : undefined,
+    stages: chain.stages
+      ? {
+          enabledOnly: chain.stages.enabledOnly ?? undefined,
+          disabled: chain.stages.disabled ?? undefined,
+        }
+      : undefined,
+  };
+}
+
+function normalizeAccountGroups(values: string[]): string[] {
+  const groups: string[] = [];
+  for (const rawValue of values) {
+    const value = rawValue.trim();
+    if (!value) {
+      continue;
+    }
+    if (!groups.includes(value)) {
+      groups.push(value);
+    }
+  }
+  if (groups.length === 0) {
+    groups.push(DEFAULT_ACCOUNT_GROUP);
+  }
+  return groups;
 }
 
 function requiredText(value: string, fieldName: string): string {
@@ -279,10 +341,12 @@ function normalizeApiKey(value: unknown): ApiKey {
   return {
     id,
     name,
-    displayName: readApiKeyDisplayName(id, name),
+    displayName: readApiKeyDisplayName(name),
     maskedKey,
+    rawKey: readNullableString(value, 'rawKey'),
     accountGroup: readRequiredString(value, 'accountGroup', 'API key account group is required'),
     accountGroupName: readNullableString(value, 'accountGroupName'),
+    accountGroups: readStringArray(value, 'accountGroups'),
     rate: readNullableString(value, 'rate'),
     quota: readRequiredString(value, 'quota', 'API key quota is required'),
     usedQuota: readRequiredString(value, 'usedQuota', 'API key used quota is required'),
@@ -295,10 +359,11 @@ function normalizeApiKey(value: unknown): ApiKey {
   };
 }
 
-function readApiKeyDisplayName(id: string, name: string): string {
+function readApiKeyDisplayName(name: string): string {
   const normalized = name.trim();
   if (!normalized) {
-    return `API Key #${id}`;
+    // 无名称时由视图层通过 console.apiKeys.unnamed 国际化格式化，避免硬编码英文
+    return '';
   }
   return normalized;
 }
@@ -320,8 +385,19 @@ function normalizeAccountGroup(value: unknown): AccountGroup {
     id: readRequiredString(value, 'id', 'Account group id is required'),
     code: readRequiredString(value, 'groupCode', 'Account group code is required'),
     name: readRequiredString(value, 'groupName', 'Account group name is required'),
+    description: readNullableString(value, 'description'),
     rate: readNullableString(value, 'costMultiplier'),
+    vendorCode: readNullableString(value, 'vendorCode'),
+    modalities: readStringArray(value, 'modalities'),
   };
+}
+
+function readStringArray(value: Record<string, unknown>, field: string): string[] {
+  const raw = value[field];
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  return raw.filter((item): item is string => typeof item === 'string');
 }
 
 function toApiKeyModalities(values: string[]): ApiKeyModality[] {

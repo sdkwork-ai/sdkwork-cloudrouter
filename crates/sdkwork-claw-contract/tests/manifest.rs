@@ -19,10 +19,10 @@ fn embedded_manifest_exposes_sdk_domain_for_runtime_contract_filters() {
     let manifest = ContractManifest::from_embedded().unwrap();
 
     let operation = manifest
-        .find_operation(ApiSurface::App, "GET", "/app/v3/api/wallet/exchange_rate")
+        .find_operation(ApiSurface::App, "GET", "/app/v3/api/notification/notifications")
         .unwrap();
 
-    assert_eq!(Some("commerce"), operation.sdk_domain.as_deref());
+    assert_eq!(Some("notification"), operation.sdk_domain.as_deref());
 }
 
 #[test]
@@ -33,13 +33,13 @@ fn embedded_manifest_finds_backend_operation_with_path_parameter() {
         .find_operation(
             ApiSurface::Backend,
             "PATCH",
-            "/backend/v3/api/content/announcements/notice-001",
+            "/backend/v3/api/ai/upstream_accounts/account-001",
         )
         .unwrap();
 
-    assert_eq!("updateAnnouncement", operation.operation);
+    assert_eq!("updateUpstreamAccount", operation.operation);
     assert_eq!(
-        "/backend/v3/api/content/announcements/{announcementId}",
+        "/backend/v3/api/ai/upstream_accounts/{accountId}",
         operation.path
     );
     assert_eq!(ApiSurface::Backend, operation.surface);

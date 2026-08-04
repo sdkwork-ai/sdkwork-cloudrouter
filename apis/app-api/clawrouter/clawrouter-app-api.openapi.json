@@ -121,6 +121,15 @@
             "minLength": 1,
             "type": "string"
           },
+          "accountGroups": {
+            "description": "Route binding group codes (priority order), including the default group.",
+            "items": {
+              "description": "Account groups field on app api key item.",
+              "maxLength": 128,
+              "type": "string"
+            },
+            "type": "array"
+          },
           "created": {
             "description": "Created field on app api key item.",
             "maxLength": 64,
@@ -185,6 +194,12 @@
             "nullable": true,
             "type": "string"
           },
+          "rawKey": {
+            "description": "Raw key field on app api key item.",
+            "maxLength": 1024,
+            "nullable": true,
+            "type": "string"
+          },
           "status": {
             "description": "Status field on app api key item.",
             "enum": [
@@ -206,6 +221,7 @@
           "maskedKey",
           "accountGroup",
           "accountGroupName",
+          "accountGroups",
           "quota",
           "usedQuota",
           "modalities",
@@ -298,6 +314,22 @@
             "x-sdkwork-int64-string": true,
             "x-sdkwork-rust-type": "i64"
           },
+          "modalities": {
+            "description": "Modalities field on app routing account group.",
+            "items": {
+              "description": "Modalities field on app routing account group.",
+              "enum": [
+                "text",
+                "audio",
+                "image",
+                "video",
+                "music"
+              ],
+              "maxLength": 16,
+              "type": "string"
+            },
+            "type": "array"
+          },
           "resourceCodes": {
             "description": "Resource codes field on app routing account group.",
             "items": {
@@ -332,6 +364,12 @@
               "enabled",
               "disabled"
             ],
+            "type": "string"
+          },
+          "vendorCode": {
+            "description": "Vendor code field on app routing account group.",
+            "maxLength": 64,
+            "nullable": true,
             "type": "string"
           }
         },
@@ -1662,10 +1700,128 @@
         "name": "CreateApiKeyRequest",
         "properties": {
           "accountGroup": {
-            "description": "Upstream account group code authorized for this API key.",
+            "description": "Upstream account group code authorized for this API key. Replaced by accountGroups when provided.",
             "maxLength": 64,
             "minLength": 1,
             "type": "string"
+          },
+          "accountGroups": {
+            "description": "Route binding group codes (binding_role='route'); the first entry becomes the default group. Replaces accountGroup when provided.",
+            "items": {
+              "description": "Account groups field on create api key request.",
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "nullable": true,
+            "type": "array"
+          },
+          "chain": {
+            "additionalProperties": false,
+            "description": "Per-API-key call-chain policy applied at creation time.",
+            "nullable": true,
+            "properties": {
+              "concurrency": {
+                "additionalProperties": false,
+                "description": "Concurrency field on create api key request.",
+                "properties": {
+                  "maxInflight": {
+                    "description": "Max inflight field on create api key request.",
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "maxInflightPerScope": {
+                    "additionalProperties": {
+                      "description": "Chain field on create api key request.",
+                      "format": "int64",
+                      "pattern": "^[0-9]+$",
+                      "type": "string",
+                      "x-sdkwork-int64-string": true,
+                      "x-sdkwork-rust-type": "i64"
+                    },
+                    "description": "Max inflight per scope field on create api key request.",
+                    "nullable": true,
+                    "type": "object"
+                  }
+                },
+                "type": "object"
+              },
+              "ipAccess": {
+                "additionalProperties": false,
+                "description": "Ip access field on create api key request.",
+                "properties": {
+                  "allowlist": {
+                    "description": "Allowlist field on create api key request.",
+                    "items": {
+                      "description": "Chain field on create api key request.",
+                      "maxLength": 256,
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  },
+                  "denylist": {
+                    "description": "Denylist field on create api key request.",
+                    "items": {
+                      "description": "Chain field on create api key request.",
+                      "maxLength": 256,
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  },
+                  "mode": {
+                    "description": "Mode field on create api key request.",
+                    "enum": [
+                      "open",
+                      "allowlistOnly"
+                    ],
+                    "nullable": true,
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "policyName": {
+                "description": "Policy name field on create api key request.",
+                "maxLength": 128,
+                "nullable": true,
+                "type": "string"
+              },
+              "stages": {
+                "additionalProperties": false,
+                "description": "Stages field on create api key request.",
+                "properties": {
+                  "disabled": {
+                    "description": "Disabled field on create api key request.",
+                    "items": {
+                      "description": "Chain field on create api key request.",
+                      "maxLength": 64,
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  },
+                  "enabledOnly": {
+                    "description": "Enabled only field on create api key request.",
+                    "items": {
+                      "description": "Chain field on create api key request.",
+                      "maxLength": 64,
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "type": "object"
           },
           "defaultForRuntime": {
             "description": "Create this key as the default backend runtime API key.",
@@ -1716,7 +1872,6 @@
         },
         "required": [
           "name",
-          "accountGroup",
           "quota",
           "isUnlimitedQuota",
           "modalities",
@@ -2871,14 +3026,14 @@
         "description": "Invocations artifacts list result schema exposed by Claw Router.",
         "x-operation-id": "invocations.artifacts.list"
       },
-      "InvocationsCompleteResult": {
+      "InvocationsCompletionsCreateResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by invocations complete result.",
+            "description": "Object schema used by invocations completions create result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -2886,7 +3041,7 @@
                     "$ref": "#/components/schemas/RuntimeInvocationResponse"
                   }
                 ],
-                "description": "Data field on invocations complete result."
+                "description": "Data field on invocations completions create result."
               }
             },
             "required": [
@@ -2895,8 +3050,8 @@
             "type": "object"
           }
         ],
-        "description": "Invocations complete result schema exposed by Claw Router.",
-        "x-operation-id": "invocations.complete"
+        "description": "Invocations completions create result schema exposed by Claw Router.",
+        "x-operation-id": "invocations.completions.create"
       },
       "InvocationsCreateResult": {
         "allOf": [
@@ -4993,6 +5148,124 @@
             "maxLength": 64,
             "minLength": 1,
             "type": "string"
+          },
+          "accountGroups": {
+            "description": "Route binding group codes; Some replaces all route bindings (first entry becomes the default group). Replaces accountGroup when provided.",
+            "items": {
+              "description": "Account groups field on update api key request.",
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "nullable": true,
+            "type": "array"
+          },
+          "chain": {
+            "additionalProperties": false,
+            "description": "Per-API-key call-chain policy (concurrency limits, IP allow/deny lists, stage switches). Some upserts the key's chain policy; omitted leaves it unchanged.",
+            "nullable": true,
+            "properties": {
+              "concurrency": {
+                "additionalProperties": false,
+                "description": "Concurrency field on update api key request.",
+                "properties": {
+                  "maxInflight": {
+                    "description": "Max inflight field on update api key request.",
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "maxInflightPerScope": {
+                    "additionalProperties": {
+                      "description": "Chain field on update api key request.",
+                      "format": "int64",
+                      "pattern": "^[0-9]+$",
+                      "type": "string",
+                      "x-sdkwork-int64-string": true,
+                      "x-sdkwork-rust-type": "i64"
+                    },
+                    "description": "Max inflight per scope field on update api key request.",
+                    "nullable": true,
+                    "type": "object"
+                  }
+                },
+                "type": "object"
+              },
+              "ipAccess": {
+                "additionalProperties": false,
+                "description": "Ip access field on update api key request.",
+                "properties": {
+                  "allowlist": {
+                    "description": "Allowlist field on update api key request.",
+                    "items": {
+                      "description": "Chain field on update api key request.",
+                      "maxLength": 256,
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  },
+                  "denylist": {
+                    "description": "Denylist field on update api key request.",
+                    "items": {
+                      "description": "Chain field on update api key request.",
+                      "maxLength": 256,
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  },
+                  "mode": {
+                    "description": "Mode field on update api key request.",
+                    "enum": [
+                      "open",
+                      "allowlistOnly"
+                    ],
+                    "nullable": true,
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "policyName": {
+                "description": "Policy name field on update api key request.",
+                "maxLength": 128,
+                "nullable": true,
+                "type": "string"
+              },
+              "stages": {
+                "additionalProperties": false,
+                "description": "Stages field on update api key request.",
+                "properties": {
+                  "disabled": {
+                    "description": "Disabled field on update api key request.",
+                    "items": {
+                      "description": "Chain field on update api key request.",
+                      "maxLength": 64,
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  },
+                  "enabledOnly": {
+                    "description": "Enabled only field on update api key request.",
+                    "items": {
+                      "description": "Chain field on update api key request.",
+                      "maxLength": 64,
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "type": "object"
           },
           "defaultForRuntime": {
             "description": "Marks this API key as the default backend runtime API key for Playground and app runtime calls.",
@@ -9188,10 +9461,10 @@
         ]
       }
     },
-    "/app/v3/api/runtime/invocations/{invocationId}/complete": {
+    "/app/v3/api/runtime/invocations/{invocationId}/completions": {
       "post": {
         "description": "Complete runtime invocation. Reads ai_runtime_invocation. Writes ai_runtime_invocation. File targets none.",
-        "operationId": "invocations.complete",
+        "operationId": "invocations.completions.create",
         "parameters": [
           {
             "description": "Invocation id path parameter.",
@@ -9215,15 +9488,15 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InvocationsCompleteResult"
+                  "$ref": "#/components/schemas/InvocationsCompletionsCreateResult"
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -9284,7 +9557,7 @@
         "x-route-scope": "public",
         "x-sdk-domain": "runtime",
         "x-sdkwork-domain": "runtime",
-        "x-sdkwork-resource": "invocations",
+        "x-sdkwork-resource": "invocations.completions",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [
           "ai_runtime_invocation"
@@ -9739,6 +10012,10 @@
     {
       "description": "memory operations exposed by Claw Router.",
       "name": "memory"
+    },
+    {
+      "description": "messaging operations exposed by Claw Router.",
+      "name": "messaging"
     },
     {
       "description": "notification operations exposed by Claw Router.",

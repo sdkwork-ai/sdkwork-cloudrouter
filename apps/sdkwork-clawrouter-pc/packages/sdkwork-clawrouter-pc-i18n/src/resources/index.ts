@@ -18,6 +18,7 @@ import { adminCacheMessages } from './admin/cache';
 import { adminCoreColumnsMessages } from './admin/core-columns';
 import { adminCoreNavigationMessages } from './admin/core-navigation';
 import { adminDashboardMessages } from './admin/dashboard';
+import { adminMarketingMessages } from './admin/marketing';
 import { adminMiscMessages } from './admin/misc';
 import { adminModelMessages } from './admin/model';
 import { adminRateLimitMessages } from './admin/rate-limit';
@@ -57,6 +58,7 @@ export const resources = mergeI18nBundles([
   adminCoreColumnsMessages,
   adminCoreNavigationMessages,
   adminDashboardMessages,
+  adminMarketingMessages,
   adminMiscMessages,
   adminModelMessages,
   adminRateLimitMessages,

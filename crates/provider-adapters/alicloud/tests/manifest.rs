@@ -52,7 +52,7 @@ fn sample_request() -> sdkwork_claw_provider_adapter_contract::AdapterInvocation
             endpoint_key: "text_generation.generate".to_owned(),
             method: "POST".to_owned(),
             standard_path: "/api/v1/services/aigc/text-generation/generation".to_owned(),
-            shape: AdapterInvocationShape::SyncRequest,
+            shape: AdapterInvocationShape::SyncJson,
             stream: false,
             request_id: Some("req-1".to_owned()),
             trace_id: Some("trace-1".to_owned()),

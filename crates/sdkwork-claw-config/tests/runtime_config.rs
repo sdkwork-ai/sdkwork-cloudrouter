@@ -514,8 +514,8 @@ password_file = "/etc/sdkwork/router/bootstrap-admin.secret"
         config.provider_secret_map.json_file.as_deref()
     );
     assert_eq!(Some(true), config.usage_settlement.enabled);
-    assert_eq!(Some(10), config.usage_settlement.tenant_id);
-    assert_eq!(Some(20), config.usage_settlement.organization_id);
+    assert_eq!(Some(100001), config.usage_settlement.tenant_id);
+    assert_eq!(Some(0), config.usage_settlement.organization_id);
     assert_eq!(Some(50), config.usage_settlement.batch_size);
     assert_eq!(Some(30000), config.usage_settlement.interval_millis);
     assert_eq!(Some(true), config.model_ranking.enabled);

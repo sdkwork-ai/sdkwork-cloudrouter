@@ -222,6 +222,8 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
             cost_multiplier: "1.100000000000".to_owned(),
             sale_multiplier: "1.250000000000".to_owned(),
             environment: Some(1),
+            vendor_code: None,
+            modalities: Vec::new(),
             status: 1,
             requested_at: REQUESTED_AT.to_owned(),
         })

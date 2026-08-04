@@ -22,13 +22,13 @@ use sdkwork_clawrouter_database_host::connect_claw_router_database;
 use sdkwork_clawrouter_router_service::application::{
     default_desktop_cache_manager, default_service_cache_manager,
     AiRoutingCacheInvalidatingAdminAiResourceStore, AiRoutingCacheInvalidatingAdminModelStore,
-    AiRoutingCacheInvalidatingAdminUpstreamStore, ApiKeySecretHasher, ModelRankingsService,
-    RedisCacheBackend, RuntimeCacheManager, UpstreamCredentialSecretCodec,
-    DEFAULT_CACHE_KEY_PREFIX, DEFAULT_REDIS_CONNECTION_PROFILE_NAME,
+    AiRoutingCacheInvalidatingAdminUpstreamStore, ApiKeySecretHasher,
+    ApiKeySecretStorageConfig, ModelRankingsService, RedisCacheBackend, RuntimeCacheManager,
+    UpstreamCredentialSecretCodec, DEFAULT_CACHE_KEY_PREFIX, DEFAULT_REDIS_CONNECTION_PROFILE_NAME,
     DEFAULT_SERVICE_CACHE_INSTANCE_NAME,
 };
 use sdkwork_clawrouter_router_service::infrastructure::crypto::{
-    HmacSha256ApiKeySecretHasher, RingAeadCredentialSecretCodec,
+    HmacSha256ApiKeySecretHasher, RingAeadApiKeySecretCodec, RingAeadCredentialSecretCodec,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::catalog::RefreshableSqlPricingCatalog;
 use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
@@ -37,21 +37,22 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
 use sdkwork_clawrouter_router_service::infrastructure::sql::pool::connect_standard_database_pool;
 use sdkwork_clawrouter_router_service::infrastructure::sql::postgres::{
     PostgresAdminAnnouncementStore, PostgresAdminApiKeyRateLimitStore,
-    PostgresAdminAuthSettingsStore, PostgresAdminCatalogStore, PostgresAdminFinanceStore,
-    PostgresAdminFirewallRuleStore, PostgresAdminInventoryStore, PostgresAdminIpRateLimitStore,
-    PostgresAdminMarketingStore, PostgresAdminMcpStore, PostgresAdminModelRateLimitStore,
-    PostgresAdminRecordStore, PostgresAdminServiceNodeStore, PostgresAdminStorageStore,
-    PostgresAdminTransactionCenterStore, PostgresAdminUpstreamAccountVerifier,
-    PostgresAdminUpstreamStore, PostgresCatalogLoadError, PostgresGatewayApiKeyCommandStore,
-    PostgresPricingCatalogLoader, PostgresRuntimeRegionSettingsStore, PostgresSiteSettingsStore,
+    PostgresAdminAuthSettingsStore, PostgresAdminCatalogStore, PostgresAdminChainPolicyStore,
+    PostgresAdminFinanceStore, PostgresAdminFirewallRuleStore, PostgresAdminInventoryStore,
+    PostgresAdminIpRateLimitStore, PostgresAdminMarketingStore, PostgresAdminMcpStore,
+    PostgresAdminModelRateLimitStore, PostgresAdminRecordStore, PostgresAdminServiceNodeStore,
+    PostgresAdminStorageStore, PostgresAdminTransactionCenterStore,
+    PostgresAdminUpstreamAccountVerifier, PostgresAdminUpstreamStore, PostgresCatalogLoadError,
+    PostgresGatewayApiKeyCommandStore, PostgresPricingCatalogLoader,
+    PostgresRuntimeRegionSettingsStore, PostgresSiteSettingsStore,
 };
 use sdkwork_clawrouter_router_service::infrastructure::OsApiKeySecretGenerator;
 use sdkwork_clawrouter_router_service::ports::{
     AdminAnalyticsReadStore, AdminAnnouncementStore, AdminApiKeyRateLimitStore,
-    AdminAuthSettingsStore, AdminCatalogStore, AdminDashboardReadStore, AdminFinanceStore,
-    AdminFirewallRuleStore, AdminInventoryStore, AdminIpRateLimitStore, AdminMarketingStore,
-    AdminMcpStore, AdminModelRateLimitStore, AdminMonitorReadStore, AdminRecordStore,
-    AdminServiceNodeStore, AdminStorageStore, AdminTransactionCenterStore,
+    AdminAuthSettingsStore, AdminCatalogStore, AdminChainPolicyStore, AdminDashboardReadStore,
+    AdminFinanceStore, AdminFirewallRuleStore, AdminInventoryStore, AdminIpRateLimitStore,
+    AdminMarketingStore, AdminMcpStore, AdminModelRateLimitStore, AdminMonitorReadStore,
+    AdminRecordStore, AdminServiceNodeStore, AdminStorageStore, AdminTransactionCenterStore,
     AdminUpstreamAccountVerifier, AdminUpstreamStore, GatewayApiKeyCommandStore,
     ModelRankingRefreshStore, ModelRankingsReadModelStore, RuntimeRegionSettingsStore,
     SiteSettingsStore, UpstreamAccountRouteCatalog,
@@ -98,6 +99,7 @@ type AdminUpstreamRuntimeStore = Arc<dyn AdminUpstreamStore + Send + Sync>;
 type AdminUpstreamRuntimeVerifier = Arc<dyn AdminUpstreamAccountVerifier + Send + Sync>;
 type AdminIpRateLimitRuntimeStore = Arc<dyn AdminIpRateLimitStore + Send + Sync>;
 type AdminFirewallRuleRuntimeStore = Arc<dyn AdminFirewallRuleStore + Send + Sync>;
+type AdminChainPolicyRuntimeStore = Arc<dyn AdminChainPolicyStore + Send + Sync>;
 type AdminApiKeyRateLimitRuntimeStore = Arc<dyn AdminApiKeyRateLimitStore + Send + Sync>;
 type AdminModelRateLimitRuntimeStore = Arc<dyn AdminModelRateLimitStore + Send + Sync>;
 type AdminModelRuntimeStore = Arc<dyn ModelCatalogAdminStore + Send + Sync>;
@@ -160,6 +162,7 @@ struct AdminRouterRuntime<'a> {
     upstream_verifier: Option<AdminUpstreamRuntimeVerifier>,
     ip_rate_limit_store: Option<AdminIpRateLimitRuntimeStore>,
     firewall_rule_store: Option<AdminFirewallRuleRuntimeStore>,
+    chain_policy_store: Option<AdminChainPolicyRuntimeStore>,
     api_key_rate_limit_store: Option<AdminApiKeyRateLimitRuntimeStore>,
     model_rate_limit_store: Option<AdminModelRateLimitRuntimeStore>,
     model_store: Option<AdminModelRuntimeStore>,
@@ -299,6 +302,7 @@ where
         upstream_verifier,
         ip_rate_limit_store,
         firewall_rule_store,
+        chain_policy_store,
         api_key_rate_limit_store,
         model_rate_limit_store,
         model_store,
@@ -515,6 +519,15 @@ where
                 ),
             ));
         }
+        if let Some(store) = chain_policy_store {
+            router = router.merge(layer_with_admin_subject_boundary(
+                admin_subject_boundary_config.clone(),
+                sdkwork_clawrouter_router_service::api::admin_chain_policy_router_with_store(
+                    store,
+                    Arc::new(OsApiKeySecretGenerator),
+                ),
+            ));
+        }
         if let Some(store) = api_key_rate_limit_store {
             router = router.merge(layer_with_admin_subject_boundary(
                 admin_subject_boundary_config.clone(),
@@ -665,6 +678,11 @@ pub async fn router_with_postgres_product_catalog(
 pub struct PostgresSharedRuntime {
     pub config: DatabaseConfig,
     pub pool: PgPool,
+    /// Federated commerce shared pool (payment/promotion/order/membership
+    /// capability databases). Promotion admin tables live in the commerce
+    /// database, so the promotion repository must use this pool instead of
+    /// the Claw Router gateway pool.
+    pub commerce_pool: PgPool,
     pub catalog: Arc<RefreshableSqlPricingCatalog>,
     pub api_key_security_config: ApiKeySecurityConfig,
     pub upstream_credential_security_config: UpstreamCredentialSecurityConfig,
@@ -683,6 +701,7 @@ pub fn router_with_postgres_shared_runtime(
     let PostgresSharedRuntime {
         config,
         pool,
+        commerce_pool,
         catalog,
         api_key_security_config,
         upstream_credential_security_config,
@@ -701,8 +720,12 @@ pub fn router_with_postgres_shared_runtime(
         Arc::new(PostgresAdminAnnouncementStore::new(pool.clone()));
     let auth_settings_store: AdminAuthSettingsRuntimeStore =
         Arc::new(PostgresAdminAuthSettingsStore::new(pool.clone()));
-    let api_key_command_store: ApiKeyCommandRuntimeStore =
-        Arc::new(PostgresGatewayApiKeyCommandStore::new(pool.clone()));
+    let api_key_command_store: ApiKeyCommandRuntimeStore = Arc::new(
+        PostgresGatewayApiKeyCommandStore::new(
+            pool.clone(),
+            build_api_key_secret_storage_config(&api_key_security_config)?,
+        ),
+    );
     let catalog_store: AdminCatalogRuntimeStore =
         Arc::new(PostgresAdminCatalogStore::new(pool.clone()));
     let inventory_store: AdminInventoryRuntimeStore =
@@ -726,6 +749,8 @@ pub fn router_with_postgres_shared_runtime(
         Arc::new(PostgresAdminIpRateLimitStore::new(pool.clone()));
     let firewall_rule_store: AdminFirewallRuleRuntimeStore =
         Arc::new(PostgresAdminFirewallRuleStore::new(pool.clone()));
+    let chain_policy_store: AdminChainPolicyRuntimeStore =
+        Arc::new(PostgresAdminChainPolicyStore::new(pool.clone()));
     let api_key_rate_limit_store: AdminApiKeyRateLimitRuntimeStore =
         Arc::new(PostgresAdminApiKeyRateLimitStore::new(pool.clone()));
     let model_rate_limit_store: AdminModelRateLimitRuntimeStore =
@@ -758,8 +783,11 @@ pub fn router_with_postgres_shared_runtime(
         Arc::new(PostgresModelRankingRefreshStore::new(pool.clone()));
     let admin_access_checker = AdminAccessChecker(pool.clone());
 
+    // Promotion admin tables live in the federated commerce database
+    // (bootstrapped by the commerce runtime), so the promotion repository
+    // must use the commerce pool rather than the gateway pool.
     let promotion_repository: Arc<dyn PromotionAdminRepositoryPort> =
-        Arc::new(PostgresPromotionAdminRepository::new(pool));
+        Arc::new(PostgresPromotionAdminRepository::new(commerce_pool));
     let promotion_router = sdkwork_routes_promotion_backend_api::build_backend_promotion_router(
         Arc::new(PromotionAdminService::new(promotion_repository)),
     );
@@ -781,6 +809,7 @@ pub fn router_with_postgres_shared_runtime(
             upstream_verifier: Some(upstream_verifier),
             ip_rate_limit_store: Some(ip_rate_limit_store),
             firewall_rule_store: Some(firewall_rule_store),
+            chain_policy_store: Some(chain_policy_store),
             api_key_rate_limit_store: Some(api_key_rate_limit_store),
             model_rate_limit_store: Some(model_rate_limit_store),
             model_store: Some(model_store),
@@ -944,8 +973,12 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
         Arc::new(PostgresAdminAnnouncementStore::new(pool.clone()));
     let auth_settings_store: AdminAuthSettingsRuntimeStore =
         Arc::new(PostgresAdminAuthSettingsStore::new(pool.clone()));
-    let api_key_command_store: ApiKeyCommandRuntimeStore =
-        Arc::new(PostgresGatewayApiKeyCommandStore::new(pool.clone()));
+    let api_key_command_store: ApiKeyCommandRuntimeStore = Arc::new(
+        PostgresGatewayApiKeyCommandStore::new(
+            pool.clone(),
+            build_api_key_secret_storage_config(&api_key_security_config)?,
+        ),
+    );
     let catalog_store: AdminCatalogRuntimeStore =
         Arc::new(PostgresAdminCatalogStore::new(pool.clone()));
     let inventory_store: AdminInventoryRuntimeStore =
@@ -969,6 +1002,8 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
         Arc::new(PostgresAdminIpRateLimitStore::new(pool.clone()));
     let firewall_rule_store: AdminFirewallRuleRuntimeStore =
         Arc::new(PostgresAdminFirewallRuleStore::new(pool.clone()));
+    let chain_policy_store: AdminChainPolicyRuntimeStore =
+        Arc::new(PostgresAdminChainPolicyStore::new(pool.clone()));
     let api_key_rate_limit_store: AdminApiKeyRateLimitRuntimeStore =
         Arc::new(PostgresAdminApiKeyRateLimitStore::new(pool.clone()));
     let model_rate_limit_store: AdminModelRateLimitRuntimeStore =
@@ -1020,6 +1055,7 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
                     upstream_verifier: Some(upstream_verifier),
                     ip_rate_limit_store: Some(ip_rate_limit_store),
                     firewall_rule_store: Some(firewall_rule_store),
+                    chain_policy_store: Some(chain_policy_store),
                     api_key_rate_limit_store: Some(api_key_rate_limit_store),
                     model_rate_limit_store: Some(model_rate_limit_store),
                     model_store: Some(model_store),
@@ -1197,6 +1233,17 @@ fn build_api_key_hasher(
     let hasher = HmacSha256ApiKeySecretHasher::new(config.pepper_secret())
         .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?;
     Ok(Arc::new(hasher))
+}
+
+fn build_api_key_secret_storage_config(
+    config: &ApiKeySecurityConfig,
+) -> Result<ApiKeySecretStorageConfig, ProductCatalogRouterError> {
+    let codec = RingAeadApiKeySecretCodec::new(config.pepper_secret())
+        .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?;
+    Ok(ApiKeySecretStorageConfig::new(
+        config.secret_storage_mode(),
+        Arc::new(codec),
+    ))
 }
 
 fn credential_secret_codec_from_config(

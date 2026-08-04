@@ -36,6 +36,7 @@ pub struct AdapterSubject {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AdapterProviderContext {
+    #[serde(rename = "providerCode")]
     pub supplier_code: String,
     pub account_id: i64,
     pub region_code: String,

@@ -18,6 +18,8 @@ export interface AppRoutingAccountGroup {
   id: string;
   /** Member account count field on app routing account group. */
   memberAccountCount: string;
+  /** Modalities field on app routing account group. */
+  modalities?: ('text' | 'audio' | 'image' | 'video' | 'music')[];
   /** Resource codes field on app routing account group. */
   resourceCodes: string[];
   /** Resource group codes field on app routing account group. */
@@ -28,4 +30,6 @@ export interface AppRoutingAccountGroup {
   saleMultiplier: string;
   /** Status field on app routing account group. */
   status: 'enabled' | 'disabled';
+  /** Vendor code field on app routing account group. */
+  vendorCode?: string | null;
 }

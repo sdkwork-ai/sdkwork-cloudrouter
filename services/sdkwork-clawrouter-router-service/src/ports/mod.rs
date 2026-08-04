@@ -1,6 +1,7 @@
 mod admin_ai_resource_store;
 mod admin_analytics_read_store;
 mod admin_announcement_store;
+mod admin_chain_policy_store;
 mod admin_api_key_rate_limit_store;
 mod admin_auth_settings_store;
 mod admin_catalog_store;
@@ -36,6 +37,7 @@ mod chat_completion_stream_relay;
 mod dashboard_overview_read_store;
 mod embeddings_relay;
 mod gateway_accounting_retry_queue;
+mod gateway_chain_policy_store;
 mod gateway_usage_recorder;
 mod invocation_dispatcher;
 mod model_ranking_refresh_store;
@@ -77,6 +79,12 @@ pub use admin_announcement_store::{
     AdminAnnouncementCommandFuture, AdminAnnouncementItem, AdminAnnouncementListPage,
     AdminAnnouncementStore, AdminAnnouncementSubject, CreateAdminAnnouncementCommand,
     DeleteAdminAnnouncementCommand, ListAdminAnnouncementsQuery, UpdateAdminAnnouncementCommand,
+};
+pub use admin_chain_policy_store::{
+    AdminChainPolicyItem, AdminChainPolicyStore, AdminChainPolicyStoreError,
+    AdminChainPolicyStoreErrorKind, AdminChainPolicySubject,
+    ADMIN_CHAIN_POLICY_SCOPE_API_KEY, ADMIN_CHAIN_POLICY_SCOPE_GLOBAL,
+    UpsertChainPolicyCommand,
 };
 pub use admin_api_key_rate_limit_store::{
     AdminApiKeyRateLimitCommandFuture, AdminApiKeyRateLimitItem, AdminApiKeyRateLimitListPage,
@@ -201,10 +209,10 @@ pub use admin_user_store::{
     ListAdminUserApiKeysQuery, ListAdminUsersQuery, UpdateAdminUserCommand,
 };
 pub use api_key_command_store::{
-    ApiKeyCommandStoreFuture, CreateGatewayApiKeyCommand, CreatedGatewayApiKey,
-    DeleteGatewayApiKeyCommand, DeleteGatewayApiKeyForOrganizationCommand,
-    EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore,
-    UpdateGatewayApiKeyCommand, UpdatedGatewayApiKey,
+    AccountGroupBindingInput, ApiKeyCommandStoreFuture, CreateGatewayApiKeyCommand,
+    CreatedGatewayApiKey, DeleteGatewayApiKeyCommand,
+    DeleteGatewayApiKeyForOrganizationCommand, EnsureDefaultUpstreamAccountGroupCommand,
+    GatewayApiKeyCommandStore, UpdateGatewayApiKeyCommand, UpdatedGatewayApiKey,
 };
 pub use api_key_management_read_store::{
     ApiKeyManagementReadFuture, GatewayApiKeyListPage, GatewayApiKeyManagementReadStore,
@@ -275,6 +283,10 @@ pub use gateway_accounting_retry_queue::{
     GATEWAY_ACCOUNTING_RETRY_SCHEMA_VERSION,
 };
 pub(crate) use gateway_usage_recorder::MAX_PRICING_SNAPSHOT_BYTES;
+pub use gateway_chain_policy_store::{
+    ChainPolicyRecord, GatewayChainPolicyStore, CHAIN_POLICY_SCOPE_API_KEY,
+    CHAIN_POLICY_SCOPE_GLOBAL,
+};
 pub use gateway_usage_recorder::{
     hash_optional_text, GatewayAccountingRecordContext, GatewayRequestTraceCommand,
     GatewayTraceAttribution, GatewayUsageQuantity, GatewayUsageRecordCommand,

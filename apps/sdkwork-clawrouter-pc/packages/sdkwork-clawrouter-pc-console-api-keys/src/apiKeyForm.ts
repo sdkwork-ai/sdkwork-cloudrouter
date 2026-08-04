@@ -1,15 +1,51 @@
 import type { CreateApiKeyInput } from './apiKeyService';
+import type { UpdateApiKeyRequest } from '@sdkwork/clawrouter-pc-console-core/sdk';
 
 export type ApiKeyFormValues = {
   name: string;
-  accountGroup: string;
+  /** 路由绑定分组 code 数组；第一个为默认分组 */
+  accountGroups: string[];
   quota: string;
   isUnlimitedQuota: boolean;
   modalities: string[];
   ipLimit: string;
   expires: string;
   createCount: number;
+  /** 按 Key 的调用链策略（可选）：启用时覆盖全局默认 */
+  chain?: {
+    maxInflight: string;
+    allowlistText: string;
+    denylistText: string;
+  };
 };
+
+/** 从表单构造调用链输入；未启用（undefined）时返回 undefined。 */
+export function chainInputFromForm(values: ApiKeyFormValues): UpdateApiKeyRequest['chain'] {
+  if (!values.chain) {
+    return undefined;
+  }
+  const maxInflight = values.chain.maxInflight.trim();
+  const allowlist = splitIpLines(values.chain.allowlistText);
+  const denylist = splitIpLines(values.chain.denylistText);
+  if (!maxInflight && allowlist.length === 0 && denylist.length === 0) {
+    return undefined;
+  }
+  return {
+    concurrency: maxInflight ? { maxInflight } : undefined,
+    ipAccess: {
+      mode: 'open',
+      allowlist,
+      denylist,
+    },
+  };
+}
+
+function splitIpLines(text: string): string[] {
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+}
 
 export const DEFAULT_API_KEY_MODALITIES = ['text', 'image', 'video', 'audio', 'music'] as const;
 export const DEFAULT_ACCOUNT_GROUP = 'default';
@@ -24,12 +60,13 @@ const MAX_BATCH_CREATE_COUNT = 100;
 export function createApiKeyInputFromForm(values: ApiKeyFormValues, _index = 0): CreateApiKeyInput {
   return {
     name: requiredText(values.name, 'name'),
-    accountGroup: normalizeOptionalText(values.accountGroup, DEFAULT_ACCOUNT_GROUP),
+    accountGroups: normalizeAccountGroups(values.accountGroups),
     quota: normalizeQuota(values.quota, values.isUnlimitedQuota),
     isUnlimitedQuota: values.isUnlimitedQuota,
     modalities: normalizeModalities(values.modalities),
     ipLimit: normalizeOptionalText(values.ipLimit, DEFAULT_IP_LIMIT),
     expires: normalizeOptionalText(values.expires, DEFAULT_EXPIRATION),
+    chain: chainInputFromForm(values),
   };
 }
 
@@ -56,6 +93,23 @@ function requiredText(value: string, fieldName: string): string {
 function normalizeOptionalText(value: string | null | undefined, fallback: string): string {
   const text = value?.trim() ?? '';
   return text.length > 0 ? text : fallback;
+}
+
+function normalizeAccountGroups(values: string[]): string[] {
+  const groups: string[] = [];
+  for (const rawValue of values) {
+    const value = rawValue.trim();
+    if (!value) {
+      continue;
+    }
+    if (!groups.includes(value)) {
+      groups.push(value);
+    }
+  }
+  if (groups.length === 0) {
+    groups.push(DEFAULT_ACCOUNT_GROUP);
+  }
+  return groups;
 }
 
 function normalizeQuota(value: string, isUnlimitedQuota: boolean): string {

@@ -41,6 +41,8 @@ impl InvocationErrorKind {
 pub struct InvocationError {
     pub kind: InvocationErrorKind,
     pub message: String,
+    /// `Retry-After` hint for `RateLimit` rejections (RFC 6585).
+    pub retry_after_secs: Option<u64>,
 }
 
 impl InvocationError {
@@ -48,7 +50,14 @@ impl InvocationError {
         Self {
             kind,
             message: message.into(),
+            retry_after_secs: None,
         }
+    }
+
+    /// Attaches a `Retry-After` hint (used by rate-limit rejections).
+    pub fn with_retry_after(mut self, retry_after_secs: u64) -> Self {
+        self.retry_after_secs = Some(retry_after_secs);
+        self
     }
 }
 

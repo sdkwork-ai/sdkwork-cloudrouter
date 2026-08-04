@@ -1,3 +1,5 @@
+import type { GroupPickerOption } from '@sdkwork/clawroutes-pc-commons/components/GroupPicker';
+import type { GroupSelectorOption } from '@sdkwork/clawroutes-pc-commons/components/GroupSelector';
 import type { AccountGroup } from './apiKeyService';
 
 export function resolveAccountGroupName(groupCode: string, groups: AccountGroup[]): string {
@@ -15,7 +17,28 @@ export function resolveAccountGroupCode(
   return group?.code?.trim() || normalizedValue;
 }
 
-export function formatAccountGroupOptionLabel(group: AccountGroup): string {
-  const name = group.name.trim() || group.code;
-  return group.rate ? `${name} (${group.rate})` : name;
+export function toAccountGroupSelectorOptions(groups: AccountGroup[]): GroupSelectorOption[] {
+  return groups.map((group) => {
+    const description = group.description?.trim();
+    return {
+      value: group.code,
+      label: group.name.trim() || group.code,
+      ...(description ? { description } : {}),
+      rate: group.rate,
+    };
+  });
+}
+
+export function toGroupPickerOptions(groups: AccountGroup[]): GroupPickerOption[] {
+  return groups.map((group) => {
+    const description = group.description?.trim();
+    return {
+      value: group.code,
+      label: group.name.trim() || group.code,
+      ...(description ? { description } : {}),
+      rate: group.rate,
+      vendorCode: group.vendorCode,
+      modalities: group.modalities,
+    };
+  });
 }

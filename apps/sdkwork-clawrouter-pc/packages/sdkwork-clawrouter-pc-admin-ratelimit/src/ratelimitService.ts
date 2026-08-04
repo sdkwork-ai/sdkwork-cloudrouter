@@ -90,6 +90,25 @@ export type FirewallCreateInput = {
   reason: string;
 };
 
+export interface ChainIpAccessPolicy {
+  mode?: 'open' | 'allowlistOnly' | null;
+  allowlist?: string[] | null;
+  denylist?: string[] | null;
+}
+
+export interface ChainPolicy {
+  policyName?: string | null;
+  concurrency?: {
+    maxInflight?: string | number | null;
+    maxInflightPerScope?: Record<string, string | number> | null;
+  } | null;
+  ipAccess?: ChainIpAccessPolicy | null;
+  stages?: {
+    enabledOnly?: string[] | null;
+    disabled?: string[] | null;
+  } | null;
+}
+
 export type RateLimitListFilters = {
   page?: number;
   pageSize?: number;
@@ -177,6 +196,28 @@ export class RateLimitService {
       requiredSafePathSegment(id, 'firewallRuleId'),
     );
     return true;
+  }
+
+  static async fetchChainPolicy(): Promise<ChainPolicy> {
+    const result = await getClawRouterBackendSdkClient().system.chains.policy.retrieve();
+    ensureSdkworkApiSuccess(result, 'Failed to fetch chain policy');
+    return normalizeChainPolicy(result);
+  }
+
+  static async updateChainPolicy(input: ChainPolicy): Promise<ChainPolicy> {
+    const result = await getClawRouterBackendSdkClient().system.chains.policy.update(
+      toChainPolicyInput(input),
+    );
+    ensureSdkworkApiSuccess(result, 'Failed to update chain policy');
+    return normalizeChainPolicy(result);
+  }
+
+  static async fetchApiKeyChainPolicy(apiKeyId: string): Promise<ChainPolicy> {
+    const result = await getClawRouterBackendSdkClient().system.chains.policy.apiKey.retrieve(
+      requiredSafePathSegment(apiKeyId, 'apiKeyId'),
+    );
+    ensureSdkworkApiSuccess(result, 'Failed to fetch API key chain policy');
+    return normalizeChainPolicy(result);
   }
 }
 
@@ -370,4 +411,76 @@ function readModelLimitStatus(item: ApiRecord): ModelLimitRule['status'] {
     return status;
   }
   throw new Error(`Unsupported model limit status: ${status}`);
+}
+
+function normalizeChainPolicy(value: unknown): ChainPolicy {
+  const data = readApiRecord(value);
+  const item = isRecord(data.item) ? data.item : {};
+  const payload = isRecord(item.payload) ? item.payload : {};
+  return {
+    // readString never returns null; item.policyName is the stored name.
+    policyName: readString(payload, 'policyName') || readString(item, 'policyName'),
+    concurrency: isRecord(payload.concurrency)
+      ? {
+          maxInflight: optionalInt64Text(payload.concurrency.maxInflight),
+          maxInflightPerScope: isRecord(payload.concurrency.maxInflightPerScope)
+            ? payload.concurrency.maxInflightPerScope
+            : null,
+        }
+      : null,
+    ipAccess: isRecord(payload.ipAccess)
+      ? {
+          mode: readString(payload.ipAccess, 'mode') as ChainIpAccessPolicy['mode'],
+          allowlist: Array.isArray(payload.ipAccess.allowlist) ? payload.ipAccess.allowlist : null,
+          denylist: Array.isArray(payload.ipAccess.denylist) ? payload.ipAccess.denylist : null,
+        }
+      : null,
+    stages: isRecord(payload.stages)
+      ? {
+          enabledOnly: Array.isArray(payload.stages.enabledOnly) ? payload.stages.enabledOnly : null,
+          disabled: Array.isArray(payload.stages.disabled) ? payload.stages.disabled : null,
+        }
+      : null,
+  };
+}
+
+function optionalInt64Text(value: unknown): string | null {
+  if (typeof value === 'number' || typeof value === 'string') {
+    const text = String(value).trim();
+    return text.length > 0 ? text : null;
+  }
+  return null;
+}
+
+function toChainPolicyInput(policy: ChainPolicy): unknown {
+  return {
+    policyName: policy.policyName || undefined,
+    concurrency: policy.concurrency
+      ? {
+          maxInflight:
+            policy.concurrency.maxInflight == null ? undefined : String(policy.concurrency.maxInflight),
+          maxInflightPerScope: policy.concurrency.maxInflightPerScope
+            ? Object.fromEntries(
+                Object.entries(policy.concurrency.maxInflightPerScope).map(([scope, limit]) => [
+                  scope,
+                  String(limit),
+                ]),
+              )
+            : undefined,
+        }
+      : undefined,
+    ipAccess: policy.ipAccess
+      ? {
+          mode: policy.ipAccess.mode || undefined,
+          allowlist: policy.ipAccess.allowlist ?? undefined,
+          denylist: policy.ipAccess.denylist ?? undefined,
+        }
+      : undefined,
+    stages: policy.stages
+      ? {
+          enabledOnly: policy.stages.enabledOnly ?? undefined,
+          disabled: policy.stages.disabled ?? undefined,
+        }
+      : undefined,
+  };
 }

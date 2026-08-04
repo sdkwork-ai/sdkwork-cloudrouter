@@ -17,7 +17,8 @@ const GROUP_COLUMNS: &str = r#"
     routing_strategy, fallback_mode, priority,
     cost_multiplier::text AS cost_multiplier,
     sale_multiplier::text AS sale_multiplier,
-    environment, status, version,
+    environment, vendor_code, modalities::text AS modalities,
+    status, version,
     TO_CHAR(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS updated_at
 "#;
 
@@ -322,13 +323,15 @@ async fn insert(
             created_at, updated_at, version, metadata,
             group_code, group_name, description, group_type,
             routing_strategy, fallback_mode, priority,
-            cost_multiplier, sale_multiplier, environment
+            cost_multiplier, sale_multiplier, environment,
+            vendor_code, modalities
         ) VALUES (
             $1, $2, $3, $4, $5, $6,
             $7::timestamptz, $7::timestamptz, 0, '{}'::jsonb,
             $8, $9, $10, $11,
             $12, $13, $14,
-            $15::numeric, $16::numeric, $17
+            $15::numeric, $16::numeric, $17,
+            $18, $19::jsonb
         )
         "#,
     )
@@ -349,6 +352,8 @@ async fn insert(
     .bind(command.cost_multiplier.trim())
     .bind(command.sale_multiplier.trim())
     .bind(command.environment)
+    .bind(command.vendor_code.as_deref().map(str::trim))
+    .bind(modalities_json(&command.modalities))
     .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to create upstream account group", error))?;
@@ -411,11 +416,13 @@ async fn update(
             cost_multiplier = $7::numeric,
             sale_multiplier = $8::numeric,
             environment = $9,
-            status = $10,
+            vendor_code = $10,
+            modalities = $11::jsonb,
+            status = $12,
             version = version + 1,
-            updated_at = $11::timestamptz
-        WHERE tenant_id = $12 AND organization_id = $13
-          AND id = $14 AND version = $15 AND deleted_at IS NULL
+            updated_at = $13::timestamptz
+        WHERE tenant_id = $14 AND organization_id = $15
+          AND id = $16 AND version = $17 AND deleted_at IS NULL
         "#,
     )
     .bind(command.group_name.trim())
@@ -427,6 +434,8 @@ async fn update(
     .bind(command.cost_multiplier.trim())
     .bind(command.sale_multiplier.trim())
     .bind(command.environment)
+    .bind(command.vendor_code.as_deref().map(str::trim))
+    .bind(modalities_json(&command.modalities))
     .bind(command.status)
     .bind(&command.requested_at)
     .bind(command.subject.tenant_id)
@@ -562,6 +571,16 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamAccountGroupItem> {
             "environment",
             "failed to map upstream account group environment",
         )?,
+        vendor_code: column(
+            &row,
+            "vendor_code",
+            "failed to map upstream account group vendor code",
+        )?,
+        modalities: parse_modalities(column(
+            &row,
+            "modalities",
+            "failed to map upstream account group modalities",
+        )?)?,
         status: column(
             &row,
             "status",
@@ -577,5 +596,17 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamAccountGroupItem> {
             "updated_at",
             "failed to map upstream account group updated time",
         )?,
+    })
+}
+
+fn modalities_json(modalities: &[String]) -> String {
+    serde_json::to_string(modalities).unwrap_or_else(|_| "[]".to_owned())
+}
+
+fn parse_modalities(value: String) -> DomainResult<Vec<String>> {
+    serde_json::from_str(&value).map_err(|error| {
+        DomainError::new(format!(
+            "failed to parse upstream account group modalities: {error}"
+        ))
     })
 }

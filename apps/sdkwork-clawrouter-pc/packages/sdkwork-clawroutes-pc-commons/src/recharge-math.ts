@@ -1,3 +1,5 @@
+import { formatMoney } from '@sdkwork/utils/money';
+
 export interface RechargeSettingsSnapshot {
   baseCurrencyCode: string;
   basePointsPerCny: string;
@@ -121,11 +123,15 @@ export function formatRechargeCurrencyAmount(
   currencyCode: string,
 ): string {
   const normalizedCurrencyCode = normalizeCurrencyCode(currencyCode);
-  const normalizedAmount = normalizeMoneyAmount(amount);
-  const symbol = rechargeCurrencySymbol(normalizedCurrencyCode);
-  return symbol
-    ? `${symbol}${normalizedAmount}`
-    : `${normalizedCurrencyCode} ${normalizedAmount}`;
+  const formatted = formatMoney(amount, {
+    currency: normalizedCurrencyCode,
+    locale: 'en-US',
+    mode: 'symbol',
+  });
+  if (formatted !== null) {
+    return formatted;
+  }
+  return `${normalizedCurrencyCode} ${normalizeMoneyAmount(amount)}`;
 }
 
 export function normalizeCurrencyCode(
@@ -194,15 +200,4 @@ function normalizeMoneyAmount(amount: string): string {
   const whole = cents / MONEY_SCALE;
   const fraction = String(cents % MONEY_SCALE).padStart(2, '0');
   return `${whole.toString()}.${fraction}`;
-}
-
-function rechargeCurrencySymbol(currencyCode: string): string {
-  switch (currencyCode) {
-    case 'CNY':
-      return '¥';
-    case 'USD':
-      return '$';
-    default:
-      return '';
-  }
 }

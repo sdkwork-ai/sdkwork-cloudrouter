@@ -334,6 +334,11 @@ tables:
     billing_type: int32
     capacity_limit: int64
     allowed_origin: json
+    vendor_code:
+      type: string(64)
+    modalities:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
   unique_constraints:
   - name: uk_ai_upstream_account_group_uuid
     columns:
@@ -373,6 +378,13 @@ tables:
     - pricing_plan_id
     - status
     - updated_at
+    - id
+  - name: idx_ai_upstream_account_group_vendor
+    columns:
+    - tenant_id
+    - organization_id
+    - vendor_code
+    - status
     - id
 - table: ai_upstream_account_group_member
   domain: ai

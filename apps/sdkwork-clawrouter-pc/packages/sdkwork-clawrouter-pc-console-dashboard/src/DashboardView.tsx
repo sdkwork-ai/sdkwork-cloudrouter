@@ -38,6 +38,7 @@ import {
 } from './dashboardService';
 
 import { useTranslation } from 'react-i18next';
+import { formatMoney } from '@sdkwork/clawroutes-pc-commons/sdkwork-utils';
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
 
 const SERIES = [
@@ -81,7 +82,8 @@ type ConfigurationDomainSpeedState = {
 };
 
 export function DashboardView() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const displayLocale = i18n.resolvedLanguage ?? i18n.language ?? 'en-US';
   const [metricType, setMetricType] = useState<'cost' | 'requests'>('cost');
   const [timeRange, setTimeRange] = useState<DashboardTimeRange>('daily');
   const [chartType, setChartType] = useState<'bar' | 'area'>('area');
@@ -230,10 +232,10 @@ export function DashboardView() {
         <MetricCard
           icon={<Wallet className="h-4 w-4 text-blue-500" />}
           title={t("console.dashboard.dashboardview.text.uvto1d", "可用额度")}
-          value={t("console.dashboard.dashboardview.text.pointsValue", "{{value}} Compute Credits", { value: formatCredits(snapshot.summary.tokenBankAvailable) })}
+          value={t("console.dashboard.dashboardview.text.pointsValue", "{{value}} Compute Credits", { value: formatCredits(snapshot.summary.tokenBankAvailable, displayLocale) })}
           valueIcon={<Zap className="h-6 w-6 text-amber-500" />}
           footerLabel={t("console.dashboard.dashboardview.text.totalUsedCredits", "历史总消耗")}
-          footerValue={t("console.dashboard.dashboardview.text.pointsValue", "{{value}} Compute Credits", { value: formatCredits(snapshot.summary.totalUsedCredits) })}
+          footerValue={t("console.dashboard.dashboardview.text.pointsValue", "{{value}} Compute Credits", { value: formatCredits(snapshot.summary.totalUsedCredits, displayLocale) })}
           action={
             <button
               className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-[#1f1f1f] dark:text-slate-300 dark:hover:bg-white/10"
@@ -354,7 +356,7 @@ export function DashboardView() {
                 <span className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("console.dashboard.dashboardview.text.3jbcte", "合计")}</span>
                 <span className="flex items-center gap-1 font-mono text-xl font-bold">
                   {metricType === 'cost' && <Zap className="h-4 w-4 text-amber-500" />}
-                  {formatMetricValue(totalValue, metricType)}
+                  {formatMetricValue(totalValue, metricType, displayLocale)}
                 </span>
               </div>
               <div className="flex flex-wrap gap-4 text-xs font-medium text-slate-600 dark:text-slate-300">
@@ -382,7 +384,7 @@ export function DashboardView() {
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#94a3b8" strokeOpacity={0.14} />
                       <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} dy={10} interval={xAxisInterval} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11, fontFamily: 'monospace' }} tickFormatter={formatAxis} width={50} />
-                      <Tooltip contentStyle={chartTooltipStyle} formatter={(value) => formatMetricValue(Number(value), metricType)} />
+                      <Tooltip contentStyle={chartTooltipStyle} formatter={(value) => formatMetricValue(Number(value), metricType, displayLocale)} />
                       {SERIES.map((series) =>
                         visibleSeries[series.key] ? <Bar key={series.key} dataKey={series.key} name={series.label(t)} stackId="usage" fill={series.color} radius={[4, 4, 0, 0]} /> : null,
                       )}
@@ -392,7 +394,7 @@ export function DashboardView() {
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#94a3b8" strokeOpacity={0.14} />
                       <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} dy={10} interval={xAxisInterval} />
                         <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11, fontFamily: 'monospace' }} tickFormatter={formatAxis} width={50} />
-                        <Tooltip contentStyle={chartTooltipStyle} formatter={(value) => formatMetricValue(Number(value), metricType)} />
+                        <Tooltip contentStyle={chartTooltipStyle} formatter={(value) => formatMetricValue(Number(value), metricType, displayLocale)} />
                         {SERIES.map((series) =>
                           visibleSeries[series.key] ? (
                             <Area key={series.key} type="monotone" dataKey={series.key} name={series.label(t)} stackId="usage" stroke={series.color} fill={series.color} fillOpacity={0.2} strokeWidth={2} />
@@ -464,7 +466,7 @@ export function DashboardView() {
                             </div>
                           </td>
                           <td className="px-3 py-2.5 text-right">
-                            <span className="font-mono text-sm font-bold text-slate-800 dark:text-white">{formatCredits(row.cost)} {t("console.dashboard.dashboardview.text.1gb9aus", "Compute Credits")}</span>
+                            <span className="font-mono text-sm font-bold text-slate-800 dark:text-white">{formatCredits(row.cost, displayLocale)} {t("console.dashboard.dashboardview.text.1gb9aus", "Compute Credits")}</span>
                           </td>
                         </tr>
                       );
@@ -848,11 +850,19 @@ function translateDashboardLocalValue(value: string, fallback: string, t: Transl
   return value;
 }
 
-function formatCredits(value: number): string {
+function formatCredits(value: number, locale: string): string {
   if (!Number.isFinite(value)) {
     return '0.00';
   }
-  return new Intl.NumberFormat('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+  return (
+    formatMoney(value, {
+      currency: 'USD',
+      locale,
+      mode: 'decimal',
+      minFractionDigits: 2,
+      maxFractionDigits: 2,
+    }) ?? new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
+  );
 }
 
 function formatCount(value: number): string {
@@ -862,8 +872,8 @@ function formatCount(value: number): string {
   return new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 }).format(value);
 }
 
-function formatMetricValue(value: number, metricType: 'cost' | 'requests'): string {
-  return metricType === 'cost' ? formatCredits(value) : formatCount(value);
+function formatMetricValue(value: number, metricType: 'cost' | 'requests', locale: string): string {
+  return metricType === 'cost' ? formatCredits(value, locale) : formatCount(value);
 }
 
 function formatAxis(value: number): string {

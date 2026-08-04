@@ -7,6 +7,8 @@ export * from './components/AdminTableShell';
 export * from './components/AdminResourceCenter';
 export * from './components/AdminCategoryManagementSidebar';
 export * from './components/AiResourceSelectorModal';
+export * from './components/GroupSelector';
+export * from './components/GroupPicker';
 export * from './components/BottomPagination';
 export * from './components/ConfirmDialog';
 export * from './components/CopyButton';

@@ -463,7 +463,9 @@ test('commerce admin services consume owner backend SDKs while preserving produc
   assert.match(marketingService, /getSdkworkPromotionBackendSdkClient\(\)\.promotions\.offers\.list/);
   assert.doesNotMatch(marketingService, /getClawRouterBackendSdkClient\(\)\.promotions/);
   assert.doesNotMatch(marketingService, /discountAllocations|budgetLedgerEntries|externalBindings|\.events\.list|\.redemptions\.list/);
-  assert.match(marketingService, /getClawRouterBackendSdkClient\(\)\.system\.marketing\.referralStats\.list/);
+  assert.match(marketingService, /getClawRouterBackendSdkClient\(\)\.billing\.referralStats\.list/);
+  assert.match(marketingService, /promotions\.codeBatches\.list/);
+  assert.match(marketingService, /promotions\.codes\.list/);
 
   for (const resource of ['methods', 'channels', 'routeRules', 'intents', 'attempts', 'webhookEvents', 'reconciliationRuns']) {
     assert.match(paymentsService, new RegExp(`getSdkworkPaymentBackendSdkClient\\(\\)\\.payments\\.${resource}\\.list`));

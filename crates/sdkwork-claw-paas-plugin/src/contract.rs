@@ -97,6 +97,7 @@ pub enum PaasImageInput {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct PaasOcrResponse {
+    #[serde(rename = "providerCode")]
     pub supplier_code: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub provider_request_id: Option<String>,
@@ -137,6 +138,7 @@ pub struct PaasBlockBoundingBox {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct PaasFaceCompareResponse {
+    #[serde(rename = "providerCode")]
     pub supplier_code: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub provider_request_id: Option<String>,
@@ -149,6 +151,7 @@ pub struct PaasFaceCompareResponse {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct PaasFaceLivenessResponse {
+    #[serde(rename = "providerCode")]
     pub supplier_code: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub provider_request_id: Option<String>,

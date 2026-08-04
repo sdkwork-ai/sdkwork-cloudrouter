@@ -487,7 +487,7 @@ mod tests {
         assert_status(
             &router,
             get("/app/v3/api/memberships/package_groups"),
-            StatusCode::NOT_FOUND,
+            StatusCode::OK,
         )
         .await;
         assert_status(

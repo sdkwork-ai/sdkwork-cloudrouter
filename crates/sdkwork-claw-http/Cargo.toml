@@ -12,6 +12,7 @@ hex.workspace = true
 hmac.workspace = true
 hyper-util.workspace = true
 prometheus.workspace = true
+rustls.workspace = true
 sdkwork-claw-config.workspace = true
 sdkwork-claw-contract.workspace = true
 sdkwork-claw-health.workspace = true

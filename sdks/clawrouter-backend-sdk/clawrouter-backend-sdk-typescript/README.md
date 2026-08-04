@@ -27,7 +27,7 @@ client.setAuthToken('your-auth-token');
 client.setAccessToken('your-access-token');
 
 // Use the SDK
-const result = await client.recharges.orders.management.list();
+const result = await client.billing.rechargeRecords.list();
 ```
 
 ## Authentication
@@ -55,10 +55,11 @@ const client = new SdkworkBackendClient({
 ## API Modules
 
 - `client.ai` - ai API
-- `client.system` - system API
+- `client.billing` - billing API
 - `client.payments` - payments API
 - `client.recharges` - recharges API
 - `client.storage` - storage API
+- `client.system` - system API
 
 ## Usage Examples
 
@@ -74,11 +75,11 @@ const params = {
 const result = await client.ai.upstreamAccountGroups.list(params);
 ```
 
-### system
+### billing
 
 ```typescript
-// List claw router auth settings
-const result = await client.system.auth.settings.retrieve();
+// List
+const result = await client.billing.rechargeRecords.list();
 ```
 
 ### payments
@@ -97,8 +98,8 @@ const result = await client.payments.providers.list(params);
 ### recharges
 
 ```typescript
-// List
-const result = await client.recharges.orders.management.list();
+// Retrieve
+const result = await client.recharges.settings.retrieve();
 ```
 
 ### storage
@@ -117,13 +118,20 @@ const params = {
 const result = await client.storage.oss.buckets.list(params);
 ```
 
+### system
+
+```typescript
+// List claw router auth settings
+const result = await client.system.auth.settings.retrieve();
+```
+
 ## Error Handling
 
 ```typescript
 import { SdkworkBackendClient, NetworkError, TimeoutError, AuthenticationError } from '@sdkwork/clawrouter-backend-sdk';
 
 try {
-  const result = await client.recharges.orders.management.list();
+  const result = await client.billing.rechargeRecords.list();
 } catch (error) {
   if (error instanceof AuthenticationError) {
     console.error('Authentication failed:', error.message);

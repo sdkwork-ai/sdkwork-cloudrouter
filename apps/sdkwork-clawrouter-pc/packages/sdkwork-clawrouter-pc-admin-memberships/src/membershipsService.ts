@@ -294,8 +294,8 @@ async function backendMembershipsEntitlementsList(params?: Parameters<BackendMem
   return getSdkworkMembershipBackendSdkClient().memberships.entitlements.list(params);
 }
 
-async function backendMembershipsRechargePackagesList(params?: Parameters<BackendRechargesService['packages']['management']['list']>[0]) {
-  return getClawRouterBackendSdkClient().recharges.packages.management.list(params);
+async function backendMembershipsRechargePackagesList(params?: Parameters<BackendRechargesService['packages']['list']>[0]) {
+  return getClawRouterBackendSdkClient().recharges.packages.list(params);
 }
 
 async function backendMembershipsRechargePackagesCreate(
@@ -323,7 +323,7 @@ async function backendMembershipsRechargePackagesDelete(
 }
 
 async function backendMembershipsRechargeSettingsRetrieve() {
-  return getClawRouterBackendSdkClient().recharges.settings.management.retrieve();
+  return getClawRouterBackendSdkClient().recharges.settings.retrieve();
 }
 
 async function backendMembershipsRechargeSettingsUpdate(

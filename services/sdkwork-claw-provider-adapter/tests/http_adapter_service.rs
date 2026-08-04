@@ -90,7 +90,7 @@ impl EndpointAdapter for EchoEndpointAdapter {
 
 #[tokio::test]
 async fn adapter_service_exposes_health_and_manifest() {
-    let router = sdkwork_claw_provider_adapter::router_with_adapters(
+    let router = sdkwork_claw_provider_adapter_host::router_with_adapters(
         vec![Arc::new(EchoProviderAdapter)],
         "test-token",
     );
@@ -145,7 +145,7 @@ async fn adapter_service_exposes_health_and_manifest() {
 #[tokio::test]
 async fn adapter_service_default_manifest_composes_provider_packages_without_false_endpoint_claims()
 {
-    let router = sdkwork_claw_provider_adapter::router_with_default_adapters("test-token");
+    let router = sdkwork_claw_provider_adapter_host::router_with_default_adapters("test-token");
 
     let manifest = router
         .oneshot(
@@ -203,7 +203,17 @@ async fn adapter_service_default_manifest_composes_provider_packages_without_fal
         .expect("default manifest should include alicloud provider package");
     assert_eq!("alicloud", alicloud["providerFamily"]);
     assert_eq!(json!(["alicloud", "aliyun"]), alicloud["providerCodes"]);
-    assert_eq!(json!([]), alicloud["endpoints"]);
+    // AliCloud exposes a definition-only text generation endpoint: it is
+    // advertised for catalog discovery but must never be invoked as a
+    // runtime-capable route.
+    assert_eq!(
+        "text_generation.generate",
+        alicloud["endpoints"][0]["endpointKey"]
+    );
+    assert_eq!(
+        "definition_only",
+        alicloud["endpoints"][0]["runtimeState"]
+    );
 
     let cloud_storage = providers
         .iter()
@@ -288,7 +298,7 @@ async fn adapter_service_default_manifest_composes_provider_packages_without_fal
 
 #[tokio::test]
 async fn adapter_service_default_manifest_covers_cloud_storage_openapi_operations() {
-    let router = sdkwork_claw_provider_adapter::router_with_default_adapters("test-token");
+    let router = sdkwork_claw_provider_adapter_host::router_with_default_adapters("test-token");
 
     let manifest = router
         .oneshot(
@@ -371,7 +381,7 @@ async fn adapter_service_default_manifest_covers_cloud_storage_openapi_operation
 
 #[tokio::test]
 async fn adapter_service_default_manifest_covers_cloud_iaas_openapi_operations() {
-    let router = sdkwork_claw_provider_adapter::router_with_default_adapters("test-token");
+    let router = sdkwork_claw_provider_adapter_host::router_with_default_adapters("test-token");
 
     let manifest = router
         .oneshot(
@@ -482,7 +492,7 @@ async fn adapter_service_default_manifest_covers_cloud_iaas_openapi_operations()
 
 #[tokio::test]
 async fn adapter_http_client_fetches_manifest_from_adapter_service() {
-    let router = sdkwork_claw_provider_adapter::router_with_adapters(
+    let router = sdkwork_claw_provider_adapter_host::router_with_adapters(
         vec![Arc::new(EchoProviderAdapter)],
         "test-token",
     );
@@ -509,7 +519,7 @@ async fn adapter_http_client_fetches_manifest_from_adapter_service() {
 
 #[tokio::test]
 async fn adapter_http_client_rejects_manifest_fetch_with_wrong_token() {
-    let router = sdkwork_claw_provider_adapter::router_with_adapters(
+    let router = sdkwork_claw_provider_adapter_host::router_with_adapters(
         vec![Arc::new(EchoProviderAdapter)],
         "test-token",
     );
@@ -536,7 +546,7 @@ async fn adapter_http_client_rejects_manifest_fetch_with_wrong_token() {
 
 #[tokio::test]
 async fn adapter_service_requires_gateway_auth_for_provider_invocation() {
-    let router = sdkwork_claw_provider_adapter::router_with_adapters(
+    let router = sdkwork_claw_provider_adapter_host::router_with_adapters(
         vec![Arc::new(EchoProviderAdapter)],
         "test-token",
     );
@@ -558,7 +568,7 @@ async fn adapter_service_requires_gateway_auth_for_provider_invocation() {
 
 #[tokio::test]
 async fn adapter_service_dispatches_provider_path_to_registered_adapter() {
-    let router = sdkwork_claw_provider_adapter::router_with_adapters(
+    let router = sdkwork_claw_provider_adapter_host::router_with_adapters(
         vec![Arc::new(EchoProviderAdapter)],
         "test-token",
     );
@@ -584,7 +594,7 @@ async fn adapter_service_dispatches_provider_path_to_registered_adapter() {
 
 #[tokio::test]
 async fn adapter_service_rejects_provider_path_that_does_not_match_invocation_standard_path() {
-    let router = sdkwork_claw_provider_adapter::router_with_adapters(
+    let router = sdkwork_claw_provider_adapter_host::router_with_adapters(
         vec![Arc::new(EchoProviderAdapter)],
         "test-token",
     );
@@ -609,7 +619,7 @@ async fn adapter_service_rejects_provider_path_that_does_not_match_invocation_st
 
 #[tokio::test]
 async fn adapter_service_rejects_supplier_code_that_does_not_match_invocation_provider_context() {
-    let router = sdkwork_claw_provider_adapter::router_with_adapters(
+    let router = sdkwork_claw_provider_adapter_host::router_with_adapters(
         vec![Arc::new(EchoProviderAdapter)],
         "test-token",
     );
@@ -639,7 +649,7 @@ async fn adapter_service_rejects_supplier_code_that_does_not_match_invocation_pr
 
 #[tokio::test]
 async fn adapter_service_rejects_method_that_does_not_match_invocation_metadata() {
-    let router = sdkwork_claw_provider_adapter::router_with_adapters(
+    let router = sdkwork_claw_provider_adapter_host::router_with_adapters(
         vec![Arc::new(EchoProviderAdapter)],
         "test-token",
     );
@@ -674,11 +684,11 @@ fn adapter_service_gateway_token_can_be_read_from_env_file() {
     let token_path = unique_secret_path("provider-adapter-service-token");
     std::fs::write(&token_path, " adapter-service-token \n").unwrap();
     std::env::set_var(
-        sdkwork_claw_provider_adapter::ENV_PROVIDER_ADAPTER_GATEWAY_TOKEN_FILE,
+        sdkwork_claw_provider_adapter_host::ENV_PROVIDER_ADAPTER_GATEWAY_TOKEN_FILE,
         token_path.display().to_string(),
     );
 
-    let token = sdkwork_claw_provider_adapter::gateway_token_from_env().unwrap();
+    let token = sdkwork_claw_provider_adapter_host::gateway_token_from_env().unwrap();
 
     assert_eq!("adapter-service-token", token);
 
@@ -693,15 +703,15 @@ fn adapter_service_gateway_token_env_value_precedes_token_file() {
     let token_path = unique_secret_path("provider-adapter-service-token-shadowed");
     std::fs::write(&token_path, "file-token\n").unwrap();
     std::env::set_var(
-        sdkwork_claw_provider_adapter::ENV_PROVIDER_ADAPTER_GATEWAY_TOKEN,
+        sdkwork_claw_provider_adapter_host::ENV_PROVIDER_ADAPTER_GATEWAY_TOKEN,
         "env-token",
     );
     std::env::set_var(
-        sdkwork_claw_provider_adapter::ENV_PROVIDER_ADAPTER_GATEWAY_TOKEN_FILE,
+        sdkwork_claw_provider_adapter_host::ENV_PROVIDER_ADAPTER_GATEWAY_TOKEN_FILE,
         token_path.display().to_string(),
     );
 
-    let token = sdkwork_claw_provider_adapter::gateway_token_from_env().unwrap();
+    let token = sdkwork_claw_provider_adapter_host::gateway_token_from_env().unwrap();
 
     assert_eq!("env-token", token);
 
@@ -714,14 +724,14 @@ fn adapter_service_bind_addr_uses_default_or_env_override() {
     let _env_lock = env_lock().lock().unwrap();
     clear_bind_env();
 
-    let default_bind = sdkwork_claw_provider_adapter::bind_addr_from_env().unwrap();
+    let default_bind = sdkwork_claw_provider_adapter_host::bind_addr_from_env().unwrap();
     assert_eq!("0.0.0.0:39110", default_bind);
 
     std::env::set_var(
-        sdkwork_claw_provider_adapter::ENV_PROVIDER_ADAPTER_BIND,
+        sdkwork_claw_provider_adapter_host::ENV_PROVIDER_ADAPTER_BIND,
         "127.0.0.1:49110",
     );
-    let override_bind = sdkwork_claw_provider_adapter::bind_addr_from_env().unwrap();
+    let override_bind = sdkwork_claw_provider_adapter_host::bind_addr_from_env().unwrap();
     assert_eq!("127.0.0.1:49110", override_bind);
 
     clear_bind_env();
@@ -732,11 +742,11 @@ fn adapter_service_bind_addr_rejects_invalid_env_override() {
     let _env_lock = env_lock().lock().unwrap();
     clear_bind_env();
     std::env::set_var(
-        sdkwork_claw_provider_adapter::ENV_PROVIDER_ADAPTER_BIND,
+        sdkwork_claw_provider_adapter_host::ENV_PROVIDER_ADAPTER_BIND,
         "not-a-socket",
     );
 
-    let error = sdkwork_claw_provider_adapter::bind_addr_from_env().unwrap_err();
+    let error = sdkwork_claw_provider_adapter_host::bind_addr_from_env().unwrap_err();
 
     assert!(error.to_string().contains("valid socket address"));
 
@@ -749,7 +759,7 @@ fn adapter_service_bind_addr_uses_runtime_toml_before_default() {
     clear_bind_env();
 
     let bind_addr =
-        sdkwork_claw_provider_adapter::bind_addr_from_env_or_toml(Some("127.0.0.1:39111")).unwrap();
+        sdkwork_claw_provider_adapter_host::bind_addr_from_env_or_toml(Some("127.0.0.1:39111")).unwrap();
 
     assert_eq!("127.0.0.1:39111", bind_addr);
 }
@@ -759,12 +769,12 @@ fn adapter_service_bind_addr_env_precedes_runtime_toml() {
     let _env_lock = env_lock().lock().unwrap();
     clear_bind_env();
     std::env::set_var(
-        sdkwork_claw_provider_adapter::ENV_PROVIDER_ADAPTER_BIND,
+        sdkwork_claw_provider_adapter_host::ENV_PROVIDER_ADAPTER_BIND,
         "127.0.0.1:49111",
     );
 
     let bind_addr =
-        sdkwork_claw_provider_adapter::bind_addr_from_env_or_toml(Some("127.0.0.1:39111")).unwrap();
+        sdkwork_claw_provider_adapter_host::bind_addr_from_env_or_toml(Some("127.0.0.1:39111")).unwrap();
 
     assert_eq!("127.0.0.1:49111", bind_addr);
 
@@ -823,12 +833,12 @@ fn env_lock() -> &'static Mutex<()> {
 }
 
 fn clear_gateway_token_env() {
-    std::env::remove_var(sdkwork_claw_provider_adapter::ENV_PROVIDER_ADAPTER_GATEWAY_TOKEN);
-    std::env::remove_var(sdkwork_claw_provider_adapter::ENV_PROVIDER_ADAPTER_GATEWAY_TOKEN_FILE);
+    std::env::remove_var(sdkwork_claw_provider_adapter_host::ENV_PROVIDER_ADAPTER_GATEWAY_TOKEN);
+    std::env::remove_var(sdkwork_claw_provider_adapter_host::ENV_PROVIDER_ADAPTER_GATEWAY_TOKEN_FILE);
 }
 
 fn clear_bind_env() {
-    std::env::remove_var(sdkwork_claw_provider_adapter::ENV_PROVIDER_ADAPTER_BIND);
+    std::env::remove_var(sdkwork_claw_provider_adapter_host::ENV_PROVIDER_ADAPTER_BIND);
 }
 
 fn unique_secret_path(name: &str) -> std::path::PathBuf {

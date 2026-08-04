@@ -326,7 +326,7 @@ export async function completeRuntimeInvocation(
   sdkClient?: ClawRouterAppSdkClient,
 ): Promise<unknown> {
   const client = appClient(sdkClient);
-  return client.runtime.invocations.complete(
+  return client.runtime.invocations.completions.create(
     invocationId,
     sdkRuntimeInvocationCompleteBody(body),
   );

@@ -12,6 +12,7 @@ import {
   Input,
   StatusNotice,
 } from '@sdkwork/ui-pc-react';
+import { formatMoney, moneySymbol } from '@sdkwork/clawroutes-pc-commons/sdkwork-utils';
 import {
   createDefaultSdkworkWalletWithdrawDestinations,
   useSdkworkWalletControllerState,
@@ -62,13 +63,13 @@ function sanitizeAmount(value: string): string {
 }
 
 export function ClawRouterWithdrawDialog({ controller, onOpenChange, open }: ClawRouterWithdrawDialogProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const displayLocale = i18n.resolvedLanguage ?? i18n.language ?? 'en-US';
   const state = useSdkworkWalletControllerState(controller);
   const isAuthenticated = usePortalIamSession();
   const destinations = useMemo(() => createDefaultSdkworkWalletWithdrawDestinations(), []);
   const {
     copy,
-    formatCurrencyCny,
     formatProjectedBalance,
     formatWithdrawDestinationDescription,
     formatWithdrawDestinationLabel,
@@ -197,7 +198,7 @@ export function ClawRouterWithdrawDialog({ controller, onOpenChange, open }: Cla
                 </div>
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-base font-semibold text-[var(--sdk-color-text-muted)]">
-                    ¥
+                    {moneySymbol('CNY')}
                   </span>
                   <Input
                     aria-invalid={amountExceedsAvailable}
@@ -347,7 +348,7 @@ export function ClawRouterWithdrawDialog({ controller, onOpenChange, open }: Cla
                   {copy.withdrawDialog.availableCashEyebrow}
                 </div>
                 <div className="mt-2 text-2xl font-semibold tabular-nums text-[var(--sdk-color-text-primary)]">
-                  {formatCurrencyCny(cashAvailable)}
+                  {formatMoney(cashAvailable, { currency: 'CNY', locale: displayLocale, mode: 'symbol' }) ?? '--'}
                 </div>
                 <div
                   className={`mt-1 text-xs ${
@@ -363,7 +364,7 @@ export function ClawRouterWithdrawDialog({ controller, onOpenChange, open }: Cla
               <div className="space-y-3 rounded-[var(--sdk-radius-panel)] border border-[var(--sdk-color-border-subtle)] bg-[var(--sdk-color-surface-panel)] px-4 py-4">
                 <SummaryRow
                   label={copy.withdrawDialog.amountLabel}
-                  value={formatCurrencyCny(Number.isFinite(amountCny) && amountCny > 0 ? amountCny : 0)}
+                  value={formatMoney(Number.isFinite(amountCny) && amountCny > 0 ? amountCny : 0, { currency: 'CNY', locale: displayLocale, mode: 'symbol' }) ?? '--'}
                 />
                 <SummaryRow
                   label={t('console.wallet.withdraw.fee')}

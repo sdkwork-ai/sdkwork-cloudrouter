@@ -6,6 +6,8 @@ export interface UpstreamAccountVerification {
   credentialId: string;
   /** Endpoint id field on upstream account verification. */
   endpointId: string;
+  /** Id field on upstream account verification. */
+  id: string;
   /** Latency ms field on upstream account verification. */
   latencyMs: string;
   /** Message field on upstream account verification. */

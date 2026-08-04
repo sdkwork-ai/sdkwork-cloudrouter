@@ -1,11 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   AlertCircle,
+  Bird,
   Check,
   CheckSquare,
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
+  Copy,
+  Download,
   Edit3,
   Image as ImageIcon,
   Loader2,
@@ -14,8 +17,10 @@ import {
   Mic,
   Music,
   Plus,
+  Repeat,
   Search,
   Trash2,
+  Unlock,
   Video,
   X,
   Zap,
@@ -24,11 +29,31 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { ConfirmDialog } from '@sdkwork/clawroutes-pc-commons/components/ConfirmDialog';
 import { CopyButton } from '@sdkwork/clawroutes-pc-commons/components/CopyButton';
+import { copyTextToClipboard } from '@sdkwork/clawroutes-pc-commons/clipboard';
+import {
+  GroupPicker,
+  type GroupPickerOption,
+} from '@sdkwork/clawroutes-pc-commons/components/GroupPicker';
 import { CreateKeyDrawer, type ApiKeyFormValues } from './CreateKeyDrawer';
-import { createApiKeyInputsFromForm } from './apiKeyForm';
+import { chainInputFromForm, createApiKeyInputsFromForm } from './apiKeyForm';
 import { ApiKeyService, type AccountGroup, type ApiKey } from './apiKeyService';
-import { formatAccountGroupOptionLabel, resolveAccountGroupCode, resolveAccountGroupName } from './accountGroups';
+import { toGroupPickerOptions } from './accountGroups';
+import {
+  displayApiKeyGroupName,
+  formatApiKeyCreated,
+  formatApiKeyExpiration,
+  formatApiKeyIpLimit,
+  formatApiKeyNumber,
+  formatApiKeyQuota,
+} from './display';
 import { ApiKeyUsageDetailsDrawer } from './usage-details/ApiKeyUsageDetailsDrawer';
+import {
+  buildQuickImportResult,
+  QUICK_IMPORT_TARGETS,
+  type QuickImportResult,
+  type QuickImportTargetId,
+} from './quick-import/quickImport';
+import { QuickImportResultDialog } from './quick-import/QuickImportResultDialog';
 
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
 
@@ -51,13 +76,12 @@ function getApiKeyProductErrorMessage(error: unknown, fallback: string, t: Trans
 }
 
 export function ApiKeysView() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [keysData, setKeysData] = useState<ApiKey[]>([]);
   const [totalKeys, setTotalKeys] = useState(0);
   const [groups, setGroups] = useState<AccountGroup[]>([]);
   const [groupsLoaded, setGroupsLoaded] = useState(false);
   const [groupsLoading, setGroupsLoading] = useState(false);
-  const [groupSelectorKeyId, setGroupSelectorKeyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,9 +94,99 @@ export function ApiKeysView() {
   const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
   const [deletingKey, setDeletingKey] = useState<ApiKey | null>(null);
   const [mutatingKeyId, setMutatingKeyId] = useState<string | null>(null);
+  const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
+  const [copyFailedKeyId, setCopyFailedKeyId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [quickImportMenu, setQuickImportMenu] = useState<QuickImportMenuAnchor | null>(null);
+  const [quickImportResult, setQuickImportResult] = useState<QuickImportResult | null>(null);
+  const quickImportCloseTimerRef = useRef<number | null>(null);
 
   const itemsPerPage = 10;
+
+  // The row cell copies the raw (plaintext) key only. Keys without stored raw
+  // key material (legacy rows) render masked and are not copyable.
+  const copyKeyToClipboard = async (key: ApiKey) => {
+    if (!key.rawKey) {
+      return;
+    }
+    const result = await copyTextToClipboard(key.rawKey);
+    if (result.ok) {
+      setCopyFailedKeyId(null);
+      setCopiedKeyId(key.id);
+      window.setTimeout(() => {
+        setCopiedKeyId((current) => (current === key.id ? null : current));
+      }, 1500);
+      return;
+    }
+    setCopiedKeyId(null);
+    setCopyFailedKeyId(key.id);
+    window.setTimeout(() => {
+      setCopyFailedKeyId((current) => (current === key.id ? null : current));
+    }, 1500);
+  };
+
+  const openQuickImportMenu = (key: ApiKey, element: HTMLElement) => {
+    if (!key.rawKey) {
+      return;
+    }
+    if (quickImportCloseTimerRef.current !== null) {
+      window.clearTimeout(quickImportCloseTimerRef.current);
+      quickImportCloseTimerRef.current = null;
+    }
+    const rect = element.getBoundingClientRect();
+    const menuWidth = 200;
+    const menuHeight = 104;
+    setQuickImportMenu({
+      keyId: key.id,
+      top: rect.bottom + menuHeight <= window.innerHeight - 8 ? rect.bottom + 6 : rect.top - menuHeight - 6,
+      left: Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8)),
+    });
+  };
+
+  const scheduleCloseQuickImportMenu = () => {
+    if (quickImportCloseTimerRef.current !== null) {
+      window.clearTimeout(quickImportCloseTimerRef.current);
+    }
+    quickImportCloseTimerRef.current = window.setTimeout(() => {
+      quickImportCloseTimerRef.current = null;
+      setQuickImportMenu(null);
+    }, 160);
+  };
+
+  const cancelCloseQuickImportMenu = () => {
+    if (quickImportCloseTimerRef.current !== null) {
+      window.clearTimeout(quickImportCloseTimerRef.current);
+      quickImportCloseTimerRef.current = null;
+    }
+  };
+
+  const selectQuickImportTarget = (targetId: QuickImportTargetId) => {
+    const anchor = quickImportMenu;
+    setQuickImportMenu(null);
+    if (quickImportCloseTimerRef.current !== null) {
+      window.clearTimeout(quickImportCloseTimerRef.current);
+      quickImportCloseTimerRef.current = null;
+    }
+    if (!anchor) {
+      return;
+    }
+    const key = keysData.find((item) => item.id === anchor.keyId);
+    if (!key) {
+      return;
+    }
+    const result = buildQuickImportResult(key, targetId);
+    if (result) {
+      setQuickImportResult(result);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (quickImportCloseTimerRef.current !== null) {
+        window.clearTimeout(quickImportCloseTimerRef.current);
+      }
+    };
+  }, []);
 
   const loadKeys = async (isActive: () => boolean = () => true) => {
     setLoading(true);
@@ -94,7 +208,7 @@ export function ApiKeysView() {
       }
       setKeysData([]);
       setTotalKeys(0);
-      setError(getApiKeyProductErrorMessage(reason, t('console.apiKeys.errors.loadFallback', 'API Key 加载失败。'), t));
+      setError(getApiKeyProductErrorMessage(reason, t('console.apiKeys.errors.loadFallback', '令牌加载失败。'), t));
     } finally {
       if (isActive()) {
         setLoading(false);
@@ -121,7 +235,7 @@ export function ApiKeysView() {
       setGroups(items);
       setGroupsLoaded(true);
     } catch (reason) {
-      setError(getApiKeyProductErrorMessage(reason, t('console.apiKeys.errors.loadGroupsFallback', 'API Key 分组加载失败。'), t));
+      setError(getApiKeyProductErrorMessage(reason, t('console.apiKeys.errors.loadGroupsFallback', '令牌分组加载失败。'), t));
     } finally {
       setGroupsLoading(false);
     }
@@ -137,11 +251,6 @@ export function ApiKeysView() {
 
   const openEditDrawer = async (key: ApiKey) => {
     setEditingKey(key);
-  };
-
-  const openGroupSelector = async (key: ApiKey) => {
-    setGroupSelectorKeyId(key.id);
-    await ensureGroupsLoaded();
   };
 
   useEffect(() => {
@@ -168,7 +277,7 @@ export function ApiKeysView() {
       setShowCreateDrawer(false);
       setShowSuccessModal(true);
     } catch (reason) {
-      setError(getApiKeyProductErrorMessage(reason, t('console.apiKeys.errors.createFallback', 'API Key 创建失败。'), t));
+      setError(getApiKeyProductErrorMessage(reason, t('console.apiKeys.errors.createFallback', '令牌创建失败。'), t));
     } finally {
       setCreating(false);
     }
@@ -181,55 +290,47 @@ export function ApiKeysView() {
     setMutatingKeyId(editingKey.id);
     setError(null);
     try {
+      const chain = chainInputFromForm(data);
       const updated = await ApiKeyService.updateKey(editingKey.id, {
         name: data.name,
-        accountGroup: data.accountGroup,
+        accountGroups: data.accountGroups,
         quota: data.quota,
         isUnlimitedQuota: data.isUnlimitedQuota,
         modalities: data.modalities,
         ipLimit: data.ipLimit,
         expires: data.expires,
+        chain,
       });
       setKeysData((previous) => previous.map((item) => mergeUpdatedApiKey(item, updated)));
       setEditingKey(null);
     } catch (reason) {
-      setError(getApiKeyProductErrorMessage(reason, t('console.apiKeys.errors.updateFallback', 'API Key 更新失败。'), t));
+      setError(getApiKeyProductErrorMessage(reason, t('console.apiKeys.errors.updateFallback', '令牌更新失败。'), t));
     } finally {
       setMutatingKeyId(null);
     }
   };
 
-  const handleGroupChange = async (key: ApiKey, group: string) => {
-    if (group === key.accountGroup) {
+  const boundGroupsFor = (key: ApiKey): string[] => {
+    const bound = key.accountGroups.length > 0 ? key.accountGroups : [key.accountGroup.trim()];
+    return bound.filter((code) => code.length > 0);
+  };
+
+  const handleGroupChange = async (key: ApiKey, groups: string[]) => {
+    const normalized = groups.map((code) => code.trim()).filter((code) => code.length > 0);
+    const current = boundGroupsFor(key);
+    if (
+      normalized.length === current.length &&
+      normalized.every((code, index) => code === current[index])
+    ) {
       return;
     }
     setMutatingKeyId(key.id);
     setError(null);
     try {
-      const updated = await ApiKeyService.updateKey(key.id, { accountGroup: group });
+      const updated = await ApiKeyService.updateKey(key.id, { accountGroups: normalized });
       setKeysData((previous) => previous.map((item) => mergeUpdatedApiKey(item, updated)));
     } catch (reason) {
-      setError(getApiKeyProductErrorMessage(reason, t('console.apiKeys.errors.groupUpdateFallback', 'API Key 分组更新失败。'), t));
-    } finally {
-      setMutatingKeyId(null);
-    }
-  };
-
-  const handleSetDefaultRuntimeKey = async (key: ApiKey) => {
-    if (key.defaultForRuntime) {
-      return;
-    }
-    setMutatingKeyId(key.id);
-    setError(null);
-    try {
-      const updated = await ApiKeyService.updateKey(key.id, { defaultForRuntime: true });
-      setKeysData((previous) => previous.map((item) => (
-        item.id === updated.id
-          ? { ...updated, defaultForRuntime: true }
-          : { ...item, defaultForRuntime: false }
-      )));
-    } catch (reason) {
-      setError(getApiKeyProductErrorMessage(reason, t('console.apiKeys.errors.updateFallback', 'API Key update failed.'), t));
+      setError(getApiKeyProductErrorMessage(reason, t('console.apiKeys.errors.groupUpdateFallback', '令牌分组更新失败。'), t));
     } finally {
       setMutatingKeyId(null);
     }
@@ -246,7 +347,7 @@ export function ApiKeysView() {
       setKeysData((previous) => previous.filter((item) => item.id !== deletingKey.id));
       setDeletingKey(null);
     } catch (reason) {
-      setError(getApiKeyProductErrorMessage(reason, t('console.apiKeys.errors.deleteFallback', 'API Key 删除失败。'), t));
+      setError(getApiKeyProductErrorMessage(reason, t('console.apiKeys.errors.deleteFallback', '令牌删除失败。'), t));
     } finally {
       setMutatingKeyId(null);
     }
@@ -275,6 +376,22 @@ export function ApiKeysView() {
     );
   };
 
+  const groupPickerOptionsFor = (key: ApiKey): GroupPickerOption[] => {
+    const options = toGroupPickerOptions(groups);
+    const bound = boundGroupsFor(key);
+    const missing = bound.filter((code) => !options.some((option) => option.value === code));
+    if (missing.length === 0) {
+      return options;
+    }
+    return [
+      ...missing.map((code) => ({
+        value: code,
+        label: displayApiKeyGroupName(key, groups, t),
+      })),
+      ...options,
+    ];
+  };
+
   return (
     <div className="mx-auto box-border flex h-full w-full flex-col gap-3 overflow-hidden bg-slate-50 animate-in fade-in duration-500 dark:bg-[#121212]">
       <div className="shrink-0 flex flex-col gap-3 bg-white p-3 shadow-sm dark:bg-[#252525] md:flex-row md:items-center md:justify-between rounded-xl border border-slate-200 dark:border-white/5" data-console-api-keys-toolbar>
@@ -287,7 +404,7 @@ export function ApiKeysView() {
               setSearchQuery(event.target.value);
               setCurrentPage(1);
             }}
-            placeholder={t('console.apiKeys.searchPlaceholder', '搜索密钥或分组')}
+            placeholder={t('console.apiKeys.searchPlaceholder', '搜索令牌或分组')}
             className="w-full bg-slate-50 dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 pl-9 pr-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-shadow text-slate-800 dark:text-white placeholder:text-slate-400"
           />
         </div>
@@ -320,7 +437,7 @@ export function ApiKeysView() {
           <table className="w-full text-left text-sm whitespace-nowrap min-w-[1120px]">
             <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1e1e1e] text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-white/5 text-xs font-semibold uppercase tracking-wider">
               <tr>
-                <th className="px-4 py-3">{t('console.apiKeys.nameToken', '名称 / 密钥')}</th>
+                <th className="px-4 py-3">{t('console.apiKeys.nameToken', '名称 / 令牌')}</th>
                 <th className="px-3 py-3">{t('console.apiKeys.group', '分组')}</th>
                 <th className="px-3 py-3">{t('console.apiKeys.quota', '额度')}</th>
                 <th className="px-3 py-3">{t('console.apiKeys.modalities', '模态')}</th>
@@ -336,7 +453,7 @@ export function ApiKeysView() {
                 <tr>
                   <td colSpan={9} className="text-center py-20 text-slate-500">
                     <Loader2 className="w-5 h-5 animate-spin inline-block mr-2" />
-                    {t('console.apiKeys.loading', '正在加载 API Key')}
+                    {t('console.apiKeys.loading', '正在加载令牌')}
                   </td>
                 </tr>
               )}
@@ -346,126 +463,142 @@ export function ApiKeysView() {
                   <tr key={key.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors group">
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-1.5">
-                        <span className="font-bold text-slate-800 dark:text-white">{key.displayName}</span>
+                        <span className="font-bold text-slate-800 dark:text-white">{key.displayName || t('console.apiKeys.unnamed', '令牌 #{{id}}', { id: key.id })}</span>
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-[11px] font-medium bg-slate-100 dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/5 px-2 py-0.5 rounded-md text-slate-600 dark:text-slate-300">
-                            {key.maskedKey}
-                          </span>
+                          <button
+                            type="button"
+                            disabled={!key.rawKey}
+                            onClick={() => {
+                              void copyKeyToClipboard(key);
+                            }}
+                            title={key.rawKey ? t('common.actions.copyKey') : undefined}
+                            aria-label={key.rawKey ? t('common.actions.copyKey') : undefined}
+                            className="group/secret inline-flex max-w-full items-center gap-1.5 rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 font-mono text-[11px] font-medium text-slate-600 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed dark:border-white/5 dark:bg-[#1e1e1e] dark:text-slate-300 dark:hover:border-blue-500/30 dark:hover:bg-blue-500/10 dark:hover:text-blue-300"
+                          >
+                            <span className="max-w-[240px] truncate">{key.rawKey ?? key.maskedKey}</span>
+                            {copiedKeyId === key.id ? (
+                              <Check className="h-3 w-3 shrink-0 text-emerald-500" />
+                            ) : copyFailedKeyId === key.id ? (
+                              <AlertCircle className="h-3 w-3 shrink-0 text-rose-500" />
+                            ) : key.rawKey ? (
+                              <Copy className="h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover/secret:opacity-100" />
+                            ) : null}
+                            <span role="status" aria-live="polite" className="sr-only">
+                              {copiedKeyId === key.id
+                                ? t('common.actions.keyCopied')
+                                : copyFailedKeyId === key.id
+                                  ? t('common.actions.copyFailed', '复制失败')
+                                  : ''}
+                            </span>
+                          </button>
                         </div>
                       </div>
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-1.5">
-                        {groupSelectorKeyId === key.id ? (
-                          <>
-                            <label className="sr-only" htmlFor={`channel-group-${key.id}`}>
-                              {t('console.apiKeys.group', '分组')}
-                            </label>
-                            <select
-                              id={`channel-group-${key.id}`}
-                              autoFocus
-                              value={resolveAccountGroupCode(key.accountGroup, groups)}
-                              disabled={mutatingKeyId === key.id || groupsLoading}
-                              onBlur={() => setGroupSelectorKeyId(null)}
-                              onFocus={() => {
-                                void ensureGroupsLoaded();
-                              }}
-                              onChange={(event) => {
-                                setGroupSelectorKeyId(null);
-                                void handleGroupChange(key, event.target.value);
-                              }}
-                              className="max-w-[150px] bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-60"
-                              title={t('console.apiKeys.changeGroup', '切换分组')}
-                            >
-                              {groups.map((group) => (
-                                <option key={group.code} value={group.code}>
-                                  {formatAccountGroupOptionLabel(group)}
-                                </option>
-                              ))}
-                              {groups.length > 0 && !groups.some((group) => group.code === key.accountGroup) && (
-                                <option value={key.accountGroup}>{displayAccountGroupName(key, groups)}</option>
-                              )}
-                              {groups.length === 0 && <option value={key.accountGroup}>{displayAccountGroupName(key, groups)}</option>}
-                            </select>
-                            {groupsLoading && <Loader2 className="h-3 w-3 animate-spin text-blue-500" />}
-                          </>
-                        ) : (
-                          <button
-                            type="button"
-                            disabled={mutatingKeyId === key.id}
-                            onClick={() => {
-                              void openGroupSelector(key);
-                            }}
-                            className="inline-flex max-w-[170px] items-center gap-1 rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-600 transition-colors hover:bg-blue-100 disabled:opacity-60 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20"
-                            title={t('console.apiKeys.changeGroup', '切换分组')}
-                          >
-                            <span className="truncate">{displayAccountGroupName(key, groups)}</span>
-                            <ChevronDown className="h-3 w-3 shrink-0" />
-                          </button>
-                        )}
-                        {key.rate && (
-                          <span className="bg-slate-100 dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded text-[10px] uppercase font-mono font-bold">
-                            X {key.rate}
-                          </span>
-                        )}
+                        <GroupPicker
+                          selectionMode="multiple"
+                          options={groupPickerOptionsFor(key)}
+                          value={boundGroupsFor(key)}
+                          onChange={(next) => {
+                            void handleGroupChange(key, next);
+                          }}
+                          disabled={mutatingKeyId === key.id}
+                          triggerLabel={displayApiKeyGroupName(key, groups, t)}
+                          triggerClassName="h-7 max-w-[180px] rounded border border-blue-200 bg-blue-50 px-1.5 text-[10px] font-bold uppercase tracking-wider text-blue-600 hover:bg-blue-100 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20"
+                          labels={{
+                            triggerPlaceholder: t('console.apiKeys.group', '分组'),
+                            title: t('console.apiKeys.groupPickerTitle', '选择分组'),
+                            searchPlaceholder: t('console.apiKeys.searchGroups', '搜索分组'),
+                            empty: t('console.apiKeys.emptyGroups', '暂无分组'),
+                            emptySearch: t('console.apiKeys.noMatchingGroups', '无匹配分组'),
+                            emptySelected: t('console.apiKeys.emptySelectedGroups', '未选择分组'),
+                            vendorAll: t('console.apiKeys.vendorAll', '全部厂商'),
+                            modalityAll: t('console.apiKeys.modalityAll', '全部模态'),
+                            available: (count) => t('console.apiKeys.availableGroups', '{{count}} 个可用分组', { count }),
+                            selected: (count) => t('console.apiKeys.selectedGroups', '{{count}} 个已选分组', { count }),
+                            selectedCount: (count) => t('console.apiKeys.selectedCount', '已选 {{count}} 项', { count }),
+                            addAll: t('console.apiKeys.addAllGroups', '全部添加'),
+                            removeAll: t('console.apiKeys.removeAllGroups', '全部移除'),
+                            clear: t('common.actions.clear'),
+                            confirm: t('common.actions.confirm'),
+                            cancel: t('common.actions.cancel'),
+                            rate: t('console.apiKeys.rate', '倍率'),
+                          }}
+                          onOpen={() => {
+                            void ensureGroupsLoaded();
+                          }}
+                        />
                       </div>
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-col gap-1 text-[11px]">
                         <span className="text-amber-600 dark:text-amber-500 font-mono font-bold flex items-center gap-1">
-                          <Zap className="w-3 h-3" /> {key.usedQuota}
+                          <Zap className="w-3 h-3" /> {formatApiKeyNumber(key.usedQuota, i18n.language)}
                         </span>
-                        <span className="text-slate-500 font-mono font-medium">/ {key.quota}</span>
+                        <span className="text-slate-500 font-mono font-medium">/ {formatApiKeyQuota(key.quota, t, i18n.language)}</span>
                       </div>
                     </td>
                     <td className="px-3 py-3">{renderModalities(key.modalities)}</td>
                     <td className="px-3 py-3">
-                      <span className="bg-slate-50 dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-300 px-2 py-1 flex items-center gap-1 w-fit rounded text-[11px] font-mono font-medium">
-                        <Lock className="w-3 h-3" /> {key.ipLimit}
-                      </span>
+                      {key.ipLimit === 'unrestricted' ? (
+                        <span className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-1 flex items-center gap-1 w-fit rounded text-[11px] font-mono font-medium">
+                          <Unlock className="w-3 h-3" /> {formatApiKeyIpLimit(key.ipLimit, t)}
+                        </span>
+                      ) : (
+                        <span className="bg-slate-50 dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-300 px-2 py-1 flex items-center gap-1 w-fit rounded text-[11px] font-mono font-medium">
+                          <Lock className="w-3 h-3" /> {key.ipLimit}
+                        </span>
+                      )}
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-col items-start gap-1.5">
                         <span className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 px-2 flex items-center gap-1 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide w-fit">
                           <CheckSquare className="w-3 h-3" /> {displayApiKeyStatus(key.status, t)}
                         </span>
-                        <button
-                          type="button"
-                          disabled={mutatingKeyId === key.id || key.defaultForRuntime}
-                          onClick={() => {
-                            void handleSetDefaultRuntimeKey(key);
-                          }}
-                          className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide transition-colors disabled:cursor-default disabled:opacity-100 ${
-                            key.defaultForRuntime
-                              ? 'border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-300'
-                              : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400 dark:hover:border-blue-500/20 dark:hover:bg-blue-500/10 dark:hover:text-blue-300'
-                          }`}
-                          title={key.defaultForRuntime
-                            ? t('console.apiKeys.runtimeDefault', 'Runtime default')
-                            : t('console.apiKeys.setRuntimeDefault', 'Set runtime default')}
-                          aria-label={key.defaultForRuntime
-                            ? t('console.apiKeys.runtimeDefault', 'Runtime default')
-                            : t('console.apiKeys.setRuntimeDefault', 'Set runtime default')}
-                        >
-                          {mutatingKeyId === key.id && !key.defaultForRuntime
-                            ? <Loader2 className="h-3 w-3 animate-spin" />
-                            : <Check className="h-3 w-3" />}
-                          <span>
-                            {key.defaultForRuntime
-                              ? t('console.apiKeys.runtimeDefault', 'Runtime default')
-                              : t('console.apiKeys.setRuntimeDefault', 'Set default')}
-                          </span>
-                        </button>
                       </div>
                     </td>
                     <td className="px-3 py-3">
-                      <span className="text-[11px] font-mono text-slate-700 dark:text-slate-300 font-medium">{key.created}</span>
+                      <span className="text-[11px] font-mono text-slate-700 dark:text-slate-300 font-medium" title={key.created}>
+                        {formatApiKeyCreated(key.created, i18n.language)}
+                      </span>
                     </td>
                     <td className="px-3 py-3">
-                      <span className="text-[11px] font-mono text-slate-500">{key.expires}</span>
+                      <span
+                        className={`text-[11px] font-mono ${key.expires === 'never' ? 'text-emerald-500' : 'text-slate-500'}`}
+                        title={key.expires === 'never' ? undefined : key.expires}
+                      >
+                        {formatApiKeyExpiration(key.expires, t, i18n.language)}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <div
+                          className="relative"
+                          onMouseEnter={(event) => openQuickImportMenu(key, event.currentTarget)}
+                          onMouseLeave={scheduleCloseQuickImportMenu}
+                        >
+                          <button
+                            type="button"
+                            disabled={!key.rawKey}
+                            onClick={(event) => {
+                              if (quickImportMenu?.keyId === key.id) {
+                                setQuickImportMenu(null);
+                              } else {
+                                openQuickImportMenu(key, event.currentTarget);
+                              }
+                            }}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-emerald-400"
+                            title={key.rawKey
+                              ? t('console.apiKeys.quickImport', '快速导入')
+                              : t('console.apiKeys.quickImport.noPlaintext', '该令牌无明文值，无法快速导入')}
+                            aria-label={key.rawKey
+                              ? t('console.apiKeys.quickImport', '快速导入')
+                              : t('console.apiKeys.quickImport.noPlaintext', '该令牌无明文值，无法快速导入')}
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                         <button
                           onClick={() => setUsageDetailsKey(key)}
                           className="bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/20 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors"
@@ -509,7 +642,7 @@ export function ApiKeysView() {
               {!loading && keysData.length === 0 && (
                 <tr>
                   <td colSpan={9} className="text-center py-20 text-slate-500">
-                    {t('console.apiKeys.empty', '暂无 API Key')}
+                    {t('console.apiKeys.empty', '暂无令牌')}
                   </td>
                 </tr>
               )}
@@ -576,6 +709,36 @@ export function ApiKeysView() {
         apiKey={usageDetailsKey}
         onClose={() => setUsageDetailsKey(null)}
       />
+      {quickImportMenu &&
+        createPortal(
+          <div
+            className="fixed z-[130] w-48 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-xl animate-in fade-in zoom-in-95 duration-150 dark:border-white/10 dark:bg-[#1e1e1e]"
+            style={{ top: quickImportMenu.top, left: quickImportMenu.left }}
+            onMouseEnter={cancelCloseQuickImportMenu}
+            onMouseLeave={scheduleCloseQuickImportMenu}
+          >
+            {QUICK_IMPORT_TARGETS.map((target) => (
+              <button
+                key={target.id}
+                type="button"
+                onClick={() => selectQuickImportTarget(target.id)}
+                className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition-colors hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-blue-500/10 dark:hover:text-blue-300"
+              >
+                {target.id === 'birdcoder'
+                  ? <Bird className="h-4 w-4 shrink-0 text-lobster-500" />
+                  : <Repeat className="h-4 w-4 shrink-0 text-blue-500" />}
+                <span className="truncate">{t(target.labelKey, target.fallbackLabel)}</span>
+              </button>
+            ))}
+          </div>,
+          document.body,
+        )}
+      {quickImportResult && (
+        <QuickImportResultDialog
+          result={quickImportResult}
+          onClose={() => setQuickImportResult(null)}
+        />
+      )}
       <CreateKeyDrawer
         isOpen={!!editingKey}
         mode="edit"
@@ -592,7 +755,7 @@ export function ApiKeysView() {
 
       {deletingKey && (
         <ConfirmDialog
-          title={t('console.apiKeys.deleteTitle', '删除 API Key？')}
+          title={t('console.apiKeys.deleteTitle', '删除令牌？')}
           description={t('console.apiKeys.deleteDescription', 'This API key will be revoked and removed from the list. Existing clients using it will stop working.')}
           confirmLabel={t('common.actions.delete', '删除')}
           cancelLabel={t('common.actions.cancel', '取消')}
@@ -618,14 +781,14 @@ export function ApiKeysView() {
             >
               <div className="px-6 py-4 border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02]">
                 <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                  <Check className="w-5 h-5 text-emerald-500" /> {t('console.apiKeys.createdTitle', 'API Key 已创建')}
+                  <Check className="w-5 h-5 text-emerald-500" /> {t('console.apiKeys.createdTitle', '令牌已创建')}
                 </h2>
               </div>
 
               <div className="p-6 space-y-4">
                 {createdKeys.map((item) => (
                   <div key={`${item.key.id}-${item.rawKey}`} className="space-y-2">
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">{item.key.displayName}</label>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">{item.key.displayName || t('console.apiKeys.unnamed', '令牌 #{{id}}', { id: item.key.id })}</label>
                     <div className="flex items-center gap-2 relative">
                       <input
                         type="text"
@@ -686,6 +849,8 @@ function displayApiKeyStatus(status: ApiKey['status'], t: TranslationFunction): 
     : t('console.apiKeys.status.disabled', '已停用');
 }
 
-function displayAccountGroupName(key: ApiKey, groups: AccountGroup[]): string {
-  return key.accountGroupName?.trim() || resolveAccountGroupName(key.accountGroup, groups);
+interface QuickImportMenuAnchor {
+  keyId: string;
+  top: number;
+  left: number;
 }

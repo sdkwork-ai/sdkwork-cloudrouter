@@ -27,11 +27,23 @@ import {
   SidePanel,
   StatusBadge,
   TableState,
+  UpstreamPageShell,
 } from './components';
 
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
 
-export function AccountTab() {
+export function UpstreamAccountAdmin() {
+  return (
+    <UpstreamPageShell
+      titleKey="admin.upstream.accounts.title"
+      subtitleKey="admin.upstream.accounts.subtitle"
+    >
+      <AccountAdminPanel />
+    </UpstreamPageShell>
+  );
+}
+
+export function AccountAdminPanel() {
   const { t } = useTranslation();
   const [items, setItems] = useState<UpstreamAccount[]>([]);
   const [suppliers, setSuppliers] = useState<UpstreamSupplier[]>([]);

@@ -21,6 +21,8 @@ export interface UpstreamAccountGroupRouteExplanation {
   catalogKey: string | null;
   /** Group code field on upstream account group route explanation. */
   groupCode: string;
+  /** Id field on upstream account group route explanation. */
+  id: string;
   /** Model field on upstream account group route explanation. */
   model: string | null;
   /** Policy id field on upstream account group route explanation. */

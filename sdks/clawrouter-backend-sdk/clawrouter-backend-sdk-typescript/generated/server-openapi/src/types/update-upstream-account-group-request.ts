@@ -12,6 +12,8 @@ export interface UpdateUpstreamAccountGroupRequest {
   groupName?: string;
   /** Group type field on update upstream account group request. */
   groupType?: string | null;
+  /** Modalities field on update upstream account group request. */
+  modalities?: ('text' | 'audio' | 'image' | 'video' | 'music')[] | null;
   /** Priority field on update upstream account group request. */
   priority?: number | null;
   /** Routing strategy field on update upstream account group request. */
@@ -20,4 +22,6 @@ export interface UpdateUpstreamAccountGroupRequest {
   saleMultiplier?: string | null;
   /** Status field on update upstream account group request. */
   status?: number | null;
+  /** Vendor code field on update upstream account group request. */
+  vendorCode?: string | null;
 }

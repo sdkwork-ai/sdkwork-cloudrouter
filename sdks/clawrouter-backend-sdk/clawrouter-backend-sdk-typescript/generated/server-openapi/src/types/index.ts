@@ -17,8 +17,16 @@ export type { AdminDashboardTrafficItem } from './admin-dashboard-traffic-item';
 export type { AdminFirewallRuleCreateRequest } from './admin-firewall-rule-create-request';
 export type { AdminIpLimitCreateRequest } from './admin-ip-limit-create-request';
 export type { AdminModelLimitCreateRequest } from './admin-model-limit-create-request';
+export type { AdminRechargePackage } from './admin-recharge-package';
+export type { AdminRechargePackageListResponse } from './admin-recharge-package-list-response';
+export type { AdminRechargeRecord } from './admin-recharge-record';
+export type { AdminRechargeRecordListResponse } from './admin-recharge-record-list-response';
+export type { AdminRechargeRecordResponse } from './admin-recharge-record-response';
+export type { AdminRechargeSettings } from './admin-recharge-settings';
 export type { AdminRecordLogItem } from './admin-record-log-item';
 export type { AdminRecordPage } from './admin-record-page';
+export type { AdminReferralStat } from './admin-referral-stat';
+export type { AdminReferralStatListResponse } from './admin-referral-stat-list-response';
 export type { AdminRuntimeRegionSettingsResponse } from './admin-runtime-region-settings-response';
 export type { AdminRuntimeRegionSettingsUpdateRequest } from './admin-runtime-region-settings-update-request';
 export type { AdminServiceNodeCreateRequest } from './admin-service-node-create-request';
@@ -28,13 +36,27 @@ export type { AdminServiceNodeStatusUpdateRequest } from './admin-service-node-s
 export type { AdminServiceNodeUpdateRequest } from './admin-service-node-update-request';
 export type { AdminSiteSettingsResponse } from './admin-site-settings-response';
 export type { AdminSiteSettingsUpdateRequest } from './admin-site-settings-update-request';
+export type { AdminStorageBucket } from './admin-storage-bucket';
 export type { AdminStorageBucketCreateRequest } from './admin-storage-bucket-create-request';
+export type { AdminStorageBucketListResponse } from './admin-storage-bucket-list-response';
+export type { AdminStorageDefaultBucket } from './admin-storage-default-bucket';
+export type { AdminStorageDefaultBucketListResponse } from './admin-storage-default-bucket-list-response';
 export type { AdminStorageDefaultBucketUpdateRequest } from './admin-storage-default-bucket-update-request';
 export type { AdminStorageGarbageCollectionCreateRequest } from './admin-storage-garbage-collection-create-request';
+export type { AdminStorageGarbageCollectionJob } from './admin-storage-garbage-collection-job';
+export type { AdminStorageGarbageCollectionJobListResponse } from './admin-storage-garbage-collection-job-list-response';
+export type { AdminStorageProvider } from './admin-storage-provider';
 export type { AdminStorageProviderCreateRequest } from './admin-storage-provider-create-request';
+export type { AdminStorageProviderListResponse } from './admin-storage-provider-list-response';
 export type { AdminStorageQuotaCreateRequest } from './admin-storage-quota-create-request';
+export type { AdminStorageQuotaPolicy } from './admin-storage-quota-policy';
+export type { AdminStorageQuotaPolicyListResponse } from './admin-storage-quota-policy-list-response';
 export type { AdminStorageReconciliationCreateRequest } from './admin-storage-reconciliation-create-request';
+export type { AdminStorageReconciliationRun } from './admin-storage-reconciliation-run';
+export type { AdminStorageReconciliationRunListResponse } from './admin-storage-reconciliation-run-list-response';
 export type { AdminStorageStatusUpdateRequest } from './admin-storage-status-update-request';
+export type { AdminStorageUsage } from './admin-storage-usage';
+export type { AdminStorageUsageListResponse } from './admin-storage-usage-list-response';
 export type { AdminTokenLimitCreateRequest } from './admin-token-limit-create-request';
 
 export type { CacheNamespaceKeyPage } from './cache-namespace-key-page';
@@ -42,6 +64,11 @@ export type { CacheNamespaceKeyPage } from './cache-namespace-key-page';
 export type { CacheOperationOutcome } from './cache-operation-outcome';
 export type { CacheOverview } from './cache-overview';
 
+export type { ChainPolicyInput } from './chain-policy-input';
+export type { ChainPolicyResult } from './chain-policy-result';
+export type { ChainsPolicyApiKeyRetrieveResult } from './chains-policy-api-key-retrieve-result';
+export type { ChainsPolicyRetrieveResult } from './chains-policy-retrieve-result';
+export type { ChainsPolicyUpdateResult } from './chains-policy-update-result';
 export type { CreateUpstreamAccountCredentialRequest } from './create-upstream-account-credential-request';
 export type { CreateUpstreamAccountGroupRequest } from './create-upstream-account-group-request';
 export type { CreateUpstreamAccountRequest } from './create-upstream-account-request';
@@ -59,7 +86,6 @@ export type { IpLimitRulePage } from './ip-limit-rule-page';
 export type { JsonNull } from './json-null';
 export type { JsonObject } from './json-object';
 export type { JsonValue } from './json-value';
-
 export type { MediaAccess } from './media-access';
 export type { MediaAiProvenance } from './media-ai-provenance';
 export type { MediaChecksum } from './media-checksum';
@@ -80,6 +106,7 @@ export type { PaymentProviderInventoryListResponse } from './payment-provider-in
 export type { ProblemDetail } from './problem-detail';
 
 export type { RechargePackageMutationRequest } from './recharge-package-mutation-request';
+
 export type { RechargeSettingsUpdateRequest } from './recharge-settings-update-request';
 
 export type { ReplaceUpstreamAccountGroupMembersRequest } from './replace-upstream-account-group-members-request';

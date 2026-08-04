@@ -19,6 +19,7 @@ import {
   getClawRouterCouponRechargeService,
   getClawRouterPointsRechargeService,
 } from '@sdkwork/clawroutes-pc-commons/domain-service-providers';
+import { formatMoney } from '@sdkwork/clawroutes-pc-commons/sdkwork-utils';
 
 import { usePortalIamSession } from '../auth/usePortalIamSession.ts';
 import { ClawRouterTokenBankBalancePanel } from './ClawRouterTokenBankBalancePanel.tsx';
@@ -277,8 +278,9 @@ function matchesRecordTab(transaction: SdkworkWalletTransaction, tab: RecordsTab
 }
 
 function RecentRecords({ transactions }: RecentRecordsProps) {
-  const { t } = useTranslation();
-  const { formatCurrencyCny, formatTokenBankDelta, formatTransactionTimestamp } = useSdkworkWalletIntl();
+  const { t, i18n } = useTranslation();
+  const displayLocale = i18n.resolvedLanguage ?? i18n.language ?? 'en-US';
+  const { formatTokenBankDelta, formatTransactionTimestamp } = useSdkworkWalletIntl();
   const [recordsTab, setRecordsTab] = useState<RecordsTab>('all');
 
   const filtered = useMemo(() => {
@@ -350,7 +352,7 @@ function RecentRecords({ transactions }: RecentRecordsProps) {
                     {formatTokenBankDelta(tx.tokenBankDelta)}
                   </div>
                   <div className="mt-0.5 text-xs text-[var(--sdk-color-text-muted)]">
-                    {formatCurrencyCny(tx.cashAmountCny)}
+                    {formatMoney(tx.cashAmountCny, { currency: 'CNY', locale: displayLocale, mode: 'symbol' }) ?? '--'}
                   </div>
                 </div>
               </li>

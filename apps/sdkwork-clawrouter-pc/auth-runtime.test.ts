@@ -2567,7 +2567,7 @@ test("admin model vendor item is grouped under model management", () => {
   assert.doesNotMatch(i18nSource, /\u6a21\u578b\u5e73\u53f0\u7ba1\u7406/);
 });
 
-test("upstream administration has one canonical navigation entry", () => {
+test("upstream administration exposes independent supplier, account, and group navigation entries", () => {
   const adminRegistrySource = readAdminRegistrySource();
   const i18nSource = readI18nResourceSource();
 
@@ -2577,17 +2577,25 @@ test("upstream administration has one canonical navigation entry", () => {
   );
   assert.match(
     adminRegistrySource,
-    /groupBlock\('admin\.menu\.home\.upstreamManagement',\s*\[\s*itemBlock\(\{\s*path:\s*'\/admin\/upstream',\s*labelKey:\s*'admin\.menu\.upstream'/s,
+    /groupBlock\('admin\.menu\.home\.upstreamManagement',\s*\[\s*itemBlock\(\{\s*path:\s*'\/admin\/upstream\/suppliers',\s*labelKey:\s*'admin\.menu\.upstream\.suppliers'/s,
   );
+  assert.match(adminRegistrySource, /itemBlock\(\{\s*path:\s*'\/admin\/upstream\/accounts',\s*labelKey:\s*'admin\.menu\.upstream\.accounts'/);
+  assert.match(adminRegistrySource, /itemBlock\(\{\s*path:\s*'\/admin\/upstream\/account-groups',\s*labelKey:\s*'admin\.menu\.upstream\.accountGroups'/);
 
   assert.doesNotMatch(adminRegistrySource, /groupBlock\('admin\.menu\.home\.userManagement'/);
   assert.doesNotMatch(adminRegistrySource, /groupBlock\('admin\.menu\.home\.agentSkills'/);
   assert.match(i18nSource, /"admin\.menu\.home\.upstreamManagement":\s*"Upstream Management"/);
   assert.match(i18nSource, /"admin\.menu\.home\.upstreamManagement":\s*"\u4e0a\u6e38\u7ba1\u7406"/);
+  assert.match(i18nSource, /"admin\.menu\.upstream\.suppliers":\s*"Upstream Suppliers"/);
+  assert.match(i18nSource, /"admin\.menu\.upstream\.suppliers":\s*"\u4e0a\u6e38\u4f9b\u5e94\u5546"/);
+  assert.match(i18nSource, /"admin\.menu\.upstream\.accounts":\s*"Upstream Accounts"/);
+  assert.match(i18nSource, /"admin\.menu\.upstream\.accounts":\s*"\u4e0a\u6e38\u8d26\u53f7"/);
+  assert.match(i18nSource, /"admin\.menu\.upstream\.accountGroups":\s*"Account Groups"/);
+  assert.match(i18nSource, /"admin\.menu\.upstream\.accountGroups":\s*"\u8d26\u53f7\u5206\u7ec4"/);
 });
 
 test("upstream credentials never expose plaintext after submission", () => {
-  const accountSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-upstream/src/accountTab.tsx");
+  const accountSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-upstream/src/accountsPage.tsx");
   const serviceSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts");
 
   assert.doesNotMatch(accountSource, /rawSecret|credential\.secret|oneTimeSecret/);

@@ -14,6 +14,7 @@ use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
 use sdkwork_claw_http::OutboundDnsResolver;
+use sdkwork_claw_http::ensure_rustls_crypto_provider;
 use sdkwork_claw_security::{validate_outbound_url, OutboundTargetPolicy};
 use sdkwork_clawrouter_router_service::application::{
     Invocation, InvocationAccount, InvocationBody, InvocationDispatchResponse,
@@ -395,6 +396,7 @@ fn build_invocation_http_client(
     policy: OutboundTargetPolicy,
     pool_config: ProviderRelayHttpPoolConfig,
 ) -> InvocationHttpClient {
+    ensure_rustls_crypto_provider();
     let mut http_connector = HttpConnector::new_with_resolver(OutboundDnsResolver::new(policy));
     http_connector.set_connect_timeout(Some(pool_config.connect_timeout));
     http_connector.enforce_http(false);

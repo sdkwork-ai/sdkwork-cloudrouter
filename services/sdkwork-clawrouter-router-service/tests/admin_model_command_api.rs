@@ -650,6 +650,8 @@ impl AdminModelStore for TestAdminModelStore {
                 supports_streaming: command.supports_streaming,
                 supports_tools: command.supports_tools,
                 supports_json_schema: command.supports_json_schema,
+                usage_scopes: command.usage_scopes,
+                coding_visible: command.coding_visible,
                 release_stage: Some(command.release_stage),
                 shelf_state: Some(command.shelf_state),
                 routing_state: Some(command.routing_state),

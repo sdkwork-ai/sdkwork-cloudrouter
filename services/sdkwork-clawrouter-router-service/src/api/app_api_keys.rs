@@ -9,6 +9,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{get, patch};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
+use sdkwork_web_chain::ChainPolicy;
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
@@ -16,16 +17,17 @@ use crate::api::response::{
     normalize_list_search_query, offset_page_info, parse_offset_list_query, problem_from_wire_code,
     success_envelope,
 };
-use crate::application::{ApiKeySecretGenerator, ApiKeySecretHasher};
+use crate::application::{validate_chain_policy, ApiKeySecretGenerator, ApiKeySecretHasher};
 use crate::domain::{
     DecimalValue, DomainError, GatewayAccessPolicy, GatewayApiKey, QuotaPolicy,
     UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot,
 };
 use crate::ports::{
-    CreateGatewayApiKeyCommand, DeleteGatewayApiKeyCommand,
-    EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore,
-    GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery,
-    PricingCatalog, UpdateGatewayApiKeyCommand,
+    AccountGroupBindingInput, AdminChainPolicyStore, AdminChainPolicySubject,
+    CreateGatewayApiKeyCommand, DeleteGatewayApiKeyCommand, EnsureDefaultUpstreamAccountGroupCommand,
+    GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore,
+    GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery, PricingCatalog,
+    UpdateGatewayApiKeyCommand, UpsertChainPolicyCommand, ADMIN_CHAIN_POLICY_SCOPE_API_KEY,
 };
 
 const DEFAULT_ACCOUNT_GROUP: &str = "default";
@@ -60,6 +62,9 @@ struct AppApiKeyState {
     command_store: Arc<dyn GatewayApiKeyCommandStore + Send + Sync>,
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
     secret_generator: Arc<dyn ApiKeySecretGenerator + Send + Sync>,
+    /// Optional call-chain policy store enabling per-API-key chain config
+    /// (concurrency limits, IP lists) from the console surface.
+    chain_policy_store: Option<Arc<dyn AdminChainPolicyStore + Send + Sync>>,
 }
 
 impl Clone for AppApiKeyState {
@@ -69,6 +74,7 @@ impl Clone for AppApiKeyState {
             command_store: Arc::clone(&self.command_store),
             api_key_hasher: Arc::clone(&self.api_key_hasher),
             secret_generator: Arc::clone(&self.secret_generator),
+            chain_policy_store: self.chain_policy_store.clone(),
         }
     }
 }
@@ -106,8 +112,10 @@ struct AppApiKeyItemResponse {
     id: String,
     name: String,
     masked_key: String,
+    raw_key: Option<String>,
     account_group: String,
     account_group_name: String,
+    account_groups: Vec<String>,
     rate: Option<String>,
     quota: String,
     used_quota: String,
@@ -134,6 +142,13 @@ struct AppApiKeyCreateRequest {
     name: Option<String>,
     account_group: Option<String>,
     account_group_id: Option<i64>,
+    /// Per-API-key call-chain policy applied at creation time.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    chain: Option<ChainPolicy>,
+    /// Route binding group codes (binding_role='route'); the first entry is
+    /// also the default group. Replaces `account_group`/`account_group_id`
+    /// when provided.
+    account_groups: Option<Vec<String>>,
     quota: Option<String>,
     is_unlimited_quota: Option<bool>,
     modalities: Option<Vec<String>>,
@@ -148,12 +163,21 @@ struct AppApiKeyUpdateRequest {
     name: Option<String>,
     account_group: Option<String>,
     account_group_id: Option<i64>,
+    /// Route binding group codes; `Some` replaces all route bindings
+    /// (first entry becomes the default group). Replaces
+    /// `account_group`/`account_group_id` when provided.
+    account_groups: Option<Vec<String>>,
     quota: Option<String>,
     is_unlimited_quota: Option<bool>,
     modalities: Option<Vec<String>>,
     ip_limit: Option<String>,
     expires: Option<String>,
     default_for_runtime: Option<bool>,
+    /// Per-API-key call-chain policy (concurrency limits, IP allow/deny
+    /// lists, stage switches). `Some` upserts the key's chain policy row;
+    /// `None` leaves it unchanged.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    chain: Option<ChainPolicy>,
 }
 
 pub fn app_api_key_router<C>(catalog: Arc<C>) -> Router
@@ -170,6 +194,7 @@ pub fn app_api_key_router_with_read_store_and_command_store(
     command_store: Arc<dyn GatewayApiKeyCommandStore + Send + Sync>,
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
     secret_generator: Arc<dyn ApiKeySecretGenerator + Send + Sync>,
+    chain_policy_store: Option<Arc<dyn AdminChainPolicyStore + Send + Sync>>,
 ) -> Router {
     Router::new()
         .route("/app/v3/api/iam/api_keys", get(fetch_keys).post(create_key))
@@ -182,6 +207,7 @@ pub fn app_api_key_router_with_read_store_and_command_store(
             command_store,
             api_key_hasher,
             secret_generator,
+            chain_policy_store,
         })
 }
 
@@ -329,12 +355,15 @@ async fn create_key_inner(
         .await
         .map_err(system_error)?;
     let mut response_snapshot = snapshot.clone();
-    let group = resolve_group(&snapshot, &request, subject, &state).await?;
-    if snapshot.find_upstream_account_group(group.id).is_none() {
-        response_snapshot
-            .upstream_account_groups
-            .push(group.clone());
+    let groups = resolve_groups(&snapshot, &request, subject, &state).await?;
+    for group in &groups {
+        if snapshot.find_upstream_account_group(group.id).is_none() {
+            response_snapshot.upstream_account_groups.push(group.clone());
+        }
     }
+    let default_group = groups
+        .first()
+        .ok_or_else(|| AppApiKeyCreateError::BadRequest("accountGroups must not be empty".to_owned()))?;
     let name = normalize_name(request.name.as_deref())?;
     let quota_limit = normalize_quota_limit(&request)?;
     let requested_modalities = normalize_modalities(request.modalities)?;
@@ -374,10 +403,19 @@ async fn create_key_inner(
         operator_id: subject.operator_id(),
         operator_type: SqlScopedSubject::operator_type(),
         name,
-        group_id: group.id,
+        group_id: default_group.id,
+        account_group_bindings: groups
+            .iter()
+            .enumerate()
+            .map(|(index, group)| AccountGroupBindingInput {
+                group_id: group.id,
+                priority: ((index as i32) + 1) * 100,
+            })
+            .collect(),
         key_prefix: key_prefix(&raw_key),
         key_display_masked: mask_created_key(&raw_key),
         key_hash,
+        raw_key: raw_key.clone(),
         hash_alg: HASH_ALG_HMAC_SHA256.to_owned(),
         secret_version: SECRET_VERSION,
         request_id,
@@ -395,6 +433,28 @@ async fn create_key_inner(
         .create_gateway_api_key(command)
         .await
         .map_err(store_error)?;
+
+    // Per-API-key call-chain policy applied at creation (validated first).
+    if let Some(policy) = request.chain {
+        validate_chain_policy(&policy)
+            .map_err(|message| AppApiKeyCreateError::BadRequest(message))?;
+        if let Some(chain_store) = &state.chain_policy_store {
+            chain_store
+                .upsert_chain_policy(build_app_chain_policy_command(
+                    &state,
+                    &subject,
+                    created.api_key.id,
+                    policy,
+                )?)
+                .await
+                .map_err(|error| {
+                    AppApiKeyCreateError::System(format!(
+                        "chain policy could not be saved: {}",
+                        error.message
+                    ))
+                })?;
+        }
+    }
 
     let response_snapshot = response_snapshot.with_created_api_key(
         created.api_key.clone(),
@@ -427,7 +487,31 @@ async fn update_key_inner(
             subject.user_id,
         )
         .ok_or_else(|| AppApiKeyCreateError::BadRequest("api key is not available".to_owned()))?;
-    let group_id = resolve_update_group(&snapshot, &request, subject)?.map(|group| group.id);
+    let (group_id, account_group_bindings) = match &request.account_groups {
+        Some(codes) => {
+            let groups = resolve_group_codes(&snapshot, codes, subject, &state).await?;
+            let default_id = groups[0].id;
+            let bindings = groups
+                .iter()
+                .enumerate()
+                .map(|(index, group)| AccountGroupBindingInput {
+                    group_id: group.id,
+                    priority: ((index as i32) + 1) * 100,
+                })
+                .collect::<Vec<_>>();
+            (Some(default_id), Some(bindings))
+        }
+        None => match resolve_update_group(&snapshot, &request, subject)? {
+            Some(group) => (
+                Some(group.id),
+                Some(vec![AccountGroupBindingInput {
+                    group_id: group.id,
+                    priority: 100,
+                }]),
+            ),
+            None => (None, None),
+        },
+    };
     let requested_modalities = optional_modalities(request.modalities.clone())?;
     let allowed_capabilities = requested_modalities
         .as_ref()
@@ -448,6 +532,7 @@ async fn update_key_inner(
         api_key_id,
         name: optional_updated_name(request.name.as_deref())?,
         group_id,
+        account_group_bindings,
         requested_at: current_timestamp_string(),
         request_id: generate_server_request_id().map_err(app_api_key_request_id_error)?,
         access_policy_uuid: state
@@ -472,6 +557,28 @@ async fn update_key_inner(
         .map_err(store_error)?
         .ok_or_else(|| AppApiKeyCreateError::BadRequest("api key is not available".to_owned()))?;
 
+    // Per-API-key call-chain policy upsert (key ownership was verified above).
+    if let Some(policy) = request.chain {
+        validate_chain_policy(&policy)
+            .map_err(|message| AppApiKeyCreateError::BadRequest(message))?;
+        if let Some(chain_store) = &state.chain_policy_store {
+            chain_store
+                .upsert_chain_policy(build_app_chain_policy_command(
+                    &state,
+                    &subject,
+                    api_key_id,
+                    policy,
+                )?)
+                .await
+                .map_err(|error| {
+                    AppApiKeyCreateError::System(format!(
+                        "chain policy could not be saved: {}",
+                        error.message
+                    ))
+                })?;
+        }
+    }
+
     let response_snapshot = snapshot.with_updated_api_key(
         merge_updated_api_key_defaults(updated.api_key, existing),
         updated.access_policy,
@@ -490,6 +597,40 @@ async fn update_key_inner(
         })?;
 
     Ok(AppApiKeyUpdateResponse { item })
+}
+
+/// Builds the per-API-key chain policy upsert command from the console
+/// update request. The key's ownership was verified by the caller.
+fn build_app_chain_policy_command(
+    state: &AppApiKeyState,
+    subject: &SqlScopedSubject,
+    api_key_id: i64,
+    policy: ChainPolicy,
+) -> Result<UpsertChainPolicyCommand, AppApiKeyCreateError> {
+    Ok(UpsertChainPolicyCommand {
+        subject: AdminChainPolicySubject {
+            tenant_id: subject.tenant_id,
+            organization_id: subject.organization_id,
+            operator_id: subject.operator_id(),
+            operator_type: SqlScopedSubject::operator_type(),
+        },
+        audit_log_uuid: state
+            .secret_generator
+            .generate_entity_uuid()
+            .map_err(system_error)?,
+        config_snapshot_uuid: state
+            .secret_generator
+            .generate_entity_uuid()
+            .map_err(system_error)?,
+        policy_name: format!("api-key:{api_key_id}"),
+        scope_type: ADMIN_CHAIN_POLICY_SCOPE_API_KEY,
+        scope_id: api_key_id,
+        payload: serde_json::to_value(policy).map_err(|error| {
+            AppApiKeyCreateError::System(format!("chain policy could not be serialized: {error}"))
+        })?,
+        request_id: generate_server_request_id().map_err(app_api_key_request_id_error)?,
+        requested_at: current_timestamp_string(),
+    })
 }
 
 async fn delete_key_inner(
@@ -606,8 +747,10 @@ fn to_item_response_with_used_quota(
         id: api_key.id.to_string(),
         name: api_key.display_name(),
         masked_key,
+        raw_key: api_key.raw_key.clone(),
         account_group: group_code(group.as_ref()),
         account_group_name: group_name(group.as_ref()),
+        account_groups: account_group_codes(&api_key, snapshot),
         rate: group_rate(group.as_ref()),
         quota: quota_limit(quota_policy.as_ref(), metric_snapshot.as_ref()),
         used_quota: used_quota_override.unwrap_or_else(|| used_quota(metric_snapshot.as_ref())),
@@ -646,6 +789,27 @@ fn group_name(group: Option<&UpstreamAccountGroup>) -> String {
 
 fn group_rate(group: Option<&UpstreamAccountGroup>) -> Option<String> {
     group.map(|group| format!("{}x", group.sale_multiplier.to_fixed_string(2)))
+}
+
+/// Route binding group codes (priority order) with the default group appended
+/// when it is not part of the bindings.
+fn account_group_codes(
+    api_key: &GatewayApiKey,
+    snapshot: &GatewayApiKeyManagementSnapshot,
+) -> Vec<String> {
+    let mut codes: Vec<String> = api_key
+        .account_group_bindings
+        .iter()
+        .filter(|binding| binding.binding_role.trim().eq_ignore_ascii_case("route"))
+        .map(|binding| binding.account_group_code.trim().to_owned())
+        .filter(|code| !code.is_empty())
+        .collect::<Vec<_>>();
+    let default_code =
+        group_code(snapshot.find_upstream_account_group(api_key.default_account_group_id).as_ref());
+    if default_code != "unassigned" && !codes.iter().any(|code| code == &default_code) {
+        codes.push(default_code);
+    }
+    codes
 }
 
 fn quota_limit(
@@ -692,6 +856,58 @@ fn unrestricted_modalities() -> Vec<String> {
         .iter()
         .map(|modality| (*modality).to_owned())
         .collect()
+}
+
+async fn resolve_groups(
+    snapshot: &GatewayApiKeyManagementSnapshot,
+    request: &AppApiKeyCreateRequest,
+    subject: SqlScopedSubject,
+    state: &AppApiKeyState,
+) -> Result<Vec<UpstreamAccountGroup>, AppApiKeyCreateError> {
+    if let Some(codes) = &request.account_groups {
+        return resolve_group_codes(snapshot, codes, subject, state).await;
+    }
+    Ok(vec![resolve_group(snapshot, request, subject, state).await?])
+}
+
+async fn resolve_group_codes(
+    snapshot: &GatewayApiKeyManagementSnapshot,
+    codes: &[String],
+    subject: SqlScopedSubject,
+    state: &AppApiKeyState,
+) -> Result<Vec<UpstreamAccountGroup>, AppApiKeyCreateError> {
+    let mut groups: Vec<UpstreamAccountGroup> = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+    for code in codes {
+        let normalized = code.trim();
+        if normalized.is_empty() {
+            continue;
+        }
+        if !seen.insert(normalized.to_owned()) {
+            continue;
+        }
+        if let Some(group) = snapshot.find_upstream_account_group_by_code_for_subject(
+            normalized,
+            subject.tenant_id,
+            subject.organization_id,
+        ) {
+            groups.push(group);
+            continue;
+        }
+        if normalized == DEFAULT_ACCOUNT_GROUP {
+            groups.push(ensure_default_group(snapshot, subject, state).await?);
+            continue;
+        }
+        return Err(AppApiKeyCreateError::BadRequest(format!(
+            "account group {normalized} is not available"
+        )));
+    }
+    if groups.is_empty() {
+        return Err(AppApiKeyCreateError::BadRequest(
+            "accountGroups must not be empty".to_owned(),
+        ));
+    }
+    Ok(groups)
 }
 
 async fn resolve_group(
@@ -799,8 +1015,8 @@ async fn ensure_default_group(
             code: DEFAULT_ACCOUNT_GROUP.to_owned(),
             name: DEFAULT_ACCOUNT_GROUP_NAME.to_owned(),
             pricing_plan_code,
-            rate_multiplier: DecimalValue::ONE,
-            official_price_multiplier: DecimalValue::ONE,
+            cost_multiplier: DecimalValue::ONE,
+            sale_multiplier: DecimalValue::ONE,
             requested_at: current_timestamp_string(),
         })
         .await
@@ -1181,6 +1397,9 @@ fn merge_updated_api_key_defaults(
     }
     if updated.key_hash.is_empty() {
         updated.key_hash = existing.key_hash;
+    }
+    if updated.raw_key.is_none() {
+        updated.raw_key = existing.raw_key.clone();
     }
     if updated.created_at.is_empty() {
         updated.created_at = existing.created_at;

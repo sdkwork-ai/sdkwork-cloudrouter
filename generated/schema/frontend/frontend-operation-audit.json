@@ -829,7 +829,7 @@
     },
     {
       "api_method": "GET",
-      "api_path": "/backend/v3/api/marketing/referral_stats",
+      "api_path": "/backend/v3/api/billing/referrals/stats",
       "api_surface": "backend",
       "file_targets": [],
       "kind": "read",
@@ -1115,7 +1115,7 @@
       "route": "/admin/memberships/rechargePackages",
       "sdk_operations": [
         {
-          "operation_id": "packages.management.list",
+          "operation_id": "packages.list",
           "sdk_family": "clawrouter-backend-sdk"
         }
       ],
@@ -1136,7 +1136,7 @@
       "route": "/admin/memberships/rechargePackages",
       "sdk_operations": [
         {
-          "operation_id": "settings.management.retrieve",
+          "operation_id": "settings.retrieve",
           "sdk_family": "clawrouter-backend-sdk"
         }
       ],
@@ -3070,7 +3070,7 @@
     },
     {
       "api_method": "POST",
-      "api_path": "/app/v3/api/runtime/invocations/{invocationId}/complete",
+      "api_path": "/app/v3/api/runtime/invocations/{invocationId}/completions",
       "api_surface": "app",
       "file_targets": [],
       "kind": "action",
@@ -3436,7 +3436,7 @@
     },
     {
       "api_method": "POST",
-      "api_path": "/app/v3/api/runtime/invocations/{invocationId}/complete",
+      "api_path": "/app/v3/api/runtime/invocations/{invocationId}/completions",
       "api_surface": "app",
       "file_targets": [],
       "kind": "action",
@@ -3489,7 +3489,7 @@
     },
     {
       "api_method": "POST",
-      "api_path": "/app/v3/api/runtime/invocations/{invocationId}/complete",
+      "api_path": "/app/v3/api/runtime/invocations/{invocationId}/completions",
       "api_surface": "app",
       "file_targets": [],
       "kind": "action",

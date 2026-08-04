@@ -10920,6 +10920,7 @@ dependencies = [
  "hmac 0.12.1",
  "hyper-util",
  "prometheus",
+ "rustls",
  "sdkwork-claw-config",
  "sdkwork-claw-contract",
  "sdkwork-claw-health",
@@ -11118,6 +11119,7 @@ dependencies = [
  "sdkwork-clawrouter-standalone-gateway",
  "sdkwork-database-sqlx",
  "sdkwork-routes-clawrouter-backend-api",
+ "sdkwork-web-core",
  "serde_json",
  "sqlx",
  "tokio",
@@ -11152,6 +11154,7 @@ name = "sdkwork-clawrouter-edge-runtime"
 version = "0.3.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "axum 0.8.9",
  "bytes",
  "futures-core",
@@ -11177,10 +11180,13 @@ dependencies = [
  "sdkwork-database-config",
  "sdkwork-database-sqlx",
  "sdkwork-models-catalog-repository-sqlx",
+ "sdkwork-payment-service-host",
  "sdkwork-routes-clawrouter-app-api",
  "sdkwork-routes-clawrouter-backend-api",
  "sdkwork-sdk-generator-client",
+ "sdkwork-web-chain",
  "sdkwork-web-core",
+ "sdkwork-web-store-redis",
  "serde",
  "serde_json",
  "sha2 0.10.9",
@@ -11208,6 +11214,7 @@ dependencies = [
  "hyper",
  "hyper-rustls",
  "hyper-util",
+ "ipnet",
  "prometheus",
  "redis 1.2.4",
  "ring",
@@ -11237,6 +11244,7 @@ dependencies = [
  "sdkwork-payment-service",
  "sdkwork-sdk-generator-client",
  "sdkwork-utils-rust",
+ "sdkwork-web-chain",
  "sdkwork-web-core",
  "sdkwork-web-store-redis",
  "serde",
@@ -12156,6 +12164,7 @@ dependencies = [
  "sdkwork-payment-database-host",
  "sdkwork-payment-providers",
  "sdkwork-payment-service-host",
+ "sdkwork-promotion-database-host",
  "sdkwork-routes-account-app-api",
  "sdkwork-routes-iam-app-api",
  "sdkwork-routes-iam-backend-api",
@@ -12566,7 +12575,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-utils-rust"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "aes-gcm",
  "base64 0.22.1",
@@ -12623,6 +12632,21 @@ name = "sdkwork-web-build"
 version = "0.1.0"
 dependencies = [
  "serde_json",
+]
+
+[[package]]
+name = "sdkwork-web-chain"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "ipnet",
+ "sdkwork-utils-rust",
+ "sdkwork-web-contract",
+ "sdkwork-web-core",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]

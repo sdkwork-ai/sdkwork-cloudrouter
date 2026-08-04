@@ -52,6 +52,20 @@ export class RuntimeInvocationsEventsApi {
   }
 }
 
+export class RuntimeInvocationsCompletionsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Complete runtime invocation */
+  async create(invocationId: string, body: CompleteRuntimeInvocationRequest, requestOptions?: ApiRequestOptions): Promise<RuntimeInvocationItem> {
+    return this.client.request<RuntimeInvocationItem>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/completions`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
+  }
+}
+
 export interface RuntimeInvocationsArtifactsListParams {
   page?: number;
   pageSize?: number;
@@ -93,11 +107,13 @@ export interface RuntimeInvocationsListParams {
 export class RuntimeInvocationsApi {
   private client: HttpClient;
   public readonly artifacts: RuntimeInvocationsArtifactsApi;
+  public readonly completions: RuntimeInvocationsCompletionsApi;
   public readonly events: RuntimeInvocationsEventsApi;
 
   constructor(client: HttpClient) {
     this.client = client;
     this.artifacts = new RuntimeInvocationsArtifactsApi(client);
+    this.completions = new RuntimeInvocationsCompletionsApi(client);
     this.events = new RuntimeInvocationsEventsApi(client);
   }
 
@@ -124,11 +140,6 @@ export class RuntimeInvocationsApi {
 /** Retrieve runtime invocation */
   async retrieve(invocationId: string, requestOptions?: ApiRequestOptions): Promise<RuntimeInvocationItem> {
     return this.client.request<RuntimeInvocationItem>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
-  }
-
-/** Complete runtime invocation */
-  async complete(invocationId: string, body: CompleteRuntimeInvocationRequest, requestOptions?: ApiRequestOptions): Promise<RuntimeInvocationItem> {
-    return this.client.request<RuntimeInvocationItem>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/complete`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 }
 

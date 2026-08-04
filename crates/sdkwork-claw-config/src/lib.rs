@@ -14,7 +14,7 @@ pub mod startup_install;
 pub mod trusted_subject;
 pub mod upstream_credential;
 
-pub use api_key::ApiKeySecurityConfig;
+pub use api_key::{ApiKeySecretStorageMode, ApiKeySecurityConfig};
 pub use app_session::AppSessionConfig;
 pub use database::{
     DatabaseConfig, DatabaseEngine, RuntimeConfigInitializationAction,

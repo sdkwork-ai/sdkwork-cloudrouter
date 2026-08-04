@@ -14,7 +14,9 @@ pub struct ProviderAdapterManifest {
 pub struct ProviderAdapterProviderManifest {
     pub package: String,
     pub provider_family: String,
-    #[serde(default)]
+    /// Public manifest contract uses `providerCodes`; `supplier_codes` is the
+    /// internal domain name for the same concept.
+    #[serde(default, rename = "providerCodes")]
     pub supplier_codes: Vec<String>,
     #[serde(default)]
     pub endpoints: Vec<ProviderAdapterEndpointManifest>,

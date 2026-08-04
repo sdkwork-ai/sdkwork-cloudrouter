@@ -58,7 +58,13 @@ sdks/*.tgz
 sdks/*/*.tgz
 sdks/*/.sdkwork/manual-backups/
 
-external/
+# external/ is a read-only git submodule workspace (see external/README.md);
+# only backup/snapshot/placeholder variants are ignored.
+external/*-backup-*/
+external/*-snapshot-*/
+external/*-broken-clone-*/
+external/*-placeholder-*/
+external/*-fragment*/
 # Local sibling-repo checkouts must never be committed under vendor/.
 vendor/
 apps/*/keys.txt

@@ -1247,9 +1247,9 @@
       "fields": [
         "id",
         "inviter",
-        "total_invited",
-        "total_revenue",
-        "bonus_awarded",
+        "totalInvited",
+        "totalRevenue",
+        "bonusAwarded",
         "link"
       ],
       "file_targets": [],
@@ -1937,6 +1937,7 @@
         "id",
         "code",
         "name",
+        "description",
         "rate"
       ],
       "file_targets": [],
@@ -1959,6 +1960,7 @@
         "name",
         "displayName",
         "maskedKey",
+        "rawKey",
         "accountGroup",
         "accountGroupName",
         "rate",
@@ -2007,6 +2009,7 @@
         "key.name",
         "key.displayName",
         "key.maskedKey",
+        "key.rawKey",
         "key.accountGroup",
         "key.accountGroupName",
         "key.rate",

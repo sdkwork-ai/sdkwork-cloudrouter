@@ -42,7 +42,7 @@ export const upstreamSupplierZhCnMessages = {
   'admin.upstream.supplier.auth.credentialParameter': '请求头或查询参数',
   'admin.upstream.supplier.auth.empty': '尚未配置认证方式',
   'admin.upstream.supplier.auth.save': '保存认证方式',
-  'admin.upstream.supplier.auth.type.apiKey': 'API Key',
+  'admin.upstream.supplier.auth.type.apiKey': '令牌',
   'admin.upstream.supplier.auth.type.bearerToken': 'Bearer Token',
   'admin.upstream.supplier.auth.type.custom': '自定义',
   'admin.upstream.supplier.resources.title': '供应商资源',

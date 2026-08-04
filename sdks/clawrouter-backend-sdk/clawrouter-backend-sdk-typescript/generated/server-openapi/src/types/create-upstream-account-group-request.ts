@@ -14,6 +14,8 @@ export interface CreateUpstreamAccountGroupRequest {
   groupName: string;
   /** Group type field on create upstream account group request. */
   groupType?: string | null;
+  /** Modalities field on create upstream account group request. */
+  modalities?: ('text' | 'audio' | 'image' | 'video' | 'music')[] | null;
   /** Priority field on create upstream account group request. */
   priority?: number | null;
   /** Routing strategy field on create upstream account group request. */
@@ -22,4 +24,6 @@ export interface CreateUpstreamAccountGroupRequest {
   saleMultiplier?: string | null;
   /** Status field on create upstream account group request. */
   status?: number | null;
+  /** Vendor code field on create upstream account group request. */
+  vendorCode?: string | null;
 }

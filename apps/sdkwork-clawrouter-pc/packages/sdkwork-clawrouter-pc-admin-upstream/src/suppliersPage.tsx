@@ -26,9 +26,21 @@ import {
   StatusBadge,
   TableState,
   textAreaClass,
+  UpstreamPageShell,
 } from './components';
 
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
+
+export function UpstreamSupplierAdmin() {
+  return (
+    <UpstreamPageShell
+      titleKey="admin.upstream.suppliers.title"
+      subtitleKey="admin.upstream.suppliers.subtitle"
+    >
+      <SupplierAdminPanel />
+    </UpstreamPageShell>
+  );
+}
 
 const emptyEndpoint = (): UpstreamSupplierEndpointInput => ({
   endpointCode: '',
@@ -62,7 +74,7 @@ const emptyResource = (): UpstreamResourceEntitlementInput => ({
   status: 1,
 });
 
-export function SupplierTab() {
+export function SupplierAdminPanel() {
   const { t } = useTranslation();
   const [items, setItems] = useState<UpstreamSupplier[]>([]);
   const [query, setQuery] = useState('');

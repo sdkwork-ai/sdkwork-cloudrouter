@@ -1,6 +1,9 @@
 import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
-import type { AdminAnalyticsOverview, AdminAuthSettingsResponse, AdminAuthSettingsUpdateRequest, AdminDashboardOverview, AdminFirewallRuleCreateRequest, AdminIpLimitCreateRequest, AdminModelLimitCreateRequest, AdminRecordPage, AdminRuntimeRegionSettingsResponse, AdminRuntimeRegionSettingsUpdateRequest, AdminServiceNodeCreateRequest, AdminServiceNodeItem, AdminServiceNodePage, AdminServiceNodeStatusUpdateRequest, AdminServiceNodeUpdateRequest, AdminSiteSettingsResponse, AdminSiteSettingsUpdateRequest, AdminTokenLimitCreateRequest, CacheNamespaceKeyPage, CacheOperationOutcome, CacheOverview, FirewallRuleItem, FirewallRulePage, InstallationStatusResponse, IpLimitRuleItem, IpLimitRulePage, ModelLimitRuleItem, ModelLimitRulePage, MonitorAlertPage, MonitorNodePage, MonitorPerformancePage, TokenLimitRuleItem, TokenLimitRulePage } from '../types';
+
+import type { AdminAnalyticsOverview, AdminAuthSettingsResponse, AdminAuthSettingsUpdateRequest, AdminDashboardOverview, AdminFirewallRuleCreateRequest, AdminIpLimitCreateRequest, AdminModelLimitCreateRequest, AdminRecordPage, AdminRuntimeRegionSettingsResponse, AdminRuntimeRegionSettingsUpdateRequest, AdminServiceNodeCreateRequest, AdminServiceNodeItem, AdminServiceNodePage, AdminServiceNodeStatusUpdateRequest, AdminServiceNodeUpdateRequest, AdminSiteSettingsResponse, AdminSiteSettingsUpdateRequest, AdminTokenLimitCreateRequest, CacheNamespaceKeyPage, CacheOperationOutcome, CacheOverview, ChainPolicyInput, FirewallRuleItem, FirewallRulePage, InstallationStatusResponse, IpLimitRuleItem, IpLimitRulePage, JsonValue, ModelLimitRuleItem, ModelLimitRulePage, MonitorAlertPage, MonitorNodePage, MonitorPerformancePage, TokenLimitRuleItem, TokenLimitRulePage } from '../types';
+
+
 export class SystemSiteSettingsApi {
   private client: HttpClient;
 
@@ -450,6 +453,52 @@ export class SystemDashboardApi {
 
 }
 
+export class SystemChainsPolicyApiKeyApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List API key chain policy */
+  async retrieve(apiKeyId: string, requestOptions?: ApiRequestOptions): Promise<{ id: string; payload: Record<string, JsonValue>; policyName: string; scopeId: string; scopeType: number; updatedAt: string; }> {
+    return this.client.request<{ id: string; payload: Record<string, JsonValue>; policyName: string; scopeId: string; scopeType: number; updatedAt: string; }>(backendApiPath(`/system/chains/policy/keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'item' });
+  }
+}
+
+export class SystemChainsPolicyApi {
+  private client: HttpClient;
+  public readonly apiKey: SystemChainsPolicyApiKeyApi;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+    this.apiKey = new SystemChainsPolicyApiKeyApi(client);
+  }
+
+
+/** List chain policy */
+  async retrieve(requestOptions?: ApiRequestOptions): Promise<{ id: string; payload: Record<string, JsonValue>; policyName: string; scopeId: string; scopeType: number; updatedAt: string; }> {
+    return this.client.request<{ id: string; payload: Record<string, JsonValue>; policyName: string; scopeId: string; scopeType: number; updatedAt: string; }>(backendApiPath(`/system/chains/policy`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'item' });
+  }
+
+/** Update chain policy */
+  async update(body: ChainPolicyInput, requestOptions?: ApiRequestOptions): Promise<{ id: string; payload: Record<string, JsonValue>; policyName: string; scopeId: string; scopeType: number; updatedAt: string; }> {
+    return this.client.request<{ id: string; payload: Record<string, JsonValue>; policyName: string; scopeId: string; scopeType: number; updatedAt: string; }>(backendApiPath(`/system/chains/policy`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
+  }
+}
+
+export class SystemChainsApi {
+  private client: HttpClient;
+  public readonly policy: SystemChainsPolicyApi;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+    this.policy = new SystemChainsPolicyApi(client);
+  }
+
+}
+
 export class SystemCacheOverviewApi {
   private client: HttpClient;
 
@@ -631,46 +680,12 @@ export class SystemAnalyticsApi {
 
 }
 
-export interface SystemMarketingReferralStatsListParams {
-  page?: number;
-  pageSize?: number;
-}
-
-export class SystemMarketingReferralStatsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** List referral stats */
-  async list(params?: SystemMarketingReferralStatsListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    const query = buildQueryString([
-      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
-      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
-    ]);
-    return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/marketing/referral_stats`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
-  }
-}
-
-export class SystemMarketingApi {
-  private client: HttpClient;
-  public readonly referralStats: SystemMarketingReferralStatsApi;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-    this.referralStats = new SystemMarketingReferralStatsApi(client);
-  }
-
-}
-
 export class SystemApi {
   private client: HttpClient;
-  public readonly marketing: SystemMarketingApi;
   public readonly analytics: SystemAnalyticsApi;
   public readonly auth: SystemAuthApi;
   public readonly cache: SystemCacheApi;
+  public readonly chains: SystemChainsApi;
   public readonly dashboard: SystemDashboardApi;
   public readonly firewalls: SystemFirewallsApi;
   public readonly installation: SystemInstallationApi;
@@ -683,10 +698,10 @@ export class SystemApi {
 
   constructor(client: HttpClient) {
     this.client = client;
-    this.marketing = new SystemMarketingApi(client);
     this.analytics = new SystemAnalyticsApi(client);
     this.auth = new SystemAuthApi(client);
     this.cache = new SystemCacheApi(client);
+    this.chains = new SystemChainsApi(client);
     this.dashboard = new SystemDashboardApi(client);
     this.firewalls = new SystemFirewallsApi(client);
     this.installation = new SystemInstallationApi(client);

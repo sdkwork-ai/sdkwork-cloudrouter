@@ -272,11 +272,12 @@ modules:
     description: Gateway-owned IAM API key, access policy, account-group binding, and risk rule tables used by Claw Router
       runtime.
     compliance_level: L2
-    tables_count: 4
+    tables_count: 5
     tables:
     - iam_gateway_access_policy
     - iam_gateway_api_key
     - iam_gateway_api_key_account_group
+    - iam_gateway_chain_policy
     - iam_gateway_risk_rule
     ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
   ops-runtime:
@@ -499,7 +500,7 @@ statistics:
     ai-routing: 23
     ai-metering: 2
     ai-pricing: 5
-    iam-gateway: 4
+    iam-gateway: 5
     ops-runtime: 10
     ai-chat-runtime: 8
 compliance:

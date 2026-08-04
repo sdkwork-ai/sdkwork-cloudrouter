@@ -83,6 +83,12 @@ tables:
     secret_version:
       type: int64
       constraints: NOT NULL
+    key_secret_mode:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'plaintext'
+    key_secret_plaintext: text
+    key_secret_ciphertext: text
+    key_secret_key_id: string(64)
     idempotency_key:
       type: string(128)
       constraints: NOT NULL
@@ -283,4 +289,38 @@ tables:
     - organization_id
     - target_type
     - target_value_hash
+    - status
+- table: iam_gateway_chain_policy
+  domain: iam_gateway
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: gateway-iam-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    policy_name: string(128)
+    scope_type: int32
+    scope_id: int64
+    payload: json
+    effective_from: instant
+    effective_to: instant
+  unique_constraints:
+  - name: uk_iam_gateway_chain_policy_scope
+    columns:
+    - tenant_id
+    - organization_id
+    - scope_type
+    - scope_id
+    - status
+  indexes:
+  - name: idx_iam_gateway_chain_policy_scope_status
+    columns:
+    - tenant_id
+    - organization_id
+    - scope_type
+    - scope_id
     - status

@@ -239,6 +239,8 @@ pub struct AdminUpstreamAccountGroupItem {
     pub cost_multiplier: String,
     pub sale_multiplier: String,
     pub environment: Option<i32>,
+    pub vendor_code: Option<String>,
+    pub modalities: Vec<String>,
     pub status: i32,
     pub version: i64,
     pub updated_at: String,
@@ -260,6 +262,8 @@ pub struct SaveAdminUpstreamAccountGroupCommand {
     pub cost_multiplier: String,
     pub sale_multiplier: String,
     pub environment: Option<i32>,
+    pub vendor_code: Option<String>,
+    pub modalities: Vec<String>,
     pub status: i32,
     pub requested_at: String,
 }

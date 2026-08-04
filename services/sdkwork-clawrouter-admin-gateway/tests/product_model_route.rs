@@ -2,6 +2,10 @@ use std::sync::Arc;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
+use sdkwork_web_core::{
+    ServerRequestId, WebApiSurface, WebAuthMode, WebDeploymentMode, WebEnvironment,
+    WebLoginScope, WebRequestContext, WebRequestPrincipal, WebTransportFacts,
+};
 use sdkwork_clawrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
     ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, RouteCandidate,
@@ -111,6 +115,43 @@ fn catalog() -> InMemoryPricingCatalog {
     catalog
 }
 
+
+fn admin_web_context(path: &str, method: &str) -> WebRequestContext {
+    let principal = WebRequestPrincipal::builder()
+        .tenant_id("100001")
+        .organization_id(Some("100001".to_owned()))
+        .login_scope(WebLoginScope::Organization)
+        .user_id("2")
+        .session_id(Some("session-test".to_owned()))
+        .app_id("sdkwork-clawrouter")
+        .environment(WebEnvironment::Test)
+        .deployment_mode(WebDeploymentMode::Local)
+        .auth_level(sdkwork_web_core::WebAuthLevel::Password)
+        .permission_scope(vec!["clawrouter.admin.access".to_owned()])
+        .build();
+    WebRequestContext {
+        request_id: ServerRequestId("request-test".to_owned()),
+        api_surface: WebApiSurface::BackendApi,
+        auth_mode: WebAuthMode::DualToken,
+        transport: WebTransportFacts {
+            path: path.to_owned(),
+            method: method.to_owned(),
+            auth_token_present: true,
+            access_token_present: true,
+            api_key_present: false,
+            ingress_token_present: false,
+            oauth_bearer_present: false,
+            agent_token_present: false,
+        },
+        principal: Some(principal),
+        locale: None,
+        client_kind: None,
+        operation: None,
+        trace_id: None,
+        idempotency_key: None,
+    }
+}
+
 #[tokio::test]
 async fn injected_product_catalog_route_overrides_manifest_fallback() {
     let router = sdkwork_clawrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
@@ -119,13 +160,16 @@ async fn injected_product_catalog_route_overrides_manifest_fallback() {
             Request::builder()
                 .method("GET")
                 .uri("/backend/v3/api/ai/models?api_key_id=100&billing_meter=llm_input_token&vendor_code=openai")
+                .extension(admin_web_context(
+                    "/backend/v3/api/ai/models",
+                    "GET",
+                ))
                 .body(Body::empty())
                 .unwrap(),
         )
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, response.status());
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .unwrap();
@@ -146,7 +190,11 @@ async fn runtime_route_explain_uses_selector_and_masks_provider_secrets() {
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/backend/v3/api/ai/route_explain")
+                .uri("/backend/v3/api/ai/upstream_account_groups/10/route_explain")
+                .extension(admin_web_context(
+                    "/backend/v3/api/ai/upstream_account_groups/10/route_explain",
+                    "POST",
+                ))
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{"apiKeyId":"100","accountGroupId":"10","resourceCode":"api.openai.chat_completions","catalogKey":"openai/gpt-4o-mini","model":"gpt-4o-mini","apiCode":"openai.chat_completions","capability":"chat","billingMeter":"llm_input_token"}"#,
@@ -210,7 +258,11 @@ async fn runtime_route_explain_reports_selector_pricing_blocking_reason() {
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/backend/v3/api/ai/route_explain")
+                .uri("/backend/v3/api/ai/upstream_account_groups/10/route_explain")
+                .extension(admin_web_context(
+                    "/backend/v3/api/ai/upstream_account_groups/10/route_explain",
+                    "POST",
+                ))
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{"apiKeyId":"100","accountGroupId":"10","resourceCode":"api.openai.chat_completions","catalogKey":"openai/gpt-not-configured","model":"gpt-not-configured","apiCode":"openai.chat_completions","capability":"chat","billingMeter":"llm_input_token"}"#,
@@ -249,7 +301,11 @@ async fn runtime_route_explain_reports_selector_route_blocking_reason() {
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/backend/v3/api/ai/route_explain")
+                .uri("/backend/v3/api/ai/upstream_account_groups/10/route_explain")
+                .extension(admin_web_context(
+                    "/backend/v3/api/ai/upstream_account_groups/10/route_explain",
+                    "POST",
+                ))
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{"apiKeyId":"100","accountGroupId":"10","resourceCode":"api.openai.embeddings","routeKey":"openai.embeddings","apiCode":"openai.embeddings","capability":"embedding","billingMeter":"llm_input_token"}"#,

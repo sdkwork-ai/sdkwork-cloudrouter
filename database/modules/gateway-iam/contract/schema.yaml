@@ -328,6 +328,26 @@ tables:
         required: true
         postgres_type: BIGINT
         constraints: NOT NULL
+      key_secret_mode:
+        type: string(16)
+        required: true
+        postgres_type: VARCHAR(16)
+        constraints: NOT NULL DEFAULT 'plaintext'
+      key_secret_plaintext:
+        type: text
+        required: false
+        postgres_type: TEXT
+        constraints: ''
+      key_secret_ciphertext:
+        type: text
+        required: false
+        postgres_type: TEXT
+        constraints: ''
+      key_secret_key_id:
+        type: string(64)
+        required: false
+        postgres_type: VARCHAR(64)
+        constraints: ''
       idempotency_key:
         type: string(128)
         required: true

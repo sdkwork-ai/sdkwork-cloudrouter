@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { BottomPagination } from '@sdkwork/clawroutes-pc-commons';
+import { formatMoney } from '@sdkwork/clawroutes-pc-commons/sdkwork-utils';
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
 import { MembershipDrawer } from '../components/MembershipDrawer';
 import { MembershipEmptyState } from '../components/MembershipEmptyState';
@@ -30,7 +31,8 @@ import {
 } from '../membershipsService';
 
 export function MembershipVipPackagesPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const displayLocale = i18n.resolvedLanguage ?? i18n.language ?? 'en-US';
   const [groups, setGroups] = useState<MembershipsAdminPackageGroup[]>([]);
   const [packages, setPackages] = useState<MembershipsAdminPackageItem[]>([]);
   const [plans, setPlans] = useState<MembershipsAdminPlanItem[]>([]);
@@ -247,7 +249,9 @@ export function MembershipVipPackagesPage() {
                       <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">
                         {planNameById.get(item.planId) ?? item.planId}
                       </td>
-                      <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">{item.priceAmount} {item.currencyCode}</td>
+                      <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">
+                        {formatMoney(item.priceAmount, { currency: item.currencyCode, locale: displayLocale, mode: 'symbol' }) ?? `${item.priceAmount} ${item.currencyCode}`}
+                      </td>
                       <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{item.durationDays}d</td>
                       <td className="px-4 py-2.5"><MembershipStatusBadge status={item.status} /></td>
                       <td className="px-4 py-2.5">

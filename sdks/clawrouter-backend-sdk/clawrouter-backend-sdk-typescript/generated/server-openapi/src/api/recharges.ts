@@ -1,7 +1,7 @@
 import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
-import type { RechargePackageMutationRequest, RechargeSettingsUpdateRequest } from '../types';
-export class RechargesSettingsManagementApi {
+import type { AdminRechargePackageListResponse, AdminRechargeSettings, RechargePackageMutationRequest, RechargeSettingsUpdateRequest } from '../types';
+export class RechargesSettingsApi {
   private client: HttpClient;
 
   constructor(client: HttpClient) {
@@ -13,17 +13,6 @@ export class RechargesSettingsManagementApi {
   async retrieve(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
     return this.client.request<Record<string, never>>(backendApiPath(`/recharges/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
-}
-
-export class RechargesSettingsApi {
-  private client: HttpClient;
-  public readonly management: RechargesSettingsManagementApi;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-    this.management = new RechargesSettingsManagementApi(client);
-  }
-
 
 /** Update */
   async update(body: RechargeSettingsUpdateRequest, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
@@ -31,13 +20,13 @@ export class RechargesSettingsApi {
   }
 }
 
-export interface RechargesPackagesManagementListParams {
+export interface RechargesPackagesListParams {
   page?: number;
   pageSize?: number;
   status?: string;
 }
 
-export class RechargesPackagesManagementApi {
+export class RechargesPackagesApi {
   private client: HttpClient;
 
   constructor(client: HttpClient) {
@@ -46,29 +35,18 @@ export class RechargesPackagesManagementApi {
 
 
 /** List */
-  async list(params?: RechargesPackagesManagementListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+  async list(params?: RechargesPackagesListParams, requestOptions?: ApiRequestOptions): Promise<AdminRechargePackageListResponse> {
     const query = buildQueryString([
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/recharges/packages`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminRechargePackageListResponse>(appendQueryString(backendApiPath(`/recharges/packages`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
-}
-
-export class RechargesPackagesApi {
-  private client: HttpClient;
-  public readonly management: RechargesPackagesManagementApi;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-    this.management = new RechargesPackagesManagementApi(client);
-  }
-
 
 /** Create */
-  async create(body: RechargePackageMutationRequest, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(backendApiPath(`/recharges/packages`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+  async create(body: RechargePackageMutationRequest, requestOptions?: ApiRequestOptions): Promise<AdminRechargeSettings> {
+    return this.client.request<AdminRechargeSettings>(backendApiPath(`/recharges/packages`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 
 /** Delete */
@@ -82,45 +60,13 @@ export class RechargesPackagesApi {
   }
 }
 
-export class RechargesOrdersManagementApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** List */
-  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(backendApiPath(`/recharges/orders`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
-  }
-
-/** Retrieve */
-  async retrieve(orderId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(backendApiPath(`/recharges/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
-  }
-}
-
-export class RechargesOrdersApi {
-  private client: HttpClient;
-  public readonly management: RechargesOrdersManagementApi;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-    this.management = new RechargesOrdersManagementApi(client);
-  }
-
-}
-
 export class RechargesApi {
   private client: HttpClient;
-  public readonly orders: RechargesOrdersApi;
   public readonly packages: RechargesPackagesApi;
   public readonly settings: RechargesSettingsApi;
 
   constructor(client: HttpClient) {
     this.client = client;
-    this.orders = new RechargesOrdersApi(client);
     this.packages = new RechargesPackagesApi(client);
     this.settings = new RechargesSettingsApi(client);
   }

@@ -51,8 +51,8 @@ fn admin_access_accepts_only_canonical_elevated_membership_kinds() {
         .count();
 
     assert_eq!(
-        2, predicate_count,
-        "SQLite and PostgreSQL admin access checks must accept IAM admin and owner memberships"
+        1, predicate_count,
+        "the PostgreSQL admin access check must accept IAM admin and owner memberships"
     );
     assert_sql_not_contains(
         ADMIN_API_SOURCE,
