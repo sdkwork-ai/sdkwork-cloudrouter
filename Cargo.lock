@@ -10958,7 +10958,7 @@ dependencies = [
  "sdkwork-database-config",
  "serde",
  "serde_json",
- "toml 0.8.23",
+ "toml 1.1.4+spec-1.1.0",
  "url",
 ]
 
@@ -11001,6 +11001,9 @@ dependencies = [
  "hyper-util",
  "prometheus",
  "redis 1.2.4",
+ "sdkwork-account-repository-sqlx",
+ "sdkwork-account-service",
+ "sdkwork-account-service-host",
  "sdkwork-cloudrouter-config",
  "sdkwork-cloudrouter-database-host",
  "sdkwork-cloudrouter-http",
@@ -11011,6 +11014,7 @@ dependencies = [
  "sdkwork-cloudrouter-router-service",
  "sdkwork-cloudrouter-security",
  "sdkwork-cloudrouter-test-support",
+ "sdkwork-contract-service",
  "sdkwork-database-config",
  "sdkwork-database-sqlx",
  "sdkwork-models-catalog-repository-sqlx",
@@ -11364,7 +11368,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.18",
- "toml 0.8.23",
+ "toml 1.1.4+spec-1.1.0",
  "tracing",
  "url",
 ]
@@ -14395,6 +14399,21 @@ dependencies = [
  "toml_parser",
  "toml_writer",
  "winnow 0.7.15",
+]
+
+[[package]]
+name = "toml"
+version = "1.1.4+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3aace63f4bbcdfc2c965b059de67119c89c4017a70d633be6c104910f67056f5"
+dependencies = [
+ "indexmap 2.14.0",
+ "serde_core",
+ "serde_spanned 1.1.1",
+ "toml_datetime 1.1.1+spec-1.1.0",
+ "toml_parser",
+ "toml_writer",
+ "winnow 1.0.4",
 ]
 
 [[package]]
