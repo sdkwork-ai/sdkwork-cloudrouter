@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { CLAW_ROUTER_RELEASE_ENV_KEY_ORDER } from './dev/claw-router-application-env.mjs';
+import { CLOUD_ROUTER_RELEASE_ENV_KEY_ORDER } from './dev/cloud-router-application-env.mjs';
 import { buildReleaseEnvFilePlan } from './write-release-env.mjs';
 
 const validReleaseEnv = Object.freeze({
-  SDKWORK_DATABASE_URL: 'postgres://release:secret@db.example.com:5432/claw',
+  SDKWORK_DATABASE_URL: 'postgres://release:secret@db.example.com:5432/cloud',
   PORTAL_PUBLIC_API_BASE_URL: 'https://tenant.example.com/v1',
   PORTAL_PUBLIC_OPEN_API_BASE_URL: 'https://open.tenant.example.com/v1',
   PORTAL_PUBLIC_APP_API_BASE_URL: '/app/v3/api',
@@ -23,13 +23,13 @@ test('buildReleaseEnvFilePlan writes every canonical release key including empty
 
   assert.equal(
     plan.safeSummary,
-    `release env file would be written with ${CLAW_ROUTER_RELEASE_ENV_KEY_ORDER.length} release profile variables`,
+    `release env file would be written with ${CLOUD_ROUTER_RELEASE_ENV_KEY_ORDER.length} release profile variables`,
   );
-  for (const key of CLAW_ROUTER_RELEASE_ENV_KEY_ORDER) {
+  for (const key of CLOUD_ROUTER_RELEASE_ENV_KEY_ORDER) {
     assert.match(plan.content, new RegExp(`^${key}=`, 'mu'), `expected ${key} in release env output`);
   }
-  assert.match(plan.content, /^SDKWORK_CLAW_EDGE_CSP_CONNECT_SRC=""/mu);
-  assert.match(plan.content, /^SDKWORK_CLAW_TOOL_API_SDK_ARCHIVE_ROOT=""/mu);
+  assert.match(plan.content, /^SDKWORK_CLOUDROUTER_EDGE_CSP_CONNECT_SRC=""/mu);
+  assert.match(plan.content, /^SDKWORK_CLOUDROUTER_TOOL_API_SDK_ARCHIVE_ROOT=""/mu);
   assert.ok(!plan.safeSummary.includes('secret'));
 });
 
@@ -57,13 +57,13 @@ test('buildReleaseEnvFilePlan rejects invalid edge rate limit values', () => {
     () => buildReleaseEnvFilePlan({
       env: {
         ...validReleaseEnv,
-        SDKWORK_CLAW_TOOL_API_RATE_LIMIT_REQUESTS: '0',
+        SDKWORK_CLOUDROUTER_TOOL_API_RATE_LIMIT_REQUESTS: '0',
       },
       outputPath: '.env.release',
       overwrite: true,
       existingFile: false,
     }),
-    /SDKWORK_CLAW_TOOL_API_RATE_LIMIT_REQUESTS must be a positive integer/u,
+    /SDKWORK_CLOUDROUTER_TOOL_API_RATE_LIMIT_REQUESTS must be a positive integer/u,
   );
 });
 
@@ -72,12 +72,12 @@ test('buildReleaseEnvFilePlan rejects invalid SDK generator base URLs', () => {
     () => buildReleaseEnvFilePlan({
       env: {
         ...validReleaseEnv,
-        SDKWORK_CLAW_TOOL_API_SDK_GENERATOR_BASE_URL: 'javascript:alert(1)',
+        SDKWORK_CLOUDROUTER_TOOL_API_SDK_GENERATOR_BASE_URL: 'javascript:alert(1)',
       },
       outputPath: '.env.release',
       overwrite: true,
       existingFile: false,
     }),
-    /SDKWORK_CLAW_TOOL_API_SDK_GENERATOR_BASE_URL must be an HTTP or HTTPS URL/u,
+    /SDKWORK_CLOUDROUTER_TOOL_API_SDK_GENERATOR_BASE_URL must be an HTTP or HTTPS URL/u,
   );
 });

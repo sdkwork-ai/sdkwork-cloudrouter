@@ -3,12 +3,12 @@
 
 > 鐗堟湰锛歷0.1
 > 鏃ユ湡锛?026-04-28 
-> 渚濇嵁锛歚DATABASE_SPEC.md`銆乣apps/sdkwork-clawrouter-pc`銆乣legacy-java-plus-backend-api` 涓?`legacy-java-plus-app-api` API 鏍囧噯銆?
+> 渚濇嵁锛歚DATABASE_SPEC.md`銆乣apps/sdkwork-cloudrouter-pc`銆乣legacy-java-plus-backend-api` 涓?`legacy-java-plus-app-api` API 鏍囧噯銆?
 
 ## 1. 鏂囨。闆?
 | 鏂囨。 | 鐩爣 |
 | --- | --- |
-| [01-PRD-sdkwork-clawrouter.md](./01-PRD-sdkwork-clawrouter.md) | 浜у搧瀹氫綅銆佺洰鏍囩敤鎴枫€佷骇鍝侀潰銆佸姛鑳借寖鍥淬€佺増鏈矾绾垮拰楠屾敹鏍囧噯 |
+| [01-PRD-sdkwork-cloudrouter.md](./01-PRD-sdkwork-cloudrouter.md) | 浜у搧瀹氫綅銆佺洰鏍囩敤鎴枫€佷骇鍝侀潰銆佸姛鑳借寖鍥淬€佺増鏈矾绾垮拰楠屾敹鏍囧噯 |
 | [02-鎶€鏈灦鏋勮璁?md](./02-鎶€鏈灦鏋勮璁?md) | 鎬讳綋鏋舵瀯銆佽繍琛岄潰銆佸垎灞傘€佺姸鎬佺湡鍊笺€佷富閾捐矾鍜屾灦鏋勫喅绛?|
 | [03-鎶€鏈€夊瀷.md](./03-鎶€鏈€夊瀷.md) | 鍚庣銆佺綉鍏炽€佸墠绔€佹暟鎹簱銆佺紦瀛樸€侀儴缃层€佽娴嬨€佸畨鍏ㄧ粍浠堕€夊瀷 |
 | [04-妯″潡瑙勫垝.md](./04-妯″潡瑙勫垝.md) | public銆乧onsole銆乤dmin銆乬ateway銆乨omain銆亀orker銆乷ps 妯″潡杈圭晫 |
@@ -23,11 +23,11 @@
 | [13-椤甸潰绾ф暟鎹粨鏋勮鐩栦笌SchemaRegistry钀藉湴璁捐.md](./13-椤甸潰绾ф暟鎹粨鏋勮鐩栦笌SchemaRegistry钀藉湴璁捐.md) | portal 姣忎釜椤甸潰鍒颁簨瀹炶〃/鎶曞奖琛?API 闈㈢殑瑕嗙洊鐭╅樀銆侀〉闈㈢骇楠屾敹鍙ｅ緞鍜?Schema Registry 钀藉湴瑙勫垯 |
 | [14-鏁版嵁缁撴瀯缁嗚妭澶嶆牳涓庤ˉ寮鸿褰?md](./14-鏁版嵁缁撴瀯缁嗚妭澶嶆牳涓庤ˉ寮鸿褰?md) | 鍩轰簬鍓嶇 service/interface/mock data 鐨勫瓧娈电骇澶嶆牳銆佺己鍙ｄ慨姝ｃ€佽〃濂戠害琛ュ己鍜?DDL 鐢熸垚鍓嶆鏌ユ竻鍗?|
 | [30-platform-data-model-v4.md](./30-platform-data-model-v4.md) | **鐜拌** v4.1 骞冲彴/鍒嗙被/鎶€鑳?鍐呭琛ㄥ懡鍚嶄笌 greenfield 鏁版嵁妯″瀷锛堟浛浠?docs/17銆乨ocs/18 鐨?Plus 鍏煎鏂规锛?|
-| [schema-registry/sdkwork-clawrouter.tables.yaml](./schema-registry/sdkwork-clawrouter.tables.yaml) | 鏈哄櫒鍙牎楠岃〃濂戠害娉ㄥ唽琛紝绾︽潫鏂板琛ㄥ墠缂€銆丄PI 闈€侀〉闈㈣鐩栥€佸瓧娈点€佺储寮曘€佸畨鍏ㄥ拰鐢熷懡鍛ㄦ湡 |
+| [schema-registry/sdkwork-cloudrouter.tables.yaml](./schema-registry/sdkwork-cloudrouter.tables.yaml) | 鏈哄櫒鍙牎楠岃〃濂戠害娉ㄥ唽琛紝绾︽潫鏂板琛ㄥ墠缂€銆丄PI 闈€侀〉闈㈣鐩栥€佸瓧娈点€佺储寮曘€佸畨鍏ㄥ拰鐢熷懡鍛ㄦ湡 |
 
 ## 2. 鏈疆鏍稿績瑁佸喅
 
-1. `sdkwork-clawrouter` 涓嶆寜鏃х増澶氫釜鍓嶇搴旂敤缁х画鎷嗗垎锛屼骇鍝侀潰缁熶竴鍒?`apps/sdkwork-clawrouter-pc`锛屽唴閮ㄩ€氳繃 public銆乧onsole銆乤dmin 涓変釜璺敱鍩熼殧绂汇€?2. 鎺ㄨ崘閲囩敤鈥淩ust-first Modular Runtime + Java-compatible API Contract + Generated SDK Boundary鈥濈殑鏋舵瀯璺嚎銆俙sdkwork-clawrouter` 鐨?gateway銆乤pp-api銆乤dmin-api銆亀orker 鍜?product runtime 鍧囦互 Rust services 涓轰富瀹炵幇锛孞ava app/backend 妯″潡浣滀负璺緞銆丱penAPI銆丼DK 鍜屾棦鏈夊疄浣撳吋瀹规爣鍑嗐€?3. Admin 鎺у埗鍙?API 蹇呴』璧?`legacy-java-plus-backend-api` 鏍囧噯锛岃矾寰勫墠缂€涓?Java `com.sdkwork.backend.api.ApiPaths.API_PREFIX`锛屽嵆 `/backend/v3/api`锛岃繑鍥?`PlusApiResult<T>`锛屾潈闄愭ā鍨嬫寜鍚庡彴瑙掕壊鍜岀鐞嗚兘鍔涙帶鍒躲€?4. Console銆乸ublic portal銆佺敤鎴疯嚜鍔?API 蹇呴』璧?`legacy-java-plus-app-api` 鏍囧噯锛岃矾寰勫墠缂€涓?Java `com.sdkwork.app.api.ApiPaths.API_PREFIX`锛屽嵆 `/app/v3/api`锛岃繑鍥?`PlusApiResult<T>`锛岀敤鎴蜂笂涓嬫枃鍜岃祫婧愬綊灞炲湪鏈嶅姟灞傚己鏍￠獙銆?5. OpenAI 鍏煎缃戝叧 API 淇濇寔 `/v1/*`锛屼笉寰楀寘瑁?`PlusApiResult<T>`锛屽繀椤讳繚鎸佺涓夋柟 SDK 鍙洿鎺ヨ皟鐢ㄣ€?6. App/Backend 鍏叡涓氬姟璺緞涓嶅緱棰濆鎻掑叆 `/claw-router`銆乣/router`銆乣/sdkwork` 绛変骇鍝佹垨閮ㄧ讲鍛藉悕绌洪棿锛涙柊澧炶兘鍔涘繀椤诲厛杩涘叆 Java app-api/backend-api 鐨?controller銆丱penAPI 鍜岀敓鎴?SDK銆?7. 鐢ㄦ埛銆乂IP銆乤ccount銆佷紭鎯犲埜銆佺Н鍒嗗厖鍊笺€佽鍗曘€佹敮浠樸€侀€€娆俱€佸彂绁ㄧ瓑浜ゆ槗璐︽埛鍩熷繀椤诲鐢?`legacy-java-plus-entity` 涓棦鏈?`plus_*` 琛ㄧ粨鏋勶紝涓嶅湪 claw-router 涓垱寤烘浛浠ｈ〃銆?8. 鏂板缓 claw-router 涓撳睘琛ㄥ繀椤婚伒瀹?`DATABASE_SPEC.md`锛岄噰鐢ㄤ笟鍔″墠缂€锛歚ai_`銆乣integration_`銆乣iam_`銆乣commerce_`銆乣studio_`銆乣content_`銆乣ops_` 绛夛紝绂佹浣跨敤 `claw_`銆乣router_`銆乣sdkwork_` 浣滀负鏂颁笟鍔¤〃绗竴娈靛墠缂€銆?9. 鏈湴妗岄潰銆丼erver銆丏ocker銆並8S 蹇呴』鏄悓涓€濂楁牳蹇冭兘鍔涚殑涓嶅悓瑁呴厤锛屼笉鍏佽鍑虹幇鍥涘涓嶅悓涓氬姟閫昏緫锛汚PI 鑷敱鍒囨崲鍙兘閫氳繃 base URL resolver 瀹屾垚銆?10. 鏁版嵁搴撳疄鐜板繀椤诲厛杩囨暟鎹绾﹁瘎瀹★細`ai_usage` 鏄敤閲忎簨瀹烇紝`commerce_usage_settlement` 鏄粨绠楁ˉ鎺ワ紝`plus_account_history` 鎵嶆槸鏈€缁堣处鎴锋祦姘翠簨瀹炪€?11. 鍓嶇妯″潡涓嶈兘鍙嶅悜姹℃煋鏁版嵁搴撳懡鍚嶏紱public銆乧onsole銆乤dmin 鍙槸浣跨敤鑰咃紝涓嶈兘浜х敓 `console_`銆乣admin_`銆佷骇鍝佸悕鎴栭儴缃插悕鍓嶇紑琛ㄣ€?
+1. `sdkwork-cloudrouter` 涓嶆寜鏃х増澶氫釜鍓嶇搴旂敤缁х画鎷嗗垎锛屼骇鍝侀潰缁熶竴鍒?`apps/sdkwork-cloudrouter-pc`锛屽唴閮ㄩ€氳繃 public銆乧onsole銆乤dmin 涓変釜璺敱鍩熼殧绂汇€?2. 鎺ㄨ崘閲囩敤鈥淩ust-first Modular Runtime + Java-compatible API Contract + Generated SDK Boundary鈥濈殑鏋舵瀯璺嚎銆俙sdkwork-cloudrouter` 鐨?gateway銆乤pp-api銆乤dmin-api銆亀orker 鍜?product runtime 鍧囦互 Rust services 涓轰富瀹炵幇锛孞ava app/backend 妯″潡浣滀负璺緞銆丱penAPI銆丼DK 鍜屾棦鏈夊疄浣撳吋瀹规爣鍑嗐€?3. Admin 鎺у埗鍙?API 蹇呴』璧?`legacy-java-plus-backend-api` 鏍囧噯锛岃矾寰勫墠缂€涓?Java `com.sdkwork.backend.api.ApiPaths.API_PREFIX`锛屽嵆 `/backend/v3/api`锛岃繑鍥?`PlusApiResult<T>`锛屾潈闄愭ā鍨嬫寜鍚庡彴瑙掕壊鍜岀鐞嗚兘鍔涙帶鍒躲€?4. Console銆乸ublic portal銆佺敤鎴疯嚜鍔?API 蹇呴』璧?`legacy-java-plus-app-api` 鏍囧噯锛岃矾寰勫墠缂€涓?Java `com.sdkwork.app.api.ApiPaths.API_PREFIX`锛屽嵆 `/app/v3/api`锛岃繑鍥?`PlusApiResult<T>`锛岀敤鎴蜂笂涓嬫枃鍜岃祫婧愬綊灞炲湪鏈嶅姟灞傚己鏍￠獙銆?5. OpenAI 鍏煎缃戝叧 API 淇濇寔 `/v1/*`锛屼笉寰楀寘瑁?`PlusApiResult<T>`锛屽繀椤讳繚鎸佺涓夋柟 SDK 鍙洿鎺ヨ皟鐢ㄣ€?6. App/Backend 鍏叡涓氬姟璺緞涓嶅緱棰濆鎻掑叆 `/cloud-router`銆乣/router`銆乣/sdkwork` 绛変骇鍝佹垨閮ㄧ讲鍛藉悕绌洪棿锛涙柊澧炶兘鍔涘繀椤诲厛杩涘叆 Java app-api/backend-api 鐨?controller銆丱penAPI 鍜岀敓鎴?SDK銆?7. 鐢ㄦ埛銆乂IP銆乤ccount銆佷紭鎯犲埜銆佺Н鍒嗗厖鍊笺€佽鍗曘€佹敮浠樸€侀€€娆俱€佸彂绁ㄧ瓑浜ゆ槗璐︽埛鍩熷繀椤诲鐢?`legacy-java-plus-entity` 涓棦鏈?`plus_*` 琛ㄧ粨鏋勶紝涓嶅湪 cloud-router 涓垱寤烘浛浠ｈ〃銆?8. 鏂板缓 cloud-router 涓撳睘琛ㄥ繀椤婚伒瀹?`DATABASE_SPEC.md`锛岄噰鐢ㄤ笟鍔″墠缂€锛歚ai_`銆乣integration_`銆乣iam_`銆乣commerce_`銆乣studio_`銆乣content_`銆乣ops_` 绛夛紝绂佹浣跨敤 `cloud_`銆乣router_`銆乣sdkwork_` 浣滀负鏂颁笟鍔¤〃绗竴娈靛墠缂€銆?9. 鏈湴妗岄潰銆丼erver銆丏ocker銆並8S 蹇呴』鏄悓涓€濂楁牳蹇冭兘鍔涚殑涓嶅悓瑁呴厤锛屼笉鍏佽鍑虹幇鍥涘涓嶅悓涓氬姟閫昏緫锛汚PI 鑷敱鍒囨崲鍙兘閫氳繃 base URL resolver 瀹屾垚銆?10. 鏁版嵁搴撳疄鐜板繀椤诲厛杩囨暟鎹绾﹁瘎瀹★細`ai_usage` 鏄敤閲忎簨瀹烇紝`commerce_usage_settlement` 鏄粨绠楁ˉ鎺ワ紝`plus_account_history` 鎵嶆槸鏈€缁堣处鎴锋祦姘翠簨瀹炪€?11. 鍓嶇妯″潡涓嶈兘鍙嶅悜姹℃煋鏁版嵁搴撳懡鍚嶏紱public銆乧onsole銆乤dmin 鍙槸浣跨敤鑰咃紝涓嶈兘浜х敓 `console_`銆乣admin_`銆佷骇鍝佸悕鎴栭儴缃插悕鍓嶇紑琛ㄣ€?
 ## 3. 涓夌鏋舵瀯璺嚎瀵规瘮
 
 | 璺嚎 | 鎻忚堪 | 浼樼偣 | 椋庨櫓 | 缁撹 |
@@ -54,7 +54,7 @@
 | [23-schema-manifest.md](./23-schema-manifest.md) | 灏?Schema Registry 缂栬瘧涓烘満鍣ㄥ彲璇?Manifest锛岀粺涓€杈撳嚭琛ㄣ€佽矾鐢便€丄PI surface銆乷wner銆佸瓧娈点€佺储寮曘€佸畨鍏ㄥ拰鐢熷懡鍛ㄦ湡鍏冩暟鎹?|
 | [24-openapi-schema-components.md](./24-openapi-schema-components.md) | 浠?Schema Registry 鐢熸垚 OpenAPI component schemas锛岀粺涓€ app/backend/SDK/鍓嶇浣跨敤鐨勫瓧娈靛簭鍒楀寲鏍囧噯 |
 | [25-frontend-contract-guardian.md](./25-frontend-contract-guardian.md) | 灏?portal 瀹為檯璺敱涓庨〉闈㈠叧閿瓧娈甸渶姹傚浐鍖栦负鍙墽琛屽绾︼紝鎸佺画鏍￠獙 Schema Manifest 鏄惁瀹屾暣婊¤冻鍓嶇椤甸潰 |
-| [26-java-legacy-contract-audit.md](./26-java-legacy-contract-audit.md) | 灏?Java-owned `plus_*` 琛ㄥ疄浣撴槧灏勪笌澹版槑鍒楃敓鎴愬璁′骇鐗╋紝闃叉 claw-router fork 鎴栨浛浠?Java 涓昏〃缁撴瀯 |
+| [26-java-legacy-contract-audit.md](./26-java-legacy-contract-audit.md) | 灏?Java-owned `plus_*` 琛ㄥ疄浣撴槧灏勪笌澹版槑鍒楃敓鎴愬璁′骇鐗╋紝闃叉 cloud-router fork 鎴栨浛浠?Java 涓昏〃缁撴瀯 |
 | [27-rust-runtime-and-sdk-integration-standard.md](./27-rust-runtime-and-sdk-integration-standard.md) | 鍥哄寲 Rust runtime銆丣ava-compatible app/backend API 璺緞銆乬enerated SDK 杈圭晫鍜?portal 涓嶆敼 UI 鐨勬帴鍏ユ爣鍑?|
 | [28-architecture-standard-guardian.md](./28-architecture-standard-guardian.md) | 灏?Rust-first 鏋舵瀯鍜屾妧鏈€夊瀷瑁佸喅鍥哄寲涓哄彲鎵ц鏂囨。瀹堝崼锛岄槻姝㈡牳蹇冩枃妗ｅ洖閫€鍒版棫璺嚎 |
 | [29-rust-backend-module-standard.md](./29-rust-backend-module-standard.md) | 鍥哄寲 Rust 鍚庣鍒嗗寘銆丠exagonal architecture 妯″潡褰㈡€併€侀珮鎬ц兘鍜屽畨鍏ㄨ竟鐣岋紝骞舵帴鍏ュ彲鎵ц瀹堝崼 |

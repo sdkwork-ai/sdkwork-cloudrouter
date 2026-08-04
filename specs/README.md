@@ -1,6 +1,6 @@
-# SDKWork Claw Router Repository Contracts
+# SDKWork Cloud Router Repository Contracts
 
-This directory contains repository-wide machine contracts for SDKWork Claw Router.
+This directory contains repository-wide machine contracts for SDKWork Cloud Router.
 Global standards remain authoritative at [sdkwork-specs](../../sdkwork-specs/README.md).
 This directory does not copy global `*_SPEC.md` bodies.
 

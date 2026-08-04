@@ -13,25 +13,25 @@ import {
 } from '@sdkwork/app-topology/access-endpoints';
 import { formatResolvedNetworkAccessLines } from '@sdkwork/app-topology/network-access';
 import {
-  defaultClawRouterDevPostgresDatabaseUrl,
-  defaultClawRouterDevPostgresMaxConnections,
+  defaultCloudRouterDevPostgresDatabaseUrl,
+  defaultCloudRouterDevPostgresMaxConnections,
   resolveWorkspaceDevDatabaseEnv,
-} from './claw-router-dev-database-env.mjs';
+} from './cloud-router-dev-database-env.mjs';
 import {
   mergePortalPublicRuntimeEnv,
   omitPortalPublicRuntimeEnv,
   portalPublicRuntimeEnvLineValue,
   resolvePortalPublicRuntimeEnv,
 } from '../portal-public-runtime-env.mjs';
-import { ensureClawRouterBrowserDevelopmentEnv } from './claw-router-application-env.mjs';
+import { ensureCloudRouterBrowserDevelopmentEnv } from './cloud-router-application-env.mjs';
 import {
-  CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS,
-} from '../lib/claw-router-browser-env-contract.mjs';
+  CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS,
+} from '../lib/cloud-router-browser-env-contract.mjs';
 import {
-  CLAW_ROUTER_EDGE_ENV_KEYS,
+  CLOUD_ROUTER_EDGE_ENV_KEYS,
   buildRuntimeEdgePrivateEnv,
   resolveEdgeEnvValue,
-} from '../lib/claw-router-edge-env-contract.mjs';
+} from '../lib/cloud-router-edge-env-contract.mjs';
 import {
   applyTopologyProfileToWorkspaceSettings,
   bridgeLegacyWorkspaceEnv,
@@ -41,7 +41,7 @@ import {
   resolveWorkspaceRuntimePlan,
   waitForHttpHealthy,
   waitForWorkspaceHealthSurfaces,
-} from '../lib/claw-router-topology.mjs';
+} from '../lib/cloud-router-topology.mjs';
 import {
   deriveFoundationEnvFromResolution,
   resolveComposition,
@@ -58,18 +58,18 @@ const DEFAULT_SERVER_BIND = '0.0.0.0:3900';
 const DEFAULT_PORTAL_BIND = '127.0.0.1:3901';
 const DEFAULT_REMOTE_API_INGRESS_ORIGIN = 'http://127.0.0.1:3902';
 const DEFAULT_EXTERNAL_SCHEME = 'http';
-const DEFAULT_DEV_DATABASE_RELATIVE_PATH = path.join('target', 'dev', 'clawrouter.sqlite');
+const DEFAULT_DEV_DATABASE_RELATIVE_PATH = path.join('target', 'dev', 'cloudrouter.sqlite');
 const DEFAULT_MODELS_CATALOG_RELATIVE_PATH = path.join('..', 'sdkwork-models');
 const DEFAULT_DEV_SECRET =
-  'sdkwork-clawrouter-local-dev-secret-20260507';
+  'sdkwork-cloudrouter-local-dev-secret-20260507';
 const UPSTREAM_CREDENTIAL_KEY_RING_ENV =
-  'SDKWORK_CLAW_UPSTREAM_CREDENTIAL_KEY_RING';
+  'SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING';
 const UPSTREAM_CREDENTIAL_KEY_RING_FILE_ENV =
-  'SDKWORK_CLAW_UPSTREAM_CREDENTIAL_KEY_RING_FILE';
+  'SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING_FILE';
 const INTERNAL_GATEWAY_SIGNING_SECRET_ENV =
-  'SDKWORK_CLAW_INTERNAL_GATEWAY_SIGNING_SECRET';
+  'SDKWORK_CLOUDROUTER_INTERNAL_GATEWAY_SIGNING_SECRET';
 const INTERNAL_GATEWAY_SIGNING_SECRET_FILE_ENV =
-  'SDKWORK_CLAW_INTERNAL_GATEWAY_SIGNING_SECRET_FILE';
+  'SDKWORK_CLOUDROUTER_INTERNAL_GATEWAY_SIGNING_SECRET_FILE';
 const DEFAULT_DEV_UPSTREAM_CREDENTIAL_KEY_RING_RELATIVE_PATH = path.join(
   '.sdkwork',
   'secrets',
@@ -80,8 +80,8 @@ const DEFAULT_DEV_INTERNAL_GATEWAY_SIGNING_SECRET_RELATIVE_PATH = path.join(
   'secrets',
   'internal-gateway-signing.development.secret',
 );
-const EDGE_GATEWAY_PACKAGE = 'sdkwork-api-clawrouter-standalone-gateway';
-const APP_API_GATEWAY_PACKAGE = 'sdkwork-clawrouter-standalone-gateway';
+const EDGE_GATEWAY_PACKAGE = 'sdkwork-api-cloudrouter-standalone-gateway';
+const APP_API_GATEWAY_PACKAGE = 'sdkwork-cloudrouter-standalone-gateway';
 const DEFAULT_DEV_REDIS_HOST = '127.0.0.1';
 const DEFAULT_DEV_REDIS_PORT = '6379';
 const DEFAULT_DEV_REDIS_DATABASE = '0';
@@ -198,15 +198,15 @@ function loadCompositionResolution(workspaceRoot) {
 }
 
 function deriveFoundationPortalEnv(runtimeEnv, settings, {
-  clawRouterAppApiBaseUrl,
-  clawRouterBackendApiBaseUrl,
+  cloudRouterAppApiBaseUrl,
+  cloudRouterBackendApiBaseUrl,
   compositionResolution,
 }) {
   const platformGatewayOrigin = remoteApiIngressOrigin(settings);
   const derived = deriveFoundationEnvFromResolution(compositionResolution, {
     platformApiOrigin: platformGatewayOrigin,
-    applicationAppApiBaseUrl: clawRouterAppApiBaseUrl,
-    applicationBackendApiBaseUrl: clawRouterBackendApiBaseUrl,
+    applicationAppApiBaseUrl: cloudRouterAppApiBaseUrl,
+    applicationBackendApiBaseUrl: cloudRouterBackendApiBaseUrl,
   });
 
   const merged = { ...runtimeEnv };
@@ -264,25 +264,25 @@ function withSharedFoundationPortalRuntimeEnv(env, settings, {
     runtimeEnvInput,
     productSurfaceMode === 'shared-gateway' ? CLIENT_PUBLIC_RUNTIME_DEFAULTS : undefined,
   );
-  const clawRouterOpenApiBaseUrl = runtimeEnv.VITE_CLAWROUTER_OPEN_API_BASE_URL
+  const cloudRouterOpenApiBaseUrl = runtimeEnv.VITE_CLOUDROUTER_OPEN_API_BASE_URL
     ?? runtimeEnv.PORTAL_PUBLIC_OPEN_API_BASE_URL
     ?? runtimeEnv.PORTAL_PUBLIC_API_BASE_URL
     ?? appendPath(sdkBaseUrl, GATEWAY_API_PREFIX);
-  const clawRouterAppApiBaseUrl = runtimeEnv.VITE_CLAWROUTER_APP_API_BASE_URL
+  const cloudRouterAppApiBaseUrl = runtimeEnv.VITE_CLOUDROUTER_APP_API_BASE_URL
     ?? runtimeEnv.PORTAL_PUBLIC_APP_API_BASE_URL
     ?? appendPath(sdkBaseUrl, APP_API_PREFIX);
-  const clawRouterBackendApiBaseUrl = runtimeEnv.VITE_CLAWROUTER_BACKEND_API_BASE_URL
+  const cloudRouterBackendApiBaseUrl = runtimeEnv.VITE_CLOUDROUTER_BACKEND_API_BASE_URL
     ?? runtimeEnv.PORTAL_PUBLIC_BACKEND_API_BASE_URL
     ?? appendPath(sdkBaseUrl, BACKEND_API_PREFIX);
 
   return deriveFoundationPortalEnv({
     ...runtimeEnv,
-    VITE_CLAWROUTER_OPEN_API_BASE_URL: clawRouterOpenApiBaseUrl,
-    VITE_CLAWROUTER_APP_API_BASE_URL: clawRouterAppApiBaseUrl,
-    VITE_CLAWROUTER_BACKEND_API_BASE_URL: clawRouterBackendApiBaseUrl,
+    VITE_CLOUDROUTER_OPEN_API_BASE_URL: cloudRouterOpenApiBaseUrl,
+    VITE_CLOUDROUTER_APP_API_BASE_URL: cloudRouterAppApiBaseUrl,
+    VITE_CLOUDROUTER_BACKEND_API_BASE_URL: cloudRouterBackendApiBaseUrl,
   }, settings, {
-    clawRouterAppApiBaseUrl,
-    clawRouterBackendApiBaseUrl,
+    cloudRouterAppApiBaseUrl,
+    cloudRouterBackendApiBaseUrl,
     compositionResolution,
   });
 }
@@ -307,31 +307,31 @@ function cargoCommand(platform = process.platform) {
   return platform === 'win32' ? 'cargo.exe' : 'cargo';
 }
 
-export function clawRouterDevCargoTargetDir(workspaceRoot) {
-  return process.env.SDKWORK_CLAWROUTER_DEV_CARGO_TARGET_DIR
+export function cloudRouterDevCargoTargetDir(workspaceRoot) {
+  return process.env.SDKWORK_CLOUDROUTER_DEV_CARGO_TARGET_DIR
     ?? path.join(workspaceRoot, 'target', 'dev-workspace');
 }
 
-export function clawRouterDevInstallerBinaryPath(
+export function cloudRouterDevInstallerBinaryPath(
   workspaceRoot,
   platform = process.platform,
 ) {
   return path.join(
-    clawRouterDevCargoTargetDir(workspaceRoot),
+    cloudRouterDevCargoTargetDir(workspaceRoot),
     'debug',
-    platform === 'win32' ? 'clawrouterctl.exe' : 'clawrouterctl',
+    platform === 'win32' ? 'cloudrouterctl.exe' : 'cloudrouterctl',
   );
 }
 
-function clawRouterDevCargoEnv(workspaceRoot, baseEnv = process.env) {
+function cloudRouterDevCargoEnv(workspaceRoot, baseEnv = process.env) {
   return {
     ...baseEnv,
     ...IAM_APPLICATION_BOOTSTRAP_ENV,
-    CARGO_TARGET_DIR: clawRouterDevCargoTargetDir(workspaceRoot),
+    CARGO_TARGET_DIR: cloudRouterDevCargoTargetDir(workspaceRoot),
   };
 }
 
-export function ensureClawRouterDevSecurityFiles({
+export function ensureCloudRouterDevSecurityFiles({
   workspaceRoot = repositoryRoot,
   env = process.env,
   dryRun = false,
@@ -406,12 +406,12 @@ export function ensureClawRouterDevSecurityFiles({
   return resolvedEnv;
 }
 
-export function clawRouterRustDevPackages(settings) {
+export function cloudRouterRustDevPackages(settings) {
   if (settings.runtimeMode === 'client') {
     return [];
   }
 
-  const packages = ['sdkwork-claw-installer'];
+  const packages = ['sdkwork-cloudrouter-installer'];
   if (settings.runtimeMode === 'all-in-one') {
     packages.push(EDGE_GATEWAY_PACKAGE);
     return packages;
@@ -419,9 +419,9 @@ export function clawRouterRustDevPackages(settings) {
 
   if (settings.runtimeMode === 'distributed') {
     packages.push(
-      'sdkwork-clawrouter-edge-runtime',
+      'sdkwork-cloudrouter-edge-runtime',
       APP_API_GATEWAY_PACKAGE,
-      'sdkwork-clawrouter-admin-gateway',
+      'sdkwork-cloudrouter-admin-gateway',
       APP_API_GATEWAY_PACKAGE,
     );
   }
@@ -438,7 +438,7 @@ export function cargoRunPackageArgs(packageName, trailingArgs = []) {
 }
 
 function rustPrebuildStep(settings, { workspaceRoot, platform }) {
-  const packages = clawRouterRustDevPackages(settings);
+  const packages = cloudRouterRustDevPackages(settings);
   if (packages.length === 0) {
     return null;
   }
@@ -448,7 +448,7 @@ function rustPrebuildStep(settings, { workspaceRoot, platform }) {
     command: cargoCommand(platform),
     args: ['build', ...packages.flatMap((packageName) => ['-p', packageName])],
     cwd: workspaceRoot,
-    env: clawRouterDevCargoEnv(workspaceRoot),
+    env: cloudRouterDevCargoEnv(workspaceRoot),
     shell: false,
     windowsHide: platform === 'win32',
     blocking: true,
@@ -472,7 +472,7 @@ function environmentDatabaseConfig(
 }
 
 function defaultPostgresDatabaseUrl() {
-  return defaultClawRouterDevPostgresDatabaseUrl();
+  return defaultCloudRouterDevPostgresDatabaseUrl();
 }
 
 function defaultModelsCatalogRoot(workspaceRoot) {
@@ -703,8 +703,8 @@ function serviceEnv(settings, bindEnvName, bindValue, {
   const databaseMaxConnections = process.env.SDKWORK_DATABASE_MAX_CONNECTIONS
     ?? (String(settings.databaseUrl ?? '').trim().toLowerCase().startsWith('sqlite:')
       ? '1'
-      : defaultClawRouterDevPostgresMaxConnections());
-  const redisUrl = String(process.env.SDKWORK_CLAW_REDIS_URL ?? '').trim();
+      : defaultCloudRouterDevPostgresMaxConnections());
+  const redisUrl = String(process.env.SDKWORK_CLOUDROUTER_REDIS_URL ?? '').trim();
   const baseEnv = { ...process.env };
   for (const key of [
     UPSTREAM_CREDENTIAL_KEY_RING_ENV,
@@ -717,7 +717,7 @@ function serviceEnv(settings, bindEnvName, bindValue, {
     }
   }
   const developmentSecurityEnv =
-    ensureClawRouterDevSecurityFiles({
+    ensureCloudRouterDevSecurityFiles({
       workspaceRoot: settings.workspaceRoot ?? repositoryRoot,
       env: baseEnv,
       dryRun: settings.dryRun === true,
@@ -725,54 +725,54 @@ function serviceEnv(settings, bindEnvName, bindValue, {
   const redisStructuredDefaults = redisUrl
     ? {}
     : {
-        SDKWORK_CLAW_REDIS_HOST:
-          process.env.SDKWORK_CLAW_REDIS_HOST ?? DEFAULT_DEV_REDIS_HOST,
-        SDKWORK_CLAW_REDIS_PORT:
-          process.env.SDKWORK_CLAW_REDIS_PORT ?? DEFAULT_DEV_REDIS_PORT,
-        SDKWORK_CLAW_REDIS_DATABASE:
-          process.env.SDKWORK_CLAW_REDIS_DATABASE ?? DEFAULT_DEV_REDIS_DATABASE,
+        SDKWORK_CLOUDROUTER_REDIS_HOST:
+          process.env.SDKWORK_CLOUDROUTER_REDIS_HOST ?? DEFAULT_DEV_REDIS_HOST,
+        SDKWORK_CLOUDROUTER_REDIS_PORT:
+          process.env.SDKWORK_CLOUDROUTER_REDIS_PORT ?? DEFAULT_DEV_REDIS_PORT,
+        SDKWORK_CLOUDROUTER_REDIS_DATABASE:
+          process.env.SDKWORK_CLOUDROUTER_REDIS_DATABASE ?? DEFAULT_DEV_REDIS_DATABASE,
       };
   if (redisUrl) {
-    delete baseEnv.SDKWORK_CLAW_REDIS_HOST;
-    delete baseEnv.SDKWORK_CLAW_REDIS_PORT;
-    delete baseEnv.SDKWORK_CLAW_REDIS_DATABASE;
-    delete baseEnv.SDKWORK_CLAW_REDIS_USERNAME;
+    delete baseEnv.SDKWORK_CLOUDROUTER_REDIS_HOST;
+    delete baseEnv.SDKWORK_CLOUDROUTER_REDIS_PORT;
+    delete baseEnv.SDKWORK_CLOUDROUTER_REDIS_DATABASE;
+    delete baseEnv.SDKWORK_CLOUDROUTER_REDIS_USERNAME;
   }
   const env = {
     ...baseEnv,
     ...IAM_APPLICATION_BOOTSTRAP_ENV,
     ...redisStructuredDefaults,
     ...developmentSecurityEnv,
-    SDKWORK_CLAW_DEPLOYMENT_MODE: 'server',
+    SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE: 'server',
     [bindEnvName]: bindValue,
     SDKWORK_DATABASE_ENGINE: String(settings.databaseUrl ?? '').trim().toLowerCase().startsWith('sqlite:')
       ? 'sqlite'
       : 'postgresql',
     SDKWORK_DATABASE_URL: settings.databaseUrl,
-    SDKWORK_CLAW_REDIS_ENABLED:
-      process.env.SDKWORK_CLAW_REDIS_ENABLED ?? 'true',
-    SDKWORK_CLAW_STARTUP_INSTALL_MODE: startupInstallMode,
+    SDKWORK_CLOUDROUTER_REDIS_ENABLED:
+      process.env.SDKWORK_CLOUDROUTER_REDIS_ENABLED ?? 'true',
+    SDKWORK_CLOUDROUTER_STARTUP_INSTALL_MODE: startupInstallMode,
     SDKWORK_MODELS_CATALOG_ROOT: settings.modelsCatalogRoot,
-    SDKWORK_CLAW_MODEL_RANKING_RUN_ON_STARTUP:
-      process.env.SDKWORK_CLAW_MODEL_RANKING_RUN_ON_STARTUP ?? 'false',
-    SDKWORK_CLAW_USAGE_SETTLEMENT_WORKER_ENABLED:
-      process.env.SDKWORK_CLAW_USAGE_SETTLEMENT_WORKER_ENABLED ?? 'false',
-    SDKWORK_CLAW_API_KEY_PEPPER:
-      process.env.SDKWORK_CLAW_API_KEY_PEPPER ?? DEFAULT_DEV_SECRET,
-    SDKWORK_CLAW_TRUSTED_SUBJECT_SECRET:
-      process.env.SDKWORK_CLAW_TRUSTED_SUBJECT_SECRET ?? DEFAULT_DEV_SECRET,
-    SDKWORK_CLAW_APP_SESSION_SECRET:
-      process.env.SDKWORK_CLAW_APP_SESSION_SECRET ?? DEFAULT_DEV_SECRET,
-    SDKWORK_CLAW_PAYMENT_WEBHOOK_SECRET:
-      process.env.SDKWORK_CLAW_PAYMENT_WEBHOOK_SECRET ?? DEFAULT_DEV_SECRET,
-    SDKWORK_CLAW_INSTALL_ENVIRONMENT:
-      process.env.SDKWORK_CLAW_INSTALL_ENVIRONMENT ?? 'development',
+    SDKWORK_CLOUDROUTER_MODEL_RANKING_RUN_ON_STARTUP:
+      process.env.SDKWORK_CLOUDROUTER_MODEL_RANKING_RUN_ON_STARTUP ?? 'false',
+    SDKWORK_CLOUDROUTER_USAGE_SETTLEMENT_WORKER_ENABLED:
+      process.env.SDKWORK_CLOUDROUTER_USAGE_SETTLEMENT_WORKER_ENABLED ?? 'false',
+    SDKWORK_CLOUDROUTER_API_KEY_PEPPER:
+      process.env.SDKWORK_CLOUDROUTER_API_KEY_PEPPER ?? DEFAULT_DEV_SECRET,
+    SDKWORK_CLOUDROUTER_TRUSTED_SUBJECT_SECRET:
+      process.env.SDKWORK_CLOUDROUTER_TRUSTED_SUBJECT_SECRET ?? DEFAULT_DEV_SECRET,
+    SDKWORK_CLOUDROUTER_APP_SESSION_SECRET:
+      process.env.SDKWORK_CLOUDROUTER_APP_SESSION_SECRET ?? DEFAULT_DEV_SECRET,
+    SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET:
+      process.env.SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET ?? DEFAULT_DEV_SECRET,
+    SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT:
+      process.env.SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT ?? 'development',
     SDKWORK_ENVIRONMENT:
       process.env.SDKWORK_ENVIRONMENT
-      ?? process.env.SDKWORK_CLAW_INSTALL_ENVIRONMENT
+      ?? process.env.SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT
       ?? 'development',
-    SDKWORK_CLAW_INSTALL_SEED_PROFILE:
-      process.env.SDKWORK_CLAW_INSTALL_SEED_PROFILE ?? 'commercial',
+    SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE:
+      process.env.SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE ?? 'commercial',
   };
   if (databaseMaxConnections !== undefined) {
     env.SDKWORK_DATABASE_MAX_CONNECTIONS = databaseMaxConnections;
@@ -785,9 +785,9 @@ function portalEnv(settings, bootstrapEnv = {}) {
   const { host, port } = splitBind(settings.portalBind, '--portal-bind');
   const isClientMode = settings.runtimeMode === 'client';
   const proxyEnv = {
-    [CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.openApi]: settings.gatewayForwardUrl,
-    [CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.backendApi]: settings.backendApiForwardUrl,
-    [CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.appApi]: settings.appApiForwardUrl,
+    [CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.openApi]: settings.gatewayForwardUrl,
+    [CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.backendApi]: settings.backendApiForwardUrl,
+    [CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.appApi]: settings.appApiForwardUrl,
   };
   return {
     ...withBrowserDevelopmentViteRuntimeEnv(process.env, settings, {
@@ -798,30 +798,30 @@ function portalEnv(settings, bootstrapEnv = {}) {
     HOST: host,
     PORT: port,
     OPENAPI_DEV_URL: appendPath(settings.gatewayForwardUrl, '/openapi.json'),
-    SDKWORK_CLAW_DEPLOYMENT_MODE:
-      process.env.SDKWORK_CLAW_DEPLOYMENT_MODE ?? (isClientMode ? 'web' : 'server'),
-    SDKWORK_CLAW_PORTAL_BIND: settings.portalBind,
+    SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE:
+      process.env.SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE ?? (isClientMode ? 'web' : 'server'),
+    SDKWORK_CLOUDROUTER_PORTAL_BIND: settings.portalBind,
   };
 }
 
 function edgeServerEnv(settings) {
   const allInOne = settings.runtimeMode === 'all-in-one';
   return {
-    ...withSharedFoundationPortalRuntimeEnv(serviceEnv(settings, 'SDKWORK_CLAW_SERVER_BIND', settings.serverBind, {
+    ...withSharedFoundationPortalRuntimeEnv(serviceEnv(settings, 'SDKWORK_CLOUDROUTER_SERVER_BIND', settings.serverBind, {
       startupInstallMode: 'skip',
     }), settings),
-    SDKWORK_CLAW_EDGE_SERVER: '1',
-    SDKWORK_CLAW_ALL_IN_ONE_RUNTIME: allInOne ? '1' : '0',
-    SDKWORK_CLAW_EDGE_GATEWAY_BASE_URL: settings.gatewayForwardUrl,
-    SDKWORK_CLAW_EDGE_BACKEND_API_BASE_URL: settings.backendApiForwardUrl,
-    SDKWORK_CLAW_EDGE_APP_API_BASE_URL: settings.appApiForwardUrl,
-    SDKWORK_CLAW_APP_RUNTIME_GATEWAY_BASE_URL: settings.gatewayForwardUrl,
-    SDKWORK_CLAW_EDGE_PORTAL_BASE_URL: forwardingOriginFromBind(
+    SDKWORK_CLOUDROUTER_EDGE_SERVER: '1',
+    SDKWORK_CLOUDROUTER_ALL_IN_ONE_RUNTIME: allInOne ? '1' : '0',
+    SDKWORK_CLOUDROUTER_EDGE_GATEWAY_BASE_URL: settings.gatewayForwardUrl,
+    SDKWORK_CLOUDROUTER_EDGE_BACKEND_API_BASE_URL: settings.backendApiForwardUrl,
+    SDKWORK_CLOUDROUTER_EDGE_APP_API_BASE_URL: settings.appApiForwardUrl,
+    SDKWORK_CLOUDROUTER_APP_RUNTIME_GATEWAY_BASE_URL: settings.gatewayForwardUrl,
+    SDKWORK_CLOUDROUTER_EDGE_PORTAL_BASE_URL: forwardingOriginFromBind(
       settings.portalBind,
       '--portal-bind',
     ),
-    SDKWORK_CLAW_EDGE_EXTERNAL_SCHEME: settings.externalScheme,
-    SDKWORK_CLAW_EDGE_TRUST_FORWARDED_HEADERS: settings.trustForwardedHeaders ? '1' : '0',
+    SDKWORK_CLOUDROUTER_EDGE_EXTERNAL_SCHEME: settings.externalScheme,
+    SDKWORK_CLOUDROUTER_EDGE_TRUST_FORWARDED_HEADERS: settings.trustForwardedHeaders ? '1' : '0',
     ...buildRuntimeEdgePrivateEnv(process.env),
   };
 }
@@ -831,7 +831,7 @@ export function buildWorkspaceCommandPlan(settings, {
   platform = process.platform,
 } = {}) {
   settings.workspaceRoot = workspaceRoot;
-  const portalRelativeDir = 'apps/sdkwork-clawrouter-pc';
+  const portalRelativeDir = 'apps/sdkwork-cloudrouter-pc';
   splitBind(settings.portalBind, '--portal-bind');
   if (settings.runtimeMode !== 'client') {
     settings.databaseUrl ??= environmentDatabaseConfig(workspaceRoot).databaseUrl
@@ -839,7 +839,7 @@ export function buildWorkspaceCommandPlan(settings, {
     settings.modelsCatalogRoot = resolveModelsCatalogRoot(settings, workspaceRoot);
     ensureLocalSqliteDatabaseDirectory(settings, workspaceRoot);
   }
-  const portalBootstrap = ensureClawRouterBrowserDevelopmentEnv({
+  const portalBootstrap = ensureCloudRouterBrowserDevelopmentEnv({
     workspaceRoot,
     portalRuntimeEnv: portalEnv(settings),
     env: process.env,
@@ -886,12 +886,12 @@ export function buildWorkspaceCommandPlan(settings, {
   const blockingRuntimeSteps = [
     {
       name: 'installer',
-      command: clawRouterDevInstallerBinaryPath(workspaceRoot, platform),
+      command: cloudRouterDevInstallerBinaryPath(workspaceRoot, platform),
       args: ['ensure'],
       cwd: workspaceRoot,
-      env: clawRouterDevCargoEnv(
+      env: cloudRouterDevCargoEnv(
         workspaceRoot,
-        serviceEnv(settings, 'SDKWORK_CLAW_INSTALLER_BIND', '127.0.0.1:0'),
+        serviceEnv(settings, 'SDKWORK_CLOUDROUTER_INSTALLER_BIND', '127.0.0.1:0'),
       ),
       shell: false,
       windowsHide: platform === 'win32',
@@ -899,7 +899,7 @@ export function buildWorkspaceCommandPlan(settings, {
     },
     {
       name: 'model-catalog-refresh',
-      command: clawRouterDevInstallerBinaryPath(workspaceRoot, platform),
+      command: cloudRouterDevInstallerBinaryPath(workspaceRoot, platform),
       args: [
         'refresh-catalog',
         '--catalog-root',
@@ -907,9 +907,9 @@ export function buildWorkspaceCommandPlan(settings, {
         '--force',
       ],
       cwd: workspaceRoot,
-      env: clawRouterDevCargoEnv(
+      env: cloudRouterDevCargoEnv(
         workspaceRoot,
-        serviceEnv(settings, 'SDKWORK_CLAW_INSTALLER_BIND', '127.0.0.1:0'),
+        serviceEnv(settings, 'SDKWORK_CLOUDROUTER_INSTALLER_BIND', '127.0.0.1:0'),
       ),
       shell: false,
       windowsHide: platform === 'win32',
@@ -923,11 +923,11 @@ export function buildWorkspaceCommandPlan(settings, {
     {
       name: 'gateway',
       command: cargoCommand(platform),
-      args: cargoRunPackageArgs('sdkwork-clawrouter-edge-runtime'),
+      args: cargoRunPackageArgs('sdkwork-cloudrouter-edge-runtime'),
       cwd: workspaceRoot,
-      env: clawRouterDevCargoEnv(
+      env: cloudRouterDevCargoEnv(
         workspaceRoot,
-        serviceEnv(settings, 'SDKWORK_CLAW_GATEWAY_BIND', settings.gatewayBind, {
+        serviceEnv(settings, 'SDKWORK_CLOUDROUTER_GATEWAY_BIND', settings.gatewayBind, {
           startupInstallMode: 'skip',
         }),
       ),
@@ -937,11 +937,11 @@ export function buildWorkspaceCommandPlan(settings, {
     {
       name: 'admin-api',
       command: cargoCommand(platform),
-      args: cargoRunPackageArgs('sdkwork-clawrouter-admin-gateway'),
+      args: cargoRunPackageArgs('sdkwork-cloudrouter-admin-gateway'),
       cwd: workspaceRoot,
-      env: clawRouterDevCargoEnv(
+      env: cloudRouterDevCargoEnv(
         workspaceRoot,
-        serviceEnv(settings, 'SDKWORK_CLAW_ADMIN_API_BIND', settings.adminApiBind, {
+        serviceEnv(settings, 'SDKWORK_CLOUDROUTER_ADMIN_API_BIND', settings.adminApiBind, {
           startupInstallMode: 'skip',
         }),
       ),
@@ -953,11 +953,11 @@ export function buildWorkspaceCommandPlan(settings, {
       command: cargoCommand(platform),
       args: cargoRunPackageArgs(APP_API_GATEWAY_PACKAGE),
       cwd: workspaceRoot,
-      env: clawRouterDevCargoEnv(workspaceRoot, {
-        ...serviceEnv(settings, 'SDKWORK_CLAW_APP_API_BIND', settings.appApiBind, {
+      env: cloudRouterDevCargoEnv(workspaceRoot, {
+        ...serviceEnv(settings, 'SDKWORK_CLOUDROUTER_APP_API_BIND', settings.appApiBind, {
           startupInstallMode: 'skip',
         }),
-        SDKWORK_CLAW_APP_RUNTIME_GATEWAY_BASE_URL: settings.gatewayForwardUrl,
+        SDKWORK_CLOUDROUTER_APP_RUNTIME_GATEWAY_BASE_URL: settings.gatewayForwardUrl,
       }),
       shell: false,
       windowsHide: platform === 'win32',
@@ -979,7 +979,7 @@ export function buildWorkspaceCommandPlan(settings, {
       command: cargoCommand(platform),
       args: cargoRunPackageArgs(EDGE_GATEWAY_PACKAGE),
       cwd: workspaceRoot,
-      env: clawRouterDevCargoEnv(workspaceRoot, edgeServerEnv(settings)),
+      env: cloudRouterDevCargoEnv(workspaceRoot, edgeServerEnv(settings)),
       shell: false,
       windowsHide: platform === 'win32',
     },
@@ -1161,7 +1161,7 @@ export function workspaceAccessLines(settings, includeLanAccess = false, interfa
 export function workspaceHelpText() {
   return `Usage: node scripts/dev/start-workspace.mjs [options]
 
-Starts the standalone Claw Router runtime and portal development server.
+Starts the standalone Cloud Router runtime and portal development server.
 Use --client-only for a remote API client session that starts no local API host.
 
 Options:
@@ -1169,9 +1169,9 @@ Options:
                          Deployment profile (default standalone)
   --distributed          Use local split-process debugging; does not change the topology profile
   --database-url <url>    Optional shared SDKWORK_DATABASE_URL override (default ${defaultPostgresDatabaseUrl()})
-  --gateway-bind <bind>   SDKWORK_CLAW_GATEWAY_BIND override (default ${DEFAULT_GATEWAY_BIND})
-  --admin-api-bind <bind> SDKWORK_CLAW_ADMIN_API_BIND override (default ${DEFAULT_ADMIN_API_BIND})
-  --app-api-bind <bind>   SDKWORK_CLAW_APP_API_BIND override (default ${DEFAULT_APP_API_BIND})
+  --gateway-bind <bind>   SDKWORK_CLOUDROUTER_GATEWAY_BIND override (default ${DEFAULT_GATEWAY_BIND})
+  --admin-api-bind <bind> SDKWORK_CLOUDROUTER_ADMIN_API_BIND override (default ${DEFAULT_ADMIN_API_BIND})
+  --app-api-bind <bind>   SDKWORK_CLOUDROUTER_APP_API_BIND override (default ${DEFAULT_APP_API_BIND})
   --server-bind <bind>    Rust edge server HOST:PORT override (default ${DEFAULT_SERVER_BIND})
   --portal-bind <bind>    Direct portal dev HOST:PORT override (default ${DEFAULT_PORTAL_BIND})
   --remote-api-ingress-url <url>
@@ -1236,15 +1236,15 @@ export function renderWorkspaceDryRun(settings, plan) {
     });
     return [
       '[start-workspace] client launch settings',
-      '  SDKWORK_CLAW_RUNTIME_MODE=client',
-      `  SDKWORK_CLAW_PORTAL_BIND=${settings.portalBind}`,
-      `  SDKWORK_CLAW_REMOTE_API_INGRESS=${settings.remoteApiIngressOrigin}`,
-      `  VITE_CLAWROUTER_OPEN_API_BASE_URL=${portalViteRuntimeEnv.VITE_CLAWROUTER_OPEN_API_BASE_URL ?? '(not configured)'}`,
-      `  VITE_CLAWROUTER_BACKEND_API_BASE_URL=${portalViteRuntimeEnv.VITE_CLAWROUTER_BACKEND_API_BASE_URL ?? '(not configured)'}`,
-      `  VITE_CLAWROUTER_APP_API_BASE_URL=${portalViteRuntimeEnv.VITE_CLAWROUTER_APP_API_BASE_URL ?? '(not configured)'}`,
-      `  ${CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.openApi}=${settings.gatewayForwardUrl}`,
-      `  ${CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.backendApi}=${settings.backendApiForwardUrl}`,
-      `  ${CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.appApi}=${settings.appApiForwardUrl}`,
+      '  SDKWORK_CLOUDROUTER_RUNTIME_MODE=client',
+      `  SDKWORK_CLOUDROUTER_PORTAL_BIND=${settings.portalBind}`,
+      `  SDKWORK_CLOUDROUTER_REMOTE_API_INGRESS=${settings.remoteApiIngressOrigin}`,
+      `  VITE_CLOUDROUTER_OPEN_API_BASE_URL=${portalViteRuntimeEnv.VITE_CLOUDROUTER_OPEN_API_BASE_URL ?? '(not configured)'}`,
+      `  VITE_CLOUDROUTER_BACKEND_API_BASE_URL=${portalViteRuntimeEnv.VITE_CLOUDROUTER_BACKEND_API_BASE_URL ?? '(not configured)'}`,
+      `  VITE_CLOUDROUTER_APP_API_BASE_URL=${portalViteRuntimeEnv.VITE_CLOUDROUTER_APP_API_BASE_URL ?? '(not configured)'}`,
+      `  ${CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.openApi}=${settings.gatewayForwardUrl}`,
+      `  ${CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.backendApi}=${settings.backendApiForwardUrl}`,
+      `  ${CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.appApi}=${settings.appApiForwardUrl}`,
       `  VITE_TOOL_API_ENABLED=${portalViteRuntimeEnv.VITE_TOOL_API_ENABLED ?? 'false'}`,
       ...workspaceAccessLines(settings),
       ...plan.steps.flatMap((step) => [
@@ -1258,34 +1258,34 @@ export function renderWorkspaceDryRun(settings, plan) {
 
   return [
     '[start-workspace] edge launch settings',
-    `  SDKWORK_CLAW_RUNTIME_MODE=${settings.runtimeMode}`,
+    `  SDKWORK_CLOUDROUTER_RUNTIME_MODE=${settings.runtimeMode}`,
     `  SDKWORK_DATABASE_URL=${settings.databaseUrl ?? defaultPostgresDatabaseUrl()}`,
     `  SDKWORK_MODELS_CATALOG_ROOT=${settings.modelsCatalogRoot}`,
-    `  SDKWORK_CLAW_GATEWAY_BIND=${settings.gatewayBind}`,
-    `  SDKWORK_CLAW_ADMIN_API_BIND=${settings.adminApiBind}`,
-    `  SDKWORK_CLAW_APP_API_BIND=${settings.appApiBind}`,
-    `  SDKWORK_CLAW_SERVER_BIND=${settings.serverBind}`,
-    `  SDKWORK_CLAW_PORTAL_BIND=${settings.portalBind}`,
+    `  SDKWORK_CLOUDROUTER_GATEWAY_BIND=${settings.gatewayBind}`,
+    `  SDKWORK_CLOUDROUTER_ADMIN_API_BIND=${settings.adminApiBind}`,
+    `  SDKWORK_CLOUDROUTER_APP_API_BIND=${settings.appApiBind}`,
+    `  SDKWORK_CLOUDROUTER_SERVER_BIND=${settings.serverBind}`,
+    `  SDKWORK_CLOUDROUTER_PORTAL_BIND=${settings.portalBind}`,
     `  PORTAL_PUBLIC_SDK_BASE_URL=${portalRuntimeEnv.PORTAL_PUBLIC_SDK_BASE_URL ?? '(not configured)'}`,
     `  PORTAL_PUBLIC_API_BASE_URL=${portalPublicRuntimeEnvLineValue(portalRuntimeEnv, 'PORTAL_PUBLIC_API_BASE_URL')}`,
     `  PORTAL_PUBLIC_OPEN_API_BASE_URL=${portalPublicRuntimeEnvLineValue(portalRuntimeEnv, 'PORTAL_PUBLIC_OPEN_API_BASE_URL')}`,
     `  PORTAL_PUBLIC_BACKEND_API_BASE_URL=${portalPublicRuntimeEnvLineValue(portalRuntimeEnv, 'PORTAL_PUBLIC_BACKEND_API_BASE_URL')}`,
     `  PORTAL_PUBLIC_APP_API_BASE_URL=${portalPublicRuntimeEnvLineValue(portalRuntimeEnv, 'PORTAL_PUBLIC_APP_API_BASE_URL')}`,
     `  PORTAL_PUBLIC_APPBASE_BACKEND_API_BASE_URL=${portalRuntimeEnv.PORTAL_PUBLIC_APPBASE_BACKEND_API_BASE_URL ?? '(not configured)'}`,
-    `  ${CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.openApi}=${settings.gatewayForwardUrl}`,
-    `  ${CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.backendApi}=${settings.backendApiForwardUrl}`,
-    `  ${CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.appApi}=${settings.appApiForwardUrl}`,
+    `  ${CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.openApi}=${settings.gatewayForwardUrl}`,
+    `  ${CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.backendApi}=${settings.backendApiForwardUrl}`,
+    `  ${CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.appApi}=${settings.appApiForwardUrl}`,
     `  PORTAL_PUBLIC_TOOL_API_ENABLED=${portalRuntimeEnv.PORTAL_PUBLIC_TOOL_API_ENABLED}`,
-    `  ${CLAW_ROUTER_EDGE_ENV_KEYS.toolApiRateLimitRequests}=${resolveEdgeEnvValue(process.env, CLAW_ROUTER_EDGE_ENV_KEYS.toolApiRateLimitRequests, '120')}`,
-    `  ${CLAW_ROUTER_EDGE_ENV_KEYS.toolApiRateLimitWindowSeconds}=${resolveEdgeEnvValue(process.env, CLAW_ROUTER_EDGE_ENV_KEYS.toolApiRateLimitWindowSeconds, '60')}`,
-    `  ${CLAW_ROUTER_EDGE_ENV_KEYS.toolApiSdkArchiveRoot}=${resolveEdgeEnvValue(process.env, CLAW_ROUTER_EDGE_ENV_KEYS.toolApiSdkArchiveRoot) ?? '(not configured)'}`,
-    `  SDKWORK_CLAW_ALL_IN_ONE_RUNTIME=${settings.runtimeMode === 'all-in-one' ? '1' : '0'}`,
-    `  SDKWORK_CLAW_EDGE_GATEWAY_BASE_URL=${settings.gatewayForwardUrl}`,
-    `  SDKWORK_CLAW_EDGE_BACKEND_API_BASE_URL=${settings.backendApiForwardUrl}`,
-    `  SDKWORK_CLAW_EDGE_APP_API_BASE_URL=${settings.appApiForwardUrl}`,
-    `  SDKWORK_CLAW_EDGE_PORTAL_BASE_URL=${forwardingOriginFromBind(settings.portalBind, '--portal-bind')}`,
-    `  SDKWORK_CLAW_EDGE_EXTERNAL_SCHEME=${settings.externalScheme}`,
-    `  SDKWORK_CLAW_EDGE_TRUST_FORWARDED_HEADERS=${settings.trustForwardedHeaders ? '1' : '0'}`,
+    `  ${CLOUD_ROUTER_EDGE_ENV_KEYS.toolApiRateLimitRequests}=${resolveEdgeEnvValue(process.env, CLOUD_ROUTER_EDGE_ENV_KEYS.toolApiRateLimitRequests, '120')}`,
+    `  ${CLOUD_ROUTER_EDGE_ENV_KEYS.toolApiRateLimitWindowSeconds}=${resolveEdgeEnvValue(process.env, CLOUD_ROUTER_EDGE_ENV_KEYS.toolApiRateLimitWindowSeconds, '60')}`,
+    `  ${CLOUD_ROUTER_EDGE_ENV_KEYS.toolApiSdkArchiveRoot}=${resolveEdgeEnvValue(process.env, CLOUD_ROUTER_EDGE_ENV_KEYS.toolApiSdkArchiveRoot) ?? '(not configured)'}`,
+    `  SDKWORK_CLOUDROUTER_ALL_IN_ONE_RUNTIME=${settings.runtimeMode === 'all-in-one' ? '1' : '0'}`,
+    `  SDKWORK_CLOUDROUTER_EDGE_GATEWAY_BASE_URL=${settings.gatewayForwardUrl}`,
+    `  SDKWORK_CLOUDROUTER_EDGE_BACKEND_API_BASE_URL=${settings.backendApiForwardUrl}`,
+    `  SDKWORK_CLOUDROUTER_EDGE_APP_API_BASE_URL=${settings.appApiForwardUrl}`,
+    `  SDKWORK_CLOUDROUTER_EDGE_PORTAL_BASE_URL=${forwardingOriginFromBind(settings.portalBind, '--portal-bind')}`,
+    `  SDKWORK_CLOUDROUTER_EDGE_EXTERNAL_SCHEME=${settings.externalScheme}`,
+    `  SDKWORK_CLOUDROUTER_EDGE_TRUST_FORWARDED_HEADERS=${settings.trustForwardedHeaders ? '1' : '0'}`,
     ...workspaceAccessLines(settings),
     ...plan.steps.flatMap((step) => [
       `[start-workspace] ${step.name}: ${formatCommand(step)}`,

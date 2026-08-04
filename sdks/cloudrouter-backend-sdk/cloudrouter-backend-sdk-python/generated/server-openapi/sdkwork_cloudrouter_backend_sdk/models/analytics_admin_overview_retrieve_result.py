@@ -1,0 +1,14 @@
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Optional, List, Dict, Any
+
+if TYPE_CHECKING:
+    from .admin_analytics_overview import AdminAnalyticsOverview
+
+
+@dataclass
+class AnalyticsAdminOverviewRetrieveResult:
+    """Analytics admin overview retrieve result schema exposed by Cloud Router."""
+    code: int
+    data: Any
+    trace_id: str

@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE_ROOT = ROOT.parent
-FRONTEND_ROOT = ROOT / "apps" / "sdkwork-clawrouter-pc" / "packages"
+FRONTEND_ROOT = ROOT / "apps" / "sdkwork-cloudrouter-pc" / "packages"
 DOCUMENTS_PACKAGES_ROOT = (
     WORKSPACE_ROOT
     / "sdkwork-documents"
@@ -15,13 +15,13 @@ DOCUMENTS_PACKAGES_ROOT = (
 )
 APPROVED_CLIPBOARD_UTILITY = (
     FRONTEND_ROOT
-    / "sdkwork-clawroutes-pc-commons"
+    / "sdkwork-cloudroutes-pc-commons"
     / "src"
     / "clipboard.ts"
 )
 COPY_BUTTON_COMPONENT = (
     FRONTEND_ROOT
-    / "sdkwork-clawroutes-pc-commons"
+    / "sdkwork-cloudroutes-pc-commons"
     / "src"
     / "components"
     / "CopyButton.tsx"
@@ -48,7 +48,7 @@ class FrontendClipboardStandardTest(unittest.TestCase):
         self.assertEqual(
             [],
             offenders,
-            "Copy actions must use sdkwork-clawroutes-pc-commons copyTextToClipboard so permission failures and unsupported browsers are handled consistently.",
+            "Copy actions must use sdkwork-cloudroutes-pc-commons copyTextToClipboard so permission failures and unsupported browsers are handled consistently.",
         )
 
     def test_shared_clipboard_utility_returns_structured_result_without_throwing(self) -> None:
@@ -82,9 +82,9 @@ class FrontendClipboardStandardTest(unittest.TestCase):
         migrated_files = [
             path
             for path in [
-            FRONTEND_ROOT / "sdkwork-clawrouter-pc-admin-user" / "src" / "index.tsx",
-            FRONTEND_ROOT / "sdkwork-clawrouter-pc-console-api-keys" / "src" / "ApiKeysView.tsx",
-            FRONTEND_ROOT / "sdkwork-clawrouter-pc-models" / "src" / "pages" / "ModelDetails.tsx",
+            FRONTEND_ROOT / "sdkwork-cloudrouter-pc-admin-user" / "src" / "index.tsx",
+            FRONTEND_ROOT / "sdkwork-cloudrouter-pc-console-api-keys" / "src" / "ApiKeysView.tsx",
+            FRONTEND_ROOT / "sdkwork-cloudrouter-pc-models" / "src" / "pages" / "ModelDetails.tsx",
             DOCUMENTS_PACKAGES_ROOT
             / "sdkwork-documents-pc-api-reference"
             / "src"

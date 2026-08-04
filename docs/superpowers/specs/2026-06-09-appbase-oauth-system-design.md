@@ -4,8 +4,8 @@
 
 Draft for implementation planning.
 
-This spec replaces Claw Router-owned `open_platform_*` management with an
-appbase-owned OAuth system. Compatibility with the old Claw Router
+This spec replaces Cloud Router-owned `open_platform_*` management with an
+appbase-owned OAuth system. Compatibility with the old Cloud Router
 `open_platform_*` tables, backend routes, generated SDK resources, admin
 packages, and frontend URLs is intentionally not preserved.
 
@@ -15,10 +15,10 @@ packages, and frontend URLs is intentionally not preserved.
 - Move OAuth provider integration, login, account linking, delegated grants,
   client credentials, surfaces, policies, diagnostics, and token-retention
   configuration to `sdkwork-appbase`.
-- Remove all `sdkwork-clawrouter` `open_platform_*` technical debt.
+- Remove all `sdkwork-cloudrouter` `open_platform_*` technical debt.
 - Support China/APAC and overseas mainstream providers across PC web, mobile
   web, native mobile apps, desktop apps, mini-programs, and service-side flows.
-- Use `/admin/oauth` as the Claw Router admin module base.
+- Use `/admin/oauth` as the Cloud Router admin module base.
 - Use `/app/v3/api/oauth/*` for app-facing OAuth runtime APIs.
 - Use `/iam/v3/api/oauth/provider_callbacks/*` for appbase-owned external
   provider callback ingress such as tickets, messages, events, and authorization
@@ -75,11 +75,11 @@ extension under the same `/admin/oauth` module.
   resources.
 - reusable appbase auth UI/runtime provider lists and OAuth invocation behavior.
 
-`sdkwork-clawrouter` owns:
+`sdkwork-cloudrouter` owns:
 
 - the admin module shell, sidebar placement, route registration, page-level UX,
   and generated appbase backend SDK consumption.
-- removal of Claw Router `open_platform_*` tables, schema registry entries,
+- removal of Cloud Router `open_platform_*` tables, schema registry entries,
   backend routes, Rust stores, tests, generated backend SDK resources, frontend
   packages, i18n resources, and sidebar routes.
 
@@ -207,7 +207,7 @@ Standard mapping:
 Rules:
 
 - Official account login must use the same appbase OAuth session creation path
-  as other OAuth providers. It must not use a Claw Router-local QR or
+  as other OAuth providers. It must not use a Cloud Router-local QR or
   open-platform login route.
 - Official account operational resources must be managed through backend API and
   appbase backend SDK resources, not product-local SDK forks.
@@ -293,7 +293,7 @@ Rules:
 ## Database Design
 
 All tables are appbase IAM tables. The system of record is `sdkwork-appbase`.
-Claw Router must not create product-local copies.
+Cloud Router must not create product-local copies.
 
 All tables follow the existing appbase portable SQL profile:
 
@@ -1270,7 +1270,7 @@ Indexes:
 
 Notes:
 
-- This table replaces the old Claw Router `open_platform_entry` concept with a
+- This table replaces the old Cloud Router `open_platform_entry` concept with a
   provider-agnostic operational resource model.
 - Menus and message rules can be modeled as parent/child resources with
   provider-specific payload snapshots in `content_snapshot_json`.
@@ -1765,17 +1765,17 @@ Appbase SDK resources after generation:
 Generated appbase SDK artifacts must not expose an `openPlatform` API group for
 this capability.
 
-Provider callback ingress is an appbase open-api route surface, not a Claw
+Provider callback ingress is an appbase open-api route surface, not a Cloud
 Router admin dependency. The current appbase SDK workspace has app and backend
 SDK families; the implementation plan must either keep provider ingress as
 route-manifest/runtime-only behavior or create a separate appbase open-api SDK
 workspace through the standard SDK generation flow before documenting generated
-SDK methods for it. Claw Router admin must not call provider callback ingress
+SDK methods for it. Cloud Router admin must not call provider callback ingress
 directly.
 
-## Claw Router Admin UX And URL Design
+## Cloud Router Admin UX And URL Design
 
-The Claw Router admin module must be independent from the old Open Platform
+The Cloud Router admin module must be independent from the old Open Platform
 menus.
 
 Sidebar:
@@ -1849,7 +1849,7 @@ UX requirements:
   controls: `self_managed_account` for customer-owned AppID/AppSecret setup and
   `operator_authorized_account` for component/third-party authorization.
 - Official Account and Mini Program pages are filtered resource-account views,
-  not separate Claw Router capabilities. They must use the same backend SDK
+  not separate Cloud Router capabilities. They must use the same backend SDK
   resources as the generic resource-account pages.
 - Mini-program login pages must make AppID, host provider, environment,
   release channel, page path, code/session flow, phone/profile authorization,
@@ -1865,31 +1865,31 @@ UX requirements:
   auth codes, full state, nonces, device codes, PKCE verifiers, or private
   claims.
 
-Claw Router frontend integration:
+Cloud Router frontend integration:
 
 - Use `getSdkworkAppbaseBackendSdkClient` from the existing commons SDK client
   boundary.
 - UI calls go through service modules backed by
   `@sdkwork/iam-backend-sdk`.
 - No raw `fetch`, axios, manual auth headers, or local SDK forks.
-- No `@sdkwork/clawrouter-backend-sdk` usage for this appbase-owned capability
-  except tests proving old Claw Router `open_platform_*` resources are removed.
+- No `@sdkwork/cloudrouter-backend-sdk` usage for this appbase-owned capability
+  except tests proving old Cloud Router `open_platform_*` resources are removed.
 
-## Removal From Claw Router
+## Removal From Cloud Router
 
-The implementation plan must remove all Claw Router-owned open platform
+The implementation plan must remove all Cloud Router-owned open platform
 artifacts:
 
 - schema registry source for `open_platform_*`.
 - generated schema references to `open_platform_*`.
-- generated Claw Router backend SDK `open_platform` resources.
+- generated Cloud Router backend SDK `open_platform` resources.
 - Rust API modules and stores for `admin_open_platform`.
 - SQLite/Postgres open platform stores.
 - `open_platform_*` tests.
 - PC admin packages:
-  - `sdkwork-clawrouter-pc-admin-open-platform`
-  - `sdkwork-clawrouter-pc-admin-wechat-mini-program`
-  - `sdkwork-clawrouter-pc-admin-wechat-official-account`
+  - `sdkwork-cloudrouter-pc-admin-open-platform`
+  - `sdkwork-cloudrouter-pc-admin-wechat-mini-program`
+  - `sdkwork-cloudrouter-pc-admin-wechat-official-account`
 - `/admin/open-platform*` route registrations.
 - open-platform i18n resources.
 
@@ -1979,16 +1979,16 @@ Appbase HTTP/API tests:
   redacts callback tokens, ticket payloads, message payload secrets, and
   authorization codes.
 
-Claw Router removal tests:
+Cloud Router removal tests:
 
 - schema registry no longer publishes `open_platform_*`.
-- generated Claw Router backend SDK no longer has `open_platform` API group or
+- generated Cloud Router backend SDK no longer has `open_platform` API group or
   models.
 - Rust route manifest no longer contains `/backend/v3/api/open_platform/*`.
 - admin route registry no longer contains `/admin/open-platform*`.
 - old open-platform admin packages are absent.
 
-Claw Router admin tests:
+Cloud Router admin tests:
 
 - module registry includes `oauth`.
 - sidebar links to `/admin/oauth/overview`.
@@ -2050,13 +2050,13 @@ Phase 2: appbase runtime behavior
   setup, operator-platform pre-authorization, authorization refresh, webhook
   verification, and operational-resource publish/sync.
 
-Phase 3: Claw Router removal
+Phase 3: Cloud Router removal
 
-- Delete Claw Router `open_platform_*` schema/API/store/frontend packages.
-- Regenerate Claw Router schema/OpenAPI/SDK outputs from source contracts.
+- Delete Cloud Router `open_platform_*` schema/API/store/frontend packages.
+- Regenerate Cloud Router schema/OpenAPI/SDK outputs from source contracts.
 - Run contract guards proving no stale `open_platform_*` remains.
 
-Phase 4: Claw Router admin
+Phase 4: Cloud Router admin
 
 - Add independent `oauth` sidebar/module/page package.
 - Integrate appbase backend SDK service boundary.
@@ -2071,16 +2071,16 @@ Phase 5: verification
 
 - Run narrow appbase storage/API tests.
 - Run appbase SDK generation/contract tests.
-- Run Claw Router schema and SDK generation guards.
-- Run Claw Router admin frontend tests/build.
+- Run Cloud Router schema and SDK generation guards.
+- Run Cloud Router admin frontend tests/build.
 
 ## Acceptance Criteria
 
 - `sdkwork-appbase` is the only owner of OAuth database schema and API
   contracts.
-- `sdkwork-clawrouter` contains no `open_platform_*` database, backend route,
+- `sdkwork-cloudrouter` contains no `open_platform_*` database, backend route,
   generated SDK, admin package, or `/admin/open-platform*` sidebar artifact.
-- Claw Router admin has a visible independent sidebar item for `/admin/oauth`.
+- Cloud Router admin has a visible independent sidebar item for `/admin/oauth`.
 - Appbase app-api exposes OAuth runtime operations under `/app/v3/api/oauth/*`.
 - Appbase provider ingress exposes external provider callback operations under
   `/iam/v3/api/oauth/provider_callbacks/*`.
@@ -2102,4 +2102,4 @@ Phase 5: verification
   customer-owned AppID/AppSecret setup and third-party component authorization.
 - Secrets are references, hashes, or redacted metadata only.
 - Tests prove app/backend API boundary separation and the absence of legacy
-  Claw Router open-platform artifacts.
+  Cloud Router open-platform artifacts.

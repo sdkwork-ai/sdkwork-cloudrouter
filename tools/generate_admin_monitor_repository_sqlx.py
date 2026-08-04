@@ -7,8 +7,8 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PRODUCT = ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql"
-CRATE = ROOT / "crates" / "sdkwork-clawrouter-admin-monitor-repository-sqlx" / "src"
+PRODUCT = ROOT / "services" / "sdkwork-cloudrouter-router-service" / "src" / "infrastructure" / "sql"
+CRATE = ROOT / "crates" / "sdkwork-cloudrouter-admin-monitor-repository-sqlx" / "src"
 
 REPLACEMENTS = [
     (r"use crate::domain::\{DomainError, DomainResult\};", ""),

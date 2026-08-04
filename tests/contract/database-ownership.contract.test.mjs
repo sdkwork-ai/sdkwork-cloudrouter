@@ -41,11 +41,11 @@ function prefixRegistry(prefix) {
 }
 
 function createFixture({ modules = ['child'], baselineTables = ['ai_owned', 'child_owned'] } = {}) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'clawrouter-db-ownership-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cloudrouter-db-ownership-'));
   writeJson(
     root,
     'database/database.manifest.json',
-    moduleManifest('clawrouter', 'ai_', ['ai_owned'], modules),
+    moduleManifest('cloudrouter', 'ai_', ['ai_owned'], modules),
   );
   writeJson(root, 'database/contract/prefix-registry.json', prefixRegistry('ai_'));
   writeJson(root, 'database/contract/table-registry.json', tableRegistry('ai_owned'));
@@ -68,14 +68,14 @@ function createFixture({ modules = ['child'], baselineTables = ['ai_owned', 'chi
   }
   writeText(
     root,
-    'database/ddl/baseline/postgres/0001_clawrouter_baseline.sql',
+    'database/ddl/baseline/postgres/0001_cloudrouter_baseline.sql',
     baselineTables
       .map((tableName) => `CREATE TABLE IF NOT EXISTS ${tableName} (id BIGINT PRIMARY KEY);`)
       .join('\n'),
   );
   writeText(
     root,
-    'services/sdkwork-clawrouter-router-service/src/infrastructure/sql/installer.rs',
+    'services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/installer.rs',
     '// fixture\n',
   );
   return root;

@@ -3,7 +3,7 @@
 ## Purpose
 
 `docs/commercial/` stores the commercial pricing and licensing model for
-SDKWork Claw Router. These documents describe the public commercial tiers,
+SDKWork Cloud Router. These documents describe the public commercial tiers,
 token metering, additional services pricing, payment methods, and refund
 policy that apply to commercial editions.
 

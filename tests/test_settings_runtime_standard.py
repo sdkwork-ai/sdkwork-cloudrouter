@@ -3,12 +3,12 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ROUTER_SERVICE = ROOT / "services" / "sdkwork-clawrouter-router-service"
+ROUTER_SERVICE = ROOT / "services" / "sdkwork-cloudrouter-router-service"
 APP_SDK = (
     ROOT
     / "sdks"
-    / "clawrouter-app-sdk"
-    / "clawrouter-app-sdk-typescript"
+    / "cloudrouter-app-sdk"
+    / "cloudrouter-app-sdk-typescript"
     / "generated"
     / "server-openapi"
     / "src"
@@ -43,7 +43,7 @@ class SettingsRuntimeStandardTest(unittest.TestCase):
 
     def test_generated_settings_sdk_returns_unwrapped_precise_types(self) -> None:
         openapi = (
-            ROOT / "generated" / "openapi" / "clawrouter-app-openapi.json"
+            ROOT / "generated" / "openapi" / "cloudrouter-app-openapi.json"
         ).read_text(encoding="utf-8")
         iam_api = (APP_SDK / "api" / "iam.ts").read_text(encoding="utf-8")
         type_exports = (APP_SDK / "types" / "index.ts").read_text(encoding="utf-8")
@@ -67,18 +67,18 @@ class SettingsRuntimeStandardTest(unittest.TestCase):
         settings_service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-settings"
+            / "sdkwork-cloudrouter-pc-console-settings"
             / "src"
             / "settingsService.ts"
         ).read_text(encoding="utf-8")
         console_core = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-core"
+            / "sdkwork-cloudrouter-pc-console-core"
             / "src"
             / "sdk"
             / "index.ts"
@@ -117,7 +117,7 @@ class SettingsRuntimeStandardTest(unittest.TestCase):
             / "settings_store.rs"
         ).read_text(encoding="utf-8")
         routes = (
-            ROOT / "crates" / "sdkwork-routes-clawrouter-app-api" / "src" / "routes.rs"
+            ROOT / "crates" / "sdkwork-routes-cloudrouter-app-api" / "src" / "routes.rs"
         ).read_text(encoding="utf-8")
 
         self.assertIn("app_settings_router_with_store", api_mod)

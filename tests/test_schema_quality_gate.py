@@ -7,9 +7,9 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 from tools.api_contract_manifest import ApiContractManifestGenerator
-from tools.clawrouter_gateway_openapi_generator import ClawRouterGatewayOpenApiGenerator
-from tools.clawrouter_openapi_generator import ClawRouterOpenApiGenerator
-from tools.clawrouter_sdk_runtime_standardizer import (
+from tools.cloudrouter_gateway_openapi_generator import CloudRouterGatewayOpenApiGenerator
+from tools.cloudrouter_openapi_generator import CloudRouterOpenApiGenerator
+from tools.cloudrouter_sdk_runtime_standardizer import (
     SDK_GENERATED_OPENAPI_PATHS,
     SdkRuntimeStandardizer,
     sdk_derived_specs,
@@ -42,13 +42,13 @@ def media_resource(locator: str, kind: str = "image") -> dict:
 
 class SchemaQualityGateTest(unittest.TestCase):
     def write_registry(self, root: Path, content: str) -> Path:
-        registry = root / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+        registry = root / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
         registry.parent.mkdir(parents=True, exist_ok=True)
         registry.write_text(textwrap.dedent(content).strip() + "\n", encoding="utf-8")
         return registry
 
     def write_app(self, root: Path, content: str = '<Route path="/models" element={<Models />} />') -> Path:
-        app = root / "apps" / "sdkwork-clawrouter-pc" / "src" / "App.tsx"
+        app = root / "apps" / "sdkwork-cloudrouter-pc" / "src" / "App.tsx"
         app.parent.mkdir(parents=True, exist_ok=True)
         app.write_text(textwrap.dedent(content).strip() + "\n", encoding="utf-8")
         return app
@@ -79,9 +79,9 @@ class SchemaQualityGateTest(unittest.TestCase):
         index.write_text(
             textwrap.dedent(
                 """
-                schema: sdkwork-clawrouter-frontend-field-contracts
+                schema: sdkwork-cloudrouter-frontend-field-contracts
                 version: 0.1.0
-                source: apps/sdkwork-clawrouter-pc/src/App.tsx
+                source: apps/sdkwork-cloudrouter-pc/src/App.tsx
                 rule: every actual portal route must be backed by explicit schema tables.
                 fragments:
                   - routes/models.yaml
@@ -109,10 +109,10 @@ class SchemaQualityGateTest(unittest.TestCase):
 
     def write_architecture_docs(self, root: Path) -> None:
         docs = {
-            "TECH-02-architecturedesign.md": "Rust-first sdkwork-clawrouter-edge-runtime sdkwork-clawrouter-standalone-gateway sdkwork-clawrouter-app-api-server sdkwork-clawrouter-admin-api-server /app/v3/api /backend/v3/api /v1",
+            "TECH-02-architecturedesign.md": "Rust-first sdkwork-cloudrouter-edge-runtime sdkwork-cloudrouter-standalone-gateway sdkwork-cloudrouter-app-api-server sdkwork-cloudrouter-admin-api-server /app/v3/api /backend/v3/api /v1",
             "TECH-03-tech-stack.md": "Rust-first axum tokio sqlx tower hyper utoipa tracing moka rust_decimal",
             "TECH-07-performancedesign.md": "Rust-first Tokio Axum moka Redis streaming batch writer connection pool",
-            "TECH-09-deploymentarchitecturedesign.md": "Rust-first Rust services desktop server docker kubernetes SDKWORK_CLAW_DEPLOYMENT_MODE SDKWORK_CLAW_GATEWAY_BIND SDKWORK_CLAW_APP_API_BIND SDKWORK_CLAW_ADMIN_API_BIND",
+            "TECH-09-deploymentarchitecturedesign.md": "Rust-first Rust services desktop server docker kubernetes SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE SDKWORK_CLOUDROUTER_GATEWAY_BIND SDKWORK_CLOUDROUTER_APP_API_BIND SDKWORK_CLOUDROUTER_ADMIN_API_BIND",
         }
         docs_root = root / "docs" / "architecture" / "tech"
         docs_root.mkdir(parents=True, exist_ok=True)
@@ -128,8 +128,8 @@ class SchemaQualityGateTest(unittest.TestCase):
           model_vendor:
             canonical_name: ModelVendor
             type_bindings:
-              java: com.sdkwork.claw.router.domain.enums.ModelVendor
-              rust: sdkwork_claw_router::domain::ModelVendor
+              java: com.sdkwork.cloud.router.domain.enums.ModelVendor
+              rust: sdkwork_cloudrouter_router::domain::ModelVendor
               typescript: ModelVendor
               openapi: ModelVendor
             builtin_values:
@@ -151,8 +151,8 @@ class SchemaQualityGateTest(unittest.TestCase):
         SchemaManifestGenerator(root=root, registry_path=registry).write()
         OpenApiComponentGenerator(root=root, registry_path=registry).write()
         ApiContractManifestGenerator(root=root).write()
-        ClawRouterOpenApiGenerator(root=root).write()
-        ClawRouterGatewayOpenApiGenerator(root=root).write()
+        CloudRouterOpenApiGenerator(root=root).write()
+        CloudRouterGatewayOpenApiGenerator(root=root).write()
         self.write_rust_backend_architecture(root)
         self.write_generated_sdks(root)
         self.write_portal_sdk_boundary(root)
@@ -169,16 +169,16 @@ class SchemaQualityGateTest(unittest.TestCase):
                 """
                 [workspace]
                 members = [
-                    "crates/sdkwork-claw-contract",
-                    "crates/sdkwork-claw-config",
-                    "crates/sdkwork-claw-health",
-                    "crates/sdkwork-claw-security",
-                    "crates/sdkwork-claw-http",
-                    "crates/sdkwork-claw-observability",
-                    "crates/sdkwork-clawrouter-edge-runtime",
-                    "services/sdkwork-clawrouter-admin-api-server",
-                    "services/sdkwork-clawrouter-app-api-server",
-                    "services/sdkwork-clawrouter-router-service",
+                    "crates/sdkwork-cloudrouter-contract",
+                    "crates/sdkwork-cloudrouter-config",
+                    "crates/sdkwork-cloudrouter-health",
+                    "crates/sdkwork-cloudrouter-security",
+                    "crates/sdkwork-cloudrouter-http",
+                    "crates/sdkwork-cloudrouter-observability",
+                    "crates/sdkwork-cloudrouter-edge-runtime",
+                    "services/sdkwork-cloudrouter-admin-api-server",
+                    "services/sdkwork-cloudrouter-app-api-server",
+                    "services/sdkwork-cloudrouter-router-service",
                 ]
 
                 [workspace.dependencies]
@@ -205,21 +205,21 @@ class SchemaQualityGateTest(unittest.TestCase):
             encoding="utf-8",
         )
         for member in (
-            "crates/sdkwork-claw-contract",
-            "crates/sdkwork-claw-config",
-            "crates/sdkwork-claw-health",
-            "crates/sdkwork-claw-security",
-            "crates/sdkwork-claw-http",
-            "crates/sdkwork-claw-observability",
-            "services/sdkwork-clawrouter-router-service",
+            "crates/sdkwork-cloudrouter-contract",
+            "crates/sdkwork-cloudrouter-config",
+            "crates/sdkwork-cloudrouter-health",
+            "crates/sdkwork-cloudrouter-security",
+            "crates/sdkwork-cloudrouter-http",
+            "crates/sdkwork-cloudrouter-observability",
+            "services/sdkwork-cloudrouter-router-service",
         ):
             cargo = root / member / "Cargo.toml"
             cargo.parent.mkdir(parents=True, exist_ok=True)
             cargo.write_text("[package]\nname = \"member\"\n", encoding="utf-8")
 
         module_rules = {
-            "crates/sdkwork-claw-contract": ("api_surface", "manifest", "operation", "path_pattern"),
-            "crates/sdkwork-claw-config": (
+            "crates/sdkwork-cloudrouter-contract": ("api_surface", "manifest", "operation", "path_pattern"),
+            "crates/sdkwork-cloudrouter-config": (
                 "api_key",
                 "database",
                 "deployment",
@@ -227,11 +227,11 @@ class SchemaQualityGateTest(unittest.TestCase):
                 "provider_secret_map",
                 "runtime",
             ),
-            "crates/sdkwork-claw-health": ("health",),
-            "crates/sdkwork-claw-security": ("headers", "redaction"),
-            "crates/sdkwork-claw-http": ("auth", "contract_routes", "error", "health", "headers", "router"),
-            "crates/sdkwork-claw-observability": ("tracing_setup",),
-            "services/sdkwork-clawrouter-router-service": (
+            "crates/sdkwork-cloudrouter-health": ("health",),
+            "crates/sdkwork-cloudrouter-security": ("headers", "redaction"),
+            "crates/sdkwork-cloudrouter-http": ("auth", "contract_routes", "error", "health", "headers", "router"),
+            "crates/sdkwork-cloudrouter-observability": ("tracing_setup",),
+            "services/sdkwork-cloudrouter-router-service": (
                 "api",
                 "application",
                 "domain",
@@ -250,7 +250,7 @@ class SchemaQualityGateTest(unittest.TestCase):
             for module in modules:
                 src.joinpath(f"{module}.rs").write_text("// module\n", encoding="utf-8")
 
-        product_src = root / "services" / "sdkwork-clawrouter-router-service" / "src"
+        product_src = root / "services" / "sdkwork-cloudrouter-router-service" / "src"
         product_src.joinpath("infrastructure.rs").unlink()
         product_src.joinpath("ports.rs").unlink()
         product_ports = product_src / "ports"
@@ -306,7 +306,7 @@ class SchemaQualityGateTest(unittest.TestCase):
         product_postgres.joinpath("row_mapping.rs").write_text("// postgres row mapping\n", encoding="utf-8")
         product_postgres.joinpath("usage_settlement_store.rs").write_text("// PostgresUsageSettlementStore commerce_usage_settlement plus_account_history settlement_status INSUFFICIENT_POINTS\n", encoding="utf-8")
 
-        for service in ("sdkwork-clawrouter-edge-runtime", "sdkwork-clawrouter-admin-api-server", "sdkwork-clawrouter-app-api-server"):
+        for service in ("sdkwork-cloudrouter-edge-runtime", "sdkwork-cloudrouter-admin-api-server", "sdkwork-cloudrouter-app-api-server"):
             service_root = root / "services" / service
             (service_root / "src").mkdir(parents=True, exist_ok=True)
             (service_root / "Cargo.toml").write_text(
@@ -316,9 +316,9 @@ class SchemaQualityGateTest(unittest.TestCase):
                     name = "service"
 
                     [dependencies]
-                    sdkwork-claw-config = { path = "../../crates/sdkwork-claw-config" }
-                    sdkwork-claw-http = { path = "../../crates/sdkwork-claw-http" }
-                    sdkwork-claw-observability = { path = "../../crates/sdkwork-claw-observability" }
+                    sdkwork-cloudrouter-config = { path = "../../crates/sdkwork-cloudrouter-config" }
+                    sdkwork-cloudrouter-http = { path = "../../crates/sdkwork-cloudrouter-http" }
+                    sdkwork-cloudrouter-observability = { path = "../../crates/sdkwork-cloudrouter-observability" }
                     anyhow.workspace = true
                     axum.workspace = true
                     tokio.workspace = true
@@ -327,9 +327,9 @@ class SchemaQualityGateTest(unittest.TestCase):
                 + "\n",
                 encoding="utf-8",
             )
-            lib_text = "pub fn router() { sdkwork_claw_http::service_router(\"service\"); }\n"
-            if service == "sdkwork-clawrouter-edge-runtime":
-                lib_text = "pub mod runtime;\npub fn router() { sdkwork_claw_http::service_router(\"service\"); }\n"
+            lib_text = "pub fn router() { sdkwork_cloudrouter_http::service_router(\"service\"); }\n"
+            if service == "sdkwork-cloudrouter-edge-runtime":
+                lib_text = "pub mod runtime;\npub fn router() { sdkwork_cloudrouter_http::service_router(\"service\"); }\n"
                 (service_root / "src" / "runtime.rs").write_text("// gateway runtime\n", encoding="utf-8")
             (service_root / "src" / "lib.rs").write_text(lib_text, encoding="utf-8")
 
@@ -340,15 +340,15 @@ class SchemaQualityGateTest(unittest.TestCase):
                 """
                 # Rust Backend Module Standard
 
-                Rust-first backend module boundary uses sdkwork-claw-security and sdkwork-claw-http.
+                Rust-first backend module boundary uses sdkwork-cloudrouter-security and sdkwork-cloudrouter-http.
                 Hexagonal architecture keeps api, application, domain, ports, adapters, infrastructure, and bootstrap separated.
                 App surface /app/v3/api, backend surface /backend/v3/api, and runtime surface /v1 remain separate.
                 High performance requires axum, tokio, tower, tower-http, connection pool, streaming, backpressure, timeout, request id, and tracing.
-                RuntimeConfig loads SDKWORK_CLAW_GATEWAY_BIND, SDKWORK_CLAW_APP_API_BIND, SDKWORK_CLAW_ADMIN_API_BIND, and validates each bind value as a valid socket address.
+                RuntimeConfig loads SDKWORK_CLOUDROUTER_GATEWAY_BIND, SDKWORK_CLOUDROUTER_APP_API_BIND, SDKWORK_CLOUDROUTER_ADMIN_API_BIND, and validates each bind value as a valid socket address.
                 DatabaseConfig parses SDKWORK_DATABASE_URL for typed deployment database wiring.
                 DatabaseHealth exposes configured, engine, and maxConnections only, and must not expose database URLs.
-                ApiKeyIdentity is parsed only in sdkwork-claw-http auth from Authorization: Bearer, x-api-key, x-goog-api-key, and query key inputs; business handlers must not parse raw auth headers.
-                ApiKeySecurityConfig loads SDKWORK_CLAW_API_KEY_PEPPER and HmacSha256ApiKeySecretHasher implements ApiKeySecretHasher for HMAC plus pepper hashing and iam_gateway_api_key.key_hash lookup with no plaintext API key storage.
+                ApiKeyIdentity is parsed only in sdkwork-cloudrouter-http auth from Authorization: Bearer, x-api-key, x-goog-api-key, and query key inputs; business handlers must not parse raw auth headers.
+                ApiKeySecurityConfig loads SDKWORK_CLOUDROUTER_API_KEY_PEPPER and HmacSha256ApiKeySecretHasher implements ApiKeySecretHasher for HMAC plus pepper hashing and iam_gateway_api_key.key_hash lookup with no plaintext API key storage.
                 Security requires redaction, sensitive headers, authorization, idempotency, audit log, rate limit, CORS, and security headers.
                 The manifest-driven contract route returns 501 for declared but unfinished operations with no fake success responses.
                 Product implementation keeps domain, application, ports, and infrastructure as first-class submodules.
@@ -358,7 +358,7 @@ class SchemaQualityGateTest(unittest.TestCase):
                 OpenAIModelsRoute serves /v1/models through the gateway runtime module, uses PricingCatalog snapshots, and returns OpenAI-compatible model list envelopes only after API key authentication.
                 OpenAIChatCompletionsRoute serves /v1/chat/completions through the gateway runtime module, authenticates the API key, validates model routing and pricing, uses ChatCompletionRelay for non-stream execution, uses ChatCompletionStreamRelay with ChatCompletionStreamRelayResponse for SSE text/event-stream pass-through, and returns provider_relay_not_configured or streaming_relay_not_configured only when the matching relay is absent.
                 Non-stream OpenAIChatCompletionsRoute provider success must build GatewayUsageRecordCommand from provider usage and persist through GatewayUsageRecorder, with PostgresGatewayUsageRecorder writing ai_request_trace and ai_usage; missing usage returns provider_usage_record_failed. The streaming usage boundary must force upstream stream_options.include_usage through OpenAiCompatibleChatCompletionStreamRelay and SecretRefOpenAiCompatibleChatCompletionStreamRelay, then StreamingUsageRecordingBody must persist the provider SSE usage event before stream completion.
-                UsageSettlementWorker owns the background worker boundary and UsageSettlementWorkerConfig controls schema readiness gated settlement activation. SDKWORK_CLAW_USAGE_SETTLEMENT_WORKER_ENABLED, SDKWORK_CLAW_USAGE_SETTLEMENT_BATCH_SIZE, and SDKWORK_CLAW_USAGE_SETTLEMENT_INTERVAL_MILLIS configure the worker. UsageSettlementStore consumes UsageSettlementCommand and returns UsageSettlementOutcome from a worker boundary after ai_usage is written. PostgresUsageSettlementStore must settle pending or failed settlement_status rows into commerce_usage_settlement and plus_account_history idempotently, update settlement_id, use FOR UPDATE SKIP LOCKED on Postgres, and insufficient balances must use INSUFFICIENT_POINTS without double-debiting.
+                UsageSettlementWorker owns the background worker boundary and UsageSettlementWorkerConfig controls schema readiness gated settlement activation. SDKWORK_CLOUDROUTER_USAGE_SETTLEMENT_WORKER_ENABLED, SDKWORK_CLOUDROUTER_USAGE_SETTLEMENT_BATCH_SIZE, and SDKWORK_CLOUDROUTER_USAGE_SETTLEMENT_INTERVAL_MILLIS configure the worker. UsageSettlementStore consumes UsageSettlementCommand and returns UsageSettlementOutcome from a worker boundary after ai_usage is written. PostgresUsageSettlementStore must settle pending or failed settlement_status rows into commerce_usage_settlement and plus_account_history idempotently, update settlement_id, use FOR UPDATE SKIP LOCKED on Postgres, and insufficient balances must use INSUFFICIENT_POINTS without double-debiting.
                 OpenAIResponsesRoute serves /v1/responses through the gateway runtime module, authenticates the API key, validates responses capability, provider route, and LlmInputToken pricing, returns responses_relay_not_configured when relay is absent, and uses ResponsesRelay with ResponsesRelayRequest for non-stream provider execution.
                 OpenAiCompatibleResponsesRelay and SecretRefOpenAiCompatibleResponsesRelay use UpstreamProviderEndpoint, provider_base_url, provider_secret_ref, ai_upstream_account.timeout_ms, ai_upstream_account.retry_policy, request-context provider timeout, request-context provider retry policy, ProviderRetryPolicy, strict JSON, non-stream JSON relay, transient provider retry, and retryable upstream status for native OpenAI-compatible /v1/responses relay without plaintext provider secret storage.
                 OpenAIEmbeddingsRoute serves /v1/embeddings through the gateway runtime module, authenticates the API key, validates embedding capability, provider route, and EmbeddingInputToken pricing, returns embedding_relay_not_configured when relay is absent, and uses EmbeddingsRelay with EmbeddingsRelayRequest for provider execution.
@@ -366,9 +366,9 @@ class SchemaQualityGateTest(unittest.TestCase):
                 ChatCompletionRelay accepts ChatCompletionRelayRequest only after authentication, model routing, and pricing validation, and carries provider_base_url, provider_secret_ref, ai_upstream_account.timeout_ms, ai_upstream_account.retry_policy, request-context provider timeout, and request-context provider retry policy, so HTTP handlers must not call upstream providers directly.
                 OpenAiCompatibleChatCompletionStreamRelay and SecretRefOpenAiCompatibleChatCompletionStreamRelay use UpstreamProviderEndpoint, an absolute http or https provider URL, hyper, hyper-rustls, and a TLS connector for native OpenAI-compatible upstream SSE calls, normalize the /v1 prefix, never send /v1/v1/..., require a provider response timeout, apply request-context provider timeout from ai_upstream_account.timeout_ms, stream adapters must not retry retryable upstream status, and keep no plaintext provider secret storage.
                 ProviderSecretResolver resolves provider_secret_ref into runtime bearer credentials outside catalog snapshots.
-                ProviderSecretMapConfig loads SDKWORK_CLAW_PROVIDER_SECRET_MAP_JSON for environment-backed local and deployment secret reference resolution.
+                ProviderSecretMapConfig loads SDKWORK_CLOUDROUTER_PROVIDER_SECRET_MAP_JSON for environment-backed local and deployment secret reference resolution.
                 ProviderSecretMapResolver adapts ProviderSecretMapConfig into ProviderSecretResolver without exposing plaintext provider tokens.
-                ProviderRelayConfig loads SDKWORK_CLAW_OPENAI_RELAY_BASE_URL and SDKWORK_CLAW_OPENAI_RELAY_BEARER_TOKEN for deployment-time provider relay wiring.
+                ProviderRelayConfig loads SDKWORK_CLOUDROUTER_OPENAI_RELAY_BASE_URL and SDKWORK_CLOUDROUTER_OPENAI_RELAY_BEARER_TOKEN for deployment-time provider relay wiring.
                 OpenAiCompatibleChatCompletionRelay and SecretRefOpenAiCompatibleChatCompletionRelay use UpstreamProviderEndpoint, an absolute http or https provider URL, hyper, hyper-rustls, and a TLS connector for native OpenAI-compatible upstream calls, normalize the /v1 prefix, never send /v1/v1/..., require a provider response timeout, apply request-context provider timeout from ai_upstream_account.timeout_ms, apply request-context provider retry policy from ai_upstream_account.retry_policy, ProviderRetryPolicy, strict JSON, non-stream JSON relay, transient provider retry, retryable upstream status, and keep no plaintext provider secret storage.
                 GatewayRouterError reports database loader and API key pepper configuration failures without leaking secrets.
                 lib.rs must stay below 80 non-empty lines and delegate implementation to submodules.
@@ -381,27 +381,27 @@ class SchemaQualityGateTest(unittest.TestCase):
     def write_generated_sdks(self, root: Path) -> None:
         self.write_generated_sdk(
             root,
-            family_dir="clawrouter-app-sdk",
-            package_dir="clawrouter-app-sdk-typescript",
-            package_name="@sdkwork/clawrouter-app-sdk",
+            family_dir="cloudrouter-app-sdk",
+            package_dir="cloudrouter-app-sdk-typescript",
+            package_name="@sdkwork/cloudrouter-app-sdk",
             sdk_type="app",
             client_name="SdkworkAppClient",
             api_prefix="/app/v3/api",
         )
         self.write_generated_sdk(
             root,
-            family_dir="clawrouter-backend-sdk",
-            package_dir="clawrouter-backend-sdk-typescript",
-            package_name="@sdkwork/clawrouter-backend-sdk",
+            family_dir="cloudrouter-backend-sdk",
+            package_dir="cloudrouter-backend-sdk-typescript",
+            package_name="@sdkwork/cloudrouter-backend-sdk",
             sdk_type="backend",
             client_name="SdkworkBackendClient",
             api_prefix="/backend/v3/api",
         )
         self.write_generated_sdk(
             root,
-            family_dir="clawrouter-open-sdk",
-            package_dir="clawrouter-open-sdk-typescript",
-            package_name="@sdkwork/clawrouter-open-sdk",
+            family_dir="cloudrouter-open-sdk",
+            package_dir="cloudrouter-open-sdk-typescript",
+            package_name="@sdkwork/cloudrouter-open-sdk",
             sdk_type="ai",
             client_name="SdkworkAiClient",
             api_prefix="/v1",
@@ -471,7 +471,7 @@ class SchemaQualityGateTest(unittest.TestCase):
             encoding="utf-8",
         )
         sdkgen_spec = source_spec
-        if family_dir == "clawrouter-open-sdk":
+        if family_dir == "cloudrouter-open-sdk":
             sdkgen_spec = SdkRuntimeStandardizer(root=root)._derive_sdkgen_openapi(source_spec)
         (family / "openapi" / f"{family_dir}.sdkgen.json").write_text(
             json.dumps(sdkgen_spec, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
@@ -480,7 +480,7 @@ class SchemaQualityGateTest(unittest.TestCase):
         generation_input_path = sdk_generation_input_path_symbol(family_dir)
         sdkgen_input_path_line = (
             "const sdkgenInputPath = `sdks/${sdkFamily}/openapi/${sdkFamily}.sdkgen.json`;\n"
-            if family_dir == "clawrouter-open-sdk"
+            if family_dir == "cloudrouter-open-sdk"
             else ""
         )
         (family / "bin" / "generate-sdk.mjs").write_text(
@@ -542,7 +542,7 @@ class SchemaQualityGateTest(unittest.TestCase):
         (base / "custom" / "build-runtime.mjs").write_text("console.log('build');\n", encoding="utf-8")
         (base / ".sdkwork" / "sdkwork-generator-manifest.json").write_text("{}\n", encoding="utf-8")
         sdk_source = f"export class {client_name} {{}}\n"
-        if family_dir == "clawrouter-backend-sdk":
+        if family_dir == "cloudrouter-backend-sdk":
             sdk_source = (
                 "import { EcosystemApi, createEcosystemApi } from './api/ecosystem';\n"
                 f"export class {client_name} {{\n"
@@ -559,7 +559,7 @@ class SchemaQualityGateTest(unittest.TestCase):
             if sdk_type == "app"
             else "export { backendApiPath } from './paths';\n"
         )
-        if family_dir == "clawrouter-backend-sdk":
+        if family_dir == "cloudrouter-backend-sdk":
             api_index_source += "export { EcosystemApi } from './ecosystem';\n"
             (base / "src" / "api" / "ecosystem.ts").write_text(
                 "export class EcosystemSkillsReviewApi { async approve() {} async reject() {} }\n"
@@ -589,7 +589,7 @@ class SchemaQualityGateTest(unittest.TestCase):
             encoding="utf-8",
         )
         common_export = "export * from './common';\n"
-        if family_dir == "clawrouter-app-sdk":
+        if family_dir == "cloudrouter-app-sdk":
             (base / "src" / "types" / "app-model-catalog-price-availability.ts").write_text(
                 "export interface AppModelCatalogPriceAvailability {\n"
                 "  reason?: string | null;\n"
@@ -624,15 +624,15 @@ class SchemaQualityGateTest(unittest.TestCase):
         (base / "dist" / "index.d.ts").write_text("export {};\n", encoding="utf-8")
 
     def write_portal_sdk_boundary(self, root: Path) -> None:
-        portal = root / "apps" / "sdkwork-clawrouter-pc"
-        commons = portal / "packages" / "sdkwork-clawroutes-pc-commons"
+        portal = root / "apps" / "sdkwork-cloudrouter-pc"
+        commons = portal / "packages" / "sdkwork-cloudroutes-pc-commons"
         (commons / "src").mkdir(parents=True, exist_ok=True)
         (portal / "package.json").write_text(
-            '{"scripts":{"dev":"vite --configLoader native","dev:browser":"vite --configLoader native","build":"vite build --configLoader native"},"dependencies":{"@sdkwork/clawrouter-app-sdk":"workspace:*","@sdkwork/clawrouter-backend-sdk":"workspace:*","@sdkwork/clawrouter-open-sdk":"workspace:*"}}\n',
+            '{"scripts":{"dev":"vite --configLoader native","dev:browser":"vite --configLoader native","build":"vite build --configLoader native"},"dependencies":{"@sdkwork/cloudrouter-app-sdk":"workspace:*","@sdkwork/cloudrouter-backend-sdk":"workspace:*","@sdkwork/cloudrouter-open-sdk":"workspace:*"}}\n',
             encoding="utf-8",
         )
         (commons / "package.json").write_text(
-            '{"dependencies":{"@sdkwork/clawrouter-app-sdk":"workspace:*","@sdkwork/clawrouter-backend-sdk":"workspace:*","@sdkwork/clawrouter-open-sdk":"workspace:*"}}\n',
+            '{"dependencies":{"@sdkwork/cloudrouter-app-sdk":"workspace:*","@sdkwork/cloudrouter-backend-sdk":"workspace:*","@sdkwork/cloudrouter-open-sdk":"workspace:*"}}\n',
             encoding="utf-8",
         )
         (commons / "src" / "index.ts").write_text("export * from './components/CopyButton';\n", encoding="utf-8")
@@ -640,7 +640,7 @@ class SchemaQualityGateTest(unittest.TestCase):
         (commons / "src" / "utils").mkdir(parents=True, exist_ok=True)
         (commons / "src" / "utils" / "env.ts").write_text(
             "const DEFAULT_API_BASE_URL = '/v1';\n"
-            "export function readClawRouterRuntimeEnv(_name: string): string | undefined { return undefined; }\n"
+            "export function readCloudRouterRuntimeEnv(_name: string): string | undefined { return undefined; }\n"
             "export const API_BASE_URL = DEFAULT_API_BASE_URL;\n",
             encoding="utf-8",
         )
@@ -649,73 +649,73 @@ class SchemaQualityGateTest(unittest.TestCase):
             encoding="utf-8",
         )
         (commons / "src" / "sdk-clients.ts").write_text(
-            "import { SdkworkAppClient } from '@sdkwork/clawrouter-app-sdk';\n"
-            "import { SdkworkBackendClient } from '@sdkwork/clawrouter-backend-sdk';\n"
-            "import { SdkworkAiClient } from '@sdkwork/clawrouter-open-sdk';\n"
+            "import { SdkworkAppClient } from '@sdkwork/cloudrouter-app-sdk';\n"
+            "import { SdkworkBackendClient } from '@sdkwork/cloudrouter-backend-sdk';\n"
+            "import { SdkworkAiClient } from '@sdkwork/cloudrouter-open-sdk';\n"
             "import { normalizeGeneratedSdkBaseUrl } from './sdk-base-url';\n"
             "const APP_API_PREFIX = '/app/v3/api';\n"
             "const BACKEND_API_PREFIX = '/backend/v3/api';\n"
             "const OPEN_API_PREFIX = '/v1';\n"
-            "export interface ClawRouterAppSdkClientOptions { appBaseUrl?: string; authToken?: string; platform?: string; timeout?: number; }\n"
-            "export interface ClawRouterBackendSdkClientOptions { backendBaseUrl?: string; authToken?: string; platform?: string; timeout?: number; }\n"
-            "export interface ClawRouterAiSdkClientOptions { aiBaseUrl?: string; apiKey?: string; authToken?: string; platform?: string; timeout?: number; }\n"
-            "export function createClawRouterAiSdkClient(options: ClawRouterAiSdkClientOptions = {}) { return new SdkworkAiClient({ baseUrl: normalizeGeneratedSdkBaseUrl(options.aiBaseUrl ?? OPEN_API_PREFIX, OPEN_API_PREFIX), apiKey: options.apiKey, authToken: options.authToken, platform: options.platform, timeout: options.timeout }); }\n"
-            "export function createClawRouterAppSdkClient(options: ClawRouterAppSdkClientOptions = {}) { return new SdkworkAppClient({ baseUrl: normalizeGeneratedSdkBaseUrl(options.appBaseUrl ?? APP_API_PREFIX, APP_API_PREFIX), authToken: options.authToken, platform: options.platform, timeout: options.timeout }); }\n"
-            "export function createClawRouterBackendSdkClient(options: ClawRouterBackendSdkClientOptions = {}) { return new SdkworkBackendClient({ baseUrl: normalizeGeneratedSdkBaseUrl(options.backendBaseUrl ?? BACKEND_API_PREFIX, BACKEND_API_PREFIX), authToken: options.authToken, platform: options.platform, timeout: options.timeout }); }\n",
+            "export interface CloudRouterAppSdkClientOptions { appBaseUrl?: string; authToken?: string; platform?: string; timeout?: number; }\n"
+            "export interface CloudRouterBackendSdkClientOptions { backendBaseUrl?: string; authToken?: string; platform?: string; timeout?: number; }\n"
+            "export interface CloudRouterAiSdkClientOptions { aiBaseUrl?: string; apiKey?: string; authToken?: string; platform?: string; timeout?: number; }\n"
+            "export function createCloudRouterAiSdkClient(options: CloudRouterAiSdkClientOptions = {}) { return new SdkworkAiClient({ baseUrl: normalizeGeneratedSdkBaseUrl(options.aiBaseUrl ?? OPEN_API_PREFIX, OPEN_API_PREFIX), apiKey: options.apiKey, authToken: options.authToken, platform: options.platform, timeout: options.timeout }); }\n"
+            "export function createCloudRouterAppSdkClient(options: CloudRouterAppSdkClientOptions = {}) { return new SdkworkAppClient({ baseUrl: normalizeGeneratedSdkBaseUrl(options.appBaseUrl ?? APP_API_PREFIX, APP_API_PREFIX), authToken: options.authToken, platform: options.platform, timeout: options.timeout }); }\n"
+            "export function createCloudRouterBackendSdkClient(options: CloudRouterBackendSdkClientOptions = {}) { return new SdkworkBackendClient({ baseUrl: normalizeGeneratedSdkBaseUrl(options.backendBaseUrl ?? BACKEND_API_PREFIX, BACKEND_API_PREFIX), authToken: options.authToken, platform: options.platform, timeout: options.timeout }); }\n",
             encoding="utf-8",
         )
 
     def write_project_skills(self, root: Path) -> None:
         self.write_skill(
             root,
-            "clawrouter-app-sdk-integration",
+            "cloudrouter-app-sdk-integration",
             """
             ---
-            name: clawrouter-app-sdk-integration
-            description: Use @sdkwork/clawrouter-app-sdk for product contract surface integration.
+            name: cloudrouter-app-sdk-integration
+            description: Use @sdkwork/cloudrouter-app-sdk for product contract surface integration.
             ---
-            Use @sdkwork/clawrouter-app-sdk.
+            Use @sdkwork/cloudrouter-app-sdk.
             Select the SDK by contract surface.
             URL path prefixes are not the source of truth.
             Block raw fetch and axios for remote business endpoints.
             Never hand-edit generated SDK output.
             Regenerate with sdkwork-sdk-generator.
-            Preserve apps/sdkwork-clawrouter-pc UI visuals.
+            Preserve apps/sdkwork-cloudrouter-pc UI visuals.
             """,
         )
         self.write_skill(
             root,
-            "clawrouter-backend-sdk-integration",
+            "cloudrouter-backend-sdk-integration",
             """
             ---
-            name: clawrouter-backend-sdk-integration
-            description: Use @sdkwork/clawrouter-backend-sdk for management contract surface integration.
+            name: cloudrouter-backend-sdk-integration
+            description: Use @sdkwork/cloudrouter-backend-sdk for management contract surface integration.
             ---
-            Use @sdkwork/clawrouter-backend-sdk.
+            Use @sdkwork/cloudrouter-backend-sdk.
             Select the SDK by contract surface.
             URL path prefixes are not the source of truth.
             Block raw fetch and axios for remote business endpoints.
             Never hand-edit generated SDK output.
             Regenerate with sdkwork-sdk-generator.
-            Preserve apps/sdkwork-clawrouter-pc UI visuals.
+            Preserve apps/sdkwork-cloudrouter-pc UI visuals.
             """,
         )
         self.write_skill(
             root,
-            "clawrouter-sdk-generation",
+            "cloudrouter-sdk-generation",
             """
             ---
-            name: clawrouter-sdk-generation
-            description: Regenerate @sdkwork/clawrouter-app-sdk, @sdkwork/clawrouter-backend-sdk, and @sdkwork/clawrouter-open-sdk.
+            name: cloudrouter-sdk-generation
+            description: Regenerate @sdkwork/cloudrouter-app-sdk, @sdkwork/cloudrouter-backend-sdk, and @sdkwork/cloudrouter-open-sdk.
             ---
-            Generate exactly three SDK systems: @sdkwork/clawrouter-app-sdk, @sdkwork/clawrouter-backend-sdk, and @sdkwork/clawrouter-open-sdk.
+            Generate exactly three SDK systems: @sdkwork/cloudrouter-app-sdk, @sdkwork/cloudrouter-backend-sdk, and @sdkwork/cloudrouter-open-sdk.
             URL path prefixes are not used as the standard for SDK ownership.
             Read generated/api/api-contract-manifest.json.
-            Write generated/openapi/clawrouter-app-openapi.json.
-            Write generated/openapi/clawrouter-backend-openapi.json.
-            Write apps/sdkwork-clawrouter-pc/public/openapi.json with tools.clawrouter_gateway_openapi_generator.
+            Write generated/openapi/cloudrouter-app-openapi.json.
+            Write generated/openapi/cloudrouter-backend-openapi.json.
+            Write apps/sdkwork-cloudrouter-pc/public/openapi.json with tools.cloudrouter_gateway_openapi_generator.
             app/backend SDK generation uses the authority OpenAPI snapshots.
-            open SDK generation uses openapi/clawrouter-open-sdk.sdkgen.json.
+            open SDK generation uses openapi/cloudrouter-open-sdk.sdkgen.json.
             sdk-manifest.json generationInputSpec declares the actual generation input.
             sdk-manifest.json derivedSpecs declares derived generator artifacts.
             Run sdkwork-sdk-generator.
@@ -899,7 +899,7 @@ class SchemaQualityGateTest(unittest.TestCase):
             with (
                 patch("tools.schema_quality_gate.ArchitectureStandardGuardian") as architecture_guardian,
                 patch("tools.schema_quality_gate.RustBackendArchitectureGuardian") as rust_guardian,
-                patch("tools.schema_quality_gate.ClawRouterSdkGuardian") as sdk_guardian,
+                patch("tools.schema_quality_gate.CloudRouterSdkGuardian") as sdk_guardian,
             ):
                 for guardian_class in (architecture_guardian, rust_guardian, sdk_guardian):
                     guardian_class.return_value.run.return_value = Mock(ok=True, messages=[])
@@ -997,12 +997,12 @@ class SchemaQualityGateTest(unittest.TestCase):
             self.assertFalse(result.ok)
             self.assertIn(f"api contract manifest is stale: {manifest}", result.messages)
 
-    def test_quality_gate_reports_stale_clawrouter_openapi(self) -> None:
+    def test_quality_gate_reports_stale_cloudrouter_openapi(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             registry = self.write_registry(root, self.valid_registry())
             self.write_generated_artifacts(root, registry)
-            stale = root / "generated" / "openapi" / "clawrouter-app-openapi.json"
+            stale = root / "generated" / "openapi" / "cloudrouter-app-openapi.json"
             stale.write_text("{}\n", encoding="utf-8")
             self.write_app(root)
             self.write_frontend_contract(root)
@@ -1010,14 +1010,14 @@ class SchemaQualityGateTest(unittest.TestCase):
             result = SchemaQualityGate(root=root, registry_path=registry).run()
 
             self.assertFalse(result.ok)
-            self.assertIn(f"clawrouter app OpenAPI spec is stale: {stale}", result.messages)
+            self.assertIn(f"cloudrouter app OpenAPI spec is stale: {stale}", result.messages)
 
     def test_quality_gate_reports_stale_gateway_openapi(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             registry = self.write_registry(root, self.valid_registry())
             self.write_generated_artifacts(root, registry)
-            stale = root / "apps" / "sdkwork-clawrouter-pc" / "public" / "openapi.json"
+            stale = root / "apps" / "sdkwork-cloudrouter-pc" / "public" / "openapi.json"
             stale_spec = json.loads(stale.read_text(encoding="utf-8"))
             stale_spec["info"]["description"] = "Stale generated fixture"
             stale.write_text(json.dumps(stale_spec, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -1027,7 +1027,7 @@ class SchemaQualityGateTest(unittest.TestCase):
             result = SchemaQualityGate(root=root, registry_path=registry).run()
 
             self.assertFalse(result.ok)
-            self.assertIn(f"Claw Router gateway OpenAPI spec is stale: {stale}", result.messages)
+            self.assertIn(f"Cloud Router gateway OpenAPI spec is stale: {stale}", result.messages)
 
     def test_quality_gate_reports_openapi_response_precision_drift(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -1044,7 +1044,7 @@ class SchemaQualityGateTest(unittest.TestCase):
                         required_columns:
                           ai_model_vendor: [vendor_code, display_name]
                     frontend_operations:
-                      - source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-models/src/modelService.ts
+                      - source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-models/src/modelService.ts
                         operation: fetchModelVendors
                         route: /models
                         kind: read
@@ -1077,9 +1077,9 @@ class SchemaQualityGateTest(unittest.TestCase):
             source = (
                 root
                 / "apps"
-                / "sdkwork-clawrouter-pc"
+                / "sdkwork-cloudrouter-pc"
                 / "packages"
-                / "sdkwork-clawrouter-pc-console-models"
+                / "sdkwork-cloudrouter-pc-console-models"
                 / "src"
                 / "modelService.ts"
             )
@@ -1087,10 +1087,10 @@ class SchemaQualityGateTest(unittest.TestCase):
             source.write_text(
                 textwrap.dedent(
                     """
-                    import { getClawRouterAppSdkClient } from '@sdkwork-clawrouter/commons';
+                    import { getCloudRouterAppSdkClient } from '@sdkwork-cloudrouter/commons';
 
                     export async function fetchModelVendors() {
-                      return getClawRouterAppSdkClient().ai.modelVendors.list();
+                      return getCloudRouterAppSdkClient().ai.modelVendors.list();
                     }
                     """
                 ).strip()
@@ -1098,7 +1098,7 @@ class SchemaQualityGateTest(unittest.TestCase):
                 encoding="utf-8",
             )
             FrontendOperationAudit(root=root).write()
-            spec_path = root / "generated" / "openapi" / "clawrouter-app-openapi.json"
+            spec_path = root / "generated" / "openapi" / "cloudrouter-app-openapi.json"
             spec = json.loads(spec_path.read_text(encoding="utf-8"))
             spec["paths"]["/app/v3/api/ai/model_vendors"]["get"]["responses"]["200"]["content"]["application/json"]["schema"] = {
                 "$ref": "#/components/schemas/PlusApiResult"
@@ -1119,7 +1119,7 @@ class SchemaQualityGateTest(unittest.TestCase):
             root = Path(tmp)
             registry = self.write_registry(root, self.valid_registry())
             self.write_generated_artifacts(root, registry)
-            spec_path = root / "generated" / "openapi" / "clawrouter-app-openapi.json"
+            spec_path = root / "generated" / "openapi" / "cloudrouter-app-openapi.json"
             spec = json.loads(spec_path.read_text(encoding="utf-8"))
             spec["components"]["schemas"]["OperationRequest"] = {
                 "type": "object",
@@ -1142,7 +1142,7 @@ class SchemaQualityGateTest(unittest.TestCase):
             root = Path(tmp)
             registry = self.write_registry(root, self.valid_registry())
             self.write_generated_artifacts(root, registry)
-            (root / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "package.json").write_text('{"name":"wrong"}\n', encoding="utf-8")
+            (root / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "package.json").write_text('{"name":"wrong"}\n', encoding="utf-8")
             self.write_app(root)
             self.write_frontend_contract(root)
 
@@ -1150,7 +1150,7 @@ class SchemaQualityGateTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "clawrouter-app-sdk-typescript package.json name must be @sdkwork/clawrouter-app-sdk",
+                "cloudrouter-app-sdk-typescript package.json name must be @sdkwork/cloudrouter-app-sdk",
                 result.messages,
             )
 
@@ -1159,7 +1159,7 @@ class SchemaQualityGateTest(unittest.TestCase):
             root = Path(tmp)
             registry = self.write_registry(root, self.valid_registry())
             self.write_generated_artifacts(root, registry)
-            (root / ".agents" / "skills" / "clawrouter-sdk-generation" / "SKILL.md").write_text(
+            (root / ".agents" / "skills" / "cloudrouter-sdk-generation" / "SKILL.md").write_text(
                 "incomplete\n",
                 encoding="utf-8",
             )
@@ -1169,7 +1169,7 @@ class SchemaQualityGateTest(unittest.TestCase):
             result = SchemaQualityGate(root=root, registry_path=registry).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("skill clawrouter-sdk-generation must mention @sdkwork/clawrouter-app-sdk", result.messages)
+            self.assertIn("skill cloudrouter-sdk-generation must mention @sdkwork/cloudrouter-app-sdk", result.messages)
 
     def test_quality_gate_reports_architecture_standard_drift(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -1231,7 +1231,7 @@ class SchemaQualityGateTest(unittest.TestCase):
 
     def test_quality_gate_reports_flyway_schema_contract_drift(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp) / "legacy-java-plus-workspace" / "apps" / "sdkwork-clawrouter"
+            root = Path(tmp) / "legacy-java-plus-workspace" / "apps" / "sdkwork-cloudrouter"
             registry = self.write_registry(root, self.valid_registry())
             self.write_generated_artifacts(root, registry)
             self.write_app(root)
@@ -1318,7 +1318,7 @@ class SchemaQualityGateTest(unittest.TestCase):
             self.write_app(root)
             self.write_frontend_contract(root)
 
-            with patch("tools.schema_quality_gate.ClawRouterPayloadSdkAudit") as audit_class:
+            with patch("tools.schema_quality_gate.CloudRouterPayloadSdkAudit") as audit_class:
                 audit_class.return_value.run.return_value = Mock(ok=False, messages=["payload sdk audit drift"])
 
                 result = SchemaQualityGate(root=root, registry_path=registry).run()
@@ -1334,7 +1334,7 @@ class SchemaQualityGateTest(unittest.TestCase):
             self.write_app(root)
             self.write_frontend_contract(root)
 
-            with patch("tools.schema_quality_gate.ClawRouterOpenApiContractAudit") as audit_class:
+            with patch("tools.schema_quality_gate.CloudRouterOpenApiContractAudit") as audit_class:
                 audit_class.return_value.run.return_value = Mock(ok=False, messages=["openapi contract audit drift"])
 
                 result = SchemaQualityGate(root=root, registry_path=registry).run()

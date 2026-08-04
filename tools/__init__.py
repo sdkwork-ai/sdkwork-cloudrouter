@@ -1,1 +1,1 @@
-"""Local quality gates for sdkwork-clawrouter."""
+"""Local quality gates for sdkwork-cloudrouter."""

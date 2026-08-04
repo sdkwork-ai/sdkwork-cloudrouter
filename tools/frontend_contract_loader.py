@@ -264,7 +264,7 @@ def _display(root: Path, path: Path) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Compile modular frontend field contracts into the snapshot YAML.")
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     parser.add_argument("--index", type=Path, default=None, help="frontend field contract index YAML path")
     parser.add_argument("--output", type=Path, default=None, help="compiled snapshot output path")
     parser.add_argument("--check", action="store_true", help="validate compiled snapshot is current")

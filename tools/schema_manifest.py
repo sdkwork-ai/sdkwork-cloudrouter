@@ -32,7 +32,7 @@ class SchemaManifestGenerator:
         self.registry_path = (
             Path(registry_path).resolve()
             if registry_path is not None
-            else self.root / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+            else self.root / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
         )
 
     def generate(self) -> dict[str, Any]:
@@ -383,13 +383,13 @@ class SchemaManifestGenerator:
         return (
             Path(output_path)
             if output_path is not None
-            else self.root / "generated" / "schema" / "registry" / "sdkwork-clawrouter.tables.effective.yaml"
+            else self.root / "generated" / "schema" / "registry" / "sdkwork-cloudrouter.tables.effective.yaml"
         )
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Generate sdkwork-clawrouter Schema Registry manifest.")
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser = argparse.ArgumentParser(description="Generate sdkwork-cloudrouter Schema Registry manifest.")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     parser.add_argument("--registry", type=Path, default=None, help="schema registry YAML path")
     parser.add_argument(
         "--output",

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make single-port integrated startup the default development topology for `sdkwork-clawrouter` and sibling `sdkwork-api-cloud-gateway`.
+**Goal:** Make single-port integrated startup the default development topology for `sdkwork-cloudrouter` and sibling `sdkwork-api-cloud-gateway`.
 
 **Architecture:** Keep low-level split capability only behind tests or explicit internal validation, while changing public `dev` entrypoints, templates, and docs to single-port-first behavior. Product developers should see one entry port by default.
 
@@ -10,13 +10,13 @@
 
 ---
 
-### Task 1: Update Claw Router default-facing script surface
+### Task 1: Update Cloud Router default-facing script surface
 
 **Files:**
 - Modify: `package.json`
-- Modify: `scripts/run-claw-router-application.mjs`
+- Modify: `scripts/run-cloud-router-application.mjs`
 - Modify: `scripts/dev/start-workspace.mjs`
-- Test: `scripts/run-claw-router-application.test.mjs`
+- Test: `scripts/run-cloud-router-application.test.mjs`
 
 - [ ] **Step 1: Write or extend failing tests for default single-port messaging**
 
@@ -28,7 +28,7 @@
 
 - [ ] **Step 5: Re-run the targeted script tests and confirm they pass**
 
-### Task 2: Update Claw Router documentation and dry-run expectations
+### Task 2: Update Cloud Router documentation and dry-run expectations
 
 **Files:**
 - Modify: `specs/README.md`
@@ -69,9 +69,9 @@
 **Files:**
 - Modify only if verification reveals gaps
 
-- [ ] **Step 1: Run `node scripts/run-claw-router-application.mjs plan --dev-env-file .env.postgres`**
+- [ ] **Step 1: Run `node scripts/run-cloud-router-application.mjs plan --dev-env-file .env.postgres`**
 
-- [ ] **Step 2: Confirm the rendered default Claw Router dev topology still exposes one public entry port**
+- [ ] **Step 2: Confirm the rendered default Cloud Router dev topology still exposes one public entry port**
 
 - [ ] **Step 3: Run the narrowest `sdkwork-api-cloud-gateway` dev/config verification command used by its repo**
 

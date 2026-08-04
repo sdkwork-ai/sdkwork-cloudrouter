@@ -1,4 +1,4 @@
-// Generated from docs/schema-registry/sdkwork-clawrouter.tables.yaml.
+// Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 // Do not edit by hand; update Schema Registry and regenerate.
 
 export const MODEL_VENDOR_VALUES = ["openai", "anthropic", "google", "alibaba", "baidu", "black_forest_labs", "bytedance", "deepseek", "elevenlabs", "kuaishou", "minimax", "moonshot", "xai", "stability_ai", "suno", "tencent", "zhipu", "custom", "unknown"] as const;

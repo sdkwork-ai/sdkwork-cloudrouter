@@ -1,0 +1,65 @@
+[package]
+name = "sdkwork-cloudrouter-router-service"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+arc-swap.workspace = true
+axum.workspace = true
+base64.workspace = true
+bytes.workspace = true
+dashmap.workspace = true
+futures-util.workspace = true
+getrandom.workspace = true
+hmac.workspace = true
+hex.workspace = true
+http-body-util.workspace = true
+hyper.workspace = true
+hyper-rustls.workspace = true
+hyper-util.workspace = true
+ipnet = "2"
+prometheus.workspace = true
+ring.workspace = true
+redis.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+url.workspace = true
+sdkwork-models.workspace = true
+sdkwork_models_contract_service.workspace = true
+sdkwork_models_catalog_service.workspace = true
+sdkwork-cloudrouter-contract.workspace = true
+sdkwork-cloudrouter-config.workspace = true
+sdkwork-cloudrouter-health.workspace = true
+sdkwork-cloudrouter-http.workspace = true
+sdkwork-cloudrouter-security.workspace = true
+sdkwork-cloudrouter-provider-adapter-contract.workspace = true
+sdkwork-cloudrouter-provider-adapter-http.workspace = true
+sdkwork-cloudrouter-provider-adapter-registry.workspace = true
+sdkwork-database-id = { workspace = true, features = ["sqlite"] }
+sdkwork_contract_service.workspace = true
+sdkwork_invoice_service.workspace = true
+sdkwork_invoice_database_bootstrap.workspace = true
+sdkwork_payment_service.workspace = true
+sdkwork-sdk-generator-client.workspace = true
+sdkwork-database-config.workspace = true
+sdkwork-database-sqlx = { workspace = true, features = ["sqlite"] }
+sdkwork-database-repository.workspace = true
+sdkwork-iam-bootstrap.workspace = true
+sdkwork-iam-web-adapter.workspace = true
+sdkwork-cloudrouter-database-host = { path = "../../crates/sdkwork-cloudrouter-database-host" }
+sdkwork-utils-rust.workspace = true
+sdkwork-web-chain.workspace = true
+sdkwork-web-core.workspace = true
+sdkwork-web-store-redis.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+tower.workspace = true
+sdkwork-cloudrouter-test-support.workspace = true
+sdkwork_commerce_promotion_service.workspace = true

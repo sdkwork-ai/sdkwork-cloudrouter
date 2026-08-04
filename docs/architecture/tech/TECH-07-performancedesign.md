@@ -3,7 +3,7 @@
 
 ## 1. 鎬ц兘鐩爣
 
-`sdkwork-clawrouter` 鐨勬€ц兘璁捐浠?Rust-first runtime 涓哄熀纭€銆傜洰鏍囦笉鏄崟绾彁楂?QPS锛岃€屾槸鍦ㄨ璇併€佽矾鐢便€侀檺娴併€佽璐广€佸璁°€乻treaming銆乫allback 鍜屽閮ㄧ讲褰㈡€佷箣闂翠繚鎸佸彲瑙ｉ噴銆佸彲瑙傛祴鍜屽彲鍘嬫祴銆?
+`sdkwork-cloudrouter` 鐨勬€ц兘璁捐浠?Rust-first runtime 涓哄熀纭€銆傜洰鏍囦笉鏄崟绾彁楂?QPS锛岃€屾槸鍦ㄨ璇併€佽矾鐢便€侀檺娴併€佽璐广€佸璁°€乻treaming銆乫allback 鍜屽閮ㄧ讲褰㈡€佷箣闂翠繚鎸佸彲瑙ｉ噴銆佸彲瑙傛祴鍜屽彲鍘嬫祴銆?
 | 灞?| 鎸囨爣 | P1 鐩爣 |
 | --- | --- | --- |
 | Gateway admission | 閴存潈 + API key hash + 涓婁笅鏂囧姞杞?p95 | < 20ms |

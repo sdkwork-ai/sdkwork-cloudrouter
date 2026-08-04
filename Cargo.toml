@@ -1,81 +1,81 @@
 [workspace]
 members = [
-    "crates/sdkwork-api-clawrouter-standalone-gateway",
-    "crates/sdkwork-api-clawrouter-assembly",
-    "crates/sdkwork-claw-contract",
-    "crates/sdkwork-claw-config",
-    "crates/sdkwork-claw-health",
-    "crates/sdkwork-claw-provider-adapter-contract",
-    "crates/sdkwork-claw-provider-adapter",
-    "crates/sdkwork-claw-provider-adapter-http",
-    "crates/sdkwork-claw-provider-adapter-registry",
-    "crates/sdkwork-claw-paas-plugin",
-    "crates/sdkwork-claw-security",
-    "crates/sdkwork-claw-http",
-    "crates/sdkwork-claw-observability",
-    "crates/sdkwork-claw-test-support",
-    "crates/sdkwork-routes-clawrouter-llm-open-api",
+    "crates/sdkwork-api-cloudrouter-standalone-gateway",
+    "crates/sdkwork-api-cloudrouter-assembly",
+    "crates/sdkwork-cloudrouter-contract",
+    "crates/sdkwork-cloudrouter-config",
+    "crates/sdkwork-cloudrouter-health",
+    "crates/sdkwork-cloudrouter-provider-adapter-contract",
+    "crates/sdkwork-cloudrouter-provider-adapter",
+    "crates/sdkwork-cloudrouter-provider-adapter-http",
+    "crates/sdkwork-cloudrouter-provider-adapter-registry",
+    "crates/sdkwork-cloudrouter-paas-plugin",
+    "crates/sdkwork-cloudrouter-security",
+    "crates/sdkwork-cloudrouter-http",
+    "crates/sdkwork-cloudrouter-observability",
+    "crates/sdkwork-cloudrouter-test-support",
+    "crates/sdkwork-routes-cloudrouter-llm-open-api",
     "crates/sdkwork-routes-image-open-api",
     "crates/sdkwork-routes-video-open-api",
     "crates/sdkwork-routes-audio-open-api",
-    "crates/sdkwork-routes-clawrouter-drive-open-api",
-    "crates/sdkwork-routes-clawrouter-knowledgebase-open-api",
-    "crates/sdkwork-routes-clawrouter-memory-open-api",
+    "crates/sdkwork-routes-cloudrouter-drive-open-api",
+    "crates/sdkwork-routes-cloudrouter-knowledgebase-open-api",
+    "crates/sdkwork-routes-cloudrouter-memory-open-api",
     "crates/sdkwork-routes-agent-open-api",
     "crates/sdkwork-routes-payment-open-api",
     "crates/sdkwork-routes-iaas-open-api",
     "crates/sdkwork-routes-paas-open-api",
-    "crates/sdkwork-routes-clawrouter-app-api",
-    "crates/sdkwork-routes-clawrouter-backend-api",
+    "crates/sdkwork-routes-cloudrouter-app-api",
+    "crates/sdkwork-routes-cloudrouter-backend-api",
     "crates/provider-adapters/tencent-cloud",
     "crates/provider-adapters/alicloud",
-    "crates/sdkwork-clawrouter-edge-runtime",
-    "services/sdkwork-clawrouter-admin-gateway",
-    "services/sdkwork-clawrouter-standalone-gateway",
-    "services/sdkwork-clawrouter-router-service",
-    "services/sdkwork-claw-installer",
-    "services/sdkwork-claw-provider-adapter",
-    "crates/sdkwork-clawrouter-database-host",
-    "crates/sdkwork-clawrouter-admin-monitor-repository-sqlx",
-    "crates/sdkwork-clawrouter-admin-dashboard-repository-sqlx",
-    "crates/sdkwork-clawrouter-admin-analytics-repository-sqlx",
-    "crates/sdkwork-clawrouter-settlements-dashboard-repository-sqlx",
+    "crates/sdkwork-cloudrouter-edge-runtime",
+    "services/sdkwork-cloudrouter-admin-gateway",
+    "services/sdkwork-cloudrouter-standalone-gateway",
+    "services/sdkwork-cloudrouter-router-service",
+    "services/sdkwork-cloudrouter-installer",
+    "services/sdkwork-cloudrouter-provider-adapter",
+    "crates/sdkwork-cloudrouter-database-host",
+    "crates/sdkwork-cloudrouter-admin-monitor-repository-sqlx",
+    "crates/sdkwork-cloudrouter-admin-dashboard-repository-sqlx",
+    "crates/sdkwork-cloudrouter-admin-analytics-repository-sqlx",
+    "crates/sdkwork-cloudrouter-settlements-dashboard-repository-sqlx",
 ]
 default-members = [
-    "crates/sdkwork-claw-contract",
-    "crates/sdkwork-claw-config",
-    "crates/sdkwork-claw-health",
-    "crates/sdkwork-claw-provider-adapter-contract",
-    "crates/sdkwork-claw-provider-adapter",
-    "crates/sdkwork-claw-provider-adapter-http",
-    "crates/sdkwork-claw-provider-adapter-registry",
-    "crates/sdkwork-claw-paas-plugin",
-    "crates/sdkwork-claw-security",
-    "crates/sdkwork-claw-http",
-    "crates/sdkwork-claw-observability",
-    "crates/sdkwork-claw-test-support",
-    "crates/sdkwork-routes-clawrouter-llm-open-api",
+    "crates/sdkwork-cloudrouter-contract",
+    "crates/sdkwork-cloudrouter-config",
+    "crates/sdkwork-cloudrouter-health",
+    "crates/sdkwork-cloudrouter-provider-adapter-contract",
+    "crates/sdkwork-cloudrouter-provider-adapter",
+    "crates/sdkwork-cloudrouter-provider-adapter-http",
+    "crates/sdkwork-cloudrouter-provider-adapter-registry",
+    "crates/sdkwork-cloudrouter-paas-plugin",
+    "crates/sdkwork-cloudrouter-security",
+    "crates/sdkwork-cloudrouter-http",
+    "crates/sdkwork-cloudrouter-observability",
+    "crates/sdkwork-cloudrouter-test-support",
+    "crates/sdkwork-routes-cloudrouter-llm-open-api",
     "crates/sdkwork-routes-image-open-api",
     "crates/sdkwork-routes-video-open-api",
     "crates/sdkwork-routes-audio-open-api",
-    "crates/sdkwork-routes-clawrouter-drive-open-api",
-    "crates/sdkwork-routes-clawrouter-knowledgebase-open-api",
-    "crates/sdkwork-routes-clawrouter-memory-open-api",
+    "crates/sdkwork-routes-cloudrouter-drive-open-api",
+    "crates/sdkwork-routes-cloudrouter-knowledgebase-open-api",
+    "crates/sdkwork-routes-cloudrouter-memory-open-api",
     "crates/sdkwork-routes-agent-open-api",
     "crates/sdkwork-routes-payment-open-api",
     "crates/sdkwork-routes-iaas-open-api",
     "crates/sdkwork-routes-paas-open-api",
-    "crates/sdkwork-routes-clawrouter-app-api",
-    "crates/sdkwork-routes-clawrouter-backend-api",
+    "crates/sdkwork-routes-cloudrouter-app-api",
+    "crates/sdkwork-routes-cloudrouter-backend-api",
     "crates/provider-adapters/tencent-cloud",
     "crates/provider-adapters/alicloud",
-    "crates/sdkwork-clawrouter-edge-runtime",
-    "services/sdkwork-clawrouter-admin-gateway",
-    "services/sdkwork-clawrouter-standalone-gateway",
-    "services/sdkwork-clawrouter-router-service",
-    "services/sdkwork-claw-installer",
-    "services/sdkwork-claw-provider-adapter",
-    "crates/sdkwork-clawrouter-database-host",
+    "crates/sdkwork-cloudrouter-edge-runtime",
+    "services/sdkwork-cloudrouter-admin-gateway",
+    "services/sdkwork-cloudrouter-standalone-gateway",
+    "services/sdkwork-cloudrouter-router-service",
+    "services/sdkwork-cloudrouter-installer",
+    "services/sdkwork-cloudrouter-provider-adapter",
+    "crates/sdkwork-cloudrouter-database-host",
 ]
 resolver = "2"
 
@@ -97,7 +97,7 @@ version = "0.3.0"
 license-file = "LICENSE"
 
 [workspace.dependencies]
-sdkwork-api-clawrouter-assembly = { path = "crates/sdkwork-api-clawrouter-assembly" }
+sdkwork-api-cloudrouter-assembly = { path = "crates/sdkwork-api-cloudrouter-assembly" }
 anyhow = "1.0"
 argon2 = "0.5"
 axum = { version = "0.8", features = ["multipart"] }
@@ -140,41 +140,41 @@ tracing-opentelemetry = "0.28"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls-native-roots"] }
 
 # SDKWork workspace members - declared once at workspace root
-sdkwork-claw-contract = { path = "crates/sdkwork-claw-contract" }
-sdkwork-claw-config = { path = "crates/sdkwork-claw-config" }
-sdkwork-claw-health = { path = "crates/sdkwork-claw-health" }
-sdkwork-claw-paas-plugin = { path = "crates/sdkwork-claw-paas-plugin" }
-sdkwork-claw-security = { path = "crates/sdkwork-claw-security" }
-sdkwork-claw-http = { path = "crates/sdkwork-claw-http" }
-sdkwork-claw-observability = { path = "crates/sdkwork-claw-observability" }
-sdkwork-clawrouter-admin-monitor-repository-sqlx = { path = "crates/sdkwork-clawrouter-admin-monitor-repository-sqlx" }
-sdkwork-clawrouter-admin-dashboard-repository-sqlx = { path = "crates/sdkwork-clawrouter-admin-dashboard-repository-sqlx" }
-sdkwork-clawrouter-admin-analytics-repository-sqlx = { path = "crates/sdkwork-clawrouter-admin-analytics-repository-sqlx" }
-sdkwork-clawrouter-settlements-dashboard-repository-sqlx = { path = "crates/sdkwork-clawrouter-settlements-dashboard-repository-sqlx" }
-sdkwork-claw-test-support = { path = "crates/sdkwork-claw-test-support" }
-sdkwork-clawrouter-router-service = { path = "services/sdkwork-clawrouter-router-service" }
-sdkwork-clawrouter-standalone-gateway = { path = "services/sdkwork-clawrouter-standalone-gateway" }
-sdkwork-clawrouter-admin-gateway = { path = "services/sdkwork-clawrouter-admin-gateway" }
+sdkwork-cloudrouter-contract = { path = "crates/sdkwork-cloudrouter-contract" }
+sdkwork-cloudrouter-config = { path = "crates/sdkwork-cloudrouter-config" }
+sdkwork-cloudrouter-health = { path = "crates/sdkwork-cloudrouter-health" }
+sdkwork-cloudrouter-paas-plugin = { path = "crates/sdkwork-cloudrouter-paas-plugin" }
+sdkwork-cloudrouter-security = { path = "crates/sdkwork-cloudrouter-security" }
+sdkwork-cloudrouter-http = { path = "crates/sdkwork-cloudrouter-http" }
+sdkwork-cloudrouter-observability = { path = "crates/sdkwork-cloudrouter-observability" }
+sdkwork-cloudrouter-admin-monitor-repository-sqlx = { path = "crates/sdkwork-cloudrouter-admin-monitor-repository-sqlx" }
+sdkwork-cloudrouter-admin-dashboard-repository-sqlx = { path = "crates/sdkwork-cloudrouter-admin-dashboard-repository-sqlx" }
+sdkwork-cloudrouter-admin-analytics-repository-sqlx = { path = "crates/sdkwork-cloudrouter-admin-analytics-repository-sqlx" }
+sdkwork-cloudrouter-settlements-dashboard-repository-sqlx = { path = "crates/sdkwork-cloudrouter-settlements-dashboard-repository-sqlx" }
+sdkwork-cloudrouter-test-support = { path = "crates/sdkwork-cloudrouter-test-support" }
+sdkwork-cloudrouter-router-service = { path = "services/sdkwork-cloudrouter-router-service" }
+sdkwork-cloudrouter-standalone-gateway = { path = "services/sdkwork-cloudrouter-standalone-gateway" }
+sdkwork-cloudrouter-admin-gateway = { path = "services/sdkwork-cloudrouter-admin-gateway" }
 sdkwork-routes-agent-open-api = { path = "crates/sdkwork-routes-agent-open-api" }
 sdkwork-routes-audio-open-api = { path = "crates/sdkwork-routes-audio-open-api" }
-sdkwork-routes-clawrouter-app-api = { path = "crates/sdkwork-routes-clawrouter-app-api" }
-sdkwork-routes-clawrouter-backend-api = { path = "crates/sdkwork-routes-clawrouter-backend-api" }
-sdkwork-routes-clawrouter-drive-open-api = { path = "crates/sdkwork-routes-clawrouter-drive-open-api" }
-sdkwork-routes-clawrouter-knowledgebase-open-api = { path = "crates/sdkwork-routes-clawrouter-knowledgebase-open-api" }
-sdkwork-routes-clawrouter-llm-open-api = { path = "crates/sdkwork-routes-clawrouter-llm-open-api" }
-sdkwork-routes-clawrouter-memory-open-api = { path = "crates/sdkwork-routes-clawrouter-memory-open-api" }
+sdkwork-routes-cloudrouter-app-api = { path = "crates/sdkwork-routes-cloudrouter-app-api" }
+sdkwork-routes-cloudrouter-backend-api = { path = "crates/sdkwork-routes-cloudrouter-backend-api" }
+sdkwork-routes-cloudrouter-drive-open-api = { path = "crates/sdkwork-routes-cloudrouter-drive-open-api" }
+sdkwork-routes-cloudrouter-knowledgebase-open-api = { path = "crates/sdkwork-routes-cloudrouter-knowledgebase-open-api" }
+sdkwork-routes-cloudrouter-llm-open-api = { path = "crates/sdkwork-routes-cloudrouter-llm-open-api" }
+sdkwork-routes-cloudrouter-memory-open-api = { path = "crates/sdkwork-routes-cloudrouter-memory-open-api" }
 sdkwork-routes-iaas-open-api = { path = "crates/sdkwork-routes-iaas-open-api" }
 sdkwork-routes-image-open-api = { path = "crates/sdkwork-routes-image-open-api" }
 sdkwork-routes-paas-open-api = { path = "crates/sdkwork-routes-paas-open-api" }
 sdkwork-routes-payment-open-api = { path = "crates/sdkwork-routes-payment-open-api" }
 sdkwork-routes-video-open-api = { path = "crates/sdkwork-routes-video-open-api" }
-sdkwork-claw-installer = { path = "services/sdkwork-claw-installer" }
-sdkwork-clawrouter-edge-runtime = { path = "crates/sdkwork-clawrouter-edge-runtime" }
-sdkwork-claw-provider-adapter-contract = { path = "crates/sdkwork-claw-provider-adapter-contract" }
-sdkwork-claw-provider-adapter = { path = "crates/sdkwork-claw-provider-adapter" }
-sdkwork-claw-provider-adapter-http = { path = "crates/sdkwork-claw-provider-adapter-http" }
-sdkwork-claw-provider-adapter-registry = { path = "crates/sdkwork-claw-provider-adapter-registry" }
-sdkwork-claw-provider-adapter-host = { path = "services/sdkwork-claw-provider-adapter" }
+sdkwork-cloudrouter-installer = { path = "services/sdkwork-cloudrouter-installer" }
+sdkwork-cloudrouter-edge-runtime = { path = "crates/sdkwork-cloudrouter-edge-runtime" }
+sdkwork-cloudrouter-provider-adapter-contract = { path = "crates/sdkwork-cloudrouter-provider-adapter-contract" }
+sdkwork-cloudrouter-provider-adapter = { path = "crates/sdkwork-cloudrouter-provider-adapter" }
+sdkwork-cloudrouter-provider-adapter-http = { path = "crates/sdkwork-cloudrouter-provider-adapter-http" }
+sdkwork-cloudrouter-provider-adapter-registry = { path = "crates/sdkwork-cloudrouter-provider-adapter-registry" }
+sdkwork-cloudrouter-provider-adapter-host = { path = "services/sdkwork-cloudrouter-provider-adapter" }
 sdkwork-provider-adapter-alicloud = { path = "crates/provider-adapters/alicloud" }
 sdkwork-provider-adapter-tencent-cloud = { path = "crates/provider-adapters/tencent-cloud" }
 sdkwork-models = { path = "../sdkwork-models/sdks/sdkwork-models-sdk/sdkwork-models-sdk-rust" }
@@ -277,7 +277,7 @@ sdkwork-database-spi = { path = "../sdkwork-database/crates/sdkwork-database-spi
 sdkwork-database-sqlx = { path = "../sdkwork-database/crates/sdkwork-database-sqlx" }
 sdkwork-database-repository = { path = "../sdkwork-database/crates/sdkwork-database-repository" }
 sdkwork-database-id = { path = "../sdkwork-database/crates/sdkwork-database-id" }
-sdkwork-clawrouter-database-host = { path = "crates/sdkwork-clawrouter-database-host" }
+sdkwork-cloudrouter-database-host = { path = "crates/sdkwork-cloudrouter-database-host" }
 sdkwork-utils-rust = { path = "../sdkwork-utils/packages/sdkwork-utils-rust" }
 
 # Asymmetric cryptography for per-tenant session token signing

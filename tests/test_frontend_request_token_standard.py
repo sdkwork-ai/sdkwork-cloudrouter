@@ -8,21 +8,21 @@ ROOT = Path(__file__).resolve().parents[1]
 REQUEST_ID_SOURCE = (
     ROOT
     / "apps"
-    / "sdkwork-clawrouter-pc"
+    / "sdkwork-cloudrouter-pc"
     / "packages"
-    / "sdkwork-clawroutes-pc-commons"
+    / "sdkwork-cloudroutes-pc-commons"
     / "src"
     / "idempotency.ts"
 )
-PORTAL_SOURCE_ROOT = ROOT / "apps" / "sdkwork-clawrouter-pc"
-APP_OPENAPI_SOURCE = ROOT / "generated" / "openapi" / "clawrouter-app-openapi.json"
-BACKEND_OPENAPI_SOURCE = ROOT / "generated" / "openapi" / "clawrouter-backend-openapi.json"
-APP_SDK_SOURCE_ROOT = ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src"
-BACKEND_SDK_SOURCE_ROOT = ROOT / "sdks" / "clawrouter-backend-sdk" / "clawrouter-backend-sdk-typescript" / "src"
+PORTAL_SOURCE_ROOT = ROOT / "apps" / "sdkwork-cloudrouter-pc"
+APP_OPENAPI_SOURCE = ROOT / "generated" / "openapi" / "cloudrouter-app-openapi.json"
+BACKEND_OPENAPI_SOURCE = ROOT / "generated" / "openapi" / "cloudrouter-backend-openapi.json"
+APP_SDK_SOURCE_ROOT = ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src"
+BACKEND_SDK_SOURCE_ROOT = ROOT / "sdks" / "cloudrouter-backend-sdk" / "cloudrouter-backend-sdk-typescript" / "src"
 API_CONTRACT_MANIFEST = ROOT / "generated" / "api" / "api-contract-manifest.json"
-VERIFIER_SOURCE = ROOT / "scripts" / "verify-claw-router-application.mjs"
-TOOLING_TEST_SOURCE = ROOT / "scripts" / "run-claw-router-application.test.mjs"
-NODE_TEST_SOURCE = ROOT / "apps" / "sdkwork-clawrouter-pc" / "commons-runtime.test.ts"
+VERIFIER_SOURCE = ROOT / "scripts" / "verify-cloud-router-application.mjs"
+TOOLING_TEST_SOURCE = ROOT / "scripts" / "run-cloud-router-application.test.mjs"
+NODE_TEST_SOURCE = ROOT / "apps" / "sdkwork-cloudrouter-pc" / "commons-runtime.test.ts"
 API_PLAYGROUND_REQUEST_SOURCE = (
     ROOT.parent
     / "sdkwork-documents"
@@ -34,7 +34,7 @@ API_PLAYGROUND_REQUEST_SOURCE = (
     / "playgroundRequest.ts"
 )
 API_PLAYGROUND_RUNTIME_TEST_SOURCE = (
-    ROOT / "apps" / "sdkwork-clawrouter-pc" / "api-reference-playground-runtime.test.ts"
+    ROOT / "apps" / "sdkwork-cloudrouter-pc" / "api-reference-playground-runtime.test.ts"
 )
 SPECS_ROOT = ROOT.parent / "sdkwork-specs"
 SDK_SPEC_SOURCE = SPECS_ROOT / "SDK_SPEC.md"
@@ -70,7 +70,7 @@ class FrontendRequestTokenStandardTest(unittest.TestCase):
         node_test = NODE_TEST_SOURCE.read_text(encoding="utf-8")
 
         self.assertIn("portal commons runtime tests", verifier)
-        self.assertIn("apps/sdkwork-clawrouter-pc/commons-runtime.test.ts", verifier)
+        self.assertIn("apps/sdkwork-cloudrouter-pc/commons-runtime.test.ts", verifier)
         self.assertIn("verification plan includes portal commons runtime tests", tooling_test)
         self.assertIn("createIdempotencyParams creates only idempotency keys", node_test)
         self.assertIn('assert.equal(captured[0].headers["x-request-id"], undefined)', node_test)

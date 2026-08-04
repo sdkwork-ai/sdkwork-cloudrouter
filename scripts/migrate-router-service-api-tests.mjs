@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const testsDir = path.join(
   root,
-  'services/sdkwork-clawrouter-router-service/tests',
+  'services/sdkwork-cloudrouter-router-service/tests',
 );
 
 const legacyErrorCodes = {

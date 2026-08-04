@@ -5,13 +5,13 @@
 
 ## Purpose
 
-ClawRouter no longer owns public model facts, billing meters, official prices,
+CloudRouter no longer owns public model facts, billing meters, official prices,
 or default ranking rows inside Rust installer seed arrays. Those facts live in
 the standalone `../sdkwork-models` catalog and are imported during install or
 catalog refresh.
 
 This keeps model data independently versioned, reviewable, releasable, and
-updatable without changing ClawRouter application code.
+updatable without changing CloudRouter application code.
 
 ## Catalog Source Resolution
 
@@ -82,7 +82,7 @@ release gate entries must fail before installer import.
 
 ## Install Behavior
 
-`DatabaseInstaller::ensure_installed()` creates the ClawRouter schema, loads
+`DatabaseInstaller::ensure_installed()` creates the CloudRouter schema, loads
 the selected `sdkwork-models` catalog, and imports it into these canonical
 tables:
 
@@ -131,7 +131,7 @@ the catalog rows.
 For local development, `pnpm dev` and `pnpm dev:server` must not stop at
 `ensure_installed()`. The workspace launcher sets `SDKWORK_MODELS_CATALOG_ROOT`
 to the checkout-local `../sdkwork-models` directory when the variable is not
-already set, then runs a blocking `sdkwork-claw-installer refresh-catalog
+already set, then runs a blocking `sdkwork-cloudrouter-installer refresh-catalog
 --catalog-root <workspace>/../sdkwork-models --force` before starting the
 Rust services. This guarantees model JSON and pricing changes are imported into
 the SQLite dev database on every server-mode startup.
@@ -160,10 +160,10 @@ dry_run                   preview the selected vendor/model scope without mutati
 CLI examples:
 
 ```powershell
-sdkwork-claw-installer refresh-catalog
-sdkwork-claw-installer refresh-catalog --vendor openai
-sdkwork-claw-installer refresh-catalog --catalog-root "$env:SDKWORK_MODELS_CATALOG_ROOT" --catalog-version 2026.05.08.1
-sdkwork-claw-installer refresh-catalog --vendor alibaba --dry-run
+sdkwork-cloudrouter-installer refresh-catalog
+sdkwork-cloudrouter-installer refresh-catalog --vendor openai
+sdkwork-cloudrouter-installer refresh-catalog --catalog-root "$env:SDKWORK_MODELS_CATALOG_ROOT" --catalog-version 2026.05.08.1
+sdkwork-cloudrouter-installer refresh-catalog --vendor alibaba --dry-run
 ```
 
 All installer commands emit exactly one JSON object to stdout. `status`,
@@ -254,7 +254,7 @@ acceptedCount    sum of all imported standard fact rows above
 ```
 
 The same count contract is exposed through the backend admin API and generated
-`@sdkwork/clawrouter-backend-sdk` response type
+`@sdkwork/cloudrouter-backend-sdk` response type
 `AdminModelCatalogSyncResponse`. Application integration boundaries must keep
 these fields intact when wrapping `syncVendorsAndModels`; returning only
 `vendors` and `models` loses the installer audit signal that deployment jobs,
@@ -274,7 +274,7 @@ catalog data.
 
 ## Independent Repository and Submodule
 
-`../sdkwork-models` is the ClawRouter mount point for the independent catalog
+`../sdkwork-models` is the CloudRouter mount point for the independent catalog
 repository:
 
 ```powershell
@@ -309,9 +309,9 @@ node ../sdkwork-models/tools/freshness-report.mjs --max-age-policy catalog-fresh
 node ../sdkwork-models/tools/catalog-audit.mjs --as-of 2026-05-08
 node ../sdkwork-models/tools/release-catalog.mjs --check --as-of 2026-05-08
 cargo test -p sdkwork-models --offline
-cargo test -p sdkwork-clawrouter-router-service --test database_installer --offline
-cargo test -p sdkwork-clawrouter-router-service --test admin_model_store --offline
-cargo test -p sdkwork-claw-installer --test installer_cli --offline
+cargo test -p sdkwork-cloudrouter-router-service --test database_installer --offline
+cargo test -p sdkwork-cloudrouter-router-service --test admin_model_store --offline
+cargo test -p sdkwork-cloudrouter-installer --test installer_cli --offline
 ```
 
 Production deployments should pin a catalog version or submodule commit.
@@ -336,7 +336,7 @@ non-reproducible.
 Portable catalog data includes public model facts, official/reference prices,
 meters, source evidence, and optional ranking snapshots.
 
-ClawRouter-local data includes providers, provider accounts, channels, route
+CloudRouter-local data includes providers, provider accounts, channels, route
 rules, channel groups, tenant plans, private discounts, secrets, health state,
 quota policies, and audit/runtime records.
 

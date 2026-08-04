@@ -6,7 +6,7 @@
 
 **Architecture:** Gateway keeps the unified Invocation lifecycle and resolves provider account routes before consulting `ProviderAdapterRegistry`. Registry hits call an internal HTTP adapter service with a stable envelope; misses continue through direct HTTP relay. Provider-native logic lives in independent provider adapter crates under one directory per provider family.
 
-**Tech Stack:** Rust 2021, Axum 0.8, Hyper/Hyper-Rustls, Serde/Serde JSON, SQLx-ready domain models, workspace Cargo crates, existing `sdkwork-claw-product` and `sdkwork-claw-gateway` gateway runtime patterns.
+**Tech Stack:** Rust 2021, Axum 0.8, Hyper/Hyper-Rustls, Serde/Serde JSON, SQLx-ready domain models, workspace Cargo crates, existing `sdkwork-cloudrouter-product` and `sdkwork-cloudrouter-gateway` gateway runtime patterns.
 
 ---
 
@@ -14,39 +14,39 @@
 
 ### New Shared Crates
 
-- Create `crates/sdkwork-claw-provider-adapter-contract/Cargo.toml`
-- Create `crates/sdkwork-claw-provider-adapter-contract/src/lib.rs`
-- Create `crates/sdkwork-claw-provider-adapter-contract/src/envelope.rs`
-- Create `crates/sdkwork-claw-provider-adapter-contract/src/endpoint.rs`
-- Create `crates/sdkwork-claw-provider-adapter-contract/src/error.rs`
-- Create `crates/sdkwork-claw-provider-adapter-contract/src/registry.rs`
-- Create `crates/sdkwork-claw-provider-adapter-contract/src/task.rs`
-- Create `crates/sdkwork-claw-provider-adapter-contract/src/usage.rs`
+- Create `crates/sdkwork-cloudrouter-provider-adapter-contract/Cargo.toml`
+- Create `crates/sdkwork-cloudrouter-provider-adapter-contract/src/lib.rs`
+- Create `crates/sdkwork-cloudrouter-provider-adapter-contract/src/envelope.rs`
+- Create `crates/sdkwork-cloudrouter-provider-adapter-contract/src/endpoint.rs`
+- Create `crates/sdkwork-cloudrouter-provider-adapter-contract/src/error.rs`
+- Create `crates/sdkwork-cloudrouter-provider-adapter-contract/src/registry.rs`
+- Create `crates/sdkwork-cloudrouter-provider-adapter-contract/src/task.rs`
+- Create `crates/sdkwork-cloudrouter-provider-adapter-contract/src/usage.rs`
 
 Responsibility: stable JSON contract shared by gateway and adapter service. No dependency on concrete provider packages.
 
-- Create `crates/sdkwork-claw-provider-adapter-registry/Cargo.toml`
-- Create `crates/sdkwork-claw-provider-adapter-registry/src/lib.rs`
-- Create `crates/sdkwork-claw-provider-adapter-registry/src/config.rs`
-- Create `crates/sdkwork-claw-provider-adapter-registry/src/matcher.rs`
-- Create `crates/sdkwork-claw-provider-adapter-registry/src/snapshot.rs`
+- Create `crates/sdkwork-cloudrouter-provider-adapter-registry/Cargo.toml`
+- Create `crates/sdkwork-cloudrouter-provider-adapter-registry/src/lib.rs`
+- Create `crates/sdkwork-cloudrouter-provider-adapter-registry/src/config.rs`
+- Create `crates/sdkwork-cloudrouter-provider-adapter-registry/src/matcher.rs`
+- Create `crates/sdkwork-cloudrouter-provider-adapter-registry/src/snapshot.rs`
 
 Responsibility: adapter route config and matching. No provider-native logic.
 
-- Create `crates/sdkwork-claw-provider-adapter/Cargo.toml`
-- Create `crates/sdkwork-claw-provider-adapter/src/lib.rs`
-- Create `crates/sdkwork-claw-provider-adapter/src/adapter.rs`
-- Create `crates/sdkwork-claw-provider-adapter/src/native_http.rs`
-- Create `crates/sdkwork-claw-provider-adapter/src/normalizer.rs`
-- Create `crates/sdkwork-claw-provider-adapter/src/task.rs`
+- Create `crates/sdkwork-cloudrouter-provider-adapter/Cargo.toml`
+- Create `crates/sdkwork-cloudrouter-provider-adapter/src/lib.rs`
+- Create `crates/sdkwork-cloudrouter-provider-adapter/src/adapter.rs`
+- Create `crates/sdkwork-cloudrouter-provider-adapter/src/native_http.rs`
+- Create `crates/sdkwork-cloudrouter-provider-adapter/src/normalizer.rs`
+- Create `crates/sdkwork-cloudrouter-provider-adapter/src/task.rs`
 
 Responsibility: adapter service-side traits and common runtime helpers.
 
-- Create `crates/sdkwork-claw-provider-adapter-http/Cargo.toml`
-- Create `crates/sdkwork-claw-provider-adapter-http/src/lib.rs`
-- Create `crates/sdkwork-claw-provider-adapter-http/src/router.rs`
-- Create `crates/sdkwork-claw-provider-adapter-http/src/handlers.rs`
-- Create `crates/sdkwork-claw-provider-adapter-http/src/gateway_auth.rs`
+- Create `crates/sdkwork-cloudrouter-provider-adapter-http/Cargo.toml`
+- Create `crates/sdkwork-cloudrouter-provider-adapter-http/src/lib.rs`
+- Create `crates/sdkwork-cloudrouter-provider-adapter-http/src/router.rs`
+- Create `crates/sdkwork-cloudrouter-provider-adapter-http/src/handlers.rs`
+- Create `crates/sdkwork-cloudrouter-provider-adapter-http/src/gateway_auth.rs`
 
 Responsibility: internal HTTP adapter router, manifest endpoint, health endpoints, gateway service authentication, and provider dispatch.
 
@@ -69,48 +69,48 @@ Responsibility: provider-specific adapters isolated by routed provider family. V
 
 ### New Adapter Service
 
-- Create `services/sdkwork-claw-provider-adapter/Cargo.toml`
-- Create `services/sdkwork-claw-provider-adapter/specs/README.md`
-- Create `services/sdkwork-claw-provider-adapter/specs/component.spec.json`
-- Create `services/sdkwork-claw-provider-adapter/src/main.rs`
-- Create `services/sdkwork-claw-provider-adapter/src/lib.rs`
-- Create `services/sdkwork-claw-provider-adapter/src/runtime.rs`
-- Create `services/sdkwork-claw-provider-adapter/src/providers.rs`
-- Create `services/sdkwork-claw-provider-adapter/tests/http_adapter_service.rs`
+- Create `services/sdkwork-cloudrouter-provider-adapter/Cargo.toml`
+- Create `services/sdkwork-cloudrouter-provider-adapter/specs/README.md`
+- Create `services/sdkwork-cloudrouter-provider-adapter/specs/component.spec.json`
+- Create `services/sdkwork-cloudrouter-provider-adapter/src/main.rs`
+- Create `services/sdkwork-cloudrouter-provider-adapter/src/lib.rs`
+- Create `services/sdkwork-cloudrouter-provider-adapter/src/runtime.rs`
+- Create `services/sdkwork-cloudrouter-provider-adapter/src/providers.rs`
+- Create `services/sdkwork-cloudrouter-provider-adapter/tests/http_adapter_service.rs`
 
 Responsibility: internal adapter service process. It composes provider adapter crates, exposes health/manifest, authenticates gateway calls, and dispatches `/providers/{provider_code}{standard_path}`.
 
 ### Existing Files To Modify
 
 - Modify `Cargo.toml` workspace members.
-- Modify `services/sdkwork-claw-gateway/Cargo.toml` dependencies.
-- Modify `services/sdkwork-claw-gateway/src/runtime.rs` to accept optional adapter registry and adapter transport.
-- Modify `services/sdkwork-claw-product/Cargo.toml` dependencies if generic provider invocation contract types live product-side.
-- Modify `services/sdkwork-claw-product/src/api/openai_invocation.rs` only if generic lifecycle bridging is needed for the first slice.
-- Modify `services/sdkwork-claw-product/src/api/openai_chat.rs`, `openai_responses.rs`, and `openai_embeddings.rs` only where the first slice needs adapter transport injection for test coverage.
-- Add focused tests under `services/sdkwork-claw-gateway/tests/provider_adapter_invocation.rs`.
+- Modify `services/sdkwork-cloudrouter-gateway/Cargo.toml` dependencies.
+- Modify `services/sdkwork-cloudrouter-gateway/src/runtime.rs` to accept optional adapter registry and adapter transport.
+- Modify `services/sdkwork-cloudrouter-product/Cargo.toml` dependencies if generic provider invocation contract types live product-side.
+- Modify `services/sdkwork-cloudrouter-product/src/api/openai_invocation.rs` only if generic lifecycle bridging is needed for the first slice.
+- Modify `services/sdkwork-cloudrouter-product/src/api/openai_chat.rs`, `openai_responses.rs`, and `openai_embeddings.rs` only where the first slice needs adapter transport injection for test coverage.
+- Add focused tests under `services/sdkwork-cloudrouter-gateway/tests/provider_adapter_invocation.rs`.
 
 ---
 
 ### Task 1: Adapter Contract Crate
 
 **Files:**
-- Create: `crates/sdkwork-claw-provider-adapter-contract/Cargo.toml`
-- Create: `crates/sdkwork-claw-provider-adapter-contract/src/lib.rs`
-- Create: `crates/sdkwork-claw-provider-adapter-contract/src/envelope.rs`
-- Create: `crates/sdkwork-claw-provider-adapter-contract/src/endpoint.rs`
-- Create: `crates/sdkwork-claw-provider-adapter-contract/src/error.rs`
-- Create: `crates/sdkwork-claw-provider-adapter-contract/src/task.rs`
-- Create: `crates/sdkwork-claw-provider-adapter-contract/src/usage.rs`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter-contract/Cargo.toml`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter-contract/src/lib.rs`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter-contract/src/envelope.rs`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter-contract/src/endpoint.rs`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter-contract/src/error.rs`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter-contract/src/task.rs`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter-contract/src/usage.rs`
 - Modify: `Cargo.toml`
-- Test: `crates/sdkwork-claw-provider-adapter-contract/tests/envelope_contract.rs`
+- Test: `crates/sdkwork-cloudrouter-provider-adapter-contract/tests/envelope_contract.rs`
 
 - [ ] **Step 1: Write the failing contract serialization tests**
 
-Create `crates/sdkwork-claw-provider-adapter-contract/tests/envelope_contract.rs` with tests for:
+Create `crates/sdkwork-cloudrouter-provider-adapter-contract/tests/envelope_contract.rs` with tests for:
 
 ```rust
-use sdkwork_claw_provider_adapter_contract::{
+use sdkwork_cloudrouter_provider_adapter_contract::{
     AdapterInvocationRequest, AdapterInvocationResponse, AdapterInvocationShape,
     AdapterSecret, AdapterSubject, AdapterProviderContext, AdapterInvocationMetadata,
 };
@@ -180,7 +180,7 @@ fn adapter_invocation_response_serializes_standard_task_response() {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cargo test -p sdkwork-claw-provider-adapter-contract --test envelope_contract -- --nocapture`
+Run: `cargo test -p sdkwork-cloudrouter-provider-adapter-contract --test envelope_contract -- --nocapture`
 
 Expected: FAIL because package and types do not exist.
 
@@ -208,13 +208,13 @@ Use `#[serde(rename_all = "camelCase")]` on envelope structs. Use `serde_json::V
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `cargo test -p sdkwork-claw-provider-adapter-contract --test envelope_contract -- --nocapture`
+Run: `cargo test -p sdkwork-cloudrouter-provider-adapter-contract --test envelope_contract -- --nocapture`
 
 Expected: PASS.
 
 - [ ] **Step 5: Format**
 
-Run: `cargo fmt -p sdkwork-claw-provider-adapter-contract`
+Run: `cargo fmt -p sdkwork-cloudrouter-provider-adapter-contract`
 
 Expected: exit 0.
 
@@ -223,13 +223,13 @@ Expected: exit 0.
 ### Task 2: Adapter Registry Crate
 
 **Files:**
-- Create: `crates/sdkwork-claw-provider-adapter-registry/Cargo.toml`
-- Create: `crates/sdkwork-claw-provider-adapter-registry/src/lib.rs`
-- Create: `crates/sdkwork-claw-provider-adapter-registry/src/config.rs`
-- Create: `crates/sdkwork-claw-provider-adapter-registry/src/matcher.rs`
-- Create: `crates/sdkwork-claw-provider-adapter-registry/src/snapshot.rs`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter-registry/Cargo.toml`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter-registry/src/lib.rs`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter-registry/src/config.rs`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter-registry/src/matcher.rs`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter-registry/src/snapshot.rs`
 - Modify: `Cargo.toml`
-- Test: `crates/sdkwork-claw-provider-adapter-registry/tests/matcher.rs`
+- Test: `crates/sdkwork-cloudrouter-provider-adapter-registry/tests/matcher.rs`
 
 - [ ] **Step 1: Write failing registry matcher tests**
 
@@ -278,7 +278,7 @@ assert!(matches!(resolution.mode, ProviderInvocationMode::InternalHttpAdapter(_)
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cargo test -p sdkwork-claw-provider-adapter-registry --test matcher -- --nocapture`
+Run: `cargo test -p sdkwork-cloudrouter-provider-adapter-registry --test matcher -- --nocapture`
 
 Expected: FAIL because package and types do not exist.
 
@@ -310,13 +310,13 @@ miss -> DirectHttp
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `cargo test -p sdkwork-claw-provider-adapter-registry --test matcher -- --nocapture`
+Run: `cargo test -p sdkwork-cloudrouter-provider-adapter-registry --test matcher -- --nocapture`
 
 Expected: PASS.
 
 - [ ] **Step 5: Format**
 
-Run: `cargo fmt -p sdkwork-claw-provider-adapter-registry`
+Run: `cargo fmt -p sdkwork-cloudrouter-provider-adapter-registry`
 
 Expected: exit 0.
 
@@ -325,13 +325,13 @@ Expected: exit 0.
 ### Task 3: Adapter Core Traits
 
 **Files:**
-- Create: `crates/sdkwork-claw-provider-adapter/Cargo.toml`
-- Create: `crates/sdkwork-claw-provider-adapter/src/lib.rs`
-- Create: `crates/sdkwork-claw-provider-adapter/src/adapter.rs`
-- Create: `crates/sdkwork-claw-provider-adapter/src/task.rs`
-- Create: `crates/sdkwork-claw-provider-adapter/src/normalizer.rs`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter/Cargo.toml`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter/src/lib.rs`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter/src/adapter.rs`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter/src/task.rs`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter/src/normalizer.rs`
 - Modify: `Cargo.toml`
-- Test: `crates/sdkwork-claw-provider-adapter/tests/adapter_manifest.rs`
+- Test: `crates/sdkwork-cloudrouter-provider-adapter/tests/adapter_manifest.rs`
 
 - [ ] **Step 1: Write failing adapter manifest tests**
 
@@ -352,7 +352,7 @@ fn provider_adapter_exposes_manifest_endpoint_metadata() {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cargo test -p sdkwork-claw-provider-adapter --test adapter_manifest -- --nocapture`
+Run: `cargo test -p sdkwork-cloudrouter-provider-adapter --test adapter_manifest -- --nocapture`
 
 Expected: FAIL because package and traits do not exist.
 
@@ -373,13 +373,13 @@ Use `Pin<Box<dyn Future<Output = Result<AdapterInvocationResponse, AdapterInvoca
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `cargo test -p sdkwork-claw-provider-adapter --test adapter_manifest -- --nocapture`
+Run: `cargo test -p sdkwork-cloudrouter-provider-adapter --test adapter_manifest -- --nocapture`
 
 Expected: PASS.
 
 - [ ] **Step 5: Format**
 
-Run: `cargo fmt -p sdkwork-claw-provider-adapter`
+Run: `cargo fmt -p sdkwork-cloudrouter-provider-adapter`
 
 Expected: exit 0.
 
@@ -388,20 +388,20 @@ Expected: exit 0.
 ### Task 4: Internal HTTP Adapter Service Skeleton
 
 **Files:**
-- Create: `crates/sdkwork-claw-provider-adapter-http/Cargo.toml`
-- Create: `crates/sdkwork-claw-provider-adapter-http/src/lib.rs`
-- Create: `crates/sdkwork-claw-provider-adapter-http/src/router.rs`
-- Create: `crates/sdkwork-claw-provider-adapter-http/src/handlers.rs`
-- Create: `crates/sdkwork-claw-provider-adapter-http/src/gateway_auth.rs`
-- Create: `services/sdkwork-claw-provider-adapter/Cargo.toml`
-- Create: `services/sdkwork-claw-provider-adapter/specs/README.md`
-- Create: `services/sdkwork-claw-provider-adapter/specs/component.spec.json`
-- Create: `services/sdkwork-claw-provider-adapter/src/lib.rs`
-- Create: `services/sdkwork-claw-provider-adapter/src/main.rs`
-- Create: `services/sdkwork-claw-provider-adapter/src/runtime.rs`
-- Create: `services/sdkwork-claw-provider-adapter/src/providers.rs`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter-http/Cargo.toml`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter-http/src/lib.rs`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter-http/src/router.rs`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter-http/src/handlers.rs`
+- Create: `crates/sdkwork-cloudrouter-provider-adapter-http/src/gateway_auth.rs`
+- Create: `services/sdkwork-cloudrouter-provider-adapter/Cargo.toml`
+- Create: `services/sdkwork-cloudrouter-provider-adapter/specs/README.md`
+- Create: `services/sdkwork-cloudrouter-provider-adapter/specs/component.spec.json`
+- Create: `services/sdkwork-cloudrouter-provider-adapter/src/lib.rs`
+- Create: `services/sdkwork-cloudrouter-provider-adapter/src/main.rs`
+- Create: `services/sdkwork-cloudrouter-provider-adapter/src/runtime.rs`
+- Create: `services/sdkwork-cloudrouter-provider-adapter/src/providers.rs`
 - Modify: `Cargo.toml`
-- Test: `services/sdkwork-claw-provider-adapter/tests/http_adapter_service.rs`
+- Test: `services/sdkwork-cloudrouter-provider-adapter/tests/http_adapter_service.rs`
 
 - [ ] **Step 1: Write failing service tests**
 
@@ -429,7 +429,7 @@ POST /providers/tencent-cloud/vidu/ent/v2/start-end2video with auth -> adapter r
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cargo test -p sdkwork-claw-provider-adapter --test http_adapter_service -- --nocapture`
+Run: `cargo test -p sdkwork-cloudrouter-provider-adapter --test http_adapter_service -- --nocapture`
 
 Expected: FAIL because service package does not exist.
 
@@ -445,13 +445,13 @@ The service config can default to test token only in tests. Production runtime s
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `cargo test -p sdkwork-claw-provider-adapter --test http_adapter_service -- --nocapture`
+Run: `cargo test -p sdkwork-cloudrouter-provider-adapter --test http_adapter_service -- --nocapture`
 
 Expected: PASS.
 
 - [ ] **Step 5: Format**
 
-Run: `cargo fmt -p sdkwork-claw-provider-adapter-http -p sdkwork-claw-provider-adapter`
+Run: `cargo fmt -p sdkwork-cloudrouter-provider-adapter-http -p sdkwork-cloudrouter-provider-adapter`
 
 Expected: exit 0.
 
@@ -466,7 +466,7 @@ Expected: exit 0.
 - Create: `crates/provider-adapters/tencent-cloud/src/common/signer_tc3.rs`
 - Create: `crates/provider-adapters/tencent-cloud/src/video/mod.rs`
 - Create: `crates/provider-adapters/tencent-cloud/src/video/start_end2video.rs`
-- Modify: `services/sdkwork-claw-provider-adapter/src/providers.rs`
+- Modify: `services/sdkwork-cloudrouter-provider-adapter/src/providers.rs`
 - Modify: `Cargo.toml`
 - Test: `crates/provider-adapters/tencent-cloud/tests/manifest.rs`
 
@@ -506,7 +506,7 @@ For the first slice, native HTTP can be represented by an injected trait and tes
 
 - [ ] **Step 4: Wire Tencent Cloud adapter into adapter service**
 
-Modify `services/sdkwork-claw-provider-adapter/src/providers.rs` to include Tencent Cloud by default. Do not include a Vidu adapter package; official Vidu remains direct HTTP unless the routed provider account is a registered non-standard provider such as Tencent Cloud.
+Modify `services/sdkwork-cloudrouter-provider-adapter/src/providers.rs` to include Tencent Cloud by default. Do not include a Vidu adapter package; official Vidu remains direct HTTP unless the routed provider account is a registered non-standard provider such as Tencent Cloud.
 
 - [ ] **Step 5: Run tests to verify pass**
 
@@ -514,14 +514,14 @@ Run:
 
 ```bash
 cargo test -p sdkwork-provider-adapter-tencent-cloud --test manifest -- --nocapture
-cargo test -p sdkwork-claw-provider-adapter --test http_adapter_service -- --nocapture
+cargo test -p sdkwork-cloudrouter-provider-adapter --test http_adapter_service -- --nocapture
 ```
 
 Expected: PASS.
 
 - [ ] **Step 6: Format**
 
-Run: `cargo fmt -p sdkwork-provider-adapter-tencent-cloud -p sdkwork-claw-provider-adapter`
+Run: `cargo fmt -p sdkwork-provider-adapter-tencent-cloud -p sdkwork-cloudrouter-provider-adapter`
 
 Expected: exit 0.
 
@@ -535,7 +535,7 @@ Expected: exit 0.
 - Create: `crates/provider-adapters/alicloud/src/common/mod.rs`
 - Create: `crates/provider-adapters/alicloud/src/common/signer_v3.rs`
 - Create: `crates/provider-adapters/alicloud/src/video/mod.rs`
-- Modify: `services/sdkwork-claw-provider-adapter/src/providers.rs`
+- Modify: `services/sdkwork-cloudrouter-provider-adapter/src/providers.rs`
 - Modify: `Cargo.toml`
 - Test: `crates/provider-adapters/tencent-cloud/tests/manifest.rs`
 - Test: `crates/provider-adapters/alicloud/tests/manifest.rs`
@@ -589,11 +589,11 @@ Expected: exit 0.
 ### Task 7: Gateway Internal HTTP Adapter Transport
 
 **Files:**
-- Modify: `services/sdkwork-claw-gateway/Cargo.toml`
-- Modify: `services/sdkwork-claw-gateway/src/runtime.rs`
-- Create: `services/sdkwork-claw-gateway/src/provider_adapter_transport.rs`
-- Modify: `services/sdkwork-claw-gateway/src/lib.rs`
-- Test: `services/sdkwork-claw-gateway/tests/provider_adapter_invocation.rs`
+- Modify: `services/sdkwork-cloudrouter-gateway/Cargo.toml`
+- Modify: `services/sdkwork-cloudrouter-gateway/src/runtime.rs`
+- Create: `services/sdkwork-cloudrouter-gateway/src/provider_adapter_transport.rs`
+- Modify: `services/sdkwork-cloudrouter-gateway/src/lib.rs`
+- Test: `services/sdkwork-cloudrouter-gateway/tests/provider_adapter_invocation.rs`
 
 - [ ] **Step 1: Write failing gateway transport tests**
 
@@ -611,7 +611,7 @@ Use a local Axum test service or mock tower service, not an external network cal
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cargo test -p sdkwork-claw-gateway --test provider_adapter_invocation -- --nocapture`
+Run: `cargo test -p sdkwork-cloudrouter-gateway --test provider_adapter_invocation -- --nocapture`
 
 Expected: FAIL because transport does not exist.
 
@@ -630,13 +630,13 @@ redacts secrets in errors
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `cargo test -p sdkwork-claw-gateway --test provider_adapter_invocation -- --nocapture`
+Run: `cargo test -p sdkwork-cloudrouter-gateway --test provider_adapter_invocation -- --nocapture`
 
 Expected: PASS.
 
 - [ ] **Step 5: Format**
 
-Run: `cargo fmt -p sdkwork-claw-gateway`
+Run: `cargo fmt -p sdkwork-cloudrouter-gateway`
 
 Expected: exit 0.
 
@@ -645,13 +645,13 @@ Expected: exit 0.
 ### Task 8: Gateway Registry Decision In Invocation Flow
 
 **Files:**
-- Modify: `services/sdkwork-claw-gateway/src/runtime.rs`
-- Modify: `services/sdkwork-claw-product/src/api/openai_invocation.rs`
-- Modify: `services/sdkwork-claw-product/src/api/openai_chat.rs`
-- Modify: `services/sdkwork-claw-product/src/api/openai_responses.rs`
-- Modify: `services/sdkwork-claw-product/src/api/openai_embeddings.rs`
-- Test: `services/sdkwork-claw-product/tests/openai_chat_api.rs`
-- Test: `services/sdkwork-claw-gateway/tests/provider_adapter_invocation.rs`
+- Modify: `services/sdkwork-cloudrouter-gateway/src/runtime.rs`
+- Modify: `services/sdkwork-cloudrouter-product/src/api/openai_invocation.rs`
+- Modify: `services/sdkwork-cloudrouter-product/src/api/openai_chat.rs`
+- Modify: `services/sdkwork-cloudrouter-product/src/api/openai_responses.rs`
+- Modify: `services/sdkwork-cloudrouter-product/src/api/openai_embeddings.rs`
+- Test: `services/sdkwork-cloudrouter-product/tests/openai_chat_api.rs`
+- Test: `services/sdkwork-cloudrouter-gateway/tests/provider_adapter_invocation.rs`
 
 - [ ] **Step 1: Write failing invocation decision tests**
 
@@ -670,8 +670,8 @@ Use existing fake relay/plugin test patterns in `openai_chat_api.rs`.
 Run:
 
 ```bash
-cargo test -p sdkwork-claw-product openai_chat_adapter -- --nocapture
-cargo test -p sdkwork-claw-gateway --test provider_adapter_invocation -- --nocapture
+cargo test -p sdkwork-cloudrouter-product openai_chat_adapter -- --nocapture
+cargo test -p sdkwork-cloudrouter-gateway --test provider_adapter_invocation -- --nocapture
 ```
 
 Expected: FAIL because invocation flow does not consult adapter registry.
@@ -694,21 +694,21 @@ Adapter success must still call route success, after relay observers, and usage 
 Run:
 
 ```bash
-cargo test -p sdkwork-claw-product openai_chat_adapter -- --nocapture
-cargo test -p sdkwork-claw-gateway --test provider_adapter_invocation -- --nocapture
+cargo test -p sdkwork-cloudrouter-product openai_chat_adapter -- --nocapture
+cargo test -p sdkwork-cloudrouter-gateway --test provider_adapter_invocation -- --nocapture
 ```
 
 Expected: PASS.
 
 - [ ] **Step 5: Run existing focused OpenAI chat tests**
 
-Run: `cargo test -p sdkwork-claw-product openai_chat_completions_relays_non_stream_request_after_auth_model_and_price_validation -- --nocapture`
+Run: `cargo test -p sdkwork-cloudrouter-product openai_chat_completions_relays_non_stream_request_after_auth_model_and_price_validation -- --nocapture`
 
 Expected: PASS, proving direct HTTP relay remains intact.
 
 - [ ] **Step 6: Format**
 
-Run: `cargo fmt -p sdkwork-claw-product -p sdkwork-claw-gateway`
+Run: `cargo fmt -p sdkwork-cloudrouter-product -p sdkwork-cloudrouter-gateway`
 
 Expected: exit 0.
 
@@ -717,17 +717,17 @@ Expected: exit 0.
 ### Task 9: Runtime Config For Adapter Registry
 
 **Files:**
-- Modify: `crates/sdkwork-claw-config/src/provider_relay.rs`
-- Modify: `crates/sdkwork-claw-config/tests/provider_relay_config.rs`
-- Modify: `services/sdkwork-claw-gateway/src/runtime.rs`
-- Test: `crates/sdkwork-claw-config/tests/provider_relay_config.rs`
+- Modify: `crates/sdkwork-cloudrouter-config/src/provider_relay.rs`
+- Modify: `crates/sdkwork-cloudrouter-config/tests/provider_relay_config.rs`
+- Modify: `services/sdkwork-cloudrouter-gateway/src/runtime.rs`
+- Test: `crates/sdkwork-cloudrouter-config/tests/provider_relay_config.rs`
 
 - [ ] **Step 1: Write failing config tests**
 
 Add tests for env/config parsing of:
 
 ```text
-SDKWORK_CLAW_PROVIDER_ADAPTER_JSON
+SDKWORK_CLOUDROUTER_PROVIDER_ADAPTER_JSON
 ```
 
 JSON shape:
@@ -753,7 +753,7 @@ JSON shape:
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cargo test -p sdkwork-claw-config provider_relay_config -- --nocapture`
+Run: `cargo test -p sdkwork-cloudrouter-config provider_relay_config -- --nocapture`
 
 Expected: FAIL because adapter config parsing does not exist.
 
@@ -770,15 +770,15 @@ Pass registry into gateway runtime assembly when config is present.
 Run:
 
 ```bash
-cargo test -p sdkwork-claw-config provider_relay_config -- --nocapture
-cargo test -p sdkwork-claw-provider-adapter-registry --test matcher -- --nocapture
+cargo test -p sdkwork-cloudrouter-config provider_relay_config -- --nocapture
+cargo test -p sdkwork-cloudrouter-provider-adapter-registry --test matcher -- --nocapture
 ```
 
 Expected: PASS.
 
 - [ ] **Step 6: Format**
 
-Run: `cargo fmt -p sdkwork-claw-config -p sdkwork-claw-gateway`
+Run: `cargo fmt -p sdkwork-cloudrouter-config -p sdkwork-cloudrouter-gateway`
 
 Expected: exit 0.
 
@@ -841,10 +841,10 @@ Expected: PASS.
 Run:
 
 ```bash
-cargo test -p sdkwork-claw-provider-adapter-contract -- --nocapture
-cargo test -p sdkwork-claw-provider-adapter-registry -- --nocapture
-cargo test -p sdkwork-claw-provider-adapter -- --nocapture
-cargo test -p sdkwork-claw-provider-adapter-http -- --nocapture
+cargo test -p sdkwork-cloudrouter-provider-adapter-contract -- --nocapture
+cargo test -p sdkwork-cloudrouter-provider-adapter-registry -- --nocapture
+cargo test -p sdkwork-cloudrouter-provider-adapter -- --nocapture
+cargo test -p sdkwork-cloudrouter-provider-adapter-http -- --nocapture
 ```
 
 Expected: PASS.
@@ -862,7 +862,7 @@ Expected: PASS.
 
 - [ ] **Step 3: Run adapter service tests**
 
-Run: `cargo test -p sdkwork-claw-provider-adapter -- --nocapture`
+Run: `cargo test -p sdkwork-cloudrouter-provider-adapter -- --nocapture`
 
 Expected: PASS.
 
@@ -871,9 +871,9 @@ Expected: PASS.
 Run:
 
 ```bash
-cargo test -p sdkwork-claw-gateway --test provider_adapter_invocation -- --nocapture
-cargo test -p sdkwork-claw-product openai_chat_adapter -- --nocapture
-cargo test -p sdkwork-claw-product openai_chat_completions_relays_non_stream_request_after_auth_model_and_price_validation -- --nocapture
+cargo test -p sdkwork-cloudrouter-gateway --test provider_adapter_invocation -- --nocapture
+cargo test -p sdkwork-cloudrouter-product openai_chat_adapter -- --nocapture
+cargo test -p sdkwork-cloudrouter-product openai_chat_completions_relays_non_stream_request_after_auth_model_and_price_validation -- --nocapture
 ```
 
 Expected: PASS.
@@ -883,7 +883,7 @@ Expected: PASS.
 Run:
 
 ```bash
-cargo test -p sdkwork-claw-config provider_relay_config -- --nocapture
+cargo test -p sdkwork-cloudrouter-config provider_relay_config -- --nocapture
 pytest tests/test_provider_adapter_architecture_standard.py -q
 ```
 

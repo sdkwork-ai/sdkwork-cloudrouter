@@ -1,7 +1,7 @@
 > Migrated from `docs/installation/en-US/deployment-modes.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
-SDKWork Claw Router release packages cover `archive`, `service`, `container`, and `desktop` modes. Source runtime is a separate `source` scenario.
+SDKWork Cloud Router release packages cover `archive`, `service`, `container`, and `desktop` modes. Source runtime is a separate `source` scenario.
 
 ## Mode Comparison
 
@@ -27,7 +27,7 @@ state. Desktop packages keep Redis optional and disabled by default.
 Characteristics:
 
 - SQLite by default.
-- Redis config exists in `clawrouter.toml` but stays disabled.
+- Redis config exists in `cloudrouter.toml` but stays disabled.
 - Uses OS user config and data directories automatically.
 - Does not require external PostgreSQL.
 - Released as a native installer for Linux, Windows, and macOS.
@@ -36,25 +36,25 @@ Characteristics:
 Start on Linux native `.deb`:
 
 ```bash
-/usr/bin/clawrouterctl ensure
-/usr/bin/clawrouterctl refresh-catalog --force
-/usr/bin/clawrouter
+/usr/bin/cloudrouterctl ensure
+/usr/bin/cloudrouterctl refresh-catalog --force
+/usr/bin/cloudrouter
 ```
 
 Start on macOS native `.pkg`:
 
 ```bash
-/opt/sdkwork/router/bin/clawrouterctl ensure
-/opt/sdkwork/router/bin/clawrouterctl refresh-catalog --force
-/opt/sdkwork/router/bin/clawrouter
+/opt/sdkwork/router/bin/cloudrouterctl ensure
+/opt/sdkwork/router/bin/cloudrouterctl refresh-catalog --force
+/opt/sdkwork/router/bin/cloudrouter
 ```
 
 From a portable archive package root, use:
 
 ```bash
-./bin/clawrouterctl ensure
-./bin/clawrouterctl refresh-catalog --force
-./bin/clawrouter
+./bin/cloudrouterctl ensure
+./bin/cloudrouterctl refresh-catalog --force
+./bin/cloudrouter
 ```
 
 ## Archive
@@ -69,9 +69,9 @@ Characteristics:
 Start:
 
 ```bash
-./bin/clawrouterctl ensure
-./bin/clawrouterctl refresh-catalog --force
-./bin/clawrouter
+./bin/cloudrouterctl ensure
+./bin/cloudrouterctl refresh-catalog --force
+./bin/cloudrouter
 ```
 
 ## Service
@@ -83,7 +83,7 @@ Characteristics:
 - macOS `.pkg` service packages install the launchd plist.
 - macOS service packages start through a launchd runner that executes `ensure` and `refresh-catalog --force` before the gateway.
 - Windows `.msi` packages install runtime files and service metadata for host-specific service registration.
-- Uses PostgreSQL by default and stores protected service overrides in `/etc/sdkwork/router/clawrouter.env` on Linux.
+- Uses PostgreSQL by default and stores protected service overrides in `/etc/sdkwork/router/cloudrouter.env` on Linux.
 - Stores PostgreSQL password material in `/etc/sdkwork/router/database.secret` by default, or directly in protected TOML when the TOML file is managed as a secret-bearing file.
 - Provides `/etc/sdkwork/router/redis.secret` for Redis password material when Redis authentication is used.
 - Linux service packages keep `/etc/sdkwork/router` read-only to the running process and allow writes only to data and log directories.
@@ -92,18 +92,18 @@ Characteristics:
 Native service assets:
 
 ```text
-Windows: clawrouter-windows-x64-server-0.3.0.msi
-Linux: clawrouter-linux-x64-server-0.3.0.deb
-macOS: clawrouter-macos-arm64-server-0.3.0.pkg
+Windows: cloudrouter-windows-x64-server-0.3.0.msi
+Linux: cloudrouter-linux-x64-server-0.3.0.deb
+macOS: cloudrouter-macos-arm64-server-0.3.0.pkg
 ```
 
 Typical Linux systemd check after installing the `.deb`:
 
 ```bash
-sudo apt install ./clawrouter-linux-x64-server-0.3.0.deb
-sudo editor /etc/sdkwork/router/clawrouter.toml
-sudo systemctl start clawrouter
-sudo systemctl status clawrouter --no-pager
+sudo apt install ./cloudrouter-linux-x64-server-0.3.0.deb
+sudo editor /etc/sdkwork/router/cloudrouter.toml
+sudo systemctl start cloudrouter
+sudo systemctl status cloudrouter --no-pager
 ```
 
 ## Container
@@ -117,19 +117,19 @@ Characteristics:
 Example:
 
 ```bash
-docker build -f container/Containerfile -t clawrouter:0.3.0 .
+docker build -f container/Containerfile -t cloudrouter:0.3.0 .
 docker run --rm -p 3900:3900 \
-  -v "$PWD/config/clawrouter.toml.example:/etc/sdkwork/router/clawrouter.toml:ro" \
+  -v "$PWD/config/cloudrouter.toml.example:/etc/sdkwork/router/cloudrouter.toml:ro" \
   -v "$PWD/secrets/postgres-password:/run/secrets/sdkwork/router/postgres-password:ro" \
   -v "$PWD/secrets/redis-password:/run/secrets/sdkwork/router/redis-password:ro" \
-  clawrouter:0.3.0
+  cloudrouter:0.3.0
 ```
 
 For Kubernetes:
 
 - Store the database password in a Secret.
 - Store the Redis password in a Secret when Redis authentication is used.
-- Provide `clawrouter.toml` through a ConfigMap or mounted file.
+- Provide `cloudrouter.toml` through a ConfigMap or mounted file.
 - Point readinessProbe at `/readyz`.
 - Point livenessProbe at `/healthz`.
 - Do not bake `.env.release` into the image.

@@ -7,7 +7,7 @@ import re
 import sys
 from pathlib import Path
 
-API_DIR = Path(__file__).resolve().parents[1] / "services" / "sdkwork-clawrouter-router-service" / "src" / "api"
+API_DIR = Path(__file__).resolve().parents[1] / "services" / "sdkwork-cloudrouter-router-service" / "src" / "api"
 SKIP = {"app_auth.rs", "subject.rs", "mod.rs"}
 
 
@@ -176,7 +176,7 @@ def enhance_subject_rs() -> None:
         """use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
-use sdkwork_claw_http::{TrustedRequestSubject, TrustedRequestSubjectError};
+use sdkwork_cloudrouter_http::{TrustedRequestSubject, TrustedRequestSubjectError};
 
 use crate::api::response::PlusApiResult;
 

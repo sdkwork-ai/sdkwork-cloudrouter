@@ -2,11 +2,11 @@
 
 ## Purpose
 
-Author-owned backend-api contract inputs for SDKWork Claw Router internal admin and operator surfaces.
+Author-owned backend-api contract inputs for SDKWork Cloud Router internal admin and operator surfaces.
 
 ## Owner
 
-SDKWork Claw Router backend-api surface owners.
+SDKWork Cloud Router backend-api surface owners.
 
 ## Allowed Content
 

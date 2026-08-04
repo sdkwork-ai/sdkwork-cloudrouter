@@ -1,0 +1,7 @@
+{
+  "language": "typescript",
+  "sdkType": "backend",
+  "name": "cloudrouter-backend-sdk",
+  "packageName": "cloudrouter-backend-sdk-generated-typescript",
+  "version": "0.1.0"
+}

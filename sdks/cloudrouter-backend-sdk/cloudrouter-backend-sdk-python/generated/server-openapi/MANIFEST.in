@@ -1,0 +1,2 @@
+include README.md
+recursive-include sdkwork_cloudrouter_backend_sdk *.py

@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PORTAL_PACKAGES = ROOT / "apps" / "sdkwork-clawrouter-pc" / "packages"
+PORTAL_PACKAGES = ROOT / "apps" / "sdkwork-cloudrouter-pc" / "packages"
 
 
 class FrontendXssRuntimeStandardTest(unittest.TestCase):

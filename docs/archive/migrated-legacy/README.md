@@ -5,7 +5,7 @@ Legacy documentation trees were ingested into Canon shards and archived here for
 ## Archived Paths
 
 - `docs/00-设计文档索引.md`
-- `docs/01-PRD-sdkwork-clawrouter.md`
+- `docs/01-PRD-sdkwork-cloudrouter.md`
 - `docs/02-技术架构设计.md`
 - `docs/03-技术选型.md`
 - `docs/04-模块规划.md`
@@ -19,7 +19,7 @@ Legacy documentation trees were ingested into Canon shards and archived here for
 - `docs/12-前端功能模块与数据库表结构映射.md`
 - `docs/13-页面级数据结构覆盖与SchemaRegistry落地设计.md`
 - `docs/14-数据结构细节复核与补强记录.md`
-- `docs/15-new-api-sub2api价格体系对比与ClawRouter定价设计.md`
+- `docs/15-new-api-sub2api价格体系对比与CloudRouter定价设计.md`
 - `docs/16-前端代码契约复核与数据设计覆盖检查.md`
 - `docs/17-AppCenter-PlusApp-compatible-design.md`
 - `docs/18-SkillsHub-AgentSkills-PlusCategory-compatible-design.md`
@@ -36,7 +36,7 @@ Legacy documentation trees were ingested into Canon shards and archived here for
 - `docs/29-rust-backend-module-standard.md`
 - `docs/30-flyway-schema-contract-audit.md`
 - `docs/30-platform-data-model-v4.md`
-- `docs/31-clawrouter-openapi-generator.md`
+- `docs/31-cloudrouter-openapi-generator.md`
 - `docs/31-product-composition-model.md`
 - `docs/32-sdkwork-models-standard.md`
 - `docs/33-sdkwork-models-install-flow.md`

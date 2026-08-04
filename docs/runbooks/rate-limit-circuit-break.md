@@ -1,8 +1,8 @@
-# SDKWork Claw Router - Rate Limit / Circuit Break Tuning Runbook
+# SDKWork Cloud Router - Rate Limit / Circuit Break Tuning Runbook
 
 **Document Version:** 1.0
 **Last Updated:** 2026-06-27
-**Owner:** Platform Engineering / clawrouter-gateway
+**Owner:** Platform Engineering / cloudrouter-gateway
 **Review Frequency:** Quarterly
 **Severity:** P1
 
@@ -37,7 +37,7 @@ the security hardening defaults documented in [SECURITY.md](../../SECURITY.md).
 ### 1. Inspect rate-limit rejections
 
 ```bash
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
   curl -s http://localhost:8080/metrics | grep rate_limit_exceeded_total
 ```
 
@@ -56,7 +56,7 @@ rate_limit_exceeded_total{scope="tenant_inflight",tenant_id="tenantA"} 56
 ### 2. Inspect circuit breaker state
 
 ```bash
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
   curl -s http://localhost:8080/metrics | grep -E "circuit_breaker_state|circuit_breaker_redis_degraded"
 ```
 
@@ -70,7 +70,7 @@ kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
 ### 3. Analyze request patterns
 
 Correlate QPS, concurrency, and upstream error rate over the incident window
-from Grafana (*Claw Router -> Request Traffic*):
+from Grafana (*Cloud Router -> Request Traffic*):
 
 | Signal | Healthy | Investigate |
 |--------|---------|-------------|
@@ -96,8 +96,8 @@ legitimate (not an abuse pattern — see [Audit Log Investigation](audit-log-inv
 Re-apply via the runtime config and roll the gateway:
 
 ```bash
-kubectl rollout restart deployment/claw-router-gateway -n clawrouter
-kubectl rollout status  deployment/claw-router-gateway -n clawrouter
+kubectl rollout restart deployment/cloud-router-gateway -n cloudrouter
+kubectl rollout status  deployment/cloud-router-gateway -n cloudrouter
 ```
 
 ### Circuit breaker
@@ -119,7 +119,7 @@ safe, which over-throttles. Confirm whether Redis needs failover or scaling:
 
 ```bash
 # Redis health
-kubectl exec -it deploy/redis-primary -n clawrouter -- redis-cli ping
+kubectl exec -it deploy/redis-primary -n cloudrouter -- redis-cli ping
 # If PONG is delayed or absent, follow the Redis Failover runbook.
 ```
 
@@ -137,7 +137,7 @@ After applying a change, monitor for 1 hour:
 - p95 latency < 50 ms and error rate < 0.1% over the rolling 1 h window.
 
 ```bash
-curl -s https://gateway.example.com/metrics | grep clawrouter_slo
+curl -s https://gateway.example.com/metrics | grep cloudrouter_slo
 ```
 
 ## Rollback
@@ -147,8 +147,8 @@ revert to the previous config snapshot:
 
 ```bash
 # Restore the prior runtime config and redeploy
-git checkout <prior-config-ref> -- deployments/config/claw-router.runtime.toml
-kubectl rollout restart deployment/claw-router-gateway -n clawrouter
+git checkout <prior-config-ref> -- deployments/config/cloud-router.runtime.toml
+kubectl rollout restart deployment/cloud-router-gateway -n cloudrouter
 ```
 
 Because `fail_open` is never toggled, rollback cannot accidentally let failed

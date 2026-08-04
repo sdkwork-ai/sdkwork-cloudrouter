@@ -195,9 +195,9 @@ class AdminModelRuntimeStandardTest(unittest.TestCase):
         self.assertIn("function readRequiredNonNegativeInteger(record: ApiRecord, key: string, label: string): number", service)
         self.assertIn("function readRequiredNonNegativeInt64String(record: ApiRecord, key: string, label: string): string", service)
         self.assertIn("function readRequiredPositiveInteger(record: ApiRecord, key: string, label: string): number", service)
-        self.assertIn("Admin model ranking requests must be a non-negative integer", (ROOT / "apps" / "sdkwork-clawrouter-pc" / "admin-model-runtime.test.ts").read_text(encoding="utf-8"))
-        self.assertIn("Model ranking refresh status generated count must be a non-negative integer", (ROOT / "apps" / "sdkwork-clawrouter-pc" / "admin-model-runtime.test.ts").read_text(encoding="utf-8"))
-        self.assertIn("Model catalog sync response meter count must be a non-negative integer", (ROOT / "apps" / "sdkwork-clawrouter-pc" / "admin-model-runtime.test.ts").read_text(encoding="utf-8"))
+        self.assertIn("Admin model ranking requests must be a non-negative integer", (ROOT / "apps" / "sdkwork-cloudrouter-pc" / "admin-model-runtime.test.ts").read_text(encoding="utf-8"))
+        self.assertIn("Model ranking refresh status generated count must be a non-negative integer", (ROOT / "apps" / "sdkwork-cloudrouter-pc" / "admin-model-runtime.test.ts").read_text(encoding="utf-8"))
+        self.assertIn("Model catalog sync response meter count must be a non-negative integer", (ROOT / "apps" / "sdkwork-cloudrouter-pc" / "admin-model-runtime.test.ts").read_text(encoding="utf-8"))
 
         self.assertIn(
             "async refresh(body: AdminModelCatalogSyncRequest): Promise<ModelsRefreshResult>",
@@ -287,7 +287,7 @@ class AdminModelRuntimeStandardTest(unittest.TestCase):
         service = (package_root / "src" / "modelService.ts").read_text(encoding="utf-8")
         view = (package_root / "src" / "index.tsx").read_text(encoding="utf-8")
         form = (package_root / "src" / "modelForm.ts").read_text(encoding="utf-8")
-        verifier = (ROOT / "scripts" / "verify-claw-router-application.mjs").read_text(encoding="utf-8")
+        verifier = (ROOT / "scripts" / "verify-cloud-router-application.mjs").read_text(encoding="utf-8")
 
         self.assertEqual(package["type"], "module")
         self.assertEqual(package["scripts"]["typecheck"], "tsc --noEmit")
@@ -364,11 +364,11 @@ class AdminModelRuntimeStandardTest(unittest.TestCase):
                 self.assertNotIn('status_label(optional_integer_cell(&row, "status"))', store)
 
     def test_admin_model_catalog_route_uses_standard_router_not_fallback_compat_layer(self) -> None:
-        product_api_mod = (ROOT / "services/sdkwork-clawrouter-router-service/src/api/mod.rs").read_text(encoding="utf-8")
-        admin_api = (ROOT / "crates/sdkwork-routes-clawrouter-backend-api/src/routes.rs").read_text(
+        product_api_mod = (ROOT / "services/sdkwork-cloudrouter-router-service/src/api/mod.rs").read_text(encoding="utf-8")
+        admin_api = (ROOT / "crates/sdkwork-routes-cloudrouter-backend-api/src/routes.rs").read_text(
             encoding="utf-8"
         )
-        product_api_dir = ROOT / "services/sdkwork-clawrouter-router-service/src/api"
+        product_api_dir = ROOT / "services/sdkwork-cloudrouter-router-service/src/api"
 
         self.assertFalse(
             (product_api_dir / "admin_model_catalog_fallback.rs").exists(),

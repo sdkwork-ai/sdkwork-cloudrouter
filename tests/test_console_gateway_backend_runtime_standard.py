@@ -3,16 +3,16 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ROUTER_SERVICE = ROOT / "services" / "sdkwork-clawrouter-router-service"
-APP_ROUTES = ROOT / "crates" / "sdkwork-routes-clawrouter-app-api" / "src" / "routes.rs"
+ROUTER_SERVICE = ROOT / "services" / "sdkwork-cloudrouter-router-service"
+APP_ROUTES = ROOT / "crates" / "sdkwork-routes-cloudrouter-app-api" / "src" / "routes.rs"
 CONTRACT = ROOT / "docs" / "schema-registry" / "frontend-field-contracts.yaml"
-APP_SDK = ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src"
+APP_SDK = ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src"
 GATEWAY_FRONTEND = (
     ROOT
     / "apps"
-    / "sdkwork-clawrouter-pc"
+    / "sdkwork-cloudrouter-pc"
     / "packages"
-    / "sdkwork-clawrouter-pc-console-gateway"
+    / "sdkwork-cloudrouter-pc-console-gateway"
     / "src"
 )
 
@@ -113,7 +113,7 @@ class ConsoleGatewayBackendRuntimeStandardTest(unittest.TestCase):
         contract = CONTRACT.read_text(encoding="utf-8")
         operation_start = contract.index("- route: /console/gateway\n")
         operation = contract[operation_start : operation_start + 3500]
-        openapi = (ROOT / "generated" / "openapi" / "clawrouter-app-openapi.json").read_text(
+        openapi = (ROOT / "generated" / "openapi" / "cloudrouter-app-openapi.json").read_text(
             encoding="utf-8"
         )
         sdk_api = (APP_SDK / "api" / "ai.ts").read_text(encoding="utf-8")
@@ -144,9 +144,9 @@ class ConsoleGatewayBackendRuntimeStandardTest(unittest.TestCase):
         i18n_root = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-i18n"
+            / "sdkwork-cloudrouter-pc-i18n"
             / "src"
         )
         messages = (i18n_root / "resources" / "console" / "gateway.ts").read_text(

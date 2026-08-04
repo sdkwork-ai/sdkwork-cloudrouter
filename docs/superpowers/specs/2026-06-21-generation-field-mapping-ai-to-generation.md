@@ -1,7 +1,7 @@
 # Generation Field Mapping: `ai_generation_*` → `generation_*`
 
 Owner after cutover: **sdkwork-generations**  
-Claw Router role during migration: compat adapter + playground shell  
+Cloud Router role during migration: compat adapter + playground shell  
 Canonical source of truth: `sdkwork-generations/storage/sqlite/generation_core.sql` + app OpenAPI
 
 ## Commercial guardrails (must preserve)
@@ -17,7 +17,7 @@ Canonical source of truth: `sdkwork-generations/storage/sqlite/generation_core.s
 
 ## Table mapping
 
-| Claw Router (legacy) | sdkwork-generations (canonical) | Notes |
+| Cloud Router (legacy) | sdkwork-generations (canonical) | Notes |
 |----------------------|----------------------------------|-------|
 | `ai_generation_session` | `generation_record` + `generation_record_projection` | Session UX folds into record aggregate |
 | `ai_generation_job` | `generation_dispatch_job` + `generation_record` | Job orchestration separated |
@@ -84,14 +84,14 @@ Canonical source of truth: `sdkwork-generations/storage/sqlite/generation_core.s
 
 ## Execution (greenfield — no compat layer)
 
-Delete `ai_generation_*` from Claw Router and wire `@sdkwork/generations-*` in one batch. Field mapping is semantic reference only.
+Delete `ai_generation_*` from Cloud Router and wire `@sdkwork/generations-*` in one batch. Field mapping is semantic reference only.
 
-## Claw Router code touchpoints
+## Cloud Router code touchpoints
 
 | Location | Action |
 |----------|--------|
-| `services/sdkwork-clawrouter-router-service/.../sqlite_app_generation_history_read_store.rs` | Replace ai_* queries with generations adapter |
-| `apps/.../sdkwork-clawrouter-pc-playground` | Switch to generations app SDK |
+| `services/sdkwork-cloudrouter-router-service/.../sqlite_app_generation_history_read_store.rs` | Replace ai_* queries with generations adapter |
+| `apps/.../sdkwork-cloudrouter-pc-playground` | Switch to generations app SDK |
 | `crates/sdkwork-routes-*-open-api` | Remove generation paths from router OpenAPI after cutover |
 
 ## Verification checklist

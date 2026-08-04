@@ -4,14 +4,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const pcRoot = path.join(repoRoot, 'apps', 'sdkwork-clawrouter-pc');
+const pcRoot = path.join(repoRoot, 'apps', 'sdkwork-cloudrouter-pc');
 const workspaceYamlPath = [
   path.join(repoRoot, 'pnpm-workspace.yaml'),
   path.join(pcRoot, 'pnpm-workspace.yaml'),
 ].find((candidate) => existsSync(candidate));
 
 if (!workspaceYamlPath) {
-  console.error('Missing pnpm-workspace.yaml at repository root or apps/sdkwork-clawrouter-pc/');
+  console.error('Missing pnpm-workspace.yaml at repository root or apps/sdkwork-cloudrouter-pc/');
   process.exit(1);
 }
 
@@ -65,7 +65,7 @@ for (const entry of readdirSync(path.join(pcRoot, 'packages'), { withFileTypes: 
   const pkg = JSON.parse(readFileSync(pj, 'utf8'));
   workspacePkgs.set(pkg.name, `packages/${entry.name}`);
 }
-workspacePkgs.set('sdkwork-clawrouter-pc', '.');
+workspacePkgs.set('sdkwork-cloudrouter-pc', '.');
 
 const missing = new Map();
 function scan(dir) {

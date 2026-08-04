@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "name": "cloudrouter-backend-sdk",
+  "version": "0.1.0",
+  "language": "kotlin",
+  "sdkType": "backend",
+  "packageName": "sdkwork-cloudrouter-backend-sdk-generated-typescript",
+  "transportPackageName": "sdkwork-cloudrouter-backend-sdk-generated-typescript",
+  "consumerPackageName": "@sdkwork/cloudrouter-backend-sdk",
+  "generator": "@sdkwork/sdk-generator",
+  "capabilities": {
+    "supportsGeneratedTests": true,
+    "supportsReadme": true,
+    "supportsCustomScaffold": true,
+    "supportsPublishWorkflow": true,
+    "hasDistinctBuildStep": false
+  },
+  "generation": {
+    "readme": true,
+    "tests": false
+  },
+  "ownership": {
+    "generatedOwnership": "generated",
+    "scaffoldOwnership": "scaffold",
+    "scaffoldRoots": [
+      "custom/"
+    ],
+    "stateRoots": [
+      ".sdkwork/"
+    ]
+  }
+}

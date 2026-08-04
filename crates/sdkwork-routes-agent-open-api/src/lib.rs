@@ -11,8 +11,8 @@ pub fn gateway_route_manifest() -> RouterApiRouteManifest {
 }
 
 pub fn gateway_mount(upstream: axum::Router) -> axum::Router {
-    sdkwork_claw_http::open_api_capability_router(
+    sdkwork_cloudrouter_http::open_api_capability_router(
         upstream,
-        sdkwork_claw_http::OpenApiCapability::Agent,
+        sdkwork_cloudrouter_http::OpenApiCapability::Agent,
     )
 }

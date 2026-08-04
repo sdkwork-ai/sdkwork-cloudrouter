@@ -2,11 +2,11 @@
 
 ## Purpose
 
-Author-owned app-api contract inputs for SDKWork Claw Router product and user-facing client surfaces.
+Author-owned app-api contract inputs for SDKWork Cloud Router product and user-facing client surfaces.
 
 ## Owner
 
-SDKWork Claw Router app-api surface owners.
+SDKWork Cloud Router app-api surface owners.
 
 ## Allowed Content
 

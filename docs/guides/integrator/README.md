@@ -1,18 +1,18 @@
 # Integrator Guide
 
-SDK consumption, API boundaries, and integration examples for partners building on SDKWork Claw Router.
+SDK consumption, API boundaries, and integration examples for partners building on SDKWork Cloud Router.
 
 Specs: `../../../../sdkwork-specs/DOCUMENTATION_SPEC.md` section 2, `../../../../sdkwork-specs/SDK_SPEC.md`, `../../../../sdkwork-specs/API_SPEC.md`.
 
 ## 1. API Surfaces
 
-Claw Router exposes three API surfaces, all served by the Rust edge on the same origin:
+Cloud Router exposes three API surfaces, all served by the Rust edge on the same origin:
 
 | Surface | Base path | OpenAPI spec |
 | --- | --- | --- |
-| OpenAI-compatible Gateway | `/v1` | `apis/open-api/clawrouter/clawrouter-open-api.openapi.json` |
-| App API (end-user) | `/app/v3/api` | `apis/app-api/clawrouter/clawrouter-app-api.openapi.json` |
-| Backend/Admin API | `/backend/v3/api` | `apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json` |
+| OpenAI-compatible Gateway | `/v1` | `apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json` |
+| App API (end-user) | `/app/v3/api` | `apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json` |
+| Backend/Admin API | `/backend/v3/api` | `apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json` |
 
 Health probes:
 
@@ -26,22 +26,22 @@ TypeScript SDKs are generated from the OpenAPI contracts and published as worksp
 
 | SDK | Package | Use case |
 | --- | --- | --- |
-| App SDK | `@sdkwork/clawrouter-app-sdk` | End-user console features (API keys, usage, billing) |
-| Backend SDK | `@sdkwork/clawrouter-backend-sdk` | Admin panel (users, channels, models, finance) |
-| Open SDK | `@sdkwork/clawrouter-open-sdk` | OpenAI-compatible gateway chat/completions |
+| App SDK | `@sdkwork/cloudrouter-app-sdk` | End-user console features (API keys, usage, billing) |
+| Backend SDK | `@sdkwork/cloudrouter-backend-sdk` | Admin panel (users, channels, models, finance) |
+| Open SDK | `@sdkwork/cloudrouter-open-sdk` | OpenAI-compatible gateway chat/completions |
 
 ### Install
 
 ```powershell
-pnpm.cmd add @sdkwork/clawrouter-app-sdk
+pnpm.cmd add @sdkwork/cloudrouter-app-sdk
 ```
 
 ### Initialize the App SDK client
 
 ```typescript
-import { createClawRouterAppSdkClient } from '@sdkwork/clawrouter-app-sdk';
+import { createCloudRouterAppSdkClient } from '@sdkwork/cloudrouter-app-sdk';
 
-const client = createClawRouterAppSdkClient({
+const client = createCloudRouterAppSdkClient({
   baseUrl: '/app/v3/api',
 });
 
@@ -51,7 +51,7 @@ const result = await client.apiKeys.list({ page: '1', pageSize: '20' });
 
 ### List/search pagination (required)
 
-All Claw Router list and search endpoints paginate in the database. Clients must pass `page` and `page_size` (OpenAPI camelCase: `pageSize`) and read `data.items` plus `data.pageInfo` from the SdkWork list envelope. Do not fetch full collections and paginate or filter in browser memory.
+All Cloud Router list and search endpoints paginate in the database. Clients must pass `page` and `page_size` (OpenAPI camelCase: `pageSize`) and read `data.items` plus `data.pageInfo` from the SdkWork list envelope. Do not fetch full collections and paginate or filter in browser memory.
 
 Representative admin/app list operations with server paging: `suppliers.list`, `accounts.list`, `accountGroups.list`, `apiKeys.list`, `system.records`, usage logs, cache namespace keys (cursor), catalog categories/products, and chat conversation messages.
 
@@ -107,7 +107,7 @@ Do not introduce `avatarUrl`, `coverImage`, `coverUrl`, or `*_url` JSON fields. 
 The SDK returns `PlusApiSuccess<T>` or throws on transport errors. Always validate the success status before reading items:
 
 ```typescript
-import { ensurePlusApiSuccess, readRequiredApiItems } from '@sdkwork/clawroutes-pc-commons/runtime';
+import { ensurePlusApiSuccess, readRequiredApiItems } from '@sdkwork/cloudroutes-pc-commons/runtime';
 
 const result = await client.users.list({ page: '1' });
 ensurePlusApiSuccess(result, 'Failed to fetch users');
@@ -119,17 +119,17 @@ Do not use `.filter(isRecord)` or silent fallbacks — they hide contract drift 
 ## 6. Rate Limiting and Idempotency
 
 - The gateway enforces per-key rate limits (RPS/RPD). Exceed them and you receive `429 Too Many Requests`.
-- Mutation endpoints accept idempotency keys via `createIdempotencyParams()` from `@sdkwork/clawroutes-pc-commons/runtime`. Pass a unique key to safely retry without duplicate side effects.
+- Mutation endpoints accept idempotency keys via `createIdempotencyParams()` from `@sdkwork/cloudroutes-pc-commons/runtime`. Pass a unique key to safely retry without duplicate side effects.
 - Path IDs must be validated with `requiredSafePathSegment(id, 'resourceId')` before passing to SDK operations.
 
 ## 7. API Examples
 
-Example requests and responses live in `apis/<surface>/clawrouter/examples/`. The OpenAPI specs in `apis/<surface>/clawrouter/clawrouter-<surface>.openapi.json` are the authoritative contract.
+Example requests and responses live in `apis/<surface>/cloudrouter/examples/`. The OpenAPI specs in `apis/<surface>/cloudrouter/cloudrouter-<surface>.openapi.json` are the authoritative contract.
 
 ## 8. Related
 
-- [App API OpenAPI](../../apis/app-api/clawrouter/clawrouter-app-api.openapi.json)
-- [Backend API OpenAPI](../../apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json)
-- [Open API OpenAPI](../../apis/open-api/clawrouter/clawrouter-open-api.openapi.json)
+- [App API OpenAPI](../../apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json)
+- [Backend API OpenAPI](../../apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json)
+- [Open API OpenAPI](../../apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json)
 - [API spec](../../../../sdkwork-specs/API_SPEC.md)
 - [Developer guide](../developer/README.md)

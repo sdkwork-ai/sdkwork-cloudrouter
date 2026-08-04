@@ -1,6 +1,6 @@
 # Product Screenshot Placeholders
 
-This directory stores README-ready product screenshots for SDKWork Claw Router.
+This directory stores README-ready product screenshots for SDKWork Cloud Router.
 
 The current `.png` files are placeholder images. Replace them with real product
 screenshots when the product UI is ready for public or customer-facing

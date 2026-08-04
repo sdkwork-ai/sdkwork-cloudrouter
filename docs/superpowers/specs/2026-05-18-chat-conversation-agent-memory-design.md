@@ -10,4 +10,4 @@ and data ownership is decided by
 [`ADR-20260730`](../../architecture/decisions/ADR-20260730-own-chat-runtime-postgres-authority.md).
 
 The retired document's broader agent, memory, runtime-event, and artifact model
-must not be interpreted as implemented Claw Router behavior.
+must not be interpreted as implemented Cloud Router behavior.

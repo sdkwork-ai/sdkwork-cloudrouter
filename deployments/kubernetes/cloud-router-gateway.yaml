@@ -1,0 +1,168 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sdkwork-api-cloudrouter-standalone-gateway
+  labels:
+    app: sdkwork-cloudrouter
+    component: gateway
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: sdkwork-cloudrouter
+      component: gateway
+  template:
+    metadata:
+      labels:
+        app: sdkwork-cloudrouter
+        component: gateway
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "18080"
+    spec:
+      automountServiceAccountToken: false
+      # Covers the 120-second provider stream timeout plus shutdown overhead.
+      terminationGracePeriodSeconds: 130
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: sdkwork-cloudrouter
+              component: gateway
+      containers:
+        - name: gateway
+          image: registry.sdkwork.com/apps/sdkwork-cloudrouter:0.3.0
+          command: ["sdkwork-api-cloudrouter-standalone-gateway"]
+          ports:
+            - containerPort: 18080
+              name: http
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          env:
+            - name: SDKWORK_CLOUDROUTER_ROUTER_CONFIG_PROFILE
+              value: prod
+            - name: SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT
+              value: production
+            - name: SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE
+              value: cloud
+            - name: SDKWORK_CLOUDROUTER_ROUTER_RUNTIME_TARGET
+              value: container
+            - name: SDKWORK_NODE_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: SDKWORK_NODE_INSTANCE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            - name: SDKWORK_CLOUDROUTER_CONFIG_FILE
+              value: /etc/sdkwork/cloudrouter.toml
+            - name: SDKWORK_CLOUDROUTER_APPLICATION_PUBLIC_INGRESS_BIND
+              value: 0.0.0.0:18080
+            - name: SDKWORK_CLOUDROUTER_REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sdkwork-cloudrouter-redis-auth
+                  key: redis-url
+            - name: SDKWORK_CLOUDROUTER_USAGE_SETTLEMENT_WORKER_ENABLED
+              value: "true"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/sdkwork
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+      volumes:
+        - name: config
+          secret:
+            secretName: sdkwork-cloudrouter-config
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sdkwork-api-cloudrouter-standalone-gateway
+spec:
+  selector:
+    app: sdkwork-cloudrouter
+    component: gateway
+  ports:
+    - name: http
+      port: 18080
+      targetPort: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: sdkwork-api-cloudrouter-standalone-gateway
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: sdkwork-cloudrouter
+      component: gateway
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: sdkwork-api-cloudrouter-standalone-gateway
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: sdkwork-api-cloudrouter-standalone-gateway
+  minReplicas: 2
+  maxReplicas: 12
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

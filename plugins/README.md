@@ -4,7 +4,7 @@
 `plugins/` stores application or runtime plugin source packages. Agent and Codex plugin metadata lives under `.sdkwork/plugins/` instead.
 
 ## Owner
-SDKWork Claw Router plugin maintainers.
+SDKWork Cloud Router plugin maintainers.
 
 ## Allowed Content
 Runtime plugin source packages, plugin component specs, plugin READMEs, extension manifests, tests, and integration examples.

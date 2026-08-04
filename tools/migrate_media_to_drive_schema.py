@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Migrate claw-router schema registry from local storage/media tables to Drive references."""
+"""Migrate cloud-router schema registry from local storage/media tables to Drive references."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FRAGMENTS = ROOT / "docs" / "schema-registry" / "tables"
-ASSEMBLY = ROOT / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+ASSEMBLY = ROOT / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
 CONTENT_FRAGMENT = FRAGMENTS / "024-content.yaml"
 
 COLUMN_REPLACEMENTS = [
@@ -82,13 +82,13 @@ def patch_assembly() -> None:
     text = text.replace("- tables/024-content.yaml\n", "")
     guardrail_old = (
         "Greenfield composition model uses ai_* runtime, ops_*, integration_*, storage_,\n"
-        "      object_, upload_, media_, and c_* tables as claw-router generated ownership."
+        "      object_, upload_, media_, and c_* tables as cloud-router generated ownership."
     )
     guardrail_new = (
         "Greenfield composition model uses ai_* runtime, ops_*, integration_*, and c_*\n"
-        "      tables as claw-router generated ownership. Drive-owned storage, upload, object,\n"
+        "      tables as cloud-router generated ownership. Drive-owned storage, upload, object,\n"
         "      and MediaResource lifecycle are owned by sdkwork-drive and must not be generated\n"
-        "      in claw-router schema.sql."
+        "      in cloud-router schema.sql."
     )
     text = text.replace(guardrail_old, guardrail_new)
     if "module_id: sdkwork-drive" not in text:

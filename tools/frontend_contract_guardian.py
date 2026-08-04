@@ -86,7 +86,7 @@ class FrontendContractGuardian:
     IMPORT_PATTERN = re.compile(r'^\s*import\s+(?:[^"\']+\s+from\s+)?["\']([^"\']+)["\']', re.MULTILINE)
     COMMONS_ROOT_NAMED_IMPORT_PATTERN = re.compile(
         r"^\s*import\s+(?:type\s+)?(?:[^{}\n]+,\s*)?\{(?P<imports>[\s\S]*?)\}\s+from\s+"
-        r"['\"]@sdkwork/clawroutes-pc-commons['\"]",
+        r"['\"]@sdkwork/cloudroutes-pc-commons['\"]",
         re.MULTILINE,
     )
     EXPORT_ALL_PATTERN = re.compile(r"^\s*export\s+\*\s+from\s+['\"](?P<module>[^'\"]+)['\"]", re.MULTILINE)
@@ -101,39 +101,39 @@ class FrontendContractGuardian:
         r"\bfetch\s*\("
         r"|\baxios(?:\s*\(|\.[A-Za-z_$][\w$]*\s*\()"
         r"|\bnew\s+XMLHttpRequest\s*\("
-        r"|\bgetClawRouterAppSdkClient\s*\("
-        r"|\bgetClawRouterBackendSdkClient\s*\("
+        r"|\bgetCloudRouterAppSdkClient\s*\("
+        r"|\bgetCloudRouterBackendSdkClient\s*\("
         r"|^\s*import\s+(?:[^'\"]+\s+from\s+)?['\"]axios['\"]",
         re.MULTILINE,
     )
     BROWSER_FETCH_CALL_PATTERN = re.compile(r"\bfetch\s*\(\s*([^,\)\n]+)")
     NODE_ONLY_BROWSER_PACKAGES = frozenset({"sdkwork-code-generator"})
-    ROUTE_PACKAGE_PREFIX = "@sdkwork/clawrouter-"
-    ROUTE_PACKAGE_PREFIXES = ("@sdkwork/clawrouter-", "sdkwork-clawrouter-")
+    ROUTE_PACKAGE_PREFIX = "@sdkwork/cloudrouter-"
+    ROUTE_PACKAGE_PREFIXES = ("@sdkwork/cloudrouter-", "sdkwork-cloudrouter-")
     STATIC_ROUTE_IMPORT_ALLOWLIST = frozenset(
         {
-            "@sdkwork/clawroutes-pc-commons",
-            "@sdkwork/clawrouter-pc-shell",
-            "@sdkwork/clawrouter-pc-console-shell",
-            "@sdkwork/clawrouter-pc-admin-shell",
+            "@sdkwork/cloudroutes-pc-commons",
+            "@sdkwork/cloudrouter-pc-shell",
+            "@sdkwork/cloudrouter-pc-console-shell",
+            "@sdkwork/cloudrouter-pc-admin-shell",
         }
     )
     APP_SHELL_LAYOUT_RELATIVE = (
-        "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-shell/src/AppShellLayout.tsx"
+        "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-shell/src/AppShellLayout.tsx"
     )
     COMMERCE_HOST_MOUNT_COMPONENTS = frozenset(
         {
-            "ClawRouterConsoleBusinessHostRoutes",
+            "CloudRouterConsoleBusinessHostRoutes",
             "SdkworkWalletPage",
         }
     )
-    ADMIN_HOST_MOUNT_COMPONENT = "ClawRouterAdminHostRoutes"
-    ADMIN_HOST_MOUNT_RELATIVE = "apps/sdkwork-clawrouter-pc/src/admin/clawRouterAdminHostMount.tsx"
+    ADMIN_HOST_MOUNT_COMPONENT = "CloudRouterAdminHostRoutes"
+    ADMIN_HOST_MOUNT_RELATIVE = "apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx"
     ADMIN_HOST_ROUTE_CONTRIBUTION_PATTERN = re.compile(
         r"\broute\(\s*['\"]([^'\"]+)['\"]\s*,\s*['\"][^'\"]+['\"]\s*,\s*['\"]([^'\"]+)['\"]",
         re.MULTILINE,
     )
-    COMMERCE_HOST_MOUNT_RELATIVE = "apps/sdkwork-clawrouter-pc/src/console-business/consoleBusinessHostMount.tsx"
+    COMMERCE_HOST_MOUNT_RELATIVE = "apps/sdkwork-cloudrouter-pc/src/console-business/consoleBusinessHostMount.tsx"
     COMMERCE_HOST_CATALOG_RELATIVES = (
         # REMOVED: sdkwork-commerce reference
     )
@@ -160,7 +160,7 @@ class FrontendContractGuardian:
         }
     )
     VITE_LOCAL_ROUTE_CHUNK_MESSAGE = (
-        "portal Vite manualChunks must split local sdkwork-clawrouter route packages before generic vendor chunks"
+        "portal Vite manualChunks must split local sdkwork-cloudrouter route packages before generic vendor chunks"
     )
     PORTAL_NODE_SERVER_FORBIDDEN_MESSAGE = (
         "portal Node server runtime is forbidden; serve portal static and forwarding through Rust edge server"
@@ -172,42 +172,42 @@ class FrontendContractGuardian:
         "portal build script must build only Vite portal artifacts and must not build a Node server"
     )
     BUSINESS_API_PREFIX_BOUNDARY_MESSAGE = (
-        "portal business API prefixes must be isolated to sdkwork-clawroutes-pc-commons SDK boundary files"
+        "portal business API prefixes must be isolated to sdkwork-cloudroutes-pc-commons SDK boundary files"
     )
     BUSINESS_RAW_HTTP_MESSAGE = (
         "portal remote business calls must go through service -> generated SDK clients, not raw fetch/axios/XMLHttpRequest"
     )
     GENERATED_SDK_VALUE_IMPORT_BOUNDARY_MESSAGE = (
-        "portal packages must value-import generated SDK clients only from sdkwork-clawroutes-pc-commons SDK boundary files"
+        "portal packages must value-import generated SDK clients only from sdkwork-cloudroutes-pc-commons SDK boundary files"
     )
     GENERATED_SDK_CLIENT_CONSTRUCTION_BOUNDARY_MESSAGE = (
-        "portal packages must construct generated SDK clients only in sdkwork-clawroutes-pc-commons SDK boundary files"
+        "portal packages must construct generated SDK clients only in sdkwork-cloudroutes-pc-commons SDK boundary files"
     )
     GENERATED_SDK_CLIENT_BOUNDARY_MESSAGE = (
-        "sdkwork-clawroutes-pc-commons/src/sdk-clients.ts must construct generated app, backend, and AI SDK clients"
+        "sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts must construct generated app, backend, and AI SDK clients"
     )
     GENERATED_SDK_CLIENT_OPTIONS_BOUNDARY_MESSAGE = (
-        "sdkwork-clawroutes-pc-commons/src/sdk-clients.ts must expose separate app/backend/AI SDK option types "
+        "sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts must expose separate app/backend/AI SDK option types "
         "without manual header/baseUrl escape hatches"
     )
     COMMONS_RUNTIME_IMPORT_BOUNDARY_MESSAGE = (
         "portal business service files must import runtime helpers from "
-        "sdkwork-clawroutes-pc-commons/runtime instead of the commons UI root"
+        "sdkwork-cloudroutes-pc-commons/runtime instead of the commons UI root"
     )
     COMMONS_UI_ROOT_RUNTIME_IMPORT_BOUNDARY_MESSAGE = (
         "portal browser source must import runtime helpers from "
-        "sdkwork-clawroutes-pc-commons/runtime instead of the commons UI root"
+        "sdkwork-cloudroutes-pc-commons/runtime instead of the commons UI root"
     )
     COMMONS_UI_ROOT_RUNTIME_EXPORT_BOUNDARY_MESSAGE = (
-        "sdkwork-clawroutes-pc-commons root must not re-export runtime modules; use "
-        "sdkwork-clawroutes-pc-commons/runtime for runtime helpers"
+        "sdkwork-cloudroutes-pc-commons root must not re-export runtime modules; use "
+        "sdkwork-cloudroutes-pc-commons/runtime for runtime helpers"
     )
     GENERATED_SDK_RESULT_DATA_BOUNDARY_MESSAGE = (
         "portal business service files must read generated SDK results through "
-        "sdkwork-clawroutes-pc-commons/runtime helpers instead of result.data"
+        "sdkwork-cloudroutes-pc-commons/runtime helpers instead of result.data"
     )
     ADMIN_SESSION_TOKEN_BOUNDARY_MESSAGE = (
-        "portal admin services must let sdkwork-clawroutes-pc-commons/src/sdk-clients.ts inject session tokens"
+        "portal admin services must let sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts inject session tokens"
     )
     RUNTIME_API_BASE_URL_BOUNDARY_MESSAGE = (
         "portal runtime API base URL defaults must stay same-origin and must not fall back to external domains"
@@ -225,7 +225,7 @@ class FrontendContractGuardian:
     BUSINESS_RANDOM_PATTERN = re.compile(r"\bMath\s*\.\s*random\s*\(")
     GENERATED_SDK_VALUE_IMPORT_PATTERN = re.compile(
         r"^\s*import\s+(?!type\b)(?P<imports>[\s\S]*?)\s+from\s+['\"]"
-        r"(?P<module>@sdkwork/clawrouter-(?:app|backend|open)-sdk)['\"]",
+        r"(?P<module>@sdkwork/cloudrouter-(?:app|backend|open)-sdk)['\"]",
         re.MULTILINE,
     )
     GENERATED_SDK_CLIENT_CONSTRUCTION_PATTERN = re.compile(r"\bnew\s+Sdkwork(?:App|Backend|Ai)Client\s*\(")
@@ -240,7 +240,7 @@ class FrontendContractGuardian:
         "iam": {
             "getSdkworkAppbaseAppSdkClient",
             "getSdkworkAppbaseBackendSdkClient",
-            "getClawRouterIamRuntime",
+            "getCloudRouterIamRuntime",
             "createSdkworkAppbasePcAuthRuntime",
             "createSdkworkIamRuntimeAuthController",
             "@sdkwork/auth-runtime-pc-react",
@@ -248,7 +248,7 @@ class FrontendContractGuardian:
         },
         "auth": {
             "getSdkworkAppbaseAppSdkClient",
-            "getClawRouterIamRuntime",
+            "getCloudRouterIamRuntime",
             "createSdkworkAppbasePcAuthRuntime",
             "createSdkworkIamRuntimeAuthController",
             "@sdkwork/auth-runtime-pc-react",
@@ -257,7 +257,7 @@ class FrontendContractGuardian:
         "appbase": {
             "getSdkworkAppbaseAppSdkClient",
             "getSdkworkAppbaseBackendSdkClient",
-            "getClawRouterIamRuntime",
+            "getCloudRouterIamRuntime",
             "createSdkworkAppbasePcAuthRuntime",
             "createSdkworkIamRuntimeAuthController",
         },
@@ -297,44 +297,44 @@ class FrontendContractGuardian:
     }
     BUSINESS_API_PREFIXES = ("/app/v3/api", "/backend/v3/api")
     SDK_CLIENT_BOUNDARY_FILE = (
-        "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts"
+        "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts"
     )
     SDK_CLIENT_BOUNDARY_FILES = frozenset(
         {
-            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts",
-            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/runtime.ts",
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts",
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/runtime.ts",
         }
     )
-    COMMONS_UI_ROOT_FILE = "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/index.ts"
+    COMMONS_UI_ROOT_FILE = "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/index.ts"
     COMMONS_RUNTIME_ONLY_SYMBOLS = frozenset(
         {
             "API_BASE_URL",
             "APP_API_PREFIX",
             "BACKEND_API_PREFIX",
             "OPEN_API_PREFIX",
-            "CLAWROUTER_APP_SDK_REFERENCE_METADATA",
-            "CLAWROUTER_BACKEND_SDK_REFERENCE_METADATA",
-            "CLAWROUTER_AI_SDK_REFERENCE_METADATA",
-            "ClawRouterAppSdkClientOptions",
-            "ClawRouterBackendSdkClientOptions",
-            "ClawRouterAiSdkClientOptions",
-            "ClawRouterGeneratedSdkMetadata",
-            "ClawRouterGeneratedSdkType",
+            "CLOUDROUTER_APP_SDK_REFERENCE_METADATA",
+            "CLOUDROUTER_BACKEND_SDK_REFERENCE_METADATA",
+            "CLOUDROUTER_AI_SDK_REFERENCE_METADATA",
+            "CloudRouterAppSdkClientOptions",
+            "CloudRouterBackendSdkClientOptions",
+            "CloudRouterAiSdkClientOptions",
+            "CloudRouterGeneratedSdkMetadata",
+            "CloudRouterGeneratedSdkType",
             "ApiRecord",
             "clearAppSession",
             "clearStoredAppSessionToken",
-            "createClawRouterAppSdkClient",
-            "createClawRouterAppSdkModelExample",
-            "createClawRouterBackendSdkClient",
-            "createClawRouterAiSdkClient",
+            "createCloudRouterAppSdkClient",
+            "createCloudRouterAppSdkModelExample",
+            "createCloudRouterBackendSdkClient",
+            "createCloudRouterAiSdkClient",
             "createClientOperationToken",
             "createIdempotencyParams",
             "decimalNumber",
             "ensurePlusApiSuccess",
             "formatDecimalAmount",
-            "getClawRouterAppSdkClient",
-            "getClawRouterBackendSdkClient",
-            "getClawRouterAiSdkClient",
+            "getCloudRouterAppSdkClient",
+            "getCloudRouterBackendSdkClient",
+            "getCloudRouterAiSdkClient",
             "getLoadErrorMessage",
             "getStoredAppSessionToken",
             "isRecord",
@@ -344,16 +344,16 @@ class FrontendContractGuardian:
             "readApiItems",
             "readApiRecord",
             "readBoolean",
-            "readClawRouterRuntimeEnv",
+            "readCloudRouterRuntimeEnv",
             "readDecimalString",
             "readNullableString",
             "readNumber",
             "readRecordArray",
             "readString",
             "readStringArray",
-            "resetClawRouterSdkClients",
+            "resetCloudRouterSdkClients",
             "resetSiteBrandingCache",
-            "resolveClawRouterRuntimeBoolean",
+            "resolveCloudRouterRuntimeBoolean",
             "storeAppSessionFromResult",
             "sumDecimalStrings",
             "syntaxHighlightJson",
@@ -380,7 +380,7 @@ class FrontendContractGuardian:
     )
     RAW_BROWSER_NETWORK_ALLOWLIST = frozenset(
         {
-            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-core/src/index.ts",
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-core/src/index.ts",
             "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/apiReferenceSchemaTabs.ts",
             "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/codeSnippetClient.ts",
             "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/components/ApiPlayground.tsx",
@@ -389,7 +389,7 @@ class FrontendContractGuardian:
     DOCUMENTS_RUNTIME_BOUNDARY_FILES = frozenset(
         {
             "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-commons/src/documents-reference-runtime.tsx",
-            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/documents-reference-runtime-adapter.ts",
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/documents-reference-runtime-adapter.ts",
         }
     )
     EXTERNAL_DEPENDENCY_SDK_FAMILIES_WITHOUT_LOCAL_OPERATIONS = frozenset(
@@ -397,8 +397,8 @@ class FrontendContractGuardian:
             "sdkwork-documents-app-sdk",
             "sdkwork-iam-app-sdk",
             "sdkwork-iam-backend-sdk",
-            "sdkwork-clawrouter-app-sdk",
-            "sdkwork-clawrouter-backend-sdk",
+            "sdkwork-cloudrouter-app-sdk",
+            "sdkwork-cloudrouter-backend-sdk",
         }
     )
     WORKSPACE_DOCUMENTS_PACKAGE_SRC: dict[str, str] = {
@@ -418,7 +418,7 @@ class FrontendContractGuardian:
         "build-server.mjs",
         "smoke-production-server.mjs",
     )
-    ROUTE_CLASSIFICATION_SCHEMA = "sdkwork-clawrouter-frontend-route-classification"
+    ROUTE_CLASSIFICATION_SCHEMA = "sdkwork-cloudrouter-frontend-route-classification"
     ALLOWED_DELIVERY_KINDS = frozenset(
         {
             "sdk_backed_business_runtime",
@@ -463,7 +463,7 @@ class FrontendContractGuardian:
         r"^\d{4}-\d{2}-\d{2}(?:[T ][0-2]\d:[0-5]\d:[0-5]\d(?:\.\d{1,6})?(?:Z|[+-][0-2]\d:[0-5]\d)?)?$"
     )
     SOURCE_HASH_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
-    STATIC_SOURCE_MANIFEST_SCHEMA = "sdkwork-clawrouter-frontend-static-source-manifest"
+    STATIC_SOURCE_MANIFEST_SCHEMA = "sdkwork-cloudrouter-frontend-static-source-manifest"
     DEPENDENCY_OPERATION_FRAGMENTS = (
         Path("docs")
         / "schema-registry"
@@ -496,7 +496,7 @@ class FrontendContractGuardian:
         self.app_path = (
             Path(app_path).resolve()
             if app_path is not None
-            else self.root / "apps" / "sdkwork-clawrouter-pc" / "src" / "App.tsx"
+            else self.root / "apps" / "sdkwork-cloudrouter-pc" / "src" / "App.tsx"
         )
         self.manifest_path = (
             Path(manifest_path).resolve()
@@ -519,7 +519,7 @@ class FrontendContractGuardian:
             else self.root / "generated" / "schema" / "frontend" / "frontend-static-source-manifest.json"
         )
         self.require_route_classification = require_route_classification
-        self.portal_root = self.root / "apps" / "sdkwork-clawrouter-pc"
+        self.portal_root = self.root / "apps" / "sdkwork-cloudrouter-pc"
         self.vite_config_path = self.portal_root / "vite.config.ts"
         self.portal_package_path = self.portal_root / "package.json"
 
@@ -874,7 +874,7 @@ class FrontendContractGuardian:
         return [item for item in value if isinstance(item, str)]
 
     def _check_browser_dependency_boundaries(self) -> list[str]:
-        portal_root = self.root / "apps" / "sdkwork-clawrouter-pc"
+        portal_root = self.root / "apps" / "sdkwork-cloudrouter-pc"
         if not portal_root.exists():
             return []
 
@@ -989,7 +989,7 @@ class FrontendContractGuardian:
         return (
             route_pattern_index != -1
             and route_match_index != -1
-            and "sdkwork-clawrouter-" in source
+            and "sdkwork-cloudrouter-" in source
             and vendor_index != -1
             and route_match_index < vendor_index
         )
@@ -1053,9 +1053,9 @@ class FrontendContractGuardian:
 
         messages: list[str] = []
         required_terms = (
-            "@sdkwork/clawrouter-app-sdk",
-            "@sdkwork/clawrouter-backend-sdk",
-            "@sdkwork/clawrouter-open-sdk",
+            "@sdkwork/cloudrouter-app-sdk",
+            "@sdkwork/cloudrouter-backend-sdk",
+            "@sdkwork/cloudrouter-open-sdk",
             "new SdkworkAppClient",
             "new SdkworkBackendClient",
             "new SdkworkAiClient",
@@ -1067,13 +1067,13 @@ class FrontendContractGuardian:
         if not all(term in source for term in required_terms):
             messages.append(self.GENERATED_SDK_CLIENT_BOUNDARY_MESSAGE)
         required_option_terms = (
-            "export interface ClawRouterAppSdkClientOptions",
-            "export interface ClawRouterBackendSdkClientOptions",
-            "export interface ClawRouterAiSdkClientOptions",
+            "export interface CloudRouterAppSdkClientOptions",
+            "export interface CloudRouterBackendSdkClientOptions",
+            "export interface CloudRouterAiSdkClientOptions",
         )
         forbidden_option_terms = (
-            "interface ClawRouterSdkClientOptions",
-            "type ClawRouterSdkClientOptions",
+            "interface CloudRouterSdkClientOptions",
+            "type CloudRouterSdkClientOptions",
             "baseUrl?:",
             "headers?:",
             "options.baseUrl",
@@ -1094,7 +1094,7 @@ class FrontendContractGuardian:
         return vite_command.startswith("vite ") and "--configLoader native" in vite_command
 
     def _check_runtime_api_base_url_boundary(self) -> list[str]:
-        env_path = self.portal_root / "packages" / "sdkwork-clawroutes-pc-commons" / "src" / "utils" / "env.ts"
+        env_path = self.portal_root / "packages" / "sdkwork-cloudroutes-pc-commons" / "src" / "utils" / "env.ts"
         sdk_clients_path = self.root / self.SDK_CLIENT_BOUNDARY_FILE
         env_source = self._safe_read_text(env_path) or ""
         sdk_clients_source = self._safe_read_text(sdk_clients_path) or ""
@@ -1127,7 +1127,7 @@ class FrontendContractGuardian:
                 )
 
             if service_name_pattern.search(relative) and re.search(
-                r"from\s+['\"]@sdkwork/clawroutes-pc-commons['\"]",
+                r"from\s+['\"]@sdkwork/cloudroutes-pc-commons['\"]",
                 source,
             ):
                 messages.append(f"{self.COMMONS_RUNTIME_IMPORT_BOUNDARY_MESSAGE}: {relative}")
@@ -1191,7 +1191,7 @@ class FrontendContractGuardian:
             if (
                 service_name_pattern.search(relative)
                 and self.GENERATED_SDK_RESULT_DATA_PATTERN.search(source)
-                and "getClawRouterAiSdkClient" not in source
+                and "getCloudRouterAiSdkClient" not in source
             ):
                 messages.append(f"{self.GENERATED_SDK_RESULT_DATA_BOUNDARY_MESSAGE}: {relative}")
 
@@ -1213,7 +1213,7 @@ class FrontendContractGuardian:
 
     def _contains_manual_admin_session_token_usage(self, relative: str, source: str) -> bool:
         return (
-            "/packages/sdkwork-clawrouter-pc-admin-" in f"/{relative}"
+            "/packages/sdkwork-cloudrouter-pc-admin-" in f"/{relative}"
             and "getStoredAppSessionToken" in source
         )
 
@@ -1411,7 +1411,7 @@ class FrontendContractGuardian:
             )
             return messages
 
-        expected_client = "getClawRouterAppSdkClient" if api_surface == "app" else "getClawRouterBackendSdkClient"
+        expected_client = "getCloudRouterAppSdkClient" if api_surface == "app" else "getCloudRouterBackendSdkClient"
         if dependency_sdk_family == "sdkwork-models-backend-sdk":
             expected_client = "getModelsBackendSdkClient"
         elif dependency_sdk_family == "sdkwork-models-app-sdk":
@@ -1466,9 +1466,9 @@ class FrontendContractGuardian:
             )
             return messages
 
-        expected_client = "getClawRouterAppSdkClient" if api_surface == "app" else "getClawRouterBackendSdkClient"
+        expected_client = "getCloudRouterAppSdkClient" if api_surface == "app" else "getCloudRouterBackendSdkClient"
         package = entry.get("package")
-        if package in {"@sdkwork/clawrouter-pc-models", "@sdkwork/clawrouter-pc-rankings"} and api_surface == "app":
+        if package in {"@sdkwork/cloudrouter-pc-models", "@sdkwork/cloudrouter-pc-rankings"} and api_surface == "app":
             expected_client = "getModelsAppSdkClient"
         if not any(
             self._operation_uses_allowed_sdk_client_boundary(operation, expected_client)
@@ -1506,7 +1506,7 @@ class FrontendContractGuardian:
 
     def _uses_standard_foundation_sdk_client(self, source_text: str, expected_client: str) -> bool:
         if (
-            "getClawRouterCommerceService" not in source_text
+            "getCloudRouterCommerceService" not in source_text
             and "commerce-runtime" not in source_text
         ):
             return False
@@ -1514,9 +1514,9 @@ class FrontendContractGuardian:
         commerce_runtime = (
             self.root
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawroutes-pc-commons"
+            / "sdkwork-cloudroutes-pc-commons"
             / "src"
             / "commerce-runtime.ts"
         )
@@ -1654,7 +1654,7 @@ class FrontendContractGuardian:
                 )
                 continue
 
-            expected_client = "getClawRouterAppSdkClient" if api_surface == "app" else "getClawRouterBackendSdkClient"
+            expected_client = "getCloudRouterAppSdkClient" if api_surface == "app" else "getCloudRouterBackendSdkClient"
             if not self._operation_uses_allowed_sdk_client_boundary(operation, expected_client):
                 messages.append(
                     f"app-shell frontend operation {operation_name} must use {expected_client}"
@@ -1891,12 +1891,12 @@ class FrontendContractGuardian:
             )
             source = self._safe_read_text(gate_source_path) or ""
             if "VITE_TOOL_API_ENABLED" not in source or (
-                "resolveClawRouterRuntimeBoolean" not in source
+                "resolveCloudRouterRuntimeBoolean" not in source
                 and "resolveDocumentsRuntimeBoolean" not in source
             ):
                 messages.append(
                     f"local tool route {route} gate source {gate_source} "
-                    "must read VITE_TOOL_API_ENABLED through resolveClawRouterRuntimeBoolean"
+                    "must read VITE_TOOL_API_ENABLED through resolveCloudRouterRuntimeBoolean"
                 )
         messages.extend(self._check_local_tool_browser_network_sources(entry))
         return messages
@@ -2366,7 +2366,7 @@ class FrontendContractGuardian:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate portal routes and field contracts against schema manifest.")
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     parser.add_argument("--app", type=Path, default=None, help="portal App.tsx path")
     parser.add_argument("--manifest", type=Path, default=None, help="schema manifest JSON path")
     parser.add_argument("--contract", type=Path, default=None, help="frontend field contract YAML path")

@@ -13,18 +13,18 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
                 """
                 [workspace]
                 members = [
-                    "crates/sdkwork-claw-contract",
-                    "crates/sdkwork-claw-config",
-                    "crates/sdkwork-claw-health",
-                    "crates/sdkwork-claw-security",
-                    "crates/sdkwork-claw-http",
-                    "crates/sdkwork-claw-observability",
-                    "crates/sdkwork-routes-clawrouter-app-api",
-                    "crates/sdkwork-routes-clawrouter-backend-api",
-                    "crates/sdkwork-clawrouter-edge-runtime",
-                    "services/sdkwork-clawrouter-admin-gateway",
-                    "services/sdkwork-clawrouter-standalone-gateway",
-                    "services/sdkwork-clawrouter-router-service",
+                    "crates/sdkwork-cloudrouter-contract",
+                    "crates/sdkwork-cloudrouter-config",
+                    "crates/sdkwork-cloudrouter-health",
+                    "crates/sdkwork-cloudrouter-security",
+                    "crates/sdkwork-cloudrouter-http",
+                    "crates/sdkwork-cloudrouter-observability",
+                    "crates/sdkwork-routes-cloudrouter-app-api",
+                    "crates/sdkwork-routes-cloudrouter-backend-api",
+                    "crates/sdkwork-cloudrouter-edge-runtime",
+                    "services/sdkwork-cloudrouter-admin-gateway",
+                    "services/sdkwork-cloudrouter-standalone-gateway",
+                    "services/sdkwork-cloudrouter-router-service",
                 ]
                 resolver = "2"
 
@@ -52,25 +52,25 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
             encoding="utf-8",
         )
         for member in (
-            "crates/sdkwork-claw-contract",
-            "crates/sdkwork-claw-config",
-            "crates/sdkwork-claw-health",
-            "crates/sdkwork-claw-security",
-            "crates/sdkwork-claw-http",
-            "crates/sdkwork-claw-observability",
-            "crates/sdkwork-routes-clawrouter-app-api",
-            "crates/sdkwork-routes-clawrouter-backend-api",
-            "crates/sdkwork-clawrouter-edge-runtime",
-            "services/sdkwork-clawrouter-admin-gateway",
-            "services/sdkwork-clawrouter-standalone-gateway",
-            "services/sdkwork-clawrouter-router-service",
+            "crates/sdkwork-cloudrouter-contract",
+            "crates/sdkwork-cloudrouter-config",
+            "crates/sdkwork-cloudrouter-health",
+            "crates/sdkwork-cloudrouter-security",
+            "crates/sdkwork-cloudrouter-http",
+            "crates/sdkwork-cloudrouter-observability",
+            "crates/sdkwork-routes-cloudrouter-app-api",
+            "crates/sdkwork-routes-cloudrouter-backend-api",
+            "crates/sdkwork-cloudrouter-edge-runtime",
+            "services/sdkwork-cloudrouter-admin-gateway",
+            "services/sdkwork-cloudrouter-standalone-gateway",
+            "services/sdkwork-cloudrouter-router-service",
         ):
             root.joinpath(member, "Cargo.toml").parent.mkdir(parents=True, exist_ok=True)
             root.joinpath(member, "Cargo.toml").write_text("[package]\nname = \"demo\"\n", encoding="utf-8")
 
         module_rules = {
-            "crates/sdkwork-claw-contract": ("api_surface", "manifest", "operation", "path_pattern"),
-            "crates/sdkwork-claw-config": (
+            "crates/sdkwork-cloudrouter-contract": ("api_surface", "manifest", "operation", "path_pattern"),
+            "crates/sdkwork-cloudrouter-config": (
                 "api_key",
                 "database",
                 "deployment",
@@ -79,12 +79,12 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
                 "runtime",
                 "upstream_credential",
             ),
-            "crates/sdkwork-claw-health": ("health",),
-            "crates/sdkwork-claw-security": ("headers", "redaction"),
-            "crates/sdkwork-claw-http": ("auth", "contract_routes", "error", "health", "headers", "router"),
-            "crates/sdkwork-claw-observability": ("tracing_setup",),
-            "crates/sdkwork-clawrouter-edge-runtime": ("runtime",),
-            "services/sdkwork-clawrouter-router-service": ("api", "application", "domain", "identity", "infrastructure", "ports"),
+            "crates/sdkwork-cloudrouter-health": ("health",),
+            "crates/sdkwork-cloudrouter-security": ("headers", "redaction"),
+            "crates/sdkwork-cloudrouter-http": ("auth", "contract_routes", "error", "health", "headers", "router"),
+            "crates/sdkwork-cloudrouter-observability": ("tracing_setup",),
+            "crates/sdkwork-cloudrouter-edge-runtime": ("runtime",),
+            "services/sdkwork-cloudrouter-router-service": ("api", "application", "domain", "identity", "infrastructure", "ports"),
         }
         for member, modules in module_rules.items():
             src = root / member / "src"
@@ -94,7 +94,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
             for module in modules:
                 src.joinpath(f"{module}.rs").write_text("// module\n", encoding="utf-8")
 
-        product_src = root / "services" / "sdkwork-clawrouter-router-service" / "src"
+        product_src = root / "services" / "sdkwork-cloudrouter-router-service" / "src"
         product_src.joinpath("infrastructure.rs").unlink()
         product_src.joinpath("ports.rs").unlink()
         product_ports = product_src / "ports"
@@ -155,14 +155,14 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         product_postgres.joinpath("usage_settlement_store.rs").write_text("// PostgresUsageSettlementStore commerce_usage_settlement plus_account_history settlement_status INSUFFICIENT_POINTS\n", encoding="utf-8")
 
         boundary_services = (
-            ("crates/sdkwork-clawrouter-edge-runtime", None),
+            ("crates/sdkwork-cloudrouter-edge-runtime", None),
             (
-                "services/sdkwork-clawrouter-admin-gateway",
-                ("sdkwork-routes-clawrouter-backend-api", "sdkwork_routes_clawrouter_backend_api"),
+                "services/sdkwork-cloudrouter-admin-gateway",
+                ("sdkwork-routes-cloudrouter-backend-api", "sdkwork_routes_cloudrouter_backend_api"),
             ),
             (
-                "services/sdkwork-clawrouter-standalone-gateway",
-                ("sdkwork-routes-clawrouter-app-api", "sdkwork_routes_clawrouter_app_api"),
+                "services/sdkwork-cloudrouter-standalone-gateway",
+                ("sdkwork-routes-cloudrouter-app-api", "sdkwork_routes_cloudrouter_app_api"),
             ),
         )
         for service, route in boundary_services:
@@ -178,9 +178,9 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
                     name = "service"
 
                     [dependencies]
-                    sdkwork-claw-config = {{ path = "../../crates/sdkwork-claw-config" }}
-                    sdkwork-claw-http = {{ path = "../../crates/sdkwork-claw-http" }}
-                    sdkwork-claw-observability = {{ path = "../../crates/sdkwork-claw-observability" }}
+                    sdkwork-cloudrouter-config = {{ path = "../../crates/sdkwork-cloudrouter-config" }}
+                    sdkwork-cloudrouter-http = {{ path = "../../crates/sdkwork-cloudrouter-http" }}
+                    sdkwork-cloudrouter-observability = {{ path = "../../crates/sdkwork-cloudrouter-observability" }}
                     axum.workspace = true
                     tokio.workspace = true
                     anyhow.workspace = true{route_dependency}
@@ -190,16 +190,16 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
                 encoding="utf-8",
             )
             service_root.joinpath("src").mkdir(parents=True, exist_ok=True)
-            lib_text = "pub fn router() { sdkwork_claw_http::service_router(\"service\"); }\n"
-            if service == "crates/sdkwork-clawrouter-edge-runtime":
-                lib_text = "pub mod runtime;\npub fn router() { sdkwork_claw_http::service_router(\"service\"); }\n"
+            lib_text = "pub fn router() { sdkwork_cloudrouter_http::service_router(\"service\"); }\n"
+            if service == "crates/sdkwork-cloudrouter-edge-runtime":
+                lib_text = "pub mod runtime;\npub fn router() { sdkwork_cloudrouter_http::service_router(\"service\"); }\n"
             elif route is not None:
                 lib_text = f"pub use {route[1]}::*;\n"
             service_root.joinpath("src", "lib.rs").write_text(lib_text, encoding="utf-8")
 
         for route_crate in (
-            "crates/sdkwork-routes-clawrouter-app-api",
-            "crates/sdkwork-routes-clawrouter-backend-api",
+            "crates/sdkwork-routes-cloudrouter-app-api",
+            "crates/sdkwork-routes-cloudrouter-backend-api",
         ):
             route_src = root / route_crate / "src"
             route_src.mkdir(parents=True, exist_ok=True)
@@ -229,38 +229,38 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
             self.write_valid_workspace(root)
             cargo = root / "Cargo.toml"
             cargo.write_text(
-                cargo.read_text(encoding="utf-8").replace('    "crates/sdkwork-claw-security",\n', ""),
+                cargo.read_text(encoding="utf-8").replace('    "crates/sdkwork-cloudrouter-security",\n', ""),
                 encoding="utf-8",
             )
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("Cargo workspace must include member: crates/sdkwork-claw-security", result.messages)
+            self.assertIn("Cargo workspace must include member: crates/sdkwork-cloudrouter-security", result.messages)
 
     def test_reports_service_without_common_http_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            service = root / "crates" / "sdkwork-clawrouter-edge-runtime"
+            service = root / "crates" / "sdkwork-cloudrouter-edge-runtime"
             service.joinpath("Cargo.toml").write_text("[package]\nname = \"service\"\n", encoding="utf-8")
             service.joinpath("src", "lib.rs").write_text("pub fn router() {}\n", encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("crates/sdkwork-clawrouter-edge-runtime/Cargo.toml must depend on sdkwork-claw-http", result.messages)
-            self.assertIn("crates/sdkwork-clawrouter-edge-runtime/src/lib.rs must build routers through sdkwork_claw_http::service_router", result.messages)
+            self.assertIn("crates/sdkwork-cloudrouter-edge-runtime/Cargo.toml must depend on sdkwork-cloudrouter-http", result.messages)
+            self.assertIn("crates/sdkwork-cloudrouter-edge-runtime/src/lib.rs must build routers through sdkwork_cloudrouter_http::service_router", result.messages)
 
     def test_reports_service_without_common_runtime_config_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            service = root / "services" / "sdkwork-clawrouter-standalone-gateway"
+            service = root / "services" / "sdkwork-cloudrouter-standalone-gateway"
             cargo = service / "Cargo.toml"
             cargo.write_text(
                 cargo.read_text(encoding="utf-8").replace(
-                    'sdkwork-claw-config = { path = "../../crates/sdkwork-claw-config" }\n',
+                    'sdkwork-cloudrouter-config = { path = "../../crates/sdkwork-cloudrouter-config" }\n',
                     "",
                 ),
                 encoding="utf-8",
@@ -270,7 +270,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "services/sdkwork-clawrouter-standalone-gateway/Cargo.toml must depend on sdkwork-claw-config",
+                "services/sdkwork-cloudrouter-standalone-gateway/Cargo.toml must depend on sdkwork-cloudrouter-config",
                 result.messages,
             )
 
@@ -278,17 +278,17 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            gateway_lib = root / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "lib.rs"
+            gateway_lib = root / "crates" / "sdkwork-cloudrouter-edge-runtime" / "src" / "lib.rs"
             gateway_lib.write_text(
                 gateway_lib.read_text(encoding="utf-8").replace("pub mod runtime;\n", ""),
                 encoding="utf-8",
             )
-            root.joinpath("crates", "sdkwork-clawrouter-edge-runtime", "src", "runtime.rs").unlink(missing_ok=True)
+            root.joinpath("crates", "sdkwork-cloudrouter-edge-runtime", "src", "runtime.rs").unlink(missing_ok=True)
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("crates/sdkwork-clawrouter-edge-runtime/src/lib.rs must declare module: runtime", result.messages)
+            self.assertIn("crates/sdkwork-cloudrouter-edge-runtime/src/lib.rs must declare module: runtime", result.messages)
 
     def test_reports_missing_module_standard_doc_terms(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -300,7 +300,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: sdkwork-api-clawrouter-assembly", result.messages)
+            self.assertIn("docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: sdkwork-api-cloudrouter-assembly", result.messages)
             self.assertIn("docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: backpressure", result.messages)
 
     def test_reports_missing_postgres_only_standard_doc_terms(self) -> None:
@@ -324,14 +324,14 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            ports_mod = root / "services" / "sdkwork-clawrouter-router-service" / "src" / "ports" / "mod.rs"
+            ports_mod = root / "services" / "sdkwork-cloudrouter-router-service" / "src" / "ports" / "mod.rs"
             ports_mod.write_text(
                 ports_mod.read_text(encoding="utf-8").replace("mod chat_completion_relay;\n", ""),
                 encoding="utf-8",
             )
             root.joinpath(
                 "services",
-                "sdkwork-clawrouter-router-service",
+                "sdkwork-cloudrouter-router-service",
                 "src",
                 "ports",
                 "chat_completion_relay.rs",
@@ -341,7 +341,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/ports/mod.rs must declare chat_completion_relay module",
+                "services/sdkwork-cloudrouter-router-service/src/ports/mod.rs must declare chat_completion_relay module",
                 result.messages,
             )
 
@@ -349,14 +349,14 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            ports_mod = root / "services" / "sdkwork-clawrouter-router-service" / "src" / "ports" / "mod.rs"
+            ports_mod = root / "services" / "sdkwork-cloudrouter-router-service" / "src" / "ports" / "mod.rs"
             ports_mod.write_text(
                 ports_mod.read_text(encoding="utf-8").replace("mod embeddings_relay;\n", ""),
                 encoding="utf-8",
             )
             root.joinpath(
                 "services",
-                "sdkwork-clawrouter-router-service",
+                "sdkwork-cloudrouter-router-service",
                 "src",
                 "ports",
                 "embeddings_relay.rs",
@@ -366,7 +366,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/ports/mod.rs must declare embeddings_relay module",
+                "services/sdkwork-cloudrouter-router-service/src/ports/mod.rs must declare embeddings_relay module",
                 result.messages,
             )
 
@@ -374,14 +374,14 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            ports_mod = root / "services" / "sdkwork-clawrouter-router-service" / "src" / "ports" / "mod.rs"
+            ports_mod = root / "services" / "sdkwork-cloudrouter-router-service" / "src" / "ports" / "mod.rs"
             ports_mod.write_text(
                 ports_mod.read_text(encoding="utf-8").replace("mod provider_secret_resolver;\n", ""),
                 encoding="utf-8",
             )
             root.joinpath(
                 "services",
-                "sdkwork-clawrouter-router-service",
+                "sdkwork-cloudrouter-router-service",
                 "src",
                 "ports",
                 "provider_secret_resolver.rs",
@@ -391,7 +391,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/ports/mod.rs must declare provider_secret_resolver module",
+                "services/sdkwork-cloudrouter-router-service/src/ports/mod.rs must declare provider_secret_resolver module",
                 result.messages,
             )
 
@@ -399,22 +399,22 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            lib = root / "crates" / "sdkwork-claw-http" / "src" / "lib.rs"
+            lib = root / "crates" / "sdkwork-cloudrouter-http" / "src" / "lib.rs"
             lib.write_text("pub fn all_in_one() {}\n", encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("crates/sdkwork-claw-http/src/lib.rs must declare module: health", result.messages)
-            self.assertIn("crates/sdkwork-claw-http/src/lib.rs must declare module: router", result.messages)
+            self.assertIn("crates/sdkwork-cloudrouter-http/src/lib.rs must declare module: health", result.messages)
+            self.assertIn("crates/sdkwork-cloudrouter-http/src/lib.rs must declare module: router", result.messages)
 
     def test_reports_missing_contract_route_modules(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            contract_lib = root / "crates" / "sdkwork-claw-contract" / "src" / "lib.rs"
+            contract_lib = root / "crates" / "sdkwork-cloudrouter-contract" / "src" / "lib.rs"
             contract_lib.write_text("pub mod api_surface;\n", encoding="utf-8")
-            http_lib = root / "crates" / "sdkwork-claw-http" / "src" / "lib.rs"
+            http_lib = root / "crates" / "sdkwork-cloudrouter-http" / "src" / "lib.rs"
             http_lib.write_text(
                 "pub mod health;\npub mod headers;\npub mod router;\n",
                 encoding="utf-8",
@@ -423,41 +423,41 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("crates/sdkwork-claw-contract/src/lib.rs must declare module: manifest", result.messages)
-            self.assertIn("crates/sdkwork-claw-contract/src/lib.rs must declare module: operation", result.messages)
-            self.assertIn("crates/sdkwork-claw-contract/src/lib.rs must declare module: path_pattern", result.messages)
-            self.assertIn("crates/sdkwork-claw-http/src/lib.rs must declare module: contract_routes", result.messages)
-            self.assertIn("crates/sdkwork-claw-http/src/lib.rs must declare module: error", result.messages)
+            self.assertIn("crates/sdkwork-cloudrouter-contract/src/lib.rs must declare module: manifest", result.messages)
+            self.assertIn("crates/sdkwork-cloudrouter-contract/src/lib.rs must declare module: operation", result.messages)
+            self.assertIn("crates/sdkwork-cloudrouter-contract/src/lib.rs must declare module: path_pattern", result.messages)
+            self.assertIn("crates/sdkwork-cloudrouter-http/src/lib.rs must declare module: contract_routes", result.messages)
+            self.assertIn("crates/sdkwork-cloudrouter-http/src/lib.rs must declare module: error", result.messages)
 
     def test_reports_config_without_api_key_security_module(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            config_lib = root / "crates" / "sdkwork-claw-config" / "src" / "lib.rs"
+            config_lib = root / "crates" / "sdkwork-cloudrouter-config" / "src" / "lib.rs"
             config_lib.write_text(config_lib.read_text(encoding="utf-8").replace("pub mod api_key;\n", ""), encoding="utf-8")
-            root.joinpath("crates", "sdkwork-claw-config", "src", "api_key.rs").unlink()
+            root.joinpath("crates", "sdkwork-cloudrouter-config", "src", "api_key.rs").unlink()
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("crates/sdkwork-claw-config/src/lib.rs must declare module: api_key", result.messages)
+            self.assertIn("crates/sdkwork-cloudrouter-config/src/lib.rs must declare module: api_key", result.messages)
 
     def test_reports_config_without_provider_relay_module(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            config_lib = root / "crates" / "sdkwork-claw-config" / "src" / "lib.rs"
+            config_lib = root / "crates" / "sdkwork-cloudrouter-config" / "src" / "lib.rs"
             config_lib.write_text(
                 config_lib.read_text(encoding="utf-8").replace("pub mod provider_relay;\n", ""),
                 encoding="utf-8",
             )
-            root.joinpath("crates", "sdkwork-claw-config", "src", "provider_relay.rs").unlink()
+            root.joinpath("crates", "sdkwork-cloudrouter-config", "src", "provider_relay.rs").unlink()
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "crates/sdkwork-claw-config/src/lib.rs must declare module: provider_relay",
+                "crates/sdkwork-cloudrouter-config/src/lib.rs must declare module: provider_relay",
                 result.messages,
             )
 
@@ -465,7 +465,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            config_lib = root / "crates" / "sdkwork-claw-config" / "src" / "lib.rs"
+            config_lib = root / "crates" / "sdkwork-cloudrouter-config" / "src" / "lib.rs"
             config_lib.write_text(
                 config_lib.read_text(encoding="utf-8").replace(
                     "pub mod provider_secret_map;\n", ""
@@ -473,14 +473,14 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
                 encoding="utf-8",
             )
             root.joinpath(
-                "crates", "sdkwork-claw-config", "src", "provider_secret_map.rs"
+                "crates", "sdkwork-cloudrouter-config", "src", "provider_secret_map.rs"
             ).unlink()
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "crates/sdkwork-claw-config/src/lib.rs must declare module: provider_secret_map",
+                "crates/sdkwork-cloudrouter-config/src/lib.rs must declare module: provider_secret_map",
                 result.messages,
             )
 
@@ -488,48 +488,48 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            http_lib = root / "crates" / "sdkwork-claw-http" / "src" / "lib.rs"
+            http_lib = root / "crates" / "sdkwork-cloudrouter-http" / "src" / "lib.rs"
             http_lib.write_text(http_lib.read_text(encoding="utf-8").replace("pub mod auth;\n", ""), encoding="utf-8")
-            root.joinpath("crates", "sdkwork-claw-http", "src", "auth.rs").unlink()
+            root.joinpath("crates", "sdkwork-cloudrouter-http", "src", "auth.rs").unlink()
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("crates/sdkwork-claw-http/src/lib.rs must declare module: auth", result.messages)
+            self.assertIn("crates/sdkwork-cloudrouter-http/src/lib.rs must declare module: auth", result.messages)
 
     def test_reports_oversized_library_entry_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            lib = root / "crates" / "sdkwork-claw-security" / "src" / "lib.rs"
+            lib = root / "crates" / "sdkwork-cloudrouter-security" / "src" / "lib.rs"
             lib.write_text("pub mod headers;\npub mod redaction;\n" + ("pub fn oversized() {}\n" * 130), encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("crates/sdkwork-claw-security/src/lib.rs must stay below 120 non-empty lines", result.messages)
+            self.assertIn("crates/sdkwork-cloudrouter-security/src/lib.rs must stay below 120 non-empty lines", result.messages)
 
     def test_reports_product_without_hexagonal_submodules(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            lib = root / "services" / "sdkwork-clawrouter-router-service" / "src" / "lib.rs"
+            lib = root / "services" / "sdkwork-cloudrouter-router-service" / "src" / "lib.rs"
             lib.write_text("pub mod identity;\n", encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("services/sdkwork-clawrouter-router-service/src/lib.rs must declare module: domain", result.messages)
-            self.assertIn("services/sdkwork-clawrouter-router-service/src/lib.rs must declare module: application", result.messages)
-            self.assertIn("services/sdkwork-clawrouter-router-service/src/lib.rs must declare module: ports", result.messages)
-            self.assertIn("services/sdkwork-clawrouter-router-service/src/lib.rs must declare module: infrastructure", result.messages)
-            self.assertIn("services/sdkwork-clawrouter-router-service/src/lib.rs must declare module: api", result.messages)
+            self.assertIn("services/sdkwork-cloudrouter-router-service/src/lib.rs must declare module: domain", result.messages)
+            self.assertIn("services/sdkwork-cloudrouter-router-service/src/lib.rs must declare module: application", result.messages)
+            self.assertIn("services/sdkwork-cloudrouter-router-service/src/lib.rs must declare module: ports", result.messages)
+            self.assertIn("services/sdkwork-cloudrouter-router-service/src/lib.rs must declare module: infrastructure", result.messages)
+            self.assertIn("services/sdkwork-cloudrouter-router-service/src/lib.rs must declare module: api", result.messages)
 
     def test_reports_missing_product_sql_boundary_modules(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            sql_dir = root / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql"
+            sql_dir = root / "services" / "sdkwork-cloudrouter-router-service" / "src" / "infrastructure" / "sql"
             sql_dir.joinpath("catalog.rs").unlink()
             sql_dir.joinpath("rows.rs").unlink()
             query_dir = sql_dir / "queries"
@@ -540,19 +540,19 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/catalog.rs is required for PricingCatalog SQL snapshots",
+                "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/catalog.rs is required for PricingCatalog SQL snapshots",
                 result.messages,
             )
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/queries/lookup.rs is required for PricingCatalog SQL lookup query boundaries",
+                "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/queries/lookup.rs is required for PricingCatalog SQL lookup query boundaries",
                 result.messages,
             )
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/queries/snapshot.rs is required for PricingCatalog SQL snapshot load query boundaries",
+                "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/queries/snapshot.rs is required for PricingCatalog SQL snapshot load query boundaries",
                 result.messages,
             )
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/rows.rs is required for PricingCatalog SQL row mappers",
+                "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/rows.rs is required for PricingCatalog SQL row mappers",
                 result.messages,
             )
 
@@ -563,7 +563,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
             infrastructure_mod = (
                 root
                 / "services"
-                / "sdkwork-clawrouter-router-service"
+                / "sdkwork-cloudrouter-router-service"
                 / "src"
                 / "infrastructure"
                 / "mod.rs"
@@ -575,7 +575,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
             provider_dir = (
                 root
                 / "services"
-                / "sdkwork-clawrouter-router-service"
+                / "sdkwork-cloudrouter-router-service"
                 / "src"
                 / "infrastructure"
                 / "provider"
@@ -587,11 +587,11 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/mod.rs must declare provider module",
+                "services/sdkwork-cloudrouter-router-service/src/infrastructure/mod.rs must declare provider module",
                 result.messages,
             )
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/provider/openai_compatible_relay.rs is required for OpenAI-compatible provider relay",
+                "services/sdkwork-cloudrouter-router-service/src/infrastructure/provider/openai_compatible_relay.rs is required for OpenAI-compatible provider relay",
                 result.messages,
             )
 
@@ -602,7 +602,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
             provider_dir = (
                 root
                 / "services"
-                / "sdkwork-clawrouter-router-service"
+                / "sdkwork-cloudrouter-router-service"
                 / "src"
                 / "infrastructure"
                 / "provider"
@@ -620,11 +620,11 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/provider/mod.rs must declare provider_secret_map_resolver module",
+                "services/sdkwork-cloudrouter-router-service/src/infrastructure/provider/mod.rs must declare provider_secret_map_resolver module",
                 result.messages,
             )
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/provider/provider_secret_map_resolver.rs is required for provider secret map resolver",
+                "services/sdkwork-cloudrouter-router-service/src/infrastructure/provider/provider_secret_map_resolver.rs is required for provider secret map resolver",
                 result.messages,
             )
 
@@ -632,7 +632,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            ports_dir = root / "services" / "sdkwork-clawrouter-router-service" / "src" / "ports"
+            ports_dir = root / "services" / "sdkwork-cloudrouter-router-service" / "src" / "ports"
             ports_mod = ports_dir / "mod.rs"
             ports_mod.write_text(
                 ports_mod.read_text(encoding="utf-8").replace("mod chat_completion_stream_relay;\n", ""),
@@ -644,11 +644,11 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/ports/mod.rs must declare chat_completion_stream_relay module",
+                "services/sdkwork-cloudrouter-router-service/src/ports/mod.rs must declare chat_completion_stream_relay module",
                 result.messages,
             )
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/ports/chat_completion_stream_relay.rs is required for ChatCompletionStreamRelay provider streaming relay port",
+                "services/sdkwork-cloudrouter-router-service/src/ports/chat_completion_stream_relay.rs is required for ChatCompletionStreamRelay provider streaming relay port",
                 result.messages,
             )
 
@@ -656,7 +656,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            ports_dir = root / "services" / "sdkwork-clawrouter-router-service" / "src" / "ports"
+            ports_dir = root / "services" / "sdkwork-cloudrouter-router-service" / "src" / "ports"
             ports_mod = ports_dir / "mod.rs"
             ports_mod.write_text(
                 ports_mod.read_text(encoding="utf-8").replace("mod gateway_usage_recorder;\n", ""),
@@ -668,11 +668,11 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/ports/mod.rs must declare gateway_usage_recorder module",
+                "services/sdkwork-cloudrouter-router-service/src/ports/mod.rs must declare gateway_usage_recorder module",
                 result.messages,
             )
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/ports/gateway_usage_recorder.rs is required for GatewayUsageRecorder usage fact and request trace writer port",
+                "services/sdkwork-cloudrouter-router-service/src/ports/gateway_usage_recorder.rs is required for GatewayUsageRecorder usage fact and request trace writer port",
                 result.messages,
             )
 
@@ -680,7 +680,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            ports_dir = root / "services" / "sdkwork-clawrouter-router-service" / "src" / "ports"
+            ports_dir = root / "services" / "sdkwork-cloudrouter-router-service" / "src" / "ports"
             ports_mod = ports_dir / "mod.rs"
             ports_mod.write_text(
                 ports_mod.read_text(encoding="utf-8").replace("mod usage_settlement_store;\n", ""),
@@ -692,11 +692,11 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/ports/mod.rs must declare usage_settlement_store module",
+                "services/sdkwork-cloudrouter-router-service/src/ports/mod.rs must declare usage_settlement_store module",
                 result.messages,
             )
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/ports/usage_settlement_store.rs is required for UsageSettlementStore usage fact settlement and account ledger port",
+                "services/sdkwork-cloudrouter-router-service/src/ports/usage_settlement_store.rs is required for UsageSettlementStore usage fact settlement and account ledger port",
                 result.messages,
             )
 
@@ -704,7 +704,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            sqlite_dir = root / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "sqlite"
+            sqlite_dir = root / "services" / "sdkwork-cloudrouter-router-service" / "src" / "infrastructure" / "sql" / "sqlite"
             sqlite_dir.mkdir(parents=True)
             sqlite_dir.joinpath("loader.rs").write_text("// forbidden server SQLite loader\n", encoding="utf-8")
 
@@ -712,7 +712,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite must not contain server persistence adapters; PostgreSQL is the authoritative server database",
+                "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/sqlite must not contain server persistence adapters; PostgreSQL is the authoritative server database",
                 result.messages,
             )
 
@@ -720,7 +720,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            postgres_dir = root / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "postgres"
+            postgres_dir = root / "services" / "sdkwork-cloudrouter-router-service" / "src" / "infrastructure" / "sql" / "postgres"
             postgres_dir.joinpath("loader.rs").unlink()
             postgres_dir.joinpath("row_mapping.rs").unlink()
 
@@ -728,11 +728,11 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/loader.rs is required for PostgreSQL PricingCatalog loader",
+                "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/loader.rs is required for PostgreSQL PricingCatalog loader",
                 result.messages,
             )
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/row_mapping.rs is required for PostgreSQL PricingCatalog row mapping",
+                "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/row_mapping.rs is required for PostgreSQL PricingCatalog row mapping",
                 result.messages,
             )
 
@@ -740,7 +740,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            sql_dir = root / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql"
+            sql_dir = root / "services" / "sdkwork-cloudrouter-router-service" / "src" / "infrastructure" / "sql"
             postgres_dir = sql_dir / "postgres"
             postgres_dir.joinpath("gateway_usage_recorder.rs").unlink()
 
@@ -748,7 +748,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/gateway_usage_recorder.rs is required for PostgreSQL GatewayUsageRecorder adapter",
+                "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/gateway_usage_recorder.rs is required for PostgreSQL GatewayUsageRecorder adapter",
                 result.messages,
             )
 
@@ -756,7 +756,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            sql_dir = root / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql"
+            sql_dir = root / "services" / "sdkwork-cloudrouter-router-service" / "src" / "infrastructure" / "sql"
             postgres_dir = sql_dir / "postgres"
             postgres_dir.joinpath("usage_settlement_store.rs").unlink()
 
@@ -764,7 +764,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/usage_settlement_store.rs is required for PostgreSQL UsageSettlementStore adapter",
+                "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/usage_settlement_store.rs is required for PostgreSQL UsageSettlementStore adapter",
                 result.messages,
             )
 
@@ -772,7 +772,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            src = root / "services" / "sdkwork-clawrouter-router-service" / "src"
+            src = root / "services" / "sdkwork-cloudrouter-router-service" / "src"
             for module in ("api", "application", "domain", "infrastructure", "ports"):
                 module_file = src / f"{module}.rs"
                 module_file.unlink(missing_ok=True)
@@ -808,12 +808,12 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
             root = Path(tmp)
             self.write_valid_workspace(root)
             doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
-            doc.write_text(doc.read_text(encoding="utf-8").replace("sdkwork-api-clawrouter-assembly", "api-assembly"), encoding="utf-8")
+            doc.write_text(doc.read_text(encoding="utf-8").replace("sdkwork-api-cloudrouter-assembly", "api-assembly"), encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: sdkwork-api-clawrouter-assembly", result.messages)
+            self.assertIn("docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: sdkwork-api-cloudrouter-assembly", result.messages)
 
     def test_reports_missing_postgres_only_doc_standard(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -968,7 +968,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
             self.write_valid_workspace(root)
             doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
-                doc.read_text(encoding="utf-8").replace("SDKWORK_CLAW_PAYMENT_WEBHOOK_SECRET", "payment webhook secret"),
+                doc.read_text(encoding="utf-8").replace("SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET", "payment webhook secret"),
                 encoding="utf-8",
             )
 
@@ -976,7 +976,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: SDKWORK_CLAW_PAYMENT_WEBHOOK_SECRET",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET",
                 result.messages,
             )
 

@@ -8,13 +8,13 @@ ROOT = Path(__file__).resolve().parents[1]
 class ConsoleMessagesBackendRuntimeStandardTest(unittest.TestCase):
     def test_console_notifications_are_backed_by_the_app_route_crate(self) -> None:
         api_mod = (
-            ROOT / "services/sdkwork-clawrouter-router-service/src/api/mod.rs"
+            ROOT / "services/sdkwork-cloudrouter-router-service/src/api/mod.rs"
         ).read_text(encoding="utf-8")
         api = (
-            ROOT / "services/sdkwork-clawrouter-router-service/src/api/app_notification.rs"
+            ROOT / "services/sdkwork-cloudrouter-router-service/src/api/app_notification.rs"
         ).read_text(encoding="utf-8")
         app_routes = (
-            ROOT / "crates/sdkwork-routes-clawrouter-app-api/src/routes.rs"
+            ROOT / "crates/sdkwork-routes-cloudrouter-app-api/src/routes.rs"
         ).read_text(encoding="utf-8")
 
         self.assertIn("mod app_notification;", api_mod)
@@ -32,11 +32,11 @@ class ConsoleMessagesBackendRuntimeStandardTest(unittest.TestCase):
 
     def test_console_notification_port_exposes_only_product_fields(self) -> None:
         ports_mod = (
-            ROOT / "services/sdkwork-clawrouter-router-service/src/ports/mod.rs"
+            ROOT / "services/sdkwork-cloudrouter-router-service/src/ports/mod.rs"
         ).read_text(encoding="utf-8")
         port = (
             ROOT
-            / "services/sdkwork-clawrouter-router-service/src/ports/app_notification_store.rs"
+            / "services/sdkwork-cloudrouter-router-service/src/ports/app_notification_store.rs"
         ).read_text(encoding="utf-8")
 
         self.assertIn("mod app_notification_store;", ports_mod)
@@ -80,7 +80,7 @@ class ConsoleMessagesBackendRuntimeStandardTest(unittest.TestCase):
     def test_postgres_notification_store_enforces_scope_visibility_and_pagination(self) -> None:
         store = (
             ROOT
-            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_notification_store.rs"
+            / "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/app_notification_store.rs"
         ).read_text(encoding="utf-8")
 
         self.assertIn("PostgresAppNotificationStore", store)
@@ -105,7 +105,7 @@ class ConsoleMessagesBackendRuntimeStandardTest(unittest.TestCase):
     def test_notification_read_model_fails_closed_for_type_and_severity(self) -> None:
         store = (
             ROOT
-            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_notification_store.rs"
+            / "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/app_notification_store.rs"
         ).read_text(encoding="utf-8")
         compact_store = " ".join(store.split())
 
@@ -128,22 +128,22 @@ class ConsoleMessagesBackendRuntimeStandardTest(unittest.TestCase):
             ROOT / "docs/schema-registry/frontend-field-contracts.yaml"
         ).read_text(encoding="utf-8")
         openapi = (
-            ROOT / "generated/openapi/clawrouter-app-openapi.json"
+            ROOT / "generated/openapi/cloudrouter-app-openapi.json"
         ).read_text(encoding="utf-8")
         sdk_notification = (
             ROOT
-            / "sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/api/notification.ts"
+            / "sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/src/api/notification.ts"
         ).read_text(encoding="utf-8")
         notification_service = (
             ROOT
-            / "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts"
+            / "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/notificationService.ts"
         ).read_text(encoding="utf-8")
 
         self.assertIn("api_path: /app/v3/api/notification/notifications", contract)
         self.assertIn('"/app/v3/api/notification/notifications"', openapi)
         self.assertIn("class NotificationApi", sdk_notification)
         self.assertIn("appApiPath(`/notification/notifications`)", sdk_notification)
-        self.assertIn("getClawRouterAppSdkClient()", notification_service)
+        self.assertIn("getCloudRouterAppSdkClient()", notification_service)
         self.assertIn("appSdkClient.notification.list", notification_service)
         self.assertIn("appSdkClient.notification.acknowledge.create", notification_service)
         self.assertIn("appSdkClient.notification.popupSeen.create", notification_service)

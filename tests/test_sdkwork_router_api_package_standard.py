@@ -32,19 +32,19 @@ class SdkworkRouterApiPackageStandardTest(unittest.TestCase):
     def test_router_api_packages_are_declared_as_workspace_route_crates(self) -> None:
         cargo_toml = (ROOT / "Cargo.toml").read_text(encoding="utf-8")
         expected_packages = [
-            "sdkwork-routes-clawrouter-llm-open-api",
+            "sdkwork-routes-cloudrouter-llm-open-api",
             "sdkwork-routes-payment-open-api",
             "sdkwork-routes-image-open-api",
             "sdkwork-routes-video-open-api",
             "sdkwork-routes-audio-open-api",
-            "sdkwork-routes-clawrouter-drive-open-api",
-            "sdkwork-routes-clawrouter-knowledgebase-open-api",
-            "sdkwork-routes-clawrouter-memory-open-api",
+            "sdkwork-routes-cloudrouter-drive-open-api",
+            "sdkwork-routes-cloudrouter-knowledgebase-open-api",
+            "sdkwork-routes-cloudrouter-memory-open-api",
             "sdkwork-routes-agent-open-api",
             "sdkwork-routes-iaas-open-api",
             "sdkwork-routes-paas-open-api",
-            "sdkwork-routes-clawrouter-app-api",
-            "sdkwork-routes-clawrouter-backend-api",
+            "sdkwork-routes-cloudrouter-app-api",
+            "sdkwork-routes-cloudrouter-backend-api",
         ]
 
         for package_name in expected_packages:
@@ -66,19 +66,19 @@ class SdkworkRouterApiPackageStandardTest(unittest.TestCase):
 
     def test_router_api_route_crates_have_component_specs(self) -> None:
         expected_packages = [
-            "sdkwork-routes-clawrouter-llm-open-api",
+            "sdkwork-routes-cloudrouter-llm-open-api",
             "sdkwork-routes-payment-open-api",
             "sdkwork-routes-image-open-api",
             "sdkwork-routes-video-open-api",
             "sdkwork-routes-audio-open-api",
-            "sdkwork-routes-clawrouter-drive-open-api",
-            "sdkwork-routes-clawrouter-knowledgebase-open-api",
-            "sdkwork-routes-clawrouter-memory-open-api",
+            "sdkwork-routes-cloudrouter-drive-open-api",
+            "sdkwork-routes-cloudrouter-knowledgebase-open-api",
+            "sdkwork-routes-cloudrouter-memory-open-api",
             "sdkwork-routes-agent-open-api",
             "sdkwork-routes-iaas-open-api",
             "sdkwork-routes-paas-open-api",
-            "sdkwork-routes-clawrouter-app-api",
-            "sdkwork-routes-clawrouter-backend-api",
+            "sdkwork-routes-cloudrouter-app-api",
+            "sdkwork-routes-cloudrouter-backend-api",
         ]
 
         for package_name in expected_packages:
@@ -88,7 +88,7 @@ class SdkworkRouterApiPackageStandardTest(unittest.TestCase):
                 self.assertEqual(spec["kind"], "sdkwork.component.spec")
                 self.assertEqual(spec["component"]["name"], package_name)
                 self.assertEqual(spec["component"]["type"], "rust-route-crate")
-                self.assertEqual(spec["component"]["root"], f"sdkwork-clawrouter/crates/{package_name}")
+                self.assertEqual(spec["component"]["root"], f"sdkwork-cloudrouter/crates/{package_name}")
                 self.assertEqual(spec["component"]["languages"], ["rust"])
                 canonical_specs = {entry["file"] for entry in spec["canonicalSpecs"]}
                 self.assertIn("API_SPEC.md", canonical_specs)
@@ -101,13 +101,13 @@ class SdkworkRouterApiPackageStandardTest(unittest.TestCase):
 
     def test_app_and_backend_route_crates_expose_executable_router_builders(self) -> None:
         expected = {
-            "sdkwork-routes-clawrouter-app-api": [
-                "src/routes.rs#build_sdkwork_claw_router_app_api_router",
-                "src/routes.rs#build_sdkwork_claw_router_app_api_router_from_env",
+            "sdkwork-routes-cloudrouter-app-api": [
+                "src/routes.rs#build_sdkwork_cloudrouter_router_app_api_router",
+                "src/routes.rs#build_sdkwork_cloudrouter_router_app_api_router_from_env",
             ],
-            "sdkwork-routes-clawrouter-backend-api": [
-                "src/routes.rs#build_sdkwork_claw_router_backend_api_router",
-                "src/routes.rs#build_sdkwork_claw_router_backend_api_router_from_env",
+            "sdkwork-routes-cloudrouter-backend-api": [
+                "src/routes.rs#build_sdkwork_cloudrouter_router_backend_api_router",
+                "src/routes.rs#build_sdkwork_cloudrouter_router_backend_api_router_from_env",
             ],
         }
 
@@ -120,8 +120,8 @@ class SdkworkRouterApiPackageStandardTest(unittest.TestCase):
 
             with self.subTest(package=package_name):
                 self.assertIn("axum.workspace = true", cargo_manifest)
-                self.assertIn("sdkwork-claw-config.workspace = true", cargo_manifest)
-                self.assertIn("sdkwork-clawrouter-router-service.workspace = true", cargo_manifest)
+                self.assertIn("sdkwork-cloudrouter-config.workspace = true", cargo_manifest)
+                self.assertIn("sdkwork-cloudrouter-router-service.workspace = true", cargo_manifest)
                 self.assertIn("pub mod routes;", lib_source)
                 for runtime_entrypoint in runtime_entrypoints:
                     self.assertIn(runtime_entrypoint, spec["contracts"]["runtimeEntrypoints"])
@@ -130,53 +130,53 @@ class SdkworkRouterApiPackageStandardTest(unittest.TestCase):
                     self.assertRegex(routes_source, rf"pub (?:async )?fn {re.escape(function_name)}")
                 self.assertIn("Router", routes_source)
 
-    def test_gateway_mounts_claw_apis_through_route_crates_not_service_crates(self) -> None:
-        gateway_manifest = (ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "Cargo.toml").read_text(
+    def test_gateway_mounts_cloud_apis_through_route_crates_not_service_crates(self) -> None:
+        gateway_manifest = (ROOT / "crates" / "sdkwork-cloudrouter-edge-runtime" / "Cargo.toml").read_text(
             encoding="utf-8",
         )
-        gateway_runtime = (ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs").read_text(
-            encoding="utf-8",
-        )
-
-        self.assertIn("sdkwork-routes-clawrouter-app-api.workspace = true", gateway_manifest)
-        self.assertIn("sdkwork-routes-clawrouter-backend-api.workspace = true", gateway_manifest)
-        self.assertNotIn("sdkwork-clawrouter-app-api-server.workspace = true", gateway_manifest)
-        self.assertNotIn("sdkwork-clawrouter-admin-api-server.workspace = true", gateway_manifest)
-        self.assertIn("sdkwork_routes_clawrouter_app_api::", gateway_runtime)
-        self.assertIn("sdkwork_routes_clawrouter_backend_api::", gateway_runtime)
-        self.assertNotIn("sdkwork_clawrouter_app_api_server::", gateway_runtime)
-        self.assertNotIn("sdkwork_clawrouter_admin_api_server::", gateway_runtime)
-
-    def test_edge_runtime_embeds_claw_api_route_crates_and_dependency_router(self) -> None:
-        gateway_runtime = (ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs").read_text(
-            encoding="utf-8",
-        )
-        edge_server = (ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "edge_server.rs").read_text(
+        gateway_runtime = (ROOT / "crates" / "sdkwork-cloudrouter-edge-runtime" / "src" / "runtime.rs").read_text(
             encoding="utf-8",
         )
 
-        self.assertIn("sdkwork_routes_clawrouter_app_api::", gateway_runtime)
-        self.assertIn("sdkwork_routes_clawrouter_backend_api::", gateway_runtime)
+        self.assertIn("sdkwork-routes-cloudrouter-app-api.workspace = true", gateway_manifest)
+        self.assertIn("sdkwork-routes-cloudrouter-backend-api.workspace = true", gateway_manifest)
+        self.assertNotIn("sdkwork-cloudrouter-app-api-server.workspace = true", gateway_manifest)
+        self.assertNotIn("sdkwork-cloudrouter-admin-api-server.workspace = true", gateway_manifest)
+        self.assertIn("sdkwork_routes_cloudrouter_app_api::", gateway_runtime)
+        self.assertIn("sdkwork_routes_cloudrouter_backend_api::", gateway_runtime)
+        self.assertNotIn("sdkwork_cloudrouter_app_api_server::", gateway_runtime)
+        self.assertNotIn("sdkwork_cloudrouter_admin_api_server::", gateway_runtime)
+
+    def test_edge_runtime_embeds_cloud_api_route_crates_and_dependency_router(self) -> None:
+        gateway_runtime = (ROOT / "crates" / "sdkwork-cloudrouter-edge-runtime" / "src" / "runtime.rs").read_text(
+            encoding="utf-8",
+        )
+        edge_server = (ROOT / "crates" / "sdkwork-cloudrouter-edge-runtime" / "src" / "edge_server.rs").read_text(
+            encoding="utf-8",
+        )
+
+        self.assertIn("sdkwork_routes_cloudrouter_app_api::", gateway_runtime)
+        self.assertIn("sdkwork_routes_cloudrouter_backend_api::", gateway_runtime)
         self.assertIn("with_dependency_api_router", edge_server)
         self.assertIn("dependency_api_path(path)", edge_server)
 
-    def test_clawrouter_open_api_adapters_keep_clawrouter_authority_mapping(self) -> None:
+    def test_cloudrouter_open_api_adapters_keep_cloudrouter_authority_mapping(self) -> None:
         expected_mappings = {
-            "sdkwork-routes-clawrouter-drive-open-api": (
-                "sdkwork-clawrouter.drive-open-api",
-                "clawrouter-open-sdk",
+            "sdkwork-routes-cloudrouter-drive-open-api": (
+                "sdkwork-cloudrouter.drive-open-api",
+                "cloudrouter-open-sdk",
             ),
-            "sdkwork-routes-clawrouter-knowledgebase-open-api": (
-                "sdkwork-clawrouter.knowledgebase-open-api",
-                "clawrouter-open-sdk",
+            "sdkwork-routes-cloudrouter-knowledgebase-open-api": (
+                "sdkwork-cloudrouter.knowledgebase-open-api",
+                "cloudrouter-open-sdk",
             ),
-            "sdkwork-routes-clawrouter-llm-open-api": (
-                "sdkwork-clawrouter.llm-open-api",
-                "clawrouter-open-sdk",
+            "sdkwork-routes-cloudrouter-llm-open-api": (
+                "sdkwork-cloudrouter.llm-open-api",
+                "cloudrouter-open-sdk",
             ),
-            "sdkwork-routes-clawrouter-memory-open-api": (
-                "sdkwork-clawrouter.memory-open-api",
-                "clawrouter-open-sdk",
+            "sdkwork-routes-cloudrouter-memory-open-api": (
+                "sdkwork-cloudrouter.memory-open-api",
+                "cloudrouter-open-sdk",
             ),
         }
 
@@ -187,7 +187,7 @@ class SdkworkRouterApiPackageStandardTest(unittest.TestCase):
             with self.subTest(package=package_name):
                 self.assertIn(f'pub const API_AUTHORITY: &str = "{api_authority}";', manifest)
                 self.assertIn(f'pub const SDK_FAMILY: &str = "{sdk_family}";', manifest)
-                self.assertIn("sdkwork-clawrouter.", manifest)
+                self.assertIn("sdkwork-cloudrouter.", manifest)
 
 
 if __name__ == "__main__":

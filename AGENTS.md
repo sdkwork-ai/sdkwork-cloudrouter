@@ -32,7 +32,7 @@ Do not copy root standard text into this repository. If these relative paths do 
 
 ## Application Identity
 
-Read `sdkwork.app.config.json` only when changing Claw Router application behavior, runtime config, SDK wiring, release metadata, app-owned capabilities, package identity, or deployment metadata.
+Read `sdkwork.app.config.json` only when changing Cloud Router application behavior, runtime config, SDK wiring, release metadata, app-owned capabilities, package identity, or deployment metadata.
 
 ## Local Dictionary Structure
 
@@ -44,7 +44,7 @@ Read `sdkwork.app.config.json` only when changing Claw Router application behavi
 - `.sdkwork/`: local skills, plugins, manifests, and AI workspace metadata.
 - `specs/`: local application/component contracts and narrowing rules.
 - `apis/`: authored API contracts, route authority inputs, API examples, changelogs, and validation fixtures.
-- `apps/`: runnable application surfaces such as `apps/sdkwork-clawrouter-pc/`.
+- `apps/`: runnable application surfaces such as `apps/sdkwork-cloudrouter-pc/`.
 - `crates/`: Rust crates, including `sdkwork-routes-<capability>-<surface>` route crates.
 - `sdks/`: SDK families, OpenAPI authorities, derived generator inputs, and generated SDK artifacts.
 - `packages/`: governed shared TypeScript or React package families.

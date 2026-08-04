@@ -1,88 +1,88 @@
-schema: sdkwork-clawrouter-frontend-route-classification
-source: apps/sdkwork-clawrouter-pc/src/App.tsx
+schema: sdkwork-cloudrouter-frontend-route-classification
+source: apps/sdkwork-cloudrouter-pc/src/App.tsx
 routes:
 - route: /
-  package: '@sdkwork/clawrouter-pc-home'
+  package: '@sdkwork/cloudrouter-pc-home'
   owner: product-surface
   route_scope: public
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
   - /
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/analytics
-  package: '@sdkwork/clawrouter-pc-admin-analytics'
+  package: '@sdkwork/cloudrouter-pc-admin-analytics'
   owner: admin-control-plane
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/analytics
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-analytics/src/analyticsService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/cache
-  package: '@sdkwork/clawrouter-pc-admin-cache'
+  package: '@sdkwork/cloudrouter-pc-admin-cache'
   owner: admin-control-plane
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/cache
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/dashboard
-  package: '@sdkwork/clawrouter-pc-admin-dashboard'
+  package: '@sdkwork/cloudrouter-pc-admin-dashboard'
   owner: admin-control-plane
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/dashboard
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/dashboardService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/marketing/:sectionId?
-  package: '@sdkwork/clawrouter-pc-admin-marketing'
+  package: '@sdkwork/cloudrouter-pc-admin-marketing'
   owner: admin-control-plane
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/marketing/:sectionId?
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/memberships/:sectionId?
-  package: '@sdkwork/clawrouter-pc-admin-memberships'
+  package: '@sdkwork/cloudrouter-pc-admin-memberships'
   owner: admin-control-plane
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/memberships/:sectionId?
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/model
   package: '@sdkwork/models-pc-admin-catalog'
@@ -90,12 +90,12 @@ routes:
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/model
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/model/mappings
   package: '@sdkwork/models-pc-admin-catalog'
@@ -103,12 +103,12 @@ routes:
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/model/mappings
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/model/resources
   package: '@sdkwork/models-pc-admin-resource'
@@ -116,146 +116,146 @@ routes:
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/model/resources
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/monitor
-  package: '@sdkwork/clawrouter-pc-admin-monitor'
+  package: '@sdkwork/cloudrouter-pc-admin-monitor'
   owner: admin-control-plane
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/monitor
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor/src/monitorService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/payments/:sectionId?
-  package: '@sdkwork/clawrouter-pc-admin-payments'
+  package: '@sdkwork/cloudrouter-pc-admin-payments'
   owner: admin-control-plane
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/payments/:sectionId?
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/ratelimit
-  package: '@sdkwork/clawrouter-pc-admin-ratelimit'
+  package: '@sdkwork/cloudrouter-pc-admin-ratelimit'
   owner: admin-control-plane
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/ratelimit
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/record
-  package: '@sdkwork/clawrouter-pc-admin-record'
+  package: '@sdkwork/cloudrouter-pc-admin-record'
   owner: admin-control-plane
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/record
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-record/src/recordService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-record/src/recordService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/runtime-region
-  package: '@sdkwork/clawrouter-pc-admin-runtime-region'
+  package: '@sdkwork/cloudrouter-pc-admin-runtime-region'
   owner: admin-control-plane
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/runtime-region
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-runtime-region/src/runtimeRegionService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-runtime-region/src/runtimeRegionService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/service-nodes
-  package: '@sdkwork/clawrouter-pc-admin-service-nodes'
+  package: '@sdkwork/cloudrouter-pc-admin-service-nodes'
   owner: admin-control-plane
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/service-nodes
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/settings
-  package: '@sdkwork/clawrouter-pc-admin-site'
+  package: '@sdkwork/cloudrouter-pc-admin-site'
   owner: admin-control-plane
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/settings
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-site/src/AuthSettingsService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site/src/AuthSettingsService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/site
-  package: '@sdkwork/clawrouter-pc-admin-site'
+  package: '@sdkwork/cloudrouter-pc-admin-site'
   owner: admin-control-plane
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/site
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-site/src/AuthSettingsService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site/src/AuthSettingsService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/storage/:sectionId?
-  package: '@sdkwork/clawrouter-pc-admin-storage'
+  package: '@sdkwork/cloudrouter-pc-admin-storage'
   owner: admin-control-plane
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/storage/:sectionId?
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/upstream
-  package: '@sdkwork/clawrouter-pc-admin-upstream'
+  package: '@sdkwork/cloudrouter-pc-admin-upstream'
   owner: admin-control-plane
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/upstream
@@ -263,8 +263,8 @@ routes:
   - /admin/upstream/accounts
   - /admin/upstream/account-groups
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /api-reference
   package: '@sdkwork/documents-pc-api-reference'
@@ -277,7 +277,7 @@ routes:
   operation_routes:
   - /api-reference
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/index.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /auth/forgot-password
@@ -286,12 +286,12 @@ routes:
   route_scope: public
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
   - /auth/forgot-password
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /auth/login
   package: portal-root
@@ -299,12 +299,12 @@ routes:
   route_scope: public
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
   - /auth/login
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /auth/oauth/callback/:provider
   package: portal-root
@@ -312,12 +312,12 @@ routes:
   route_scope: public
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
   - /auth/oauth/callback/:provider
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /auth/register
   package: portal-root
@@ -325,26 +325,26 @@ routes:
   route_scope: public
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
   - /auth/register
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /c/:conversationId
-  package: '@sdkwork/clawrouter-pc-playground'
+  package: '@sdkwork/cloudrouter-pc-playground'
   owner: product-surface
   route_scope: public
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
   - /c/:conversationId
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundGenerationService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /console/account
   package: portal-root
@@ -352,26 +352,26 @@ routes:
   route_scope: console
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
   - /console/account
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /console/api-keys
-  package: '@sdkwork/clawrouter-pc-console-api-keys'
+  package: '@sdkwork/cloudrouter-pc-console-api-keys'
   owner: console-surface
   route_scope: console
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
   - /console/api-keys
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /console/checkout
   package: '@sdkwork/payment-pc-payment'
@@ -379,40 +379,40 @@ routes:
   route_scope: console
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
   - /console/checkout
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /console/dashboard
-  package: '@sdkwork/clawrouter-pc-console-dashboard'
+  package: '@sdkwork/cloudrouter-pc-console-dashboard'
   owner: console-surface
   route_scope: console
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
   - /console/dashboard
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/dashboardService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /console/gateway
-  package: '@sdkwork/clawrouter-pc-console-gateway'
+  package: '@sdkwork/cloudrouter-pc-console-gateway'
   owner: console-surface
   route_scope: console
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
   - /console/gateway
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-gateway/src/gatewayService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/gatewayService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /console/memberships
   package: '@sdkwork/membership-pc-membership'
@@ -420,26 +420,26 @@ routes:
   route_scope: console
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
   - /console/memberships
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /console/notifications
-  package: '@sdkwork/clawrouter-pc-console-messages'
+  package: '@sdkwork/cloudrouter-pc-console-messages'
   owner: console-surface
   route_scope: console
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
   - /console/notifications
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-messages/src/messagesService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-messages/src/messagesService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /console/payment
   package: '@sdkwork/payment-pc-payment'
@@ -447,26 +447,26 @@ routes:
   route_scope: console
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
   - /console/payment
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /console/settings
-  package: '@sdkwork/clawrouter-pc-console-settings'
+  package: '@sdkwork/cloudrouter-pc-console-settings'
   owner: console-surface
   route_scope: console
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
   - /console/settings
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-settings/src/settingsService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-settings/src/settingsService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /console/settlements
   package: portal-root
@@ -474,40 +474,40 @@ routes:
   route_scope: console
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
   - /console/settlements
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /console/usage
-  package: '@sdkwork/clawrouter-pc-console-usage'
+  package: '@sdkwork/cloudrouter-pc-console-usage'
   owner: console-surface
   route_scope: console
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
   - /console/usage
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-usage/src/usageService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-usage/src/usageService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /console/user
-  package: '@sdkwork/clawrouter-pc-console-user'
+  package: '@sdkwork/cloudrouter-pc-console-user'
   owner: console-surface
   route_scope: console
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
   - /console/user
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-user/src/userService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-user/src/userService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /console/wallet
   package: '@sdkwork/account-pc-wallet'
@@ -515,12 +515,12 @@ routes:
   route_scope: console
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
   - /console/wallet
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /docs
   package: '@sdkwork/documents-pc-api-reference'
@@ -533,73 +533,73 @@ routes:
   operation_routes:
   - /docs
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/index.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /models
   delivery_kind: sdk_backed_business_runtime
   api_surface: app
-  package: '@sdkwork/clawrouter-pc-models'
+  package: '@sdkwork/cloudrouter-pc-models'
   owner: product-surface
   route_scope: public
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   operation_routes:
   - /models
   - /models/:id
   - /models/:provider/:model
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/runtimeModelCatalog.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/runtimeModelCatalog.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /models/:id
   delivery_kind: sdk_backed_business_runtime
   api_surface: app
-  package: '@sdkwork/clawrouter-pc-models'
+  package: '@sdkwork/cloudrouter-pc-models'
   owner: product-surface
   route_scope: public
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   operation_routes:
   - /models
   - /models/:id
   - /models/:provider/:model
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /models/:provider/:model
   delivery_kind: sdk_backed_business_runtime
   api_surface: app
-  package: '@sdkwork/clawrouter-pc-models'
+  package: '@sdkwork/cloudrouter-pc-models'
   owner: product-surface
   route_scope: public
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   operation_routes:
   - /models
   - /models/:id
   - /models/:provider/:model
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /playground
   delivery_kind: sdk_backed_business_runtime
   api_surface: app
-  package: '@sdkwork/clawrouter-pc-playground'
+  package: '@sdkwork/cloudrouter-pc-playground'
   owner: developer-tools
   route_scope: public
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   operation_routes:
   - /playground
   - /c/:conversationId
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/pages/Playground.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/components/chat/ChatPage.tsx
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/pages/Playground.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/ChatPage.tsx
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /product-docs
   package: '@sdkwork/documents-pc-api-reference'
@@ -612,23 +612,23 @@ routes:
   operation_routes:
   - /product-docs
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/index.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /rankings
   delivery_kind: sdk_backed_business_runtime
   api_surface: app
-  package: '@sdkwork/clawrouter-pc-rankings'
+  package: '@sdkwork/cloudrouter-pc-rankings'
   owner: product-surface
   route_scope: public
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   operation_routes:
   - /rankings
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/src/rankingCatalog.ts
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/src/rankingService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-rankings/src/rankingCatalog.ts
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-rankings/src/rankingService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /sdk-reference
   package: '@sdkwork/documents-pc-sdk-reference'
@@ -641,6 +641,6 @@ routes:
   operation_routes:
   - /sdk-reference
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-sdk-reference/src/index.ts
   - docs/schema-registry/frontend-field-contracts.yaml

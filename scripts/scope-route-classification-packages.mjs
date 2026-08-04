@@ -8,8 +8,8 @@ const filePath = path.resolve(
 );
 const text = readFileSync(filePath, 'utf8');
 const fixed = text.replace(
-  /^(\s*package:\s*)sdkwork-clawrouter-pc-([^\n]+)$/gm,
-  '$1"@sdkwork/clawrouter-pc-$2"',
+  /^(\s*package:\s*)sdkwork-cloudrouter-pc-([^\n]+)$/gm,
+  '$1"@sdkwork/cloudrouter-pc-$2"',
 );
 writeFileSync(filePath, fixed, 'utf8');
 console.log('scoped route classification packages');

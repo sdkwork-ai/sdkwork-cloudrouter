@@ -8,22 +8,22 @@ ROOT = Path(__file__).resolve().parents[1]
 class AdminRecordRuntimeStandardTest(unittest.TestCase):
     def test_admin_record_operation_is_backed_by_real_backend_api_router(self) -> None:
         product_api_mod = (
-            ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "api" / "mod.rs"
+            ROOT / "services" / "sdkwork-cloudrouter-router-service" / "src" / "api" / "mod.rs"
         ).read_text(encoding="utf-8")
         backend_sdk = (
-            ROOT / "sdks" / "clawrouter-backend-sdk" / "clawrouter-backend-sdk-typescript" / "src" / "api" / "system.ts"
+            ROOT / "sdks" / "cloudrouter-backend-sdk" / "cloudrouter-backend-sdk-typescript" / "src" / "api" / "system.ts"
         ).read_text(encoding="utf-8")
         record_service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-admin-record"
+            / "sdkwork-cloudrouter-pc-admin-record"
             / "src"
             / "recordService.ts"
         ).read_text(encoding="utf-8")
         admin_record_api = (
-            ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "api" / "admin_record.rs"
+            ROOT / "services" / "sdkwork-cloudrouter-router-service" / "src" / "api" / "admin_record.rs"
         ).read_text(encoding="utf-8")
 
         self.assertIn("mod admin_record;", product_api_mod)
@@ -36,7 +36,7 @@ class AdminRecordRuntimeStandardTest(unittest.TestCase):
         self.assertIn("export interface SystemRecordsListParams", backend_sdk)
         self.assertIn("{ name: 'page_size', value: params?.pageSize", backend_sdk)
         self.assertIn(
-            "getClawRouterBackendSdkClient().system.records.list(toRecordLogQueryParams(filters))",
+            "getCloudRouterBackendSdkClient().system.records.list(toRecordLogQueryParams(filters))",
             record_service,
         )
         self.assertIn("readRequiredPageTotal(data)", record_service)
@@ -46,7 +46,7 @@ class AdminRecordRuntimeStandardTest(unittest.TestCase):
     def test_admin_record_read_models_reject_missing_or_invalid_trace_latency(self) -> None:
         store = (
             ROOT
-            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_record_store.rs"
+            / "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_record_store.rs"
         ).read_text(encoding="utf-8")
         compact_store = " ".join(store.split())
         self.assertNotIn("COALESCE(t.latency_ms, 0) AS latency_ms", store)
@@ -64,13 +64,13 @@ class AdminRecordRuntimeStandardTest(unittest.TestCase):
 
     def test_admin_record_log_modality_preserves_unknown_values(self) -> None:
         modality_source = (
-            ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "model_modality.rs"
+            ROOT / "services" / "sdkwork-cloudrouter-router-service" / "src" / "infrastructure" / "sql" / "model_modality.rs"
         ).read_text(encoding="utf-8")
         self.assertIn('_ => "unknown"', modality_source)
         self.assertNotIn('_ => "text"', modality_source)
         store = (
             ROOT
-            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_record_store.rs"
+            / "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_record_store.rs"
         ).read_text(encoding="utf-8")
         self.assertIn("model_modality::label(value).to_owned()", store)
         self.assertNotIn("_ => \"text\"", store)

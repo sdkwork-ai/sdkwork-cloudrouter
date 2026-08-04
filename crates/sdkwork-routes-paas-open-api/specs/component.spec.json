@@ -6,7 +6,7 @@
     "displayName": "SDKWork Router PaaS Open API",
     "version": "0.1.0",
     "type": "rust-route-crate",
-    "root": "sdkwork-clawrouter/crates/sdkwork-routes-paas-open-api",
+    "root": "sdkwork-cloudrouter/crates/sdkwork-routes-paas-open-api",
     "domain": "platform",
     "capability": "paas",
     "surface": "open-api",

@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-API_SRC = REPO_ROOT / "services/sdkwork-clawrouter-router-service/src/api"
+API_SRC = REPO_ROOT / "services/sdkwork-cloudrouter-router-service/src/api"
 FORBIDDEN_IDENTIFIERS = (
     "PlusApiResult",
     "PlusErrorEnvelope",

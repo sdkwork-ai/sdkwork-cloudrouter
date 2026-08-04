@@ -1,8 +1,8 @@
-# SDKWork Claw Router - PostgreSQL HA Failover Runbook
+# SDKWork Cloud Router - PostgreSQL HA Failover Runbook
 
 **Document Version:** 1.0
 **Last Updated:** 2026-07-14
-**Owner:** Platform Engineering / clawrouter-release
+**Owner:** Platform Engineering / cloudrouter-release
 **Review Frequency:** Quarterly
 **Severity:** P0
 **Status:** Target procedure only. Patroni, pgBouncer, replication, PITR,
@@ -31,7 +31,7 @@ candidate.
 
 ## Scenario
 
-The PostgreSQL primary fails or becomes unreachable. Claw Router treats the
+The PostgreSQL primary fails or becomes unreachable. Cloud Router treats the
 database as its primary data store (tenants, API keys, usage facts, audit log,
 routing config), so a primary loss halts all gateway writes until a replica is
 promoted or the primary is restored.
@@ -67,12 +67,12 @@ topology. They are not current-candidate recovery evidence:
 
 ```bash
 # Patroni cluster status
-kubectl exec -it deploy/patroni -n clawrouter -- \
+kubectl exec -it deploy/patroni -n cloudrouter -- \
   patronictl list
 
 # pgBouncer reports a live backend
-kubectl exec -it deploy/pgbouncer -n clawrouter -- \
-  psql -p 6432 -U clawrouter pgbouncer -c "SHOW POOLS;"
+kubectl exec -it deploy/pgbouncer -n cloudrouter -- \
+  psql -p 6432 -U cloudrouter pgbouncer -c "SHOW POOLS;"
 ```
 
 For an approved deployed topology, `/readyz = 200` only confirms its configured
@@ -82,7 +82,7 @@ financial reconciliation, or recovery correctness.
 Illustrative gateway readiness check:
 
 ```bash
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
   curl -s http://localhost:8080/readyz
 # Expected: 200 {"status":"ready"}
 ```
@@ -98,8 +98,8 @@ and incident command have approved a procedure for that specific failure.
 ```bash
 pg_isready -h postgres-primary -p 5432
 # Also confirm the replica is reachable and accepting reads
-kubectl exec -it deploy/patroni-replica -n clawrouter -- \
-  psql -h postgres-replica -U clawrouter -c "SELECT pg_is_in_recovery();"
+kubectl exec -it deploy/patroni-replica -n cloudrouter -- \
+  psql -h postgres-replica -U cloudrouter -c "SELECT pg_is_in_recovery();"
 ```
 
 ### Step 2: Check streaming replication state
@@ -128,7 +128,7 @@ SELECT pg_is_in_recovery(), pg_last_wal_replay_lsn(),
 
 ```bash
 # Promote the replica to primary
-kubectl exec -it deploy/patroni-replica -n clawrouter -- \
+kubectl exec -it deploy/patroni-replica -n cloudrouter -- \
   pg_ctl promote -D /var/lib/postgresql/data
 ```
 
@@ -140,20 +140,20 @@ point at the new primary only through the approved procedure. pgBouncer
 billable or non-idempotent work, or prevent unknown in-flight outcomes:
 
 ```bash
-kubectl exec -it deploy/pgbouncer -n clawrouter -- \
-  psql -p 6432 -U clawrouter pgbouncer -c "PAUSE;"
+kubectl exec -it deploy/pgbouncer -n cloudrouter -- \
+  psql -p 6432 -U cloudrouter pgbouncer -c "PAUSE;"
 # reconfigure backend to new primary
-kubectl exec -it deploy/pgbouncer -n clawrouter -- \
-  psql -p 6432 -U clawrouter pgbouncer -c "RELOAD;"
-kubectl exec -it deploy/pgbouncer -n clawrouter -- \
-  psql -p 6432 -U clawrouter pgbouncer -c "RESUME;"
+kubectl exec -it deploy/pgbouncer -n cloudrouter -- \
+  psql -p 6432 -U cloudrouter pgbouncer -c "RELOAD;"
+kubectl exec -it deploy/pgbouncer -n cloudrouter -- \
+  psql -p 6432 -U cloudrouter pgbouncer -c "RESUME;"
 ```
 
 Roll the gateway pods so stale connections to the old primary are dropped:
 
 ```bash
-kubectl rollout restart deployment/claw-router-gateway -n clawrouter
-kubectl rollout status  deployment/claw-router-gateway -n clawrouter
+kubectl rollout restart deployment/cloud-router-gateway -n cloudrouter
+kubectl rollout status  deployment/cloud-router-gateway -n cloudrouter
 ```
 
 ## Data Recovery
@@ -172,8 +172,8 @@ over a full restore.
 After restore, validate integrity:
 
 ```bash
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
-  psql -h postgres -U clawrouter -c \
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
+  psql -h postgres -U cloudrouter -c \
   "SELECT COUNT(*) FROM ai_usage;
    SELECT COUNT(*) FROM ops_audit_log;
    SELECT COUNT(*) FROM ai_routing;"

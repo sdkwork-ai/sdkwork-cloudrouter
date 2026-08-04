@@ -12,8 +12,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: Affected Claw Router version
-      placeholder: "0.3.0 (run `clawrouter --version`)"
+      label: Affected Cloud Router version
+      placeholder: "0.3.0 (run `cloudrouter --version`)"
     validations:
       required: true
   - type: dropdown
@@ -36,7 +36,7 @@ body:
         - admin-api (backend management)
         - app-api (portal backend)
         - edge server (all-in-one)
-        - installer (clawrouterctl)
+        - installer (cloudrouterctl)
         - portal (React PC app)
         - sdk (generated client)
         - database / migrations

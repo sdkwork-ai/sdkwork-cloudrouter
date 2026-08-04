@@ -1,7 +1,7 @@
 {
   "schemaVersion": 3,
   "kind": "sdkwork.database-store-migration",
-  "application": "sdkwork-clawrouter",
+  "application": "sdkwork-cloudrouter",
   "authority": "../sdkwork-specs/DATABASE_SPEC.md",
   "databaseRole": "authoritative-server",
   "engines": [
@@ -9,16 +9,16 @@
   ],
   "inventoriedAt": "2026-07-29",
   "storeInventory": {
-    "path": "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres",
+    "path": "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres",
     "glob": "**/*_store.rs"
   },
-  "targetPattern": "crates/sdkwork-clawrouter-<capability>-repository-sqlx",
+  "targetPattern": "crates/sdkwork-cloudrouter-<capability>-repository-sqlx",
   "capabilities": [
     {
       "capability": "api-key",
-      "targetCrate": "crates/sdkwork-clawrouter-api-key-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-api-key-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/api_key_command_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/api_key_command_store.rs"
       ],
       "tables": [
         "ai_pricing_plan",
@@ -34,10 +34,10 @@
     },
     {
       "capability": "app-routing",
-      "targetCrate": "crates/sdkwork-clawrouter-app-routing-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-app-routing-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_routing_read_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_routing_strategy_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/app_routing_read_store.rs",
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/app_routing_strategy_store.rs"
       ],
       "tables": [
         "ai_request_trace",
@@ -62,9 +62,9 @@
     },
     {
       "capability": "admin-api-key-rate-limit",
-      "targetCrate": "crates/sdkwork-clawrouter-admin-api-key-rate-limit-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-admin-api-key-rate-limit-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_api_key_rate_limit_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_api_key_rate_limit_store.rs"
       ],
       "tables": [
         "ai_quota_policy",
@@ -78,9 +78,9 @@
     },
     {
       "capability": "admin-model-rate-limit",
-      "targetCrate": "crates/sdkwork-clawrouter-admin-model-rate-limit-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-admin-model-rate-limit-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_model_rate_limit_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_model_rate_limit_store.rs"
       ],
       "tables": [
         "ai_quota_policy",
@@ -93,9 +93,9 @@
     },
     {
       "capability": "admin-firewall-rule",
-      "targetCrate": "crates/sdkwork-clawrouter-admin-firewall-rule-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-admin-firewall-rule-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_firewall_rule_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_firewall_rule_store.rs"
       ],
       "tables": [
         "iam_gateway_risk_rule",
@@ -108,9 +108,9 @@
     },
     {
       "capability": "admin-ip-rate-limit",
-      "targetCrate": "crates/sdkwork-clawrouter-admin-ip-rate-limit-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-admin-ip-rate-limit-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_ip_rate_limit_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_ip_rate_limit_store.rs"
       ],
       "tables": [
         "iam_gateway_risk_rule",
@@ -123,9 +123,9 @@
     },
     {
       "capability": "usage-settlement",
-      "targetCrate": "crates/sdkwork-clawrouter-usage-settlement-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-usage-settlement-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/usage_settlement_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/usage_settlement_store.rs"
       ],
       "tables": [
         "ai_usage",
@@ -139,10 +139,10 @@
     },
     {
       "capability": "payment-runtime",
-      "targetCrate": "crates/sdkwork-clawrouter-payment-runtime-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-payment-runtime-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/payment_intent_runtime_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/payment_reconciliation_runtime_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/payment_intent_runtime_store.rs",
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/payment_reconciliation_runtime_store.rs"
       ],
       "tables": [
         "commerce_payment_attempt",
@@ -163,9 +163,9 @@
     },
     {
       "capability": "payment-callback",
-      "targetCrate": "crates/sdkwork-clawrouter-payment-callback-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-payment-callback-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/payment_callback_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/payment_callback_store.rs"
       ],
       "tables": [
         "commerce_account",
@@ -182,9 +182,9 @@
     },
     {
       "capability": "admin-transaction-center",
-      "targetCrate": "crates/sdkwork-clawrouter-admin-transaction-center-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-admin-transaction-center-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_transaction_center_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_transaction_center_store.rs"
       ],
       "tables": [
         "commerce_fulfillment_order",
@@ -211,9 +211,9 @@
     },
     {
       "capability": "admin-finance",
-      "targetCrate": "crates/sdkwork-clawrouter-admin-finance-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-admin-finance-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_finance_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_finance_store.rs"
       ],
       "tables": [
         "commerce_account_ledger_entry",
@@ -230,10 +230,10 @@
     },
     {
       "capability": "usage-logs",
-      "targetCrate": "crates/sdkwork-clawrouter-usage-logs-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-usage-logs-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_gateway_traces_read_store.rs",
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/app_gateway_traces_read_store.rs",
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs"
       ],
       "tables": [
         "ai_request_trace",
@@ -246,9 +246,9 @@
     },
     {
       "capability": "admin-record",
-      "targetCrate": "crates/sdkwork-clawrouter-admin-record-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-admin-record-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_record_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_record_store.rs"
       ],
       "tables": [
         "ai_request_trace",
@@ -262,9 +262,9 @@
     },
     {
       "capability": "app-chat",
-      "targetCrate": "crates/sdkwork-clawrouter-app-chat-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-app-chat-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_chat_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/app_chat_store.rs"
       ],
       "tables": [
         "ai_chat_context_snapshot",
@@ -281,9 +281,9 @@
     },
     {
       "capability": "app-runtime",
-      "targetCrate": "crates/sdkwork-clawrouter-app-runtime-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-app-runtime-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_runtime_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/app_runtime_store.rs"
       ],
       "tables": [
         "ai_agent_run",
@@ -301,9 +301,9 @@
     },
     {
       "capability": "admin-user",
-      "targetCrate": "crates/sdkwork-clawrouter-admin-user-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-admin-user-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_user_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_user_store.rs"
       ],
       "tables": [
         "ai_pricing_plan",
@@ -322,9 +322,9 @@
     },
     {
       "capability": "admin-marketing",
-      "targetCrate": "crates/sdkwork-clawrouter-admin-marketing-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-admin-marketing-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_marketing_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_marketing_store.rs"
       ],
       "tables": [
         "commerce_exchange_rule",
@@ -350,9 +350,9 @@
     },
     {
       "capability": "admin-catalog",
-      "targetCrate": "crates/sdkwork-clawrouter-admin-catalog-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-admin-catalog-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_catalog_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_catalog_store.rs"
       ],
       "tables": [
         "c_category",
@@ -373,9 +373,9 @@
     },
     {
       "capability": "admin-inventory",
-      "targetCrate": "crates/sdkwork-clawrouter-admin-inventory-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-admin-inventory-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_inventory_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_inventory_store.rs"
       ],
       "tables": [
         "commerce_inventory_movement",
@@ -388,9 +388,9 @@
     },
     {
       "capability": "admin-storage",
-      "targetCrate": "crates/sdkwork-clawrouter-admin-storage-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-admin-storage-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_storage_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_storage_store.rs"
       ],
       "tables": [
         "object_bucket",
@@ -410,9 +410,9 @@
     },
     {
       "capability": "admin-mcp",
-      "targetCrate": "crates/sdkwork-clawrouter-admin-mcp-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-admin-mcp-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_mcp_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_mcp_store.rs"
       ],
       "tables": [
         "ai_mcp_binding",
@@ -425,9 +425,9 @@
     },
     {
       "capability": "admin-announcement",
-      "targetCrate": "crates/sdkwork-clawrouter-admin-announcement-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-admin-announcement-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_announcement_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_announcement_store.rs"
       ],
       "tables": [
         "ops_audit_log",
@@ -439,9 +439,9 @@
     },
     {
       "capability": "app-notification",
-      "targetCrate": "crates/sdkwork-clawrouter-app-notification-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-app-notification-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_notification_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/app_notification_store.rs"
       ],
       "tables": [
         "iam_organization_membership",
@@ -455,9 +455,9 @@
     },
     {
       "capability": "dashboard-overview",
-      "targetCrate": "crates/sdkwork-clawrouter-dashboard-overview-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-dashboard-overview-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/dashboard_overview_read_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/dashboard_overview_read_store.rs"
       ],
       "tables": [
         "ai_model",
@@ -474,9 +474,9 @@
     },
     {
       "capability": "admin-service-node",
-      "targetCrate": "crates/sdkwork-clawrouter-admin-service-node-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-admin-service-node-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_service_node_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_service_node_store.rs"
       ],
       "tables": [
         "ops_gateway_instance"
@@ -486,9 +486,9 @@
     },
     {
       "capability": "admin-auth-settings",
-      "targetCrate": "crates/sdkwork-clawrouter-admin-auth-settings-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-admin-auth-settings-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_auth_settings_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_auth_settings_store.rs"
       ],
       "tables": [
         "ops_audit_log",
@@ -499,9 +499,9 @@
     },
     {
       "capability": "runtime-region-settings",
-      "targetCrate": "crates/sdkwork-clawrouter-runtime-region-settings-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-runtime-region-settings-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/runtime_region_settings_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/runtime_region_settings_store.rs"
       ],
       "tables": [
         "ops_audit_log",
@@ -512,9 +512,9 @@
     },
     {
       "capability": "site-settings",
-      "targetCrate": "crates/sdkwork-clawrouter-site-settings-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-site-settings-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/site_settings_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/site_settings_store.rs"
       ],
       "tables": [
         "ops_audit_log",
@@ -525,9 +525,9 @@
     },
     {
       "capability": "settings",
-      "targetCrate": "crates/sdkwork-clawrouter-settings-repository-sqlx",
+      "targetCrate": "crates/sdkwork-cloudrouter-settings-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/settings_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/settings_store.rs"
       ],
       "tables": [
         "iam_user_preference",

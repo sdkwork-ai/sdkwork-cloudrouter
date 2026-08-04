@@ -1,6 +1,6 @@
 # Developer Guide
 
-Local setup, verification, debugging, admin module workflow, and code style summary for SDKWork Claw Router contributors.
+Local setup, verification, debugging, admin module workflow, and code style summary for SDKWork Cloud Router contributors.
 
 Specs: `../../sdkwork-specs/DOCUMENTATION_SPEC.md` section 2, `../../sdkwork-specs/CODE_STYLE_SPEC.md`, `../../sdkwork-specs/NAMING_SPEC.md`, `../../sdkwork-specs/FRONTEND_CODE_SPEC.md`, `../../sdkwork-specs/RUST_CODE_SPEC.md`.
 
@@ -42,15 +42,15 @@ pnpm.cmd admin:reset:dev # reset admin account (dev mode)
 
 Copy `.env.example` to `.env` and configure:
 
-- `VITE_CLAWROUTER_*` for browser-visible SDK paths
-- `SDKWORK_CLAW_BROWSER_DEV_PROXY_*` for private dev-server proxy upstreams
+- `VITE_CLOUDROUTER_*` for browser-visible SDK paths
+- `SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_*` for private dev-server proxy upstreams
 
 Do not put `PORTAL_PUBLIC_*` or legacy `PORTAL_DEV_PROXY_*` in `.env.development`. See `specs/application-env-standard.md` for the full environment contract.
 
 ## 2. Repository Layout
 
 ```
-apps/sdkwork-clawrouter-pc/   React PC portal (Vite + React 19 + TypeScript)
+apps/sdkwork-cloudrouter-pc/   React PC portal (Vite + React 19 + TypeScript)
 crates/                       Rust crates (routes, gateway, services)
 sdks/                         Generated TypeScript SDK families
 packages/                     Governed shared TypeScript/React packages
@@ -68,10 +68,10 @@ Run the narrowest relevant check first, then broader verification:
 
 ```powershell
 # Frontend targeted checks
-pnpm.cmd --dir apps/sdkwork-clawrouter-pc typecheck
-pnpm.cmd --dir apps/sdkwork-clawrouter-pc lint
-pnpm.cmd --dir apps/sdkwork-clawrouter-pc test
-pnpm.cmd --dir apps/sdkwork-clawrouter-pc size
+pnpm.cmd --dir apps/sdkwork-cloudrouter-pc typecheck
+pnpm.cmd --dir apps/sdkwork-cloudrouter-pc lint
+pnpm.cmd --dir apps/sdkwork-cloudrouter-pc test
+pnpm.cmd --dir apps/sdkwork-cloudrouter-pc size
 
 # Python static hygiene guards
 python -B -m unittest tests.test_frontend_source_hygiene_standard
@@ -88,9 +88,9 @@ pnpm.cmd verify
 ### Frontend
 
 - Vite dev server HMR is enabled by default; changes to `packages/*/src/**` hot-reload without a full page refresh.
-- The portal routes all backend calls through `@sdkwork/clawrouter-app-sdk` and `@sdkwork/clawrouter-backend-sdk`. Inspect SDK request/response shapes in `sdks/clawrouter-app-sdk/` and `sdks/clawrouter-backend-sdk/`.
-- The `PortalErrorBoundary` in `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/PortalErrorBoundary.tsx` catches render errors. Check browser DevTools Console for the boundary payload.
-- E2E debugging: `pnpm.cmd --dir apps/sdkwork-clawrouter-pc exec playwright test --debug` opens Playwright Inspector.
+- The portal routes all backend calls through `@sdkwork/cloudrouter-app-sdk` and `@sdkwork/cloudrouter-backend-sdk`. Inspect SDK request/response shapes in `sdks/cloudrouter-app-sdk/` and `sdks/cloudrouter-backend-sdk/`.
+- The `PortalErrorBoundary` in `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/PortalErrorBoundary.tsx` catches render errors. Check browser DevTools Console for the boundary payload.
+- E2E debugging: `pnpm.cmd --dir apps/sdkwork-cloudrouter-pc exec playwright test --debug` opens Playwright Inspector.
 
 ### Rust
 
@@ -104,20 +104,20 @@ Set `RUSTFLAGS="-D warnings"` in CI to enforce zero warnings.
 
 ## 5. Admin Module Workflow
 
-Admin modules live under `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-*/`. Each admin module follows the same structure:
+Admin modules live under `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-*/`. Each admin module follows the same structure:
 
 - `src/index.tsx` — page component (list, form, detail)
-- `src/*Service.ts` — service layer calling `@sdkwork/clawrouter-backend-sdk`
+- `src/*Service.ts` — service layer calling `@sdkwork/cloudrouter-backend-sdk`
 - `specs/component.spec.json` — component contract and ownership metadata
 
 ### Adding a New Admin Module
 
-1. Create `packages/sdkwork-clawrouter-pc-admin-<feature>/` with `package.json`, `tsconfig.json`, `src/index.tsx`.
+1. Create `packages/sdkwork-cloudrouter-pc-admin-<feature>/` with `package.json`, `tsconfig.json`, `src/index.tsx`.
 2. Register the package in the portal root `package.json` workspace dependencies.
-3. Implement the service layer using `readRequiredApiItems`, `readRequiredRecord`, and `readRequiredString` from `@sdkwork/clawroutes-pc-commons/runtime` to fail closed on contract drift.
+3. Implement the service layer using `readRequiredApiItems`, `readRequiredRecord`, and `readRequiredString` from `@sdkwork/cloudroutes-pc-commons/runtime` to fail closed on contract drift.
 4. Use `requiredSafePathSegment(id, '<featureId>')` for all SDK path ids.
-5. Add the admin route to `packages/sdkwork-clawrouter-pc-admin-shell/src/adminModuleRegistry.ts`.
-6. Add the permission hint to `packages/sdkwork-clawrouter-pc-admin-shell/src/admin-route-permission-hints.ts`.
+5. Add the admin route to `packages/sdkwork-cloudrouter-pc-admin-shell/src/adminModuleRegistry.ts`.
+6. Add the permission hint to `packages/sdkwork-cloudrouter-pc-admin-shell/src/admin-route-permission-hints.ts`.
 7. Add a runtime test at the portal root (e.g., `admin-<feature>-runtime.test.ts`).
 
 ### Service Layer Contract
@@ -147,12 +147,12 @@ Services must:
 
 - `#![deny(warnings)]` enforced in CI.
 - Use `sqlx::query!` with compile-time checked SQL.
-- Modules follow `crates/sdkwork-clawroutes-<capability>-<surface>/` naming.
+- Modules follow `crates/sdkwork-cloudroutes-<capability>-<surface>/` naming.
 
 ### Naming
 
 - Root scripts follow `<command>[:runtimeTarget][:database][:deploymentProfile][:tier]` grammar.
-- No application-code prefixes (`clawrouter:dev` is forbidden; use `dev`).
+- No application-code prefixes (`cloudrouter:dev` is forbidden; use `dev`).
 - Use `api`, not `apis`, for new root scripts.
 
 ## 7. Sourcemap Error Monitoring (Future Integration)
@@ -183,11 +183,11 @@ When error monitoring is added:
 
 ## 8. cc-switch Client Integration
 
-[cc-switch](https://github.com/farion1231/cc-switch) is a cross-platform desktop manager (Tauri 2 + React + TypeScript + Rust) that switches Claude Code, Codex, Gemini CLI, OpenCode, and Hermes Agent between different provider configurations. Contributors run it locally to point these CLI agents at the dev Claw Router gateway for end-to-end routing, billing, and provider-adapter testing, without editing `~/.claude` or `~/.codex` config files by hand.
+[cc-switch](https://github.com/farion1231/cc-switch) is a cross-platform desktop manager (Tauri 2 + React + TypeScript + Rust) that switches Claude Code, Codex, Gemini CLI, OpenCode, and Hermes Agent between different provider configurations. Contributors run it locally to point these CLI agents at the dev Cloud Router gateway for end-to-end routing, billing, and provider-adapter testing, without editing `~/.claude` or `~/.codex` config files by hand.
 
 ### Why use it during development
 
-The Rust edge exposes three vendor-compatible gateway surfaces on a single origin, so one local Claw Router instance can serve all three CLI agents:
+The Rust edge exposes three vendor-compatible gateway surfaces on a single origin, so one local Cloud Router instance can serve all three CLI agents:
 
 | CLI agent | Gateway surface | Base URL (dev) | Wire protocol |
 | --- | --- | --- | --- |
@@ -202,22 +202,22 @@ The Rust edge exposes three vendor-compatible gateway surfaces on a single origi
 3. A gateway API key created in the end-user console (`/console` → API Keys). Copy the key value; it is the `Bearer` token for all three surfaces.
 4. cc-switch installed from the [latest release](https://github.com/farion1231/cc-switch/releases).
 
-### Configure Claw Router as a provider
+### Configure Cloud Router as a provider
 
 In cc-switch, add a new provider under the tab for each CLI agent you want to test. Use the gateway API key from step 3 as the API key, and the Base URL from the table above.
 
 | cc-switch agent tab | Base URL | API Key |
 | --- | --- | --- |
-| Claude Code | `http://127.0.0.1:3900/anthropic` | Claw Router gateway API key |
-| Codex | `http://127.0.0.1:3900/v1` | Claw Router gateway API key |
-| Gemini CLI | `http://127.0.0.1:3900/google` | Claw Router gateway API key |
+| Claude Code | `http://127.0.0.1:3900/anthropic` | Cloud Router gateway API key |
+| Codex | `http://127.0.0.1:3900/v1` | Cloud Router gateway API key |
+| Gemini CLI | `http://127.0.0.1:3900/google` | Cloud Router gateway API key |
 
-Switch the active provider to the Claw Router entry, then launch (or restart) the CLI agent from cc-switch so it picks up the new base URL and token.
+Switch the active provider to the Cloud Router entry, then launch (or restart) the CLI agent from cc-switch so it picks up the new base URL and token.
 
-### Verify the request hits Claw Router
+### Verify the request hits Cloud Router
 
 1. Send a prompt through the CLI agent (e.g. run `claude`, `codex`, or `gemini` and ask a question).
-2. Confirm the model name is one configured in your Claw Router model catalog; the gateway rejects unknown models.
+2. Confirm the model name is one configured in your Cloud Router model catalog; the gateway rejects unknown models.
 3. Check the gateway request landed:
    - Portal: `/console/usage` shows the call record with tokens, latency, and the routed provider.
    - Edge logs: structured stdout logs include the route, model, and provider relay latency.
@@ -232,7 +232,7 @@ Switch the active provider to the Claw Router entry, then launch (or restart) th
 
 ## 9. Related
 
-- [Portal README](../../../apps/sdkwork-clawrouter-pc/README.md)
+- [Portal README](../../../apps/sdkwork-cloudrouter-pc/README.md)
 - [Technical architecture](../../architecture/tech/TECH_ARCHITECTURE.md)
 - [Standard alignment audit](../../standard-alignment-audit.md)
 - [Runbooks](../../runbooks/README.md)

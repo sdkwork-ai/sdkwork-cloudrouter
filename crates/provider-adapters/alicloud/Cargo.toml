@@ -5,8 +5,8 @@ edition.workspace = true
 license-file.workspace = true
 
 [dependencies]
-sdkwork-claw-provider-adapter-contract.workspace = true
-sdkwork-claw-provider-adapter.workspace = true
+sdkwork-cloudrouter-provider-adapter-contract.workspace = true
+sdkwork-cloudrouter-provider-adapter.workspace = true
 hex.workspace = true
 hmac.workspace = true
 hyper.workspace = true

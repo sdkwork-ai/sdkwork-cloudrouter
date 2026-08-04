@@ -1,6 +1,6 @@
 # 按 Release 版本安装
 
-本指南说明如何从正式 release 安装 SDKWork Claw Router。当前 release 版本来自 [docs/release/VERSION.md](../../release/VERSION.md)，当前为 `0.3.0`。
+本指南说明如何从正式 release 安装 SDKWork Cloud Router。当前 release 版本来自 [docs/release/VERSION.md](../../release/VERSION.md)，当前为 `0.3.0`。
 
 最快部署路径优先使用平台原生安装包：
 
@@ -20,7 +20,7 @@
 
 服务包 ID 继续使用内部 `service` 部署模式，因为它驱动 systemd、launchd 和
 Windows Service 集成。公开 Release 制品名对同一模式使用 `server`，例如
-`linux-x64-service` 会构建 `clawrouter-linux-x64-server-0.3.0.deb`。
+`linux-x64-service` 会构建 `cloudrouter-linux-x64-server-0.3.0.deb`。
 
 支持的平台：
 
@@ -43,20 +43,20 @@ Windows Service 集成。公开 Release 制品名对同一模式使用 `server`�
 常见安装包名：
 
 ```text
-clawrouter-linux-x64-server-0.3.0.deb
-clawrouter-linux-x64-desktop-0.3.0.deb
-clawrouter-windows-x64-server-0.3.0.msi
-clawrouter-windows-x64-desktop-0.3.0.msi
-clawrouter-macos-arm64-server-0.3.0.pkg
-clawrouter-macos-arm64-desktop-0.3.0.pkg
-clawrouter-linux-x64-archive-0.3.0.tar.gz
-clawrouter-windows-x64-archive-0.3.0.zip
+cloudrouter-linux-x64-server-0.3.0.deb
+cloudrouter-linux-x64-desktop-0.3.0.deb
+cloudrouter-windows-x64-server-0.3.0.msi
+cloudrouter-windows-x64-desktop-0.3.0.msi
+cloudrouter-macos-arm64-server-0.3.0.pkg
+cloudrouter-macos-arm64-desktop-0.3.0.pkg
+cloudrouter-linux-x64-archive-0.3.0.tar.gz
+cloudrouter-windows-x64-archive-0.3.0.zip
 ```
 
 在源码仓库中可查看完整矩阵：
 
 ```powershell
-node scripts\plan-claw-router-install-packages.mjs --json
+node scripts\plan-cloud-router-install-packages.mjs --json
 ```
 
 从源码仓库构建 Linux x64 service release：
@@ -71,7 +71,7 @@ pnpm install:package:build -- --package-id linux-x64-service
 
 `pnpm verify` 是完整的商业验证门禁，构建任何 release 包之前必须通过。release 预检会强制执行此规则：当 `docs/release` 下最近的 release 记录未记录 `pnpm verify` 证据，或记录中包含 "skipped"、"not run" 等跳过字样时，`node scripts/release-preflight.mjs --check` 会失败。`SDKWORK_RELEASE_SKIP_VERIFY=1` 是唯一的紧急跳过方式，仅限紧急热修复使用，并必须在 release 记录中说明。
 
-生成的 Ubuntu/Debian 安装包使用公开制品名 `clawrouter-linux-x64-server-0.3.0.deb`。
+生成的 Ubuntu/Debian 安装包使用公开制品名 `cloudrouter-linux-x64-server-0.3.0.deb`。
 
 ## 2. 快速安装路径
 
@@ -80,23 +80,23 @@ pnpm install:package:build -- --package-id linux-x64-service
 适用于 Ubuntu 或 Debian 上长期运行的服务：
 
 ```bash
-sudo apt install ./clawrouter-linux-x64-server-0.3.0.deb
-sudo editor /etc/sdkwork/router/clawrouter.toml
+sudo apt install ./cloudrouter-linux-x64-server-0.3.0.deb
+sudo editor /etc/sdkwork/router/cloudrouter.toml
 sudo editor /etc/sdkwork/router/database.secret
-sudo systemctl start clawrouter
+sudo systemctl start cloudrouter
 curl http://127.0.0.1:3900/healthz
 curl http://127.0.0.1:3900/readyz
 ```
 
-`.deb` 包会创建 `sdkwork` 系统用户、`/etc/sdkwork/router/clawrouter.toml`、`/etc/sdkwork/router/clawrouter.env`、`/etc/sdkwork/router/database.secret`、`/var/lib/sdkwork/router`、`/var/log/sdkwork/router` 和 systemd unit。在 systemd 主机上，安装过程会启用但不会立即启动 `clawrouter.service`。首次启动会通过 `ExecStartPre` 自动执行 `clawrouterctl ensure` 和 `clawrouterctl refresh-catalog --force`。生成的 systemd unit 默认使用受限运行配置，包括 `NoNewPrivileges`、`ProtectSystem=strict`、`ProtectHome=true`、systemd 管理的 state/log/config 目录、内核和 control group 保护、原生系统调用架构过滤，以及 `LimitNOFILE=65535`。运行中的服务只能写入数据和日志目录，`/etc/sdkwork/router` 对服务进程保持只读。
+`.deb` 包会创建 `sdkwork` 系统用户、`/etc/sdkwork/router/cloudrouter.toml`、`/etc/sdkwork/router/cloudrouter.env`、`/etc/sdkwork/router/database.secret`、`/var/lib/sdkwork/router`、`/var/log/sdkwork/router` 和 systemd unit。在 systemd 主机上，安装过程会启用但不会立即启动 `cloudrouter.service`。首次启动会通过 `ExecStartPre` 自动执行 `cloudrouterctl ensure` 和 `cloudrouterctl refresh-catalog --force`。生成的 systemd unit 默认使用受限运行配置，包括 `NoNewPrivileges`、`ProtectSystem=strict`、`ProtectHome=true`、systemd 管理的 state/log/config 目录、内核和 control group 保护、原生系统调用架构过滤，以及 `LimitNOFILE=65535`。运行中的服务只能写入数据和日志目录，`/etc/sdkwork/router` 对服务进程保持只读。
 
 安装后输出会打印一段配置摘要，直接列出运行时 TOML、服务环境文件、PostgreSQL 密码文件、服务名和首次启动命令：
 
 ```text
-Runtime TOML: /etc/sdkwork/router/clawrouter.toml
-Service environment: /etc/sdkwork/router/clawrouter.env
+Runtime TOML: /etc/sdkwork/router/cloudrouter.toml
+Service environment: /etc/sdkwork/router/cloudrouter.env
 PostgreSQL password file: /etc/sdkwork/router/database.secret
-Systemd service: clawrouter.service
+Systemd service: cloudrouter.service
 ```
 
 默认服务端数据库配置是外部 PostgreSQL：
@@ -200,9 +200,9 @@ gateway_invocation_body_max_bytes = 1048576
 deployment_mode = "server"
 ```
 
-首次启动前请编辑 `/etc/sdkwork/router/clawrouter.toml`。推荐把数据库密码保存在 `/etc/sdkwork/router/database.secret`。如果 TOML 文件本身由密钥系统保护，也可以直接配置 `password`：
+首次启动前请编辑 `/etc/sdkwork/router/cloudrouter.toml`。推荐把数据库密码保存在 `/etc/sdkwork/router/database.secret`。如果 TOML 文件本身由密钥系统保护，也可以直接配置 `password`：
 
-`.deb` 包创建的 `database.secret` 初始内容是占位值 `change-me`。启动服务前必须替换为真实 PostgreSQL 密码；server 配置仍使用 `db.example.com` 或 `change-me` 时会被启动校验拒绝。`password_file` 可以是绝对路径、相对 `clawrouter.toml` 所在目录的路径，也可以使用 `${VAR}`、`$VAR`、`%VAR%` 或 `~` 展开，用于平台 Secret 路径。
+`.deb` 包创建的 `database.secret` 初始内容是占位值 `change-me`。启动服务前必须替换为真实 PostgreSQL 密码；server 配置仍使用 `db.example.com` 或 `change-me` 时会被启动校验拒绝。`password_file` 可以是绝对路径、相对 `cloudrouter.toml` 所在目录的路径，也可以使用 `${VAR}`、`$VAR`、`%VAR%` 或 `~` 展开，用于平台 Secret 路径。
 
 ```toml
 [database]
@@ -219,26 +219,26 @@ max_connections = 16
 deployment_mode = "server"
 ```
 
-`SDKWORK_DATABASE_URL` 仍可写入 `/etc/sdkwork/router/clawrouter.env`，但只建议作为明确的运维覆盖或平台密钥注入方式。
+`SDKWORK_DATABASE_URL` 仍可写入 `/etc/sdkwork/router/cloudrouter.env`，但只建议作为明确的运维覆盖或平台密钥注入方式。
 
 `.deb` 安装脚本会创建：
 
-- `/usr/bin/clawrouter`
-- `/usr/bin/clawrouterctl`
+- `/usr/bin/cloudrouter`
+- `/usr/bin/cloudrouterctl`
 - `/usr/lib/sdkwork/router`
 - `/etc/sdkwork/router`
-- `/etc/sdkwork/router/clawrouter.env`
+- `/etc/sdkwork/router/cloudrouter.env`
 - `/etc/sdkwork/router/database.secret`
 - `/var/lib/sdkwork/router`
 - `/var/log/sdkwork/router`
-- `service` 包会安装 `/lib/systemd/system/clawrouter.service`
+- `service` 包会安装 `/lib/systemd/system/cloudrouter.service`
 
 Linux `.deb` payload 使用标准系统目录：不可变私有运行时文件位于 `/usr/lib/sdkwork/router`，公共运维命令位于 `/usr/bin`，服务配置位于 `/etc/sdkwork/router`，可变状态位于 `/var/lib/sdkwork/router`，日志位于 `/var/log/sdkwork/router`。服务配置文件和模板使用 `root:sdkwork`、`0640` 文件权限；`/etc/sdkwork/router`、`/var/lib/sdkwork/router` 和 `/var/log/sdkwork/router` 使用 `0750` 目录权限。
 
 如果服务启动时自动初始化数据库，请从日志中保存首次管理员密码：
 
 ```bash
-sudo journalctl -u clawrouter -n 200 --no-pager
+sudo journalctl -u cloudrouter -n 200 --no-pager
 ```
 
 ### Linux 桌面/单机
@@ -246,20 +246,20 @@ sudo journalctl -u clawrouter -n 200 --no-pager
 适用于本机 SQLite 试用：
 
 ```bash
-sudo apt install ./clawrouter-linux-x64-desktop-0.3.0.deb
-/usr/bin/clawrouterctl ensure
-/usr/bin/clawrouterctl refresh-catalog --force
-/usr/bin/clawrouter
+sudo apt install ./cloudrouter-linux-x64-desktop-0.3.0.deb
+/usr/bin/cloudrouterctl ensure
+/usr/bin/cloudrouterctl refresh-catalog --force
+/usr/bin/cloudrouter
 ```
 
-`desktop` 模式使用当前 OS 用户的配置和数据目录，默认不要求 PostgreSQL。Linux desktop `.deb` 会把共享模板安装到 `/usr/share/sdkwork/router/config/clawrouter.toml.example`，不会创建 `/etc/sdkwork/router/clawrouter.toml`、`/etc/sdkwork/router/database.secret` 或 systemd 服务。
+`desktop` 模式使用当前 OS 用户的配置和数据目录，默认不要求 PostgreSQL。Linux desktop `.deb` 会把共享模板安装到 `/usr/share/sdkwork/router/config/cloudrouter.toml.example`，不会创建 `/etc/sdkwork/router/cloudrouter.toml`、`/etc/sdkwork/router/database.secret` 或 systemd 服务。
 
 ### Windows 桌面或服务文件
 
 安装 MSI：
 
 ```powershell
-msiexec /i .\clawrouter-windows-x64-desktop-0.3.0.msi
+msiexec /i .\cloudrouter-windows-x64-desktop-0.3.0.msi
 ```
 
 默认安装目录：
@@ -273,9 +273,9 @@ msiexec /i .\clawrouter-windows-x64-desktop-0.3.0.msi
 ```powershell
 $installRoot = Join-Path $env:USERPROFILE "sdkwork\router"
 Set-Location $installRoot
-.\bin\clawrouterctl.exe ensure
-.\bin\clawrouterctl.exe refresh-catalog --force
-.\bin\clawrouter.exe
+.\bin\cloudrouterctl.exe ensure
+.\bin\cloudrouterctl.exe refresh-catalog --force
+.\bin\cloudrouter.exe
 ```
 
 生产或多节点 server/service 部署需要在受保护的服务环境或运行时 TOML 中配置 PostgreSQL：
@@ -291,31 +291,31 @@ Windows `.msi` 会把程序二进制放在 `%ProgramFiles%/sdkwork/router`，把
 安装 PKG：
 
 ```bash
-sudo installer -pkg clawrouter-macos-arm64-desktop-0.3.0.pkg -target /
+sudo installer -pkg cloudrouter-macos-arm64-desktop-0.3.0.pkg -target /
 ```
 
 默认运行文件：
 
 ```text
 Binaries: /opt/sdkwork/router/bin
-Desktop config template: /usr/local/share/sdkwork/router/config/clawrouter.toml.example
-Desktop runtime config: ~/.sdkwork/router/config/clawrouter.toml
-Service config template: /Library/Application Support/sdkwork/router/clawrouter.toml.example
-Service plist for service package: /Library/LaunchDaemons/com.sdkwork.clawrouter.plist
-Service runner for service package: /Library/Application Support/sdkwork/router/service/macos/clawrouter-service-runner
+Desktop config template: /usr/local/share/sdkwork/router/config/cloudrouter.toml.example
+Desktop runtime config: ~/.sdkwork/router/config/cloudrouter.toml
+Service config template: /Library/Application Support/sdkwork/router/cloudrouter.toml.example
+Service plist for service package: /Library/LaunchDaemons/com.sdkwork.cloudrouter.plist
+Service runner for service package: /Library/Application Support/sdkwork/router/service/macos/cloudrouter-service-runner
 ```
 
 初始化并启动：
 
 ```bash
-/opt/sdkwork/router/bin/clawrouterctl ensure
-/opt/sdkwork/router/bin/clawrouterctl refresh-catalog --force
-/opt/sdkwork/router/bin/clawrouter
+/opt/sdkwork/router/bin/cloudrouterctl ensure
+/opt/sdkwork/router/bin/cloudrouterctl refresh-catalog --force
+/opt/sdkwork/router/bin/cloudrouter
 ```
 
-macOS service 包由 launchd 启动 service runner。runner 会先执行 `clawrouterctl ensure` 和 `clawrouterctl refresh-catalog --force`，然后用 gateway 进程替换自身。
+macOS service 包由 launchd 启动 service runner。runner 会先执行 `cloudrouterctl ensure` 和 `cloudrouterctl refresh-catalog --force`，然后用 gateway 进程替换自身。
 
-macOS service 包会把服务运行文件安装到 `/Library/Application Support/sdkwork/router`，使用 `root:wheel` 所有权；服务根目录为 `0750`，服务模板和复制出的运行时 TOML 为 `0640`，`/Library/LaunchDaemons/com.sdkwork.clawrouter.plist` 为 `0644`。macOS desktop 包仍把运行时配置放在当前用户的 Application Support 目录中。
+macOS service 包会把服务运行文件安装到 `/Library/Application Support/sdkwork/router`，使用 `root:wheel` 所有权；服务根目录为 `0750`，服务模板和复制出的运行时 TOML 为 `0640`，`/Library/LaunchDaemons/com.sdkwork.cloudrouter.plist` 为 `0644`。macOS desktop 包仍把运行时配置放在当前用户的 Application Support 目录中。
 
 ### 可移植归档包
 
@@ -325,38 +325,38 @@ Linux/macOS：
 
 ```bash
 mkdir -p /opt/sdkwork/router
-tar -xzf clawrouter-linux-x64-archive-0.3.0.tar.gz -C /opt/sdkwork/router
+tar -xzf cloudrouter-linux-x64-archive-0.3.0.tar.gz -C /opt/sdkwork/router
 cd /opt/sdkwork/router
 cp .env.release.example .env.release
 editor .env.release
-./bin/clawrouterctl ensure
-./bin/clawrouterctl refresh-catalog --force
-./bin/clawrouter
+./bin/cloudrouterctl ensure
+./bin/cloudrouterctl refresh-catalog --force
+./bin/cloudrouter
 ```
 
 Windows：
 
 ```powershell
 $installRoot = Join-Path $env:USERPROFILE "sdkwork\router"
-Expand-Archive .\clawrouter-windows-x64-archive-0.3.0.zip -DestinationPath $installRoot
+Expand-Archive .\cloudrouter-windows-x64-archive-0.3.0.zip -DestinationPath $installRoot
 Set-Location $installRoot
 Copy-Item .env.release.example .env.release
 notepad .env.release
-.\bin\clawrouterctl.exe ensure
-.\bin\clawrouterctl.exe refresh-catalog --force
-.\bin\clawrouter.exe
+.\bin\cloudrouterctl.exe ensure
+.\bin\cloudrouterctl.exe refresh-catalog --force
+.\bin\cloudrouter.exe
 ```
 
 ## 3. 安装包内容
 
-release 包包含运行 Claw Router 所需文件：
+release 包包含运行 Cloud Router 所需文件：
 
-- `bin/clawrouter` 或 `bin/clawrouter.exe`
-- `bin/clawrouterctl` 或 `bin/clawrouterctl.exe`
+- `bin/cloudrouter` 或 `bin/cloudrouter.exe`
+- `bin/cloudrouterctl` 或 `bin/cloudrouterctl.exe`
 - `portal/dist`
 - `portal/dist/sdk-archives`
 - `.env.release.example`
-- `config/clawrouter.toml.example`
+- `config/cloudrouter.toml.example`
 - `INSTALL.md`
 - `install-manifest.json`
 
@@ -368,21 +368,21 @@ release 包包含运行 Claw Router 所需文件：
 
 `archive` 和 `container` release 资产仍然是可移植 `.tar.gz` 或 `.zip`。
 
-每个包的 `install-manifest.json` 都包含 `installConfiguration`，记录运行时 TOML、模板、数据库策略、必填字段、密码路径、首次启动命令和后续步骤。原生安装包还包含 `nativeInstall`，用机器可读方式描述最终安装布局，例如 `/usr/bin/clawrouter`、`/usr/lib/sdkwork/router/portal/dist`、`/etc/sdkwork/router/clawrouter.toml`、`/etc/sdkwork/router/database.secret`、`/lib/systemd/system/clawrouter.service`、服务启动策略、权限和运维命令。部署自动化应读取这些字段，而不是解析 `INSTALL.md`。
+每个包的 `install-manifest.json` 都包含 `installConfiguration`，记录运行时 TOML、模板、数据库策略、必填字段、密码路径、首次启动命令和后续步骤。原生安装包还包含 `nativeInstall`，用机器可读方式描述最终安装布局，例如 `/usr/bin/cloudrouter`、`/usr/lib/sdkwork/router/portal/dist`、`/etc/sdkwork/router/cloudrouter.toml`、`/etc/sdkwork/router/database.secret`、`/lib/systemd/system/cloudrouter.service`、服务启动策略、权限和运维命令。部署自动化应读取这些字段，而不是解析 `INSTALL.md`。
 
-不要把 `.env.release` 打包或提交。归档部署可以在目标机器上生成它；Linux service 部署使用 `/etc/sdkwork/router/clawrouter.env` 保存受保护的进程覆盖项，并使用 `/etc/sdkwork/router/clawrouter.toml` 作为主要运行时配置。`PORTAL_PUBLIC_*` 只能放浏览器可见配置，不要放数据库密码、供应商密钥或管理员凭据。
+不要把 `.env.release` 打包或提交。归档部署可以在目标机器上生成它；Linux service 部署使用 `/etc/sdkwork/router/cloudrouter.env` 保存受保护的进程覆盖项，并使用 `/etc/sdkwork/router/cloudrouter.toml` 作为主要运行时配置。`PORTAL_PUBLIC_*` 只能放浏览器可见配置，不要放数据库密码、供应商密钥或管理员凭据。
 
 ## 4. 数据库策略
 
 `desktop` 包默认使用 SQLite：
 
 ```text
-Windows: %USERPROFILE%/.sdkwork/router/data/clawrouter.sqlite
-Linux: ~/.sdkwork/router/data/clawrouter.sqlite
-macOS: ~/.sdkwork/router/data/clawrouter.sqlite
+Windows: %USERPROFILE%/.sdkwork/router/data/cloudrouter.sqlite
+Linux: ~/.sdkwork/router/data/cloudrouter.sqlite
+macOS: ~/.sdkwork/router/data/cloudrouter.sqlite
 ```
 
-Desktop SQLite 策略独立于 `pnpm dev`、`pnpm dev:server` 和 `pnpm dev:server:postgres` 为后端服务运行时使用的显式 product server PostgreSQL 开发配置。网关客户端命令（`pnpm dev:desktop`、`pnpm dev:desktop:sqlite`）通过 `sdkwork-api-cloud-gateway` 运行，不启动 Claw Router 后端服务。
+Desktop SQLite 策略独立于 `pnpm dev`、`pnpm dev:server` 和 `pnpm dev:server:postgres` 为后端服务运行时使用的显式 product server PostgreSQL 开发配置。网关客户端命令（`pnpm dev:desktop`、`pnpm dev:desktop:sqlite`）通过 `sdkwork-api-cloud-gateway` 运行，不启动 Cloud Router 后端服务。
 
 `archive`、`service`、`container` 包默认使用 PostgreSQL。请在 TOML 中配置 `host`、`port`、`database`、`username`，并使用 `password_file` 或受保护的 `password`。生产环境优先使用 `password_file`。
 
@@ -398,7 +398,7 @@ database = 0
 # url = "redis://redis.example.com:6379/0"
 # password_file = "/etc/sdkwork/router/redis.secret"
 # password = "change-me"
-key_prefix = "clawrouter"
+key_prefix = "cloudrouter"
 tls = false
 max_connections = 16
 connect_timeout_millis = 2000
@@ -419,33 +419,33 @@ server 部署保持 `[redis].enabled = true`，首次启动前配置 `host`、`p
 Linux/macOS 包目录：
 
 ```bash
-./bin/clawrouterctl status
-./bin/clawrouterctl ensure
-./bin/clawrouterctl refresh-catalog --force
+./bin/cloudrouterctl status
+./bin/cloudrouterctl ensure
+./bin/cloudrouterctl refresh-catalog --force
 ```
 
 Windows 包目录：
 
 ```powershell
-.\bin\clawrouterctl.exe status
-.\bin\clawrouterctl.exe ensure
-.\bin\clawrouterctl.exe refresh-catalog --force
+.\bin\cloudrouterctl.exe status
+.\bin\cloudrouterctl.exe ensure
+.\bin\cloudrouterctl.exe refresh-catalog --force
 ```
 
 Linux 原生 `.deb` 安装路径：
 
 ```bash
-/usr/bin/clawrouterctl status
-/usr/bin/clawrouterctl ensure
-/usr/bin/clawrouterctl refresh-catalog --force
+/usr/bin/cloudrouterctl status
+/usr/bin/cloudrouterctl ensure
+/usr/bin/cloudrouterctl refresh-catalog --force
 ```
 
 macOS 原生 `.pkg` desktop 安装路径：
 
 ```bash
-/opt/sdkwork/router/bin/clawrouterctl status
-/opt/sdkwork/router/bin/clawrouterctl ensure
-/opt/sdkwork/router/bin/clawrouterctl refresh-catalog --force
+/opt/sdkwork/router/bin/cloudrouterctl status
+/opt/sdkwork/router/bin/cloudrouterctl ensure
+/opt/sdkwork/router/bin/cloudrouterctl refresh-catalog --force
 ```
 
 初始化命令输出 JSON。首次成功安装可能包含：
@@ -467,19 +467,19 @@ macOS 原生 `.pkg` desktop 安装路径：
 从包目录直接启动：
 
 ```bash
-./bin/clawrouter
+./bin/cloudrouter
 ```
 
 Windows：
 
 ```powershell
-.\bin\clawrouter.exe
+.\bin\cloudrouter.exe
 ```
 
 Linux 服务：
 
 ```bash
-sudo systemctl status clawrouter --no-pager
+sudo systemctl status cloudrouter --no-pager
 ```
 
 默认访问地址：
@@ -539,13 +539,13 @@ curl https://api.sdkwork.com/readyz
 示例：
 
 ```bash
-tar -xzf clawrouter-linux-x64-container-0.3.0.tar.gz -C /opt/sdkwork/router
+tar -xzf cloudrouter-linux-x64-container-0.3.0.tar.gz -C /opt/sdkwork/router
 cd /opt/sdkwork/router
-docker build -f container/Containerfile -t clawrouter:0.3.0 .
+docker build -f container/Containerfile -t cloudrouter:0.3.0 .
 docker run --rm -p 3900:3900 \
-  -v "$PWD/config/clawrouter.toml.example:/etc/sdkwork/router/clawrouter.toml:ro" \
+  -v "$PWD/config/cloudrouter.toml.example:/etc/sdkwork/router/cloudrouter.toml:ro" \
   -v "$PWD/secrets/postgres-password:/run/secrets/sdkwork/router/postgres-password:ro" \
-  clawrouter:0.3.0
+  cloudrouter:0.3.0
 ```
 
 生产服务和容器部署应把运行配置、日志和可变数据目录作为可写资源挂载，并通过受保护 TOML、密码文件或平台 Secret 注入 PostgreSQL 密码。
@@ -556,9 +556,9 @@ docker run --rm -p 3900:3900 \
 2. 备份数据库和运行时配置。
 3. 停止旧版本服务。
 4. 安装或解压新 release 包。
-5. 保留目标机器上的 `/etc/sdkwork/router/clawrouter.env`、`/etc/sdkwork/router/database.secret`、归档部署可能使用的 `.env.release` 和运行时 TOML。
+5. 保留目标机器上的 `/etc/sdkwork/router/cloudrouter.env`、`/etc/sdkwork/router/database.secret`、归档部署可能使用的 `.env.release` 和运行时 TOML。
 6. Linux service 包直接启动服务，让 systemd 自动执行 `ensure` 和 `refresh-catalog --force`。
-7. archive/manual 部署手动执行 `clawrouterctl ensure` 和 `clawrouterctl refresh-catalog --force`。
+7. archive/manual 部署手动执行 `cloudrouterctl ensure` 和 `cloudrouterctl refresh-catalog --force`。
 8. 启动新版本并检查 `/healthz` 和 `/readyz`。
 
 ## 9. 故障排查
@@ -570,4 +570,4 @@ docker run --rm -p 3900:3900 \
 - `catalog_error`：模型目录路径、版本或内容校验失败。
 - `commerce_error`：Commerce bootstrap schema 或种子数据初始化失败。
 - `/healthz` 成功但 `/readyz` 失败：edge 进程已启动，但 gateway/admin/app/portal upstream 或数据库未就绪。
-- Linux 服务启动后立即退出：检查 `/etc/sdkwork/router/clawrouter.toml`、`/etc/sdkwork/router/database.secret`、`/etc/sdkwork/router/clawrouter.env` 和 `journalctl -u clawrouter`。
+- Linux 服务启动后立即退出：检查 `/etc/sdkwork/router/cloudrouter.toml`、`/etc/sdkwork/router/database.secret`、`/etc/sdkwork/router/cloudrouter.env` 和 `journalctl -u cloudrouter`。

@@ -7,12 +7,12 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { buildReleaseEnvFilePlan } from './write-release-env.mjs';
-import { currentHostArchivePackageId } from './build-claw-router-install-package.mjs';
+import { currentHostArchivePackageId } from './build-cloud-router-install-package.mjs';
 import {
   DEFAULT_VERSION,
   createInstallPackagePlan,
   validateInstallPackagePlan,
-} from './plan-claw-router-install-packages.mjs';
+} from './plan-cloud-router-install-packages.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,7 +29,7 @@ Options:
   --package-id <id>      Package id from install package plan.
   --package-root <dir>   Optional extracted package root to validate.
   --tmp-root <dir>       Temporary install root.
-  --installer-bin <path> Optional real clawrouterctl binary to execute.
+  --installer-bin <path> Optional real cloudrouterctl binary to execute.
   --version <value>      Product package version (default ${DEFAULT_VERSION}).
   --check                Validate the smoke plan.
   --dry-run              Do not execute installer commands.
@@ -139,11 +139,11 @@ function createInstallInitSmokePlan({
     throw new Error('--installer-bin is required unless --dry-run is used');
   }
 
-  const runtimeConfigPath = path.join(absoluteTmpRoot, 'clawrouter.toml');
+  const runtimeConfigPath = path.join(absoluteTmpRoot, 'cloudrouter.toml');
   const databaseEngine = packageItem.databasePolicy.defaultEngine;
   const deploymentMode = packageItem.runtimeProfile === 'desktop' ? 'desktop' : 'server';
   const databasePath = databaseEngine === 'sqlite'
-    ? path.join(absoluteTmpRoot, 'clawrouter-install-init.sqlite')
+    ? path.join(absoluteTmpRoot, 'cloudrouter-install-init.sqlite')
     : null;
   const databasePasswordPath = databaseEngine === 'postgresql'
     ? path.join(absoluteTmpRoot, 'database.secret')
@@ -234,9 +234,9 @@ function createSmokeEnvironment({ databaseUrl, databaseEngine, deploymentMode, r
     PORTAL_PUBLIC_APP_API_BASE_URL: '/app/v3/api',
     PORTAL_PUBLIC_BACKEND_API_BASE_URL: '/backend/v3/api',
     PORTAL_PUBLIC_TOOL_API_ENABLED: 'false',
-    SDKWORK_CLAW_RELEASE_ENV_FILE: releaseEnvPath,
-    SDKWORK_CLAW_CONFIG_FILE: runtimeConfigPath,
-    SDKWORK_CLAW_DEPLOYMENT_MODE: deploymentMode,
+    SDKWORK_CLOUDROUTER_RELEASE_ENV_FILE: releaseEnvPath,
+    SDKWORK_CLOUDROUTER_CONFIG_FILE: runtimeConfigPath,
+    SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE: deploymentMode,
   };
   if (databaseEngine === 'sqlite') {
     env.SDKWORK_DATABASE_URL = databaseUrl;
@@ -294,7 +294,7 @@ function validateInstallInitSmokePlan(plan) {
   if (!plan.runtimeConfigPath || !path.isAbsolute(plan.runtimeConfigPath)) {
     issues.push('runtimeConfigPath must be an absolute path');
   }
-  if (!plan.env?.SDKWORK_CLAW_CONFIG_FILE || !plan.env?.SDKWORK_MODELS_CATALOG_ROOT) {
+  if (!plan.env?.SDKWORK_CLOUDROUTER_CONFIG_FILE || !plan.env?.SDKWORK_MODELS_CATALOG_ROOT) {
     issues.push('installer environment must include config file and model catalog roots');
   }
   if (plan.databaseEngine === 'sqlite' && !plan.env?.SDKWORK_DATABASE_URL) {
@@ -368,8 +368,8 @@ async function writeReleaseEnvForSmoke(plan) {
   });
   const content = [
     envPlan.content.trimEnd(),
-    `SDKWORK_CLAW_CONFIG_FILE=${quoteDotenvValue(plan.env.SDKWORK_CLAW_CONFIG_FILE)}`,
-    `SDKWORK_CLAW_DEPLOYMENT_MODE=${quoteDotenvValue(plan.env.SDKWORK_CLAW_DEPLOYMENT_MODE)}`,
+    `SDKWORK_CLOUDROUTER_CONFIG_FILE=${quoteDotenvValue(plan.env.SDKWORK_CLOUDROUTER_CONFIG_FILE)}`,
+    `SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE=${quoteDotenvValue(plan.env.SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE)}`,
     `SDKWORK_MODELS_CATALOG_ROOT=${quoteDotenvValue(plan.env.SDKWORK_MODELS_CATALOG_ROOT)}`,
     '',
   ].join('\n');
@@ -417,7 +417,7 @@ function inspectReleaseEnvContent(content, plan) {
     written: true,
     containsLocalDatabaseUrl: Boolean(plan.env.SDKWORK_DATABASE_URL)
       && content.includes(`SDKWORK_DATABASE_URL="${plan.env.SDKWORK_DATABASE_URL}"`),
-    containsConfigFile: /^SDKWORK_CLAW_CONFIG_FILE=/mu.test(content),
+    containsConfigFile: /^SDKWORK_CLOUDROUTER_CONFIG_FILE=/mu.test(content),
     containsHostSecret: /SDKWORK_SECRET|SECRET_KEY|PRIVATE_KEY|(?<!ACCESS_)TOKEN=/u.test(content),
     containsExamplePath: content.includes('.env.release.example'),
     variableCount: content

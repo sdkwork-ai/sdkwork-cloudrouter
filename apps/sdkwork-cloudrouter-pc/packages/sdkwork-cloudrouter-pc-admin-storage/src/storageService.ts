@@ -1,0 +1,82 @@
+import { getCloudRouterBackendSdkClient } from '@sdkwork/cloudroutes-pc-commons/sdk-clients';
+import { createClientOperationToken } from '@sdkwork/cloudroutes-pc-commons/runtime';
+
+type BackendStorageService = ReturnType<typeof getCloudRouterBackendSdkClient>['storage'];
+
+export type StorageProviderCreateInput = Parameters<BackendStorageService['oss']['providers']['create']>[0];
+export type StorageBucketCreateInput = Parameters<BackendStorageService['oss']['buckets']['create']>[0];
+export type StorageQuotaCreateInput = Parameters<BackendStorageService['oss']['quotas']['create']>[0];
+export type StorageDefaultBucketUpdateInput = Parameters<BackendStorageService['defaultBuckets']['update']>[1];
+export type StorageReconciliationCreateInput = NonNullable<Parameters<BackendStorageService['oss']['storageReconciliationRuns']['create']>[1]>;
+export type StorageGarbageCollectionCreateInput = NonNullable<Parameters<BackendStorageService['gcJobs']['create']>[1]>;
+
+export async function backendStorageProvidersList(pageSize = 100) {
+  return getCloudRouterBackendSdkClient().storage.oss.providers.list({ pageSize });
+}
+
+export async function backendStorageProviderCreate(body: StorageProviderCreateInput) {
+  return getCloudRouterBackendSdkClient().storage.oss.providers.create(body, {
+    idempotencyKey: createClientOperationToken('storage-provider'),
+  });
+}
+
+export async function backendStorageProviderHealthCheck(providerId: string) {
+  return getCloudRouterBackendSdkClient().storage.providers.healthCheck(providerId);
+}
+
+export async function backendStorageBucketsList(pageSize = 100) {
+  return getCloudRouterBackendSdkClient().storage.oss.buckets.list({ pageSize });
+}
+
+export async function backendStorageBucketCreate(body: StorageBucketCreateInput) {
+  return getCloudRouterBackendSdkClient().storage.oss.buckets.create(body, {
+    idempotencyKey: createClientOperationToken('storage-bucket'),
+  });
+}
+
+export async function backendStorageDefaultBucketsList(pageSize = 100) {
+  return getCloudRouterBackendSdkClient().storage.defaultBuckets.list({ pageSize });
+}
+
+export async function backendStorageDefaultBucketUpdate(
+  logicalScope: string,
+  body: StorageDefaultBucketUpdateInput,
+) {
+  return getCloudRouterBackendSdkClient().storage.defaultBuckets.update(logicalScope, body);
+}
+
+export async function backendStorageQuotasList(pageSize = 100) {
+  return getCloudRouterBackendSdkClient().storage.oss.quotas.list({ pageSize });
+}
+
+export async function backendStorageQuotaCreate(body: StorageQuotaCreateInput) {
+  return getCloudRouterBackendSdkClient().storage.oss.quotas.create(body, {
+    idempotencyKey: createClientOperationToken('storage-quota'),
+  });
+}
+
+export async function backendStorageUsageList(pageSize = 100) {
+  return getCloudRouterBackendSdkClient().storage.oss.usage.list({ pageSize });
+}
+
+export async function backendStorageReconciliationRunsList(pageSize = 100) {
+  return getCloudRouterBackendSdkClient().storage.oss.storageReconciliationRuns.list({ pageSize });
+}
+
+export async function backendStorageReconciliationRunCreate(body: StorageReconciliationCreateInput) {
+  return getCloudRouterBackendSdkClient().storage.oss.storageReconciliationRuns.create(
+    { idempotencyKey: createClientOperationToken('storage-reconciliation') },
+    body,
+  );
+}
+
+export async function backendStorageGarbageCollectionJobsList(pageSize = 100) {
+  return getCloudRouterBackendSdkClient().storage.gcJobs.list({ pageSize });
+}
+
+export async function backendStorageGarbageCollectionJobCreate(body: StorageGarbageCollectionCreateInput) {
+  return getCloudRouterBackendSdkClient().storage.gcJobs.create(
+    { idempotencyKey: createClientOperationToken('storage-garbage-collection') },
+    body,
+  );
+}

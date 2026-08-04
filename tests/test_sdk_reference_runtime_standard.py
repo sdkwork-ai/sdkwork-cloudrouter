@@ -16,9 +16,9 @@ DOCUMENTS_SDK_REFERENCE_ROOT = (
 COMMONS_RUNTIME = (
     ROOT
     / "apps"
-    / "sdkwork-clawrouter-pc"
+    / "sdkwork-cloudrouter-pc"
     / "packages"
-    / "sdkwork-clawroutes-pc-commons"
+    / "sdkwork-cloudroutes-pc-commons"
     / "src"
     / "sdk-clients.ts"
 )
@@ -95,9 +95,9 @@ class SdkReferenceRuntimeStandardTest(unittest.TestCase):
         adapter_source = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawroutes-pc-commons"
+            / "sdkwork-cloudroutes-pc-commons"
             / "src"
             / "documents-reference-runtime-adapter.ts"
         ).read_text(encoding="utf-8")
@@ -130,7 +130,7 @@ class SdkReferenceRuntimeStandardTest(unittest.TestCase):
 
     def test_sdk_reference_sidebar_uses_fixed_width_without_resize_drag_handle(self) -> None:
         sdk_reference_source = (DOCUMENTS_SDK_REFERENCE_ROOT / "pages" / "SdkReference.tsx").read_text(encoding="utf-8")
-        portal_css = (ROOT / "apps" / "sdkwork-clawrouter-pc" / "src" / "index.css").read_text(encoding="utf-8")
+        portal_css = (ROOT / "apps" / "sdkwork-cloudrouter-pc" / "src" / "index.css").read_text(encoding="utf-8")
 
         self.assertIn("md:w-[360px] md:max-w-[360px] md:basis-[360px]", sdk_reference_source)
         self.assertIn("md:h-full overflow-y-auto custom-scrollbar py-6 px-6 md:py-8", sdk_reference_source)

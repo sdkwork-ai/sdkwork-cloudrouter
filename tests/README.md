@@ -4,7 +4,7 @@
 `tests/` stores cross-package tests, contract tests, integration tests, end-to-end tests, fixtures, and static verification inputs.
 
 ## Owner
-SDKWork Claw Router quality and component maintainers.
+SDKWork Cloud Router quality and component maintainers.
 
 ## Allowed Content
 Python unittest suites, contract fixtures, static guardian tests, integration fixtures, safe test data, and cross-package verification helpers.

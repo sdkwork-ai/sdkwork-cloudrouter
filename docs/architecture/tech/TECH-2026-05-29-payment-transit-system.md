@@ -7,7 +7,7 @@
 
 **Goal:** Land the SDKWORK payment transit system incrementally, starting with mainstream payment providers and keeping domestic acquiring providers extensible through catalog, capability, route, and adapter registration.
 
-**Architecture:** `/payments/v3` is the stable aggregate API. Appbase commerce owns canonical `commerce_payment_*` facts and schema. Claw Router owns contract exposure, provider adapter runtime, callback/reconciliation workers, and admin/API reference integration.
+**Architecture:** `/payments/v3` is the stable aggregate API. Appbase commerce owns canonical `commerce_payment_*` facts and schema. Cloud Router owns contract exposure, provider adapter runtime, callback/reconciliation workers, and admin/API reference integration.
 
 **Tech Stack:** Rust, Axum, SQLx, SQLite, Postgres, OpenAPI 3.1, React portal API reference, Appbase commerce schema registry.
 
@@ -51,12 +51,12 @@ The initial implementation must not hardcode future extension providers as activ
 
 Contract and API reference:
 
-- Modify: `crates/sdkwork-claw-http/specs/payment-aggregate-openapi.json`
-- Modify: `crates/sdkwork-claw-http/src/contract_routes.rs`
-- Modify: `crates/sdkwork-claw-http/src/router.rs`
+- Modify: `crates/sdkwork-cloudrouter-http/specs/payment-aggregate-openapi.json`
+- Modify: `crates/sdkwork-cloudrouter-http/src/contract_routes.rs`
+- Modify: `crates/sdkwork-cloudrouter-http/src/router.rs`
 - Modify: `../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/apiReferenceSchemaTabs.ts`
 - Modify: `../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/pages/ApiReference.tsx`
-- Modify: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-i18n/src/resources/public/api-reference.ts`
+- Modify: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-i18n/src/resources/public/api-reference.ts`
 
 Schema and registry:
 
@@ -67,19 +67,19 @@ Schema and registry:
 
 Backend payment center:
 
-- Modify: `services/sdkwork-clawrouter-router-service/src/api/admin_transaction_center.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_transaction_center_store.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_transaction_center_store.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/ports/admin_transaction_center_store.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/api/admin_transaction_center.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_transaction_center_store.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/sqlite/admin_transaction_center_store.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/ports/admin_transaction_center_store.rs`
 
 Payment callback and adapter runtime:
 
-- Create: `services/sdkwork-clawrouter-router-service/src/application/payment_adapter.rs`
-- Create: `services/sdkwork-clawrouter-router-service/src/application/payment_provider_registry.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/api/app_payment_callback.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/payment_callback_store.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/payment_callback_store.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/ports/payment_callback_store.rs`
+- Create: `services/sdkwork-cloudrouter-router-service/src/application/payment_adapter.rs`
+- Create: `services/sdkwork-cloudrouter-router-service/src/application/payment_provider_registry.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/api/app_payment_callback.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/payment_callback_store.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/sqlite/payment_callback_store.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/ports/payment_callback_store.rs`
 
 Bootstrap catalog:
 
@@ -88,17 +88,17 @@ Bootstrap catalog:
 
 Tests:
 
-- Modify: `crates/sdkwork-claw-http/tests/service_router.rs`
-- Modify: `apps/sdkwork-clawrouter-pc/api-reference-playground-runtime.test.ts`
-- Create: `services/sdkwork-clawrouter-router-service/tests/payment_provider_catalog_contract.rs`
-- Create: `services/sdkwork-clawrouter-router-service/tests/payment_adapter_registry.rs`
+- Modify: `crates/sdkwork-cloudrouter-http/tests/service_router.rs`
+- Modify: `apps/sdkwork-cloudrouter-pc/api-reference-playground-runtime.test.ts`
+- Create: `services/sdkwork-cloudrouter-router-service/tests/payment_provider_catalog_contract.rs`
+- Create: `services/sdkwork-cloudrouter-router-service/tests/payment_adapter_registry.rs`
 - Create: `tests/test_payment_transit_schema_contract.py`
 
 ## Task 1: Contract Scope Alignment
 
 - [x] Verify `payment-aggregate-openapi.json` parses as OpenAPI 3.1.
 
-Run: `powershell -Command "Get-Content -Raw 'crates\sdkwork-claw-http\specs\payment-aggregate-openapi.json' | ConvertFrom-Json | Select-Object -ExpandProperty openapi"`
+Run: `powershell -Command "Get-Content -Raw 'crates\sdkwork-cloudrouter-http\specs\payment-aggregate-openapi.json' | ConvertFrom-Json | Select-Object -ExpandProperty openapi"`
 
 Expected: `3.1.2`
 
@@ -116,17 +116,17 @@ Reason: new provider support should not require a public API shape change.
 
 - [x] Run focused contract tests.
 
-Run: `cargo test -p sdkwork-claw-http service_router --test service_router`
+Run: `cargo test -p sdkwork-cloudrouter-http service_router --test service_router`
 
 Expected: pass, or update expected route assertions when payment aggregate route exposure is intentionally changed.
 
-Result: payment aggregate focused filter passed with `cargo test -p sdkwork-claw-http payment_aggregate --test service_router`. Full `service_router` currently still has an unrelated commerce coupons/campaigns contract failure in this workspace.
+Result: payment aggregate focused filter passed with `cargo test -p sdkwork-cloudrouter-http payment_aggregate --test service_router`. Full `service_router` currently still has an unrelated commerce coupons/campaigns contract failure in this workspace.
 
 ## Task 2: Provider Catalog Alignment
 
 - [x] Update backend validation so active runtime provider allowlists match the mainstream provider set.
 
-Target file: `services/sdkwork-clawrouter-router-service/src/api/admin_transaction_center.rs`
+Target file: `services/sdkwork-cloudrouter-router-service/src/api/admin_transaction_center.rs`
 
 Expected mainstream providers: `wechat_pay`, `alipay`, `stripe`, `paypal`, `apple_pay`, `google_pay`.
 
@@ -142,7 +142,7 @@ Expected: mainstream providers have deterministic seed ids and inactive placehol
 
 - [x] Add provider catalog contract test.
 
-Target file: `services/sdkwork-clawrouter-router-service/tests/payment_provider_catalog_contract.rs`
+Target file: `services/sdkwork-cloudrouter-router-service/tests/payment_provider_catalog_contract.rs`
 
 Expected checks:
 
@@ -193,14 +193,14 @@ Expected checks:
 Expected modified generated files:
 
 - `generated/schema/postgres/schema.sql`
-- `generated/schema/registry/sdkwork-clawrouter.tables.effective.yaml`
+- `generated/schema/registry/sdkwork-cloudrouter.tables.effective.yaml`
 - `generated/openapi/schema-components.yaml`
 
 ## Task 4: Adapter Runtime Skeleton
 
 - [x] Create `PaymentProviderAdapter` interface.
 
-Target file: `services/sdkwork-clawrouter-router-service/src/application/payment_adapter.rs`
+Target file: `services/sdkwork-cloudrouter-router-service/src/application/payment_adapter.rs`
 
 Required operations:
 
@@ -220,7 +220,7 @@ Required operations:
 
 - [x] Create provider registry.
 
-Target file: `services/sdkwork-clawrouter-router-service/src/application/payment_provider_registry.rs`
+Target file: `services/sdkwork-cloudrouter-router-service/src/application/payment_provider_registry.rs`
 
 Expected behavior:
 
@@ -234,7 +234,7 @@ Expected: adapters normalize unsupported runtime calls as capability errors unti
 
 - [x] Add registry tests.
 
-Target file: `services/sdkwork-clawrouter-router-service/tests/payment_adapter_registry.rs`
+Target file: `services/sdkwork-cloudrouter-router-service/tests/payment_adapter_registry.rs`
 
 Expected checks:
 
@@ -248,8 +248,8 @@ Expected checks:
 
 Targets:
 
-- `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/payment_callback_store.rs`
-- `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/payment_callback_store.rs`
+- `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/payment_callback_store.rs`
+- `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/sqlite/payment_callback_store.rs`
 
 Expected behavior:
 
@@ -259,7 +259,7 @@ Expected behavior:
 
 - [x] Replace hardcoded callback provider parsing with registry lookup.
 
-Target file: `services/sdkwork-clawrouter-router-service/src/api/app_payment_callback.rs`
+Target file: `services/sdkwork-cloudrouter-router-service/src/api/app_payment_callback.rs`
 
 Expected behavior:
 

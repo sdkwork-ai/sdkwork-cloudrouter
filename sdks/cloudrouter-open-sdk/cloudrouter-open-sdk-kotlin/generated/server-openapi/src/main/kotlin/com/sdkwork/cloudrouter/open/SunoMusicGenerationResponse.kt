@@ -1,0 +1,8 @@
+package com.sdkwork.cloudrouter.open
+
+data class SunoMusicGenerationResponse(
+    val createdAt: String? = null,
+    val id: String? = null,
+    val status: String? = null,
+    val taskId: String? = null
+)

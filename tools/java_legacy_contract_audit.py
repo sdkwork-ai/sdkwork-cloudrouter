@@ -37,7 +37,7 @@ class JavaLegacyContractAudit:
         self.registry_path = (
             Path(registry_path).resolve()
             if registry_path is not None
-            else self.root / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+            else self.root / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
         )
 
     def generate(self) -> dict[str, Any]:
@@ -230,7 +230,7 @@ class JavaLegacyContractAudit:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Audit Java-owned legacy table contracts.")
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     parser.add_argument("--registry", type=Path, default=None, help="schema registry YAML path")
     parser.add_argument("--output", type=Path, default=None, help="output audit JSON path")
     parser.add_argument("--check", action="store_true", help="validate that the generated audit artifact is current")

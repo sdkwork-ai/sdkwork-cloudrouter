@@ -15,8 +15,8 @@ else:
 
 from tools.frontend_contract_guardian import FrontendContractGuardian
 
-SCHEMA_NAME = "sdkwork-clawrouter-frontend-route-classification"
-APP_SOURCE = "apps/sdkwork-clawrouter-pc/src/App.tsx"
+SCHEMA_NAME = "sdkwork-cloudrouter-frontend-route-classification"
+APP_SOURCE = "apps/sdkwork-cloudrouter-pc/src/App.tsx"
 CONTRACT_SNAPSHOT = "docs/schema-registry/frontend-field-contracts.yaml"
 
 LOCAL_TOOL_ROUTES: set[str] = set()
@@ -35,8 +35,8 @@ PLAYGROUND_ROUTES = {
 
 PLAYGROUND_EVIDENCE = [
     APP_SOURCE,
-    "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/pages/Playground.tsx",
-    "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/components/chat/ChatPage.tsx",
+    "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/pages/Playground.tsx",
+    "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/ChatPage.tsx",
     CONTRACT_SNAPSHOT,
 ]
 
@@ -65,86 +65,86 @@ DOCUMENTS_EVIDENCE = {
 
 COMMERCE_PACKAGE_PREFIXES = (
     "@sdkwork/commerce-pc-",
-    "@sdkwork/clawrouter-pc-admin-payments",
-    "@sdkwork/clawrouter-pc-admin-wallet",
-    "@sdkwork/clawrouter-pc-admin-orders",
-    "@sdkwork/clawrouter-pc-admin-memberships",
-    "@sdkwork/clawrouter-pc-admin-finance",
-    "@sdkwork/clawrouter-pc-admin-inventory",
-    "@sdkwork/clawrouter-pc-admin-marketing",
+    "@sdkwork/cloudrouter-pc-admin-payments",
+    "@sdkwork/cloudrouter-pc-admin-wallet",
+    "@sdkwork/cloudrouter-pc-admin-orders",
+    "@sdkwork/cloudrouter-pc-admin-memberships",
+    "@sdkwork/cloudrouter-pc-admin-finance",
+    "@sdkwork/cloudrouter-pc-admin-inventory",
+    "@sdkwork/cloudrouter-pc-admin-marketing",
 )
 
 SPECIAL_CLASSIFICATIONS: dict[str, dict[str, Any]] = {
     "/rankings": {
         "delivery_kind": "sdk_backed_business_runtime",
         "api_surface": "app",
-        "package": "@sdkwork/clawrouter-pc-rankings",
+        "package": "@sdkwork/cloudrouter-pc-rankings",
         "owner": "product-surface",
         "route_scope": "public",
         "dependency_owned": True,
-        "dependency_sdk_family": "sdkwork-clawrouter-app-sdk",
+        "dependency_sdk_family": "sdkwork-cloudrouter-app-sdk",
         "operation_routes": ["/rankings"],
         "evidence": [
             APP_SOURCE,
-            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/src/rankingCatalog.ts",
-            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/src/rankingService.ts",
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-rankings/src/rankingCatalog.ts",
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-rankings/src/rankingService.ts",
             CONTRACT_SNAPSHOT,
         ],
     },
     "/models": {
         "delivery_kind": "sdk_backed_business_runtime",
         "api_surface": "app",
-        "package": "@sdkwork/clawrouter-pc-models",
+        "package": "@sdkwork/cloudrouter-pc-models",
         "owner": "product-surface",
         "route_scope": "public",
         "dependency_owned": True,
-        "dependency_sdk_family": "sdkwork-clawrouter-app-sdk",
+        "dependency_sdk_family": "sdkwork-cloudrouter-app-sdk",
         "operation_routes": ["/models", "/models/:id", "/models/:provider/:model"],
         "evidence": [
             APP_SOURCE,
-            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts",
-            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/runtimeModelCatalog.ts",
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts",
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/runtimeModelCatalog.ts",
             CONTRACT_SNAPSHOT,
         ],
     },
     "/models/:id": {
         "delivery_kind": "sdk_backed_business_runtime",
         "api_surface": "app",
-        "package": "@sdkwork/clawrouter-pc-models",
+        "package": "@sdkwork/cloudrouter-pc-models",
         "owner": "product-surface",
         "route_scope": "public",
         "dependency_owned": True,
-        "dependency_sdk_family": "sdkwork-clawrouter-app-sdk",
+        "dependency_sdk_family": "sdkwork-cloudrouter-app-sdk",
         "operation_routes": ["/models", "/models/:id", "/models/:provider/:model"],
         "evidence": [
             APP_SOURCE,
-            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts",
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts",
             CONTRACT_SNAPSHOT,
         ],
     },
     "/models/:provider/:model": {
         "delivery_kind": "sdk_backed_business_runtime",
         "api_surface": "app",
-        "package": "@sdkwork/clawrouter-pc-models",
+        "package": "@sdkwork/cloudrouter-pc-models",
         "owner": "product-surface",
         "route_scope": "public",
         "dependency_owned": True,
-        "dependency_sdk_family": "sdkwork-clawrouter-app-sdk",
+        "dependency_sdk_family": "sdkwork-cloudrouter-app-sdk",
         "operation_routes": ["/models", "/models/:id", "/models/:provider/:model"],
         "evidence": [
             APP_SOURCE,
-            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts",
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts",
             CONTRACT_SNAPSHOT,
         ],
     },
     "/playground": {
         "delivery_kind": "sdk_backed_business_runtime",
         "api_surface": "app",
-        "package": "@sdkwork/clawrouter-pc-playground",
+        "package": "@sdkwork/cloudrouter-pc-playground",
         "owner": "developer-tools",
         "route_scope": "public",
         "dependency_owned": True,
-        "dependency_sdk_family": "sdkwork-clawrouter-app-sdk",
+        "dependency_sdk_family": "sdkwork-cloudrouter-app-sdk",
         "operation_routes": ["/playground", "/c/:conversationId"],
         "evidence": PLAYGROUND_EVIDENCE,
     },
@@ -155,16 +155,16 @@ def _resolve_dependency_sdk_family(package_name: str | None, route: str) -> str:
     if route in DOCUMENTS_ROUTES:
         return "sdkwork-documents-app-sdk"
     if route in PLAYGROUND_ROUTES:
-        return "sdkwork-clawrouter-app-sdk"
+        return "sdkwork-cloudrouter-app-sdk"
     if route in {"/models", "/models/:id", "/models/:provider/:model", "/rankings"}:
-        return "sdkwork-clawrouter-app-sdk"
+        return "sdkwork-cloudrouter-app-sdk"
     if package_name and "oauth" in package_name:
         return "sdkwork-iam-backend-sdk"
     if route.startswith("/console"):
-        return "sdkwork-clawrouter-app-sdk"
+        return "sdkwork-cloudrouter-app-sdk"
     if route.startswith("/admin"):
-        return "sdkwork-clawrouter-backend-sdk"
-    return "sdkwork-clawrouter-app-sdk"
+        return "sdkwork-cloudrouter-backend-sdk"
+    return "sdkwork-cloudrouter-app-sdk"
 
 
 def _resolve_api_surface(route: str, manifest_route: dict[str, Any] | None) -> str:
@@ -203,14 +203,14 @@ def _package_to_folder(package_name: str) -> str:
 
 def _default_service_evidence(package_name: str) -> str | None:
     folder = _package_to_folder(package_name)
-    package_root = Path("apps/sdkwork-clawrouter-pc/packages") / folder / "src"
+    package_root = Path("apps/sdkwork-cloudrouter-pc/packages") / folder / "src"
     if not package_root.exists():
         return None
     for candidate in sorted(package_root.glob("*Service.ts")):
-        return f"apps/sdkwork-clawrouter-pc/packages/{folder}/src/{candidate.name}"
+        return f"apps/sdkwork-cloudrouter-pc/packages/{folder}/src/{candidate.name}"
     index_tsx = package_root / "index.tsx"
     if index_tsx.exists():
-        return f"apps/sdkwork-clawrouter-pc/packages/{folder}/src/index.tsx"
+        return f"apps/sdkwork-cloudrouter-pc/packages/{folder}/src/index.tsx"
     return None
 
 

@@ -9,7 +9,7 @@ QUALITY_GATE_SPEC.md, MIGRATION_SPEC.md
 
 ## Context
 
-Claw Router is a pre-launch commercial AI relay. Its current generic provider
+Cloud Router is a pre-launch commercial AI relay. Its current generic provider
 dispatch path accepts unsafe upstream destinations, its public OpenAI-compatible
 surface includes upstream organization administration, its app runtime registers
 channel mutations outside the app-api authority, and its metering lifecycle is

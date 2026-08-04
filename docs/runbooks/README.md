@@ -1,14 +1,14 @@
 # Runbooks
 
 Status: pre-launch; target procedures require current-candidate evidence
-Owner: SDKWork Claw Router SRE / clawrouter-release
-Application: sdkwork-clawrouter
+Owner: SDKWork Cloud Router SRE / cloudrouter-release
+Application: sdkwork-cloudrouter
 Updated: 2026-08-01
 Specs: DOCUMENTATION_SPEC.md §7, HEALTH_CHECK_SPEC.md, DEPLOYMENT_SPEC.md
 
 ## Purpose
 
-Operational runbooks for on-call engineers handling SDKWork Claw Router
+Operational runbooks for on-call engineers handling SDKWork Cloud Router
 incidents. Current procedures are target designs unless they link immutable
 evidence from the current candidate. They do not establish an operating
 production, high-availability, recovery, or RPO/RTO capability on their own.

@@ -10,20 +10,20 @@ ROOT = Path(__file__).resolve().parents[1]
 class ConsoleUserBackendRuntimeStandardTest(unittest.TestCase):
     def test_console_user_current_profile_is_federated_iam_not_product_local(self) -> None:
         product_api_mod = (
-            ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "api" / "mod.rs"
+            ROOT / "services" / "sdkwork-cloudrouter-router-service" / "src" / "api" / "mod.rs"
         ).read_text(encoding="utf-8")
         routes = (
-            ROOT / "crates" / "sdkwork-routes-clawrouter-app-api" / "src" / "routes.rs"
+            ROOT / "crates" / "sdkwork-routes-cloudrouter-app-api" / "src" / "routes.rs"
         ).read_text(encoding="utf-8")
         iam_embedded = (
             ROOT
             / "crates"
-            / "sdkwork-clawrouter-edge-runtime"
+            / "sdkwork-cloudrouter-edge-runtime"
             / "src"
             / "iam_embedded.rs"
         ).read_text(encoding="utf-8")
         runtime = (
-            ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs"
+            ROOT / "crates" / "sdkwork-cloudrouter-edge-runtime" / "src" / "runtime.rs"
         ).read_text(encoding="utf-8")
 
         self.assertNotIn("mod app_user_profile;", product_api_mod)
@@ -32,9 +32,9 @@ class ConsoleUserBackendRuntimeStandardTest(unittest.TestCase):
         self.assertNotIn("app_user_profile_router", routes)
         self.assertNotIn("AppUserProfileReadStore", routes)
         self.assertNotIn("merge_federated_iam_routers", routes)
-        self.assertIn("build_claw_embedded_iam_app_api_router", iam_embedded)
+        self.assertIn("build_cloud_embedded_iam_app_api_router", iam_embedded)
         self.assertIn("bootstrap_iam_database_from_env", iam_embedded)
-        self.assertIn("claw_router_product_iam_api_keys_dependency_surface", runtime)
+        self.assertIn("cloud_router_product_iam_api_keys_dependency_surface", runtime)
 
     def test_console_user_contract_response_schema_is_precise(self) -> None:
         contract_text = (
@@ -101,20 +101,20 @@ class ConsoleUserBackendRuntimeStandardTest(unittest.TestCase):
         package_root = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-user"
+            / "sdkwork-cloudrouter-pc-console-user"
         )
         package = __import__("json").loads((package_root / "package.json").read_text(encoding="utf-8"))
         openapi = (
-            ROOT / "generated" / "openapi" / "clawrouter-app-openapi.json"
+            ROOT / "generated" / "openapi" / "cloudrouter-app-openapi.json"
         ).read_text(encoding="utf-8")
         frontend = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-user"
+            / "sdkwork-cloudrouter-pc-console-user"
             / "src"
             / "userService.ts"
         ).read_text(encoding="utf-8")
@@ -134,7 +134,7 @@ class ConsoleUserBackendRuntimeStandardTest(unittest.TestCase):
         self.assertIn("Promise<UserProfile>", frontend)
         self.assertIn("normalizeUserProfile", frontend)
         self.assertIn("readRequiredString(data, 'email', 'User profile response missing data')", frontend)
-        self.assertNotIn("getClawRouterAppSdkClient().user.fetchUserProfile()", frontend)
+        self.assertNotIn("getCloudRouterAppSdkClient().user.fetchUserProfile()", frontend)
         self.assertNotIn("as unknown as UserProfile", frontend)
         self.assertNotIn("initialAvatar", frontend)
 
@@ -144,18 +144,18 @@ class ConsoleUserBackendRuntimeStandardTest(unittest.TestCase):
         user_view = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-user"
+            / "sdkwork-cloudrouter-pc-console-user"
             / "src"
             / "UserView.tsx"
         ).read_text(encoding="utf-8")
         user_service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-user"
+            / "sdkwork-cloudrouter-pc-console-user"
             / "src"
             / "userService.ts"
         ).read_text(encoding="utf-8")
@@ -212,9 +212,9 @@ class ConsoleUserBackendRuntimeStandardTest(unittest.TestCase):
         user_view = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-user"
+            / "sdkwork-cloudrouter-pc-console-user"
             / "src"
             / "UserView.tsx"
         ).read_text(encoding="utf-8")
@@ -235,27 +235,27 @@ class ConsoleUserBackendRuntimeStandardTest(unittest.TestCase):
         user_view = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-user"
+            / "sdkwork-cloudrouter-pc-console-user"
             / "src"
             / "UserView.tsx"
         ).read_text(encoding="utf-8")
         user_service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-user"
+            / "sdkwork-cloudrouter-pc-console-user"
             / "src"
             / "userService.ts"
         ).read_text(encoding="utf-8")
         i18n = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-i18n"
+            / "sdkwork-cloudrouter-pc-i18n"
             / "src"
             / "resources"
             / "console"

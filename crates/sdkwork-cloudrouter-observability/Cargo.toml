@@ -1,0 +1,20 @@
+[package]
+name = "sdkwork-cloudrouter-observability"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+
+[dependencies]
+sdkwork-cloudrouter-config.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+prometheus.workspace = true
+# M-5: OTLP exporter integration
+opentelemetry.workspace = true
+opentelemetry_sdk.workspace = true
+opentelemetry-otlp.workspace = true
+tracing-opentelemetry.workspace = true
+reqwest.workspace = true

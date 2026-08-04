@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// @sdkwork/clawrouter-workspace 锟??refresh-standard-alignment-audit.mjs
+// @sdkwork/cloudrouter-workspace 锟??refresh-standard-alignment-audit.mjs
 //
 // Generates `generated/audit/standard-alignment-facts.json` by reading the
 // repository source of truth. The audit document
@@ -116,8 +116,8 @@ function collectCiSecurityFacts() {
     runsGitleaks: /gitleaks/.test(verify),
     runsPnpmAudit: /pnpm audit/.test(verify),
     runsRustTests: /cargo (test|clippy|--workspace)/.test(verify) || /pnpm verify:ci/.test(verify),
-    runsBrowserSmoke: /CLAWROUTER_BROWSER_SMOKE_REQUIRED/.test(verify),
-    runsEdgeDevSmoke: /CLAWROUTER_EDGE_DEV_SMOKE_REQUIRED/.test(verify),
+    runsBrowserSmoke: /CLOUDROUTER_BROWSER_SMOKE_REQUIRED/.test(verify),
+    runsEdgeDevSmoke: /CLOUDROUTER_EDGE_DEV_SMOKE_REQUIRED/.test(verify),
     runsPostgresRequired: /pnpm test:postgres:required/.test(verify),
   };
 }
@@ -136,10 +136,10 @@ function collectMigrationsFacts() {
   };
   return {
     postgresMigrationFiles: pgFiles,
-    postgresBaselineExists: fileExists("database/ddl/baseline/postgres/0001_clawrouter_baseline.sql"),
+    postgresBaselineExists: fileExists("database/ddl/baseline/postgres/0001_cloudrouter_baseline.sql"),
     postgresPairs: paired(pgFiles),
     sqliteMigrationFiles: sqliteFiles,
-    sqliteBaselineExists: fileExists("tests/fixtures/database/sqlite/ddl/baseline/0001_clawrouter_baseline.sql"),
+    sqliteBaselineExists: fileExists("tests/fixtures/database/sqlite/ddl/baseline/0001_cloudrouter_baseline.sql"),
     sqlitePairs: paired(sqliteFiles),
   };
 }
@@ -148,14 +148,14 @@ function collectKubernetesFacts() {
   const k8sDir = "deployments/kubernetes";
   const files = listDir(k8sDir).filter((f) => f.endsWith(".yaml"));
   const expected = [
-    "claw-router-gateway.yaml",
-    "claw-router-app-api.yaml",
-    "claw-router-admin-api.yaml",
-    "claw-router-edge.yaml",
-    "claw-router-redis.yaml",
-    "claw-router-ingress.yaml",
-    "claw-router-network-policy.yaml",
-    "claw-router-migration-job.yaml",
+    "cloud-router-gateway.yaml",
+    "cloud-router-app-api.yaml",
+    "cloud-router-admin-api.yaml",
+    "cloud-router-edge.yaml",
+    "cloud-router-redis.yaml",
+    "cloud-router-ingress.yaml",
+    "cloud-router-network-policy.yaml",
+    "cloud-router-migration-job.yaml",
   ];
   return {
     manifests: files,
@@ -166,14 +166,14 @@ function collectKubernetesFacts() {
 }
 
 function collectRedisHaFacts() {
-  const redisManifestPath = "deployments/kubernetes/claw-router-redis.yaml";
+  const redisManifestPath = "deployments/kubernetes/cloud-router-redis.yaml";
   if (!fileExists(redisManifestPath)) return { exists: false, isHa: false };
   const runtimeSourcePaths = [
-    "crates/sdkwork-claw-config/src/redis.rs",
-    "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/pool.rs",
-    "services/sdkwork-clawrouter-router-service/src/application/invocation/circuit_breaker.rs",
-    "services/sdkwork-clawrouter-router-service/src/application/invocation/idempotency.rs",
-    "services/sdkwork-clawrouter-router-service/src/application/invocation/tenant_inflight.rs",
+    "crates/sdkwork-cloudrouter-config/src/redis.rs",
+    "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/pool.rs",
+    "services/sdkwork-cloudrouter-router-service/src/application/invocation/circuit_breaker.rs",
+    "services/sdkwork-cloudrouter-router-service/src/application/invocation/idempotency.rs",
+    "services/sdkwork-cloudrouter-router-service/src/application/invocation/tenant_inflight.rs",
   ];
   const runtimeSources = runtimeSourcePaths
     .filter(fileExists)
@@ -198,14 +198,14 @@ function collectClientLocalSqliteFacts() {
         .test(path),
     ));
   const serverRuntimeSourcePaths = [
-    "crates/sdkwork-clawrouter-edge-runtime/src/runtime.rs",
-    "crates/sdkwork-routes-clawrouter-app-api/src/routes.rs",
-    "crates/sdkwork-routes-clawrouter-backend-api/src/routes.rs",
+    "crates/sdkwork-cloudrouter-edge-runtime/src/runtime.rs",
+    "crates/sdkwork-routes-cloudrouter-app-api/src/routes.rs",
+    "crates/sdkwork-routes-cloudrouter-backend-api/src/routes.rs",
   ];
   const runtimeFacts = analyzeClientLocalSqliteRuntime({
     appConfig: readJson(join(REPO_ROOT, "sdkwork.app.config.json")),
     packageJson: readJson(join(REPO_ROOT, "package.json")),
-    applicationLauncherSource: readText("scripts/run-claw-router-application.mjs"),
+    applicationLauncherSource: readText("scripts/run-cloud-router-application.mjs"),
     tauriConfigPaths,
     clientLocalSqliteAuthorityPaths,
     serverRuntimeSources: serverRuntimeSourcePaths.filter(fileExists).map(readText).join("\n"),
@@ -213,7 +213,7 @@ function collectClientLocalSqliteFacts() {
   return {
     ...runtimeFacts,
     fixtureBaselineExists: fileExists(
-      "tests/fixtures/database/sqlite/ddl/baseline/0001_clawrouter_baseline.sql",
+      "tests/fixtures/database/sqlite/ddl/baseline/0001_cloudrouter_baseline.sql",
     ),
     fixtureMigrationFiles: listDir("tests/fixtures/database/sqlite/migrations")
       .filter((file) => file.endsWith(".sql"))
@@ -226,7 +226,7 @@ function collectClientLocalSqliteFacts() {
 
 function collectI18nFacts() {
   const i18nIndexPath =
-    "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-i18n/src/index.ts";
+    "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-i18n/src/index.ts";
   if (!fileExists(i18nIndexPath)) return { exists: false };
   const text = readText(i18nIndexPath);
   const supportedLngsMatch = text.match(/SUPPORTED_LNGS\s*=\s*\[([^\]]+)\]/);
@@ -247,7 +247,7 @@ function collectI18nFacts() {
 
 function collectCircuitBreakerFacts() {
   const cbPath =
-    "services/sdkwork-clawrouter-router-service/src/application/invocation/circuit_breaker.rs";
+    "services/sdkwork-cloudrouter-router-service/src/application/invocation/circuit_breaker.rs";
   if (!fileExists(cbPath)) {
     return { exists: false, implemented: false };
   }
@@ -264,7 +264,7 @@ function collectCircuitBreakerFacts() {
 
 function collectIdempotencyFacts() {
   const idemPath =
-    "services/sdkwork-clawrouter-router-service/src/application/invocation/idempotency.rs";
+    "services/sdkwork-cloudrouter-router-service/src/application/invocation/idempotency.rs";
   if (!fileExists(idemPath)) {
     return { exists: false, implemented: false };
   }
@@ -281,9 +281,9 @@ function collectIdempotencyFacts() {
 
 function collectStreamingFacts() {
   const dispatcherPath =
-    "crates/sdkwork-clawrouter-edge-runtime/src/invocation_dispatcher.rs";
+    "crates/sdkwork-cloudrouter-edge-runtime/src/invocation_dispatcher.rs";
   const passthroughTransportPath =
-    "crates/sdkwork-clawrouter-edge-runtime/src/provider_passthrough_transport.rs";
+    "crates/sdkwork-cloudrouter-edge-runtime/src/provider_passthrough_transport.rs";
   const dispatcherText = fileExists(dispatcherPath) ? readText(dispatcherPath) : "";
   const transportText = fileExists(passthroughTransportPath) ? readText(passthroughTransportPath) : "";
   return {
@@ -295,8 +295,8 @@ function collectStreamingFacts() {
 }
 
 function collectAppSessionSigningFacts() {
-  const appSessionPath = "crates/sdkwork-claw-config/src/app_session.rs";
-  const authPath = "crates/sdkwork-claw-http/src/auth.rs";
+  const appSessionPath = "crates/sdkwork-cloudrouter-config/src/app_session.rs";
+  const authPath = "crates/sdkwork-cloudrouter-http/src/auth.rs";
   if (!fileExists(appSessionPath) || !fileExists(authPath)) {
     return { exists: false };
   }
@@ -327,7 +327,7 @@ function collectProviderAdapterFacts() {
   const alicloudPath = "crates/provider-adapters/alicloud/src/lib.rs";
   const alicloudSignerPath = "crates/provider-adapters/alicloud/src/common/signer_v3.rs";
   const alicloudCargoPath = "crates/provider-adapters/alicloud/Cargo.toml";
-  const paasPluginPath = "crates/sdkwork-claw-paas-plugin/src/plugin.rs";
+  const paasPluginPath = "crates/sdkwork-cloudrouter-paas-plugin/src/plugin.rs";
 
   const alicloudLib = fileExists(alicloudPath) ? readText(alicloudPath) : "";
   const alicloudSigner = fileExists(alicloudSignerPath) ? readText(alicloudSignerPath) : "";
@@ -452,7 +452,7 @@ function collectTechArchFacts() {
 }
 
 function collectMetricsFacts() {
-  const metricsPath = "crates/sdkwork-claw-http/src/metrics.rs";
+  const metricsPath = "crates/sdkwork-cloudrouter-http/src/metrics.rs";
   if (!fileExists(metricsPath)) return { exists: false };
   const text = readText(metricsPath);
   return {
@@ -464,11 +464,11 @@ function collectMetricsFacts() {
 }
 
 function collectTableConsistencyFacts() {
-  // Count claw-router-owned tables across the three owned sources of truth.
+  // Count cloud-router-owned tables across the three owned sources of truth.
   // The 90-table effective registry and 154-table catalog include sibling
   // module tables (iam, commerce, etc.) and are NOT drift 锟??they are a
-  // scope difference. The claw-router-owned count must be consistent.
-  const ddlPath = "database/ddl/baseline/postgres/0001_clawrouter_baseline.sql";
+  // scope difference. The cloud-router-owned count must be consistent.
+  const ddlPath = "database/ddl/baseline/postgres/0001_cloudrouter_baseline.sql";
   const registryPath = "database/contract/table-registry.json";
   const schemaYamlPath = "database/contract/schema.yaml";
 
@@ -498,14 +498,14 @@ function collectTableConsistencyFacts() {
     counts,
     consistent,
     note: consistent
-      ? "claw-router-owned tables consistent across DDL, table-registry.json, and schema.yaml"
-      : "drift detected in claw-router-owned table counts",
+      ? "cloud-router-owned tables consistent across DDL, table-registry.json, and schema.yaml"
+      : "drift detected in cloud-router-owned table counts",
   };
 }
 
 function collectTablePartitionFacts() {
   // Engine-specific partitioning is applied through reviewed PostgreSQL migrations.
-  const ddlPath = "database/ddl/baseline/postgres/0001_clawrouter_baseline.sql";
+  const ddlPath = "database/ddl/baseline/postgres/0001_cloudrouter_baseline.sql";
   const migrationDir = "database/migrations/postgres";
   const strategyPath = "docs/architecture/tech/TECH-35-high-volume-ledger-evolution.md";
   const requiredTables = [

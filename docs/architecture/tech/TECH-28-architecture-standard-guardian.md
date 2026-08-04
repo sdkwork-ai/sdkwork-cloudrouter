@@ -1,11 +1,11 @@
 > Migrated from `docs/28-architecture-standard-guardian.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
-# sdkwork-clawrouter Architecture Standard Guardian
+# sdkwork-cloudrouter Architecture Standard Guardian
 
 ## 1. 目标
 
-`tools.architecture_standard_guardian` 用于防止架构文档重新漂回旧的主实现路线。`sdkwork-clawrouter` 的当前裁决是：
+`tools.architecture_standard_guardian` 用于防止架构文档重新漂回旧的主实现路线。`sdkwork-cloudrouter` 的当前裁决是：
 
 ```text
 Rust-first Modular Runtime
@@ -50,9 +50,9 @@ docs/09-部署架构设计.md
 
 - `docs/02-技术架构设计.md`
   - `Rust-first`
-  - `sdkwork-clawrouter-edge-runtime`
-  - `sdkwork-clawrouter-standalone-gateway`
-  - `sdkwork-clawrouter-admin-gateway`
+  - `sdkwork-cloudrouter-edge-runtime`
+  - `sdkwork-cloudrouter-standalone-gateway`
+  - `sdkwork-cloudrouter-admin-gateway`
   - `/app/v3/api`
   - `/backend/v3/api`
   - `/v1`
@@ -86,10 +86,10 @@ docs/09-部署架构设计.md
   - `server`
   - `docker`
   - `kubernetes`
-  - `SDKWORK_CLAW_DEPLOYMENT_MODE`
-  - `SDKWORK_CLAW_GATEWAY_BIND`
-  - `SDKWORK_CLAW_APP_API_BIND`
-  - `SDKWORK_CLAW_ADMIN_API_BIND`
+  - `SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE`
+  - `SDKWORK_CLOUDROUTER_GATEWAY_BIND`
+  - `SDKWORK_CLOUDROUTER_APP_API_BIND`
+  - `SDKWORK_CLOUDROUTER_ADMIN_API_BIND`
 
 ## 5. 命令
 

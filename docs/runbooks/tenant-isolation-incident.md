@@ -1,8 +1,8 @@
-# SDKWork Claw Router - Tenant Isolation Incident Runbook
+# SDKWork Cloud Router - Tenant Isolation Incident Runbook
 
 **Document Version:** 1.0
 **Last Updated:** 2026-06-27
-**Owner:** Security / clawrouter-security
+**Owner:** Security / cloudrouter-security
 **Review Frequency:** Quarterly
 **Severity:** P0 (data breach class)
 
@@ -26,7 +26,7 @@
 A request authenticated as tenant A unexpectedly reads or modifies data
 belonging to tenant B. Per [SECURITY.md](../../SECURITY.md), any cross-tenant
 data access is treated as Critical regardless of exploit complexity, because
-the multi-tenant trust boundary is the core security invariant of Claw Router.
+the multi-tenant trust boundary is the core security invariant of Cloud Router.
 
 The boundary is normally enforced by:
 
@@ -35,7 +35,7 @@ The boundary is normally enforced by:
   repository boundary.
 - Schema-registry owned-table prefixes per capability.
 - App session tokens signed with the shared HMAC secret
-  (`SDKWORK_CLAW_APP_SESSION_SECRET`).
+  (`SDKWORK_CLOUDROUTER_APP_SESSION_SECRET`).
 
 An isolation failure means one of these enforcement layers was bypassed.
 
@@ -63,14 +63,14 @@ boundary, and freeze the affected tenant(s) to stop further data movement:
 
 ```bash
 # Suspend the implicated API key (admin-only, membership_kind=admin required)
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
   curl -sS -X PATCH http://localhost:8080/admin/api-keys/<api-key-id> \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
     -d '{"status": "suspended"}'
 
 # If a tenant-wide freeze is required
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
   curl -sS -X PATCH http://localhost:8080/admin/tenants/<tenant-id> \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
@@ -94,7 +94,7 @@ ORDER BY created_at;
 
 ```bash
 # Capture distributed traces for the implicated request ids
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
   curl -s "http://otel-collector:4318/api/traces?tenant_id=<tenantA>" > traces.json
 ```
 
@@ -116,7 +116,7 @@ Redis keys for rate limiting, idempotency, and circuit breaker state MUST
 embed the `tenant_id` so one tenant cannot read another tenant's counters:
 
 ```bash
-kubectl exec -it deploy/redis-primary -n clawrouter -- redis-cli --scan \
+kubectl exec -it deploy/redis-primary -n cloudrouter -- redis-cli --scan \
   --pattern 'ratelimit:*' | head -50
 # Expected: ratelimit:{tenant_id}:{scope}:...
 # Investigate any key missing the tenant_id segment.

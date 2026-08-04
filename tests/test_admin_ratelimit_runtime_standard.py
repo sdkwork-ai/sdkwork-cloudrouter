@@ -7,18 +7,18 @@ from tools.api_contract_manifest import ApiContractManifestGenerator
 
 ROOT = Path(__file__).resolve().parents[1]
 SERVICE_SOURCE = (
-    "apps/sdkwork-clawrouter-pc/packages/"
-    "sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts"
+    "apps/sdkwork-cloudrouter-pc/packages/"
+    "sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts"
 )
-BACKEND_OPENAPI = ROOT / "generated" / "openapi" / "clawrouter-backend-openapi.json"
+BACKEND_OPENAPI = ROOT / "generated" / "openapi" / "cloudrouter-backend-openapi.json"
 BACKEND_SDK_ROOT = (
     ROOT
     / "sdks"
-    / "clawrouter-backend-sdk"
-    / "clawrouter-backend-sdk-typescript"
+    / "cloudrouter-backend-sdk"
+    / "cloudrouter-backend-sdk-typescript"
     / "src"
 )
-ROUTER_SERVICE_ROOT = ROOT / "services" / "sdkwork-clawrouter-router-service"
+ROUTER_SERVICE_ROOT = ROOT / "services" / "sdkwork-cloudrouter-router-service"
 
 
 class AdminRateLimitRuntimeStandardTest(unittest.TestCase):

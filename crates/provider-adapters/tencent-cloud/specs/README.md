@@ -10,7 +10,7 @@ Root SDKWork standards remain authoritative. Local component specs can narrow or
 | --- | --- |
 | Name | `sdkwork-provider-adapter-tencent-cloud` |
 | Type | `rust-crate` |
-| Root | `sdkwork-clawrouter/crates/provider-adapters/tencent-cloud` |
+| Root | `sdkwork-cloudrouter/crates/provider-adapters/tencent-cloud` |
 | Domain | `platform` |
 | Capability | `router` |
 | Languages | `rust` |
@@ -52,4 +52,4 @@ Root SDKWork standards remain authoritative. Local component specs can narrow or
 
 ## Verification
 
-- `cargo test --manifest-path apps/sdkwork-clawrouter/crates/provider-adapters/tencent-cloud/Cargo.toml`
+- `cargo test --manifest-path apps/sdkwork-cloudrouter/crates/provider-adapters/tencent-cloud/Cargo.toml`

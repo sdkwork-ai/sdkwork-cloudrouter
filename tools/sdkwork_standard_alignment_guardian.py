@@ -34,13 +34,13 @@ class AlignmentGuardianResult:
 
 
 class SdkworkStandardAlignmentGuardian:
-    """Audit sdkwork-clawrouter against sdkwork-specs framework integration requirements."""
+    """Audit sdkwork-cloudrouter against sdkwork-specs framework integration requirements."""
 
     ROOT_COMPONENT_SPEC = "specs/component.spec.json"
     WORKFLOW_MANIFEST = "sdkwork.workflow.json"
     CARGO_MANIFEST = "Cargo.toml"
     DATABASE_POSTGRES_STORE_ROOT = (
-        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres"
     )
     DATABASE_POSTGRES_STORE_GLOB = "**/*_store.rs"
 
@@ -87,17 +87,17 @@ class SdkworkStandardAlignmentGuardian:
     )
 
     HTTP_ROUTE_CRATES: tuple[str, ...] = (
-        "crates/sdkwork-routes-clawrouter-app-api",
-        "crates/sdkwork-routes-clawrouter-backend-api",
+        "crates/sdkwork-routes-cloudrouter-app-api",
+        "crates/sdkwork-routes-cloudrouter-backend-api",
     )
     IAM_RESOLVER_CANONICAL_IMPORT = "IamWebRequestContextResolver"
     IAM_RESOLVER_LEGACY_IMPORT = "IamDatabaseWebRequestContextResolver"
     IAM_RESOLVER_CANONICAL_FACTORY = "iam_web_request_context_resolver_from_env"
     IAM_RESOLVER_LEGACY_FACTORY = "iam_database_resolver_from_env"
-    IAM_RESOLVER_CLAW_INTEGRATION_FILE = (
-        "crates/sdkwork-claw-http/src/federated_database_env.rs"
+    IAM_RESOLVER_CLOUD_INTEGRATION_FILE = (
+        "crates/sdkwork-cloudrouter-http/src/federated_database_env.rs"
     )
-    IAM_RESOLVER_CLAW_INTEGRATION_MARKERS: tuple[str, ...] = (
+    IAM_RESOLVER_CLOUD_INTEGRATION_MARKERS: tuple[str, ...] = (
         "ensure_workspace_database_env_from_config",
     )
 
@@ -323,7 +323,7 @@ class SdkworkStandardAlignmentGuardian:
             schema_errors.append("component must be an object")
         else:
             expected_component_identity = {
-                "name": "sdkwork-clawrouter",
+                "name": "sdkwork-cloudrouter",
                 "root": ".",
                 "type": "app",
             }
@@ -544,19 +544,19 @@ class SdkworkStandardAlignmentGuardian:
                     )
                 )
 
-        claw_http = self.root / "crates" / "sdkwork-claw-http"
+        cloud_http = self.root / "crates" / "sdkwork-cloudrouter-http"
         web_bootstrap = self.root / self.HTTP_ROUTE_CRATES[0] / "src" / "web_bootstrap.rs"
         bootstrap_text = (
             web_bootstrap.read_text(encoding="utf-8") if web_bootstrap.exists() else ""
         )
-        auth_rs = claw_http / "src" / "auth.rs"
+        auth_rs = cloud_http / "src" / "auth.rs"
         auth_text = auth_rs.read_text(encoding="utf-8") if auth_rs.exists() else ""
         web_framework_defaults_on = (
-            "claw_web_framework_enabled_from_env" in (claw_http / "src" / "web_framework_compat.rs").read_text(encoding="utf-8")
-            if (claw_http / "src" / "web_framework_compat.rs").exists()
+            "cloud_web_framework_enabled_from_env" in (cloud_http / "src" / "web_framework_compat.rs").read_text(encoding="utf-8")
+            if (cloud_http / "src" / "web_framework_compat.rs").exists()
             else ""
         )
-        bypasses_legacy_boundary = "claw_web_framework_enabled_from_env()" in auth_text
+        bypasses_legacy_boundary = "cloud_web_framework_enabled_from_env()" in auth_text
         injects_trusted_subject = (
             "inject_legacy_handler_context_from_web_context" in bootstrap_text
             or "inject_legacy_handler_context_from_web_context"
@@ -568,10 +568,10 @@ class SdkworkStandardAlignmentGuardian:
             )
         )
         projects_subject_middleware = "project_trusted_subject_from_web_request_context" in (
-            claw_http / "src" / "web_framework_compat.rs"
-        ).read_text(encoding="utf-8") if (claw_http / "src" / "web_framework_compat.rs").exists() else ""
+            cloud_http / "src" / "web_framework_compat.rs"
+        ).read_text(encoding="utf-8") if (cloud_http / "src" / "web_framework_compat.rs").exists() else ""
         if (
-            claw_http.exists()
+            cloud_http.exists()
             and web_framework_defaults_on
             and bypasses_legacy_boundary
             and injects_trusted_subject
@@ -583,29 +583,29 @@ class SdkworkStandardAlignmentGuardian:
                     category="web-framework",
                     severity="blocking",
                     status="pass",
-                    message="sdkwork-web-framework owns auth/context; legacy claw-http boundaries bypass when framework is active",
+                    message="sdkwork-web-framework owns auth/context; legacy cloud-http boundaries bypass when framework is active",
                     remediation="",
                 )
             )
-        elif claw_http.exists() and web_framework_defaults_on:
+        elif cloud_http.exists() and web_framework_defaults_on:
             checks.append(
                 AlignmentCheck(
                     id="web-framework-local-http-stack",
                     category="web-framework",
                     severity="warning",
                     status="fail",
-                    message="sdkwork-web-framework is default-on but legacy claw-http auth bypass/projection is incomplete",
+                    message="sdkwork-web-framework is default-on but legacy cloud-http auth bypass/projection is incomplete",
                     remediation="ensure auth.rs bypasses legacy boundaries and web_bootstrap injects TrustedRequestSubject",
                 )
             )
-        elif claw_http.exists():
+        elif cloud_http.exists():
             checks.append(
                 AlignmentCheck(
                     id="web-framework-local-http-stack",
                     category="web-framework",
                     severity="warning",
                     status="fail",
-                    message="local sdkwork-claw-http stack still owns HTTP auth/context; migrate to sdkwork-web-framework",
+                    message="local sdkwork-cloudrouter-http stack still owns HTTP auth/context; migrate to sdkwork-web-framework",
                     remediation="retire competing interceptor/context logic per WEB_FRAMEWORK_SPEC.md migration plan",
                 )
             )
@@ -632,7 +632,7 @@ class SdkworkStandardAlignmentGuardian:
                 )
             )
 
-        gateway_runtime = self.root / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs"
+        gateway_runtime = self.root / "crates" / "sdkwork-cloudrouter-edge-runtime" / "src" / "runtime.rs"
         gateway_text = (
             gateway_runtime.read_text(encoding="utf-8") if gateway_runtime.exists() else ""
         )
@@ -668,7 +668,7 @@ class SdkworkStandardAlignmentGuardian:
 
     def _check_handler_subject_resolution(self) -> list[AlignmentCheck]:
         checks: list[AlignmentCheck] = []
-        api_dir = self.root / "services" / "sdkwork-clawrouter-router-service" / "src" / "api"
+        api_dir = self.root / "services" / "sdkwork-cloudrouter-router-service" / "src" / "api"
         allowlist = {"subject.rs", "openai_invocation.rs", "openai_chat.rs", "openai_embeddings.rs", "openai_models.rs", "openai_responses.rs"}
         legacy_files: list[str] = []
         migrated_files: list[str] = []
@@ -700,7 +700,7 @@ class SdkworkStandardAlignmentGuardian:
                 ),
                 remediation=(
                     "replace header parsing with sdkwork-web-framework-aware extractors; "
-                    "see services/sdkwork-clawrouter-router-service/src/api/subject.rs"
+                    "see services/sdkwork-cloudrouter-router-service/src/api/subject.rs"
                 ),
             )
         )
@@ -750,7 +750,7 @@ class SdkworkStandardAlignmentGuardian:
                 )
             )
 
-        product_src = self.root / "services" / "sdkwork-clawrouter-router-service" / "src"
+        product_src = self.root / "services" / "sdkwork-cloudrouter-router-service" / "src"
         rust_usage_files = 0
         if product_src.exists():
             for path in product_src.rglob("*.rs"):
@@ -775,8 +775,8 @@ class SdkworkStandardAlignmentGuardian:
             )
         )
 
-        pc_root = self.root / "apps" / "sdkwork-clawrouter-pc"
-        commons_pkg = pc_root / "packages" / "sdkwork-clawroutes-pc-commons" / "package.json"
+        pc_root = self.root / "apps" / "sdkwork-cloudrouter-pc"
+        commons_pkg = pc_root / "packages" / "sdkwork-cloudroutes-pc-commons" / "package.json"
         pc_pkg = pc_root / "package.json"
         has_ts_dep = False
         for manifest in (commons_pkg, pc_pkg):
@@ -796,7 +796,7 @@ class SdkworkStandardAlignmentGuardian:
                 ),
                 remediation=(
                     "add ../../../sdkwork-utils/packages/sdkwork-utils-typescript to pnpm workspace "
-                    "and declare @sdkwork/utils in sdkwork-clawroutes-pc-commons"
+                    "and declare @sdkwork/utils in sdkwork-cloudroutes-pc-commons"
                 ),
             )
         )
@@ -813,7 +813,7 @@ class SdkworkStandardAlignmentGuardian:
                     continue
                 if (
                     "@sdkwork/utils" in text
-                    or "sdkwork-clawroutes-pc-commons/sdkwork-utils" in text
+                    or "sdkwork-cloudroutes-pc-commons/sdkwork-utils" in text
                 ):
                     ts_usage_files += 1
         app_src = pc_root / "src"
@@ -827,7 +827,7 @@ class SdkworkStandardAlignmentGuardian:
                     continue
                 if (
                     "@sdkwork/utils" in text
-                    or "sdkwork-clawroutes-pc-commons/sdkwork-utils" in text
+                    or "sdkwork-cloudroutes-pc-commons/sdkwork-utils" in text
                 ):
                     ts_usage_files += 1
         checks.append(
@@ -841,14 +841,14 @@ class SdkworkStandardAlignmentGuardian:
                     if ts_usage_files
                     else "PC application declares @sdkwork/utils but has no imports yet"
                 ),
-                remediation="import helpers from sdkwork-clawroutes-pc-commons/sdkwork-utils instead of local duplicates",
+                remediation="import helpers from sdkwork-cloudroutes-pc-commons/sdkwork-utils instead of local duplicates",
             )
         )
         return checks
 
     def _check_database_framework_integration(self) -> list[AlignmentCheck]:
         checks: list[AlignmentCheck] = []
-        gateway_runtime = self.root / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs"
+        gateway_runtime = self.root / "crates" / "sdkwork-cloudrouter-edge-runtime" / "src" / "runtime.rs"
         gateway_text = gateway_runtime.read_text(encoding="utf-8") if gateway_runtime.exists() else ""
         if "sdkwork_database_sqlx" in gateway_text:
             checks.append(
@@ -873,10 +873,10 @@ class SdkworkStandardAlignmentGuardian:
                 )
             )
 
-        product_cargo = self.root / "services" / "sdkwork-clawrouter-router-service" / "Cargo.toml"
+        product_cargo = self.root / "services" / "sdkwork-cloudrouter-router-service" / "Cargo.toml"
         product_text = product_cargo.read_text(encoding="utf-8") if product_cargo.exists() else ""
         if "sdkwork-database-repository" in product_text:
-            product_rs_files = list((self.root / "services" / "sdkwork-clawrouter-router-service" / "src").rglob("*.rs"))
+            product_rs_files = list((self.root / "services" / "sdkwork-cloudrouter-router-service" / "src").rglob("*.rs"))
             uses_repository = any(
                 "sdkwork_database_repository" in path.read_text(encoding="utf-8") for path in product_rs_files
             )
@@ -918,17 +918,17 @@ class SdkworkStandardAlignmentGuardian:
                 )
 
         server_runtime_files = [
-            self.root / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs",
-            self.root / "crates" / "sdkwork-routes-clawrouter-app-api" / "src" / "routes.rs",
-            self.root / "crates" / "sdkwork-routes-clawrouter-app-api" / "src" / "commerce_runtime.rs",
-            self.root / "crates" / "sdkwork-routes-clawrouter-backend-api" / "src" / "routes.rs",
+            self.root / "crates" / "sdkwork-cloudrouter-edge-runtime" / "src" / "runtime.rs",
+            self.root / "crates" / "sdkwork-routes-cloudrouter-app-api" / "src" / "routes.rs",
+            self.root / "crates" / "sdkwork-routes-cloudrouter-app-api" / "src" / "commerce_runtime.rs",
+            self.root / "crates" / "sdkwork-routes-cloudrouter-backend-api" / "src" / "routes.rs",
         ]
         forbidden_sqlite_runtime_tokens = (
             "DatabaseEngine::Sqlite",
             "DatabasePool::Sqlite",
             "SqlitePool",
             "router_with_sqlite",
-            "connect_claw_sqlite",
+            "connect_cloud_sqlite",
             "for_sqlite",
             "as_sqlite",
         )
@@ -1007,7 +1007,7 @@ class SdkworkStandardAlignmentGuardian:
         expected_identity = {
             "schemaVersion": 3,
             "kind": "sdkwork.database-store-migration",
-            "application": "sdkwork-clawrouter",
+            "application": "sdkwork-cloudrouter",
             "authority": "../sdkwork-specs/DATABASE_SPEC.md",
             "databaseRole": "authoritative-server",
             "engines": ["postgres"],
@@ -1111,7 +1111,7 @@ class SdkworkStandardAlignmentGuardian:
 
             target_crate = entry.get("targetCrate")
             expected_crate = (
-                f"crates/sdkwork-clawrouter-{capability}-repository-sqlx"
+                f"crates/sdkwork-cloudrouter-{capability}-repository-sqlx"
                 if isinstance(capability, str)
                 else None
             )
@@ -1242,7 +1242,7 @@ class SdkworkStandardAlignmentGuardian:
                         severity="blocking",
                         status="fail",
                         message=f"{route_crate} is missing generated http_route_manifest.rs",
-                        remediation="run node tools/generate-clawrouter-http-route-manifest-rs.mjs --apply",
+                        remediation="run node tools/generate-cloudrouter-http-route-manifest-rs.mjs --apply",
                     )
                 )
                 continue
@@ -1250,12 +1250,12 @@ class SdkworkStandardAlignmentGuardian:
             wires_route_manifest = (
                 (
                     "http_route_manifest()" in bootstrap_text
-                    or "claw_router_app_http_route_manifest()" in bootstrap_text
+                    or "cloud_router_app_http_route_manifest()" in bootstrap_text
                 )
                 and (
                     "WebFrameworkLayer::new" in bootstrap_text
                     or "build_web_framework_layer" in bootstrap_text
-                    or "build_claw_router_" in bootstrap_text
+                    or "build_cloud_router_" in bootstrap_text
                 )
             )
             if wires_route_manifest:
@@ -1362,14 +1362,14 @@ class SdkworkStandardAlignmentGuardian:
 
     def _check_pc_package_taxonomy(self) -> list[AlignmentCheck]:
         checks: list[AlignmentCheck] = []
-        pc_root = self.root / "apps" / "sdkwork-clawrouter-pc" / "packages"
+        pc_root = self.root / "apps" / "sdkwork-cloudrouter-pc" / "packages"
         if not pc_root.exists():
             return checks
 
         required_shells = (
-            "sdkwork-clawrouter-pc-shell",
-            "sdkwork-clawrouter-pc-console-shell",
-            "sdkwork-clawrouter-pc-admin-shell",
+            "sdkwork-cloudrouter-pc-shell",
+            "sdkwork-cloudrouter-pc-console-shell",
+            "sdkwork-cloudrouter-pc-admin-shell",
         )
         missing_shells = [
             package_name
@@ -1404,36 +1404,36 @@ class SdkworkStandardAlignmentGuardian:
             for path in pc_root.iterdir()
             if path.is_dir() and (path / "package.json").exists()
         ]
-        clawrouter_dirs = [name for name in package_dirs if name.startswith("sdkwork-clawrouter-pc-")]
+        cloudrouter_dirs = [name for name in package_dirs if name.startswith("sdkwork-cloudrouter-pc-")]
         scoped_names = 0
-        for package_dir in clawrouter_dirs:
+        for package_dir in cloudrouter_dirs:
             package_json = pc_root / package_dir / "package.json"
             if not package_json.exists():
                 continue
             data = json.loads(package_json.read_text(encoding="utf-8"))
             name = data.get("name")
-            if isinstance(name, str) and name.startswith("@sdkwork/clawrouter-pc-"):
+            if isinstance(name, str) and name.startswith("@sdkwork/cloudrouter-pc-"):
                 scoped_names += 1
-        if clawrouter_dirs and scoped_names == len(clawrouter_dirs):
+        if cloudrouter_dirs and scoped_names == len(cloudrouter_dirs):
             checks.append(
                 AlignmentCheck(
                     id="pc-package-application-code",
                     category="naming",
                     severity="blocking",
                     status="pass",
-                    message="PC packages use canonical clawrouter application code with @sdkwork/clawrouter-pc-* npm names",
+                    message="PC packages use canonical cloudrouter application code with @sdkwork/cloudrouter-pc-* npm names",
                     remediation="",
                 )
             )
-        elif clawrouter_dirs:
+        elif cloudrouter_dirs:
             checks.append(
                 AlignmentCheck(
                     id="pc-package-application-code",
                     category="naming",
                     severity="blocking",
                     status="fail",
-                    message="PC package directories exist but npm names are not fully migrated to @sdkwork/clawrouter-pc-*",
-                    remediation="run node scripts/migrate-clawrouter-naming-standard.mjs",
+                    message="PC package directories exist but npm names are not fully migrated to @sdkwork/cloudrouter-pc-*",
+                    remediation="run node scripts/migrate-cloudrouter-naming-standard.mjs",
                 )
             )
         else:
@@ -1443,13 +1443,13 @@ class SdkworkStandardAlignmentGuardian:
                     category="naming",
                     severity="blocking",
                     status="fail",
-                    message="PC package taxonomy missing sdkwork-clawrouter-pc-* directories",
-                    remediation="create packages under apps/sdkwork-clawrouter-pc/packages per APP_PC_ARCHITECTURE_SPEC.md",
+                    message="PC package taxonomy missing sdkwork-cloudrouter-pc-* directories",
+                    remediation="create packages under apps/sdkwork-cloudrouter-pc/packages per APP_PC_ARCHITECTURE_SPEC.md",
                 )
             )
 
         legacy_repo_refs = 0
-        legacy_stem = "sdkwork-claw-router"
+        legacy_stem = "sdkwork-cloudrouter-router"
         for relative in ("sdkwork.app.config.json", "sdkwork.workflow.json", "specs/component.spec.json"):
             file_path = self.root / relative
             if file_path.exists() and legacy_stem in file_path.read_text(encoding="utf-8"):
@@ -1457,18 +1457,18 @@ class SdkworkStandardAlignmentGuardian:
         if legacy_repo_refs == 0:
             checks.append(
                 AlignmentCheck(
-                    id="repository-stem-clawrouter",
+                    id="repository-stem-cloudrouter",
                     category="naming",
                     severity="blocking",
                     status="pass",
-                    message="governance manifests use canonical sdkwork-clawrouter stem",
+                    message="governance manifests use canonical sdkwork-cloudrouter stem",
                     remediation="",
                 )
             )
         else:
             checks.append(
                 AlignmentCheck(
-                    id="repository-stem-clawrouter",
+                    id="repository-stem-cloudrouter",
                     category="naming",
                     severity="blocking",
                     status="fail",
@@ -1602,7 +1602,7 @@ class SdkworkStandardAlignmentGuardian:
         profile_ids = [
             line.split("=", 1)[1].strip()
             for line in profile_text.splitlines()
-            if line.strip().startswith("SDKWORK_CLAW_ROUTER_PROFILE_ID=")
+            if line.strip().startswith("SDKWORK_CLOUDROUTER_ROUTER_PROFILE_ID=")
         ]
         if profile_ids != [expected_profile_id]:
             return AlignmentCheck(
@@ -1612,7 +1612,7 @@ class SdkworkStandardAlignmentGuardian:
                 status="fail",
                 message="standalone production profile must declare its exact canonical profile id once",
                 remediation=(
-                    f"set SDKWORK_CLAW_ROUTER_PROFILE_ID={expected_profile_id} in "
+                    f"set SDKWORK_CLOUDROUTER_ROUTER_PROFILE_ID={expected_profile_id} in "
                     f"{expected_relative_path}"
                 ),
             )
@@ -1717,18 +1717,18 @@ class SdkworkStandardAlignmentGuardian:
     def _check_rust_service_naming(self) -> list[AlignmentCheck]:
         checks: list[AlignmentCheck] = []
         forbidden_legacy_paths = (
-            "services/sdkwork-claw-product",
-            "services/sdkwork-claw-app",
-            "services/sdkwork-claw-admin",
-            "services/sdkwork-clawrouter-gateway",
-            "crates/sdkwork-claw-product-test-support",
+            "services/sdkwork-cloudrouter-product",
+            "services/sdkwork-cloudrouter-app",
+            "services/sdkwork-cloudrouter-admin",
+            "services/sdkwork-cloudrouter-gateway",
+            "crates/sdkwork-cloudrouter-product-test-support",
         )
         canonical_service_paths = (
-            "services/sdkwork-clawrouter-router-service",
-            "services/sdkwork-clawrouter-app-api-server",
-            "services/sdkwork-clawrouter-admin-api-server",
-            "crates/sdkwork-clawrouter-edge-runtime",
-            "crates/sdkwork-clawrouter-standalone-gateway",
+            "services/sdkwork-cloudrouter-router-service",
+            "services/sdkwork-cloudrouter-app-api-server",
+            "services/sdkwork-cloudrouter-admin-api-server",
+            "crates/sdkwork-cloudrouter-edge-runtime",
+            "crates/sdkwork-cloudrouter-standalone-gateway",
         )
         migration_manifest = self.root / "specs" / "naming-migration.manifest.json"
         pending_paths: set[str] = set()
@@ -1778,21 +1778,21 @@ class SdkworkStandardAlignmentGuardian:
     def _check_iam_resolver_standardization(self) -> list[AlignmentCheck]:
         checks: list[AlignmentCheck] = []
 
-        integration_path = self.root / self.IAM_RESOLVER_CLAW_INTEGRATION_FILE
+        integration_path = self.root / self.IAM_RESOLVER_CLOUD_INTEGRATION_FILE
         if integration_path.exists():
             integration_text = integration_path.read_text(encoding="utf-8", errors="ignore")
             is_canonical_integration = all(
-                marker in integration_text for marker in self.IAM_RESOLVER_CLAW_INTEGRATION_MARKERS
+                marker in integration_text for marker in self.IAM_RESOLVER_CLOUD_INTEGRATION_MARKERS
             )
             if is_canonical_integration:
                 checks.append(
                     AlignmentCheck(
-                        id="iam-resolver-claw-integration-factory",
+                        id="iam-resolver-cloud-integration-factory",
                         category="iam",
                         severity="blocking",
                         status="pass",
                         message=(
-                            f"{self.IAM_RESOLVER_CLAW_INTEGRATION_FILE} provides claw-specific "
+                            f"{self.IAM_RESOLVER_CLOUD_INTEGRATION_FILE} provides cloud-specific "
                             "IAM database environment materialization without a local resolver wrapper"
                         ),
                         remediation="",
@@ -1801,13 +1801,13 @@ class SdkworkStandardAlignmentGuardian:
             else:
                 checks.append(
                     AlignmentCheck(
-                        id="iam-resolver-claw-integration-factory",
+                        id="iam-resolver-cloud-integration-factory",
                         category="iam",
                         severity="blocking",
                         status="fail",
                         message=(
-                            f"{self.IAM_RESOLVER_CLAW_INTEGRATION_FILE} exists but is not the "
-                            "canonical claw IAM database environment integration"
+                            f"{self.IAM_RESOLVER_CLOUD_INTEGRATION_FILE} exists but is not the "
+                            "canonical cloud IAM database environment integration"
                         ),
                         remediation=(
                             "implement ensure_workspace_database_env_from_config per WEB_FRAMEWORK_SPEC.md"
@@ -1817,13 +1817,13 @@ class SdkworkStandardAlignmentGuardian:
         else:
             checks.append(
                 AlignmentCheck(
-                    id="iam-resolver-claw-integration-factory",
+                    id="iam-resolver-cloud-integration-factory",
                     category="iam",
                     severity="blocking",
                     status="fail",
                     message=(
-                        f"missing claw IAM database environment integration at "
-                        f"{self.IAM_RESOLVER_CLAW_INTEGRATION_FILE}"
+                        f"missing cloud IAM database environment integration at "
+                        f"{self.IAM_RESOLVER_CLOUD_INTEGRATION_FILE}"
                     ),
                     remediation=(
                         "add federated_database_env.rs for IAM database env materialization and wire "
@@ -1833,8 +1833,8 @@ class SdkworkStandardAlignmentGuardian:
             )
 
         deprecated_wrapper_paths = (
-            "crates/sdkwork-claw-http/src/iam_web_resolver.rs",
-            "crates/sdkwork-claw-http/src/web_resolver.rs",
+            "crates/sdkwork-cloudrouter-http/src/iam_web_resolver.rs",
+            "crates/sdkwork-cloudrouter-http/src/web_resolver.rs",
         )
         for relative in deprecated_wrapper_paths:
             wrapper_path = self.root / relative
@@ -1980,9 +1980,9 @@ class SdkworkStandardAlignmentGuardian:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Audit sdkwork-clawrouter alignment with sdkwork-specs framework standards."
+        description="Audit sdkwork-cloudrouter alignment with sdkwork-specs framework standards."
     )
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     parser.add_argument(
         "--strict",
         action="store_true",

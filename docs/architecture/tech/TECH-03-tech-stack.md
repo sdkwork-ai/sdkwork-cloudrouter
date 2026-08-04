@@ -1,11 +1,11 @@
 > Migrated from `docs/03-技术选型.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
-# sdkwork-clawrouter 技术选型
+# sdkwork-cloudrouter 技术选型
 
 ## 1. 选型原则
 
-`sdkwork-clawrouter` 采用 Rust-first 技术路线。组合模块（Commerce、IAM、Models 等）通过生成 SDK 与安装时 schema 组合接入，不作为 Claw Router runtime 主实现语言。
+`sdkwork-cloudrouter` 采用 Rust-first 技术路线。组合模块（Commerce、IAM、Models 等）通过生成 SDK 与安装时 schema 组合接入，不作为 Cloud Router runtime 主实现语言。
 
 选型原则：
 
@@ -38,29 +38,29 @@
 当前已落地的最小 workspace：
 
 ```text
-crates/sdkwork-claw-contract
-crates/sdkwork-claw-config
-crates/sdkwork-claw-health
-crates/sdkwork-claw-observability
-crates/sdkwork-clawrouter-edge-runtime
-services/sdkwork-clawrouter-standalone-gateway
-services/sdkwork-clawrouter-admin-gateway
-services/sdkwork-clawrouter-router-service
+crates/sdkwork-cloudrouter-contract
+crates/sdkwork-cloudrouter-config
+crates/sdkwork-cloudrouter-health
+crates/sdkwork-cloudrouter-observability
+crates/sdkwork-cloudrouter-edge-runtime
+services/sdkwork-cloudrouter-standalone-gateway
+services/sdkwork-cloudrouter-admin-gateway
+services/sdkwork-cloudrouter-router-service
 ```
 
 ## 3. Service 选型
 
 | Service | Runtime | 端口配置 | 职责 |
 | --- | --- | --- | --- |
-| `sdkwork-clawrouter-edge-runtime` | Rust + axum + tokio | `SDKWORK_CLAW_GATEWAY_BIND` | `/v1/**`、OpenAI-compatible、provider relay、routing hot path |
-| `sdkwork-clawrouter-standalone-gateway` | Rust + axum + tokio | `SDKWORK_CLAW_APP_API_BIND` | `/app/v3/api/**`、console/public app API |
-| `sdkwork-clawrouter-admin-gateway` | Rust + axum + tokio | `SDKWORK_CLAW_ADMIN_API_BIND` | `/backend/v3/api/**`、admin/control API |
-| `sdkwork-clawrouter-router-service` | Rust composition | profile config | desktop/server/docker/kubernetes 组合入口 |
+| `sdkwork-cloudrouter-edge-runtime` | Rust + axum + tokio | `SDKWORK_CLOUDROUTER_GATEWAY_BIND` | `/v1/**`、OpenAI-compatible、provider relay、routing hot path |
+| `sdkwork-cloudrouter-standalone-gateway` | Rust + axum + tokio | `SDKWORK_CLOUDROUTER_APP_API_BIND` | `/app/v3/api/**`、console/public app API |
+| `sdkwork-cloudrouter-admin-gateway` | Rust + axum + tokio | `SDKWORK_CLOUDROUTER_ADMIN_API_BIND` | `/backend/v3/api/**`、admin/control API |
+| `sdkwork-cloudrouter-router-service` | Rust composition | profile config | desktop/server/docker/kubernetes 组合入口 |
 | worker services | Rust + tokio | profile config | usage finalize、settlement、outbox、health probe、archive |
 
 ## 4. Frontend 选型
 
-沿用 `apps/sdkwork-clawrouter-pc` 的既有视觉和工程结构，不改变 UI 设计：
+沿用 `apps/sdkwork-cloudrouter-pc` 的既有视觉和工程结构，不改变 UI 设计：
 
 | 类别 | 选择 |
 | --- | --- |
@@ -91,9 +91,9 @@ SDK source of truth：
 
 | Surface | Prefix | Client | Snapshot |
 | --- | --- | --- | --- |
-| app | `/app/v3/api` | `SdkworkAppClient` | `sdks/clawrouter-app-sdk/openapi/clawrouter-app-sdk.openapi.json` |
-| backend | `/backend/v3/api` | `SdkworkBackendClient` | `sdks/clawrouter-backend-sdk/openapi/clawrouter-backend-sdk.openapi.json` |
-| ai/openai | `/v1` | `SdkworkAiClient` | `sdks/clawrouter-open-sdk` |
+| app | `/app/v3/api` | `SdkworkAppClient` | `sdks/cloudrouter-app-sdk/openapi/cloudrouter-app-sdk.openapi.json` |
+| backend | `/backend/v3/api` | `SdkworkBackendClient` | `sdks/cloudrouter-backend-sdk/openapi/cloudrouter-backend-sdk.openapi.json` |
+| ai/openai | `/v1` | `SdkworkAiClient` | `sdks/cloudrouter-open-sdk` |
 
 生成语言优先级：
 

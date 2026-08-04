@@ -1,0 +1,13 @@
+use serde::{Deserialize, Serialize};
+
+/// Channel groups list result schema exposed by Cloud Router.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct ChannelGroupsListResult {
+    pub code: i64,
+
+    pub data: serde_json::Value,
+
+    /// Server-owned request correlation id.
+    #[serde(rename = "traceId")]
+    pub trace_id: String,
+}

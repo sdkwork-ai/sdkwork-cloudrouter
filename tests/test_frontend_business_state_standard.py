@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PORTAL_PACKAGES = ROOT / "apps" / "sdkwork-clawrouter-pc" / "packages"
+PORTAL_PACKAGES = ROOT / "apps" / "sdkwork-cloudrouter-pc" / "packages"
 
 
 class FrontendBusinessStateStandardTest(unittest.TestCase):
@@ -12,18 +12,18 @@ class FrontendBusinessStateStandardTest(unittest.TestCase):
     ) -> None:
         forbidden_markers = ["localStorage", "sessionStorage"]
         allowed_paths = {
-            "sdkwork-clawroutes-pc-commons/src/app-session-token.ts",
-            "sdkwork-clawroutes-pc-commons/src/components/Navbar.tsx",
-            "sdkwork-clawrouter-pc-i18n/src/index.ts",
-            "sdkwork-clawrouter-pc-admin-shell/src/AdminHeader.tsx",
+            "sdkwork-cloudroutes-pc-commons/src/app-session-token.ts",
+            "sdkwork-cloudroutes-pc-commons/src/components/Navbar.tsx",
+            "sdkwork-cloudrouter-pc-i18n/src/index.ts",
+            "sdkwork-cloudrouter-pc-admin-shell/src/AdminHeader.tsx",
         }
         violations: list[str] = []
 
-        for package_dir in sorted(PORTAL_PACKAGES.glob("sdkwork-clawrouter-*")):
+        for package_dir in sorted(PORTAL_PACKAGES.glob("sdkwork-cloudrouter-*")):
             package_name = package_dir.name
             if not (
-                package_name.startswith("sdkwork-clawrouter-pc-console-")
-                or package_name.startswith("sdkwork-clawrouter-pc-admin-")
+                package_name.startswith("sdkwork-cloudrouter-pc-console-")
+                or package_name.startswith("sdkwork-cloudrouter-pc-admin-")
             ):
                 continue
             for source in sorted((package_dir / "src").rglob("*")):
@@ -46,17 +46,17 @@ class FrontendBusinessStateStandardTest(unittest.TestCase):
     def test_business_state_components_are_centralized_and_used_by_core_business_tables(
         self,
     ) -> None:
-        commons_index = PORTAL_PACKAGES / "sdkwork-clawroutes-pc-commons" / "src" / "index.ts"
+        commons_index = PORTAL_PACKAGES / "sdkwork-cloudroutes-pc-commons" / "src" / "index.ts"
         business_state_component = (
             PORTAL_PACKAGES
-            / "sdkwork-clawroutes-pc-commons"
+            / "sdkwork-cloudroutes-pc-commons"
             / "src"
             / "components"
             / "BusinessState.tsx"
         )
         core_table_components = [
             PORTAL_PACKAGES
-            / "sdkwork-clawrouter-pc-admin-group"
+            / "sdkwork-cloudrouter-pc-admin-group"
             / "src"
             / "index.tsx",
             ROOT
@@ -69,25 +69,25 @@ class FrontendBusinessStateStandardTest(unittest.TestCase):
             / "src"
             / "index.tsx",
             PORTAL_PACKAGES
-            / "sdkwork-clawrouter-pc-admin-record"
+            / "sdkwork-cloudrouter-pc-admin-record"
             / "src"
             / "index.tsx",
             PORTAL_PACKAGES
-            / "sdkwork-clawrouter-pc-admin-ratelimit"
+            / "sdkwork-cloudrouter-pc-admin-ratelimit"
             / "src"
             / "index.tsx",
             PORTAL_PACKAGES
-            / "sdkwork-clawrouter-pc-admin-channel"
+            / "sdkwork-cloudrouter-pc-admin-channel"
             / "src"
             / "index.tsx",
         ]
         panel_components = [
             PORTAL_PACKAGES
-            / "sdkwork-clawrouter-pc-admin-monitor"
+            / "sdkwork-cloudrouter-pc-admin-monitor"
             / "src"
             / "index.tsx",
             PORTAL_PACKAGES
-            / "sdkwork-clawrouter-pc-console-settings"
+            / "sdkwork-cloudrouter-pc-console-settings"
             / "src"
             / "SettingsView.tsx",
         ]
@@ -135,7 +135,7 @@ class FrontendBusinessStateStandardTest(unittest.TestCase):
                 source,
                 f"{relative} must not hand-roll table loading rows.",
             )
-            if relative != "sdkwork-clawrouter-pc-admin-ratelimit/src/index.tsx":
+            if relative != "sdkwork-cloudrouter-pc-admin-ratelimit/src/index.tsx":
                 self.assertNotIn(
                     '<Loader2 className="w-8 h-8',
                     source,

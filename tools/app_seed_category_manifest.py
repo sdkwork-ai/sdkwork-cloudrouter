@@ -184,7 +184,7 @@ class AppCategorySeedManifestGenerator:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate SDKWork app PlusCategory seed manifest.")
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     parser.add_argument("--seed", type=Path, default=None, help="sdkwork-apps.json path")
     parser.add_argument("--output", type=Path, default=None, help="sdkwork-app-categories.json output path")
     parser.add_argument("--check", action="store_true", help="validate that the category seed manifest is current")

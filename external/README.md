@@ -1,12 +1,12 @@
 # External Source Dependencies
 
 These directories are read-only Git submodules. Do not patch, commit, or generate source changes
-inside them from the Claw Router repository. Claw Router-owned integrations and adaptations must
+inside them from the Cloud Router repository. Cloud Router-owned integrations and adaptations must
 live outside `external/`.
 
 - `sub2api/`: `https://github.com/Wei-Shaw/sub2api.git`, branch `main` — reference for API-key /
   account import APIs, channel pricing, and billing design (see
-  `docs/architecture/tech/TECH-15-new-api-sub2api-clawrouter-design.md`).
+  `docs/architecture/tech/TECH-15-new-api-sub2api-cloudrouter-design.md`).
 - `cc-switch/`: `https://github.com/farion1231/cc-switch.git`, branch `main` — reference for
   Claude Code / Codex provider configuration formats used by the console API-key quick import
   feature.
@@ -14,7 +14,7 @@ live outside `external/`.
 Clone all external submodules with the repository:
 
 ```shell
-git clone --recurse-submodules <sdkwork-clawrouter-repository-url>
+git clone --recurse-submodules <sdkwork-cloudrouter-repository-url>
 ```
 
 Initialize them in an existing checkout:

@@ -1,7 +1,7 @@
 # Observability Alert Response
 
 Status: active pre-launch procedure; release-candidate drill evidence required
-Owner: SDKWork Claw Router SRE / clawrouter-release
+Owner: SDKWork Cloud Router SRE / cloudrouter-release
 Updated: 2026-08-01
 Specs: `OBSERVABILITY_SPEC.md`, `HEALTH_CHECK_SPEC.md`, `DOCUMENTATION_SPEC.md`
 
@@ -11,7 +11,7 @@ Use this runbook for HTTP availability burn, control-plane latency, provider
 usage and settlement integrity, circuit-breaker coordination, scrape loss,
 readiness failure, bounded metric-series saturation, high container memory,
 and OOMKilled alerts emitted by
-[`deployments/prometheus/claw-router-alerts.yaml`](../../deployments/prometheus/claw-router-alerts.yaml).
+[`deployments/prometheus/cloud-router-alerts.yaml`](../../deployments/prometheus/cloud-router-alerts.yaml).
 The alert rules operate on runtime metrics exposed by `GET /metrics`; metrics
 are operational projections and are never billing or audit authorities.
 
@@ -69,7 +69,7 @@ are operational projections and are never billing or audit authorities.
 
 ## Missing Provider Usage
 
-- `clawrouter_gateway_missing_usage_total` is a low-cardinality counter grouped
+- `cloudrouter_gateway_missing_usage_total` is a low-cardinality counter grouped
   only by the fixed OpenAI endpoint and streaming mode. Any increase means a
   successful provider response omitted the usage facts required for billing.
 - Locate the persisted request trace with `provider_error_code` equal to
@@ -90,16 +90,16 @@ are operational projections and are never billing or audit authorities.
 
 ## Usage Settlement
 
-- `clawrouter_usage_settlement_runs_total` has only the fixed outcomes
+- `cloudrouter_usage_settlement_runs_total` has only the fixed outcomes
   `success`, `partial_failure`, `error`, and `disabled`. A partial failure is
   not a successful batch: inspect the failed durable usage rows while retaining
   already committed settlement entries as authoritative.
-- Correlate `clawrouter_usage_settlement_errors_total` with
-  `clawrouter_usage_settlement_duration_seconds` and PostgreSQL readiness,
+- Correlate `cloudrouter_usage_settlement_errors_total` with
+  `cloudrouter_usage_settlement_duration_seconds` and PostgreSQL readiness,
   connection-pool saturation, transaction errors, deadlocks, and retry logs.
   Never replay a batch by inserting synthetic zero-value usage or debit rows.
 - Compare the `settled` and `failed` series in
-  `clawrouter_usage_settlement_items_total`. Retry only rows still in the
+  `cloudrouter_usage_settlement_items_total`. Retry only rows still in the
   durable pending/failed state and preserve their idempotency key and original
   usage authority.
 - Resolve only after failed rows have an owned reconciliation decision, the
@@ -109,14 +109,14 @@ are operational projections and are never billing or audit authorities.
 
 ## Circuit Breaker Coordination
 
-- `clawrouter_circuit_breaker_degraded_total` reports Redis coordination
+- `cloudrouter_circuit_breaker_degraded_total` reports Redis coordination
   failures by a fixed operation and `fail_open`/`fail_closed` mode. In
   fail-closed mode, provider calls are intentionally rejected; in fail-open
   mode, calls may proceed without distributed circuit protection and require
   immediate containment.
-- Break down `clawrouter_circuit_breaker_rejections_total` by its fixed
+- Break down `cloudrouter_circuit_breaker_rejections_total` by its fixed
   `backend` and `reason` labels, then correlate with
-  `clawrouter_circuit_breaker_transitions_total`. Repeated
+  `cloudrouter_circuit_breaker_transitions_total`. Repeated
   `closed -> open -> half_open` churn indicates provider instability or
   thresholds unsupported by measured traffic, not a reason to disable the
   breaker.

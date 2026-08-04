@@ -42,7 +42,7 @@ class RustRouteOverlapAuditTest(unittest.TestCase):
     def test_scans_sibling_appbase_crates_layout(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace_root = Path(temp_dir)
-            root = workspace_root / "sdkwork-clawrouter"
+            root = workspace_root / "sdkwork-cloudrouter"
             appbase_source_dir = (
                 workspace_root
                 / "sdkwork-appbase"

@@ -1,17 +1,17 @@
-# sdkwork-clawrouter
+# sdkwork-cloudrouter
 repository-kind: application
 
-Commercial AI gateway and console workspace for SDKWork Claw Router.
+Commercial AI gateway and console workspace for SDKWork Cloud Router.
 
 This workspace contains the Rust product services, the React portal, generated
 TypeScript SDKs, schema/OpenAPI generators, and delivery guardrails for the
-Claw Router product. The core rule is simple: product UI and service code must
+Cloud Router product. The core rule is simple: product UI and service code must
 be backed by schema registry contracts, generated OpenAPI specs, generated SDKs,
 Rust handlers, persistence implementations, and repeatable verification.
 
 ## Product Overview
 
-SDKWork Claw Router is a commercial AI gateway product for teams that need to
+SDKWork Cloud Router is a commercial AI gateway product for teams that need to
 operate OpenAI-compatible model access, provider routing, model catalog data,
 usage accounting, API keys, and administrative controls from one deployable
 workspace. It combines a Rust gateway and product API layer with a React portal
@@ -46,11 +46,11 @@ customer-facing documentation.
 
 | Product area | Screenshot |
 | --- | --- |
-| Portal home | ![SDKWork Claw Router portal home placeholder](./docs/assets/product-screenshots/portal-home.png) |
-| Console dashboard | ![SDKWork Claw Router console dashboard placeholder](./docs/assets/product-screenshots/console-dashboard.png) |
-| Model catalog and routing | ![SDKWork Claw Router model routing placeholder](./docs/assets/product-screenshots/model-routing.png) |
-| API playground | ![SDKWork Claw Router playground placeholder](./docs/assets/product-screenshots/playground.png) |
-| Admin console | ![SDKWork Claw Router admin console placeholder](./docs/assets/product-screenshots/admin-console.png) |
+| Portal home | ![SDKWork Cloud Router portal home placeholder](./docs/assets/product-screenshots/portal-home.png) |
+| Console dashboard | ![SDKWork Cloud Router console dashboard placeholder](./docs/assets/product-screenshots/console-dashboard.png) |
+| Model catalog and routing | ![SDKWork Cloud Router model routing placeholder](./docs/assets/product-screenshots/model-routing.png) |
+| API playground | ![SDKWork Cloud Router playground placeholder](./docs/assets/product-screenshots/playground.png) |
+| Admin console | ![SDKWork Cloud Router admin console placeholder](./docs/assets/product-screenshots/admin-console.png) |
 
 ## Installation And Usage
 
@@ -84,10 +84,10 @@ pnpm dev -- --install
 Quick Ubuntu/Debian service install from a release asset:
 
 ```bash
-sudo apt install ./clawrouter-linux-x64-server-0.3.0.deb
-sudo editor /etc/sdkwork/router/clawrouter.toml
+sudo apt install ./cloudrouter-linux-x64-server-0.3.0.deb
+sudo editor /etc/sdkwork/router/cloudrouter.toml
 sudo editor /etc/sdkwork/router/database.secret
-sudo systemctl start clawrouter
+sudo systemctl start cloudrouter
 curl http://127.0.0.1:3900/healthz
 curl http://127.0.0.1:3900/readyz
 ```
@@ -109,15 +109,15 @@ template and [`etc/nginx/sdkwork`](./etc/nginx/sdkwork/) for full-domain
 examples. See the release install guide for certificate path conventions under
 `/opt/certs/letsencrypt/live/<cert-name>`.
 
-The `.deb` package creates `/etc/sdkwork/router/clawrouter.toml`,
-`/etc/sdkwork/router/clawrouter.env`, `/etc/sdkwork/router/database.secret`,
+The `.deb` package creates `/etc/sdkwork/router/cloudrouter.toml`,
+`/etc/sdkwork/router/cloudrouter.env`, `/etc/sdkwork/router/database.secret`,
 `/var/lib/sdkwork/router`, and the
-`sdkwork` system user. The Linux systemd service runs `clawrouterctl
+`sdkwork` system user. The Linux systemd service runs `cloudrouterctl
 ensure` and `refresh-catalog --force` automatically before the gateway starts,
-and service packages enable `clawrouter.service` during installation on systemd
+and service packages enable `cloudrouter.service` during installation on systemd
 hosts. The service is not started until the operator configures PostgreSQL in
-`/etc/sdkwork/router/clawrouter.toml` or uses a protected
-`SDKWORK_DATABASE_URL` override in `/etc/sdkwork/router/clawrouter.env`.
+`/etc/sdkwork/router/cloudrouter.toml` or uses a protected
+`SDKWORK_DATABASE_URL` override in `/etc/sdkwork/router/cloudrouter.env`.
 The package post-install step prints the runtime TOML, service environment,
 PostgreSQL password file, systemd service name, and the exact first-start
 commands so the operator can configure the service without hunting through
@@ -126,7 +126,7 @@ The generated `/etc/sdkwork/router/database.secret` contains the placeholder
 `change-me`; replace it with the real PostgreSQL password before starting the
 service. Startup rejects default placeholder hosts or passwords.
 
-On the first install or first startup, Claw Router initializes the bootstrap
+On the first install or first startup, Cloud Router initializes the bootstrap
 administrator login when it is missing or incomplete. The default username is
 `admin`. Save the one-time password from installer JSON
 `bootstrapAdmin.initialPassword` or startup logs `initial_password`, then rotate
@@ -135,34 +135,34 @@ it after first login.
 Quick MSI install root initialization on Windows:
 
 ```powershell
-Set-Location ".\clawrouter"
-.\bin\clawrouterctl.exe ensure
-.\bin\clawrouterctl.exe refresh-catalog --force
-.\bin\clawrouter.exe
+Set-Location ".\cloudrouter"
+.\bin\cloudrouterctl.exe ensure
+.\bin\cloudrouterctl.exe refresh-catalog --force
+.\bin\cloudrouter.exe
 ```
 
 Quick Linux native desktop package initialization:
 
 ```bash
-/usr/bin/clawrouterctl ensure
-/usr/bin/clawrouterctl refresh-catalog --force
-/usr/bin/clawrouter
+/usr/bin/cloudrouterctl ensure
+/usr/bin/cloudrouterctl refresh-catalog --force
+/usr/bin/cloudrouter
 ```
 
 Quick macOS native package initialization:
 
 ```bash
-/opt/sdkwork/router/bin/clawrouterctl ensure
-/opt/sdkwork/router/bin/clawrouterctl refresh-catalog --force
-/opt/sdkwork/router/bin/clawrouter
+/opt/sdkwork/router/bin/cloudrouterctl ensure
+/opt/sdkwork/router/bin/cloudrouterctl refresh-catalog --force
+/opt/sdkwork/router/bin/cloudrouter
 ```
 
 Quick portable package initialization on Linux and macOS:
 
 ```bash
-./bin/clawrouterctl ensure
-./bin/clawrouterctl refresh-catalog --force
-./bin/clawrouter
+./bin/cloudrouterctl ensure
+./bin/cloudrouterctl refresh-catalog --force
+./bin/cloudrouter
 ```
 
 ## Architecture
@@ -170,8 +170,8 @@ Quick portable package initialization on Linux and macOS:
 - Gateway service exposes OpenAI-compatible `/v1/*` APIs.
 - App and public console business APIs live under `/app/v3/api`.
 - Admin and backend management APIs live under `/backend/v3/api`.
-- Frontend app/API calls must use `@sdkwork/clawrouter-app-sdk`.
-- Frontend admin/API calls must use `@sdkwork/clawrouter-backend-sdk`.
+- Frontend app/API calls must use `@sdkwork/cloudrouter-app-sdk`.
+- Frontend admin/API calls must use `@sdkwork/cloudrouter-backend-sdk`.
 - Generated SDKs are produced from `generated/openapi/*.json` and must not be
   hand-edited.
 - Schema registry is the source of truth for business tables, field contracts,
@@ -206,7 +206,7 @@ Quick portable package initialization on Linux and macOS:
 This repository follows `../sdkwork-specs/SDKWORK_WORKSPACE_SPEC.md`. The standard project root dictionary is represented by tracked README files:
 
 - `apis/` - authored API contracts, route authority inputs, examples, changelogs, and API validation fixtures.
-- `apps/` - runnable application surfaces. `apps/sdkwork-clawrouter-pc/` is the PC React portal root.
+- `apps/` - runnable application surfaces. `apps/sdkwork-cloudrouter-pc/` is the PC React portal root.
 - `crates/` - authored Rust crates. Rust route crates use `crates/sdkwork-routes-<capability>-<surface>/`, including open-api, app-api, and backend-api route packages.
 - `sdks/` - SDK family workspaces, materialized authority OpenAPI, derived generator inputs, generated language SDKs, and SDK evidence.
 - `jobs/` - job schedules, queue bindings, batch descriptors, and maintenance runbooks.
@@ -281,7 +281,7 @@ node ../sdkwork-models/tools/freshness-report.mjs --max-age-policy catalog-fresh
 node ../sdkwork-models/tools/catalog-audit.mjs --as-of 2026-05-08
 node ../sdkwork-models/tools/release-catalog.mjs --check --as-of 2026-05-08
 cargo test -p sdkwork-models --offline
-cargo test -p sdkwork-clawrouter-router-service --test database_installer --offline
+cargo test -p sdkwork-cloudrouter-router-service --test database_installer --offline
 ```
 
 Model catalog release evidence is mandatory. `sources/vendor-sources.json`,
@@ -310,10 +310,10 @@ $env:SDKWORK_MODELS_CATALOG_ROOT = Join-Path (Get-Location) "../sdkwork-models"
 Refresh installed catalog rows without reinstalling the database:
 
 ```powershell
-clawrouterctl refresh-catalog
-clawrouterctl refresh-catalog --vendor openai
-clawrouterctl refresh-catalog --catalog-root "$env:SDKWORK_MODELS_CATALOG_ROOT" --catalog-version 2026.05.08.1
-clawrouterctl refresh-catalog --vendor alibaba --dry-run
+cloudrouterctl refresh-catalog
+cloudrouterctl refresh-catalog --vendor openai
+cloudrouterctl refresh-catalog --catalog-root "$env:SDKWORK_MODELS_CATALOG_ROOT" --catalog-version 2026.05.08.1
+cloudrouterctl refresh-catalog --vendor alibaba --dry-run
 ```
 
 Installer commands print one JSON object to stdout. `status`, `install`,
@@ -371,10 +371,10 @@ Command intent:
 - `pnpm test` runs the launcher/tooling contract tests.
 - `pnpm build` builds production portal assets, builds the generated app
   and backend SDK runtime packages, creates SDK ZIP archives under
-  `apps/sdkwork-clawrouter-pc/dist/sdk-archives`, and builds the canonical Rust
+  `apps/sdkwork-cloudrouter-pc/dist/sdk-archives`, and builds the canonical Rust
   standalone gateway release binary.
 - `pnpm start` serves the built production portal from
-  `apps/sdkwork-clawrouter-pc/dist` through the single canonical Rust
+  `apps/sdkwork-cloudrouter-pc/dist` through the single canonical Rust
   standalone gateway process, using the release binary when it exists.
 - `pnpm release` validates the release environment, regenerates
   `.env.release` from the release host process environment, runs strict
@@ -400,7 +400,7 @@ shells that block `pnpm.ps1`, call the package-manager shim through your shell
 or adjust the execution policy instead of changing committed scripts.
 
 Standalone client development commands use
-`sdkwork-api-clawrouter-standalone-gateway` for API integration. Explicit product server development commands use PostgreSQL for integration testing.
+`sdkwork-api-cloudrouter-standalone-gateway` for API integration. Explicit product server development commands use PostgreSQL for integration testing.
 Desktop packages and first-run local user data use SQLite under `~/.sdkwork/router/data`.
 On Windows, the equivalent path is `%USERPROFILE%/.sdkwork/router/data`.
 Use `pnpm dev:desktop:sqlite` when validating client-local SQLite behavior; it
@@ -547,14 +547,14 @@ without starting the live `pnpm dev` workspace by default:
 
 - `cargo fmt --check`
 - `cargo check --all-targets` with `RUSTFLAGS=-D warnings`
-- `node scripts/run-claw-router-application.test.mjs`
+- `node scripts/run-cloud-router-application.test.mjs`
 - `python -B -m tools.repository_delivery_guardian`
-- `python -B -m tools.clawrouter_sdk_guardian`
-- `python -B -m tools.clawrouter_skill_guardian`
+- `python -B -m tools.cloudrouter_sdk_guardian`
+- `python -B -m tools.cloudrouter_skill_guardian`
 - `python -B -m tools.architecture_standard_guardian`
 - `python -B -m tools.rust_backend_architecture_guardian`
-- `python -B -m tools.clawrouter_openapi_precision_audit`
-- `python -B -m tools.clawrouter_payload_sdk_audit`
+- `python -B -m tools.cloudrouter_openapi_precision_audit`
+- `python -B -m tools.cloudrouter_payload_sdk_audit`
 - `python -B -m tools.frontend_static_source_manifest --check`
 - `python -B -m tools.frontend_contract_guardian`
 - `python -B -m tools.schema_guardian`
@@ -575,7 +575,7 @@ without starting the live `pnpm dev` workspace by default:
 For a faster local pass while editing contracts only:
 
 ```powershell
-node scripts/verify-claw-router-application.mjs --skip-contract-guardians
+node scripts/verify-cloud-router-application.mjs --skip-contract-guardians
 ```
 
 Do not use `--skip-contract-guardians` for final delivery.
@@ -600,12 +600,12 @@ skip message instead of failing. CI and release environments that require this
 coverage should make the smoke mandatory:
 
 ```powershell
-$env:CLAWROUTER_EDGE_DEV_SMOKE_REQUIRED="1"
+$env:CLOUDROUTER_EDGE_DEV_SMOKE_REQUIRED="1"
 pnpm.cmd verify -- --with-edge-dev-smoke
 ```
 
-`CLAWROUTER_VERIFY_EDGE_DEV_SMOKE=1` also opts `verify` into the live dev smoke.
-Use `node scripts/verify-claw-router-application.mjs --skip-edge-dev-smoke` only to
+`CLOUDROUTER_VERIFY_EDGE_DEV_SMOKE=1` also opts `verify` into the live dev smoke.
+Use `node scripts/verify-cloud-router-application.mjs --skip-edge-dev-smoke` only to
 override an environment that would otherwise enable it.
 
 ## Fast Local Iteration
@@ -620,8 +620,8 @@ pnpm verify:fast
 and source-standard regressions:
 
 - `python -B -m tools.repository_delivery_guardian`
-- `node scripts/run-claw-router-application.test.mjs`
-- `pnpm --dir apps/sdkwork-clawrouter-pc exec tsx auth-runtime.test.ts`
+- `node scripts/run-cloud-router-application.test.mjs`
+- `pnpm --dir apps/sdkwork-cloudrouter-pc exec tsx auth-runtime.test.ts`
 - `python -B -m unittest tests.test_frontend_source_hygiene_standard`
 
 For Rust edits during local development, use the scoped Rust entrypoints instead
@@ -638,13 +638,13 @@ the smallest useful Rust surface automatically:
 
 - exact `services/*/tests/*.rs` edits run only that integration-test target
 - common `services/*/src/*.rs` edits try to infer nearby test targets by name
-- shared `services/*/tests/common/*.rs` helper edits, plus `crates/sdkwork-clawrouter-router-service-test-support/src/*.rs` fixture-crate edits, try to target only the integration tests that directly consume that shared test helper; product fixture module edits such as `schema.rs`, `repair.rs`, and `installed.rs` narrow further by the exported pool helper they affect
+- shared `services/*/tests/common/*.rs` helper edits, plus `crates/sdkwork-cloudrouter-router-service-test-support/src/*.rs` fixture-crate edits, try to target only the integration tests that directly consume that shared test helper; product fixture module edits such as `schema.rs`, `repair.rs`, and `installed.rs` narrow further by the exported pool helper they affect
 - broader or ambiguous changes fall back to the existing scoped profiles
 
 When the worktree is noisy, choose one narrowing mode:
 
 ```powershell
-pnpm test:rust:auto -- --changed-file services/sdkwork-clawrouter-router-service/src/api/app_runtime.rs
+pnpm test:rust:auto -- --changed-file services/sdkwork-cloudrouter-router-service/src/api/app_runtime.rs
 pnpm test:rust:auto -- --staged
 pnpm test:rust:auto -- --base-ref main
 ```
@@ -685,7 +685,7 @@ pressure is more important than fast recompilation/reinstall avoidance. For an
 explicit deep cleanup, call the script directly with opt-in flags:
 
 ```powershell
-node scripts/clean-claw-router-workspace.mjs --rust-target --node-modules
+node scripts/clean-cloud-router-workspace.mjs --rust-target --node-modules
 ```
 
 ## Release Preflight
@@ -697,7 +697,7 @@ pnpm release:preflight
 ```
 
 The preflight is read-only. It checks that the current branch is `main`,
-`main...origin/main` is synchronized, the `sdkwork-clawrouter` application
+`main...origin/main` is synchronized, the `sdkwork-cloudrouter` application
 worktree is clean, required commands are available, staging/Postgres
 environment variables are present, Git LFS is available, LFS-managed bundled
 skill seed JSON files are hydrated, and local Codex/Git IO footprint is not
@@ -779,7 +779,7 @@ Codex session footprint, or Git object footprint are release-ready.
 ## Install Package Planning
 
 The install package standard is executable through
-`scripts/plan-claw-router-install-packages.mjs`. It is intentionally plan-only:
+`scripts/plan-cloud-router-install-packages.mjs`. It is intentionally plan-only:
 it does not run `pnpm dev`, does not launch the live edge dev smoke, does not
 start production services, and does not build platform packages. Real archive,
 service, container, and desktop builders must consume this plan so Windows,
@@ -794,7 +794,7 @@ pnpm install:packages:check
 pnpm install:package:check
 pnpm install:native:check
 pnpm install:init:smoke
-node scripts/plan-claw-router-install-packages.mjs --json --check
+node scripts/plan-cloud-router-install-packages.mjs --json --check
 ```
 
 The default matrix contains 24 package contracts: `windows`, `linux`, and
@@ -803,14 +803,14 @@ The default matrix contains 24 package contracts: `windows`, `linux`, and
 `linux-arm64-container`, and `macos-arm64-desktop`. Each package contract
 declares:
 
-- the Rust edge binary, `clawrouter` or
-  `clawrouter.exe`
-- the installer binary, `clawrouterctl` or
-  `clawrouterctl.exe`
+- the Rust edge binary, `cloudrouter` or
+  `cloudrouter.exe`
+- the installer binary, `cloudrouterctl` or
+  `cloudrouterctl.exe`
 - `portal/dist` production assets
 - `portal/dist/sdk-archives` generated SDK ZIP artifacts
 - `.env.release.example` as a reference template only
-- `config/clawrouter.toml.example` as the runtime configuration
+- `config/cloudrouter.toml.example` as the runtime configuration
   template
 - an `install-manifest.json`
 - service manifests for service mode and container entrypoint metadata for
@@ -848,7 +848,7 @@ database = 0
 # url = "redis://redis.example.com:6379/0"
 # password_file = "/etc/sdkwork/router/redis.secret"
 # password = "change-me"
-key_prefix = "clawrouter"
+key_prefix = "cloudrouter"
 tls = false
 max_connections = 16
 connect_timeout_millis = 2000
@@ -973,7 +973,7 @@ gateway_invocation_body_max_bytes = 1048576
 # models_catalog_root = "/usr/lib/sdkwork/router/catalog"
 ```
 
-`password_file` may be an absolute path, a path relative to `clawrouter.toml`,
+`password_file` may be an absolute path, a path relative to `cloudrouter.toml`,
 or a path that uses standard environment variable expansion such as
 `${SECRET_ROOT}/database.secret`, `$SECRET_ROOT/database.secret`, or
 `%ProgramData%/sdkwork/router/database.secret`. Generated service templates
@@ -997,7 +997,7 @@ Use `[redis].url` only as an advanced override for managed Redis endpoints that
 cannot be represented cleanly with separate fields. Standard optional secret
 paths are `/etc/sdkwork/router/redis.secret` for Linux service installs,
 `/run/secrets/sdkwork/router/redis-password` for containers, and the matching
-ClawRouter config/data directory on Windows, macOS, and desktop installs.
+CloudRouter config/data directory on Windows, macOS, and desktop installs.
 
 `[paths]` contains runtime-owned filesystem roots. `data_directory` is the
 long-lived application state directory. Keep it on durable storage for service
@@ -1037,7 +1037,7 @@ the first provider fault without trying later candidates. `[provider_relay.retry
 is the default retry policy when a database routing channel does not define its
 own retry policy.
 
-Protected TOML files may place the password directly in `clawrouter.toml`
+Protected TOML files may place the password directly in `cloudrouter.toml`
 instead of using a separate password file:
 
 ```toml
@@ -1054,19 +1054,19 @@ max_connections = 16
 
 The standard config file locations are:
 
-- Linux server: `/etc/sdkwork/router/clawrouter.toml`
-- Linux desktop: `~/.sdkwork/router/config/clawrouter.toml`
-- Windows server: `%ProgramData%/sdkwork/router/clawrouter.toml`
-- Windows desktop: `%USERPROFILE%/.sdkwork/router/config/clawrouter.toml`
-- macOS server: `/Library/Application Support/sdkwork/router/clawrouter.toml`
-- macOS desktop: `~/.sdkwork/router/config/clawrouter.toml`
+- Linux server: `/etc/sdkwork/router/cloudrouter.toml`
+- Linux desktop: `~/.sdkwork/router/config/cloudrouter.toml`
+- Windows server: `%ProgramData%/sdkwork/router/cloudrouter.toml`
+- Windows desktop: `%USERPROFILE%/.sdkwork/router/config/cloudrouter.toml`
+- macOS server: `/Library/Application Support/sdkwork/router/cloudrouter.toml`
+- macOS desktop: `~/.sdkwork/router/config/cloudrouter.toml`
 
-At runtime, `SDKWORK_CLAW_CONFIG_FILE` can point to any explicit TOML config
+At runtime, `SDKWORK_CLOUDROUTER_CONFIG_FILE` can point to any explicit TOML config
 file. `SDKWORK_DATABASE_URL` and
 `SDKWORK_DATABASE_MAX_CONNECTIONS` override the file for emergency
 operations and container orchestration. The Rust gateway, installer, admin API,
 and app API all read this shared configuration layer through
-`sdkwork-claw-config`.
+`sdkwork-cloudrouter-config`.
 
 Fast initialization is standardized around host-local environment generation
 and installer commands:
@@ -1074,8 +1074,8 @@ and installer commands:
 ```powershell
 pnpm release:env:write -- --check
 pnpm release:env:write -- --force
-clawrouterctl ensure
-clawrouterctl refresh-catalog --force
+cloudrouterctl ensure
+cloudrouterctl refresh-catalog --force
 ```
 
 The same package contract works across Windows, Linux, and macOS through
@@ -1089,7 +1089,7 @@ install or release host, must treat `.env.release.example` as reference-only,
 and must keep trusted forwarded headers disabled by default. Enable forwarded
 header trust only when a controlled reverse proxy is the sole inbound client.
 
-`scripts/build-claw-router-install-package.mjs` consumes the same matrix to
+`scripts/build-cloud-router-install-package.mjs` consumes the same matrix to
 create portable archive and container-context packages from a staged production
 directory. The default
 `pnpm install:package:check` command is dry-run only, so it validates the
@@ -1107,7 +1107,7 @@ packages use real ZIP bytes for `.zip`; Linux and macOS packages use real
 gzip-compressed tar bytes for `.tar.gz` and preserve executable mode on
 extensionless binaries under `bin/`. The tar writer supports standard ustar
 prefix paths for nested production asset names. All packages generate
-`config/clawrouter.toml.example`. Container
+`config/cloudrouter.toml.example`. Container
 packages generate a `container/Containerfile`, platform-specific
 entrypoint (`container/entrypoint` on Linux/macOS,
 `container/entrypoint.ps1` on Windows), and `container/metadata.json` without
@@ -1117,19 +1117,19 @@ desktop SQLite policy and OS config/data directories. The builder excludes
 for pure machine-readable output.
 
 `service` and `desktop` release assets must be final platform installers, not
-only portable archives. `scripts/build-claw-router-native-installer.mjs`
+only portable archives. `scripts/build-cloud-router-native-installer.mjs`
 consumes the same staged production directory and package plan to build:
 
 - Linux `.deb` packages for Ubuntu/Debian installation through
-  `apt install ./clawrouter-linux-x64-server-0.3.0.deb` or
+  `apt install ./cloudrouter-linux-x64-server-0.3.0.deb` or
   `dpkg -i`.
 - Windows `.msi` packages through WiX for service and desktop install targets.
 - macOS `.pkg` packages through `pkgbuild` for service and desktop install
   targets.
   macOS service packages include a launchd runner at
-  `/Library/Application Support/sdkwork/router/service/macos/clawrouter-service-runner`
-  so launchd runs `clawrouterctl ensure` and
-  `clawrouterctl refresh-catalog --force` before starting the gateway.
+  `/Library/Application Support/sdkwork/router/service/macos/cloudrouter-service-runner`
+  so launchd runs `cloudrouterctl ensure` and
+  `cloudrouterctl refresh-catalog --force` before starting the gateway.
 
 The native installer builder writes the installer, a per-installer
 `.manifest.json`, and a scoped aggregate manifest. Each native manifest includes
@@ -1145,7 +1145,7 @@ script creates the `sdkwork` user/group, applies root-owned `0755` modes to
 runtime binaries, keeps service config templates and secrets as `root:sdkwork`
 `0640`, creates `0750` mutable data and log directories for `sdkwork`, copies a
 first-run TOML config from the example when missing, and runs
-`systemctl daemon-reload` before enabling `clawrouter.service` on systemd
+`systemctl daemon-reload` before enabling `cloudrouter.service` on systemd
 hosts. The generated service unit uses a restricted runtime profile with
 `NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome=true`, systemd-managed
 state/log/config directories with `0750` directory modes, kernel and
@@ -1154,8 +1154,8 @@ control-group protections, native syscall architecture filtering, and
 `/usr/lib/sdkwork/router` and `/etc/sdkwork/router` stay read-only to the service
 process after installation.
 Operators configure PostgreSQL through
-`/etc/sdkwork/router/clawrouter.toml`, `/etc/sdkwork/router/database.secret`, or a
-protected override in `/etc/sdkwork/router/clawrouter.env`, then start the service.
+`/etc/sdkwork/router/cloudrouter.toml`, `/etc/sdkwork/router/database.secret`, or a
+protected override in `/etc/sdkwork/router/cloudrouter.env`, then start the service.
 Windows `.msi` packages keep binaries under `%ProgramFiles%/sdkwork/router` and
 shared templates under `%ProgramData%/sdkwork/router`; native manifests
 record inherited ProgramData ACLs for service templates, runtime TOML, secrets,
@@ -1170,10 +1170,10 @@ runtime config and local SQLite data under `~/.sdkwork/router`.
 `scripts/smoke-install-package-init.mjs` validates the fast initialization
 contract separately from service startup. The default root command is a dry-run
 smoke that creates a temporary install root, writes a safe
-`.env.release`, writes a temporary `clawrouter.toml`, verifies
+`.env.release`, writes a temporary `cloudrouter.toml`, verifies
 that server package dry-runs use PostgreSQL while desktop package dry-runs use
-a file-backed SQLite URL, verifies `clawrouterctl ensure` plus
-`clawrouterctl refresh-catalog --force` are the only installer
+a file-backed SQLite URL, verifies `cloudrouterctl ensure` plus
+`cloudrouterctl refresh-catalog --force` are the only installer
 actions, and confirms `/healthz` plus `/readyz` remain the readiness contract.
 It never starts `pnpm dev`, the live edge dev smoke, or production services.
 
@@ -1187,7 +1187,7 @@ same smoke to a real installer check by passing `--installer-bin` and an
 isolated `--tmp-root`:
 
 ```powershell
-node scripts/smoke-install-package-init.mjs --package-id linux-x64-archive --package-root dist\install-package-staging --installer-bin bin\clawrouterctl --tmp-root target\install-init-smoke\linux-x64 --check
+node scripts/smoke-install-package-init.mjs --package-id linux-x64-archive --package-root dist\install-package-staging --installer-bin bin\cloudrouterctl --tmp-root target\install-init-smoke\linux-x64 --check
 ```
 
 Relative `--installer-bin` values are resolved from `--package-root` first, then
@@ -1198,13 +1198,13 @@ package directory.
 ## Production Browser Smoke
 
 `pnpm verify` runs
-`node apps/sdkwork-clawrouter-pc/scripts/smoke-production-browser.mjs`
+`node apps/sdkwork-cloudrouter-pc/scripts/smoke-production-browser.mjs`
 after the production edge smoke and before portal runtime tests. The script runs
 the built portal through the Rust edge server in a real Chromium-family browser through Chrome
 DevTools Protocol and verifies:
 
 - `/runtime-env.js` loads before the hashed portal bundle.
-- `window.__CLAWROUTER_ENV__` contains the expected public API, app SDK API,
+- `window.__CLOUDROUTER_ENV__` contains the expected public API, app SDK API,
   backend SDK API, and local tool API values.
 - The browser locale is fixed to `en-US` through Chrome launch flags and
   Chrome DevTools Protocol, so DOM text assertions are stable on CI and release
@@ -1262,20 +1262,20 @@ with an explicit `[browser-smoke] skipped` message. CI and release packaging
 must make the check mandatory:
 
 ```powershell
-$env:CLAWROUTER_BROWSER_SMOKE_REQUIRED="1"
+$env:CLOUDROUTER_BROWSER_SMOKE_REQUIRED="1"
 pnpm verify
 ```
 
-Use `CLAWROUTER_BROWSER_EXECUTABLE` to point at a specific Chrome, Edge, or
+Use `CLOUDROUTER_BROWSER_EXECUTABLE` to point at a specific Chrome, Edge, or
 Chromium executable. If the process cannot spawn a browser, start one outside
 the Node process and provide its DevTools port:
 
 ```powershell
-$env:CLAWROUTER_BROWSER_EXECUTABLE="<absolute path to Chrome, Edge, or Chromium>"
-& $env:CLAWROUTER_BROWSER_EXECUTABLE --headless=new --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 --user-data-dir="$(Join-Path ([System.IO.Path]::GetTempPath()) 'clawrouter-browser-smoke')" about:blank
-$env:CLAWROUTER_BROWSER_DEBUG_PORT="9222"
-$env:CLAWROUTER_BROWSER_SMOKE_REQUIRED="1"
-node apps\sdkwork-clawrouter-pc\scripts\smoke-production-browser.mjs
+$env:CLOUDROUTER_BROWSER_EXECUTABLE="<absolute path to Chrome, Edge, or Chromium>"
+& $env:CLOUDROUTER_BROWSER_EXECUTABLE --headless=new --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 --user-data-dir="$(Join-Path ([System.IO.Path]::GetTempPath()) 'cloudrouter-browser-smoke')" about:blank
+$env:CLOUDROUTER_BROWSER_DEBUG_PORT="9222"
+$env:CLOUDROUTER_BROWSER_SMOKE_REQUIRED="1"
+node apps\sdkwork-cloudrouter-pc\scripts\smoke-production-browser.mjs
 ```
 
 ## Postgres Integration
@@ -1300,7 +1300,7 @@ pnpm test:postgres:docker
 ```
 
 Docker mode uses `docker-compose.postgres-test.yml`, Postgres 16, a tmpfs data
-directory, health checks, and port `${SDKWORK_CLAW_POSTGRES_TEST_PORT:-15432}`.
+directory, health checks, and port `${SDKWORK_CLOUDROUTER_POSTGRES_TEST_PORT:-15432}`.
 Install and start Docker Desktop before using Docker mode.
 
 ## SDK And Contract Regeneration
@@ -1310,8 +1310,8 @@ regenerate through the contract pipeline instead of editing generated SDK files.
 
 ```powershell
 python -B -m tools.api_contract_manifest
-python -B -m tools.clawrouter_openapi_generator
-python -B -m tools.clawrouter_gateway_openapi_generator
+python -B -m tools.cloudrouter_openapi_generator
+python -B -m tools.cloudrouter_gateway_openapi_generator
 python -B -m tools.schema_quality_gate
 ```
 
@@ -1357,11 +1357,11 @@ defaults to:
 ```
 
 For private deployments whose browser needs to call a different API origin,
-set `SDKWORK_CLAW_EDGE_CSP_CONNECT_SRC` to a comma- or space-separated list of additional
+set `SDKWORK_CLOUDROUTER_EDGE_CSP_CONNECT_SRC` to a comma- or space-separated list of additional
 HTTP/HTTPS origins, for example:
 
 ```powershell
-$env:SDKWORK_CLAW_EDGE_CSP_CONNECT_SRC="https://tenant-api.example.com https://admin-api.example.com"
+$env:SDKWORK_CLOUDROUTER_EDGE_CSP_CONNECT_SRC="https://tenant-api.example.com https://admin-api.example.com"
 ```
 
 Entries must be origins only, without paths, query strings, fragments, semicolon
@@ -1380,11 +1380,11 @@ $env:PORTAL_PUBLIC_OPEN_API_BASE_URL=""
 $env:PORTAL_PUBLIC_APP_API_BASE_URL=""
 $env:PORTAL_PUBLIC_BACKEND_API_BASE_URL=""
 $env:PORTAL_PUBLIC_TOOL_API_ENABLED="false"
-$env:SDKWORK_CLAW_TOOL_API_RATE_LIMIT_REQUESTS="120"
-$env:SDKWORK_CLAW_TOOL_API_RATE_LIMIT_WINDOW_SECONDS="60"
-$env:SDKWORK_CLAW_TOOL_API_SDK_GENERATOR_BASE_URL=""
-$env:SDKWORK_CLAW_TOOL_API_SDK_GENERATOR_API_KEY=""
-$env:SDKWORK_CLAW_TOOL_API_SDK_ARCHIVE_ROOT = Join-Path (Get-Location) "apps/sdkwork-clawrouter-pc/dist/sdk-archives"
+$env:SDKWORK_CLOUDROUTER_TOOL_API_RATE_LIMIT_REQUESTS="120"
+$env:SDKWORK_CLOUDROUTER_TOOL_API_RATE_LIMIT_WINDOW_SECONDS="60"
+$env:SDKWORK_CLOUDROUTER_TOOL_API_SDK_GENERATOR_BASE_URL=""
+$env:SDKWORK_CLOUDROUTER_TOOL_API_SDK_GENERATOR_API_KEY=""
+$env:SDKWORK_CLOUDROUTER_TOOL_API_SDK_ARCHIVE_ROOT = Join-Path (Get-Location) "apps/sdkwork-cloudrouter-pc/dist/sdk-archives"
 ```
 
 `PORTAL_PUBLIC_SDK_BASE_URL` is the default public SDK root. Runtime bootstrap
@@ -1400,23 +1400,23 @@ values before they are constructed.
 When `PORTAL_PUBLIC_TOOL_API_ENABLED=true`, the Rust edge server serves the
 local portal tool API under `/api/code-snippet`, `/api/sdk-readme`, and
 `/api/generate-sdk`. These routes are disabled by default and are rate limited
-by `SDKWORK_CLAW_TOOL_API_RATE_LIMIT_REQUESTS` per
-`SDKWORK_CLAW_TOOL_API_RATE_LIMIT_WINDOW_SECONDS`. The limiter buckets by remote
-client IP. When `SDKWORK_CLAW_EDGE_TRUST_FORWARDED_HEADERS=1`, the limiter uses
+by `SDKWORK_CLOUDROUTER_TOOL_API_RATE_LIMIT_REQUESTS` per
+`SDKWORK_CLOUDROUTER_TOOL_API_RATE_LIMIT_WINDOW_SECONDS`. The limiter buckets by remote
+client IP. When `SDKWORK_CLOUDROUTER_EDGE_TRUST_FORWARDED_HEADERS=1`, the limiter uses
 the first valid IP from `x-forwarded-for`; only enable that mode behind a
 controlled reverse proxy. Limited requests return HTTP 429 with `Retry-After`,
 `RateLimit-Limit`, `RateLimit-Remaining`, and `RateLimit-Reset` headers.
 
 `/api/generate-sdk` calls the Rust SDK generator service and returns the
-generated ZIP archive directly. `SDKWORK_CLAW_TOOL_API_SDK_GENERATOR_BASE_URL` may be
+generated ZIP archive directly. `SDKWORK_CLOUDROUTER_TOOL_API_SDK_GENERATOR_BASE_URL` may be
 set to an explicit generator origin; when it is empty, the edge server defaults
 to the current web page origin derived from the incoming request host and
-scheme. Configure `SDKWORK_CLAW_TOOL_API_SDK_GENERATOR_API_KEY` when the generator
+scheme. Configure `SDKWORK_CLOUDROUTER_TOOL_API_SDK_GENERATOR_API_KEY` when the generator
 requires a bearer token. Standard `pnpm build` also creates generated
 TypeScript app and backend SDK runtime packages and writes prebuilt SDK ZIP archives
-into `apps/sdkwork-clawrouter-pc/dist/sdk-archives`; `pnpm start`
-uses that directory as `SDKWORK_CLAW_TOOL_API_SDK_ARCHIVE_ROOT` by default. When a
-live generator request fails and `SDKWORK_CLAW_TOOL_API_SDK_ARCHIVE_ROOT` is
+into `apps/sdkwork-cloudrouter-pc/dist/sdk-archives`; `pnpm start`
+uses that directory as `SDKWORK_CLOUDROUTER_TOOL_API_SDK_ARCHIVE_ROOT` by default. When a
+live generator request fails and `SDKWORK_CLOUDROUTER_TOOL_API_SDK_ARCHIVE_ROOT` is
 configured, the edge server falls back to a matching prebuilt ZIP.
 
 Archive fallback lookup is constrained to the configured directory, rejects
@@ -1430,16 +1430,16 @@ even if a matching ZIP file exists in the archive directory.
 The generated app SDK archive is:
 
 ```text
-sdkwork-clawrouter-app-sdk-typescript-0.1.0.zip
+sdkwork-cloudrouter-app-sdk-typescript-0.1.0.zip
 ```
 
 The generated backend SDK archive is:
 
 ```text
-sdkwork-clawrouter-backend-sdk-typescript-0.1.0.zip
+sdkwork-cloudrouter-backend-sdk-typescript-0.1.0.zip
 ```
 
-If the live generator fails and `SDKWORK_CLAW_TOOL_API_SDK_ARCHIVE_ROOT` is not
+If the live generator fails and `SDKWORK_CLOUDROUTER_TOOL_API_SDK_ARCHIVE_ROOT` is not
 configured, `/api/generate-sdk` returns `sdk_generator_failed`. If fallback is
 configured but the normalized archive is missing, it returns
 `sdk_archive_not_found`.
@@ -1460,9 +1460,9 @@ evidence defined by
    `pnpm release:preflight` and `pnpm verify:fast`.
 3. In CI or release packaging, opt into the live dev edge smoke when required
    with `pnpm verify -- --with-edge-dev-smoke` and
-   `CLAWROUTER_EDGE_DEV_SMOKE_REQUIRED=1`.
+   `CLOUDROUTER_EDGE_DEV_SMOKE_REQUIRED=1`.
 4. In CI or release packaging, run the same gate with
-   `CLAWROUTER_BROWSER_SMOKE_REQUIRED=1` and a working Chrome/Edge/Chromium
+   `CLOUDROUTER_BROWSER_SMOKE_REQUIRED=1` and a working Chrome/Edge/Chromium
    DevTools target.
 5. Run `pnpm test:postgres:docker` when Docker Desktop is available.
 6. Review generated audits under `generated/schema/frontend/`.
@@ -1480,7 +1480,7 @@ evidence defined by
 
 ## Commercial Licensing
 
-SDKWork Claw Router application source is licensed under
+SDKWork Cloud Router application source is licensed under
 `AGPL-3.0-or-later AND LicenseRef-SDKWork-Commercial-Restriction`. Commercial
 use is prohibited unless SDKWork grants prior written commercial authorization.
 Commercial editions are available for teams and organizations that need
@@ -1512,7 +1512,7 @@ custom quote, or negotiate OEM terms.
 
 ## License
 
-SDKWork Claw Router application source is licensed under
+SDKWork Cloud Router application source is licensed under
 `AGPL-3.0-or-later AND LicenseRef-SDKWork-Commercial-Restriction`. See
 [LICENSE](./LICENSE) and [COMMERCIAL-LICENSE.md](./COMMERCIAL-LICENSE.md).
 
@@ -1562,7 +1562,7 @@ Extension points are limited to declared public exports, runtime entrypoints, SD
 ### Verification
 
 - `cargo test --workspace`
-- `pnpm --filter sdkwork-clawrouter-workspace test`
+- `pnpm --filter sdkwork-cloudrouter-workspace test`
 
 ### Owner And Status
 

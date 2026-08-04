@@ -14,7 +14,7 @@
 ### Task 1: Contract Tests
 
 - [ ] Add `tests/test_admin_model_mapping_runtime_standard.py` assertions for rule, item, and binding tables.
-- [ ] Add `apps/sdkwork-clawrouter-pc/admin-model-mapping-runtime.test.ts` assertions for rule list, associated content, multi-item mapping rows, and edit semantics.
+- [ ] Add `apps/sdkwork-cloudrouter-pc/admin-model-mapping-runtime.test.ts` assertions for rule list, associated content, multi-item mapping rows, and edit semantics.
 - [ ] Run both tests and confirm RED.
 
 ### Task 2: Schema And API Contract
@@ -33,7 +33,7 @@
 
 ### Task 4: Portal UI
 
-- [ ] Add `ModelMappingService` using `getClawRouterBackendSdkClient().ai.modelMappings`.
+- [ ] Add `ModelMappingService` using `getCloudRouterBackendSdkClient().ai.modelMappings`.
 - [ ] Add `ModelMappingAdmin` under `/admin/model/mappings` as a rule list.
 - [ ] Add the associated content column and `ModelMappingBindingsCell`.
 - [ ] Add create/edit form support for rule bindings and multi-row mapping item CRUD.

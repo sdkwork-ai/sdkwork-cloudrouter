@@ -3,7 +3,7 @@
 
 ## 目标
 
-`tools.schema_compiler` 将 `docs/schema-registry/sdkwork-clawrouter.tables.yaml` 编译为可落库的 PostgreSQL DDL，形成从“数据契约”到“物理表结构”的标准生成链路。
+`tools.schema_compiler` 将 `docs/schema-registry/sdkwork-cloudrouter.tables.yaml` 编译为可落库的 PostgreSQL DDL，形成从“数据契约”到“物理表结构”的标准生成链路。
 
 生成产物：
 

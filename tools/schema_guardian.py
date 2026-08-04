@@ -537,7 +537,7 @@ class GeneratedUniqueTarget:
 
 
 class SchemaGuardian:
-    """Executable guardrails for the Claw Router schema registry."""
+    """Executable guardrails for the Cloud Router schema registry."""
 
     def __init__(
         self,
@@ -549,7 +549,7 @@ class SchemaGuardian:
         self.registry_path = (
             Path(registry_path).resolve()
             if registry_path is not None
-            else self.root / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+            else self.root / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
         )
         self.test_schema_path = Path(test_schema_path).resolve() if test_schema_path is not None else None
 
@@ -670,10 +670,10 @@ class SchemaGuardian:
             *self._frontend_contract_source_paths(),
             self.root / "docs" / "schema-registry" / "frontend-field-contracts.yaml",
             self.root / "tools" / "api_contract_manifest.py",
-            self.root / "apis" / "app-api" / "clawrouter" / "clawrouter-app-api.openapi.json",
-            self.root / "apis" / "backend-api" / "clawrouter" / "clawrouter-backend-api.openapi.json",
-            self.root / "generated" / "openapi" / "clawrouter-app-openapi.json",
-            self.root / "generated" / "openapi" / "clawrouter-backend-openapi.json",
+            self.root / "apis" / "app-api" / "cloudrouter" / "cloudrouter-app-api.openapi.json",
+            self.root / "apis" / "backend-api" / "cloudrouter" / "cloudrouter-backend-api.openapi.json",
+            self.root / "generated" / "openapi" / "cloudrouter-app-openapi.json",
+            self.root / "generated" / "openapi" / "cloudrouter-backend-openapi.json",
             self.root / "generated" / "api" / "api-contract-manifest.json",
         ]
         messages: list[str] = []
@@ -1713,8 +1713,8 @@ class SchemaGuardian:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate sdkwork-clawrouter schema registry guardrails.")
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser = argparse.ArgumentParser(description="Validate sdkwork-cloudrouter schema registry guardrails.")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     parser.add_argument("--registry", type=Path, default=None, help="schema registry YAML path")
     parser.add_argument("--test-schema", type=Path, default=None, help="Rust integration test schema source path")
     args = parser.parse_args()

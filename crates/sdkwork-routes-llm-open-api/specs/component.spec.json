@@ -6,7 +6,7 @@
     "displayName": "SDKWork Router LLM Open API",
     "version": "0.1.0",
     "type": "rust-route-crate",
-    "root": "sdkwork-clawrouter/crates/sdkwork-routes-llm-open-api",
+    "root": "sdkwork-cloudrouter/crates/sdkwork-routes-llm-open-api",
     "domain": "intelligence",
     "capability": "llm",
     "surface": "open-api",

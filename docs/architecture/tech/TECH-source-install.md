@@ -28,14 +28,14 @@ python --version
 ## 2. Clone
 
 ```bash
-git clone https://github.com/Sdkwork-Cloud/sdkwork-clawrouter.git
-cd sdkwork-clawrouter
+git clone https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter.git
+cd sdkwork-cloudrouter
 ```
 
 Install portal workspace dependencies:
 
 ```bash
-pnpm --dir apps/sdkwork-clawrouter-pc install
+pnpm --dir apps/sdkwork-cloudrouter-pc install
 ```
 
 Or let the root launcher install them when needed:
@@ -209,7 +209,7 @@ Native installer formats are platform-specific: `.deb` on Linux, `.msi` on Windo
 Use an older package version explicitly:
 
 ```bash
-node scripts/build-claw-router-install-package.mjs --package-id linux-x64-archive --version 0.1.0 --check --dry-run
+node scripts/build-cloud-router-install-package.mjs --package-id linux-x64-archive --version 0.1.0 --check --dry-run
 ```
 
 ## 7. Source Initialization Smoke
@@ -223,7 +223,7 @@ pnpm install:init:smoke
 Run the smoke against a real built installer:
 
 ```bash
-node scripts/smoke-install-package-init.mjs --package-id linux-x64-archive --package-root dist/install-package-staging --installer-bin bin/clawrouterctl --tmp-root target/install-init-smoke/linux-x64 --check
+node scripts/smoke-install-package-init.mjs --package-id linux-x64-archive --package-root dist/install-package-staging --installer-bin bin/cloudrouterctl --tmp-root target/install-init-smoke/linux-x64 --check
 ```
 
 ## 8. Verification

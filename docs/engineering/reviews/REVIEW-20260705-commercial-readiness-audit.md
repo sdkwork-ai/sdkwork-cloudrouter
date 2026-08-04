@@ -2,7 +2,7 @@
 
 Status: superseded
 Review date: 2026-07-05
-Application: sdkwork-clawrouter
+Application: sdkwork-cloudrouter
 Superseded by: `REQ-2026-0001`, `ADR-20260710`, and `PLAN-2026-0001`
 
 This is a retained navigation entry for a point-in-time implementation review.

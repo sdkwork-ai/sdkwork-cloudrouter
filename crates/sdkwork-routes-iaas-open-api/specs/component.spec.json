@@ -6,7 +6,7 @@
     "displayName": "SDKWork Router IaaS Open API",
     "version": "0.1.0",
     "type": "rust-route-crate",
-    "root": "sdkwork-clawrouter/crates/sdkwork-routes-iaas-open-api",
+    "root": "sdkwork-cloudrouter/crates/sdkwork-routes-iaas-open-api",
     "domain": "platform",
     "capability": "iaas",
     "surface": "open-api",

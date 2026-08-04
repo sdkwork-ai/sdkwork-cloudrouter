@@ -20,13 +20,13 @@ const DEFAULT_CLIENT_MAX_BODY_SIZE = '1100m';
 function printHelp() {
   console.log(`Usage: node scripts/configure-nginx.mjs [options]
 
-Render or deploy an SDKWork Claw Router nginx reverse-proxy config.
+Render or deploy an SDKWork Cloud Router nginx reverse-proxy config.
 
 Options:
   --domain <fqdn>             Full public hostname (default ${DEFAULT_DOMAIN}).
   --site-family <name>        sites-enabled child directory (default ${DEFAULT_SITE_FAMILY}).
   --site-type <api|web>       Comment and profile label (default ${DEFAULT_SITE_TYPE}).
-  --upstream <origin>         Claw Router edge origin (default ${DEFAULT_UPSTREAM}).
+  --upstream <origin>         Cloud Router edge origin (default ${DEFAULT_UPSTREAM}).
   --server-root <path>        Canonical nginx root (default ${DEFAULT_SERVER_ROOT}).
   --cert-root <path>          Certificate live root (default ${DEFAULT_CERT_ROOT}).
   --cert-name <name>          Certificate directory name (default derived root domain).
@@ -357,7 +357,7 @@ ${renderProxyHeaders()}
 }
 
 function renderNginxConfig(plan) {
-  return `# SDKWork Claw Router nginx reverse proxy
+  return `# SDKWork Cloud Router nginx reverse proxy
 # Domain: ${plan.domain}
 # Site family: ${plan.siteFamily}
 # Site type: ${plan.siteType}

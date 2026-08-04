@@ -1,8 +1,8 @@
-# SDKWork Claw Router Standard Alignment Audit
+# SDKWork Cloud Router Standard Alignment Audit
 
 Status: superseded
 Superseded: 2026-07-13
-Owner: clawrouter-platform
+Owner: cloudrouter-platform
 
 This former audit is retained only as a stable historical entrypoint. It does
 not establish current production readiness, commercial release eligibility,

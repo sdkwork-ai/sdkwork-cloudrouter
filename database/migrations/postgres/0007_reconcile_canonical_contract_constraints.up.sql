@@ -1,16 +1,16 @@
 -- sdkwork:migration
 -- id: 0007_reconcile_canonical_contract_constraints
 -- engine: postgres
--- module: clawrouter
+-- module: cloudrouter
 -- purpose: Reconcile legacy nullability, constraints, and soft-delete-aware unique indexes with the canonical contract.
 -- reversible: false
 -- rollback: forward-fix
 -- transactional: true
--- lock: access-exclusive-on-clawrouter-contract-tables
+-- lock: access-exclusive-on-cloudrouter-contract-tables
 -- lock_timeout: 5s
 -- statement_timeout: 5min
--- estimated_size: Metadata changes plus validation scans of Claw Router-owned routing, pricing, trace, and usage tables.
--- write_traffic: Stop Claw Router configuration, routing, pricing, trace, and usage writes while this migration runs.
+-- estimated_size: Metadata changes plus validation scans of Cloud Router-owned routing, pricing, trace, and usage tables.
+-- write_traffic: Stop Cloud Router configuration, routing, pricing, trace, and usage writes while this migration runs.
 -- rewrite: Nullability and constraint changes are metadata-only when existing rows satisfy the contract; unique indexes are rebuilt.
 -- replication_impact: Catalog DDL and bounded index WAL; monitor lock waits, WAL bytes, and replica lag.
 -- backfill: None; invalid null, scope, range, relationship, or uniqueness data fails closed for explicit repair.

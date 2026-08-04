@@ -4,7 +4,7 @@
 `deployments/` stores deployment descriptors, topology examples, packaging handoff files, infrastructure examples, and deployment runbooks.
 
 ## Owner
-SDKWork Claw Router release and operations maintainers.
+SDKWork Cloud Router release and operations maintainers.
 
 ## Allowed Content
 Docker, Kubernetes, systemd, nginx, release handoff, environment topology, deployment runbooks, and non-secret deployment examples.

@@ -1,13 +1,13 @@
 # Upstream Supplier Management
 
 Status: active  
-Owner: claw-router-platform  
+Owner: cloud-router-platform  
 Updated: 2026-07-29  
 Decision: [ADR-20260728](../../architecture/decisions/ADR-20260728-standardize-upstream-supplier-routing.md)
 
 ## Product Goal
 
-Claw Router provides one standardized operator workflow for configuring an
+Cloud Router provides one standardized operator workflow for configuring an
 official AI provider or relay supplier, attaching credentialed accounts,
 grouping those accounts for routing and settlement, and explaining why an API
 request selected or rejected each candidate.

@@ -6,14 +6,14 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-ROUTES = Path(__file__).resolve().parents[1] / "crates/sdkwork-routes-clawrouter-app-api/src/routes.rs"
+ROUTES = Path(__file__).resolve().parents[1] / "crates/sdkwork-routes-cloudrouter-app-api/src/routes.rs"
 
 BOUNDARIES = {
-    "sdkwork_claw_http::app_request_subject_boundary": (
-        "sdkwork_claw_http::apply_app_subject_boundary_if_legacy"
+    "sdkwork_cloudrouter_http::app_request_subject_boundary": (
+        "sdkwork_cloudrouter_http::apply_app_subject_boundary_if_legacy"
     ),
-    "sdkwork_claw_http::optional_app_request_subject_boundary": (
-        "sdkwork_claw_http::apply_optional_app_subject_boundary_if_legacy"
+    "sdkwork_cloudrouter_http::optional_app_request_subject_boundary": (
+        "sdkwork_cloudrouter_http::apply_optional_app_subject_boundary_if_legacy"
     ),
 }
 
@@ -113,7 +113,7 @@ def migrate(content: str) -> str:
             )
 
         config_match = re.search(
-            r"from_fn_with_state\(\s*(.+?)\s*,\s*sdkwork_claw_http::",
+            r"from_fn_with_state\(\s*(.+?)\s*,\s*sdkwork_cloudrouter_http::",
             layer_block,
             re.DOTALL,
         )

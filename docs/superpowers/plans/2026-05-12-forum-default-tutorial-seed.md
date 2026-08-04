@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Install SDKWork Claw Router with professional default forum tutorial articles backed by real forum database tables.
+**Goal:** Install SDKWork Cloud Router with professional default forum tutorial articles backed by real forum database tables.
 
 **Architecture:** Add a bundled `data/forum/forum-seed.json` catalog and a Rust `forum_seed` importer that writes Java-compatible rows into `plus_feeds`, `plus_comments`, `plus_content_vote`, and `plus_favorite`. Wire the importer into `DatabaseInstaller` status, repair, and first-install flows using the existing checksum migration pattern.
 
@@ -13,7 +13,7 @@
 ### Task 1: Installer Test Contract
 
 **Files:**
-- Modify: `services/sdkwork-clawrouter-router-service/tests/database_installer.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/tests/database_installer.rs`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -21,7 +21,7 @@ Replace the old “forum tables empty after install” assertion with checks tha
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cargo test -p sdkwork-clawrouter-router-service --test database_installer sqlite_installer_installs_schema_and_sdkwork_models_catalog_once -- --exact`
+Run: `cargo test -p sdkwork-cloudrouter-router-service --test database_installer sqlite_installer_installs_schema_and_sdkwork_models_catalog_once -- --exact`
 Expected: FAIL because no forum seed rows or migration exist yet.
 
 ### Task 2: Bundled Forum Seed Data
@@ -41,9 +41,9 @@ Use fixed numeric ids and `sdkwork-forum-*` UUIDs so imports are idempotent and 
 ### Task 3: Rust Forum Seed Importer
 
 **Files:**
-- Create: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/forum_seed.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/mod.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/installer.rs`
+- Create: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/forum_seed.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/mod.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/installer.rs`
 
 - [ ] **Step 1: Implement JSON loader and payload hash**
 
@@ -64,17 +64,17 @@ Call forum seed import during install and status repair. Record migration key `f
 ### Task 4: Verification
 
 **Files:**
-- Test: `services/sdkwork-clawrouter-router-service/tests/database_installer.rs`
-- Test: `services/sdkwork-clawrouter-router-service/tests/sqlite_forum_store.rs`
+- Test: `services/sdkwork-cloudrouter-router-service/tests/database_installer.rs`
+- Test: `services/sdkwork-cloudrouter-router-service/tests/sqlite_forum_store.rs`
 
 - [ ] **Step 1: Run focused installer test**
 
-Run: `cargo test -p sdkwork-clawrouter-router-service --test database_installer sqlite_installer_installs_schema_and_sdkwork_models_catalog_once -- --exact`
+Run: `cargo test -p sdkwork-cloudrouter-router-service --test database_installer sqlite_installer_installs_schema_and_sdkwork_models_catalog_once -- --exact`
 Expected: PASS.
 
 - [ ] **Step 2: Run forum store tests**
 
-Run: `cargo test -p sdkwork-clawrouter-router-service --test sqlite_forum_store`
+Run: `cargo test -p sdkwork-cloudrouter-router-service --test sqlite_forum_store`
 Expected: PASS.
 
 - [ ] **Step 3: Run forum runtime standard**

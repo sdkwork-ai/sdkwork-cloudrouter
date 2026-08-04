@@ -1,7 +1,7 @@
 -- sdkwork:migration
 -- id: 0008_add_api_key_secret_storage
 -- engine: postgres
--- module: sdkwork-clawrouter
+-- module: sdkwork-cloudrouter
 -- purpose: Add raw API key secret storage columns to iam_gateway_api_key.
 --   Keys are stored either as plaintext (default) or AEAD ciphertext so
 --   management surfaces can re-display the raw key. Existing rows have no

@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "kind": "sdkwork.component.spec",
   "component": {
-    "name": "sdkwork-clawrouter",
-    "displayName": "SDKWork Claw Router",
+    "name": "sdkwork-cloudrouter",
+    "displayName": "SDKWork Cloud Router",
     "version": "0.3.0",
     "type": "app",
     "root": ".",
@@ -110,26 +110,26 @@
   ],
   "contracts": {
     "publicExports": [
-      "@sdkwork/clawrouter-app-sdk",
-      "@sdkwork/clawrouter-backend-sdk",
-      "@sdkwork/clawrouter-open-sdk"
+      "@sdkwork/cloudrouter-app-sdk",
+      "@sdkwork/cloudrouter-backend-sdk",
+      "@sdkwork/cloudrouter-open-sdk"
     ],
     "requiredPorts": [
       {
-        "name": "clawrouterApiAssembly",
-        "export": "sdkwork_api_clawrouter_assembly::assemble_api_router"
+        "name": "cloudrouterApiAssembly",
+        "export": "sdkwork_api_cloudrouter_assembly::assemble_api_router"
       }
     ],
     "runtimeEntrypoints": [
-      "crates/sdkwork-api-clawrouter-standalone-gateway/src/main.rs",
-      "crates/sdkwork-clawrouter-edge-runtime/src/main.rs",
-      "apps/sdkwork-clawrouter-pc/package.json#scripts"
+      "crates/sdkwork-api-cloudrouter-standalone-gateway/src/main.rs",
+      "crates/sdkwork-cloudrouter-edge-runtime/src/main.rs",
+      "apps/sdkwork-cloudrouter-pc/package.json#scripts"
     ],
     "routeManifest": null,
     "sdkClients": [
-      "@sdkwork/clawrouter-app-sdk",
-      "@sdkwork/clawrouter-backend-sdk",
-      "@sdkwork/clawrouter-open-sdk"
+      "@sdkwork/cloudrouter-app-sdk",
+      "@sdkwork/cloudrouter-backend-sdk",
+      "@sdkwork/cloudrouter-open-sdk"
     ],
     "sdkDependencies": [
       {
@@ -171,11 +171,11 @@
         "profileCoverage": [
           "standalone"
         ],
-        "cargoDependency": "sdkwork-api-clawrouter-assembly",
-        "embeddedExecutableExport": "sdkwork_api_clawrouter_assembly::assemble_api_router",
+        "cargoDependency": "sdkwork-api-cloudrouter-assembly",
+        "embeddedExecutableExport": "sdkwork_api_cloudrouter_assembly::assemble_api_router",
         "coverageEvidence": [
-          "crates/sdkwork-api-clawrouter-assembly/src/bootstrap/iam.rs#wire_iam_app_router",
-          "crates/sdkwork-api-clawrouter-assembly/src/bootstrap.rs#assemble_api_router"
+          "crates/sdkwork-api-cloudrouter-assembly/src/bootstrap/iam.rs#wire_iam_app_router",
+          "crates/sdkwork-api-cloudrouter-assembly/src/bootstrap.rs#assemble_api_router"
         ]
       },
       {
@@ -203,7 +203,7 @@
     "defaultConnectivityPlane": "application",
     "defaultRuntimeMode": "same-origin-embedded",
     "dependencyPolicy": "Consume dependency APIs through declared generated SDKs and resolved composition. Do not copy dependency routes or transports.",
-    "sdkPolicy": "Application and frontend code consume composed Claw Router SDK packages. Generated transport output is generator-owned.",
+    "sdkPolicy": "Application and frontend code consume composed Cloud Router SDK packages. Generated transport output is generator-owned.",
     "languagePolicy": "Language packages follow native manifests while preserving this component contract."
   },
   "verification": {

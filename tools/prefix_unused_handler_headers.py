@@ -11,7 +11,7 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-CRATE = "sdkwork-clawrouter-router-service"
+CRATE = "sdkwork-cloudrouter-router-service"
 REF_HEADER_PARAM_RE = re.compile(r"\bheaders\s*:\s*&HeaderMap\b")
 PLAIN_HEADER_PARAM_RE = re.compile(r"\bheaders\s*:\s*HeaderMap\b")
 

@@ -1,8 +1,8 @@
-# SDKWork Claw Router - Token / API Key Rotation Runbook
+# SDKWork Cloud Router - Token / API Key Rotation Runbook
 
 **Document Version:** 1.0
 **Last Updated:** 2026-06-27
-**Owner:** Security / clawrouter-security
+**Owner:** Security / cloudrouter-security
 **Review Frequency:** Quarterly
 **Severity:** P1
 
@@ -22,11 +22,11 @@
 
 ## Scenario
 
-Scheduled rotation of credentials and signing material used by Claw Router:
+Scheduled rotation of credentials and signing material used by Cloud Router:
 
 - Tenant-facing **API keys** (issued per tenant / application).
 - **JWT signing keys** — the shared HMAC secret backing app session tokens
-  (`SDKWORK_CLAW_APP_SESSION_SECRET`, `AppSessionConfig`).
+  (`SDKWORK_CLOUDROUTER_APP_SESSION_SECRET`, `AppSessionConfig`).
 - **Provider credentials** — bearer tokens for upstream AI providers.
 - **Admin passwords** — credentials for admin portal members.
 
@@ -60,7 +60,7 @@ NEW_SECRET=$(openssl rand -base64 32)
 echo "NEW_SECRET=$NEW_SECRET"  # record in the secret manager, not in git
 
 # Generate a tenant API key via admin API (dual-key: existing key stays active)
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
   curl -sS -X POST http://localhost:8080/admin/api-keys \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
@@ -71,12 +71,12 @@ kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
 
 ```bash
 # Stage the new HMAC secret alongside the old one (overlap window)
-kubectl create secret generic claw-app-session-secret-new \
-  --from-literal=secret="$NEW_SECRET" -n clawrouter
+kubectl create secret generic cloud-app-session-secret-new \
+  --from-literal=secret="$NEW_SECRET" -n cloudrouter
 
 # Patch the deployment to reference both, then roll pods one at a time
-kubectl rollout restart deployment/claw-router-gateway -n clawrouter
-kubectl rollout status  deployment/claw-router-gateway -n clawrouter
+kubectl rollout restart deployment/cloud-router-gateway -n cloudrouter
+kubectl rollout status  deployment/cloud-router-gateway -n cloudrouter
 ```
 
 For provider credentials stored as `password_file` references (SECURITY.md),
@@ -87,17 +87,17 @@ the new bearer token is loaded.
 
 ```bash
 # JWT / session token verification
-NEW_TOKEN=$(kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+NEW_TOKEN=$(kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
   curl -sS -X POST http://localhost:8080/auth/login \
     -H "Content-Type: application/json" \
     -d "{\"username\":\"$TEST_USER\",\"password\":\"$TEST_PASS\"}" | jq -r .token)
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
   curl -sS -o /dev/null -w "%{http_code}\n" \
     -H "Authorization: Bearer $NEW_TOKEN" \
     http://localhost:8080/me
 
 # Provider relay (new bearer token)
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
   curl -sS -o /dev/null -w "%{http_code}\n" \
     -H "Authorization: Bearer $NEW_PROVIDER_KEY" \
     https://api.openai.com/v1/models
@@ -109,19 +109,19 @@ Only after all verification checks pass:
 
 ```bash
 # Revoke the old tenant API key
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
   curl -sS -X DELETE http://localhost:8080/admin/api-keys/<old-key-id> \
     -H "Authorization: Bearer ${ADMIN_TOKEN}"
 
 # Remove the old HMAC secret once all pods run the new one
-kubectl delete secret claw-app-session-secret-old -n clawrouter
+kubectl delete secret cloud-app-session-secret-old -n cloudrouter
 ```
 
 Back up the rotated key material first (per
 [Disaster Recovery Plan](../../deployments/runbooks/disaster-recovery-plan.md#signing-key-backup)):
 
 ```bash
-kubectl get secret claw-app-session-secret -n clawrouter -o jsonpath='{.data.secret}' \
+kubectl get secret cloud-app-session-secret -n cloudrouter -o jsonpath='{.data.secret}' \
   | base64 -d > backups/app-session-secret-$(date +%Y%m%d).enc
 # Retain for 90 days after rotation, then destroy.
 ```
@@ -133,12 +133,12 @@ regressions), roll back immediately:
 
 ```bash
 # Point the deployment back to the previous secret
-kubectl set env deployment/claw-router-gateway \
-  SDKWORK_CLAW_APP_SESSION_SECRET=<previous-value> -n clawrouter
-kubectl rollout restart deployment/claw-router-gateway -n clawrouter
+kubectl set env deployment/cloud-router-gateway \
+  SDKWORK_CLOUDROUTER_APP_SESSION_SECRET=<previous-value> -n cloudrouter
+kubectl rollout restart deployment/cloud-router-gateway -n cloudrouter
 
 # Re-enable the old tenant API key if it was revoked prematurely
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
   curl -sS -X POST http://localhost:8080/admin/api-keys/<old-key-id>/restore \
     -H "Authorization: Bearer ${ADMIN_TOKEN}"
 ```

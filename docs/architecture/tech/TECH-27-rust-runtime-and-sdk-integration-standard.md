@@ -1,4 +1,4 @@
-# Claw Router Rust Runtime And SDK Integration
+# Cloud Router Rust Runtime And SDK Integration
 
 Status: active  
 Owner: SDKWork maintainers  
@@ -7,7 +7,7 @@ Specs: `RUST_CODE_SPEC.md`, `API_SPEC.md`, `SDK_SPEC.md`, `APP_SDK_INTEGRATION_S
 
 ## 1. Purpose
 
-This document narrows the SDKWork standards for Claw Router's Rust runtime,
+This document narrows the SDKWork standards for Cloud Router's Rust runtime,
 three HTTP API surfaces, generated SDK families, and PC consumers. It does not
 approve a release or restate the global standards.
 
@@ -15,9 +15,9 @@ approve a release or restate the global standards.
 
 | Surface | Runtime path | Route authority | Generated SDK |
 | --- | --- | --- | --- |
-| App/product | `/app/v3/api/**` | `crates/sdkwork-routes-clawrouter-app-api` | `@sdkwork/clawrouter-app-sdk` |
-| Backend/admin | `/backend/v3/api/**` | `crates/sdkwork-routes-clawrouter-backend-api` | `@sdkwork/clawrouter-backend-sdk` |
-| OpenAI compatible | `/v1/**` | Open API route crates and assembly | `@sdkwork/clawrouter-open-sdk` |
+| App/product | `/app/v3/api/**` | `crates/sdkwork-routes-cloudrouter-app-api` | `@sdkwork/cloudrouter-app-sdk` |
+| Backend/admin | `/backend/v3/api/**` | `crates/sdkwork-routes-cloudrouter-backend-api` | `@sdkwork/cloudrouter-backend-sdk` |
+| OpenAI compatible | `/v1/**` | Open API route crates and assembly | `@sdkwork/cloudrouter-open-sdk` |
 
 URL prefixes do not select SDK ownership by themselves; the authored API
 surface does. PC product modules call the App SDK, management modules call the
@@ -30,10 +30,10 @@ compatibility clients are forbidden for these business surfaces.
 ```text
 docs/schema-registry/frontend-field-contracts.yaml
   -> generated/api/api-contract-manifest.json
-  -> generated/openapi/clawrouter-app-openapi.json
-  -> generated/openapi/clawrouter-backend-openapi.json
+  -> generated/openapi/cloudrouter-app-openapi.json
+  -> generated/openapi/cloudrouter-backend-openapi.json
   -> generated Open SDK input
-  -> sdks/clawrouter-*-sdk/*-typescript
+  -> sdks/cloudrouter-*-sdk/*-typescript
 ```
 
 Generated output is never hand-edited. An incorrect method, operation ID,
@@ -47,13 +47,13 @@ page metadata. Errors use RFC 9457 Problem Details.
 
 ## 4. Rust Runtime Composition
 
-- `sdkwork-clawrouter-edge-runtime` owns OpenAI-compatible invocation assembly,
+- `sdkwork-cloudrouter-edge-runtime` owns OpenAI-compatible invocation assembly,
   streaming dispatch, and runtime coordination.
-- `sdkwork-routes-clawrouter-app-api` and
-  `sdkwork-routes-clawrouter-backend-api` own route composition.
-- `sdkwork-clawrouter-standalone-gateway` and
-  `sdkwork-clawrouter-admin-gateway` own listeners.
-- `sdkwork-clawrouter-router-service` owns application/domain ports and
+- `sdkwork-routes-cloudrouter-app-api` and
+  `sdkwork-routes-cloudrouter-backend-api` own route composition.
+- `sdkwork-cloudrouter-standalone-gateway` and
+  `sdkwork-cloudrouter-admin-gateway` own listeners.
+- `sdkwork-cloudrouter-router-service` owns application/domain ports and
   remaining in-repository PostgreSQL adapters.
 - Provider adapter contract, registry, HTTP, and implementation crates own
   provider-specific protocol translation.
@@ -129,8 +129,8 @@ catalog allocation.
 
 Payment provider callbacks are signed public ingress and must not use
 `app_request_subject_boundary`. `PaymentWebhookConfig` requires
-`SDKWORK_CLAW_PAYMENT_WEBHOOK_SECRET`, enforces
-`SDKWORK_CLAW_PAYMENT_WEBHOOK_MAX_CLOCK_SKEW_SECONDS`, and fails closed because
+`SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET`, enforces
+`SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_MAX_CLOCK_SKEW_SECONDS`, and fails closed because
 unsigned payment callbacks are forbidden. Payment callback amounts must be
 parsed as exact decimal values; binary floating-point comparison is forbidden
 and sub-cent callback precision must be rejected.
@@ -145,11 +145,11 @@ is never server authorization, billing, entitlement, audit, or routing truth.
 ## 10. Verification
 
 ```text
-cargo check -p sdkwork-routes-clawrouter-app-api
-cargo check -p sdkwork-routes-clawrouter-backend-api
-cargo check -p sdkwork-clawrouter-edge-runtime
-python -B -m tools.clawrouter_sdk_guardian
-python -B -m tools.clawrouter_skill_guardian
+cargo check -p sdkwork-routes-cloudrouter-app-api
+cargo check -p sdkwork-routes-cloudrouter-backend-api
+cargo check -p sdkwork-cloudrouter-edge-runtime
+python -B -m tools.cloudrouter_sdk_guardian
+python -B -m tools.cloudrouter_skill_guardian
 python -B -m tools.schema_quality_gate
 node ../sdkwork-specs/tools/check-pagination.mjs --workspace .
 ```

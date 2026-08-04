@@ -1,26 +1,26 @@
 $ErrorActionPreference = 'Stop'
-$root = (Resolve-Path (Join-Path $PSScriptRoot '..\apps\sdkwork-clawrouter-pc\packages')).Path
+$root = (Resolve-Path (Join-Path $PSScriptRoot '..\apps\sdkwork-cloudrouter-pc\packages')).Path
 $toDelete = @(
-  'sdkwork-clawrouter-pc-admin-announcement',
-  'sdkwork-clawrouter-pc-admin-catalog',
-  'sdkwork-clawrouter-pc-admin-file-platform',
-  'sdkwork-clawrouter-pc-admin-finance',
-  'sdkwork-clawrouter-pc-admin-inventory',
-  'sdkwork-clawrouter-pc-admin-marketing',
-  'sdkwork-clawrouter-pc-admin-memberships',
-  'sdkwork-clawrouter-pc-admin-oauth',
-  'sdkwork-clawrouter-pc-admin-orders',
-  'sdkwork-clawrouter-pc-admin-payments',
-  'sdkwork-clawrouter-pc-admin-wallet',
-  'sdkwork-clawrouter-pc-console-account',
-  'sdkwork-clawrouter-pc-console-checkout',
-  'sdkwork-clawrouter-pc-console-memberships',
-  'sdkwork-clawrouter-pc-console-messages',
-  'sdkwork-clawrouter-pc-console-recharge',
-  'sdkwork-clawrouter-pc-console-settlements',
-  'sdkwork-clawrouter-pc-console-wallet',
-  'sdkwork-clawrouter-pc-forum',
-  'sdkwork-clawrouter-pc-vip'
+  'sdkwork-cloudrouter-pc-admin-announcement',
+  'sdkwork-cloudrouter-pc-admin-catalog',
+  'sdkwork-cloudrouter-pc-admin-file-platform',
+  'sdkwork-cloudrouter-pc-admin-finance',
+  'sdkwork-cloudrouter-pc-admin-inventory',
+  'sdkwork-cloudrouter-pc-admin-marketing',
+  'sdkwork-cloudrouter-pc-admin-memberships',
+  'sdkwork-cloudrouter-pc-admin-oauth',
+  'sdkwork-cloudrouter-pc-admin-orders',
+  'sdkwork-cloudrouter-pc-admin-payments',
+  'sdkwork-cloudrouter-pc-admin-wallet',
+  'sdkwork-cloudrouter-pc-console-account',
+  'sdkwork-cloudrouter-pc-console-checkout',
+  'sdkwork-cloudrouter-pc-console-memberships',
+  'sdkwork-cloudrouter-pc-console-messages',
+  'sdkwork-cloudrouter-pc-console-recharge',
+  'sdkwork-cloudrouter-pc-console-settlements',
+  'sdkwork-cloudrouter-pc-console-wallet',
+  'sdkwork-cloudrouter-pc-forum',
+  'sdkwork-cloudrouter-pc-vip'
 )
 
 foreach ($name in $toDelete) {

@@ -1,14 +1,14 @@
 # Contributor Covenant Code of Conduct
 
 Status: active
-Owner: SDKWork Claw Router maintainers
-Application: sdkwork-clawrouter
+Owner: SDKWork Cloud Router maintainers
+Application: sdkwork-cloudrouter
 Updated: 2026-06-26
 
 ## Our Pledge
 
 We as members, contributors, and leaders pledge to make participation in the
-SDKWork Claw Router community a harassment-free experience for everyone,
+SDKWork Cloud Router community a harassment-free experience for everyone,
 regardless of age, body size, visible or invisible disability, ethnicity, sex
 characteristics, gender identity and expression, level of experience, education,
 socio-economic status, nationality, personal appearance, race, caste, color,

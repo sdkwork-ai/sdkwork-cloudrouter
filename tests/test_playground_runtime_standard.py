@@ -7,9 +7,9 @@ ROOT = Path(__file__).resolve().parents[1]
 PLAYGROUND_ROOT = (
     ROOT
     / "apps"
-    / "sdkwork-clawrouter-pc"
+    / "sdkwork-cloudrouter-pc"
     / "packages"
-    / "sdkwork-clawrouter-pc-playground"
+    / "sdkwork-cloudrouter-pc-playground"
 )
 PLAYGROUND_ADAPTER = PLAYGROUND_ROOT / "src" / "pages" / "Playground.tsx"
 AGENTS_APP_ROOT = (
@@ -83,8 +83,8 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
         self.assertIn("'chat_session'", tabs_source)
         self.assertIn("DEFAULT_WORKBENCH_TAB", tabs_source)
         self.assertIn("SIDEBAR_TABS.map", sidebar_source)
-        self.assertNotIn("@sdkwork/clawrouter", workbench_component)
-        self.assertNotIn("@sdkwork/clawrouter", layout_source)
+        self.assertNotIn("@sdkwork/cloudrouter", workbench_component)
+        self.assertNotIn("@sdkwork/cloudrouter", layout_source)
 
     def test_agents_package_exports_the_embeddable_home_facade(self) -> None:
         package = json.loads((AGENTS_PACKAGE_ROOT / "package.json").read_text(encoding="utf-8"))
@@ -105,8 +105,8 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
         self.assertIn("agentService.updateAgent", page_source)
         self.assertIn("agentService.deleteAgent", page_source)
         self.assertIn("agentChatService.sendMessage", conversation_source)
-        self.assertNotIn("@sdkwork/clawrouter", page_source)
-        self.assertNotIn("@sdkwork/clawrouter", conversation_source)
+        self.assertNotIn("@sdkwork/cloudrouter", page_source)
+        self.assertNotIn("@sdkwork/cloudrouter", conversation_source)
         self.assertNotIn("fetch(", page_source)
         self.assertNotIn("fetch(", conversation_source)
 
@@ -158,12 +158,12 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
     def test_workspace_and_tailwind_register_the_agents_feature_packages(self) -> None:
         workspace_source = (ROOT / "pnpm-workspace.yaml").read_text(encoding="utf-8")
         css_source = (
-            ROOT / "apps" / "sdkwork-clawrouter-pc" / "src" / "index.css"
+            ROOT / "apps" / "sdkwork-cloudrouter-pc" / "src" / "index.css"
         ).read_text(encoding="utf-8")
         sources_registry = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "src"
             / "portal-external-tailwind-sources.ts"
         ).read_text(encoding="utf-8")
@@ -202,9 +202,9 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
         source = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-playground"
+            / "sdkwork-cloudrouter-pc-playground"
             / "src"
             / "pages"
             / "Playground.tsx"

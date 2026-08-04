@@ -145,7 +145,7 @@ class ApiReferencePlaygroundStandardTest(unittest.TestCase):
 
     def test_api_reference_sidebar_uses_fixed_width_without_resize_drag_handle(self) -> None:
         api_reference_source = (API_REFERENCE_ROOT / "pages" / "ApiReference.tsx").read_text(encoding="utf-8")
-        portal_css = (ROOT / "apps" / "sdkwork-clawrouter-pc" / "src" / "index.css").read_text(encoding="utf-8")
+        portal_css = (ROOT / "apps" / "sdkwork-cloudrouter-pc" / "src" / "index.css").read_text(encoding="utf-8")
 
         self.assertIn("documentsShellLayout.stickySidebarBelowSubHeader", api_reference_source)
         self.assertIn("documentsShellLayout.stickySubHeader", api_reference_source)
@@ -174,12 +174,12 @@ class ApiReferencePlaygroundStandardTest(unittest.TestCase):
         row_runtime = (API_REFERENCE_ROOT / "apiPlaygroundRows.ts").read_text(encoding="utf-8")
         code_snippet_runtime = (API_REFERENCE_ROOT / "codeSnippetClient.ts").read_text(encoding="utf-8")
         playground = (API_REFERENCE_ROOT / "components" / "ApiPlayground.tsx").read_text(encoding="utf-8")
-        smoke = ROOT / "apps" / "sdkwork-clawrouter-pc" / "api-reference-ssr-smoke.test.cjs"
-        production_smoke = ROOT / "apps" / "sdkwork-clawrouter-pc" / "scripts" / "smoke-production-browser.mjs"
+        smoke = ROOT / "apps" / "sdkwork-cloudrouter-pc" / "api-reference-ssr-smoke.test.cjs"
+        production_smoke = ROOT / "apps" / "sdkwork-cloudrouter-pc" / "scripts" / "smoke-production-browser.mjs"
         playground_request = API_REFERENCE_ROOT / "playgroundRequest.ts"
         playground_download = API_REFERENCE_ROOT / "playgroundResponseDownload.ts"
-        verifier = (ROOT / "scripts" / "verify-claw-router-application.mjs").read_text(encoding="utf-8")
-        product_tests = (ROOT / "scripts" / "run-claw-router-application.test.mjs").read_text(encoding="utf-8")
+        verifier = (ROOT / "scripts" / "verify-cloud-router-application.mjs").read_text(encoding="utf-8")
+        product_tests = (ROOT / "scripts" / "run-cloud-router-application.test.mjs").read_text(encoding="utf-8")
 
         self.assertIn("export function createApiPlaygroundInitialState", row_runtime)
         self.assertIn("export function createApiPlaygroundInitialStateKey", row_runtime)
@@ -250,11 +250,11 @@ class ApiReferencePlaygroundStandardTest(unittest.TestCase):
         browser_smoke = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "scripts"
             / "smoke-production-browser.mjs"
         ).read_text(encoding="utf-8")
-        product_tests = (ROOT / "scripts" / "run-claw-router-application.test.mjs").read_text(encoding="utf-8")
+        product_tests = (ROOT / "scripts" / "run-cloud-router-application.test.mjs").read_text(encoding="utf-8")
 
         for route in [
             "/api-reference?__browser-smoke-playground-primitive-response=1",
@@ -288,11 +288,11 @@ class ApiReferencePlaygroundStandardTest(unittest.TestCase):
         browser_smoke = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "scripts"
             / "smoke-production-browser.mjs"
         ).read_text(encoding="utf-8")
-        product_tests = (ROOT / "scripts" / "run-claw-router-application.test.mjs").read_text(encoding="utf-8")
+        product_tests = (ROOT / "scripts" / "run-cloud-router-application.test.mjs").read_text(encoding="utf-8")
 
         for route in [
             "/api-reference?__browser-smoke-playground-api-key-auth=1",
@@ -324,7 +324,7 @@ class ApiReferencePlaygroundStandardTest(unittest.TestCase):
         browser_smoke = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "scripts"
             / "smoke-production-browser.mjs"
         ).read_text(encoding="utf-8")
@@ -343,11 +343,11 @@ class ApiReferencePlaygroundStandardTest(unittest.TestCase):
         browser_smoke = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "scripts"
             / "smoke-production-browser.mjs"
         ).read_text(encoding="utf-8")
-        product_tests = (ROOT / "scripts" / "run-claw-router-application.test.mjs").read_text(encoding="utf-8")
+        product_tests = (ROOT / "scripts" / "run-cloud-router-application.test.mjs").read_text(encoding="utf-8")
 
         route = "/api-reference?__browser-smoke-tool-api-disabled=1"
         self.assertIn(route, browser_smoke)
@@ -359,8 +359,8 @@ class ApiReferencePlaygroundStandardTest(unittest.TestCase):
         self.assertIn('forbiddenToolApiPaths: ["/api/code-snippet"]', browser_smoke)
         self.assertIn("/api/code-snippet", browser_smoke)
         self.assertIn("assertNoRequests(pathName)", browser_smoke)
-        self.assertIn("CLAWROUTER_API_KEY", browser_smoke)
-        self.assertIn('window.__CLAWROUTER_ENV__?.VITE_TOOL_API_ENABLED === "false"', browser_smoke)
+        self.assertIn("CLOUDROUTER_API_KEY", browser_smoke)
+        self.assertIn('window.__CLOUDROUTER_ENV__?.VITE_TOOL_API_ENABLED === "false"', browser_smoke)
 
         local_tool_flag_index = endpoint_view.index("const localToolApiEnabled")
         static_fallback_index = endpoint_view.index("const fallbackCode = buildStaticCodeSnippet(request)")
@@ -379,11 +379,11 @@ class ApiReferencePlaygroundStandardTest(unittest.TestCase):
         browser_smoke = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "scripts"
             / "smoke-production-browser.mjs"
         ).read_text(encoding="utf-8")
-        product_tests = (ROOT / "scripts" / "run-claw-router-application.test.mjs").read_text(encoding="utf-8")
+        product_tests = (ROOT / "scripts" / "run-cloud-router-application.test.mjs").read_text(encoding="utf-8")
 
         route = "/api-reference?__browser-smoke-code-snippet-tabs=1"
         self.assertIn(route, browser_smoke)
@@ -393,7 +393,7 @@ class ApiReferencePlaygroundStandardTest(unittest.TestCase):
         self.assertIn('clickRouteCodeLibraryButtonByExactText("fetch")', browser_smoke)
         self.assertIn('clickRouteButtonByTitle("Copy code")', browser_smoke)
         self.assertIn('window.__BROWSER_SMOKE_CLIPBOARD__?.includes("await fetch")', browser_smoke)
-        self.assertIn('window.__BROWSER_SMOKE_CLIPBOARD__?.includes("CLAWROUTER_API_KEY")', browser_smoke)
+        self.assertIn('window.__BROWSER_SMOKE_CLIPBOARD__?.includes("CLOUDROUTER_API_KEY")', browser_smoke)
         self.assertIn('forbiddenToolApiPaths: ["/api/code-snippet"]', browser_smoke)
         self.assertIn("axios.request", browser_smoke)
         self.assertIn("await fetch", browser_smoke)

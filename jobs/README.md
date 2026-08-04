@@ -4,7 +4,7 @@
 `jobs/` stores job definitions, schedules, queue bindings, batch descriptors, maintenance runbooks, and non-Rust job packages.
 
 ## Owner
-SDKWork Claw Router operations and platform maintainers.
+SDKWork Cloud Router operations and platform maintainers.
 
 ## Allowed Content
 Schedule manifests, queue contracts, batch job descriptors, maintenance runbooks, operational examples, and links to worker crates.

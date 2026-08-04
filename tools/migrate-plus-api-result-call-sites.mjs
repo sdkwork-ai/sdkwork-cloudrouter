@@ -12,7 +12,7 @@ const apiRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
   "services",
-  "sdkwork-clawrouter-router-service",
+  "sdkwork-cloudrouter-router-service",
   "src",
   "api",
 );

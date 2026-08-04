@@ -976,7 +976,7 @@ class SdkworkModelsUpdateWorkflowTest(unittest.TestCase):
         self.assertIn("catalog-audit.mjs", package_json["scripts"]["models:check"])
         self.assertIn("release-catalog.mjs --check", package_json["scripts"]["models:check"])
 
-        verify_script = (ROOT / "scripts" / "verify-claw-router-application.mjs").read_text(
+        verify_script = (ROOT / "scripts" / "verify-cloud-router-application.mjs").read_text(
             encoding="utf-8"
         )
         self.assertIn("sdkwork-models catalog check", verify_script)

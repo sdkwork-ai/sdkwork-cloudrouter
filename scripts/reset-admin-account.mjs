@@ -8,12 +8,12 @@ import {
   mergeRuntimeConfigEnv,
   parseStartProductionArgs,
   prepareStartProductionRuntimeConfig,
-} from './start-claw-router-production.mjs';
+} from './start-cloud-router-production.mjs';
 import {
-  loadClawRouterDevEnvFile,
-  resolveClawRouterDevDatabaseEnv,
+  loadCloudRouterDevEnvFile,
+  resolveCloudRouterDevDatabaseEnv,
   resolveDefaultDevEnvFilePath,
-} from './dev/claw-router-dev-database-env.mjs';
+} from './dev/cloud-router-dev-database-env.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -124,11 +124,11 @@ function validateText(value, flag) {
 
 function resetPassword(settings, env) {
   const password = String(
-    settings.password ?? env.SDKWORK_CLAW_ADMIN_RESET_PASSWORD ?? '',
+    settings.password ?? env.SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD ?? '',
   );
   if (!password.trim()) {
     throw new Error(
-      'admin reset password is required. Pass --password or set SDKWORK_CLAW_ADMIN_RESET_PASSWORD.',
+      'admin reset password is required. Pass --password or set SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD.',
     );
   }
   return password;
@@ -138,7 +138,7 @@ function installerArgs(settings) {
   return [
     'run',
     '-p',
-    'sdkwork-claw-installer',
+    'sdkwork-cloudrouter-installer',
     '--',
     'reset-admin',
     '--username',
@@ -157,9 +157,9 @@ function devResetEnv(settings, env, root) {
   const devEnvFile = settings.devEnvFile ?? resolveDefaultDevEnvFilePath(root);
   const devEnv = {
     ...env,
-    ...loadClawRouterDevEnvFile(devEnvFile, { workspaceRoot: root }),
+    ...loadCloudRouterDevEnvFile(devEnvFile, { workspaceRoot: root }),
   };
-  const resolvedDatabase = resolveClawRouterDevDatabaseEnv({
+  const resolvedDatabase = resolveCloudRouterDevDatabaseEnv({
     env: {
       ...devEnv,
       ...(settings.databaseUrl ? { SDKWORK_DATABASE_URL: settings.databaseUrl } : {}),
@@ -180,9 +180,9 @@ function devResetEnv(settings, env, root) {
     ...devEnv,
     ...resolvedDatabase.env,
     SDKWORK_DATABASE_URL: databaseUrl,
-    SDKWORK_CLAW_DEPLOYMENT_MODE: env.SDKWORK_CLAW_DEPLOYMENT_MODE ?? 'server',
-    SDKWORK_CLAW_INSTALL_ENVIRONMENT: env.SDKWORK_CLAW_INSTALL_ENVIRONMENT ?? 'development',
-    SDKWORK_CLAW_INSTALL_SEED_PROFILE: env.SDKWORK_CLAW_INSTALL_SEED_PROFILE ?? 'commercial',
+    SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE: env.SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE ?? 'server',
+    SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT: env.SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT ?? 'development',
+    SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE: env.SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE ?? 'commercial',
     ...(databaseMaxConnections ? { SDKWORK_DATABASE_MAX_CONNECTIONS: databaseMaxConnections } : {}),
   };
 }
@@ -224,8 +224,8 @@ export function createResetAdminPlan({
     }
     stepEnv = {
       ...mergeRuntimeConfigEnv(env, runtimeConfig),
-      SDKWORK_CLAW_INSTALL_ENVIRONMENT: env.SDKWORK_CLAW_INSTALL_ENVIRONMENT ?? 'production',
-      SDKWORK_CLAW_INSTALL_SEED_PROFILE: env.SDKWORK_CLAW_INSTALL_SEED_PROFILE ?? 'commercial',
+      SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT: env.SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT ?? 'production',
+      SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE: env.SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE ?? 'commercial',
     };
   } else {
     stepEnv = devResetEnv(settings, env, root);
@@ -233,7 +233,7 @@ export function createResetAdminPlan({
 
   stepEnv = {
     ...stepEnv,
-    SDKWORK_CLAW_ADMIN_RESET_PASSWORD: password,
+    SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD: password,
   };
 
   return {
@@ -256,14 +256,14 @@ export function createResetAdminPlan({
 function printHelp() {
   console.log(`Usage: node scripts/reset-admin-account.mjs --mode <dev|release> --password <password> [options]
 
-Reset the Claw Router admin account password through the installer database layer.
+Reset the Cloud Router admin account password through the installer database layer.
 
 Options:
   --mode <dev|release>          dev uses .env.postgres; release uses PostgreSQL runtime config
   --username <username>         Admin username (default admin)
   --display-name <name>         Admin display name (default Administrator)
   --email <email>               Admin email identity (default admin@sdkwork.com)
-  --password <password>         New admin password; may also be set with SDKWORK_CLAW_ADMIN_RESET_PASSWORD
+  --password <password>         New admin password; may also be set with SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD
   --config-file <path>          Release runtime TOML path
   --dev-env-file <path>         Dev PostgreSQL dotenv file such as .env.postgres
   --database-url <url>          PostgreSQL database override
@@ -274,7 +274,7 @@ Options:
 Examples:
   pnpm admin:reset:dev -- --password "Admin-Dev-Password-2026!"
   pnpm admin:reset:release -- --password "Admin-Release-Password-2026!"
-  SDKWORK_CLAW_ADMIN_RESET_PASSWORD="Admin-Release-Password-2026!" pnpm admin:reset:release
+  SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD="Admin-Release-Password-2026!" pnpm admin:reset:release
 `);
 }
 

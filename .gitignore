@@ -30,7 +30,7 @@ target-*/
 .cargo-target*/
 .codex-target/
 **/.codex-target/
-tmp-claw-router-portal-vite.*.log
+tmp-cloud-router-portal-vite.*.log
 portal-dev-*.log
 .codex-portal*.log
 verify-*.log
@@ -69,8 +69,8 @@ external/*-fragment*/
 vendor/
 apps/*/keys.txt
 
-data/skills/clawhub/raw/details/*.json
-!data/skills/clawhub/raw/details/*-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f].json
+data/skills/cloudhub/raw/details/*.json
+!data/skills/cloudhub/raw/details/*-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f].json
 
 # SDKWork profile env files (see specs/application-env-standard.md)
 # Host profiles such as .env.development and .env.release are ignored via .env.*

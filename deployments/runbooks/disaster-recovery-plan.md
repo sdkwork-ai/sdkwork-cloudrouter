@@ -1,4 +1,4 @@
-# SDKWork Claw Router - Disaster Recovery Plan
+# SDKWork Cloud Router - Disaster Recovery Plan
 
 **Document Version:** 1.0
 **Last Updated:** 2026-07-30
@@ -31,7 +31,7 @@ or RTO capability.
 
 ## Executive Summary
 
-This document records the target disaster-recovery design for SDKWork Claw
+This document records the target disaster-recovery design for SDKWork Cloud
 Router. It does not yet provide a tested recovery procedure for a current
 release candidate; the active production-readiness review remains authoritative
 for open PostgreSQL, Redis, identity, accounting, and recovery blockers.
@@ -51,7 +51,7 @@ for open PostgreSQL, Redis, identity, accounting, and recovery blockers.
 
 ### In Scope
 
-- Claw Router Gateway services (cloud, standalone, edge)
+- Cloud Router Gateway services (cloud, standalone, edge)
 - PostgreSQL database (primary data store)
 - Redis cache and state management
 - Configuration and secrets management
@@ -136,7 +136,7 @@ cutover sequence before release.
 
 ### Redis Backup
 
-Redis in Claw Router is used for:
+Redis in Cloud Router is used for:
 - Circuit breaker state
 - Idempotency keys
 - Session caching
@@ -156,8 +156,8 @@ restore drill before any Redis RPO/RTO claim.
 
 ```bash
 # Kubernetes ConfigMaps and Secrets
-kubectl get configmap -n clawrouter -o yaml > backups/configmaps.yaml
-kubectl get secret -n clawrouter -o yaml > backups/secrets.yaml
+kubectl get configmap -n cloudrouter -o yaml > backups/configmaps.yaml
+kubectl get secret -n cloudrouter -o yaml > backups/secrets.yaml
 
 # Schedule: Daily at 03:00 UTC
 # Retention: 30 days
@@ -195,8 +195,8 @@ FATAL: password authentication failed
 1. **Immediate Assessment** (0-5 minutes)
    ```bash
    # Check database connectivity
-   kubectl exec -it deploy/claw-router-gateway -- \
-     psql -h postgres -U clawrouter -c "SELECT 1"
+   kubectl exec -it deploy/cloud-router-gateway -- \
+     psql -h postgres -U cloudrouter -c "SELECT 1"
 
    # Check database pod status
    kubectl get pods -n postgres -l app=postgres
@@ -221,8 +221,8 @@ FATAL: password authentication failed
 4. **Validation**
    ```bash
    # Verify data integrity
-   kubectl exec -it deploy/claw-router-gateway -- \
-     psql -h postgres -U clawrouter -c "SELECT COUNT(*) FROM ai_usage"
+   kubectl exec -it deploy/cloud-router-gateway -- \
+     psql -h postgres -U cloudrouter -c "SELECT COUNT(*) FROM ai_usage"
 
    # Check gateway health
    curl https://gateway.example.com/healthz
@@ -254,7 +254,7 @@ WARN Circuit breaker state lost, resetting to CLOSED
 2. **Verify approved recovery evidence**
    ```bash
    # Check Redis connectivity
-   kubectl exec -it deploy/claw-router-gateway -- \
+   kubectl exec -it deploy/cloud-router-gateway -- \
      redis-cli -h redis-primary ping
 
    # Accounting recovery requires a separate approved reconciliation record;
@@ -271,22 +271,22 @@ WARN Circuit breaker state lost, resetting to CLOSED
 
 1. **Check Pod Health**
    ```bash
-   kubectl get pods -n clawrouter -l app=claw-router-gateway
-   kubectl describe pod <pod-name> -n clawrouter
+   kubectl get pods -n cloudrouter -l app=cloud-router-gateway
+   kubectl describe pod <pod-name> -n cloudrouter
    ```
 
 2. **Rollback Deployment** (if bad deployment)
    ```bash
    # View deployment history
-   kubectl rollout history deployment/claw-router-gateway -n clawrouter
+   kubectl rollout history deployment/cloud-router-gateway -n cloudrouter
 
    # Rollback to previous version
-   kubectl rollout undo deployment/claw-router-gateway -n clawrouter
+   kubectl rollout undo deployment/cloud-router-gateway -n cloudrouter
    ```
 
 3. **Force Restart** (if stuck)
    ```bash
-   kubectl rollout restart deployment/claw-router-gateway -n clawrouter
+   kubectl rollout restart deployment/cloud-router-gateway -n cloudrouter
    ```
 
 ### Scenario 4: Data Corruption
@@ -300,8 +300,8 @@ WARN Circuit breaker state lost, resetting to CLOSED
 1. **Identify Corruption Scope**
    ```bash
    # Check for NULL values in critical columns
-   kubectl exec -it deploy/claw-router-gateway -- \
-     psql -h postgres -U clawrouter -c \
+   kubectl exec -it deploy/cloud-router-gateway -- \
+     psql -h postgres -U cloudrouter -c \
      "SELECT COUNT(*) FROM ai_usage WHERE tenant_id IS NULL"
    ```
 
@@ -351,7 +351,7 @@ signed artifacts may be invalidated
 
 - [ ] Declare incident in status page
 - [ ] Notify on-call engineer
-- [ ] Open incident channel (#incident-clawrouter)
+- [ ] Open incident channel (#incident-cloudrouter)
 - [ ] Assign incident commander
 - [ ] Document timeline
 
@@ -370,10 +370,10 @@ it with an owned, drilled procedure before a release candidate is approved.
 
 set -e
 
-NAMESPACE="clawrouter"
+NAMESPACE="cloudrouter"
 BACKUP_SERVER="backup-server.example.com"
 
-echo "=== SDKWork Claw Router Emergency Recovery ==="
+echo "=== SDKWork Cloud Router Emergency Recovery ==="
 echo "Timestamp: $(date -Iseconds)"
 echo ""
 
@@ -384,14 +384,14 @@ echo ""
 
 # Step 2: Check database connectivity
 echo "Step 2: Checking database connectivity..."
-kubectl exec -it deploy/claw-router-gateway -n $NAMESPACE -- \
-  timeout 5 bash -c 'psql -h postgres -U clawrouter -c "SELECT version();"' || \
+kubectl exec -it deploy/cloud-router-gateway -n $NAMESPACE -- \
+  timeout 5 bash -c 'psql -h postgres -U cloudrouter -c "SELECT version();"' || \
   echo "WARNING: Database unreachable"
 echo ""
 
 # Step 3: Check Redis connectivity
 echo "Step 3: Checking Redis connectivity..."
-kubectl exec -it deploy/claw-router-gateway -n $NAMESPACE -- \
+kubectl exec -it deploy/cloud-router-gateway -n $NAMESPACE -- \
   timeout 5 bash -c 'redis-cli -h redis ping' || \
   echo "WARNING: Redis unreachable"
 echo ""
@@ -403,8 +403,8 @@ echo ""
 
 # Step 5: Scale down services
 echo "Step 5: Scaling down services..."
-kubectl scale deployment claw-router-gateway --replicas=0 -n $NAMESPACE
-kubectl scale deployment claw-router-admin-api --replicas=0 -n $NAMESPACE
+kubectl scale deployment cloud-router-gateway --replicas=0 -n $NAMESPACE
+kubectl scale deployment cloud-router-admin-api --replicas=0 -n $NAMESPACE
 echo ""
 
 # Step 6: Perform recovery (customize based on scenario)
@@ -429,7 +429,7 @@ case $option in
     ;;
   3)
     echo "Rolling back deployment..."
-    kubectl rollout undo deployment/claw-router-gateway -n $NAMESPACE
+    kubectl rollout undo deployment/cloud-router-gateway -n $NAMESPACE
     ;;
   4)
     echo "Cancelling. Manual intervention required."
@@ -439,14 +439,14 @@ esac
 
 # Step 7: Scale up services
 echo "Step 7: Scaling up services..."
-kubectl scale deployment claw-router-gateway --replicas=2 -n $NAMESPACE
-kubectl scale deployment claw-router-admin-api --replicas=1 -n $NAMESPACE
+kubectl scale deployment cloud-router-gateway --replicas=2 -n $NAMESPACE
+kubectl scale deployment cloud-router-admin-api --replicas=1 -n $NAMESPACE
 echo ""
 
 # Step 8: Validate recovery
 echo "Step 8: Validating recovery..."
 sleep 30
-kubectl exec -it deploy/claw-router-gateway -n $NAMESPACE -- \
+kubectl exec -it deploy/cloud-router-gateway -n $NAMESPACE -- \
   curl -s http://localhost:8080/healthz || echo "Health check failed"
 echo ""
 
@@ -458,11 +458,11 @@ echo "Please verify data integrity and update status page."
 
 ```bash
 # 1. Check all pods are running
-kubectl get pods -n clawrouter
+kubectl get pods -n cloudrouter
 
 # 2. Verify database data
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
-  psql -h postgres -U clawrouter -c "SELECT COUNT(*) FROM ai_usage;"
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
+  psql -h postgres -U cloudrouter -c "SELECT COUNT(*) FROM ai_usage;"
 
 # 3. Test gateway endpoints
 curl -I https://gateway.example.com/healthz
@@ -472,10 +472,10 @@ curl -I https://gateway.example.com/readyz
 # (Send test requests and verify counters increment)
 
 # 5. Check circuit breakers
-kubectl logs deploy/claw-router-gateway | grep "Circuit breaker" | tail -10
+kubectl logs deploy/cloud-router-gateway | grep "Circuit breaker" | tail -10
 
 # 6. Verify SLO metrics
-curl -s https://gateway.example.com/metrics | grep clawrouter_slo
+curl -s https://gateway.example.com/metrics | grep cloudrouter_slo
 ```
 
 ---
@@ -486,7 +486,7 @@ curl -s https://gateway.example.com/metrics | grep clawrouter_slo
 
 | Audience | Notification Method | Timing |
 |----------|-------------------|--------|
-| Internal Team | Slack #incident-clawrouter | Immediate |
+| Internal Team | Slack #incident-cloudrouter | Immediate |
 | On-Call | PagerDuty | Immediate |
 | Status Page | statuspage.io | Within 5 minutes |
 | Customers | Email (if P0) | Within 30 minutes |

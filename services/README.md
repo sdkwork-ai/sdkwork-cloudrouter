@@ -1,10 +1,10 @@
 # Services
 
 ## Purpose
-`services/` stores existing Rust product service and host crates for Claw Router runtime composition.
+`services/` stores existing Rust product service and host crates for Cloud Router runtime composition.
 
 ## Owner
-SDKWork Claw Router Rust runtime maintainers.
+SDKWork Cloud Router Rust runtime maintainers.
 
 ## Allowed Content
 Existing product service crates, gateway and installer service crates, service-local tests, component specs, and runtime host code already declared in the Cargo workspace.

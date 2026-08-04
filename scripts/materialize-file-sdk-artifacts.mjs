@@ -42,7 +42,7 @@ async function main(argv = process.argv.slice(2)) {
 
 function compileFileSdkGenerationPackage() {
   const compileDir = mkdtempSync(path.join(tmpdir(), 'sdkwork-file-sdk-generation-'));
-  const appNodeModules = path.join(workspaceRoot, 'apps', 'sdkwork-clawrouter-pc', 'node_modules');
+  const appNodeModules = path.join(workspaceRoot, 'apps', 'sdkwork-cloudrouter-pc', 'node_modules');
   const tscPath = path.join(appNodeModules, 'typescript', 'bin', 'tsc');
   const entryPath = path.join(
     workspaceRoot,

@@ -1,0 +1,4 @@
+interface:
+  display_name: "CloudRouter App SDK"
+  short_description: "Use the generated CloudRouter app SDK"
+  default_prompt: "Use the CloudRouter app SDK integration standard."

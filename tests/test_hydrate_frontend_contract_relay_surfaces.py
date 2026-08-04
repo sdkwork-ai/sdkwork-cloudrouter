@@ -7,7 +7,7 @@ from tools.hydrate_frontend_contract_relay_surfaces import (
 
 
 AUTH_CONTROLLER_SOURCE = (
-    "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts"
+    "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts"
 )
 MESSAGING_TABLES = {
     "messaging_verification_policy",

@@ -28,9 +28,9 @@ class FrontendOperationAuditTest(unittest.TestCase):
         index.write_text(
             textwrap.dedent(
                 """
-                schema: sdkwork-clawrouter-frontend-field-contracts
+                schema: sdkwork-cloudrouter-frontend-field-contracts
                 version: 0.1.0
-                source: apps/sdkwork-clawrouter-pc/src/App.tsx
+                source: apps/sdkwork-cloudrouter-pc/src/App.tsx
                 rule: every actual portal route must be backed by explicit schema tables.
                 fragments:
                   - operations/demo.yaml
@@ -56,11 +56,11 @@ class FrontendOperationAuditTest(unittest.TestCase):
     def write_backend_sdk_authority(self, root: Path) -> None:
         self.write_file(
             root,
-            "sdks/clawrouter-backend-sdk/sdk-manifest.json",
+            "sdks/cloudrouter-backend-sdk/sdk-manifest.json",
             """
             {
-              "sdkFamily": "clawrouter-backend-sdk",
-              "authoritySpec": "openapi/clawrouter-backend-sdk.openapi.json",
+              "sdkFamily": "cloudrouter-backend-sdk",
+              "authoritySpec": "openapi/cloudrouter-backend-sdk.openapi.json",
               "sdkDependencies": [
                 {"workspace": "sdkwork-membership-backend-sdk"}
               ]
@@ -106,7 +106,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [integration_provider_account, ops_audit_log]
                 frontend_operations:
                   - route: /admin/channel
-                    source: crates/sdkwork-routes-clawrouter-backend-api/src/http_route_manifest.rs
+                    source: crates/sdkwork-routes-cloudrouter-backend-api/src/http_route_manifest.rs
                     operation: fetchProviderSecrets
                     kind: read
                     api_surface: backend
@@ -115,7 +115,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     read_sources: [integration_provider_account]
                     write_tables: []
                   - route: /admin/channel
-                    source: crates/sdkwork-routes-clawrouter-backend-api/src/http_route_manifest.rs
+                    source: crates/sdkwork-routes-cloudrouter-backend-api/src/http_route_manifest.rs
                     operation: addProviderSecret
                     kind: create
                     api_surface: backend
@@ -136,7 +136,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             class_source = self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts",
                 """
                 export class DemoService {
                   static async fetchItems(): Promise<string[]> {
@@ -153,7 +153,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
             )
             object_source = self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/services/appService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/services/appService.ts",
                 """
                 export const appService = {
                   async getApps(): Promise<string[]> {
@@ -176,12 +176,12 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
+                "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts",
                 """
-                import { getClawRouterAppSdkClient } from 'sdkwork-clawroutes-pc-commons/runtime';
+                import { getCloudRouterAppSdkClient } from 'sdkwork-cloudroutes-pc-commons/runtime';
 
                 export async function loadCurrentUser(): Promise<void> {
-                  await getClawRouterAppSdkClient().user.fetchUserProfile();
+                  await getCloudRouterAppSdkClient().user.fetchUserProfile();
                 }
                 """,
             )
@@ -193,7 +193,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [plus_user]
                 frontend_operations:
                   - route: /auth/login
-                    source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+                    source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts
                     operation: loadCurrentUser
                     kind: read
                     api_surface: app
@@ -212,12 +212,12 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
+                "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts",
                 """
-                import { getClawRouterIamRuntime } from 'sdkwork-clawroutes-pc-commons/runtime';
+                import { getCloudRouterIamRuntime } from 'sdkwork-cloudroutes-pc-commons/runtime';
 
                 export async function login(): Promise<void> {
-                  await getClawRouterIamRuntime().service.auth.sessions.create({ grantType: 'password' });
+                  await getCloudRouterIamRuntime().service.auth.sessions.create({ grantType: 'password' });
                 }
                 """,
             )
@@ -229,7 +229,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [iam_user, iam_credential, iam_session, iam_security_event]
                 frontend_operations:
                   - route: /auth/login
-                    source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+                    source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts
                     operation: login
                     operation_id: sessions.create
                     kind: create
@@ -250,9 +250,9 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/playgroundService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/playgroundService.ts",
                 """
-                import { getSdkworkGenerationsAppSdkClient } from 'sdkwork-clawroutes-pc-commons/runtime';
+                import { getSdkworkGenerationsAppSdkClient } from 'sdkwork-cloudroutes-pc-commons/runtime';
                 import { createSdkworkGenerationService } from '@sdkwork/generations-pc-workspace/generation-service';
 
                 export class PlaygroundService {
@@ -275,7 +275,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [generation_record, generation_dispatch_job]
                 frontend_operations:
                   - route: /playground
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/playgroundService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/playgroundService.ts
                     operation: runGeneration
                     operation_scope: app_shell
                     operation_id: generations.images.textToImage
@@ -298,7 +298,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/playgroundGenerationsService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/playgroundGenerationsService.ts",
                 """
                 import type { SdkworkGenerationService } from '@sdkwork/generations-pc-workspace/generation-service';
 
@@ -318,7 +318,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [ai_generation_job, ai_generation_asset]
                 frontend_operations:
                   - route: /playground
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/playgroundGenerationsService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/playgroundGenerationsService.ts
                     operation: runPlaygroundAssetGeneration
                     operation_scope: app_shell
                     operation_id: playground.generations.asset.run
@@ -343,13 +343,13 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             source = self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
+                "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts",
                 """
                 import { createSdkworkIamRuntimeAuthController } from '@sdkwork/auth-pc-react';
-                import { getClawRouterAuthRuntime } from './clawRouterAuthRuntime';
+                import { getCloudRouterAuthRuntime } from './cloudRouterAuthRuntime';
 
-                export const clawRouterAuthController = createSdkworkIamRuntimeAuthController({
-                  getRuntime: getClawRouterAuthRuntime,
+                export const cloudRouterAuthController = createSdkworkIamRuntimeAuthController({
+                  getRuntime: getCloudRouterAuthRuntime,
                 });
                 """,
             )
@@ -374,13 +374,13 @@ class FrontendOperationAuditTest(unittest.TestCase):
     def test_current_auth_controller_factory_is_appbase_oauth_sdk_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            source = "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts"
+            source = "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts"
             source_text = """
                 import { createSdkworkIamRuntimeAuthController } from '@sdkwork/auth-pc-react';
-                import { getClawRouterAuthRuntime } from './clawRouterAuthRuntime';
+                import { getCloudRouterAuthRuntime } from './cloudRouterAuthRuntime';
 
-                export const clawRouterAuthController = createSdkworkIamRuntimeAuthController({
-                  getRuntime: getClawRouterAuthRuntime,
+                export const cloudRouterAuthController = createSdkworkIamRuntimeAuthController({
+                  getRuntime: getCloudRouterAuthRuntime,
                 });
             """
             operation = {
@@ -405,7 +405,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts",
                 """
                 export class DemoService {
                   static async fetchItems(): Promise<string[]> {
@@ -428,7 +428,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "frontend operation missing from contract: apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts#fetchItems",
+                "frontend operation missing from contract: apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts#fetchItems",
                 result.messages,
             )
 
@@ -437,7 +437,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/node_modules/sdkwork-clawroutes-pc-commons/src/sessionService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/node_modules/sdkwork-cloudroutes-pc-commons/src/sessionService.ts",
                 """
                 export async function createAppSession(): Promise<void> {
                 }
@@ -462,12 +462,12 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts",
                 """
-                import { getClawRouterAppSdkClient } from 'sdkwork-clawroutes-pc-commons/runtime';
+                import { getCloudRouterAppSdkClient } from 'sdkwork-cloudroutes-pc-commons/runtime';
 
                 export async function fetchItems(): Promise<void> {
-                  await getClawRouterAppSdkClient().demo.items.list();
+                  await getCloudRouterAppSdkClient().demo.items.list();
                 }
                 """,
             )
@@ -486,7 +486,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [demo_table]
                 frontend_operations:
                   - route: /demo
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts
                     operation: fetchItems
                     kind: read
                     api_surface: app
@@ -505,7 +505,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/rechargeService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/rechargeService.ts",
                 """
                 import { getSdkworkCommerceService } from '@sdkwork/commerce-service';
 
@@ -529,7 +529,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                 fragment: operations/app-commerce-catalog
                 frontend_operations:
                   - route: /console/recharge
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/rechargeService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/rechargeService.ts
                     operation: listCatalogProducts
                     operation_id: catalog.products.list
                     kind: read
@@ -551,7 +551,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
             self.write_backend_sdk_authority(root)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/membershipService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/membershipService.ts",
                 """
                 import { getSdkworkMembershipBackendSdkClient } from '@sdkwork/clients';
 
@@ -577,7 +577,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     manifest: authorities/membership/sdk-manifest.json
                 frontend_operations:
                   - route: /admin/memberships/plans
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/membershipService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/membershipService.ts
                     operation: listMembershipPlans
                     kind: read
                     api_surface: backend
@@ -600,7 +600,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
             self.write_backend_sdk_authority(root)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/membershipService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/membershipService.ts",
                 """
                 import { getSdkworkMembershipBackendSdkClient } from '@sdkwork/clients';
 
@@ -626,7 +626,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     manifest: authorities/membership/sdk-manifest.json
                 frontend_operations:
                   - route: /admin/memberships/plans
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/membershipService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/membershipService.ts
                     operation: listMembershipPlans
                     kind: read
                     api_surface: backend
@@ -653,7 +653,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
             self.write_backend_sdk_authority(root)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/membershipService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/membershipService.ts",
                 """
                 import { getSdkworkMembershipBackendSdkClient } from '@sdkwork/clients';
 
@@ -680,7 +680,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     manifest: authorities/membership/sdk-manifest.json
                 frontend_operations:
                   - route: /admin/memberships/packages
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/membershipService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/membershipService.ts
                     operation: loadMembershipCatalog
                     operation_scope: composition
                     kind: read
@@ -701,7 +701,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
     def test_skips_broken_paths_when_recursive_scan_encounters_vanished_node_modules(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            portal = root / "apps" / "sdkwork-clawrouter-pc" / "packages"
+            portal = root / "apps" / "sdkwork-cloudrouter-pc" / "packages"
             portal.mkdir(parents=True)
             self.write_contract(
                 root,
@@ -721,7 +721,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts",
                 """
                 export class DemoService {
                   static async updateItem(): Promise<void> {
@@ -737,7 +737,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [demo_table]
                 frontend_operations:
                   - route: /demo
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts
                     operation: updateItem
                     kind: update
                     api_surface: app
@@ -751,7 +751,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "frontend operation apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts#updateItem kind update must declare non-empty write_tables",
+                "frontend operation apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts#updateItem kind update must declare non-empty write_tables",
                 result.messages,
             )
 
@@ -760,13 +760,13 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts",
                 """
-                import { getClawRouterAppSdkClient } from 'sdkwork-clawroutes-pc-commons/runtime';
+                import { getCloudRouterAppSdkClient } from 'sdkwork-cloudroutes-pc-commons/runtime';
 
                 export async function uploadVideo(): Promise<void> {
                   const formData = new FormData();
-                  await getClawRouterAppSdkClient().content.forum.attachments.create(formData);
+                  await getCloudRouterAppSdkClient().content.forum.attachments.create(formData);
                 }
                 """,
             )
@@ -778,7 +778,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [content_forum_post]
                 frontend_operations:
                   - route: /demo
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts
                     operation: uploadVideo
                     operation_id: forum.attachments.create
                     kind: create
@@ -801,13 +801,13 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts",
                 """
-                import { getClawRouterAppSdkClient } from 'sdkwork-clawroutes-pc-commons/runtime';
+                import { getCloudRouterAppSdkClient } from 'sdkwork-cloudroutes-pc-commons/runtime';
 
                 export async function uploadVideo(): Promise<void> {
                   const formData = new FormData();
-                  await getClawRouterAppSdkClient().content.forum.attachments.create(formData);
+                  await getCloudRouterAppSdkClient().content.forum.attachments.create(formData);
                 }
                 """,
             )
@@ -819,7 +819,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [content_forum_post]
                 frontend_operations:
                   - route: /demo
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts
                     operation: uploadVideo
                     operation_id: forum.attachments.create
                     kind: create
@@ -836,7 +836,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "frontend operation apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts#uploadVideo multipart upload must declare non-empty file_targets",
+                "frontend operation apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts#uploadVideo multipart upload must declare non-empty file_targets",
                 result.messages,
             )
 
@@ -845,7 +845,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts",
                 """
                 export class DemoService {
                   static async fetchItems(): Promise<string[]> {
@@ -862,7 +862,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [demo_table]
                 frontend_operations:
                   - route: /demo
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts
                     operation: fetchItems
                     kind: read
                     api_surface: app
@@ -876,7 +876,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "frontend operation apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts#fetchItems read_source missing_table is not declared in route /demo required_tables",
+                "frontend operation apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts#fetchItems read_source missing_table is not declared in route /demo required_tables",
                 result.messages,
             )
 
@@ -885,7 +885,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts",
                 """
                 export class DemoService {
                   static async addItem(): Promise<void> {
@@ -901,7 +901,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [demo_table, ops_audit_log]
                 frontend_operations:
                   - route: /demo
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts
                     operation: addItem
                     kind: create
                     api_surface: app
@@ -927,7 +927,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts",
                 """
                 export class DemoService {
                   static async fetchItems(): Promise<string[]> {
@@ -944,7 +944,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [demo_table]
                 frontend_operations:
                   - route: /demo
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts
                     operation: fetchItems
                     kind: read
                     read_sources: [demo_table]
@@ -955,15 +955,15 @@ class FrontendOperationAuditTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "frontend operation apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts#fetchItems must declare api_surface",
+                "frontend operation apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts#fetchItems must declare api_surface",
                 result.messages,
             )
             self.assertIn(
-                "frontend operation apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts#fetchItems must declare api_method",
+                "frontend operation apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts#fetchItems must declare api_method",
                 result.messages,
             )
             self.assertIn(
-                "frontend operation apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts#fetchItems must declare api_path",
+                "frontend operation apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts#fetchItems must declare api_path",
                 result.messages,
             )
 
@@ -972,13 +972,13 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/adminService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/adminService.ts",
                 """
-                import { getClawRouterBackendSdkClient } from 'sdkwork-clawroutes-pc-commons';
+                import { getCloudRouterBackendSdkClient } from 'sdkwork-cloudroutes-pc-commons';
 
                 export class AdminService {
                   static async fetchItems(): Promise<string[]> {
-                    const result = await getClawRouterBackendSdkClient().router.fetchGroups();
+                    const result = await getCloudRouterBackendSdkClient().router.fetchGroups();
                     return Array.isArray(result.data) ? result.data : [];
                   }
                 }
@@ -992,7 +992,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [demo_table]
                 frontend_operations:
                   - route: /admin/demo
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/adminService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/adminService.ts
                     operation: fetchItems
                     kind: read
                     api_surface: app
@@ -1006,7 +1006,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "frontend operation apps/sdkwork-clawrouter-pc/packages/demo/src/adminService.ts#fetchItems route /admin/demo must use backend api_surface",
+                "frontend operation apps/sdkwork-cloudrouter-pc/packages/demo/src/adminService.ts#fetchItems route /admin/demo must use backend api_surface",
                 result.messages,
             )
 
@@ -1015,13 +1015,13 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts",
                 """
-                import { getClawRouterAppSdkClient } from 'sdkwork-clawroutes-pc-commons/runtime';
+                import { getCloudRouterAppSdkClient } from 'sdkwork-cloudroutes-pc-commons/runtime';
 
                 export class DemoService {
                   static async fetchItems(): Promise<string[]> {
-                    const result = await getClawRouterAppSdkClient().tenant.fetchItems();
+                    const result = await getCloudRouterAppSdkClient().tenant.fetchItems();
                     return Array.isArray(result.data) ? result.data : [];
                   }
                 }
@@ -1035,7 +1035,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [demo_table]
                 frontend_operations:
                   - route: /demo
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts
                     operation: fetchItems
                     kind: read
                     api_surface: app
@@ -1054,7 +1054,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts",
                 """
                 export class DemoService {
                   static async addItem(): Promise<void> {
@@ -1070,7 +1070,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [demo_table]
                 frontend_operations:
                   - route: /demo
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts
                     operation: addItem
                     kind: create
                     api_surface: app
@@ -1085,7 +1085,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "frontend operation apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts#addItem kind create does not allow api_method GET",
+                "frontend operation apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts#addItem kind create does not allow api_method GET",
                 result.messages,
             )
 
@@ -1094,13 +1094,13 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/adminService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/adminService.ts",
                 """
-                import { getClawRouterBackendSdkClient } from 'sdkwork-clawroutes-pc-commons';
+                import { getCloudRouterBackendSdkClient } from 'sdkwork-cloudroutes-pc-commons';
 
                 export class AdminService {
                   static async fetchItems(): Promise<string[]> {
-                    const result = await getClawRouterBackendSdkClient().router.fetchGroups();
+                    const result = await getCloudRouterBackendSdkClient().router.fetchGroups();
                     return Array.isArray(result.data) ? result.data : [];
                   }
                 }
@@ -1114,7 +1114,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [demo_table]
                 frontend_operations:
                   - route: /admin/demo
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/adminService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/adminService.ts
                     operation: fetchItems
                     kind: read
                     api_surface: backend
@@ -1133,7 +1133,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts",
                 """
                 export class DemoService {
                   static async fetchItems(): Promise<string[]> {
@@ -1152,7 +1152,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [demo_table]
                 frontend_operations:
                   - route: /demo
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts
                     operation: fetchItems
                     kind: read
                     api_surface: app
@@ -1166,11 +1166,11 @@ class FrontendOperationAuditTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "frontend operation apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts#fetchItems must use getClawRouterAppSdkClient for app api_surface",
+                "frontend operation apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts#fetchItems must use getCloudRouterAppSdkClient for app api_surface",
                 result.messages,
             )
             self.assertIn(
-                "frontend operation apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts#fetchItems must not use mock async data pattern: setTimeout",
+                "frontend operation apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts#fetchItems must not use mock async data pattern: setTimeout",
                 result.messages,
             )
 
@@ -1179,7 +1179,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/adminService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/adminService.ts",
                 """
                 export class AdminService {
                   static async fetchItems(): Promise<string[]> {
@@ -1196,7 +1196,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [demo_table]
                 frontend_operations:
                   - route: /admin/demo
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/adminService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/adminService.ts
                     operation: fetchItems
                     kind: read
                     api_surface: backend
@@ -1210,21 +1210,21 @@ class FrontendOperationAuditTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "frontend operation apps/sdkwork-clawrouter-pc/packages/demo/src/adminService.ts#fetchItems must use getClawRouterBackendSdkClient for backend api_surface",
+                "frontend operation apps/sdkwork-cloudrouter-pc/packages/demo/src/adminService.ts#fetchItems must use getCloudRouterBackendSdkClient for backend api_surface",
                 result.messages,
             )
 
-    def test_allows_clawrouter_owned_ai_backend_operation(self) -> None:
+    def test_allows_cloudrouter_owned_ai_backend_operation(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/upstreamService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/upstreamService.ts",
                 """
-                import { getClawRouterBackendSdkClient } from 'sdkwork-clawroutes-pc-commons';
+                import { getCloudRouterBackendSdkClient } from 'sdkwork-cloudroutes-pc-commons';
 
                 export async function listUpstreamSuppliers(): Promise<unknown> {
-                  return getClawRouterBackendSdkClient().ai.upstreamSuppliers.list();
+                  return getCloudRouterBackendSdkClient().ai.upstreamSuppliers.list();
                 }
                 """,
             )
@@ -1236,7 +1236,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [ai_upstream_supplier]
                 frontend_operations:
                   - route: /admin/upstream
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/upstreamService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/upstreamService.ts
                     operation: listUpstreamSuppliers
                     kind: read
                     api_surface: backend
@@ -1256,7 +1256,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/billingService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/billingService.ts",
                 """
                 import { getSdkworkCommerceService } from '@sdkwork/commerce-service';
 
@@ -1275,7 +1275,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [commerce_account]
                 frontend_operations:
                   - route: /console/commerce
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/billingService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/billingService.ts
                     operation: fetchWallet
                     kind: read
                     api_surface: app
@@ -1295,13 +1295,13 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/billingService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/billingService.ts",
                 """
-                import { getClawRouterAppSdkClient } from 'sdkwork-clawroutes-pc-commons/runtime';
+                import { getCloudRouterAppSdkClient } from 'sdkwork-cloudroutes-pc-commons/runtime';
 
                 export class BillingService {
                   static async fetchWallet(): Promise<unknown> {
-                    return getClawRouterAppSdkClient().commerce.wallet.overview.retrieve();
+                    return getCloudRouterAppSdkClient().commerce.wallet.overview.retrieve();
                   }
                 }
                 """,
@@ -1314,7 +1314,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [commerce_account]
                 frontend_operations:
                   - route: /console/commerce
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/billingService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/billingService.ts
                     operation: fetchWallet
                     kind: read
                     api_surface: app
@@ -1329,7 +1329,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "frontend operation apps/sdkwork-clawrouter-pc/packages/demo/src/billingService.ts#fetchWallet must use getClawRouterBackendSdkClient().<domain>, getClawRouterAppSdkClient().<domain>, or missingCommerceDependencyOperation for app api_surface",
+                "frontend operation apps/sdkwork-cloudrouter-pc/packages/demo/src/billingService.ts#fetchWallet must use getCloudRouterBackendSdkClient().<domain>, getCloudRouterAppSdkClient().<domain>, or missingCommerceDependencyOperation for app api_surface",
                 result.messages,
             )
 
@@ -1338,9 +1338,9 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/userService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/userService.ts",
                 """
-                import { getSdkworkAppbaseAppSdkClient } from 'sdkwork-clawroutes-pc-commons/runtime';
+                import { getSdkworkAppbaseAppSdkClient } from 'sdkwork-cloudroutes-pc-commons/runtime';
 
                 export class UserService {
                   static async fetchCurrentUser(): Promise<unknown> {
@@ -1357,7 +1357,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [iam_user]
                 frontend_operations:
                   - route: /console/user
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/userService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/userService.ts
                     operation: fetchCurrentUser
                     kind: read
                     api_surface: app
@@ -1372,18 +1372,18 @@ class FrontendOperationAuditTest(unittest.TestCase):
 
             self.assertTrue(result.ok, result.messages)
 
-    def test_accepts_clawrouter_app_sdk_for_clawrouter_owned_iam_settings(self) -> None:
+    def test_accepts_cloudrouter_app_sdk_for_cloudrouter_owned_iam_settings(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/settingsService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/settingsService.ts",
                 """
-                import { getClawRouterAppSdkClient } from 'sdkwork-clawroutes-pc-commons/runtime';
+                import { getCloudRouterAppSdkClient } from 'sdkwork-cloudroutes-pc-commons/runtime';
 
                 export class SettingsService {
                   static async fetchSettings(): Promise<unknown> {
-                    return getClawRouterAppSdkClient().iam.users.settings.retrieve();
+                    return getCloudRouterAppSdkClient().iam.users.settings.retrieve();
                   }
                 }
                 """,
@@ -1396,7 +1396,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [iam_user_preference]
                 frontend_operations:
                   - route: /console/settings
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/settingsService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/settingsService.ts
                     operation: fetchSettings
                     kind: read
                     api_surface: app
@@ -1416,9 +1416,9 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/oauthService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/oauthService.ts",
                 """
-                import { getSdkworkAppbaseAppSdkClient } from 'sdkwork-clawroutes-pc-commons/sdk-clients';
+                import { getSdkworkAppbaseAppSdkClient } from 'sdkwork-cloudroutes-pc-commons/sdk-clients';
 
                 export async function createAuthorizationUrl(): Promise<unknown> {
                   return getSdkworkAppbaseAppSdkClient().oauth.authorizationUrls.create({
@@ -1437,7 +1437,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [iam_oauth_provider_config]
                 frontend_operations:
                   - route: /auth/oauth/callback/:provider
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/oauthService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/oauthService.ts
                     operation: createAuthorizationUrl
                     operation_id: oauth.authorizationUrls.create
                     kind: create
@@ -1459,9 +1459,9 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/oauthAdminService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/oauthAdminService.ts",
                 """
-                import { getSdkworkAppbaseBackendSdkClient } from 'sdkwork-clawroutes-pc-commons/sdk-clients';
+                import { getSdkworkAppbaseBackendSdkClient } from 'sdkwork-cloudroutes-pc-commons/sdk-clients';
 
                 export async function listOAuthProviderCatalog(): Promise<unknown> {
                   return getSdkworkAppbaseBackendSdkClient().iam.oauth.providerCatalog.list();
@@ -1478,7 +1478,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [iam_oauth_provider_catalog]
                 frontend_operations:
                   - route: /admin/oauth
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/oauthAdminService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/oauthAdminService.ts
                     operation: listOAuthProviderCatalog
                     kind: read
                     api_surface: backend
@@ -1498,7 +1498,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/accountService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/accountService.ts",
                 """
                 import { getSdkworkCommerceService } from '@sdkwork/commerce-service';
 
@@ -1518,7 +1518,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                 frontend_operations:
                   - route: /console/account
                     operation_scope: app_shell
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/accountService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/accountService.ts
                     operation: fetchAccountDetails
                     kind: read
                     api_surface: app
@@ -1537,9 +1537,9 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/adminUserService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/adminUserService.ts",
                 """
-                import { getSdkworkAppbaseBackendSdkClient } from 'sdkwork-clawroutes-pc-commons/runtime';
+                import { getSdkworkAppbaseBackendSdkClient } from 'sdkwork-cloudroutes-pc-commons/runtime';
 
                 export class AdminUserService {
                   static async fetchUsers(): Promise<unknown> {
@@ -1556,7 +1556,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [iam_user, commerce_account]
                 frontend_operations:
                   - route: /admin/user
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/adminUserService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/adminUserService.ts
                     operation: fetchUsers
                     kind: read
                     api_surface: backend
@@ -1575,9 +1575,9 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/oauthAdminService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/oauthAdminService.ts",
                 """
-                import { getSdkworkAppbaseBackendSdkClient } from 'sdkwork-clawroutes-pc-commons/sdk-clients';
+                import { getSdkworkAppbaseBackendSdkClient } from 'sdkwork-cloudroutes-pc-commons/sdk-clients';
 
                 export async function listOAuthResourceAccounts(): Promise<unknown> {
                   return getSdkworkAppbaseBackendSdkClient().iam.oauth.resourceAccounts.list();
@@ -1594,7 +1594,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [iam_oauth_resource_account]
                 frontend_operations:
                   - route: /admin/oauth
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/oauthAdminService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/oauthAdminService.ts
                     operation: listOAuthResourceAccounts
                     kind: read
                     api_surface: backend
@@ -1615,18 +1615,18 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/commerce-runtime.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/commerce-runtime.ts",
                 """
-                import { getClawRouterAppSdkClient } from './sdk-clients.ts';
+                import { getCloudRouterAppSdkClient } from './sdk-clients.ts';
 
                 export async function appAccountsCurrentSummaryRetrieve(): Promise<unknown> {
-                  return getClawRouterAppSdkClient().commerce.accounts.current.summary.retrieve();
+                  return getCloudRouterAppSdkClient().commerce.accounts.current.summary.retrieve();
                 }
                 """,
             )
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/commerce-console-service.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/commerce-console-service.ts",
                 """
                 import { appAccountsCurrentSummaryRetrieve } from './commerce-runtime.ts';
 
@@ -1645,7 +1645,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [commerce_account]
                 frontend_operations:
                   - route: /console/account
-                    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/commerce-console-service.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/commerce-console-service.ts
                     operation: fetchAccountDetails
                     operation_scope: app_shell
                     kind: read
@@ -1665,18 +1665,18 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/appRuntimeApiOperations.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/appRuntimeApiOperations.ts",
                 """
-                import { getClawRouterAppSdkClient } from 'sdkwork-clawroutes-pc-commons/runtime';
+                import { getCloudRouterAppSdkClient } from 'sdkwork-cloudroutes-pc-commons/runtime';
 
                 export async function listModelCatalog(): Promise<unknown> {
-                  return getClawRouterAppSdkClient().intelligence.modelsList();
+                  return getCloudRouterAppSdkClient().intelligence.modelsList();
                 }
                 """,
             )
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts",
                 """
                 import { listModelCatalog } from './appRuntimeApiOperations.ts';
 
@@ -1695,7 +1695,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [ai_model]
                 frontend_operations:
                   - route: /demo
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/appRuntimeApiOperations.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/appRuntimeApiOperations.ts
                     operation: listModelCatalog
                     kind: read
                     api_surface: app
@@ -1703,7 +1703,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     api_path: /app/v3/api/ai/models
                     read_sources: [ai_model]
                   - route: /demo
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts
                     operation: fetchModelGroups
                     operation_scope: app_shell
                     kind: read
@@ -1723,12 +1723,12 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/siteBranding.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/siteBranding.ts",
                 """
-                import { getClawRouterAppSdkClient } from './sdk-clients.ts';
+                import { getCloudRouterAppSdkClient } from './sdk-clients.ts';
 
                 export async function fetchSiteBranding(): Promise<unknown> {
-                  return getClawRouterAppSdkClient().system.site.runtime.retrieve();
+                  return getCloudRouterAppSdkClient().system.site.runtime.retrieve();
                 }
                 """,
             )
@@ -1741,7 +1741,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                 frontend_operations:
                   - route: /
                     operation_scope: app_shell
-                    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/siteBranding.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/siteBranding.ts
                     operation: fetchSiteBranding
                     operation_id: site.runtime.retrieve
                     kind: read
@@ -1764,13 +1764,13 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/chatService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/chatService.ts",
                 """
-                import { getClawRouterAiSdkClient } from 'sdkwork-clawroutes-pc-commons/runtime';
+                import { getCloudRouterAiSdkClient } from 'sdkwork-cloudroutes-pc-commons/runtime';
 
                 export class ChatService {
                   static async sendMessage(): Promise<string> {
-                    const client = getClawRouterAiSdkClient({ apiKey: 'test-key' });
+                    const client = getCloudRouterAiSdkClient({ apiKey: 'test-key' });
                     const response = await client.chat.completions.create({
                       model: 'gpt-test',
                       messages: [{ role: 'user', content: 'hello' }],
@@ -1788,7 +1788,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [ai_request_trace, ai_usage]
                 frontend_operations:
                   - route: /demo
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/chatService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/chatService.ts
                     operation: sendMessage
                     kind: create
                     api_surface: openai_v1
@@ -1808,7 +1808,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/chatService.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/chatService.ts",
                 """
                 export class ChatService {
                   static async sendMessage(): Promise<string> {
@@ -1825,7 +1825,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
                     required_tables: [ai_request_trace, ai_usage]
                 frontend_operations:
                   - route: /demo
-                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/chatService.ts
+                    source: apps/sdkwork-cloudrouter-pc/packages/demo/src/chatService.ts
                     operation: sendMessage
                     kind: create
                     api_surface: openai_v1
@@ -1840,7 +1840,7 @@ class FrontendOperationAuditTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "frontend operation apps/sdkwork-clawrouter-pc/packages/demo/src/chatService.ts#sendMessage must use getClawRouterAiSdkClient for openai_v1 api_surface",
+                "frontend operation apps/sdkwork-cloudrouter-pc/packages/demo/src/chatService.ts#sendMessage must use getCloudRouterAiSdkClient for openai_v1 api_surface",
                 result.messages,
             )
 

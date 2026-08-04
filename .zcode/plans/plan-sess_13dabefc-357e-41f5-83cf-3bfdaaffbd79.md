@@ -3,13 +3,13 @@
 1. **术语统一**：前端中文 UI 中 "API Key" 统一译为「令牌」（用户指定）
 2. **国际化优化**：补齐缺失的 i18n 资源 key、统一前端源码中 `t()` 兜底默认值与资源一致，保证中英文文案都走 i18n
 
-## 改动范围（均在 `apps/sdkwork-clawrouter-pc/` 内）
+## 改动范围（均在 `apps/sdkwork-cloudrouter-pc/` 内）
 
 ### A. i18n 资源文件 zh 部分 — "API Key / API 密钥 / 密钥" → "令牌"
 
 | 文件 | 要点 |
 |---|---|
-| `packages/sdkwork-clawrouter-pc-i18n/src/resources/console/api-keys.ts` | 全部 zh 文案（创建/编辑/详情/删除/错误提示/复制密钥/脱敏密钥/搜索占位等约 30+ 处） |
+| `packages/sdkwork-cloudrouter-pc-i18n/src/resources/console/api-keys.ts` | 全部 zh 文案（创建/编辑/详情/删除/错误提示/复制密钥/脱敏密钥/搜索占位等约 30+ 处） |
 | `.../resources/playground/chat.ts` | 5 处 API Key 文案 |
 | `.../resources/admin/rate-limit.ts` | "API 密钥限速配置"、"API Key (前缀)" 等 5 处 |
 | `.../resources/shared/common.ts` | 创建密钥/复制 API 密钥/密钥已复制等 5 处（已确认仅用于 API Key 场景） |
@@ -46,5 +46,5 @@
 ## 验证
 
 1. `node --import tsx --test api-key-runtime.test.ts i18n-resources-runtime.test.ts admin-ratelimit-runtime.test.ts`（app 根目录）
-2. `pnpm --filter @sdkwork/clawrouter-pc-admin-upstream typecheck`
-3. 全局复查：`grep -rn "API Key\|API 密钥" apps/sdkwork-clawrouter-pc/packages --include="*.tsx" --include="*.ts"` 仅应剩 en 资源、key 名与数据值
+2. `pnpm --filter @sdkwork/cloudrouter-pc-admin-upstream typecheck`
+3. 全局复查：`grep -rn "API Key\|API 密钥" apps/sdkwork-cloudrouter-pc/packages --include="*.tsx" --include="*.ts"` 仅应剩 en 资源、key 名与数据值

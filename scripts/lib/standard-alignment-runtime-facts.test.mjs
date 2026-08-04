@@ -77,7 +77,7 @@ test('SQLite fixtures do not establish a client-local desktop runtime', () => {
     applicationLauncherSource: `case 'desktop':
       launch({ clientOnly: true });
     case 'service':`,
-    serverRuntimeSources: 'Claw Router server runtime requires PostgreSQL; SQLite is client-local only',
+    serverRuntimeSources: 'Cloud Router server runtime requires PostgreSQL; SQLite is client-local only',
   });
 
   assert.equal(facts.desktopLaunchIsClientOnly, true);
@@ -99,7 +99,7 @@ test('SQLite is implemented only by a separate native client-local authority', (
     case 'service':`,
     tauriConfigPaths: ['apps/desktop/src-tauri/tauri.conf.json'],
     clientLocalSqliteAuthorityPaths: ['apps/desktop/src-tauri/migrations/0001_client_local.sql'],
-    serverRuntimeSources: 'Claw Router server runtime requires PostgreSQL; SQLite is client-local only',
+    serverRuntimeSources: 'Cloud Router server runtime requires PostgreSQL; SQLite is client-local only',
   });
 
   assert.equal(facts.desktopLaunchIsClientOnly, false);

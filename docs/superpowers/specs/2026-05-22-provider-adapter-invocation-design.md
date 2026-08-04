@@ -36,7 +36,7 @@ The adapter system must be separated into shared adapter infrastructure, provide
 
 ```text
 crates/
-  sdkwork-claw-provider-adapter-contract/
+  sdkwork-cloudrouter-provider-adapter-contract/
     src/
       lib.rs
       envelope.rs
@@ -47,7 +47,7 @@ crates/
       task.rs
       streaming.rs
 
-  sdkwork-claw-provider-adapter/
+  sdkwork-cloudrouter-provider-adapter/
     src/
       lib.rs
       adapter.rs
@@ -59,7 +59,7 @@ crates/
       callback.rs
       health.rs
 
-  sdkwork-claw-provider-adapter-http/
+  sdkwork-cloudrouter-provider-adapter-http/
     src/
       lib.rs
       router.rs
@@ -68,7 +68,7 @@ crates/
       gateway_auth.rs
       response.rs
 
-  sdkwork-claw-provider-adapter-registry/
+  sdkwork-cloudrouter-provider-adapter-registry/
     src/
       lib.rs
       config.rs
@@ -140,7 +140,7 @@ crates/
         tests/
 
 services/
-  sdkwork-claw-provider-adapter/
+  sdkwork-cloudrouter-provider-adapter/
     Cargo.toml
     src/
       main.rs
@@ -152,19 +152,19 @@ services/
 
 ### Package Responsibilities
 
-`sdkwork-claw-provider-adapter-contract` defines the stable contract shared by the gateway and adapter service. It must not depend on concrete provider packages.
+`sdkwork-cloudrouter-provider-adapter-contract` defines the stable contract shared by the gateway and adapter service. It must not depend on concrete provider packages.
 
-`sdkwork-claw-provider-adapter` defines provider adapter traits, endpoint adapter traits, native auth abstractions, signing helpers, task lifecycle helpers, streaming helpers, callback verification helpers, native HTTP helpers, and normalization helpers.
+`sdkwork-cloudrouter-provider-adapter` defines provider adapter traits, endpoint adapter traits, native auth abstractions, signing helpers, task lifecycle helpers, streaming helpers, callback verification helpers, native HTTP helpers, and normalization helpers.
 
-`sdkwork-claw-provider-adapter-http` hosts the internal HTTP adapter protocol. It validates gateway service credentials, decodes invocation envelopes, routes to provider adapters, and returns standard adapter responses.
+`sdkwork-cloudrouter-provider-adapter-http` hosts the internal HTTP adapter protocol. It validates gateway service credentials, decodes invocation envelopes, routes to provider adapters, and returns standard adapter responses.
 
-`sdkwork-claw-provider-adapter-registry` loads adapter route configuration and matches routed gateway invocations to adapter routes.
+`sdkwork-cloudrouter-provider-adapter-registry` loads adapter route configuration and matches routed gateway invocations to adapter routes.
 
 `crates/provider-adapters/{provider}` contains one provider family per package. Each package owns native signing, native request mapping, native response normalization, task state mapping, callback verification, provider-specific errors, and endpoint adapters for that provider.
 
 Official providers whose APIs already match the gateway standard surface do not need packages. In particular, Vidu official is not modeled as `crates/provider-adapters/vidu`; Tencent Cloud or Alibaba Cloud can instead declare provider-local adapters whose standard path is `/vidu/...` when their routed account exposes Vidu-compatible capability through a non-standard cloud API.
 
-`services/sdkwork-claw-provider-adapter` is the internal adapter service. It composes provider adapter packages behind the internal HTTP adapter router. It may use Cargo features to include only the provider packages needed by a deployment.
+`services/sdkwork-cloudrouter-provider-adapter` is the internal adapter service. It composes provider adapter packages behind the internal HTTP adapter router. It may use Cargo features to include only the provider packages needed by a deployment.
 
 ## Provider Package Rules
 

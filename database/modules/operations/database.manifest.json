@@ -3,9 +3,9 @@
   "kind": "sdkwork.database.module",
   "databaseRole": "authoritative-server",
   "moduleId": "operations",
-  "serviceCode": "CLAW_ROUTER_OPERATIONS",
-  "displayName": "Claw Router Operations Database",
-  "owner": "claw-router-platform",
+  "serviceCode": "CLOUD_ROUTER_OPERATIONS",
+  "displayName": "Cloud Router Operations Database",
+  "owner": "cloud-router-platform",
   "engines": [
     "postgres"
   ],

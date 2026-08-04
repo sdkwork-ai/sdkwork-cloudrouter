@@ -21,9 +21,9 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
     )
 
     REQUIRED_SHELLS = (
-        "sdkwork-clawrouter-pc-shell",
-        "sdkwork-clawrouter-pc-console-shell",
-        "sdkwork-clawrouter-pc-admin-shell",
+        "sdkwork-cloudrouter-pc-shell",
+        "sdkwork-cloudrouter-pc-console-shell",
+        "sdkwork-cloudrouter-pc-admin-shell",
     )
 
     def write_json(self, root: Path, relative: str, payload: object) -> None:
@@ -36,7 +36,7 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
             npm_name = f"@sdkwork/{package_name.removeprefix('sdkwork-')}"
             self.write_json(
                 root,
-                f"apps/sdkwork-clawrouter-pc/packages/{package_name}/package.json",
+                f"apps/sdkwork-cloudrouter-pc/packages/{package_name}/package.json",
                 {"name": npm_name},
             )
 
@@ -205,18 +205,18 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
             {
                 "schemaVersion": 3,
                 "kind": "sdkwork.database-store-migration",
-                "application": "sdkwork-clawrouter",
+                "application": "sdkwork-cloudrouter",
                 "authority": "../sdkwork-specs/DATABASE_SPEC.md",
                 "databaseRole": "authoritative-server",
                 "engines": ["postgres"],
                 "storeInventory": {
-                    "path": "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres",
+                    "path": "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres",
                     "glob": "**/*_store.rs",
                 },
                 "capabilities": [
                     {
                         "capability": "example",
-                        "targetCrate": "crates/sdkwork-clawrouter-example-repository-sqlx",
+                        "targetCrate": "crates/sdkwork-cloudrouter-example-repository-sqlx",
                         "storePaths": store_paths,
                         "tables": tables or ["example_item"],
                         "priority": "HIGH",
@@ -234,7 +234,7 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
 
     def write_postgres_store(self, root: Path, name: str = "example_store.rs") -> str:
         relative = (
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/"
+            "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/"
             + name
         )
         path = root / relative
@@ -380,7 +380,7 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
             profile = root / "etc/topology/standalone.production.env"
             profile.parent.mkdir(parents=True, exist_ok=True)
             profile.write_text(
-                "SDKWORK_CLAW_ROUTER_PROFILE_ID=standalone.production\n",
+                "SDKWORK_CLOUDROUTER_ROUTER_PROFILE_ID=standalone.production\n",
                 encoding="utf-8",
             )
 
@@ -411,7 +411,7 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
             )
             legacy_profile.parent.mkdir(parents=True, exist_ok=True)
             legacy_profile.write_text(
-                "SDKWORK_CLAW_ROUTER_PROFILE_ID=standalone.unified-process.production\n",
+                "SDKWORK_CLOUDROUTER_ROUTER_PROFILE_ID=standalone.unified-process.production\n",
                 encoding="utf-8",
             )
 
@@ -440,7 +440,7 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
             profile = root / legacy_relative
             profile.parent.mkdir(parents=True, exist_ok=True)
             profile.write_text(
-                "SDKWORK_CLAW_ROUTER_PROFILE_ID=standalone.unified-process.production\n",
+                "SDKWORK_CLOUDROUTER_ROUTER_PROFILE_ID=standalone.unified-process.production\n",
                 encoding="utf-8",
             )
 
@@ -508,7 +508,7 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
             )
             external_profile = external_root / "standalone.production.env"
             external_profile.write_text(
-                "SDKWORK_CLAW_ROUTER_PROFILE_ID=standalone.production\n",
+                "SDKWORK_CLOUDROUTER_ROUTER_PROFILE_ID=standalone.production\n",
                 encoding="utf-8",
             )
             (root / "configs").mkdir(parents=True, exist_ok=True)

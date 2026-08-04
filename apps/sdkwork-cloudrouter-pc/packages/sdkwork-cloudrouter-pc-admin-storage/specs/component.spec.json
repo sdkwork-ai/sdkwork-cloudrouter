@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "component": {
+    "name": "sdkwork-cloudrouter-pc-admin-storage",
+    "package": "@sdkwork/cloudrouter-pc-admin-storage",
+    "owner": "sdkwork-cloudrouter",
+    "surface": "backend-admin"
+  },
+  "contracts": {
+    "backendSdkFamilies": ["cloudrouter-backend-sdk"],
+    "apiSurface": "backend",
+    "routes": ["/admin/storage/:sectionId?"],
+    "permissions": ["cloudrouter.admin.access"]
+  }
+}

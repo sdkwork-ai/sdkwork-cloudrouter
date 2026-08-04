@@ -1,6 +1,6 @@
 schemaVersion: 1
 kind: sdkwork.database.drift-policy
-# Drift detection policy for sdkwork-clawrouter.
+# Drift detection policy for sdkwork-cloudrouter.
 # Aligns with sdkwork-specs/MIGRATION_SPEC.md §drift-check and
 # sdkwork-specs/SCHEMA_REGISTRY_SPEC.md §drift-policy.
 #

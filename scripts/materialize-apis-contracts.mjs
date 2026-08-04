@@ -10,27 +10,27 @@ const ROOT = resolve(import.meta.dirname, '..');
 const CONTRACTS = [
   {
     surface: 'open-api',
-    domain: 'clawrouter',
-    target: 'apis/open-api/clawrouter/clawrouter-open-api.openapi.json',
-    source: 'sdks/clawrouter-open-sdk/openapi/clawrouter-open-sdk.openapi.json',
-    apiAuthority: 'sdkwork-clawrouter-open-api',
-    sdkFamily: 'clawrouter-open-sdk',
+    domain: 'cloudrouter',
+    target: 'apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json',
+    source: 'sdks/cloudrouter-open-sdk/openapi/cloudrouter-open-sdk.openapi.json',
+    apiAuthority: 'sdkwork-cloudrouter-open-api',
+    sdkFamily: 'cloudrouter-open-sdk',
   },
   {
     surface: 'app-api',
-    domain: 'clawrouter',
-    target: 'apis/app-api/clawrouter/clawrouter-app-api.openapi.json',
-    source: 'generated/openapi/clawrouter-app-openapi.json',
-    apiAuthority: 'sdkwork-clawrouter-app-api',
-    sdkFamily: 'clawrouter-app-sdk',
+    domain: 'cloudrouter',
+    target: 'apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json',
+    source: 'generated/openapi/cloudrouter-app-openapi.json',
+    apiAuthority: 'sdkwork-cloudrouter-app-api',
+    sdkFamily: 'cloudrouter-app-sdk',
   },
   {
     surface: 'backend-api',
-    domain: 'clawrouter',
-    target: 'apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json',
-    source: 'generated/openapi/clawrouter-backend-openapi.json',
-    apiAuthority: 'sdkwork-clawrouter-backend-api',
-    sdkFamily: 'clawrouter-backend-sdk',
+    domain: 'cloudrouter',
+    target: 'apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json',
+    source: 'generated/openapi/cloudrouter-backend-openapi.json',
+    apiAuthority: 'sdkwork-cloudrouter-backend-api',
+    sdkFamily: 'cloudrouter-backend-sdk',
   },
 ];
 
@@ -79,9 +79,9 @@ function buildManifest(entries) {
   return {
     schemaVersion: 1,
     kind: 'sdkwork.api-contract-manifest',
-    application: 'sdkwork-clawrouter',
+    application: 'sdkwork-cloudrouter',
     description:
-      'Author-owned HTTP API contract materialization inputs for SDKWork Claw Router. Generated SDK output remains under sdks/.',
+      'Author-owned HTTP API contract materialization inputs for SDKWork Cloud Router. Generated SDK output remains under sdks/.',
     contracts: entries,
     materializeScript: 'scripts/materialize-apis-contracts.mjs',
     relatedSpecs: [

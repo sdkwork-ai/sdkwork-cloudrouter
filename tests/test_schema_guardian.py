@@ -8,7 +8,7 @@ from tools.schema_guardian import SchemaGuardian
 
 class SchemaGuardianTest(unittest.TestCase):
     def write_registry(self, root: Path, content: str) -> Path:
-        registry = root / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+        registry = root / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
         registry.parent.mkdir(parents=True, exist_ok=True)
         registry.write_text(textwrap.dedent(content).strip() + "\n", encoding="utf-8")
         return registry
@@ -1111,7 +1111,7 @@ class SchemaGuardianTest(unittest.TestCase):
                     persistence:
                       table: ai_model_vendor
                     type_bindings:
-                      java: com.sdkwork.claw.router.domain.enums.ModelVendor
+                      java: com.sdkwork.cloud.router.domain.enums.ModelVendor
                       typescript: ModelVendor
                       openapi: ModelVendor
                     builtin_values:
@@ -1179,8 +1179,8 @@ class SchemaGuardianTest(unittest.TestCase):
                     persistence:
                       table: ai_billing_meter
                     type_bindings:
-                      java: com.sdkwork.claw.router.domain.enums.BillingMeter
-                      rust: sdkwork_claw_router::domain::BillingMeter
+                      java: com.sdkwork.cloud.router.domain.enums.BillingMeter
+                      rust: sdkwork_cloudrouter_router::domain::BillingMeter
                       typescript: BillingMeter
                       openapi: BillingMeter
                     builtin_values:

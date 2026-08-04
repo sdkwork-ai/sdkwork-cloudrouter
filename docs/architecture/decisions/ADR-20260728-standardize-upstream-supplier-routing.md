@@ -1,7 +1,7 @@
 # ADR-20260728: Standardize Upstream Supplier Routing
 
 Status: accepted  
-Owner: claw-router-platform  
+Owner: cloud-router-platform  
 Updated: 2026-07-29  
 Requirement: upstream supplier standardization
 
@@ -142,7 +142,7 @@ use `page` and `pageSize`. Mutations use explicit request DTOs, idempotency and
 optimistic concurrency where required, standard success envelopes, and RFC
 9457 Problem Details. Credential commands are rate-limited and audited.
 
-The Backend OpenAPI authority generates `@sdkwork/clawrouter-backend-sdk`. The
+The Backend OpenAPI authority generates `@sdkwork/cloudrouter-backend-sdk`. The
 PC admin surface consumes that package through its package-owned SDK boundary;
 it does not use raw HTTP or a local compatibility SDK.
 

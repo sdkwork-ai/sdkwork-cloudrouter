@@ -4,15 +4,15 @@ from pathlib import Path
 
 INSTALLER = (
     Path(__file__).resolve().parents[1]
-    / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/installer.rs"
+    / "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/installer.rs"
 )
 
 
 def main() -> None:
     text = INSTALLER.read_text(encoding="utf-8")
-    old = """/// Claw-router owns only generated gateway schema; sibling SoR DDL is external.
+    old = """/// Cloud-router owns only generated gateway schema; sibling SoR DDL is external.
 const COMPOSE_SIBLING_DATABASE_MODULES: bool = false;"""
-    new = """/// Claw-router owns gateway schema; commerce SoR stays external, models catalog composes at install.
+    new = """/// Cloud-router owns gateway schema; commerce SoR stays external, models catalog composes at install.
 const COMPOSE_SIBLING_COMMERCE_MODULE: bool = false;
 const COMPOSE_SDKWORK_MODELS_CATALOG_MODULE: bool = true;"""
     if old not in text:

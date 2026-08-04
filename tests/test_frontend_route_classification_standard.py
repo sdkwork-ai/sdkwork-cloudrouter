@@ -22,7 +22,7 @@ CLASSIFICATION_PATH = ROOT / "docs" / "schema-registry" / "frontend-route-classi
 CONTRACT_PATH = ROOT / "docs" / "schema-registry" / "frontend-field-contracts.yaml"
 MANIFEST_PATH = ROOT / "generated" / "schema" / "manifest" / "schema-manifest.json"
 STATIC_SOURCE_MANIFEST_PATH = ROOT / "generated" / "schema" / "frontend" / "frontend-static-source-manifest.json"
-PORTAL_ROOT = ROOT / "apps" / "sdkwork-clawrouter-pc"
+PORTAL_ROOT = ROOT / "apps" / "sdkwork-cloudrouter-pc"
 
 ALLOWED_DELIVERY_KINDS = {
     "sdk_backed_business_runtime",
@@ -31,8 +31,8 @@ ALLOWED_DELIVERY_KINDS = {
 }
 
 EXPECTED_SDK_CLIENTS = {
-    "app": "getClawRouterAppSdkClient",
-    "backend": "getClawRouterBackendSdkClient",
+    "app": "getCloudRouterAppSdkClient",
+    "backend": "getCloudRouterBackendSdkClient",
 }
 
 LOCAL_TOOL_ENDPOINTS = {
@@ -102,8 +102,8 @@ class FrontendRouteClassificationStandardTest(unittest.TestCase):
         classification = self._classification()
         route_entries = self._route_entries(classification)
 
-        self.assertEqual("sdkwork-clawrouter-frontend-route-classification", classification["schema"])
-        self.assertEqual("apps/sdkwork-clawrouter-pc/src/App.tsx", classification["source"])
+        self.assertEqual("sdkwork-cloudrouter-frontend-route-classification", classification["schema"])
+        self.assertEqual("apps/sdkwork-cloudrouter-pc/src/App.tsx", classification["source"])
 
         classified_routes = [entry.get("route") for entry in route_entries]
         duplicates = sorted(route for route, count in Counter(classified_routes).items() if count > 1)
@@ -115,7 +115,7 @@ class FrontendRouteClassificationStandardTest(unittest.TestCase):
             with self.subTest(route=route):
                 self.assertIn(entry.get("delivery_kind"), ALLOWED_DELIVERY_KINDS)
                 self.assertIsInstance(entry.get("package"), str)
-                self.assertTrue(entry["package"].startswith("sdkwork-clawrouter-") or entry["package"] == "portal-root")
+                self.assertTrue(entry["package"].startswith("sdkwork-cloudrouter-") or entry["package"] == "portal-root")
                 self.assertIsInstance(entry.get("owner"), str)
                 self.assertTrue(entry["owner"].strip())
                 self.assertIsInstance(entry.get("evidence"), list)
@@ -142,24 +142,24 @@ class FrontendRouteClassificationStandardTest(unittest.TestCase):
         actual_routes = set(guardian.extract_portal_routes())
         actual_route_packages = guardian.extract_portal_route_packages()
         expected_packages = {
-            "/admin/analytics": "@sdkwork/clawrouter-pc-admin-analytics",
-            "/admin/cache": "@sdkwork/clawrouter-pc-admin-cache",
-            "/admin/dashboard": "@sdkwork/clawrouter-pc-admin-dashboard",
+            "/admin/analytics": "@sdkwork/cloudrouter-pc-admin-analytics",
+            "/admin/cache": "@sdkwork/cloudrouter-pc-admin-cache",
+            "/admin/dashboard": "@sdkwork/cloudrouter-pc-admin-dashboard",
             "/admin/model": "@sdkwork/models-pc-admin-catalog",
             "/admin/model/mappings": "@sdkwork/models-pc-admin-catalog",
             "/admin/model/resources": "@sdkwork/models-pc-admin-resource",
-            "/admin/marketing/:sectionId?": "@sdkwork/clawrouter-pc-admin-marketing",
-            "/admin/memberships/:sectionId?": "@sdkwork/clawrouter-pc-admin-memberships",
-            "/admin/monitor": "@sdkwork/clawrouter-pc-admin-monitor",
-            "/admin/ratelimit": "@sdkwork/clawrouter-pc-admin-ratelimit",
-            "/admin/record": "@sdkwork/clawrouter-pc-admin-record",
-            "/admin/payments/:sectionId?": "@sdkwork/clawrouter-pc-admin-payments",
-            "/admin/runtime-region": "@sdkwork/clawrouter-pc-admin-runtime-region",
-            "/admin/service-nodes": "@sdkwork/clawrouter-pc-admin-service-nodes",
-            "/admin/settings": "@sdkwork/clawrouter-pc-admin-site",
-            "/admin/site": "@sdkwork/clawrouter-pc-admin-site",
-            "/admin/storage/:sectionId?": "@sdkwork/clawrouter-pc-admin-storage",
-            "/admin/upstream": "@sdkwork/clawrouter-pc-admin-upstream",
+            "/admin/marketing/:sectionId?": "@sdkwork/cloudrouter-pc-admin-marketing",
+            "/admin/memberships/:sectionId?": "@sdkwork/cloudrouter-pc-admin-memberships",
+            "/admin/monitor": "@sdkwork/cloudrouter-pc-admin-monitor",
+            "/admin/ratelimit": "@sdkwork/cloudrouter-pc-admin-ratelimit",
+            "/admin/record": "@sdkwork/cloudrouter-pc-admin-record",
+            "/admin/payments/:sectionId?": "@sdkwork/cloudrouter-pc-admin-payments",
+            "/admin/runtime-region": "@sdkwork/cloudrouter-pc-admin-runtime-region",
+            "/admin/service-nodes": "@sdkwork/cloudrouter-pc-admin-service-nodes",
+            "/admin/settings": "@sdkwork/cloudrouter-pc-admin-site",
+            "/admin/site": "@sdkwork/cloudrouter-pc-admin-site",
+            "/admin/storage/:sectionId?": "@sdkwork/cloudrouter-pc-admin-storage",
+            "/admin/upstream": "@sdkwork/cloudrouter-pc-admin-upstream",
         }
 
         self.assertTrue(set(expected_packages) <= actual_routes)
@@ -179,10 +179,10 @@ class FrontendRouteClassificationStandardTest(unittest.TestCase):
             if isinstance(entry, dict) and isinstance(entry.get("route"), str)
         ]
         host_packages = {
-            "/admin/marketing/:sectionId?": "sdkwork-clawrouter-pc-admin-marketing",
-            "/admin/memberships/:sectionId?": "sdkwork-clawrouter-pc-admin-memberships",
-            "/admin/payments/:sectionId?": "sdkwork-clawrouter-pc-admin-payments",
-            "/admin/storage/:sectionId?": "sdkwork-clawrouter-pc-admin-storage",
+            "/admin/marketing/:sectionId?": "sdkwork-cloudrouter-pc-admin-marketing",
+            "/admin/memberships/:sectionId?": "sdkwork-cloudrouter-pc-admin-memberships",
+            "/admin/payments/:sectionId?": "sdkwork-cloudrouter-pc-admin-payments",
+            "/admin/storage/:sectionId?": "sdkwork-cloudrouter-pc-admin-storage",
         }
 
         for host_route, package_segment in host_packages.items():
@@ -193,7 +193,7 @@ class FrontendRouteClassificationStandardTest(unittest.TestCase):
                 self.assertFalse(is_relay_retired_admin_operation_route(host_route))
                 self.assertFalse(
                     is_relay_retired_admin_source(
-                        f"apps/sdkwork-clawrouter-pc/packages/{package_segment}/src/service.ts"
+                        f"apps/sdkwork-cloudrouter-pc/packages/{package_segment}/src/service.ts"
                     )
                 )
                 logical_operation_routes = {
@@ -308,7 +308,7 @@ class FrontendRouteClassificationStandardTest(unittest.TestCase):
                 self._assert_local_tool_browser_network_source_metadata(route, entry, tool_endpoints)
                 for gate_source in gate_sources:
                     source = self._read_relative(gate_source)
-                    self.assertIn("resolveClawRouterRuntimeBoolean", source)
+                    self.assertIn("resolveCloudRouterRuntimeBoolean", source)
                     self.assertIn("VITE_TOOL_API_ENABLED", source)
 
             for endpoint in tool_endpoints:
@@ -318,7 +318,7 @@ class FrontendRouteClassificationStandardTest(unittest.TestCase):
         actual_endpoint_sources = self._browser_tool_endpoint_sources()
         self.assertEqual(actual_endpoint_sources, declared_endpoint_sources)
 
-        edge_server_source = (ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "src" / "edge_server.rs").read_text(
+        edge_server_source = (ROOT / "services" / "sdkwork-cloudrouter-edge-runtime" / "src" / "edge_server.rs").read_text(
             encoding="utf-8"
         )
         self.assertIn("PORTAL_PUBLIC_TOOL_API_ENABLED", (PORTAL_ROOT / "vite.config.ts").read_text(encoding="utf-8"))
@@ -491,7 +491,7 @@ class FrontendRouteClassificationStandardTest(unittest.TestCase):
         self.assertEqual(f"static-route:{route}", manifest_ref)
 
         manifest = self._static_source_manifest()
-        self.assertEqual("sdkwork-clawrouter-frontend-static-source-manifest", manifest.get("schema"))
+        self.assertEqual("sdkwork-cloudrouter-frontend-static-source-manifest", manifest.get("schema"))
         self.assertEqual(1, manifest.get("version"))
         snapshots = manifest.get("snapshots")
         self.assertIsInstance(snapshots, dict)
@@ -657,8 +657,8 @@ class FrontendRouteClassificationStandardTest(unittest.TestCase):
             r"\bfetch\s*\("
             r"|\baxios(?:\s*\(|\.[A-Za-z_$][\w$]*\s*\()"
             r"|\bnew\s+XMLHttpRequest\s*\("
-            r"|\bgetClawRouterAppSdkClient\s*\("
-            r"|\bgetClawRouterBackendSdkClient\s*\("
+            r"|\bgetCloudRouterAppSdkClient\s*\("
+            r"|\bgetCloudRouterBackendSdkClient\s*\("
             r"|^\s*import\s+(?:[^'\"]+\s+from\s+)?['\"]axios['\"]",
             re.MULTILINE,
         )

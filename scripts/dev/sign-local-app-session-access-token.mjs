@@ -4,13 +4,13 @@ const APP_SESSION_CLAIM_TOKEN_VERSION = 'v2';
 const SDKWORK_TOKEN_VERSION_CURRENT = 1;
 const DEFAULT_SESSION_TTL_SECONDS = 86_400;
 
-const LOCAL_DEV_CONSOLE_PERMISSION = 'clawrouter.console.access';
+const LOCAL_DEV_CONSOLE_PERMISSION = 'cloudrouter.console.access';
 
 export const DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT = Object.freeze({
   tenantId: 100001,
   organizationId: 0,
   userId: 30,
-  appId: 'sdkwork-clawrouter',
+  appId: 'sdkwork-cloudrouter',
   sessionId: 'bootstrap-local-dev',
   environment: 'development',
   deploymentMode: 'local',
@@ -47,7 +47,7 @@ function signLocalAppSessionToken({
     throw new Error('local bootstrap token signing requires an explicit development lifecycle');
   }
   if (secret.length < 32) {
-    throw new Error('SDKWORK_CLAW_APP_SESSION_SECRET must be at least 32 characters');
+    throw new Error('SDKWORK_CLOUDROUTER_APP_SESSION_SECRET must be at least 32 characters');
   }
   if (tokenKind !== 'auth' && tokenKind !== 'access') {
     throw new Error(`unsupported local bootstrap token kind: ${tokenKind}`);

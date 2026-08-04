@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PORTAL_ROOT = ROOT / "apps" / "sdkwork-clawrouter-pc"
+PORTAL_ROOT = ROOT / "apps" / "sdkwork-cloudrouter-pc"
 PORTAL_PACKAGES = PORTAL_ROOT / "packages"
 
 
@@ -102,7 +102,7 @@ class FrontendThemeStandardTest(unittest.TestCase):
         )
         theme_source = theme_source_path.read_text(encoding="utf-8")
 
-        self.assertIn("CLAW_ROUTER_THEME_STORAGE_KEY", theme_source)
+        self.assertIn("CLOUD_ROUTER_THEME_STORAGE_KEY", theme_source)
         self.assertIn("resolveInitialThemePreference", theme_source)
         self.assertIn("persistThemePreference", theme_source)
         self.assertIn("prefers-color-scheme: dark", theme_source)
@@ -118,17 +118,17 @@ class FrontendThemeStandardTest(unittest.TestCase):
 
     def test_console_appearance_uses_explicit_theme_setter(self) -> None:
         console_layout = first_existing_path(
-            PORTAL_PACKAGES / "sdkwork-clawrouter-pc-console-shell" / "src" / "ConsoleLayout.tsx",
-            PORTAL_PACKAGES / "sdkwork-clawrouter-pc-console-core" / "src" / "ConsoleLayout.tsx",
+            PORTAL_PACKAGES / "sdkwork-cloudrouter-pc-console-shell" / "src" / "ConsoleLayout.tsx",
+            PORTAL_PACKAGES / "sdkwork-cloudrouter-pc-console-core" / "src" / "ConsoleLayout.tsx",
         )
         settings_view_path = (
             PORTAL_PACKAGES
-            / "sdkwork-clawrouter-pc-console-settings"
+            / "sdkwork-cloudrouter-pc-console-settings"
             / "src"
             / "SettingsView.tsx"
         )
         if not console_layout.exists() or not settings_view_path.exists():
-            self.skipTest("console shell/settings packages are not available in this claw router surface")
+            self.skipTest("console shell/settings packages are not available in this cloud router surface")
 
         console_core = console_layout.read_text(encoding="utf-8")
         settings_view = settings_view_path.read_text(encoding="utf-8")
@@ -146,9 +146,9 @@ class FrontendThemeStandardTest(unittest.TestCase):
 
     def test_dark_designed_pages_are_scoped_for_light_theme_overrides(self) -> None:
         adaptive_pages = [
-            PORTAL_PACKAGES / "sdkwork-clawrouter-pc-rankings" / "src" / "Rankings.tsx",
-            PORTAL_PACKAGES / "sdkwork-clawrouter-pc-playground" / "src" / "pages" / "Playground.tsx",
-            PORTAL_PACKAGES / "sdkwork-clawrouter-pc-console-settlements" / "src" / "SettlementsView.tsx",
+            PORTAL_PACKAGES / "sdkwork-cloudrouter-pc-rankings" / "src" / "Rankings.tsx",
+            PORTAL_PACKAGES / "sdkwork-cloudrouter-pc-playground" / "src" / "pages" / "Playground.tsx",
+            PORTAL_PACKAGES / "sdkwork-cloudrouter-pc-console-settlements" / "src" / "SettlementsView.tsx",
         ]
         css_source = (PORTAL_ROOT / "src" / "index.css").read_text(encoding="utf-8")
 
@@ -182,7 +182,7 @@ class FrontendThemeStandardTest(unittest.TestCase):
 
     def test_playground_dark_tokens_have_light_theme_overrides(self) -> None:
         playground_root = (
-            PORTAL_PACKAGES / "sdkwork-clawrouter-pc-playground" / "src"
+            PORTAL_PACKAGES / "sdkwork-cloudrouter-pc-playground" / "src"
         )
         playground_source = "\n".join(
             source_path.read_text(encoding="utf-8")

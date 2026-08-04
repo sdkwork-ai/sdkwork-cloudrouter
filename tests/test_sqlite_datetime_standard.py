@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SQLITE_SOURCE_ROOT = (
     ROOT
     / "services"
-    / "sdkwork-clawrouter-router-service"
+    / "sdkwork-cloudrouter-router-service"
     / "src"
     / "infrastructure"
     / "sql"

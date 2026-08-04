@@ -38,7 +38,7 @@ export function ensureModelsCatalogDeps({
   if (!existsSync(path.join(utilsPackageRoot, 'package.json'))) {
     throw new Error(
       `Missing @sdkwork/utils package at ${utilsPackageRoot}. `
-      + 'Clone sdkwork-utils next to sdkwork-clawrouter and build the TypeScript package.',
+      + 'Clone sdkwork-utils next to sdkwork-cloudrouter and build the TypeScript package.',
     );
   }
   if (!existsSync(path.join(utilsPackageRoot, 'dist', 'crypto.js'))) {

@@ -1,0 +1,14 @@
+{
+  "name": "@sdkwork/cloudrouter-pc-admin-marketing",
+  "version": "1.0.0",
+  "private": true,
+  "license": "SEE LICENSE IN ../../../../LICENSE",
+  "type": "module",
+  "main": "src/index.tsx",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sdkwork/cloudroutes-pc-commons": "workspace:*"
+  }
+}

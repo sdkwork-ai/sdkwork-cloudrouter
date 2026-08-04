@@ -1,13 +1,13 @@
 > Migrated from `docs/04-模块规划.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
-# sdkwork-clawrouter 模块规划
+# sdkwork-cloudrouter 模块规划
 
 ## 1. 模块规划目标
 
 模块规划需要服务两个方向：
 
-1. 产品模块：与 `apps/sdkwork-clawrouter-pc` 的 public、console、admin 模块对齐。
+1. 产品模块：与 `apps/sdkwork-cloudrouter-pc` 的 public、console、admin 模块对齐。
 2. 后端模块：与 Spring AI Plus 的 backend/app API 标准、business entity 结构、gateway 执行链路对齐。
 
 模块边界的核心原则：
@@ -22,15 +22,15 @@
 
 | 包 | 产品能力 | API 面 |
 | --- | --- | --- |
-| `sdkwork-clawrouter-pc-home` | 首页、能力介绍、下载入口 | app public |
-| `sdkwork-clawrouter-pc-models` | 模型目录、模型详情 | app public |
-| `sdkwork-clawrouter-pc-rankings` | 模型排行 | app public |
-| `sdkwork-clawrouter-pc-app-center` | 应用中心 | app public |
-| `sdkwork-clawrouter-pc-skills-hub` | 技能中心 | app public |
+| `sdkwork-cloudrouter-pc-home` | 首页、能力介绍、下载入口 | app public |
+| `sdkwork-cloudrouter-pc-models` | 模型目录、模型详情 | app public |
+| `sdkwork-cloudrouter-pc-rankings` | 模型排行 | app public |
+| `sdkwork-cloudrouter-pc-app-center` | 应用中心 | app public |
+| `sdkwork-cloudrouter-pc-skills-hub` | 技能中心 | app public |
 | `@sdkwork/documents-pc-api-reference` | API 文档、在线请求 | gateway + app public |
 | `@sdkwork/documents-pc-sdk-reference` | SDK 文档、SDK 生成 | app public |
-| `sdkwork-clawrouter-pc-playground` | 多模态调试 | gateway + app |
-| `sdkwork-clawrouter-pc-forum` | 论坛 | app |
+| `sdkwork-cloudrouter-pc-playground` | 多模态调试 | gateway + app |
+| `sdkwork-cloudrouter-pc-forum` | 论坛 | app |
 
 ### 2.2 Console 模块
 
@@ -70,15 +70,15 @@
 
 | 模块 | 责任 | 对外 API |
 | --- | --- | --- |
-| `claw-router-gateway` | `/v1/*` 协议入口、streaming、Provider 调用、fallback | Gateway |
-| `claw-router-app-api` | Console/public 用户自助 API controllers | `/app/v3/api/{resource-path}`，与 Java app-api 保持一致 |
-| `claw-router-backend-api` | Admin controllers | `/backend/v3/api/{resource-path}`，与 Java backend-api 保持一致 |
-| `claw-router-application` | 用例编排、事务、幂等、事件发布 | 内部 |
-| `claw-router-domain` | 路由、模型能力、计量、策略、状态机 | 内部 |
-| `claw-router-infra` | Repository、Provider client、Redis、Secret、Object Storage | 内部 |
-| `claw-router-worker` | 健康探测、账务结算、聚合、归档、outbox/inbox | 内部 |
-| `claw-router-contract` | 数据契约、OpenAPI 扩展、SDK schema | 生成输入 |
-| `claw-router-ops` | metrics、tracing、health、runbook、admin monitor | 内部/运维 |
+| `cloud-router-gateway` | `/v1/*` 协议入口、streaming、Provider 调用、fallback | Gateway |
+| `cloud-router-app-api` | Console/public 用户自助 API controllers | `/app/v3/api/{resource-path}`，与 Java app-api 保持一致 |
+| `cloud-router-backend-api` | Admin controllers | `/backend/v3/api/{resource-path}`，与 Java backend-api 保持一致 |
+| `cloud-router-application` | 用例编排、事务、幂等、事件发布 | 内部 |
+| `cloud-router-domain` | 路由、模型能力、计量、策略、状态机 | 内部 |
+| `cloud-router-infra` | Repository、Provider client、Redis、Secret、Object Storage | 内部 |
+| `cloud-router-worker` | 健康探测、账务结算、聚合、归档、outbox/inbox | 内部 |
+| `cloud-router-contract` | 数据契约、OpenAPI 扩展、SDK schema | 生成输入 |
+| `cloud-router-ops` | metrics、tracing、health、runbook、admin monitor | 内部/运维 |
 
 实际落地时可按 Spring AI Plus 根项目现有模块规则命名，本文档定义的是逻辑边界。
 
@@ -128,10 +128,10 @@
 
 1. `admin-*` 前端包不能调用 `/app/v3/api` 完成管理动作。
 2. `console-*` 前端包不能调用 `/backend/v3/api` 获取用户数据。
-3. App/Backend 公共路径不能加入 `/claw-router`、`/router`、`/sdkwork` 等产品命名空间；新增能力先进入 Java app-api/backend-api 契约和 SDK。
+3. App/Backend 公共路径不能加入 `/cloud-router`、`/router`、`/sdkwork` 等产品命名空间；新增能力先进入 Java app-api/backend-api 契约和 SDK。
 4. Gateway 不能直接执行后台 CRUD。
 5. Provider adapter 不能写账户余额。
-6. 账户和 VIP 相关逻辑不能创建 claw-router 私有替代表。
+6. 账户和 VIP 相关逻辑不能创建 cloud-router 私有替代表。
 7. 新表不能用产品名前缀。
 
 ## 7. MVP 模块范围

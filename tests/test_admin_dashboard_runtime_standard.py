@@ -10,9 +10,9 @@ class AdminDashboardRuntimeStandardTest(unittest.TestCase):
         view = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-admin-dashboard"
+            / "sdkwork-cloudrouter-pc-admin-dashboard"
             / "src"
             / "index.tsx"
         ).read_text(encoding="utf-8")

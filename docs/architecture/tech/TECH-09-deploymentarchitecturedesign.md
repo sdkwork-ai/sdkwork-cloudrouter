@@ -1,11 +1,11 @@
 > Migrated from `docs/09-部署架构设计.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
-# sdkwork-clawrouter 部署架构设计
+# sdkwork-cloudrouter 部署架构设计
 
 ## 1. 部署目标
 
-`sdkwork-clawrouter` 使用 Rust-first Rust services 支持四种部署方式：
+`sdkwork-cloudrouter` 使用 Rust-first Rust services 支持四种部署方式：
 
 1. `desktop`：本地桌面部署。
 2. `server`：服务器部署。
@@ -27,30 +27,30 @@ API 自由切换是部署硬约束：
 核心 profile 变量：
 
 ```text
-SDKWORK_CLAW_DEPLOYMENT_MODE=desktop|server|docker|kubernetes
+SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE=desktop|server|docker|kubernetes
 ```
 
 服务监听变量：
 
 ```text
-SDKWORK_CLAW_GATEWAY_BIND=0.0.0.0:18080
-SDKWORK_CLAW_APP_API_BIND=0.0.0.0:18082
-SDKWORK_CLAW_ADMIN_API_BIND=0.0.0.0:18081
+SDKWORK_CLOUDROUTER_GATEWAY_BIND=0.0.0.0:18080
+SDKWORK_CLOUDROUTER_APP_API_BIND=0.0.0.0:18082
+SDKWORK_CLOUDROUTER_ADMIN_API_BIND=0.0.0.0:18081
 ```
 
-`SDKWORK_CLAW_GATEWAY_BIND`, `SDKWORK_CLAW_APP_API_BIND`, and `SDKWORK_CLAW_ADMIN_API_BIND` are parsed by Rust `RuntimeConfig` and must be valid socket addresses. `SDKWORK_CLAW_DEPLOYMENT_MODE` is validated by the same config boundary; invalid deployment modes or blank bind values fail startup instead of relying on per-service fallback logic.
+`SDKWORK_CLOUDROUTER_GATEWAY_BIND`, `SDKWORK_CLOUDROUTER_APP_API_BIND`, and `SDKWORK_CLOUDROUTER_ADMIN_API_BIND` are parsed by Rust `RuntimeConfig` and must be valid socket addresses. `SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE` is validated by the same config boundary; invalid deployment modes or blank bind values fail startup instead of relying on per-service fallback logic.
 
 基础设施变量：
 
 ```text
 SDKWORK_DATABASE_URL
-SDKWORK_CLAW_REDIS_URL
-SDKWORK_CLAW_SECRET_BACKEND
-SDKWORK_CLAW_OBJECT_STORAGE_URL
-SDKWORK_CLAW_PUBLIC_BASE_URL
-SDKWORK_CLAW_APP_API_BASE_URL
-SDKWORK_CLAW_ADMIN_API_BASE_URL
-SDKWORK_CLAW_GATEWAY_BASE_URL
+SDKWORK_CLOUDROUTER_REDIS_URL
+SDKWORK_CLOUDROUTER_SECRET_BACKEND
+SDKWORK_CLOUDROUTER_OBJECT_STORAGE_URL
+SDKWORK_CLOUDROUTER_PUBLIC_BASE_URL
+SDKWORK_CLOUDROUTER_APP_API_BASE_URL
+SDKWORK_CLOUDROUTER_ADMIN_API_BASE_URL
+SDKWORK_CLOUDROUTER_GATEWAY_BASE_URL
 ```
 
 这些 base URL 只包含 scheme、host、port 和可选 context root，不包含 `/app/v3/api`、`/backend/v3/api` 或 `/v1` 之后的资源路径。
@@ -78,10 +78,10 @@ SDKWORK_CLAW_GATEWAY_BASE_URL
 ```text
 Desktop Shell / local launcher
   -> static portal
-  -> sdkwork-clawrouter-router-service
-      -> sdkwork-clawrouter-edge-runtime      127.0.0.1:18080
-      -> sdkwork-clawrouter-admin-gateway    127.0.0.1:18081
-      -> sdkwork-clawrouter-standalone-gateway      127.0.0.1:18082
+  -> sdkwork-cloudrouter-router-service
+      -> sdkwork-cloudrouter-edge-runtime      127.0.0.1:18080
+      -> sdkwork-cloudrouter-admin-gateway    127.0.0.1:18081
+      -> sdkwork-cloudrouter-standalone-gateway      127.0.0.1:18082
       -> SQLite
       -> memory/moka cache
       -> OS keychain or encrypted file
@@ -109,9 +109,9 @@ Desktop Shell / local launcher
 ```text
 Nginx
   -> /                 portal static
-  -> /app/v3/api       sdkwork-clawrouter-standalone-gateway
-  -> /backend/v3/api   sdkwork-clawrouter-admin-gateway
-  -> /v1               sdkwork-clawrouter-edge-runtime
+  -> /app/v3/api       sdkwork-cloudrouter-standalone-gateway
+  -> /backend/v3/api   sdkwork-cloudrouter-admin-gateway
+  -> /v1               sdkwork-cloudrouter-edge-runtime
 
 Rust services
   -> PostgreSQL
@@ -139,11 +139,11 @@ Rust services
 ### 6.2 Compose 组件
 
 ```text
-claw-router-gateway
-claw-router-app-api
-claw-router-admin-api
-claw-router-worker
-claw-router-portal or nginx
+cloud-router-gateway
+cloud-router-app-api
+cloud-router-admin-api
+cloud-router-worker
+cloud-router-portal or nginx
 postgres
 redis
 minio optional
@@ -180,10 +180,10 @@ Ingress
 
 Deployments:
   portal
-  sdkwork-clawrouter-standalone-gateway
-  sdkwork-clawrouter-admin-gateway
-  sdkwork-clawrouter-edge-runtime
-  sdkwork-claw-worker
+  sdkwork-cloudrouter-standalone-gateway
+  sdkwork-cloudrouter-admin-gateway
+  sdkwork-cloudrouter-edge-runtime
+  sdkwork-cloudrouter-worker
 
 State:
   PostgreSQL / cloud database
@@ -202,10 +202,10 @@ Observability:
 
 | Deployment | 扩缩容依据 |
 | --- | --- |
-| `sdkwork-clawrouter-edge-runtime` | QPS、并发、CPU、network、TTFT |
-| `sdkwork-clawrouter-standalone-gateway` | console/public 请求量 |
-| `sdkwork-clawrouter-admin-gateway` | admin 请求量、后台任务触发 |
-| `sdkwork-claw-worker` | outbox backlog、usage finalize delay |
+| `sdkwork-cloudrouter-edge-runtime` | QPS、并发、CPU、network、TTFT |
+| `sdkwork-cloudrouter-standalone-gateway` | console/public 请求量 |
+| `sdkwork-cloudrouter-admin-gateway` | admin 请求量、后台任务触发 |
+| `sdkwork-cloudrouter-worker` | outbox backlog、usage finalize delay |
 | `portal` | 静态资源流量 |
 
 ### 7.4 K8S 标准

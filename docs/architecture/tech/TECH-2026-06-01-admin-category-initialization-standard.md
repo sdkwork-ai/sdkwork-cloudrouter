@@ -10,7 +10,7 @@
 
 **Architecture:** Store canonical category seed data under `data/categories/<taxonomy>/categories.json`, with product categories targeting `commerce_product_category` and reusable platform categories targeting `plus_category`. Add a backend admin command endpoint that imports selected datasets idempotently; keep installer participation disabled by default but represented by manifest policy so install can opt in later. The portal adds a product category management page and initialization button that calls the generated backend SDK.
 
-**Tech Stack:** Rust, Axum, SQLx SQLite/Postgres stores, schema-registry OpenAPI generation, generated `@sdkwork/clawrouter-backend-sdk`, React, TypeScript, Node runtime tests.
+**Tech Stack:** Rust, Axum, SQLx SQLite/Postgres stores, schema-registry OpenAPI generation, generated `@sdkwork/cloudrouter-backend-sdk`, React, TypeScript, Node runtime tests.
 
 ---
 
@@ -22,19 +22,19 @@
 - Create: `data/categories/agent-skills/categories.json`
 - Create: `data/categories/mcp/categories.json`
 - Create: `data/categories/apps/categories.json`
-- Modify: `services/sdkwork-clawrouter-router-service/src/api/admin_catalog.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/ports/admin_catalog_store.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_catalog_store.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_catalog_store.rs`
-- Modify: `services/sdkwork-clawrouter-admin-gateway/tests/product_center_routes.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/api/admin_catalog.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/ports/admin_catalog_store.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/sqlite/admin_catalog_store.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_catalog_store.rs`
+- Modify: `services/sdkwork-cloudrouter-admin-gateway/tests/product_center_routes.rs`
 - Modify: `docs/schema-registry/frontend-field-contracts/operations/backend-commerce-catalog.yaml`
 - Regenerate: `generated/api/api-contract-manifest.json`
-- Regenerate: `generated/openapi/clawrouter-backend-openapi.json`
-- Regenerate: `sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/**`
-- Modify: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-catalog/src/catalogService.ts`
-- Create: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-catalog/src/CategoryManagementPage.tsx`
-- Modify: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-catalog/src/index.tsx`
-- Modify: `apps/sdkwork-clawrouter-pc/admin-catalog-runtime.test.ts`
+- Regenerate: `generated/openapi/cloudrouter-backend-openapi.json`
+- Regenerate: `sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/**`
+- Modify: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-catalog/src/catalogService.ts`
+- Create: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-catalog/src/CategoryManagementPage.tsx`
+- Modify: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-catalog/src/index.tsx`
+- Modify: `apps/sdkwork-cloudrouter-pc/admin-catalog-runtime.test.ts`
 
 ## Tasks
 
@@ -63,7 +63,7 @@
 
 - [ ] Add `catalog.categorySeeds.initialize` to `backend-commerce-catalog.yaml`.
 - [ ] Regenerate manifest/OpenAPI/backend TypeScript SDK with the repository SDK generation commands.
-- [ ] Verify the portal service uses only `getClawRouterBackendSdkClient().catalog.categorySeeds.initialize`.
+- [ ] Verify the portal service uses only `getCloudRouterBackendSdkClient().catalog.categorySeeds.initialize`.
 
 ### Task 5: Admin UI
 

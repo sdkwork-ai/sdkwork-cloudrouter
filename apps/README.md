@@ -1,13 +1,13 @@
 # apps/
 
-Application: sdkwork-clawrouter
+Application: sdkwork-cloudrouter
 Status: active
 Owner: SDKWork maintainers
 Specs: APPLICATION_SPEC.md, SDKWORK_WORKSPACE_SPEC.md
 
 ## Purpose
 
-Index the application roots owned by SDKWork Claw Router and identify which
+Index the application roots owned by SDKWork Cloud Router and identify which
 surfaces are runnable.
 
 ## Owner
@@ -23,7 +23,7 @@ The repository root `sdkwork.app.config.json` governs the primary application ma
 
 | Directory | Surface role | Runnable | Purpose | Entry |
 | --- | --- | --- | --- | --- |
-| sdkwork-clawrouter-pc | pc | yes | SDKWork ClawRouter PC pc application root. | [README](sdkwork-clawrouter-pc/README.md) |
+| sdkwork-cloudrouter-pc | pc | yes | SDKWork CloudRouter PC pc application root. | [README](sdkwork-cloudrouter-pc/README.md) |
 
 ## Allowed Content
 

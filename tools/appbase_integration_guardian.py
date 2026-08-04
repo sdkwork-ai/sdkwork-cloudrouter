@@ -33,10 +33,10 @@ APPBASE_CATALOG_PATH = (
     / "appbase-capabilities.yaml"
 )
 DEFAULT_INTEGRATION_PATH = Path("specs") / "appbase-integration.yaml"
-PORTAL_PACKAGE_PATH = Path("apps") / "sdkwork-clawrouter-pc" / "package.json"
+PORTAL_PACKAGE_PATH = Path("apps") / "sdkwork-cloudrouter-pc" / "package.json"
 FRONTEND_FIELD_CONTRACTS_PATH = DEFAULT_CONTRACT_SNAPSHOT
 FRONTEND_ROUTE_CLASSIFICATION_PATH = Path("docs") / "schema-registry" / "frontend-route-classification.yaml"
-TABLE_REGISTRY_PATH = Path("docs") / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+TABLE_REGISTRY_PATH = Path("docs") / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
 LEGACY_CONSOLE_BILLING_ROUTE = "/console/" + "billing"
 
 MATURITY_RANK: dict[str, int] = {
@@ -48,8 +48,8 @@ MATURITY_RANK: dict[str, int] = {
 
 REQUIRED_FRONTEND_ADAPTERS: dict[str, tuple[str, ...]] = {
     "commerce": (
-        "apps/sdkwork-clawrouter-pc/src/App.tsx",
-        "apps/sdkwork-clawrouter-pc/src/console-business/consoleBusinessHostMount.tsx",
+        "apps/sdkwork-cloudrouter-pc/src/App.tsx",
+        "apps/sdkwork-cloudrouter-pc/src/console-business/consoleBusinessHostMount.tsx",
     ),
 }
 
@@ -76,9 +76,9 @@ BUILT_IN_FORBIDDEN_PRODUCT_FORKS: tuple[str, ...] = (
     "/".join(
         [
             "apps",
-            "sdkwork-clawrouter-pc",
+            "sdkwork-cloudrouter-pc",
             "packages",
-            "sdkwork-clawroutes-pc-commons",
+            "sdkwork-cloudroutes-pc-commons",
             "src",
             f"{'-'.join(['appbase', 'sdk', 'clients'])}.ts",
         ]
@@ -90,9 +90,9 @@ ROOT_LEVEL_APPBASE_SHADOW_PATHS: tuple[str, ...] = (
     "packages/native-rust/commerce",
 )
 
-CLAWROUTER_GENERATED_SDK_IMPORT_RE = re.compile(
-    r"from\s+['\"]@sdkwork/clawrouter-(?:app|backend|open)-sdk['\"]|"
-    r"import\s*\(\s*['\"]@sdkwork/clawrouter-(?:app|backend|open)-sdk['\"]\s*\)"
+CLOUDROUTER_GENERATED_SDK_IMPORT_RE = re.compile(
+    r"from\s+['\"]@sdkwork/cloudrouter-(?:app|backend|open)-sdk['\"]|"
+    r"import\s*\(\s*['\"]@sdkwork/cloudrouter-(?:app|backend|open)-sdk['\"]\s*\)"
 )
 
 COMMERCE_RETIRED_API_PATH_RE = re.compile(
@@ -108,7 +108,7 @@ COMMERCE_RETIRED_FRONTEND_ARTIFACT_RE = re.compile(
     r"@sdkwork/commerce-(?:contracts|sdk-ports|service)"
     r"|commerce-runtime\.ts"
     r"|commerce-console-service\.ts"
-    r"|sdkwork-claw-?router-(?:pc-)?(?:console-commerce|admin-commerce|admin-vip)"
+    r"|sdkwork-cloudrouter-?router-(?:pc-)?(?:console-commerce|admin-commerce|admin-vip)"
 )
 COMMERCE_TABLE_DECLARATION_RE = re.compile(r"(?m)^\s*-\s*table:\s*([A-Za-z0-9_]+)\s*$")
 COMMERCE_RETIRED_PRODUCT_CENTER_TABLES: set[str] = {
@@ -259,8 +259,8 @@ class AppbaseIntegrationGuardian:
         if manifest.get("kind") != "sdkwork.appbase.integration":
             messages.append("appbase integration manifest kind must be sdkwork.appbase.integration")
         app = manifest.get("app")
-        if not isinstance(app, dict) or app.get("key") != "sdkwork-clawrouter":
-            messages.append("appbase integration manifest must declare app.key sdkwork-clawrouter")
+        if not isinstance(app, dict) or app.get("key") != "sdkwork-cloudrouter":
+            messages.append("appbase integration manifest must declare app.key sdkwork-cloudrouter")
         integrations = manifest.get("integrations")
         if not isinstance(integrations, list) or not integrations:
             messages.append("appbase integration manifest must declare integrations")
@@ -440,11 +440,11 @@ class AppbaseIntegrationGuardian:
             if not adapter_path.is_file():
                 continue
             source = adapter_path.read_text(encoding="utf-8")
-            imports_generated_sdk = CLAWROUTER_GENERATED_SDK_IMPORT_RE.search(source) is not None
+            imports_generated_sdk = CLOUDROUTER_GENERATED_SDK_IMPORT_RE.search(source) is not None
             if imports_generated_sdk and adapter not in declared_sdk_injection_adapters:
                 messages.append(
                     f"appbase integration {capability_id} frontend adapter {adapter} "
-                    "must not import ClawRouter generated SDK packages; use the shared SDK runtime boundary"
+                    "must not import CloudRouter generated SDK packages; use the shared SDK runtime boundary"
                 )
         messages.extend(self._validate_commerce_frontend_feature_sources(declared_sdk_injection_adapters))
         return messages
@@ -462,10 +462,10 @@ class AppbaseIntegrationGuardian:
                 if relative_path in sdk_injection_adapters:
                     continue
                 source = path.read_text(encoding="utf-8")
-                if CLAWROUTER_GENERATED_SDK_IMPORT_RE.search(source) is not None:
+                if CLOUDROUTER_GENERATED_SDK_IMPORT_RE.search(source) is not None:
                     messages.append(
                         f"appbase integration commerce frontend source {relative_path} "
-                        "must not import ClawRouter generated SDK packages; use the local commerce service boundary"
+                        "must not import CloudRouter generated SDK packages; use the local commerce service boundary"
                     )
         return messages
 
@@ -767,8 +767,8 @@ class AppbaseIntegrationGuardian:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate appbase capability integration for sdkwork-clawrouter.")
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser = argparse.ArgumentParser(description="Validate appbase capability integration for sdkwork-cloudrouter.")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     parser.add_argument("--manifest", type=Path, default=None, help="appbase integration manifest path")
     parser.add_argument("--appbase-catalog", type=Path, default=None, help="appbase capability catalog path")
     args = parser.parse_args()

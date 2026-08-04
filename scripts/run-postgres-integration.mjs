@@ -8,15 +8,15 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const POSTGRES_TEST_DATABASE_URL = 'SDKWORK_DATABASE_URL';
-const POSTGRES_TEST_PORT = 'SDKWORK_CLAW_POSTGRES_TEST_PORT';
+const POSTGRES_TEST_PORT = 'SDKWORK_CLOUDROUTER_POSTGRES_TEST_PORT';
 const POSTGRES_DOCKER_COMPOSE_FILE = 'docker-compose.postgres-test.yml';
-const POSTGRES_DOCKER_PROJECT = 'sdkwork-clawrouter-postgres-test';
+const POSTGRES_DOCKER_PROJECT = 'sdkwork-cloudrouter-postgres-test';
 const DEFAULT_WORKSPACE_ROOT = path.resolve(__dirname, '..');
 
 function printHelp() {
   console.log(`Usage: node scripts/run-postgres-integration.mjs [options] [-- cargo-test-args...]
 
-Run the sdkwork-clawrouter-router-service real Postgres transaction integration tests.
+Run the sdkwork-cloudrouter-router-service real Postgres transaction integration tests.
 
 Options:
   --with-docker       Start the app-local Docker Postgres test database before cargo.
@@ -95,7 +95,7 @@ function postgresDockerTestPort(env = process.env) {
 }
 
 function postgresDockerDatabaseUrl(env = process.env) {
-  return `postgres://sdkwork_claw_test:sdkwork_claw_test_password@127.0.0.1:${postgresDockerTestPort(env)}/sdkwork_claw_test`;
+  return `postgres://sdkwork_cloudrouter_test:sdkwork_cloudrouter_test_password@127.0.0.1:${postgresDockerTestPort(env)}/sdkwork_cloudrouter_test`;
 }
 
 function hasPostgresDatabaseUrl(env = process.env) {
@@ -106,7 +106,7 @@ function postgresIntegrationCargoArgs(extraArgs = []) {
   const args = [
     'test',
     '-p',
-    'sdkwork-clawrouter-router-service',
+    'sdkwork-cloudrouter-router-service',
     '--test',
     'postgres_transaction_integration',
   ];

@@ -6,7 +6,7 @@
     "displayName": "SDKWork Provider Adapter Alicloud",
     "version": "0.1.0",
     "type": "rust-crate",
-    "root": "sdkwork-clawrouter/crates/provider-adapters/alicloud",
+    "root": "sdkwork-cloudrouter/crates/provider-adapters/alicloud",
     "domain": "platform",
     "declaredDomain": null,
     "capability": "router",
@@ -110,7 +110,7 @@
   },
   "verification": {
     "commands": [
-      "cargo test --manifest-path apps/sdkwork-clawrouter/crates/provider-adapters/alicloud/Cargo.toml"
+      "cargo test --manifest-path apps/sdkwork-cloudrouter/crates/provider-adapters/alicloud/Cargo.toml"
     ]
   },
   "metadata": {

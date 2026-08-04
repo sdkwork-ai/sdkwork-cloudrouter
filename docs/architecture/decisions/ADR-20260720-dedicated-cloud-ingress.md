@@ -2,16 +2,16 @@
 
 Status: accepted
 Requirement: REQ-2026-0001
-Owner: claw-router-platform
+Owner: cloud-router-platform
 Date: 2026-07-20
 Specs: APP_RUNTIME_TOPOLOGY_SPEC.md, APPLICATION_GATEWAY_SPEC.md, ARCHITECTURE_DECISION_SPEC.md
 
 ## Context
 
-Claw Router exposes OpenAI-compatible and provider-native traffic through the
-application-owned `sdkwork-clawrouter-edge-runtime`. The shared
+Cloud Router exposes OpenAI-compatible and provider-native traffic through the
+application-owned `sdkwork-cloudrouter-edge-runtime`. The shared
 `sdkwork-api-cloud-gateway` remains the platform dependency gateway and cannot
-replace Claw Router's provider routing, streaming, billing, and settlement
+replace Cloud Router's provider routing, streaming, billing, and settlement
 pipeline.
 
 Topology v5 requires the cloud ingress strategy and its ownership boundary to
@@ -23,17 +23,17 @@ starting local API or gateway processes.
 Use the `dedicated-application` cloud ingress strategy.
 
 - `sdkwork-api-cloud-gateway` owns the platform gateway surface.
-- `sdkwork-clawrouter-edge-runtime` owns the Claw Router application ingress.
-- Cloud development uses `https://clawrouter-test.sdkwork.com` for application,
-  open, backend, and browser-facing Claw Router URLs.
-- Cloud production continues to use `https://clawrouter.sdkwork.com` for the
+- `sdkwork-cloudrouter-edge-runtime` owns the Cloud Router application ingress.
+- Cloud development uses `https://cloudrouter-test.sdkwork.com` for application,
+  open, backend, and browser-facing Cloud Router URLs.
+- Cloud production continues to use `https://cloudrouter.sdkwork.com` for the
   public and open surfaces and the separately declared admin origin for the
   backend surface.
 - Standalone development continues to use the local standalone gateway.
 
 ## Alternatives
 
-- Collapse Claw Router into the platform gateway: rejected because it would
+- Collapse Cloud Router into the platform gateway: rejected because it would
   move provider routing and settlement ownership into a shared dependency.
 - Start both cloud gateways locally during cloud development: rejected because
   cloud development is remote-only under `APP_RUNTIME_TOPOLOGY_SPEC.md`.
@@ -46,11 +46,11 @@ The application and platform gateway boundaries remain independently
 deployable and observable. Cloud profiles require two explicit remote origins,
 and releases must preserve the application gateway artifact and routing
 contract. This adds a dedicated deployment surface but avoids coupling shared
-platform releases to Claw Router provider behavior.
+platform releases to Cloud Router provider behavior.
 
 ## Verification
 
-- `node ../sdkwork-specs/tools/check-topology-deployment-profiles.mjs --workspace .. --repo sdkwork-clawrouter`
+- `node ../sdkwork-specs/tools/check-topology-deployment-profiles.mjs --workspace .. --repo sdkwork-cloudrouter`
 - `pnpm topology:validate`
 - `pnpm gateway:validate:cloud`
 - Release readiness checks must verify the application and platform gateway

@@ -5,11 +5,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Implement the standalone `sdkwork-models` catalog standard and migrate ClawRouter installation so model, pricing, meter, and ranking initialization comes from the new vendor-scoped JSON catalog.
+**Goal:** Implement the standalone `sdkwork-models` catalog standard and migrate CloudRouter installation so model, pricing, meter, and ranking initialization comes from the new vendor-scoped JSON catalog.
 
-**Architecture:** `../sdkwork-models` becomes the portable catalog project and owns JSON model facts, prices, schemas, validators, and language SDKs. ClawRouter depends on the Rust catalog loader and imports catalog data into canonical `ai_*` tables during `DatabaseInstaller::ensure_installed`; ClawRouter-specific providers, channels, routes, secrets, and tenant policies remain in overlays or existing runtime config.
+**Architecture:** `../sdkwork-models` becomes the portable catalog project and owns JSON model facts, prices, schemas, validators, and language SDKs. CloudRouter depends on the Rust catalog loader and imports catalog data into canonical `ai_*` tables during `DatabaseInstaller::ensure_installed`; CloudRouter-specific providers, channels, routes, secrets, and tenant policies remain in overlays or existing runtime config.
 
-**Tech Stack:** JSON Schema, Node.js ESM tooling, Python unittest contract guards, TypeScript SDK package, Python/Java/Rust/Flutter SDK skeletons, Rust 2021, serde, serde_json, sqlx, SQLite, PostgreSQL, ClawRouter installer tests.
+**Tech Stack:** JSON Schema, Node.js ESM tooling, Python unittest contract guards, TypeScript SDK package, Python/Java/Rust/Flutter SDK skeletons, Rust 2021, serde, serde_json, sqlx, SQLite, PostgreSQL, CloudRouter installer tests.
 
 ---
 
@@ -25,7 +25,7 @@ In scope:
 - continuous catalog update workflow, freshness policy, diff reports, and
   release governance
 - multi-language SDK public package skeletons and standards
-- Rust catalog loader required by ClawRouter
+- Rust catalog loader required by CloudRouter
 - SQL import layer for SQLite and PostgreSQL
 - `DatabaseInstaller` migration away from hard-coded model seed arrays
 - post-install catalog refresh path for ongoing model and pricing updates
@@ -36,7 +36,7 @@ Out of scope for this plan:
 - fetching current public prices from external sites
 - publishing packages to npm, PyPI, Maven Central, crates.io, or pub.dev
 - pushing the independent GitHub repository
-- replacing ClawRouter tenant-specific pricing plans or private provider secrets
+- replacing CloudRouter tenant-specific pricing plans or private provider secrets
 - UI changes in the portal
 
 ## File Structure
@@ -70,8 +70,8 @@ Out of scope for this plan:
 - Create `../sdkwork-models/models/<vendorCode>/...`
   Vendor-specific `vendor.json`, `families.json`, `models/<modelId>.json`, `pricing/<modelId>.json`, and `rankings.json`.
 
-- Create `../sdkwork-models/overlays/clawrouter/*.json`
-  ClawRouter provider/channel/route/ranking overlay data. Public model facts must not be defined here.
+- Create `../sdkwork-models/overlays/cloudrouter/*.json`
+  CloudRouter provider/channel/route/ranking overlay data. Public model facts must not be defined here.
 
 ### Catalog Tooling
 
@@ -84,8 +84,8 @@ Out of scope for this plan:
 - Create `../sdkwork-models/tools/build-index.mjs`
   Deterministically rebuilds `models/index.json` and `models/vendors.json`.
 
-- Create `../sdkwork-models/tools/export-clawrouter-seed.mjs`
-  Optional development tool that summarizes the catalog rows ClawRouter will import. It must not become the runtime importer.
+- Create `../sdkwork-models/tools/export-cloudrouter-seed.mjs`
+  Optional development tool that summarizes the catalog rows CloudRouter will import. It must not become the runtime importer.
 
 - Create `../sdkwork-models/tools/catalog-diff.mjs`
   Compares two catalog versions and emits added, changed, deprecated, retired,
@@ -124,45 +124,45 @@ Out of scope for this plan:
 - Create `../sdkwork-models/sdkwork-models-flutter/lib/src/{types.dart,loaders.dart,query.dart,validation.dart}`
 - Create `../sdkwork-models/sdkwork-models-flutter/test/catalog_test.dart`
 
-### ClawRouter Runtime
+### CloudRouter Runtime
 
-- Modify `services/sdkwork-clawrouter-router-service/Cargo.toml`
+- Modify `services/sdkwork-cloudrouter-router-service/Cargo.toml`
   Add path dependency on `sdkwork-models`.
 
-- Modify `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/mod.rs`
+- Modify `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/mod.rs`
   Export catalog import modules.
 
-- Create `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/model_catalog_import.rs`
+- Create `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/model_catalog_import.rs`
   Backend-agnostic mapping from `sdkwork_models::ModelCatalog` to canonical SQL rows.
 
-- Create `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/model_catalog_import.rs`
+- Create `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/sqlite/model_catalog_import.rs`
   SQLite importer using sqlx bind parameters.
 
-- Create `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/model_catalog_import.rs`
+- Create `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/model_catalog_import.rs`
   PostgreSQL importer using sqlx bind parameters.
 
-- Create `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/model_catalog_overlay_import.rs`
-  ClawRouter overlay importer for providers, channels, and routes.
+- Create `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/model_catalog_overlay_import.rs`
+  CloudRouter overlay importer for providers, channels, and routes.
 
-- Modify `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/installer.rs`
+- Modify `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/installer.rs`
   Replace hard-coded model catalog, meter, pricing, and ranking seed arrays with catalog loading and importer calls. Keep non-catalog schema setup and product-specific seed paths until their overlays are implemented.
 
-- Modify `services/sdkwork-clawrouter-router-service/tests/database_installer.rs`
+- Modify `services/sdkwork-cloudrouter-router-service/tests/database_installer.rs`
   Assert the installer imports from `sdkwork-models`, records the new catalog version, remains idempotent, and repairs missing rows.
 
-- Create `services/sdkwork-clawrouter-router-service/tests/sdkwork_models_catalog_import.rs`
+- Create `services/sdkwork-cloudrouter-router-service/tests/sdkwork_models_catalog_import.rs`
   Focused importer tests for SQLite.
 
-- Modify `services/sdkwork-claw-installer/src/main.rs`
+- Modify `services/sdkwork-cloudrouter-installer/src/main.rs`
   Show catalog root and catalog version in status/install output. Add an
   explicit catalog refresh command.
 
-- Modify `crates/sdkwork-clawrouter-edge-runtime/src/runtime.rs`
-- Modify `services/sdkwork-clawrouter-admin-gateway/src/lib.rs`
-- Modify `services/sdkwork-clawrouter-standalone-gateway/src/lib.rs`
+- Modify `crates/sdkwork-cloudrouter-edge-runtime/src/runtime.rs`
+- Modify `services/sdkwork-cloudrouter-admin-gateway/src/lib.rs`
+- Modify `services/sdkwork-cloudrouter-standalone-gateway/src/lib.rs`
   Ensure startup install can receive catalog options from environment.
 
-- Modify `services/sdkwork-clawrouter-router-service/src/api/admin_system.rs`
+- Modify `services/sdkwork-cloudrouter-router-service/src/api/admin_system.rs`
   Expose catalog version, catalog source, and last refresh status in admin
   installation/status APIs.
 
@@ -176,9 +176,9 @@ Out of scope for this plan:
   update workflow.
 
 - Modify `tests/test_model_catalog_standard_contract.py`
-  Move environment seed expectations from legacy `spring-ai-plus-server-application/src/main/resources/data/model-catalog` to `apps/sdkwork-clawrouter/../sdkwork-models`.
+  Move environment seed expectations from legacy `spring-ai-plus-server-application/src/main/resources/data/model-catalog` to `apps/sdkwork-cloudrouter/../sdkwork-models`.
 
-- Modify `scripts/verify-claw-router-application.mjs`
+- Modify `scripts/verify-cloud-router-application.mjs`
   Add `sdkwork-models` validation to the standard verification sequence.
 
 ---
@@ -370,10 +370,10 @@ git commit -m "add sdkwork-models catalog schema"
 - Create: `../sdkwork-models/tools/catalog-lib.mjs`
 - Create: `../sdkwork-models/tools/validate-catalog.mjs`
 - Create: `../sdkwork-models/tools/build-index.mjs`
-- Create: `../sdkwork-models/tools/export-clawrouter-seed.mjs`
+- Create: `../sdkwork-models/tools/export-cloudrouter-seed.mjs`
 - Modify: `tests/test_sdkwork_models_standard.py`
 - Modify: `package.json`
-- Modify: `scripts/verify-claw-router-application.mjs`
+- Modify: `scripts/verify-cloud-router-application.mjs`
 
 - [ ] **Step 1: Write failing validator tests**
 
@@ -473,7 +473,7 @@ Add a root script:
 "models:check": "node ../sdkwork-models/tools/build-index.mjs --check && node ../sdkwork-models/tools/validate-catalog.mjs"
 ```
 
-Update `scripts/verify-claw-router-application.mjs` to run this check in normal verification.
+Update `scripts/verify-cloud-router-application.mjs` to run this check in normal verification.
 
 - [ ] **Step 6: Run tests**
 
@@ -490,7 +490,7 @@ Expected: fails until Task 4 adds valid catalog data.
 - [ ] **Step 7: Commit**
 
 ```powershell
-git add ../sdkwork-models/tools package.json scripts/verify-claw-router-application.mjs tests/test_sdkwork_models_standard.py
+git add ../sdkwork-models/tools package.json scripts/verify-cloud-router-application.mjs tests/test_sdkwork_models_standard.py
 git commit -m "add sdkwork-models validation tooling"
 ```
 
@@ -517,7 +517,7 @@ git commit -m "add sdkwork-models validation tooling"
 - Create: `../sdkwork-models/models/black_forest_labs/*`
 - Create: `../sdkwork-models/models/suno/*`
 - Create: `../sdkwork-models/models/elevenlabs/*`
-- Create: `../sdkwork-models/overlays/clawrouter/*.json`
+- Create: `../sdkwork-models/overlays/cloudrouter/*.json`
 
 - [ ] **Step 1: Port canonical meters**
 
@@ -551,7 +551,7 @@ unknown
 
 - [ ] **Step 2: Port model facts**
 
-Move the current facts from `OPENAI_ACTIVE_MODEL_SEEDS` and `GLOBAL_MODEL_SEEDS` in `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/installer.rs` into vendor directories. Preserve the model IDs that current tests assert, including:
+Move the current facts from `OPENAI_ACTIVE_MODEL_SEEDS` and `GLOBAL_MODEL_SEEDS` in `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/installer.rs` into vendor directories. Preserve the model IDs that current tests assert, including:
 
 ```text
 gpt-5.2
@@ -587,11 +587,11 @@ Move current `global_model_pricing_seed_sql()` data into `pricing/<modelId>.json
 - `effectiveFrom`
 - decimal string prices
 
-Provider-specific private costs should move to `overlays/clawrouter` or be left for ClawRouter private config, not model facts.
+Provider-specific private costs should move to `overlays/cloudrouter` or be left for CloudRouter private config, not model facts.
 
 - [ ] **Step 4: Port rankings**
 
-Move current `global_model_ranking_seed_sql()` rows into `rankings.json` files or `overlays/clawrouter/rankings.json` depending on whether they are public catalog rankings or ClawRouter commercial rankings. The existing `commercial-default` ranking belongs in the ClawRouter overlay unless intentionally published as global catalog data.
+Move current `global_model_ranking_seed_sql()` rows into `rankings.json` files or `overlays/cloudrouter/rankings.json` depending on whether they are public catalog rankings or CloudRouter commercial rankings. The existing `commercial-default` ranking belongs in the CloudRouter overlay unless intentionally published as global catalog data.
 
 - [ ] **Step 5: Build index and validate**
 
@@ -747,7 +747,7 @@ git add ../sdkwork-models/sdkwork-models-python ../sdkwork-models/sdkwork-models
 git commit -m "add portable sdkwork models SDK skeletons"
 ```
 
-### Task 7: Rust SDK Loader for ClawRouter
+### Task 7: Rust SDK Loader for CloudRouter
 
 **Files:**
 - Create: `../sdkwork-models/sdkwork-models-rust/Cargo.toml`
@@ -796,7 +796,7 @@ pub fn load_vendor_catalog(path: impl AsRef<std::path::Path>, vendor_code: &str)
 
 `build.rs` must generate a static manifest of bundled JSON files from `../models` so release binaries can install without relying on the current working directory.
 
-The loader order for ClawRouter later will be:
+The loader order for CloudRouter later will be:
 
 1. explicit `SDKWORK_MODELS_CATALOG_ROOT`
 2. `../sdkwork-models` relative to workspace root
@@ -819,20 +819,20 @@ git add ../sdkwork-models/sdkwork-models-rust
 git commit -m "add sdkwork models Rust loader"
 ```
 
-### Task 8: ClawRouter Catalog Importer
+### Task 8: CloudRouter Catalog Importer
 
 **Files:**
-- Modify: `services/sdkwork-clawrouter-router-service/Cargo.toml`
-- Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/mod.rs`
-- Create: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/model_catalog_import.rs`
-- Create: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/model_catalog_import.rs`
-- Create: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/model_catalog_import.rs`
-- Create: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/model_catalog_overlay_import.rs`
-- Create: `services/sdkwork-clawrouter-router-service/tests/sdkwork_models_catalog_import.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/Cargo.toml`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/mod.rs`
+- Create: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/model_catalog_import.rs`
+- Create: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/sqlite/model_catalog_import.rs`
+- Create: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/model_catalog_import.rs`
+- Create: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/model_catalog_overlay_import.rs`
+- Create: `services/sdkwork-cloudrouter-router-service/tests/sdkwork_models_catalog_import.rs`
 
 - [ ] **Step 1: Add Rust dependency**
 
-In `services/sdkwork-clawrouter-router-service/Cargo.toml`:
+In `services/sdkwork-cloudrouter-router-service/Cargo.toml`:
 
 ```toml
 sdkwork-models = { path = "../../../sdkwork-models/sdkwork-models-rust" }
@@ -887,7 +887,7 @@ Mirror SQLite behavior with PostgreSQL bind syntax. Keep field mapping identical
 
 - [ ] **Step 6: Implement overlay importer**
 
-Import ClawRouter overlay data only for product-specific tables:
+Import CloudRouter overlay data only for product-specific tables:
 
 - integration providers
 - provider accounts
@@ -901,7 +901,7 @@ Import ClawRouter overlay data only for product-specific tables:
 Run:
 
 ```powershell
-cargo test -p sdkwork-clawrouter-router-service --test sdkwork_models_catalog_import
+cargo test -p sdkwork-cloudrouter-router-service --test sdkwork_models_catalog_import
 ```
 
 Expected: importer test passes for SQLite. PostgreSQL-specific SQL contract can be covered by existing Postgres integration gates after Task 9.
@@ -909,20 +909,20 @@ Expected: importer test passes for SQLite. PostgreSQL-specific SQL contract can 
 - [ ] **Step 8: Commit**
 
 ```powershell
-git add services/sdkwork-clawrouter-router-service ../sdkwork-models/sdkwork-models-rust Cargo.toml Cargo.lock
-git commit -m "add ClawRouter sdkwork models importer"
+git add services/sdkwork-cloudrouter-router-service ../sdkwork-models/sdkwork-models-rust Cargo.toml Cargo.lock
+git commit -m "add CloudRouter sdkwork models importer"
 ```
 
 ### Task 9: Replace Installer Model Seed Flow
 
 **Files:**
-- Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/installer.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/tests/database_installer.rs`
-- Modify: `services/sdkwork-claw-installer/src/main.rs`
-- Modify: `crates/sdkwork-clawrouter-edge-runtime/src/runtime.rs`
-- Modify: `services/sdkwork-clawrouter-admin-gateway/src/lib.rs`
-- Modify: `services/sdkwork-clawrouter-standalone-gateway/src/lib.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/mod.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/installer.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/tests/database_installer.rs`
+- Modify: `services/sdkwork-cloudrouter-installer/src/main.rs`
+- Modify: `crates/sdkwork-cloudrouter-edge-runtime/src/runtime.rs`
+- Modify: `services/sdkwork-cloudrouter-admin-gateway/src/lib.rs`
+- Modify: `services/sdkwork-cloudrouter-standalone-gateway/src/lib.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/mod.rs`
 
 - [ ] **Step 1: Write installer behavior tests first**
 
@@ -988,7 +988,7 @@ pub struct DatabaseInstallOptions {
 }
 ```
 
-Default overlay: `clawrouter`.
+Default overlay: `cloudrouter`.
 
 - [ ] **Step 4: Load catalog in installer**
 
@@ -1022,7 +1022,7 @@ New flow:
 let catalog = load_install_model_catalog(options)?;
 record_sqlite_catalog_migration_started(pool, &catalog).await?;
 import_sqlite_model_catalog(pool, &catalog).await?;
-import_sqlite_clawrouter_overlay(pool, &catalog, options.models_overlay.as_str()).await?;
+import_sqlite_cloudrouter_overlay(pool, &catalog, options.models_overlay.as_str()).await?;
 record_sqlite_catalog_migration_completed(pool, &catalog).await?;
 ```
 
@@ -1076,9 +1076,9 @@ and that `with_env_options()` now includes `SDKWORK_MODELS_CATALOG_ROOT`.
 Run:
 
 ```powershell
-cargo test -p sdkwork-clawrouter-router-service --test database_installer
-cargo test -p sdkwork-clawrouter-admin-gateway --test installation_status_route
-cargo test -p sdkwork-clawrouter-edge-runtime --test database_installer_startup
+cargo test -p sdkwork-cloudrouter-router-service --test database_installer
+cargo test -p sdkwork-cloudrouter-admin-gateway --test installation_status_route
+cargo test -p sdkwork-cloudrouter-edge-runtime --test database_installer_startup
 ```
 
 Expected: all pass and report catalog version from `sdkwork-models.json`.
@@ -1086,7 +1086,7 @@ Expected: all pass and report catalog version from `sdkwork-models.json`.
 - [ ] **Step 10: Commit**
 
 ```powershell
-git add services/sdkwork-clawrouter-router-service services/sdkwork-claw-installer crates/sdkwork-clawrouter-edge-runtime services/sdkwork-clawrouter-admin-gateway services/sdkwork-clawrouter-standalone-gateway
+git add services/sdkwork-cloudrouter-router-service services/sdkwork-cloudrouter-installer crates/sdkwork-cloudrouter-edge-runtime services/sdkwork-cloudrouter-admin-gateway services/sdkwork-cloudrouter-standalone-gateway
 git commit -m "migrate installer to sdkwork-models catalog"
 ```
 
@@ -1275,7 +1275,7 @@ Update docs to require:
 - standard vendors reviewed at least monthly
 - price files reviewed more frequently than model fact files
 - each release includes machine-readable diff metadata
-- ClawRouter can update by submodule commit, local catalog root, or bundled SDK update
+- CloudRouter can update by submodule commit, local catalog root, or bundled SDK update
 - production deployments should pin `catalogVersion`, not track floating branch heads
 
 - [ ] **Step 8: Run update workflow checks**
@@ -1300,14 +1300,14 @@ git commit -m "add sdkwork models update workflow"
 ### Task 11: Post-Install Catalog Refresh API and CLI
 
 **Files:**
-- Modify: `services/sdkwork-clawrouter-router-service/src/ports/admin_model_store.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/api/admin_model_command.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/api/admin_system.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_model_store.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_model_store.rs`
-- Modify: `services/sdkwork-claw-installer/src/main.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/tests/admin_model_command_api.rs`
-- Modify: `services/sdkwork-clawrouter-admin-gateway/tests/installation_status_route.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/ports/admin_model_store.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/api/admin_model_command.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/api/admin_system.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_model_store.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/sqlite/admin_model_store.rs`
+- Modify: `services/sdkwork-cloudrouter-installer/src/main.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/tests/admin_model_command_api.rs`
+- Modify: `services/sdkwork-cloudrouter-admin-gateway/tests/installation_status_route.rs`
 
 - [ ] **Step 1: Write refresh behavior tests**
 
@@ -1353,10 +1353,10 @@ It must support:
 
 - [ ] **Step 4: Add CLI command**
 
-Update `sdkwork-claw-installer`:
+Update `sdkwork-cloudrouter-installer`:
 
 ```powershell
-sdkwork-claw-installer refresh-catalog --catalog-root ../sdkwork-models --vendor openai
+sdkwork-cloudrouter-installer refresh-catalog --catalog-root ../sdkwork-models --vendor openai
 ```
 
 Keep existing commands:
@@ -1383,9 +1383,9 @@ Refresh must not:
 Run:
 
 ```powershell
-cargo test -p sdkwork-clawrouter-router-service --test admin_model_command_api
-cargo test -p sdkwork-clawrouter-admin-gateway --test installation_status_route
-cargo test -p sdkwork-clawrouter-router-service --test database_installer
+cargo test -p sdkwork-cloudrouter-router-service --test admin_model_command_api
+cargo test -p sdkwork-cloudrouter-admin-gateway --test installation_status_route
+cargo test -p sdkwork-cloudrouter-router-service --test database_installer
 ```
 
 Expected: install and refresh paths both use the `sdkwork-models` importer.
@@ -1393,7 +1393,7 @@ Expected: install and refresh paths both use the `sdkwork-models` importer.
 - [ ] **Step 7: Commit**
 
 ```powershell
-git add services/sdkwork-clawrouter-router-service services/sdkwork-claw-installer services/sdkwork-clawrouter-admin-gateway
+git add services/sdkwork-cloudrouter-router-service services/sdkwork-cloudrouter-installer services/sdkwork-cloudrouter-admin-gateway
 git commit -m "add sdkwork models catalog refresh flow"
 ```
 
@@ -1497,7 +1497,7 @@ git remote add origin https://github.com/Sdkwork-Cloud/sdkwork-models.git
 git push -u origin main
 ```
 
-Document ClawRouter submodule usage:
+Document CloudRouter submodule usage:
 
 ```powershell
 git submodule add https://github.com/Sdkwork-Cloud/sdkwork-models.git ../sdkwork-models
@@ -1523,9 +1523,9 @@ pnpm.cmd models:check
 node ../sdkwork-models/tools/freshness-report.mjs --max-age-policy ../sdkwork-models/catalog-freshness-policy.json --as-of 2026-05-07
 node ../sdkwork-models/tools/release-catalog.mjs --check
 python -B -m unittest tests.test_sdkwork_models_standard tests.test_sdkwork_models_update_workflow tests.test_model_catalog_standard_contract
-cargo test -p sdkwork-clawrouter-router-service --test sdkwork_models_catalog_import
-cargo test -p sdkwork-clawrouter-router-service --test database_installer
-cargo test -p sdkwork-clawrouter-router-service --test admin_model_command_api
+cargo test -p sdkwork-cloudrouter-router-service --test sdkwork_models_catalog_import
+cargo test -p sdkwork-cloudrouter-router-service --test database_installer
+cargo test -p sdkwork-cloudrouter-router-service --test admin_model_command_api
 pnpm.cmd verify:fast
 ```
 
@@ -1552,11 +1552,11 @@ python -B -m unittest tests.test_sdkwork_models_standard
 python -B -m unittest tests.test_sdkwork_models_update_workflow
 python -B -m unittest tests.test_model_catalog_standard_contract
 cargo test --manifest-path ../sdkwork-models/sdkwork-models-rust/Cargo.toml
-cargo test -p sdkwork-clawrouter-router-service --test sdkwork_models_catalog_import
-cargo test -p sdkwork-clawrouter-router-service --test database_installer
-cargo test -p sdkwork-clawrouter-router-service --test admin_model_command_api
-cargo test -p sdkwork-clawrouter-admin-gateway --test installation_status_route
-cargo test -p sdkwork-clawrouter-edge-runtime --test database_installer_startup
+cargo test -p sdkwork-cloudrouter-router-service --test sdkwork_models_catalog_import
+cargo test -p sdkwork-cloudrouter-router-service --test database_installer
+cargo test -p sdkwork-cloudrouter-router-service --test admin_model_command_api
+cargo test -p sdkwork-cloudrouter-admin-gateway --test installation_status_route
+cargo test -p sdkwork-cloudrouter-edge-runtime --test database_installer_startup
 pnpm.cmd verify:fast
 ```
 
@@ -1569,7 +1569,7 @@ Expected final state:
 - The Rust SDK can load local and bundled catalog data.
 - `DatabaseInstaller::ensure_installed()` imports model facts, meters, pricing, and rankings from `sdkwork-models`.
 - Catalog release checks include freshness, diff metadata, and release metadata.
-- Installed ClawRouter deployments can refresh all vendors or selected vendors
+- Installed CloudRouter deployments can refresh all vendors or selected vendors
   from a newer catalog without reinstalling the database.
 - `system_installation_state.catalog_version` matches `sdkwork-models.json.catalogVersion`.
 - No public model facts, billing meters, prices, or ranking seed arrays remain hard-coded in `installer.rs`.

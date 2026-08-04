@@ -46,9 +46,9 @@ const pnpmDirLicenseCache = new Map();
 const DEFAULT_ARTIFACT_DIRS = [
   { dir: join(root, 'dist', 'install-packages'), recursive: true, filter: null },
   { dir: join(root, 'target', 'release'), recursive: false, filter: 'binaries' },
-  { dir: join(root, 'apps', 'sdkwork-clawrouter-pc', 'dist'), recursive: true, filter: 'portal' },
+  { dir: join(root, 'apps', 'sdkwork-cloudrouter-pc', 'dist'), recursive: true, filter: 'portal' },
   {
-    dir: join(root, 'apps', 'sdkwork-clawrouter-pc', 'dist', 'sdk-archives'),
+    dir: join(root, 'apps', 'sdkwork-cloudrouter-pc', 'dist', 'sdk-archives'),
     recursive: true,
     filter: null,
   },
@@ -138,7 +138,7 @@ try {
 // ---------------------------------------------------------------------------
 let rootNpmPackages = [];
 let pcNpmPackages = [];
-const pcAppRoot = join(root, 'apps', 'sdkwork-clawrouter-pc');
+const pcAppRoot = join(root, 'apps', 'sdkwork-cloudrouter-pc');
 try {
   rootNpmPackages = collectPnpmPackages(root);
 } catch (error) {
@@ -244,8 +244,8 @@ const sbom = {
   spdxVersion: 'SPDX-2.3',
   dataLicense: 'CC0-1.0',
   SPDXID: 'SPDXRef-DOCUMENT',
-  name: 'sdkwork-clawrouter-sbom',
-  documentNamespace: `https://sdkwork.com/apps/sdkwork-clawrouter/sbom/${createdAt}`,
+  name: 'sdkwork-cloudrouter-sbom',
+  documentNamespace: `https://sdkwork.com/apps/sdkwork-cloudrouter/sbom/${createdAt}`,
   creationInfo: {
     created: createdAt,
     creators: [`Tool: ${generatorName}@${generatorVersion}`],
@@ -345,10 +345,10 @@ const checksums = {
     })),
     predicate: {
       builder: { id: `${generatorName}@${generatorVersion}` },
-      buildType: 'https://sdkwork.com/buildtypes/clawrouter/release/v1',
+      buildType: 'https://sdkwork.com/buildtypes/cloudrouter/release/v1',
       invocation: {
         configSource: {
-          uri: 'git+https://github.com/Sdkwork-Cloud/sdkwork-clawrouter',
+          uri: 'git+https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter',
           digest: {
             cargoLock: hashFile(join(root, 'Cargo.lock')),
             rootPnpmLock: hashFile(join(root, 'pnpm-lock.yaml')),
@@ -371,11 +371,11 @@ const checksums = {
       },
       materials: [
         {
-          uri: 'pkg:cargo/sdkwork-clawrouter@Cargo.lock',
+          uri: 'pkg:cargo/sdkwork-cloudrouter@Cargo.lock',
           digest: { sha256: hashFile(join(root, 'Cargo.lock')) },
         },
         {
-          uri: 'pkg:npm/sdkwork-clawrouter@pnpm-lock.yaml',
+          uri: 'pkg:npm/sdkwork-cloudrouter@pnpm-lock.yaml',
           digest: { sha256: hashFile(join(root, 'pnpm-lock.yaml')) },
         },
       ],
@@ -388,7 +388,7 @@ console.log(`[sbom] wrote ${checksumPath} (${artifactsExport.length} artifacts)`
 
 if (artifactsExport.length === 0) {
   console.warn(
-    '[sbom] no artifacts found; run release packaging (cargo build --release / portal build / install packages) to populate target/release, apps/sdkwork-clawrouter-pc/dist, or dist/install-packages',
+    '[sbom] no artifacts found; run release packaging (cargo build --release / portal build / install packages) to populate target/release, apps/sdkwork-cloudrouter-pc/dist, or dist/install-packages',
   );
 }
 
@@ -919,7 +919,7 @@ function collectArtifacts() {
 
       if (filter === 'binaries') {
         // Only the release executables, not .d/.pdb/.exp/.lib/intermediates.
-        if (!/^clawrouter(ctl)?(\.exe)?$/i.test(name)) continue;
+        if (!/^cloudrouter(ctl)?(\.exe)?$/i.test(name)) continue;
       }
       if (filter === 'portal') {
         // Skip source maps and dotfiles to keep provenance focused on shipped assets.

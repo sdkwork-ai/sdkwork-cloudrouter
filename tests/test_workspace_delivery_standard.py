@@ -28,19 +28,19 @@ class WorkspaceDeliveryStandardTest(unittest.TestCase):
             scripts["verify"],
         )
         self.assertEqual(
-            "node scripts/plan-claw-router-install-packages.mjs",
+            "node scripts/plan-cloud-router-install-packages.mjs",
             scripts["install:packages:plan"],
         )
         self.assertEqual(
-            "node scripts/plan-claw-router-install-packages.mjs --check",
+            "node scripts/plan-cloud-router-install-packages.mjs --check",
             scripts["install:packages:check"],
         )
         self.assertEqual(
-            "node scripts/build-claw-router-install-package.mjs",
+            "node scripts/build-cloud-router-install-package.mjs",
             scripts["install:package:build"],
         )
         self.assertEqual(
-            "node scripts/build-claw-router-install-package.mjs --check --dry-run --all",
+            "node scripts/build-cloud-router-install-package.mjs --check --dry-run --all",
             scripts["install:package:check"],
         )
         self.assertEqual(
@@ -53,14 +53,14 @@ class WorkspaceDeliveryStandardTest(unittest.TestCase):
             (
                 ROOT
                 / "apps"
-                / "sdkwork-clawrouter-pc"
+                / "sdkwork-cloudrouter-pc"
                 / "package.json"
             ).read_text(encoding="utf-8")
         )
         build_script = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "scripts"
             / "build-portal.mjs"
         ).read_text(encoding="utf-8")
@@ -70,7 +70,7 @@ class WorkspaceDeliveryStandardTest(unittest.TestCase):
             portal_package_json["scripts"]["build"],
         )
         self.assertIn("MAX_OLD_SPACE_SIZE_MB = 8192", build_script)
-        self.assertIn("CLAWROUTER_PORTAL_BUILD_HEAP_BOOTSTRAPPED", build_script)
+        self.assertIn("CLOUDROUTER_PORTAL_BUILD_HEAP_BOOTSTRAPPED", build_script)
         self.assertIn("process.execPath", build_script)
         self.assertIn("spawnSync(", build_script)
         self.assertIn("stdio: 'inherit'", build_script)
@@ -83,14 +83,14 @@ class WorkspaceDeliveryStandardTest(unittest.TestCase):
         smoke_script = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "scripts"
             / "smoke-production-browser.mjs"
         ).read_text(encoding="utf-8")
 
         self.assertIn("EDGE_SERVER_STARTUP_TIMEOUT_MS", smoke_script)
-        self.assertIn("CLAWROUTER_EDGE_STARTUP_TIMEOUT_MS", smoke_script)
-        self.assertIn("CLAWROUTER_BROWSER_SMOKE_CARGO_TARGET_DIR", smoke_script)
+        self.assertIn("CLOUDROUTER_EDGE_STARTUP_TIMEOUT_MS", smoke_script)
+        self.assertIn("CLOUDROUTER_BROWSER_SMOKE_CARGO_TARGET_DIR", smoke_script)
         self.assertIn("target-codex", smoke_script)
         self.assertIn("browser-smoke-edge", smoke_script)
         self.assertIn("CARGO_TARGET_DIR", smoke_script)
@@ -128,11 +128,11 @@ class WorkspaceDeliveryStandardTest(unittest.TestCase):
         self.assertIn("--require-database", source)
         self.assertIn("--with-docker", source)
         self.assertIn("docker-compose.postgres-test.yml", source)
-        self.assertIn("sdkwork-clawrouter-postgres-test", source)
+        self.assertIn("sdkwork-cloudrouter-postgres-test", source)
         self.assertIn("Docker engine is not available", source)
         self.assertIn("docker version", source)
         self.assertIn("cargo", source)
-        self.assertIn("sdkwork-clawrouter-router-service", source)
+        self.assertIn("sdkwork-cloudrouter-router-service", source)
         self.assertNotIn("postgres_generation_history_sql_contract", source)
         self.assertIn("postgres_transaction_integration", source)
 
@@ -145,7 +145,7 @@ class WorkspaceDeliveryStandardTest(unittest.TestCase):
         self.assertIn("POSTGRES_DB: sdkwork_ai_test", source)
         self.assertIn("POSTGRES_USER: sdkwork_ai_test", source)
         self.assertIn("POSTGRES_PASSWORD: sdkwork_ai_test_password", source)
-        self.assertIn("${SDKWORK_CLAW_POSTGRES_TEST_PORT:-15432}:5432", source)
+        self.assertIn("${SDKWORK_CLOUDROUTER_POSTGRES_TEST_PORT:-15432}:5432", source)
         self.assertIn("tmpfs:", source)
         self.assertIn("/var/lib/postgresql/data", source)
         self.assertIn("healthcheck:", source)
@@ -190,8 +190,8 @@ class WorkspaceDeliveryStandardTest(unittest.TestCase):
             "data/skills/skills.json",
             "data/skills/artifacts.json",
             "data/skills/assets.json",
-            "data/skills/clawhub/raw/checkpoint.json",
-            "data/skills/clawhub/raw/index.json",
+            "data/skills/cloudhub/raw/checkpoint.json",
+            "data/skills/cloudhub/raw/index.json",
         ]:
             with self.subTest(path=path):
                 self.assertIn(
@@ -221,12 +221,12 @@ class WorkspaceDeliveryStandardTest(unittest.TestCase):
             "pnpm install:package:build",
             "pnpm install:package:check",
             "pnpm install:init:smoke",
-            "scripts/plan-claw-router-install-packages.mjs",
-            "scripts/build-claw-router-install-package.mjs",
+            "scripts/plan-cloud-router-install-packages.mjs",
+            "scripts/build-cloud-router-install-package.mjs",
             "scripts/smoke-install-package-init.mjs",
             "install-packages-manifest.json",
-            "config/clawrouter.toml.example",
-            "SDKWORK_CLAW_CONFIG_FILE",
+            "config/cloudrouter.toml.example",
+            "SDKWORK_CLOUDROUTER_CONFIG_FILE",
             "SDKWORK_DATABASE_URL",
             "SDKWORK_DATABASE_MAX_CONNECTIONS",
             "macos-arm64-desktop",
@@ -236,8 +236,8 @@ class WorkspaceDeliveryStandardTest(unittest.TestCase):
             "Docker Desktop",
             "--skip-contract-guardians",
             "tools.repository_delivery_guardian",
-            "tools.clawrouter_sdk_guardian",
-            "tools.clawrouter_gateway_openapi_generator",
+            "tools.cloudrouter_sdk_guardian",
+            "tools.cloudrouter_gateway_openapi_generator",
             "tools.frontend_contract_guardian",
             "tools.frontend_static_source_manifest",
             "frontend-static-source-snapshots.yaml",
@@ -252,14 +252,14 @@ class WorkspaceDeliveryStandardTest(unittest.TestCase):
                 "server release profiles and default to external PostgreSQL",
                 "desktop package dry-runs use",
                 "a file-backed SQLite URL",
-                "clawrouterctl ensure",
-                "clawrouterctl refresh-catalog --force",
+                "cloudrouterctl ensure",
+                "cloudrouterctl refresh-catalog --force",
             ],
             "CHECK_RESULT.md": [
                 "server release profiles and default to PostgreSQL",
                 "desktop packages default to a local SQLite",
-                "sdkwork-claw-installer ensure",
-                "sdkwork-claw-installer refresh-catalog --force",
+                "sdkwork-cloudrouter-installer ensure",
+                "sdkwork-cloudrouter-installer refresh-catalog --force",
             ],
         }
         mojibake_markers = [

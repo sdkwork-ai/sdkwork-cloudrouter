@@ -28,14 +28,14 @@ python --version
 ## 2. 获取源码
 
 ```powershell
-git clone https://github.com/Sdkwork-Cloud/sdkwork-clawrouter.git
-cd sdkwork-clawrouter
+git clone https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter.git
+cd sdkwork-cloudrouter
 ```
 
 安装 portal workspace 依赖：
 
 ```powershell
-pnpm --dir apps\sdkwork-clawrouter-pc install
+pnpm --dir apps\sdkwork-cloudrouter-pc install
 ```
 
 也可以直接使用根命令，它会在需要时安装 portal 依赖：
@@ -196,7 +196,7 @@ pnpm install:native:build -- --package-id windows-x64-service --staging-root dis
 指定旧版本包名：
 
 ```powershell
-node scripts\build-claw-router-install-package.mjs --package-id windows-x64-archive --version 0.1.0 --check --dry-run
+node scripts\build-cloud-router-install-package.mjs --package-id windows-x64-archive --version 0.1.0 --check --dry-run
 ```
 
 ## 7. 源码初始化 smoke
@@ -210,7 +210,7 @@ pnpm install:init:smoke
 对已构建的真实 installer 执行初始化 smoke：
 
 ```powershell
-node scripts\smoke-install-package-init.mjs --package-id linux-x64-archive --package-root dist\install-package-staging --installer-bin bin\clawrouterctl --tmp-root target\install-init-smoke\linux-x64 --check
+node scripts\smoke-install-package-init.mjs --package-id linux-x64-archive --package-root dist\install-package-staging --installer-bin bin\cloudrouterctl --tmp-root target\install-init-smoke\linux-x64 --check
 ```
 
 ## 8. 验证

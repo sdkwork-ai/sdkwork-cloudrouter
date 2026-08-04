@@ -9,7 +9,7 @@ class AdminFirewallRuntimeStandardTest(unittest.TestCase):
     def test_admin_firewall_read_model_rejects_missing_required_rule_codes(self) -> None:
         store = (
             ROOT
-            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_firewall_rule_store.rs"
+            / "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_firewall_rule_store.rs"
         ).read_text(encoding="utf-8")
         compact_store = " ".join(store.split())
 
@@ -27,7 +27,7 @@ class AdminFirewallRuntimeStandardTest(unittest.TestCase):
     def test_admin_firewall_read_model_fails_closed_for_unknown_rule_codes(self) -> None:
         store = (
             ROOT
-            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_firewall_rule_store.rs"
+            / "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_firewall_rule_store.rs"
         ).read_text(encoding="utf-8")
         compact_store = " ".join(store.split())
 

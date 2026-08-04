@@ -1,8 +1,8 @@
-# SDKWork Claw Router - Audit Log Investigation Runbook
+# SDKWork Cloud Router - Audit Log Investigation Runbook
 
 **Document Version:** 1.0
 **Last Updated:** 2026-06-27
-**Owner:** Security / clawrouter-security
+**Owner:** Security / cloudrouter-security
 **Review Frequency:** Quarterly
 **Severity:** P2
 
@@ -35,15 +35,15 @@ This runbook is referenced by the
 
 | Source | Location | Content |
 |--------|----------|---------|
-| `ops_audit_log` table | PostgreSQL `clawrouter` database | Structured audit rows: `tenant_id`, `actor_user_id`, `action_type`, `resource_type`, `resource_id`, `request_id`, `created_at`. |
-| Application logs | Loki (`loki.clawrouter.svc`) / ELK | Structured request logs, provider relay decisions, circuit breaker transitions. |
+| `ops_audit_log` table | PostgreSQL `cloudrouter` database | Structured audit rows: `tenant_id`, `actor_user_id`, `action_type`, `resource_type`, `resource_id`, `request_id`, `created_at`. |
+| Application logs | Loki (`loki.cloudrouter.svc`) / ELK | Structured request logs, provider relay decisions, circuit breaker transitions. |
 | Provider relay logs | gateway pod stdout | `provider_invocation_total`, `circuit_breaker_state` context. |
 
 Confirm connectivity:
 
 ```bash
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
-  psql -h postgres -U clawrouter -c \
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
+  psql -h postgres -U cloudrouter -c \
   "SELECT column_name, data_type FROM information_schema.columns
    WHERE table_name = 'ops_audit_log' ORDER BY ordinal_position;"
 ```
@@ -98,7 +98,7 @@ Join the audit row's `request_id` to the application log stream to recover the
 full request context (provider, route, status):
 
 ```logql
-{app="claw-router-gateway"} |= "request_id=<request-id>"
+{app="cloud-router-gateway"} |= "request_id=<request-id>"
 ```
 
 ## Retention Policy
@@ -118,8 +118,8 @@ Always scope the export to the minimum necessary window and tenant set.
 
 ```bash
 # CSV export scoped to a tenant and window
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
-  psql -h postgres -U clawrouter -c \
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
+  psql -h postgres -U cloudrouter -c \
   "\copy (
      SELECT id, tenant_id, actor_user_id, action_type, resource_type,
             resource_id, request_id, created_at
@@ -129,7 +129,7 @@ kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
      ORDER BY created_at
    ) TO '/tmp/audit-<tenant-id>-2026-06.csv' WITH CSV HEADER"
 
-kubectl cp clawrouter/$(kubectl get pod -n clawrouter -l app=claw-router-gateway \
+kubectl cp cloudrouter/$(kubectl get pod -n cloudrouter -l app=cloud-router-gateway \
   -o jsonpath='{.items[0].metadata.name}'):/tmp/audit-<tenant-id>-2026-06.csv \
   ./audit-<tenant-id>-2026-06.csv
 ```
@@ -145,14 +145,14 @@ The audit log stream is forwarded to the organization SIEM for correlation:
 
 | SIEM | Transport | Notes |
 |------|-----------|-------|
-| Splunk | HEC from Loki / Logstash pipeline | Index `clawrouter_audit`. |
+| Splunk | HEC from Loki / Logstash pipeline | Index `cloudrouter_audit`. |
 | Datadog Logs | Datadog Agent on gateway pods | Facet on `tenant_id`, `action_type`. |
 
 Verify the forwarder is shipping:
 
 ```bash
 # Confirm the gateway pod is emitting structured audit lines
-kubectl logs deploy/claw-router-gateway -n clawrouter --tail=100 | \
+kubectl logs deploy/cloud-router-gateway -n cloudrouter --tail=100 | \
   grep '"event":"audit"'
 ```
 

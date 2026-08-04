@@ -22,7 +22,7 @@ Lower levels are SDKWork-managed operational directories derived from common sto
 - Maximum depth: `4`
 - Fourth-level leaf nodes: `2800`
 - Generic template leaf suffixes: `0`
-- Install policy: opt-in only through `SDKWORK_CLAW_INSTALL_CATEGORY_SEEDS`; admin button remains the default initialization path.
+- Install policy: opt-in only through `SDKWORK_CLOUDROUTER_INSTALL_CATEGORY_SEEDS`; admin button remains the default initialization path.
 
 ## Maintenance Rules
 
@@ -40,7 +40,7 @@ Run the focused route test after changes:
 
 ```powershell
 $env:CARGO_TARGET_DIR = Join-Path $PWD 'target/product-category-seed'
-cargo test -p sdkwork-clawrouter-admin-gateway --test product_center_routes -- product_center_category_seed_initializer_imports_data_directories_idempotently
+cargo test -p sdkwork-cloudrouter-admin-gateway --test product_center_routes -- product_center_category_seed_initializer_imports_data_directories_idempotently
 ```
 
 The test asserts total product seed size, first-level root coverage, fourth-level leaf coverage, Unicode names, and idempotent re-import.

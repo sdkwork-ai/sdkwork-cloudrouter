@@ -4,7 +4,7 @@
   "prefixes": [
     {
       "prefix": "ops_",
-      "owner": "claw-router-platform",
+      "owner": "cloud-router-platform",
       "domain": "operations"
     }
   ]

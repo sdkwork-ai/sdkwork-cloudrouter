@@ -1,11 +1,11 @@
 > Migrated from `docs/34-login-qrcode-system.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
-This document describes the SDKWork Claw Router login and registration QRCode flow after the appbase OAuth migration. It is limited to QR session behavior, scanner flow, and the OAuth resource-account configuration needed to generate scannable entries.
+This document describes the SDKWork Cloud Router login and registration QRCode flow after the appbase OAuth migration. It is limited to QR session behavior, scanner flow, and the OAuth resource-account configuration needed to generate scannable entries.
 
 ## Canonical Model
 
-QR login is owned by `sdkwork-appbase` OAuth runtime APIs. Claw Router consumes those APIs through generated appbase SDK clients and must not reintroduce product-local provider-account management or local QR login contracts.
+QR login is owned by `sdkwork-appbase` OAuth runtime APIs. Cloud Router consumes those APIs through generated appbase SDK clients and must not reintroduce product-local provider-account management or local QR login contracts.
 
 The canonical public identifier is `sessionKey`. URLs carry it as `session_key`; JSON and SDK payloads use `sessionKey`.
 
@@ -31,7 +31,7 @@ client.oauth.sessions.scans.create(sessionKey, body)
 client.oauth.sessions.passwords.create(sessionKey, body)
 ```
 
-Backend/admin OAuth configuration is owned by appbase backend APIs under `/backend/v3/api/iam/oauth/*`. Claw Router admin pages must call `@sdkwork/iam-backend-sdk` through the existing appbase SDK boundary, for example `client.iam.oauth.resourceAccounts.*`, `client.iam.oauth.operationalResources.*`, and `client.iam.oauth.webhookConfigs.*`.
+Backend/admin OAuth configuration is owned by appbase backend APIs under `/backend/v3/api/iam/oauth/*`. Cloud Router admin pages must call `@sdkwork/iam-backend-sdk` through the existing appbase SDK boundary, for example `client.iam.oauth.resourceAccounts.*`, `client.iam.oauth.operationalResources.*`, and `client.iam.oauth.webhookConfigs.*`.
 
 All operation ids follow `API_SPEC`: dotted lowerCamel resource-tree ids such as `oauth.sessions.create`, `oauth.sessions.scans.create`, and backend `iam.oauth.resourceAccounts.create`. URL query names use lower snake case; JSON fields use lowerCamelCase.
 
@@ -88,7 +88,7 @@ Password completion before a scan is rejected. Completion after terminal states 
 
 ## Webhook Boundary
 
-Appbase defines provider callback ingress under `/iam/v3/api/oauth/provider_callbacks/{callbackPublicId}`. Claw Router admin must not implement provider callback ingestion locally. If Claw Router needs to display callback diagnostics, it reads appbase backend SDK resources under `client.iam.oauth.*`.
+Appbase defines provider callback ingress under `/iam/v3/api/oauth/provider_callbacks/{callbackPublicId}`. Cloud Router admin must not implement provider callback ingestion locally. If Cloud Router needs to display callback diagnostics, it reads appbase backend SDK resources under `client.iam.oauth.*`.
 
 Provider callback adapters must verify signatures, normalize provider user identity, record a scan before completion, require account and entry identifiers to match the session default, and complete through IAM token issuing. They must never store tokens in the callback layer.
 
@@ -106,12 +106,12 @@ Security details store `sessionKeyHash`, not the raw `sessionKey`. Scanner ident
 
 ## Implementation Map
 
-Claw Router side (relay admin — auth settings only; OAuth workspace UI removed from portal):
+Cloud Router side (relay admin — auth settings only; OAuth workspace UI removed from portal):
 
-- `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-site/src/ClawRouterAuthSettingsPage.tsx`
-- `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-site/src/AuthSettingsService.ts`
+- `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site/src/CloudRouterAuthSettingsPage.tsx`
+- `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site/src/AuthSettingsService.ts`
 
-OAuth workspace administration (`/admin/oauth/*`) is owned by `sdkwork-manager` / IAM admin surfaces, not Claw Router Admin.
+OAuth workspace administration (`/admin/oauth/*`) is owned by `sdkwork-manager` / IAM admin surfaces, not Cloud Router Admin.
 
 Appbase side:
 

@@ -11,8 +11,8 @@ const iamRoot = path.join(appsRoot, 'sdkwork-iam');
 
 const dependencyContracts = [
   {
-    label: 'clawrouter app SDK',
-    sdkFamily: 'clawrouter-app-sdk',
+    label: 'cloudrouter app SDK',
+    sdkFamily: 'cloudrouter-app-sdk',
     prefix: '/app/v3/api',
     dependencyWorkspace: 'sdkwork-iam-app-sdk',
     role: 'appbase-app-capability',
@@ -25,8 +25,8 @@ const dependencyContracts = [
     ),
   },
   {
-    label: 'clawrouter backend SDK',
-    sdkFamily: 'clawrouter-backend-sdk',
+    label: 'cloudrouter backend SDK',
+    sdkFamily: 'cloudrouter-backend-sdk',
     prefix: '/backend/v3/api',
     dependencyWorkspace: 'sdkwork-iam-backend-sdk',
     role: 'appbase-backend-management-capability',
@@ -255,4 +255,4 @@ for (const contract of dependencyContracts) {
   assertGeneratedOutputHasNoDependencySurface(contract, authority, dependencyAuthority);
 }
 
-console.log('claw-router SDK dependency boundary contract passed');
+console.log('cloud-router SDK dependency boundary contract passed');

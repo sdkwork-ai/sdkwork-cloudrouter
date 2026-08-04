@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a defect in SDKWork Claw Router
+description: Report a defect in SDKWork Cloud Router
 title: "bug(<scope>): <short description>"
 labels: ["bug", "triage"]
 body:
@@ -12,8 +12,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: Claw Router version
-      placeholder: "0.3.0 (run `clawrouter --version`)"
+      label: Cloud Router version
+      placeholder: "0.3.0 (run `cloudrouter --version`)"
     validations:
       required: true
   - type: dropdown
@@ -25,7 +25,7 @@ body:
         - admin-api (backend management)
         - app-api (portal backend)
         - edge server (all-in-one)
-        - installer (clawrouterctl)
+        - installer (cloudrouterctl)
         - portal (React PC app)
         - sdk (generated client)
         - database / migrations
@@ -62,7 +62,7 @@ body:
       label: Reproduction steps
       description: Minimal, deterministic steps to reproduce.
       placeholder: |
-        1. Start clawrouter with config ...
+        1. Start cloudrouter with config ...
         2. Send request to /v1/chat/completions with body ...
         3. Observe ...
     validations:

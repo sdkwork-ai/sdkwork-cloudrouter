@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: sdkwork_ai_test
       POSTGRES_PASSWORD: sdkwork_ai_test_password
     ports:
-      - "${SDKWORK_CLAW_POSTGRES_TEST_PORT:-15432}:5432"
+      - "${SDKWORK_CLOUDROUTER_POSTGRES_TEST_PORT:-15432}:5432"
     tmpfs:
       - /var/lib/postgresql/data
     healthcheck:

@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-API_DIR = ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "api"
+API_DIR = ROOT / "services" / "sdkwork-cloudrouter-router-service" / "src" / "api"
 SKIP = {"app_auth.rs", "subject.rs"}
 
 ADMIN_RESOLVE = re.compile(

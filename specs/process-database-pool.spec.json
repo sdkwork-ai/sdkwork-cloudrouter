@@ -8,72 +8,72 @@
   },
   "processes": [
     {
-      "id": "sdkwork-clawrouter-standalone-gateway",
-      "entrypoint": "services/sdkwork-clawrouter-standalone-gateway/src/main.rs",
-      "poolOwner": "services/sdkwork-clawrouter-standalone-gateway/src/main.rs",
+      "id": "sdkwork-cloudrouter-standalone-gateway",
+      "entrypoint": "services/sdkwork-cloudrouter-standalone-gateway/src/main.rs",
+      "poolOwner": "services/sdkwork-cloudrouter-standalone-gateway/src/main.rs",
       "driver": "sqlx::PgPool",
       "poolCount": 1,
       "databaseUrlEnv": "SDKWORK_DATABASE_*",
       "schemaEnv": "SDKWORK_DATABASE_SCHEMA",
       "maxConnectionsEnv": "SDKWORK_DATABASE_MAX_CONNECTIONS",
-      "productionSourceRoots": ["services/sdkwork-clawrouter-standalone-gateway/src"],
+      "productionSourceRoots": ["services/sdkwork-cloudrouter-standalone-gateway/src"],
       "consumers": [
-        {"module": "clawrouter app routes", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-clawrouter-app-api/src/routes.rs"]},
-        {"module": "invoice runtime", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-clawrouter-app-api/src/invoice_runtime.rs"]},
-        {"module": "commerce runtime", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-clawrouter-app-api/src/commerce_runtime.rs"]}
+        {"module": "cloudrouter app routes", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-cloudrouter-app-api/src/routes.rs"]},
+        {"module": "invoice runtime", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-cloudrouter-app-api/src/invoice_runtime.rs"]},
+        {"module": "commerce runtime", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-cloudrouter-app-api/src/commerce_runtime.rs"]}
       ],
       "temporaryDriverExceptions": []
     },
     {
-      "id": "sdkwork-clawrouter-admin-gateway",
-      "entrypoint": "services/sdkwork-clawrouter-admin-gateway/src/main.rs",
-      "poolOwner": "services/sdkwork-clawrouter-admin-gateway/src/main.rs",
+      "id": "sdkwork-cloudrouter-admin-gateway",
+      "entrypoint": "services/sdkwork-cloudrouter-admin-gateway/src/main.rs",
+      "poolOwner": "services/sdkwork-cloudrouter-admin-gateway/src/main.rs",
       "driver": "sqlx::PgPool",
       "poolCount": 1,
       "databaseUrlEnv": "SDKWORK_DATABASE_*",
       "schemaEnv": "SDKWORK_DATABASE_SCHEMA",
       "maxConnectionsEnv": "SDKWORK_DATABASE_MAX_CONNECTIONS",
-      "productionSourceRoots": ["services/sdkwork-clawrouter-admin-gateway/src"],
+      "productionSourceRoots": ["services/sdkwork-cloudrouter-admin-gateway/src"],
       "consumers": [
-        {"module": "clawrouter backend routes", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-clawrouter-backend-api/src/routes.rs"]}
+        {"module": "cloudrouter backend routes", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-cloudrouter-backend-api/src/routes.rs"]}
       ],
       "temporaryDriverExceptions": []
     },
     {
-      "id": "sdkwork-clawrouter-edge-runtime",
-      "entrypoint": "crates/sdkwork-clawrouter-edge-runtime/src/main.rs",
-      "poolOwner": "crates/sdkwork-clawrouter-edge-runtime/src/main.rs",
+      "id": "sdkwork-cloudrouter-edge-runtime",
+      "entrypoint": "crates/sdkwork-cloudrouter-edge-runtime/src/main.rs",
+      "poolOwner": "crates/sdkwork-cloudrouter-edge-runtime/src/main.rs",
       "driver": "sqlx::PgPool",
       "poolCount": 1,
       "databaseUrlEnv": "SDKWORK_DATABASE_*",
       "schemaEnv": "SDKWORK_DATABASE_SCHEMA",
       "maxConnectionsEnv": "SDKWORK_DATABASE_MAX_CONNECTIONS",
-      "productionSourceRoots": ["crates/sdkwork-clawrouter-edge-runtime/src"],
+      "productionSourceRoots": ["crates/sdkwork-cloudrouter-edge-runtime/src"],
       "consumers": [
-        {"module": "clawrouter router runtime", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-clawrouter-edge-runtime/src/runtime.rs"]}
+        {"module": "cloudrouter router runtime", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-cloudrouter-edge-runtime/src/runtime.rs"]}
       ],
       "temporaryDriverExceptions": []
     },
     {
-      "id": "clawrouterctl",
-      "entrypoint": "services/sdkwork-claw-installer/src/main.rs",
-      "poolOwner": "services/sdkwork-claw-installer/src/main.rs",
+      "id": "cloudrouterctl",
+      "entrypoint": "services/sdkwork-cloudrouter-installer/src/main.rs",
+      "poolOwner": "services/sdkwork-cloudrouter-installer/src/main.rs",
       "driver": "sqlx::PgPool",
       "poolCount": 1,
       "databaseUrlEnv": "SDKWORK_DATABASE_*",
       "schemaEnv": "SDKWORK_DATABASE_SCHEMA",
       "maxConnectionsEnv": "SDKWORK_DATABASE_MAX_CONNECTIONS",
-      "productionSourceRoots": ["services/sdkwork-claw-installer/src"],
+      "productionSourceRoots": ["services/sdkwork-cloudrouter-installer/src"],
       "consumers": [
-        {"module": "clawrouter installer lifecycle", "poolMode": "injected", "evidence": ["services/sdkwork-claw-installer/src/main.rs"]},
-        {"module": "models database lifecycle", "poolMode": "injected", "evidence": ["services/sdkwork-claw-installer/src/main.rs"]}
+        {"module": "cloudrouter installer lifecycle", "poolMode": "injected", "evidence": ["services/sdkwork-cloudrouter-installer/src/main.rs"]},
+        {"module": "models database lifecycle", "poolMode": "injected", "evidence": ["services/sdkwork-cloudrouter-installer/src/main.rs"]}
       ],
       "temporaryDriverExceptions": []
     }
   ],
   "verification": [
     "node ../sdkwork-specs/tools/check-process-shared-database-pool.mjs --root .",
-    "cargo check -p sdkwork-clawrouter-edge-runtime",
-    "cargo check -p sdkwork-clawrouter-standalone-gateway"
+    "cargo check -p sdkwork-cloudrouter-edge-runtime",
+    "cargo check -p sdkwork-cloudrouter-standalone-gateway"
   ]
 }

@@ -26,12 +26,12 @@ Vidu official standard API is not an adapter package. `/vidu/...` is a standard 
 
 Shared adapter infrastructure lives in separate crates:
 
-- `sdkwork-claw-provider-adapter-contract` defines the gateway-to-adapter JSON envelope.
-- `sdkwork-claw-provider-adapter-registry` owns route config and endpoint matching.
-- `sdkwork-claw-provider-adapter` owns adapter traits and service-side helper abstractions.
-- `sdkwork-claw-provider-adapter-http` owns internal adapter HTTP transport, auth, and dispatch.
+- `sdkwork-cloudrouter-provider-adapter-contract` defines the gateway-to-adapter JSON envelope.
+- `sdkwork-cloudrouter-provider-adapter-registry` owns route config and endpoint matching.
+- `sdkwork-cloudrouter-provider-adapter` owns adapter traits and service-side helper abstractions.
+- `sdkwork-cloudrouter-provider-adapter-http` owns internal adapter HTTP transport, auth, and dispatch.
 
-The gateway must not depend on concrete provider adapter packages. The adapter service is the only runtime that composes concrete provider packages. Its default router is built from `services/sdkwork-claw-provider-adapter/src/providers.rs`, so `/internal/adapter-manifest` exposes the concrete packages registered in the service process without linking them into the gateway.
+The gateway must not depend on concrete provider adapter packages. The adapter service is the only runtime that composes concrete provider packages. Its default router is built from `services/sdkwork-cloudrouter-provider-adapter/src/providers.rs`, so `/internal/adapter-manifest` exposes the concrete packages registered in the service process without linking them into the gateway.
 
 ## Internal HTTP Adapter Service
 
@@ -48,7 +48,7 @@ standard path: /vidu/ent/v2/start-end2video
 internal path: /providers/tencent-cloud/vidu/ent/v2/start-end2video
 ```
 
-The service exposes public health probes and protects both `/internal/adapter-manifest` and provider invocation routes with gateway bearer authentication. It listens on `0.0.0.0:39110` by default and can be overridden with `SDKWORK_CLAW_PROVIDER_ADAPTER_BIND` or `[services.provider_adapter].bind` in runtime TOML; the environment variable wins when both are present. Configure the service-side bearer token with `SDKWORK_CLAW_PROVIDER_ADAPTER_GATEWAY_TOKEN` or `SDKWORK_CLAW_PROVIDER_ADAPTER_GATEWAY_TOKEN_FILE`; the gateway must use the same token when calling adapter routes. Provider packages are registered inside `services/sdkwork-claw-provider-adapter`, not inside the gateway. `router_with_default_adapters` is the service-level composition entry point for Tencent Cloud, AliCloud, and future non-standard provider packages.
+The service exposes public health probes and protects both `/internal/adapter-manifest` and provider invocation routes with gateway bearer authentication. It listens on `0.0.0.0:39110` by default and can be overridden with `SDKWORK_CLOUDROUTER_PROVIDER_ADAPTER_BIND` or `[services.provider_adapter].bind` in runtime TOML; the environment variable wins when both are present. Configure the service-side bearer token with `SDKWORK_CLOUDROUTER_PROVIDER_ADAPTER_GATEWAY_TOKEN` or `SDKWORK_CLOUDROUTER_PROVIDER_ADAPTER_GATEWAY_TOKEN_FILE`; the gateway must use the same token when calling adapter routes. Provider packages are registered inside `services/sdkwork-cloudrouter-provider-adapter`, not inside the gateway. `router_with_default_adapters` is the service-level composition entry point for Tencent Cloud, AliCloud, and future non-standard provider packages.
 
 The default manifest is intentionally conservative. Tencent Cloud can declare `video.start_end2video` because that endpoint represents a non-standard Tencent Cloud access path normalized onto the gateway's Vidu standard path. AliCloud exposes provider family and provider code metadata, but its endpoint list stays empty until a provider-local endpoint adapter and tests exist. Empty endpoint lists are valid metadata; they must not create gateway adapter routes.
 
@@ -62,7 +62,7 @@ Fallback to official standard HTTP happens in the gateway before the adapter ser
 
 ## Runtime Configuration
 
-Adapter routes can be configured with `SDKWORK_CLAW_PROVIDER_ADAPTER_JSON`:
+Adapter routes can be configured with `SDKWORK_CLOUDROUTER_PROVIDER_ADAPTER_JSON`:
 
 ```json
 {
@@ -110,7 +110,7 @@ For deployments that want the adapter service to be the source of provider packa
 }
 ```
 
-The adapter gateway token is configured separately with `SDKWORK_CLAW_PROVIDER_ADAPTER_GATEWAY_TOKEN` or `SDKWORK_CLAW_PROVIDER_ADAPTER_GATEWAY_TOKEN_FILE`.
+The adapter gateway token is configured separately with `SDKWORK_CLOUDROUTER_PROVIDER_ADAPTER_GATEWAY_TOKEN` or `SDKWORK_CLOUDROUTER_PROVIDER_ADAPTER_GATEWAY_TOKEN_FILE`.
 
 For production deployments, prefer split manifest configuration so the registry wiring is explicit and the adapter service manifest can be generated or mounted independently:
 
@@ -123,9 +123,9 @@ gateway_token_file = "/etc/sdkwork/router/provider-adapter-token.secret"
 
 The equivalent environment variables are:
 
-- `SDKWORK_CLAW_PROVIDER_ADAPTER_BASE_URL`
-- `SDKWORK_CLAW_PROVIDER_ADAPTER_MANIFEST` or `SDKWORK_CLAW_PROVIDER_ADAPTER_MANIFEST_FILE`
-- `SDKWORK_CLAW_PROVIDER_ADAPTER_GATEWAY_TOKEN` or `SDKWORK_CLAW_PROVIDER_ADAPTER_GATEWAY_TOKEN_FILE`
+- `SDKWORK_CLOUDROUTER_PROVIDER_ADAPTER_BASE_URL`
+- `SDKWORK_CLOUDROUTER_PROVIDER_ADAPTER_MANIFEST` or `SDKWORK_CLOUDROUTER_PROVIDER_ADAPTER_MANIFEST_FILE`
+- `SDKWORK_CLOUDROUTER_PROVIDER_ADAPTER_GATEWAY_TOKEN` or `SDKWORK_CLOUDROUTER_PROVIDER_ADAPTER_GATEWAY_TOKEN_FILE`
 
 `manifest_file` contains the manifest body itself:
 
@@ -172,7 +172,7 @@ This envelope lets Tencent Cloud, Alibaba Cloud, and other non-standard provider
 
 ## Extension Rules
 
-Add a new provider by creating a package under `crates/provider-adapters/{provider}` and registering it in `services/sdkwork-claw-provider-adapter/src/providers.rs`.
+Add a new provider by creating a package under `crates/provider-adapters/{provider}` and registering it in `services/sdkwork-cloudrouter-provider-adapter/src/providers.rs`.
 
 Add a new adapted endpoint by adding a provider-local endpoint adapter and a registry route. Direct HTTP providers need no provider package.
 

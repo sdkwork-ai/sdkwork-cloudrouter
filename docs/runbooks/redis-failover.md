@@ -1,8 +1,8 @@
-# SDKWork Claw Router - Redis Failover Runbook
+# SDKWork Cloud Router - Redis Failover Runbook
 
 **Document Version:** 1.0
 **Last Updated:** 2026-07-14
-**Owner:** Platform Engineering / clawrouter-release
+**Owner:** Platform Engineering / cloudrouter-release
 **Review Frequency:** Quarterly
 **Severity:** P0
 **Status:** Target procedure only. It has not been validated for the current
@@ -33,7 +33,7 @@ candidate and must not be used as proof of Redis HA, recovery, or RPO/RTO.
 The Redis primary node fails, or the network partitions the primary from the
 Sentinel quorum. Redis holds circuit-breaker state, idempotency keys, rate
 limit counters, session cache, and optionally gateway accounting retry/DLQ
-facts for Claw Router. The documented Sentinel topology is a target design;
+facts for Cloud Router. The documented Sentinel topology is a target design;
 automatic promotion, durability, reconciliation, and degraded-mode behavior
 need current-candidate validation before an operator executes this procedure.
 
@@ -73,7 +73,7 @@ Verify automatic failover completed:
 
 ```bash
 # Sentinel reports the new primary
-kubectl exec -it deploy/redis-sentinel -n clawrouter -- \
+kubectl exec -it deploy/redis-sentinel -n cloudrouter -- \
   redis-cli -p 26379 -a "${REDIS_PASSWORD}" --tls sentinel masters
 ```
 
@@ -81,7 +81,7 @@ Expected: one master entry with `flags` containing `master` and `num-slaves`
 of 2. Confirm the gateway reconnected:
 
 ```bash
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
   curl -s http://localhost:8080/metrics | grep -E "circuit_breaker_redis_degraded|redis_up"
 ```
 
@@ -95,12 +95,12 @@ automatic failover has not completed. Intervene manually.
 ### Step 1: Verify Sentinel state
 
 ```bash
-kubectl exec -it deploy/redis-sentinel -n clawrouter -- \
+kubectl exec -it deploy/redis-sentinel -n cloudrouter -- \
   redis-cli -p 26379 -a "${REDIS_PASSWORD}" --tls sentinel masters
 
 # Inspect each Sentinel's view of the master
-kubectl exec -it deploy/redis-sentinel -n clawrouter -- \
-  redis-cli -p 26379 -a "${REDIS_PASSWORD}" --tls sentinel get-master-addr-by-name clawrouter
+kubectl exec -it deploy/redis-sentinel -n cloudrouter -- \
+  redis-cli -p 26379 -a "${REDIS_PASSWORD}" --tls sentinel get-master-addr-by-name cloudrouter
 ```
 
 ### Step 2: Force a failover
@@ -109,8 +109,8 @@ If Sentinels agree on a master name but the master is unreachable, force
 Sentinel to promote a replica:
 
 ```bash
-kubectl exec -it deploy/redis-sentinel -n clawrouter -- \
-  redis-cli -p 26379 -a "${REDIS_PASSWORD}" --tls sentinel failover clawrouter
+kubectl exec -it deploy/redis-sentinel -n cloudrouter -- \
+  redis-cli -p 26379 -a "${REDIS_PASSWORD}" --tls sentinel failover cloudrouter
 ```
 
 ### Step 3: Restart a stuck gateway pod
@@ -118,8 +118,8 @@ kubectl exec -it deploy/redis-sentinel -n clawrouter -- \
 If the gateway pod is not reconnecting (stale connection), recycle it:
 
 ```bash
-kubectl rollout restart deployment/claw-router-gateway -n clawrouter
-kubectl rollout status  deployment/claw-router-gateway -n clawrouter
+kubectl rollout restart deployment/cloud-router-gateway -n cloudrouter
+kubectl rollout status  deployment/cloud-router-gateway -n cloudrouter
 ```
 
 ## Degraded Mode
@@ -148,7 +148,7 @@ Once Redis is healthy again (`circuit_breaker_redis_degraded == 0` for 5 min):
 
 1. **Verify replication** — confirm both replicas are following the primary:
    ```bash
-   kubectl exec -it deploy/redis-primary -n clawrouter -- \
+   kubectl exec -it deploy/redis-primary -n cloudrouter -- \
      redis-cli -a "${REDIS_PASSWORD}" --tls info replication | grep -E "role|connected_slaves|slave[0-9]"
    ```
 2. **Confirm Sentinel quorum** — all 3 Sentinels report the same master.
@@ -159,7 +159,7 @@ Once Redis is healthy again (`circuit_breaker_redis_degraded == 0` for 5 min):
 4. **Clear stale local state** — recycle gateway pods so each pod drops its
    local fallback counters and re-hydrates from Redis:
    ```bash
-   kubectl rollout restart deployment/claw-router-gateway -n clawrouter
+   kubectl rollout restart deployment/cloud-router-gateway -n cloudrouter
    ```
 5. **Validate recovery evidence** — do not assert SLO, RPO, or RTO attainment
    until the current candidate's approved drill captures those measurements.

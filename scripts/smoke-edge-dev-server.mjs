@@ -8,15 +8,15 @@ import process from 'node:process';
 
 const REQUEST_TIMEOUT_MS = 2_000;
 const STARTUP_TIMEOUT_MS = Number.parseInt(
-  process.env.CLAWROUTER_EDGE_DEV_SMOKE_TIMEOUT_MS ?? '900000',
+  process.env.CLOUDROUTER_EDGE_DEV_SMOKE_TIMEOUT_MS ?? '900000',
   10,
 );
 const PORT_SEARCH_START = Number.parseInt(
-  process.env.CLAWROUTER_EDGE_DEV_SMOKE_PORT_START ?? '41000',
+  process.env.CLOUDROUTER_EDGE_DEV_SMOKE_PORT_START ?? '41000',
   10,
 );
 const PORT_SEARCH_LIMIT = Number.parseInt(
-  process.env.CLAWROUTER_EDGE_DEV_SMOKE_PORT_LIMIT ?? '1000',
+  process.env.CLOUDROUTER_EDGE_DEV_SMOKE_PORT_LIMIT ?? '1000',
   10,
 );
 const POLL_INTERVAL_MS = 500;
@@ -30,7 +30,7 @@ const EXPECTED_RUNTIME_ENV_OUTPUT = [
 ];
 
 const BACKEND_SURFACE_OPENAPI_CONTRACT = {
-  expectedTitle: 'SDKWork Claw Router Backend API',
+  expectedTitle: 'SDKWork Cloud Router Backend API',
   requiredPaths: [
     '/backend/v3/api/ai/upstream_suppliers',
     '/backend/v3/api/recharges/packages',
@@ -38,7 +38,7 @@ const BACKEND_SURFACE_OPENAPI_CONTRACT = {
 };
 
 const APP_SURFACE_OPENAPI_CONTRACT = {
-  expectedTitle: 'SDKWork Claw Router App API',
+  expectedTitle: 'SDKWork Cloud Router App API',
   requiredPaths: [
     '/app/v3/api/ai/routing/account_groups',
     '/app/v3/api/ai/generations',
@@ -48,14 +48,14 @@ const APP_SURFACE_OPENAPI_CONTRACT = {
 const ISOLATED_ENV_NAMES = [
   'SDKWORK_DATABASE_URL',
   'SDKWORK_DATABASE_MAX_CONNECTIONS',
-  'SDKWORK_CLAW_API_KEY_PEPPER',
-  'SDKWORK_CLAW_TRUSTED_SUBJECT_SECRET',
-  'SDKWORK_CLAW_APP_SESSION_SECRET',
-  'SDKWORK_CLAW_PAYMENT_WEBHOOK_SECRET',
-  'SDKWORK_CLAW_PROVIDER_RELAY_OPENAI_BASE_URL',
-  'SDKWORK_CLAW_PROVIDER_RELAY_OPENAI_BEARER_TOKEN',
-  'SDKWORK_CLAW_PROVIDER_SECRET_MAP',
-  'SDKWORK_CLAW_USAGE_SETTLEMENT_WORKER_ENABLED',
+  'SDKWORK_CLOUDROUTER_API_KEY_PEPPER',
+  'SDKWORK_CLOUDROUTER_TRUSTED_SUBJECT_SECRET',
+  'SDKWORK_CLOUDROUTER_APP_SESSION_SECRET',
+  'SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET',
+  'SDKWORK_CLOUDROUTER_PROVIDER_RELAY_OPENAI_BASE_URL',
+  'SDKWORK_CLOUDROUTER_PROVIDER_RELAY_OPENAI_BEARER_TOKEN',
+  'SDKWORK_CLOUDROUTER_PROVIDER_SECRET_MAP',
+  'SDKWORK_CLOUDROUTER_USAGE_SETTLEMENT_WORKER_ENABLED',
   'HOST',
   'PORT',
   'OPENAPI_DEV_URL',
@@ -87,7 +87,7 @@ function processSpawnPermissionDiagnostic(error) {
   const original = error instanceof Error ? error.message : String(error);
   return (
     'child process spawn is not available in this environment; ' +
-    'CLAWROUTER_EDGE_DEV_SMOKE_REQUIRED requires this smoke to launch real processes. ' +
+    'CLOUDROUTER_EDGE_DEV_SMOKE_REQUIRED requires this smoke to launch real processes. ' +
     'Run it from a local shell or CI runner that permits Node child_process.spawn. ' +
     `Original error: ${original}`
   );
@@ -138,7 +138,7 @@ function isolatedSmokeDatabaseUrl() {
   const databaseRelativePath = path.join(
     'target',
     'dev-smoke',
-    `sdkwork-clawrouter-${process.pid}-${Date.now()}.sqlite`,
+    `sdkwork-cloudrouter-${process.pid}-${Date.now()}.sqlite`,
   );
   mkdirSync(path.dirname(databaseRelativePath), { recursive: true });
   return `sqlite://${toPortablePath(databaseRelativePath)}`;
@@ -194,12 +194,12 @@ function launchWorkspace({
   } catch (error) {
     if (isProcessSpawnPermissionError(error)) {
       const diagnostic = processSpawnPermissionDiagnostic(error);
-      if (isEnabled(process.env.CLAWROUTER_EDGE_DEV_SMOKE_REQUIRED)) {
+      if (isEnabled(process.env.CLOUDROUTER_EDGE_DEV_SMOKE_REQUIRED)) {
         throw new Error(diagnostic);
       }
       console.log(
         `[edge-dev-smoke] skipped: ${diagnostic}. ` +
-          'Set CLAWROUTER_EDGE_DEV_SMOKE_REQUIRED=1 to fail instead.',
+          'Set CLOUDROUTER_EDGE_DEV_SMOKE_REQUIRED=1 to fail instead.',
       );
       return null;
     }
@@ -329,7 +329,7 @@ function assertGatewayOpenApi({ response, body }, label) {
   const payload = parseJson(body, label);
   if (
     payload.openapi !== '3.0.3'
-    || payload.info?.title !== 'Claw Router Open API'
+    || payload.info?.title !== 'Cloud Router Open API'
     || payload['x-api-prefix'] !== '/v1'
     || !payload.paths?.['/v1/models']
     || !payload.paths?.['/v1/chat/completions']
@@ -363,11 +363,11 @@ function assertPortalHtml({ response, body }, label) {
 function assertRuntimeEnv({ response, body }, label) {
   assertStatus(response, label);
   for (const expected of [
-    'window.__CLAWROUTER_ENV__ = Object.freeze(',
+    'window.__CLOUDROUTER_ENV__ = Object.freeze(',
     '"VITE_API_BASE_URL":"/v1"',
-    '"VITE_CLAWROUTER_OPEN_API_BASE_URL":"/v1"',
-    '"VITE_CLAWROUTER_BACKEND_API_BASE_URL":"/backend/v3/api"',
-    '"VITE_CLAWROUTER_APP_API_BASE_URL":"/app/v3/api"',
+    '"VITE_CLOUDROUTER_OPEN_API_BASE_URL":"/v1"',
+    '"VITE_CLOUDROUTER_BACKEND_API_BASE_URL":"/backend/v3/api"',
+    '"VITE_CLOUDROUTER_APP_API_BASE_URL":"/app/v3/api"',
   ]) {
     if (!body.includes(expected)) {
       throw new Error(`${label} runtime env is missing ${expected}: ${body}`);
@@ -470,10 +470,10 @@ async function killProcessTree(child) {
 
 async function main() {
   if (!Number.isInteger(STARTUP_TIMEOUT_MS) || STARTUP_TIMEOUT_MS <= 0) {
-    throw new Error('CLAWROUTER_EDGE_DEV_SMOKE_TIMEOUT_MS must be a positive integer');
+    throw new Error('CLOUDROUTER_EDGE_DEV_SMOKE_TIMEOUT_MS must be a positive integer');
   }
   if (!Number.isInteger(PORT_SEARCH_START) || PORT_SEARCH_START < 1 || PORT_SEARCH_START > 65535) {
-    throw new Error('CLAWROUTER_EDGE_DEV_SMOKE_PORT_START must be a valid port');
+    throw new Error('CLOUDROUTER_EDGE_DEV_SMOKE_PORT_START must be a valid port');
   }
 
   const [serverPort, gatewayPort, adminApiPort, appApiPort, portalPort] =
@@ -526,13 +526,13 @@ async function main() {
       ...workspace,
       url: `${edgeBaseUrl}/healthz`,
       label: 'edge /healthz',
-      validate: (result) => assertHealth(result, 'edge /healthz', 'sdkwork-claw-edge-server'),
+      validate: (result) => assertHealth(result, 'edge /healthz', 'sdkwork-cloudrouter-edge-server'),
     });
     await waitForEndpoint({
       ...workspace,
       url: `${edgeBaseUrl}/readyz`,
       label: 'edge /readyz',
-      validate: (result) => assertHealth(result, 'edge /readyz', 'sdkwork-claw-edge-server'),
+      validate: (result) => assertHealth(result, 'edge /readyz', 'sdkwork-cloudrouter-edge-server'),
     });
     await waitForEndpoint({
       ...workspace,
@@ -577,7 +577,7 @@ async function main() {
       ...workspace,
       url: `${gatewayBaseUrl}/healthz`,
       label: 'direct gateway health',
-      validate: (result) => assertHealth(result, 'direct gateway health', 'sdkwork-clawrouter-edge-runtime'),
+      validate: (result) => assertHealth(result, 'direct gateway health', 'sdkwork-cloudrouter-edge-runtime'),
     });
     await waitForEndpoint({
       ...workspace,

@@ -1,6 +1,6 @@
 # SaaS Verification Code Delivery Implementation Plan
 
-> **Superseded (2026-06-25):** Claw Router verification delivery and auth routes are owned by federated `sdkwork-routes-iam-app-api` in `sdkwork-iam`. See `../../sdkwork-iam/docs/IAM_INTEGRATION.md`.
+> **Superseded (2026-06-25):** Cloud Router verification delivery and auth routes are owned by federated `sdkwork-routes-iam-app-api` in `sdkwork-iam`. See `../../sdkwork-iam/docs/IAM_INTEGRATION.md`.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -15,10 +15,10 @@
 ### Task 1: Rust Verification Sender Port
 
 **Files:**
-- Modify: `services/sdkwork-clawrouter-router-service/src/api/app_auth.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/ports/mod.rs`
-- Create: `services/sdkwork-clawrouter-router-service/src/ports/verification_code_sender.rs`
-- Test: `services/sdkwork-clawrouter-router-service/tests/app_auth_api.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/api/app_auth.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/ports/mod.rs`
+- Create: `services/sdkwork-cloudrouter-router-service/src/ports/verification_code_sender.rs`
+- Test: `services/sdkwork-cloudrouter-router-service/tests/app_auth_api.rs`
 
 - [ ] Write failing tests proving verification code creation uses an injected sender and does not expose `debugCode` when delivery mode is production.
 - [ ] Add `VerificationCodeDeliveryRequest`, `VerificationCodeDeliveryReceipt`, and `VerificationCodeSender`.
@@ -26,16 +26,16 @@
 - [ ] Inject the sender through auth router state without breaking existing route constructors.
 - [ ] Send login/register/password-reset codes through the sender after persistence.
 - [ ] Keep local/dev tests able to inspect debug delivery without production API leakage.
-- [ ] Run `cargo test -p sdkwork-clawrouter-router-service --test app_auth_api`.
+- [ ] Run `cargo test -p sdkwork-cloudrouter-router-service --test app_auth_api`.
 
 ### Task 2: Rust Provider Config Read Model
 
 **Files:**
-- Create: `services/sdkwork-clawrouter-router-service/src/ports/verification_delivery_config_store.rs`
-- Create: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/verification_delivery_config_store.rs`
-- Create: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/verification_delivery_config_store.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/mod.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/mod.rs`
+- Create: `services/sdkwork-cloudrouter-router-service/src/ports/verification_delivery_config_store.rs`
+- Create: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/sqlite/verification_delivery_config_store.rs`
+- Create: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/verification_delivery_config_store.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/sqlite/mod.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/mod.rs`
 - Test: new focused Rust SQL store tests
 
 - [ ] Write failing tests for selecting active EMAIL/SMS verification delivery configuration by tenant, organization, channel, scene, and priority.

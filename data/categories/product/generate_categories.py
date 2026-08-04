@@ -77,8 +77,8 @@ def build_seed(source: dict[str, Any]) -> dict[str, Any]:
         "target": "commerce_product_category",
         "installPolicy": {
             "defaultEnabled": False,
-            "configKey": "SDKWORK_CLAW_INSTALL_CATEGORY_SEEDS",
-            "selectableDatasetsKey": "SDKWORK_CLAW_INSTALL_CATEGORY_SEED_DATASETS",
+            "configKey": "SDKWORK_CLOUDROUTER_INSTALL_CATEGORY_SEEDS",
+            "selectableDatasetsKey": "SDKWORK_CLOUDROUTER_INSTALL_CATEGORY_SEED_DATASETS",
         },
         "source": {
             "alignment": source["alignment"],

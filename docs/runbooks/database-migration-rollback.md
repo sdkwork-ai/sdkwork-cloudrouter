@@ -1,8 +1,8 @@
-# SDKWork Claw Router - Database Migration Rollback Runbook
+# SDKWork Cloud Router - Database Migration Rollback Runbook
 
 **Document Version:** 1.0
 **Last Updated:** 2026-07-14
-**Owner:** Platform Engineering / clawrouter-data
+**Owner:** Platform Engineering / cloudrouter-data
 **Review Frequency:** Quarterly
 **Severity:** P1
 **Status:** Target procedure only. It is not an approved current-candidate
@@ -54,8 +54,8 @@ Before any migration reaches production:
 - **Verify Flyway ordering.** Confirm the new version number does not collide
   with applied migrations:
   ```bash
-  kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
-    psql -h postgres -U clawrouter -c \
+  kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
+    psql -h postgres -U cloudrouter -c \
     "SELECT installed_rank, version, description, success FROM flyway_schema_history ORDER BY installed_rank;"
   ```
 
@@ -64,8 +64,8 @@ Before any migration reaches production:
 ### Step 1: Identify the failed migration version
 
 ```bash
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
-  psql -h postgres -U clawrouter -c \
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
+  psql -h postgres -U cloudrouter -c \
   "SELECT installed_rank, version, description, success, installed_on
    FROM flyway_schema_history
    ORDER BY installed_rank DESC LIMIT 5;"
@@ -80,8 +80,8 @@ Stop the services that write to the affected tables so the rollback runs
 against a quiescent database:
 
 ```bash
-kubectl scale deployment claw-router-gateway --replicas=0 -n clawrouter
-kubectl scale deployment claw-router-admin-api --replicas=0 -n clawrouter
+kubectl scale deployment cloud-router-gateway --replicas=0 -n cloudrouter
+kubectl scale deployment cloud-router-admin-api --replicas=0 -n cloudrouter
 ```
 
 ### Step 3: Execute only the reviewed lifecycle reversal
@@ -104,8 +104,8 @@ in this repository, so an ad hoc restore must not be attempted.
 ### Step 5: Verify data integrity
 
 ```bash
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
-  psql -h postgres -U clawrouter -c \
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
+  psql -h postgres -U cloudrouter -c \
   "SELECT COUNT(*) FROM ai_usage;
    SELECT COUNT(*) FROM ops_audit_log;
    SELECT COUNT(*) FROM ai_routing;"
@@ -126,8 +126,8 @@ kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
 After verification, scale the writers back up:
 
 ```bash
-kubectl scale deployment claw-router-gateway --replicas=2 -n clawrouter
-kubectl scale deployment claw-router-admin-api --replicas=1 -n clawrouter
+kubectl scale deployment cloud-router-gateway --replicas=2 -n cloudrouter
+kubectl scale deployment cloud-router-admin-api --replicas=1 -n cloudrouter
 ```
 
 ## Post-Incident Improvement

@@ -4,8 +4,8 @@
   "prefixes": [
     {
       "prefix": "ai_",
-      "owner": "claw-router-platform",
-      "domain": "clawrouter"
+      "owner": "cloud-router-platform",
+      "domain": "cloudrouter"
     }
   ]
 }

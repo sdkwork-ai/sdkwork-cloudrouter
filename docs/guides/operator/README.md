@@ -1,12 +1,12 @@
 # Operator Guide
 
-Deployment, monitoring, and incident response entrypoints for SDKWork Claw Router operators and SREs.
+Deployment, monitoring, and incident response entrypoints for SDKWork Cloud Router operators and SREs.
 
 Specs: `../../sdkwork-specs/DOCUMENTATION_SPEC.md` section 2, `../../sdkwork-specs/DEPLOYMENT_SPEC.md`, `../../sdkwork-specs/ENVIRONMENT_SPEC.md`, `../../sdkwork-specs/RELEASE_SPEC.md`.
 
 ## 1. Deployment Modes
 
-Claw Router supports two deployment profiles:
+Cloud Router supports two deployment profiles:
 
 | Profile | Topology | Use case |
 | --- | --- | --- |
@@ -63,7 +63,7 @@ The edge exposes Prometheus metrics at `/metrics`. Key metrics include:
 
 ### Logs
 
-Structured logs are written to stdout. Configure log level via `RUST_LOG` (e.g., `info,claw_router=debug`). Do not log to files in container deployments.
+Structured logs are written to stdout. Configure log level via `RUST_LOG` (e.g., `info,cloud_router=debug`). Do not log to files in container deployments.
 
 ### Alerting
 

@@ -7,29 +7,29 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
 
 const TARGETS = [
-  'sdks/clawrouter-backend-sdk/openapi/clawrouter-backend-domain-transport.openapi.json',
-  'sdks/clawrouter-app-sdk/openapi/clawrouter-app-domain-transport.openapi.json',
-  'sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/domains/server-openapi/source-openapi.json',
-  'sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/domains/server-openapi/source-openapi.json',
+  'sdks/cloudrouter-backend-sdk/openapi/cloudrouter-backend-domain-transport.openapi.json',
+  'sdks/cloudrouter-app-sdk/openapi/cloudrouter-app-domain-transport.openapi.json',
+  'sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/generated/domains/server-openapi/source-openapi.json',
+  'sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/generated/domains/server-openapi/source-openapi.json',
 ];
 
 const REPLACEMENTS = [
-  ['SDKWork Commerce Backend API', 'SDKWork Claw Router Backend Domain Transport API'],
-  ['SDKWork Commerce App API', 'SDKWork Claw Router App Domain Transport API'],
+  ['SDKWork Commerce Backend API', 'SDKWork Cloud Router Backend Domain Transport API'],
+  ['SDKWork Commerce App API', 'SDKWork Cloud Router App Domain Transport API'],
   [
     'Backend/admin contract for SDKWork Commerce catalog, order, payment, inventory, wallet, promotion, invoice, membership, and reporting modules.',
-    'Claw Router backend domain transport for wallet, membership, promotion, catalog, order, payment, inventory, and finance modules.',
+    'Cloud Router backend domain transport for wallet, membership, promotion, catalog, order, payment, inventory, and finance modules.',
   ],
   [
     'App/client contract for SDKWork Commerce product, order, payment, wallet, promotion, invoice, and membership modules.',
-    'Claw Router app domain transport for wallet, membership, promotion, catalog, order, and payment modules.',
+    'Cloud Router app domain transport for wallet, membership, promotion, catalog, order, and payment modules.',
   ],
-  ['sdkwork-commerce-backend-api', 'sdkwork-clawrouter.backend'],
-  ['sdkwork-commerce-app-api', 'sdkwork-clawrouter.app'],
-  ['sdkwork-commerce-backend-sdk', 'clawrouter-backend-domain-transport'],
-  ['sdkwork-commerce-app-sdk', 'clawrouter-app-domain-transport'],
-  ['"x-sdkwork-owner": "sdkwork-commerce"', '"x-sdkwork-owner": "sdkwork-clawrouter"'],
-  ['Local sdkwork-commerce runtime', 'Local Claw Router runtime'],
+  ['sdkwork-commerce-backend-api', 'sdkwork-cloudrouter.backend'],
+  ['sdkwork-commerce-app-api', 'sdkwork-cloudrouter.app'],
+  ['sdkwork-commerce-backend-sdk', 'cloudrouter-backend-domain-transport'],
+  ['sdkwork-commerce-app-sdk', 'cloudrouter-app-domain-transport'],
+  ['"x-sdkwork-owner": "sdkwork-commerce"', '"x-sdkwork-owner": "sdkwork-cloudrouter"'],
+  ['Local sdkwork-commerce runtime', 'Local Cloud Router runtime'],
 ];
 
 function patchFile(relativePath) {

@@ -4,7 +4,7 @@
 `sdks/` stores SDK family workspaces, materialized API authority OpenAPI outputs, derived SDK generator inputs, generated language packages, and SDK component specs.
 
 ## Owner
-SDKWork Claw Router SDK maintainers and API generation owners.
+SDKWork Cloud Router SDK maintainers and API generation owners.
 
 ## Allowed Content
 Generated and composed SDK workspaces, SDK family manifests, generated OpenAPI materialization outputs, generator evidence, SDK READMEs, and SDK verification metadata.
@@ -19,5 +19,5 @@ Authored API contract source that belongs in `apis/`, product server implementat
 
 ## Verification
 - `python -B -m tools.api_contract_manifest`
-- `python -B -m tools.clawrouter_openapi_generator`
+- `python -B -m tools.cloudrouter_openapi_generator`
 - `python -B tools/architecture_standard_guardian.py`

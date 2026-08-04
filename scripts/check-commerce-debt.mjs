@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Scans Claw Router for transitional commerce/vendor technical debt.
+ * Scans Cloud Router for transitional commerce/vendor technical debt.
  *
  * - `pnpm check:commerce-debt` (--report): print findings, exit 0 while debt is tracked.
  * - `pnpm check:commerce-debt:strict`: fail on forbidden console-era commerce PC packages,
@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
-const PORTAL_ROOT = path.join(REPO_ROOT, 'apps', 'sdkwork-clawrouter-pc');
+const PORTAL_ROOT = path.join(REPO_ROOT, 'apps', 'sdkwork-cloudrouter-pc');
 
 const REPORT_ONLY = process.argv.includes('--report');
 
@@ -54,16 +54,16 @@ const FORBIDDEN_PORTAL_SOURCE_PATTERNS = [
 const FORBIDDEN_METADATA_PATTERNS = [
   /commerce-capability/,
   /commerce-capability-generated-typescript/,
-  /getClawRouterAppCapabilitySdkClient/,
-  /getClawRouterBackendCapabilitySdkClient/,
-  /createClawRouterAppCapabilitySdkClient/,
-  /createClawRouterBackendCapabilitySdkClient/,
+  /getCloudRouterAppCapabilitySdkClient/,
+  /getCloudRouterBackendCapabilitySdkClient/,
+  /createCloudRouterAppCapabilitySdkClient/,
+  /createCloudRouterBackendCapabilitySdkClient/,
   /BackendCommerceService/,
-  /getClawRouterBackendSdkClient\(\)\.commerce\./,
-  /clawrouter-app-sdk\.commerce/,
-  /clawrouter-backend-sdk\.commerce/,
-  /clawrouter-app-capability/,
-  /clawrouter-backend-capability/,
+  /getCloudRouterBackendSdkClient\(\)\.commerce\./,
+  /cloudrouter-app-sdk\.commerce/,
+  /cloudrouter-backend-sdk\.commerce/,
+  /cloudrouter-app-capability/,
+  /cloudrouter-backend-capability/,
   /sdkwork-commerce \(deleted\)/,
   /sdkwork-commerce-pc-admin-product/,
   /sdkwork-commerce-backend-sdk-generated-typescript/,
@@ -79,34 +79,34 @@ const FORBIDDEN_METADATA_PATTERNS = [
 ];
 
 const SCANNED_REPO_METADATA_FILES = [
-  'sdks/clawrouter-app-sdk/specs/component.spec.json',
-  'sdks/clawrouter-backend-sdk/specs/component.spec.json',
-  'sdks/clawrouter-app-sdk/README.md',
-  'sdks/clawrouter-backend-sdk/README.md',
-  'sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/package.json',
-  'sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/domains/index.ts',
-  'sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/package.json',
-  'sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/domains/index.ts',
-  'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-core/specs/component.spec.json',
-  'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-core/specs/component.spec.json',
-  'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/specs/component.spec.json',
-  'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-commons/specs/component.spec.json',
-  'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-wallet/specs/component.spec.json',
-  'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-orders/specs/component.spec.json',
-  'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/specs/component.spec.json',
-  'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-catalog/specs/component.spec.json',
-  'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-catalog/src/catalogService.ts',
-  'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-catalog/src/routes.ts',
-  'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-catalog/specs/README.md',
-  'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-inventory/specs/component.spec.json',
-  'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-inventory/README.md',
-  'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-finance/specs/component.spec.json',
-  'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-finance/README.md',
-  'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/specs/component.spec.json',
-  'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/README.md',
-  'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/specs/component.spec.json',
-  'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/README.md',
-  'apps/sdkwork-clawrouter-pc/specs/component.spec.json',
+  'sdks/cloudrouter-app-sdk/specs/component.spec.json',
+  'sdks/cloudrouter-backend-sdk/specs/component.spec.json',
+  'sdks/cloudrouter-app-sdk/README.md',
+  'sdks/cloudrouter-backend-sdk/README.md',
+  'sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/package.json',
+  'sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/src/domains/index.ts',
+  'sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/package.json',
+  'sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/src/domains/index.ts',
+  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-core/specs/component.spec.json',
+  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-core/specs/component.spec.json',
+  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/specs/component.spec.json',
+  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-commons/specs/component.spec.json',
+  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-wallet/specs/component.spec.json',
+  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-orders/specs/component.spec.json',
+  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/specs/component.spec.json',
+  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-catalog/specs/component.spec.json',
+  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-catalog/src/catalogService.ts',
+  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-catalog/src/routes.ts',
+  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-catalog/specs/README.md',
+  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-inventory/specs/component.spec.json',
+  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-inventory/README.md',
+  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-finance/specs/component.spec.json',
+  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-finance/README.md',
+  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/specs/component.spec.json',
+  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/README.md',
+  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/specs/component.spec.json',
+  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/README.md',
+  'apps/sdkwork-cloudrouter-pc/specs/component.spec.json',
   'crates/sdkwork-routes-payment-open-api/specs/component.spec.json',
   'docs/architecture/tech/TECH-2026-05-23-admin-membership-center-completeness.md',
   'docs/architecture/tech/TECH-2026-05-23-admin-membership-center-completeness-design.md',
@@ -121,7 +121,7 @@ const SCANNED_REPO_METADATA_FILES = [
   'docs/architecture/tech/TECH-2026-05-22-admin-product-center.md',
   'docs/superpowers/specs/2026-05-22-admin-product-center-design.md',
   'docs/superpowers/plans/2026-05-22-admin-product-center.md',
-  'apps/sdkwork-clawrouter-pc/src/main.tsx',
+  'apps/sdkwork-cloudrouter-pc/src/main.tsx',
 ];
 
 const SCANNED_PORTAL_FILES = [
@@ -130,10 +130,10 @@ const SCANNED_PORTAL_FILES = [
   'src/console-business/consoleBusinessHostMount.tsx',
   'src/portal-external-tailwind-sources.ts',
   'src/index.css',
-  'packages/sdkwork-clawroutes-pc-commons/package.json',
-  'packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts',
-  'packages/sdkwork-clawroutes-pc-commons/src/domain-service-providers.ts',
-  'packages/sdkwork-clawrouter-pc-core/package.json',
+  'packages/sdkwork-cloudroutes-pc-commons/package.json',
+  'packages/sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts',
+  'packages/sdkwork-cloudroutes-pc-commons/src/domain-service-providers.ts',
+  'packages/sdkwork-cloudrouter-pc-core/package.json',
   'tsconfig.json',
   'tsconfig.typecheck.json',
   'vite.config.ts',
@@ -187,7 +187,7 @@ function collectIssues() {
     issues.push({
       severity: 'error',
       code: 'nested-pnpm-workspace',
-      message: 'apps/sdkwork-clawrouter-pc/pnpm-workspace.yaml is forbidden; declare workspace packages at repository root only',
+      message: 'apps/sdkwork-cloudrouter-pc/pnpm-workspace.yaml is forbidden; declare workspace packages at repository root only',
     });
   }
 
@@ -195,7 +195,7 @@ function collectIssues() {
     issues.push({
       severity: 'error',
       code: 'legacy-commerce-common-packages',
-      message: 'packages/common/commerce must be removed; commerce capabilities are composed through clawrouter SDK clients',
+      message: 'packages/common/commerce must be removed; commerce capabilities are composed through cloudrouter SDK clients',
     });
   }
 
@@ -203,7 +203,7 @@ function collectIssues() {
     issues.push({
       severity: 'error',
       code: 'legacy-commerce-app-sdk-family',
-      message: 'sdks/sdkwork-commerce-app-sdk must be removed; federated app domains use the owner SDK composed wrapper at @sdkwork/clawrouter-app-sdk/domains',
+      message: 'sdks/sdkwork-commerce-app-sdk must be removed; federated app domains use the owner SDK composed wrapper at @sdkwork/cloudrouter-app-sdk/domains',
     });
   }
 
@@ -211,7 +211,7 @@ function collectIssues() {
     issues.push({
       severity: 'error',
       code: 'legacy-commerce-backend-sdk-family',
-      message: 'sdks/sdkwork-commerce-backend-sdk must be removed; federated backend domains use the owner SDK composed wrapper at @sdkwork/clawrouter-backend-sdk/domains',
+      message: 'sdks/sdkwork-commerce-backend-sdk must be removed; federated backend domains use the owner SDK composed wrapper at @sdkwork/cloudrouter-backend-sdk/domains',
     });
   }
 
@@ -241,7 +241,7 @@ function collectIssues() {
         issues.push({
           severity: 'error',
           code: 'forbidden-console-commerce-package',
-          message: `apps/sdkwork-clawrouter-pc/package.json must not depend on ${pkg}`,
+          message: `apps/sdkwork-cloudrouter-pc/package.json must not depend on ${pkg}`,
         });
       }
     }
@@ -251,7 +251,7 @@ function collectIssues() {
         issues.push({
           severity: 'error',
           code: 'forbidden-portal-commerce-package',
-          message: `apps/sdkwork-clawrouter-pc/package.json must not depend on ${pkg}`,
+          message: `apps/sdkwork-cloudrouter-pc/package.json must not depend on ${pkg}`,
         });
       }
     }
@@ -265,7 +265,7 @@ function collectIssues() {
         issues.push({
           severity: 'error',
           code: 'legacy-commerce-nested-workspace',
-          message: `apps/sdkwork-clawrouter-pc/package.json workspaces must not include ${workspaceEntry}`,
+          message: `apps/sdkwork-cloudrouter-pc/package.json workspaces must not include ${workspaceEntry}`,
         });
       }
     }

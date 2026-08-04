@@ -20,9 +20,9 @@
 - Modify: `docs/schema-registry/frontend-field-contracts/operations/app-commerce-recharges.yaml`
 - Modify: `docs/schema-registry/frontend-field-contracts/operations/backend-commerce-recharges.yaml`
 - Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-http-rust/tests/app_recharge_checkout_router.rs`
-- Modify: `services/sdkwork-clawrouter-admin-gateway/tests/database_config_router.rs`
-- Modify: `apps/sdkwork-clawrouter-pc/billing-runtime.test.ts`
-- Modify: `apps/sdkwork-clawrouter-pc/admin-membership-recharge-runtime.test.ts`
+- Modify: `services/sdkwork-cloudrouter-admin-gateway/tests/database_config_router.rs`
+- Modify: `apps/sdkwork-cloudrouter-pc/billing-runtime.test.ts`
+- Modify: `apps/sdkwork-cloudrouter-pc/admin-membership-recharge-runtime.test.ts`
 
 - [ ] **Step 1: Add failing tests for multi-currency recharge packages, recharge settings, and frontend custom amount behavior**
 - [ ] **Step 2: Run the targeted tests to verify they fail for the expected legacy-model reasons**
@@ -56,10 +56,10 @@
 ### Task 4: Implement admin recharge package/settings backend
 
 **Files:**
-- Modify: `services/sdkwork-clawrouter-router-service/src/ports/admin_marketing_store.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/api/admin_marketing.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_marketing_store.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_marketing_store.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/ports/admin_marketing_store.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/api/admin_marketing.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/sqlite/admin_marketing_store.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_marketing_store.rs`
 
 - [ ] **Step 1: Replace legacy admin recharge package mutation/list models with standardized fields**
 - [ ] **Step 2: Add dedicated recharge settings read/update endpoints in admin marketing API**
@@ -71,10 +71,10 @@
 **Files:**
 - Modify: `docs/schema-registry/frontend-field-contracts.yaml`
 - Regenerate: `generated/api/api-contract-manifest.json`
-- Regenerate: `generated/openapi/clawrouter-app-openapi.json`
-- Regenerate: `generated/openapi/clawrouter-backend-openapi.json`
-- Regenerate: `sdks/clawrouter-app-sdk/**`
-- Regenerate: `sdks/clawrouter-backend-sdk/**`
+- Regenerate: `generated/openapi/cloudrouter-app-openapi.json`
+- Regenerate: `generated/openapi/cloudrouter-backend-openapi.json`
+- Regenerate: `sdks/cloudrouter-app-sdk/**`
+- Regenerate: `sdks/cloudrouter-backend-sdk/**`
 
 - [ ] **Step 1: Compile the modular frontend contract snapshot**
 - [ ] **Step 2: Regenerate manifest and OpenAPI snapshots**
@@ -83,12 +83,12 @@
 ### Task 6: Connect admin membership center and app recharge UI
 
 **Files:**
-- Modify: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts`
-- Modify: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipRechargePackagesPage.tsx`
-- Modify: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/forms/MembershipRechargePackageDrawerForm.tsx`
-- Modify: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-recharge/src/rechargeService.ts`
-- Modify: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-recharge/src/RechargeView.tsx`
-- Modify: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-vip/src/VipView.tsx`
+- Modify: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts`
+- Modify: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/pages/MembershipRechargePackagesPage.tsx`
+- Modify: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/forms/MembershipRechargePackageDrawerForm.tsx`
+- Modify: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-recharge/src/rechargeService.ts`
+- Modify: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-recharge/src/RechargeView.tsx`
+- Modify: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-vip/src/VipView.tsx`
 
 - [ ] **Step 1: Add backend SDK wrappers and normalization for recharge settings and standardized package fields**
 - [ ] **Step 2: Add admin membership-center settings maintenance and package currency editing**

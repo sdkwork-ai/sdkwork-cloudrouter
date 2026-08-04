@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SQL_ROOT = ROOT / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql"
+SQL_ROOT = ROOT / "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql"
 
 IMPORT_LINE = "use crate::infrastructure::sql::store_error::redacted_store_error;\n"
 

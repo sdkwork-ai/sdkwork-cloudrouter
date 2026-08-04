@@ -4,7 +4,7 @@
 `scripts/` stores thin command entrypoints for build, verification, generation, migration, packaging, local development, and release workflows.
 
 ## Owner
-SDKWork Claw Router tooling and release maintainers.
+SDKWork Cloud Router tooling and release maintainers.
 
 ## Allowed Content
 Node, Python, PowerShell, or shell entrypoints that orchestrate canonical tools and keep reusable logic in `tools/` or proper packages.
@@ -19,4 +19,4 @@ Long-lived business logic, generated SDK transport output, runtime state, caches
 
 ## Verification
 - `python -B tools/architecture_standard_guardian.py`
-- `node scripts/run-claw-router-application.test.mjs`
+- `node scripts/run-cloud-router-application.test.mjs`

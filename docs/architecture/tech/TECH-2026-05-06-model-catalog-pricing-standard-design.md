@@ -3,7 +3,7 @@
 
 ## Goal
 
-Build Claw Router's canonical AI model catalog and pricing standard for a new product with no legacy compatibility. The Java backend, Rust runtime, PostgreSQL schema, OpenAPI contracts, generated SDKs, and environment seed data must use the same source-of-truth design.
+Build Cloud Router's canonical AI model catalog and pricing standard for a new product with no legacy compatibility. The Java backend, Rust runtime, PostgreSQL schema, OpenAPI contracts, generated SDKs, and environment seed data must use the same source-of-truth design.
 
 ## Non-Negotiable Decisions
 
@@ -61,7 +61,7 @@ Vendor is not the same as integration provider. A vendor creates a model. A prov
 
 `ai_model` stores one canonical AI model row per stable model id. Required concepts:
 
-- `model`: stable canonical id used by Claw Router and all model catalog consumers.
+- `model`: stable canonical id used by Cloud Router and all model catalog consumers.
 - `display_name`: UI label.
 - `vendor_code`, `family_code`, `model_version`, `model_aliases`.
 - `modalities`: input and output modalities as structured JSON.

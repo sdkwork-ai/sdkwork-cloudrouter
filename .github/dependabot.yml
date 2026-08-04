@@ -1,4 +1,4 @@
-# SDKWork Claw Router Dependabot configuration
+# SDKWork Cloud Router Dependabot configuration
 # Aligns with sdkwork-specs/SUPPLY_CHAIN_SECURITY_SPEC.md and
 # sdkwork-specs/DEPENDENCY_MANAGEMENT_SPEC.md.
 #
@@ -86,7 +86,7 @@ updates:
 
   # PC application pnpm workspace
   - package-ecosystem: "npm"
-    directory: "/apps/sdkwork-clawrouter-pc"
+    directory: "/apps/sdkwork-cloudrouter-pc"
     schedule:
       interval: "weekly"
       day: "wednesday"

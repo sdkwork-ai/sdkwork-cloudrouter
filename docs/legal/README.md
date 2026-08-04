@@ -3,7 +3,7 @@
 ## Purpose
 
 `docs/legal/` stores the service-level agreements, edition tier matrix, and
-other legal terms that govern commercial use of SDKWork Claw Router. These
+other legal terms that govern commercial use of SDKWork Cloud Router. These
 documents define availability commitments, incident response times, service
 credits, rate-limit tiers, support channels, and the comparison matrix across
 commercial editions.

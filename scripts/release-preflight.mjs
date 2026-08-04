@@ -174,8 +174,8 @@ function releaseEnvironmentIssues(env) {
   }
 
   for (const name of [
-    'SDKWORK_CLAW_TOOL_API_RATE_LIMIT_REQUESTS',
-    'SDKWORK_CLAW_TOOL_API_RATE_LIMIT_WINDOW_SECONDS',
+    'SDKWORK_CLOUDROUTER_TOOL_API_RATE_LIMIT_REQUESTS',
+    'SDKWORK_CLOUDROUTER_TOOL_API_RATE_LIMIT_WINDOW_SECONDS',
   ]) {
     const value = String(env[name] ?? '').trim();
     if (value && !/^[1-9]\d*$/u.test(value)) {
@@ -183,15 +183,15 @@ function releaseEnvironmentIssues(env) {
     }
   }
 
-  const generatorBaseUrl = String(env.SDKWORK_CLAW_TOOL_API_SDK_GENERATOR_BASE_URL ?? '').trim();
+  const generatorBaseUrl = String(env.SDKWORK_CLOUDROUTER_TOOL_API_SDK_GENERATOR_BASE_URL ?? '').trim();
   if (generatorBaseUrl) {
     try {
       const parsed = new URL(generatorBaseUrl);
       if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-        issues.push('SDKWORK_CLAW_TOOL_API_SDK_GENERATOR_BASE_URL must be an HTTP or HTTPS URL');
+        issues.push('SDKWORK_CLOUDROUTER_TOOL_API_SDK_GENERATOR_BASE_URL must be an HTTP or HTTPS URL');
       }
     } catch {
-      issues.push('SDKWORK_CLAW_TOOL_API_SDK_GENERATOR_BASE_URL must be an HTTP or HTTPS URL');
+      issues.push('SDKWORK_CLOUDROUTER_TOOL_API_SDK_GENERATOR_BASE_URL must be an HTTP or HTTPS URL');
     }
   }
 
@@ -605,8 +605,8 @@ function buildReleasePreflightReport({
       ? 'application worktree was not probed because child process execution is blocked'
       : dryRun
         ? 'dry-run: application worktree was not probed'
-      : appStatusLines.length === 0 ? 'sdkwork-clawrouter has no uncommitted files' : appStatusLines.join('; '),
-    'Commit or intentionally shelve sdkwork-clawrouter changes before release packaging.',
+      : appStatusLines.length === 0 ? 'sdkwork-cloudrouter has no uncommitted files' : appStatusLines.join('; '),
+    'Commit or intentionally shelve sdkwork-cloudrouter changes before release packaging.',
   ));
 
   const rootStatusLines = probes.rootStatusLines ?? [];
@@ -734,7 +734,7 @@ function buildReleasePreflightReport({
       : dryRun
         ? gitLfsVersionDetails || 'dry-run: would run git lfs version'
       : gitLfsVersionDetails || 'git lfs is not available from this shell; release packaging no longer requires LFS hydration',
-    'Git LFS is only needed when refreshing large ClawHub mirror snapshots, not for release package builds.',
+    'Git LFS is only needed when refreshing large CloudHub mirror snapshots, not for release package builds.',
   ));
 
   const runtimeSkillSeedFiles = probes.runtimeSkillSeedFiles ?? [];
@@ -817,7 +817,7 @@ function buildReleasePreflightReport({
 
 function formatTextReport(report) {
   const lines = [
-    'sdkwork-clawrouter release preflight',
+    'sdkwork-cloudrouter release preflight',
     `Summary: PASS=${report.summary.pass} WARN=${report.summary.warn} FAIL=${report.summary.fail}`,
     '',
     'Checks:',

@@ -14,8 +14,8 @@ pub struct RouterApiRouteManifest {
 pub const PACKAGE_NAME: &str = "sdkwork-routes-audio-open-api";
 pub const CAPABILITY: &str = "audio";
 pub const SURFACE: &str = "open-api";
-pub const API_AUTHORITY: &str = "sdkwork-clawrouter.audio-open-api";
-pub const SDK_FAMILY: &str = "clawrouter-open-sdk";
+pub const API_AUTHORITY: &str = "sdkwork-cloudrouter.audio-open-api";
+pub const SDK_FAMILY: &str = "cloudrouter-open-sdk";
 
 pub fn route_manifest() -> RouterApiRouteManifest {
     RouterApiRouteManifest {

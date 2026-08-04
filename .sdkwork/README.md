@@ -1,6 +1,6 @@
 # SDKWork Workspace
 
-This .sdkwork/ directory is source-controlled workspace metadata for sdkwork-clawrouter.
+This .sdkwork/ directory is source-controlled workspace metadata for sdkwork-cloudrouter.
 
 This README links to `../../sdkwork-specs/SDKWORK_WORKSPACE_SPEC.md` and the standards entrypoint at `../../sdkwork-specs/README.md`.
 

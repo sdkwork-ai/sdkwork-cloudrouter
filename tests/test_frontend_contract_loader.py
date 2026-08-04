@@ -48,7 +48,7 @@ class FrontendContractLoaderTest(unittest.TestCase):
             fragment: operations/demo
             frontend_operations:
               - route: /demo
-                source: apps/sdkwork-clawrouter-pc/packages/demo/src/demoService.ts
+                source: apps/sdkwork-cloudrouter-pc/packages/demo/src/demoService.ts
                 operation: fetchDemo
                 kind: read
                 api_surface: app
@@ -61,9 +61,9 @@ class FrontendContractLoaderTest(unittest.TestCase):
             root,
             "docs/schema-registry/frontend-field-contracts/index.yaml",
             """
-            schema: sdkwork-clawrouter-frontend-field-contracts
+            schema: sdkwork-cloudrouter-frontend-field-contracts
             version: 0.1.0
-            source: apps/sdkwork-clawrouter-pc/src/App.tsx
+            source: apps/sdkwork-cloudrouter-pc/src/App.tsx
             rule: every actual portal route must be backed by explicit schema tables.
             fragments:
               - shared/entities.yaml
@@ -79,7 +79,7 @@ class FrontendContractLoaderTest(unittest.TestCase):
 
             contract = compile_frontend_field_contract(root)
 
-            self.assertEqual("sdkwork-clawrouter-frontend-field-contracts", contract["schema"])
+            self.assertEqual("sdkwork-cloudrouter-frontend-field-contracts", contract["schema"])
             self.assertIn("DemoEntity", contract["x_response_entities"])
             self.assertEqual("/demo", contract["routes"][0]["route"])
             self.assertEqual("fetchDemo", contract["frontend_operations"][0]["operation"])

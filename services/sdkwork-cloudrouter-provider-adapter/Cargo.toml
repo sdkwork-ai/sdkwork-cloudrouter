@@ -1,0 +1,24 @@
+[package]
+name = "sdkwork-cloudrouter-provider-adapter-host"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+
+[[bin]]
+name = "cloud-provider-adapter"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+axum.workspace = true
+serde_json.workspace = true
+sdkwork-cloudrouter-config.workspace = true
+sdkwork-cloudrouter-provider-adapter.workspace = true
+sdkwork-cloudrouter-provider-adapter-http.workspace = true
+sdkwork-provider-adapter-alicloud.workspace = true
+sdkwork-provider-adapter-tencent-cloud.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+sdkwork-cloudrouter-provider-adapter-contract.workspace = true
+tower.workspace = true

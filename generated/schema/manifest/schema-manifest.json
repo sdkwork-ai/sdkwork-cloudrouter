@@ -331,8 +331,8 @@
   },
   "schema": {
     "api_prefixes": {},
-    "name": "sdkwork-clawrouter",
-    "registry_path": "docs/schema-registry/sdkwork-clawrouter.tables.yaml",
+    "name": "sdkwork-cloudrouter",
+    "registry_path": "docs/schema-registry/sdkwork-cloudrouter.tables.yaml",
     "version": "0.3.0"
   },
   "summary": {
@@ -6202,8 +6202,8 @@
         }
       },
       "source_refs": [
-        "sdkwork-clawrouter.ai_usage",
-        "sdkwork-clawrouter.ai_request_trace"
+        "sdkwork-cloudrouter.ai_usage",
+        "sdkwork-cloudrouter.ai_request_trace"
       ],
       "source_tables": [
         "ai_model",
@@ -17562,7 +17562,7 @@
           "authorization": {
             "audit_required": true,
             "mode": "service_identity",
-            "service": "clawrouter-ops-runtime"
+            "service": "cloudrouter-ops-runtime"
           },
           "batch_size": 1000,
           "candidate_recheck": {
@@ -17594,7 +17594,7 @@
               "cleanup_failures"
             ]
           },
-          "owner": "clawrouter-ops-runtime",
+          "owner": "cloudrouter-ops-runtime",
           "predicate": "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false",
           "retry": {
             "backoff": {
@@ -17630,7 +17630,7 @@
           "name": "uk_ops_alert_event_no"
         }
       ],
-      "write_owner": "clawrouter-ops-runtime"
+      "write_owner": "cloudrouter-ops-runtime"
     },
     {
       "api_surfaces": [
@@ -17816,7 +17816,7 @@
           "authorization": {
             "audit_required": true,
             "mode": "service_identity",
-            "service": "clawrouter-ops-runtime"
+            "service": "cloudrouter-ops-runtime"
           },
           "batch_size": 1000,
           "candidate_recheck": {
@@ -17848,7 +17848,7 @@
               "cleanup_failures"
             ]
           },
-          "owner": "clawrouter-ops-runtime",
+          "owner": "cloudrouter-ops-runtime",
           "predicate": "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false",
           "retry": {
             "backoff": {
@@ -17877,7 +17877,7 @@
       "system_of_record": true,
       "table": "ops_audit_log",
       "unique_constraints": [],
-      "write_owner": "clawrouter-ops-runtime"
+      "write_owner": "cloudrouter-ops-runtime"
     },
     {
       "api_surfaces": [
@@ -18129,7 +18129,7 @@
           "authorization": {
             "audit_required": true,
             "mode": "service_identity",
-            "service": "clawrouter-ops-runtime"
+            "service": "cloudrouter-ops-runtime"
           },
           "batch_size": 1000,
           "candidate_recheck": {
@@ -18161,7 +18161,7 @@
               "cleanup_failures"
             ]
           },
-          "owner": "clawrouter-ops-runtime",
+          "owner": "cloudrouter-ops-runtime",
           "predicate": "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false",
           "retry": {
             "backoff": {
@@ -18197,7 +18197,7 @@
           "name": "uk_ops_config_snapshot_no"
         }
       ],
-      "write_owner": "clawrouter-ops-runtime"
+      "write_owner": "cloudrouter-ops-runtime"
     },
     {
       "api_surfaces": [
@@ -18457,7 +18457,7 @@
           "authorization": {
             "audit_required": true,
             "mode": "service_identity",
-            "service": "clawrouter-ops-runtime"
+            "service": "cloudrouter-ops-runtime"
           },
           "batch_size": 1000,
           "candidate_recheck": {
@@ -18489,7 +18489,7 @@
               "cleanup_failures"
             ]
           },
-          "owner": "clawrouter-ops-runtime",
+          "owner": "cloudrouter-ops-runtime",
           "predicate": "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false",
           "retry": {
             "backoff": {
@@ -18518,7 +18518,7 @@
       "system_of_record": true,
       "table": "ops_gateway_heartbeat",
       "unique_constraints": [],
-      "write_owner": "clawrouter-ops-runtime"
+      "write_owner": "cloudrouter-ops-runtime"
     },
     {
       "api_surfaces": [
@@ -18803,7 +18803,7 @@
           "name": "uk_ops_gateway_instance_code"
         }
       ],
-      "write_owner": "clawrouter-ops-runtime"
+      "write_owner": "cloudrouter-ops-runtime"
     },
     {
       "api_surfaces": [
@@ -19084,7 +19084,7 @@
           "authorization": {
             "audit_required": true,
             "mode": "service_identity",
-            "service": "clawrouter-ops-runtime"
+            "service": "cloudrouter-ops-runtime"
           },
           "batch_size": 1000,
           "candidate_recheck": {
@@ -19116,7 +19116,7 @@
               "cleanup_failures"
             ]
           },
-          "owner": "clawrouter-ops-runtime",
+          "owner": "cloudrouter-ops-runtime",
           "predicate": "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false",
           "retry": {
             "backoff": {
@@ -19202,7 +19202,7 @@
               "max_retry_attempts_default": 1,
               "max_retry_attempts_max": 5
             },
-            "scheduler_owner": "sdkwork-clawrouter-standalone-gateway",
+            "scheduler_owner": "sdkwork-cloudrouter-standalone-gateway",
             "startup_policy": {
               "run_on_startup_default": true
             },
@@ -19221,7 +19221,7 @@
       "system_of_record": true,
       "table": "ops_job_execution",
       "unique_constraints": [],
-      "write_owner": "clawrouter-ops-runtime"
+      "write_owner": "cloudrouter-ops-runtime"
     },
     {
       "api_surfaces": [
@@ -19458,7 +19458,7 @@
             "target_seconds": 60
           },
           "rebuild": {
-            "owner": "clawrouter-ops-runtime",
+            "owner": "cloudrouter-ops-runtime",
             "strategy": "full_recompute"
           },
           "source_version": {
@@ -19495,7 +19495,7 @@
           "name": "uk_ops_metric_snapshot"
         }
       ],
-      "write_owner": "clawrouter-ops-runtime"
+      "write_owner": "cloudrouter-ops-runtime"
     },
     {
       "api_surfaces": [
@@ -19692,7 +19692,7 @@
           "name": "uk_ops_notification_delivery_user_message_app"
         }
       ],
-      "write_owner": "clawrouter-ops-runtime"
+      "write_owner": "cloudrouter-ops-runtime"
     },
     {
       "api_surfaces": [
@@ -19965,7 +19965,7 @@
       "system_of_record": true,
       "table": "ops_notification_message",
       "unique_constraints": [],
-      "write_owner": "clawrouter-ops-runtime"
+      "write_owner": "cloudrouter-ops-runtime"
     },
     {
       "api_surfaces": [
@@ -20220,7 +20220,7 @@
       "system_of_record": true,
       "table": "ops_notification_recipient",
       "unique_constraints": [],
-      "write_owner": "clawrouter-ops-runtime"
+      "write_owner": "cloudrouter-ops-runtime"
     }
   ]
 }

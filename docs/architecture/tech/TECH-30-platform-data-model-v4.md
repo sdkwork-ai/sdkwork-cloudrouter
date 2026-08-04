@@ -17,7 +17,7 @@
 | `c_` | 跨垂直统一分类 | `c_category` |
 | `ai_` | 模型路由、技能、MCP | `ai_agent_skill`, `ai_agent_skill_package`, `ai_skill_asset`, `ai_skill_artifact`, `ai_skill_action` |
 | `content_` | 社区内容 | `content_forum_post`, `content_comment`, `content_reaction`, `content_favorite` |
-| `iam_` / `commerce_` / `ops_` | Appbase 标准�?| 沿用现有 appbase 表，不做 claw-router 替代�?|
+| `iam_` / `commerce_` / `ops_` | Appbase 标准�?| 沿用现有 appbase 表，不做 cloud-router 替代�?|
 
 ## 3. App Store（`appstore_app`�?
 | 能力 | v4.1 来源 |
@@ -49,7 +49,7 @@ Admin/App API 契约表名：`appstore_app`、`c_category`（OpenAPI `x-table` �
 | `content_course*` | `course_*`（由 `sdkwork-course` 拥有�?|
 
 ## 6. 门禁与验�?
-- **Schema Registry**：`docs/schema-registry/sdkwork-clawrouter.tables.yaml` 不得再注�?v4.1 已退役的 `appstore_app`、`plus_category`、`studio_catalog_*`、`platform_*`、`content_course*` 等表�?- **Schema Guardian**：`tools/schema_guardian.py` �?`V41_PLATFORM_LEGACY_ALIASES` 会扫�?registry、frontend-field-contracts 片段、编译快照、OpenAPI �?API manifest，禁止引用退役别名（�?`platform_app_template` �?`appstore_app_template`）�?- **迁移脚本**：`scripts/migrate-v41-frontend-contract-tables.mjs` 用于一次性替换契�?YAML 中的 legacy 表名�?- **测试**：`database_installer`、`sqlite_app_store_*`、`sqlite_admin_skill_store`、OpenAPI/SDK guardian 必须通过�?
+- **Schema Registry**：`docs/schema-registry/sdkwork-cloudrouter.tables.yaml` 不得再注�?v4.1 已退役的 `appstore_app`、`plus_category`、`studio_catalog_*`、`platform_*`、`content_course*` 等表�?- **Schema Guardian**：`tools/schema_guardian.py` �?`V41_PLATFORM_LEGACY_ALIASES` 会扫�?registry、frontend-field-contracts 片段、编译快照、OpenAPI �?API manifest，禁止引用退役别名（�?`platform_app_template` �?`appstore_app_template`）�?- **迁移脚本**：`scripts/migrate-v41-frontend-contract-tables.mjs` 用于一次性替换契�?YAML 中的 legacy 表名�?- **测试**：`database_installer`、`sqlite_app_store_*`、`sqlite_admin_skill_store`、OpenAPI/SDK guardian 必须通过�?
 ## 7. 明确不做
 
 - 不为 App Store 恢复 `platform_asset` / `platform_artifact` / `platform_action` 独立表�?- 不做 legacy Java `plus_*` 双写或投影回写�?- 不在 greenfield 环境保留 `plus_user`（身份事实来源为 `iam_user`）�?

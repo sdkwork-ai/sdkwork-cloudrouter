@@ -12,7 +12,7 @@ from tools.schema_registry_loader import load_schema_registry
 ROOT = Path(__file__).resolve().parents[1]
 BUSINESS_ROOT = ROOT.parent.parent
 APPBASE_ROOT = ROOT / ".sdkwork" / "dependencies" / "sdkwork-appbase"
-SCHEMA_REGISTRY = ROOT / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+SCHEMA_REGISTRY = ROOT / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
 FRONTEND_FIELD_CONTRACTS = ROOT / "docs" / "schema-registry" / "frontend-field-contracts.yaml"
 
 FORBIDDEN_LEGACY_IDENTITY_TABLES = {
@@ -67,7 +67,7 @@ JAVA_BOOTSTRAP_CONTRACT_ROOTS = [
     BUSINESS_ROOT / "spring-ai-plus-server-application" / "src" / "main" / "resources" / "database",
 ]
 
-CLAW_APP_API_DATABASE_FIXTURE = ROOT / "services" / "sdkwork-clawrouter-app-api-server" / "tests" / "database_config_router.rs"
+CLOUD_APP_API_DATABASE_FIXTURE = ROOT / "services" / "sdkwork-cloudrouter-app-api-server" / "tests" / "database_config_router.rs"
 APPBASE_TAURI_AUTHORITY = (
     APPBASE_ROOT
     / "packages"
@@ -81,17 +81,17 @@ APPBASE_TAURI_AUTHORITY = (
 )
 GENERATED_CONTRACT_ARTIFACTS = [
     ROOT / "generated" / "openapi" / "schema-components.yaml",
-    ROOT / "generated" / "openapi" / "clawrouter-app-openapi.json",
-    ROOT / "generated" / "openapi" / "clawrouter-backend-openapi.json",
+    ROOT / "generated" / "openapi" / "cloudrouter-app-openapi.json",
+    ROOT / "generated" / "openapi" / "cloudrouter-backend-openapi.json",
     ROOT / "generated" / "api" / "api-contract-manifest.json",
-    ROOT / "sdks" / "clawrouter-app-sdk" / "openapi" / "clawrouter-app-sdk.openapi.json",
-    ROOT / "sdks" / "clawrouter-app-sdk" / "openapi" / "clawrouter-app-sdk.sdkgen.json",
-    ROOT / "sdks" / "clawrouter-backend-sdk" / "openapi" / "clawrouter-backend-sdk.openapi.json",
-    ROOT / "sdks" / "clawrouter-backend-sdk" / "openapi" / "clawrouter-backend-sdk.sdkgen.json",
+    ROOT / "sdks" / "cloudrouter-app-sdk" / "openapi" / "cloudrouter-app-sdk.openapi.json",
+    ROOT / "sdks" / "cloudrouter-app-sdk" / "openapi" / "cloudrouter-app-sdk.sdkgen.json",
+    ROOT / "sdks" / "cloudrouter-backend-sdk" / "openapi" / "cloudrouter-backend-sdk.openapi.json",
+    ROOT / "sdks" / "cloudrouter-backend-sdk" / "openapi" / "cloudrouter-backend-sdk.sdkgen.json",
 ]
 GENERATED_SDK_ARTIFACT_ROOTS = [
-    ROOT / "sdks" / "clawrouter-app-sdk",
-    ROOT / "sdks" / "clawrouter-backend-sdk",
+    ROOT / "sdks" / "cloudrouter-app-sdk",
+    ROOT / "sdks" / "cloudrouter-backend-sdk",
 ]
 
 FORBIDDEN_LEGACY_IDENTITY_JAVA_TYPE_PATTERN = re.compile(
@@ -301,15 +301,15 @@ def test_java_identity_domain_declares_canonical_iam_types() -> None:
     assert not violations, "Java identity domain must declare canonical Iam* types: " + "; ".join(violations)
 
 
-def test_claw_app_api_database_fixture_uses_canonical_identity_tables() -> None:
-    text = CLAW_APP_API_DATABASE_FIXTURE.read_text(encoding="utf-8")
+def test_cloud_app_api_database_fixture_uses_canonical_identity_tables() -> None:
+    text = CLOUD_APP_API_DATABASE_FIXTURE.read_text(encoding="utf-8")
     forbidden = sorted(
         table_name
         for table_name in FORBIDDEN_LEGACY_IDENTITY_TABLES
         if re.search(rf"(?<![A-Za-z0-9_]){re.escape(table_name)}(?![A-Za-z0-9_])", text)
     )
 
-    assert not forbidden, "claw app-api database fixture must not create or seed legacy identity tables: " + ", ".join(forbidden)
+    assert not forbidden, "cloud app-api database fixture must not create or seed legacy identity tables: " + ", ".join(forbidden)
 
 
 def test_appbase_tauri_user_center_schema_uses_canonical_api_key_table() -> None:

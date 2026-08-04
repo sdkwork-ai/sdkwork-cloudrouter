@@ -3,7 +3,7 @@
 
 ## 目标
 
-`tools.schema_guardian` 将数据设计中的关键约束固化为可执行校验，作为 `sdkwork-clawrouter` 后续数据库、API、Entity、DTO、OpenAPI 和 SDK 生成前的第一道质量门禁。
+`tools.schema_guardian` 将数据设计中的关键约束固化为可执行校验，作为 `sdkwork-cloudrouter` 后续数据库、API、Entity、DTO、OpenAPI 和 SDK 生成前的第一道质量门禁。
 
 当前门禁优先覆盖以下高风险规则：
 
@@ -18,11 +18,11 @@
 - API Key 分组：`iam_gateway_api_key` 必须能绑定 `ai_channel_group`，分组必须能选择 `ai_pricing_plan`，并允许通过 `ai_pricing_plan_binding` 扩展到 API Key、分组、VIP、租户、用户等主体。
 - API 路径标准：`api_prefixes.app` 必须是 `/app/v3/api`，`api_prefixes.backend` 必须是 `/backend/v3/api`，OpenAI 兼容面必须是 `/v1`。
 - 前端路由覆盖：`/admin/*` 页面必须声明 `backend` API surface，非 `/admin/*` 页面必须声明 `app` API surface，确保 admin 与 console/public 可以按 Java app/backend 标准自由切换。
-- 命名标准：非 legacy 新表不得使用 `claw_`、`router_`、`sdkwork_`、`console_`、`admin_`、`portal_` 等产品名或部署名前缀。
+- 命名标准：非 legacy 新表不得使用 `cloud_`、`router_`、`sdkwork_`、`console_`、`admin_`、`portal_` 等产品名或部署名前缀。
 
 ## 运行方式
 
-在 `apps/sdkwork-clawrouter` 目录下执行：
+在 `apps/sdkwork-cloudrouter` 目录下执行：
 
 统一门禁：
 
@@ -83,7 +83,7 @@ python -B -m tools.openapi_component_generator --check
 默认校验文件：
 
 ```text
-docs/schema-registry/sdkwork-clawrouter.tables.yaml
+docs/schema-registry/sdkwork-cloudrouter.tables.yaml
 ```
 
 默认支持两类 Java 实体路径：

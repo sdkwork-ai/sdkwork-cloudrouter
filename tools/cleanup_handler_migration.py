@@ -7,7 +7,7 @@ import re
 import sys
 from pathlib import Path
 
-API_DIR = Path(__file__).resolve().parents[1] / "services" / "sdkwork-clawrouter-router-service" / "src" / "api"
+API_DIR = Path(__file__).resolve().parents[1] / "services" / "sdkwork-cloudrouter-router-service" / "src" / "api"
 
 
 def cleanup(text: str) -> str:

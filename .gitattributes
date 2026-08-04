@@ -10,8 +10,8 @@
 *.zip binary
 *.gz binary
 *.tgz binary
-data/skills/clawhub/raw/checkpoint.json filter=lfs diff=lfs merge=lfs -text
-data/skills/clawhub/raw/index.json filter=lfs diff=lfs merge=lfs -text
+data/skills/cloudhub/raw/checkpoint.json filter=lfs diff=lfs merge=lfs -text
+data/skills/cloudhub/raw/index.json filter=lfs diff=lfs merge=lfs -text
 data/skills/skills.json filter=lfs diff=lfs merge=lfs -text
 data/skills/artifacts.json filter=lfs diff=lfs merge=lfs -text
 data/skills/assets.json filter=lfs diff=lfs merge=lfs -text

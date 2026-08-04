@@ -7,8 +7,8 @@ from tools.api_contract_manifest import ApiContractManifestGenerator
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = (
-    "apps/sdkwork-clawrouter-pc/packages/"
-    "sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts"
+    "apps/sdkwork-cloudrouter-pc/packages/"
+    "sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts"
 )
 
 
@@ -111,15 +111,15 @@ class AdminUpstreamRuntimeStandardTest(unittest.TestCase):
         package_root = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-admin-upstream"
+            / "sdkwork-cloudrouter-pc-admin-upstream"
         )
         component = json.loads(
             (package_root / "specs" / "component.spec.json").read_text(encoding="utf-8")
         )
 
-        retired_package = package_root.parent / "sdkwork-clawrouter-pc-admin-group"
+        retired_package = package_root.parent / "sdkwork-cloudrouter-pc-admin-group"
         self.assertFalse((retired_package / "package.json").exists())
         self.assertFalse(any((retired_package / "src").glob("*")))
         self.assertEqual("upstream-management", component["component"]["capability"])

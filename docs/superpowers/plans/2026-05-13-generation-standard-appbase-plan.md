@@ -4,7 +4,7 @@
 
 **Goal:** Build a single, standard generation system across Java business services and sdkwork-appbase, with no legacy `plus_ai_generation_content` dependency and with reusable Rust/data/Playground contracts.
 
-**Architecture:** Java remains the source-of-truth backend ledger and orchestration implementation. Appbase receives shared contracts, Rust-native domain crates, and a reusable Playground UI/service layer that consumes host adapters instead of claw-router-specific SDKs. Claw-router keeps only adapter-specific bindings.
+**Architecture:** Java remains the source-of-truth backend ledger and orchestration implementation. Appbase receives shared contracts, Rust-native domain crates, and a reusable Playground UI/service layer that consumes host adapters instead of cloud-router-specific SDKs. Cloud-router keeps only adapter-specific bindings.
 
 **Tech Stack:** Java 21/Spring Boot/JPA/Flyway/PostgreSQL, TypeScript/React/pnpm/Vitest, Rust/Cargo.
 
@@ -83,10 +83,10 @@
 **Files:** 
 
 - [ ] Move generic Playground types/components/service interfaces into appbase.
-- [ ] Keep claw-router-specific SDK calls in a host adapter.
+- [ ] Keep cloud-router-specific SDK calls in a host adapter.
 - [ ] Add model group, history, submit job, asset action, and readonly-disabled state contracts.
 - [ ] Add Vitest/React rendering tests.
-- [ ] Run claw-router portal package typecheck for the adapted package.
+- [ ] Run cloud-router portal package typecheck for the adapted package.
 
 ### Task 7: Final Verification
 
@@ -95,5 +95,5 @@
 
 - [ ] Run Java generation focused Maven suite.
 - [ ] Run appbase typecheck and targeted Vitest/Cargo tests.
-- [ ] Run `rg` audits for old content dependency and raw claw-router coupling in appbase Playground.
+- [ ] Run `rg` audits for old content dependency and raw cloud-router coupling in appbase Playground.
 - [ ] Summarize remaining risks with exact files if any.

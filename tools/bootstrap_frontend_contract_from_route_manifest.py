@@ -16,11 +16,11 @@ else:
 TARGETS = (
     {
         "api_surface": "app",
-        "manifest_path": "sdks/_route-manifests/app-api/sdkwork-routes-clawrouter-app-api.route-manifest.json",
+        "manifest_path": "sdks/_route-manifests/app-api/sdkwork-routes-cloudrouter-app-api.route-manifest.json",
     },
     {
         "api_surface": "backend",
-        "manifest_path": "sdks/_route-manifests/backend-api/sdkwork-routes-clawrouter-backend-api.route-manifest.json",
+        "manifest_path": "sdks/_route-manifests/backend-api/sdkwork-routes-cloudrouter-backend-api.route-manifest.json",
     },
 )
 

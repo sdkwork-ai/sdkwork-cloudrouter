@@ -1,7 +1,7 @@
 -- sdkwork:migration
 -- id: 0005_reconcile_upstream_supplier_routing
 -- engine: postgres
--- module: clawrouter
+-- module: cloudrouter
 -- purpose: Reconcile schemas where 0003 history exists but legacy routing columns remain.
 -- reversible: false
 -- rollback: forward-fix
@@ -10,7 +10,7 @@
 -- lock_timeout: 5s
 -- statement_timeout: 5min
 -- estimated_size: Metadata-only renames plus bounded updates on routing fact tables; no table rewrite expected.
--- write_traffic: Stop Claw Router writes while this migration runs.
+-- write_traffic: Stop Cloud Router writes while this migration runs.
 -- rewrite: Column and table renames are metadata-only; retired nullable columns are dropped after explicit data checks.
 -- replication_impact: Bounded update WAL for rows carrying legacy account references; monitor WAL bytes and replica lag.
 -- backfill: Deterministic supplier/account projection from ai_upstream_account with orphan and conflict checks.

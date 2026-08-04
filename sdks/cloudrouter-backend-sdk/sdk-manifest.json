@@ -1,0 +1,393 @@
+{
+  "schemaVersion": 1,
+  "sdkFamily": "cloudrouter-backend-sdk",
+  "sdkName": "cloudrouter-backend-sdk",
+  "packageName": "@sdkwork/cloudrouter-backend-sdk",
+  "transportPackageName": "cloudrouter-backend-sdk-generated-typescript",
+  "typescript": {
+    "composedRoot": "cloudrouter-backend-sdk-typescript",
+    "composedEntry": "cloudrouter-backend-sdk-typescript/src/index.ts",
+    "transportRoot": "cloudrouter-backend-sdk-typescript/generated/server-openapi",
+    "transportEntry": "cloudrouter-backend-sdk-typescript/generated/server-openapi/src/index.ts"
+  },
+  "workspace": "cloudrouter-backend-sdk",
+  "title": "SDKWork Cloud Router backend API SDK",
+  "apiVersion": "0.1.0",
+  "authoritySpec": "openapi/cloudrouter-backend-sdk.openapi.json",
+  "generationInputSpec": "openapi/cloudrouter-backend-sdk.openapi.json",
+  "derivedSpecs": {},
+  "sdkOwner": "sdkwork-cloudrouter",
+  "apiAuthority": "sdkwork-cloudrouter.backend",
+  "discoverySurface": {
+    "sdkTarget": "backend",
+    "apiPrefix": "/backend/v3/api",
+    "generatedProtocols": [
+      "http"
+    ],
+    "manualTransports": []
+  },
+  "sdkDependencies": [
+    {
+      "workspace": "sdkwork-iam-backend-sdk",
+      "role": "appbase-backend-management-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/backend/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/iam-backend-sdk",
+        "flutter": "sdkwork_iam_backend_sdk",
+        "rust": "sdkwork-iam-backend-sdk",
+        "java": "com.sdkwork:sdkwork-iam-backend-sdk",
+        "csharp": "SDKWork.Appbase.BackendSdk",
+        "swift": "sdkwork-iam-backend-sdk",
+        "kotlin": "com.sdkwork:sdkwork-iam-backend-sdk",
+        "go": "github.com/sdkwork/sdkwork-iam-backend-sdk",
+        "python": "sdkwork-iam-backend-sdk"
+      }
+    },
+    {
+      "workspace": "sdkwork-models-backend-sdk",
+      "role": "models-backend-catalog-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/backend/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/models-backend-sdk",
+        "rust": "sdkwork-models-backend-sdk",
+        "java": "com.sdkwork:sdkwork-models-backend-sdk",
+        "go": "github.com/sdkwork/sdkwork-models-backend-sdk",
+        "python": "sdkwork-models-backend-sdk"
+      }
+    },
+    {
+      "workspace": "sdkwork-membership-backend-sdk",
+      "role": "membership-backend-management-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/backend/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/membership-backend-sdk"
+      }
+    },
+    {
+      "workspace": "sdkwork-payment-backend-sdk",
+      "role": "payment-backend-management-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/backend/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/payment-backend-sdk"
+      }
+    },
+    {
+      "workspace": "sdkwork-promotion-backend-sdk",
+      "role": "promotion-backend-management-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/backend/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/promotion-backend-sdk"
+      }
+    },
+    {
+      "workspace": "sdkwork-drive-backend-sdk",
+      "role": "drive-backend-management-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/backend/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/drive-backend-sdk"
+      }
+    }
+  ],
+  "languages": [
+    {
+      "language": "typescript",
+      "workspace": "cloudrouter-backend-sdk-typescript",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "cloudrouter-backend-sdk-typescript/generated/server-openapi",
+      "packagePath": "cloudrouter-backend-sdk-typescript",
+      "manifestPath": "cloudrouter-backend-sdk-typescript/package.json",
+      "name": "@sdkwork/cloudrouter-backend-sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Cloud Router backend API SDK",
+      "entrypoints": {
+        "main": "./dist/index.cjs",
+        "module": "./dist/index.js",
+        "types": "./dist/index.d.ts"
+      },
+      "consumerSurface": {
+        "primaryClient": "SdkworkBackendClient",
+        "apiPrefix": "/backend/v3/api"
+      },
+      "packages": [
+        {
+          "layer": "generated-output",
+          "packagePath": "cloudrouter-backend-sdk-typescript/generated/server-openapi",
+          "manifestPath": "cloudrouter-backend-sdk-typescript/generated/server-openapi/package.json",
+          "name": "cloudrouter-backend-sdk-generated-typescript",
+          "version": "0.1.0",
+          "description": "SDKWork Cloud Router backend API SDK generator-owned transport output",
+          "entrypoints": {
+            "main": "./dist/index.cjs",
+            "module": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+          }
+        },
+        {
+          "layer": "package",
+          "packagePath": "cloudrouter-backend-sdk-typescript",
+          "manifestPath": "cloudrouter-backend-sdk-typescript/package.json",
+          "name": "@sdkwork/cloudrouter-backend-sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Cloud Router backend API SDK",
+          "entrypoints": {
+            "main": "./dist/index.cjs",
+            "module": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+          }
+        }
+      ]
+    },
+    {
+      "language": "flutter",
+      "workspace": "cloudrouter-backend-sdk-flutter",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "cloudrouter-backend-sdk-flutter/generated/server-openapi",
+      "manifestPath": "cloudrouter-backend-sdk-flutter/generated/server-openapi/pubspec.yaml",
+      "name": "cloudrouter_backend_sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Cloud Router backend API SDK flutter generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "cloudrouter-backend-sdk-flutter/generated/server-openapi",
+          "manifestPath": "cloudrouter-backend-sdk-flutter/generated/server-openapi/pubspec.yaml",
+          "name": "cloudrouter_backend_sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Cloud Router backend API SDK flutter generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "cloudrouter-backend-sdk-flutter/composed",
+          "status": "reserved",
+          "name": "cloudrouter_backend_sdk",
+          "version": "",
+          "description": "Reserved composed flutter SDK boundary for cloudrouter-backend-sdk"
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "workspace": "cloudrouter-backend-sdk-rust",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "cloudrouter-backend-sdk-rust/generated/server-openapi",
+      "manifestPath": "cloudrouter-backend-sdk-rust/generated/server-openapi/Cargo.toml",
+      "name": "cloudrouter-backend-sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Cloud Router backend API SDK rust generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "cloudrouter-backend-sdk-rust/generated/server-openapi",
+          "manifestPath": "cloudrouter-backend-sdk-rust/generated/server-openapi/Cargo.toml",
+          "name": "cloudrouter-backend-sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Cloud Router backend API SDK rust generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "cloudrouter-backend-sdk-rust/composed",
+          "status": "reserved",
+          "name": "cloudrouter-backend-sdk",
+          "version": "",
+          "description": "Reserved composed rust SDK boundary for cloudrouter-backend-sdk"
+        }
+      ]
+    },
+    {
+      "language": "java",
+      "workspace": "cloudrouter-backend-sdk-java",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "cloudrouter-backend-sdk-java/generated/server-openapi",
+      "manifestPath": "cloudrouter-backend-sdk-java/generated/server-openapi/pom.xml",
+      "name": "com.sdkwork.cloudrouter:cloudrouter-backend-sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Cloud Router backend API SDK java generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "cloudrouter-backend-sdk-java/generated/server-openapi",
+          "manifestPath": "cloudrouter-backend-sdk-java/generated/server-openapi/pom.xml",
+          "name": "com.sdkwork.cloudrouter:cloudrouter-backend-sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Cloud Router backend API SDK java generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "cloudrouter-backend-sdk-java/composed",
+          "status": "reserved",
+          "name": "com.sdkwork.cloudrouter:cloudrouter-backend-sdk",
+          "version": "",
+          "description": "Reserved composed java SDK boundary for cloudrouter-backend-sdk"
+        }
+      ]
+    },
+    {
+      "language": "csharp",
+      "workspace": "cloudrouter-backend-sdk-csharp",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "cloudrouter-backend-sdk-csharp/generated/server-openapi",
+      "manifestPath": "cloudrouter-backend-sdk-csharp/generated/server-openapi/Sdkwork.CloudRouter.Backend.Sdk.csproj",
+      "name": "Sdkwork.CloudRouter.Backend.Sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Cloud Router backend API SDK csharp generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "cloudrouter-backend-sdk-csharp/generated/server-openapi",
+          "manifestPath": "cloudrouter-backend-sdk-csharp/generated/server-openapi/Sdkwork.CloudRouter.Backend.Sdk.csproj",
+          "name": "Sdkwork.CloudRouter.Backend.Sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Cloud Router backend API SDK csharp generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "cloudrouter-backend-sdk-csharp/composed",
+          "status": "reserved",
+          "name": "Sdkwork.CloudRouter.Backend.Sdk",
+          "version": "",
+          "description": "Reserved composed csharp SDK boundary for cloudrouter-backend-sdk"
+        }
+      ]
+    },
+    {
+      "language": "swift",
+      "workspace": "cloudrouter-backend-sdk-swift",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "cloudrouter-backend-sdk-swift/generated/server-openapi",
+      "manifestPath": "cloudrouter-backend-sdk-swift/generated/server-openapi/Package.swift",
+      "name": "CloudRouterBackendSdk",
+      "version": "0.1.0",
+      "description": "SDKWork Cloud Router backend API SDK swift generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "cloudrouter-backend-sdk-swift/generated/server-openapi",
+          "manifestPath": "cloudrouter-backend-sdk-swift/generated/server-openapi/Package.swift",
+          "name": "CloudRouterBackendSdk",
+          "version": "0.1.0",
+          "description": "SDKWork Cloud Router backend API SDK swift generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "cloudrouter-backend-sdk-swift/composed",
+          "status": "reserved",
+          "name": "CloudRouterBackendSdk",
+          "version": "",
+          "description": "Reserved composed swift SDK boundary for cloudrouter-backend-sdk"
+        }
+      ]
+    },
+    {
+      "language": "kotlin",
+      "workspace": "cloudrouter-backend-sdk-kotlin",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "cloudrouter-backend-sdk-kotlin/generated/server-openapi",
+      "manifestPath": "cloudrouter-backend-sdk-kotlin/generated/server-openapi/build.gradle.kts",
+      "name": "com.sdkwork.cloudrouter:cloudrouter-backend-sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Cloud Router backend API SDK kotlin generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "cloudrouter-backend-sdk-kotlin/generated/server-openapi",
+          "manifestPath": "cloudrouter-backend-sdk-kotlin/generated/server-openapi/build.gradle.kts",
+          "name": "com.sdkwork.cloudrouter:cloudrouter-backend-sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Cloud Router backend API SDK kotlin generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "cloudrouter-backend-sdk-kotlin/composed",
+          "status": "reserved",
+          "name": "com.sdkwork.cloudrouter:cloudrouter-backend-sdk",
+          "version": "",
+          "description": "Reserved composed kotlin SDK boundary for cloudrouter-backend-sdk"
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "workspace": "cloudrouter-backend-sdk-go",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "cloudrouter-backend-sdk-go/generated/server-openapi",
+      "manifestPath": "cloudrouter-backend-sdk-go/generated/server-openapi/go.mod",
+      "name": "github.com/sdkwork/cloudrouter-backend-sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Cloud Router backend API SDK go generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "cloudrouter-backend-sdk-go/generated/server-openapi",
+          "manifestPath": "cloudrouter-backend-sdk-go/generated/server-openapi/go.mod",
+          "name": "github.com/sdkwork/cloudrouter-backend-sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Cloud Router backend API SDK go generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "cloudrouter-backend-sdk-go/composed",
+          "status": "reserved",
+          "name": "github.com/sdkwork/cloudrouter-backend-sdk",
+          "version": "",
+          "description": "Reserved composed go SDK boundary for cloudrouter-backend-sdk"
+        }
+      ]
+    },
+    {
+      "language": "python",
+      "workspace": "cloudrouter-backend-sdk-python",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "cloudrouter-backend-sdk-python/generated/server-openapi",
+      "manifestPath": "cloudrouter-backend-sdk-python/generated/server-openapi/pyproject.toml",
+      "name": "sdkwork-cloudrouter-backend-sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Cloud Router backend API SDK python generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "cloudrouter-backend-sdk-python/generated/server-openapi",
+          "manifestPath": "cloudrouter-backend-sdk-python/generated/server-openapi/pyproject.toml",
+          "name": "sdkwork-cloudrouter-backend-sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Cloud Router backend API SDK python generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "cloudrouter-backend-sdk-python/composed",
+          "status": "reserved",
+          "name": "sdkwork-cloudrouter-backend-sdk",
+          "version": "",
+          "description": "Reserved composed python SDK boundary for cloudrouter-backend-sdk"
+        }
+      ]
+    }
+  ],
+  "dependencyApiExports": []
+}

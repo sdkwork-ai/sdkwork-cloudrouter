@@ -1,7 +1,7 @@
 fragment: operations/backend-admin-commerce
 frontend_operation_sdk_authorities:
-  clawrouter-backend-sdk:
-    manifest: sdks/clawrouter-backend-sdk/sdk-manifest.json
+  cloudrouter-backend-sdk:
+    manifest: sdks/cloudrouter-backend-sdk/sdk-manifest.json
   sdkwork-membership-backend-sdk:
     manifest: ../sdkwork-membership/sdks/sdkwork-membership-backend-sdk/sdk-manifest.json
   sdkwork-payment-backend-sdk:
@@ -10,7 +10,7 @@ frontend_operation_sdk_authorities:
     manifest: ../sdkwork-promotion/sdks/sdkwork-promotion-backend-sdk/sdk-manifest.json
 frontend_operations:
   - route: /admin/memberships/packageGroups
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
     operation: fetchMembershipAdminPackageGroups
     kind: read
     api_surface: backend
@@ -20,7 +20,7 @@ frontend_operations:
       - { sdk_family: sdkwork-membership-backend-sdk, operation_id: packageGroups.list }
     read_sources: [memberships]
   - route: /admin/memberships/packageGroups
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
     operation: createMembershipAdminPackageGroup
     kind: create
     api_surface: backend
@@ -31,7 +31,7 @@ frontend_operations:
     read_sources: [memberships]
     write_tables: []
   - route: /admin/memberships/packageGroups
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
     operation: updateMembershipAdminPackageGroup
     kind: update
     api_surface: backend
@@ -42,7 +42,7 @@ frontend_operations:
     read_sources: [memberships]
     write_tables: []
   - route: /admin/memberships/packageGroups
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
     operation: deleteMembershipAdminPackageGroup
     kind: delete
     api_surface: backend
@@ -53,7 +53,7 @@ frontend_operations:
     read_sources: [memberships]
     write_tables: []
   - route: /admin/memberships/packages
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
     operation: fetchMembershipAdminPackages
     kind: read
     api_surface: backend
@@ -63,7 +63,7 @@ frontend_operations:
       - { sdk_family: sdkwork-membership-backend-sdk, operation_id: packages.list }
     read_sources: [memberships]
   - route: /admin/memberships/packages
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
     operation: createMembershipAdminPackage
     kind: create
     api_surface: backend
@@ -74,7 +74,7 @@ frontend_operations:
     read_sources: [memberships]
     write_tables: []
   - route: /admin/memberships/packages
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
     operation: updateMembershipAdminPackage
     kind: update
     api_surface: backend
@@ -85,7 +85,7 @@ frontend_operations:
     read_sources: [memberships]
     write_tables: []
   - route: /admin/memberships/packages
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
     operation: deleteMembershipAdminPackage
     kind: delete
     api_surface: backend
@@ -96,7 +96,7 @@ frontend_operations:
     read_sources: [memberships]
     write_tables: []
   - route: /admin/memberships/plans
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
     operation: fetchMembershipAdminPlans
     kind: read
     api_surface: backend
@@ -106,7 +106,7 @@ frontend_operations:
       - { sdk_family: sdkwork-membership-backend-sdk, operation_id: plans.list }
     read_sources: [memberships]
   - route: /admin/memberships/plans
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
     operation: createMembershipAdminPlan
     kind: create
     api_surface: backend
@@ -117,7 +117,7 @@ frontend_operations:
     read_sources: [memberships]
     write_tables: []
   - route: /admin/memberships/plans
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
     operation: updateMembershipAdminPlan
     kind: update
     api_surface: backend
@@ -128,7 +128,7 @@ frontend_operations:
     read_sources: [memberships]
     write_tables: []
   - route: /admin/memberships/members
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
     operation: fetchMembershipAdminMembers
     kind: read
     api_surface: backend
@@ -138,7 +138,7 @@ frontend_operations:
       - { sdk_family: sdkwork-membership-backend-sdk, operation_id: members.list }
     read_sources: [memberships]
   - route: /admin/memberships/members
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
     operation: updateMembershipAdminMemberStatus
     kind: update
     api_surface: backend
@@ -149,7 +149,7 @@ frontend_operations:
     read_sources: [memberships]
     write_tables: []
   - route: /admin/memberships/entitlements
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
     operation: fetchMembershipAdminEntitlements
     kind: read
     api_surface: backend
@@ -159,71 +159,71 @@ frontend_operations:
       - { sdk_family: sdkwork-membership-backend-sdk, operation_id: entitlements.list }
     read_sources: [memberships]
   - route: /admin/memberships/rechargePackages
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
     operation: fetchMembershipAdminRechargePackages
     kind: read
     api_surface: backend
     api_method: GET
     api_path: /backend/v3/api/recharges/packages
     sdk_operations:
-      - { sdk_family: clawrouter-backend-sdk, operation_id: packages.list }
+      - { sdk_family: cloudrouter-backend-sdk, operation_id: packages.list }
     read_sources: [recharges]
   - route: /admin/memberships/rechargePackages
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
     operation: createMembershipAdminRechargePackage
     kind: create
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/recharges/packages
     sdk_operations:
-      - { sdk_family: clawrouter-backend-sdk, operation_id: packages.create }
+      - { sdk_family: cloudrouter-backend-sdk, operation_id: packages.create }
     read_sources: [recharges]
     write_tables: [recharges, ops_audit_log]
   - route: /admin/memberships/rechargePackages
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
     operation: updateMembershipAdminRechargePackage
     kind: update
     api_surface: backend
     api_method: PATCH
     api_path: /backend/v3/api/recharges/packages/{packageId}
     sdk_operations:
-      - { sdk_family: clawrouter-backend-sdk, operation_id: packages.update }
+      - { sdk_family: cloudrouter-backend-sdk, operation_id: packages.update }
     read_sources: [recharges]
     write_tables: [recharges, ops_audit_log]
   - route: /admin/memberships/rechargePackages
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
     operation: deleteMembershipAdminRechargePackage
     kind: delete
     api_surface: backend
     api_method: DELETE
     api_path: /backend/v3/api/recharges/packages/{packageId}
     sdk_operations:
-      - { sdk_family: clawrouter-backend-sdk, operation_id: packages.delete }
+      - { sdk_family: cloudrouter-backend-sdk, operation_id: packages.delete }
     read_sources: [recharges]
     write_tables: [recharges, ops_audit_log]
   - route: /admin/memberships/rechargePackages
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
     operation: fetchMembershipAdminRechargeSettings
     kind: read
     api_surface: backend
     api_method: GET
     api_path: /backend/v3/api/recharges/settings
     sdk_operations:
-      - { sdk_family: clawrouter-backend-sdk, operation_id: settings.retrieve }
+      - { sdk_family: cloudrouter-backend-sdk, operation_id: settings.retrieve }
     read_sources: [recharges]
   - route: /admin/memberships/rechargePackages
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
     operation: updateMembershipAdminRechargeSettings
     kind: update
     api_surface: backend
     api_method: PUT
     api_path: /backend/v3/api/recharges/settings
     sdk_operations:
-      - { sdk_family: clawrouter-backend-sdk, operation_id: settings.update }
+      - { sdk_family: cloudrouter-backend-sdk, operation_id: settings.update }
     read_sources: [recharges]
     write_tables: [recharges, ops_audit_log]
   - route: /admin/marketing/promotionOffers
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts
     operation: backendPromotionOffersList
     kind: read
     api_surface: backend
@@ -233,7 +233,7 @@ frontend_operations:
       - { sdk_family: sdkwork-promotion-backend-sdk, operation_id: offers.list }
     read_sources: [promotions]
   - route: /admin/marketing/promotionCouponStocks
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts
     operation: backendPromotionCouponStocksList
     kind: read
     api_surface: backend
@@ -243,7 +243,7 @@ frontend_operations:
       - { sdk_family: sdkwork-promotion-backend-sdk, operation_id: couponStocks.list }
     read_sources: [promotions]
   - route: /admin/marketing/promotionCodes
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts
     operation: backendPromotionCodesList
     kind: read
     api_surface: backend
@@ -253,7 +253,7 @@ frontend_operations:
       - { sdk_family: sdkwork-promotion-backend-sdk, operation_id: codes.list }
     read_sources: [promotions]
   - route: /admin/marketing/discountApplications
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts
     operation: backendPromotionDiscountApplicationsList
     kind: read
     api_surface: backend
@@ -263,7 +263,7 @@ frontend_operations:
       - { sdk_family: sdkwork-promotion-backend-sdk, operation_id: discountApplications.list }
     read_sources: [promotions]
   - route: /admin/marketing/userCoupons
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts
     operation: backendPromotionUserCouponsList
     kind: read
     api_surface: backend
@@ -273,7 +273,7 @@ frontend_operations:
       - { sdk_family: sdkwork-promotion-backend-sdk, operation_id: userCoupons.list }
     read_sources: [promotions]
   - route: /admin/marketing/promotionCouponLedger
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts
     operation: backendPromotionCouponLedgerEntriesList
     kind: read
     api_surface: backend
@@ -283,17 +283,17 @@ frontend_operations:
       - { sdk_family: sdkwork-promotion-backend-sdk, operation_id: couponLedgerEntries.list }
     read_sources: [promotions]
   - route: /admin/payments/providers
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts
     operation: backendPaymentsProvidersList
     kind: read
     api_surface: backend
     api_method: GET
     api_path: /backend/v3/api/payments/providers
     sdk_operations:
-      - { sdk_family: clawrouter-backend-sdk, operation_id: payments.providers.list }
+      - { sdk_family: cloudrouter-backend-sdk, operation_id: payments.providers.list }
     read_sources: [payments]
   - route: /admin/payments/methods
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts
     operation: backendPaymentsMethodsList
     kind: read
     api_surface: backend
@@ -303,7 +303,7 @@ frontend_operations:
       - { sdk_family: sdkwork-payment-backend-sdk, operation_id: methods.list }
     read_sources: [payments]
   - route: /admin/payments/channels
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts
     operation: backendPaymentsChannelsList
     kind: read
     api_surface: backend
@@ -313,7 +313,7 @@ frontend_operations:
       - { sdk_family: sdkwork-payment-backend-sdk, operation_id: channels.list }
     read_sources: [payments]
   - route: /admin/payments/routeRules
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts
     operation: backendPaymentsRouteRulesList
     kind: read
     api_surface: backend
@@ -323,7 +323,7 @@ frontend_operations:
       - { sdk_family: sdkwork-payment-backend-sdk, operation_id: routeRules.list }
     read_sources: [payments]
   - route: /admin/payments/intents
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts
     operation: backendPaymentsIntentsList
     kind: read
     api_surface: backend
@@ -333,7 +333,7 @@ frontend_operations:
       - { sdk_family: sdkwork-payment-backend-sdk, operation_id: intents.list }
     read_sources: [payments]
   - route: /admin/payments/attempts
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts
     operation: backendPaymentsAttemptsList
     kind: read
     api_surface: backend
@@ -343,7 +343,7 @@ frontend_operations:
       - { sdk_family: sdkwork-payment-backend-sdk, operation_id: attempts.list }
     read_sources: [payments]
   - route: /admin/payments/webhookEvents
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts
     operation: backendPaymentsWebhookEventsList
     kind: read
     api_surface: backend
@@ -353,7 +353,7 @@ frontend_operations:
       - { sdk_family: sdkwork-payment-backend-sdk, operation_id: webhookEvents.list }
     read_sources: [payments]
   - route: /admin/payments/reconciliationRuns
-    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts
     operation: backendPaymentsReconciliationRunsList
     kind: read
     api_surface: backend

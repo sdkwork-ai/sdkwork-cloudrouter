@@ -6,18 +6,18 @@ from tools.api_contract_manifest import ApiContractManifestGenerator
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ROUTER_SERVICE = ROOT / "services" / "sdkwork-clawrouter-router-service"
-APP_ROUTE_CRATE = ROOT / "crates" / "sdkwork-routes-clawrouter-app-api"
+ROUTER_SERVICE = ROOT / "services" / "sdkwork-cloudrouter-router-service"
+APP_ROUTE_CRATE = ROOT / "crates" / "sdkwork-routes-cloudrouter-app-api"
 APP_SDK_ROOT = (
     ROOT
     / "sdks"
-    / "clawrouter-app-sdk"
-    / "clawrouter-app-sdk-typescript"
+    / "cloudrouter-app-sdk"
+    / "cloudrouter-app-sdk-typescript"
     / "src"
 )
 ROUTING_OPERATIONS_SOURCE = (
-    "apps/sdkwork-clawrouter-pc/packages/"
-    "sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts"
+    "apps/sdkwork-cloudrouter-pc/packages/"
+    "sdkwork-cloudroutes-pc-commons/src/routingApiOperations.ts"
 )
 
 
@@ -51,7 +51,7 @@ class ConsoleRoutingBackendRuntimeStandardTest(unittest.TestCase):
         self.assertIn("PostgresAppRoutingStrategyStore", route_assembly)
         self.assertIn("app_routing_router_with_read_store", route_assembly)
         self.assertIn("merge_web_framework_scoped_app_router", route_assembly)
-        self.assertFalse((ROOT / "services" / "sdkwork-clawrouter-app-api-server").exists())
+        self.assertFalse((ROOT / "services" / "sdkwork-cloudrouter-app-api-server").exists())
 
     def test_app_routing_contract_and_generated_sdk_are_precise(self) -> None:
         manifest = ApiContractManifestGenerator(root=ROOT).generate()
@@ -89,7 +89,7 @@ class ConsoleRoutingBackendRuntimeStandardTest(unittest.TestCase):
                 self.assertEqual(response_name, operation["response_schema"]["name"])
 
         openapi = json.loads(
-            (ROOT / "generated" / "openapi" / "clawrouter-app-openapi.json").read_text(
+            (ROOT / "generated" / "openapi" / "cloudrouter-app-openapi.json").read_text(
                 encoding="utf-8"
             )
         )
@@ -259,7 +259,7 @@ class ConsoleRoutingBackendRuntimeStandardTest(unittest.TestCase):
         contract = (ROOT / "docs" / "schema-registry" / "frontend-field-contracts.yaml").read_text(
             encoding="utf-8"
         )
-        app_openapi = (ROOT / "generated" / "openapi" / "clawrouter-app-openapi.json").read_text(
+        app_openapi = (ROOT / "generated" / "openapi" / "cloudrouter-app-openapi.json").read_text(
             encoding="utf-8"
         )
         retired_paths = [

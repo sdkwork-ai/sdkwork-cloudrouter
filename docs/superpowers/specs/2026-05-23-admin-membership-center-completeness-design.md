@@ -3,7 +3,7 @@
 ## Status
 
 This specification defines the next iteration of the admin Membership Center in
-`sdkwork-clawrouter`.
+`sdkwork-cloudrouter`.
 
 The implementation must complete the admin-facing CRUD and status-management
 workflows that are already backed by the generated backend SDK and the standard
@@ -59,21 +59,21 @@ The admin Membership Center is already routed and uses the standard membership
 package:
 
 - Portal route registration:
-  - `apps/sdkwork-clawrouter-pc/src/App.tsx`
+  - `apps/sdkwork-cloudrouter-pc/src/App.tsx`
   - `/admin/memberships/packages`
   - `/admin/memberships/plans`
   - `/admin/memberships/members`
   - `/admin/memberships/entitlements`
   - `/admin/memberships/recharge-packages`
 - Admin navigation:
-  - `apps/sdkwork-clawrouter-pc/src/AdminLayout.tsx`
+  - `apps/sdkwork-cloudrouter-pc/src/AdminLayout.tsx`
 - Portal package:
-  - `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships`
+  - `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships`
 - Service boundary:
-  - `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts`
+  - `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts`
 
 The service already uses the generated backend SDK through
-`getClawRouterBackendSdkClient().memberships.*` and must keep doing so.
+`getCloudRouterBackendSdkClient().memberships.*` and must keep doing so.
 
 The backend membership router already exposes the required management endpoints:
 
@@ -125,7 +125,7 @@ keeping the public export stable.
 Target file layout:
 
 ```text
-apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/
+apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/
   index.tsx
   membershipsService.ts
   components/
@@ -160,7 +160,7 @@ Responsibilities:
     generated-SDK request parameter creation.
   - Expose typed functions for pages and forms.
   - Continue importing backend SDK access only through
-    `sdkwork-clawroutes-pc-commons/runtime`.
+    `sdkwork-cloudroutes-pc-commons/runtime`.
 - `pages/*Page.tsx`
   - Own list loading, filters, selected row, drawer open state, delete/disable
     confirmation state, mutation refresh, loading, error, and empty states for
@@ -408,8 +408,8 @@ No backend API contract change is expected for this iteration because the
 required management operations already exist in:
 
 - `docs/schema-registry/frontend-field-contracts/operations/backend-commerce-memberships.yaml`
-- `generated/openapi/clawrouter-backend-openapi.json`
-- `sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/api/commerce.ts`
+- `generated/openapi/cloudrouter-backend-openapi.json`
+- `sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/src/api/commerce.ts`
 
 If implementation discovers a generated SDK method is missing, the fix must
 follow the normal contract-first path:
@@ -417,7 +417,7 @@ follow the normal contract-first path:
 1. Update `docs/schema-registry/frontend-field-contracts.yaml` or the relevant
    fragment.
 2. Regenerate `generated/api/api-contract-manifest.json`.
-3. Regenerate `generated/openapi/clawrouter-backend-openapi.json`.
+3. Regenerate `generated/openapi/cloudrouter-backend-openapi.json`.
 4. Regenerate the backend SDK.
 5. Run the SDK guardian.
 
@@ -555,7 +555,7 @@ Expected verification commands:
 ```powershell
 node --test admin-membership-recharge-runtime.test.ts admin-membership-entitlement-runtime.test.ts membership-runtime.test.ts
 cargo test -p sdkwork_membership_subscription_sqlx --test membership_sqlx_standard
-pnpm --dir apps/sdkwork-clawrouter-pc typecheck
+pnpm --dir apps/sdkwork-cloudrouter-pc typecheck
 python -B -m tools.schema_quality_gate
 ```
 
@@ -563,9 +563,9 @@ If generated backend SDK files are regenerated, also run:
 
 ```powershell
 python -B -m tools.api_contract_manifest
-python -B -m tools.clawrouter_openapi_generator
-node sdks\clawrouter-backend-sdk\bin\generate-sdk.mjs --language typescript
-python -B -m tools.clawrouter_sdk_guardian
+python -B -m tools.cloudrouter_openapi_generator
+node sdks\cloudrouter-backend-sdk\bin\generate-sdk.mjs --language typescript
+python -B -m tools.cloudrouter_sdk_guardian
 ```
 
 ## Rollout

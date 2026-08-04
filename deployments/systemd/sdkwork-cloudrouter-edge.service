@@ -1,0 +1,19 @@
+[Unit]
+Description=SDKWork Cloud Router Edge Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=sdkwork
+Group=sdkwork
+Environment=SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE=server
+Environment=SDKWORK_CLOUDROUTER_CONFIG_FILE=/etc/sdkwork/cloudrouter.toml
+ExecStart=/usr/local/bin/sdkwork-cloudrouter-standalone-gateway
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=60
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

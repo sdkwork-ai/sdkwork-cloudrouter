@@ -1,0 +1,194 @@
+{
+  "name": "@sdkwork/cloudroutes-pc-commons",
+  "private": true,
+  "license": "SEE LICENSE IN ../../../../LICENSE",
+  "type": "module",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "require": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./runtime": {
+      "types": "./src/runtime.ts",
+      "import": "./src/runtime.ts",
+      "require": "./src/runtime.ts",
+      "default": "./src/runtime.ts"
+    },
+    "./runtime-usage": {
+      "types": "./src/runtime-usage.ts",
+      "import": "./src/runtime-usage.ts",
+      "require": "./src/runtime-usage.ts",
+      "default": "./src/runtime-usage.ts"
+    },
+    "./api-result": {
+      "types": "./src/api-result.ts",
+      "import": "./src/api-result.ts",
+      "require": "./src/api-result.ts",
+      "default": "./src/api-result.ts"
+    },
+    "./sdk-clients": {
+      "types": "./src/sdk-clients.ts",
+      "import": "./src/sdk-clients.ts",
+      "require": "./src/sdk-clients.ts",
+      "default": "./src/sdk-clients.ts"
+    },
+    "./sdk-request-boundary": {
+      "types": "./src/sdk-request-boundary.ts",
+      "import": "./src/sdk-request-boundary.ts",
+      "require": "./src/sdk-request-boundary.ts",
+      "default": "./src/sdk-request-boundary.ts"
+    },
+    "./model-catalog-identity": {
+      "types": "./src/model-catalog-identity.ts",
+      "import": "./src/model-catalog-identity.ts",
+      "require": "./src/model-catalog-identity.ts",
+      "default": "./src/model-catalog-identity.ts"
+    },
+    "./components/BusinessState": {
+      "types": "./src/components/BusinessState.tsx",
+      "import": "./src/components/BusinessState.tsx",
+      "require": "./src/components/BusinessState.tsx",
+      "default": "./src/components/BusinessState.tsx"
+    },
+    "./components/AdminTableShell": {
+      "types": "./src/components/AdminTableShell.tsx",
+      "import": "./src/components/AdminTableShell.tsx",
+      "require": "./src/components/AdminTableShell.tsx",
+      "default": "./src/components/AdminTableShell.tsx"
+    },
+    "./components/BottomPagination": {
+      "types": "./src/components/BottomPagination.tsx",
+      "import": "./src/components/BottomPagination.tsx",
+      "require": "./src/components/BottomPagination.tsx",
+      "default": "./src/components/BottomPagination.tsx"
+    },
+    "./components/AiResourceSelectorModal": {
+      "types": "./src/components/AiResourceSelectorModal.tsx",
+      "import": "./src/components/AiResourceSelectorModal.tsx",
+      "require": "./src/components/AiResourceSelectorModal.tsx",
+      "default": "./src/components/AiResourceSelectorModal.tsx"
+    },
+    "./components/GroupSelector": {
+      "types": "./src/components/GroupSelector.tsx",
+      "import": "./src/components/GroupSelector.tsx",
+      "require": "./src/components/GroupSelector.tsx",
+      "default": "./src/components/GroupSelector.tsx"
+    },
+    "./components/GroupPicker": {
+      "types": "./src/components/GroupPicker.tsx",
+      "import": "./src/components/GroupPicker.tsx",
+      "require": "./src/components/GroupPicker.tsx",
+      "default": "./src/components/GroupPicker.tsx"
+    },
+    "./components/ConfirmDialog": {
+      "types": "./src/components/ConfirmDialog.tsx",
+      "import": "./src/components/ConfirmDialog.tsx",
+      "require": "./src/components/ConfirmDialog.tsx",
+      "default": "./src/components/ConfirmDialog.tsx"
+    },
+    "./components/CopyButton": {
+      "types": "./src/components/CopyButton.tsx",
+      "import": "./src/components/CopyButton.tsx",
+      "require": "./src/components/CopyButton.tsx",
+      "default": "./src/components/CopyButton.tsx"
+    },
+    "./clipboard": {
+      "types": "./src/clipboard.ts",
+      "import": "./src/clipboard.ts",
+      "require": "./src/clipboard.ts",
+      "default": "./src/clipboard.ts"
+    },
+    "./media-resource": {
+      "types": "./src/media-resource.ts",
+      "import": "./src/media-resource.ts",
+      "require": "./src/media-resource.ts",
+      "default": "./src/media-resource.ts"
+    },
+    "./idempotency": {
+      "types": "./src/idempotency.ts",
+      "import": "./src/idempotency.ts",
+      "require": "./src/idempotency.ts",
+      "default": "./src/idempotency.ts"
+    },
+    "./utils/env": {
+      "types": "./src/utils/env.ts",
+      "import": "./src/utils/env.ts",
+      "require": "./src/utils/env.ts",
+      "default": "./src/utils/env.ts"
+    },
+    "./session-jwt-claims": {
+      "types": "./src/session-jwt-claims.ts",
+      "import": "./src/session-jwt-claims.ts",
+      "require": "./src/session-jwt-claims.ts",
+      "default": "./src/session-jwt-claims.ts"
+    },
+    "./sdkwork-utils": {
+      "types": "./src/sdkwork-utils.ts",
+      "import": "./src/sdkwork-utils.ts",
+      "require": "./src/sdkwork-utils.ts",
+      "default": "./src/sdkwork-utils.ts"
+    },
+    "./domain-service-providers": {
+      "types": "./src/domain-service-providers.ts",
+      "import": "./src/domain-service-providers.ts",
+      "require": "./src/domain-service-providers.ts",
+      "default": "./src/domain-service-providers.ts"
+    }
+  },
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sdkwork/account-sdk-ports": "workspace:*",
+    "@sdkwork/account-service": "workspace:*",
+    "@sdkwork/agents-app-sdk": "workspace:*",
+    "@sdkwork/agents-backend-sdk": "workspace:*",
+    "@sdkwork/appbase-pc-react": "workspace:*",
+    "@sdkwork/assets-core": "workspace:*",
+    "@sdkwork/auth-runtime-pc-react": "workspace:*",
+    "@sdkwork/cloudrouter-app-sdk": "workspace:*",
+    "@sdkwork/cloudrouter-backend-sdk": "workspace:*",
+    "@sdkwork/cloudrouter-open-sdk": "workspace:*",
+    "@sdkwork/cloudrouter-pc-core": "workspace:*",
+    "@sdkwork/documents-app-sdk": "workspace:*",
+    "@sdkwork/documents-pc-commons": "workspace:*",
+    "@sdkwork/drive-app-sdk": "workspace:*",
+    "@sdkwork/iam-app-sdk": "workspace:*",
+    "@sdkwork/iam-backend-sdk": "workspace:*",
+    "@sdkwork/iam-contracts": "workspace:*",
+    "@sdkwork/iam-credential-entry": "workspace:*",
+    "@sdkwork/iam-runtime": "workspace:*",
+    "@sdkwork/iam-service": "workspace:*",
+    "@sdkwork/membership-backend-sdk": "workspace:*",
+    "@sdkwork/membership-sdk-ports": "workspace:*",
+    "@sdkwork/membership-service": "workspace:*",
+    "@sdkwork/memory-app-sdk": "workspace:*",
+    "@sdkwork/messaging-app-sdk": "workspace:*",
+    "@sdkwork/models-app-sdk": "workspace:*",
+    "@sdkwork/models-backend-sdk": "workspace:*",
+    "@sdkwork/notification-pc-react": "workspace:*",
+    "@sdkwork/order-service": "workspace:*",
+    "@sdkwork/payment-backend-sdk": "workspace:*",
+    "@sdkwork/payment-sdk-ports": "workspace:*",
+    "@sdkwork/payment-service": "workspace:*",
+    "@sdkwork/promotion-backend-sdk": "workspace:*",
+    "@sdkwork/promotion-sdk-ports": "workspace:*",
+    "@sdkwork/promotion-service": "workspace:*",
+    "@sdkwork/prompts-app-sdk": "workspace:*",
+    "@sdkwork/prompts-backend-sdk": "workspace:*",
+    "@sdkwork/sdk-common": "workspace:*",
+    "@sdkwork/utils": "workspace:*",
+    "@tanstack/react-query": "^5.90.12"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}

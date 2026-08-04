@@ -1,7 +1,7 @@
 -- sdkwork:migration
 -- id: 0002_ai_request_trace_gateway_attribution
 -- engine: postgres
--- module: clawrouter
+-- module: cloudrouter
 -- purpose: Add immutable gateway attribution snapshots, normalize trace error types, and add retention/query indexes.
 -- reversible: true
 -- transactional: true

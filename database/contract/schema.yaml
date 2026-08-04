@@ -1,14 +1,14 @@
 schema_version: 1
 kind: sdkwork.database.schema
 database_role: authoritative-server
-module_id: clawrouter
+module_id: cloudrouter
 contract_version: 0.4.0
-owner_team: claw-router-platform
+owner_team: cloud-router-platform
 compliance_level: L2
 engines:
   - postgres
 table_prefix: ai_
-source_registry: docs/schema-registry/sdkwork-clawrouter.tables.yaml
+source_registry: docs/schema-registry/sdkwork-cloudrouter.tables.yaml
 tables:
   - name: ai_chat_context_snapshot
     domain: ai

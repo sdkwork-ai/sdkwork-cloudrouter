@@ -1,0 +1,555 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Sdkwork.CloudRouter.Backend.Models;
+using SdkHttpClient = Sdkwork.CloudRouter.Backend.Http.HttpClient;
+
+namespace Sdkwork.CloudRouter.Backend.Api
+{
+    public class AiApi
+    {
+        private readonly SdkHttpClient _client;
+
+        public AiApi(SdkHttpClient client)
+        {
+            _client = client;
+        }
+
+        /// <summary>
+        /// List
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ChannelGroupsListResult?> ChannelGroupsListAsync()
+        {
+            return await _client.GetAsync<Sdkwork.CloudRouter.Backend.Models.ChannelGroupsListResult>(ApiPaths.BackendPath("/ai/channel_groups"));
+        }
+
+        /// <summary>
+        /// Create
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ChannelGroupsCreateResult?> ChannelGroupsCreateAsync()
+        {
+            return await _client.PostAsync<Sdkwork.CloudRouter.Backend.Models.ChannelGroupsCreateResult>(ApiPaths.BackendPath("/ai/channel_groups"), null);
+        }
+
+        /// <summary>
+        /// Delete
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ChannelGroupsDeleteResult?> ChannelGroupsDeleteAsync(string channelGroupId)
+        {
+            return await _client.DeleteAsync<Sdkwork.CloudRouter.Backend.Models.ChannelGroupsDeleteResult>(ApiPaths.BackendPath($"/ai/channel_groups/{SerializePathParameter(channelGroupId, new PathParameterSpec("channelGroupId", "simple", false))}"));
+        }
+
+        /// <summary>
+        /// Update
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ChannelGroupsUpdateResult?> ChannelGroupsUpdateAsync(string channelGroupId)
+        {
+            return await _client.PatchAsync<Sdkwork.CloudRouter.Backend.Models.ChannelGroupsUpdateResult>(ApiPaths.BackendPath($"/ai/channel_groups/{SerializePathParameter(channelGroupId, new PathParameterSpec("channelGroupId", "simple", false))}"), null);
+        }
+
+        /// <summary>
+        /// List
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ChannelGroupsChannelBindingsListResult?> ChannelGroupsBindingsListAsync(string channelGroupId)
+        {
+            return await _client.GetAsync<Sdkwork.CloudRouter.Backend.Models.ChannelGroupsChannelBindingsListResult>(ApiPaths.BackendPath($"/ai/channel_groups/{SerializePathParameter(channelGroupId, new PathParameterSpec("channelGroupId", "simple", false))}/channel_bindings"));
+        }
+
+        /// <summary>
+        /// Update
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ChannelGroupsChannelBindingsUpdateResult?> ChannelGroupsBindingsUpdateAsync(string channelGroupId)
+        {
+            return await _client.PutAsync<Sdkwork.CloudRouter.Backend.Models.ChannelGroupsChannelBindingsUpdateResult>(ApiPaths.BackendPath($"/ai/channel_groups/{SerializePathParameter(channelGroupId, new PathParameterSpec("channelGroupId", "simple", false))}/channel_bindings"), null);
+        }
+
+        /// <summary>
+        /// Retrieve
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ChannelGroupsRouteExplainRetrieveResult?> ChannelGroupsRouteExplainRetrieveAsync(string channelGroupId)
+        {
+            return await _client.GetAsync<Sdkwork.CloudRouter.Backend.Models.ChannelGroupsRouteExplainRetrieveResult>(ApiPaths.BackendPath($"/ai/channel_groups/{SerializePathParameter(channelGroupId, new PathParameterSpec("channelGroupId", "simple", false))}/route_explain"));
+        }
+
+        /// <summary>
+        /// List
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ModelMappingOptionsListResult?> ModelMappingOptionsListAsync()
+        {
+            return await _client.GetAsync<Sdkwork.CloudRouter.Backend.Models.ModelMappingOptionsListResult>(ApiPaths.BackendPath("/ai/model_mapping_options"));
+        }
+
+        /// <summary>
+        /// List
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ModelMappingsListResult?> ModelMappingsListAsync()
+        {
+            return await _client.GetAsync<Sdkwork.CloudRouter.Backend.Models.ModelMappingsListResult>(ApiPaths.BackendPath("/ai/model_mappings"));
+        }
+
+        /// <summary>
+        /// Create
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ModelMappingsCreateResult?> ModelMappingsCreateAsync()
+        {
+            return await _client.PostAsync<Sdkwork.CloudRouter.Backend.Models.ModelMappingsCreateResult>(ApiPaths.BackendPath("/ai/model_mappings"), null);
+        }
+
+        /// <summary>
+        /// Replace
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ModelMappingsReplaceResult?> ModelMappingsReplaceAsync()
+        {
+            return await _client.PutAsync<Sdkwork.CloudRouter.Backend.Models.ModelMappingsReplaceResult>(ApiPaths.BackendPath("/ai/model_mappings"), null);
+        }
+
+        /// <summary>
+        /// Create
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ModelMappingsResolveCreateResult?> ModelMappingsResolveCreateAsync()
+        {
+            return await _client.PostAsync<Sdkwork.CloudRouter.Backend.Models.ModelMappingsResolveCreateResult>(ApiPaths.BackendPath("/ai/model_mappings/resolve"), null);
+        }
+
+        /// <summary>
+        /// Delete
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ModelMappingsDeleteResult?> ModelMappingsDeleteAsync(string mappingId)
+        {
+            return await _client.DeleteAsync<Sdkwork.CloudRouter.Backend.Models.ModelMappingsDeleteResult>(ApiPaths.BackendPath($"/ai/model_mappings/{SerializePathParameter(mappingId, new PathParameterSpec("mappingId", "simple", false))}"));
+        }
+
+        /// <summary>
+        /// Update
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ModelMappingsUpdateResult?> ModelMappingsUpdateAsync(string mappingId)
+        {
+            return await _client.PatchAsync<Sdkwork.CloudRouter.Backend.Models.ModelMappingsUpdateResult>(ApiPaths.BackendPath($"/ai/model_mappings/{SerializePathParameter(mappingId, new PathParameterSpec("mappingId", "simple", false))}"), null);
+        }
+
+        /// <summary>
+        /// List
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ModelRankingsListResult?> ModelRankingsListAsync(string? rankScope = null, string? vendorCode = null, string? modality = null, string? q = null, int? pageSize = null)
+        {
+            var queryString = BuildQueryString(new[]
+            {
+                new QueryParameterSpec("rank_scope", rankScope, "form", true, false, null),
+                new QueryParameterSpec("vendor_code", vendorCode, "form", true, false, null),
+                new QueryParameterSpec("modality", modality, "form", true, false, null),
+                new QueryParameterSpec("q", q, "form", true, false, null),
+                new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+            });
+            return await _client.GetAsync<Sdkwork.CloudRouter.Backend.Models.ModelRankingsListResult>(ApiPaths.AppendQueryString(ApiPaths.BackendPath("/ai/model_rankings"), queryString));
+        }
+
+        /// <summary>
+        /// List
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ModelRankingsJobsListResult?> ModelRankingsJobsListAsync(string? rankScope = null, int? pageSize = null)
+        {
+            var queryString = BuildQueryString(new[]
+            {
+                new QueryParameterSpec("rank_scope", rankScope, "form", true, false, null),
+                new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+            });
+            return await _client.GetAsync<Sdkwork.CloudRouter.Backend.Models.ModelRankingsJobsListResult>(ApiPaths.AppendQueryString(ApiPaths.BackendPath("/ai/model_rankings/jobs"), queryString));
+        }
+
+        /// <summary>
+        /// Refresh
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ModelRankingsRefreshResult?> ModelRankingsRefreshAsync()
+        {
+            return await _client.PostAsync<Sdkwork.CloudRouter.Backend.Models.ModelRankingsRefreshResult>(ApiPaths.BackendPath("/ai/model_rankings/refresh"), null);
+        }
+
+        /// <summary>
+        /// Retrieve
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ModelRankingsStatusRetrieveResult?> ModelRankingsStatusRetrieveAsync(int? page = null, int? pageSize = null, string? q = null, string? billingMeter = null, List<string>? vendorCodes = null, List<string>? modalities = null, List<string>? capabilities = null, List<string>? categories = null, List<string>? groups = null)
+        {
+            var queryString = BuildQueryString(new[]
+            {
+                new QueryParameterSpec("page", page, "form", true, false, null),
+                new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+                new QueryParameterSpec("q", q, "form", true, false, null),
+                new QueryParameterSpec("billing_meter", billingMeter, "form", true, false, null),
+                new QueryParameterSpec("vendor_codes", vendorCodes, "form", false, false, null),
+                new QueryParameterSpec("modalities", modalities, "form", false, false, null),
+                new QueryParameterSpec("capabilities", capabilities, "form", false, false, null),
+                new QueryParameterSpec("categories", categories, "form", false, false, null),
+                new QueryParameterSpec("groups", groups, "form", false, false, null),
+            });
+            return await _client.GetAsync<Sdkwork.CloudRouter.Backend.Models.ModelRankingsStatusRetrieveResult>(ApiPaths.AppendQueryString(ApiPaths.BackendPath("/ai/model_rankings/status"), queryString));
+        }
+
+        /// <summary>
+        /// List
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ModelVendorsListResult?> ModelVendorsListAsync()
+        {
+            return await _client.GetAsync<Sdkwork.CloudRouter.Backend.Models.ModelVendorsListResult>(ApiPaths.BackendPath("/ai/model_vendors"));
+        }
+
+        /// <summary>
+        /// Create
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ModelVendorsCreateResult?> ModelVendorsCreateAsync()
+        {
+            return await _client.PostAsync<Sdkwork.CloudRouter.Backend.Models.ModelVendorsCreateResult>(ApiPaths.BackendPath("/ai/model_vendors"), null);
+        }
+
+        /// <summary>
+        /// List
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ModelsListResult?> ModelsListAsync(int? page = null, int? pageSize = null, string? q = null, string? billingMeter = null, List<string>? vendorCodes = null, List<string>? modalities = null, List<string>? capabilities = null, List<string>? categories = null, List<string>? groups = null)
+        {
+            var queryString = BuildQueryString(new[]
+            {
+                new QueryParameterSpec("page", page, "form", true, false, null),
+                new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+                new QueryParameterSpec("q", q, "form", true, false, null),
+                new QueryParameterSpec("billing_meter", billingMeter, "form", true, false, null),
+                new QueryParameterSpec("vendor_codes", vendorCodes, "form", false, false, null),
+                new QueryParameterSpec("modalities", modalities, "form", false, false, null),
+                new QueryParameterSpec("capabilities", capabilities, "form", false, false, null),
+                new QueryParameterSpec("categories", categories, "form", false, false, null),
+                new QueryParameterSpec("groups", groups, "form", false, false, null),
+            });
+            return await _client.GetAsync<Sdkwork.CloudRouter.Backend.Models.ModelsListResult>(ApiPaths.AppendQueryString(ApiPaths.BackendPath("/ai/models"), queryString));
+        }
+
+        /// <summary>
+        /// Create
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ModelsCreateResult?> ModelsCreateAsync()
+        {
+            return await _client.PostAsync<Sdkwork.CloudRouter.Backend.Models.ModelsCreateResult>(ApiPaths.BackendPath("/ai/models"), null);
+        }
+
+        /// <summary>
+        /// Refresh
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ModelsRefreshResult?> ModelsRefreshAsync()
+        {
+            return await _client.PostAsync<Sdkwork.CloudRouter.Backend.Models.ModelsRefreshResult>(ApiPaths.BackendPath("/ai/models/refresh"), null);
+        }
+
+        /// <summary>
+        /// Delete
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ModelsDeleteResult?> ModelsDeleteAsync(string modelId)
+        {
+            return await _client.DeleteAsync<Sdkwork.CloudRouter.Backend.Models.ModelsDeleteResult>(ApiPaths.BackendPath($"/ai/models/{SerializePathParameter(modelId, new PathParameterSpec("modelId", "simple", false))}"));
+        }
+
+        /// <summary>
+        /// Update
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.ModelsUpdateResult?> ModelsUpdateAsync(string modelId)
+        {
+            return await _client.PatchAsync<Sdkwork.CloudRouter.Backend.Models.ModelsUpdateResult>(ApiPaths.BackendPath($"/ai/models/{SerializePathParameter(modelId, new PathParameterSpec("modelId", "simple", false))}"), null);
+        }
+
+        /// <summary>
+        /// List
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.AiResourceGroupsListResult?> GetResourceGroupsListAsync()
+        {
+            return await _client.GetAsync<Sdkwork.CloudRouter.Backend.Models.AiResourceGroupsListResult>(ApiPaths.BackendPath("/ai/resource_groups"));
+        }
+
+        /// <summary>
+        /// Create
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.AiResourceGroupsCreateResult?> ResourceGroupsCreateAsync()
+        {
+            return await _client.PostAsync<Sdkwork.CloudRouter.Backend.Models.AiResourceGroupsCreateResult>(ApiPaths.BackendPath("/ai/resource_groups"), null);
+        }
+
+        /// <summary>
+        /// List
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.AiResourceGroupsResourcesListResult?> GetResourceGroupsListResourceGroupsAsync(string groupIdOrCode)
+        {
+            return await _client.GetAsync<Sdkwork.CloudRouter.Backend.Models.AiResourceGroupsResourcesListResult>(ApiPaths.BackendPath($"/ai/resource_groups/{SerializePathParameter(groupIdOrCode, new PathParameterSpec("groupIdOrCode", "simple", false))}/resources"));
+        }
+
+        /// <summary>
+        /// Delete
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.AiResourceGroupsDeleteResult?> ResourceGroupsDeleteAsync(string groupId)
+        {
+            return await _client.DeleteAsync<Sdkwork.CloudRouter.Backend.Models.AiResourceGroupsDeleteResult>(ApiPaths.BackendPath($"/ai/resource_groups/{SerializePathParameter(groupId, new PathParameterSpec("groupId", "simple", false))}"));
+        }
+
+        /// <summary>
+        /// Update
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.AiResourceGroupsUpdateResult?> ResourceGroupsUpdateAsync(string groupId)
+        {
+            return await _client.PatchAsync<Sdkwork.CloudRouter.Backend.Models.AiResourceGroupsUpdateResult>(ApiPaths.BackendPath($"/ai/resource_groups/{SerializePathParameter(groupId, new PathParameterSpec("groupId", "simple", false))}"), null);
+        }
+
+        /// <summary>
+        /// List
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.AiResourcesListResult?> ResourcesListAsync()
+        {
+            return await _client.GetAsync<Sdkwork.CloudRouter.Backend.Models.AiResourcesListResult>(ApiPaths.BackendPath("/ai/resources"));
+        }
+
+        /// <summary>
+        /// Create
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.AiResourcesCreateResult?> ResourcesCreateAsync()
+        {
+            return await _client.PostAsync<Sdkwork.CloudRouter.Backend.Models.AiResourcesCreateResult>(ApiPaths.BackendPath("/ai/resources"), null);
+        }
+
+        /// <summary>
+        /// Update
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.AiResourcesUpdateResult?> ResourcesUpdateAsync(string resourceId)
+        {
+            return await _client.PutAsync<Sdkwork.CloudRouter.Backend.Models.AiResourcesUpdateResult>(ApiPaths.BackendPath($"/ai/resources/{SerializePathParameter(resourceId, new PathParameterSpec("resourceId", "simple", false))}"), null);
+        }
+
+        /// <summary>
+        /// Create
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Backend.Models.RouteExplainCreateResult?> RouteExplainCreateAsync()
+        {
+            return await _client.PostAsync<Sdkwork.CloudRouter.Backend.Models.RouteExplainCreateResult>(ApiPaths.BackendPath("/ai/route_explain"), null);
+        }
+
+        private sealed record PathParameterSpec(string Name, string Style, bool Explode);
+
+        private static string SerializePathParameter(object? value, PathParameterSpec spec)
+        {
+            if (value is null)
+            {
+                return string.Empty;
+            }
+            var style = string.IsNullOrWhiteSpace(spec.Style) ? "simple" : spec.Style;
+            if (value is System.Collections.IDictionary dictionary)
+            {
+                return SerializePathObject(spec.Name, dictionary, style, spec.Explode);
+            }
+            if (value is System.Collections.IEnumerable enumerable && value is not string)
+            {
+                return SerializePathArray(spec.Name, enumerable, style, spec.Explode);
+            }
+            return PathPrimitivePrefix(spec.Name, style) + Uri.EscapeDataString(value.ToString() ?? string.Empty);
+        }
+
+        private static string SerializePathArray(string name, System.Collections.IEnumerable values, string style, bool explode)
+        {
+            var serialized = new List<string>();
+            foreach (var item in values)
+            {
+                if (item is not null)
+                {
+                    serialized.Add(Uri.EscapeDataString(item.ToString() ?? string.Empty));
+                }
+            }
+            if (serialized.Count == 0)
+            {
+                return PathPrefix(name, style);
+            }
+            if (style == "matrix")
+            {
+                if (explode)
+                {
+                    var parts = new List<string>();
+                    foreach (var item in serialized)
+                    {
+                        parts.Add(";" + name + "=" + item);
+                    }
+                    return string.Join(string.Empty, parts);
+                }
+                return ";" + name + "=" + string.Join(",", serialized);
+            }
+            var separator = explode ? "." : ",";
+            return PathPrefix(name, style) + string.Join(separator, serialized);
+        }
+
+        private static string SerializePathObject(string name, System.Collections.IDictionary values, string style, bool explode)
+        {
+            var entries = new List<string>();
+            var exploded = new List<string>();
+            foreach (System.Collections.DictionaryEntry item in values)
+            {
+                if (item.Value is null)
+                {
+                    continue;
+                }
+                var escapedKey = Uri.EscapeDataString(item.Key.ToString() ?? string.Empty);
+                var escapedValue = Uri.EscapeDataString(item.Value.ToString() ?? string.Empty);
+                if (explode)
+                {
+                    exploded.Add(style == "matrix" ? ";" + escapedKey + "=" + escapedValue : escapedKey + "=" + escapedValue);
+                }
+                else
+                {
+                    entries.Add(escapedKey);
+                    entries.Add(escapedValue);
+                }
+            }
+            if (style == "matrix")
+            {
+                return explode ? string.Join(string.Empty, exploded) : ";" + name + "=" + string.Join(",", entries);
+            }
+            if (explode)
+            {
+                var separator = style == "label" ? "." : ",";
+                return PathPrefix(name, style) + string.Join(separator, exploded);
+            }
+            return PathPrefix(name, style) + string.Join(",", entries);
+        }
+
+        private static string PathPrefix(string name, string style)
+        {
+            return style switch
+            {
+                "label" => ".",
+                "matrix" => ";" + name,
+                _ => string.Empty,
+            };
+        }
+
+        private static string PathPrimitivePrefix(string name, string style)
+        {
+            return style == "matrix" ? ";" + name + "=" : PathPrefix(name, style);
+        }
+
+        private sealed record QueryParameterSpec(
+            string Name,
+            object? Value,
+            string Style,
+            bool Explode,
+            bool AllowReserved,
+            string? ContentType);
+
+        private static string BuildQueryString(IEnumerable<QueryParameterSpec> parameters)
+        {
+            var pairs = new List<string>();
+            foreach (var parameter in parameters)
+            {
+                AppendSerializedParameter(pairs, parameter);
+            }
+            return string.Join("&", pairs);
+        }
+
+        private static void AppendSerializedParameter(List<string> pairs, QueryParameterSpec parameter)
+        {
+            if (parameter.Value is null)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(parameter.ContentType))
+            {
+                var json = System.Text.Json.JsonSerializer.Serialize(parameter.Value);
+                pairs.Add(Uri.EscapeDataString(parameter.Name) + "=" + EncodeQueryValue(json, parameter.AllowReserved));
+                return;
+            }
+
+            var style = string.IsNullOrWhiteSpace(parameter.Style) ? "form" : parameter.Style;
+            if (style == "deepObject" && parameter.Value is System.Collections.IDictionary deepObject)
+            {
+                AppendDeepObjectParameter(pairs, parameter.Name, deepObject, parameter.AllowReserved);
+            }
+            else if (parameter.Value is System.Collections.IEnumerable enumerable && parameter.Value is not string && parameter.Value is not System.Collections.IDictionary)
+            {
+                AppendArrayParameter(pairs, parameter.Name, enumerable, style, parameter.Explode, parameter.AllowReserved);
+            }
+            else if (parameter.Value is System.Collections.IDictionary dictionary)
+            {
+                AppendObjectParameter(pairs, parameter.Name, dictionary, style, parameter.Explode, parameter.AllowReserved);
+            }
+            else
+            {
+                pairs.Add(Uri.EscapeDataString(parameter.Name) + "=" + EncodeQueryValue(parameter.Value.ToString() ?? string.Empty, parameter.AllowReserved));
+            }
+        }
+
+        private static void AppendArrayParameter(List<string> pairs, string name, System.Collections.IEnumerable values, string style, bool explode, bool allowReserved)
+        {
+            var serialized = new List<string>();
+            foreach (var item in values)
+            {
+                if (item is not null)
+                {
+                    serialized.Add(item.ToString() ?? string.Empty);
+                }
+            }
+            if (serialized.Count == 0)
+            {
+                return;
+            }
+            if (style == "form" && explode)
+            {
+                foreach (var item in serialized)
+                {
+                    pairs.Add(Uri.EscapeDataString(name) + "=" + EncodeQueryValue(item, allowReserved));
+                }
+                return;
+            }
+            pairs.Add(Uri.EscapeDataString(name) + "=" + EncodeQueryValue(string.Join(",", serialized), allowReserved));
+        }
+
+        private static void AppendObjectParameter(List<string> pairs, string name, System.Collections.IDictionary values, string style, bool explode, bool allowReserved)
+        {
+            var serialized = new List<string>();
+            foreach (System.Collections.DictionaryEntry item in values)
+            {
+                if (item.Value is null)
+                {
+                    continue;
+                }
+                if (style == "form" && explode)
+                {
+                    pairs.Add(Uri.EscapeDataString(item.Key.ToString() ?? string.Empty) + "=" + EncodeQueryValue(item.Value.ToString() ?? string.Empty, allowReserved));
+                }
+                else
+                {
+                    serialized.Add(item.Key.ToString() ?? string.Empty);
+                    serialized.Add(item.Value.ToString() ?? string.Empty);
+                }
+            }
+            if (serialized.Count > 0)
+            {
+                pairs.Add(Uri.EscapeDataString(name) + "=" + EncodeQueryValue(string.Join(",", serialized), allowReserved));
+            }
+        }
+
+        private static void AppendDeepObjectParameter(List<string> pairs, string name, System.Collections.IDictionary values, bool allowReserved)
+        {
+            foreach (System.Collections.DictionaryEntry item in values)
+            {
+                if (item.Value is not null)
+                {
+                    pairs.Add(Uri.EscapeDataString(name + "[" + item.Key + "]") + "=" + EncodeQueryValue(item.Value.ToString() ?? string.Empty, allowReserved));
+                }
+            }
+        }
+
+        private static string EncodeQueryValue(string value, bool allowReserved)
+        {
+            var encoded = Uri.EscapeDataString(value);
+            if (!allowReserved)
+            {
+                return encoded;
+            }
+            return encoded
+                .Replace("%3A", ":").Replace("%2F", "/").Replace("%3F", "?").Replace("%23", "#")
+                .Replace("%5B", "[").Replace("%5D", "]").Replace("%40", "@").Replace("%21", "!")
+                .Replace("%24", "$").Replace("%26", "&").Replace("%27", "'").Replace("%28", "(")
+                .Replace("%29", ")").Replace("%2A", "*").Replace("%2B", "+").Replace("%2C", ",")
+                .Replace("%3B", ";").Replace("%3D", "=");
+        }
+
+    }
+}

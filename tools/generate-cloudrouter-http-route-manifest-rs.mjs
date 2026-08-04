@@ -1,0 +1,233 @@
+import { readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const workspaceRoot = path.resolve(scriptDir, "..");
+
+const TARGETS = [
+  {
+    surface: "app-api",
+    manifestPath:
+      "sdks/_route-manifests/app-api/sdkwork-routes-cloudrouter-app-api.route-manifest.json",
+    outputPath: "crates/sdkwork-routes-cloudrouter-app-api/src/http_route_manifest.rs",
+  },
+  {
+    surface: "backend-api",
+    manifestPath:
+      "sdks/_route-manifests/backend-api/sdkwork-routes-cloudrouter-backend-api.route-manifest.json",
+    outputPath: "crates/sdkwork-routes-cloudrouter-backend-api/src/http_route_manifest.rs",
+  },
+  {
+    surface: "open-api",
+    manifestPath:
+      "sdks/_route-manifests/open-api/sdkwork-routes-cloudrouter-open-api.route-manifest.json",
+    outputPath:
+      "crates/sdkwork-api-cloudrouter-assembly/src/generated_open_http_route_manifest.rs",
+  },
+];
+
+const METHOD_MAP = {
+  GET: "Get",
+  POST: "Post",
+  PUT: "Put",
+  PATCH: "Patch",
+  DELETE: "Delete",
+};
+
+const AUTH_BUILDER = {
+  public: "public",
+  "dual-token": "dual_token",
+  "api-key": "api_key",
+  oauth: "oauth",
+  openApiFlexible: "open_api_flexible",
+};
+
+const RUSTFMT_FN_CALL_WIDTH = 60;
+
+function parseArgs(argv) {
+  return {
+    apply: argv.includes("--apply"),
+    check: argv.includes("--check") || !argv.includes("--apply"),
+  };
+}
+
+function escapeRustString(value) {
+  return value.replaceAll("\\", "\\\\").replaceAll("\"", "\\\"");
+}
+
+function routeEntry(route) {
+  const method = METHOD_MAP[route.method];
+  if (!method) {
+    throw new Error(`unsupported HTTP method ${route.method} for ${route.path}`);
+  }
+  const authMode = route.auth?.mode ?? "dual-token";
+  const builder = AUTH_BUILDER[authMode];
+  if (!builder) {
+    throw new Error(`unsupported auth mode ${authMode} for ${route.path}`);
+  }
+  const tag = Array.isArray(route.tags) && route.tags.length > 0 ? route.tags[0] : "router";
+  const operationId =
+    route.operationId ??
+    `${route.method.toLowerCase()}.${route.path.replace(/[{}]/g, "").replaceAll("/", ".")}`;
+  const args = [
+    `HttpMethod::${method}`,
+    `"${escapeRustString(route.path)}"`,
+    `"${escapeRustString(tag)}"`,
+    `"${escapeRustString(operationId)}"`,
+  ].join(", ");
+  const entry = `    HttpRoute::${builder}(${args}),`;
+  if (args.length <= RUSTFMT_FN_CALL_WIDTH) {
+    return entry;
+  }
+  return `    HttpRoute::${builder}(
+        HttpMethod::${method},
+        "${escapeRustString(route.path)}",
+        "${escapeRustString(tag)}",
+        "${escapeRustString(operationId)}",
+    ),`;
+}
+
+function renderManifest(routes, target) {
+  const routeBlock = routes.map(routeEntry).join("\n");
+  const appManifestAlias = target.surface === "app-api"
+    ? `
+/// Cloudrouter-owned app-api route manifest.
+pub fn cloud_router_app_http_route_manifest() -> HttpRouteManifest {
+    http_route_manifest()
+}
+`
+    : "";
+  const appManifestTests = target.surface === "app-api"
+    ? `
+#[cfg(test)]
+mod tests {
+    use sdkwork_web_contract::RouteAuth;
+    use sdkwork_web_core::{resolve_public_path, WebRequestContextProfile};
+
+    fn assert_public_route(method: &str, path: &str) {
+        let manifest = super::http_route_manifest();
+        let route = manifest
+            .match_route(method, path)
+            .unwrap_or_else(|| panic!("{method} {path} must be registered"));
+        assert_eq!(
+            RouteAuth::Public,
+            route.auth,
+            "{method} {path} must be public"
+        );
+        assert!(
+            resolve_public_path(
+                method,
+                path,
+                &WebRequestContextProfile::default(),
+                Some(&manifest),
+            ),
+            "{method} {path} must resolve as a public path",
+        );
+    }
+
+    fn assert_dual_token_route(method: &str, path: &str) {
+        let manifest = super::http_route_manifest();
+        let route = manifest
+            .match_route(method, path)
+            .unwrap_or_else(|| panic!("{method} {path} must be registered"));
+        assert_eq!(
+            RouteAuth::DualToken,
+            route.auth,
+            "{method} {path} must require dual-token authentication"
+        );
+        assert!(
+            !resolve_public_path(
+                method,
+                path,
+                &WebRequestContextProfile::default(),
+                Some(&manifest),
+            ),
+            "{method} {path} must not resolve as a public path",
+        );
+    }
+
+    #[test]
+    fn public_catalog_routes_allow_anonymous_access() {
+        assert_public_route("GET", "/app/v3/api/system/site/runtime");
+    }
+
+    #[test]
+    fn user_owned_chat_routes_require_dual_token_authentication() {
+        assert_dual_token_route(
+            "GET",
+            "/app/v3/api/chat/conversations/{conversationId}/messages",
+        );
+    }
+}
+`
+    : "";
+
+  return `// @generated by tools/generate-cloudrouter-http-route-manifest-rs.mjs — do not edit
+
+use sdkwork_web_contract::{HttpMethod, HttpRoute};
+use sdkwork_web_core::HttpRouteManifest;
+
+const HTTP_ROUTES: &[HttpRoute] = &[
+${routeBlock}
+];
+
+pub fn http_route_manifest() -> HttpRouteManifest {
+    HttpRouteManifest::new(HTTP_ROUTES)
+}
+${appManifestAlias}${appManifestTests}
+`.trimEnd() + "\n";
+}
+
+async function processTarget(target, mode) {
+  const manifest = JSON.parse(
+    await readFile(path.join(workspaceRoot, target.manifestPath), "utf8"),
+  );
+  const content = renderManifest(manifest.routes, target);
+  const outputPath = path.join(workspaceRoot, target.outputPath);
+  let existing = null;
+  try {
+    existing = await readFile(outputPath, "utf8");
+  } catch {
+    existing = null;
+  }
+  if (existing === content) {
+    return {
+      surface: target.surface,
+      status: "ok",
+      routeCount: manifest.routes.length,
+    };
+  }
+  if (mode.check) {
+    return {
+      surface: target.surface,
+      status: "drift",
+      routeCount: manifest.routes.length,
+    };
+  }
+  await writeFile(outputPath, content, "utf8");
+  return {
+    surface: target.surface,
+    status: "wrote",
+    routeCount: manifest.routes.length,
+  };
+}
+
+async function main() {
+  const mode = parseArgs(process.argv.slice(2));
+  const summaries = [];
+  for (const target of TARGETS) {
+    summaries.push(await processTarget(target, mode));
+  }
+  for (const summary of summaries) {
+    console.log(
+      `[${summary.surface}] routes=${summary.routeCount} status=${summary.status}`,
+    );
+  }
+  if (mode.check && summaries.some((summary) => summary.status === "drift")) {
+    console.error("Generated http_route_manifest.rs files are out of date.");
+    process.exitCode = 1;
+  }
+}
+
+await main();

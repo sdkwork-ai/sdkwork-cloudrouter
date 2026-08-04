@@ -10,7 +10,7 @@
     "zh-CN": {
       "version": "1.0.0",
       "required": true,
-      "checksum": "sha256:clawrouter-zh-cn-v1",
+      "checksum": "sha256:cloudrouter-zh-cn-v1",
       "files": []
     }
   },

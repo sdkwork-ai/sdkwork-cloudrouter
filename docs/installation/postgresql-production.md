@@ -1,24 +1,24 @@
 # Production PostgreSQL Configuration
 
-This guide documents the production PostgreSQL configuration for SDKWork Claw Router. Production deployments should use the runtime TOML configuration file and protected secret files. Do not reuse the development `.env.postgres` file in production.
+This guide documents the production PostgreSQL configuration for SDKWork Cloud Router. Production deployments should use the runtime TOML configuration file and protected secret files. Do not reuse the development `.env.postgres` file in production.
 
 ## 1. Standard Linux Service Layout
 
 The native Linux service package creates the standard paths:
 
 ```text
-/etc/sdkwork/router/clawrouter.toml
-/etc/sdkwork/router/clawrouter.env
+/etc/sdkwork/router/cloudrouter.toml
+/etc/sdkwork/router/cloudrouter.env
 /etc/sdkwork/router/database.secret
 /var/lib/sdkwork/router
 /var/log/sdkwork/router
 ```
 
-The service reads `/etc/sdkwork/router/clawrouter.toml` and `/etc/sdkwork/router/clawrouter.env`. PostgreSQL credentials should be kept in `/etc/sdkwork/router/database.secret` with restricted permissions.
+The service reads `/etc/sdkwork/router/cloudrouter.toml` and `/etc/sdkwork/router/cloudrouter.env`. PostgreSQL credentials should be kept in `/etc/sdkwork/router/database.secret` with restricted permissions.
 
 ## 2. PostgreSQL Database And User
 
-Create a database and user owned by the Claw Router deployment:
+Create a database and user owned by the Cloud Router deployment:
 
 ```sql
 CREATE USER sdkwork_ai_prod WITH PASSWORD 'replace-with-real-password';
@@ -41,7 +41,7 @@ The file must contain only the database password. Replace the package placeholde
 
 ## 4. Runtime TOML
 
-Configure `/etc/sdkwork/router/clawrouter.toml` with split PostgreSQL fields:
+Configure `/etc/sdkwork/router/cloudrouter.toml` with split PostgreSQL fields:
 
 ```toml
 [database]
@@ -59,7 +59,7 @@ Use `password_file` for normal production deployments. Direct `password = "..."`
 
 ## 5. Service Environment Overrides
 
-`/etc/sdkwork/router/clawrouter.env` is for process-level overrides and operational toggles. Normal database configuration should stay in TOML plus `database.secret`.
+`/etc/sdkwork/router/cloudrouter.env` is for process-level overrides and operational toggles. Normal database configuration should stay in TOML plus `database.secret`.
 
 `SDKWORK_DATABASE_URL` remains supported as an emergency or orchestration override:
 
@@ -68,15 +68,15 @@ SDKWORK_DATABASE_URL="postgresql://sdkwork_ai_prod:<password>@db.example.com:543
 SDKWORK_DATABASE_MAX_CONNECTIONS="16"
 ```
 
-Do not store long-lived production passwords in shell history or ad hoc startup commands. Prefer `password_file` in `/etc/sdkwork/router/clawrouter.toml`.
+Do not store long-lived production passwords in shell history or ad hoc startup commands. Prefer `password_file` in `/etc/sdkwork/router/cloudrouter.toml`.
 
 ## 6. Start And Verify
 
 After PostgreSQL and the config files are ready:
 
 ```bash
-sudo systemctl start clawrouter
-sudo systemctl status clawrouter
+sudo systemctl start cloudrouter
+sudo systemctl status cloudrouter
 curl http://127.0.0.1:3900/healthz
 curl http://127.0.0.1:3900/readyz
 ```
@@ -95,10 +95,10 @@ Development, production, and desktop runtime data must stay separate:
 | Concern | Development integration | Production service/container | Desktop local runtime |
 | --- | --- | --- | --- |
 | Database default | PostgreSQL through `.env.postgres.example` or `.env.postgres` | PostgreSQL through protected TOML and secret files | SQLite |
-| Config entrypoint | default dev profile or `.env.postgres` override | `/etc/sdkwork/router/clawrouter.toml` | `~/.sdkwork/router/config/clawrouter.toml` |
+| Config entrypoint | default dev profile or `.env.postgres` override | `/etc/sdkwork/router/cloudrouter.toml` | `~/.sdkwork/router/config/cloudrouter.toml` |
 | Password storage | local untracked `.env.postgres` | `/etc/sdkwork/router/database.secret` | no PostgreSQL password by default |
 | Startup command | `pnpm dev:server` | native service, container, or packaged runtime | desktop package or explicit SQLite dev command |
-| Data file | external local PostgreSQL | external managed PostgreSQL | `~/.sdkwork/router/data/clawrouter.sqlite` |
+| Data file | external local PostgreSQL | external managed PostgreSQL | `~/.sdkwork/router/data/cloudrouter.sqlite` |
 | SSL mode | usually `disable` | usually `require` | not applicable by default |
 
 Do not copy `.env.postgres` to a production host as the service configuration. It is only a local developer convenience profile.

@@ -9,8 +9,8 @@ This directory is the canonical data source for admin-triggered category initial
 - `dataset`: stable ASCII dataset key, such as `product`, `agents`, `agent-skills`, `mcp`, or `apps`.
 - `target`: target table. Product taxonomy uses `commerce_product_category`; reusable platform taxonomies use `c_category`.
 - `installPolicy.defaultEnabled`: must remain `false` unless install-time seeding is intentionally enabled by configuration.
-- `installPolicy.configKey`: global opt-in switch, currently `SDKWORK_CLAW_INSTALL_CATEGORY_SEEDS`.
-- `installPolicy.selectableDatasetsKey`: optional comma-separated dataset selection, currently `SDKWORK_CLAW_INSTALL_CATEGORY_SEED_DATASETS`.
+- `installPolicy.configKey`: global opt-in switch, currently `SDKWORK_CLOUDROUTER_INSTALL_CATEGORY_SEEDS`.
+- `installPolicy.selectableDatasetsKey`: optional comma-separated dataset selection, currently `SDKWORK_CLOUDROUTER_INSTALL_CATEGORY_SEED_DATASETS`.
 
 ## Product Category Rules
 

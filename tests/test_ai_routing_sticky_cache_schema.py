@@ -5,7 +5,7 @@ from tools.schema_registry_loader import load_schema_registry
 
 
 ROOT = Path(__file__).resolve().parents[1]
-REGISTRY_PATH = ROOT / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+REGISTRY_PATH = ROOT / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
 GENERATED_SCHEMA_PATH = ROOT / "generated" / "schema" / "postgres" / "schema.sql"
 
 

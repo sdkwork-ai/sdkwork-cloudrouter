@@ -2,13 +2,13 @@
 
 Status: accepted  
 Requirement: REQ-2026-0001  
-Owner: clawrouter-platform  
+Owner: cloudrouter-platform  
 Date: 2026-07-30  
 Specs: `ARCHITECTURE_DECISION_SPEC.md`, `DATABASE_SPEC.md`, `DATABASE_FRAMEWORK_SPEC.md`, `SUBJECT_ID_SPEC.md`, `PAGINATION_SPEC.md`, `SECURITY_SPEC.md`
 
 ## Context
 
-Claw Router already owns authenticated `/app/v3/api/chat/*` routes, the Chat
+Cloud Router already owns authenticated `/app/v3/api/chat/*` routes, the Chat
 application port, PostgreSQL store behavior, and usage linkage needed by its
 first-party product surface. Older working documents proposed deleting all
 Chat persistence from this repository and delegating it to `sdkwork-kernel`,
@@ -22,7 +22,7 @@ sibling authority that disagree.
 
 ## Decision
 
-Claw Router owns the current PostgreSQL system of record for these eight
+Cloud Router owns the current PostgreSQL system of record for these eight
 user-scoped tables:
 
 - `ai_chat_conversation`
@@ -91,8 +91,8 @@ horizontal replicas require durable tenant-scoped state.
 - `python -B -m tools.database_contract_materializer --root . --check`
 - `python -B -m tools.schema_compiler --root . --dialect postgres --materialize --check`
 - `python -B -m unittest tests.test_chat_runtime_database_contract -v`
-- `cargo test -p sdkwork-clawrouter-router-service --test postgres_app_chat_sql_contract`
-- `cargo test -p sdkwork-clawrouter-database-host`
+- `cargo test -p sdkwork-cloudrouter-router-service --test postgres_app_chat_sql_contract`
+- `cargo test -p sdkwork-cloudrouter-database-host`
 - PostgreSQL migration and concurrent Chat write tests against an isolated
   release-candidate database
 

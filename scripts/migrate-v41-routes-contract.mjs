@@ -30,7 +30,7 @@ const OAUTH_ROUTE_BLOCK = `- route: /admin/oauth/login-platforms
 `;
 
 const OAUTH_CLASSIFICATION_BLOCK = `- route: /admin/oauth/login-platforms
-  package: sdkwork-clawrouter-pc-admin-oauth
+  package: sdkwork-cloudrouter-pc-admin-oauth
   owner: appbase-iam
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
@@ -41,12 +41,12 @@ const OAUTH_CLASSIFICATION_BLOCK = `- route: /admin/oauth/login-platforms
   - iam_oauth_resource_account
   - ops_audit_log
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-oauth/src/index.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-oauth/src/oauthAdminService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-oauth/src/index.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-oauth/src/oauthAdminService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/oauth/official-accounts
-  package: sdkwork-clawrouter-pc-admin-oauth
+  package: sdkwork-cloudrouter-pc-admin-oauth
   owner: appbase-iam
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
@@ -57,12 +57,12 @@ const OAUTH_CLASSIFICATION_BLOCK = `- route: /admin/oauth/login-platforms
   - iam_oauth_resource_account
   - ops_audit_log
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-oauth/src/index.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-oauth/src/oauthAdminService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-oauth/src/index.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-oauth/src/oauthAdminService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/oauth/mini-programs
-  package: sdkwork-clawrouter-pc-admin-oauth
+  package: sdkwork-cloudrouter-pc-admin-oauth
   owner: appbase-iam
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
@@ -73,9 +73,9 @@ const OAUTH_CLASSIFICATION_BLOCK = `- route: /admin/oauth/login-platforms
   - iam_oauth_resource_account
   - ops_audit_log
   evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-oauth/src/index.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-oauth/src/oauthAdminService.ts
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-oauth/src/index.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-oauth/src/oauthAdminService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 `;
 

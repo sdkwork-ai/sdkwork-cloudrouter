@@ -1,4 +1,4 @@
-"""Repository delivery guardrails for commercial Claw Router releases."""
+"""Repository delivery guardrails for commercial Cloud Router releases."""
 
 from __future__ import annotations
 
@@ -15,8 +15,8 @@ LFS_MANAGED_SKILL_SEED_FILES = [
     "data/skills/skills.json",
     "data/skills/artifacts.json",
     "data/skills/assets.json",
-    "data/skills/clawhub/raw/checkpoint.json",
-    "data/skills/clawhub/raw/index.json",
+    "data/skills/cloudhub/raw/checkpoint.json",
+    "data/skills/cloudhub/raw/index.json",
 ]
 
 

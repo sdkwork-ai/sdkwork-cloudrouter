@@ -32,30 +32,30 @@
   },
   {
     "id": 7201,
-    "uuid": "skill-package-clawhub-community-mirror",
+    "uuid": "skill-package-cloudhub-community-mirror",
     "userId": 0,
-    "packageKey": "clawhub-community-mirror",
-    "name": "ClawHub Community Mirror",
-    "summary": "Local projection of community skills mirrored from the ClawHub public catalog.",
-    "description": "ClawHub community skills are crawled into a local raw mirror and projected as metadata-only marketplace entries until their execution artifacts are reviewed.",
+    "packageKey": "cloudhub-community-mirror",
+    "name": "CloudHub Community Mirror",
+    "summary": "Local projection of community skills mirrored from the CloudHub public catalog.",
+    "description": "CloudHub community skills are crawled into a local raw mirror and projected as metadata-only marketplace entries until their execution artifacts are reviewed.",
     "icon": {
       "kind": "image",
       "source": "external_url",
-      "url": "https://cdn.sdkwork.example/skills/packages/clawhub-community-mirror/icon.png",
-      "publicUrl": "https://cdn.sdkwork.example/skills/packages/clawhub-community-mirror/icon.png"
+      "url": "https://cdn.sdkwork.example/skills/packages/cloudhub-community-mirror/icon.png",
+      "publicUrl": "https://cdn.sdkwork.example/skills/packages/cloudhub-community-mirror/icon.png"
     },
     "cover": {
       "kind": "image",
       "source": "external_url",
-      "url": "https://cdn.sdkwork.example/skills/packages/clawhub-community-mirror/cover.png",
-      "publicUrl": "https://cdn.sdkwork.example/skills/packages/clawhub-community-mirror/cover.png"
+      "url": "https://cdn.sdkwork.example/skills/packages/cloudhub-community-mirror/cover.png",
+      "publicUrl": "https://cdn.sdkwork.example/skills/packages/cloudhub-community-mirror/cover.png"
     },
     "categoryId": 1902,
     "enabled": true,
     "featured": false,
     "sortWeight": 20,
     "tags": [
-      "clawhub",
+      "cloudhub",
       "community",
       "mirror"
     ],

@@ -1,6 +1,6 @@
 # Usage Guide
 
-This guide assumes Claw Router has been initialized and started successfully.
+This guide assumes Cloud Router has been initialized and started successfully.
 
 ## 1. Entry Points
 
@@ -117,11 +117,11 @@ portal/dist/sdk-archives
 Standard prebuilt package names:
 
 ```text
-sdkwork-clawrouter-app-sdk-typescript-0.1.0.zip
-sdkwork-clawrouter-backend-sdk-typescript-0.1.0.zip
+sdkwork-cloudrouter-app-sdk-typescript-0.1.0.zip
+sdkwork-cloudrouter-backend-sdk-typescript-0.1.0.zip
 ```
 
-SDK package versions are independent from Claw Router release versions. Use each SDK package's own `package.json` version.
+SDK package versions are independent from Cloud Router release versions. Use each SDK package's own `package.json` version.
 
 ## 7. Common First-Use Flow
 
@@ -138,18 +138,18 @@ After first deployment:
 
 ## 8. Operations Checks
 
-The commands below assume `clawrouterctl` is on `PATH`. From an extracted release package root, use `./bin/clawrouterctl` on Linux/macOS and `.\bin\clawrouterctl.exe` on Windows.
+The commands below assume `cloudrouterctl` is on `PATH`. From an extracted release package root, use `./bin/cloudrouterctl` on Linux/macOS and `.\bin\cloudrouterctl.exe` on Windows.
 
 Installation status:
 
 ```bash
-clawrouterctl status
+cloudrouterctl status
 ```
 
 Refresh model catalog:
 
 ```bash
-clawrouterctl refresh-catalog --force
+cloudrouterctl refresh-catalog --force
 ```
 
 Readiness:

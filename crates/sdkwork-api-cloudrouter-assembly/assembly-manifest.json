@@ -1,0 +1,153 @@
+{
+  "kind": "sdkwork.api.assembly",
+  "schemaVersion": 1,
+  "applicationCode": "cloudrouter",
+  "apiMode": "served",
+  "packageName": "sdkwork-api-cloudrouter-assembly",
+  "crateDir": "crates/sdkwork-api-cloudrouter-assembly",
+  "routeCrates": [
+    {
+      "packageName": "sdkwork-routes-agent-open-api",
+      "memberDir": "crates/sdkwork-routes-agent-open-api",
+      "libName": "sdkwork_routes_agent_open_api",
+      "surface": "open-api",
+      "pathPrefix": null,
+      "mountOrder": 0,
+      "componentRef": "crates/sdkwork-routes-agent-open-api/specs/component.spec.json",
+      "routeManifestRef": "crates/sdkwork-routes-agent-open-api/src/manifest.rs",
+      "sourceRef": "crates/sdkwork-routes-agent-open-api/Cargo.toml"
+    },
+    {
+      "packageName": "sdkwork-routes-audio-open-api",
+      "memberDir": "crates/sdkwork-routes-audio-open-api",
+      "libName": "sdkwork_routes_audio_open_api",
+      "surface": "open-api",
+      "pathPrefix": null,
+      "mountOrder": 1,
+      "componentRef": "crates/sdkwork-routes-audio-open-api/specs/component.spec.json",
+      "routeManifestRef": "crates/sdkwork-routes-audio-open-api/src/manifest.rs",
+      "sourceRef": "crates/sdkwork-routes-audio-open-api/Cargo.toml"
+    },
+    {
+      "packageName": "sdkwork-routes-cloudrouter-app-api",
+      "memberDir": "crates/sdkwork-routes-cloudrouter-app-api",
+      "libName": "sdkwork_routes_cloudrouter_app_api",
+      "surface": "app-api",
+      "pathPrefix": null,
+      "mountOrder": 2,
+      "componentRef": "crates/sdkwork-routes-cloudrouter-app-api/specs/component.spec.json",
+      "routeManifestRef": "crates/sdkwork-routes-cloudrouter-app-api/src/manifest.rs",
+      "sourceRef": "crates/sdkwork-routes-cloudrouter-app-api/Cargo.toml"
+    },
+    {
+      "packageName": "sdkwork-routes-cloudrouter-backend-api",
+      "memberDir": "crates/sdkwork-routes-cloudrouter-backend-api",
+      "libName": "sdkwork_routes_cloudrouter_backend_api",
+      "surface": "backend-api",
+      "pathPrefix": null,
+      "mountOrder": 3,
+      "componentRef": "crates/sdkwork-routes-cloudrouter-backend-api/specs/component.spec.json",
+      "routeManifestRef": "crates/sdkwork-routes-cloudrouter-backend-api/src/manifest.rs",
+      "sourceRef": "crates/sdkwork-routes-cloudrouter-backend-api/Cargo.toml"
+    },
+    {
+      "packageName": "sdkwork-routes-cloudrouter-drive-open-api",
+      "memberDir": "crates/sdkwork-routes-cloudrouter-drive-open-api",
+      "libName": "sdkwork_routes_cloudrouter_drive_open_api",
+      "surface": "open-api",
+      "pathPrefix": null,
+      "mountOrder": 4,
+      "componentRef": "crates/sdkwork-routes-cloudrouter-drive-open-api/specs/component.spec.json",
+      "routeManifestRef": "crates/sdkwork-routes-cloudrouter-drive-open-api/src/manifest.rs",
+      "sourceRef": "crates/sdkwork-routes-cloudrouter-drive-open-api/Cargo.toml"
+    },
+    {
+      "packageName": "sdkwork-routes-cloudrouter-knowledgebase-open-api",
+      "memberDir": "crates/sdkwork-routes-cloudrouter-knowledgebase-open-api",
+      "libName": "sdkwork_routes_cloudrouter_knowledgebase_open_api",
+      "surface": "open-api",
+      "pathPrefix": null,
+      "mountOrder": 5,
+      "componentRef": "crates/sdkwork-routes-cloudrouter-knowledgebase-open-api/specs/component.spec.json",
+      "routeManifestRef": "crates/sdkwork-routes-cloudrouter-knowledgebase-open-api/src/manifest.rs",
+      "sourceRef": "crates/sdkwork-routes-cloudrouter-knowledgebase-open-api/Cargo.toml"
+    },
+    {
+      "packageName": "sdkwork-routes-cloudrouter-llm-open-api",
+      "memberDir": "crates/sdkwork-routes-cloudrouter-llm-open-api",
+      "libName": "sdkwork_routes_cloudrouter_llm_open_api",
+      "surface": "open-api",
+      "pathPrefix": null,
+      "mountOrder": 6,
+      "componentRef": "crates/sdkwork-routes-cloudrouter-llm-open-api/specs/component.spec.json",
+      "routeManifestRef": "crates/sdkwork-routes-cloudrouter-llm-open-api/src/manifest.rs",
+      "sourceRef": "crates/sdkwork-routes-cloudrouter-llm-open-api/Cargo.toml"
+    },
+    {
+      "packageName": "sdkwork-routes-cloudrouter-memory-open-api",
+      "memberDir": "crates/sdkwork-routes-cloudrouter-memory-open-api",
+      "libName": "sdkwork_routes_cloudrouter_memory_open_api",
+      "surface": "open-api",
+      "pathPrefix": null,
+      "mountOrder": 7,
+      "componentRef": "crates/sdkwork-routes-cloudrouter-memory-open-api/specs/component.spec.json",
+      "routeManifestRef": "crates/sdkwork-routes-cloudrouter-memory-open-api/src/manifest.rs",
+      "sourceRef": "crates/sdkwork-routes-cloudrouter-memory-open-api/Cargo.toml"
+    },
+    {
+      "packageName": "sdkwork-routes-iaas-open-api",
+      "memberDir": "crates/sdkwork-routes-iaas-open-api",
+      "libName": "sdkwork_routes_iaas_open_api",
+      "surface": "open-api",
+      "pathPrefix": null,
+      "mountOrder": 8,
+      "componentRef": "crates/sdkwork-routes-iaas-open-api/specs/component.spec.json",
+      "routeManifestRef": "crates/sdkwork-routes-iaas-open-api/src/manifest.rs",
+      "sourceRef": "crates/sdkwork-routes-iaas-open-api/Cargo.toml"
+    },
+    {
+      "packageName": "sdkwork-routes-image-open-api",
+      "memberDir": "crates/sdkwork-routes-image-open-api",
+      "libName": "sdkwork_routes_image_open_api",
+      "surface": "open-api",
+      "pathPrefix": null,
+      "mountOrder": 9,
+      "componentRef": "crates/sdkwork-routes-image-open-api/specs/component.spec.json",
+      "routeManifestRef": "crates/sdkwork-routes-image-open-api/src/manifest.rs",
+      "sourceRef": "crates/sdkwork-routes-image-open-api/Cargo.toml"
+    },
+    {
+      "packageName": "sdkwork-routes-paas-open-api",
+      "memberDir": "crates/sdkwork-routes-paas-open-api",
+      "libName": "sdkwork_routes_paas_open_api",
+      "surface": "open-api",
+      "pathPrefix": null,
+      "mountOrder": 10,
+      "componentRef": "crates/sdkwork-routes-paas-open-api/specs/component.spec.json",
+      "routeManifestRef": "crates/sdkwork-routes-paas-open-api/src/manifest.rs",
+      "sourceRef": "crates/sdkwork-routes-paas-open-api/Cargo.toml"
+    },
+    {
+      "packageName": "sdkwork-routes-payment-open-api",
+      "memberDir": "crates/sdkwork-routes-payment-open-api",
+      "libName": "sdkwork_routes_payment_open_api",
+      "surface": "open-api",
+      "pathPrefix": null,
+      "mountOrder": 11,
+      "componentRef": "crates/sdkwork-routes-payment-open-api/specs/component.spec.json",
+      "routeManifestRef": "crates/sdkwork-routes-payment-open-api/src/manifest.rs",
+      "sourceRef": "crates/sdkwork-routes-payment-open-api/Cargo.toml"
+    },
+    {
+      "packageName": "sdkwork-routes-video-open-api",
+      "memberDir": "crates/sdkwork-routes-video-open-api",
+      "libName": "sdkwork_routes_video_open_api",
+      "surface": "open-api",
+      "pathPrefix": null,
+      "mountOrder": 12,
+      "componentRef": "crates/sdkwork-routes-video-open-api/specs/component.spec.json",
+      "routeManifestRef": "crates/sdkwork-routes-video-open-api/src/manifest.rs",
+      "sourceRef": "crates/sdkwork-routes-video-open-api/Cargo.toml"
+    }
+  ]
+}

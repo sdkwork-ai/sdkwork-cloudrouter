@@ -1,10 +1,10 @@
-# SDKWork Claw Router 安装与使用指南
+# SDKWork Cloud Router 安装与使用指南
 
-本文档面向需要安装、部署、初始化和使用 SDKWork Claw Router 的运维人员、开发者和交付人员。当前 release 版本以 `docs/release/VERSION.md` 为准；截至本指南编写时为 `0.3.0`。
+本文档面向需要安装、部署、初始化和使用 SDKWork Cloud Router 的运维人员、开发者和交付人员。当前 release 版本以 `docs/release/VERSION.md` 为准；截至本指南编写时为 `0.3.0`。
 
 ## 产品介绍
 
-SDKWork Claw Router 是面向商业化交付的 AI 网关与控制台工作区。它提供
+SDKWork Cloud Router 是面向商业化交付的 AI 网关与控制台工作区。它提供
 OpenAI 兼容 `/v1/*` API、供应商路由、模型目录与价格管理、API Key、账单与
 用量流程、用户控制台、管理后台，以及由 Schema 和 OpenAPI 契约驱动的生成式
 SDK。
@@ -14,11 +14,11 @@ SDK。
 
 | 产品区域 | 截图 |
 | --- | --- |
-| 产品首页 | ![SDKWork Claw Router 产品首页占位图](../../assets/product-screenshots/portal-home.png) |
-| 用户控制台 | ![SDKWork Claw Router 用户控制台占位图](../../assets/product-screenshots/console-dashboard.png) |
-| 模型与路由 | ![SDKWork Claw Router 模型与路由占位图](../../assets/product-screenshots/model-routing.png) |
-| API 调试台 | ![SDKWork Claw Router API 调试台占位图](../../assets/product-screenshots/playground.png) |
-| 管理后台 | ![SDKWork Claw Router 管理后台占位图](../../assets/product-screenshots/admin-console.png) |
+| 产品首页 | ![SDKWork Cloud Router 产品首页占位图](../../assets/product-screenshots/portal-home.png) |
+| 用户控制台 | ![SDKWork Cloud Router 用户控制台占位图](../../assets/product-screenshots/console-dashboard.png) |
+| 模型与路由 | ![SDKWork Cloud Router 模型与路由占位图](../../assets/product-screenshots/model-routing.png) |
+| API 调试台 | ![SDKWork Cloud Router API 调试台占位图](../../assets/product-screenshots/playground.png) |
+| 管理后台 | ![SDKWork Cloud Router 管理后台占位图](../../assets/product-screenshots/admin-console.png) |
 
 ## 入口选择
 
@@ -45,17 +45,17 @@ Release Date: 2026-05-17
 安装包命名使用这个版本号，例如：
 
 ```text
-clawrouter-linux-x64-server-0.3.0.deb
-clawrouter-windows-x64-desktop-0.3.0.msi
-clawrouter-macos-arm64-desktop-0.3.0.pkg
-clawrouter-linux-x64-archive-0.3.0.tar.gz
+cloudrouter-linux-x64-server-0.3.0.deb
+cloudrouter-windows-x64-desktop-0.3.0.msi
+cloudrouter-macos-arm64-desktop-0.3.0.pkg
+cloudrouter-linux-x64-archive-0.3.0.tar.gz
 ```
 
 如需查看完整安装包矩阵：
 
 ```powershell
-node scripts\plan-claw-router-install-packages.mjs
-node scripts\plan-claw-router-install-packages.mjs --json
+node scripts\plan-cloud-router-install-packages.mjs
+node scripts\plan-cloud-router-install-packages.mjs --json
 ```
 
 ## 部署模式摘要
@@ -84,10 +84,10 @@ pnpm start
 Ubuntu/Debian service 包：
 
 ```bash
-sudo apt install ./clawrouter-linux-x64-server-0.3.0.deb
-sudo editor /etc/sdkwork/router/clawrouter.toml
+sudo apt install ./cloudrouter-linux-x64-server-0.3.0.deb
+sudo editor /etc/sdkwork/router/cloudrouter.toml
 sudo editor /etc/sdkwork/router/database.secret
-sudo systemctl start clawrouter
+sudo systemctl start cloudrouter
 curl http://127.0.0.1:3900/healthz
 curl http://127.0.0.1:3900/readyz
 ```
@@ -106,30 +106,30 @@ sudo systemctl reload nginx
 `http://127.0.0.1:3900`。通用模板使用 `etc/nginx/NGINX_SAMPLE.conf`，
 完整域名示例放在 `etc/nginx/sdkwork/`。
 
-Debian service 包会创建 `/etc/sdkwork/router/clawrouter.toml`、`/etc/sdkwork/router/clawrouter.env`、`/etc/sdkwork/router/database.secret`、`/etc/sdkwork/router/redis.secret`、数据目录和日志目录，在 systemd 主机上启用但不会立即启动 `clawrouter.service`。请先配置 PostgreSQL 和 Redis，再启动服务。systemd unit 会在 gateway 启动前自动执行初始化和 catalog 刷新，并使用文件系统、内核、control group、系统调用架构和打开文件数等 systemd 限制。安装后输出会直接打印运行时 TOML、服务环境文件、PostgreSQL 密码文件、Redis 密码文件、systemd 服务名和首次启动命令。安装清单还包含 `nativeInstall` 布局，方便部署自动化和售后诊断读取最终路径。Redis 已纳入 `clawrouter.toml` 标准配置，server 部署默认启用并要求配置；desktop 包仍保持 Redis 可选且默认关闭。
+Debian service 包会创建 `/etc/sdkwork/router/cloudrouter.toml`、`/etc/sdkwork/router/cloudrouter.env`、`/etc/sdkwork/router/database.secret`、`/etc/sdkwork/router/redis.secret`、数据目录和日志目录，在 systemd 主机上启用但不会立即启动 `cloudrouter.service`。请先配置 PostgreSQL 和 Redis，再启动服务。systemd unit 会在 gateway 启动前自动执行初始化和 catalog 刷新，并使用文件系统、内核、control group、系统调用架构和打开文件数等 systemd 限制。安装后输出会直接打印运行时 TOML、服务环境文件、PostgreSQL 密码文件、Redis 密码文件、systemd 服务名和首次启动命令。安装清单还包含 `nativeInstall` 布局，方便部署自动化和售后诊断读取最终路径。Redis 已纳入 `cloudrouter.toml` 标准配置，server 部署默认启用并要求配置；desktop 包仍保持 Redis 可选且默认关闭。
 
 Linux 原生 desktop 包：
 
 ```bash
-/usr/bin/clawrouterctl ensure
-/usr/bin/clawrouterctl refresh-catalog --force
-/usr/bin/clawrouter
+/usr/bin/cloudrouterctl ensure
+/usr/bin/cloudrouterctl refresh-catalog --force
+/usr/bin/cloudrouter
 ```
 
 macOS 原生 desktop 包：
 
 ```bash
-/opt/sdkwork/router/bin/clawrouterctl ensure
-/opt/sdkwork/router/bin/clawrouterctl refresh-catalog --force
-/opt/sdkwork/router/bin/clawrouter
+/opt/sdkwork/router/bin/cloudrouterctl ensure
+/opt/sdkwork/router/bin/cloudrouterctl refresh-catalog --force
+/opt/sdkwork/router/bin/cloudrouter
 ```
 
 Linux/macOS 可移植 release 包根目录：
 
 ```bash
-./bin/clawrouterctl ensure
-./bin/clawrouterctl refresh-catalog --force
-./bin/clawrouter
+./bin/cloudrouterctl ensure
+./bin/cloudrouterctl refresh-catalog --force
+./bin/cloudrouter
 ```
 
 Windows MSI 安装目录：
@@ -137,9 +137,9 @@ Windows MSI 安装目录：
 ```powershell
 $installRoot = Join-Path $env:USERPROFILE "sdkwork\router"
 Set-Location $installRoot
-.\bin\clawrouterctl.exe ensure
-.\bin\clawrouterctl.exe refresh-catalog --force
-.\bin\clawrouter.exe
+.\bin\cloudrouterctl.exe ensure
+.\bin\cloudrouterctl.exe refresh-catalog --force
+.\bin\cloudrouter.exe
 ```
 
 服务启动后访问：
@@ -155,4 +155,4 @@ Ready: http://127.0.0.1:3900/readyz
 
 ## 许可证
 
-SDKWork Claw Router 应用源码采用 `AGPL-3.0-or-later AND LicenseRef-SDKWork-Commercial-Restriction`。未经 SDKWork 书面授权禁止商用。详见根目录 [LICENSE](../../../LICENSE) 和 [COMMERCIAL-LICENSE.md](../../../COMMERCIAL-LICENSE.md)。
+SDKWork Cloud Router 应用源码采用 `AGPL-3.0-or-later AND LicenseRef-SDKWork-Commercial-Restriction`。未经 SDKWork 书面授权禁止商用。详见根目录 [LICENSE](../../../LICENSE) 和 [COMMERCIAL-LICENSE.md](../../../COMMERCIAL-LICENSE.md)。

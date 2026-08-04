@@ -185,7 +185,7 @@ class OpenApiComponentGenerator:
         self.registry_path = (
             Path(registry_path).resolve()
             if registry_path is not None
-            else self.root / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+            else self.root / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
         )
 
     def render_yaml(self) -> str:
@@ -374,7 +374,7 @@ class OpenApiComponentGenerator:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate OpenAPI component schemas from Schema Registry.")
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     parser.add_argument("--registry", type=Path, default=None, help="schema registry YAML path")
     parser.add_argument(
         "--output",

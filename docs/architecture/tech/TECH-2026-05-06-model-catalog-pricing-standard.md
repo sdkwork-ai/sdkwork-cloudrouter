@@ -15,7 +15,7 @@
 
 **Files:**
 - Create: `tests/test_model_catalog_standard_contract.py`
-- Modify: `tests/test_clawrouter_openapi_precision_audit.py`
+- Modify: `tests/test_cloudrouter_openapi_precision_audit.py`
 
 - [ ] Write failing tests that assert runtime migrations, schema registry, generated OpenAPI, generated manifest, and Rust support do not expose legacy model catalog table or DTO symbols.
 - [ ] Write failing tests that assert canonical model/pricing tables follow `DATABASE_SPEC.md`: required common columns, UUID unique constraints, non-null tenant and organization scope, soft-delete fields, and tenant-leading indexes.
@@ -31,7 +31,7 @@
 - Modify: `../../spring-ai-plus-server-application/src/main/resources/database/postgresql/V3__model_governance_controls.sql`
 - Modify: `../../spring-ai-plus-server-application/src/main/resources/database/postgresql/V5__builder_core_and_authoring.sql`
 - Modify: `generated/schema/postgres/schema.sql`
-- Modify: `docs/schema-registry/sdkwork-clawrouter.tables.yaml`
+- Modify: `docs/schema-registry/sdkwork-cloudrouter.tables.yaml`
 
 - [ ] Replace old model catalog DDL with canonical `ai_model_vendor`, `ai_model_family`, `ai_model`, `ai_model_capability`, `ai_billing_meter`, `ai_model_pricing`, `ai_pricing_plan`, `ai_pricing_plan_binding`, `ai_pricing_rule`, `ai_pricing_tier`, `ai_pricing_import_snapshot`, and `ai_model_rank_snapshot`.
 - [ ] Apply `DATABASE_SPEC.md` to every canonical table: `uuid NOT NULL`, `tenant_id BIGINT NOT NULL DEFAULT 0`, `organization_id BIGINT NOT NULL DEFAULT 0`, lifecycle and soft-delete fields, UUID unique constraints, and tenant-leading indexes.
@@ -105,10 +105,10 @@
 
 **Files:**
 - Modify: `generated/api/api-contract-manifest.json`
-- Modify: `generated/openapi/clawrouter-backend-openapi.json`
-- Modify: `generated/openapi/clawrouter-app-openapi.json`
+- Modify: `generated/openapi/cloudrouter-backend-openapi.json`
+- Modify: `generated/openapi/cloudrouter-app-openapi.json`
 - Modify: `generated/openapi/schema-components.yaml`
-- Modify: `generated/types/java/com/sdkwork/claw/router/domain/enums/BillingMeter.java`
+- Modify: `generated/types/java/com/sdkwork/cloud/router/domain/enums/BillingMeter.java`
 - Modify: `generated/types/rust/domain.rs`
 - Modify: `generated/types/typescript/domain-types.ts`
 - Regenerate SDK packages where project tooling requires it.
@@ -121,13 +121,13 @@
 ### Task 8: Rust Runtime Alignment
 
 **Files:**
-- Modify: `crates/sdkwork-claw-test-support/src/lib.rs`
+- Modify: `crates/sdkwork-cloudrouter-test-support/src/lib.rs`
 - Modify Rust runtime query modules that read model/pricing data.
 
 - [ ] Write failing Rust tests for canonical tables, expanded meters, lifecycle/shelf/routing filtering, and decimal price strings.
 - [ ] Update Rust support schema and seed rows.
 - [ ] Update runtime query code to use canonical table columns.
-- [ ] Run: `cargo test -p sdkwork-claw-test-support`
+- [ ] Run: `cargo test -p sdkwork-cloudrouter-test-support`
 
 ### Task 9: Final Verification
 
@@ -138,7 +138,7 @@
   - `python -B -m unittest tests.test_model_catalog_standard_contract`
   - `python -B -m unittest tests.test_schema_manifest`
   - `python -B -m unittest tests.test_openapi_component_generator`
-  - `python -B -m unittest tests.test_clawrouter_openapi_generator`
+  - `python -B -m unittest tests.test_cloudrouter_openapi_generator`
   - `python -B -m unittest tests.test_api_contract_manifest`
 - [ ] Run targeted Maven tests for affected modules.
 - [ ] Run Rust tests for affected crates.

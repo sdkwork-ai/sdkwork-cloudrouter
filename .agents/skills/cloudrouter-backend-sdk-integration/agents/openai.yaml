@@ -1,0 +1,4 @@
+interface:
+  display_name: "CloudRouter Backend SDK"
+  short_description: "Use the generated CloudRouter backend SDK"
+  default_prompt: "Use the CloudRouter backend SDK integration standard."

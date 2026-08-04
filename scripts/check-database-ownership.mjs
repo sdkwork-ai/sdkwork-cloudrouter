@@ -137,11 +137,11 @@ function main() {
   const args = parseArgs(process.argv.slice(2));
   const failures = [];
 
-  const rootOwnership = loadModuleOwnership(args.root, 'database', 'clawrouter', failures);
+  const rootOwnership = loadModuleOwnership(args.root, 'database', 'cloudrouter', failures);
   const allOwnedTables = new Map();
   if (rootOwnership !== null) {
     for (const tableName of rootOwnership.tableNames) {
-      allOwnedTables.set(tableName, 'clawrouter');
+      allOwnedTables.set(tableName, 'cloudrouter');
     }
   }
 
@@ -185,28 +185,28 @@ function main() {
 
   const baselinePath = path.join(
     args.root,
-    'database/ddl/baseline/postgres/0001_clawrouter_baseline.sql',
+    'database/ddl/baseline/postgres/0001_cloudrouter_baseline.sql',
   );
   const baselineSql = fs.readFileSync(baselinePath, 'utf8');
   const baselineTables = new Set(collectCreateTables(baselineSql));
   for (const tableName of baselineTables) {
     if (!allOwnedTables.has(tableName)) {
       failures.push(
-        `claw-router baseline must not define table ${tableName} without a root or declared-module registry owner`,
+        `cloud-router baseline must not define table ${tableName} without a root or declared-module registry owner`,
       );
     }
   }
   for (const [tableName, owner] of allOwnedTables) {
     if (!baselineTables.has(tableName)) {
       failures.push(
-        `claw-router baseline is missing registered table ${tableName} owned by ${owner}`,
+        `cloud-router baseline is missing registered table ${tableName} owned by ${owner}`,
       );
     }
   }
 
   const installerPath = path.join(
     args.root,
-    'services/sdkwork-clawrouter-router-service/src/infrastructure/sql/installer.rs',
+    'services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/installer.rs',
   );
   const installerSource = fs.readFileSync(installerPath, 'utf8');
   if (/const COMPOSE_SIBLING_DATABASE_MODULES: bool = true/.test(installerSource)) {

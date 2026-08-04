@@ -17,32 +17,32 @@ class RustBackendArchitectureGuardian:
     """Validate Rust backend module boundaries that make the architecture executable."""
 
     REQUIRED_WORKSPACE_MEMBERS: tuple[str, ...] = (
-        "crates/sdkwork-claw-contract",
-        "crates/sdkwork-claw-config",
-        "crates/sdkwork-claw-health",
-        "crates/sdkwork-claw-security",
-        "crates/sdkwork-claw-http",
-        "crates/sdkwork-claw-observability",
-        "crates/sdkwork-routes-clawrouter-app-api",
-        "crates/sdkwork-routes-clawrouter-backend-api",
-        "crates/sdkwork-clawrouter-edge-runtime",
-        "services/sdkwork-clawrouter-admin-gateway",
-        "services/sdkwork-clawrouter-standalone-gateway",
-        "services/sdkwork-clawrouter-router-service",
+        "crates/sdkwork-cloudrouter-contract",
+        "crates/sdkwork-cloudrouter-config",
+        "crates/sdkwork-cloudrouter-health",
+        "crates/sdkwork-cloudrouter-security",
+        "crates/sdkwork-cloudrouter-http",
+        "crates/sdkwork-cloudrouter-observability",
+        "crates/sdkwork-routes-cloudrouter-app-api",
+        "crates/sdkwork-routes-cloudrouter-backend-api",
+        "crates/sdkwork-cloudrouter-edge-runtime",
+        "services/sdkwork-cloudrouter-admin-gateway",
+        "services/sdkwork-cloudrouter-standalone-gateway",
+        "services/sdkwork-cloudrouter-router-service",
     )
     HTTP_BOUNDARY_SERVICES: tuple[str, ...] = (
-        "crates/sdkwork-clawrouter-edge-runtime",
-        "services/sdkwork-clawrouter-admin-gateway",
-        "services/sdkwork-clawrouter-standalone-gateway",
+        "crates/sdkwork-cloudrouter-edge-runtime",
+        "services/sdkwork-cloudrouter-admin-gateway",
+        "services/sdkwork-cloudrouter-standalone-gateway",
     )
     THIN_ROUTE_GATEWAYS: dict[str, tuple[str, str]] = {
-        "services/sdkwork-clawrouter-admin-gateway": (
-            "sdkwork_routes_clawrouter_backend_api",
-            "crates/sdkwork-routes-clawrouter-backend-api",
+        "services/sdkwork-cloudrouter-admin-gateway": (
+            "sdkwork_routes_cloudrouter_backend_api",
+            "crates/sdkwork-routes-cloudrouter-backend-api",
         ),
-        "services/sdkwork-clawrouter-standalone-gateway": (
-            "sdkwork_routes_clawrouter_app_api",
-            "crates/sdkwork-routes-clawrouter-app-api",
+        "services/sdkwork-cloudrouter-standalone-gateway": (
+            "sdkwork_routes_cloudrouter_app_api",
+            "crates/sdkwork-routes-cloudrouter-app-api",
         ),
     }
     REQUIRED_WORKSPACE_DEPENDENCIES: tuple[str, ...] = (
@@ -66,8 +66,8 @@ class RustBackendArchitectureGuardian:
     )
     LIB_RS_MAX_NON_EMPTY_LINES = 120
     REQUIRED_CRATE_MODULES: dict[str, tuple[str, ...]] = {
-        "crates/sdkwork-claw-contract": ("api_surface", "manifest", "operation", "path_pattern"),
-        "crates/sdkwork-claw-config": (
+        "crates/sdkwork-cloudrouter-contract": ("api_surface", "manifest", "operation", "path_pattern"),
+        "crates/sdkwork-cloudrouter-config": (
             "api_key",
             "database",
             "deployment",
@@ -76,12 +76,12 @@ class RustBackendArchitectureGuardian:
             "runtime",
             "upstream_credential",
         ),
-        "crates/sdkwork-claw-health": ("health",),
-        "crates/sdkwork-claw-security": ("headers", "redaction"),
-        "crates/sdkwork-claw-http": ("auth", "contract_routes", "error", "health", "headers", "router"),
-        "crates/sdkwork-claw-observability": ("tracing_setup",),
-        "crates/sdkwork-clawrouter-edge-runtime": ("runtime",),
-        "services/sdkwork-clawrouter-router-service": (
+        "crates/sdkwork-cloudrouter-health": ("health",),
+        "crates/sdkwork-cloudrouter-security": ("headers", "redaction"),
+        "crates/sdkwork-cloudrouter-http": ("auth", "contract_routes", "error", "health", "headers", "router"),
+        "crates/sdkwork-cloudrouter-observability": ("tracing_setup",),
+        "crates/sdkwork-cloudrouter-edge-runtime": ("runtime",),
+        "services/sdkwork-cloudrouter-router-service": (
             "api",
             "application",
             "domain",
@@ -94,12 +94,12 @@ class RustBackendArchitectureGuardian:
     REQUIRED_DOC_TERMS: tuple[str, ...] = (
         "Rust-first",
         "Hexagonal architecture",
-        "sdkwork-api-clawrouter-assembly",
-        "sdkwork-api-clawrouter-standalone-gateway",
-        "sdkwork-routes-clawrouter-app-api",
-        "sdkwork-routes-clawrouter-backend-api",
-        "sdkwork-clawrouter-edge-runtime",
-        "sdkwork-clawrouter-router-service",
+        "sdkwork-api-cloudrouter-assembly",
+        "sdkwork-api-cloudrouter-standalone-gateway",
+        "sdkwork-routes-cloudrouter-app-api",
+        "sdkwork-routes-cloudrouter-backend-api",
+        "sdkwork-cloudrouter-edge-runtime",
+        "sdkwork-cloudrouter-router-service",
         "api",
         "application",
         "domain",
@@ -121,7 +121,7 @@ class RustBackendArchitectureGuardian:
         "PostgresGatewayUsageRecorder",
         "UsageSettlementWorker",
         "FOR UPDATE SKIP LOCKED",
-        "SDKWORK_CLAW_PAYMENT_WEBHOOK_SECRET",
+        "SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET",
         "Do not hold locks across `.await`",
         "backpressure",
         "bounded database pools",
@@ -198,13 +198,13 @@ class RustBackendArchitectureGuardian:
             service_toml = self._load_toml(cargo_path, messages)
             if service_toml is not None:
                 dependencies = service_toml.get("dependencies", {})
-                if not isinstance(dependencies, dict) or "sdkwork-claw-config" not in dependencies:
-                    messages.append(f"{service}/Cargo.toml must depend on sdkwork-claw-config")
+                if not isinstance(dependencies, dict) or "sdkwork-cloudrouter-config" not in dependencies:
+                    messages.append(f"{service}/Cargo.toml must depend on sdkwork-cloudrouter-config")
 
                 thin_route = self.THIN_ROUTE_GATEWAYS.get(service)
                 if thin_route is None:
-                    if not isinstance(dependencies, dict) or "sdkwork-claw-http" not in dependencies:
-                        messages.append(f"{service}/Cargo.toml must depend on sdkwork-claw-http")
+                    if not isinstance(dependencies, dict) or "sdkwork-cloudrouter-http" not in dependencies:
+                        messages.append(f"{service}/Cargo.toml must depend on sdkwork-cloudrouter-http")
                 else:
                     route_dep = thin_route[1].split("/")[-1].replace("-", "_")
                     route_crate_key = next(
@@ -234,9 +234,9 @@ class RustBackendArchitectureGuardian:
             text = lib_path.read_text(encoding="utf-8")
             thin_route = self.THIN_ROUTE_GATEWAYS.get(service)
             if thin_route is None:
-                if "sdkwork_claw_http::service_router" not in text:
+                if "sdkwork_cloudrouter_http::service_router" not in text:
                     messages.append(
-                        f"{service}/src/lib.rs must build routers through sdkwork_claw_http::service_router"
+                        f"{service}/src/lib.rs must build routers through sdkwork_cloudrouter_http::service_router"
                     )
                 continue
 
@@ -269,14 +269,14 @@ class RustBackendArchitectureGuardian:
         ports_dir = (
             self.root
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "ports"
         )
         ports_mod = ports_dir / "mod.rs"
         if not ports_mod.exists():
             return [
-                "services/sdkwork-clawrouter-router-service/src/ports/mod.rs is required for product port boundaries"
+                "services/sdkwork-cloudrouter-router-service/src/ports/mod.rs is required for product port boundaries"
             ]
 
         text = ports_mod.read_text(encoding="utf-8")
@@ -294,11 +294,11 @@ class RustBackendArchitectureGuardian:
         for module, purpose in required_modules.items():
             if f"mod {module};" not in text and f"pub mod {module};" not in text:
                 messages.append(
-                    f"services/sdkwork-clawrouter-router-service/src/ports/mod.rs must declare {module} module"
+                    f"services/sdkwork-cloudrouter-router-service/src/ports/mod.rs must declare {module} module"
                 )
             if not ports_dir.joinpath(f"{module}.rs").exists():
                 messages.append(
-                    f"services/sdkwork-clawrouter-router-service/src/ports/{module}.rs is required for {purpose}"
+                    f"services/sdkwork-cloudrouter-router-service/src/ports/{module}.rs is required for {purpose}"
                 )
         return messages
 
@@ -307,26 +307,26 @@ class RustBackendArchitectureGuardian:
         infrastructure_mod = (
             self.root
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "infrastructure"
             / "mod.rs"
         )
         if not infrastructure_mod.exists():
             messages.append(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/mod.rs is required for product infrastructure submodules"
+                "services/sdkwork-cloudrouter-router-service/src/infrastructure/mod.rs is required for product infrastructure submodules"
             )
         else:
             text = infrastructure_mod.read_text(encoding="utf-8")
             if "pub mod sql;" not in text and "mod sql;" not in text:
                 messages.append(
-                    "services/sdkwork-clawrouter-router-service/src/infrastructure/mod.rs must declare sql module"
+                    "services/sdkwork-cloudrouter-router-service/src/infrastructure/mod.rs must declare sql module"
                 )
 
         sql_mod = (
             self.root
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "infrastructure"
             / "sql"
@@ -334,21 +334,21 @@ class RustBackendArchitectureGuardian:
         )
         if not sql_mod.exists():
             messages.append(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/mod.rs is required for PricingCatalog SQL boundaries"
+                "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/mod.rs is required for PricingCatalog SQL boundaries"
             )
         else:
             text = sql_mod.read_text(encoding="utf-8")
             if "catalog" not in text:
                 messages.append(
-                    "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/mod.rs must declare catalog module"
+                    "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/mod.rs must declare catalog module"
                 )
             if "queries" not in text:
                 messages.append(
-                    "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/mod.rs must declare queries module"
+                    "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/mod.rs must declare queries module"
                 )
             if "rows" not in text:
                 messages.append(
-                    "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/mod.rs must declare rows module"
+                    "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/mod.rs must declare rows module"
                 )
 
         required_files = {
@@ -358,7 +358,7 @@ class RustBackendArchitectureGuardian:
         sql_dir = (
             self.root
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "infrastructure"
             / "sql"
@@ -366,7 +366,7 @@ class RustBackendArchitectureGuardian:
         for filename, purpose in required_files.items():
             if not sql_dir.joinpath(filename).exists():
                 messages.append(
-                    f"services/sdkwork-clawrouter-router-service/src/infrastructure/sql/{filename} is required for {purpose}"
+                    f"services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/{filename} is required for {purpose}"
                 )
         query_dir = sql_dir / "queries"
         required_query_files = {
@@ -377,12 +377,12 @@ class RustBackendArchitectureGuardian:
         for filename, purpose in required_query_files.items():
             if not query_dir.joinpath(filename).exists():
                 messages.append(
-                    f"services/sdkwork-clawrouter-router-service/src/infrastructure/sql/queries/{filename} is required for {purpose}"
+                    f"services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/queries/{filename} is required for {purpose}"
                 )
         sqlite_dir = sql_dir / "sqlite"
         if sqlite_dir.exists() and any(path.is_file() for path in sqlite_dir.rglob("*")):
             messages.append(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite must not contain server persistence adapters; PostgreSQL is the authoritative server database"
+                "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/sqlite must not contain server persistence adapters; PostgreSQL is the authoritative server database"
             )
         postgres_dir = sql_dir / "postgres"
         required_postgres_files = {
@@ -396,7 +396,7 @@ class RustBackendArchitectureGuardian:
         for filename, purpose in required_postgres_files.items():
             if not postgres_dir.joinpath(filename).exists():
                 messages.append(
-                    f"services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/{filename} is required for {purpose}"
+                    f"services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/{filename} is required for {purpose}"
                 )
         return messages
 
@@ -405,26 +405,26 @@ class RustBackendArchitectureGuardian:
         infrastructure_mod = (
             self.root
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "infrastructure"
             / "mod.rs"
         )
         if not infrastructure_mod.exists():
             messages.append(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/mod.rs is required for product infrastructure submodules"
+                "services/sdkwork-cloudrouter-router-service/src/infrastructure/mod.rs is required for product infrastructure submodules"
             )
         else:
             text = infrastructure_mod.read_text(encoding="utf-8")
             if "pub mod provider;" not in text and "mod provider;" not in text:
                 messages.append(
-                    "services/sdkwork-clawrouter-router-service/src/infrastructure/mod.rs must declare provider module"
+                    "services/sdkwork-cloudrouter-router-service/src/infrastructure/mod.rs must declare provider module"
                 )
 
         provider_mod = (
             self.root
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "infrastructure"
             / "provider"
@@ -432,34 +432,34 @@ class RustBackendArchitectureGuardian:
         )
         if not provider_mod.exists():
             messages.append(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/provider/mod.rs is required for provider relay adapters"
+                "services/sdkwork-cloudrouter-router-service/src/infrastructure/provider/mod.rs is required for provider relay adapters"
             )
         else:
             text = provider_mod.read_text(encoding="utf-8")
             if "openai_compatible_relay" not in text:
                 messages.append(
-                    "services/sdkwork-clawrouter-router-service/src/infrastructure/provider/mod.rs must declare openai_compatible_relay module"
+                    "services/sdkwork-cloudrouter-router-service/src/infrastructure/provider/mod.rs must declare openai_compatible_relay module"
                 )
             if "provider_secret_map_resolver" not in text:
                 messages.append(
-                    "services/sdkwork-clawrouter-router-service/src/infrastructure/provider/mod.rs must declare provider_secret_map_resolver module"
+                    "services/sdkwork-cloudrouter-router-service/src/infrastructure/provider/mod.rs must declare provider_secret_map_resolver module"
                 )
 
         provider_dir = (
             self.root
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "infrastructure"
             / "provider"
         )
         if not provider_dir.joinpath("openai_compatible_relay.rs").exists():
             messages.append(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/provider/openai_compatible_relay.rs is required for OpenAI-compatible provider relay"
+                "services/sdkwork-cloudrouter-router-service/src/infrastructure/provider/openai_compatible_relay.rs is required for OpenAI-compatible provider relay"
             )
         if not provider_dir.joinpath("provider_secret_map_resolver.rs").exists():
             messages.append(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/provider/provider_secret_map_resolver.rs is required for provider secret map resolver"
+                "services/sdkwork-cloudrouter-router-service/src/infrastructure/provider/provider_secret_map_resolver.rs is required for provider secret map resolver"
             )
         return messages
 
@@ -492,8 +492,8 @@ class RustBackendArchitectureGuardian:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate sdkwork-clawrouter Rust backend module boundaries.")
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser = argparse.ArgumentParser(description="Validate sdkwork-cloudrouter Rust backend module boundaries.")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     args = parser.parse_args()
 
     result = RustBackendArchitectureGuardian(root=args.root).run()

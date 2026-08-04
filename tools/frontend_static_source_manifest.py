@@ -26,8 +26,8 @@ class FrontendStaticSourceManifestResult:
 class FrontendStaticSourceManifest:
     """Generate deterministic static content source snapshots for frontend route audits."""
 
-    SNAPSHOTS_SCHEMA = "sdkwork-clawrouter-frontend-static-source-snapshots"
-    MANIFEST_SCHEMA = "sdkwork-clawrouter-frontend-static-source-manifest"
+    SNAPSHOTS_SCHEMA = "sdkwork-cloudrouter-frontend-static-source-snapshots"
+    MANIFEST_SCHEMA = "sdkwork-cloudrouter-frontend-static-source-manifest"
     ALLOWED_STATIC_DELIVERY_MODES = frozenset(
         {
             "curated_seed_content",
@@ -235,7 +235,7 @@ class FrontendStaticSourceManifest:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate frontend static source manifest from snapshot registry.")
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     parser.add_argument("--snapshots", type=Path, default=None, help="frontend static source snapshots YAML path")
     parser.add_argument("--output", type=Path, default=None, help="frontend static source manifest JSON path")
     parser.add_argument("--check", action="store_true", help="validate that the generated manifest is current")

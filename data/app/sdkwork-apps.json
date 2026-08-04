@@ -5,9 +5,9 @@
   "count": 30,
   "errors": [],
   "source": {
-    "rootAppKey": "sdkwork-clawrouter",
+    "rootAppKey": "sdkwork-cloudrouter",
     "appsRoot": "sdkwork-space",
-    "generatedBy": "sdkwork-clawrouter/scripts/update-app-store-seed.mjs",
+    "generatedBy": "sdkwork-cloudrouter/scripts/update-app-store-seed.mjs",
     "environment": "production",
     "channel": "STABLE"
   },
@@ -2400,30 +2400,30 @@
       }
     },
     {
-      "appKey": "sdkwork-clawrouter-pc",
-      "appRoot": "sdkwork-clawrouter/apps/sdkwork-clawrouter-pc",
-      "configPath": "sdkwork-clawrouter/apps/sdkwork-clawrouter-pc/sdkwork.app.config.json",
+      "appKey": "sdkwork-cloudrouter-pc",
+      "appRoot": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc",
+      "configPath": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
-        "name": "SDKWork ClawRouter PC",
-        "description": "SDKWork ClawRouter PC SDKWork application.",
+        "name": "SDKWork CloudRouter PC",
+        "description": "SDKWork CloudRouter PC SDKWork application.",
         "version": "0.0.0",
         "icon": {
           "kind": "image",
           "source": "external_url",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter-pc/assets/icon-1024.png",
-          "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter-pc/assets/icon-1024.png"
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-pc/assets/icon-1024.png",
+          "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-pc/assets/icon-1024.png"
         },
-        "accessUrl": "https://api.sdkwork.com/apps/sdkwork-clawrouter-pc",
+        "accessUrl": "https://api.sdkwork.com/apps/sdkwork-cloudrouter-pc",
         "config": {
-          "workspaceRoot": "sdkwork-clawrouter/apps/sdkwork-clawrouter-pc",
+          "workspaceRoot": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc",
           "framework": "react",
           "managedBy": "apps/scripts/initialize-sdkwork-app-standard-v3.mjs",
           "media": {
             "icons": {
               "primary": {
-                "id": "sdkwork-clawrouter-pc-primary-icon",
+                "id": "sdkwork-cloudrouter-pc-primary-icon",
                 "type": "ICON",
                 "purpose": "PRIMARY",
                 "platform": "APP",
@@ -2441,15 +2441,15 @@
                 "asset": {
                   "kind": "image",
                   "source": "external_url",
-                  "url": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter-pc/assets/icon-1024.png",
-                  "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter-pc/assets/icon-1024.png"
+                  "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-pc/assets/icon-1024.png",
+                  "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-pc/assets/icon-1024.png"
                 }
               },
               "platform": []
             },
             "screenshots": [
               {
-                "id": "sdkwork-clawrouter-pc-web-screenshot",
+                "id": "sdkwork-cloudrouter-pc-web-screenshot",
                 "type": "SCREENSHOT",
                 "purpose": "CATALOG_SCREENSHOT",
                 "platform": "WEB",
@@ -2461,24 +2461,24 @@
                 "format": "PNG",
                 "fileSizeBytes": 1048576,
                 "alphaChannel": false,
-                "caption": "SDKWork ClawRouter PC product screenshot.",
+                "caption": "SDKWork CloudRouter PC product screenshot.",
                 "sortOrder": 0,
                 "enabled": true,
                 "metadata": {
                   "generatedPlaceholder": true,
-                  "altText": "SDKWork ClawRouter PC app screenshot."
+                  "altText": "SDKWork CloudRouter PC app screenshot."
                 },
                 "asset": {
                   "kind": "image",
                   "source": "external_url",
-                  "url": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter-pc/media/web-screenshot.png",
-                  "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter-pc/media/web-screenshot.png"
+                  "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-pc/media/web-screenshot.png",
+                  "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-pc/media/web-screenshot.png"
                 }
               }
             ],
             "previews": [
               {
-                "id": "sdkwork-clawrouter-pc-catalog-preview",
+                "id": "sdkwork-cloudrouter-pc-catalog-preview",
                 "type": "PREVIEW_IMAGE",
                 "purpose": "CATALOG_PREVIEW",
                 "platform": "WEB",
@@ -2488,18 +2488,18 @@
                 "format": "PNG",
                 "fileSizeBytes": 786432,
                 "alphaChannel": false,
-                "caption": "SDKWork ClawRouter PC preview.",
+                "caption": "SDKWork CloudRouter PC preview.",
                 "sortOrder": 0,
                 "enabled": true,
                 "metadata": {
                   "generatedPlaceholder": true,
-                  "altText": "SDKWork ClawRouter PC preview cover."
+                  "altText": "SDKWork CloudRouter PC preview cover."
                 },
                 "asset": {
                   "kind": "image",
                   "source": "external_url",
-                  "url": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter-pc/media/preview-cover.png",
-                  "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter-pc/media/preview-cover.png"
+                  "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-pc/media/preview-cover.png",
+                  "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-pc/media/preview-cover.png"
                 }
               }
             ],
@@ -2513,13 +2513,13 @@
             "marketStatus": "PUBLISHED"
           },
           "publish": {
-            "officialWebsiteUrl": "https://sdkwork.com/apps/sdkwork-clawrouter-pc",
+            "officialWebsiteUrl": "https://sdkwork.com/apps/sdkwork-cloudrouter-pc",
             "stores": []
           },
           "standard": {
             "schemaVersion": 3,
-            "appKey": "sdkwork-clawrouter-pc",
-            "officialWebsiteUrl": "https://sdkwork.com/apps/sdkwork-clawrouter-pc",
+            "appKey": "sdkwork-cloudrouter-pc",
+            "officialWebsiteUrl": "https://sdkwork.com/apps/sdkwork-cloudrouter-pc",
             "family": "web",
             "framework": "react"
           }
@@ -2544,7 +2544,7 @@
           "packages": [
             {
               "id": "web-production",
-              "name": "SDKWork ClawRouter PC Web Bundle",
+              "name": "SDKWork CloudRouter PC Web Bundle",
               "sourceType": "WEB_URL",
               "packageFormat": "ZIP",
               "platform": "WEB",
@@ -2560,13 +2560,13 @@
               "artifact": {
                 "kind": "document",
                 "source": "external_url",
-                "url": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter-pc/STABLE/0.0.0/web.zip",
-                "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter-pc/STABLE/0.0.0/web.zip"
+                "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-pc/STABLE/0.0.0/web.zip",
+                "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-pc/STABLE/0.0.0/web.zip"
               }
             },
             {
               "id": "desktop-windows",
-              "name": "SDKWork ClawRouter PC Windows Bundle",
+              "name": "SDKWork CloudRouter PC Windows Bundle",
               "sourceType": "BINARY_URL",
               "packageFormat": "ZIP",
               "platform": "DESKTOP_WINDOWS",
@@ -2582,13 +2582,13 @@
               "artifact": {
                 "kind": "document",
                 "source": "external_url",
-                "url": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter-pc/STABLE/0.0.0/windows/x64/app.zip",
-                "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter-pc/STABLE/0.0.0/windows/x64/app.zip"
+                "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-pc/STABLE/0.0.0/windows/x64/app.zip",
+                "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-pc/STABLE/0.0.0/windows/x64/app.zip"
               }
             },
             {
               "id": "desktop-macos",
-              "name": "SDKWork ClawRouter PC macOS Bundle",
+              "name": "SDKWork CloudRouter PC macOS Bundle",
               "sourceType": "BINARY_URL",
               "packageFormat": "DMG",
               "platform": "DESKTOP_MACOS",
@@ -2604,13 +2604,13 @@
               "artifact": {
                 "kind": "document",
                 "source": "external_url",
-                "url": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter-pc/STABLE/0.0.0/macos/universal/app.dmg",
-                "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter-pc/STABLE/0.0.0/macos/universal/app.dmg"
+                "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-pc/STABLE/0.0.0/macos/universal/app.dmg",
+                "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-pc/STABLE/0.0.0/macos/universal/app.dmg"
               }
             },
             {
               "id": "desktop-linux",
-              "name": "SDKWork ClawRouter PC Linux Bundle",
+              "name": "SDKWork CloudRouter PC Linux Bundle",
               "sourceType": "BINARY_URL",
               "packageFormat": "APPIMAGE",
               "platform": "DESKTOP_LINUX",
@@ -2626,17 +2626,17 @@
               "artifact": {
                 "kind": "document",
                 "source": "external_url",
-                "url": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter-pc/STABLE/0.0.0/linux/generic/x64/app.AppImage",
-                "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter-pc/STABLE/0.0.0/linux/generic/x64/app.AppImage"
+                "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-pc/STABLE/0.0.0/linux/generic/x64/app.AppImage",
+                "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-pc/STABLE/0.0.0/linux/generic/x64/app.AppImage"
               }
             }
           ],
           "defaultPackageId": "web-production",
-          "installCommand": "sdkwork install sdkwork-clawrouter-pc",
-          "launchCommand": "sdkwork open sdkwork-clawrouter-pc",
-          "uninstallCommand": "sdkwork uninstall sdkwork-clawrouter-pc",
+          "installCommand": "sdkwork install sdkwork-cloudrouter-pc",
+          "launchCommand": "sdkwork open sdkwork-cloudrouter-pc",
+          "uninstallCommand": "sdkwork uninstall sdkwork-cloudrouter-pc",
           "metadata": {
-            "workspaceRoot": "sdkwork-clawrouter/apps/sdkwork-clawrouter-pc",
+            "workspaceRoot": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc",
             "framework": "react",
             "packageManager": "pnpm@10.33.0",
             "migratedFromLegacyConfig": true,
@@ -2656,9 +2656,9 @@
           {
             "version": "0.0.0",
             "releaseChannel": "STABLE",
-            "title": "SDKWork ClawRouter PC 0.0.0",
-            "summary": "SDKWork ClawRouter PC initialized standard release.",
-            "content": "Initial SDKWork App Standard v3 manifest for SDKWork ClawRouter PC.",
+            "title": "SDKWork CloudRouter PC 0.0.0",
+            "summary": "SDKWork CloudRouter PC initialized standard release.",
+            "content": "Initial SDKWork App Standard v3 manifest for SDKWork CloudRouter PC.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
               "platform_app projection metadata standardized",
@@ -2679,45 +2679,45 @@
         ],
         "packageName": null,
         "bundleId": null,
-        "storeUrl": "https://sdkwork.com/apps/sdkwork-clawrouter-pc",
+        "storeUrl": "https://sdkwork.com/apps/sdkwork-cloudrouter-pc",
         "artifact": {
           "kind": "document",
           "source": "external_url",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter-pc/STABLE/0.0.0/web.zip",
-          "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter-pc/STABLE/0.0.0/web.zip"
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-pc/STABLE/0.0.0/web.zip",
+          "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-pc/STABLE/0.0.0/web.zip"
         }
       },
       "source": {
         "schemaVersion": 3,
         "kind": "sdkwork.app",
-        "file": "sdkwork-clawrouter/apps/sdkwork-clawrouter-pc/sdkwork.app.config.json"
+        "file": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/sdkwork.app.config.json"
       }
     },
     {
-      "appKey": "sdkwork-clawrouter",
-      "appRoot": "sdkwork-clawrouter",
-      "configPath": "sdkwork-clawrouter/sdkwork.app.config.json",
+      "appKey": "sdkwork-cloudrouter",
+      "appRoot": "sdkwork-cloudrouter",
+      "configPath": "sdkwork-cloudrouter/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
-        "name": "SDKWork Claw Router",
-        "description": "SDKWork Claw Router SDKWork application.",
+        "name": "SDKWork Cloud Router",
+        "description": "SDKWork Cloud Router SDKWork application.",
         "version": "0.1.0",
         "icon": {
           "kind": "image",
           "source": "external_url",
-          "url": "https://cdn.sdkwork.com/sdkwork-clawrouter/assets/icon-1024.png",
-          "publicUrl": "https://cdn.sdkwork.com/sdkwork-clawrouter/assets/icon-1024.png"
+          "url": "https://cdn.sdkwork.com/sdkwork-cloudrouter/assets/icon-1024.png",
+          "publicUrl": "https://cdn.sdkwork.com/sdkwork-cloudrouter/assets/icon-1024.png"
         },
-        "accessUrl": "https://api.sdkwork.com/sdkwork-clawrouter",
+        "accessUrl": "https://api.sdkwork.com/sdkwork-cloudrouter",
         "config": {
-          "workspaceRoot": "sdkwork-clawrouter",
+          "workspaceRoot": "sdkwork-cloudrouter",
           "framework": "tauri",
           "managedBy": "apps/scripts/initialize-sdkwork-app-standard-v3.mjs",
           "media": {
             "icons": {
               "primary": {
-                "id": "sdkwork-clawrouter-primary-icon",
+                "id": "sdkwork-cloudrouter-primary-icon",
                 "type": "ICON",
                 "purpose": "PRIMARY",
                 "platform": "APP",
@@ -2735,15 +2735,15 @@
                 "asset": {
                   "kind": "image",
                   "source": "external_url",
-                  "url": "https://cdn.sdkwork.com/sdkwork-clawrouter/assets/icon-1024.png",
-                  "publicUrl": "https://cdn.sdkwork.com/sdkwork-clawrouter/assets/icon-1024.png"
+                  "url": "https://cdn.sdkwork.com/sdkwork-cloudrouter/assets/icon-1024.png",
+                  "publicUrl": "https://cdn.sdkwork.com/sdkwork-cloudrouter/assets/icon-1024.png"
                 }
               },
               "platform": []
             },
             "screenshots": [
               {
-                "id": "sdkwork-clawrouter-desktop_windows-screenshot",
+                "id": "sdkwork-cloudrouter-desktop_windows-screenshot",
                 "type": "SCREENSHOT",
                 "purpose": "CATALOG_SCREENSHOT",
                 "platform": "DESKTOP_WINDOWS",
@@ -2755,24 +2755,24 @@
                 "format": "PNG",
                 "fileSizeBytes": 1048576,
                 "alphaChannel": false,
-                "caption": "SDKWork Claw Router product screenshot.",
+                "caption": "SDKWork Cloud Router product screenshot.",
                 "sortOrder": 0,
                 "enabled": true,
                 "metadata": {
                   "generatedPlaceholder": true,
-                  "altText": "SDKWork Claw Router app screenshot."
+                  "altText": "SDKWork Cloud Router app screenshot."
                 },
                 "asset": {
                   "kind": "image",
                   "source": "external_url",
-                  "url": "https://cdn.sdkwork.com/sdkwork-clawrouter/media/desktop_windows-screenshot.png",
-                  "publicUrl": "https://cdn.sdkwork.com/sdkwork-clawrouter/media/desktop_windows-screenshot.png"
+                  "url": "https://cdn.sdkwork.com/sdkwork-cloudrouter/media/desktop_windows-screenshot.png",
+                  "publicUrl": "https://cdn.sdkwork.com/sdkwork-cloudrouter/media/desktop_windows-screenshot.png"
                 }
               }
             ],
             "previews": [
               {
-                "id": "sdkwork-clawrouter-catalog-preview",
+                "id": "sdkwork-cloudrouter-catalog-preview",
                 "type": "PREVIEW_IMAGE",
                 "purpose": "CATALOG_PREVIEW",
                 "platform": "DESKTOP_WINDOWS",
@@ -2782,18 +2782,18 @@
                 "format": "PNG",
                 "fileSizeBytes": 786432,
                 "alphaChannel": false,
-                "caption": "SDKWork Claw Router preview.",
+                "caption": "SDKWork Cloud Router preview.",
                 "sortOrder": 0,
                 "enabled": true,
                 "metadata": {
                   "generatedPlaceholder": true,
-                  "altText": "SDKWork Claw Router preview cover."
+                  "altText": "SDKWork Cloud Router preview cover."
                 },
                 "asset": {
                   "kind": "image",
                   "source": "external_url",
-                  "url": "https://cdn.sdkwork.com/sdkwork-clawrouter/media/preview-cover.png",
-                  "publicUrl": "https://cdn.sdkwork.com/sdkwork-clawrouter/media/preview-cover.png"
+                  "url": "https://cdn.sdkwork.com/sdkwork-cloudrouter/media/preview-cover.png",
+                  "publicUrl": "https://cdn.sdkwork.com/sdkwork-cloudrouter/media/preview-cover.png"
                 }
               }
             ],
@@ -2807,13 +2807,13 @@
             "marketStatus": "PUBLISHED"
           },
           "publish": {
-            "officialWebsiteUrl": "https://sdkwork.com/sdkwork-clawrouter",
+            "officialWebsiteUrl": "https://sdkwork.com/sdkwork-cloudrouter",
             "stores": []
           },
           "standard": {
             "schemaVersion": 3,
-            "appKey": "sdkwork-clawrouter",
-            "officialWebsiteUrl": "https://sdkwork.com/sdkwork-clawrouter",
+            "appKey": "sdkwork-cloudrouter",
+            "officialWebsiteUrl": "https://sdkwork.com/sdkwork-cloudrouter",
             "family": "desktop",
             "framework": "tauri"
           }
@@ -2845,7 +2845,7 @@
           "packages": [
             {
               "id": "web-production",
-              "name": "SDKWork Claw Router Web Bundle",
+              "name": "SDKWork Cloud Router Web Bundle",
               "sourceType": "WEB_URL",
               "packageFormat": "ZIP",
               "platform": "WEB",
@@ -2861,13 +2861,13 @@
               "artifact": {
                 "kind": "document",
                 "source": "external_url",
-                "url": "https://cdn.sdkwork.com/sdkwork-clawrouter/STABLE/0.1.0/web.zip",
-                "publicUrl": "https://cdn.sdkwork.com/sdkwork-clawrouter/STABLE/0.1.0/web.zip"
+                "url": "https://cdn.sdkwork.com/sdkwork-cloudrouter/STABLE/0.1.0/web.zip",
+                "publicUrl": "https://cdn.sdkwork.com/sdkwork-cloudrouter/STABLE/0.1.0/web.zip"
               }
             },
             {
               "id": "desktop-windows",
-              "name": "SDKWork Claw Router Windows Bundle",
+              "name": "SDKWork Cloud Router Windows Bundle",
               "sourceType": "BINARY_URL",
               "packageFormat": "ZIP",
               "platform": "DESKTOP_WINDOWS",
@@ -2883,13 +2883,13 @@
               "artifact": {
                 "kind": "document",
                 "source": "external_url",
-                "url": "https://cdn.sdkwork.com/sdkwork-clawrouter/STABLE/0.1.0/windows/x64/app.zip",
-                "publicUrl": "https://cdn.sdkwork.com/sdkwork-clawrouter/STABLE/0.1.0/windows/x64/app.zip"
+                "url": "https://cdn.sdkwork.com/sdkwork-cloudrouter/STABLE/0.1.0/windows/x64/app.zip",
+                "publicUrl": "https://cdn.sdkwork.com/sdkwork-cloudrouter/STABLE/0.1.0/windows/x64/app.zip"
               }
             },
             {
               "id": "desktop-macos",
-              "name": "SDKWork Claw Router macOS Bundle",
+              "name": "SDKWork Cloud Router macOS Bundle",
               "sourceType": "BINARY_URL",
               "packageFormat": "DMG",
               "platform": "DESKTOP_MACOS",
@@ -2905,13 +2905,13 @@
               "artifact": {
                 "kind": "document",
                 "source": "external_url",
-                "url": "https://cdn.sdkwork.com/sdkwork-clawrouter/STABLE/0.1.0/macos/universal/app.dmg",
-                "publicUrl": "https://cdn.sdkwork.com/sdkwork-clawrouter/STABLE/0.1.0/macos/universal/app.dmg"
+                "url": "https://cdn.sdkwork.com/sdkwork-cloudrouter/STABLE/0.1.0/macos/universal/app.dmg",
+                "publicUrl": "https://cdn.sdkwork.com/sdkwork-cloudrouter/STABLE/0.1.0/macos/universal/app.dmg"
               }
             },
             {
               "id": "desktop-linux",
-              "name": "SDKWork Claw Router Linux Bundle",
+              "name": "SDKWork Cloud Router Linux Bundle",
               "sourceType": "BINARY_URL",
               "packageFormat": "APPIMAGE",
               "platform": "DESKTOP_LINUX",
@@ -2927,17 +2927,17 @@
               "artifact": {
                 "kind": "document",
                 "source": "external_url",
-                "url": "https://cdn.sdkwork.com/sdkwork-clawrouter/STABLE/0.1.0/linux/generic/x64/app.AppImage",
-                "publicUrl": "https://cdn.sdkwork.com/sdkwork-clawrouter/STABLE/0.1.0/linux/generic/x64/app.AppImage"
+                "url": "https://cdn.sdkwork.com/sdkwork-cloudrouter/STABLE/0.1.0/linux/generic/x64/app.AppImage",
+                "publicUrl": "https://cdn.sdkwork.com/sdkwork-cloudrouter/STABLE/0.1.0/linux/generic/x64/app.AppImage"
               }
             }
           ],
           "defaultPackageId": "web-production",
-          "installCommand": "sdkwork install sdkwork-clawrouter",
-          "launchCommand": "sdkwork open sdkwork-clawrouter",
-          "uninstallCommand": "sdkwork uninstall sdkwork-clawrouter",
+          "installCommand": "sdkwork install sdkwork-cloudrouter",
+          "launchCommand": "sdkwork open sdkwork-cloudrouter",
+          "uninstallCommand": "sdkwork uninstall sdkwork-cloudrouter",
           "metadata": {
-            "workspaceRoot": "sdkwork-clawrouter",
+            "workspaceRoot": "sdkwork-cloudrouter",
             "framework": "tauri",
             "packageManager": "pnpm@10.33.0",
             "migratedFromLegacyConfig": true,
@@ -2957,9 +2957,9 @@
           {
             "version": "0.1.0",
             "releaseChannel": "STABLE",
-            "title": "SDKWork Claw Router 0.1.0",
-            "summary": "SDKWork Claw Router initialized standard release.",
-            "content": "Initial SDKWork App Standard v3 manifest for SDKWork Claw Router.",
+            "title": "SDKWork Cloud Router 0.1.0",
+            "summary": "SDKWork Cloud Router initialized standard release.",
+            "content": "Initial SDKWork App Standard v3 manifest for SDKWork Cloud Router.",
             "highlights": [
               "SDKWork App Standard v3 configuration initialized",
               "platform_app projection metadata standardized",
@@ -2980,24 +2980,24 @@
         ],
         "packageName": null,
         "bundleId": null,
-        "storeUrl": "https://sdkwork.com/sdkwork-clawrouter",
+        "storeUrl": "https://sdkwork.com/sdkwork-cloudrouter",
         "artifact": {
           "kind": "document",
           "source": "external_url",
-          "url": "https://cdn.sdkwork.com/sdkwork-clawrouter/STABLE/0.1.0/web.zip",
-          "publicUrl": "https://cdn.sdkwork.com/sdkwork-clawrouter/STABLE/0.1.0/web.zip"
+          "url": "https://cdn.sdkwork.com/sdkwork-cloudrouter/STABLE/0.1.0/web.zip",
+          "publicUrl": "https://cdn.sdkwork.com/sdkwork-cloudrouter/STABLE/0.1.0/web.zip"
         }
       },
       "source": {
         "schemaVersion": 3,
         "kind": "sdkwork.app",
-        "file": "sdkwork-clawrouter/sdkwork.app.config.json"
+        "file": "sdkwork-cloudrouter/sdkwork.app.config.json"
       }
     },
     {
-      "appKey": "sdkwork-cloud-portal",
-      "appRoot": "sdkwork-cloud-portal",
-      "configPath": "sdkwork-cloud-portal/sdkwork.app.config.json",
+      "appKey": "sdkwork-cloudrouter-portal",
+      "appRoot": "sdkwork-cloudrouter-portal",
+      "configPath": "sdkwork-cloudrouter-portal/sdkwork.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -3007,18 +3007,18 @@
         "icon": {
           "kind": "image",
           "source": "external_url",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloud-portal/assets/icon-1024.png",
-          "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloud-portal/assets/icon-1024.png"
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-portal/assets/icon-1024.png",
+          "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-portal/assets/icon-1024.png"
         },
-        "accessUrl": "https://api.sdkwork.com/apps/sdkwork-cloud-portal",
+        "accessUrl": "https://api.sdkwork.com/apps/sdkwork-cloudrouter-portal",
         "config": {
-          "workspaceRoot": "apps/sdkwork-cloud-portal",
+          "workspaceRoot": "apps/sdkwork-cloudrouter-portal",
           "framework": "react-electron-tauri",
           "managedBy": "apps/scripts/initialize-sdkwork-app-standard-v3.mjs",
           "media": {
             "icons": {
               "primary": {
-                "id": "sdkwork-cloud-portal-primary-icon",
+                "id": "sdkwork-cloudrouter-portal-primary-icon",
                 "type": "ICON",
                 "purpose": "PRIMARY",
                 "platform": "APP",
@@ -3036,15 +3036,15 @@
                 "asset": {
                   "kind": "image",
                   "source": "external_url",
-                  "url": "https://cdn.sdkwork.com/apps/sdkwork-cloud-portal/assets/icon-1024.png",
-                  "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloud-portal/assets/icon-1024.png"
+                  "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-portal/assets/icon-1024.png",
+                  "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-portal/assets/icon-1024.png"
                 }
               },
               "platform": []
             },
             "screenshots": [
               {
-                "id": "sdkwork-cloud-portal-desktop_windows-screenshot",
+                "id": "sdkwork-cloudrouter-portal-desktop_windows-screenshot",
                 "type": "SCREENSHOT",
                 "purpose": "CATALOG_SCREENSHOT",
                 "platform": "DESKTOP_WINDOWS",
@@ -3066,14 +3066,14 @@
                 "asset": {
                   "kind": "image",
                   "source": "external_url",
-                  "url": "https://cdn.sdkwork.com/apps/sdkwork-cloud-portal/media/desktop_windows-screenshot.png",
-                  "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloud-portal/media/desktop_windows-screenshot.png"
+                  "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-portal/media/desktop_windows-screenshot.png",
+                  "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-portal/media/desktop_windows-screenshot.png"
                 }
               }
             ],
             "previews": [
               {
-                "id": "sdkwork-cloud-portal-catalog-preview",
+                "id": "sdkwork-cloudrouter-portal-catalog-preview",
                 "type": "PREVIEW_IMAGE",
                 "purpose": "CATALOG_PREVIEW",
                 "platform": "DESKTOP_WINDOWS",
@@ -3093,8 +3093,8 @@
                 "asset": {
                   "kind": "image",
                   "source": "external_url",
-                  "url": "https://cdn.sdkwork.com/apps/sdkwork-cloud-portal/media/preview-cover.png",
-                  "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloud-portal/media/preview-cover.png"
+                  "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-portal/media/preview-cover.png",
+                  "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-portal/media/preview-cover.png"
                 }
               }
             ],
@@ -3108,13 +3108,13 @@
             "marketStatus": "PUBLISHED"
           },
           "publish": {
-            "officialWebsiteUrl": "https://sdkwork.com/apps/sdkwork-cloud-portal",
+            "officialWebsiteUrl": "https://sdkwork.com/apps/sdkwork-cloudrouter-portal",
             "stores": []
           },
           "standard": {
             "schemaVersion": 3,
-            "appKey": "sdkwork-cloud-portal",
-            "officialWebsiteUrl": "https://sdkwork.com/apps/sdkwork-cloud-portal",
+            "appKey": "sdkwork-cloudrouter-portal",
+            "officialWebsiteUrl": "https://sdkwork.com/apps/sdkwork-cloudrouter-portal",
             "family": "desktop",
             "framework": "react-electron-tauri"
           }
@@ -3162,8 +3162,8 @@
               "artifact": {
                 "kind": "document",
                 "source": "external_url",
-                "url": "https://cdn.sdkwork.com/apps/sdkwork-cloud-portal/STABLE/1.0.0/web.zip",
-                "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloud-portal/STABLE/1.0.0/web.zip"
+                "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-portal/STABLE/1.0.0/web.zip",
+                "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-portal/STABLE/1.0.0/web.zip"
               }
             },
             {
@@ -3184,8 +3184,8 @@
               "artifact": {
                 "kind": "document",
                 "source": "external_url",
-                "url": "https://cdn.sdkwork.com/apps/sdkwork-cloud-portal/STABLE/1.0.0/windows/x64/app.zip",
-                "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloud-portal/STABLE/1.0.0/windows/x64/app.zip"
+                "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-portal/STABLE/1.0.0/windows/x64/app.zip",
+                "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-portal/STABLE/1.0.0/windows/x64/app.zip"
               }
             },
             {
@@ -3206,8 +3206,8 @@
               "artifact": {
                 "kind": "document",
                 "source": "external_url",
-                "url": "https://cdn.sdkwork.com/apps/sdkwork-cloud-portal/STABLE/1.0.0/macos/universal/app.dmg",
-                "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloud-portal/STABLE/1.0.0/macos/universal/app.dmg"
+                "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-portal/STABLE/1.0.0/macos/universal/app.dmg",
+                "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-portal/STABLE/1.0.0/macos/universal/app.dmg"
               }
             },
             {
@@ -3228,17 +3228,17 @@
               "artifact": {
                 "kind": "document",
                 "source": "external_url",
-                "url": "https://cdn.sdkwork.com/apps/sdkwork-cloud-portal/STABLE/1.0.0/linux/generic/x64/app.AppImage",
-                "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloud-portal/STABLE/1.0.0/linux/generic/x64/app.AppImage"
+                "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-portal/STABLE/1.0.0/linux/generic/x64/app.AppImage",
+                "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-portal/STABLE/1.0.0/linux/generic/x64/app.AppImage"
               }
             }
           ],
           "defaultPackageId": "web-production",
-          "installCommand": "sdkwork install sdkwork-cloud-portal",
-          "launchCommand": "sdkwork open sdkwork-cloud-portal",
-          "uninstallCommand": "sdkwork uninstall sdkwork-cloud-portal",
+          "installCommand": "sdkwork install sdkwork-cloudrouter-portal",
+          "launchCommand": "sdkwork open sdkwork-cloudrouter-portal",
+          "uninstallCommand": "sdkwork uninstall sdkwork-cloudrouter-portal",
           "metadata": {
-            "workspaceRoot": "apps/sdkwork-cloud-portal",
+            "workspaceRoot": "apps/sdkwork-cloudrouter-portal",
             "framework": "react-electron-tauri",
             "packageManager": "pnpm@9.15.0",
             "migratedFromLegacyConfig": true,
@@ -3281,18 +3281,18 @@
         ],
         "packageName": null,
         "bundleId": null,
-        "storeUrl": "https://sdkwork.com/apps/sdkwork-cloud-portal",
+        "storeUrl": "https://sdkwork.com/apps/sdkwork-cloudrouter-portal",
         "artifact": {
           "kind": "document",
           "source": "external_url",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloud-portal/STABLE/1.0.0/web.zip",
-          "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloud-portal/STABLE/1.0.0/web.zip"
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-portal/STABLE/1.0.0/web.zip",
+          "publicUrl": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter-portal/STABLE/1.0.0/web.zip"
         }
       },
       "source": {
         "schemaVersion": 3,
         "kind": "sdkwork.app",
-        "file": "sdkwork-cloud-portal/sdkwork.app.config.json"
+        "file": "sdkwork-cloudrouter-portal/sdkwork.app.config.json"
       }
     },
     {

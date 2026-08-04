@@ -15,7 +15,7 @@ from tools.relay_retired_admin_surfaces import (
 )
 
 FIELD_AUDIT_EXEMPT_SOURCE_SEGMENTS: tuple[str, ...] = (
-    "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-i18n/",
+    "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-i18n/",
 )
 
 
@@ -70,9 +70,9 @@ class FrontendFieldAudit:
         "@sdkwork/commerce-pc-wallet",
         "@sdkwork/commerce-pc-membership",
         "@sdkwork/commerce-pc-payment",
-        "@sdkwork/clawrouter-app-sdk",
-        "@sdkwork/clawrouter-backend-sdk",
-        "@sdkwork/clawrouter-open-sdk",
+        "@sdkwork/cloudrouter-app-sdk",
+        "@sdkwork/cloudrouter-backend-sdk",
+        "@sdkwork/cloudrouter-open-sdk",
         "@sdkwork/models-backend-sdk",
         "@sdkwork/generation-pc-react/react",
         "@sdkwork/generations-pc-workspace/generation-history",
@@ -294,7 +294,7 @@ class FrontendFieldAudit:
         return FrontendFieldAuditResult(ok=not messages, messages=messages)
 
     def _source_files(self) -> list[Path]:
-        portal = self.root / "apps" / "sdkwork-clawrouter-pc" / "packages"
+        portal = self.root / "apps" / "sdkwork-cloudrouter-pc" / "packages"
         if not portal.exists():
             return []
 
@@ -548,7 +548,7 @@ class FrontendFieldAudit:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Audit portal TypeScript service/data view model fields.")
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     parser.add_argument("--contract", type=Path, default=None, help="frontend field contract YAML path")
     parser.add_argument("--output", type=Path, default=None, help="output audit JSON path")
     parser.add_argument("--check", action="store_true", help="validate generated audit and frontend model contracts")

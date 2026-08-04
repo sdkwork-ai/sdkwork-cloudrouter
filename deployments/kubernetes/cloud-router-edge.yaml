@@ -1,0 +1,244 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sdkwork-cloudrouter-edge
+  labels:
+    app: sdkwork-cloudrouter
+    component: edge
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: sdkwork-cloudrouter
+      component: edge
+  template:
+    metadata:
+      labels:
+        app: sdkwork-cloudrouter
+        component: edge
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "3900"
+    spec:
+      automountServiceAccountToken: false
+      # Covers the 120-second upstream stream timeout plus shutdown overhead.
+      terminationGracePeriodSeconds: 130
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: sdkwork-cloudrouter
+              component: edge
+      containers:
+        - name: edge
+          image: registry.sdkwork.com/apps/sdkwork-cloudrouter:0.3.0
+          command: ["sdkwork-cloudrouter-edge-runtime"]
+          ports:
+            - containerPort: 3900
+              name: http
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          env:
+            - name: SDKWORK_CLOUDROUTER_ROUTER_CONFIG_PROFILE
+              value: prod
+            - name: SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT
+              value: production
+            - name: SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE
+              value: cloud
+            - name: SDKWORK_CLOUDROUTER_ROUTER_RUNTIME_TARGET
+              value: container
+            - name: SDKWORK_NODE_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: SDKWORK_NODE_INSTANCE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            - name: SDKWORK_CLOUDROUTER_CONFIG_FILE
+              value: /etc/sdkwork/cloudrouter.toml
+            - name: SDKWORK_CLOUDROUTER_EDGE_SERVER
+              value: "true"
+            - name: SDKWORK_CLOUDROUTER_GATEWAY_BIND
+              value: 0.0.0.0:3900
+            - name: SDKWORK_CLOUDROUTER_EDGE_GATEWAY_BASE_URL
+              value: http://sdkwork-api-cloudrouter-standalone-gateway:18080
+            - name: SDKWORK_CLOUDROUTER_EDGE_BACKEND_API_BASE_URL
+              value: http://sdkwork-cloudrouter-admin-api:18081
+            - name: SDKWORK_CLOUDROUTER_EDGE_APP_API_BASE_URL
+              value: http://sdkwork-cloudrouter-app-api:18082
+            - name: SDKWORK_CLOUDROUTER_EDGE_PORTAL_BASE_URL
+              value: http://sdkwork-cloudrouter-app-api:18082
+            - name: SDKWORK_CLOUDROUTER_EDGE_EXTERNAL_SCHEME
+              value: https
+            - name: SDKWORK_CLOUDROUTER_EDGE_TRUST_FORWARDED_HEADERS
+              value: "true"
+            - name: SDKWORK_CLOUDROUTER_EDGE_UPSTREAM_REQUEST_TIMEOUT_MILLIS
+              value: "120000"
+          resources:
+            # H-7 fix: align requests/limits with Google SRE Book capacity
+            # guidance (SRE Book, "Capacity Planning" + "Monitoring Distributed
+            # Systems"). The previous 250m -> 2 CPU (8x) and 512Mi -> 2Gi memory
+            # (4x) ratios caused overcommit-driven throttling and OOM kills
+            # under bursts. The new ratios follow the SRE recommendation to keep
+            # limits close to requests:
+            #   - CPU    500m -> 1    (2:1)  CPU is compressible, so a 2:1 ratio
+            #                                  is acceptable and bounded.
+            #   - Memory 1Gi  -> 1.5Gi (1.5:1) Memory is NOT compressible; a
+            #                                  node under pressure will OOMKill
+            #                                  the pod, so keep this ratio close
+            #                                  to 1:1. The 0.5Gi headroom only
+            #                                  covers brief allocator spikes.
+            # The HPA CPU target below was lowered from 70% to 60% because
+            # requests doubled; 60% of 500m (300m) is comparable to the prior
+            # 70% of 250m (175m) headroom but keeps scaling reactive to real
+            # load instead of compressing into throttling.
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "1"
+              memory: 1.5Gi
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            # Keep liveness timeout tight (3s): /healthz only checks that the
+            # process is alive and able to answer; a slow response here means
+            # the process is wedged and should be restarted.
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+            # Raised from 3s to 5s: /readyz verifies database and Redis
+            # connectivity, so a brief network partition between this pod and
+            # the managed PostgreSQL/Redis should not flip the pod to
+            # not-ready and trigger churn. 5s tolerates transient latency
+            # without masking a real outage (failureThreshold stays at 3 ->
+            # the pod is marked not-ready after ~15s of consecutive failures).
+            # Readiness must NEVER depend on upstream provider reachability;
+            # only on internal dependencies (DB, Redis) that this service
+            # needs to serve its own requests.
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: config
+              mountPath: /etc/sdkwork
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          secret:
+            secretName: sdkwork-cloudrouter-config
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sdkwork-cloudrouter-edge
+spec:
+  selector:
+    app: sdkwork-cloudrouter
+    component: edge
+  ports:
+    - name: http
+      port: 3900
+      targetPort: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: sdkwork-cloudrouter-edge
+spec:
+  # PDB strictness: switched from `minAvailable: 1` to `maxUnavailable: 1`
+  # for the same effective behavior with 2 replicas (at most 1 pod may be
+  # voluntarily disrupted at a time) but clearer operational intent. Prefer
+  # `maxUnavailable` for fixed-replica workloads because it explicitly states
+  # the disruption budget rather than relying on the implicit replica count.
+  # Production recommendation: when rolling out, prefer a surge-style
+  # deployment (e.g. `maxSurge: 1, maxUnavailable: 0`) so that capacity is
+  # never reduced below the full replica count during a deploy. The HPA and
+  # PDB together should be reviewed whenever minReplicas or replica count
+  # changes; with 2 replicas, `maxUnavailable: 1` allows one voluntary
+  # disruption (node drain, evict) while keeping at least 1 pod serving.
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: sdkwork-cloudrouter
+      component: edge
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: sdkwork-cloudrouter-edge
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: sdkwork-cloudrouter-edge
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    # CPU target lowered from 70% to 60% as part of H-7: requests.cpu was
+    # raised from 250m to 500m, so 60% of 500m (300m) keeps the autoscaler
+    # reactive to real load. CPU is a compressible resource and a leading
+    # indicator of gateway saturation.
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+    # Memory metric added so the HPA scales when per-pod RSS approaches the
+    # 1Gi request (e.g. large prompt buffers, in-flight streaming responses).
+    # Requires the metrics-server `Resource` source for memory, available on
+    # Kubernetes >= 1.18 with metrics-server installed. 70% of 1Gi (~716Mi)
+    # leaves headroom before the 1.5Gi limit and avoids OOMKill-driven scale
+    # events.
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70
+  # TODO(observability): once a Prometheus adapter or KEDA scaler is installed,
+  # add custom/external metrics that drive scaling from real business load:
+  #   - per-pod request QPS (e.g. haproxy_backend_http_rate)
+  #   - p95 upstream-provider latency (alert when > 5s for 60s)
+  #   - in-flight streaming requests gauge
+  # These are better leading indicators than CPU/memory for an AI gateway
+  # because CPU stays low while waiting on provider I/O. See
+  # PERFORMANCE_SPEC.md and OBSERVABILITY_SPEC.md for the canonical metric
+  # names. Adding custom metrics requires deployment of
+  # prometheus-adapter and a corresponding APIService; do not enable the
+  # external metric before the adapter is verified in the target cluster.

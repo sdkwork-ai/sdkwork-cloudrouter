@@ -36,7 +36,7 @@ ROUTE_CONTRACT_SUPPLEMENTS: tuple[dict[str, Any], ...] = (
         "route": "/console/notifications",
         "required_tables": ["ops_audit_log"],
         "dependency_owned": True,
-        "dependency_sdk_family": "sdkwork-clawrouter-app-sdk",
+        "dependency_sdk_family": "sdkwork-cloudrouter-app-sdk",
     },
     {
         "route": "/auth/login",
@@ -55,7 +55,7 @@ ROUTE_CONTRACT_SUPPLEMENTS: tuple[dict[str, Any], ...] = (
             "ops_config_snapshot",
         ],
         "dependency_owned": True,
-        "dependency_sdk_family": "sdkwork-clawrouter-app-sdk",
+        "dependency_sdk_family": "sdkwork-cloudrouter-app-sdk",
     },
     {
         "route": "/auth/forgot-password",
@@ -72,7 +72,7 @@ ROUTE_CONTRACT_SUPPLEMENTS: tuple[dict[str, Any], ...] = (
             "messaging_outbound_delivery",
         ],
         "dependency_owned": True,
-        "dependency_sdk_family": "sdkwork-clawrouter-app-sdk",
+        "dependency_sdk_family": "sdkwork-cloudrouter-app-sdk",
     },
     {
         "route": "/auth/register",
@@ -90,7 +90,7 @@ ROUTE_CONTRACT_SUPPLEMENTS: tuple[dict[str, Any], ...] = (
             "messaging_outbound_delivery",
         ],
         "dependency_owned": True,
-        "dependency_sdk_family": "sdkwork-clawrouter-app-sdk",
+        "dependency_sdk_family": "sdkwork-cloudrouter-app-sdk",
     },
     {
         "route": "/auth/oauth/callback/:provider",
@@ -103,21 +103,21 @@ ROUTE_CONTRACT_SUPPLEMENTS: tuple[dict[str, Any], ...] = (
             "ops_audit_log",
         ],
         "dependency_owned": True,
-        "dependency_sdk_family": "sdkwork-clawrouter-app-sdk",
+        "dependency_sdk_family": "sdkwork-cloudrouter-app-sdk",
     },
 )
 
 FIELD_MODEL_SOURCE_ALIASES: dict[str, str] = {
-    "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-commons/src/notificationService.ts": (
-        "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts"
+    "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-commons/src/notificationService.ts": (
+        "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/notificationService.ts"
     ),
 }
 
 NON_API_ORCHESTRATION_OPERATIONS = frozenset(
     {
         (
-            "apps/sdkwork-clawrouter-pc/packages/"
-            "sdkwork-clawrouter-pc-admin-channel/src/channelService.ts",
+            "apps/sdkwork-cloudrouter-pc/packages/"
+            "sdkwork-cloudrouter-pc-admin-channel/src/channelService.ts",
             "replaceAccountMappings",
         ),
     }
@@ -132,18 +132,18 @@ RETIRED_DEPENDENCY_API_OPERATIONS = frozenset(
 
 OPERATION_ID_OVERRIDES = {
     (
-        "apps/sdkwork-clawrouter-pc/packages/"
-        "sdkwork-clawrouter-pc-admin-site/src/AuthSettingsService.ts",
-        "fetchClawRouterAuthSettings",
+        "apps/sdkwork-cloudrouter-pc/packages/"
+        "sdkwork-cloudrouter-pc-admin-site/src/AuthSettingsService.ts",
+        "fetchCloudRouterAuthSettings",
     ): "auth.settings.retrieve",
     (
-        "apps/sdkwork-clawrouter-pc/packages/"
-        "sdkwork-clawrouter-pc-admin-site/src/AuthSettingsService.ts",
-        "updateClawRouterAuthSettings",
+        "apps/sdkwork-cloudrouter-pc/packages/"
+        "sdkwork-cloudrouter-pc-admin-site/src/AuthSettingsService.ts",
+        "updateCloudRouterAuthSettings",
     ): "auth.settings.update",
     (
-        "apps/sdkwork-clawrouter-pc/packages/"
-        "sdkwork-clawrouter-pc-console-settings/src/settingsService.ts",
+        "apps/sdkwork-cloudrouter-pc/packages/"
+        "sdkwork-cloudrouter-pc-console-settings/src/settingsService.ts",
         "fetchSettings",
     ): "users.settings.retrieve",
 }
@@ -152,15 +152,15 @@ def _operation_priority(entry: dict[str, Any]) -> tuple[int, str]:
     source = str(entry.get("source", "")).replace("\\", "/")
     if is_route_manifest_bootstrap_source(source):
         return (10, source)
-    if "clawRouterAuthController.ts" in source:
+    if "cloudRouterAuthController.ts" in source:
         return (1, source)
     if "/admin-" in source or "/sdkwork-models-pc-admin-" in source:
         return (2, source)
-    if "sdkwork-clawrouter-pc-commons/src/notificationService.ts" in source:
+    if "sdkwork-cloudrouter-pc-commons/src/notificationService.ts" in source:
         return (3, source)
-    if "clawroutes-pc-commons/src/notificationService.ts" in source:
+    if "cloudroutes-pc-commons/src/notificationService.ts" in source:
         return (4, source)
-    if "clawroutes-pc-commons/src/sessionService.ts" in source:
+    if "cloudroutes-pc-commons/src/sessionService.ts" in source:
         return (5, source)
     if "playground" in source:
         return (8, source)
@@ -527,7 +527,7 @@ def hydrate_frontend_contract(root: Path) -> dict[str, Any]:
         operation = _operation_from_audit_entry(entry)
         if operation is not None:
             source = str(operation.get("source", ""))
-            if source.endswith("clawRouterAuthSettingsService.ts"):
+            if source.endswith("cloudRouterAuthSettingsService.ts"):
                 operation["operation_scope"] = "app_shell"
             service_operations.append(_clamp_operation_tables(operation, route_tables))
 

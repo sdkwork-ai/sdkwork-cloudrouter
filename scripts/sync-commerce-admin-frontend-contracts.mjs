@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * @deprecated Commerce admin UI removed from Claw Router portal (relay-only admin).
+ * @deprecated Commerce admin UI removed from Cloud Router portal (relay-only admin).
  * Retained only for historical reference; use bootstrap_frontend_contract_from_route_manifest.py instead.
  */
 

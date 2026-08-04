@@ -1,7 +1,7 @@
 # Chat Persistence Implementation Status
 
 Status: in progress  
-Owner: clawrouter-platform  
+Owner: cloudrouter-platform  
 Updated: 2026-07-30  
 Design: [First-Party Chat Persistence Design](TECH-2026-05-18-chat-conversation-agent-memory-design.md)
 

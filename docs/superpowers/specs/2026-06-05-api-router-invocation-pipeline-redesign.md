@@ -2,7 +2,7 @@
 
 ## 背景
 
-当前 `sdkwork-clawrouter` 仍处于新应用阶段，没有线上兼容压力，也没有外部用户依赖既有调用编排。因此本次重构采用一次性删除旧编排、全新实现统一调用链的方案。
+当前 `sdkwork-cloudrouter` 仍处于新应用阶段，没有线上兼容压力，也没有外部用户依赖既有调用编排。因此本次重构采用一次性删除旧编排、全新实现统一调用链的方案。
 
 重构目标不是保留旧的三套路径再包一层 facade，而是把所有 API 请求统一抽象为一次资源调用 `Invocation`，并通过高度拆分的 `InvocationPipeline` 和 `InvocationInterceptor` 完成鉴权、资源分类、路由、账号选择、secret、请求转换、调用、计费、sticky、trace 和响应处理。
 
@@ -609,7 +609,7 @@ GET /some/free/metadata
 新增产品层模块：
 
 ```text
-services/sdkwork-clawrouter-router-service/src/application/invocation/
+services/sdkwork-cloudrouter-router-service/src/application/invocation/
   mod.rs
   account.rs
   billing.rs
@@ -633,21 +633,21 @@ services/sdkwork-clawrouter-router-service/src/application/invocation/
 新增 gateway HTTP 适配层：
 
 ```text
-services/sdkwork-clawrouter-edge-runtime/src/invocation_http.rs
-services/sdkwork-clawrouter-edge-runtime/src/invocation_router.rs
+services/sdkwork-cloudrouter-edge-runtime/src/invocation_http.rs
+services/sdkwork-cloudrouter-edge-runtime/src/invocation_router.rs
 ```
 
 删除或大幅替换：
 
 ```text
-services/sdkwork-clawrouter-router-service/src/api/openai_chat.rs
-services/sdkwork-clawrouter-router-service/src/api/openai_embeddings.rs
-services/sdkwork-clawrouter-router-service/src/api/openai_responses.rs
-services/sdkwork-clawrouter-router-service/src/api/openai_invocation.rs
-services/sdkwork-clawrouter-router-service/src/api/openai_runtime.rs
-services/sdkwork-clawrouter-router-service/src/api/openai_usage.rs
-services/sdkwork-clawrouter-edge-runtime/src/passthrough.rs
-services/sdkwork-clawrouter-edge-runtime/src/route_scoped_openai_passthrough.rs
+services/sdkwork-cloudrouter-router-service/src/api/openai_chat.rs
+services/sdkwork-cloudrouter-router-service/src/api/openai_embeddings.rs
+services/sdkwork-cloudrouter-router-service/src/api/openai_responses.rs
+services/sdkwork-cloudrouter-router-service/src/api/openai_invocation.rs
+services/sdkwork-cloudrouter-router-service/src/api/openai_runtime.rs
+services/sdkwork-cloudrouter-router-service/src/api/openai_usage.rs
+services/sdkwork-cloudrouter-edge-runtime/src/passthrough.rs
+services/sdkwork-cloudrouter-edge-runtime/src/route_scoped_openai_passthrough.rs
 ```
 
 这些文件可先替换为薄路由入口，再逐步删除旧私有函数。最终不保留旧编排。

@@ -36,9 +36,9 @@ The schema registry in `docs/schema-registry/tables/006-commerce.yaml` already d
 - `commerce_refund_event`
 - `commerce_order_event`
 
-The Claw Router generated Postgres schema currently does not create the Appbase payment fact tables. It does contain `open_platform_pay_binding`, which is reusable as a binding between open-platform accounts and payment provider accounts/channels. It must not become the payment source of truth.
+The Cloud Router generated Postgres schema currently does not create the Appbase payment fact tables. It does contain `open_platform_pay_binding`, which is reusable as a binding between open-platform accounts and payment provider accounts/channels. It must not become the payment source of truth.
 
-The definition-only payment aggregate OpenAPI file exists at `crates/sdkwork-claw-http/specs/payment-aggregate-openapi.json`. It exposes `/payments/v3` for provider discovery, payment intents, capture, cancel, refunds, reconciliation, webhooks, and provider-native operations. This API surface is the right public contract direction, but it is ahead of the current runtime and seed catalog.
+The definition-only payment aggregate OpenAPI file exists at `crates/sdkwork-cloudrouter-http/specs/payment-aggregate-openapi.json`. It exposes `/payments/v3` for provider discovery, payment intents, capture, cancel, refunds, reconciliation, webhooks, and provider-native operations. This API surface is the right public contract direction, but it is ahead of the current runtime and seed catalog.
 
 Known implementation gaps:
 
@@ -688,7 +688,7 @@ The registry-defined refund tables should be physically landed and wired into ru
 Preferred ownership:
 
 - Appbase commerce owns canonical commerce/payment schema definitions and reusable migrations.
-- Claw Router product owns API aggregation, provider adapter runtime, installed route wiring, and frontend API reference exposure.
+- Cloud Router product owns API aggregation, provider adapter runtime, installed route wiring, and frontend API reference exposure.
 - Generated schema files must be regenerated from source registry/contracts, not hand-edited.
 
 Migration strategy:
@@ -696,7 +696,7 @@ Migration strategy:
 - Add missing canonical tables to Appbase commerce migrations where the tables are reusable across SDKWORK products.
 - Reflect those tables in `docs/schema-registry/tables/006-commerce.yaml`.
 - Regenerate generated schema artifacts after source registry updates.
-- Add product-specific runtime tables only if the fact is specific to Claw Router and not Appbase commerce.
+- Add product-specific runtime tables only if the fact is specific to Cloud Router and not Appbase commerce.
 
 ## Identifier Naming Rules
 
@@ -905,8 +905,8 @@ Provider-specific raw APIs should not be shown as the primary user experience. T
 
 Provider enum alignment:
 
-- `crates/sdkwork-claw-http/specs/payment-aggregate-openapi.json`
-- `services/sdkwork-clawrouter-router-service/src/api/admin_transaction_center.rs`
+- `crates/sdkwork-cloudrouter-http/specs/payment-aggregate-openapi.json`
+- `services/sdkwork-cloudrouter-router-service/src/api/admin_transaction_center.rs`
 - Appbase bootstrap payment provider seeds
 - Appbase bootstrap payment method seeds
 - frontend API reference grouping and schema tabs
@@ -1074,7 +1074,7 @@ Security tests:
 
 ## Open Decisions
 
-- Whether the canonical payment transit tables should be added directly to Appbase commerce migrations first or introduced as a Claw Router product migration and later upstreamed.
+- Whether the canonical payment transit tables should be added directly to Appbase commerce migrations first or introduced as a Cloud Router product migration and later upstreamed.
 - Which domestic providers should be Phase 6 production priorities after the mainstream provider set.
 - Whether `wallet_balance` remains solely an internal method or becomes a first-class provider with a dedicated adapter.
 - Whether large webhook payloads should be stored in object storage immediately or only after payload size crosses a threshold.

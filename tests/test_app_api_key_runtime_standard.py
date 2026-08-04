@@ -28,7 +28,7 @@ def sql_table(source: str, name: str) -> str:
 
 class AppApiKeyRuntimeStandardTest(unittest.TestCase):
     def test_app_api_key_runtime_uses_persistent_postgres_ports(self) -> None:
-        routes = read_text("crates/sdkwork-routes-clawrouter-app-api/src/routes.rs")
+        routes = read_text("crates/sdkwork-routes-cloudrouter-app-api/src/routes.rs")
 
         self.assertIn("fn app_api_key_runtime_deps_for_postgres(", routes)
         self.assertIn("PostgresPricingCatalogLoader::with_credential_secret_codec", routes)
@@ -38,7 +38,7 @@ class AppApiKeyRuntimeStandardTest(unittest.TestCase):
         self.assertNotIn("InMemoryGatewayApiKey", routes)
 
     def test_create_contract_returns_raw_key_exactly_once(self) -> None:
-        openapi = json.loads(read_text("generated/openapi/clawrouter-app-openapi.json"))
+        openapi = json.loads(read_text("generated/openapi/cloudrouter-app-openapi.json"))
         schemas = openapi["components"]["schemas"]
         create_response = schemas["CreateApiKeyResponse"]
         item = schemas["AppApiKeyItem"]
@@ -53,10 +53,10 @@ class AppApiKeyRuntimeStandardTest(unittest.TestCase):
 
     def test_create_sdk_preserves_composite_response(self) -> None:
         sdk = read_text(
-            "sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/api/iam.ts"
+            "sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/src/api/iam.ts"
         )
         response_type = read_text(
-            "sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/types/create-api-key-response.ts"
+            "sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/src/types/create-api-key-response.ts"
         )
 
         self.assertIn(
@@ -70,15 +70,15 @@ class AppApiKeyRuntimeStandardTest(unittest.TestCase):
 
     def test_frontend_uses_generated_sdk_and_keeps_secret_ephemeral(self) -> None:
         service = read_text(
-            "apps/sdkwork-clawrouter-pc/packages/"
-            "sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts"
+            "apps/sdkwork-cloudrouter-pc/packages/"
+            "sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts"
         )
         view = read_text(
-            "apps/sdkwork-clawrouter-pc/packages/"
-            "sdkwork-clawrouter-pc-console-api-keys/src/ApiKeysView.tsx"
+            "apps/sdkwork-cloudrouter-pc/packages/"
+            "sdkwork-cloudrouter-pc-console-api-keys/src/ApiKeysView.tsx"
         )
 
-        self.assertIn("getClawRouterAppSdkClient().iam.apiKeys.create", service)
+        self.assertIn("getCloudRouterAppSdkClient().iam.apiKeys.create", service)
         self.assertIn("const data = readApiRecord(result);", service)
         self.assertIn("const rawKey = readString(data, 'rawKey');", service)
         self.assertIn("const key = normalizeCreatedApiKey(data.item);", service)
@@ -89,7 +89,7 @@ class AppApiKeyRuntimeStandardTest(unittest.TestCase):
         self.assertIn("created.push({ key: result.key, rawKey: result.rawKey })", view)
 
     def test_list_and_update_contracts_never_expose_secret_material(self) -> None:
-        openapi = json.loads(read_text("generated/openapi/clawrouter-app-openapi.json"))
+        openapi = json.loads(read_text("generated/openapi/cloudrouter-app-openapi.json"))
         schemas = openapi["components"]["schemas"]
         item_properties = set(schemas["AppApiKeyItem"]["properties"])
         update_properties = set(schemas["UpdateApiKeyRequest"]["properties"])
@@ -118,7 +118,7 @@ class AppApiKeyRuntimeStandardTest(unittest.TestCase):
 
     def test_rust_response_separates_create_secret_from_metadata(self) -> None:
         route = read_text(
-            "services/sdkwork-clawrouter-router-service/src/api/app_api_keys.rs"
+            "services/sdkwork-cloudrouter-router-service/src/api/app_api_keys.rs"
         )
         create_response = rust_struct(route, "AppApiKeyCreateResponse")
         item_response = rust_struct(route, "AppApiKeyItemResponse")
@@ -136,11 +136,11 @@ class AppApiKeyRuntimeStandardTest(unittest.TestCase):
         schema = read_text("generated/schema/postgres/schema.sql")
         table = sql_table(schema, "iam_gateway_api_key")
         store = read_text(
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/"
+            "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/"
             "postgres/api_key_command_store.rs"
         )
         port = read_text(
-            "services/sdkwork-clawrouter-router-service/src/ports/api_key_command_store.rs"
+            "services/sdkwork-cloudrouter-router-service/src/ports/api_key_command_store.rs"
         )
 
         self.assertIn("key_hash VARCHAR(128) NOT NULL", table)
@@ -158,7 +158,7 @@ class AppApiKeyRuntimeStandardTest(unittest.TestCase):
         schema = read_text("generated/schema/postgres/schema.sql")
         binding = sql_table(schema, "iam_gateway_api_key_account_group")
         routing_store = read_text(
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/"
+            "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/"
             "postgres/app_routing_read_store.rs"
         )
 
@@ -178,14 +178,14 @@ class AppApiKeyRuntimeStandardTest(unittest.TestCase):
             [
                 read_text("docs/schema-registry/frontend-field-contracts.yaml"),
                 read_text(
-                    "services/sdkwork-clawrouter-router-service/src/api/app_api_keys.rs"
+                    "services/sdkwork-cloudrouter-router-service/src/api/app_api_keys.rs"
                 ),
                 read_text(
-                    "apps/sdkwork-clawrouter-pc/packages/"
-                    "sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts"
+                    "apps/sdkwork-cloudrouter-pc/packages/"
+                    "sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts"
                 ),
                 read_text(
-                    "sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/"
+                    "sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/"
                     "src/types/create-api-key-request.ts"
                 ),
             ]
@@ -197,10 +197,10 @@ class AppApiKeyRuntimeStandardTest(unittest.TestCase):
         self.assertNotIn("channel_group", sources)
 
     def test_app_routes_apply_authenticated_subject_boundary(self) -> None:
-        routes = read_text("crates/sdkwork-routes-clawrouter-app-api/src/routes.rs")
-        auth = read_text("crates/sdkwork-claw-http/src/auth.rs")
+        routes = read_text("crates/sdkwork-routes-cloudrouter-app-api/src/routes.rs")
+        auth = read_text("crates/sdkwork-cloudrouter-http/src/auth.rs")
         handler = read_text(
-            "services/sdkwork-clawrouter-router-service/src/api/app_api_keys.rs"
+            "services/sdkwork-cloudrouter-router-service/src/api/app_api_keys.rs"
         )
 
         self.assertIn("merge_web_framework_scoped_app_router", routes)
@@ -208,8 +208,8 @@ class AppApiKeyRuntimeStandardTest(unittest.TestCase):
         self.assertIn("remove_internal_trusted_subject_headers", auth)
         self.assertIn("RequiredAppSqlScopedSubject", handler)
         self.assertNotIn("x-sdkwork-tenant-id", read_text(
-            "apps/sdkwork-clawrouter-pc/packages/"
-            "sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts"
+            "apps/sdkwork-cloudrouter-pc/packages/"
+            "sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts"
         ).lower())
 
 

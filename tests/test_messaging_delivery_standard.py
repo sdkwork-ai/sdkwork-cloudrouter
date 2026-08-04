@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class MessagingDeliveryStandardTest(unittest.TestCase):
     def load_registry(self) -> dict[str, Any]:
-        registry = ROOT / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+        registry = ROOT / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
         data = load_schema_registry(registry)
         self.assertIsInstance(data, dict)
         return data
@@ -31,13 +31,13 @@ class MessagingDeliveryStandardTest(unittest.TestCase):
             if isinstance(table, dict) and isinstance(table.get("table"), str)
         }
 
-    def test_clawrouter_schema_registry_does_not_own_messaging_delivery_tables(self) -> None:
+    def test_cloudrouter_schema_registry_does_not_own_messaging_delivery_tables(self) -> None:
         tables = self.table_map()
         messaging_tables = [name for name in tables if name.startswith("messaging_")]
         self.assertEqual(
             [],
             messaging_tables,
-            "messaging delivery tables are owned by sdkwork-appbase-messaging, not claw-router",
+            "messaging delivery tables are owned by sdkwork-appbase-messaging, not cloud-router",
         )
 
         confusing_tables = [
@@ -50,7 +50,7 @@ class MessagingDeliveryStandardTest(unittest.TestCase):
         ]
         self.assertEqual([], confusing_tables)
 
-    def test_clawrouter_schema_registry_does_not_own_iam_verification_tables(self) -> None:
+    def test_cloudrouter_schema_registry_does_not_own_iam_verification_tables(self) -> None:
         tables = self.table_map()
         verification_tables = [
             name
@@ -60,7 +60,7 @@ class MessagingDeliveryStandardTest(unittest.TestCase):
         self.assertEqual(
             [],
             verification_tables,
-            "IAM verification tables are owned by sdkwork-iam, not claw-router",
+            "IAM verification tables are owned by sdkwork-iam, not cloud-router",
         )
 
     def test_messaging_backend_contract_uses_messaging_sdk_domain(self) -> None:
@@ -75,7 +75,7 @@ class MessagingDeliveryStandardTest(unittest.TestCase):
         self.assertEqual(
             [],
             operations,
-            "relay-only Claw Router must not declare messaging admin frontend operations",
+            "relay-only Cloud Router must not declare messaging admin frontend operations",
         )
 
         manifest = ApiContractManifestGenerator(root=ROOT).generate()
@@ -83,24 +83,24 @@ class MessagingDeliveryStandardTest(unittest.TestCase):
             operation
             for operation in manifest["operations"]
             if operation["api_path"].startswith("/backend/v3/api/messaging/")
-            and str(operation.get("source", "")).startswith("apps/sdkwork-clawrouter-pc/")
+            and str(operation.get("source", "")).startswith("apps/sdkwork-cloudrouter-pc/")
         ]
         self.assertEqual([], manifest_operations)
 
     def test_messaging_admin_surface_is_external_to_relay_portal(self) -> None:
         contract = load_frontend_field_contract(ROOT)
-        clawrouter_messaging_sources = [
+        cloudrouter_messaging_sources = [
             operation
             for operation in contract.get("frontend_operations", [])
             if isinstance(operation, dict)
-            and "sdkwork-clawrouter-pc-admin-messaging" in str(operation.get("source", ""))
+            and "sdkwork-cloudrouter-pc-admin-messaging" in str(operation.get("source", ""))
         ]
-        self.assertEqual([], clawrouter_messaging_sources)
+        self.assertEqual([], cloudrouter_messaging_sources)
 
-        app_tsx = (ROOT / "apps" / "sdkwork-clawrouter-pc" / "src" / "App.tsx").read_text(
+        app_tsx = (ROOT / "apps" / "sdkwork-cloudrouter-pc" / "src" / "App.tsx").read_text(
             encoding="utf-8"
         )
-        self.assertNotIn("sdkwork-clawrouter-pc-admin-messaging", app_tsx)
+        self.assertNotIn("sdkwork-cloudrouter-pc-admin-messaging", app_tsx)
         for route in [
             'path="messaging"',
             'path="messaging/providers"',
@@ -118,9 +118,9 @@ class MessagingDeliveryStandardTest(unittest.TestCase):
         service_path = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-admin-messaging"
+            / "sdkwork-cloudrouter-pc-admin-messaging"
             / "src"
             / "messagingService.ts"
         )
@@ -142,9 +142,9 @@ class MessagingDeliveryStandardTest(unittest.TestCase):
         self.assertIn("email", messaging.get("scope", []))
 
     def test_product_app_runtime_does_not_wire_local_verification_delivery(self) -> None:
-        app_api_path = ROOT / "crates" / "sdkwork-routes-clawrouter-app-api" / "src" / "routes.rs"
+        app_api_path = ROOT / "crates" / "sdkwork-routes-cloudrouter-app-api" / "src" / "routes.rs"
         iam_embedded_path = (
-            ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "iam_embedded.rs"
+            ROOT / "crates" / "sdkwork-cloudrouter-edge-runtime" / "src" / "iam_embedded.rs"
         )
         app_api_source = app_api_path.read_text(encoding="utf-8")
         iam_embedded_source = iam_embedded_path.read_text(encoding="utf-8")
@@ -154,7 +154,7 @@ class MessagingDeliveryStandardTest(unittest.TestCase):
         self.assertNotIn("app_auth_router", app_api_source)
         self.assertNotIn("merge_federated_iam_routers", app_api_source)
         self.assertIn("bootstrap_iam_database_from_env", iam_embedded_source)
-        self.assertIn("build_claw_embedded_iam_app_api_router", iam_embedded_source)
+        self.assertIn("build_cloud_embedded_iam_app_api_router", iam_embedded_source)
 
 
 if __name__ == "__main__":

@@ -3,8 +3,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const LEGACY = 'sdkwork-claw-router';
-const CANONICAL = 'sdkwork-clawrouter';
+const LEGACY = 'sdkwork-cloudrouter-router';
+const CANONICAL = 'sdkwork-cloudrouter';
 const SKIP_DIRS = new Set(['node_modules', '.git', 'target', 'dist', '.pnpm-store']);
 const SKIP_FILES = new Set([
   path.join(root, 'tools', 'sdkwork_standard_alignment_guardian.py'),

@@ -11,7 +11,7 @@ from tools.schema_registry_loader import load_schema_registry
 
 
 ROOT = Path(__file__).resolve().parents[1]
-REGISTRY_PATH = ROOT / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+REGISTRY_PATH = ROOT / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
 
 RETENTION_INDEXES = {
     "ai_config_change_event": "idx_ai_config_change_event_retention",
@@ -28,11 +28,11 @@ CLEANUP_OWNERS = {
     "ai_config_change_event": "ai-routing-service",
     "ai_pricing_import_snapshot": "ai-pricing-service",
     "ai_usage": "router-service",
-    "ops_alert_event": "clawrouter-ops-runtime",
-    "ops_audit_log": "clawrouter-ops-runtime",
-    "ops_config_snapshot": "clawrouter-ops-runtime",
-    "ops_gateway_heartbeat": "clawrouter-ops-runtime",
-    "ops_job_execution": "clawrouter-ops-runtime",
+    "ops_alert_event": "cloudrouter-ops-runtime",
+    "ops_audit_log": "cloudrouter-ops-runtime",
+    "ops_config_snapshot": "cloudrouter-ops-runtime",
+    "ops_gateway_heartbeat": "cloudrouter-ops-runtime",
+    "ops_job_execution": "cloudrouter-ops-runtime",
 }
 
 OPS_QUERY_INDEXES = {

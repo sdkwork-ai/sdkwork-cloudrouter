@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const apiDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  '../services/sdkwork-clawrouter-router-service/src/api',
+  '../services/sdkwork-cloudrouter-router-service/src/api',
 );
 
 const replacements = [

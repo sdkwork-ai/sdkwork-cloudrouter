@@ -28,8 +28,8 @@ jobs:
           --health-retries 10
     env:
       SDKWORK_DATABASE_URL: postgres://sdkwork_ai_test:sdkwork-ci@localhost:5432/sdkwork_ai_test
-      CLAWROUTER_BROWSER_SMOKE_REQUIRED: "1"
-      CLAWROUTER_EDGE_DEV_SMOKE_REQUIRED: "1"
+      CLOUDROUTER_BROWSER_SMOKE_REQUIRED: "1"
+      CLOUDROUTER_EDGE_DEV_SMOKE_REQUIRED: "1"
       RUSTFLAGS: "-D warnings"
     steps:
       - uses: actions/checkout@v4
@@ -69,23 +69,23 @@ jobs:
         run: pnpm api:standard-extensions:check
 
       - name: Install PC workspace dependencies
-        working-directory: apps/sdkwork-clawrouter-pc
+        working-directory: apps/sdkwork-cloudrouter-pc
         run: pnpm install --frozen-lockfile
 
       - name: PC workspace typecheck
-        working-directory: apps/sdkwork-clawrouter-pc
+        working-directory: apps/sdkwork-cloudrouter-pc
         run: pnpm typecheck
 
       - name: PC workspace lint
-        working-directory: apps/sdkwork-clawrouter-pc
+        working-directory: apps/sdkwork-cloudrouter-pc
         run: pnpm lint
 
       - name: PC workspace tests
-        working-directory: apps/sdkwork-clawrouter-pc
+        working-directory: apps/sdkwork-cloudrouter-pc
         run: pnpm test
 
       - name: PC bundle size check
-        working-directory: apps/sdkwork-clawrouter-pc
+        working-directory: apps/sdkwork-cloudrouter-pc
         run: pnpm check:size
 
       - name: Product verification (CI)
@@ -231,15 +231,15 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install PC workspace dependencies
-        working-directory: apps/sdkwork-clawrouter-pc
+        working-directory: apps/sdkwork-cloudrouter-pc
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright chromium
-        working-directory: apps/sdkwork-clawrouter-pc
+        working-directory: apps/sdkwork-cloudrouter-pc
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Run Playwright E2E suite
-        working-directory: apps/sdkwork-clawrouter-pc
+        working-directory: apps/sdkwork-cloudrouter-pc
         env:
           CI: "true"
         run: pnpm test:e2e
@@ -249,5 +249,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: apps/sdkwork-clawrouter-pc/playwright-report/
+          path: apps/sdkwork-cloudrouter-pc/playwright-report/
           retention-days: 7

@@ -6,7 +6,7 @@
     "displayName": "SDKWork Router Agent Open API",
     "version": "0.1.0",
     "type": "rust-route-crate",
-    "root": "sdkwork-clawrouter/crates/sdkwork-routes-agent-open-api",
+    "root": "sdkwork-cloudrouter/crates/sdkwork-routes-agent-open-api",
     "domain": "intelligence",
     "capability": "agent",
     "surface": "open-api",

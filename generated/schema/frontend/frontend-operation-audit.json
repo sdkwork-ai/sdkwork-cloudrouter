@@ -512,7 +512,7 @@
       ],
       "route": "/admin/analytics",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-analytics/src/analyticsService.ts",
       "write_tables": []
     },
     {
@@ -529,7 +529,7 @@
       ],
       "route": "/admin/cache",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -548,7 +548,7 @@
       ],
       "route": "/admin/cache",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -567,7 +567,7 @@
       ],
       "route": "/admin/cache",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -586,7 +586,7 @@
       ],
       "route": "/admin/cache",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
       "write_tables": []
     },
     {
@@ -603,7 +603,7 @@
       ],
       "route": "/admin/cache",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
       "write_tables": []
     },
     {
@@ -620,7 +620,7 @@
       ],
       "route": "/admin/cache",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -639,7 +639,7 @@
       ],
       "route": "/admin/cache",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -658,7 +658,7 @@
       ],
       "route": "/admin/cache",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -680,7 +680,7 @@
       ],
       "route": "/admin/dashboard",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/dashboardService.ts",
       "write_tables": []
     },
     {
@@ -698,7 +698,7 @@
       ],
       "route": "/admin/dashboard",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/dashboardService.ts",
       "write_tables": []
     },
     {
@@ -719,7 +719,7 @@
           "sdk_family": "sdkwork-promotion-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
       "write_tables": []
     },
     {
@@ -740,7 +740,7 @@
           "sdk_family": "sdkwork-promotion-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
       "write_tables": []
     },
     {
@@ -761,7 +761,7 @@
           "sdk_family": "sdkwork-promotion-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
       "write_tables": []
     },
     {
@@ -782,7 +782,7 @@
           "sdk_family": "sdkwork-promotion-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
       "write_tables": []
     },
     {
@@ -803,7 +803,7 @@
           "sdk_family": "sdkwork-promotion-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
       "write_tables": []
     },
     {
@@ -824,7 +824,7 @@
           "sdk_family": "sdkwork-promotion-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
       "write_tables": []
     },
     {
@@ -840,7 +840,7 @@
       ],
       "route": "/admin/marketing/referrals",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
       "write_tables": []
     },
     {
@@ -861,7 +861,7 @@
           "sdk_family": "sdkwork-membership-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": []
     },
     {
@@ -882,7 +882,7 @@
           "sdk_family": "sdkwork-membership-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": []
     },
     {
@@ -903,7 +903,7 @@
           "sdk_family": "sdkwork-membership-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": []
     },
     {
@@ -921,10 +921,10 @@
       "sdk_operations": [
         {
           "operation_id": "packages.create",
-          "sdk_family": "clawrouter-backend-sdk"
+          "sdk_family": "cloudrouter-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": [
         "recharges",
         "ops_audit_log"
@@ -948,7 +948,7 @@
           "sdk_family": "sdkwork-membership-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": []
     },
     {
@@ -969,7 +969,7 @@
           "sdk_family": "sdkwork-membership-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": []
     },
     {
@@ -987,10 +987,10 @@
       "sdk_operations": [
         {
           "operation_id": "packages.delete",
-          "sdk_family": "clawrouter-backend-sdk"
+          "sdk_family": "cloudrouter-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": [
         "recharges",
         "ops_audit_log"
@@ -1014,7 +1014,7 @@
           "sdk_family": "sdkwork-membership-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": []
     },
     {
@@ -1035,7 +1035,7 @@
           "sdk_family": "sdkwork-membership-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": []
     },
     {
@@ -1056,7 +1056,7 @@
           "sdk_family": "sdkwork-membership-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": []
     },
     {
@@ -1077,7 +1077,7 @@
           "sdk_family": "sdkwork-membership-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": []
     },
     {
@@ -1098,7 +1098,7 @@
           "sdk_family": "sdkwork-membership-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": []
     },
     {
@@ -1116,10 +1116,10 @@
       "sdk_operations": [
         {
           "operation_id": "packages.list",
-          "sdk_family": "clawrouter-backend-sdk"
+          "sdk_family": "cloudrouter-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": []
     },
     {
@@ -1137,10 +1137,10 @@
       "sdk_operations": [
         {
           "operation_id": "settings.retrieve",
-          "sdk_family": "clawrouter-backend-sdk"
+          "sdk_family": "cloudrouter-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": []
     },
     {
@@ -1161,7 +1161,7 @@
           "sdk_family": "sdkwork-membership-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": []
     },
     {
@@ -1182,7 +1182,7 @@
           "sdk_family": "sdkwork-membership-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": []
     },
     {
@@ -1203,7 +1203,7 @@
           "sdk_family": "sdkwork-membership-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": []
     },
     {
@@ -1224,7 +1224,7 @@
           "sdk_family": "sdkwork-membership-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": []
     },
     {
@@ -1242,10 +1242,10 @@
       "sdk_operations": [
         {
           "operation_id": "packages.update",
-          "sdk_family": "clawrouter-backend-sdk"
+          "sdk_family": "cloudrouter-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": [
         "recharges",
         "ops_audit_log"
@@ -1266,10 +1266,10 @@
       "sdk_operations": [
         {
           "operation_id": "settings.update",
-          "sdk_family": "clawrouter-backend-sdk"
+          "sdk_family": "cloudrouter-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": [
         "recharges",
         "ops_audit_log"
@@ -1288,7 +1288,7 @@
       ],
       "route": "/admin/monitor",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor/src/monitorService.ts",
       "write_tables": []
     },
     {
@@ -1305,7 +1305,7 @@
       ],
       "route": "/admin/monitor",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor/src/monitorService.ts",
       "write_tables": []
     },
     {
@@ -1321,7 +1321,7 @@
       ],
       "route": "/admin/monitor",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor/src/monitorService.ts",
       "write_tables": []
     },
     {
@@ -1342,7 +1342,7 @@
           "sdk_family": "sdkwork-payment-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
       "write_tables": []
     },
     {
@@ -1363,7 +1363,7 @@
           "sdk_family": "sdkwork-payment-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
       "write_tables": []
     },
     {
@@ -1384,7 +1384,7 @@
           "sdk_family": "sdkwork-payment-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
       "write_tables": []
     },
     {
@@ -1405,7 +1405,7 @@
           "sdk_family": "sdkwork-payment-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
       "write_tables": []
     },
     {
@@ -1421,7 +1421,7 @@
       ],
       "route": "/admin/payments/providers",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
       "write_tables": []
     },
     {
@@ -1442,7 +1442,7 @@
           "sdk_family": "sdkwork-payment-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
       "write_tables": []
     },
     {
@@ -1463,7 +1463,7 @@
           "sdk_family": "sdkwork-payment-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
       "write_tables": []
     },
     {
@@ -1484,7 +1484,7 @@
           "sdk_family": "sdkwork-payment-backend-sdk"
         }
       ],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
       "write_tables": []
     },
     {
@@ -1500,7 +1500,7 @@
       ],
       "route": "/admin/ratelimit",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
       "write_tables": [
         "iam_gateway_risk_rule",
         "ops_audit_log"
@@ -1519,7 +1519,7 @@
       ],
       "route": "/admin/ratelimit",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
       "write_tables": [
         "iam_gateway_risk_rule",
         "ops_audit_log"
@@ -1539,7 +1539,7 @@
       ],
       "route": "/admin/ratelimit",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
       "write_tables": [
         "ai_quota_policy",
         "ops_audit_log"
@@ -1559,7 +1559,7 @@
       ],
       "route": "/admin/ratelimit",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
       "write_tables": [
         "ai_quota_policy",
         "ops_audit_log"
@@ -1578,7 +1578,7 @@
       ],
       "route": "/admin/ratelimit",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
       "write_tables": []
     },
     {
@@ -1594,7 +1594,7 @@
       ],
       "route": "/admin/ratelimit",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
       "write_tables": []
     },
     {
@@ -1611,7 +1611,7 @@
       ],
       "route": "/admin/ratelimit",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
       "write_tables": []
     },
     {
@@ -1628,7 +1628,7 @@
       ],
       "route": "/admin/ratelimit",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
       "write_tables": []
     },
     {
@@ -1644,7 +1644,7 @@
       ],
       "route": "/admin/ratelimit",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
       "write_tables": [
         "iam_gateway_risk_rule",
         "ops_audit_log"
@@ -1665,7 +1665,7 @@
       ],
       "route": "/admin/record",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-record/src/recordService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-record/src/recordService.ts",
       "write_tables": []
     },
     {
@@ -1681,7 +1681,7 @@
       ],
       "route": "/admin/runtime-region",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-runtime-region/src/runtimeRegionService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-runtime-region/src/runtimeRegionService.ts",
       "write_tables": []
     },
     {
@@ -1697,7 +1697,7 @@
       ],
       "route": "/admin/runtime-region",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-runtime-region/src/runtimeRegionService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-runtime-region/src/runtimeRegionService.ts",
       "write_tables": [
         "ops_config_snapshot",
         "ops_audit_log"
@@ -1716,7 +1716,7 @@
       ],
       "route": "/admin/service-nodes",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
       "write_tables": [
         "ops_gateway_instance"
       ]
@@ -1734,7 +1734,7 @@
       ],
       "route": "/admin/service-nodes",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
       "write_tables": [
         "ops_gateway_instance"
       ]
@@ -1752,7 +1752,7 @@
       ],
       "route": "/admin/service-nodes",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
       "write_tables": []
     },
     {
@@ -1768,7 +1768,7 @@
       ],
       "route": "/admin/service-nodes",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
       "write_tables": [
         "ops_gateway_instance"
       ]
@@ -1786,7 +1786,7 @@
       ],
       "route": "/admin/service-nodes",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
       "write_tables": [
         "ops_gateway_instance"
       ]
@@ -1797,14 +1797,14 @@
       "api_surface": "backend",
       "file_targets": [],
       "kind": "read",
-      "operation": "fetchClawRouterAuthSettings",
+      "operation": "fetchCloudRouterAuthSettings",
       "operation_scope": null,
       "read_sources": [
         "ops_config_snapshot"
       ],
       "route": "/admin/settings",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-site/src/AuthSettingsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site/src/AuthSettingsService.ts",
       "write_tables": []
     },
     {
@@ -1813,14 +1813,14 @@
       "api_surface": "backend",
       "file_targets": [],
       "kind": "update",
-      "operation": "updateClawRouterAuthSettings",
+      "operation": "updateCloudRouterAuthSettings",
       "operation_scope": null,
       "read_sources": [
         "ops_config_snapshot"
       ],
       "route": "/admin/settings",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-site/src/AuthSettingsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site/src/AuthSettingsService.ts",
       "write_tables": [
         "ops_config_snapshot",
         "ops_audit_log"
@@ -1839,7 +1839,7 @@
       ],
       "route": "/admin/site",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-site/src/SiteSettingsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site/src/SiteSettingsService.ts",
       "write_tables": []
     },
     {
@@ -1855,7 +1855,7 @@
       ],
       "route": "/admin/site",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-site/src/SiteSettingsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site/src/SiteSettingsService.ts",
       "write_tables": [
         "ops_config_snapshot",
         "ops_audit_log"
@@ -1874,7 +1874,7 @@
       ],
       "route": "/admin/storage/buckets",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -1892,7 +1892,7 @@
       ],
       "route": "/admin/storage/buckets",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
       "write_tables": []
     },
     {
@@ -1908,7 +1908,7 @@
       ],
       "route": "/admin/storage/defaultBuckets",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -1926,7 +1926,7 @@
       ],
       "route": "/admin/storage/defaultBuckets",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
       "write_tables": []
     },
     {
@@ -1942,7 +1942,7 @@
       ],
       "route": "/admin/storage/garbageCollection",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -1960,7 +1960,7 @@
       ],
       "route": "/admin/storage/garbageCollection",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
       "write_tables": []
     },
     {
@@ -1976,7 +1976,7 @@
       ],
       "route": "/admin/storage/providers",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -1994,7 +1994,7 @@
       ],
       "route": "/admin/storage/providers/{providerId}",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -2012,7 +2012,7 @@
       ],
       "route": "/admin/storage/providers",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
       "write_tables": []
     },
     {
@@ -2028,7 +2028,7 @@
       ],
       "route": "/admin/storage/quotas",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -2046,7 +2046,7 @@
       ],
       "route": "/admin/storage/quotas",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
       "write_tables": []
     },
     {
@@ -2062,7 +2062,7 @@
       ],
       "route": "/admin/storage/reconciliation",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -2080,7 +2080,7 @@
       ],
       "route": "/admin/storage/reconciliation",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
       "write_tables": []
     },
     {
@@ -2096,7 +2096,7 @@
       ],
       "route": "/admin/storage/usage",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
       "write_tables": []
     },
     {
@@ -2113,7 +2113,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": [
         "ai_upstream_supplier",
         "ai_upstream_account",
@@ -2135,7 +2135,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": [
         "ai_upstream_account",
         "ai_upstream_account_credential",
@@ -2156,7 +2156,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": [
         "ai_upstream_account_group",
         "ops_audit_log",
@@ -2176,7 +2176,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": [
         "ai_upstream_supplier",
         "ops_audit_log",
@@ -2197,7 +2197,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": [
         "ai_upstream_supplier",
         "ai_upstream_account",
@@ -2221,7 +2221,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": [
         "ai_upstream_account",
         "ai_upstream_account_credential",
@@ -2242,7 +2242,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": [
         "ai_upstream_account_group",
         "ops_audit_log",
@@ -2262,7 +2262,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": [
         "ai_upstream_supplier",
         "ops_audit_log",
@@ -2291,7 +2291,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": []
     },
     {
@@ -2308,7 +2308,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": []
     },
     {
@@ -2324,7 +2324,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": []
     },
     {
@@ -2340,7 +2340,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": []
     },
     {
@@ -2357,7 +2357,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": []
     },
     {
@@ -2375,7 +2375,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": []
     },
     {
@@ -2394,7 +2394,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": []
     },
     {
@@ -2410,7 +2410,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": []
     },
     {
@@ -2427,7 +2427,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": []
     },
     {
@@ -2444,7 +2444,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": []
     },
     {
@@ -2461,7 +2461,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": []
     },
     {
@@ -2480,7 +2480,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": []
     },
     {
@@ -2496,7 +2496,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": []
     },
     {
@@ -2513,7 +2513,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": [
         "ai_upstream_supplier",
         "ai_upstream_account",
@@ -2534,7 +2534,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": [
         "ai_upstream_account_group",
         "ops_audit_log",
@@ -2556,7 +2556,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": [
         "ai_upstream_account_group",
         "ai_upstream_account_group_member",
@@ -2581,7 +2581,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": [
         "ai_upstream_account_group",
         "ai_upstream_account_group_resource",
@@ -2604,7 +2604,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": [
         "ai_upstream_supplier",
         "ops_audit_log",
@@ -2625,7 +2625,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": [
         "ai_upstream_supplier",
         "ai_upstream_supplier_auth_method",
@@ -2647,7 +2647,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": [
         "ai_upstream_supplier",
         "ai_upstream_supplier_endpoint",
@@ -2671,7 +2671,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": [
         "ai_upstream_supplier",
         "ai_upstream_supplier_resource",
@@ -2698,7 +2698,7 @@
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
       "write_tables": [
         "ai_upstream_account",
         "ai_upstream_supplier_endpoint",
@@ -2719,7 +2719,7 @@
       ],
       "route": "/console/api-keys",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts",
       "write_tables": [
         "ai_upstream_account_group",
         "iam_gateway_api_key",
@@ -2741,7 +2741,7 @@
       ],
       "route": "/console/api-keys",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts",
       "write_tables": [
         "iam_gateway_api_key",
         "ops_audit_log"
@@ -2764,7 +2764,7 @@
       ],
       "route": "/console/api-keys",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts",
       "write_tables": []
     },
     {
@@ -2786,7 +2786,7 @@
       ],
       "route": "/console/api-keys",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts",
       "write_tables": []
     },
     {
@@ -2805,7 +2805,7 @@
       ],
       "route": "/console/api-keys",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts",
       "write_tables": [
         "iam_gateway_api_key",
         "iam_gateway_access_policy",
@@ -2831,7 +2831,7 @@
       ],
       "route": "/console/dashboard",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/dashboardService.ts",
       "write_tables": []
     },
     {
@@ -2847,7 +2847,7 @@
       ],
       "route": "/console/gateway",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-gateway/src/gatewayService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/gatewayService.ts",
       "write_tables": []
     },
     {
@@ -2863,7 +2863,7 @@
       ],
       "route": "/console/notifications",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-messages/src/messagesService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-messages/src/messagesService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -2881,7 +2881,7 @@
       ],
       "route": "/console/notifications",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-messages/src/messagesService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-messages/src/messagesService.ts",
       "write_tables": []
     },
     {
@@ -2897,7 +2897,7 @@
       ],
       "route": "/console/notifications",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-messages/src/messagesService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-messages/src/messagesService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -2917,7 +2917,7 @@
       ],
       "route": "/console/settings",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-settings/src/settingsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-settings/src/settingsService.ts",
       "write_tables": []
     },
     {
@@ -2934,7 +2934,7 @@
       ],
       "route": "/console/settings",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-settings/src/settingsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-settings/src/settingsService.ts",
       "write_tables": [
         "iam_user_preference",
         "integration_webhook_endpoint"
@@ -2955,7 +2955,7 @@
       ],
       "route": "/console/usage",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-usage/src/usageService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-usage/src/usageService.ts",
       "write_tables": []
     },
     {
@@ -2971,7 +2971,7 @@
       ],
       "route": "/console/user",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-user/src/userService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-user/src/userService.ts",
       "write_tables": []
     },
     {
@@ -2995,7 +2995,7 @@
       ],
       "route": "/models",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts",
       "write_tables": []
     },
     {
@@ -3012,7 +3012,7 @@
       ],
       "route": "/models",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts",
       "write_tables": []
     },
     {
@@ -3036,7 +3036,7 @@
       ],
       "route": "/models",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts",
       "write_tables": []
     },
     {
@@ -3058,7 +3058,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": [
         "ai_chat_turn",
         "ai_chat_item",
@@ -3081,7 +3081,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": [
         "ai_runtime_invocation"
       ]
@@ -3099,7 +3099,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": [
         "ai_chat_conversation"
       ]
@@ -3117,7 +3117,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": [
         "ai_chat_turn",
         "ai_chat_item",
@@ -3138,7 +3138,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": [
         "ai_agent"
       ]
@@ -3156,7 +3156,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": [
         "ai_agent"
       ]
@@ -3174,7 +3174,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": [
         "ai_runtime_artifact"
       ]
@@ -3192,7 +3192,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": [
         "ai_runtime_invocation_event"
       ]
@@ -3212,7 +3212,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": [
         "ai_runtime_invocation"
       ]
@@ -3230,7 +3230,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3249,7 +3249,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3265,7 +3265,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3281,7 +3281,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3297,7 +3297,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3314,7 +3314,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3331,7 +3331,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3350,7 +3350,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3366,7 +3366,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3382,7 +3382,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3398,7 +3398,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3414,7 +3414,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3431,7 +3431,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3447,7 +3447,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/components/chat/chatService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts",
       "write_tables": [
         "ai_runtime_invocation"
       ]
@@ -3468,7 +3468,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/components/chat/chatService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts",
       "write_tables": []
     },
     {
@@ -3484,7 +3484,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/components/chat/chatService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts",
       "write_tables": []
     },
     {
@@ -3503,7 +3503,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/components/chat/chatService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts",
       "write_tables": [
         "ai_chat_turn",
         "ai_chat_item",
@@ -3527,7 +3527,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/components/chat/chatService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts",
       "write_tables": [
         "ai_request_trace",
         "ai_usage"
@@ -3546,7 +3546,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundGenerationService.ts",
       "write_tables": [
         "ai_usage"
       ]
@@ -3564,7 +3564,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundGenerationsService.ts",
       "write_tables": []
     },
     {
@@ -3580,7 +3580,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundGenerationsService.ts",
       "write_tables": [
         "ai_usage"
       ]
@@ -3598,7 +3598,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundService.ts",
       "write_tables": []
     },
     {
@@ -3614,7 +3614,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundService.ts",
       "write_tables": []
     },
     {
@@ -3630,7 +3630,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundService.ts",
       "write_tables": [
         "ai_usage"
       ]
@@ -3648,7 +3648,7 @@
       ],
       "route": "/playground",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundService.ts",
       "write_tables": [
         "ai_usage"
       ]
@@ -3667,7 +3667,7 @@
       ],
       "route": "/rankings",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/src/rankingService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-rankings/src/rankingService.ts",
       "write_tables": []
     },
     {
@@ -3684,7 +3684,7 @@
       ],
       "route": "/rankings",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/src/rankingService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-rankings/src/rankingService.ts",
       "write_tables": []
     },
     {
@@ -3700,7 +3700,7 @@
       ],
       "route": "/console/user",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/iamDirectoryApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3716,7 +3716,7 @@
       ],
       "route": "/console/user",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/iamDirectoryApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3732,7 +3732,7 @@
       ],
       "route": "/console/user",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/iamDirectoryApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3748,7 +3748,7 @@
       ],
       "route": "/console/user",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/iamDirectoryApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3764,7 +3764,7 @@
       ],
       "route": "/console/user",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/iamDirectoryApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3780,7 +3780,7 @@
       ],
       "route": "/console/user",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/iamDirectoryApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3796,7 +3796,7 @@
       ],
       "route": "/console/user",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/iamDirectoryApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3812,7 +3812,7 @@
       ],
       "route": "/console/user",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/iamDirectoryApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3828,7 +3828,7 @@
       ],
       "route": "/console/user",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/iamDirectoryApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3844,7 +3844,7 @@
       ],
       "route": "/console/notifications",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/notificationService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -3862,7 +3862,7 @@
       ],
       "route": "/console/notifications",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/notificationService.ts",
       "write_tables": []
     },
     {
@@ -3878,7 +3878,7 @@
       ],
       "route": "/console/notifications",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/notificationService.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -3899,7 +3899,7 @@
       ],
       "route": "/console/api-keys",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/routingApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3918,7 +3918,7 @@
       ],
       "route": "/console/gateway",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/routingApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3936,7 +3936,7 @@
       ],
       "route": "/console/usage",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/routingApiOperations.ts",
       "write_tables": []
     },
     {
@@ -3953,7 +3953,7 @@
       ],
       "route": "/auth/login",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/sessionService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/sessionService.ts",
       "write_tables": [
         "iam_session",
         "iam_security_event",
@@ -3973,7 +3973,7 @@
       ],
       "route": "/auth/login",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/sessionService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/sessionService.ts",
       "write_tables": [
         "iam_session",
         "iam_security_event"
@@ -3992,7 +3992,7 @@
       ],
       "route": "/",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/siteBranding.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/siteBranding.ts",
       "write_tables": []
     },
     {
@@ -4009,7 +4009,7 @@
       ],
       "route": "/auth/login",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts",
       "write_tables": []
     },
     {
@@ -4025,7 +4025,7 @@
       ],
       "route": "/auth/oauth/callback/:provider",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -4043,7 +4043,7 @@
       ],
       "route": "/auth/login",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts",
       "write_tables": [
         "iam_session",
         "iam_security_event"
@@ -4064,7 +4064,7 @@
       ],
       "route": "/auth/register",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts",
       "write_tables": [
         "iam_user",
         "iam_user_identity",
@@ -4088,7 +4088,7 @@
       ],
       "route": "/auth/forgot-password",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts",
       "write_tables": [
         "iam_security_event"
       ]
@@ -4107,7 +4107,7 @@
       ],
       "route": "/auth/forgot-password",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts",
       "write_tables": [
         "iam_credential",
         "iam_security_event",
@@ -4127,7 +4127,7 @@
       ],
       "route": "/auth/login",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts",
       "write_tables": [
         "messaging_verification_challenge",
         "messaging_outbound_message",
@@ -4149,7 +4149,7 @@
       ],
       "route": "/auth/login",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts",
       "write_tables": [
         "iam_session",
         "iam_security_event",
@@ -4171,7 +4171,7 @@
       ],
       "route": "/auth/login",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts",
       "write_tables": [
         "iam_session",
         "iam_security_event",
@@ -4192,7 +4192,7 @@
       ],
       "route": "/auth/oauth/callback/:provider",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts",
       "write_tables": [
         "iam_user_identity",
         "iam_session",
@@ -4215,7 +4215,7 @@
       ],
       "route": "/auth/login",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts",
       "write_tables": [
         "iam_session",
         "iam_security_event",
@@ -4236,7 +4236,7 @@
       ],
       "route": "/auth/login",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts",
       "write_tables": [
         "iam_session",
         "iam_security_event",
@@ -4256,7 +4256,7 @@
       ],
       "route": "/auth/login",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts",
       "write_tables": [
         "iam_session",
         "iam_security_event"
@@ -4275,7 +4275,7 @@
       ],
       "route": "/auth/login",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts",
       "write_tables": [
         "iam_session",
         "iam_security_event"
@@ -4295,7 +4295,7 @@
       ],
       "route": "/auth/login",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts",
       "write_tables": [
         "messaging_verification_challenge",
         "messaging_verification_attempt"
@@ -4307,14 +4307,14 @@
       "api_surface": "app",
       "file_targets": [],
       "kind": "read",
-      "operation": "fetchClawRouterAuthRuntimeSettings",
+      "operation": "fetchCloudRouterAuthRuntimeSettings",
       "operation_scope": "app_shell",
       "read_sources": [
         "ops_config_snapshot"
       ],
       "route": "/auth/login",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthSettingsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthSettingsService.ts",
       "write_tables": []
     },
     {
@@ -4323,14 +4323,14 @@
       "api_surface": "app",
       "file_targets": [],
       "kind": "read",
-      "operation": "fetchClawRouterAuthVerificationPolicy",
+      "operation": "fetchCloudRouterAuthVerificationPolicy",
       "operation_scope": "app_shell",
       "read_sources": [
         "ops_config_snapshot"
       ],
       "route": "/auth/login",
       "sdk_operations": [],
-      "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthSettingsService.ts",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthSettingsService.ts",
       "write_tables": []
     }
   ],

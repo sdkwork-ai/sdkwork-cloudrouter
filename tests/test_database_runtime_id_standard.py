@@ -4,16 +4,16 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SQL_SOURCE_ROOT = ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql"
+SQL_SOURCE_ROOT = ROOT / "services" / "sdkwork-cloudrouter-router-service" / "src" / "infrastructure" / "sql"
 GENERATED_POSTGRES_SCHEMA = ROOT / "generated" / "schema" / "postgres" / "schema.sql"
 SCHEMA_COMPILER_DOC = (
     ROOT / "docs" / "architecture" / "tech" / "TECH-21-schema-compiler-postgres-ddl.md"
 )
 KUBERNETES_RUNTIME_DEPLOYMENTS = (
-    ROOT / "deployments" / "kubernetes" / "claw-router-gateway.yaml",
-    ROOT / "deployments" / "kubernetes" / "claw-router-app-api.yaml",
-    ROOT / "deployments" / "kubernetes" / "claw-router-admin-api.yaml",
-    ROOT / "deployments" / "kubernetes" / "claw-router-edge.yaml",
+    ROOT / "deployments" / "kubernetes" / "cloud-router-gateway.yaml",
+    ROOT / "deployments" / "kubernetes" / "cloud-router-app-api.yaml",
+    ROOT / "deployments" / "kubernetes" / "cloud-router-admin-api.yaml",
+    ROOT / "deployments" / "kubernetes" / "cloud-router-edge.yaml",
 )
 
 
@@ -86,14 +86,14 @@ class DatabaseRuntimeIdStandardTest(unittest.TestCase):
                 self.assertIn("fieldPath: metadata.name", text)
                 self.assertIn("name: SDKWORK_NODE_INSTANCE_ID", text)
                 self.assertIn("fieldPath: metadata.uid", text)
-                self.assertNotIn("SDKWORK_CLAW_SNOWFLAKE_NODE_ID", text)
+                self.assertNotIn("SDKWORK_CLOUDROUTER_SNOWFLAKE_NODE_ID", text)
 
     def test_runtime_uses_the_canonical_database_fenced_allocator(self) -> None:
         runtime_id_source = (SQL_SOURCE_ROOT / "runtime_id.rs").read_text(encoding="utf-8")
         service_manifest = (
             ROOT
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "Cargo.toml"
         ).read_text(encoding="utf-8")
 
@@ -105,8 +105,8 @@ class DatabaseRuntimeIdStandardTest(unittest.TestCase):
     def test_runtime_id_health_and_failures_are_exported_with_bounded_labels(self) -> None:
         runtime_id_source = (SQL_SOURCE_ROOT / "runtime_id.rs").read_text(encoding="utf-8")
 
-        self.assertIn("clawrouter_runtime_id_generator_ready", runtime_id_source)
-        self.assertIn("clawrouter_runtime_id_failures_total", runtime_id_source)
+        self.assertIn("cloudrouter_runtime_id_generator_ready", runtime_id_source)
+        self.assertIn("cloudrouter_runtime_id_failures_total", runtime_id_source)
         self.assertIn('&["operation", "reason"]', runtime_id_source)
         for reason in (
             "configuration",

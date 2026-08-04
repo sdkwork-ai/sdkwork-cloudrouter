@@ -11,9 +11,9 @@ ROOT = Path(__file__).resolve().parents[1]
 MODELS_PACKAGE = (
     ROOT
     / "apps"
-    / "sdkwork-clawrouter-pc"
+    / "sdkwork-cloudrouter-pc"
     / "packages"
-    / "sdkwork-clawrouter-pc-models"
+    / "sdkwork-cloudrouter-pc-models"
 )
 CONTRACT_PATH = ROOT / "docs" / "schema-registry" / "frontend-field-contracts.yaml"
 CLASSIFICATION_PATH = ROOT / "docs" / "schema-registry" / "frontend-route-classification.yaml"
@@ -54,9 +54,9 @@ class ModelsCatalogRuntimeStandardTest(unittest.TestCase):
         i18n_models_source = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-i18n"
+            / "sdkwork-cloudrouter-pc-i18n"
             / "src"
             / "resources"
             / "public"
@@ -145,34 +145,34 @@ class ModelsCatalogRuntimeStandardTest(unittest.TestCase):
 
     def test_playground_model_groups_are_derived_from_standard_app_model_catalog(self) -> None:
         contract = yaml.safe_load(CONTRACT_PATH.read_text(encoding="utf-8"))
-        app_openapi = json.loads((ROOT / "generated" / "openapi" / "clawrouter-app-openapi.json").read_text(encoding="utf-8"))
+        app_openapi = json.loads((ROOT / "generated" / "openapi" / "cloudrouter-app-openapi.json").read_text(encoding="utf-8"))
         playground_types_source = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-playground"
+            / "sdkwork-cloudrouter-pc-playground"
             / "src"
             / "playgroundTypes.ts"
         ).read_text(encoding="utf-8")
         playground_service_source = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-playground"
+            / "sdkwork-cloudrouter-pc-playground"
             / "src"
             / "playgroundService.ts"
         ).read_text(encoding="utf-8")
         playground_runtime_test_source = (
-            ROOT / "apps" / "sdkwork-clawrouter-pc" / "console-app-runtime.test.ts"
+            ROOT / "apps" / "sdkwork-cloudrouter-pc" / "console-app-runtime.test.ts"
         ).read_text(encoding="utf-8")
-        rust_api_source = (ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "api" / "app_models.rs").read_text(encoding="utf-8")
+        rust_api_source = (ROOT / "services" / "sdkwork-cloudrouter-router-service" / "src" / "api" / "app_models.rs").read_text(encoding="utf-8")
         sdk_ai_source = (
             ROOT
             / "sdks"
-            / "clawrouter-app-sdk"
-            / "clawrouter-app-sdk-typescript"
+            / "cloudrouter-app-sdk"
+            / "cloudrouter-app-sdk-typescript"
             / "src"
             / "api"
             / "ai.ts"
@@ -180,7 +180,7 @@ class ModelsCatalogRuntimeStandardTest(unittest.TestCase):
 
         operation = self._operation(
             contract,
-            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundService.ts",
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundService.ts",
             "fetchModelGroups",
         )
         group_schema = operation["response_schema"]["properties"]["groups"]["items"]
@@ -233,8 +233,8 @@ class ModelsCatalogRuntimeStandardTest(unittest.TestCase):
         classification = yaml.safe_load(CLASSIFICATION_PATH.read_text(encoding="utf-8"))
         model_service_path = MODELS_PACKAGE / "src" / "modelService.ts"
         runtime_catalog_path = MODELS_PACKAGE / "src" / "runtimeModelCatalog.ts"
-        app_sdk_types_path = ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "types"
-        app_models_api_path = ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "api" / "app_models.rs"
+        app_sdk_types_path = ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src" / "types"
+        app_models_api_path = ROOT / "services" / "sdkwork-cloudrouter-router-service" / "src" / "api" / "app_models.rs"
 
         self.assertTrue(
             model_service_path.exists(),
@@ -254,14 +254,14 @@ class ModelsCatalogRuntimeStandardTest(unittest.TestCase):
         route_entry = self._route_entry(classification, "/models")
         operation = self._operation(
             contract,
-            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts",
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts",
             "fetchModels",
         )
 
         self.assertEqual("sdk_backed_business_runtime", route_entry["delivery_kind"])
         self.assertEqual("app", route_entry["api_surface"])
         self.assertIn(
-            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts",
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts",
             route_entry["evidence"],
         )
 
@@ -303,7 +303,7 @@ class ModelsCatalogRuntimeStandardTest(unittest.TestCase):
         self.assertIn("status: 'reference' | 'unavailable'", app_price_availability_source)
         self.assertNotIn("'available'", app_price_availability_source)
 
-        self.assertIn("getClawRouterAppSdkClient", model_service_source)
+        self.assertIn("getCloudRouterAppSdkClient", model_service_source)
         self.assertIn(".ai.models.list", model_service_source)
         self.assertIn("mergeRuntimeModelCatalog", runtime_catalog_source)
         self.assertIn("resolveRuntimeModelCatalog", model_service_source)
@@ -323,7 +323,7 @@ class ModelsCatalogRuntimeStandardTest(unittest.TestCase):
         self.assertNotIn("return mergeRuntimeModelCatalog(result.data?.items ?? [])", model_service_source)
         self.assertIn("findModelByCatalogRouteId", runtime_catalog_source)
         self.assertIn("decodeModelRouteId", runtime_catalog_source)
-        self.assertNotIn("getClawRouterAppSdkClient", runtime_catalog_source)
+        self.assertNotIn("getCloudRouterAppSdkClient", runtime_catalog_source)
         self.assertNotRegex(model_service_source, r"\bfetch\s*\(")
         self.assertNotIn("axios", model_service_source)
 
@@ -377,7 +377,7 @@ class ModelsCatalogRuntimeStandardTest(unittest.TestCase):
     def test_model_catalog_filter_fields_are_registry_driven(self) -> None:
         catalog_source = (MODELS_PACKAGE / "src" / "modelCatalog.ts").read_text(encoding="utf-8")
         runtime_test_source = (
-            ROOT / "apps" / "sdkwork-clawrouter-pc" / "models-runtime.test.ts"
+            ROOT / "apps" / "sdkwork-cloudrouter-pc" / "models-runtime.test.ts"
         ).read_text(encoding="utf-8")
 
         registry_match = re.search(
@@ -459,9 +459,9 @@ class ModelsCatalogRuntimeStandardTest(unittest.TestCase):
         sdk_clients_source = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawroutes-pc-commons"
+            / "sdkwork-cloudroutes-pc-commons"
             / "src"
             / "sdk-clients.ts"
         ).read_text(encoding="utf-8")
@@ -471,8 +471,8 @@ class ModelsCatalogRuntimeStandardTest(unittest.TestCase):
         self.assertNotIn("{model.id}", details_source)
         self.assertNotIn("'{model.id}'", details_source)
         self.assertIn("apiExample: modelCatalogApiExample(model.id)", catalog_source)
-        self.assertIn("return createClawRouterAppSdkModelExample(modelId, NODE_ENV_REFERENCE);", catalog_source)
-        self.assertIn("export function createClawRouterAppSdkModelExample", sdk_clients_source)
+        self.assertIn("return createCloudRouterAppSdkModelExample(modelId, NODE_ENV_REFERENCE);", catalog_source)
+        self.assertIn("export function createCloudRouterAppSdkModelExample", sdk_clients_source)
         self.assertIn("JSON.stringify(modelId)", sdk_clients_source)
         self.assertNotIn("model: '${modelId}'", catalog_source)
 
@@ -519,8 +519,8 @@ class ModelsCatalogRuntimeStandardTest(unittest.TestCase):
         self.assertNotIn("model.pricing.input.toFixed", details_source)
 
     def test_models_runtime_node_test_covers_public_price_semantics(self) -> None:
-        runtime_test_path = ROOT / "apps" / "sdkwork-clawrouter-pc" / "models-runtime.test.ts"
-        verifier_path = ROOT / "scripts" / "verify-claw-router-application.mjs"
+        runtime_test_path = ROOT / "apps" / "sdkwork-cloudrouter-pc" / "models-runtime.test.ts"
+        verifier_path = ROOT / "scripts" / "verify-cloud-router-application.mjs"
 
         self.assertTrue(runtime_test_path.exists(), "Portal must have executable Node tests for /models runtime mapping.")
         runtime_test_source = runtime_test_path.read_text(encoding="utf-8")
@@ -601,14 +601,14 @@ class ModelsCatalogRuntimeStandardTest(unittest.TestCase):
             self.assertIn(sensitive_field, runtime_test_source)
 
         self.assertIn("portal models runtime tests", verifier_source)
-        self.assertIn("apps/sdkwork-clawrouter-pc/models-runtime.test.ts", verifier_source)
+        self.assertIn("apps/sdkwork-cloudrouter-pc/models-runtime.test.ts", verifier_source)
 
     def test_models_production_smoke_covers_routes_and_bundle_semantics(self) -> None:
-        smoke_path = ROOT / "apps" / "sdkwork-clawrouter-pc" / "scripts" / "smoke-production-browser.mjs"
-        product_test_path = ROOT / "scripts" / "run-claw-router-application.test.mjs"
+        smoke_path = ROOT / "apps" / "sdkwork-cloudrouter-pc" / "scripts" / "smoke-production-browser.mjs"
+        product_test_path = ROOT / "scripts" / "run-cloud-router-application.test.mjs"
 
         self.assertTrue(smoke_path.exists(), "Portal production smoke script must exist.")
-        ssr_smoke_path = ROOT / "apps" / "sdkwork-clawrouter-pc" / "models-ssr-smoke.test.cjs"
+        ssr_smoke_path = ROOT / "apps" / "sdkwork-cloudrouter-pc" / "models-ssr-smoke.test.cjs"
         service_path = MODELS_PACKAGE / "src" / "modelService.ts"
         catalog_path = MODELS_PACKAGE / "src" / "modelCatalog.ts"
         smoke_source = smoke_path.read_text(encoding="utf-8")
@@ -619,9 +619,9 @@ class ModelsCatalogRuntimeStandardTest(unittest.TestCase):
         sdk_clients_source = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawroutes-pc-commons"
+            / "sdkwork-cloudroutes-pc-commons"
             / "src"
             / "sdk-clients.ts"
         ).read_text(encoding="utf-8")
@@ -662,7 +662,7 @@ class ModelsCatalogRuntimeStandardTest(unittest.TestCase):
         self.assertIn("providerDocsLabelKey", catalog_source)
         self.assertIn("specificationsLabelKey", catalog_source)
         self.assertIn("models.details.performanceSource", catalog_source)
-        self.assertIn("createClawRouterAppSdkModelExample", catalog_source)
+        self.assertIn("createCloudRouterAppSdkModelExample", catalog_source)
         self.assertIn("JSON.stringify(modelId)", sdk_clients_source)
 
         self.assertIn("portal production browser DOM smoke", product_test_source)

@@ -5,11 +5,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add complete inactive default payment-center initialization data for new Claw Router installations.
+**Goal:** Add complete inactive default payment-center initialization data for new Cloud Router installations.
 
 **Architecture:** Extend the appbase commerce storage migration with payment provider, provider account, channel, and route-rule tables. Extend the commerce bootstrap seed catalog with standard payment center records, then make the existing commerce experience installer upsert those records idempotently while preserving admin-owned credential fields and active statuses.
 
-**Tech Stack:** Rust, SQLx, SQLite, PostgreSQL, appbase commerce native Rust packages, Claw Router database installer tests.
+**Tech Stack:** Rust, SQLx, SQLite, PostgreSQL, appbase commerce native Rust packages, Cloud Router database installer tests.
 
 ---
 
@@ -42,11 +42,11 @@
 
 **Files:**
 - Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-membership-sqlx-rust/src/seed.rs`
-- Test: `services/sdkwork-clawrouter-router-service/tests/database_installer.rs`
+- Test: `services/sdkwork-cloudrouter-router-service/tests/database_installer.rs`
 
 - [ ] Write failing installer tests expecting inactive payment methods, providers, provider accounts, channels, and route rules after install.
 - [ ] Add failing repair preservation coverage for edited provider account fields and active statuses.
-- [ ] Run `cargo test -p sdkwork_clawrouter_router_service --test database_installer sqlite_installer_seeds_complete_inactive_payment_center_defaults`.
+- [ ] Run `cargo test -p sdkwork_cloudrouter_router_service --test database_installer sqlite_installer_seeds_complete_inactive_payment_center_defaults`.
 - [ ] Add SQLite and PostgreSQL upsert functions for the new seed rows.
 - [ ] Add integrity checks for inactive/default payment center rows.
 - [ ] Re-run targeted installer tests.

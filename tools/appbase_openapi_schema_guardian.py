@@ -29,12 +29,12 @@ class AppbaseOpenApiSchemaGuardian:
     """Validate appbase commerce operations across manifest, OpenAPI, and generated SDKs."""
 
     SPEC_FILES = {
-        "app": "clawrouter-app-openapi.json",
-        "backend": "clawrouter-backend-openapi.json",
+        "app": "cloudrouter-app-openapi.json",
+        "backend": "cloudrouter-backend-openapi.json",
     }
     SDK_DIRECTORIES = {
-        "app": Path("sdks") / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript",
-        "backend": Path("sdks") / "clawrouter-backend-sdk" / "clawrouter-backend-sdk-typescript",
+        "app": Path("sdks") / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript",
+        "backend": Path("sdks") / "cloudrouter-backend-sdk" / "cloudrouter-backend-sdk-typescript",
     }
     DEPENDENCY_SDK_DIRECTORIES = {
         "app": (
@@ -877,7 +877,7 @@ class AppbaseOpenApiSchemaGuardian:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate appbase commerce OpenAPI and generated SDK schema coverage.")
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     parser.add_argument("--manifest", type=Path, default=None, help="API contract manifest path")
     parser.add_argument("--openapi-dir", type=Path, default=None, help="directory containing generated app/backend OpenAPI JSON")
     parser.add_argument("--sdk-root", type=Path, default=None, help="directory containing generated SDK packages")

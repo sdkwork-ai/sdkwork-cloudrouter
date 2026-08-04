@@ -6,26 +6,26 @@ Initialization creates runtime configuration, installs the database schema, impo
 For the fastest path, initialize before first startup:
 
 ```bash
-clawrouterctl status
-clawrouterctl ensure
-clawrouterctl refresh-catalog --force
-clawrouter
+cloudrouterctl status
+cloudrouterctl ensure
+cloudrouterctl refresh-catalog --force
+cloudrouter
 ```
 
 If you installed a native Linux `.deb`, public commands are under `/usr/bin` and private runtime assets are under `/usr/lib/sdkwork/router`:
 
 ```bash
-/usr/bin/clawrouterctl ensure
-/usr/bin/clawrouterctl refresh-catalog --force
-/usr/bin/clawrouter
+/usr/bin/cloudrouterctl ensure
+/usr/bin/cloudrouterctl refresh-catalog --force
+/usr/bin/cloudrouter
 ```
 
 If you installed a native macOS `.pkg`, desktop binaries are under `/opt/sdkwork/router/bin`; service binaries are under `/Library/Application Support/sdkwork/router/bin`:
 
 ```bash
-/opt/sdkwork/router/bin/clawrouterctl ensure
-/opt/sdkwork/router/bin/clawrouterctl refresh-catalog --force
-/opt/sdkwork/router/bin/clawrouter
+/opt/sdkwork/router/bin/cloudrouterctl ensure
+/opt/sdkwork/router/bin/cloudrouterctl refresh-catalog --force
+/opt/sdkwork/router/bin/cloudrouter
 ```
 
 If you installed the Windows MSI, the default install root is:
@@ -41,20 +41,20 @@ Recommended order for archive/manual deployments:
 1. Prepare PostgreSQL and protected process environment variables when defaults are not enough.
 2. Prepare runtime TOML configuration.
 3. Set `host`, `database`, `username`, and either `password_file` or protected `password`.
-4. Run `clawrouterctl ensure`.
-5. Run `clawrouterctl refresh-catalog --force`.
-6. Start `clawrouter`.
+4. Run `cloudrouterctl ensure`.
+5. Run `cloudrouterctl refresh-catalog --force`.
+6. Start `cloudrouter`.
 7. Check `/healthz` and `/readyz`.
 
-For Linux `service` deployments, the `.deb` creates the default runtime TOML, `/etc/sdkwork/router/clawrouter.env`, and `/etc/sdkwork/router/database.secret`. The systemd unit runs `ensure` and `refresh-catalog --force` automatically before the gateway starts. The service can write `/var/lib/sdkwork/router` and `/var/log/sdkwork/router`; `/etc/sdkwork/router` is read-only to the running process.
+For Linux `service` deployments, the `.deb` creates the default runtime TOML, `/etc/sdkwork/router/cloudrouter.env`, and `/etc/sdkwork/router/database.secret`. The systemd unit runs `ensure` and `refresh-catalog --force` automatically before the gateway starts. The service can write `/var/lib/sdkwork/router` and `/var/log/sdkwork/router`; `/etc/sdkwork/router` is read-only to the running process.
 
 Linux service packages should follow this order:
 
 ```bash
-sudo apt install ./clawrouter-linux-x64-server-0.3.0.deb
-sudo editor /etc/sdkwork/router/clawrouter.toml
-sudo systemctl start clawrouter
-sudo systemctl status clawrouter --no-pager
+sudo apt install ./cloudrouter-linux-x64-server-0.3.0.deb
+sudo editor /etc/sdkwork/router/cloudrouter.toml
+sudo systemctl start cloudrouter
+sudo systemctl status cloudrouter --no-pager
 ```
 
 ## Runtime Config Paths
@@ -63,37 +63,37 @@ server/service/container defaults:
 
 | Platform | Config file |
 | --- | --- |
-| Windows | `%ProgramData%/sdkwork/router/clawrouter.toml` |
-| Linux | `/etc/sdkwork/router/clawrouter.toml` |
-| macOS | `/Library/Application Support/sdkwork/router/clawrouter.toml` |
+| Windows | `%ProgramData%/sdkwork/router/cloudrouter.toml` |
+| Linux | `/etc/sdkwork/router/cloudrouter.toml` |
+| macOS | `/Library/Application Support/sdkwork/router/cloudrouter.toml` |
 
 desktop defaults:
 
 | Platform | Config file |
 | --- | --- |
-| Windows | `%USERPROFILE%/.sdkwork/router/config/clawrouter.toml` |
-| Linux | `~/.sdkwork/router/config/clawrouter.toml` |
-| macOS | `~/.sdkwork/router/config/clawrouter.toml` |
+| Windows | `%USERPROFILE%/.sdkwork/router/config/cloudrouter.toml` |
+| Linux | `~/.sdkwork/router/config/cloudrouter.toml` |
+| macOS | `~/.sdkwork/router/config/cloudrouter.toml` |
 
-Override with `SDKWORK_CLAW_CONFIG_FILE`:
+Override with `SDKWORK_CLOUDROUTER_CONFIG_FILE`:
 
 ```bash
-export SDKWORK_CLAW_CONFIG_FILE="/etc/sdkwork/router/clawrouter.toml"
+export SDKWORK_CLOUDROUTER_CONFIG_FILE="/etc/sdkwork/router/cloudrouter.toml"
 ```
 
 PowerShell:
 
 ```powershell
-$env:SDKWORK_CLAW_CONFIG_FILE = Join-Path $env:ProgramData "sdkwork/router/clawrouter.toml"
+$env:SDKWORK_CLOUDROUTER_CONFIG_FILE = Join-Path $env:ProgramData "sdkwork/router/cloudrouter.toml"
 ```
 
 Native package install locations:
 
 | Platform | Binaries | Notes |
 | --- | --- | --- |
-| Linux `.deb` | `/usr/bin` public commands, `/usr/lib/sdkwork/router/bin` private binaries | `service` packages also install `/lib/systemd/system/clawrouter.service`, `/etc/sdkwork/router`, `/var/lib/sdkwork/router`, and `/var/log/sdkwork/router`. |
+| Linux `.deb` | `/usr/bin` public commands, `/usr/lib/sdkwork/router/bin` private binaries | `service` packages also install `/lib/systemd/system/cloudrouter.service`, `/etc/sdkwork/router`, `/var/lib/sdkwork/router`, and `/var/log/sdkwork/router`. |
 | Windows `.msi` | `<install-root>/bin` | Shared config templates use `%ProgramData%/sdkwork/router`; desktop runtime config is created under `%USERPROFILE%/.sdkwork/router/config` during user initialization. |
-| macOS `.pkg` | `/opt/sdkwork/router/bin` for desktop, `/Library/Application Support/sdkwork/router/bin` for service | `service` packages also install `/Library/LaunchDaemons/com.sdkwork.clawrouter.plist`. |
+| macOS `.pkg` | `/opt/sdkwork/router/bin` for desktop, `/Library/Application Support/sdkwork/router/bin` for service | `service` packages also install `/Library/LaunchDaemons/com.sdkwork.cloudrouter.plist`. |
 
 Every package includes `install-manifest.json` with `installConfiguration`. Native installers also include `nativeInstall`, which describes the final install paths, service metadata, permissions, and operator commands.
 
@@ -135,7 +135,7 @@ database = 0
 # url = "redis://redis.example.com:6379/0"
 # password_file = "/etc/sdkwork/router/redis.secret"
 # password = "change-me"
-key_prefix = "clawrouter"
+key_prefix = "cloudrouter"
 tls = false
 max_connections = 16
 connect_timeout_millis = 2000
@@ -228,7 +228,7 @@ payment_callback_body_max_bytes = 65536
 deployment_mode = "server"
 ```
 
-The `.deb` package creates `/etc/sdkwork/router/database.secret` with the placeholder value `change-me`. Replace that file with the real PostgreSQL password before starting `clawrouter`; startup rejects server configurations that still use `db.example.com` or `change-me`.
+The `.deb` package creates `/etc/sdkwork/router/database.secret` with the placeholder value `change-me`. Replace that file with the real PostgreSQL password before starting `cloudrouter`; startup rejects server configurations that still use `db.example.com` or `change-me`.
 
 Redis is enabled and required by default for server/service/container
 deployments. Configure `[redis].host`, `[redis].port`, and `[redis].database`
@@ -274,7 +274,7 @@ when a database routing channel does not define its own retry policy.
 For production server/service/container deployments, use the structured TOML fields above. `password_file` is the preferred secret path. Direct `password` is supported only when the TOML file is protected as a secret-bearing file:
 
 - `password_file` can be absolute.
-- `password_file` can be relative to the directory containing `clawrouter.toml`.
+- `password_file` can be relative to the directory containing `cloudrouter.toml`.
 - `password_file` can use `${VAR}`, `$VAR`, `%VAR%`, or `~` expansion for platform-managed secret paths.
 
 ```toml
@@ -301,7 +301,7 @@ payment_callback_body_max_bytes = 65536
 deployment_mode = "server"
 ```
 
-`SDKWORK_DATABASE_URL` remains available in `/etc/sdkwork/router/clawrouter.env` or the process environment only as an explicit operator override:
+`SDKWORK_DATABASE_URL` remains available in `/etc/sdkwork/router/cloudrouter.env` or the process environment only as an explicit operator override:
 
 ```text
 SDKWORK_DATABASE_URL=postgresql://sdkwork_ai_prod:<password>@db.example.com:5432/sdkwork_ai_prod
@@ -321,22 +321,22 @@ deployment_mode = "desktop"
 
 ## Installer Commands
 
-The examples below assume `clawrouterctl` is on `PATH`. From an extracted release package root, use `./bin/clawrouterctl` on Linux/macOS and `.\bin\clawrouterctl.exe` on Windows.
+The examples below assume `cloudrouterctl` is on `PATH`. From an extracted release package root, use `./bin/cloudrouterctl` on Linux/macOS and `.\bin\cloudrouterctl.exe` on Windows.
 
 From native Linux `.deb` packages, use:
 
 ```bash
-/usr/bin/clawrouterctl status
-/usr/bin/clawrouterctl ensure
-/usr/bin/clawrouterctl refresh-catalog --force
+/usr/bin/cloudrouterctl status
+/usr/bin/cloudrouterctl ensure
+/usr/bin/cloudrouterctl refresh-catalog --force
 ```
 
 From native macOS `.pkg` desktop packages, use:
 
 ```bash
-/opt/sdkwork/router/bin/clawrouterctl status
-/opt/sdkwork/router/bin/clawrouterctl ensure
-/opt/sdkwork/router/bin/clawrouterctl refresh-catalog --force
+/opt/sdkwork/router/bin/cloudrouterctl status
+/opt/sdkwork/router/bin/cloudrouterctl ensure
+/opt/sdkwork/router/bin/cloudrouterctl refresh-catalog --force
 ```
 
 From the default Windows MSI install directory, use:
@@ -344,52 +344,52 @@ From the default Windows MSI install directory, use:
 ```powershell
 $installRoot = Join-Path $env:USERPROFILE "sdkwork\router"
 Set-Location $installRoot
-.\bin\clawrouterctl.exe status
-.\bin\clawrouterctl.exe ensure
-.\bin\clawrouterctl.exe refresh-catalog --force
+.\bin\cloudrouterctl.exe status
+.\bin\cloudrouterctl.exe ensure
+.\bin\cloudrouterctl.exe refresh-catalog --force
 ```
 
 Status:
 
 ```bash
-clawrouterctl status
+cloudrouterctl status
 ```
 
 Install or repair schema:
 
 ```bash
-clawrouterctl ensure
+cloudrouterctl ensure
 ```
 
 Refresh the model catalog:
 
 ```bash
-clawrouterctl refresh-catalog --force
+cloudrouterctl refresh-catalog --force
 ```
 
 Refresh one vendor:
 
 ```bash
-clawrouterctl refresh-catalog --vendor openai
+cloudrouterctl refresh-catalog --vendor openai
 ```
 
 Use an external model catalog:
 
 ```bash
-clawrouterctl refresh-catalog --catalog-root /opt/sdkwork-models --catalog-version 2026.05.08.1 --force
+cloudrouterctl refresh-catalog --catalog-root /opt/sdkwork-models --catalog-version 2026.05.08.1 --force
 ```
 
 Dry-run refresh:
 
 ```bash
-clawrouterctl refresh-catalog --vendor openai --dry-run
+cloudrouterctl refresh-catalog --vendor openai --dry-run
 ```
 
 Windows commands use `.exe`:
 
 ```powershell
-.\bin\clawrouterctl.exe ensure
-.\bin\clawrouterctl.exe refresh-catalog --force
+.\bin\cloudrouterctl.exe ensure
+.\bin\cloudrouterctl.exe refresh-catalog --force
 ```
 
 ## Output And Errors
@@ -424,19 +424,19 @@ curl http://127.0.0.1:3900/readyz
 For Linux services, also check systemd and logs:
 
 ```bash
-sudo systemctl status clawrouter --no-pager
-sudo journalctl -u clawrouter -n 200 --no-pager
+sudo systemctl status cloudrouter --no-pager
+sudo journalctl -u cloudrouter -n 200 --no-pager
 ```
 
 ## First Account And IAM
 
-On first install or first startup, Claw Router creates or repairs a bootstrap administrator login if the configured bootstrap admin is not complete. The default account is:
+On first install or first startup, Cloud Router creates or repairs a bootstrap administrator login if the configured bootstrap admin is not complete. The default account is:
 
 - username: `admin`
 - tenant: `default` (`tenantId: "100001"`)
 - organization: `root` (`organizationId: "0"`)
 
-The initial password is generated from the operating-system random source unless `SDKWORK_CLAW_BOOTSTRAP_ADMIN_PASSWORD` is set. When a new password is written, it is exposed once in two places:
+The initial password is generated from the operating-system random source unless `SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_PASSWORD` is set. When a new password is written, it is exposed once in two places:
 
 - installer JSON output under `bootstrapAdmin.initialPassword`
 - startup logs from gateway/admin/app services as `initial_password`
@@ -447,11 +447,11 @@ Bootstrap admin environment variables:
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `SDKWORK_CLAW_BOOTSTRAP_ADMIN_ENABLED` | `true` | Set to `false` to disable automatic bootstrap admin creation and repair. |
-| `SDKWORK_CLAW_BOOTSTRAP_ADMIN_USERNAME` | `admin` | Bootstrap username. Letters, digits, `.`, `-`, and `_` are allowed. |
-| `SDKWORK_CLAW_BOOTSTRAP_ADMIN_DISPLAY_NAME` | `Administrator` | Display name for the bootstrap user. |
-| `SDKWORK_CLAW_BOOTSTRAP_ADMIN_EMAIL` | `admin@sdkwork.com` | Email identity for the bootstrap user. |
-| `SDKWORK_CLAW_BOOTSTRAP_ADMIN_PASSWORD` | generated | Optional explicit initial password. Must be 12 to 128 characters. |
+| `SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_ENABLED` | `true` | Set to `false` to disable automatic bootstrap admin creation and repair. |
+| `SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_USERNAME` | `admin` | Bootstrap username. Letters, digits, `.`, `-`, and `_` are allowed. |
+| `SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_DISPLAY_NAME` | `Administrator` | Display name for the bootstrap user. |
+| `SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_EMAIL` | `admin@sdkwork.com` | Email identity for the bootstrap user. |
+| `SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_PASSWORD` | generated | Optional explicit initial password. Must be 12 to 128 characters. |
 
 Example installer output:
 
@@ -473,7 +473,7 @@ Example installer output:
 }
 ```
 
-When you need to quickly recover administrator access, reset the `admin` password through the root `pnpm` commands. Development mode targets the default `target/dev/clawrouter.sqlite` database, while release mode uses the database configuration from the runtime `clawrouter.toml`. The wrapper does not forward the password to the installer/cargo child process as a command-line argument. To also avoid exposing the password in shell history or the Node process arguments, provide it through `SDKWORK_CLAW_ADMIN_RESET_PASSWORD`.
+When you need to quickly recover administrator access, reset the `admin` password through the root `pnpm` commands. Development mode targets the default `target/dev/cloudrouter.sqlite` database, while release mode uses the database configuration from the runtime `cloudrouter.toml`. The wrapper does not forward the password to the installer/cargo child process as a command-line argument. To also avoid exposing the password in shell history or the Node process arguments, provide it through `SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD`.
 
 ```bash
 pnpm admin:reset:dev -- --password "Admin-Dev-Password-2026!"
@@ -483,7 +483,7 @@ pnpm admin:reset:release -- --password "Admin-Release-Password-2026!"
 For release operations, prefer:
 
 ```bash
-SDKWORK_CLAW_ADMIN_RESET_PASSWORD="Admin-Release-Password-2026!" pnpm admin:reset:release
+SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD="Admin-Release-Password-2026!" pnpm admin:reset:release
 ```
 
 The default reset target is username `admin`, display name `Administrator`, and email identity `admin@sdkwork.com`. Override them when needed:
@@ -496,6 +496,6 @@ pnpm admin:reset:release -- \
   --password "Admin-Release-Password-2026!"
 ```
 
-Claw Router login methods, registration, QR login, verification-code policy, and recovery options are controlled by IAM runtime settings. `v0.3.0` keeps a strict default posture: password login is available by default, while QR login, code login, OAuth, and session bridge require explicit enablement.
+Cloud Router login methods, registration, QR login, verification-code policy, and recovery options are controlled by IAM runtime settings. `v0.3.0` keeps a strict default posture: password login is available by default, while QR login, code login, OAuth, and session bridge require explicit enablement.
 
 After first login, use the admin backend to configure IAM policy for login methods, QR login, registration verification, OAuth visibility, and account recovery.

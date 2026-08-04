@@ -3,8 +3,8 @@
   "kind": "sdkwork.database.module",
   "databaseRole": "authoritative-server",
   "moduleId": "gateway-iam",
-  "serviceCode": "CLAW_ROUTER_GATEWAY_IAM",
-  "displayName": "Claw Router Gateway IAM Database",
+  "serviceCode": "CLOUD_ROUTER_GATEWAY_IAM",
+  "displayName": "Cloud Router Gateway IAM Database",
   "owner": "gateway-iam-service",
   "engines": [
     "postgres"

@@ -14,8 +14,8 @@ pub struct RouterApiRouteManifest {
 pub const PACKAGE_NAME: &str = "sdkwork-routes-paas-open-api";
 pub const CAPABILITY: &str = "paas";
 pub const SURFACE: &str = "open-api";
-pub const API_AUTHORITY: &str = "sdkwork-clawrouter.paas-open-api";
-pub const SDK_FAMILY: &str = "clawrouter-paas-sdk";
+pub const API_AUTHORITY: &str = "sdkwork-cloudrouter.paas-open-api";
+pub const SDK_FAMILY: &str = "cloudrouter-paas-sdk";
 
 pub fn route_manifest() -> RouterApiRouteManifest {
     RouterApiRouteManifest {

@@ -1,21 +1,21 @@
-# Contributing to SDKWork Claw Router
+# Contributing to SDKWork Cloud Router
 
 Status: active
-Owner: SDKWork Claw Router maintainers
-Application: sdkwork-clawrouter
+Owner: SDKWork Cloud Router maintainers
+Application: sdkwork-cloudrouter
 Updated: 2026-06-26
 Specs: ENGINEERING_WORKFLOW_SPEC.md, CODE_REVIEW_SPEC.md, GITHUB_WORKFLOW_SPEC.md, NAMING_SPEC.md, RUST_CODE_SPEC.md, TYPESCRIPT_CODE_SPEC.md
 
 ## Welcome
 
-Contributions to SDKWork Claw Router must follow `sdkwork-specs/` standards,
+Contributions to SDKWork Cloud Router must follow `sdkwork-specs/` standards,
 preserve commercial-grade quality, and pass the full `pnpm verify` gate before
 merge. This document captures the binding rules for code, contract, schema, and
 documentation changes.
 
 ## Repository Entry Points
 
-- Workspace root: `e:\sdkwork-space\sdkwork-clawrouter`
+- Workspace root: `e:\sdkwork-space\sdkwork-cloudrouter`
 - Workspace specs: `../sdkwork-specs/`
 - Application manifest: `sdkwork.app.config.json`
 - Repository agent rules: `AGENTS.md`
@@ -58,9 +58,9 @@ Before requesting review, confirm:
 - [ ] `cargo fmt --check` passes
 - [ ] `cargo check --all-targets` with `RUSTFLAGS=-D warnings` passes
 - [ ] Touched Rust crate tests pass (`pnpm test:rust:auto`)
-- [ ] Touched frontend package typecheck passes (`pnpm --dir apps/sdkwork-clawrouter-pc typecheck`)
+- [ ] Touched frontend package typecheck passes (`pnpm --dir apps/sdkwork-cloudrouter-pc typecheck`)
 - [ ] No raw `/app/v3/api` or `/backend/v3/api` fetch in frontend code
-- [ ] No hand-edits to generated SDK output under `sdks/clawrouter-*-sdk/`
+- [ ] No hand-edits to generated SDK output under `sdks/cloudrouter-*-sdk/`
 - [ ] No new secrets, tokens, or credentials in source, logs, or fixtures
 - [ ] No new `unwrap()`/`expect()` in production Rust paths
 - [ ] No new `as any` in TypeScript code
@@ -98,7 +98,7 @@ resolve.
 1. Schema first: edit `docs/schema-registry/tables/*.yaml`, regenerate via
    `python -B -m tools.schema_quality_gate`.
 2. OpenAPI next: edit `apis/`, regenerate via
-   `python -B -m tools.clawrouter_openapi_generator`.
+   `python -B -m tools.cloudrouter_openapi_generator`.
 3. SDK after: regenerate via the per-SDK `bin/generate-sdk.mjs` entry point.
 4. Rust handlers and SQL repositories follow the contract.
 5. Frontend consumes the generated SDK; never raw fetch.
@@ -134,8 +134,8 @@ Release candidates must run the full gate:
 pnpm release:preflight -- --strict --env-file .env.release --strict-root-clean
 pnpm verify
 pnpm test:postgres:required
-CLAWROUTER_BROWSER_SMOKE_REQUIRED=1 pnpm verify
-CLAWROUTER_EDGE_DEV_SMOKE_REQUIRED=1 pnpm verify -- --with-edge-dev-smoke
+CLOUDROUTER_BROWSER_SMOKE_REQUIRED=1 pnpm verify
+CLOUDROUTER_EDGE_DEV_SMOKE_REQUIRED=1 pnpm verify -- --with-edge-dev-smoke
 ```
 
 Record exact command output in `CHECK_RESULT.md` before tagging a release.

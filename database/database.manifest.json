@@ -1,10 +1,10 @@
 {
   "schemaVersion": 2,
   "kind": "sdkwork.database.module",
-  "moduleId": "clawrouter",
-  "serviceCode": "CLAW_ROUTER",
-  "displayName": "Claw Router AI Database",
-  "owner": "claw-router-platform",
+  "moduleId": "cloudrouter",
+  "serviceCode": "CLOUD_ROUTER",
+  "displayName": "Cloud Router AI Database",
+  "owner": "cloud-router-platform",
   "engines": [
     "postgres"
   ],

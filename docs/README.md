@@ -4,7 +4,7 @@
 `docs/` stores repository documentation, architecture decisions, runbooks, design notes, changelogs, installation guides, and product delivery evidence.
 
 ## Owner
-SDKWork Claw Router maintainers and documentation owners.
+SDKWork Cloud Router maintainers and documentation owners.
 
 ## Allowed Content
 Architecture documentation, installation guides, release notes, runbooks, schema registry documentation, design evidence, and documentation assets.
@@ -42,7 +42,7 @@ Generated SDK transport output, live credentials, private customer data, runtime
 The following stable paths are retained only as redirect stubs. They are not
 current product, route, schema, or architecture authorities:
 
-- [product/prd/PRD-01-prd-sdkwork-clawrouter.md](product/prd/PRD-01-prd-sdkwork-clawrouter.md)
+- [product/prd/PRD-01-prd-sdkwork-cloudrouter.md](product/prd/PRD-01-prd-sdkwork-cloudrouter.md)
 - [architecture/tech/TECH-12-featuresmodules.md](architecture/tech/TECH-12-featuresmodules.md)
 - [architecture/tech/TECH-13-schemaregistry-design.md](architecture/tech/TECH-13-schemaregistry-design.md)
 - [architecture/tech/TECH-16-design.md](architecture/tech/TECH-16-design.md)
@@ -56,16 +56,16 @@ Active versus superseded status is registered in [INDEX.yaml](INDEX.yaml).
 
 | Domain | Path | Owner |
 | --- | --- | --- |
-| gateway | `architecture/tech/TECH-*.md`, `runbooks/gateway-*.md` | clawrouter-gateway |
-| commerce | `architecture/tech/TECH-commerce-*.md`, `runbooks/commerce-*.md` | clawrouter-data |
-| iam | `architecture/tech/TECH-iam-*.md`, `runbooks/iam-*.md` | clawrouter-security |
-| security | `SECURITY.md`, `runbooks/security-*.md` | clawrouter-security |
-| observability | `architecture/tech/TECH-observability-*.md` | clawrouter-observability |
-| release | `release/CHANGELOG.md`, `release/VERSION.md` | clawrouter-release |
-| deployment | `../deployments/`, `../etc/nginx/` | clawrouter-release |
-| frontend | `architecture/tech/TECH-portal-*.md` | clawrouter-frontend |
-| commercial | `commercial/PRICING.md` | clawrouter-commercial |
-| legal | `legal/SLA.md`, `legal/TIER_MATRIX.md` | clawrouter-commercial |
+| gateway | `architecture/tech/TECH-*.md`, `runbooks/gateway-*.md` | cloudrouter-gateway |
+| commerce | `architecture/tech/TECH-commerce-*.md`, `runbooks/commerce-*.md` | cloudrouter-data |
+| iam | `architecture/tech/TECH-iam-*.md`, `runbooks/iam-*.md` | cloudrouter-security |
+| security | `SECURITY.md`, `runbooks/security-*.md` | cloudrouter-security |
+| observability | `architecture/tech/TECH-observability-*.md` | cloudrouter-observability |
+| release | `release/CHANGELOG.md`, `release/VERSION.md` | cloudrouter-release |
+| deployment | `../deployments/`, `../etc/nginx/` | cloudrouter-release |
+| frontend | `architecture/tech/TECH-portal-*.md` | cloudrouter-frontend |
+| commercial | `commercial/PRICING.md` | cloudrouter-commercial |
+| legal | `legal/SLA.md`, `legal/TIER_MATRIX.md` | cloudrouter-commercial |
 
 ## Index
 

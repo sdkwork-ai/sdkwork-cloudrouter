@@ -1,4 +1,4 @@
-# Claw Router topology profiles
+# Cloud Router topology profiles
 
 Authoritative profile env files for `specs/topology.spec.json`.
 

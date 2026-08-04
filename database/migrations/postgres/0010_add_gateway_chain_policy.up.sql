@@ -1,7 +1,7 @@
 -- sdkwork:migration
 -- id: 0010_add_gateway_chain_policy
 -- engine: postgres
--- module: sdkwork-clawrouter
+-- module: sdkwork-cloudrouter
 -- purpose: Add the gateway call-chain policy table backing global and
 --   per-API-key chain configuration (concurrency limits, IP allow/deny
 --   lists, per-stage switches). One active row per scope (GLOBAL or API_KEY)

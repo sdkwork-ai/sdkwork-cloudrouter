@@ -1,7 +1,7 @@
 # Memory Field Mapping: `ai_memory_*` → `mem_*`
 
 Owner after cutover: **sdkwork-memory**  
-Claw Router role during migration: compat read/write adapter only  
+Cloud Router role during migration: compat read/write adapter only  
 Canonical source of truth: `sdkwork-memory/docs/schema-registry/tables/001-memory-core.yaml`
 
 ## Commercial guardrails (must preserve)
@@ -17,7 +17,7 @@ Canonical source of truth: `sdkwork-memory/docs/schema-registry/tables/001-memor
 
 ## Table mapping
 
-| Claw Router (legacy) | sdkwork-memory (canonical) | Notes |
+| Cloud Router (legacy) | sdkwork-memory (canonical) | Notes |
 |----------------------|----------------------------|-------|
 | `ai_memory_space` | `mem_space` | Namespace; bindings fold into owner + policy |
 | `ai_memory_space_binding` | `mem_space.policy_json` + `mem_record_source` | No long-term 1:1 table |
@@ -96,11 +96,11 @@ Canonical source of truth: `sdkwork-memory/docs/schema-registry/tables/001-memor
 
 ## Execution (greenfield — no compat layer)
 
-Claw Router **deletes** all `ai_memory_*` artifacts in the same batch it wires `@sdkwork/memory-*`. No proxy, no backfill, no readonly legacy phase.
+Cloud Router **deletes** all `ai_memory_*` artifacts in the same batch it wires `@sdkwork/memory-*`. No proxy, no backfill, no readonly legacy phase.
 
 1. Remove tables from schema registry + generated DDL
-2. Remove OpenAPI paths from clawrouter app/backend APIs
-3. Regenerate clawrouter SDKs
+2. Remove OpenAPI paths from cloudrouter app/backend APIs
+3. Regenerate cloudrouter SDKs
 4. Frontend/services call memory SDK only
 5. Delete memory-specific router tests and field contracts
 
@@ -110,8 +110,8 @@ Field mapping below is **semantic reference** for sdkwork-memory contract alignm
 
 | Surface | Today | Target |
 |---------|-------|--------|
-| App API | Claw Router `/app/v3/api/.../memory` | sdkwork-memory app SDK |
-| Backend API | Claw Router backend memory ops | sdkwork-memory backend SDK |
+| App API | Cloud Router `/app/v3/api/.../memory` | sdkwork-memory app SDK |
+| Backend API | Cloud Router backend memory ops | sdkwork-memory backend SDK |
 | Open API | `sdkwork-memory-open-api` (already referenced in commons sdk-clients) | primary |
 | Frontend | playground memory panels | call memory SDK via composed client |
 

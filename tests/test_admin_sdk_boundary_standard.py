@@ -6,25 +6,25 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PORTAL_ROOT = ROOT / "apps" / "sdkwork-clawrouter-pc"
+PORTAL_ROOT = ROOT / "apps" / "sdkwork-cloudrouter-pc"
 PACKAGES_ROOT = PORTAL_ROOT / "packages"
 SPECS_ROOT = ROOT.parent / "sdkwork-specs"
 
 BACKEND_SDK_MARKERS = (
-    "@sdkwork/clawrouter-backend-sdk",
+    "@sdkwork/cloudrouter-backend-sdk",
     "@sdkwork/iam-backend-sdk",
-    "getClawRouterBackendSdkClient",
+    "getCloudRouterBackendSdkClient",
     "getSdkworkAppbaseBackendSdkClient",
-    "createClawRouterBackendSdkClient",
+    "createCloudRouterBackendSdkClient",
     "createSdkworkAppbaseBackendSdkClient",
-    "VITE_CLAWROUTER_BACKEND_API_BASE_URL",
+    "VITE_CLOUDROUTER_BACKEND_API_BASE_URL",
     "VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL",
 )
 
 COMMONS_BACKEND_RUNTIME_BOUNDARIES = {
-    Path("sdkwork-clawroutes-pc-commons/src/sdk-clients.ts"),
-    Path("sdkwork-clawroutes-pc-commons/src/runtime.ts"),
-    Path("sdkwork-clawroutes-pc-commons/src/portal-session.ts"),
+    Path("sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts"),
+    Path("sdkwork-cloudroutes-pc-commons/src/runtime.ts"),
+    Path("sdkwork-cloudroutes-pc-commons/src/portal-session.ts"),
 }
 
 
@@ -64,7 +64,7 @@ def package_relative_source_path(path: Path) -> Path | None:
 
 def is_admin_package_source(path: Path) -> bool:
     relative = package_relative_source_path(path)
-    return relative is not None and relative.parts[0].startswith("sdkwork-clawrouter-pc-admin-")
+    return relative is not None and relative.parts[0].startswith("sdkwork-cloudrouter-pc-admin-")
 
 
 def is_allowed_runtime_boundary(path: Path) -> bool:
@@ -86,8 +86,8 @@ class AdminSdkBoundaryStandardTest(unittest.TestCase):
             root_backend["accessTokenPermissionScope"],
             portal_backend["accessTokenPermissionScope"],
         )
-        self.assertIn("clawrouter.admin.access", portal_backend["accessTokenPermissionScope"])
-        self.assertIn("clawrouter.system.read", portal_backend["accessTokenPermissionScope"])
+        self.assertIn("cloudrouter.admin.access", portal_backend["accessTokenPermissionScope"])
+        self.assertIn("cloudrouter.system.read", portal_backend["accessTokenPermissionScope"])
 
     def test_backend_sdk_usage_stays_inside_backend_admin_boundaries(self) -> None:
         violations: list[str] = []
@@ -110,7 +110,7 @@ class AdminSdkBoundaryStandardTest(unittest.TestCase):
     def test_admin_package_component_specs_declare_backend_admin_surface(self) -> None:
         violations: list[str] = []
 
-        for package_root in sorted(PACKAGES_ROOT.glob("sdkwork-clawrouter-pc-admin-*")):
+        for package_root in sorted(PACKAGES_ROOT.glob("sdkwork-cloudrouter-pc-admin-*")):
             spec_path = package_root / "specs" / "component.spec.json"
             if not spec_path.exists():
                 violations.append(f"{package_root.relative_to(ROOT).as_posix()}: missing component spec")
@@ -129,7 +129,7 @@ class AdminSdkBoundaryStandardTest(unittest.TestCase):
             if not is_admin_package_source(path):
                 continue
             source = read_text(path)
-            if re.search(r"getClawRouterBackendSdkClient\(\)\.http\b|\bbackendApiPath\b", source):
+            if re.search(r"getCloudRouterBackendSdkClient\(\)\.http\b|\bbackendApiPath\b", source):
                 violations.append(path.relative_to(ROOT).as_posix())
 
         self.assertEqual(
@@ -168,11 +168,11 @@ class AdminSdkBoundaryStandardTest(unittest.TestCase):
                     self.assertIn(marker, source)
 
     def test_portal_session_admin_access_check_uses_iam_session_rbac(self) -> None:
-        source = read_text(PACKAGES_ROOT / "sdkwork-clawroutes-pc-commons" / "src" / "portal-session.ts")
+        source = read_text(PACKAGES_ROOT / "sdkwork-cloudroutes-pc-commons" / "src" / "portal-session.ts")
         self.assertIn("getSdkworkAppbaseAppSdkClient", source)
         self.assertIn("auth.sessions.current.retrieve()", source)
         self.assertIn("hasPortalAdminSurfaceAccess", source)
-        self.assertNotIn("getClawRouterBackendSdkClient", source)
+        self.assertNotIn("getCloudRouterBackendSdkClient", source)
         self.assertNotIn("installation.status.retrieve", source)
 
         forbidden_business_namespaces = (

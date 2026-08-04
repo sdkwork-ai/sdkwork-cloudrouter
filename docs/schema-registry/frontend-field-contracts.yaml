@@ -1,10 +1,10 @@
 schema:
-  name: sdkwork-clawrouter-frontend-field-contracts
+  name: sdkwork-cloudrouter-frontend-field-contracts
   version: 0.2.0
   source: tools/hydrate_frontend_contract_relay_surfaces.py
 frontend_operations:
 - route: /console/api-keys
-  source: crates/sdkwork-routes-clawrouter-app-api/src/http_route_manifest.rs
+  source: crates/sdkwork-routes-cloudrouter-app-api/src/http_route_manifest.rs
   operation: listRoutingAccountGroups
   operation_id: routing.accountGroups.list
   kind: read
@@ -68,7 +68,7 @@ frontend_operations:
   - name: q
     schema: { type: string, maxLength: 256 }
 - route: /console/api-keys
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts
   operation: fetchGroups
   operation_id: routing.accountGroups.list
   kind: read
@@ -89,7 +89,7 @@ frontend_operations:
   operation_scope: app_shell
   openapi_exposed: false
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamSuppliers
   operation_id: upstreamSuppliers.list
   kind: read
@@ -141,7 +141,7 @@ frontend_operations:
   - name: q
     schema: { type: string, maxLength: 256 }
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: createUpstreamSupplier
   operation_id: upstreamSuppliers.create
   kind: create
@@ -184,7 +184,7 @@ frontend_operations:
   - ops_config_snapshot
   idempotency_required: true
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: getUpstreamSupplier
   operation_id: upstreamSuppliers.retrieve
   kind: read
@@ -204,7 +204,7 @@ frontend_operations:
         $ref: '#/components/schemas/UpstreamSupplier'
   query_parameters: []
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: updateUpstreamSupplier
   operation_id: upstreamSuppliers.update
   if_match_required: true
@@ -246,7 +246,7 @@ frontend_operations:
   - ops_audit_log
   - ops_config_snapshot
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: deleteUpstreamSupplier
   operation_id: upstreamSuppliers.delete
   if_match_required: true
@@ -265,7 +265,7 @@ frontend_operations:
   - ops_audit_log
   - ops_config_snapshot
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamSupplierEndpoints
   operation_id: upstreamSuppliers.endpoints.list
   kind: read
@@ -306,7 +306,7 @@ frontend_operations:
         $ref: '#/components/schemas/PageInfo'
   query_parameters: []
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: updateUpstreamSupplierEndpoints
   operation_id: upstreamSuppliers.endpoints.update
   if_match_required: true
@@ -366,7 +366,7 @@ frontend_operations:
   - ops_audit_log
   - ops_config_snapshot
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamSupplierAuthMethods
   operation_id: upstreamSuppliers.authMethods.list
   kind: read
@@ -412,7 +412,7 @@ frontend_operations:
         $ref: '#/components/schemas/PageInfo'
   query_parameters: []
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: updateUpstreamSupplierAuthMethods
   operation_id: upstreamSuppliers.authMethods.update
   if_match_required: true
@@ -478,7 +478,7 @@ frontend_operations:
   - ops_audit_log
   - ops_config_snapshot
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamSupplierResources
   operation_id: upstreamSuppliers.resources.list
   kind: read
@@ -515,7 +515,7 @@ frontend_operations:
         $ref: '#/components/schemas/PageInfo'
   query_parameters: []
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: updateUpstreamSupplierResources
   operation_id: upstreamSuppliers.resources.update
   if_match_required: true
@@ -574,7 +574,7 @@ frontend_operations:
   - ops_audit_log
   - ops_config_snapshot
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamAccounts
   operation_id: upstreamAccounts.list
   kind: read
@@ -633,7 +633,7 @@ frontend_operations:
   - name: q
     schema: { type: string, maxLength: 256 }
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: createUpstreamAccount
   operation_id: upstreamAccounts.create
   kind: create
@@ -680,7 +680,7 @@ frontend_operations:
   - ops_config_snapshot
   idempotency_required: true
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: getUpstreamAccount
   operation_id: upstreamAccounts.retrieve
   kind: read
@@ -701,7 +701,7 @@ frontend_operations:
         $ref: '#/components/schemas/UpstreamAccount'
   query_parameters: []
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: updateUpstreamAccount
   operation_id: upstreamAccounts.update
   if_match_required: true
@@ -747,7 +747,7 @@ frontend_operations:
   - ops_audit_log
   - ops_config_snapshot
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: deleteUpstreamAccount
   operation_id: upstreamAccounts.delete
   if_match_required: true
@@ -770,7 +770,7 @@ frontend_operations:
   - ops_audit_log
   - ops_config_snapshot
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamAccountCredentials
   operation_id: upstreamAccounts.credentials.list
   kind: read
@@ -817,7 +817,7 @@ frontend_operations:
   - name: q
     schema: { type: string, maxLength: 256 }
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: createUpstreamAccountCredential
   operation_id: upstreamAccounts.credentials.create
   kind: create
@@ -873,7 +873,7 @@ frontend_operations:
   - ops_config_snapshot
   idempotency_required: true
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: deleteUpstreamAccountCredential
   operation_id: upstreamAccounts.credentials.delete
   kind: delete
@@ -893,7 +893,7 @@ frontend_operations:
   - ops_audit_log
   - ops_config_snapshot
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: verifyUpstreamAccount
   operation_id: upstreamAccounts.verify
   kind: action
@@ -944,7 +944,7 @@ frontend_operations:
   - ai_upstream_account_credential
   - ops_audit_log
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamAccountGroups
   operation_id: upstreamAccountGroups.list
   kind: read
@@ -1001,7 +1001,7 @@ frontend_operations:
   - name: q
     schema: { type: string, maxLength: 256 }
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: createUpstreamAccountGroup
   operation_id: upstreamAccountGroups.create
   kind: create
@@ -1051,7 +1051,7 @@ frontend_operations:
   - ops_config_snapshot
   idempotency_required: true
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: getUpstreamAccountGroup
   operation_id: upstreamAccountGroups.retrieve
   kind: read
@@ -1071,7 +1071,7 @@ frontend_operations:
         $ref: '#/components/schemas/UpstreamAccountGroup'
   query_parameters: []
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: updateUpstreamAccountGroup
   operation_id: upstreamAccountGroups.update
   if_match_required: true
@@ -1120,7 +1120,7 @@ frontend_operations:
   - ops_audit_log
   - ops_config_snapshot
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: deleteUpstreamAccountGroup
   operation_id: upstreamAccountGroups.delete
   if_match_required: true
@@ -1139,7 +1139,7 @@ frontend_operations:
   - ops_audit_log
   - ops_config_snapshot
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamAccountGroupMembers
   operation_id: upstreamAccountGroups.members.list
   kind: read
@@ -1178,7 +1178,7 @@ frontend_operations:
         $ref: '#/components/schemas/PageInfo'
   query_parameters: []
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: updateUpstreamAccountGroupMembers
   operation_id: upstreamAccountGroups.members.update
   if_match_required: true
@@ -1236,7 +1236,7 @@ frontend_operations:
   - ops_audit_log
   - ops_config_snapshot
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamAccountGroupResources
   operation_id: upstreamAccountGroups.resources.list
   kind: read
@@ -1273,7 +1273,7 @@ frontend_operations:
         $ref: '#/components/schemas/PageInfo'
   query_parameters: []
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: updateUpstreamAccountGroupResources
   operation_id: upstreamAccountGroups.resources.update
   if_match_required: true
@@ -1332,7 +1332,7 @@ frontend_operations:
   - ops_audit_log
   - ops_config_snapshot
 - route: /admin/upstream
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: explainUpstreamAccountGroupRoute
   operation_id: upstreamAccountGroups.explain
   kind: read
@@ -1432,7 +1432,7 @@ frontend_operations:
       billingMeter: { type: string, maxLength: 128, nullable: true }
       routeKey: { type: string, maxLength: 128, nullable: true }
 - route: /console/dashboard
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/dashboardService.ts
   operation: fetchDashboardOverview
   operation_id: dashboard.overview.retrieve
   kind: read
@@ -1563,7 +1563,7 @@ frontend_operations:
   - name: end_time
     schema: { type: string, maxLength: 64 }
 - route: /console/gateway
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-gateway/src/gatewayService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/gatewayService.ts
   operation: fetchTraces
   operation_id: gateway.traces.list
   kind: read
@@ -1605,7 +1605,7 @@ frontend_operations:
   - name: q
     schema: { type: string, maxLength: 128 }
 - route: /rankings
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/src/rankingService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-rankings/src/rankingService.ts
   operation: fetchModelRankings
   operation_id: ai.model.rankings.get
   kind: read
@@ -1718,7 +1718,7 @@ frontend_operations:
   - name: page_size
     schema: { type: integer, minimum: 1, maximum: 200, default: 20 }
 - route: /rankings
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/src/rankingService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-rankings/src/rankingService.ts
   operation: fetchModelVendors
   operation_id: ai.model.vendors.get
   kind: read
@@ -1749,7 +1749,7 @@ frontend_operations:
             modelCount: { type: integer, format: int32, minimum: 0 }
   query_parameters: []
 - route: /models
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts
   operation: fetchModels
   operation_id: ai.models.get
   kind: read
@@ -1921,7 +1921,7 @@ frontend_operations:
       maxItems: 128
       items: { type: string, minLength: 1, maxLength: 64 }
 - route: /models
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts
   operation: fetchModelByCatalogRouteId
   operation_id: ai.models.get
   kind: read
@@ -1943,7 +1943,7 @@ frontend_operations:
   query_parameters: *app_model_catalog_query
   openapi_exposed: false
 - route: /models
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts
   operation: fetchModelProviders
   operation_id: ai.model.vendors.get
   kind: read
@@ -1958,7 +1958,7 @@ frontend_operations:
   query_parameters: []
   openapi_exposed: false
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: listModelCatalog
   operation_id: ai.models.get
   kind: read
@@ -1974,7 +1974,7 @@ frontend_operations:
   query_parameters: []
   openapi_exposed: false
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundService.ts
   operation: fetchModelGroups
   operation_id: ai.models.get
   kind: read
@@ -1991,7 +1991,7 @@ frontend_operations:
   operation_scope: app_shell
   openapi_exposed: false
 - route: /console/api-keys
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/routingApiOperations.ts
   operation: fetchRoutingApiKeys
   operation_id: routing.apiKeys.list
   kind: read
@@ -2046,7 +2046,7 @@ frontend_operations:
     schema: { type: string, maxLength: 256 }
   operation_scope: app_shell
 - route: /console/gateway
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/routingApiOperations.ts
   operation: fetchRoutingRequestTraces
   operation_id: routing.requestTraces.list
   kind: read
@@ -2110,7 +2110,7 @@ frontend_operations:
     schema: { type: string, maxLength: 256 }
   operation_scope: app_shell
 - route: /console/usage
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/routingApiOperations.ts
   operation: fetchRoutingUsage
   operation_id: routing.usage.retrieve
   kind: read
@@ -2155,7 +2155,7 @@ frontend_operations:
   query_parameters: []
   operation_scope: app_shell
 - route: /console/usage
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-usage/src/usageService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-usage/src/usageService.ts
   operation: fetchLogs
   operation_id: usage.logs.list
   kind: read
@@ -2227,7 +2227,7 @@ frontend_operations:
   - name: end_time
     schema: { type: string, format: date-time, maxLength: 64 }
 - route: /auth/login
-  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts
   operation: sendVerifyCode
   operation_id: messaging.verificationCodes.create
   kind: create
@@ -2268,7 +2268,7 @@ frontend_operations:
   - messaging_outbound_message
   - messaging_outbound_delivery
 - route: /auth/login
-  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts
   operation: verifyCode
   operation_id: messaging.verificationCodes.verify
   kind: action
@@ -2307,7 +2307,7 @@ frontend_operations:
   - messaging_verification_challenge
   - messaging_verification_attempt
 - route: /auth/forgot-password
-  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts
   operation: requestPasswordReset
   operation_id: auth.password.reset.requests.post
   kind: create
@@ -2325,7 +2325,7 @@ frontend_operations:
   write_tables:
   - iam_security_event
 - route: /auth/forgot-password
-  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts
   operation: resetPassword
   operation_id: auth.password.resets.post
   kind: create
@@ -2345,7 +2345,7 @@ frontend_operations:
   - iam_security_event
   - iam_audit_event
 - route: /auth/register
-  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts
   operation: register
   operation_id: auth.registrations.post
   kind: create
@@ -2369,7 +2369,7 @@ frontend_operations:
   - iam_security_event
   - iam_audit_event
 - route: /auth/login
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/sessionService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/sessionService.ts
   operation: createAppSession
   operation_id: auth.sessions.post
   kind: create
@@ -2390,7 +2390,7 @@ frontend_operations:
   - iam_audit_event
   openapi_exposed: false
 - route: /auth/login
-  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts
   operation: signIn
   operation_id: auth.sessions.post
   kind: create
@@ -2411,7 +2411,7 @@ frontend_operations:
   - iam_security_event
   - iam_audit_event
 - route: /auth/login
-  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts
   operation: signInWithEmailCode
   operation_id: auth.sessions.post
   kind: create
@@ -2433,7 +2433,7 @@ frontend_operations:
   - iam_audit_event
   openapi_exposed: false
 - route: /auth/login
-  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts
   operation: signInWithPhoneCode
   operation_id: auth.sessions.post
   kind: create
@@ -2455,7 +2455,7 @@ frontend_operations:
   - iam_audit_event
   openapi_exposed: false
 - route: /auth/login
-  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts
   operation: signInWithSessionBridge
   operation_id: auth.sessions.post
   kind: create
@@ -2476,7 +2476,7 @@ frontend_operations:
   - iam_audit_event
   openapi_exposed: false
 - route: /auth/login
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/sessionService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/sessionService.ts
   operation: revokeAppSession
   operation_id: auth.sessions.current.delete
   kind: delete
@@ -2494,7 +2494,7 @@ frontend_operations:
   - iam_security_event
   openapi_exposed: false
 - route: /auth/login
-  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts
   operation: signOut
   operation_id: auth.sessions.current.delete
   kind: delete
@@ -2511,7 +2511,7 @@ frontend_operations:
   - iam_session
   - iam_security_event
 - route: /auth/login
-  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts
   operation: bootstrap
   operation_id: auth.sessions.current.get
   kind: read
@@ -2527,7 +2527,7 @@ frontend_operations:
     properties: {}
   query_parameters: []
 - route: /auth/login
-  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts
   operation: updateCurrentSession
   operation_id: auth.sessions.current.patch
   kind: update
@@ -2545,7 +2545,7 @@ frontend_operations:
   - iam_session
   - iam_security_event
 - route: /auth/login
-  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts
   operation: refreshSession
   operation_id: auth.sessions.refresh.post
   kind: create
@@ -2563,7 +2563,7 @@ frontend_operations:
   - iam_session
   - iam_security_event
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: listChatConversations
   operation_id: chat.conversations.get
   kind: read
@@ -2609,7 +2609,7 @@ frontend_operations:
   - name: page_size
     schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/components/chat/chatService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts
   operation: fetchSessions
   operation_id: chat.conversations.get
   kind: read
@@ -2626,7 +2626,7 @@ frontend_operations:
   operation_scope: app_shell
   openapi_exposed: false
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: createChatConversation
   operation_id: chat.conversations.post
   kind: create
@@ -2660,7 +2660,7 @@ frontend_operations:
   write_tables:
   - ai_chat_conversation
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/components/chat/chatService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts
   operation: fetchMessages
   operation_id: chat.conversations.byId.messages.get
   kind: read
@@ -2680,7 +2680,7 @@ frontend_operations:
   operation_scope: app_shell
   openapi_exposed: false
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: retrieveChatConversation
   operation_id: chat.conversations.byId.get
   kind: read
@@ -2695,7 +2695,7 @@ frontend_operations:
     $ref: '#/components/schemas/ChatConversationItem'
   query_parameters: []
 - route: /playground
-  source: crates/sdkwork-routes-clawrouter-app-api/src/http_route_manifest.rs
+  source: crates/sdkwork-routes-cloudrouter-app-api/src/http_route_manifest.rs
   operation: listChatMessages
   operation_id: chat.conversations.byId.messages.get
   kind: read
@@ -2763,7 +2763,7 @@ frontend_operations:
   - name: page_size
     schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: listChatMessages
   operation_id: chat.conversations.byId.messages.get
   kind: read
@@ -2783,7 +2783,7 @@ frontend_operations:
   operation_scope: app_shell
   openapi_exposed: false
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: createChatTurn
   operation_id: chat.conversations.byId.turns.post
   kind: create
@@ -2837,7 +2837,7 @@ frontend_operations:
   - ai_chat_message
   - ai_chat_message_part
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: completeChatTurnResponse
   operation_id: chat.conversations.byId.turns.byId.response.post
   kind: create
@@ -2891,7 +2891,7 @@ frontend_operations:
   - ai_chat_context_snapshot
   - ai_runtime_usage_link
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundService.ts
   operation: fetchGenerationHistory
   operation_id: generations.get
   kind: read
@@ -2907,7 +2907,7 @@ frontend_operations:
   query_parameters: []
   operation_scope: app_shell
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundGenerationsService.ts
   operation: runPlaygroundAssetGeneration
   operation_id: generations.images.text.to.image.post
   kind: create
@@ -2925,7 +2925,7 @@ frontend_operations:
   - ai_usage
   operation_scope: app_shell
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundService.ts
   operation: runGeneration
   operation_id: generations.images.text.to.image.post
   kind: create
@@ -2944,7 +2944,7 @@ frontend_operations:
   operation_scope: app_shell
   openapi_exposed: false
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundGenerationsService.ts
   operation: fetchPlaygroundGenerationHistoryFromService
   operation_id: generations.workspace.get
   kind: read
@@ -2960,7 +2960,7 @@ frontend_operations:
   query_parameters: []
   operation_scope: app_shell
 - route: /console/api-keys
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts
   operation: fetchKeys
   operation_id: apiKeys.list
   kind: read
@@ -3029,7 +3029,7 @@ frontend_operations:
   - name: q
     schema: { type: string, maxLength: 128 }
 - route: /console/api-keys
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts
   operation: createKey
   operation_id: apiKeys.create
   kind: create
@@ -3183,7 +3183,7 @@ frontend_operations:
         minLength: 1
         description: Full raw API key secret returned exactly once by the create operation.
 - route: /console/api-keys
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts
   operation: updateKey
   operation_id: apiKeys.update
   kind: update
@@ -3336,7 +3336,7 @@ frontend_operations:
             description: Whether this key is the current console default for backend runtime API key selection.
         description: Updated API key metadata. Secret material is never returned by update operations.
 - route: /console/api-keys
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts
   operation: deleteKey
   operation_id: apiKeys.delete
   kind: delete
@@ -3352,7 +3352,7 @@ frontend_operations:
   - iam_gateway_api_key
   - ops_audit_log
 - route: /console/user
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/iamDirectoryApiOperations.ts
   operation: fetchIamDepartmentAssignments
   operation_id: iam.department.assignments.get
   kind: read
@@ -3368,7 +3368,7 @@ frontend_operations:
   query_parameters: []
   operation_scope: app_shell
 - route: /console/user
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/iamDirectoryApiOperations.ts
   operation: fetchIamDepartments
   operation_id: iam.departments.get
   kind: read
@@ -3384,7 +3384,7 @@ frontend_operations:
   query_parameters: []
   operation_scope: app_shell
 - route: /console/user
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/iamDirectoryApiOperations.ts
   operation: fetchIamDepartmentTree
   operation_id: iam.departments.tree.get
   kind: read
@@ -3400,7 +3400,7 @@ frontend_operations:
   query_parameters: []
   operation_scope: app_shell
 - route: /console/user
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/iamDirectoryApiOperations.ts
   operation: fetchIamOrganizationMemberships
   operation_id: iam.organization.memberships.get
   kind: read
@@ -3416,7 +3416,7 @@ frontend_operations:
   query_parameters: []
   operation_scope: app_shell
 - route: /console/user
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/iamDirectoryApiOperations.ts
   operation: fetchIamOrganizations
   operation_id: iam.organizations.get
   kind: read
@@ -3432,7 +3432,7 @@ frontend_operations:
   query_parameters: []
   operation_scope: app_shell
 - route: /console/user
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/iamDirectoryApiOperations.ts
   operation: fetchIamOrganizationTree
   operation_id: iam.organizations.tree.get
   kind: read
@@ -3448,7 +3448,7 @@ frontend_operations:
   query_parameters: []
   operation_scope: app_shell
 - route: /console/user
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/iamDirectoryApiOperations.ts
   operation: fetchIamPositionAssignments
   operation_id: iam.position.assignments.get
   kind: read
@@ -3464,7 +3464,7 @@ frontend_operations:
   query_parameters: []
   operation_scope: app_shell
 - route: /console/user
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/iamDirectoryApiOperations.ts
   operation: fetchIamPositions
   operation_id: iam.positions.get
   kind: read
@@ -3480,7 +3480,7 @@ frontend_operations:
   query_parameters: []
   operation_scope: app_shell
 - route: /console/user
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/iamDirectoryApiOperations.ts
   operation: fetchIamRoleBindings
   operation_id: iam.role.bindings.get
   kind: read
@@ -3496,7 +3496,7 @@ frontend_operations:
   query_parameters: []
   operation_scope: app_shell
 - route: /console/user
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-user/src/userService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-user/src/userService.ts
   operation: fetchCurrentUser
   operation_id: iam.users.current.get
   kind: read
@@ -3511,7 +3511,7 @@ frontend_operations:
     properties: {}
   query_parameters: []
 - route: /console/settings
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-settings/src/settingsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-settings/src/settingsService.ts
   operation: fetchSettings
   operation_id: users.settings.retrieve
   kind: read
@@ -3543,7 +3543,7 @@ frontend_operations:
           apiMonitor: { type: boolean }
   query_parameters: []
 - route: /console/settings
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-settings/src/settingsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-settings/src/settingsService.ts
   operation: updateSettings
   operation_id: users.settings.update
   kind: update
@@ -3584,7 +3584,7 @@ frontend_operations:
   - iam_user_preference
   - integration_webhook_endpoint
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: retrieveMemoryEntry
   operation_id: memory.entries.byId.get
   kind: read
@@ -3600,7 +3600,7 @@ frontend_operations:
   query_parameters: []
   operation_scope: app_shell
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: listMemorySpaces
   operation_id: memory.spaces.get
   kind: read
@@ -3616,7 +3616,7 @@ frontend_operations:
   query_parameters: []
   operation_scope: app_shell
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: createMemorySpace
   operation_id: memory.spaces.post
   kind: create
@@ -3634,7 +3634,7 @@ frontend_operations:
   - ai_agent
   operation_scope: app_shell
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: retrieveMemorySpace
   operation_id: memory.spaces.byId.get
   kind: read
@@ -3650,7 +3650,7 @@ frontend_operations:
   query_parameters: []
   operation_scope: app_shell
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: listMemoryEntries
   operation_id: memory.spaces.byId.entries.get
   kind: read
@@ -3666,7 +3666,7 @@ frontend_operations:
   query_parameters: []
   operation_scope: app_shell
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: createMemoryEntry
   operation_id: memory.spaces.byId.entries.post
   kind: create
@@ -3684,7 +3684,7 @@ frontend_operations:
   - ai_agent
   operation_scope: app_shell
 - route: /console/notifications
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-messages/src/messagesService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-messages/src/messagesService.ts
   operation: fetchMessages
   operation_id: notification.notifications.get
   kind: read
@@ -3700,7 +3700,7 @@ frontend_operations:
   query_parameters: []
   openapi_exposed: false
 - route: /console/notifications
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/notificationService.ts
   operation: fetchNotifications
   operation_id: notification.notifications.get
   kind: read
@@ -3740,7 +3740,7 @@ frontend_operations:
         $ref: '#/components/schemas/PageInfo'
   query_parameters:
   - name: app_id
-    schema: { type: string, maxLength: 128, default: claw-router }
+    schema: { type: string, maxLength: 128, default: cloud-router }
   - name: include_archived
     schema: { type: boolean, default: false }
   - name: page
@@ -3748,7 +3748,7 @@ frontend_operations:
   - name: page_size
     schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
 - route: /console/notifications
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-messages/src/messagesService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-messages/src/messagesService.ts
   operation: acknowledge
   operation_id: notification.notifications.byId.acknowledge.post
   kind: create
@@ -3768,13 +3768,13 @@ frontend_operations:
       state: { type: string, enum: [acknowledged] }
   query_parameters:
   - name: app_id
-    schema: { type: string, maxLength: 128, default: claw-router }
+    schema: { type: string, maxLength: 128, default: cloud-router }
   request_body_required: false
   write_tables:
   - ops_audit_log
   openapi_exposed: false
 - route: /console/notifications
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/notificationService.ts
   operation: acknowledge
   operation_id: notification.notifications.byId.acknowledge.post
   kind: create
@@ -3794,12 +3794,12 @@ frontend_operations:
       state: { type: string, enum: [acknowledged] }
   query_parameters:
   - name: app_id
-    schema: { type: string, maxLength: 128, default: claw-router }
+    schema: { type: string, maxLength: 128, default: cloud-router }
   request_body_required: false
   write_tables:
   - ops_audit_log
 - route: /console/notifications
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-messages/src/messagesService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-messages/src/messagesService.ts
   operation: markPopupSeen
   operation_id: notification.notifications.byId.popup.seen.post
   kind: create
@@ -3819,13 +3819,13 @@ frontend_operations:
       state: { type: string, enum: [popup_seen] }
   query_parameters:
   - name: app_id
-    schema: { type: string, maxLength: 128, default: claw-router }
+    schema: { type: string, maxLength: 128, default: cloud-router }
   request_body_required: false
   write_tables:
   - ops_audit_log
   openapi_exposed: false
 - route: /console/notifications
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/notificationService.ts
   operation: markPopupSeen
   operation_id: notification.notifications.byId.popup.seen.post
   kind: create
@@ -3845,12 +3845,12 @@ frontend_operations:
       state: { type: string, enum: [popup_seen] }
   query_parameters:
   - name: app_id
-    schema: { type: string, maxLength: 128, default: claw-router }
+    schema: { type: string, maxLength: 128, default: cloud-router }
   request_body_required: false
   write_tables:
   - ops_audit_log
 - route: /auth/oauth/callback/:provider
-  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts
   operation: getOAuthAuthorizationUrl
   operation_id: oauth.authorization.urls.post
   kind: create
@@ -3867,7 +3867,7 @@ frontend_operations:
   write_tables:
   - ops_audit_log
 - route: /auth/oauth/callback/:provider
-  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
+  source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts
   operation: signInWithOAuth
   operation_id: oauth.sessions.post
   kind: create
@@ -3888,7 +3888,7 @@ frontend_operations:
   - iam_security_event
   - iam_audit_event
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: listRuntimeInvocations
   operation_id: runtime.invocations.get
   kind: read
@@ -3971,7 +3971,7 @@ frontend_operations:
   - name: status
     schema: { type: string, enum: [pending, running, streaming, completed, failed, cancelled] }
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: createRuntimeInvocation
   operation_id: runtime.invocations.post
   kind: create
@@ -4022,7 +4022,7 @@ frontend_operations:
   write_tables:
   - ai_runtime_invocation
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/components/chat/chatService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts
   operation: sendMessage
   operation_id: runtime.invocations.post
   kind: create
@@ -4043,7 +4043,7 @@ frontend_operations:
   operation_scope: app_shell
   openapi_exposed: false
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundGenerationService.ts
   operation: runPlaygroundGeneration
   operation_id: runtime.invocations.post
   kind: create
@@ -4062,7 +4062,7 @@ frontend_operations:
   operation_scope: app_shell
   openapi_exposed: false
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundService.ts
   operation: runAgentGeneration
   operation_id: runtime.invocations.post
   kind: create
@@ -4081,7 +4081,7 @@ frontend_operations:
   operation_scope: app_shell
   openapi_exposed: false
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: retrieveRuntimeInvocation
   operation_id: runtime.invocations.byId.get
   kind: read
@@ -4096,7 +4096,7 @@ frontend_operations:
     $ref: '#/components/schemas/RuntimeInvocationItem'
   query_parameters: []
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: listRuntimeArtifacts
   operation_id: runtime.invocations.byId.artifacts.get
   kind: read
@@ -4140,7 +4140,7 @@ frontend_operations:
   - name: page_size
     schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: createRuntimeArtifact
   operation_id: runtime.invocations.byId.artifacts.post
   kind: create
@@ -4177,7 +4177,7 @@ frontend_operations:
   write_tables:
   - ai_runtime_artifact
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: completeRuntimeInvocation
   operation_id: invocations.completions.create
   kind: action
@@ -4214,7 +4214,7 @@ frontend_operations:
   write_tables:
   - ai_runtime_invocation
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/components/chat/chatService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts
   operation: cancelRuntimeInvocation
   operation_id: invocations.completions.create
   kind: action
@@ -4233,7 +4233,7 @@ frontend_operations:
   operation_scope: app_shell
   openapi_exposed: false
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/components/chat/chatService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts
   operation: resumeMessage
   operation_id: invocations.completions.create
   kind: action
@@ -4260,7 +4260,7 @@ frontend_operations:
   operation_scope: app_shell
   openapi_exposed: false
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: listRuntimeEvents
   operation_id: runtime.invocations.byId.events.get
   kind: read
@@ -4301,7 +4301,7 @@ frontend_operations:
   - name: page_size
     schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: createRuntimeEvent
   operation_id: runtime.invocations.byId.events.post
   kind: create
@@ -4333,7 +4333,7 @@ frontend_operations:
   write_tables:
   - ai_runtime_invocation_event
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: streamRuntimeEvents
   operation_id: runtime.invocations.byId.events.stream.get
   kind: read
@@ -4351,8 +4351,8 @@ frontend_operations:
   - name: after_event_no
     schema: { type: string, format: int64, pattern: '^[0-9]+$', default: '0', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
 - route: /auth/login
-  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthSettingsService.ts
-  operation: fetchClawRouterAuthRuntimeSettings
+  source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthSettingsService.ts
+  operation: fetchCloudRouterAuthRuntimeSettings
   operation_id: system.iam.runtime.get
   kind: read
   api_surface: app
@@ -4367,8 +4367,8 @@ frontend_operations:
   query_parameters: []
   operation_scope: app_shell
 - route: /auth/login
-  source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthSettingsService.ts
-  operation: fetchClawRouterAuthVerificationPolicy
+  source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthSettingsService.ts
+  operation: fetchCloudRouterAuthVerificationPolicy
   operation_id: system.iam.verification.policy.get
   kind: read
   api_surface: app
@@ -4383,7 +4383,7 @@ frontend_operations:
   query_parameters: []
   operation_scope: app_shell
 - route: /
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/siteBranding.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/siteBranding.ts
   operation: fetchSiteBranding
   operation_id: site.runtime.retrieve
   kind: read
@@ -5398,7 +5398,7 @@ frontend_operations:
   - ai_resource_group_item
   - ops_audit_log
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: fetchFirewalls
   operation_id: firewalls.rules.list
   kind: read
@@ -5419,7 +5419,7 @@ frontend_operations:
   - name: q
     schema: { type: string, maxLength: 128 }
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: addFirewall
   operation_id: firewalls.rules.create
   kind: create
@@ -5437,7 +5437,7 @@ frontend_operations:
   - iam_gateway_risk_rule
   - ops_audit_log
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: removeFirewall
   operation_id: firewalls.rules.delete
   kind: delete
@@ -5454,7 +5454,7 @@ frontend_operations:
   - iam_gateway_risk_rule
   - ops_audit_log
 - route: /admin/monitor
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor/src/monitorService.ts
   operation: fetchAlerts
   operation_id: router.monitor.alerts.get
   kind: read
@@ -5494,7 +5494,7 @@ frontend_operations:
   - name: q
     schema: { type: string, maxLength: 128 }
 - route: /admin/monitor
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor/src/monitorService.ts
   operation: fetchNodes
   operation_id: router.monitor.nodes.get
   kind: read
@@ -5536,7 +5536,7 @@ frontend_operations:
   - name: q
     schema: { type: string, maxLength: 128 }
 - route: /admin/monitor
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor/src/monitorService.ts
   operation: fetchPerformanceData
   operation_id: router.monitor.performance.get
   kind: read
@@ -5573,7 +5573,7 @@ frontend_operations:
   - name: q
     schema: { type: string, maxLength: 128 }
 - route: /admin/analytics
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-analytics/src/analyticsService.ts
   operation: fetchOverview
   operation_id: analytics.admin.overview.retrieve
   kind: read
@@ -5746,8 +5746,8 @@ frontend_operations:
   - name: ranking_size
     schema: { type: integer, format: int32, minimum: 3, maximum: 50, default: 10 }
 - route: /admin/settings
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-site/src/AuthSettingsService.ts
-  operation: fetchClawRouterAuthSettings
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site/src/AuthSettingsService.ts
+  operation: fetchCloudRouterAuthSettings
   operation_id: auth.settings.retrieve
   kind: read
   api_surface: backend
@@ -5761,8 +5761,8 @@ frontend_operations:
     properties: {}
   query_parameters: []
 - route: /admin/settings
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-site/src/AuthSettingsService.ts
-  operation: updateClawRouterAuthSettings
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site/src/AuthSettingsService.ts
+  operation: updateCloudRouterAuthSettings
   operation_id: auth.settings.update
   kind: update
   api_surface: backend
@@ -5779,7 +5779,7 @@ frontend_operations:
   - ops_config_snapshot
   - ops_audit_log
 - route: /admin/cache
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts
   operation: deleteInstance
   operation_id: system.cache.instances.byId.delete
   kind: delete
@@ -5796,7 +5796,7 @@ frontend_operations:
   write_tables:
   - ops_audit_log
 - route: /admin/cache
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts
   operation: refreshInstance
   operation_id: system.cache.instances.byId.refresh.post
   kind: create
@@ -5814,7 +5814,7 @@ frontend_operations:
   write_tables:
   - ops_audit_log
 - route: /admin/cache
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts
   operation: deleteNamespace
   operation_id: system.cache.namespaces.byId.delete
   kind: delete
@@ -5831,7 +5831,7 @@ frontend_operations:
   write_tables:
   - ops_audit_log
 - route: /admin/cache
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts
   operation: listKeys
   operation_id: system.cache.namespaces.byId.keys.get
   kind: read
@@ -5851,7 +5851,7 @@ frontend_operations:
   - name: cursor
     schema: { type: string, maxLength: 2048 }
 - route: /admin/cache
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts
   operation: deleteKey
   operation_id: system.cache.namespaces.byId.keys.byId.delete
   kind: delete
@@ -5868,7 +5868,7 @@ frontend_operations:
   write_tables:
   - ops_audit_log
 - route: /admin/cache
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts
   operation: refreshNamespace
   operation_id: system.cache.namespaces.byId.refresh.post
   kind: create
@@ -5886,7 +5886,7 @@ frontend_operations:
   write_tables:
   - ops_audit_log
 - route: /admin/cache
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts
   operation: fetchOverview
   operation_id: cache.overview.retrieve
   kind: read
@@ -5902,7 +5902,7 @@ frontend_operations:
     properties: {}
   query_parameters: []
 - route: /admin/cache
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts
   operation: refreshAll
   operation_id: system.cache.refresh.post
   kind: create
@@ -5920,7 +5920,7 @@ frontend_operations:
   write_tables:
   - ops_audit_log
 - route: /admin/dashboard
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/dashboardService.ts
   operation: fetchDashboardData
   operation_id: dashboard.admin.overview.retrieve
   kind: read
@@ -5997,7 +5997,7 @@ frontend_operations:
             cost: { type: string, maxLength: 64, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
   query_parameters: []
 - route: /admin/dashboard
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/dashboardService.ts
   operation: fetchInstallationStatus
   operation_id: installation.status.retrieve
   kind: read
@@ -6026,7 +6026,7 @@ frontend_operations:
       changed: { type: boolean }
   query_parameters: []
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: fetchTokenLimits
   operation_id: rateLimits.apiKeys.list
   kind: read
@@ -6048,7 +6048,7 @@ frontend_operations:
   - name: q
     schema: { type: string, maxLength: 128 }
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: addTokenLimit
   operation_id: rateLimits.apiKeys.create
   kind: create
@@ -6067,7 +6067,7 @@ frontend_operations:
   - ai_quota_policy
   - ops_audit_log
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: fetchIpLimits
   operation_id: rateLimits.ip.list
   kind: read
@@ -6088,7 +6088,7 @@ frontend_operations:
   - name: q
     schema: { type: string, maxLength: 128 }
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: addIpLimit
   operation_id: rateLimits.ip.create
   kind: create
@@ -6106,7 +6106,7 @@ frontend_operations:
   - iam_gateway_risk_rule
   - ops_audit_log
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: fetchModelLimits
   operation_id: rateLimits.models.list
   kind: read
@@ -6128,7 +6128,7 @@ frontend_operations:
   - name: q
     schema: { type: string, maxLength: 128 }
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: addModelLimit
   operation_id: rateLimits.models.create
   kind: create
@@ -6147,7 +6147,7 @@ frontend_operations:
   - ai_quota_policy
   - ops_audit_log
 - route: /admin/record
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-record/src/recordService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-record/src/recordService.ts
   operation: fetchLogs
   operation_id: system.records.get
   kind: read
@@ -6219,7 +6219,7 @@ frontend_operations:
   - name: model
     schema: { type: string, maxLength: 128 }
 - route: /admin/runtime-region
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-runtime-region/src/runtimeRegionService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-runtime-region/src/runtimeRegionService.ts
   operation: fetchSettings
   operation_id: runtimeRegion.settings.retrieve
   kind: read
@@ -6234,7 +6234,7 @@ frontend_operations:
     properties: {}
   query_parameters: []
 - route: /admin/runtime-region
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-runtime-region/src/runtimeRegionService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-runtime-region/src/runtimeRegionService.ts
   operation: updateSettings
   operation_id: system.runtime.region.settings.patch
   kind: update
@@ -6252,7 +6252,7 @@ frontend_operations:
   - ops_config_snapshot
   - ops_audit_log
 - route: /admin/service-nodes
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts
   operation: fetchNodes
   operation_id: system.service.nodes.get
   kind: read
@@ -6275,7 +6275,7 @@ frontend_operations:
   - name: page_size
     schema: { type: integer, minimum: 1, maximum: 200, default: 20 }
 - route: /admin/service-nodes
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts
   operation: createNode
   operation_id: system.service.nodes.post
   kind: create
@@ -6292,7 +6292,7 @@ frontend_operations:
   write_tables:
   - ops_gateway_instance
 - route: /admin/service-nodes
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts
   operation: deleteNode
   operation_id: system.service.nodes.byId.delete
   kind: delete
@@ -6308,7 +6308,7 @@ frontend_operations:
   write_tables:
   - ops_gateway_instance
 - route: /admin/service-nodes
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts
   operation: updateNode
   operation_id: system.service.nodes.byId.put
   kind: update
@@ -6325,7 +6325,7 @@ frontend_operations:
   write_tables:
   - ops_gateway_instance
 - route: /admin/service-nodes
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts
   operation: updateNodeStatus
   operation_id: system.service.nodes.byId.status.put
   kind: update
@@ -6342,7 +6342,7 @@ frontend_operations:
   write_tables:
   - ops_gateway_instance
 - route: /admin/site
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-site/src/SiteSettingsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site/src/SiteSettingsService.ts
   operation: fetchSettings
   operation_id: site.settings.retrieve
   kind: read
@@ -6380,7 +6380,7 @@ frontend_operations:
       customCss: { type: string, maxLength: 20000 }
   query_parameters: []
 - route: /admin/site
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-site/src/SiteSettingsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site/src/SiteSettingsService.ts
   operation: updateSettings
   operation_id: system.site.settings.patch
   kind: update
@@ -6842,7 +6842,7 @@ frontend_operations:
   write_tables:
   - ops_audit_log
 - route: /admin/payments/providers
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts
   operation: backendPaymentsProvidersList
   operation_id: providers.list
   kind: read
@@ -7329,7 +7329,7 @@ frontend_operations:
   write_tables:
   - ops_audit_log
 - route: /admin/storage/buckets
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
   operation: backendStorageBucketsList
   operation_id: oss.buckets.list
   kind: read
@@ -7405,7 +7405,7 @@ frontend_operations:
     required: false
     maxLength: 64
 - route: /admin/storage/buckets
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
   operation: backendStorageBucketCreate
   operation_id: oss.buckets.create
   kind: create
@@ -7525,7 +7525,7 @@ frontend_operations:
         minLength: 1
         maxLength: 512
 - route: /admin/storage/defaultBuckets
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
   operation: backendStorageDefaultBucketsList
   operation_id: defaultBuckets.list
   kind: read
@@ -7590,7 +7590,7 @@ frontend_operations:
     required: false
     maxLength: 64
 - route: /admin/storage/defaultBuckets
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
   operation: backendStorageDefaultBucketUpdate
   operation_id: defaultBuckets.update
   kind: update
@@ -7620,7 +7620,7 @@ frontend_operations:
         minLength: 1
         maxLength: 512
 - route: /admin/storage/garbageCollection
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
   operation: backendStorageGarbageCollectionJobsList
   operation_id: gcJobs.list
   kind: read
@@ -7684,7 +7684,7 @@ frontend_operations:
     required: false
     maxLength: 64
 - route: /admin/storage/garbageCollection
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
   operation: backendStorageGarbageCollectionJobCreate
   operation_id: gcJobs.create
   kind: create
@@ -7727,7 +7727,7 @@ frontend_operations:
         additionalProperties: true
   idempotency_required: true
 - route: /admin/storage/providers
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
   operation: backendStorageProvidersList
   operation_id: oss.providers.list
   kind: read
@@ -7796,7 +7796,7 @@ frontend_operations:
     required: false
     maxLength: 64
 - route: /admin/storage/providers
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
   operation: backendStorageProviderCreate
   operation_id: oss.providers.create
   kind: create
@@ -7890,7 +7890,7 @@ frontend_operations:
         minLength: 1
         maxLength: 512
 - route: /admin/storage/providers/{providerId}
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
   operation: backendStorageProviderHealthCheck
   operation_id: providers.healthCheck
   kind: create
@@ -7906,7 +7906,7 @@ frontend_operations:
   write_tables:
   - ops_audit_log
 - route: /admin/storage/quotas
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
   operation: backendStorageQuotasList
   operation_id: oss.quotas.list
   kind: read
@@ -7970,7 +7970,7 @@ frontend_operations:
     required: false
     maxLength: 64
 - route: /admin/storage/quotas
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
   operation: backendStorageQuotaCreate
   operation_id: oss.quotas.create
   kind: create
@@ -8023,7 +8023,7 @@ frontend_operations:
         maxLength: 64
   idempotency_required: true
 - route: /admin/storage/reconciliation
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
   operation: backendStorageReconciliationRunsList
   operation_id: oss.storageReconciliationRuns.list
   kind: read
@@ -8091,7 +8091,7 @@ frontend_operations:
     required: false
     maxLength: 64
 - route: /admin/storage/reconciliation
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
   operation: backendStorageReconciliationRunCreate
   operation_id: oss.storageReconciliationRuns.create
   kind: create
@@ -8130,7 +8130,7 @@ frontend_operations:
         maxLength: 512
   idempotency_required: true
 - route: /admin/storage/usage
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
   operation: backendStorageUsageList
   operation_id: oss.usage.list
   kind: read
@@ -8192,7 +8192,7 @@ frontend_operations:
     required: false
     maxLength: 64
 - route: /admin/marketing/referrals
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts
   operation: fetchReferralStats
   operation_id: referralStats.list
   kind: read
@@ -8229,7 +8229,7 @@ frontend_operations:
   - name: page_size
     schema: { type: integer, minimum: 1, maximum: 200 }
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: fetchChainPolicy
   operation_id: chains.policy.retrieve
   kind: read
@@ -8261,7 +8261,7 @@ frontend_operations:
             additionalProperties: true
             description: camelCase ChainPolicy document (concurrency, ipAccess, stages).
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: updateChainPolicy
   operation_id: chains.policy.update
   kind: update
@@ -8343,7 +8343,7 @@ frontend_operations:
   - iam_gateway_chain_policy
   - ops_audit_log
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: fetchApiKeyChainPolicy
   operation_id: chains.policy.apiKey.retrieve
   kind: read
@@ -8944,7 +8944,7 @@ frontend_models:
   - ai_resource_group_item
   - ai_resource
 - route: /admin/analytics
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-analytics/src/analyticsService.ts
   interface: AdminAnalyticsInsight
   fields:
   - key
@@ -8956,7 +8956,7 @@ frontend_models:
   - ai_usage
   - ai_request_trace
 - route: /admin/analytics
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-analytics/src/analyticsService.ts
   interface: AdminAnalyticsModelRankItem
   fields:
   - rank
@@ -8975,7 +8975,7 @@ frontend_models:
   - ai_usage
   - ai_request_trace
 - route: /admin/analytics
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-analytics/src/analyticsService.ts
   interface: AdminAnalyticsOverview
   fields:
   - timeRange
@@ -9021,7 +9021,7 @@ frontend_models:
   - ai_usage
   - ai_request_trace
 - route: /admin/analytics
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-analytics/src/analyticsService.ts
   interface: AdminAnalyticsQuery
   fields:
   - timeRange
@@ -9032,7 +9032,7 @@ frontend_models:
   - ai_usage
   - ai_request_trace
 - route: /admin/analytics
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-analytics/src/analyticsService.ts
   interface: AdminAnalyticsSummary
   fields:
   - totalUsers
@@ -9051,7 +9051,7 @@ frontend_models:
   - ai_usage
   - ai_request_trace
 - route: /admin/analytics
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-analytics/src/analyticsService.ts
   interface: AdminAnalyticsTrendPoint
   fields:
   - time
@@ -9063,7 +9063,7 @@ frontend_models:
   - ai_usage
   - ai_request_trace
 - route: /admin/analytics
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-analytics/src/analyticsService.ts
   interface: AdminAnalyticsUserRankItem
   fields:
   - rank
@@ -9080,7 +9080,7 @@ frontend_models:
   data_sources:
   - ai_usage
 - route: /admin/analytics
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-analytics/src/analyticsService.ts
   interface: PieChartData
   fields:
   - name
@@ -9089,7 +9089,7 @@ frontend_models:
   data_sources:
   - ai_usage
 - route: /admin/cache
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts
   interface: CacheInstance
   fields:
   - name
@@ -9116,7 +9116,7 @@ frontend_models:
   - ops_config_snapshot
   - ops_audit_log
 - route: /admin/cache
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts
   interface: CacheKeyItem
   fields:
   - key
@@ -9128,7 +9128,7 @@ frontend_models:
   - ops_config_snapshot
   - ops_audit_log
 - route: /admin/cache
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts
   interface: CacheKeyList
   fields:
   - namespace
@@ -9151,7 +9151,7 @@ frontend_models:
   - ops_config_snapshot
   - ops_audit_log
 - route: /admin/cache
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts
   interface: CachePageInfo
   fields:
   - mode
@@ -9162,7 +9162,7 @@ frontend_models:
   - ops_config_snapshot
   - ops_audit_log
 - route: /admin/cache
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts
   interface: CacheNamespacePolicy
   fields:
   - namespace
@@ -9180,7 +9180,7 @@ frontend_models:
   - ops_config_snapshot
   - ops_audit_log
 - route: /admin/cache
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts
   interface: CacheOperationOutcome
   fields:
   - operation
@@ -9194,7 +9194,7 @@ frontend_models:
   - ops_config_snapshot
   - ops_audit_log
 - route: /admin/cache
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts
   interface: CacheOverview
   fields:
   - summary
@@ -9247,7 +9247,7 @@ frontend_models:
   - ops_config_snapshot
   - ops_audit_log
 - route: /admin/cache
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts
   interface: CacheSummary
   fields:
   - runtimeTarget
@@ -9266,7 +9266,7 @@ frontend_models:
   - ops_config_snapshot
   - ops_audit_log
 - route: /admin/dashboard
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/dashboardService.ts
   interface: DashboardDataQuery
   fields:
   - timeRange
@@ -9274,7 +9274,7 @@ frontend_models:
   - ai_usage
   - ai_request_trace
 - route: /admin/dashboard
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/dashboardService.ts
   interface: DashboardDataSnapshot
   fields:
   - activeUsers
@@ -9322,7 +9322,7 @@ frontend_models:
   - ai_usage
   - ai_request_trace
 - route: /admin/dashboard
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/dashboardService.ts
   interface: DashboardSummaryCard
   fields:
   - label
@@ -9332,7 +9332,7 @@ frontend_models:
   - ai_usage
   - ai_request_trace
 - route: /admin/dashboard
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/dashboardService.ts
   interface: PieChartData
   fields:
   - name
@@ -9342,7 +9342,7 @@ frontend_models:
   data_sources:
   - ai_usage
 - route: /admin/dashboard
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/dashboardService.ts
   interface: RecentUsageTrace
   fields:
   - id
@@ -9361,7 +9361,7 @@ frontend_models:
   - ai_request_trace
   - ai_usage
 - route: /admin/dashboard
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/dashboardService.ts
   interface: TrafficData
   fields:
   - time
@@ -9375,7 +9375,7 @@ frontend_models:
   - ai_request_trace
   - ai_usage
 - route: /admin/dashboard
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/dashboardService.ts
   interface: InstallationStatusResponse
   fields:
   - status
@@ -9392,7 +9392,7 @@ frontend_models:
   - ai_model
   - ops_gateway_instance
 - route: /admin/monitor
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor/src/monitorService.ts
   interface: Alert
   fields:
   - id
@@ -9405,7 +9405,7 @@ frontend_models:
   data_sources:
   - ops_alert_event
 - route: /admin/monitor
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor/src/monitorService.ts
   interface: PerformanceDatum
   fields:
   - time
@@ -9415,7 +9415,7 @@ frontend_models:
   data_sources:
   - ops_metric_snapshot
 - route: /admin/monitor
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor/src/monitorService.ts
   interface: SysNode
   fields:
   - id
@@ -9430,7 +9430,7 @@ frontend_models:
   - ops_gateway_instance
   - ops_gateway_heartbeat
 - route: /admin/monitor
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor/src/monitorService.ts
   interface: MonitorListFilters
   fields:
   - page
@@ -9442,7 +9442,7 @@ frontend_models:
   - ops_metric_snapshot
   - ops_gateway_instance
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   interface: RateLimitListFilters
   fields:
   - page
@@ -9453,7 +9453,7 @@ frontend_models:
   - iam_gateway_risk_rule
   - ai_quota_policy
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   interface: FirewallCreateInput
   fields:
   - type
@@ -9462,7 +9462,7 @@ frontend_models:
   data_sources:
   - iam_gateway_risk_rule
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   interface: FirewallRule
   fields:
   - id
@@ -9473,7 +9473,7 @@ frontend_models:
   data_sources:
   - iam_gateway_risk_rule
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   interface: IpLimitCreateInput
   fields:
   - ruleName
@@ -9485,7 +9485,7 @@ frontend_models:
   - iam_gateway_risk_rule
   - ai_quota_policy
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   interface: IpLimitRule
   fields:
   - id
@@ -9498,7 +9498,7 @@ frontend_models:
   data_sources:
   - iam_gateway_risk_rule
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   interface: ModelLimitCreateInput
   fields:
   - model
@@ -9509,7 +9509,7 @@ frontend_models:
   - ai_quota_policy
   - ai_upstream_account_group
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   interface: ModelLimitRule
   fields:
   - id
@@ -9524,7 +9524,7 @@ frontend_models:
   - ai_quota_policy
   - ai_upstream_account_group
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   interface: TokenLimitCreateInput
   fields:
   - keyPrefix
@@ -9536,7 +9536,7 @@ frontend_models:
   - ai_quota_policy
   - iam_gateway_api_key
 - route: /admin/ratelimit
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   interface: TokenLimitRule
   fields:
   - id
@@ -9550,7 +9550,7 @@ frontend_models:
   - ai_quota_policy
   - iam_gateway_api_key
 - route: /admin/record
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-record/src/recordService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-record/src/recordService.ts
   interface: LogRecord
   fields:
   - id
@@ -9590,7 +9590,7 @@ frontend_models:
   - ai_usage
   - ai_routing_decision_log
 - route: /admin/service-nodes
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts
   interface: ServiceNode
   fields:
   - id
@@ -9607,7 +9607,7 @@ frontend_models:
   data_sources:
   - ops_gateway_instance
 - route: /admin/service-nodes
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts
   interface: ServiceNodeInput
   fields:
   - name
@@ -9621,7 +9621,7 @@ frontend_models:
   data_sources:
   - ops_gateway_instance
 - route: /admin/service-nodes
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts
   interface: ServiceNodeListParams
   fields:
   - search
@@ -9629,7 +9629,7 @@ frontend_models:
   data_sources:
   - ops_gateway_instance
 - route: /console/api-keys
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts
   interface: ApiKey
   fields:
   - id
@@ -9657,7 +9657,7 @@ frontend_models:
   - ai_model_pricing
   - ai_pricing_plan
 - route: /console/api-keys
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts
   interface: AccountGroup
   fields:
   - id
@@ -9668,7 +9668,7 @@ frontend_models:
   data_sources:
   - ai_upstream_account_group
 - route: /console/api-keys
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts
   interface: CreateApiKeyInput
   fields:
   - name
@@ -9684,7 +9684,7 @@ frontend_models:
   - iam_gateway_access_policy
   - ai_quota_policy
 - route: /console/api-keys
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts
   interface: CreatedApiKey
   fields:
   - key
@@ -9708,7 +9708,7 @@ frontend_models:
   data_sources:
   - iam_gateway_api_key
 - route: /console/dashboard
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/dashboardService.ts
   interface: Announcement
   fields:
   - id
@@ -9720,7 +9720,7 @@ frontend_models:
   data_sources:
   - ops_notification_message
 - route: /console/dashboard
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/dashboardService.ts
   interface: ConfigurationDomain
   fields:
   - id
@@ -9732,7 +9732,7 @@ frontend_models:
   data_sources:
   - ops_gateway_instance
 - route: /console/dashboard
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/dashboardService.ts
   interface: DashboardData
   fields:
   - time
@@ -9744,7 +9744,7 @@ frontend_models:
   data_sources:
   - ai_usage
 - route: /console/dashboard
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/dashboardService.ts
   interface: ModelUsage
   fields:
   - rank
@@ -9759,7 +9759,7 @@ frontend_models:
   - ai_model_rank_snapshot
   - ai_usage
 - route: /console/settings
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-settings/src/settingsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-settings/src/settingsService.ts
   interface: SettingsData
   fields:
   - language
@@ -9774,7 +9774,7 @@ frontend_models:
   - integration_webhook_endpoint
   - ops_notification_delivery
 - route: /console/usage
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-usage/src/usageService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-usage/src/usageService.ts
   interface: UsageLogPage
   fields:
   - items
@@ -9791,7 +9791,7 @@ frontend_models:
   - ai_routing_decision_log
   - ai_upstream_account_group
 - route: /console/user
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-user/src/userService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-user/src/userService.ts
   interface: UserProfile
   fields:
   - name
@@ -9812,7 +9812,7 @@ frontend_models:
   - iam_user_identity
   - iam_session
 - route: /models
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/data/models.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/data/models.ts
   interface: Model
   fields:
   - id
@@ -9857,7 +9857,7 @@ frontend_models:
   - ai_model_capability
   - ai_model_pricing
 - route: /models
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/data/models.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/data/models.ts
   interface: ModelPricing
   fields:
   - input
@@ -9876,7 +9876,7 @@ frontend_models:
   data_sources:
   - ai_model_pricing
 - route: /models
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/data/models.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/data/models.ts
   interface: ModelReferencePrice
   fields:
   - regionCode
@@ -9886,7 +9886,7 @@ frontend_models:
   data_sources:
   - ai_model_pricing
 - route: /models
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts
   interface: ModelCatalogGroup
   fields:
   - key
@@ -9895,7 +9895,7 @@ frontend_models:
   data_sources:
   - ai_upstream_account_group
 - route: /models
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts
   interface: ModelCatalogResult
   fields:
   - models
@@ -9916,7 +9916,7 @@ frontend_models:
   - ai_upstream_account_group
   - ai_upstream_account_group_member
 - route: /models
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts
   interface: ModelCatalogServiceFilters
   fields:
   - billingMeter
@@ -9934,7 +9934,7 @@ frontend_models:
   - ai_model_capability
   - ai_model_pricing
 - route: /models
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts
   interface: ModelCatalogPageInfo
   fields:
   - total
@@ -9945,7 +9945,7 @@ frontend_models:
   - ai_model_vendor
   - ai_model
 - route: /models
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts
   interface: ModelCatalogProvider
   fields:
   - code
@@ -9955,7 +9955,7 @@ frontend_models:
   - ai_model_vendor
   - ai_model
 - route: /models
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/runtimeModelCatalog.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/runtimeModelCatalog.ts
   interface: RuntimeModelCatalogItem
   fields:
   - catalogKey
@@ -9998,7 +9998,7 @@ frontend_models:
   - ai_model_capability
   - ai_model_pricing
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundTypes.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundTypes.ts
   interface: GenerationAgentRunCreateInput
   fields:
   - prompt
@@ -10025,7 +10025,7 @@ frontend_models:
   - ai_model
   - ai_model_capability
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundTypes.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundTypes.ts
   interface: PlaygroundHistoryItem
   fields:
   - id
@@ -10048,7 +10048,7 @@ frontend_models:
   data_sources:
   - ai_usage
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundTypes.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundTypes.ts
   interface: PlaygroundReferenceAssetInput
   fields:
   - kind
@@ -10060,7 +10060,7 @@ frontend_models:
   data_sources:
   - ai_runtime_artifact
 - route: /playground
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundTypes.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundTypes.ts
   interface: PlaygroundReferenceImageInput
   fields:
   - name
@@ -10070,7 +10070,7 @@ frontend_models:
   data_sources:
   - ai_runtime_artifact
 - route: /rankings
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/src/rankingCatalog.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-rankings/src/rankingCatalog.ts
   interface: RankingVendorOption
   fields:
   - label
@@ -10080,7 +10080,7 @@ frontend_models:
   - ai_model_vendor
   - ai_model
 - route: /rankings
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/src/rankingService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-rankings/src/rankingService.ts
   interface: RankingServiceFilters
   fields:
   - rankScope
@@ -10092,7 +10092,7 @@ frontend_models:
   data_sources:
   - ai_model_rank_snapshot
 - route: /rankings
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/src/rankingService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-rankings/src/rankingService.ts
   interface: RuntimeRankingSnapshot
   fields:
   - catalog
@@ -10101,7 +10101,7 @@ frontend_models:
   data_sources:
   - ai_model_rank_snapshot
 - route: /console/notifications
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/notificationService.ts
   interface: NotificationItem
   fields:
   - actionUrl
@@ -10120,7 +10120,7 @@ frontend_models:
   - ops_notification_message
   - ops_notification_delivery
 - route: /admin/marketing/:sectionId?
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts
   interface: ReferralStat
   fields:
   - id
@@ -10132,7 +10132,7 @@ frontend_models:
   data_sources:
   - growth_referral_stats
 - route: /admin/memberships/:sectionId?
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
   interface: MembershipsAdminEntitlementsListParams
   fields:
   - page
@@ -10143,14 +10143,14 @@ frontend_models:
   data_sources:
   - memberships
 - route: /admin/memberships/:sectionId?
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
   interface: MembershipsAdminMemberStatusInput
   fields:
   - status
   data_sources:
   - memberships
 - route: /admin/memberships/:sectionId?
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
   interface: MembershipsAdminMembersListParams
   fields:
   - page
@@ -10161,7 +10161,7 @@ frontend_models:
   data_sources:
   - memberships
 - route: /admin/memberships/:sectionId?
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
   interface: MembershipsAdminPackageGroup
   fields:
   - id
@@ -10177,7 +10177,7 @@ frontend_models:
   data_sources:
   - memberships
 - route: /admin/memberships/:sectionId?
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
   interface: MembershipsAdminPackageGroupMutationInput
   fields:
   - code
@@ -10190,7 +10190,7 @@ frontend_models:
   data_sources:
   - memberships
 - route: /admin/memberships/:sectionId?
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
   interface: MembershipsAdminPackageGroupsListParams
   fields:
   - page
@@ -10199,7 +10199,7 @@ frontend_models:
   data_sources:
   - memberships
 - route: /admin/memberships/:sectionId?
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
   interface: MembershipsAdminPackageItem
   fields:
   - id
@@ -10216,7 +10216,7 @@ frontend_models:
   data_sources:
   - memberships
 - route: /admin/memberships/:sectionId?
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
   interface: MembershipsAdminPackageMutationInput
   fields:
   - code
@@ -10230,7 +10230,7 @@ frontend_models:
   data_sources:
   - memberships
 - route: /admin/memberships/:sectionId?
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
   interface: MembershipsAdminPackagesListParams
   fields:
   - page
@@ -10241,7 +10241,7 @@ frontend_models:
   data_sources:
   - memberships
 - route: /admin/memberships/:sectionId?
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
   interface: MembershipsAdminPageInfo
   fields:
   - mode
@@ -10254,7 +10254,7 @@ frontend_models:
   data_sources:
   - memberships
 - route: /admin/memberships/:sectionId?
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
   interface: MembershipsAdminPlanBenefitInput
   fields:
   - id
@@ -10269,7 +10269,7 @@ frontend_models:
   data_sources:
   - memberships
 - route: /admin/memberships/:sectionId?
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
   interface: MembershipsAdminPlanCreateInput
   fields:
   - code
@@ -10289,7 +10289,7 @@ frontend_models:
   data_sources:
   - memberships
 - route: /admin/memberships/:sectionId?
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
   interface: MembershipsAdminPlanItem
   fields:
   - id
@@ -10313,7 +10313,7 @@ frontend_models:
   data_sources:
   - memberships
 - route: /admin/memberships/:sectionId?
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
   interface: MembershipsAdminPlanMutationInput
   fields:
   - code
@@ -10333,7 +10333,7 @@ frontend_models:
   data_sources:
   - memberships
 - route: /admin/memberships/:sectionId?
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
   interface: MembershipsAdminPlansListParams
   fields:
   - page
@@ -10342,7 +10342,7 @@ frontend_models:
   data_sources:
   - memberships
 - route: /admin/memberships/:sectionId?
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
   interface: MembershipsAdminRechargePackageItem
   fields:
   - id
@@ -10359,7 +10359,7 @@ frontend_models:
   data_sources:
   - recharges
 - route: /admin/memberships/:sectionId?
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
   interface: MembershipsAdminRechargePackageMutationInput
   fields:
   - priceAmount
@@ -10369,7 +10369,7 @@ frontend_models:
   data_sources:
   - recharges
 - route: /admin/memberships/:sectionId?
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
   interface: MembershipsAdminRechargeSettingsItem
   fields:
   - baseCurrencyCode
@@ -10378,7 +10378,7 @@ frontend_models:
   data_sources:
   - recharges
 - route: /admin/memberships/:sectionId?
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
   interface: MembershipsAdminRechargeSettingsUpdateInput
   fields:
   - baseCurrencyCode
@@ -10391,19 +10391,19 @@ frontend_models:
   required_tables:
   - ops_audit_log
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /admin/analytics
   required_tables:
   - ai_request_trace
   - ai_usage
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
 - route: /admin/cache
   required_tables:
   - ops_audit_log
   - ops_config_snapshot
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
 - route: /admin/upstream
   required_tables:
   - ai_routing_policy
@@ -10424,7 +10424,7 @@ frontend_models:
   - ops_audit_log
   - ops_config_snapshot
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
 - route: /admin/dashboard
   required_tables:
   - ai_request_trace
@@ -10436,7 +10436,7 @@ frontend_models:
   - iam_user
   - iam_organization_membership
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
 - route: /admin/model
   required_tables:
   - ai_model_vendor
@@ -10452,7 +10452,7 @@ frontend_models:
   - ops_audit_log
   - ops_job_execution
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
 - route: /admin/model/mappings
   required_tables:
   - ai_model_vendor
@@ -10464,7 +10464,7 @@ frontend_models:
   - ai_model_mapping_rule_item
   - ops_audit_log
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
 - route: /admin/model/resources
   required_tables:
   - ops_audit_log
@@ -10472,7 +10472,7 @@ frontend_models:
   - ai_resource_group
   - ai_resource_group_item
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
 - route: /admin/monitor
   required_tables:
   - integration_provider_health_snapshot
@@ -10481,7 +10481,7 @@ frontend_models:
   - ops_gateway_instance
   - ops_metric_snapshot
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
 - route: /admin/ratelimit
   required_tables:
   - ai_quota_policy
@@ -10490,37 +10490,37 @@ frontend_models:
   - iam_gateway_risk_rule
   - ops_audit_log
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
 - route: /admin/record
   required_tables:
   - ai_request_trace
   - ai_routing_decision_log
   - ai_usage
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
 - route: /admin/runtime-region
   required_tables:
   - ops_audit_log
   - ops_config_snapshot
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
 - route: /admin/service-nodes
   required_tables:
   - ops_gateway_instance
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
 - route: /admin/settings
   required_tables:
   - ops_audit_log
   - ops_config_snapshot
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
 - route: /admin/site
   required_tables:
   - ops_audit_log
   - ops_config_snapshot
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
 - route: /api-reference
   required_tables:
   - ops_audit_log
@@ -10540,7 +10540,7 @@ frontend_models:
   - messaging_outbound_message
   - messaging_outbound_delivery
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /auth/login
   required_tables:
   - ops_config_snapshot
@@ -10556,7 +10556,7 @@ frontend_models:
   - messaging_outbound_message
   - messaging_outbound_delivery
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /auth/oauth/callback/:provider
   required_tables:
   - ops_audit_log
@@ -10566,7 +10566,7 @@ frontend_models:
   - iam_security_event
   - iam_audit_event
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /auth/register
   required_tables:
   - ops_audit_log
@@ -10582,7 +10582,7 @@ frontend_models:
   - messaging_outbound_message
   - messaging_outbound_delivery
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /c/:conversationId
   required_tables:
   - ai_agent
@@ -10592,14 +10592,14 @@ frontend_models:
   - ai_chat_turn
   - ai_runtime_invocation
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /console/account
   required_tables:
   - ai_usage
   - iam_user_login_event
   - iam_user_security_setting
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /console/api-keys
   required_tables:
   - ai_model_pricing
@@ -10611,12 +10611,12 @@ frontend_models:
   - iam_gateway_api_key
   - ops_audit_log
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /console/checkout
   required_tables:
   - ops_audit_log
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /console/dashboard
   required_tables:
   - ai_model_rank_snapshot
@@ -10626,35 +10626,35 @@ frontend_models:
   - ops_metric_snapshot
   - ops_notification_message
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /console/gateway
   required_tables:
   - ai_request_trace
   - ops_gateway_instance
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /console/memberships
   required_tables:
   - ops_audit_log
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /console/notifications
   required_tables:
   - ops_audit_log
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /console/payment
   required_tables:
   - ops_audit_log
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /console/settings
   required_tables:
   - iam_user_preference
   - integration_webhook_endpoint
   - ops_notification_delivery
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /console/settlements
   required_tables:
   - ai_usage
@@ -10663,7 +10663,7 @@ frontend_models:
   - commerce_usage_statement_item
   - ops_audit_log
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /console/usage
   required_tables:
   - ai_upstream_account_group
@@ -10671,17 +10671,17 @@ frontend_models:
   - ai_routing_decision_log
   - ai_usage
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /console/user
   required_tables:
   - ops_audit_log
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /console/wallet
   required_tables:
   - ops_audit_log
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /docs
   required_tables:
   - ops_audit_log
@@ -10699,17 +10699,17 @@ frontend_models:
   - ai_upstream_account_group_member
   - ai_upstream_account_group_resource
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /models/:id
   required_tables:
   - ops_audit_log
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /models/:provider/:model
   required_tables:
   - ops_audit_log
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /playground
   required_tables:
   - ai_agent
@@ -10730,7 +10730,7 @@ frontend_models:
   - ai_runtime_usage_link
   - ai_usage
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /product-docs
   required_tables:
   - ops_audit_log
@@ -10743,7 +10743,7 @@ frontend_models:
   - ai_model_rank_snapshot
   - ops_audit_log
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-app-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
 - route: /sdk-reference
   required_tables:
   - ops_audit_log
@@ -10755,7 +10755,7 @@ frontend_models:
   - recharges
   - ops_audit_log
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
 - route: /admin/marketing/:sectionId?
   required_tables:
   - commerce_usage_settlement
@@ -10764,17 +10764,17 @@ frontend_models:
   - promotions
   - ops_audit_log
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
 - route: /admin/payments/:sectionId?
   required_tables:
   - commerce_payment_provider
   - payments
   - ops_audit_log
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
 - route: /admin/storage/:sectionId?
   required_tables:
   - storage
   - ops_audit_log
   dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk

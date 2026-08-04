@@ -30,7 +30,7 @@ CLIENT_API_SUPPORT_STATUSES = ("supported", "unsupported", "partial", "convert")
 RUST_INSTALLER_PATH = (
     ROOT
     / "services"
-    / "sdkwork-clawrouter-router-service"
+    / "sdkwork-cloudrouter-router-service"
     / "src"
     / "infrastructure"
     / "sql"

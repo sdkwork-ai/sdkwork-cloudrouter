@@ -1,0 +1,42 @@
+[package]
+name = "sdkwork-routes-cloudrouter-backend-api"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+anyhow.workspace = true
+axum.workspace = true
+sdkwork_models_catalog_repository_sqlx.workspace = true
+sdkwork_models_contract_service.workspace = true
+sdkwork_routes_models_catalog_backend_api.workspace = true
+sdkwork_commerce_promotion_repository_sqlx.workspace = true
+sdkwork_commerce_promotion_service.workspace = true
+sdkwork_routes_promotion_backend_api.workspace = true
+sdkwork-cloudrouter-config.workspace = true
+sdkwork-cloudrouter-http.workspace = true
+sdkwork-cloudrouter-observability.workspace = true
+sdkwork-cloudrouter-router-service.workspace = true
+sdkwork-cloudrouter-admin-monitor-repository-sqlx.workspace = true
+sdkwork-cloudrouter-admin-dashboard-repository-sqlx.workspace = true
+sdkwork-cloudrouter-admin-analytics-repository-sqlx.workspace = true
+sdkwork-cloudrouter-database-host.workspace = true
+sdkwork-iam-web-adapter.workspace = true
+sdkwork-routes-iam-backend-api.workspace = true
+sdkwork-database-config.workspace = true
+sdkwork-database-sqlx.workspace = true
+sdkwork-web-axum.workspace = true
+sdkwork-web-contract.workspace = true
+sdkwork-web-core.workspace = true
+sdkwork-utils-rust.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

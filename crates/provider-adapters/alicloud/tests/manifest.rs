@@ -1,4 +1,4 @@
-use sdkwork_claw_provider_adapter_contract::AdapterEndpointRuntimeState;
+use sdkwork_cloudrouter_provider_adapter_contract::AdapterEndpointRuntimeState;
 
 #[test]
 fn alicloud_adapter_exposes_definition_only_text_generation_mapping() {
@@ -39,14 +39,14 @@ fn alicloud_credentials_debug_redacts_access_key_secret() {
     assert!(debug.contains("[REDACTED]"));
 }
 
-fn sample_request() -> sdkwork_claw_provider_adapter_contract::AdapterInvocationRequest {
-    use sdkwork_claw_provider_adapter_contract::{
+fn sample_request() -> sdkwork_cloudrouter_provider_adapter_contract::AdapterInvocationRequest {
+    use sdkwork_cloudrouter_provider_adapter_contract::{
         AdapterInvocationMetadata, AdapterInvocationShape, AdapterProviderContext, AdapterSecret,
         AdapterSubject,
     };
     use serde_json::json;
 
-    sdkwork_claw_provider_adapter_contract::AdapterInvocationRequest {
+    sdkwork_cloudrouter_provider_adapter_contract::AdapterInvocationRequest {
         invocation: AdapterInvocationMetadata {
             id: "inv-1".to_owned(),
             endpoint_key: "text_generation.generate".to_owned(),

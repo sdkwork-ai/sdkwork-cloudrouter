@@ -63,11 +63,11 @@ class FrontendOperationAudit:
         "sync": {"POST"},
     }
     SDK_CLIENTS = {
-        "app": "getClawRouterAppSdkClient",
-        "backend": "getClawRouterBackendSdkClient",
-        "openai_v1": "getClawRouterAiSdkClient",
+        "app": "getCloudRouterAppSdkClient",
+        "backend": "getCloudRouterBackendSdkClient",
+        "openai_v1": "getCloudRouterAiSdkClient",
     }
-    CLAWROUTER_DOMAIN_TRANSPORT_DOMAINS = frozenset({
+    CLOUDROUTER_DOMAIN_TRANSPORT_DOMAINS = frozenset({
         "commerce",
         "promotion",
         "promotions",
@@ -86,7 +86,7 @@ class FrontendOperationAudit:
         "recharge",
         "recharges",
     })
-    COMMERCE_DEPENDENCY_DOMAINS = CLAWROUTER_DOMAIN_TRANSPORT_DOMAINS
+    COMMERCE_DEPENDENCY_DOMAINS = CLOUDROUTER_DOMAIN_TRANSPORT_DOMAINS
     COMMERCE_SERVICE_CLIENT = "getSdkworkCommerceService"
     COMMERCE_SERVICE_PATTERN = re.compile(r"\bgetSdkworkCommerceService\s*\(")
     COMMERCE_API_PATH_PREFIXES = (
@@ -152,14 +152,14 @@ class FrontendOperationAudit:
         "/backend/v3/api/ai/resource_groups",
     )
     MODELS_SOURCE_PREFIX = "../sdkwork-models/"
-    CLAWROUTER_PORTAL_MODELS_SOURCE_PREFIX = (
-        "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/"
+    CLOUDROUTER_PORTAL_MODELS_SOURCE_PREFIX = (
+        "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/"
     )
-    CLAWROUTER_PORTAL_RANKINGS_SOURCE_PREFIX = (
-        "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/"
+    CLOUDROUTER_PORTAL_RANKINGS_SOURCE_PREFIX = (
+        "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-rankings/"
     )
     APPBASE_APP_DEPENDENCY_DOMAINS = frozenset({"auth", "iam", "oauth", "appbase"})
-    CLAWROUTER_OWNED_IAM_APP_API_PATH_PREFIXES = (
+    CLOUDROUTER_OWNED_IAM_APP_API_PATH_PREFIXES = (
         "/app/v3/api/iam/api_keys",
         "/app/v3/api/iam/users/settings",
     )
@@ -183,18 +183,18 @@ class FrontendOperationAudit:
         r"(?:from\s+|import\s*\(\s*)['\"](\.{1,2}/[^'\"]*RuntimeApiOperations(?:\.[cm]?[tj]sx?)?)['\"]"
     )
     COMMERCE_RUNTIME_SOURCE = (
-        "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts"
+        "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts"
     )
     MISSING_COMMERCE_DEPENDENCY_PATTERN = re.compile(
         r"\bmissingCommerceDependencyOperation\s*\(\s*['\"]([^'\"]+)['\"]\s*\)"
     )
     OPERATION_SOURCE_ALIASES: dict[str, str] = {
-        "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts": (
-            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-commons/src/notificationService.ts"
+        "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/notificationService.ts": (
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-commons/src/notificationService.ts"
         ),
     }
     OPERATION_AUDIT_EXEMPT_SOURCE_PREFIXES: tuple[str, ...] = (
-        "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/sessionService.ts",
+        "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/sessionService.ts",
     )
     AGENT_DEPENDENCY_DOMAINS = frozenset({"agent"})
     AGENT_BACKEND_SDK_PATTERN = re.compile(r"\bgetSdkworkAgentBackendSdkClient\s*\(")
@@ -214,15 +214,15 @@ class FrontendOperationAudit:
             "/admin/drive/audit",
         }
     )
-    CLAWROUTER_BACKEND_DOMAIN_TRANSPORT_PATTERN = re.compile(
-        r"\bgetClawRouterBackendSdkClient\s*\(\s*\)\s*\.(?:wallet|memberships|promotions|catalog|orders|payments|inventory|recharges|refunds|fulfillments|invoices|commerceReports|afterSales|shipments|audit)\b"
+    CLOUDROUTER_BACKEND_DOMAIN_TRANSPORT_PATTERN = re.compile(
+        r"\bgetCloudRouterBackendSdkClient\s*\(\s*\)\s*\.(?:wallet|memberships|promotions|catalog|orders|payments|inventory|recharges|refunds|fulfillments|invoices|commerceReports|afterSales|shipments|audit)\b"
     )
-    CLAWROUTER_APP_DOMAIN_TRANSPORT_PATTERN = re.compile(
-        r"\bgetClawRouterAppSdkClient\s*\(\s*\)\s*\.(?:wallet|memberships|promotions|catalog|orders|payments|cart|checkout|accounts|recharges|refunds|fulfillments|shipments|afterSales)\b"
+    CLOUDROUTER_APP_DOMAIN_TRANSPORT_PATTERN = re.compile(
+        r"\bgetCloudRouterAppSdkClient\s*\(\s*\)\s*\.(?:wallet|memberships|promotions|catalog|orders|payments|cart|checkout|accounts|recharges|refunds|fulfillments|shipments|afterSales)\b"
     )
-    APPBASE_IAM_RUNTIME_PATTERN = re.compile(r"\bgetClawRouterIamRuntime\s*\(\s*\)\s*\.service\b")
+    APPBASE_IAM_RUNTIME_PATTERN = re.compile(r"\bgetCloudRouterIamRuntime\s*\(\s*\)\s*\.service\b")
     APPBASE_IAM_CONTROLLER_PATTERN = re.compile(
-        r"\bcreateSdkworkIamRuntimeAuthController\s*\([\s\S]*\bgetRuntime\s*:\s*getClawRouterAuthRuntime\b"
+        r"\bcreateSdkworkIamRuntimeAuthController\s*\([\s\S]*\bgetRuntime\s*:\s*getCloudRouterAuthRuntime\b"
     )
     APPBASE_IAM_CONTROLLER_OPERATIONS = (
         "bootstrap",
@@ -537,7 +537,7 @@ class FrontendOperationAudit:
                 continue
             source, operation = key.split("#", 1)
             if (
-                source.endswith("/src/auth/clawRouterAuthController.ts")
+                source.endswith("/src/auth/cloudRouterAuthController.ts")
                 and operation in self.AUTH_OPERATION_VARIANTS
                 and f"{source}#signIn" in expected
             ):
@@ -557,7 +557,7 @@ class FrontendOperationAudit:
         return FrontendOperationAuditResult(ok=not messages, messages=messages)
 
     def _source_files(self) -> list[Path]:
-        portal_root = self.root / "apps" / "sdkwork-clawrouter-pc"
+        portal_root = self.root / "apps" / "sdkwork-cloudrouter-pc"
         source_roots = [portal_root / "packages", portal_root / "src"]
         files: list[Path] = []
         for source_root in source_roots:
@@ -747,9 +747,9 @@ class FrontendOperationAudit:
                 return f"{canonical_source}#{operation}"
             if normalized == canonical_source:
                 return f"{alias_source}#{operation}"
-        if normalized.endswith("sdkwork-clawrouter-pc-commons/src/sessionService.ts"):
+        if normalized.endswith("sdkwork-cloudrouter-pc-commons/src/sessionService.ts"):
             return (
-                "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/sessionService.ts"
+                "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/sessionService.ts"
                 f"#{operation}"
             )
         return key
@@ -935,15 +935,15 @@ class FrontendOperationAudit:
         family: str,
         manifest_path: Path,
     ) -> str | None:
-        owner_manifest_path = self.root / "sdks" / "clawrouter-backend-sdk" / "sdk-manifest.json"
+        owner_manifest_path = self.root / "sdks" / "cloudrouter-backend-sdk" / "sdk-manifest.json"
         if not owner_manifest_path.is_file():
-            return "Claw Router backend SDK manifest is missing"
+            return "Cloud Router backend SDK manifest is missing"
         try:
             owner_manifest = json.loads(owner_manifest_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
-            return f"Claw Router backend SDK manifest is invalid: {exc}"
+            return f"Cloud Router backend SDK manifest is invalid: {exc}"
         if not isinstance(owner_manifest, dict):
-            return "Claw Router backend SDK manifest root must be a mapping"
+            return "Cloud Router backend SDK manifest root must be a mapping"
 
         owner_family = owner_manifest.get("sdkFamily") or owner_manifest.get("workspace")
         if family == owner_family:
@@ -957,7 +957,7 @@ class FrontendOperationAudit:
             if isinstance(dependency, dict) and isinstance(dependency.get("workspace"), str)
         } if isinstance(dependencies, list) else set()
         if family not in declared_families:
-            return f"frontend operation SDK authority {family} is not declared in clawrouter-backend-sdk sdkDependencies"
+            return f"frontend operation SDK authority {family} is not declared in cloudrouter-backend-sdk sdkDependencies"
         return None
 
     def _sdk_operation_families(self, source_operation: dict[str, Any] | None) -> list[str]:
@@ -976,8 +976,8 @@ class FrontendOperationAudit:
         return families
 
     def _sdk_client_factory(self, family: str) -> str | None:
-        if family == "clawrouter-backend-sdk":
-            return "getClawRouterBackendSdkClient"
+        if family == "cloudrouter-backend-sdk":
+            return "getCloudRouterBackendSdkClient"
         match = re.fullmatch(r"sdkwork-([a-z0-9-]+)-backend-sdk", family)
         if match is None:
             return None
@@ -985,7 +985,7 @@ class FrontendOperationAudit:
         return f"getSdkwork{domain}BackendSdkClient" if domain else None
 
     def _is_external_sdk_operation(self, source_operation: dict[str, Any] | None) -> bool:
-        return any(family != "clawrouter-backend-sdk" for family in self._sdk_operation_families(source_operation))
+        return any(family != "cloudrouter-backend-sdk" for family in self._sdk_operation_families(source_operation))
 
     def _resolve_route_contract(
         self,
@@ -1050,8 +1050,8 @@ class FrontendOperationAudit:
         if self._is_commerce_dependency_operation(sdk_domain=sdk_domain, source_operation=source_operation):
             return (
                 self.COMMERCE_SERVICE_PATTERN.search(source_text) is not None
-                or self.CLAWROUTER_BACKEND_DOMAIN_TRANSPORT_PATTERN.search(source_text) is not None
-                or self.CLAWROUTER_APP_DOMAIN_TRANSPORT_PATTERN.search(source_text) is not None
+                or self.CLOUDROUTER_BACKEND_DOMAIN_TRANSPORT_PATTERN.search(source_text) is not None
+                or self.CLOUDROUTER_APP_DOMAIN_TRANSPORT_PATTERN.search(source_text) is not None
                 or self.MISSING_COMMERCE_DEPENDENCY_PATTERN.search(source_text) is not None
             )
         if self._is_generations_dependency_operation(sdk_domain=sdk_domain, source_operation=source_operation):
@@ -1274,9 +1274,9 @@ class FrontendOperationAudit:
         if isinstance(source, str) and source.replace("\\", "/").startswith(self.MODELS_SOURCE_PREFIX):
             return True
         normalized_source = source.replace("\\", "/") if isinstance(source, str) else ""
-        if normalized_source.startswith(self.CLAWROUTER_PORTAL_MODELS_SOURCE_PREFIX):
+        if normalized_source.startswith(self.CLOUDROUTER_PORTAL_MODELS_SOURCE_PREFIX):
             return True
-        if normalized_source.startswith(self.CLAWROUTER_PORTAL_RANKINGS_SOURCE_PREFIX):
+        if normalized_source.startswith(self.CLOUDROUTER_PORTAL_RANKINGS_SOURCE_PREFIX):
             return True
         if api_surface != "backend" or not self._is_models_dependency_domain(sdk_domain):
             return False
@@ -1296,7 +1296,7 @@ class FrontendOperationAudit:
     ) -> bool:
         if api_surface not in {"app", "backend"}:
             return False
-        if self._is_clawrouter_owned_iam_app_operation(
+        if self._is_cloudrouter_owned_iam_app_operation(
             api_surface=api_surface,
             source_operation=source_operation,
         ):
@@ -1314,7 +1314,7 @@ class FrontendOperationAudit:
             or api_path.startswith("/backend/v3/api/iam/oauth/")
         )
 
-    def _is_clawrouter_owned_iam_app_operation(
+    def _is_cloudrouter_owned_iam_app_operation(
         self,
         *,
         api_surface: str,
@@ -1327,7 +1327,7 @@ class FrontendOperationAudit:
             return False
         return any(
             api_path == prefix or api_path.startswith(f"{prefix}/")
-            for prefix in self.CLAWROUTER_OWNED_IAM_APP_API_PATH_PREFIXES
+            for prefix in self.CLOUDROUTER_OWNED_IAM_APP_API_PATH_PREFIXES
         )
 
     def _sdk_boundary_error_message(
@@ -1346,8 +1346,8 @@ class FrontendOperationAudit:
             )
         if self._is_commerce_dependency_operation(sdk_domain=sdk_domain, source_operation=source_operation):
             return (
-                f"frontend operation {key} must use getClawRouterBackendSdkClient().<domain>, "
-                f"getClawRouterAppSdkClient().<domain>, or missingCommerceDependencyOperation "
+                f"frontend operation {key} must use getCloudRouterBackendSdkClient().<domain>, "
+                f"getCloudRouterAppSdkClient().<domain>, or missingCommerceDependencyOperation "
                 f"for {api_surface} api_surface"
             )
         if self._is_agent_dependency_operation(sdk_domain=sdk_domain, source_operation=source_operation):
@@ -1466,7 +1466,7 @@ class FrontendOperationAudit:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Audit portal TypeScript service operations against route data contracts.")
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     parser.add_argument("--contract", type=Path, default=None, help="frontend field contract YAML path")
     parser.add_argument("--output", type=Path, default=None, help="output audit JSON path")
     parser.add_argument("--check", action="store_true", help="validate generated operation audit and operation contracts")

@@ -40,7 +40,7 @@ class ArchitectureStandardGuardianTest(unittest.TestCase):
             Documents the standard SDKWork directory capability.
 
             ## Owner
-            sdkwork-clawrouter maintainers.
+            sdkwork-cloudrouter maintainers.
 
             ## Allowed Content
             Source-controlled files for this directory capability.
@@ -105,24 +105,24 @@ class ArchitectureStandardGuardianTest(unittest.TestCase):
         """)
         for directory in self.STANDARD_DIRS:
             self.write_standard_readme(root, f"{directory}/README.md")
-        self.write_doc(root, "apps/sdkwork-clawrouter-pc/AGENTS.md", """# Repository Guidelines
+        self.write_doc(root, "apps/sdkwork-cloudrouter-pc/AGENTS.md", """# Repository Guidelines
 
         Read `../../../sdkwork-specs/README.md`.
         """)
-        self.write_doc(root, "apps/sdkwork-clawrouter-pc/CLAUDE.md", """# Claude Code Entry
+        self.write_doc(root, "apps/sdkwork-cloudrouter-pc/CLAUDE.md", """# Claude Code Entry
 
         Read `AGENTS.md` and `../../../sdkwork-specs/README.md`.
         """)
-        self.write_doc(root, "apps/sdkwork-clawrouter-pc/GEMINI.md", """# Gemini CLI Entry
+        self.write_doc(root, "apps/sdkwork-cloudrouter-pc/GEMINI.md", """# Gemini CLI Entry
 
         Read `AGENTS.md` and `../../../sdkwork-specs/README.md`.
         """)
-        self.write_doc(root, "apps/sdkwork-clawrouter-pc/CODEX.md", """# Codex Entry
+        self.write_doc(root, "apps/sdkwork-cloudrouter-pc/CODEX.md", """# Codex Entry
 
         Read `AGENTS.md` and `../../../sdkwork-specs/README.md`.
         """)
-        self.write_doc(root, "apps/sdkwork-clawrouter-pc/sdkwork.app.config.json", '{"kind":"sdkwork.app"}')
-        self.write_doc(root, "apps/sdkwork-clawrouter-pc/package.json", '{"name":"sdkwork-clawrouter-pc"}')
+        self.write_doc(root, "apps/sdkwork-cloudrouter-pc/sdkwork.app.config.json", '{"kind":"sdkwork.app"}')
+        self.write_doc(root, "apps/sdkwork-cloudrouter-pc/package.json", '{"name":"sdkwork-cloudrouter-pc"}')
         for relative in (
             ".sdkwork/README.md",
             ".sdkwork/.gitignore",
@@ -137,7 +137,7 @@ class ArchitectureStandardGuardianTest(unittest.TestCase):
             "packages/README.md",
             "tests/README.md",
         ):
-            self.write_doc(root, f"apps/sdkwork-clawrouter-pc/{relative}", "# App Root Entry\n")
+            self.write_doc(root, f"apps/sdkwork-cloudrouter-pc/{relative}", "# App Root Entry\n")
 
     def test_accepts_rust_first_architecture_docs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -148,9 +148,9 @@ class ArchitectureStandardGuardianTest(unittest.TestCase):
                 "docs/02-技术架构设计.md",
                 """
                 # 技术架构设计
-                Rust-first runtime with sdkwork-clawrouter-edge-runtime,
-                sdkwork-api-clawrouter-assembly, sdkwork-api-clawrouter-standalone-gateway,
-                sdkwork-routes-clawrouter-app-api, sdkwork-routes-clawrouter-backend-api,
+                Rust-first runtime with sdkwork-cloudrouter-edge-runtime,
+                sdkwork-api-cloudrouter-assembly, sdkwork-api-cloudrouter-standalone-gateway,
+                sdkwork-routes-cloudrouter-app-api, sdkwork-routes-cloudrouter-backend-api,
                 /app/v3/api, /backend/v3/api and /v1.
                 """,
             )
@@ -178,8 +178,8 @@ class ArchitectureStandardGuardianTest(unittest.TestCase):
                 """
                 # 部署架构设计
                 Rust-first Rust services support desktop, server, docker,
-                kubernetes, SDKWORK_CLAW_DEPLOYMENT_MODE, SDKWORK_CLAW_GATEWAY_BIND,
-                SDKWORK_CLAW_APP_API_BIND and SDKWORK_CLAW_ADMIN_API_BIND.
+                kubernetes, SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE, SDKWORK_CLOUDROUTER_GATEWAY_BIND,
+                SDKWORK_CLOUDROUTER_APP_API_BIND and SDKWORK_CLOUDROUTER_ADMIN_API_BIND.
                 """,
             )
 
@@ -232,24 +232,24 @@ class ArchitectureStandardGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_standard_workspace(root)
-            (root / "apps" / "sdkwork-clawrouter-pc" / "config" / "README.md").unlink()
+            (root / "apps" / "sdkwork-cloudrouter-pc" / "config" / "README.md").unlink()
 
             result = ArchitectureStandardGuardian(root=root).run()
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "PC application root apps/sdkwork-clawrouter-pc must include config/README.md",
+                "PC application root apps/sdkwork-cloudrouter-pc must include config/README.md",
                 result.messages,
             )
 
     def test_rejects_unresolved_component_spec_canonical_sdkwork_spec_path(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             workspace = Path(tmp)
-            root = workspace / 'sdkwork-clawrouter'
+            root = workspace / 'sdkwork-cloudrouter'
             root.mkdir()
             self.write_standard_workspace(root)
             self.write_doc(workspace, 'sdkwork-specs/README.md', '# SDKWork Specs')
-            component_spec_path = 'apps/sdkwork-clawrouter-pc/packages/bad-package/specs/component.spec.json'
+            component_spec_path = 'apps/sdkwork-cloudrouter-pc/packages/bad-package/specs/component.spec.json'
             self.write_doc(
                 root,
                 component_spec_path,
@@ -258,7 +258,7 @@ class ArchitectureStandardGuardianTest(unittest.TestCase):
                         'kind': 'sdkwork.component.spec',
                         'component': {
                             'name': 'bad-package',
-                            'root': 'sdkwork-clawrouter/apps/sdkwork-clawrouter-pc/packages/bad-package',
+                            'root': 'sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/bad-package',
                         },
                         'canonicalSpecs': [
                             {'file': 'README.md', 'path': '../../../../../../sdkwork-specs/README.md'}
@@ -272,7 +272,7 @@ class ArchitectureStandardGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                'component spec apps/sdkwork-clawrouter-pc/packages/bad-package/specs/component.spec.json '
+                'component spec apps/sdkwork-cloudrouter-pc/packages/bad-package/specs/component.spec.json '
                 'canonical spec path does not resolve: ../../../../../../sdkwork-specs/README.md',
                 result.messages,
             )
@@ -287,7 +287,7 @@ class ArchitectureStandardGuardianTest(unittest.TestCase):
                 'apis/README.md',
                 '# APIs\n\n'
                 '## Purpose\nDocuments the standard SDKWork directory capability.\n\n'
-                '## Owner\nsdkwork-clawrouter maintainers.\n\n'
+                '## Owner\nsdkwork-cloudrouter maintainers.\n\n'
                 '## Allowed Content\nAuthored API contracts.\n\n'
                 '## Forbidden Content\nGenerated SDK transport output.\n\n'
                 '## Related Specs\n- `../../../../../specs/README.md`\n\n'

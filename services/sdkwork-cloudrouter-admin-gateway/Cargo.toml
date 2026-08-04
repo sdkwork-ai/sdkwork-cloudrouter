@@ -1,0 +1,27 @@
+[package]
+name = "sdkwork-cloudrouter-admin-gateway"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+
+[[bin]]
+name = "sdkwork-cloudrouter-admin-gateway"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+sdkwork-cloudrouter-config.workspace = true
+sdkwork-routes-cloudrouter-backend-api.workspace = true
+sdkwork-database-sqlx.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+axum.workspace = true
+sdkwork-cloudrouter-standalone-gateway.workspace = true
+sdkwork-cloudrouter-http.workspace = true
+sdkwork-cloudrouter-router-service.workspace = true
+sdkwork-cloudrouter-test-support.workspace = true
+sdkwork-web-core.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+tower.workspace = true

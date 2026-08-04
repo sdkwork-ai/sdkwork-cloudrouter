@@ -3,7 +3,7 @@
 
 > Version: 0.1
 > Date: 2026-05-08
-> Scope: `../sdkwork-models`, ClawRouter model catalog import, and language SDKs
+> Scope: `../sdkwork-models`, CloudRouter model catalog import, and language SDKs
 > Status: Draft standard for implementation
 
 ## 1. Purpose
@@ -12,13 +12,13 @@
 Sdkwork products and external application integrations. It stores model facts,
 prices, source evidence, and optional ranking snapshots as versioned JSON data.
 It also defines language SDK contracts so applications can load model
-information directly without depending on ClawRouter runtime APIs.
+information directly without depending on CloudRouter runtime APIs.
 
 The same catalog must support two usage modes:
 
 - direct application usage through TypeScript, Python, Java, Rust, and Flutter
   SDKs
-- ClawRouter initialization and refresh by importing the catalog into canonical
+- CloudRouter initialization and refresh by importing the catalog into canonical
   `ai_*` model and pricing tables
 
 ## 2. Core Principles
@@ -27,7 +27,7 @@ The same catalog must support two usage modes:
    prices.
 2. Each model vendor owns an isolated directory under `models/<vendorCode>/`.
 3. A vendor is an operating and billing entity for a model publisher, not only a brand name and not an access provider or aggregator.
-4. Model facts, prices, rankings, and ClawRouter provider overlays are separate
+4. Model facts, prices, rankings, and CloudRouter provider overlays are separate
    contracts.
 5. All money and quantity fields are decimal strings, never floats.
 6. Every price record must include source URL, observed time, and effective
@@ -35,7 +35,7 @@ The same catalog must support two usage modes:
 7. The catalog must be loadable from a local directory, bundled package data, or
    remote immutable JSON files.
 8. SDK APIs must be conceptually identical across all supported languages.
-9. ClawRouter imports catalog data into SQL tables; it must not hard-code model
+9. CloudRouter imports catalog data into SQL tables; it must not hard-code model
    seed data after this standard is implemented.
 10. Updates must be possible per vendor without rebuilding unrelated vendors.
 
@@ -82,7 +82,7 @@ The same catalog must support two usage modes:
         pricing/
         rankings.json
   overlays/
-    clawrouter/
+    cloudrouter/
       providers.json
       channels.json
       routes.json
@@ -94,7 +94,7 @@ The same catalog must support two usage modes:
   tools/
     validate-catalog.mjs
     build-index.mjs
-    export-clawrouter-seed.mjs
+    export-cloudrouter-seed.mjs
   sdkwork-models-typescript/
   sdkwork-models-python/
   sdkwork-models-java/
@@ -215,9 +215,9 @@ Provider overlays must not rewrite the model vendor. For example, an Anthropic
 model accessed through Amazon Bedrock remains under `models/anthropic/`; the
 Bedrock channel mapping belongs in an overlay.
 
-### 4.3 ClawRouter Runtime
+### 4.3 CloudRouter Runtime
 
-ClawRouter imports the catalog into canonical database tables:
+CloudRouter imports the catalog into canonical database tables:
 
 - `ai_billing_meter`
 - `ai_model_vendor`
@@ -227,7 +227,7 @@ ClawRouter imports the catalog into canonical database tables:
 - `ai_model_pricing`
 - `ai_model_rank_snapshot`
 
-ClawRouter-specific integration providers, channels, routing rules, secrets,
+CloudRouter-specific integration providers, channels, routing rules, secrets,
 tenant policies, and access controls remain outside the portable model catalog.
 
 
@@ -367,7 +367,7 @@ JSON bytes. A catalog release must not be published when the computed hash does
 not match the index.
 
 `modelFiles` and `pricingFiles` are required because remote HTTP/object-storage
-catalogs cannot enumerate directories. SDK loaders, the ClawRouter importer,
+catalogs cannot enumerate directories. SDK loaders, the CloudRouter importer,
 and release tooling must treat this generated index as the file-level source of
 truth for published vendor-region data.
 
@@ -817,13 +817,13 @@ Scores and dimensions are decimal strings.
 
 ## 11. Overlay Contract
 
-Overlays are optional and product-specific. The ClawRouter overlay is stored
-under `overlays/clawrouter/`.
+Overlays are optional and product-specific. The CloudRouter overlay is stored
+under `overlays/cloudrouter/`.
 
 ```json
 {
   "schemaVersion": "1.0.0",
-  "overlayCode": "clawrouter",
+  "overlayCode": "cloudrouter",
   "routes": [
     {
       "routeCode": "global-frontier-default",
@@ -866,7 +866,7 @@ The catalog validator must reject:
 15. unknown capability, modality, API format, lifecycle, or price enum
 16. generated `models/index.json` hash drift
 17. overlay referencing unknown models
-18. ClawRouter hard-coded model seed additions after importer adoption
+18. CloudRouter hard-coded model seed additions after importer adoption
 19. vendor missing from `sources/vendor-sources.json`
 20. required current model missing a model or pricing JSON file
 21. enabled model or price source URL not declared in the source manifest
@@ -1087,7 +1087,7 @@ import {
 Rules:
 
 - ESM-first package with generated `.d.ts` types.
-- No runtime dependency on ClawRouter APIs.
+- No runtime dependency on CloudRouter APIs.
 - Browser and Node loaders must be separate entrypoints when filesystem APIs are
   used.
 - Price fields stay strings.
@@ -1189,8 +1189,8 @@ Rules:
 - `serde` is the JSON contract boundary.
 - Decimal values use a string-preserving newtype, with optional
   `rust_decimal` feature.
-- ClawRouter importer may depend on this crate, but this crate must not depend
-  on ClawRouter.
+- CloudRouter importer may depend on this crate, but this crate must not depend
+  on CloudRouter.
 
 ## 20. Flutter/Dart SDK Standard
 
@@ -1221,7 +1221,7 @@ Rules:
 - Works with Flutter asset bundles.
 - Price fields stay strings by default.
 - Network loading must be opt-in.
-- No dependency on ClawRouter app/backend SDKs.
+- No dependency on CloudRouter app/backend SDKs.
 
 ## 21. Application Integration Modes
 
@@ -1248,9 +1248,9 @@ storage, or an internal artifact service. Remote loading must:
 - reject hash drift
 - fail closed when validation fails
 
-## 22. ClawRouter Import Standard
+## 22. CloudRouter Import Standard
 
-The ClawRouter importer must:
+The CloudRouter importer must:
 
 1. load `sdkwork-models.json`
 2. load `models/index.json`
@@ -1261,7 +1261,7 @@ The ClawRouter importer must:
 7. import `modelFiles` into `ai_model` and `ai_model_capability`
 8. import `pricingFiles` into `ai_model_pricing`
 9. import `rankings.json` into `ai_model_rank_snapshot`
-10. import `overlays/clawrouter/*` into integration and routing tables
+10. import `overlays/cloudrouter/*` into integration and routing tables
 11. record `catalogVersion` in `system_installation_state`
 12. support per-vendor refresh when only one vendor changes
 
@@ -1277,13 +1277,13 @@ tenant policy.
 https://github.com/Sdkwork-Cloud/sdkwork-models.git
 ```
 
-When embedded in ClawRouter, it should be mounted as:
+When embedded in CloudRouter, it should be mounted as:
 
 ```text
 ../sdkwork-models
 ```
 
-ClawRouter must treat this path as a data dependency. Product logic must not
+CloudRouter must treat this path as a data dependency. Product logic must not
 modify catalog files at runtime. Updates are made by advancing the submodule
 commit or by loading a signed remote catalog release.
 
@@ -1315,8 +1315,8 @@ Each vendor addition must document:
 - Add index generation.
 - Add language SDK skeletons.
 - Add TypeScript loader first for browser and Node app integration.
-- Add Rust loader/importer for ClawRouter.
-- Replace hard-coded ClawRouter model seed data with catalog import.
+- Add Rust loader/importer for CloudRouter.
+- Replace hard-coded CloudRouter model seed data with catalog import.
 - Add tests that forbid new hard-coded model seed arrays.
 - Add release workflow for independent `sdkwork-models` Git tags.
 

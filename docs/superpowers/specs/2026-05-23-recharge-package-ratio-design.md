@@ -175,7 +175,7 @@ Audit logging:
 
 ### Console Recharge
 
-`apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-recharge`
+`apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-recharge`
 
 Changes:
 
@@ -192,7 +192,7 @@ Changes:
 
 ### membership Credit Purchase
 
-`apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-membership/src/MembershipView.tsx`
+`apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-membership/src/MembershipView.tsx`
 
 Changes:
 
@@ -203,7 +203,7 @@ Changes:
 
 ### Admin Membership Center
 
-`apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships`
+`apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships`
 
 Changes:
 
@@ -219,9 +219,9 @@ Changes:
 
 ## SDK and Contract
 
-App frontend calls must continue using `@sdkwork/clawrouter-app-sdk` through `getClawRouterAppSdkClient()`.
+App frontend calls must continue using `@sdkwork/cloudrouter-app-sdk` through `getCloudRouterAppSdkClient()`.
 
-Admin frontend calls must continue using `@sdkwork/clawrouter-backend-sdk` through the existing backend SDK boundary.
+Admin frontend calls must continue using `@sdkwork/cloudrouter-backend-sdk` through the existing backend SDK boundary.
 
 Contract updates:
 
@@ -231,7 +231,7 @@ Contract updates:
 - Replace `appRechargesOrdersCreate` request schema with a recharge-specific request that includes `amount`, `method`, `packageId`, and `clientRequestNo`.
 - Add or update response schemas to include recharge order fields used by the UI.
 
-Regenerate generated artifacts using the existing Claw Router SDK workflow, rather than hand-editing generated SDK output.
+Regenerate generated artifacts using the existing Cloud Router SDK workflow, rather than hand-editing generated SDK output.
 
 ## Error Handling
 

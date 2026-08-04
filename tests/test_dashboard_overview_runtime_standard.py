@@ -15,24 +15,24 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
             (ROOT / "generated" / "api" / "api-contract-manifest.json").read_text(encoding="utf-8")
         )
         openapi = json.loads(
-            (ROOT / "generated" / "openapi" / "clawrouter-app-openapi.json").read_text(encoding="utf-8")
+            (ROOT / "generated" / "openapi" / "cloudrouter-app-openapi.json").read_text(encoding="utf-8")
         )
-        sdk_ai = (ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "api" / "ai.ts").read_text(
+        sdk_ai = (ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src" / "api" / "ai.ts").read_text(
             encoding="utf-8"
         )
         frontend = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-dashboard"
+            / "sdkwork-cloudrouter-pc-console-dashboard"
             / "src"
             / "dashboardService.ts"
         ).read_text(encoding="utf-8")
 
         operation_key = (
-            "apps/sdkwork-clawrouter-pc/packages/"
-            "sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts#fetchDashboardOverview@/console/dashboard"
+            "apps/sdkwork-cloudrouter-pc/packages/"
+            "sdkwork-cloudrouter-pc-console-dashboard/src/dashboardService.ts#fetchDashboardOverview@/console/dashboard"
         )
         operations = {operation["key"]: operation for operation in manifest["operations"]}
 
@@ -77,16 +77,16 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
 
     def test_console_dashboard_generated_sdk_and_frontend_use_precise_overview_type(self) -> None:
         openapi = (
-            ROOT / "generated" / "openapi" / "clawrouter-app-openapi.json"
+            ROOT / "generated" / "openapi" / "cloudrouter-app-openapi.json"
         ).read_text(encoding="utf-8")
         sdk_ai = (
-            ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "api" / "ai.ts"
+            ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src" / "api" / "ai.ts"
         ).read_text(encoding="utf-8")
         overview_response_path = (
             ROOT
             / "sdks"
-            / "clawrouter-app-sdk"
-            / "clawrouter-app-sdk-typescript"
+            / "cloudrouter-app-sdk"
+            / "cloudrouter-app-sdk-typescript"
             / "src"
             / "types"
             / "dashboard-overview-response.ts"
@@ -94,8 +94,8 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         top_model_path = (
             ROOT
             / "sdks"
-            / "clawrouter-app-sdk"
-            / "clawrouter-app-sdk-typescript"
+            / "cloudrouter-app-sdk"
+            / "cloudrouter-app-sdk-typescript"
             / "src"
             / "types"
             / "dashboard-top-model.ts"
@@ -103,8 +103,8 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         announcement_path = (
             ROOT
             / "sdks"
-            / "clawrouter-app-sdk"
-            / "clawrouter-app-sdk-typescript"
+            / "cloudrouter-app-sdk"
+            / "cloudrouter-app-sdk-typescript"
             / "src"
             / "types"
             / "dashboard-announcement.ts"
@@ -112,8 +112,8 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         summary_path = (
             ROOT
             / "sdks"
-            / "clawrouter-app-sdk"
-            / "clawrouter-app-sdk-typescript"
+            / "cloudrouter-app-sdk"
+            / "cloudrouter-app-sdk-typescript"
             / "src"
             / "types"
             / "dashboard-overview-summary.ts"
@@ -121,9 +121,9 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         frontend = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-dashboard"
+            / "sdkwork-cloudrouter-pc-console-dashboard"
             / "src"
             / "dashboardService.ts"
         ).read_text(encoding="utf-8")
@@ -144,7 +144,7 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         self.assertIn("modality: 'text' | 'image' | 'video' | 'audio' | 'music' | 'unknown';", top_model)
         self.assertIn("type: 'success' | 'info' | 'warning' | 'error' | 'unknown';", announcement)
         sdk_ai = (
-            ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "api" / "ai.ts"
+            ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src" / "api" / "ai.ts"
         ).read_text(encoding="utf-8")
         self.assertIn("async retrieve(params?: AiDashboardOverviewRetrieveParams): Promise<DashboardOverviewResponse>", sdk_ai)
 
@@ -163,9 +163,9 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         view = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-dashboard"
+            / "sdkwork-cloudrouter-pc-console-dashboard"
             / "src"
             / "DashboardView.tsx"
         ).read_text(encoding="utf-8")
@@ -181,27 +181,27 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         view = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-dashboard"
+            / "sdkwork-cloudrouter-pc-console-dashboard"
             / "src"
             / "DashboardView.tsx"
         ).read_text(encoding="utf-8")
         service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-dashboard"
+            / "sdkwork-cloudrouter-pc-console-dashboard"
             / "src"
             / "dashboardService.ts"
         ).read_text(encoding="utf-8")
         i18n = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-i18n"
+            / "sdkwork-cloudrouter-pc-i18n"
             / "src"
             / "index.ts"
         ).read_text(encoding="utf-8")
@@ -235,18 +235,18 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         view = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-dashboard"
+            / "sdkwork-cloudrouter-pc-console-dashboard"
             / "src"
             / "DashboardView.tsx"
         ).read_text(encoding="utf-8")
         service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-dashboard"
+            / "sdkwork-cloudrouter-pc-console-dashboard"
             / "src"
             / "dashboardService.ts"
         ).read_text(encoding="utf-8")
@@ -272,9 +272,9 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         view = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-dashboard"
+            / "sdkwork-cloudrouter-pc-console-dashboard"
             / "src"
             / "DashboardView.tsx"
         ).read_text(encoding="utf-8")
@@ -300,18 +300,18 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         view = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-dashboard"
+            / "sdkwork-cloudrouter-pc-console-dashboard"
             / "src"
             / "DashboardView.tsx"
         ).read_text(encoding="utf-8")
         service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-dashboard"
+            / "sdkwork-cloudrouter-pc-console-dashboard"
             / "src"
             / "dashboardService.ts"
         ).read_text(encoding="utf-8")
@@ -320,8 +320,8 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
         dashboard_operation_marker = (
             "- route: /console/dashboard\n"
-            "  source: apps/sdkwork-clawrouter-pc/packages/"
-            "sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts\n"
+            "  source: apps/sdkwork-cloudrouter-pc/packages/"
+            "sdkwork-cloudrouter-pc-console-dashboard/src/dashboardService.ts\n"
             "  operation: fetchDashboardOverview"
         )
         dashboard_operation_start = contract.index(dashboard_operation_marker)
@@ -359,7 +359,7 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         ports = (
             ROOT
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "ports"
             / "dashboard_overview_read_store.rs"
@@ -367,7 +367,7 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         postgres_store = (
             ROOT
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "infrastructure"
             / "sql"
@@ -388,10 +388,10 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         self.assertIn("total_request_count,", postgres_store)
 
     def test_backend_app_router_exposes_real_dashboard_overview_route(self) -> None:
-        product_api = (ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "api" / "mod.rs").read_text(
+        product_api = (ROOT / "services" / "sdkwork-cloudrouter-router-service" / "src" / "api" / "mod.rs").read_text(
             encoding="utf-8"
         )
-        app_api = (ROOT / "crates" / "sdkwork-routes-clawrouter-app-api" / "src" / "routes.rs").read_text(encoding="utf-8")
+        app_api = (ROOT / "crates" / "sdkwork-routes-cloudrouter-app-api" / "src" / "routes.rs").read_text(encoding="utf-8")
 
         self.assertIn("app_dashboard_overview_router", product_api)
         self.assertIn("app_dashboard_overview_router_with_read_store", product_api)
@@ -405,12 +405,12 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
             encoding="utf-8"
         )
         app_dashboard = (
-            ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "api" / "app_dashboard.rs"
+            ROOT / "services" / "sdkwork-cloudrouter-router-service" / "src" / "api" / "app_dashboard.rs"
         ).read_text(encoding="utf-8")
         postgres_store = (
             ROOT
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "infrastructure"
             / "sql"
@@ -442,8 +442,8 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         self.assertNotIn("AT TIME ZONE 'UTC'", postgres_store)
         dashboard_operation_marker = (
             "- route: /console/dashboard\n"
-            "  source: apps/sdkwork-clawrouter-pc/packages/"
-            "sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts\n"
+            "  source: apps/sdkwork-cloudrouter-pc/packages/"
+            "sdkwork-cloudrouter-pc-console-dashboard/src/dashboardService.ts\n"
             "  operation: fetchDashboardOverview"
         )
         dashboard_operation_start = contract.index(dashboard_operation_marker)
@@ -463,7 +463,7 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         metrics = (
             ROOT
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "infrastructure"
             / "sql"
@@ -472,7 +472,7 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         postgres_store = (
             ROOT
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "infrastructure"
             / "sql"
@@ -480,7 +480,7 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
             / "dashboard_overview_read_store.rs"
         ).read_text(encoding="utf-8")
         sql_mod = (
-            ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "mod.rs"
+            ROOT / "services" / "sdkwork-cloudrouter-router-service" / "src" / "infrastructure" / "sql" / "mod.rs"
         ).read_text(encoding="utf-8")
 
         self.assertIn("mod dashboard_overview_metrics;", sql_mod)
@@ -503,7 +503,7 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         postgres_store = (
             ROOT
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "infrastructure"
             / "sql"
@@ -527,16 +527,16 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         dashboard_service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-dashboard"
+            / "sdkwork-cloudrouter-pc-console-dashboard"
             / "src"
             / "dashboardService.ts"
         ).read_text(encoding="utf-8")
 
         store = (
             ROOT
-            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/dashboard_overview_read_store.rs"
+            / "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/dashboard_overview_read_store.rs"
         ).read_text(encoding="utf-8")
         self.assertIn("None => \"unknown\"", store)
         self.assertIn("Some(_) => \"unknown\"", store)
@@ -550,16 +550,16 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         dashboard_service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-dashboard"
+            / "sdkwork-cloudrouter-pc-console-dashboard"
             / "src"
             / "dashboardService.ts"
         ).read_text(encoding="utf-8")
 
         store = (
             ROOT
-            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/dashboard_overview_read_store.rs"
+            / "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/dashboard_overview_read_store.rs"
         ).read_text(encoding="utf-8")
         self.assertIn('Some(1) => "info"', store)
         self.assertIn("None => \"unknown\"", store)

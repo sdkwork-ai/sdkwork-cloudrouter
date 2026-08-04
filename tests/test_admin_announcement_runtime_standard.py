@@ -9,23 +9,23 @@ ROOT = Path(__file__).resolve().parents[1]
 ANNOUNCEMENT_PACKAGE = (
     ROOT
     / "apps"
-    / "sdkwork-clawrouter-pc"
+    / "sdkwork-cloudrouter-pc"
     / "packages"
-    / "sdkwork-clawrouter-pc-admin-announcement"
+    / "sdkwork-cloudrouter-pc-admin-announcement"
 )
 
 
 @unittest.skipUnless(
     (ANNOUNCEMENT_PACKAGE / "src" / "announcementService.ts").exists(),
-    "admin announcement package removed from claw router PC surface",
+    "admin announcement package removed from cloud router PC surface",
 )
 class AdminAnnouncementRuntimeStandardTest(unittest.TestCase):
     def test_admin_announcement_write_contracts_use_operation_specific_payloads(self) -> None:
         manifest = ApiContractManifestGenerator(root=ROOT).generate()
         operations = {operation["key"]: operation for operation in manifest["operations"]}
         source = (
-            "apps/sdkwork-clawrouter-pc/packages/"
-            "sdkwork-clawrouter-pc-admin-announcement/src/announcementService.ts"
+            "apps/sdkwork-cloudrouter-pc/packages/"
+            "sdkwork-cloudrouter-pc-admin-announcement/src/announcementService.ts"
         )
 
         add_announcement = operations[f"{source}#addAnnouncement"]
@@ -48,17 +48,17 @@ class AdminAnnouncementRuntimeStandardTest(unittest.TestCase):
         service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-admin-announcement"
+            / "sdkwork-cloudrouter-pc-admin-announcement"
             / "src"
             / "announcementService.ts"
         ).read_text(encoding="utf-8")
         router_api = (
-            ROOT / "sdks" / "clawrouter-backend-sdk" / "clawrouter-backend-sdk-typescript" / "src" / "api" / "content.ts"
+            ROOT / "sdks" / "cloudrouter-backend-sdk" / "cloudrouter-backend-sdk-typescript" / "src" / "api" / "content.ts"
         ).read_text(encoding="utf-8")
         type_exports = (
-            ROOT / "sdks" / "clawrouter-backend-sdk" / "clawrouter-backend-sdk-typescript" / "src" / "types" / "index.ts"
+            ROOT / "sdks" / "cloudrouter-backend-sdk" / "cloudrouter-backend-sdk-typescript" / "src" / "types" / "index.ts"
         ).read_text(encoding="utf-8")
 
         for token in [
@@ -103,15 +103,15 @@ class AdminAnnouncementRuntimeStandardTest(unittest.TestCase):
         package_root = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-admin-announcement"
+            / "sdkwork-cloudrouter-pc-admin-announcement"
         )
         package = json.loads((package_root / "package.json").read_text(encoding="utf-8"))
         service = (package_root / "src" / "announcementService.ts").read_text(encoding="utf-8")
         view = (package_root / "src" / "index.tsx").read_text(encoding="utf-8")
         form = (package_root / "src" / "announcementForm.ts").read_text(encoding="utf-8")
-        verifier = (ROOT / "scripts" / "verify-claw-router-application.mjs").read_text(encoding="utf-8")
+        verifier = (ROOT / "scripts" / "verify-cloud-router-application.mjs").read_text(encoding="utf-8")
 
         self.assertEqual(package["type"], "module")
         self.assertEqual(package["scripts"]["typecheck"], "tsc --noEmit")
@@ -145,7 +145,7 @@ class AdminAnnouncementRuntimeStandardTest(unittest.TestCase):
 
     def test_admin_announcement_read_model_fails_closed_for_target_and_status(self) -> None:
         relative_path = (
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/"
+            "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/"
             "postgres/admin_announcement_store.rs"
         )
         store = (ROOT / relative_path).read_text(encoding="utf-8")

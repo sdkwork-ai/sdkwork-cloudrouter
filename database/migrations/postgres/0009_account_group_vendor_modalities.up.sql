@@ -1,7 +1,7 @@
 -- sdkwork:migration
 -- id: 0009_account_group_vendor_modalities
 -- engine: postgres
--- module: sdkwork-clawrouter
+-- module: sdkwork-cloudrouter
 -- purpose: Add optional model vendor binding and supported modality set to
 --   ai_upstream_account_group. vendor_code is NULL for groups that are not
 --   vendor-bound (apply to all vendors); modalities is a JSONB array of

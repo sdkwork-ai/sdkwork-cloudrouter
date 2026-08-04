@@ -26,15 +26,15 @@
   },
   {
     "id": 1902,
-    "uuid": "skill-category-clawhub-community",
-    "name": "ClawHub Community",
-    "description": "Community skills mirrored from ClawHub into local SDKWork seed data for offline startup and review.",
+    "uuid": "skill-category-cloudhub-community",
+    "name": "CloudHub Community",
+    "description": "Community skills mirrored from CloudHub into local SDKWork seed data for offline startup and review.",
     "shopId": 0,
     "type": 19,
     "groupName": "community",
-    "code": "clawhub-community",
+    "code": "cloudhub-community",
     "tags": [
-      "clawhub",
+      "cloudhub",
       "community",
       "mirror"
     ],
@@ -45,7 +45,7 @@
     },
     "sortWeight": 20,
     "parentId": null,
-    "path": "/skills/clawhub-community",
+    "path": "/skills/cloudhub-community",
     "visible": true,
     "status": 1
   }

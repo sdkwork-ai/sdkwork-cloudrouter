@@ -6,18 +6,18 @@ contracts with upstream Spring AI Plus Flyway PostgreSQL DDL.
 
 ## Purpose
 
-- Keep Java-owned `plus_*` tables registered by claw-router aligned with
+- Keep Java-owned `plus_*` tables registered by cloud-router aligned with
   production Flyway migrations.
 - Detect drift when production DDL adds or changes tables, business
   `NOT NULL` columns, physical business columns, unique constraints, indexes, or
   foreign keys that are not mirrored in
-  `docs/schema-registry/sdkwork-clawrouter.tables.yaml`.
+  `docs/schema-registry/sdkwork-cloudrouter.tables.yaml`.
 - Optionally validate SQL physical column types for tables that declare
   `column_types` in the registry.
 - Preserve PostgreSQL index method metadata, including `USING gin` and
   `USING gist`, without requiring non-portable SQLite test DDL.
 - Avoid false positives for upstream tables that are not part of the current
-  claw-router registry scope.
+  cloud-router registry scope.
 
 ## Default Scope
 

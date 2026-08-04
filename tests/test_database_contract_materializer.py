@@ -12,7 +12,7 @@ from tools.database_contract_materializer import DatabaseContractMaterializer
 class DatabaseContractMaterializerTest(unittest.TestCase):
     def make_root(self, tmp: str) -> tuple[Path, Path]:
         root = Path(tmp)
-        registry = root / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+        registry = root / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
         registry.parent.mkdir(parents=True)
         registry.write_text(
             textwrap.dedent(
@@ -61,8 +61,8 @@ class DatabaseContractMaterializerTest(unittest.TestCase):
                     "schemaVersion": 2,
                     "kind": "sdkwork.database.module",
                     "databaseRole": "authoritative-server",
-                    "moduleId": "clawrouter",
-                    "serviceCode": "CLAW_ROUTER",
+                    "moduleId": "cloudrouter",
+                    "serviceCode": "CLOUD_ROUTER",
                     "tablePrefix": "ai_",
                     "contractVersion": "1.0.0",
                     "baselineStrategy": "baseline-plus-migrations",
@@ -121,7 +121,7 @@ class DatabaseContractMaterializerTest(unittest.TestCase):
                 / "ddl"
                 / "baseline"
                 / "postgres"
-                / "0001_clawrouter_baseline.sql"
+                / "0001_cloudrouter_baseline.sql"
             ).read_text(encoding="utf-8")
             self.assertIn("CREATE TABLE IF NOT EXISTS ai_upstream_supplier", postgres_baseline)
             self.assertNotIn("ai_model_vendor", postgres_baseline)

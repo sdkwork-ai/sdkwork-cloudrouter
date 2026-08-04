@@ -2,7 +2,7 @@
 
 Status: active
 Review date: 2026-07-31
-Application: sdkwork-clawrouter
+Application: sdkwork-cloudrouter
 Owner: sdkwork-platform
 Requirement: REQ-2026-0001
 Decision: ADR-20260710
@@ -36,7 +36,7 @@ skipped suite, or a partial local check.
 
 | Severity | Finding | Current worktree evidence | Required closure evidence |
 | --- | --- | --- | --- |
-| P0 partially closed | Tenant signing-key rotation lifecycle remains incomplete. | IAM already owns PostgreSQL persistence in `iam_tenant_signing_key`, primary-key provisioning, and `kid` lookup through `TenantSigningKeyStore`. Claw HTTP's unused in-memory lifecycle is now test-only. IAM still lacks a proven cross-replica rotation lease, persisted grace/revocation lifecycle, encrypted backup/restore procedure, and restart/concurrency evidence. | Security/IAM-approved rotation command and lease, explicit persisted grace/revocation behavior, backup/restore policy, rotation/restart/concurrency tests, and clean-candidate evidence. |
+| P0 partially closed | Tenant signing-key rotation lifecycle remains incomplete. | IAM already owns PostgreSQL persistence in `iam_tenant_signing_key`, primary-key provisioning, and `kid` lookup through `TenantSigningKeyStore`. Cloud HTTP's unused in-memory lifecycle is now test-only. IAM still lacks a proven cross-replica rotation lease, persisted grace/revocation lifecycle, encrypted backup/restore procedure, and restart/concurrency evidence. | Security/IAM-approved rotation command and lease, explicit persisted grace/revocation behavior, backup/restore policy, rotation/restart/concurrency tests, and clean-candidate evidence. |
 | P0 | Provider egress remains incomplete. | Production passthrough and adapter transports now reject plaintext HTTP and validate the target before credential forwarding and connector construction. They still lack a controlled resolver, DNS rebinding defense, resolved-IP pinning, persistent host allowlists, redirect policy, and Kubernetes egress enforcement. | Security/SRE approval of a shared fail-closed policy, persistence-time and connect-time validation, resolver pinning, redirect policy, and private/metadata/DNS-rebinding negative tests. |
 | Mitigation closed in worktree; protocol remains P0 | Direct authenticated Adapter streaming is not yet a commercial protocol. | Adapter `SseStream` and `ByteStream` routes that require settlement now fail before provider I/O; authenticated passthrough returns `501 provider_adapter_streaming_accounting_unavailable` for both shapes because it has no provable free-route contract. Dispatch and fallback candidate resolution apply the same exact-shape guard, leave explicit free routes eligible, and do not misclassify `FileUpload`. The official Adapter trait still has no stream outcome, terminal usage, cancellation, idempotency, or controlled header contract, so paid Adapter streaming remains disabled. | Repeat the dispatch, fallback, passthrough, and real `/v1/responses` settlement tests from a clean candidate. A formal Adapter stream contract, one terminal lifecycle, usage reconciliation, cancellation/timeouts, idempotency, and measured concurrency/RSS evidence remain required before enabling paid Adapter streams. |
 | Closed in worktree | Provider-native relay scope was broader than the public contract. | Provider-native wildcard mounts now derive provider/path-template/method admission from the embedded authored OpenAPI before authentication or forwarding. Direct and provider-alias standard routes pass; unknown Google management paths, undeclared ElevenLabs paths, OpenAI model deletion, and wrong methods fail closed with focused unit and gateway integration evidence. | Repeat the positive/negative provider boundary tests and API/SDK contract checks from the clean candidate. |
@@ -51,7 +51,7 @@ skipped suite, or a partial local check.
 | Sequence implementation closed in worktree; contention evidence remains P1 | Chat used `COUNT(*) + 1` sequence allocation. | Turn creation now locks the scoped conversation row and allocates turn/item/message ordinals from checked aggregate counters. Context snapshots use atomic `UPDATE ... RETURNING`; scoped unique indexes remain collision guards. Static regression tests forbid the old allocator. | Run concurrent create/complete/failure-injection tests from at least two PostgreSQL-backed processes and retain deadlock, latency, and collision evidence. |
 | P0 | PostgreSQL integration evidence is absent in this environment. | `SDKWORK_DATABASE_URL` was absent. `pnpm test:postgres:required` exited `2` before running CI-grade PostgreSQL transaction verification. | An isolated PostgreSQL URL or digest-pinned test service, clean-install/upgrade/restore/transaction/concurrency evidence, and a passing required suite from the release candidate. |
 | Implementation closed in worktree; capacity evidence remains P1 | Settlement batch count was bounded but payload capacity was not. | The worker still clamps a claim to `1..=200`; usage admission now limits `pricing_snapshot` to 16 KiB. The PostgreSQL query measures snapshot text bytes before client projection, returns `{}` for an oversized historical value, and marks that fact `INVALID_PRICING_SNAPSHOT` in the same transaction. A claim therefore transfers at most 3.2 MiB of snapshot text before ordinary row overhead. Focused validation, retry-queue, SQL-contract, and service compile checks pass. | Finance/SRE approval of per-item and queue-wide budgets, backlog admission/backpressure, instrumentation/alerts, and production-like PostgreSQL load, cancellation, recovery, and process-RSS evidence. |
-| P0 partially closed | Clustered runtime ID allocation and fencing. | All PostgreSQL startup paths now install the canonical process-wide `sdkwork-database-id` generator before writes. The shared registry uses database time, random lease tokens, monotonic versions, TTL heartbeats, and generator fencing; readiness includes lease health and bounded-backoff recovery. `clawrouter_runtime_id_generator_ready` and the bounded-label `clawrouter_runtime_id_failures_total{operation,reason}` expose lease and recovery state. Kubernetes supplies Pod name/UID diagnostics and no static ID. Upstream rollback uniqueness and allocator concurrency/fencing suites pass. However, the allocator still executes registry DDL during runtime allocation. An isolated PostgreSQL 16 check proved `CREATE TABLE IF NOT EXISTS` is denied to a role with schema `USAGE` and table DML but no schema `CREATE`, violating the required runtime-role boundary. | `sdkwork-database` owner must provide migrator-owned registry provisioning plus a runtime verify/allocate path requiring only DML. Then repeat focused suites from a clean candidate and prove concurrent allocation, token theft, expiry/reallocation, database partition/recovery, sequence-capacity behavior, least-privilege ACLs, alert rules, and stable readiness with at least two real PostgreSQL-backed replicas. |
+| P0 partially closed | Clustered runtime ID allocation and fencing. | All PostgreSQL startup paths now install the canonical process-wide `sdkwork-database-id` generator before writes. The shared registry uses database time, random lease tokens, monotonic versions, TTL heartbeats, and generator fencing; readiness includes lease health and bounded-backoff recovery. `cloudrouter_runtime_id_generator_ready` and the bounded-label `cloudrouter_runtime_id_failures_total{operation,reason}` expose lease and recovery state. Kubernetes supplies Pod name/UID diagnostics and no static ID. Upstream rollback uniqueness and allocator concurrency/fencing suites pass. However, the allocator still executes registry DDL during runtime allocation. An isolated PostgreSQL 16 check proved `CREATE TABLE IF NOT EXISTS` is denied to a role with schema `USAGE` and table DML but no schema `CREATE`, violating the required runtime-role boundary. | `sdkwork-database` owner must provide migrator-owned registry provisioning plus a runtime verify/allocate path requiring only DML. Then repeat focused suites from a clean candidate and prove concurrent allocation, token theft, expiry/reallocation, database partition/recovery, sequence-capacity behavior, least-privilege ACLs, alert rules, and stable readiness with at least two real PostgreSQL-backed replicas. |
 | P0 | Redis accounting-retry recovery is unproven. | Redis Streams can hold accounting retry stream, schedule, payload, deduplication, and DLQ records. Individual retry envelopes are now limited to 32 KiB and oversized poison content is replaced with bounded digest evidence, but no Finance/SRE-approved queue-wide byte/retention, persistence, backup, restore, reconciliation, requeue, or destructive-operation policy exists. The corrected runbooks explicitly prohibit treating those records as disposable cache state. | Finance/SRE-approved queue data classification and recovery design, Redis HA/persistence configuration, total-capacity/backpressure/retention limits, restore/reconciliation drills, operator controls, and clean-candidate evidence. |
 | Closed in worktree | Root README governance and accounting-retry fallback wording was stale. | `README.md` is valid UTF-8, describes `pnpm verify` as a repository verification gate, and no longer claims a nonexistent SQLite WAL retry queue. It records the bounded, restart-volatile desktop memory queue and the fail-closed Redis requirement for all non-desktop deployments. | Repeat documentation and delivery checks from the clean release candidate. |
 | Focused warning debt closed in worktree; clean-candidate gate remains P1 | The router service and Analytics repository now compile without warnings, including with `RUSTFLAGS=-D warnings`. Retired model-import encoders, duplicate commerce DDL, the superseded IAM bootstrap wrapper, and the unused Analytics scope helper were removed rather than suppressed. This is not yet an all-targets clean-candidate result. | Repeat warning-denying checks for all workspace targets from a clean candidate and retain the command output in the release evidence bundle. |
@@ -63,52 +63,52 @@ checks ran after the command-boundary changes described above; the other
 results retain their stated evidence boundaries:
 
 ```text
-cargo test -p sdkwork-claw-http --lib test_key_rotation
-cargo test -p sdkwork-clawrouter-router-service runtime_id::tests --lib
-cargo check -p sdkwork-clawrouter-edge-runtime --lib
-cargo test -p sdkwork-clawrouter-edge-runtime --lib invocation_dispatcher::tests
-cargo test -p sdkwork-clawrouter-edge-runtime --lib runtime::tests::invocation_response_budget_rejects_zero_runtime_config -- --exact
-cargo test -p sdkwork-clawrouter-edge-runtime passthrough::tests::provider_passthrough_runtime_enforces_the_injected_request_body_limit --lib -- --exact
-cargo test -p sdkwork-clawrouter-edge-runtime runtime::tests::runtime_toml_body_limit_is_resolved_once_for_invocation_and_passthrough --lib -- --exact
-cargo test -p sdkwork-clawrouter-router-service --test sqlite_gateway_usage_recorder
-cargo test -p sdkwork-clawrouter-router-service infrastructure::gateway_accounting_retry_queue::tests --lib
-cargo test -p sdkwork-clawrouter-router-service --test invocation_pricing_settlement
-cargo test -p sdkwork-clawrouter-router-service --test invocation_usage_recording
-cargo test -p sdkwork-clawrouter-router-service ports::gateway_usage_recorder::tests --lib
-cargo test -p sdkwork-clawrouter-router-service --test postgres_usage_settlement_store_sql_contract
-cargo check -p sdkwork-clawrouter-router-service
-cargo test -p sdkwork-clawrouter-router-service --test invocation_streaming_usage
-cargo test -p sdkwork-clawrouter-router-service --test invocation_provider_adapter_dispatch
-cargo test -p sdkwork-clawrouter-router-service --test invocation_dispatch
-cargo test -p sdkwork-clawrouter-edge-runtime --test invocation_router invocation_http_dispatcher_settles_responses_stream_from_nested_terminal_usage -- --exact
-cargo test -p sdkwork-clawrouter-edge-runtime passthrough::tests::authenticated_adapter_streaming_shapes_fail_closed_before_invocation --lib -- --exact
-cargo test -p sdkwork-routes-clawrouter-app-api router_from_env_rejects_static_or_invalid_server_snowflake_node_id_before_database_bootstrap --lib
-cargo test -p sdkwork-routes-clawrouter-backend-api router_from_env_rejects_static_or_invalid_server_snowflake_node_id_before_database_bootstrap --lib
-cargo test -p sdkwork-clawrouter-edge-runtime --test database_installer_startup
+cargo test -p sdkwork-cloudrouter-http --lib test_key_rotation
+cargo test -p sdkwork-cloudrouter-router-service runtime_id::tests --lib
+cargo check -p sdkwork-cloudrouter-edge-runtime --lib
+cargo test -p sdkwork-cloudrouter-edge-runtime --lib invocation_dispatcher::tests
+cargo test -p sdkwork-cloudrouter-edge-runtime --lib runtime::tests::invocation_response_budget_rejects_zero_runtime_config -- --exact
+cargo test -p sdkwork-cloudrouter-edge-runtime passthrough::tests::provider_passthrough_runtime_enforces_the_injected_request_body_limit --lib -- --exact
+cargo test -p sdkwork-cloudrouter-edge-runtime runtime::tests::runtime_toml_body_limit_is_resolved_once_for_invocation_and_passthrough --lib -- --exact
+cargo test -p sdkwork-cloudrouter-router-service --test sqlite_gateway_usage_recorder
+cargo test -p sdkwork-cloudrouter-router-service infrastructure::gateway_accounting_retry_queue::tests --lib
+cargo test -p sdkwork-cloudrouter-router-service --test invocation_pricing_settlement
+cargo test -p sdkwork-cloudrouter-router-service --test invocation_usage_recording
+cargo test -p sdkwork-cloudrouter-router-service ports::gateway_usage_recorder::tests --lib
+cargo test -p sdkwork-cloudrouter-router-service --test postgres_usage_settlement_store_sql_contract
+cargo check -p sdkwork-cloudrouter-router-service
+cargo test -p sdkwork-cloudrouter-router-service --test invocation_streaming_usage
+cargo test -p sdkwork-cloudrouter-router-service --test invocation_provider_adapter_dispatch
+cargo test -p sdkwork-cloudrouter-router-service --test invocation_dispatch
+cargo test -p sdkwork-cloudrouter-edge-runtime --test invocation_router invocation_http_dispatcher_settles_responses_stream_from_nested_terminal_usage -- --exact
+cargo test -p sdkwork-cloudrouter-edge-runtime passthrough::tests::authenticated_adapter_streaming_shapes_fail_closed_before_invocation --lib -- --exact
+cargo test -p sdkwork-routes-cloudrouter-app-api router_from_env_rejects_static_or_invalid_server_snowflake_node_id_before_database_bootstrap --lib
+cargo test -p sdkwork-routes-cloudrouter-backend-api router_from_env_rejects_static_or_invalid_server_snowflake_node_id_before_database_bootstrap --lib
+cargo test -p sdkwork-cloudrouter-edge-runtime --test database_installer_startup
 python -m unittest tests.test_database_runtime_id_standard
-rustfmt --edition 2021 --check services/sdkwork-clawrouter-router-service/src/ports/gateway_usage_recorder.rs services/sdkwork-clawrouter-router-service/tests/sqlite_gateway_usage_recorder.rs
+rustfmt --edition 2021 --check services/sdkwork-cloudrouter-router-service/src/ports/gateway_usage_recorder.rs services/sdkwork-cloudrouter-router-service/tests/sqlite_gateway_usage_recorder.rs
 node ../sdkwork-specs/tools/check-api-operation-patterns.mjs --workspace .
 node ../sdkwork-specs/tools/check-route-path-collisions.mjs --root .
 pnpm test:postgres:required
-cargo test -p sdkwork-clawrouter-router-service --test app_chat_api
+cargo test -p sdkwork-cloudrouter-router-service --test app_chat_api
 pnpm db:materialize:contract
 python -B -m tools.database_contract_materializer --root . --check
 python -B -m tools.schema_compiler --root . --dialect postgres --materialize --check
 python -B -m unittest tests.test_chat_runtime_database_contract -v
-cargo test -p sdkwork-clawrouter-router-service --test postgres_app_chat_sql_contract
+cargo test -p sdkwork-cloudrouter-router-service --test postgres_app_chat_sql_contract
 rg -n -i "ai_chat_|ai_runtime_usage_link" database/ddl/baseline database/migrations generated/schema/postgres
-rg -n "COUNT\\(\\*\\).*\\+ 1|FOR UPDATE|context_snapshot_count" services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_chat_store.rs
-cargo test -p sdkwork-clawrouter-admin-analytics-repository-sqlx --lib
-cargo test -p sdkwork-clawrouter-router-service --test admin_analytics_api
-cargo test -p sdkwork-clawrouter-router-service --test postgres_admin_analytics_read_store_sql_contract
-cargo check -p sdkwork-clawrouter-router-service
-RUSTFLAGS="-D warnings" cargo check -p sdkwork-clawrouter-admin-analytics-repository-sqlx
-pnpm --filter @sdkwork/clawrouter-pc-admin-analytics test
-pnpm --filter @sdkwork/clawrouter-pc-admin-dashboard test
+rg -n "COUNT\\(\\*\\).*\\+ 1|FOR UPDATE|context_snapshot_count" services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/app_chat_store.rs
+cargo test -p sdkwork-cloudrouter-admin-analytics-repository-sqlx --lib
+cargo test -p sdkwork-cloudrouter-router-service --test admin_analytics_api
+cargo test -p sdkwork-cloudrouter-router-service --test postgres_admin_analytics_read_store_sql_contract
+cargo check -p sdkwork-cloudrouter-router-service
+RUSTFLAGS="-D warnings" cargo check -p sdkwork-cloudrouter-admin-analytics-repository-sqlx
+pnpm --filter @sdkwork/cloudrouter-pc-admin-analytics test
+pnpm --filter @sdkwork/cloudrouter-pc-admin-dashboard test
 pnpm api:materialize:check
 pnpm api:standard-extensions:check
 pnpm api:http-route-manifest:check
-python -B -m tools.clawrouter_sdk_guardian
+python -B -m tools.cloudrouter_sdk_guardian
 ```
 
 The accounting command validation test and the complete SQLite gateway-usage
@@ -131,7 +131,7 @@ library compiled in an earlier focused check; it has not been repeated with
 warning denial after this cleanup. Chat schema materialization and the
 standalone SQL/database contract tests now pass. The normal Cargo Chat test
 command is temporarily
-blocked before compiling Claw Router by an in-progress sibling
+blocked before compiling Cloud Router by an in-progress sibling
 `sdkwork-database` feature-gating change: PostgreSQL-only `DatabasePool` builds
 still reach unconditional `DatabasePool::Sqlite` matches in database history
 and ID crates. Re-enabling server SQLite is not an acceptable workaround.

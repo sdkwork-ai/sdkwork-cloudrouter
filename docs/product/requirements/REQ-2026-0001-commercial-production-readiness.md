@@ -6,12 +6,12 @@ owner: sdkwork-platform
 status: in-progress
 source: security, reliability, governance
 priority: critical
-application: sdkwork-clawrouter
+application: sdkwork-cloudrouter
 approval: Pre-launch direct cleanup authorized by the repository owner on 2026-07-10
 
 ## Problem
 
-Claw Router has a substantial provider-routing and SDK foundation, but the current
+Cloud Router has a substantial provider-routing and SDK foundation, but the current
 worktree does not yet enforce the security, financial, streaming, routing, release,
 and operational invariants required for a commercial AI API relay. Several current
 behaviors can expose internal networks, expose upstream administrative operations,
@@ -121,16 +121,16 @@ artifacts without trustworthy evidence.
 
 ### Components
 
-- `services/sdkwork-clawrouter-router-service`
-- `crates/sdkwork-clawrouter-edge-runtime`
-- `crates/sdkwork-routes-clawrouter-app-api`
-- `crates/sdkwork-routes-clawrouter-backend-api`
-- `apis/open-api/clawrouter`
-- `apis/app-api/clawrouter`
-- `sdks/clawrouter-app-sdk`
-- `sdks/clawrouter-backend-sdk`
-- `sdks/clawrouter-open-sdk`
-- `apps/sdkwork-clawrouter-pc`
+- `services/sdkwork-cloudrouter-router-service`
+- `crates/sdkwork-cloudrouter-edge-runtime`
+- `crates/sdkwork-routes-cloudrouter-app-api`
+- `crates/sdkwork-routes-cloudrouter-backend-api`
+- `apis/open-api/cloudrouter`
+- `apis/app-api/cloudrouter`
+- `sdks/cloudrouter-app-sdk`
+- `sdks/cloudrouter-backend-sdk`
+- `sdks/cloudrouter-open-sdk`
+- `apps/sdkwork-cloudrouter-pc`
 - `deployments`
 - `../sdkwork-account` through
   `docs/engineering/prerequisites/PREREQ-2026-0001-sdkwork-account-ai-hold-settlement.md`

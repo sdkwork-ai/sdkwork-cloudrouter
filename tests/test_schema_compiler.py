@@ -10,12 +10,12 @@ from tools.schema_compiler import SchemaCompileError, SchemaCompiler
 
 class SchemaCompilerTest(unittest.TestCase):
     def write_registry(self, root: Path, content: str) -> Path:
-        registry = root / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+        registry = root / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
         registry.parent.mkdir(parents=True, exist_ok=True)
         registry.write_text(textwrap.dedent(content).strip() + "\n", encoding="utf-8")
         return registry
 
-    def test_real_registry_compiles_clawrouter_owned_tables_only(self) -> None:
+    def test_real_registry_compiles_cloudrouter_owned_tables_only(self) -> None:
         root = Path(__file__).resolve().parents[1]
 
         sql = SchemaCompiler(root=root).compile_postgres()

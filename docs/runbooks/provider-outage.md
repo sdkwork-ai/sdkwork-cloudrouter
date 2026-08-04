@@ -1,8 +1,8 @@
-# SDKWork Claw Router - Provider Upstream Outage Runbook
+# SDKWork Cloud Router - Provider Upstream Outage Runbook
 
 **Document Version:** 1.0
 **Last Updated:** 2026-06-27
-**Owner:** Platform Engineering / clawrouter-gateway
+**Owner:** Platform Engineering / cloudrouter-gateway
 **Review Frequency:** Quarterly
 **Severity:** P0
 
@@ -24,7 +24,7 @@
 
 An upstream AI Provider (OpenAI, Anthropic, Google, Alibaba Tongyi / 通义, Tencent
 Hunyuan / 混元, or any provider registered in the routing catalog) is degraded or
-fully unavailable. Claw Router continues accepting tenant requests but the
+fully unavailable. Cloud Router continues accepting tenant requests but the
 provider relay returns elevated 5xx responses, and the per-provider circuit
 breaker opens to protect the gateway.
 
@@ -63,12 +63,12 @@ total upstream failure requiring degraded-mode operation.
 ## Diagnosis Steps
 
 1. **Check the provider health dashboard**
-   Open Grafana -> *Claw Router -> Provider Health*. Confirm which
+   Open Grafana -> *Cloud Router -> Provider Health*. Confirm which
    `provider` labels show elevated 5xx and which routes are affected.
 
 2. **Inspect circuit breaker state**
    ```bash
-   kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+   kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
      curl -s http://localhost:8080/metrics | grep circuit_breaker_state
    ```
    Expected output (open breaker example):
@@ -92,7 +92,7 @@ total upstream failure requiring degraded-mode operation.
    is upstream and not internal:
    ```bash
    # From a pod that shares the provider egress path
-   kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+   kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
      curl -sS -o /dev/null -w "%{http_code}\n" \
        -H "Authorization: Bearer ${PROVIDER_API_KEY}" \
        https://api.openai.com/v1/models
@@ -101,7 +101,7 @@ total upstream failure requiring degraded-mode operation.
 
 5. **Check the provider relay configuration**
    ```bash
-   kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+   kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
      curl -s http://localhost:8080/admin/providers | jq '.[] | {id, enabled, base_url}'
    ```
    Confirm the failing provider's `base_url` is HTTPS (per SECURITY.md H-1) and
@@ -117,14 +117,14 @@ configured in the routing catalog.
 
 ```bash
 # Disable the failing provider channel
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
   curl -sS -X PATCH http://localhost:8080/admin/providers/<provider-id> \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
     -d '{"enabled": false}'
 
 # Promote the backup channel to the route's primary weight
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
   curl -sS -X PUT http://localhost:8080/admin/routes/<route-id>/policy \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
@@ -158,7 +158,7 @@ mode so the gateway returns a controlled `503` with a tenant-friendly error
 body instead of cascading retries:
 
 ```bash
-kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
   curl -sS -X PATCH http://localhost:8080/admin/routes/<route-id>/policy \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
@@ -177,7 +177,7 @@ Once the provider status page reports recovery and a direct `curl` returns 200:
 1. **Manually reset the circuit breaker** (the breaker auto-transitions
    through half-open, but a forced reset accelerates recovery):
    ```bash
-   kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+   kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
      curl -sS -X POST http://localhost:8080/admin/providers/<provider-id>/circuit-breaker/reset \
        -H "Authorization: Bearer ${ADMIN_TOKEN}"
    ```
@@ -193,7 +193,7 @@ Once the provider status page reports recovery and a direct `curl` returns 200:
 
 4. **Confirm SLO recovery**:
    ```bash
-   curl -s https://gateway.example.com/metrics | grep clawrouter_slo
+   curl -s https://gateway.example.com/metrics | grep cloudrouter_slo
    ```
    Confirm error rate < 0.1% and p95 latency < 50 ms over a 30-minute window.
 

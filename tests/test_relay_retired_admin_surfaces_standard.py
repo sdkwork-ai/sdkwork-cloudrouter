@@ -1,4 +1,4 @@
-"""Relay-only guard: retired commerce/platform admin surfaces must not return to Claw Router."""
+"""Relay-only guard: retired commerce/platform admin surfaces must not return to Cloud Router."""
 
 from __future__ import annotations
 
@@ -16,9 +16,9 @@ from tools.relay_retired_admin_surfaces import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PORTAL_ROOT = ROOT / "apps" / "sdkwork-clawrouter-pc"
+PORTAL_ROOT = ROOT / "apps" / "sdkwork-cloudrouter-pc"
 APP_TSX = PORTAL_ROOT / "src" / "App.tsx"
-REGISTRY = PORTAL_ROOT / "packages" / "sdkwork-clawrouter-pc-admin-shell" / "src" / "adminModuleRegistry.ts"
+REGISTRY = PORTAL_ROOT / "packages" / "sdkwork-cloudrouter-pc-admin-shell" / "src" / "adminModuleRegistry.ts"
 PACKAGES_ROOT = PORTAL_ROOT / "packages"
 
 

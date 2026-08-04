@@ -1,0 +1,4 @@
+interface:
+  display_name: "CloudRouter SDK Generation"
+  short_description: "Regenerate CloudRouter app and backend SDKs"
+  default_prompt: "Regenerate the CloudRouter SDKs from project OpenAPI specs."

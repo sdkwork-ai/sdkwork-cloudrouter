@@ -1,0 +1,516 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "sdk": {
+    "name": "cloudrouter-app-sdk",
+    "version": "0.1.0",
+    "language": "go",
+    "sdkType": "app",
+    "protocol": "http",
+    "packageName": "github.com/sdkwork/cloudrouter-app-sdk"
+  },
+  "generatedFiles": [
+    {
+      "path": "api/ai.go",
+      "sha256": "51f194a50b19323f7041bdf5fbf465dc7245d84564781c21c0a99c2f6f27d162"
+    },
+    {
+      "path": "api/base.go",
+      "sha256": "1f5f1447891bf21355c2314998d97a3176978a9f410ad40e9f1e415e7b0852f5"
+    },
+    {
+      "path": "api/chat.go",
+      "sha256": "5771a466dfadc63a8cefbcca1558ea8fb6400cb9b3988c60de976e6e951faabf"
+    },
+    {
+      "path": "api/doc.go",
+      "sha256": "8cc9e307974419ace8688c54209eb6b537affa6cce3b0b9e6dda42fa14496928"
+    },
+    {
+      "path": "api/iam.go",
+      "sha256": "4af211886b26e031ddf0b123e15b45b5901060afc10d3d1a27dede7483c6d890"
+    },
+    {
+      "path": "api/notification.go",
+      "sha256": "5ec7bec91bdb4a3100d1456b739568270300fd1e52a70f51d279a70d46567a6e"
+    },
+    {
+      "path": "api/paths.go",
+      "sha256": "28a40834c366f1d794724493eef66c4fd0516b565a4274f1862438244d137b0b"
+    },
+    {
+      "path": "api/runtime.go",
+      "sha256": "d0e7d87c11e4f946bf7a048a9fdb9c3c8e741c9c24698c3c764cd98d0dde706d"
+    },
+    {
+      "path": "api/system.go",
+      "sha256": "5c2dc8b0599c2da47bfeb948f1b6842ad00b91ede76da223c751e9b7a0b88a65"
+    },
+    {
+      "path": "bin/publish-core.mjs",
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
+    },
+    {
+      "path": "bin/publish.ps1",
+      "sha256": "b86912c73f0f0e62915246690fbb006213bcaf7e612729a59403d5893903e003"
+    },
+    {
+      "path": "bin/publish.sh",
+      "sha256": "bb05183d134a4057090fcc04e51d2e06d191d43a3e5e133f9451bd7552a961d7"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "fb941a0806986a54fc192f98a98f6d9c282b8d350b2b19a3e71dda404e92d545"
+    },
+    {
+      "path": "doc.go",
+      "sha256": "143acb388fc3eae643792b0ac76d0f9fff8bdd84d0f2602e4d2326abe30b0b55"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "d0f6f60fcba015407b1c1e22a2e83c075a31c9375a2a154b2ffe169c9d499e9d"
+    },
+    {
+      "path": "http/client.go",
+      "sha256": "5574d28592e72078ae744ce20c0930fa7825b32ab3e2b18ed3de16652df50b0e"
+    },
+    {
+      "path": "http/doc.go",
+      "sha256": "7e20faa13e2ab5c570db5034f49bba4ea67bda9d89d74a033c267dcc055ac14e"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "7840cc7d2b36ff364ac16c2fc5ec15b861bfe96854eecf81fb59b00edb8b1447"
+    },
+    {
+      "path": "README.md",
+      "sha256": "8deedf4fd9a849248604d3e3f4561336befeabdf956d81de88c515c9fdc709d0"
+    },
+    {
+      "path": "sdk.go",
+      "sha256": "100e76191cb89b8500cdc5ffe0e82a87b140c1aa3542bfc80d952ce4bb66ca13"
+    },
+    {
+      "path": "sdkwork-sdk.json",
+      "sha256": "16d20fc7a1a68ff8264bbff1d1a8730ae53ea9fe779c8d313a391b86d48df7fc"
+    },
+    {
+      "path": "types/after_sales_events_list_result.go",
+      "sha256": "f4073a13caf4066894f9b76c7624ab3d717bc50cfef01186df77b5145bcd2371"
+    },
+    {
+      "path": "types/after_sales_requests_create_result.go",
+      "sha256": "e1b9c6321314e4c2abdc71d836ce42c395ecdde3742d7aa892622ae6557b54af"
+    },
+    {
+      "path": "types/after_sales_requests_list_result.go",
+      "sha256": "069e9f4a69f9f5f4984989d86bddde4737073fa56606aa4d6a823b8dfa6ba1ef"
+    },
+    {
+      "path": "types/after_sales_requests_retrieve_result.go",
+      "sha256": "9d8551f2cf6c5b98196f44200daf56fabc90ea544289cdc039bf4fa20de31723"
+    },
+    {
+      "path": "types/after_sales_requests_update_result.go",
+      "sha256": "a26ba58c688d67ad06d6586b4aa3fdf4a75fed7964ffcc371db4d144313e4cf3"
+    },
+    {
+      "path": "types/after_sales_return_shipments_create_result.go",
+      "sha256": "2e955d63d82121831963aa3ea4974048713b10ff2b99a6b22d5b85677ad10f21"
+    },
+    {
+      "path": "types/after_sales_return_shipments_list_result.go",
+      "sha256": "9f36afb4676f83e98cf32daaacf3acdd51895cd1e4fc0edbbad7d07bb28d58bc"
+    },
+    {
+      "path": "types/api_keys_create_result.go",
+      "sha256": "240908d831a1eb1f9f995af6113c7fdf5cfd3d8f148279898086aa138e8b0703"
+    },
+    {
+      "path": "types/api_keys_delete_result.go",
+      "sha256": "1c2b533a77c4a7fa1ea5e979ceaa5854a919aba7b36ff2377d4ef429f6b81935"
+    },
+    {
+      "path": "types/api_keys_list_result.go",
+      "sha256": "7b0287cb53c0a8e45ea0069ddd37973d4cf8d8a072e76111558d6e19291db1dc"
+    },
+    {
+      "path": "types/api_keys_update_result.go",
+      "sha256": "145dce487d85a59bb9092e701811842e41ed789abb264fc30c9908f58b44f32e"
+    },
+    {
+      "path": "types/artifacts_create_result.go",
+      "sha256": "46ba413d8e799da79bbf435b952aff15fe18102069ee2ef00dbd790d19b55fb4"
+    },
+    {
+      "path": "types/artifacts_list_result.go",
+      "sha256": "0b746c1d3e6e8ef3a516bfa7b693ab051b064c36b1752de3a0f2fc7374a835a0"
+    },
+    {
+      "path": "types/channel_groups_list_result.go",
+      "sha256": "d8a1c121abe09c93e6d498098c73074b56d326f86a7dec2e6518c3a3554fea04"
+    },
+    {
+      "path": "types/common.go",
+      "sha256": "6e7e501a9c98d11b736cae0ee81c729da6273ebdb0fb0f2c15a0b13d6bce47c0"
+    },
+    {
+      "path": "types/conversation_messages_list_result.go",
+      "sha256": "a9ba4d349c7ad350a608b151b2a67c7d21714d5d37cb49ed064d49673f4b35ca"
+    },
+    {
+      "path": "types/conversations_create_result.go",
+      "sha256": "59362de74743c8c6db3bcd30b3d2b3b8ff2d4b8309929406b5fa637e9c1b6b5e"
+    },
+    {
+      "path": "types/conversations_list_result.go",
+      "sha256": "0d60676507a89866edea96d69badf271c5bce24bce77c576ba583db602bf36ac"
+    },
+    {
+      "path": "types/conversations_retrieve_result.go",
+      "sha256": "89f07fad6ab2ee4c8a48309f2164ff629ac066a5beafc9a7f470693145bede9b"
+    },
+    {
+      "path": "types/dashboard_overview_retrieve_result.go",
+      "sha256": "150b66da1e3381220455f67222b49079d86e1e5c96f0a8687cd6d1f5a27e931b"
+    },
+    {
+      "path": "types/doc.go",
+      "sha256": "91d0fe18f56bff5e8a26d58ace037dc20bdc1ab25fc474e08918631f895625a4"
+    },
+    {
+      "path": "types/field_error.go",
+      "sha256": "2671da2eb0f681646fe3c73509e1f04b8fd625b9b10b931cfd36685f21d42e27"
+    },
+    {
+      "path": "types/gateway_traces_list_result.go",
+      "sha256": "f234e863b8771cd21c6d15549549d646e0f078c2e54c04096f031268f3b5fc43"
+    },
+    {
+      "path": "types/invocation_event_streams_list_result.go",
+      "sha256": "85a91d5d6af63fdbe28d93e8152ff3d4c29493abe6fdcb4ada00c3e7370639f0"
+    },
+    {
+      "path": "types/invocation_events_create_result.go",
+      "sha256": "eeb789b3e3bddce6a6e874006fd14e5e0dddc102a95b8daa76575b2ba3e95013"
+    },
+    {
+      "path": "types/invocation_events_list_result.go",
+      "sha256": "57fcebc64174ba132534e939ec7eaf0fd0750b46cdb8ab2eda17fa08709fea4e"
+    },
+    {
+      "path": "types/invocations_create_result.go",
+      "sha256": "ef9f3756b0719432716bffb26e0b5f1f79c15f9e2db7cc818e5452915664d0f1"
+    },
+    {
+      "path": "types/invocations_list_result.go",
+      "sha256": "5d6ab643103f48735d0d17ddb2eb5a55c02f824eb4246e0efd928231a22f4f57"
+    },
+    {
+      "path": "types/invocations_retrieve_result.go",
+      "sha256": "6fed67f73f28c71d3c524ab54753acc0337010d555f6e6a54ef6851acd053c71"
+    },
+    {
+      "path": "types/invocations_submit_result.go",
+      "sha256": "2a285367c17cc71ddb24da3910d97146e14366b21cf1bdd32d98a354d7ba40dc"
+    },
+    {
+      "path": "types/json_null.go",
+      "sha256": "449de52866d73ffdd6ddc62508ac5c3255b8fd068dfa5304fda17dbf67e58520"
+    },
+    {
+      "path": "types/json_object.go",
+      "sha256": "6db1839f16491388efc067e47dc4c7d22c22dbddc4943047cab1a4b270115a3a"
+    },
+    {
+      "path": "types/json_value.go",
+      "sha256": "dd74bac91085f57b1068e5ca1b1e8f338a0bad2990bec09aae2ab2135f5827a6"
+    },
+    {
+      "path": "types/model_catalog_page.go",
+      "sha256": "a625b3ecacb8b4e51dc2324a2bcf6097cb737c4fad30fa9cd2c247ec6e24f45f"
+    },
+    {
+      "path": "types/model_rankings_list_result.go",
+      "sha256": "e972074ba76cc45d4361c0c13d06b3d66db83fd299002d3421cf177bc8b1aff5"
+    },
+    {
+      "path": "types/model_rankings_page.go",
+      "sha256": "4d492d4d7e428bee709446e878340a9978166efeed27ea9b90f228911831aef1"
+    },
+    {
+      "path": "types/model_vendors_list_result.go",
+      "sha256": "7895dad1b1f2d2f1366233f526c40f771be487fa8e8ff0139729ccc41bf49f1b"
+    },
+    {
+      "path": "types/models_list_result.go",
+      "sha256": "a80299b8254a3e295a7e0379fb268bcfd03e8ebc5fa08ae54f07fc3e62ab32aa"
+    },
+    {
+      "path": "types/no_data.go",
+      "sha256": "617e00ef996c0847dc403a38ae9b906c7c30b2b2627c47184486cd6598251d36"
+    },
+    {
+      "path": "types/notifications_acknowledge_create_result.go",
+      "sha256": "f442fedb4830ae887d6c832b734dac12637c3037e6b6302e6e63fa5bdb64201a"
+    },
+    {
+      "path": "types/notifications_list_result.go",
+      "sha256": "98edfb11c47612e054f485ffcb2b98ccaa94f2877d9960a566b4cd5f4f208940"
+    },
+    {
+      "path": "types/notifications_popup_seen_create_result.go",
+      "sha256": "bab9c949d7fa9ac5ac7357bffb0a1f0e210724b6417c6d62a62c971a56ffde7b"
+    },
+    {
+      "path": "types/page_info.go",
+      "sha256": "91a7096fcb770e58e13ad7d2f74bf3d150173fcf96b61870c7fe15609593b8b7"
+    },
+    {
+      "path": "types/problem_detail.go",
+      "sha256": "196031d13fc3d1cbf3d0fdd921cd2d8927c2503a55465883d8c9f25e956f4695"
+    },
+    {
+      "path": "types/routing_api_keys_list_result.go",
+      "sha256": "c0cc051c8b5321bc7e4bd3781ea23b5f6c4b039d3cf1272c2e1e7d1a40a33d51"
+    },
+    {
+      "path": "types/routing_channels_list_result.go",
+      "sha256": "10404f9d5ddcc01bdd17e36903ae1d2f02131e1a219461fa29b065b0ce600497"
+    },
+    {
+      "path": "types/routing_request_traces_list_result.go",
+      "sha256": "255890d84b8a46310c810e5c4594d1143c2cc470c33c456242ad8f77d150e0b1"
+    },
+    {
+      "path": "types/routing_usage_list_result.go",
+      "sha256": "0471c9382cb55ada6dc46dda7da1fc7cc9d08ba6f9fa16c84096aa18ba10a46f"
+    },
+    {
+      "path": "types/sdk_work_api_response.go",
+      "sha256": "5db6f23abcb089d1d69ea0b883363a56d40249fedbc148c1873d5e1a1035b908"
+    },
+    {
+      "path": "types/sdk_work_platform_error_code.go",
+      "sha256": "6b6ca36f06dc0804cf6429312f6c6352017e0b119d9a77e81d5eb7bc36bdb092"
+    },
+    {
+      "path": "types/shops_current_applications_create_result.go",
+      "sha256": "35712a9bc86729d4bc5e8533b53de3cfad9707c7f92844525d0892eecdb595c8"
+    },
+    {
+      "path": "types/shops_current_applications_list_result.go",
+      "sha256": "e480f4ffcb1432fcb9013d307044d99c742121c063e916b3498f6483881b5ba8"
+    },
+    {
+      "path": "types/shops_current_brand_authorizations_list_result.go",
+      "sha256": "51e6581021a6d1a1d7573d00b7b2494cb0a3ae54f791223c6405f5dbe84aaf3f"
+    },
+    {
+      "path": "types/shops_current_brand_authorizations_upsert_result.go",
+      "sha256": "85f21bdebc955c13e5dec6f130d4c99be4b6f8f94cb848610185710bddfbea26"
+    },
+    {
+      "path": "types/shops_current_business_hours_retrieve_result.go",
+      "sha256": "cb11ce4579203b10fa14feb697f9e54e2b76cab448ffc2141eda0623c3aa333e"
+    },
+    {
+      "path": "types/shops_current_business_hours_update_result.go",
+      "sha256": "fa6e0bab820aeb9dc348f32f4baed9c1a5648a3b2a16a17bca7a0e8ac8745d52"
+    },
+    {
+      "path": "types/shops_current_category_bindings_list_result.go",
+      "sha256": "53be233d029ad2daa2405e8457ee585404250819ea4f8dcfb7e68e8cdaa96552"
+    },
+    {
+      "path": "types/shops_current_category_bindings_upsert_result.go",
+      "sha256": "343d3b01cc579bf48b3e9a46c2514416a8b51d8fdcd9539e13534c2008d363dd"
+    },
+    {
+      "path": "types/shops_current_channels_list_result.go",
+      "sha256": "f27cc158002348c1cf24e613e02d3ed0d595ebb8b7e730f6c5b669e30e8c22f7"
+    },
+    {
+      "path": "types/shops_current_channels_update_result.go",
+      "sha256": "f87da4241e77ae23ab63207c28c4dd3afa5817f3f99ee32442ef232042a614a5"
+    },
+    {
+      "path": "types/shops_current_customer_services_list_result.go",
+      "sha256": "4dd11c804a631c6697d40976df1af0d674131160cd527f2c8f510d4dcd99482f"
+    },
+    {
+      "path": "types/shops_current_customer_services_upsert_result.go",
+      "sha256": "de28f9845128a8e2f54a4212f3eb87c1a7dd82e5d421f811d61fb6756c530621"
+    },
+    {
+      "path": "types/shops_current_dashboard_retrieve_result.go",
+      "sha256": "8e9e3691233294aa17cdf31e35da7af9fbdf4fc4004eacc3ee1766b39e140aba"
+    },
+    {
+      "path": "types/shops_current_deposit_account_retrieve_result.go",
+      "sha256": "1f88994b3ac170261a9fd13522d82a96c9d8d4f1e8c75223421d0924a60e4399"
+    },
+    {
+      "path": "types/shops_current_fulfillment_profile_retrieve_result.go",
+      "sha256": "f36b2471827f04807ba2a4185321ee2fd878ec0d5f5cdf59ad91f4a2b365f909"
+    },
+    {
+      "path": "types/shops_current_fulfillment_profile_update_result.go",
+      "sha256": "a439f16ff16f2cd98a58e6dbd33e2ae139401d68a7a0fdf230342f6c3dd6cb7c"
+    },
+    {
+      "path": "types/shops_current_inventory_stocks_adjustments_create_result.go",
+      "sha256": "fb90b6a2b579198e21f9ed1e4a190b9a905a69003b89e26ad3f187536f7c51a0"
+    },
+    {
+      "path": "types/shops_current_inventory_stocks_list_result.go",
+      "sha256": "0913545b28474e74d7b0daede910cda4f7a6edb1beb9ee1b34bf0506808fdd75"
+    },
+    {
+      "path": "types/shops_current_orders_fulfillments_create_result.go",
+      "sha256": "89aeaa096cad1d75b60406de056f78dd73655554a5b4d1f3cb1f5e01dfa1457f"
+    },
+    {
+      "path": "types/shops_current_orders_list_result.go",
+      "sha256": "e23b1d6d0bc402934d58f04b28e5a3e3509319bd4028c61ea36aa146bb2efae5"
+    },
+    {
+      "path": "types/shops_current_orders_retrieve_result.go",
+      "sha256": "30ea40943903eabd08c96f66e2926d7ec9a90a8e0111ca1203bc742fb36fcb7c"
+    },
+    {
+      "path": "types/shops_current_policies_list_result.go",
+      "sha256": "0b1270102bdeb48f56a17784e5c1890695464cbd55accec51b21b2c950c7c874"
+    },
+    {
+      "path": "types/shops_current_policies_update_result.go",
+      "sha256": "3c40e78e08610a19d556b7460eb40b2c7642253b24d1fdcf1d9fc34100e8b47d"
+    },
+    {
+      "path": "types/shops_current_products_create_result.go",
+      "sha256": "1fa579bc2952ecdf5234d958d1a2a5d7d06e7013ba8d20108684071868d468c3"
+    },
+    {
+      "path": "types/shops_current_products_list_result.go",
+      "sha256": "8c768c56e6816d5368ff439edd7b805e90709826f52cbc15326dee78021fc093"
+    },
+    {
+      "path": "types/shops_current_products_publish_result.go",
+      "sha256": "b41051e34b711edacffa017ce16fbbe0eb3d78b5b3bfa65bb3f350d72795ee35"
+    },
+    {
+      "path": "types/shops_current_products_unpublish_result.go",
+      "sha256": "e527ae2c9f51cf4652288bf77e76a7c4099cfce5e14e64a26aba5b91f5b95169"
+    },
+    {
+      "path": "types/shops_current_products_update_result.go",
+      "sha256": "0f8a4abe8cb6e5cce629da03eeff67933efbf16f06c4314dbc060894cce375dd"
+    },
+    {
+      "path": "types/shops_current_qualifications_list_result.go",
+      "sha256": "b710244c6163db6d3e3e936c4ae2fd6186e9a4e55c83690e05101c0b86305e7f"
+    },
+    {
+      "path": "types/shops_current_qualifications_upsert_result.go",
+      "sha256": "dd4656ab954434d7a258404e7f9a6af77884fc8494d183b19d768ad63d49c7db"
+    },
+    {
+      "path": "types/shops_current_readiness_retrieve_result.go",
+      "sha256": "ea6988160f0dce420af4b5510244c8748f5158ce2a176e3e3c3099b1cb6db4b5"
+    },
+    {
+      "path": "types/shops_current_retrieve_result.go",
+      "sha256": "2d32a6cfd2c20bf24c8ab2e496c3292e46103d851b140b896e2712de8d994e3a"
+    },
+    {
+      "path": "types/shops_current_return_addresses_list_result.go",
+      "sha256": "be5b8e318a9035c973866379e33d7030be3d14e13a5ab7f8f21f3f8bcbf26f13"
+    },
+    {
+      "path": "types/shops_current_return_addresses_upsert_result.go",
+      "sha256": "80c55eec43018d3105bc429af3e2e202cd46533ce915e6cd98b279250d7bec96"
+    },
+    {
+      "path": "types/shops_current_risk_signals_list_result.go",
+      "sha256": "ef40c9d5cb4963b56252a46ae1ab6cb8b48677df1a2ff1db6300f2f601a72567"
+    },
+    {
+      "path": "types/shops_current_service_areas_create_result.go",
+      "sha256": "c69678fb711287b1ecaa8c1b476063246954980eecf99ba17aaadea4945facdc"
+    },
+    {
+      "path": "types/shops_current_service_areas_list_result.go",
+      "sha256": "060e142757b1597cc79c9033c05bf1a0bf587b22ef9e6aefa5c12f48fd004afe"
+    },
+    {
+      "path": "types/shops_current_service_areas_update_result.go",
+      "sha256": "a3c21fbf3070ecde033c7eddaccfcc17d4adaa1df5e6a123190a6526b5298269"
+    },
+    {
+      "path": "types/shops_current_settlement_profile_retrieve_result.go",
+      "sha256": "aeeaa638266c3a46c0db0c73272667c7a61d0839db0e07b8695f94562cfa301f"
+    },
+    {
+      "path": "types/shops_current_settlement_profile_update_result.go",
+      "sha256": "3a4bcc1ee2e1995fd88ca56b9bab99e503d2c26efd6fb7f55c8db472d9c1b719"
+    },
+    {
+      "path": "types/shops_current_settlements_list_result.go",
+      "sha256": "71c147f3ffbfab0bdcba48bc0db5036b2c547488dfda76ed64cb5cf7d6927ef5"
+    },
+    {
+      "path": "types/shops_current_shipping_templates_list_result.go",
+      "sha256": "2ddfb2a6bba468e0eb3122015df18f422d37e97f4950142e57210b60f5ceff44"
+    },
+    {
+      "path": "types/shops_current_shipping_templates_upsert_result.go",
+      "sha256": "f49b7b6af5316d9faf75f11f5f94f23b965be83b35bfae457b34a738fd9a7ac2"
+    },
+    {
+      "path": "types/shops_current_status_events_list_result.go",
+      "sha256": "4fc491b546c498331afcb7a6e5fedcc0466d0b3b1c2ff6f29cf26f0ba0675e6a"
+    },
+    {
+      "path": "types/shops_current_verifications_list_result.go",
+      "sha256": "b11fca0e840bb94c7512fc62fc88f4ca0a028dbba6e9c6ead1f8b412c91d3b73"
+    },
+    {
+      "path": "types/shops_list_result.go",
+      "sha256": "633abd90b3031b53bdd4fc3a4946fae607056845e25d1183fc5d0461dc7b618c"
+    },
+    {
+      "path": "types/shops_retrieve_result.go",
+      "sha256": "fc57d2af67fac003548dbf8c75f7777771d97cb695698656caed3fe1d5157dee"
+    },
+    {
+      "path": "types/site_runtime_retrieve_result.go",
+      "sha256": "993c5c2cb3e6f0b9a6372e229ac3493a3fd3440ced965b170ee5d7ab19cb4977"
+    },
+    {
+      "path": "types/turn_responses_create_result.go",
+      "sha256": "141df909ef963471d054ac5dfabb507f69b8593f2b4139b7f50e1fa91587342e"
+    },
+    {
+      "path": "types/turns_create_result.go",
+      "sha256": "5a65bdcd1789f896f5dae6314dc214df56528eeb1e6a8ad8343548252516e476"
+    },
+    {
+      "path": "types/usage_logs_list_result.go",
+      "sha256": "5b8f0e2e467b40f0e79dbd6a2e424a6fc37a8f45dd85d736da21a764f9905c77"
+    },
+    {
+      "path": "types/users_settings_retrieve_result.go",
+      "sha256": "bf842cd006c25050add2aaf797ec701dccf9363be2ff0afb385f447ffca84099"
+    },
+    {
+      "path": "types/users_settings_update_result.go",
+      "sha256": "2db718f59968c9931b7b750cef9cbf171dc64b256f4adff9e8db7c14791d110e"
+    }
+  ],
+  "scaffoldFiles": [
+    "custom/README.md"
+  ],
+  "customRoots": [
+    "custom/"
+  ]
+}

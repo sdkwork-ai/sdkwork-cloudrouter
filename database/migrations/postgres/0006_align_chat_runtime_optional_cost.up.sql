@@ -1,7 +1,7 @@
 -- sdkwork:migration
 -- id: 0006_align_chat_runtime_optional_cost
 -- engine: postgres
--- module: clawrouter
+-- module: cloudrouter
 -- purpose: Align chat runtime cost columns with the optional decimal contract.
 -- reversible: false
 -- rollback: forward-fix

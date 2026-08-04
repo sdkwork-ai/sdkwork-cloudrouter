@@ -27,7 +27,7 @@ Current migrations:
   non-negative checks with null-aware constraints.
 - `0007_reconcile_canonical_contract_constraints.up.sql` reconciles legacy
   nullability, validated constraints, and soft-delete-aware unique indexes with
-  the materialized Claw Router contract. It fails closed on null, scope, range,
+  the materialized Cloud Router contract. It fails closed on null, scope, range,
   relationship, or uniqueness violations instead of rewriting business data.
 - `0009_account_group_vendor_modalities.up.sql` adds optional model vendor
   binding (`vendor_code`, NULL = not vendor-bound) and the supported modality
@@ -48,7 +48,7 @@ Example:
 
 ## Rules
 
-- The baseline in `database/ddl/baseline/postgres/0001_clawrouter_baseline.sql` represents the initial installed schema.
+- The baseline in `database/ddl/baseline/postgres/0001_cloudrouter_baseline.sql` represents the initial installed schema.
 - Development migrations run only in the shared `sdkwork_ai_dev` database and
   `sdkwork_ai_dev` schema. They must not create, drop, alter, or switch databases
   or schemas.
@@ -67,4 +67,4 @@ Example:
   contract or mark constraints valid without PostgreSQL validation.
 - After GA, **do not** change production schema only by regenerating the baseline; add an incremental migration and update the schema registry contract.
 - Run `pnpm db:plan` and `pnpm db:drift:check` before merge.
-- Production upgrades use controlled jobs (`deployments/kubernetes/claw-router-migration-job.yaml`) with `SDKWORK_CLAW_STARTUP_INSTALL_MODE=skip`.
+- Production upgrades use controlled jobs (`deployments/kubernetes/cloud-router-migration-job.yaml`) with `SDKWORK_CLOUDROUTER_STARTUP_INSTALL_MODE=skip`.

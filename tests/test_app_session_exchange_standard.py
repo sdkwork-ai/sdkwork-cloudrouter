@@ -22,16 +22,16 @@ class AppSessionExchangeStandardTest(unittest.TestCase):
         contract = (ROOT / "docs" / "schema-registry" / "frontend-field-contracts.yaml").read_text(
             encoding="utf-8"
         )
-        app_api = (ROOT / "crates" / "sdkwork-routes-clawrouter-app-api" / "src" / "routes.rs").read_text(
+        app_api = (ROOT / "crates" / "sdkwork-routes-cloudrouter-app-api" / "src" / "routes.rs").read_text(
             encoding="utf-8"
         )
-        app_sdk_api_index = (ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "api" / "index.ts")
+        app_sdk_api_index = (ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src" / "api" / "index.ts")
         session_service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawroutes-pc-commons"
+            / "sdkwork-cloudroutes-pc-commons"
             / "src"
             / "sessionService.ts"
         )
@@ -65,7 +65,7 @@ class AppSessionExchangeStandardTest(unittest.TestCase):
         self.assertIn("getSdkworkAppbaseAppSdkClient", session_source)
         self.assertIn(".auth.sessions.create", session_source)
         self.assertIn("createAppSession", session_source)
-        self.assertNotIn("getClawRouterAppSdkClient().auth.sessions.create", session_source)
+        self.assertNotIn("getCloudRouterAppSdkClient().auth.sessions.create", session_source)
         self.assertNotIn("grantType: 'session_bridge'", session_source)
         self.assertNotIn("fetch(", session_source)
         self.assertNotIn("axios", session_source)
@@ -74,9 +74,9 @@ class AppSessionExchangeStandardTest(unittest.TestCase):
         commons_root = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawroutes-pc-commons"
+            / "sdkwork-cloudroutes-pc-commons"
             / "src"
         )
         session_service = (commons_root / "sessionService.ts").read_text(encoding="utf-8")
@@ -90,7 +90,7 @@ class AppSessionExchangeStandardTest(unittest.TestCase):
         session_token = session_token_path.read_text(encoding="utf-8")
 
         self.assertIn("storeAppSessionFromResult", session_service)
-        self.assertIn("resetClawRouterSdkClients()", session_service)
+        self.assertIn("resetCloudRouterSdkClients()", session_service)
         self.assertIn("const stored = storeAppSessionFromResult(result);", session_service)
         self.assertIn("type StoredAppSessionToken", session_service)
         self.assertIn("): Promise<StoredAppSessionToken | null>", session_service)
@@ -102,8 +102,8 @@ class AppSessionExchangeStandardTest(unittest.TestCase):
         self.assertIn("readStoredAuthTokens", sdk_clients)
         self.assertIn("const stored = loadStoredAppSessionToken();", sdk_clients)
         self.assertIn("tokenManager.setTokens(tokens);", sdk_clients)
-        self.assertIn("resolveClawRouterSdkTokenManager", sdk_clients)
-        self.assertIn("getClawRouterGlobalTokenManager", sdk_clients)
+        self.assertIn("resolveCloudRouterSdkTokenManager", sdk_clients)
+        self.assertIn("getCloudRouterGlobalTokenManager", sdk_clients)
         self.assertIn("?? APP_API_PREFIX", sdk_clients)
         self.assertIn("?? BACKEND_API_PREFIX", sdk_clients)
         self.assertNotIn("?? API_BASE_URL", sdk_clients)
@@ -131,9 +131,9 @@ class AppSessionExchangeStandardTest(unittest.TestCase):
         portal_session = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawroutes-pc-commons"
+            / "sdkwork-cloudroutes-pc-commons"
             / "src"
             / "portal-session.ts"
         ).read_text(encoding="utf-8")
@@ -143,7 +143,7 @@ class AppSessionExchangeStandardTest(unittest.TestCase):
         self.assertIn("const session = readCurrentPortalSession(result);", portal_session)
         self.assertIn("if (session) {", portal_session)
         self.assertIn("storeAppSessionFromResult(result);", portal_session)
-        self.assertIn("resetClawRouterSdkClients();", portal_session)
+        self.assertIn("resetCloudRouterSdkClients();", portal_session)
         self.assertIn("return session;", portal_session)
         self.assertIn("function readCurrentPortalSession(result: unknown): PortalSessionResponse | null", portal_session)
         self.assertIn(
@@ -155,9 +155,9 @@ class AppSessionExchangeStandardTest(unittest.TestCase):
         api_result = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawroutes-pc-commons"
+            / "sdkwork-cloudroutes-pc-commons"
             / "src"
             / "api-result.ts"
         ).read_text(encoding="utf-8")
@@ -178,12 +178,12 @@ class AppSessionExchangeStandardTest(unittest.TestCase):
         admin_packages_root = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
         )
 
         offenders = []
-        for service_path in sorted(admin_packages_root.glob("sdkwork-clawrouter-pc-admin-*/src/*Service.ts*")):
+        for service_path in sorted(admin_packages_root.glob("sdkwork-cloudrouter-pc-admin-*/src/*Service.ts*")):
             source = service_path.read_text(encoding="utf-8")
             if "getStoredAppSessionToken" in source:
                 offenders.append(service_path.relative_to(ROOT).as_posix())
@@ -217,9 +217,9 @@ class AppSessionExchangeStandardTest(unittest.TestCase):
         commons_root = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawroutes-pc-commons"
+            / "sdkwork-cloudroutes-pc-commons"
             / "src"
         )
         session_service = (commons_root / "sessionService.ts").read_text(encoding="utf-8")
@@ -228,42 +228,42 @@ class AppSessionExchangeStandardTest(unittest.TestCase):
         auth_controller = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "src"
             / "auth"
-            / "clawRouterAuthController.ts"
+            / "cloudRouterAuthController.ts"
         ).read_text(encoding="utf-8")
         auth_routes = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "src"
             / "auth"
-            / "ClawRouterAuthRoutes.tsx"
+            / "CloudRouterAuthRoutes.tsx"
         ).read_text(encoding="utf-8")
         console_layout = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-core"
+            / "sdkwork-cloudrouter-pc-console-core"
             / "src"
             / "ConsoleLayout.tsx"
         ).read_text(encoding="utf-8")
 
         self.assertIn("clearAppSession", session_service)
         self.assertIn("clearStoredAppSessionToken()", session_service)
-        self.assertIn("resetClawRouterSdkClients()", session_service)
+        self.assertIn("resetCloudRouterSdkClients()", session_service)
         self.assertIn("createSdkworkIamRuntimeAuthController", auth_controller)
-        self.assertIn("getRuntime: getClawRouterIamRuntime", auth_controller)
+        self.assertIn("getRuntime: getCloudRouterIamRuntime", auth_controller)
         self.assertIn("SdkworkIamAuthRoutes", auth_routes)
-        self.assertIn("getRuntime={getClawRouterIamRuntime}", auth_routes)
+        self.assertIn("getRuntime={getCloudRouterIamRuntime}", auth_routes)
         self.assertIn("methodUnavailableMessage={AUTH_METHOD_UNAVAILABLE_MESSAGE}", auth_routes)
-        self.assertIn("useClawRouterAuthRuntimeConfig", auth_routes)
+        self.assertIn("useCloudRouterAuthRuntimeConfig", auth_routes)
         self.assertIn("runtimeConfig={runtimeConfig}", auth_routes)
-        self.assertNotIn("getClawRouterIamRuntime().service.auth.sessions.create", auth_controller)
+        self.assertNotIn("getCloudRouterIamRuntime().service.auth.sessions.create", auth_controller)
         self.assertNotIn("signInWithSessionBridge: createSessionBridgeSession", auth_controller)
-        self.assertNotIn("controller={clawRouterAuthController}", auth_routes)
+        self.assertNotIn("controller={cloudRouterAuthController}", auth_routes)
         self.assertIn("handleSignIn", navbar)
         self.assertNotIn("createAppSession", navbar)
         self.assertNotIn("result.code === '2000'", navbar)
@@ -282,25 +282,25 @@ class AppSessionExchangeStandardTest(unittest.TestCase):
         auth_controller = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "src"
             / "auth"
-            / "clawRouterAuthController.ts"
+            / "cloudRouterAuthController.ts"
         ).read_text(encoding="utf-8")
         auth_routes = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "src"
             / "auth"
-            / "ClawRouterAuthRoutes.tsx"
+            / "CloudRouterAuthRoutes.tsx"
         ).read_text(encoding="utf-8")
         navbar = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawroutes-pc-commons"
+            / "sdkwork-cloudroutes-pc-commons"
             / "src"
             / "components"
             / "Navbar.tsx"
@@ -311,10 +311,10 @@ class AppSessionExchangeStandardTest(unittest.TestCase):
         self.assertIn("SdkworkIamAuthRoutes", auth_routes)
         self.assertNotIn("createSessionBridgeSession", auth_controller)
         self.assertNotIn("storeAppSessionFromResult(session)", auth_controller)
-        self.assertNotIn("throw new Error('Claw Router app session is not available.')", auth_controller)
+        self.assertNotIn("throw new Error('Cloud Router app session is not available.')", auth_controller)
         self.assertIn("homePath=\"/console\"", auth_routes)
-        self.assertIn("getRuntime={getClawRouterIamRuntime}", auth_routes)
-        self.assertIn("useClawRouterAuthRuntimeConfig", auth_routes)
+        self.assertIn("getRuntime={getCloudRouterIamRuntime}", auth_routes)
+        self.assertIn("useCloudRouterAuthRuntimeConfig", auth_routes)
         self.assertIn("runtimeConfig={runtimeConfig}", auth_routes)
         self.assertIn("onClick={handleSignIn}", navbar)
         self.assertIn("buildPortalAuthLoginRedirect(location)", navbar)
@@ -338,16 +338,16 @@ class AppSessionExchangeStandardTest(unittest.TestCase):
             )
         )
         openapi = json.loads(
-            (ROOT / "generated" / "openapi" / "clawrouter-app-openapi.json").read_text(
+            (ROOT / "generated" / "openapi" / "cloudrouter-app-openapi.json").read_text(
                 encoding="utf-8"
             )
         )
-        app_sdk_auth = ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "api" / "auth.ts"
+        app_sdk_auth = ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src" / "api" / "auth.ts"
         generated_app_sdk_auth = (
             ROOT
             / "sdks"
-            / "clawrouter-app-sdk"
-            / "clawrouter-app-sdk-typescript"
+            / "cloudrouter-app-sdk"
+            / "cloudrouter-app-sdk-typescript"
             / "generated"
             / "server-openapi"
             / "src"
@@ -357,9 +357,9 @@ class AppSessionExchangeStandardTest(unittest.TestCase):
         session_service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawroutes-pc-commons"
+            / "sdkwork-cloudroutes-pc-commons"
             / "src"
             / "sessionService.ts"
         ).read_text(encoding="utf-8")

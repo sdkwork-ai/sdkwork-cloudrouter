@@ -48,9 +48,9 @@ FORBIDDEN_APPBASE_PATH_NAMES: tuple[str, ...] = (
 )
 
 FORBIDDEN_REUSABLE_IMPORTS: tuple[str, ...] = (
-    "@sdkwork/clawrouter-app-sdk",
-    "@sdkwork/clawrouter-backend-sdk",
-    "@sdkwork/clawrouter-open-sdk",
+    "@sdkwork/cloudrouter-app-sdk",
+    "@sdkwork/cloudrouter-backend-sdk",
+    "@sdkwork/cloudrouter-open-sdk",
 )
 
 SCANNED_SOURCE_SUFFIXES: tuple[str, ...] = (
@@ -560,7 +560,7 @@ class AppbaseCapabilityGuardian:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate sdkwork-appbase reusable capability building-block standards.")
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     parser.add_argument("--manifest", type=Path, default=None, help="appbase capability manifest path")
     args = parser.parse_args()
 

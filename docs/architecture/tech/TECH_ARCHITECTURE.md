@@ -1,14 +1,14 @@
-# SDKWork Claw Router Technical Architecture
+# SDKWork Cloud Router Technical Architecture
 
 Status: active  
 Owner: SDKWork maintainers  
-Application: sdkwork-clawrouter  
+Application: sdkwork-cloudrouter  
 Updated: 2026-07-31
 Specs: `ARCHITECTURE_SPEC.md`, `API_SPEC.md`, `SDK_SPEC.md`, `DATABASE_SPEC.md`, `SECURITY_SPEC.md`, `DEPLOYMENT_SPEC.md`
 
 ## 1. Architecture Overview
 
-Claw Router separates HTTP surfaces, application use cases, routing policy,
+Cloud Router separates HTTP surfaces, application use cases, routing policy,
 provider transport, persistence, and generated SDKs. The core upstream domain
 uses exactly three product aggregates: `UpstreamSupplier`, `UpstreamAccount`,
 and `UpstreamAccountGroup`.
@@ -19,7 +19,7 @@ flowchart LR
     admin["PC admin via Backend SDK"] --> adminGateway["Admin gateway"]
     app["PC console via App SDK"] --> appRoutes["App API route crate"]
     adminGateway --> backendRoutes["Backend API route crate"]
-    ingress --> edge["Claw Router edge runtime"]
+    ingress --> edge["Cloud Router edge runtime"]
     appRoutes --> service["Router service ports and use cases"]
     backendRoutes --> service
     edge --> service
@@ -46,7 +46,7 @@ contracts without adding conditionals to the core selector.
 | Distributed coordination | Redis where the feature contract requires it | Circuit, idempotency, quota, sticky or cluster coordination |
 | Frontend | React and Vite workspace packages | UI calls package-owned service boundaries |
 | API contracts | Authored route/field contracts materialized to OpenAPI | Source of generated SDK families |
-| SDKs | Claw Router app/backend/open SDKs plus declared dependency SDKs such as `@sdkwork/payment-backend-sdk` | No raw business HTTP, manual auth headers, dependency API copies, or generated transport edits in consumers |
+| SDKs | Cloud Router app/backend/open SDKs plus declared dependency SDKs such as `@sdkwork/payment-backend-sdk` | No raw business HTTP, manual auth headers, dependency API copies, or generated transport edits in consumers |
 | Upstream transport | HTTPS provider adapters with bounded request/response behavior | Credentials are attached only after target validation |
 
 PostgreSQL is the sole authoritative server engine in standalone, split-service,
@@ -59,13 +59,13 @@ the router-service SQL infrastructure.
 
 ### API And Ingress
 
-- `crates/sdkwork-routes-clawrouter-app-api` composes authenticated product APIs.
-- `crates/sdkwork-routes-clawrouter-backend-api` composes management APIs.
-- `services/sdkwork-clawrouter-standalone-gateway` is the standalone listener.
-- `services/sdkwork-clawrouter-admin-gateway` is the management listener.
-- `crates/sdkwork-clawrouter-edge-runtime` assembles invocation/runtime behavior.
-- `crates/sdkwork-api-clawrouter-assembly` and
-  `crates/sdkwork-api-clawrouter-standalone-gateway` own standard API assembly
+- `crates/sdkwork-routes-cloudrouter-app-api` composes authenticated product APIs.
+- `crates/sdkwork-routes-cloudrouter-backend-api` composes management APIs.
+- `services/sdkwork-cloudrouter-standalone-gateway` is the standalone listener.
+- `services/sdkwork-cloudrouter-admin-gateway` is the management listener.
+- `crates/sdkwork-cloudrouter-edge-runtime` assembles invocation/runtime behavior.
+- `crates/sdkwork-api-cloudrouter-assembly` and
+  `crates/sdkwork-api-cloudrouter-standalone-gateway` own standard API assembly
   and application ingress composition.
 
 Route modules decode and validate HTTP input, resolve typed request context,
@@ -74,7 +74,7 @@ Problem Details. They do not own SQL or provider calls.
 
 ### Domain And Application
 
-- `services/sdkwork-clawrouter-router-service/src/domain` owns domain values and
+- `services/sdkwork-cloudrouter-router-service/src/domain` owns domain values and
   invariants.
 - `application/upstream_route_selector.rs` owns candidate filtering and
   selection.
@@ -94,9 +94,9 @@ not deep-clone every route or hold a lock across `.await`.
 
 ### Provider Adapters
 
-- `sdkwork-claw-provider-adapter-contract` defines the adapter contract.
-- `sdkwork-claw-provider-adapter-registry` resolves adapter implementations.
-- `sdkwork-claw-provider-adapter-http` owns HTTP transport behavior.
+- `sdkwork-cloudrouter-provider-adapter-contract` defines the adapter contract.
+- `sdkwork-cloudrouter-provider-adapter-registry` resolves adapter implementations.
+- `sdkwork-cloudrouter-provider-adapter-http` owns HTTP transport behavior.
 - `crates/provider-adapters/*` and service adapters implement supplier-specific
   protocol translation.
 
@@ -109,27 +109,27 @@ The `sdkwork-payment` repository owns the Payment backend OpenAPI authority,
 the generated/composed `@sdkwork/payment-backend-sdk`, the
 `@sdkwork/payment-pc-admin-provider` package, provider-account credentials,
 methods, channels, route rules, payment runtime records, webhook events, and
-reconciliation. Claw Router consumes those public boundaries; it does not copy
+reconciliation. Cloud Router consumes those public boundaries; it does not copy
 Payment DTOs, generated transport, controllers, credential forms, or auth
 headers.
 
-The Claw Router admin-payments package owns host composition and one
+The Cloud Router admin-payments package owns host composition and one
 product-specific extension: provider inventory exposed through
-`@sdkwork/clawrouter-backend-sdk`. The current UI route for Payment channels is
+`@sdkwork/cloudrouter-backend-sdk`. The current UI route for Payment channels is
 `/admin/payments/channels`. `/admin/channel` is retired and is neither a route
 nor an ownership authority.
 
 ### Persistence
 
-`services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres`
+`services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres`
 contains remaining PostgreSQL adapters while capability-owned stores migrate to
-`sdkwork-clawrouter-<capability>-repository-sqlx` crates. The migration inventory
+`sdkwork-cloudrouter-<capability>-repository-sqlx` crates. The migration inventory
 is `specs/database-store-migration.manifest.json`.
 
 The database authority chain is:
 
 1. `database/contract/schema.yaml` and module contracts.
-2. `database/ddl/baseline/postgres/0001_clawrouter_baseline.sql`.
+2. `database/ddl/baseline/postgres/0001_cloudrouter_baseline.sql`.
 3. `generated/schema/postgres/schema.sql` and table registry artifacts.
 4. PostgreSQL repository, transaction, migration, and drift verification.
 
@@ -138,7 +138,7 @@ router-service SQLite adapter directory.
 
 ### Chat Persistence
 
-Claw Router is the current system of record for the first-party Chat surface.
+Cloud Router is the current system of record for the first-party Chat surface.
 The authored fragment `docs/schema-registry/tables/ai-chat-runtime.yaml`
 declares six transcript/context tables plus `ai_runtime_invocation` and
 `ai_runtime_usage_link`. All eight are PostgreSQL-only server authorities and
@@ -160,10 +160,10 @@ and `LIMIT page_size + 1`; each bounded page is normalized to chronological
 order before it leaves the repository. It does not issue `OFFSET` or a
 total-count window. The first page therefore contains the latest context, while
 the HTTP boundary accepts only `cursor` and `page_size`, caps pages at 200, and
-the generated Claw Router App SDK exposes `pageInfo.nextCursor` for bounded
+the generated Cloud Router App SDK exposes `pageInfo.nextCursor` for bounded
 earlier-window reads. The mounted `/playground` UI is the composed Agents
 Workbench and uses the separately owned Agents session/message APIs; it does
-not claim to consume the Claw Router Chat history endpoint. The existing scoped
+not claim to consume the Cloud Router Chat history endpoint. The existing scoped
 conversation/message indexes cover the seek prefix.
 Production-like `EXPLAIN (ANALYZE, BUFFERS)` evidence remains a release gate for
 the target PostgreSQL data distribution.
@@ -265,22 +265,22 @@ The contract chain is:
 ```text
 docs/schema-registry/frontend-field-contracts.yaml
   -> generated/api/api-contract-manifest.json
-  -> generated/openapi/clawrouter-*-openapi.json
-  -> generated @sdkwork/clawrouter-*-sdk packages
+  -> generated/openapi/cloudrouter-*-openapi.json
+  -> generated @sdkwork/cloudrouter-*-sdk packages
   -> PC package service boundaries
 ```
 
 Generated SDK output is never hand-edited. Management UI calls
-`@sdkwork/clawrouter-backend-sdk`; product UI calls
-`@sdkwork/clawrouter-app-sdk`; public gateway consumers use
-`@sdkwork/clawrouter-open-sdk`. Missing methods or incorrect DTOs are fixed at
+`@sdkwork/cloudrouter-backend-sdk`; product UI calls
+`@sdkwork/cloudrouter-app-sdk`; public gateway consumers use
+`@sdkwork/cloudrouter-open-sdk`. Missing methods or incorrect DTOs are fixed at
 the contract or implementation authority and regenerated.
 
-Payment is an explicit dependency exception to the Claw-only list above:
+Payment is an explicit dependency exception to the Cloud-only list above:
 Payment-owned management operations use `@sdkwork/payment-backend-sdk` through
 the injected `@sdkwork/payment-service` boundary. The provider-account UI and
 controller come from `@sdkwork/payment-pc-admin-provider`. Only the
-Claw-specific provider inventory list uses the Claw backend SDK. This
+Cloud-specific provider inventory list uses the Cloud backend SDK. This
 owner/dependency split is declared in both component specs and SDK manifests.
 
 ### Frontend Pagination Sessions
@@ -342,17 +342,17 @@ bounded chart projection is required.
   rotation.
 - Secret values are excluded from audit records, route explanations, provider
   errors, traces, and generated read DTOs.
-- Payment provider-account and certificate inputs are also write-only. Claw
+- Payment provider-account and certificate inputs are also write-only. Cloud
   Router never rehydrates them into browser state; the Payment service encrypts
   replacements before PostgreSQL persistence. Read DTOs expose only presence,
   storage mode, masked metadata, and lifecycle state.
 
 ### Payment RBAC
 
-The admin shell permission `clawrouter.admin.access` controls visibility of the
+The admin shell permission `cloudrouter.admin.access` controls visibility of the
 `/admin/payments/**` host route. It does not grant Payment mutations. The
 Payment IAM manifest and backend OpenAPI operation metadata own exact action
-permissions, and the Claw host passes the same effective permission scope into
+permissions, and the Cloud host passes the same effective permission scope into
 the provider UI capability map:
 
 | Action | Required permission |
@@ -392,13 +392,13 @@ negative authorization evidence.
 - Lease ownership loss or expiry fences the generator. Runtime writes fail
   closed, readiness reports unavailable, and a bounded-backoff worker obtains
   and atomically installs a new process lease.
-- Prometheus exports `clawrouter_runtime_id_generator_ready` and
-  `clawrouter_runtime_id_failures_total{operation,reason}`. Failure labels are
+- Prometheus exports `cloudrouter_runtime_id_generator_ready` and
+  `cloudrouter_runtime_id_failures_total{operation,reason}`. Failure labels are
   fixed operational codes for bootstrap, recovery, state, lease, clock,
   sequence, contention, and capacity conditions; raw error text and process
   identity never enter metric labels.
 - Kubernetes injects Pod name and UID for diagnostics. Static
-  `SDKWORK_CLAW_SNOWFLAKE_NODE_ID` values are rejected outside single-process
+  `SDKWORK_CLOUDROUTER_SNOWFLAKE_NODE_ID` values are rejected outside single-process
   desktop development and are never a cluster identity authority.
 - The current platform allocator still runs idempotent registry DDL from its
   allocation path. PostgreSQL requires schema `CREATE` even for `CREATE TABLE
@@ -420,7 +420,7 @@ Every served process uses the shared `sdkwork-web-framework`
 `HttpMetricsRegistry`. App/backend framework requests record route templates,
 operation IDs, surface, method, numeric status, and handler latency; open and
 internal routes that do not enter the framework pipeline are recorded by the
-Claw HTTP router layer. The registry has an exact 4096 request-series ceiling,
+Cloud HTTP router layer. The registry has an exact 4096 request-series ceiling,
 64 fixed contention shards, a 2048-byte label-key bound, and an independent
 128-stage ceiling. Request and pipeline durations use the documented
 `0.005` through `30` second Prometheus histogram buckets. Saturation increments
@@ -483,12 +483,12 @@ run:
 
 ```text
 cargo fmt --all -- --check
-cargo check -p sdkwork-routes-clawrouter-app-api
-cargo check -p sdkwork-routes-clawrouter-backend-api
-cargo check -p sdkwork-clawrouter-edge-runtime
+cargo check -p sdkwork-routes-cloudrouter-app-api
+cargo check -p sdkwork-routes-cloudrouter-backend-api
+cargo check -p sdkwork-cloudrouter-edge-runtime
 python -B -m tools.rust_backend_architecture_guardian
 python -B -m tools.schema_quality_gate
-python -B -m tools.clawrouter_sdk_guardian
+python -B -m tools.cloudrouter_sdk_guardian
 python -B -m tools.sdkwork_standard_alignment_guardian --strict
 node ../sdkwork-specs/tools/check-component-port-bindings.mjs --root .
 node ../sdkwork-specs/tools/check-permission-composition.mjs --root .

@@ -6,7 +6,7 @@
     "displayName": "SDKWork Router Drive Open API",
     "version": "0.1.0",
     "type": "rust-route-crate",
-    "root": "sdkwork-clawrouter/crates/sdkwork-routes-drive-open-api",
+    "root": "sdkwork-cloudrouter/crates/sdkwork-routes-drive-open-api",
     "domain": "drive",
     "capability": "drive",
     "surface": "open-api",

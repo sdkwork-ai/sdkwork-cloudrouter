@@ -3,7 +3,7 @@
 
 ## 1. 接口面总览
 
-`sdkwork-clawrouter` 对外暴露三类稳定接口面：
+`sdkwork-cloudrouter` 对外暴露三类稳定接口面：
 
 | 接口面 | 前缀 | 标准 | 返回 |
 | --- | --- | --- | --- |
@@ -13,7 +13,7 @@
 
 内部接口包括 worker、runtime、event、snapshot，不作为外部长期公共契约。
 
-App/Backend API 的公共路径必须与 Java API 模块完全一致。claw-router 只能切换 `baseUrl`，不得在公共路径中额外插入 `/claw-router`、`/router`、`/sdkwork` 等产品或部署命名空间。详细自由切换标准见 [10-API路径一致性与自由切换架构.md](./10-API路径一致性与自由切换架构.md)。
+App/Backend API 的公共路径必须与 Java API 模块完全一致。cloud-router 只能切换 `baseUrl`，不得在公共路径中额外插入 `/cloud-router`、`/router`、`/sdkwork` 等产品或部署命名空间。详细自由切换标准见 [10-API路径一致性与自由切换架构.md](./10-API路径一致性与自由切换架构.md)。
 
 ## 2. Gateway API
 
@@ -158,7 +158,7 @@ Backend API 权限标准：
 - console 调用 backend 管理接口。
 - admin 调用 app 用户接口完成后台管理。
 - 为 Provider 私有协议复制一套平台 API。
-- 为 claw-router 新增本地专用 App/Backend path，绕过 Java app-api/backend-api 契约。
+- 为 cloud-router 新增本地专用 App/Backend path，绕过 Java app-api/backend-api 契约。
 
 ## 6. 请求上下文标准
 

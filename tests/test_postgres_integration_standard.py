@@ -10,7 +10,7 @@ class PostgresIntegrationStandardTest(unittest.TestCase):
         test_path = (
             ROOT
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "tests"
             / "postgres_transaction_integration.rs"
         )

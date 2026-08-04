@@ -1,6 +1,6 @@
 # Source Configuration
 
-`sdkwork.deployment.config.json` is the source-controlled deployment index for Claw Router.
+`sdkwork.deployment.config.json` is the source-controlled deployment index for Cloud Router.
 It selects one profile under `topology/` for the `standalone|cloud` and
 `development|test|staging|production` matrix. Gateway TOML files and safe database/nginx examples
 also live here. Environment variables and CLI flags are runtime overrides, not the checked-in
@@ -19,16 +19,16 @@ node ../sdkwork-app-topology/scripts/sdkwork-topology.mjs validate --root . --sp
 
 ## Server secret files
 
-[`clawrouter.database.example.toml`](clawrouter.database.example.toml) is the safe server runtime
-template. `SDKWORK_CLAW_CONFIG_FILE` selects the operator-owned materialized copy. The template
+[`cloudrouter.database.example.toml`](cloudrouter.database.example.toml) is the safe server runtime
+template. `SDKWORK_CLOUDROUTER_CONFIG_FILE` selects the operator-owned materialized copy. The template
 contains secret-file references only; the referenced files are provisioned by the platform secret
 manager with owner-only read permissions.
 
 PostgreSQL server runtimes fail startup unless both API key hashing and upstream credential
 encryption are configured. The preferred inputs are:
 
-- `SDKWORK_CLAW_API_KEY_PEPPER_FILE`, or `[security].api_key_pepper_file`.
-- `SDKWORK_CLAW_UPSTREAM_CREDENTIAL_KEY_RING_FILE`, or
+- `SDKWORK_CLOUDROUTER_API_KEY_PEPPER_FILE`, or `[security].api_key_pepper_file`.
+- `SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING_FILE`, or
   `[security].upstream_credential_key_ring_file`.
 
 The upstream credential key ring file is UTF-8 JSON with this shape. Values shown as angle-bracket

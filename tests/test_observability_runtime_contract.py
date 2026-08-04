@@ -10,25 +10,25 @@ DASHBOARD = (
     ROOT
     / "deployments"
     / "grafana"
-    / "claw-router-http-operations-dashboard.json"
+    / "cloud-router-http-operations-dashboard.json"
 )
-ALERTS = ROOT / "deployments" / "prometheus" / "claw-router-alerts.yaml"
+ALERTS = ROOT / "deployments" / "prometheus" / "cloud-router-alerts.yaml"
 RUNBOOK = ROOT / "docs" / "runbooks" / "observability-alert-response.md"
 RUNBOOK_URL = (
-    "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/"
+    "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/"
     "docs/runbooks/observability-alert-response.md"
 )
 
 RUNTIME_METRICS = {
-    "clawrouter_circuit_breaker_degraded_total",
-    "clawrouter_circuit_breaker_rejections_total",
-    "clawrouter_circuit_breaker_transitions_total",
-    "clawrouter_gateway_missing_usage_total",
-    "clawrouter_invocation_total",
-    "clawrouter_usage_settlement_duration_seconds_bucket",
-    "clawrouter_usage_settlement_errors_total",
-    "clawrouter_usage_settlement_items_total",
-    "clawrouter_usage_settlement_runs_total",
+    "cloudrouter_circuit_breaker_degraded_total",
+    "cloudrouter_circuit_breaker_rejections_total",
+    "cloudrouter_circuit_breaker_transitions_total",
+    "cloudrouter_gateway_missing_usage_total",
+    "cloudrouter_invocation_total",
+    "cloudrouter_usage_settlement_duration_seconds_bucket",
+    "cloudrouter_usage_settlement_errors_total",
+    "cloudrouter_usage_settlement_items_total",
+    "cloudrouter_usage_settlement_runs_total",
     "sdkwork_http_requests_labeled_total",
     "sdkwork_http_request_duration_seconds_bucket",
     "sdkwork_http_metric_series_dropped_total",
@@ -41,31 +41,31 @@ EXTERNAL_METRICS = {
     "kube_pod_container_status_last_terminated_reason",
 }
 DASHBOARD_METRICS = {
-    "clawrouter_circuit_breaker_degraded_total",
-    "clawrouter_circuit_breaker_rejections_total",
-    "clawrouter_circuit_breaker_transitions_total",
-    "clawrouter_gateway_missing_usage_total",
-    "clawrouter_invocation_total",
-    "clawrouter_usage_settlement_duration_seconds_bucket",
-    "clawrouter_usage_settlement_errors_total",
-    "clawrouter_usage_settlement_items_total",
-    "clawrouter_usage_settlement_runs_total",
+    "cloudrouter_circuit_breaker_degraded_total",
+    "cloudrouter_circuit_breaker_rejections_total",
+    "cloudrouter_circuit_breaker_transitions_total",
+    "cloudrouter_gateway_missing_usage_total",
+    "cloudrouter_invocation_total",
+    "cloudrouter_usage_settlement_duration_seconds_bucket",
+    "cloudrouter_usage_settlement_errors_total",
+    "cloudrouter_usage_settlement_items_total",
+    "cloudrouter_usage_settlement_runs_total",
     "sdkwork_http_request_duration_seconds_bucket",
     "sdkwork_http_requests_labeled_total",
 }
 METRIC_REFERENCE = re.compile(
-    r"\b(?:clawrouter|sdkwork|http|container|kube)_[a-z0-9_]+"
+    r"\b(?:cloudrouter|sdkwork|http|container|kube)_[a-z0-9_]+"
     r"(?:_total|_bucket|_bytes|_reason)\b|\bup\b"
 )
 
 KUBERNETES_SCRAPE_CONTRACTS = {
-    "claw-router-gateway.yaml": (
+    "cloud-router-gateway.yaml": (
         "18080",
-        "SDKWORK_CLAWROUTER_APPLICATION_PUBLIC_INGRESS_BIND",
+        "SDKWORK_CLOUDROUTER_APPLICATION_PUBLIC_INGRESS_BIND",
     ),
-    "claw-router-admin-api.yaml": ("18081", "SDKWORK_CLAW_ADMIN_API_BIND"),
-    "claw-router-app-api.yaml": ("18082", "SDKWORK_CLAW_APP_API_BIND"),
-    "claw-router-edge.yaml": ("3900", "SDKWORK_CLAW_GATEWAY_BIND"),
+    "cloud-router-admin-api.yaml": ("18081", "SDKWORK_CLOUDROUTER_ADMIN_API_BIND"),
+    "cloud-router-app-api.yaml": ("18082", "SDKWORK_CLOUDROUTER_APP_API_BIND"),
+    "cloud-router-edge.yaml": ("3900", "SDKWORK_CLOUDROUTER_GATEWAY_BIND"),
 }
 
 
@@ -88,8 +88,8 @@ class ObservabilityRuntimeContractTest(unittest.TestCase):
         self.assertEqual(DASHBOARD_METRICS, references)
         serialized = json.dumps(dashboard)
         self.assertNotIn("tenant_id", serialized)
-        self.assertNotIn("clawrouter_slo_", serialized)
-        self.assertNotIn("clawrouter_requests_total", serialized)
+        self.assertNotIn("cloudrouter_slo_", serialized)
+        self.assertNotIn("cloudrouter_requests_total", serialized)
 
         variables = {
             item["name"] for item in dashboard["templating"]["list"]
@@ -134,9 +134,9 @@ class ObservabilityRuntimeContractTest(unittest.TestCase):
         alerts = ALERTS.read_text(encoding="utf-8")
         references = set(METRIC_REFERENCE.findall(alerts))
         self.assertEqual(set(), references - RUNTIME_METRICS - EXTERNAL_METRICS)
-        self.assertNotIn("docs.clawrouter.example.com", alerts)
-        self.assertNotIn("clawrouter_slo_", alerts)
-        self.assertNotIn("clawrouter_requests_total", alerts)
+        self.assertNotIn("docs.cloudrouter.example.com", alerts)
+        self.assertNotIn("cloudrouter_slo_", alerts)
+        self.assertNotIn("cloudrouter_requests_total", alerts)
         self.assertNotIn("tenant_id", alerts)
 
         alert_blocks = alerts.split("      - alert: ")[1:]
@@ -150,13 +150,13 @@ class ObservabilityRuntimeContractTest(unittest.TestCase):
         framework_metrics = (
             WEB_FRAMEWORK_ROOT / "crates" / "sdkwork-web-core" / "src" / "metrics.rs"
         ).read_text(encoding="utf-8")
-        claw_metrics = (
-            ROOT / "crates" / "sdkwork-claw-http" / "src" / "metrics.rs"
+        cloud_metrics = (
+            ROOT / "crates" / "sdkwork-cloudrouter-http" / "src" / "metrics.rs"
         ).read_text(encoding="utf-8")
         openai_usage_metrics = (
             ROOT
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "api"
             / "openai_usage.rs"
@@ -164,7 +164,7 @@ class ObservabilityRuntimeContractTest(unittest.TestCase):
         settlement_metrics = (
             ROOT
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "application"
             / "usage_settlement_worker.rs"
@@ -172,7 +172,7 @@ class ObservabilityRuntimeContractTest(unittest.TestCase):
         circuit_metrics = (
             ROOT
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "application"
             / "invocation"
@@ -181,7 +181,7 @@ class ObservabilityRuntimeContractTest(unittest.TestCase):
         invocation_metrics = (
             ROOT
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "application"
             / "invocation"
@@ -189,7 +189,7 @@ class ObservabilityRuntimeContractTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
         runtime_source = (
             framework_metrics
-            + claw_metrics
+            + cloud_metrics
             + openai_usage_metrics
             + settlement_metrics
             + circuit_metrics
@@ -233,9 +233,9 @@ class ObservabilityRuntimeContractTest(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertIn("sdkwork_http_requests_labeled_total", runbook)
-        self.assertIn("clawrouter_gateway_missing_usage_total", runbook)
-        self.assertIn("clawrouter_usage_settlement_runs_total", runbook)
-        self.assertIn("clawrouter_circuit_breaker_degraded_total", runbook)
+        self.assertIn("cloudrouter_gateway_missing_usage_total", runbook)
+        self.assertIn("cloudrouter_usage_settlement_runs_total", runbook)
+        self.assertIn("cloudrouter_circuit_breaker_degraded_total", runbook)
         self.assertIn("provider_usage_missing", runbook)
         self.assertIn("OOMKilled", runbook)
         self.assertIn(RUNBOOK.name, index)

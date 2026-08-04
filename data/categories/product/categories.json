@@ -5,8 +5,8 @@
   "target": "commerce_product_category",
   "installPolicy": {
     "defaultEnabled": false,
-    "configKey": "SDKWORK_CLAW_INSTALL_CATEGORY_SEEDS",
-    "selectableDatasetsKey": "SDKWORK_CLAW_INSTALL_CATEGORY_SEED_DATASETS"
+    "configKey": "SDKWORK_CLOUDROUTER_INSTALL_CATEGORY_SEEDS",
+    "selectableDatasetsKey": "SDKWORK_CLOUDROUTER_INSTALL_CATEGORY_SEED_DATASETS"
   },
   "source": {
     "alignment": "wechat-shop-industry-taxonomy-style",

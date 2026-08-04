@@ -6,15 +6,15 @@ ROOT = Path(__file__).resolve().parents[1]
 CONSOLE_SETTLEMENTS_PACKAGE = (
     ROOT
     / "apps"
-    / "sdkwork-clawrouter-pc"
+    / "sdkwork-cloudrouter-pc"
     / "packages"
-    / "sdkwork-clawrouter-pc-console-settlements"
+    / "sdkwork-cloudrouter-pc-console-settlements"
 )
 
 
 def skip_unless_console_settlements_package(test_case: unittest.TestCase) -> None:
     if not CONSOLE_SETTLEMENTS_PACKAGE.exists():
-        test_case.skipTest("console settlements package removed from claw router PC surface")
+        test_case.skipTest("console settlements package removed from cloud router PC surface")
 
 
 class SettlementsRuntimeStandardTest(unittest.TestCase):
@@ -22,28 +22,28 @@ class SettlementsRuntimeStandardTest(unittest.TestCase):
         settlements_port = (
             ROOT
             / "crates"
-            / "sdkwork-clawrouter-settlements-dashboard-repository-sqlx"
+            / "sdkwork-cloudrouter-settlements-dashboard-repository-sqlx"
             / "src"
             / "types.rs"
         ).read_text(encoding="utf-8")
         repository_mapping = (
             ROOT
             / "crates"
-            / "sdkwork-clawrouter-settlements-dashboard-repository-sqlx"
+            / "sdkwork-cloudrouter-settlements-dashboard-repository-sqlx"
             / "src"
             / "mapping.rs"
         ).read_text(encoding="utf-8")
         sqlite_store = (
             ROOT
             / "crates"
-            / "sdkwork-clawrouter-settlements-dashboard-repository-sqlx"
+            / "sdkwork-cloudrouter-settlements-dashboard-repository-sqlx"
             / "src"
             / "sqlite.rs"
         ).read_text(encoding="utf-8")
         postgres_store = (
             ROOT
             / "crates"
-            / "sdkwork-clawrouter-settlements-dashboard-repository-sqlx"
+            / "sdkwork-cloudrouter-settlements-dashboard-repository-sqlx"
             / "src"
             / "postgres.rs"
         ).read_text(encoding="utf-8")
@@ -118,18 +118,18 @@ class SettlementsRuntimeStandardTest(unittest.TestCase):
         service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-settlements"
+            / "sdkwork-cloudrouter-pc-console-settlements"
             / "src"
             / "settlementsService.ts"
         ).read_text(encoding="utf-8")
         view = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-settlements"
+            / "sdkwork-cloudrouter-pc-console-settlements"
             / "src"
             / "SettlementsView.tsx"
         ).read_text(encoding="utf-8")
@@ -140,10 +140,10 @@ class SettlementsRuntimeStandardTest(unittest.TestCase):
             self.assertNotIn(f"readNumber(item, '{field}')", service)
         self.assertIn("readDecimalString", service)
         self.assertIn(
-            "getClawRouterAppSdkClient().billing.settlements.dashboard.list(",
+            "getCloudRouterAppSdkClient().billing.settlements.dashboard.list(",
             service,
         )
-        self.assertNotIn("getClawRouterAppSdkClient().router.fetchDashboardData", service)
+        self.assertNotIn("getCloudRouterAppSdkClient().router.fetchDashboardData", service)
         self.assertNotIn("fetch('/app/v3/api", service)
         self.assertNotIn("axios", service)
 
@@ -160,9 +160,9 @@ class SettlementsRuntimeStandardTest(unittest.TestCase):
         view = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-settlements"
+            / "sdkwork-cloudrouter-pc-console-settlements"
             / "src"
             / "SettlementsView.tsx"
         ).read_text(encoding="utf-8")
@@ -179,27 +179,27 @@ class SettlementsRuntimeStandardTest(unittest.TestCase):
         view = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-settlements"
+            / "sdkwork-cloudrouter-pc-console-settlements"
             / "src"
             / "SettlementsView.tsx"
         ).read_text(encoding="utf-8")
         service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-settlements"
+            / "sdkwork-cloudrouter-pc-console-settlements"
             / "src"
             / "settlementsService.ts"
         ).read_text(encoding="utf-8")
         i18n = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-i18n"
+            / "sdkwork-cloudrouter-pc-i18n"
             / "src"
             / "index.ts"
         ).read_text(encoding="utf-8")
@@ -232,18 +232,18 @@ class SettlementsRuntimeStandardTest(unittest.TestCase):
         view = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-settlements"
+            / "sdkwork-cloudrouter-pc-console-settlements"
             / "src"
             / "SettlementsView.tsx"
         ).read_text(encoding="utf-8")
         service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-settlements"
+            / "sdkwork-cloudrouter-pc-console-settlements"
             / "src"
             / "settlementsService.ts"
         ).read_text(encoding="utf-8")
@@ -252,8 +252,8 @@ class SettlementsRuntimeStandardTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
         settlement_operation_marker = (
             "  - route: /console/settlements\n"
-            "    source: apps/sdkwork-clawrouter-pc/packages/"
-            "sdkwork-clawrouter-pc-console-settlements/src/settlementsService.ts\n"
+            "    source: apps/sdkwork-cloudrouter-pc/packages/"
+            "sdkwork-cloudrouter-pc-console-settlements/src/settlementsService.ts\n"
             "    operation: fetchDashboardData"
         )
         settlement_operation_start = contract.index(settlement_operation_marker)
@@ -294,17 +294,17 @@ class SettlementsRuntimeStandardTest(unittest.TestCase):
             ROOT / "docs" / "schema-registry" / "frontend-field-contracts.yaml"
         ).read_text(encoding="utf-8")
         openapi = (
-            ROOT / "generated" / "openapi" / "clawrouter-app-openapi.json"
+            ROOT / "generated" / "openapi" / "cloudrouter-app-openapi.json"
         ).read_text(encoding="utf-8")
         sdk_billing = (
-            ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "api" / "billing.ts"
+            ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src" / "api" / "billing.ts"
         ).read_text(encoding="utf-8")
         service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-settlements"
+            / "sdkwork-cloudrouter-pc-console-settlements"
             / "src"
             / "settlementsService.ts"
         ).read_text(encoding="utf-8")
@@ -316,10 +316,10 @@ class SettlementsRuntimeStandardTest(unittest.TestCase):
         self.assertIn("async list(params?: BillingSettlementsDashboardListParams): Promise<SettlementsDashboardListResult>", sdk_billing)
         self.assertIn("get<SettlementsDashboardListResult>", sdk_billing)
 
-        response_path = ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "types" / "settlement-dashboard-response.ts"
-        chart_path = ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "types" / "settlement-chart-point.ts"
-        bill_path = ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "types" / "settlement-bill.ts"
-        result_path = ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "types" / "settlements-dashboard-list-result.ts"
+        response_path = ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src" / "types" / "settlement-dashboard-response.ts"
+        chart_path = ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src" / "types" / "settlement-chart-point.ts"
+        bill_path = ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src" / "types" / "settlement-bill.ts"
+        result_path = ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src" / "types" / "settlements-dashboard-list-result.ts"
         self.assertTrue(response_path.exists())
         self.assertTrue(chart_path.exists())
         self.assertTrue(bill_path.exists())

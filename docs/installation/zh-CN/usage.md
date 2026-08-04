@@ -1,6 +1,6 @@
 # 使用教程
 
-本教程假设 Claw Router 已完成初始化并成功启动。
+本教程假设 Cloud Router 已完成初始化并成功启动。
 
 ## 1. 访问入口
 
@@ -116,11 +116,11 @@ portal/dist/sdk-archives
 标准预构建包名示例：
 
 ```text
-sdkwork-clawrouter-app-sdk-typescript-0.1.0.zip
-sdkwork-clawrouter-backend-sdk-typescript-0.1.0.zip
+sdkwork-cloudrouter-app-sdk-typescript-0.1.0.zip
+sdkwork-cloudrouter-backend-sdk-typescript-0.1.0.zip
 ```
 
-SDK 包版本独立于 Claw Router release 版本。以 SDK package 自身 `package.json` 版本为准。
+SDK 包版本独立于 Cloud Router release 版本。以 SDK package 自身 `package.json` 版本为准。
 
 ## 7. 常见操作顺序
 
@@ -137,18 +137,18 @@ SDK 包版本独立于 Claw Router release 版本。以 SDK package 自身 `pack
 
 ## 8. 运维检查
 
-下面的命令假设 `clawrouterctl` 已在 `PATH` 中。若从 release 包解压目录执行，Linux/macOS 使用 `./bin/clawrouterctl`，Windows 使用 `.\bin\clawrouterctl.exe`。
+下面的命令假设 `cloudrouterctl` 已在 `PATH` 中。若从 release 包解压目录执行，Linux/macOS 使用 `./bin/cloudrouterctl`，Windows 使用 `.\bin\cloudrouterctl.exe`。
 
 查看安装状态：
 
 ```bash
-clawrouterctl status
+cloudrouterctl status
 ```
 
 刷新模型目录：
 
 ```bash
-clawrouterctl refresh-catalog --force
+cloudrouterctl refresh-catalog --force
 ```
 
 查看 readiness：

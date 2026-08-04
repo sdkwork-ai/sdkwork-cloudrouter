@@ -10,7 +10,7 @@ class UsageRuntimeStandardTest(unittest.TestCase):
         usage_port = (
             ROOT
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "ports"
             / "usage_logs_read_store.rs"
@@ -18,7 +18,7 @@ class UsageRuntimeStandardTest(unittest.TestCase):
         postgres_store = (
             ROOT
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "infrastructure"
             / "sql"
@@ -28,7 +28,7 @@ class UsageRuntimeStandardTest(unittest.TestCase):
         postgres_admin_record_store = (
             ROOT
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "infrastructure"
             / "sql"
@@ -97,17 +97,17 @@ class UsageRuntimeStandardTest(unittest.TestCase):
         usage_service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-usage"
+            / "sdkwork-cloudrouter-pc-console-usage"
             / "src"
             / "usageService.ts"
         ).read_text(encoding="utf-8")
         usage_sdk_type = (
             ROOT
             / "sdks"
-            / "clawrouter-app-sdk"
-            / "clawrouter-app-sdk-typescript"
+            / "cloudrouter-app-sdk"
+            / "cloudrouter-app-sdk-typescript"
             / "src"
             / "types"
             / "usage-log-item.ts"
@@ -115,27 +115,27 @@ class UsageRuntimeStandardTest(unittest.TestCase):
         usage_view = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-usage"
+            / "sdkwork-cloudrouter-pc-console-usage"
             / "src"
             / "UsageView.tsx"
         ).read_text(encoding="utf-8")
         record_service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-admin-record"
+            / "sdkwork-cloudrouter-pc-admin-record"
             / "src"
             / "recordService.ts"
         ).read_text(encoding="utf-8")
         record_view = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-admin-record"
+            / "sdkwork-cloudrouter-pc-admin-record"
             / "src"
             / "index.tsx"
         ).read_text(encoding="utf-8")

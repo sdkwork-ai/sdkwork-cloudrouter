@@ -10,7 +10,7 @@ This repository adopts the shared SDKWork runtime topology framework.
 
 ## Archetype
 
-`application-http-gateway` - Claw Router exposes three **application** HTTP
+`application-http-gateway` - Cloud Router exposes three **application** HTTP
 surfaces (open gateway `/v1`, backend `/backend/v3/api`, app `/app/v3/api`)
 through the edge server or split upstream services. Shared IAM and appbase SDKs
 use **platform.api-gateway**.
@@ -26,7 +26,7 @@ deployment.
 
 ## Command Matrix (`package.json`)
 
-Canonical topology commands use `scripts/claw-router-dev.mjs` with explicit
+Canonical topology commands use `scripts/cloud-router-dev.mjs` with explicit
 `--deployment-profile`, `--service-layout`, `--target`, and `--database` flags.
 Authoritative mapping is also declared in `specs/topology.spec.json` ->
 `scripts.pnpm`.
@@ -43,7 +43,7 @@ Authoritative mapping is also declared in `specs/topology.spec.json` ->
 | `pnpm topology:plan:server` | standalone | plan | postgres |
 
 `pnpm dev`, `pnpm dev:browser`, and `pnpm dev:desktop` delegate to the canonical
-standard profile scripts above. Product-prefixed `clawrouter:*`, platform-first
+standard profile scripts above. Product-prefixed `cloudrouter:*`, platform-first
 `desktop:*`, and tool-first `tauri:*` scripts are retired.
 
 Gateway packaging (cloud config bundle only, binary owned by `sdkwork-api-cloud-gateway`):
@@ -52,7 +52,7 @@ Gateway packaging (cloud config bundle only, binary owned by `sdkwork-api-cloud-
 | --- | --- |
 | `pnpm gateway:matrix` | print all packaging targets from topology spec |
 | `pnpm gateway:matrix:cloud` | print `platform-config-bundle` targets |
-| `pnpm gateway:package:cloud` | bundle `etc/sdkwork-api-cloud-gateway.claw-router.*.toml` |
+| `pnpm gateway:package:cloud` | bundle `etc/sdkwork-api-cloud-gateway.cloud-router.*.toml` |
 | `pnpm topology:validate` | validate `specs/topology.spec.json` |
 
 ## Local URLs (standalone dev)
@@ -66,10 +66,10 @@ Gateway packaging (cloud config bundle only, binary owned by `sdkwork-api-cloud-
 
 Client env keys:
 
-- `VITE_SDKWORK_CLAW_ROUTER_APPLICATION_PUBLIC_HTTP_URL` - app SDK (`/app/v3/api`)
-- `VITE_SDKWORK_CLAW_ROUTER_APPLICATION_BACKEND_HTTP_URL` - backend SDK (`/backend/v3/api`)
-- `VITE_SDKWORK_CLAW_ROUTER_APPLICATION_OPEN_HTTP_URL` - open SDK (`/v1`)
-- `VITE_SDKWORK_CLAW_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL` - platform / IAM SDKs
+- `VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL` - app SDK (`/app/v3/api`)
+- `VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_BACKEND_HTTP_URL` - backend SDK (`/backend/v3/api`)
+- `VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_OPEN_HTTP_URL` - open SDK (`/v1`)
+- `VITE_SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL` - platform / IAM SDKs
 
 `start-workspace.mjs` health-gates the portal dev server: backend processes
 start first, required `/healthz` endpoints must pass, then Vite starts.
@@ -79,5 +79,5 @@ route crates or feature packages.
 
 Cloud gateway config bundles (for `cloud` profiles):
 
-- `etc/sdkwork-api-cloud-gateway.claw-router.development.toml`
-- `etc/sdkwork-api-cloud-gateway.claw-router.production.toml`
+- `etc/sdkwork-api-cloud-gateway.cloud-router.development.toml`
+- `etc/sdkwork-api-cloud-gateway.cloud-router.production.toml`

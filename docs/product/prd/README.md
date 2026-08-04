@@ -16,5 +16,5 @@ See `DOCUMENTATION_SPEC.md` section 2.2.
 
 ## Superseded Stable Paths
 
-- [PRD-01-prd-sdkwork-clawrouter.md](PRD-01-prd-sdkwork-clawrouter.md) is a
+- [PRD-01-prd-sdkwork-cloudrouter.md](PRD-01-prd-sdkwork-cloudrouter.md) is a
   redirect stub retained for existing links. It is not an active PRD shard.

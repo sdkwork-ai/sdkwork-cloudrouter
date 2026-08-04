@@ -1,0 +1,23 @@
+{
+  "name": "@sdkwork/cloudrouter-pc-admin-payments",
+  "version": "0.0.1",
+  "private": true,
+  "license": "SEE LICENSE IN ../../../../LICENSE",
+  "type": "module",
+  "main": "src/index.tsx",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sdkwork/cloudroutes-pc-commons": "workspace:*",
+    "@sdkwork/payment-pc-admin-provider": "workspace:*",
+    "@sdkwork/payment-service": "workspace:*",
+    "lucide-react": "catalog:",
+    "react": "catalog:",
+    "react-i18next": "catalog:"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "typescript": "catalog:"
+  }
+}

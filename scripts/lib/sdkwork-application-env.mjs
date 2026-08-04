@@ -9,7 +9,7 @@ import {
 } from './merge-env-file.mjs';
 
 /**
- * SDKWork application env profile standard (claw-router implementation).
+ * SDKWork application env profile standard (cloud-router implementation).
  *
  * Checked-in templates:  .env.{profile}.example
  * Host profile files:    .env.{profile}

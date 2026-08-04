@@ -1,15 +1,15 @@
-# SDKWork Claw Router Commercial Pricing Model
+# SDKWork Cloud Router Commercial Pricing Model
 
 **Document Version:** 1.0
 **Last Updated:** 2026-06-27
 **Status:** active
 **Owner:** SDKWork commercial team
-**Application:** sdkwork-clawrouter
+**Application:** sdkwork-cloudrouter
 
 ## 1. Overview
 
 This document defines the commercial authorization pricing model for SDKWork
-Claw Router. Claw Router source is licensed under
+Cloud Router. Cloud Router source is licensed under
 `AGPL-3.0-or-later AND LicenseRef-SDKWork-Commercial-Restriction`. Commercial use
 requires prior written authorization from SDKWork, granted under one of the
 commercial tiers described here.
@@ -25,7 +25,7 @@ Taxes, including VAT, GST, and withholding tax, are added where applicable.
 
 ## 2. License Tiers
 
-Claw Router is offered in four tiers. Each tier maps to a specific commercial
+Cloud Router is offered in four tiers. Each tier maps to a specific commercial
 authorization scope and a different level of platform capability, support, and
 service-level commitment.
 
@@ -69,7 +69,7 @@ service-level commitment.
 ### 2.4 OEM / White-label License
 
 - **License:** One-time license fee plus annual royalty.
-- **Use case:** Vendors that embed Claw Router inside a commercial product,
+- **Use case:** Vendors that embed Cloud Router inside a commercial product,
   rebrand it, or redistribute it as part of a managed offering to unlimited
   tenants.
 - **Capability scope:** Everything in Enterprise Edition, plus white-label
@@ -93,13 +93,13 @@ multi-year contracts, and OEM terms are negotiated separately.
 Notes:
 
 - Included tokens are shared across all tenants on the licensed instance and
-  cover the sum of input and output tokens metered by Claw Router.
+  cover the sum of input and output tokens metered by Cloud Router.
 - Overage tokens are billed at the end of each billing cycle based on actual
   metered usage recorded in `ai_usage`.
 - Enterprise annual prepay applies the 15% discount to the base subscription
   fee only; overage tokens are billed at the published overage rate.
 - OEM royalty is calculated as 5% of gross revenue attributable to the
-  embedded Claw Router functionality, reported quarterly and audited annually.
+  embedded Cloud Router functionality, reported quarterly and audited annually.
 
 ## 4. Token Metering
 
@@ -107,7 +107,7 @@ Notes:
 
 - Tokens are counted using the OpenAI `tiktoken` tokenizer for OpenAI-compatible
   models. For models that expose their own tokenizer through the provider relay,
-  Claw Router uses the provider-reported token counts when available and falls
+  Cloud Router uses the provider-reported token counts when available and falls
   back to `tiktoken` estimation otherwise.
 - Billable tokens are the sum of input (prompt) and output (completion) tokens
   for each successful request. The `usage` object returned by the
@@ -117,7 +117,7 @@ Notes:
 
 ### 4.2 Model multipliers
 
-Different models carry different resource and provider cost. Claw Router
+Different models carry different resource and provider cost. Cloud Router
 applies a model multiplier to the raw token count before billing so that
 pricing reflects actual cost of goods sold. The multiplied value is the
 billable token count recorded in `ai_usage`.
@@ -130,7 +130,7 @@ billable token count recorded in `ai_usage`.
 | Other hosted frontier models | 1.0x | Default |
 | Self-deployed / open-weight models | 0.1x | No provider pass-through cost |
 
-Model multipliers are versioned and published in the model catalog. Claw
+Model multipliers are versioned and published in the model catalog. Cloud
 Router records the multiplier applied to each request in the usage fact row so
 billing is auditable.
 
@@ -138,9 +138,9 @@ billing is auditable.
 
 The following requests are not counted toward billable token usage:
 
-- Requests that return an HTTP 5xx error caused by Claw Router or an upstream
+- Requests that return an HTTP 5xx error caused by Cloud Router or an upstream
   provider fault, when no successful completion is returned.
-- Requests rejected by Claw Router rate limiting (HTTP 429) before any
+- Requests rejected by Cloud Router rate limiting (HTTP 429) before any
   provider call is made.
 - Requests rejected by authentication, authorization, or firewall rules
   before any provider call is made.
@@ -189,7 +189,7 @@ and payable within 30 days of invoice.
   days of the first paid billing cycle, provided the customer has not exceeded
   110% of the included monthly token allowance. Token overage charges are
   non-refundable.
-- **Service-level shortfall:** When Claw Router fails to meet the committed
+- **Service-level shortfall:** When Cloud Router fails to meet the committed
   monthly uptime SLA, the customer is eligible for service credits according
   to the policy in [docs/legal/SLA.md](../legal/SLA.md). Service credits are
   applied to the next billing cycle and are not paid out as cash.

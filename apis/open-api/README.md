@@ -2,11 +2,11 @@
 
 ## Purpose
 
-Author-owned open-api contract inputs for SDKWork Claw Router gateway and public integration surfaces.
+Author-owned open-api contract inputs for SDKWork Cloud Router gateway and public integration surfaces.
 
 ## Owner
 
-SDKWork Claw Router API surface owners.
+SDKWork Cloud Router API surface owners.
 
 ## Allowed Content
 

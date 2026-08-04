@@ -1,6 +1,6 @@
 schemaVersion: 1
 kind: sdkwork.docs.index
-repository: sdkwork-clawrouter
+repository: sdkwork-cloudrouter
 canon:
   prd: docs/product/prd/PRD.md
   techArchitecture: docs/architecture/tech/TECH_ARCHITECTURE.md
@@ -18,67 +18,67 @@ entries:
     path: docs/product/prd/PRD.md
     kind: prd
     status: active
-    owner: clawrouter-platform
-    title: SDKWork Claw Router Product Requirements
+    owner: cloudrouter-platform
+    title: SDKWork Cloud Router Product Requirements
   - id: PRD-0002
     path: docs/product/prd/PRD-00-design.md
     kind: prd
     status: active
-    owner: clawrouter-platform
-    title: Claw Router design shard
+    owner: cloudrouter-platform
+    title: Cloud Router design shard
   - id: PRD-0003
-    path: docs/product/prd/PRD-01-prd-sdkwork-clawrouter.md
+    path: docs/product/prd/PRD-01-prd-sdkwork-cloudrouter.md
     kind: prd
     status: superseded
-    owner: clawrouter-platform
+    owner: cloudrouter-platform
     title: Superseded detailed PRD redirect
   - id: PRD-0004
     path: docs/product/prd/PRD-UPSTREAM-SUPPLIER.md
     kind: prd
     status: active
-    owner: clawrouter-platform
+    owner: cloudrouter-platform
     title: Upstream supplier management
   - id: TECH-0001
     path: docs/architecture/tech/TECH_ARCHITECTURE.md
     kind: tech
     status: active
-    owner: clawrouter-platform
+    owner: cloudrouter-platform
     title: Technical architecture index
   - id: TECH-0012
     path: docs/architecture/tech/TECH-12-featuresmodules.md
     kind: tech
     status: superseded
-    owner: clawrouter-platform
+    owner: cloudrouter-platform
     title: Superseded frontend and database mapping redirect
   - id: TECH-0013
     path: docs/architecture/tech/TECH-13-schemaregistry-design.md
     kind: tech
     status: superseded
-    owner: clawrouter-platform
+    owner: cloudrouter-platform
     title: Superseded schema registry design redirect
   - id: TECH-0016
     path: docs/architecture/tech/TECH-16-design.md
     kind: tech
     status: superseded
-    owner: clawrouter-platform
+    owner: cloudrouter-platform
     title: Superseded frontend contract review redirect
   - id: TECH-USAGE-EN
     path: docs/architecture/tech/TECH-usage.md
     kind: tech
     status: superseded
-    owner: clawrouter-release
+    owner: cloudrouter-release
     title: Superseded English usage redirect
   - id: TECH-USAGE-ZH
     path: docs/architecture/tech/TECH-usage-2.md
     kind: tech
     status: superseded
-    owner: clawrouter-release
+    owner: cloudrouter-release
     title: Superseded Chinese usage redirect
   - id: AUDIT-0001
     path: docs/standard-alignment-audit.md
     kind: audit
     status: superseded
-    owner: clawrouter-platform
+    owner: cloudrouter-platform
     title: Historical SDKWork standard alignment audit
   - id: REQ-2026-0001
     path: docs/product/requirements/REQ-2026-0001-commercial-production-readiness.md
@@ -96,13 +96,13 @@ entries:
     path: docs/architecture/decisions/ADR-20260728-standardize-upstream-supplier-routing.md
     kind: adr
     status: accepted
-    owner: clawrouter-platform
+    owner: cloudrouter-platform
     title: Standardize upstream supplier routing
   - id: ADR-20260730
     path: docs/architecture/decisions/ADR-20260730-own-chat-runtime-postgres-authority.md
     kind: adr
     status: accepted
-    owner: clawrouter-platform
+    owner: cloudrouter-platform
     title: Own Chat runtime PostgreSQL authority
   - id: PLAN-2026-0001
     path: docs/engineering/plans/PLAN-2026-0001-commercial-production-readiness.md
@@ -132,120 +132,120 @@ entries:
     path: docs/schema-registry/table-catalog.md
     kind: schema
     status: active
-    owner: clawrouter-data
+    owner: cloudrouter-data
     title: Schema registry table catalog
   - id: OPS-0001
     path: deployments/runbooks/production-operations.md
     kind: runbook
     status: active
-    owner: clawrouter-release
+    owner: cloudrouter-release
     title: Production operations runbook
   - id: OPS-0002
     path: docs/runbooks/provider-outage.md
     kind: runbook
     status: active
-    owner: clawrouter-gateway
+    owner: cloudrouter-gateway
     title: Provider upstream outage runbook
   - id: OPS-0003
     path: docs/runbooks/token-api-key-rotation.md
     kind: runbook
     status: active
-    owner: clawrouter-security
+    owner: cloudrouter-security
     title: Token / API key rotation runbook
   - id: OPS-0004
     path: docs/runbooks/tenant-isolation-incident.md
     kind: runbook
     status: active
-    owner: clawrouter-security
+    owner: cloudrouter-security
     title: Tenant isolation incident runbook
   - id: OPS-0005
     path: docs/runbooks/database-migration-rollback.md
     kind: runbook
     status: active
-    owner: clawrouter-data
+    owner: cloudrouter-data
     title: Database migration rollback runbook
   - id: OPS-0006
     path: docs/runbooks/rate-limit-circuit-break.md
     kind: runbook
     status: active
-    owner: clawrouter-gateway
+    owner: cloudrouter-gateway
     title: Rate limit / circuit break tuning runbook
   - id: OPS-0007
     path: docs/runbooks/audit-log-investigation.md
     kind: runbook
     status: active
-    owner: clawrouter-security
+    owner: cloudrouter-security
     title: Audit log investigation runbook
   - id: OPS-0008
     path: docs/runbooks/redis-failover.md
     kind: runbook
     status: active
-    owner: clawrouter-release
+    owner: cloudrouter-release
     title: Redis failover runbook
   - id: OPS-0009
     path: docs/runbooks/postgresql-ha-failover.md
     kind: runbook
     status: active
-    owner: clawrouter-release
+    owner: cloudrouter-release
     title: PostgreSQL HA failover runbook
   - id: SEC-0001
     path: SECURITY.md
     kind: policy
     status: active
-    owner: clawrouter-security
+    owner: cloudrouter-security
     title: Security policy
   - id: CONTRIB-0001
     path: CONTRIBUTING.md
     kind: policy
     status: active
-    owner: clawrouter-platform
+    owner: cloudrouter-platform
     title: Contributing guide
   - id: REL-0001
     path: docs/release/CHANGELOG.md
     kind: changelog
     status: active
-    owner: clawrouter-release
+    owner: cloudrouter-release
     title: Release changelog
   - id: REL-0002
     path: docs/release/VERSION.md
     kind: version
     status: active
-    owner: clawrouter-release
+    owner: cloudrouter-release
     title: Current release version
   - id: INSTALL-ZH-0001
     path: docs/installation/zh-CN/
     kind: guide
     status: active
-    owner: clawrouter-release
+    owner: cloudrouter-release
     title: Installation guides (Simplified Chinese)
   - id: INSTALL-EN-0001
     path: docs/installation/en-US/
     kind: guide
     status: active
-    owner: clawrouter-release
+    owner: cloudrouter-release
     title: Installation guides (English)
   - id: COMMERCIAL-0001
     path: docs/commercial/PRICING.md
     kind: commercial
     status: active
-    owner: clawrouter-commercial
+    owner: cloudrouter-commercial
     title: Commercial pricing model
   - id: LEGAL-0001
     path: docs/legal/SLA.md
     kind: legal
     status: active
-    owner: clawrouter-commercial
+    owner: cloudrouter-commercial
     title: Service Level Agreement
   - id: LEGAL-0002
     path: docs/legal/TIER_MATRIX.md
     kind: legal
     status: active
-    owner: clawrouter-commercial
+    owner: cloudrouter-commercial
     title: Edition tier matrix
 domains:
   - id: gateway
     name: Gateway
-    owner: clawrouter-gateway
+    owner: cloudrouter-gateway
     description: OpenAI-compatible gateway, provider relay, dispatch executor, circuit breaker, idempotency
     documents:
       - TECH-0001
@@ -254,13 +254,13 @@ domains:
       - OPS-0006
   - id: commerce
     name: Commerce
-    owner: clawrouter-data
+    owner: cloudrouter-data
     description: Billing ledger, usage settlement, payment adapter, financial compliance
     documents:
       - SCHEMA-0001
   - id: iam
     name: IAM
-    owner: clawrouter-security
+    owner: cloudrouter-security
     description: Authentication, tenant isolation, signing keys, web request principal
     documents:
       - SEC-0001
@@ -268,7 +268,7 @@ domains:
       - OPS-0004
   - id: security
     name: Security
-    owner: clawrouter-security
+    owner: cloudrouter-security
     description: Hardening defaults, supply chain, artifact signing, SBOM, vulnerability response
     documents:
       - SEC-0001
@@ -278,7 +278,7 @@ domains:
       - OPS-0007
   - id: observability
     name: Observability
-    owner: clawrouter-observability
+    owner: cloudrouter-observability
     description: Metrics, tracing, structured logs, SLO/SLI, alerting
     documents:
       - TECH-0001
@@ -290,7 +290,7 @@ domains:
       - OPS-0009
   - id: release
     name: Release
-    owner: clawrouter-release
+    owner: cloudrouter-release
     description: Versioning, changelog, package matrix, signing, SBOM, dependabot
     documents:
       - REL-0001
@@ -299,7 +299,7 @@ domains:
       - INSTALL-EN-0001
   - id: deployment
     name: Deployment
-    owner: clawrouter-release
+    owner: cloudrouter-release
     description: Kubernetes manifests, nginx, installer CLI, topology configs
     documents:
       - OPS-0001
@@ -308,13 +308,13 @@ domains:
       - OPS-0009
   - id: frontend
     name: Frontend
-    owner: clawrouter-frontend
+    owner: cloudrouter-frontend
     description: React PC application, console, admin, playground, i18n, theming
     documents:
       - TECH-0001
   - id: chat
     name: Chat
-    owner: clawrouter-platform
+    owner: cloudrouter-platform
     description: First-party conversation transcript, context snapshots, runtime references, and usage linkage
     documents:
       - PRD-0001
@@ -322,19 +322,19 @@ domains:
       - ADR-20260730
   - id: docs
     name: Documentation
-    owner: clawrouter-docs
+    owner: cloudrouter-docs
     description: Documentation index, contributing guide, code of conduct
     documents:
       - CONTRIB-0001
   - id: commercial
     name: Commercial
-    owner: clawrouter-commercial
+    owner: cloudrouter-commercial
     description: Commercial pricing, license tiers, token metering, payment and refund policy
     documents:
       - COMMERCIAL-0001
   - id: legal
     name: Legal
-    owner: clawrouter-commercial
+    owner: cloudrouter-commercial
     description: Service Level Agreement, edition tier matrix, and commercial legal terms
     documents:
       - LEGAL-0001

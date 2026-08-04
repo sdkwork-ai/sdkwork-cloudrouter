@@ -29,32 +29,32 @@ class ApiContractManifestGenerator:
     """Compile frontend operation contracts into SDK/API gateway manifest data."""
 
     BACKEND_CONTRACT_OVERRIDES = Path(
-        "apis/backend-api/clawrouter/clawrouter-backend-contract-overrides.json"
+        "apis/backend-api/cloudrouter/cloudrouter-backend-contract-overrides.json"
     )
 
     SDK_BOUNDARIES: dict[str, dict[str, str]] = {
         "app": {
             "api_prefix": "/app/v3/api",
-            "sdk_family": "clawrouter-app-sdk",
+            "sdk_family": "cloudrouter-app-sdk",
             "sdk_client": "SdkworkAppClient",
-            "openapi_source": "generated/openapi/clawrouter-app-openapi.json",
-            "generated_sdk_home": "sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript",
+            "openapi_source": "generated/openapi/cloudrouter-app-openapi.json",
+            "generated_sdk_home": "sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript",
             "generator": "../sdkwork-sdk-generator",
         },
         "backend": {
             "api_prefix": "/backend/v3/api",
-            "sdk_family": "clawrouter-backend-sdk",
+            "sdk_family": "cloudrouter-backend-sdk",
             "sdk_client": "SdkworkBackendClient",
-            "openapi_source": "generated/openapi/clawrouter-backend-openapi.json",
-            "generated_sdk_home": "sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript",
+            "openapi_source": "generated/openapi/cloudrouter-backend-openapi.json",
+            "generated_sdk_home": "sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript",
             "generator": "../sdkwork-sdk-generator",
         },
         "openai_v1": {
             "api_prefix": "/v1",
-            "sdk_family": "clawrouter-open-sdk",
+            "sdk_family": "cloudrouter-open-sdk",
             "sdk_client": "SdkworkAiClient",
-            "openapi_source": "apps/sdkwork-clawrouter-pc/public/openapi.json",
-            "generated_sdk_home": "sdks/clawrouter-open-sdk/clawrouter-open-sdk-typescript",
+            "openapi_source": "apps/sdkwork-cloudrouter-pc/public/openapi.json",
+            "generated_sdk_home": "sdks/cloudrouter-open-sdk/cloudrouter-open-sdk-typescript",
             "generator": "../sdkwork-sdk-generator",
         },
     }
@@ -445,7 +445,7 @@ class ApiContractManifestGenerator:
 
         return {
             "schema": {
-                "name": "sdkwork-clawrouter-api-contract-manifest",
+                "name": "sdkwork-cloudrouter-api-contract-manifest",
                 "version": "0.1.0",
                 "contract_path": self._display_path(self.contract_path),
             },
@@ -678,7 +678,7 @@ class ApiContractManifestGenerator:
         contract = json.loads(contract_path.read_text(encoding="utf-8"))
         if contract.get("kind") != "sdkwork.openapi.contract-overrides":
             raise ValueError(f"invalid backend contract override kind: {contract_path}")
-        if contract.get("owner") != "sdkwork-clawrouter" or contract.get("surface") != "backend-api":
+        if contract.get("owner") != "sdkwork-cloudrouter" or contract.get("surface") != "backend-api":
             raise ValueError(f"invalid backend contract override ownership: {contract_path}")
 
         schemas = contract.get("schemas")
@@ -1739,7 +1739,7 @@ class ApiContractManifestGenerator:
             package_index = parts.index("packages") + 1
             if package_index < len(parts):
                 package = parts[package_index]
-                prefix = "sdkwork-clawrouter-"
+                prefix = "sdkwork-cloudrouter-"
                 if package.startswith(prefix):
                     return package[len(prefix) :]
                 return package
@@ -1807,8 +1807,8 @@ class ApiContractManifestGenerator:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Generate sdkwork-clawrouter API contract manifest.")
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser = argparse.ArgumentParser(description="Generate sdkwork-cloudrouter API contract manifest.")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     parser.add_argument("--contract", type=Path, default=None, help="frontend field contract YAML path")
     parser.add_argument(
         "--output",

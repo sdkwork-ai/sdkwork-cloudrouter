@@ -1,10 +1,10 @@
-# SDKWork Claw Router Installation And Usage Guide
+# SDKWork Cloud Router Installation And Usage Guide
 
-This documentation is for operators, developers, and delivery engineers who install, initialize, deploy, and use SDKWork Claw Router. The current release version is defined by `docs/release/VERSION.md`; at the time this guide was written, it is `0.3.0`.
+This documentation is for operators, developers, and delivery engineers who install, initialize, deploy, and use SDKWork Cloud Router. The current release version is defined by `docs/release/VERSION.md`; at the time this guide was written, it is `0.3.0`.
 
-## What Is SDKWork Claw Router?
+## What Is SDKWork Cloud Router?
 
-SDKWork Claw Router is a commercial AI gateway and console workspace. It
+SDKWork Cloud Router is a commercial AI gateway and console workspace. It
 provides OpenAI-compatible `/v1/*` APIs, provider routing, model catalog and
 pricing management, API keys, billing and usage workflows, a user portal, an
 admin console, and generated SDKs backed by schema and OpenAPI contracts.
@@ -15,11 +15,11 @@ real product screenshots when preparing customer-facing installation material.
 
 | Product area | Screenshot |
 | --- | --- |
-| Portal home | ![SDKWork Claw Router portal home placeholder](../../assets/product-screenshots/portal-home.png) |
-| Console dashboard | ![SDKWork Claw Router console dashboard placeholder](../../assets/product-screenshots/console-dashboard.png) |
-| Model catalog and routing | ![SDKWork Claw Router model routing placeholder](../../assets/product-screenshots/model-routing.png) |
-| API playground | ![SDKWork Claw Router playground placeholder](../../assets/product-screenshots/playground.png) |
-| Admin console | ![SDKWork Claw Router admin console placeholder](../../assets/product-screenshots/admin-console.png) |
+| Portal home | ![SDKWork Cloud Router portal home placeholder](../../assets/product-screenshots/portal-home.png) |
+| Console dashboard | ![SDKWork Cloud Router console dashboard placeholder](../../assets/product-screenshots/console-dashboard.png) |
+| Model catalog and routing | ![SDKWork Cloud Router model routing placeholder](../../assets/product-screenshots/model-routing.png) |
+| API playground | ![SDKWork Cloud Router playground placeholder](../../assets/product-screenshots/playground.png) |
+| Admin console | ![SDKWork Cloud Router admin console placeholder](../../assets/product-screenshots/admin-console.png) |
 
 ## Choose A Path
 
@@ -46,17 +46,17 @@ Release Date: 2026-05-17
 Package names use this version:
 
 ```text
-clawrouter-linux-x64-server-0.3.0.deb
-clawrouter-windows-x64-desktop-0.3.0.msi
-clawrouter-macos-arm64-desktop-0.3.0.pkg
-clawrouter-linux-x64-archive-0.3.0.tar.gz
+cloudrouter-linux-x64-server-0.3.0.deb
+cloudrouter-windows-x64-desktop-0.3.0.msi
+cloudrouter-macos-arm64-desktop-0.3.0.pkg
+cloudrouter-linux-x64-archive-0.3.0.tar.gz
 ```
 
 From a source checkout, inspect the full package matrix with:
 
 ```bash
-node scripts/plan-claw-router-install-packages.mjs
-node scripts/plan-claw-router-install-packages.mjs --json
+node scripts/plan-cloud-router-install-packages.mjs
+node scripts/plan-cloud-router-install-packages.mjs --json
 ```
 
 ## Deployment Modes
@@ -85,10 +85,10 @@ pnpm start
 Ubuntu/Debian service package:
 
 ```bash
-sudo apt install ./clawrouter-linux-x64-server-0.3.0.deb
-sudo editor /etc/sdkwork/router/clawrouter.toml
+sudo apt install ./cloudrouter-linux-x64-server-0.3.0.deb
+sudo editor /etc/sdkwork/router/cloudrouter.toml
 sudo editor /etc/sdkwork/router/database.secret
-sudo systemctl start clawrouter
+sudo systemctl start cloudrouter
 curl http://127.0.0.1:3900/healthz
 curl http://127.0.0.1:3900/readyz
 ```
@@ -108,10 +108,10 @@ complete domain and the file name stem. Generated configs proxy to
 `http://127.0.0.1:3900`. Use `etc/nginx/NGINX_SAMPLE.conf` as the canonical
 template and `etc/nginx/sdkwork/` for full-domain examples.
 
-The Debian service package creates `/etc/sdkwork/router/clawrouter.toml`,
-`/etc/sdkwork/router/clawrouter.env`, `/etc/sdkwork/router/database.secret`,
+The Debian service package creates `/etc/sdkwork/router/cloudrouter.toml`,
+`/etc/sdkwork/router/cloudrouter.env`, `/etc/sdkwork/router/database.secret`,
 `/etc/sdkwork/router/redis.secret`, and the writable data/log directories. The
-package enables `clawrouter.service` on systemd hosts but does not start it
+package enables `cloudrouter.service` on systemd hosts but does not start it
 until the PostgreSQL host, database,
 username, and password are configured. The systemd unit runs installer
 initialization automatically before starting the gateway and runs with
@@ -120,32 +120,32 @@ architecture, and open-file limits. The post-install output prints the runtime
 TOML, service environment, PostgreSQL password file, Redis password file,
 systemd service name, and first-start commands. The package manifest also
 includes a `nativeInstall` layout for deployment automation and support
-diagnostics. Redis is standardized in `clawrouter.toml`, enabled by default for
+diagnostics. Redis is standardized in `cloudrouter.toml`, enabled by default for
 server deployments, and must be configured before first startup. Desktop
 packages keep Redis optional and disabled by default.
 
 Linux native desktop package:
 
 ```bash
-/usr/bin/clawrouterctl ensure
-/usr/bin/clawrouterctl refresh-catalog --force
-/usr/bin/clawrouter
+/usr/bin/cloudrouterctl ensure
+/usr/bin/cloudrouterctl refresh-catalog --force
+/usr/bin/cloudrouter
 ```
 
 macOS native desktop package:
 
 ```bash
-/opt/sdkwork/router/bin/clawrouterctl ensure
-/opt/sdkwork/router/bin/clawrouterctl refresh-catalog --force
-/opt/sdkwork/router/bin/clawrouter
+/opt/sdkwork/router/bin/cloudrouterctl ensure
+/opt/sdkwork/router/bin/cloudrouterctl refresh-catalog --force
+/opt/sdkwork/router/bin/cloudrouter
 ```
 
 Portable release package root on Linux/macOS:
 
 ```bash
-./bin/clawrouterctl ensure
-./bin/clawrouterctl refresh-catalog --force
-./bin/clawrouter
+./bin/cloudrouterctl ensure
+./bin/cloudrouterctl refresh-catalog --force
+./bin/cloudrouter
 ```
 
 Windows MSI install root:
@@ -153,9 +153,9 @@ Windows MSI install root:
 ```powershell
 $installRoot = Join-Path $env:USERPROFILE "sdkwork\router"
 Set-Location $installRoot
-.\bin\clawrouterctl.exe ensure
-.\bin\clawrouterctl.exe refresh-catalog --force
-.\bin\clawrouter.exe
+.\bin\cloudrouterctl.exe ensure
+.\bin\cloudrouterctl.exe refresh-catalog --force
+.\bin\cloudrouter.exe
 ```
 
 After startup:
@@ -171,4 +171,4 @@ Ready: http://127.0.0.1:3900/readyz
 
 ## License
 
-The SDKWork Claw Router application source is licensed under `AGPL-3.0-or-later AND LicenseRef-SDKWork-Commercial-Restriction`. Commercial use is prohibited without prior written authorization from SDKWork. See [LICENSE](../../../LICENSE) and [COMMERCIAL-LICENSE.md](../../../COMMERCIAL-LICENSE.md).
+The SDKWork Cloud Router application source is licensed under `AGPL-3.0-or-later AND LicenseRef-SDKWork-Commercial-Restriction`. Commercial use is prohibited without prior written authorization from SDKWork. See [LICENSE](../../../LICENSE) and [COMMERCIAL-LICENSE.md](../../../COMMERCIAL-LICENSE.md).

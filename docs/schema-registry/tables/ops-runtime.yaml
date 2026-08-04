@@ -4,7 +4,7 @@ tables:
   profile: audit_event
   compliance_level: L2
   system_of_record: true
-  write_owner: clawrouter-ops-runtime
+  write_owner: cloudrouter-ops-runtime
   common_columns: event_log
   api_surfaces:
   - app
@@ -44,11 +44,11 @@ tables:
       archive_retention: 5y
       grace_period: 24h
     cleanup:
-      owner: clawrouter-ops-runtime
+      owner: cloudrouter-ops-runtime
       scope: platform_cross_tenant
       authorization:
         mode: service_identity
-        service: clawrouter-ops-runtime
+        service: cloudrouter-ops-runtime
         audit_required: true
       candidate_recheck:
         required: true
@@ -86,7 +86,7 @@ tables:
   profile: audit_event
   compliance_level: L3
   system_of_record: true
-  write_owner: clawrouter-ops-runtime
+  write_owner: cloudrouter-ops-runtime
   api_surfaces:
   - app
   - backend
@@ -163,11 +163,11 @@ tables:
       archive_retention: 5y
       grace_period: 24h
     cleanup:
-      owner: clawrouter-ops-runtime
+      owner: cloudrouter-ops-runtime
       scope: platform_cross_tenant
       authorization:
         mode: service_identity
-        service: clawrouter-ops-runtime
+        service: cloudrouter-ops-runtime
         audit_required: true
       candidate_recheck:
         required: true
@@ -205,7 +205,7 @@ tables:
   profile: audit_event
   compliance_level: L2
   system_of_record: true
-  write_owner: clawrouter-ops-runtime
+  write_owner: cloudrouter-ops-runtime
   common_columns: event_log
   api_surfaces:
   - app
@@ -246,11 +246,11 @@ tables:
       archive_retention: 5y
       grace_period: 24h
     cleanup:
-      owner: clawrouter-ops-runtime
+      owner: cloudrouter-ops-runtime
       scope: platform_cross_tenant
       authorization:
         mode: service_identity
-        service: clawrouter-ops-runtime
+        service: cloudrouter-ops-runtime
         audit_required: true
       candidate_recheck:
         required: true
@@ -288,7 +288,7 @@ tables:
   profile: operational_state
   compliance_level: L2
   system_of_record: true
-  write_owner: clawrouter-ops-runtime
+  write_owner: cloudrouter-ops-runtime
   common_columns: event_log
   api_surfaces:
   - app
@@ -325,11 +325,11 @@ tables:
       archive_retention: 5y
       grace_period: 24h
     cleanup:
-      owner: clawrouter-ops-runtime
+      owner: cloudrouter-ops-runtime
       scope: platform_cross_tenant
       authorization:
         mode: service_identity
-        service: clawrouter-ops-runtime
+        service: cloudrouter-ops-runtime
         audit_required: true
       candidate_recheck:
         required: true
@@ -367,7 +367,7 @@ tables:
   profile: operational_state
   compliance_level: L2
   system_of_record: true
-  write_owner: clawrouter-ops-runtime
+  write_owner: cloudrouter-ops-runtime
   common_columns: tenant_entity
   api_surfaces:
   - app
@@ -411,7 +411,7 @@ tables:
   profile: operational_state
   compliance_level: L2
   system_of_record: true
-  write_owner: clawrouter-ops-runtime
+  write_owner: cloudrouter-ops-runtime
   common_columns: event_log
   api_surfaces:
   - app
@@ -468,7 +468,7 @@ tables:
         - ai_model
         - ai_model_rank_snapshot
       runtime_contract:
-        scheduler_owner: sdkwork-clawrouter-standalone-gateway
+        scheduler_owner: sdkwork-cloudrouter-standalone-gateway
         startup_policy:
           run_on_startup_default: true
         timeout:
@@ -520,11 +520,11 @@ tables:
       archive_retention: 5y
       grace_period: 24h
     cleanup:
-      owner: clawrouter-ops-runtime
+      owner: cloudrouter-ops-runtime
       scope: platform_cross_tenant
       authorization:
         mode: service_identity
-        service: clawrouter-ops-runtime
+        service: cloudrouter-ops-runtime
         audit_required: true
       candidate_recheck:
         required: true
@@ -562,7 +562,7 @@ tables:
   profile: read_model
   compliance_level: L2
   system_of_record: false
-  write_owner: clawrouter-ops-runtime
+  write_owner: cloudrouter-ops-runtime
   common_columns: projection
   api_surfaces:
   - app
@@ -621,7 +621,7 @@ tables:
         max_staleness_seconds: 300
       rebuild:
         strategy: full_recompute
-        owner: clawrouter-ops-runtime
+        owner: cloudrouter-ops-runtime
       aggregation_grain:
       - tenant_id
       - organization_id
@@ -636,7 +636,7 @@ tables:
   profile: operational_state
   compliance_level: L2
   system_of_record: true
-  write_owner: clawrouter-ops-runtime
+  write_owner: cloudrouter-ops-runtime
   common_columns: tenant_entity
   api_surfaces:
   - app
@@ -690,7 +690,7 @@ tables:
   profile: relation_entity
   compliance_level: L2
   system_of_record: true
-  write_owner: clawrouter-ops-runtime
+  write_owner: cloudrouter-ops-runtime
   common_columns: relation_entity
   api_surfaces:
   - app
@@ -748,7 +748,7 @@ tables:
   profile: user_entity
   compliance_level: L2
   system_of_record: true
-  write_owner: clawrouter-ops-runtime
+  write_owner: cloudrouter-ops-runtime
   api_surfaces:
   - app
   - backend

@@ -1,7 +1,7 @@
 > Migrated from `docs/installation/zh-CN/deployment-modes.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
-SDKWork Claw Router release 包覆盖 `archive`、`service`、`container`、`desktop` 四种模式。源码运行属于单独的 `source` 场景。
+SDKWork Cloud Router release 包覆盖 `archive`、`service`、`container`、`desktop` 四种模式。源码运行属于单独的 `source` 场景。
 
 ## 模式对比
 
@@ -22,7 +22,7 @@ archive、service、container 服务端部署默认启用并要求 Redis，因�
 特点：
 
 - 默认 SQLite。
-- `clawrouter.toml` 中包含 Redis 配置，但默认保持关闭。
+- `cloudrouter.toml` 中包含 Redis 配置，但默认保持关闭。
 - 自动使用 OS 用户目录下的配置和数据目录。
 - 不要求外部 PostgreSQL。
 - Linux、Windows、macOS 均发布为平台原生安装包。
@@ -31,25 +31,25 @@ archive、service、container 服务端部署默认启用并要求 Redis，因�
 Linux 原生 `.deb` 启动：
 
 ```bash
-/usr/bin/clawrouterctl ensure
-/usr/bin/clawrouterctl refresh-catalog --force
-/usr/bin/clawrouter
+/usr/bin/cloudrouterctl ensure
+/usr/bin/cloudrouterctl refresh-catalog --force
+/usr/bin/cloudrouter
 ```
 
 macOS 原生 `.pkg` 启动：
 
 ```bash
-/opt/sdkwork/router/bin/clawrouterctl ensure
-/opt/sdkwork/router/bin/clawrouterctl refresh-catalog --force
-/opt/sdkwork/router/bin/clawrouter
+/opt/sdkwork/router/bin/cloudrouterctl ensure
+/opt/sdkwork/router/bin/cloudrouterctl refresh-catalog --force
+/opt/sdkwork/router/bin/cloudrouter
 ```
 
 如果从可移植归档包根目录启动：
 
 ```bash
-./bin/clawrouterctl ensure
-./bin/clawrouterctl refresh-catalog --force
-./bin/clawrouter
+./bin/cloudrouterctl ensure
+./bin/cloudrouterctl refresh-catalog --force
+./bin/cloudrouter
 ```
 
 ## Archive
@@ -64,9 +64,9 @@ macOS 原生 `.pkg` 启动：
 启动：
 
 ```bash
-./bin/clawrouterctl ensure
-./bin/clawrouterctl refresh-catalog --force
-./bin/clawrouter
+./bin/cloudrouterctl ensure
+./bin/cloudrouterctl refresh-catalog --force
+./bin/cloudrouter
 ```
 
 ## Service
@@ -78,7 +78,7 @@ macOS 原生 `.pkg` 启动：
 - macOS `.pkg` service 包会安装 launchd plist。
 - macOS service 包通过 launchd runner 启动，runner 会在 gateway 前执行 `ensure` 和 `refresh-catalog --force`。
 - Windows `.msi` 包安装运行文件和服务元数据，实际服务注册由目标主机部署系统配置。
-- 默认使用 PostgreSQL，Linux 服务覆盖项保存在 `/etc/sdkwork/router/clawrouter.env`。
+- 默认使用 PostgreSQL，Linux 服务覆盖项保存在 `/etc/sdkwork/router/cloudrouter.env`。
 - PostgreSQL 密码默认放在 `/etc/sdkwork/router/database.secret`，也可以在受保护 TOML 中直接配置 `password`。
 - 如 Redis 启用了认证，可使用 `/etc/sdkwork/router/redis.secret` 保存 Redis 密码。
 - Linux service 包会让运行中的服务只读访问 `/etc/sdkwork/router`，只允许写入数据和日志目录。
@@ -87,18 +87,18 @@ macOS 原生 `.pkg` 启动：
 原生服务资产：
 
 ```text
-Windows: clawrouter-windows-x64-server-0.3.0.msi
-Linux: clawrouter-linux-x64-server-0.3.0.deb
-macOS: clawrouter-macos-arm64-server-0.3.0.pkg
+Windows: cloudrouter-windows-x64-server-0.3.0.msi
+Linux: cloudrouter-linux-x64-server-0.3.0.deb
+macOS: cloudrouter-macos-arm64-server-0.3.0.pkg
 ```
 
 Linux 安装 `.deb` 后通常只需要检查服务状态：
 
 ```bash
-sudo apt install ./clawrouter-linux-x64-server-0.3.0.deb
-sudo editor /etc/sdkwork/router/clawrouter.toml
-sudo systemctl start clawrouter
-sudo systemctl status clawrouter --no-pager
+sudo apt install ./cloudrouter-linux-x64-server-0.3.0.deb
+sudo editor /etc/sdkwork/router/cloudrouter.toml
+sudo systemctl start cloudrouter
+sudo systemctl status cloudrouter --no-pager
 ```
 
 ## Container
@@ -112,19 +112,19 @@ sudo systemctl status clawrouter --no-pager
 示例：
 
 ```bash
-docker build -f container/Containerfile -t clawrouter:0.3.0 .
+docker build -f container/Containerfile -t cloudrouter:0.3.0 .
 docker run --rm -p 3900:3900 \
-  -v "$PWD/config/clawrouter.toml.example:/etc/sdkwork/router/clawrouter.toml:ro" \
+  -v "$PWD/config/cloudrouter.toml.example:/etc/sdkwork/router/cloudrouter.toml:ro" \
   -v "$PWD/secrets/postgres-password:/run/secrets/sdkwork/router/postgres-password:ro" \
   -v "$PWD/secrets/redis-password:/run/secrets/sdkwork/router/redis-password:ro" \
-  clawrouter:0.3.0
+  cloudrouter:0.3.0
 ```
 
 Kubernetes 部署时建议：
 
 - 使用 Secret 保存数据库 URL。
 - Redis 启用认证时为 Redis 密码配置 Secret。
-- 使用 ConfigMap 或挂载文件提供 `clawrouter.toml`。
+- 使用 ConfigMap 或挂载文件提供 `cloudrouter.toml`。
 - 配置 readinessProbe 指向 `/readyz`。
 - 配置 livenessProbe 指向 `/healthz`。
 - 不把 `.env.release` bake 到镜像。

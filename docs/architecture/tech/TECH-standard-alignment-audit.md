@@ -2,7 +2,7 @@
 
 Status: superseded
 Superseded: 2026-07-13
-Owner: clawrouter-platform
+Owner: cloudrouter-platform
 
 This former technical audit shard is retained for inbound links and historical
 traceability. It is not a current architecture, release, security, database,

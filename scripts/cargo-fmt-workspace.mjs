@@ -46,7 +46,7 @@ function commandPathEquals(left, right) {
 }
 
 function resolveCargoFmtCommand() {
-  const configured = process.env.SDKWORK_CLAW_CARGO_FMT_BINARY?.trim();
+  const configured = process.env.SDKWORK_CLOUDROUTER_CARGO_FMT_BINARY?.trim();
   if (configured) {
     return configured;
   }

@@ -1,0 +1,600 @@
+{
+  "schemaVersion": 1,
+  "generator": "@sdkwork/sdk-generator",
+  "sdk": {
+    "name": "cloudrouter-backend-sdk",
+    "version": "0.1.0",
+    "language": "java",
+    "sdkType": "backend",
+    "protocol": "http",
+    "packageName": "com.sdkwork.cloudrouter:cloudrouter-backend-sdk"
+  },
+  "generatedFiles": [
+    {
+      "path": "bin/publish-core.mjs",
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
+    },
+    {
+      "path": "bin/publish.ps1",
+      "sha256": "33394b9189a458f6b36bf7fd74815ea4b71a435083e0c428a9d3ca4673e28c3e"
+    },
+    {
+      "path": "bin/publish.sh",
+      "sha256": "da4bd76701864b29d52b6b260c20f65305bcd4b9eea8696f7751b991f6aba345"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "fb941a0806986a54fc192f98a98f6d9c282b8d350b2b19a3e71dda404e92d545"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "7840cc7d2b36ff364ac16c2fc5ec15b861bfe96854eecf81fb59b00edb8b1447"
+    },
+    {
+      "path": "pom.xml",
+      "sha256": "e48650e6ffe99ba71411472ad14804758d7fe67001f13f972898e3b548c2a7c8"
+    },
+    {
+      "path": "README.md",
+      "sha256": "c2ce8c0e459d5ac43351bd80382e009968c164690b3c63fb08a1c820776fea69"
+    },
+    {
+      "path": "sdkwork-sdk.json",
+      "sha256": "c2044b41670a3cd66ec02cf38a26b7ad564f19de2f6eb5518a9bf7b8e946b241"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/api/AiApi.java",
+      "sha256": "601dd234dda6e82563ed0cceae98d946e14a300d415feb87e6a31f8c46a3325d"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/api/ApiPaths.java",
+      "sha256": "495bcee6df81e01a40317d38aedcdfd409c0da884b4a6c459c4b70248ee8ad22"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/api/IntegrationApi.java",
+      "sha256": "2171f5ab1eb4ddc1ce7a451ae1d4fe8f5b8d810df3a1ddddf292487d833056bc"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/api/package-info.java",
+      "sha256": "ccd8c4e6f938a8491ce25f64ad4ae4c39769cef2936d1c45261e3ed8e659b4d1"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/api/SitesApi.java",
+      "sha256": "de9c41c74c927b06a40f712b60e4cab14812fd698b33ea30cae019184d095c02"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/api/SystemApi.java",
+      "sha256": "b655844b9b78b289a7a573d1f9494f317003d97edf5094e9bc2fa4432cb87386"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/http/HttpClient.java",
+      "sha256": "e11f29898b7f49bb02cd57522d183b048e65b36c347735b1ac7bd5a6a7bb26e7"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/AdminAnalyticsOverview.java",
+      "sha256": "76ca834d62ea9820a3c8b2257839529d7677f507fb951cf72ad51005914b57f3"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/AfterSalesReviewsCreateResult.java",
+      "sha256": "ca68742034742ba67e76afa66974b2395f67e4d2d2c59876bcd8c8dc95178a33"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/AiResourceGroupsCreateResult.java",
+      "sha256": "421e48c0f4a7fab04cd3f00d1461b0853930240be6676180766ab25b34b974ee"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/AiResourceGroupsDeleteResult.java",
+      "sha256": "bc74f4bc80179eefbf4af1e9b89e0404147d295191796e7e8130b88c8ba74534"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/AiResourceGroupsListResult.java",
+      "sha256": "e54c37a8948d8f8df5ccbd4aa8219ccd4e680692bc2bfa60f82c65cd78bee8f6"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/AiResourceGroupsResourcesListResult.java",
+      "sha256": "a88daadd43385f2db5f7277e9491a18525f44f67aab68c95092accc6dad110cc"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/AiResourceGroupsUpdateResult.java",
+      "sha256": "c8a754d800520d0dc4f35e963b8134d4ee0ffa9da244aa1d590b27abe60e6b96"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/AiResourcesCreateResult.java",
+      "sha256": "c6ec0afd168cbfabe988df3c68752191c2026d316264eae8f8d947e10afdb1a5"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/AiResourcesListResult.java",
+      "sha256": "17197ebed72d65bdb0c2d5cce129e26a7674c0cf88b1423778b6ddb93d3a90f7"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/AiResourcesUpdateResult.java",
+      "sha256": "c54ef1595eae71fee353ba06d1d43379a8818e5a780743075f2eb55df5996449"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/AnalyticsAdminOverviewRetrieveResult.java",
+      "sha256": "e19d1a80924e44ae789be250932591f0b3beb9b371eb5526f44a5625c4980949"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/AuthSettingsRetrieveResult.java",
+      "sha256": "805662f38c3f1b5df6ec3d0dcaa15f656ff5d17ae8a09e3d042d62bd4923a085"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/AuthSettingsUpdateResult.java",
+      "sha256": "844fb8cbcd5712320bac58a7500b82d33863268ac71afb978ff6759ae0f04a57"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/CacheInstancesDeleteResult.java",
+      "sha256": "fcbc32a961af01c53361572ee2dcb5841f9f78f9315d11231aefe016cddeaf28"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/CacheInstancesRefreshCreateResult.java",
+      "sha256": "9168e6a45f4094ce5848522c26a92f197811f69cc0d3361c770bc602bf0f750b"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/CacheNamespaceKeyPage.java",
+      "sha256": "3fbdbc863b52d5212fca9741a51191205c07a6ae9e7f7f4e3b7cc645a211d324"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/CacheNamespacesDeleteResult.java",
+      "sha256": "5fa94519f77c366f57eaa43cfbe4f8969a9ada21dcd240cd9685f5a47266ecf8"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/CacheNamespacesKeysDeleteResult.java",
+      "sha256": "8672eea662853e09e979de6bd03183b71a0e99304f0d2b61157ad08ebbbe7cfa"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/CacheNamespacesKeysListResult.java",
+      "sha256": "ff64f627f6e7fdaa88d89bf1f48334801bd33215fc29138c1158893a6b3d5936"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/CacheNamespacesRefreshCreateResult.java",
+      "sha256": "f3789fc1fbd4d18e2ed48f4fc894e5c60f41ef27f145520f75654fef397010c0"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/CacheOperationOutcome.java",
+      "sha256": "e6c09349678e2cc4287a10e283c0890ac5fd5459f80386818e61a47832981493"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/CacheOverview.java",
+      "sha256": "e10b3a969e3524f5233bb1b12e114e22db0f0e5fc352b00d2821ee857e5aada7"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/CacheOverviewRetrieveResult.java",
+      "sha256": "2cc70f0897b0cb9c7f4df59cb019541627148ca686361758eda91f6285284a79"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/CacheRefreshCreateResult.java",
+      "sha256": "173dab1b830730b23e94b5d2c4c143821d1c13620d7f9491acc6f2404cce3e54"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ChannelGroupsChannelBindingsListResult.java",
+      "sha256": "fb6a7180df8ca958ce707295c92d9774f16b2feda38eb5c62045eb6d53c613cf"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ChannelGroupsChannelBindingsUpdateResult.java",
+      "sha256": "dab0439559710c3de28f3ac007912bc5054e3212fb010153cfbde52360b774d1"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ChannelGroupsCreateResult.java",
+      "sha256": "176d56680c16ee94d8ece93e716b6ef5c53f24df1c88d4a8aa4e52a1f88ca31f"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ChannelGroupsDeleteResult.java",
+      "sha256": "656fd8cfe929dc98d523f5a32f37c40203cecb017ff46f59ce0678386d75de47"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ChannelGroupsListResult.java",
+      "sha256": "d560cd7fd75cba8630a3ebd1a2f0988d2180a38309eab853222facf30e7d6fa1"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ChannelGroupsRouteExplainRetrieveResult.java",
+      "sha256": "c806fae23e9637edf306258be9110873bfa2b729317daf4a3a360cc85538ba89"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ChannelGroupsUpdateResult.java",
+      "sha256": "60bfba3d189e45efabb11f9087fa850d343f33139e46838696a2e839a5ee70ed"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ChannelsCreateResult.java",
+      "sha256": "9d7083d4de215f711c58c8b54f094d2169619db11d91c44f821779d4673dc690"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ChannelsDeleteResult.java",
+      "sha256": "be59181dc65c83dd0614ebbf145b6929f04623260ccedc63c70b55761b00a865"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ChannelsListResult.java",
+      "sha256": "bc07a808dc467bcb55177faea6222b607e992661df16c94e04c9ed4862e85274"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ChannelsUpdateResult.java",
+      "sha256": "0c165ef8fbbfed95a64cfcd13fa6a2ce768aa8a5afeabefb677eae1d73cdbca7"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ChannelsVerifyResult.java",
+      "sha256": "294e87f80db7566f3ae43f003dce0e6983e1fd39cea590a8700ff882c648748b"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/DashboardAdminOverviewRetrieveResult.java",
+      "sha256": "3a6a6333bba6228ab3a9174781a2a2f6209929628f8f6842c127fab41995b2a8"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/FieldError.java",
+      "sha256": "789b9633d2541569a40beb31b598e1e4d9cfbef00691a8ed47aceb93fc3e37f0"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/FirewallsRulesCreateResult.java",
+      "sha256": "b692a6d61ba5a2a52bec89792d047dfa8aa330522f4ea2477ccd7a7063926ebd"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/FirewallsRulesDeleteResult.java",
+      "sha256": "c5e5c63c8a35d43326f74232474962928b846c5171f28aa46328bca746796f66"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/FirewallsRulesListResult.java",
+      "sha256": "dae057a7f8868b0ce11b5bde5227774071df35d1a27e410a488c1649412aa7fc"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/HealthCheckCreateResult.java",
+      "sha256": "f46f57005a645afb57ce9903c947384fc5cba1bc78867a7457c386e695a49130"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/InstallationStatusRetrieveResult.java",
+      "sha256": "124ebe8f6013edd86ef4d6bee108b553d64033d0c311d12ef1c67fabde34f73f"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/MarketingReferralStatsListResult.java",
+      "sha256": "50a78f61aba53c3fdaa8da181af2d353da6ff9641949bb4b581ce719d194c701"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelCatalogPage.java",
+      "sha256": "9a2c6004f56a19120631962159c3867ee5fbaf8dc0796e45e114fa1772e16840"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelMappingOptionsListResult.java",
+      "sha256": "434601ffd5d3e2da9bd39647f5a325479217246599b128c4eddd317222eb8937"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelMappingsCreateResult.java",
+      "sha256": "034f661bd27dfbf3d1144ca30ac3f473fce93018ac0d3104cb8e7e79da072bf9"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelMappingsDeleteResult.java",
+      "sha256": "5c1f24179ba0a8427218c6a57c14b0afcafe3b504076014266ff1f5f16b11006"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelMappingsListResult.java",
+      "sha256": "2e3bcd8292aaa67bb26044f1131a69486c72209b96f13e9fc5190ea712cf4fc3"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelMappingsReplaceResult.java",
+      "sha256": "987eec34e56cb4763d959718b4c4160a292a034652fc3da0a2999219ed5cd953"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelMappingsResolveCreateResult.java",
+      "sha256": "281955b180f035a4a77bf05b15fa577efde8df83174e632ef478b0429c0e98b4"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelMappingsUpdateResult.java",
+      "sha256": "fdbdcd150bff50cdce3edfc7fd0aca1ebc0126d235c4e7079b46fade837988cb"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelRankingRefreshJobHistoryPage.java",
+      "sha256": "191eea8b3b7abc98ad73b6bccafeb915e6751a776912cdd533e4a96235430e24"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelRankingsJobsListResult.java",
+      "sha256": "02ac0552b6da061eda895f84c90a8502b444bfbff69ae85a65e192d946b81d13"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelRankingsListResult.java",
+      "sha256": "46fea4882774fa01cbffa4a86cd151a1840fd17908d760c8f70a39ff0fe6bb38"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelRankingsPage.java",
+      "sha256": "0eb9756d51fb6e2c27a30f555026337b2048899a37f4a26048288d2780742eb1"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelRankingsRefreshResult.java",
+      "sha256": "0ebb5bec62232a37d29b5e8c8fa7b99ee943a80e44c18edab412978e235f92e8"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelRankingsStatusRetrieveResult.java",
+      "sha256": "e0ac553869c1d64895c317f35a6a4fa6563a4df207a07437da78322fe6e40c42"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelsCreateResult.java",
+      "sha256": "0844cd1f6328d2d4bf4011e9cec9b3fc7f5bb81b21afaa438c2dc56658cff14d"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelsDeleteResult.java",
+      "sha256": "1ed99c1e10a51709cf48ee49e0c4de7e3df4f57533fc68e1f1034293668f7c21"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelsListResult.java",
+      "sha256": "c4bfcb590b3d0fe41be37f662d391f3ca15dcf5f1afbf28796a0b0738c7b6dd5"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelsRefreshResult.java",
+      "sha256": "11853aba67e85327828e5c2b2c6bd6a1e318a3b2dcef3f3dce65dcdf163cb2c3"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelsUpdateResult.java",
+      "sha256": "78f4225dd57a7c334a72df7d4a11d924a2906cc1d3d4ef5dbafbfc79cfda13c3"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelVendorsCreateResult.java",
+      "sha256": "58fdafd3bad978f88ad4dbac4832a3d59ef55089846b6cc2a07a27d7fbf017f9"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ModelVendorsListResult.java",
+      "sha256": "fa7fd1cc8a1254c7b8e0c326d70ceee3432374123566ce380c7a72328a548f6d"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/MonitorAlertsListResult.java",
+      "sha256": "903c90c82f42ac155ab262ba0ffaeae12b971976026ef9d72dd4085c19585477"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/MonitorNodesListResult.java",
+      "sha256": "4286a396e798a950913e9dd0234783b9a22f076bc938d41d793b6e7289d16015"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/MonitorPerformanceListResult.java",
+      "sha256": "55aae931a7be83e828ab1fc865880cffea824e36411f0e13eae2958d888c4a3e"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/NoData.java",
+      "sha256": "f1811170a211dbf152e76b993af6feafe93cb15b466bd1aba584c4b05a2e91ae"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/PageInfo.java",
+      "sha256": "b539b13d6aa71f1390020e005a04ebe4fce48fcc720e82d5525e3839daacf7f4"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ProblemDetail.java",
+      "sha256": "dab9334975bfca404f83eb2f1fb1706406c13bc3c6a771e8f4a077c873a38485"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ProviderSecretsCreateResult.java",
+      "sha256": "cb3336f9c63800d5c6788e4775778019fe69f49770d7b00e6b40ce5ef7cdd489"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ProviderSecretsDeleteResult.java",
+      "sha256": "db87c00d612aebd3f61d56675b87922aaf81ba4eb76ba0daae835c569b560a9d"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ProviderSecretsListResult.java",
+      "sha256": "6d0e737435aa79794f6c6ef0954c11b645248b5df95b79be118946f7c466ca7b"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ProviderSecretsUpdateResult.java",
+      "sha256": "7d1649ffa9d95a00db0d4d1dd673455aa15a45cb117f3efa72fd34232d2be7a5"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/RateLimitsApiKeysCreateResult.java",
+      "sha256": "88e47a028156b80ac7091c70f8877ead8adbb58a02cc72634bf276a1e29ef36a"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/RateLimitsApiKeysListResult.java",
+      "sha256": "65ee3ed890f50683cec4f1e38e288efea1711efab89c7f2c5cd623588e3588e9"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/RateLimitsIpCreateResult.java",
+      "sha256": "0d6bbfbe0cf4cc50582e78cb9971b52b98d0d96c3166ea38507e9eeffcd9c8a4"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/RateLimitsIpListResult.java",
+      "sha256": "d03c478108f2763f2ddb69cb57af155cefa8063981c10401f0b8be6177b2aff1"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/RateLimitsModelsCreateResult.java",
+      "sha256": "5598a2950987ad5496cd0281ccb86ec8039c178b7f7588e5dd53ee802f22b305"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/RateLimitsModelsListResult.java",
+      "sha256": "ea3af73c241b61bc279b276f9e0a32f8d733857d7550fed23fba7aad617c6491"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/RecordsListResult.java",
+      "sha256": "1b7966fc6edba00b75b7d441666b7d0a1fdc3389240060a6d1296fce2d83d693"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/RouteExplainCreateResult.java",
+      "sha256": "692181290081ab74d42c805393cf5e29ec88bbf3c2fb4cc413189d5d3e24868f"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/RuntimeRegionSettingsRetrieveResult.java",
+      "sha256": "09691624132861840a4e15bd824cd614ef5d416ad569a4d98ef9e002353d057a"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/RuntimeRegionSettingsUpdateResult.java",
+      "sha256": "766796dd5d39d0d46f70efe05c128b827e5f26e9ae322502bfbb9500a8f01c72"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/SdkWorkApiResponse.java",
+      "sha256": "f9c4ca3485e7332a216b6e1d5ca3a1b04b1d06dfab87b2db694f6b19dfbbc3a8"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ServiceNodesCreateResult.java",
+      "sha256": "21cf2fe5cd9d5b2db102f5f4a3ab620617d8fb4f95590d05cdf0bafabaf85817"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ServiceNodesDeleteResult.java",
+      "sha256": "fb350c47a6a8208d1f2fbee84c3e8e71c454fea484f367367147a14e38399cc4"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ServiceNodesListResult.java",
+      "sha256": "ae50924f08a2513b06496685c4616960c7561f38a6572c37286bc16784f078b9"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ServiceNodesStatusUpdateResult.java",
+      "sha256": "6492e938ac1a81d2b90773b3631e1a151a90733232bb68d5897ecd85f8b56328"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ServiceNodesUpdateResult.java",
+      "sha256": "fed0eb7aff7a66404fe1c432cdb915fea14c7f3aeced58c3efee2c48622dc2a3"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsApproveResult.java",
+      "sha256": "d436d193b7780bf4129ede30f5c2154183f9c8ea25b51814fbb07c7b5c3c7bae"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsBrandAuthorizationsUpsertResult.java",
+      "sha256": "5c9812331419ddf7c99e469c08aff3e9b95d04aaf6bd16037d54dee8dd26b6a1"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsBusinessHoursUpdateResult.java",
+      "sha256": "fa30dc015d9abbed92cef9efeae09117bfaf9f91dac31e62a44dcbbd3a34475e"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsCategoryBindingsUpsertResult.java",
+      "sha256": "7604a106dd426b0f4fc510241d79b8471e218c14dcc67336480863deffb59733"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsChannelsCreateResult.java",
+      "sha256": "c28e7f9ded26227c71361863e0e60df7634d2d74f9e1e8f6b3c408745c8abe97"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsChannelsUpdateResult.java",
+      "sha256": "f9245ec89a5312fc62c908e689b838130dfdc57cd133e9be83d6b546d3cddd28"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsCloseResult.java",
+      "sha256": "f82d8a67d5b04aab329c626884bfbd4753adbe0f4a998b04e9daf0d5022ac866"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsCreateResult.java",
+      "sha256": "1bcc5cefab3d118916539b9947bb4ecedaa991e411d8f0ebecbb0850eb7952c6"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsCustomerServicesUpsertResult.java",
+      "sha256": "3d36127d1fe21b6517175d0707c4f23b0a569e37909fd76f8b462e3e2c40a267"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsDepositAccountReviewResult.java",
+      "sha256": "7e0b0e6de1fa6f2f49b7b41d524984c483027727c0a36ec41161e72ad475dc5c"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsDepositAccountUpdateResult.java",
+      "sha256": "053cdcb9680820857134fa7307e614fe2c197afeecd921f85eb662bb1da29c66"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsFulfillmentProfileUpdateResult.java",
+      "sha256": "081969e411ccac14c8b84e0bc9e8bc8081c47a1668e65925fc509bd5a30d966a"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsPoliciesCreateResult.java",
+      "sha256": "3c667b155e0483146aa456228c5dfc8875222ac674f8f6b2e75f0b713ef5e7bd"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsPoliciesUpdateResult.java",
+      "sha256": "a954a0ab8cc23336142097eeb471dd5e56d7f66ed0b45c9480001d8457fd46d9"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsQualificationsUpsertResult.java",
+      "sha256": "e4eb70ab6b7bc3316d7da14f1b0503bb305b072604bc3326facbe8e6d5c297da"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsRejectResult.java",
+      "sha256": "96c291f18571469ce65864644364b156defbf74c58f9ed6497973fa4c2b31c1f"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsResumeResult.java",
+      "sha256": "0053abb1a8c48a7699e53661f48dd0eee5463d45334d054c96afe963d087ad4b"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsReturnAddressesUpsertResult.java",
+      "sha256": "3908faff4e18da01bc3f698d55abcf35313c7b73a36d8a5dff041c8a4e69504f"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsRiskSignalsCreateResult.java",
+      "sha256": "f03b7a41e7a76a52e4358ef4624ef9ed5b7f38d533638019168d1681636fa04b"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsRiskSignalsResolveResult.java",
+      "sha256": "1207d4d6e9e402dbec94fac57f04c0198e043330f9c529df0da03f437ef8a9b5"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsServiceAreasCreateResult.java",
+      "sha256": "2e7976ec4d7d236bedd44f3f4eb1cebf8b92fd96f61c13bb2d95c483d14f61a4"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsServiceAreasUpdateResult.java",
+      "sha256": "9b2ba30b48bf4425628f5483ee6b54ae4956d8725c68fe981320b27412b2a967"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsSettlementProfileApproveResult.java",
+      "sha256": "a0fdba3238c1f897df95491a774e5cb8e504769f862db364a696d47e25d47b65"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsSettlementProfileRejectResult.java",
+      "sha256": "4932a9eb703b642afb5053d0f9ef4b9211fa403939ea6192fbb04e0923655150"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsSettlementProfileUpdateResult.java",
+      "sha256": "c18304f6f831f27e41f1bbb007f0abfb822fad239ba756091f4869155d39dcdd"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsShippingTemplatesUpsertResult.java",
+      "sha256": "32a683672c289a04979674322bfd5f08c3d819bc42c0e0c9cbdf641e9425382f"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsSubmitReviewResult.java",
+      "sha256": "60140cc5cd485983666f92b2c62607105655b936b85bbe5a08d84da5064bb215"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsSuspendResult.java",
+      "sha256": "126b0ea4e5b621a845484e684ebf39804fbdefd1d7f011722ba8d4c759bfabc7"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsUpdateResult.java",
+      "sha256": "0dd5f66fd06d8472124870f32ea0e348b51968b3d1200d823518b9257839449c"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/ShopsVerificationsUpdateResult.java",
+      "sha256": "7b2b62fece22548e3a8eefc7988a4a0acc22276847561ee5cb76d3d0431bb0a0"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/SiteCatalogListResult.java",
+      "sha256": "e4fcb051bb46b9fd5ba9d4217bb399e457bd5001affa0050735e0f7b7f3d9dab"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/SiteChannelsListResult.java",
+      "sha256": "9b567c26bf38d543c11b00cd21b00fec6104d42ca2547a371aa6d30320b66402"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/SiteCreateResult.java",
+      "sha256": "0192fa33d05e42efff5f1ec0b8d6ac503f37d44539b5b0ff945e16693c599801"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/SiteDeleteResult.java",
+      "sha256": "7ea1c235ea92f79dece87ce4a48d8d7a6457840b69473c8b176fcc8b5fa56168"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/SiteSettingsRetrieveResult.java",
+      "sha256": "9cb9ce78b6439ed4f5fac9ebe7c05a63b6463756ef73a19f2d4734272e15ffc8"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/SiteSettingsUpdateResult.java",
+      "sha256": "8795f5e9e0323453d2f3033a55fca73653d621d68fc5714463497f958cf4b6c7"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/SiteUpdateResult.java",
+      "sha256": "d69256f8b288d04221741c9e492b3b02a258b28155ec97e2ea131a17872e7891"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/model/TestConnectionCreateResult.java",
+      "sha256": "a6209c6622fc58ce869787f6529c3004c4d478fd09ee5a4cda4a10ea49e3a24f"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/backend/SdkworkBackendClient.java",
+      "sha256": "643b9fbb7aeeabbf72910f0957b918542b49f67f650a02a952a65280fd289522"
+    }
+  ],
+  "scaffoldFiles": [
+    "custom/README.md"
+  ],
+  "customRoots": [
+    "custom/"
+  ]
+}

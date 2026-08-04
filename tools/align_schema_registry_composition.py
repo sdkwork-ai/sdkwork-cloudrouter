@@ -242,7 +242,7 @@ def split_fragment(rel: str, extract_names: set[str]) -> tuple[list[dict], list[
 
 
 def main() -> None:
-    assembly_path = ROOT / "docs/schema-registry/sdkwork-clawrouter.tables.yaml"
+    assembly_path = ROOT / "docs/schema-registry/sdkwork-cloudrouter.tables.yaml"
     assembly = yaml.safe_load(assembly_path.read_text(encoding="utf-8"))
     fragments = list(assembly.get("table_fragments") or [])
 
@@ -518,9 +518,9 @@ table_fragments:
     guard = assembly.setdefault("schema_registry", {}).setdefault("legacy_compatibility_guardrails", {})
     guard["rule"] = (
         "Greenfield composition model uses ai_* runtime, ops_*, integration_*, storage_, object_, upload_, media_, c_, "
-        "and content_forum projection tables as claw-router generated ownership. Model catalog dictionary tables are "
+        "and content_forum projection tables as cloud-router generated ownership. Model catalog dictionary tables are "
         "owned by sdkwork-models. IAM verification tables are owned by appbase-iam. Commerce, promotion, messaging, "
-        "and IAM base tables are owned by sibling modules and must not be generated in claw-router schema.sql."
+        "and IAM base tables are owned by sibling modules and must not be generated in cloud-router schema.sql."
     )
     assembly_path.write_text(
         yaml.safe_dump(assembly, allow_unicode=True, sort_keys=False),

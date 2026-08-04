@@ -1,8 +1,8 @@
 # Security Policy
 
 Status: active
-Owner: SDKWork Claw Router security maintainers
-Application: sdkwork-clawrouter
+Owner: SDKWork Cloud Router security maintainers
+Application: sdkwork-cloudrouter
 Updated: 2026-06-27
 Specs: SECURITY_SPEC.md, SUPPLY_CHAIN_SECURITY_SPEC.md, PRIVACY_SPEC.md, IAM_SPEC.md
 
@@ -25,13 +25,13 @@ GitHub issues for suspected vulnerabilities.
    This creates a private advisory visible only to repository maintainers.
 2. **Email — security@sdkwork.com**
    Encrypt sensitive payloads with the SDKWork security GPG key
-   (`0xCLAWROUTERSEC`, published at `https://sdkwork.com/.well-known/security.asc`).
-3. **Internal SDKWork channel** (employees only): `#clawrouter-security` on the
+   (`0xCLOUDROUTERSEC`, published at `https://sdkwork.com/.well-known/security.asc`).
+3. **Internal SDKWork channel** (employees only): `#cloudrouter-security` on the
    internal Slack workspace.
 
 ### Required Information
 
-- Affected version (exact `clawrouter --version` output or git ref)
+- Affected version (exact `cloudrouter --version` output or git ref)
 - Affected component (`gateway`, `admin-api`, `app-api`, `edge`, `installer`,
   `portal`, `sdk`, `database-migration`, `k8s-manifest`)
 - Reproduction steps, minimal proof-of-concept, or stack trace
@@ -78,9 +78,9 @@ Production deployments MUST keep the following defaults enabled:
 | Control | Default | Override path |
 | --- | --- | --- |
 | HSTS | enabled in production profile | `[portal.security].hsts_enabled` |
-| `X-Forwarded-*` trust | disabled | `SDKWORK_CLAW_EDGE_TRUST_FORWARDED_HEADERS` |
+| `X-Forwarded-*` trust | disabled | `SDKWORK_CLOUDROUTER_EDGE_TRUST_FORWARDED_HEADERS` |
 | Local tool API | disabled | `PORTAL_PUBLIC_TOOL_API_ENABLED` |
-| Portal tool API rate limit | 120 req / 60 s per IP | `SDKWORK_CLAW_TOOL_API_RATE_LIMIT_*` |
+| Portal tool API rate limit | 120 req / 60 s per IP | `SDKWORK_CLOUDROUTER_TOOL_API_RATE_LIMIT_*` |
 | Artifact signature | required | `sdkwork.app.config.json` `security.signatureRequired` |
 | SBOM | required | `sdkwork.app.config.json` `security.sbomRequired` |
 | Forwarded header trust | off | `[server].trust_forwarded_headers` |
@@ -97,7 +97,7 @@ Production deployments MUST keep the following defaults enabled:
 
 ## Tenant Isolation Boundary
 
-Claw Router is multi-tenant. Any issue that allows one tenant to read or modify
+Cloud Router is multi-tenant. Any issue that allows one tenant to read or modify
 another tenant's data, API keys, usage records, billing ledgers, or routing
 configurations is treated as Critical regardless of exploit complexity.
 
@@ -105,7 +105,7 @@ The trust boundary is enforced by:
 
 - IAM-issued `WebRequestPrincipal` (no client-side tenant headers trusted)
 - App session tokens signed with a single shared HMAC secret configured via
-  `SDKWORK_CLAW_APP_SESSION_SECRET` (`sdkwork-claw-config::AppSessionConfig`).
+  `SDKWORK_CLOUDROUTER_APP_SESSION_SECRET` (`sdkwork-cloudrouter-config::AppSessionConfig`).
   The shared HMAC secret is the current 0.3.x baseline; per-tenant asymmetric
   signing (RS256/ES256) is tracked as a P0 GA prerequisite in
   `docs/standard-alignment-audit.md`.
@@ -132,7 +132,7 @@ and covers both Rust and npm dependency trees:
   with license fields enriched via `cargo metadata --format-version=1`. Covers
   workspace members and transitive crates.
 - **npm dependencies**: parsed from `pnpm-lock.yaml` `packages:` sections in both
-  the root workspace and `apps/sdkwork-clawrouter-pc`. License resolved from
+  the root workspace and `apps/sdkwork-cloudrouter-pc`. License resolved from
   each installed package's `package.json` via Node module resolution, with a
   `node_modules/.pnpm` virtual-store fallback for transitive deps.
 - **Vulnerability scans**: `cargo audit` and `pnpm audit` results embedded in

@@ -1,4 +1,4 @@
-# SDKWork Claw Router - SOC 2 Compliance Readiness
+# SDKWork Cloud Router - SOC 2 Compliance Readiness
 
 **Document Version:** 1.1
 **Last Updated:** 2026-06-27
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This document outlines the SOC 2 Type II compliance readiness plan for SDKWork Claw Router. The audit will evaluate controls across the five Trust Service Criteria (TSC): Security, Availability, Processing Integrity, Confidentiality, and Privacy.
+This document outlines the SOC 2 Type II compliance readiness plan for SDKWork Cloud Router. The audit will evaluate controls across the five Trust Service Criteria (TSC): Security, Availability, Processing Integrity, Confidentiality, and Privacy.
 
 ### Audit Timeline
 

@@ -282,13 +282,13 @@ class RustRouteOverlapAudit:
         source_paths = {location.source_path for location in locations}
         if (
             path.startswith("/app/v3/api/auth/")
-            and source_paths == {"services/sdkwork-clawrouter-router-service/src/api/app_auth.rs"}
+            and source_paths == {"services/sdkwork-cloudrouter-router-service/src/api/app_auth.rs"}
         ):
             return True
         if (
             method == "GET"
             and path == "/app/v3/api/iam/api_keys"
-            and source_paths == {"services/sdkwork-clawrouter-router-service/src/api/app_api_keys.rs"}
+            and source_paths == {"services/sdkwork-cloudrouter-router-service/src/api/app_api_keys.rs"}
         ):
             return True
         if (
@@ -296,8 +296,8 @@ class RustRouteOverlapAudit:
             and path == "/v1/models/{model}"
             and source_paths
             == {
-                "crates/sdkwork-clawrouter-edge-runtime/src/passthrough.rs",
-                "crates/sdkwork-clawrouter-edge-runtime/src/invocation_http.rs",
+                "crates/sdkwork-cloudrouter-edge-runtime/src/passthrough.rs",
+                "crates/sdkwork-cloudrouter-edge-runtime/src/invocation_http.rs",
             }
         ):
             return True
@@ -311,17 +311,17 @@ class RustRouteOverlapAudit:
         path: str,
         source_paths: set[str],
     ) -> bool:
-        claw_sources = {
+        cloud_sources = {
             source_path
             for source_path in source_paths
-            if source_path.startswith("services/sdkwork-clawrouter-router-service/")
+            if source_path.startswith("services/sdkwork-cloudrouter-router-service/")
         }
         appbase_sources = {
             source_path
             for source_path in source_paths
             if "sdkwork-appbase/" in source_path.replace("\\", "/")
         }
-        if not claw_sources or not appbase_sources:
+        if not cloud_sources or not appbase_sources:
             return False
         dependency_prefixes = (
             "/app/v3/api/auth/",
@@ -340,7 +340,7 @@ class RustRouteOverlapAudit:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Audit duplicate Rust Axum method routes.")
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     args = parser.parse_args()
 
     result = RustRouteOverlapAudit(root=args.root).run()

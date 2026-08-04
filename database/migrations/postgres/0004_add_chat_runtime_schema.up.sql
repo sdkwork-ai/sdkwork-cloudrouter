@@ -1,7 +1,7 @@
 -- sdkwork:migration
 -- id: 0004_add_chat_runtime_schema
 -- engine: postgres
--- module: clawrouter
+-- module: cloudrouter
 -- purpose: Materialize the user-scoped chat transcript, context snapshot, runtime invocation, and usage-link authority.
 -- reversible: false
 -- rollback: forward-fix

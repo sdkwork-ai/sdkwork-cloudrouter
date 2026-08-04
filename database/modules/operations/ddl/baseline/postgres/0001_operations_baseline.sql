@@ -1,4 +1,4 @@
--- Generated from docs/schema-registry/sdkwork-clawrouter.tables.yaml.
+-- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.4.0.
 -- Registry SHA-256: 68adaff94451c089d37f4be3b45c66d13b1d93c1f3aa9d2411c48ec4d3cfa03f.
 -- Dialect: postgres.

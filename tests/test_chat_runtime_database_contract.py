@@ -10,7 +10,7 @@ CHAT_FRAGMENT = ROOT / "docs" / "schema-registry" / "tables" / "ai-chat-runtime.
 MATERIALIZED_CONTRACT = ROOT / "database" / "contract" / "schema.yaml"
 DATABASE_MANIFEST = ROOT / "database" / "database.manifest.json"
 POSTGRES_BASELINE = (
-    ROOT / "database" / "ddl" / "baseline" / "postgres" / "0001_clawrouter_baseline.sql"
+    ROOT / "database" / "ddl" / "baseline" / "postgres" / "0001_cloudrouter_baseline.sql"
 )
 POSTGRES_MIGRATION = (
     ROOT / "database" / "migrations" / "postgres" / "0004_add_chat_runtime_schema.up.sql"

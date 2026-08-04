@@ -1,4 +1,0 @@
-interface:
-  display_name: "ClawRouter App SDK"
-  short_description: "Use the generated ClawRouter app SDK"
-  default_prompt: "Use the ClawRouter app SDK integration standard."

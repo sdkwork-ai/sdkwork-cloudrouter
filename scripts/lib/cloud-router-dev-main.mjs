@@ -1,0 +1,273 @@
+import { spawn } from 'node:child_process';
+import path from 'node:path';
+import process from 'node:process';
+import { fileURLToPath } from 'node:url';
+
+import {
+  DEFAULT_DEV_PROFILE_ID,
+  listHealthSurfaces,
+  loadTopologyProfileForWorkspace,
+  REPO_ROOT,
+  resolveDevProfileId,
+  resolveGatewayBaseUrl,
+  resolveSurfaceHttpUrl,
+} from './cloud-router-topology.mjs';
+import { ensureCloudRouterBrowserDevelopmentEnv } from '../dev/cloud-router-application-env.mjs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const LEGACY_MODES = new Set(['server', 'desktop', 'browser', 'plan', 'service']);
+const DEFAULT_SQLITE_DATABASE_URL = 'sqlite://target/dev/cloudrouter.sqlite';
+
+function mapTargetToProductMode(target, legacyMode) {
+  if (target === 'desktop') {
+    return 'desktop';
+  }
+  if (target === 'browser-only') {
+    return 'browser';
+  }
+  if (target === 'browser') {
+    return 'server';
+  }
+  if (target === 'plan') {
+    return 'plan';
+  }
+  if (target === 'service') {
+    return 'service';
+  }
+  if (legacyMode && LEGACY_MODES.has(legacyMode)) {
+    return legacyMode;
+  }
+  return 'server';
+}
+
+function hasPassthroughFlag(passthrough, flag) {
+  return passthrough.includes(flag);
+}
+
+function applyDatabaseSettings(settings) {
+  if (settings.database === 'postgres' && !settings.devEnvFile) {
+    settings.devEnvFile = '.env.postgres';
+  }
+  if (
+    settings.database === 'sqlite'
+    && !hasPassthroughFlag(settings.passthrough, '--database-url')
+  ) {
+    settings.passthrough.push('--database-url', DEFAULT_SQLITE_DATABASE_URL);
+  }
+}
+
+function parseArgs(argv) {
+  const settings = {
+    deploymentProfile: 'standalone',
+    environment: 'development',
+    runtimeMode: 'all-in-one',
+    target: 'browser',
+    database: undefined,
+    legacyMode: undefined,
+    devEnvFile: undefined,
+    dryRun: false,
+    help: false,
+    passthrough: [],
+    passthroughMode: false,
+  };
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === '--help' || arg === '-h') {
+      settings.help = true;
+      continue;
+    }
+    if (arg === '--topology') {
+      throw new Error(
+        '--topology is retired; use --deployment-profile (standalone|cloud)',
+      );
+    }
+    if (arg === '--deployment-profile') {
+      settings.deploymentProfile = argv[index + 1] ?? settings.deploymentProfile;
+      index += 1;
+      continue;
+    }
+    if (arg === '--environment') {
+      settings.environment = argv[index + 1] ?? settings.environment;
+      index += 1;
+      continue;
+    }
+    if (arg === '--hosting') {
+      throw new Error(
+        '--hosting is retired; use --deployment-profile (standalone or cloud)',
+      );
+    }
+    if (arg === '--service-layout') {
+      throw new Error(
+        '--service-layout is retired; process decomposition is not a topology profile axis. Use --distributed only for local split-process debugging.',
+      );
+    }
+    if (arg === '--distributed') {
+      settings.runtimeMode = 'distributed';
+      continue;
+    }
+    if (arg === '--target') {
+      settings.target = argv[index + 1] ?? settings.target;
+      index += 1;
+      continue;
+    }
+    if (arg === '--runtime-target') {
+      settings.target = argv[index + 1] ?? settings.target;
+      index += 1;
+      continue;
+    }
+    if (arg === '--database') {
+      settings.database = argv[index + 1];
+      index += 1;
+      continue;
+    }
+    if (arg === '--dev-env-file') {
+      settings.devEnvFile = argv[index + 1];
+      index += 1;
+      continue;
+    }
+    if (arg === '--dry-run') {
+      settings.dryRun = true;
+      continue;
+    }
+    if (arg === '--') {
+      settings.passthroughMode = true;
+      continue;
+    }
+    if (settings.passthroughMode) {
+      settings.passthrough.push(arg);
+      continue;
+    }
+    if (!arg.startsWith('-') && LEGACY_MODES.has(arg)) {
+      settings.legacyMode = arg;
+      continue;
+    }
+    if (!arg.startsWith('-')) {
+      throw new Error(
+        `Unsupported positional argument: ${arg}. Use --target instead of legacy mode names.`,
+      );
+    }
+    settings.passthrough.push(arg);
+  }
+
+  if (settings.environment !== 'development') {
+    throw new Error('cloud-router-dev supports only --environment development');
+  }
+  applyDatabaseSettings(settings);
+  settings.mode = mapTargetToProductMode(settings.target, settings.legacyMode);
+  return settings;
+}
+
+function printHelp() {
+  console.log(`Usage: node scripts/cloud-router-dev.mjs [options] [-- <workspace args>]
+
+Topology-aware Cloud Router dev entry. Loads etc/topology profile env via @sdkwork/app-topology.
+
+Options:
+  --deployment-profile <standalone|cloud>           Default: standalone
+  --environment <development>                       Default: development
+  --distributed                                      Use local split-process debugging
+  --target <browser|browser-only|desktop|plan|service>
+                                                    Default: browser (integrated product server)
+  --runtime-target <browser|desktop|server>           sdkwork-app lifecycle alias for --target
+  --database <postgres|sqlite>                      Optional database overlay
+  --dev-env-file <path>                             Optional dotenv overlay (overrides --database postgres)
+  --dry-run                                         Print resolved topology only
+  --help, -h
+
+Note: --topology and --service-layout are retired. Deployment profiles do not encode process decomposition.
+
+Examples:
+  pnpm dev:browser
+  pnpm dev:browser:cloud
+  pnpm dev:desktop
+  pnpm dev:desktop:sqlite
+`);
+}
+
+function main() {
+  const settings = parseArgs(process.argv.slice(2));
+  if (settings.help) {
+    printHelp();
+    return;
+  }
+
+  const profileId = resolveDevProfileId(settings.deploymentProfile);
+  const { env: mergedEnv } = loadTopologyProfileForWorkspace({
+    deploymentProfile: settings.deploymentProfile,
+    env: process.env,
+    includeIamDatabase: true,
+  });
+
+  const summary = {
+    repoRoot: REPO_ROOT,
+    profileId,
+    defaultDevProfileId: DEFAULT_DEV_PROFILE_ID,
+    deploymentProfile: settings.deploymentProfile,
+    environment: settings.environment,
+    runtimeMode: settings.runtimeMode,
+    target: settings.target,
+    database: settings.database,
+    applicationPublicHttpUrl: resolveSurfaceHttpUrl(
+      mergedEnv,
+      'application.public-ingress',
+    ),
+    applicationBackendHttpUrl: resolveSurfaceHttpUrl(
+      mergedEnv,
+      'application.backend-http',
+    ),
+    applicationOpenHttpUrl: resolveSurfaceHttpUrl(mergedEnv, 'application.open-http'),
+    platformApiGatewayHttpUrl: resolveGatewayBaseUrl(mergedEnv, settings.deploymentProfile),
+    healthSurfaces: listHealthSurfaces(profileId),
+    mode: settings.mode,
+  };
+
+  console.log('[sdkwork-cloudrouter-dev] topology profile loaded');
+  console.log(JSON.stringify(summary, null, 2));
+
+  if (settings.dryRun) {
+    return;
+  }
+
+  const browserApplicationEnv = ensureCloudRouterBrowserDevelopmentEnv({
+    workspaceRoot: REPO_ROOT,
+    env: mergedEnv,
+    deploymentProfile: settings.deploymentProfile,
+  });
+  Object.assign(mergedEnv, browserApplicationEnv.mergedEnv);
+
+  const workspaceArgs = [
+    '--deployment-profile',
+    settings.deploymentProfile,
+    ...(settings.runtimeMode === 'distributed' ? ['--distributed'] : []),
+    ...settings.passthrough,
+  ];
+
+  const applicationArgs = [settings.mode, ...workspaceArgs];
+  if (settings.devEnvFile) {
+    applicationArgs.unshift('--dev-env-file', settings.devEnvFile);
+  }
+
+  const child = spawn(
+    process.execPath,
+    [path.join(REPO_ROOT, 'scripts', 'run-cloud-router-application.mjs'), ...applicationArgs],
+    {
+      cwd: REPO_ROOT,
+      env: mergedEnv,
+      stdio: 'inherit',
+      shell: false,
+    },
+  );
+
+  child.on('exit', (code, signal) => {
+    if (signal) {
+      process.kill(process.pid, signal);
+      return;
+    }
+    process.exit(code ?? 0);
+  });
+}
+
+main();

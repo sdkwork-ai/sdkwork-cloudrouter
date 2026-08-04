@@ -123,7 +123,7 @@ class SchemaCompiler:
         self.registry_path = (
             Path(registry_path).resolve()
             if registry_path is not None
-            else self.root / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+            else self.root / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
         )
         self.table_prefixes = table_prefixes
 
@@ -155,7 +155,7 @@ class SchemaCompiler:
         registry_payload = json.dumps(registry, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
         registry_hash = hashlib.sha256(registry_payload.encode("utf-8")).hexdigest()
         statements: list[str] = [
-            "-- Generated from docs/schema-registry/sdkwork-clawrouter.tables.yaml.\n"
+            "-- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.\n"
             f"-- Registry version: {registry_version}.\n"
             f"-- Registry SHA-256: {registry_hash}.\n"
             f"-- Dialect: {dialect}.\n"
@@ -206,7 +206,7 @@ class SchemaCompiler:
             / "ddl"
             / "baseline"
             / dialect
-            / "0001_clawrouter_baseline.sql"
+            / "0001_cloudrouter_baseline.sql"
         )
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(self._compile(dialect), encoding="utf-8")
@@ -250,7 +250,7 @@ class SchemaCompiler:
             / "ddl"
             / "baseline"
             / dialect
-            / "0001_clawrouter_baseline.sql"
+            / "0001_cloudrouter_baseline.sql"
         )
         expected = self._compile(dialect)
         if not target.exists():
@@ -1017,9 +1017,9 @@ class SchemaCompiler:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Compile sdkwork-clawrouter Schema Registry to engine-specific DDL."
+        description="Compile sdkwork-cloudrouter Schema Registry to engine-specific DDL."
     )
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     parser.add_argument("--registry", type=Path, default=None, help="schema registry YAML path")
     parser.add_argument(
         "--output",

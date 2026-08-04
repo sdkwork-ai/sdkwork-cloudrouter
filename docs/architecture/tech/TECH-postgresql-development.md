@@ -1,10 +1,10 @@
 > Migrated from `docs/installation/postgresql-development.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
-This guide documents the local SDKWork Claw Router PostgreSQL development
+This guide documents the local SDKWork Cloud Router PostgreSQL development
 profile for explicit product server commands. `pnpm dev`, `pnpm dev:browser`,
 `pnpm dev:server`, and `pnpm dev:server:postgres` use PostgreSQL by default for
-the integrated Claw Router product server runtime. Gateway-backed desktop
+the integrated Cloud Router product server runtime. Gateway-backed desktop
 client commands (`pnpm dev:desktop` and `pnpm dev:desktop:sqlite`) start
 `sdkwork-api-cloud-gateway` plus the portal shell only; they do not start the product
 server database profile.
@@ -19,9 +19,9 @@ Desktop packages and desktop user data still use SQLite by default.
 Desktop SQLite defaults are unchanged by this profile:
 
 ```text
-Windows: %USERPROFILE%/.sdkwork/router/data/clawrouter.sqlite
-Linux: ~/.sdkwork/router/data/clawrouter.sqlite
-macOS: ~/.sdkwork/router/data/clawrouter.sqlite
+Windows: %USERPROFILE%/.sdkwork/router/data/cloudrouter.sqlite
+Linux: ~/.sdkwork/router/data/cloudrouter.sqlite
+macOS: ~/.sdkwork/router/data/cloudrouter.sqlite
 ```
 
 ## 1. Create The Local Database

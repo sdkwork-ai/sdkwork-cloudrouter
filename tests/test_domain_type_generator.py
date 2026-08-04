@@ -8,7 +8,7 @@ from tools.domain_type_generator import DomainTypeGenerationError, DomainTypeGen
 
 class DomainTypeGeneratorTest(unittest.TestCase):
     def write_registry(self, root: Path, content: str) -> Path:
-        registry = root / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+        registry = root / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
         registry.parent.mkdir(parents=True, exist_ok=True)
         registry.write_text(textwrap.dedent(content).strip() + "\n", encoding="utf-8")
         return registry
@@ -23,7 +23,7 @@ class DomainTypeGeneratorTest(unittest.TestCase):
                   model_vendor:
                     canonical_name: ModelVendor
                     type_bindings:
-                      java: com.sdkwork.claw.router.domain.enums.ModelVendor
+                      java: com.sdkwork.cloud.router.domain.enums.ModelVendor
                     builtin_values:
                       - { code: openai, java: OPENAI, rust: OpenAi, label: OpenAI }
                       - { code: unknown, java: UNKNOWN, rust: Unknown, label: Unknown Vendor }
@@ -31,9 +31,9 @@ class DomainTypeGeneratorTest(unittest.TestCase):
             )
 
             files = DomainTypeGenerator(root=root, registry_path=registry).generate()
-            java_source = files[root / "generated" / "types" / "java" / "com" / "sdkwork" / "claw" / "router" / "domain" / "enums" / "ModelVendor.java"]
+            java_source = files[root / "generated" / "types" / "java" / "com" / "sdkwork" / "cloud" / "router" / "domain" / "enums" / "ModelVendor.java"]
 
-            self.assertIn("package com.sdkwork.claw.router.domain.enums;", java_source)
+            self.assertIn("package com.sdkwork.cloud.router.domain.enums;", java_source)
             self.assertIn("OPENAI(\"openai\")", java_source)
             self.assertIn("UNKNOWN(\"unknown\")", java_source)
             self.assertIn("public static ModelVendor fromCode(String code)", java_source)
@@ -49,7 +49,7 @@ class DomainTypeGeneratorTest(unittest.TestCase):
                   billing_meter:
                     canonical_name: BillingMeter
                     type_bindings:
-                      rust: sdkwork_claw_router::domain::BillingMeter
+                      rust: sdkwork_cloudrouter_router::domain::BillingMeter
                       typescript: BillingMeter
                       openapi: BillingMeter
                     builtin_values:
@@ -86,8 +86,8 @@ class DomainTypeGeneratorTest(unittest.TestCase):
                     persistence:
                       store_as: stable_int_code
                     type_bindings:
-                      java: com.sdkwork.claw.router.domain.enums.IntegrationProviderType
-                      rust: sdkwork_claw_router::domain::IntegrationProviderType
+                      java: com.sdkwork.cloud.router.domain.enums.IntegrationProviderType
+                      rust: sdkwork_cloudrouter_router::domain::IntegrationProviderType
                     builtin_values:
                       - { code: unknown, java: UNKNOWN, rust: Unknown, int_code: 0, label: Unknown }
                       - { code: cloud_platform, java: CLOUD_PLATFORM, rust: CloudPlatform, int_code: 2, label: Cloud platform }
@@ -96,7 +96,7 @@ class DomainTypeGeneratorTest(unittest.TestCase):
             )
 
             files = DomainTypeGenerator(root=root, registry_path=registry).generate()
-            java_source = files[root / "generated" / "types" / "java" / "com" / "sdkwork" / "claw" / "router" / "domain" / "enums" / "IntegrationProviderType.java"]
+            java_source = files[root / "generated" / "types" / "java" / "com" / "sdkwork" / "cloud" / "router" / "domain" / "enums" / "IntegrationProviderType.java"]
             rust_source = files[root / "generated" / "types" / "rust" / "domain.rs"]
 
             self.assertIn('UNKNOWN("unknown", 0)', java_source)
@@ -120,7 +120,7 @@ class DomainTypeGeneratorTest(unittest.TestCase):
                     persistence:
                       store_as: stable_int_code
                     type_bindings:
-                      rust: sdkwork_claw_router::domain::IntegrationProviderType
+                      rust: sdkwork_cloudrouter_router::domain::IntegrationProviderType
                     builtin_values:
                       - { code: unknown, rust: Unknown, int_code: 0, label: Unknown }
                       - { code: relay_aggregator, rust: RelayAggregator, int_code: 0, label: Relay }
@@ -144,7 +144,7 @@ class DomainTypeGeneratorTest(unittest.TestCase):
                   billing_meter:
                     canonical_name: BillingMeter
                     type_bindings:
-                      java: com.sdkwork.claw.router.domain.enums.BillingMeter
+                      java: com.sdkwork.cloud.router.domain.enums.BillingMeter
                     builtin_values:
                       - { code: llm_input_token, java: LLM_INPUT_TOKEN, rust: LlmInputToken, label: LLM Input Token }
                 """,
@@ -166,8 +166,8 @@ class DomainTypeGeneratorTest(unittest.TestCase):
                   model_vendor:
                     canonical_name: ModelVendor
                     type_bindings:
-                      java: com.sdkwork.claw.router.domain.enums.ModelVendor
-                      rust: sdkwork_claw_router::domain::ModelVendor
+                      java: com.sdkwork.cloud.router.domain.enums.ModelVendor
+                      rust: sdkwork_cloudrouter_router::domain::ModelVendor
                       typescript: ModelVendor
                       openapi: ModelVendor
                     builtin_values:
@@ -179,7 +179,7 @@ class DomainTypeGeneratorTest(unittest.TestCase):
 
             written = generator.write()
 
-            self.assertIn(root / "generated" / "types" / "java" / "com" / "sdkwork" / "claw" / "router" / "domain" / "enums" / "ModelVendor.java", written)
+            self.assertIn(root / "generated" / "types" / "java" / "com" / "sdkwork" / "cloud" / "router" / "domain" / "enums" / "ModelVendor.java", written)
             self.assertTrue((root / "generated" / "types" / "rust" / "domain.rs").exists())
             self.assertTrue((root / "generated" / "types" / "typescript" / "domain-types.ts").exists())
             self.assertTrue((root / "generated" / "types" / "openapi" / "domain-types.yaml").exists())
@@ -194,13 +194,13 @@ class DomainTypeGeneratorTest(unittest.TestCase):
                   model_vendor:
                     canonical_name: ModelVendor
                     type_bindings:
-                      java: com.sdkwork.claw.router.domain.enums.ModelVendor
+                      java: com.sdkwork.cloud.router.domain.enums.ModelVendor
                     builtin_values:
                       - { code: openai, java: OPENAI, rust: OpenAi, label: OpenAI }
                       - { code: unknown, java: UNKNOWN, rust: Unknown, label: Unknown Vendor }
                 """,
             )
-            stale = root / "generated" / "types" / "java" / "com" / "sdkwork" / "claw" / "router" / "domain" / "enums" / "ModelVendor.java"
+            stale = root / "generated" / "types" / "java" / "com" / "sdkwork" / "cloud" / "router" / "domain" / "enums" / "ModelVendor.java"
             stale.parent.mkdir(parents=True, exist_ok=True)
             stale.write_text("// stale\n", encoding="utf-8")
 
@@ -219,7 +219,7 @@ class DomainTypeGeneratorTest(unittest.TestCase):
                   model_vendor:
                     canonical_name: ModelVendor
                     type_bindings:
-                      java: com.sdkwork.claw.router.domain.enums.ModelVendor
+                      java: com.sdkwork.cloud.router.domain.enums.ModelVendor
                     builtin_values:
                       - { code: openai, java: OPENAI, rust: OpenAi, label: OpenAI }
                       - { code: unknown, java: UNKNOWN, rust: Unknown, label: Unknown Vendor }

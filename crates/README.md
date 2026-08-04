@@ -4,7 +4,7 @@
 `crates/` stores authored Rust crates, including shared libraries, route crates, provider adapters, service hosts, workers, gateways, and test support crates.
 
 ## Owner
-SDKWork Claw Router Rust maintainers and crate owners.
+SDKWork Cloud Router Rust maintainers and crate owners.
 
 ## Allowed Content
 Cargo packages, Rust modules, crate-local tests, component specs, route manifests such as `crates/sdkwork-routes-*-open-api/src/manifest.rs`, and crate READMEs.

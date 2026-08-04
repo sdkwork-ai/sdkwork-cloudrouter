@@ -33,7 +33,7 @@ Extension points are limited to public exports, runtime entrypoints, SDK clients
 
 ## Verification
 
-- `cargo test --manifest-path apps/sdkwork-clawrouter/crates/provider-adapters/tencent-cloud/Cargo.toml`
+- `cargo test --manifest-path apps/sdkwork-cloudrouter/crates/provider-adapters/tencent-cloud/Cargo.toml`
 
 ## Owner And Status
 

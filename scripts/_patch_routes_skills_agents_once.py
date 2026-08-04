@@ -190,8 +190,8 @@ def patch_backend(text: str) -> str:
 
 
 def main() -> None:
-    app_path = ROOT / "crates/sdkwork-routes-clawrouter-app-api/src/routes.rs"
-    backend_path = ROOT / "crates/sdkwork-routes-clawrouter-backend-api/src/routes.rs"
+    app_path = ROOT / "crates/sdkwork-routes-cloudrouter-app-api/src/routes.rs"
+    backend_path = ROOT / "crates/sdkwork-routes-cloudrouter-backend-api/src/routes.rs"
     app_path.write_text(patch_app(app_path.read_text(encoding="utf-8")), encoding="utf-8")
     backend_path.write_text(patch_backend(backend_path.read_text(encoding="utf-8")), encoding="utf-8")
     print("patched routes")

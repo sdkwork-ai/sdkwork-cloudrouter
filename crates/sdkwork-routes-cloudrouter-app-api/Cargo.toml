@@ -1,0 +1,50 @@
+[package]
+name = "sdkwork-routes-cloudrouter-app-api"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+anyhow.workspace = true
+async-trait.workspace = true
+axum.workspace = true
+sdkwork-cloudrouter-config.workspace = true
+sdkwork-cloudrouter-http.workspace = true
+sdkwork-cloudrouter-observability.workspace = true
+sdkwork-cloudrouter-router-service.workspace = true
+sdkwork-cloudrouter-settlements-dashboard-repository-sqlx.workspace = true
+sdkwork-cloudrouter-database-host.workspace = true
+sdkwork_models_catalog_repository_sqlx.workspace = true
+sdkwork_routes_models_catalog_app_api.workspace = true
+sdkwork_content_documents_sdk_reference.workspace = true
+sdkwork-iam-web-adapter.workspace = true
+sdkwork-routes-iam-app-api.workspace = true
+sdkwork-routes-iam-backend-api.workspace = true
+sdkwork_routes_invoice_app_api.workspace = true
+sdkwork_invoice_service_host.workspace = true
+sdkwork_invoice_database_host.workspace = true
+sdkwork_routes_payment_app_api.workspace = true
+sdkwork_payment_service_host.workspace = true
+sdkwork_payment_database_host.workspace = true
+sdkwork_payment_providers.workspace = true
+sdkwork_routes_promotion_app_api.workspace = true
+sdkwork_promotion_database_host.workspace = true
+sdkwork_routes_account_app_api.workspace = true
+sdkwork_routes_membership_app_api.workspace = true
+sdkwork_membership_database_host.workspace = true
+sdkwork_api_order_assembly.workspace = true
+sdkwork_api_agents_assembly.workspace = true
+sdkwork_agents_database_host.workspace = true
+sdkwork-database-lifecycle.workspace = true
+sdkwork-database-spi.workspace = true
+sdkwork-database-sqlx.workspace = true
+sdkwork-web-axum.workspace = true
+sdkwork-web-contract.workspace = true
+sdkwork-web-core.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+tracing.workspace = true

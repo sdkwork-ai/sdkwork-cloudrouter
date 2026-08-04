@@ -1,6 +1,6 @@
 # SDKWork Forum Seed
 
-`forum-seed.json` is the install-time forum content bundle for SDKWork Claw Router.
+`forum-seed.json` is the install-time forum content bundle for SDKWork Cloud Router.
 It initializes professional tutorial discussions in the Java-compatible forum tables:
 
 - `plus_feeds`

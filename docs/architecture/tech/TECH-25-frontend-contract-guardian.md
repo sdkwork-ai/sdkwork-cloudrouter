@@ -2,11 +2,11 @@
 > Owner: SDKWork maintainers
 
 `tools.frontend_contract_guardian` keeps the database design aligned with the actual
-`apps/sdkwork-clawrouter-pc` application instead of relying on a manual checklist.
+`apps/sdkwork-cloudrouter-pc` application instead of relying on a manual checklist.
 
 ## Scope
 
-- Parse `apps/sdkwork-clawrouter-pc/src/App.tsx` and extract the public, console, and admin routes that are actually mounted by React Router.
+- Parse `apps/sdkwork-cloudrouter-pc/src/App.tsx` and extract the public, console, and admin routes that are actually mounted by React Router.
 - Compare every actual route with `generated/schema/manifest/schema-manifest.json`.
 - Validate the frontend field contract. The human-maintained source is `docs/schema-registry/frontend-field-contracts/index.yaml` plus the fragment files below `docs/schema-registry/frontend-field-contracts/`; `docs/schema-registry/frontend-field-contracts.yaml` is the compiled snapshot used by older direct-text checks and SDK generation quality gates.
 - Run `tools.frontend_field_audit` against portal service/data/type files, extract exported TypeScript data interfaces, and require every interface to be registered with exact fields.
@@ -26,7 +26,7 @@
 - AppCenter and SkillsHub now share `studio_catalog_asset` and `studio_catalog_artifact` for screenshots, release artifacts, package sizes, frameworks, and image/artifact references while preserving `appstore_app`, `plus_agent_skill`, `plus_agent_skill_package`, and `plus_category` as the source-of-truth domain tables.
 - Frontend field audit now covers 54 data interfaces from 31 portal service/data/type files and records the `route` plus `data_sources` in `generated/schema/frontend/frontend-field-audit.json`.
 - Frontend operation audit now covers 76 service operations from 25 portal service files, including 30 mutating operations, and records read/write table mappings in `generated/schema/frontend/frontend-operation-audit.json`.
-- Frontend operation audit now also records `api_surface`, `api_method`, and `api_path` for all 76 operations so the portal can switch between Claw Router Rust services and Java `legacy-java-plus-app-api`/`legacy-java-plus-backend-api` compatible paths without changing UI modules.
+- Frontend operation audit now also records `api_surface`, `api_method`, and `api_path` for all 76 operations so the portal can switch between Cloud Router Rust services and Java `legacy-java-plus-app-api`/`legacy-java-plus-backend-api` compatible paths without changing UI modules.
 - AppCenter operations are mapped to the Java `platform_app` app-store contract (`/app/v3/api/app/store/**`), and SkillsHub operations are mapped to the Java AgentSkills contract (`/app/v3/api/skills/**`) with category reads kept under the Java category-backed surfaces.
 - `/console/recharge` now includes `plus_order`, `plus_order_item`, and `plus_payment` because `submitRecharge` creates a trade/payment workflow, not only a recharge pack selection.
 - `/console/commerce` now includes `commerce_account_ledger_entry` because coupon redemption changes account balance and must leave an appbase-compatible account ledger entry.
@@ -55,7 +55,7 @@ domain type freshness, schema manifest freshness, OpenAPI component freshness, J
 python -B -m tools.frontend_contract_loader
 python -B -m tools.frontend_contract_loader --check
 python -B -m tools.api_contract_manifest
-python -B -m tools.clawrouter_openapi_generator
+python -B -m tools.cloudrouter_openapi_generator
 ```
 
 Fragment ownership:

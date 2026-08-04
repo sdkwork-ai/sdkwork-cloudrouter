@@ -3,7 +3,7 @@ pub mod video;
 
 use std::sync::Arc;
 
-use sdkwork_claw_provider_adapter::{EndpointAdapter, ProviderAdapter, ProviderAdapterEndpoint};
+use sdkwork_cloudrouter_provider_adapter::{EndpointAdapter, ProviderAdapter, ProviderAdapterEndpoint};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct TencentCloudProviderAdapter;
@@ -31,7 +31,7 @@ impl ProviderAdapter for TencentCloudProviderAdapter {
 
     fn resolve_endpoint(
         &self,
-        _request: &sdkwork_claw_provider_adapter_contract::AdapterInvocationRequest,
+        _request: &sdkwork_cloudrouter_provider_adapter_contract::AdapterInvocationRequest,
     ) -> Option<Arc<dyn EndpointAdapter>> {
         None
     }

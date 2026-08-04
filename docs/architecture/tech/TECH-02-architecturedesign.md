@@ -1,11 +1,11 @@
 > Migrated from `docs/02-技术架构设计.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
-# sdkwork-clawrouter 技术架构设计
+# sdkwork-cloudrouter 技术架构设计
 
 ## 1. 架构目标
 
-`sdkwork-clawrouter` 是 Rust-first 高性能 AI 网关运行时。它围绕统一数据库标准、稳定 app/backend API 路径、生成 SDK 边界、统一 portal 产品体验建立标准化运行时。
+`sdkwork-cloudrouter` 是 Rust-first 高性能 AI 网关运行时。它围绕统一数据库标准、稳定 app/backend API 路径、生成 SDK 边界、统一 portal 产品体验建立标准化运行时。
 
 架构目标：
 
@@ -21,19 +21,19 @@
 推荐架构是 **Rust-first Modular Runtime + Stable API Contract + Generated SDK Boundary**。
 
 ```text
-apps/sdkwork-clawrouter-pc
+apps/sdkwork-cloudrouter-pc
   -> generated TypeScript app/backend SDK
-  -> /app/v3/api/**      sdkwork-clawrouter-standalone-gateway
-  -> /backend/v3/api/**  sdkwork-clawrouter-admin-gateway
+  -> /app/v3/api/**      sdkwork-cloudrouter-standalone-gateway
+  -> /backend/v3/api/**  sdkwork-cloudrouter-admin-gateway
 
 OpenAI-compatible SDK / curl / third-party clients
-  -> /v1/**              sdkwork-clawrouter-edge-runtime
+  -> /v1/**              sdkwork-cloudrouter-edge-runtime
 
 Rust runtime services
-  -> sdkwork-claw-health
-  -> sdkwork-claw-config
-  -> sdkwork-claw-contract
-  -> sdkwork-claw-observability
+  -> sdkwork-cloudrouter-health
+  -> sdkwork-cloudrouter-config
+  -> sdkwork-cloudrouter-contract
+  -> sdkwork-cloudrouter-observability
   -> domain/application crates
   -> storage/cache/secret/provider adapters
 
@@ -44,21 +44,21 @@ State
   -> object storage optional
 ```
 
-`sdkwork-clawrouter` 以 `/app/v3/api/**` 与 `/backend/v3/api/**` 为稳定公共面，通过 OpenAPI 契约与生成 SDK 对外暴露能力；Commerce、IAM、Models 等域由组合模块提供，前端与外部调用方只切换 base URL 即可在不同部署 profile 间迁移。
+`sdkwork-cloudrouter` 以 `/app/v3/api/**` 与 `/backend/v3/api/**` 为稳定公共面，通过 OpenAPI 契约与生成 SDK 对外暴露能力；Commerce、IAM、Models 等域由组合模块提供，前端与外部调用方只切换 base URL 即可在不同部署 profile 间迁移。
 
 ## 3. Runtime Plane
 
 | Plane | Rust 服务/模块 | 职责 | 公共路径 |
 | --- | --- | --- | --- |
-| Gateway Plane | `sdkwork-clawrouter-edge-runtime` | OpenAI-compatible 请求、streaming、provider relay、routing、quota、usage finalize | `/v1/**` |
-| App Plane | `sdkwork-clawrouter-standalone-gateway` | console/public 用户自助 API，用户上下文和资源归属校验 | `/app/v3/api/**` |
-| Admin Plane | `sdkwork-clawrouter-admin-gateway` | admin 控制台 API，后台 RBAC/ABAC、审计和配置治理 | `/backend/v3/api/**` |
-| Product Plane | `sdkwork-clawrouter-router-service` | 本地桌面/服务端组合入口、静态 portal 装配、部署 profile glue | internal |
+| Gateway Plane | `sdkwork-cloudrouter-edge-runtime` | OpenAI-compatible 请求、streaming、provider relay、routing、quota、usage finalize | `/v1/**` |
+| App Plane | `sdkwork-cloudrouter-standalone-gateway` | console/public 用户自助 API，用户上下文和资源归属校验 | `/app/v3/api/**` |
+| Admin Plane | `sdkwork-cloudrouter-admin-gateway` | admin 控制台 API，后台 RBAC/ABAC、审计和配置治理 | `/backend/v3/api/**` |
+| Product Plane | `sdkwork-cloudrouter-router-service` | 本地桌面/服务端组合入口、静态 portal 装配、部署 profile glue | internal |
 | Worker Plane | 后续 worker crates | usage 聚合、账务结转、健康探测、归档、告警、outbox/inbox | internal |
-| Contract Plane | `sdkwork-claw-contract` | API surface、SDK client、路径前缀、生成 manifest 类型 | internal |
-| Config Plane | `sdkwork-claw-config` | `desktop/server/docker/kubernetes` profile、env/file 配置解析 | internal |
-| Core Plane | `sdkwork-claw-health` | health、error、app state、request context 通用模型 | internal |
-| Observability Plane | `sdkwork-claw-observability` | tracing、request_id、structured logs、metrics exporter glue | internal |
+| Contract Plane | `sdkwork-cloudrouter-contract` | API surface、SDK client、路径前缀、生成 manifest 类型 | internal |
+| Config Plane | `sdkwork-cloudrouter-config` | `desktop/server/docker/kubernetes` profile、env/file 配置解析 | internal |
+| Core Plane | `sdkwork-cloudrouter-health` | health、error、app state、request context 通用模型 | internal |
+| Observability Plane | `sdkwork-cloudrouter-observability` | tracing、request_id、structured logs、metrics exporter glue | internal |
 
 ## 4. 分层规则
 
@@ -162,18 +162,18 @@ python -B -m tools.schema_quality_gate
 
 ## 9. 数据与业务域
 
-数据库以 `docs/schema-registry/sdkwork-clawrouter.tables.yaml` 为唯一新增表契约来源。
+数据库以 `docs/schema-registry/sdkwork-cloudrouter.tables.yaml` 为唯一新增表契约来源。
 
 复用原则：
 
-- 用户、VIP、account、优惠券、算力元充值（Token Bank）、订单、支付、退款、发票由 T1 能力仓库（`sdkwork-account`、`sdkwork-order`、`sdkwork-payment` 等）和 `sdkwork-iam` 等组合模块提供；Claw Router 通过生成 SDK 消费，不在本地重复定义资金事实表。
-- Token Plan 组合运行时在共享连接池上注册 Payment、Order、Membership 数据库模块，并在挂载业务路由前统一执行模块生命周期。套餐目录由 Membership 标准种子提供；Claw Router 不硬编码套餐 ID、复制领域 DDL 或维护本地兜底目录。重复点击由 Order 的购买意图键收敛为一个有效订单，支付尝试再按不可变场景和付款元数据快照复用。
+- 用户、VIP、account、优惠券、算力元充值（Token Bank）、订单、支付、退款、发票由 T1 能力仓库（`sdkwork-account`、`sdkwork-order`、`sdkwork-payment` 等）和 `sdkwork-iam` 等组合模块提供；Cloud Router 通过生成 SDK 消费，不在本地重复定义资金事实表。
+- Token Plan 组合运行时在共享连接池上注册 Payment、Order、Membership 数据库模块，并在挂载业务路由前统一执行模块生命周期。套餐目录由 Membership 标准种子提供；Cloud Router 不硬编码套餐 ID、复制领域 DDL 或维护本地兜底目录。重复点击由 Order 的购买意图键收敛为一个有效订单，支付尝试再按不可变场景和付款元数据快照复用。
 - AppCenter、SkillsHub、模型目录等通过 `sdkwork-agent`、`sdkwork-models` 等组合模块接入。
 - 新建 AI gateway、routing、pricing、provider、usage、ops 表使用 `ai_`、`integration_`、`iam_`、`commerce_`、`studio_`、`content_`、`ops_` 等业务前缀。
 
 ## 10. 部署模式
 
-`sdkwork-clawrouter` 使用统一 Rust runtime，按 profile 变更基础设施装配：
+`sdkwork-cloudrouter` 使用统一 Rust runtime，按 profile 变更基础设施装配：
 
 | Profile | 目标 | DB | Cache | Secret |
 | --- | --- | --- | --- | --- |
@@ -188,7 +188,7 @@ python -B -m tools.schema_quality_gate
 
 1. 任一接口都能归类到 Gateway、App、Admin、Internal 之一。
 2. 任一 App/Admin 接口都能追溯到 API contract manifest、OpenAPI path 和 generated SDK 方法。
-3. 任一表都能归类为组合模块 owned 表或 Claw Router 本地业务前缀表。
+3. 任一表都能归类为组合模块 owned 表或 Cloud Router 本地业务前缀表。
 4. 任一资金变动都能追踪到订单、支付、流水、幂等键。
 5. 任一 provider secret 都只通过 secret_ref 访问。
 6. 任一路由决策都能解释候选、过滤、排序、fallback 和最终目标。

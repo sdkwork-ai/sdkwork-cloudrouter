@@ -3,7 +3,7 @@
   "facts": {
     "generatedAt": "2026-07-12T06:34:41.080Z",
     "identity": {
-      "appKey": "sdkwork-clawrouter",
+      "appKey": "sdkwork-cloudrouter",
       "version": "0.3.0",
       "releaseChannels": [
         "STABLE"
@@ -63,26 +63,26 @@
     },
     "kubernetes": {
       "manifests": [
-        "claw-router-admin-api.yaml",
-        "claw-router-app-api.yaml",
-        "claw-router-edge.yaml",
-        "claw-router-egress-gateway.yaml",
-        "claw-router-gateway.yaml",
-        "claw-router-ingress.yaml",
-        "claw-router-migration-job.yaml",
-        "claw-router-network-policy.yaml",
-        "claw-router-redis-external-secret.example.yaml",
-        "claw-router-redis.yaml"
+        "cloud-router-admin-api.yaml",
+        "cloud-router-app-api.yaml",
+        "cloud-router-edge.yaml",
+        "cloud-router-egress-gateway.yaml",
+        "cloud-router-gateway.yaml",
+        "cloud-router-ingress.yaml",
+        "cloud-router-migration-job.yaml",
+        "cloud-router-network-policy.yaml",
+        "cloud-router-redis-external-secret.example.yaml",
+        "cloud-router-redis.yaml"
       ],
       "expectedPresent": [
-        "claw-router-gateway.yaml",
-        "claw-router-app-api.yaml",
-        "claw-router-admin-api.yaml",
-        "claw-router-edge.yaml",
-        "claw-router-redis.yaml",
-        "claw-router-ingress.yaml",
-        "claw-router-network-policy.yaml",
-        "claw-router-migration-job.yaml"
+        "cloud-router-gateway.yaml",
+        "cloud-router-app-api.yaml",
+        "cloud-router-admin-api.yaml",
+        "cloud-router-edge.yaml",
+        "cloud-router-redis.yaml",
+        "cloud-router-ingress.yaml",
+        "cloud-router-network-policy.yaml",
+        "cloud-router-migration-job.yaml"
       ],
       "expectedMissing": [],
       "hasAllExpected": true
@@ -187,7 +187,7 @@
         "schemaYaml": 43
       },
       "consistent": true,
-      "note": "claw-router-owned tables consistent across DDL, table-registry.json, and schema.yaml"
+      "note": "cloud-router-owned tables consistent across DDL, table-registry.json, and schema.yaml"
     },
     "tablePartition": {
       "exists": true,
@@ -350,7 +350,7 @@
           "schemaYaml": 43
         },
         "consistent": true,
-        "note": "claw-router-owned tables consistent across DDL, table-registry.json, and schema.yaml"
+        "note": "cloud-router-owned tables consistent across DDL, table-registry.json, and schema.yaml"
       }
     },
     {

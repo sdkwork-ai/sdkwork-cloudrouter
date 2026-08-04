@@ -8,8 +8,8 @@ ROOT = Path(__file__).resolve().parents[1]
 class AdminMonitorRuntimeStandardTest(unittest.TestCase):
     def test_admin_monitor_read_model_rejects_missing_required_health_and_alert_fields(self) -> None:
         store_paths = [
-            "crates/sdkwork-clawrouter-admin-monitor-repository-sqlx/src/sqlite.rs",
-            "crates/sdkwork-clawrouter-admin-monitor-repository-sqlx/src/postgres.rs",
+            "crates/sdkwork-cloudrouter-admin-monitor-repository-sqlx/src/sqlite.rs",
+            "crates/sdkwork-cloudrouter-admin-monitor-repository-sqlx/src/postgres.rs",
         ]
 
         forbidden_fragments = [

@@ -11,10 +11,10 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
             encoding="utf-8"
         )
         product_api_mod = (
-            ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "api" / "mod.rs"
+            ROOT / "services" / "sdkwork-cloudrouter-router-service" / "src" / "api" / "mod.rs"
         ).read_text(encoding="utf-8")
         app_api = (
-            ROOT / "crates" / "sdkwork-routes-clawrouter-app-api" / "src" / "routes.rs"
+            ROOT / "crates" / "sdkwork-routes-cloudrouter-app-api" / "src" / "routes.rs"
         ).read_text(encoding="utf-8")
 
         self.assertIn("operation: fetchLogs", contract)
@@ -27,7 +27,7 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
             self.assertIn(read_source, contract)
 
         self.assertTrue(
-            (ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "api" / "app_usage_logs.rs").exists()
+            (ROOT / "services" / "sdkwork-cloudrouter-router-service" / "src" / "api" / "app_usage_logs.rs").exists()
         )
         self.assertIn("app_usage_logs_router", product_api_mod)
         self.assertIn("app_usage_logs_router_with_read_store", product_api_mod)
@@ -40,13 +40,13 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
 
     def test_usage_logs_api_validates_query_and_empty_runtime_returns_standard_page(self) -> None:
         app_usage_logs = (
-            ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "api" / "app_usage_logs.rs"
+            ROOT / "services" / "sdkwork-cloudrouter-router-service" / "src" / "api" / "app_usage_logs.rs"
         ).read_text(encoding="utf-8")
-        ports_mod = (ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "ports" / "mod.rs").read_text(
+        ports_mod = (ROOT / "services" / "sdkwork-cloudrouter-router-service" / "src" / "ports" / "mod.rs").read_text(
             encoding="utf-8"
         )
         usage_port = (
-            ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "ports" / "usage_logs_read_store.rs"
+            ROOT / "services" / "sdkwork-cloudrouter-router-service" / "src" / "ports" / "usage_logs_read_store.rs"
         ).read_text(encoding="utf-8")
 
         self.assertIn('"/app/v3/api/ai/usage/logs"', app_usage_logs)
@@ -79,7 +79,7 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
     def test_usage_logs_read_stores_use_trace_usage_join_with_tenant_scope_and_pagination(self) -> None:
         store = (
             ROOT
-            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs"
+            / "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs"
         ).read_text(encoding="utf-8")
         for expected in [
             "FROM ai_request_trace",
@@ -111,7 +111,7 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
     def test_usage_logs_read_models_reject_missing_or_invalid_trace_latency(self) -> None:
         store = (
             ROOT
-            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs"
+            / "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs"
         ).read_text(encoding="utf-8")
         compact_store = " ".join(store.split())
         self.assertNotIn("COALESCE(t.latency_ms, 0) AS latency_ms", store)
@@ -134,7 +134,7 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
     def test_usage_logs_read_models_do_not_default_missing_modality_to_text(self) -> None:
         store = (
             ROOT
-            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs"
+            / "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs"
         ).read_text(encoding="utf-8")
         compact_store = " ".join(store.split())
         self.assertIn('log_type: modality_label(optional_integer_cell(&row, "modality"))', compact_store)
@@ -143,7 +143,7 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
         modality_helper = (
             ROOT
             / "services"
-            / "sdkwork-clawrouter-router-service"
+            / "sdkwork-cloudrouter-router-service"
             / "src"
             / "infrastructure"
             / "sql"
@@ -156,9 +156,9 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
         usage_view = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-usage"
+            / "sdkwork-cloudrouter-pc-console-usage"
             / "src"
             / "UsageView.tsx"
         ).read_text(encoding="utf-8")
@@ -179,9 +179,9 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
         usage_view = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-usage"
+            / "sdkwork-cloudrouter-pc-console-usage"
             / "src"
             / "UsageView.tsx"
         ).read_text(encoding="utf-8")
@@ -197,27 +197,27 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
         usage_view = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-usage"
+            / "sdkwork-cloudrouter-pc-console-usage"
             / "src"
             / "UsageView.tsx"
         ).read_text(encoding="utf-8")
         usage_service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-usage"
+            / "sdkwork-cloudrouter-pc-console-usage"
             / "src"
             / "usageService.ts"
         ).read_text(encoding="utf-8")
         i18n_root = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-i18n"
+            / "sdkwork-cloudrouter-pc-i18n"
             / "src"
             / "resources"
         )
@@ -255,18 +255,18 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
         usage_view = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-usage"
+            / "sdkwork-cloudrouter-pc-console-usage"
             / "src"
             / "UsageView.tsx"
         ).read_text(encoding="utf-8")
         usage_service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-usage"
+            / "sdkwork-cloudrouter-pc-console-usage"
             / "src"
             / "usageService.ts"
         ).read_text(encoding="utf-8")
@@ -275,8 +275,8 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
         usage_operation_marker = (
             "- route: /console/usage\n"
-            "  source: apps/sdkwork-clawrouter-pc/packages/"
-            "sdkwork-clawrouter-pc-console-usage/src/usageService.ts\n"
+            "  source: apps/sdkwork-cloudrouter-pc/packages/"
+            "sdkwork-cloudrouter-pc-console-usage/src/usageService.ts\n"
             "  operation: fetchLogs"
         )
         usage_operation_start = contract.index(usage_operation_marker)
@@ -323,17 +323,17 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
             ROOT / "docs" / "schema-registry" / "frontend-field-contracts.yaml"
         ).read_text(encoding="utf-8")
         openapi = (
-            ROOT / "generated" / "openapi" / "clawrouter-app-openapi.json"
+            ROOT / "generated" / "openapi" / "cloudrouter-app-openapi.json"
         ).read_text(encoding="utf-8")
         sdk_ai = (
-            ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "api" / "ai.ts"
+            ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src" / "api" / "ai.ts"
         ).read_text(encoding="utf-8")
         service = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawrouter-pc-console-usage"
+            / "sdkwork-cloudrouter-pc-console-usage"
             / "src"
             / "usageService.ts"
         ).read_text(encoding="utf-8")
@@ -348,8 +348,8 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
         self.assertIn("{ name: 'q', value: params?.q", sdk_ai)
         self.assertNotIn("search_query", sdk_ai)
 
-        response_path = ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "types" / "usage-logs-response.ts"
-        item_path = ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "types" / "usage-log-item.ts"
+        response_path = ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src" / "types" / "usage-logs-response.ts"
+        item_path = ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src" / "types" / "usage-log-item.ts"
         self.assertTrue(response_path.exists())
         self.assertTrue(item_path.exists())
         response = response_path.read_text(encoding="utf-8")

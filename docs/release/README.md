@@ -1,6 +1,6 @@
 # Release Records
 
-This directory stores the formal release record for `sdkwork-clawrouter`.
+This directory stores the formal release record for `sdkwork-cloudrouter`.
 
 ## File Layout
 

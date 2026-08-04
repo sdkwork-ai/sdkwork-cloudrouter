@@ -8,7 +8,7 @@ compliance_level: L2
 engines:
   - postgres
 table_prefix: iam_gateway_
-source_registry: docs/schema-registry/sdkwork-clawrouter.tables.yaml
+source_registry: docs/schema-registry/sdkwork-cloudrouter.tables.yaml
 tables:
   - name: iam_gateway_access_policy
     domain: iam_gateway

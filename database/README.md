@@ -1,38 +1,38 @@
-# CLAW_ROUTER Database Module
+# CLOUD_ROUTER Database Module
 
-Canonical lifecycle assets for `sdkwork-clawrouter` per `DATABASE_FRAMEWORK_SPEC.md`.
+Canonical lifecycle assets for `sdkwork-cloudrouter` per `DATABASE_FRAMEWORK_SPEC.md`.
 
-- moduleId: `clawrouter`
-- serviceCode: `CLAW_ROUTER`
-- tablePrefix: `ai_` (claw-router-owned generated schema)
+- moduleId: `cloudrouter`
+- serviceCode: `CLOUD_ROUTER`
+- tablePrefix: `ai_` (cloud-router-owned generated schema)
 
 ## Composition
 
-Claw-router **generated schema** (`generated/schema/postgres/schema.sql`) owns gateway, routing, usage settlement projections, and claw-router operational tables only.
+Cloud-router **generated schema** (`generated/schema/postgres/schema.sql`) owns gateway, routing, usage settlement projections, and cloud-router operational tables only.
 
-`database.manifest.json` describes only the Claw Router-owned database module. Sibling modules keep independent manifests, migrations, history, and ownership; they are not duplicated in the Claw Router baseline.
+`database.manifest.json` describes only the Cloud Router-owned database module. Sibling modules keep independent manifests, migrations, history, and ownership; they are not duplicated in the Cloud Router baseline.
 
-The product installer performs explicit lifecycle orchestration. It migrates `sdkwork-models` first and then the Claw Router database host before application-data bootstrap. IAM and other product domains remain independent service or SDK boundaries.
+The product installer performs explicit lifecycle orchestration. It migrates `sdkwork-models` first and then the Cloud Router database host before application-data bootstrap. IAM and other product domains remain independent service or SDK boundaries.
 
 | Dependency | Lifecycle owner | Runtime role |
 | --- | --- | --- |
-| `sdkwork-models` | `sdkwork-models` database host | Model catalog tables migrated before Claw Router bootstrap |
+| `sdkwork-models` | `sdkwork-models` database host | Model catalog tables migrated before Cloud Router bootstrap |
 | `sdkwork-iam` | IAM service/database host | Authentication and identity data consumed through IAM boundaries |
 
-Gateway / routing / ops tables remain owned by `clawrouter` in `generated/schema/postgres/schema.sql`.
+Gateway / routing / ops tables remain owned by `cloudrouter` in `generated/schema/postgres/schema.sql`.
 
 See `docs/31-product-composition-model.md`.
 
 ## Initialization state
 
-The canonical baseline contains the complete current Claw Router-owned schema,
+The canonical baseline contains the complete current Cloud Router-owned schema,
 including app-chat and runtime usage-link tables. Product installation remains
 a composed lifecycle: migrate the `sdkwork-models` module first, migrate this
 module and its declared child modules, then bootstrap application data.
 
 This authoritative-server module uses the following greenfield lifecycle:
 
-1. **Baseline** - `database/ddl/baseline/postgres/0001_clawrouter_baseline.sql` contains the complete pre-release DDL snapshot.
+1. **Baseline** - `database/ddl/baseline/postgres/0001_cloudrouter_baseline.sql` contains the complete pre-release DDL snapshot.
 2. **Migrations** - `database/migrations/postgres/` contains guarded upgrade paths for pre-release installations. The folded baseline already reflects their canonical end state; fresh installs apply the baseline and record or skip compatible migrations through the lifecycle framework.
 3. **Drift** - run `pnpm db:drift:check` before release.
 

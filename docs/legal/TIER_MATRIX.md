@@ -1,14 +1,14 @@
-# SDKWork Claw Router Edition Tier Matrix
+# SDKWork Cloud Router Edition Tier Matrix
 
 **Document Version:** 1.0
 **Last Updated:** 2026-06-27
 **Status:** active
 **Owner:** SDKWork commercial team
-**Application:** sdkwork-clawrouter
+**Application:** sdkwork-cloudrouter
 
 ## 1. Overview
 
-This matrix compares the four SDKWork Claw Router editions: Community, Pro,
+This matrix compares the four SDKWork Cloud Router editions: Community, Pro,
 Enterprise, and OEM / White-label. Use it to select the edition that matches
 your deployment model, capability needs, and commercial expectations.
 
@@ -150,7 +150,7 @@ Legend:
 - Choose **Enterprise Edition** for organizations that need SSO, enhanced
   audit, dedicated support, 99.9% uptime, private deployment, and custom
   integration.
-- Choose **OEM / White-label License** for vendors that embed Claw Router
+- Choose **OEM / White-label License** for vendors that embed Cloud Router
   inside a commercial product, rebrand it, or redistribute it.
 
 Contact `sales@sdkwork.com` for edition selection guidance, custom terms,

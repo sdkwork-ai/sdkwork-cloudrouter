@@ -3,7 +3,7 @@
 
 ## Goal
 
-Install a complete payment-center configuration baseline for a new Claw Router deployment. The baseline must expose every standard payment method, provider, provider account placeholder, payment channel, and routing rule needed by the admin payment center, while keeping every runtime payment path disabled until an administrator explicitly edits credentials and enables the records.
+Install a complete payment-center configuration baseline for a new Cloud Router deployment. The baseline must expose every standard payment method, provider, provider account placeholder, payment channel, and routing rule needed by the admin payment center, while keeping every runtime payment path disabled until an administrator explicitly edits credentials and enables the records.
 
 ## Scope
 

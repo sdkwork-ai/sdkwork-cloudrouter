@@ -9,13 +9,13 @@ from tools.appbase_capability_guardian import AppbaseCapabilityGuardian
 from tools.appbase_integration_guardian import AppbaseIntegrationGuardian
 from tools.appbase_openapi_schema_guardian import AppbaseOpenApiSchemaGuardian
 from tools.architecture_standard_guardian import ArchitectureStandardGuardian
-from tools.clawrouter_gateway_openapi_generator import ClawRouterGatewayOpenApiGenerator
-from tools.clawrouter_openapi_contract_audit import ClawRouterOpenApiContractAudit
-from tools.clawrouter_openapi_generator import ClawRouterOpenApiGenerator
-from tools.clawrouter_openapi_precision_audit import ClawRouterOpenApiPrecisionAudit
-from tools.clawrouter_payload_sdk_audit import ClawRouterPayloadSdkAudit
-from tools.clawrouter_sdk_guardian import ClawRouterSdkGuardian
-from tools.clawrouter_skill_guardian import ClawRouterSkillGuardian
+from tools.cloudrouter_gateway_openapi_generator import CloudRouterGatewayOpenApiGenerator
+from tools.cloudrouter_openapi_contract_audit import CloudRouterOpenApiContractAudit
+from tools.cloudrouter_openapi_generator import CloudRouterOpenApiGenerator
+from tools.cloudrouter_openapi_precision_audit import CloudRouterOpenApiPrecisionAudit
+from tools.cloudrouter_payload_sdk_audit import CloudRouterPayloadSdkAudit
+from tools.cloudrouter_sdk_guardian import CloudRouterSdkGuardian
+from tools.cloudrouter_skill_guardian import CloudRouterSkillGuardian
 from tools.domain_type_generator import DomainTypeGenerator
 from tools.flyway_schema_contract_audit import FlywaySchemaContractAudit
 from tools.frontend_contract_loader import FrontendFieldContractCompiler
@@ -45,7 +45,7 @@ class SchemaQualityGate:
         self.registry_path = (
             Path(registry_path).resolve()
             if registry_path is not None
-            else self.root / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+            else self.root / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
         )
 
     def run(self) -> SchemaQualityGateResult:
@@ -81,26 +81,26 @@ class SchemaQualityGate:
         api_contract_manifest = ApiContractManifestGenerator(root=self.root).check()
         messages.extend(api_contract_manifest.messages)
 
-        clawrouter_openapi = ClawRouterOpenApiGenerator(root=self.root).check()
-        messages.extend(clawrouter_openapi.messages)
+        cloudrouter_openapi = CloudRouterOpenApiGenerator(root=self.root).check()
+        messages.extend(cloudrouter_openapi.messages)
 
-        clawrouter_gateway_openapi = ClawRouterGatewayOpenApiGenerator(root=self.root).check()
-        messages.extend(clawrouter_gateway_openapi.messages)
+        cloudrouter_gateway_openapi = CloudRouterGatewayOpenApiGenerator(root=self.root).check()
+        messages.extend(cloudrouter_gateway_openapi.messages)
 
-        clawrouter_openapi_contract = ClawRouterOpenApiContractAudit(root=self.root).run()
-        messages.extend(clawrouter_openapi_contract.messages)
+        cloudrouter_openapi_contract = CloudRouterOpenApiContractAudit(root=self.root).run()
+        messages.extend(cloudrouter_openapi_contract.messages)
 
-        clawrouter_openapi_precision = ClawRouterOpenApiPrecisionAudit(root=self.root).run()
-        messages.extend(clawrouter_openapi_precision.messages)
+        cloudrouter_openapi_precision = CloudRouterOpenApiPrecisionAudit(root=self.root).run()
+        messages.extend(cloudrouter_openapi_precision.messages)
 
-        clawrouter_payload_sdk = ClawRouterPayloadSdkAudit(root=self.root).run()
-        messages.extend(clawrouter_payload_sdk.messages)
+        cloudrouter_payload_sdk = CloudRouterPayloadSdkAudit(root=self.root).run()
+        messages.extend(cloudrouter_payload_sdk.messages)
 
-        clawrouter_sdk = ClawRouterSdkGuardian(root=self.root).run()
-        messages.extend(clawrouter_sdk.messages)
+        cloudrouter_sdk = CloudRouterSdkGuardian(root=self.root).run()
+        messages.extend(cloudrouter_sdk.messages)
 
-        clawrouter_skills = ClawRouterSkillGuardian(root=self.root).run()
-        messages.extend(clawrouter_skills.messages)
+        cloudrouter_skills = CloudRouterSkillGuardian(root=self.root).run()
+        messages.extend(cloudrouter_skills.messages)
 
         java_legacy_audit = JavaLegacyContractAudit(root=self.root, registry_path=self.registry_path).check()
         messages.extend(java_legacy_audit.messages)
@@ -132,8 +132,8 @@ class SchemaQualityGate:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run sdkwork-clawrouter schema quality gates.")
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser = argparse.ArgumentParser(description="Run sdkwork-cloudrouter schema quality gates.")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     parser.add_argument("--registry", type=Path, default=None, help="schema registry YAML path")
     args = parser.parse_args()
 

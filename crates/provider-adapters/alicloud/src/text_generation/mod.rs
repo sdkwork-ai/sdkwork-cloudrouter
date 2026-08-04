@@ -9,10 +9,10 @@
 // upstream provider is performed by the cloud-gateway passthrough transport;
 // this adapter resolves the endpoint and records usage for billing settlement.
 
-use sdkwork_claw_provider_adapter::{
+use sdkwork_cloudrouter_provider_adapter::{
     AdapterInvocationContext, AdapterInvocationFuture, EndpointAdapter, ProviderAdapterEndpoint,
 };
-use sdkwork_claw_provider_adapter_contract::{
+use sdkwork_cloudrouter_provider_adapter_contract::{
     AdapterError, AdapterErrorKind, AdapterInvocationRequest, AdapterInvocationResponse,
     AdapterInvocationShape,
 };

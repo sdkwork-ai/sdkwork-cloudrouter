@@ -1,8 +1,8 @@
-# SDKWork Claw Router PRD
+# SDKWork Cloud Router PRD
 
 Status: active  
 Owner: SDKWork maintainers  
-Application: sdkwork-clawrouter  
+Application: sdkwork-cloudrouter  
 Updated: 2026-07-31
 Specs: `REQUIREMENTS_SPEC.md`, `DOCUMENTATION_SPEC.md`
 
@@ -14,7 +14,7 @@ integration spreads those differences across every application and makes
 failover, tenant isolation, settlement, audit, and cost reconciliation hard to
 operate consistently.
 
-Claw Router is a pre-launch, multi-tenant AI gateway. It provides a stable
+Cloud Router is a pre-launch, multi-tenant AI gateway. It provides a stable
 OpenAI-compatible invocation surface, standardized upstream supplier control
 plane, account-group routing, usage accounting, and generated management SDKs.
 This document defines intended product behavior; it is not production-release
@@ -51,7 +51,7 @@ evidence.
 - Generate app, backend, and open SDK families from reviewed API authorities.
 - Compose Payment as a dependency-owned commercial capability instead of
   copying its provider-account, channel, intent, webhook, reconciliation, or
-  credential lifecycle into Claw Router. Claw Router may add only
+  credential lifecycle into Cloud Router. Cloud Router may add only
   product-owned inventory and presentation extensions through declared SDK
   boundaries.
 - Produce usage, routing-decision, health, audit, and settlement facts required
@@ -127,9 +127,9 @@ is recorded in
 
 ### Product Surfaces
 
-- Backend management API and `@sdkwork/clawrouter-backend-sdk` for operators.
-- App API and `@sdkwork/clawrouter-app-sdk` for authenticated product clients.
-- Open API and `@sdkwork/clawrouter-open-sdk` for public gateway consumers.
+- Backend management API and `@sdkwork/cloudrouter-backend-sdk` for operators.
+- App API and `@sdkwork/cloudrouter-app-sdk` for authenticated product clients.
+- Open API and `@sdkwork/cloudrouter-open-sdk` for public gateway consumers.
 - PC console and admin application using generated SDK boundaries.
 - Usage, finance, notification, settings, monitoring, and audit capabilities
   required to operate the gateway.
@@ -137,7 +137,7 @@ is recorded in
 Payment administration is a composed dependency capability. Provider-account
 creation and updates, credential testing and rotation, sub-merchant commands,
 methods, channels, routing rules, intents, attempts, webhook events, and
-reconciliation remain owned by the Payment product. Claw Router contributes
+reconciliation remain owned by the Payment product. Cloud Router contributes
 only its product-specific provider inventory extension and host navigation.
 Credential inputs are write-only, and every mutation requires its exact
 effective Payment permission; access to the enclosing admin route is not write
@@ -148,7 +148,7 @@ authorization.
 The admin analytics overview is a PostgreSQL-backed read model exposed by
 `GET /backend/v3/api/system/analytics/admin/overview` and generated as
 `system.analytics.admin.overview.retrieve(...)` in
-`@sdkwork/clawrouter-backend-sdk`. It reports summary totals, UTC trends, user
+`@sdkwork/cloudrouter-backend-sdk`. It reports summary totals, UTC trends, user
 and model rankings, model/modality distributions, and deterministic insights
 from tenant-scoped `ai_usage` and `ai_request_trace` facts.
 
@@ -175,7 +175,7 @@ from tenant-scoped `ai_usage` and `ai_request_trace` facts.
    verifies that list/detail APIs expose only masked metadata.
 3. The operator creates an account group, assigns accounts, sets routing and
    financial multipliers independently, and publishes resource eligibility.
-4. A client invokes a supported API. Claw Router authenticates the request,
+4. A client invokes a supported API. Cloud Router authenticates the request,
    resolves entitlements, selects an eligible group/account/endpoint, dispatches
    through an adapter, and records a redacted decision and usage fact.
 5. When an endpoint or account is unhealthy, routing applies the declared
@@ -224,7 +224,7 @@ backup/restore, and multi-replica tests. They are not inferred from design.
 | Phase | Exit condition | Status |
 | --- | --- | --- |
 | Domain convergence | Supplier/account/account-group model, PostgreSQL schema, APIs, SDKs, UI, tests, and docs agree | In progress |
-| Payment composition convergence | Payment owner SDK, Claw extension boundary, write-only credentials, exact action RBAC, server pagination, and docs agree | In progress |
+| Payment composition convergence | Payment owner SDK, Cloud extension boundary, write-only credentials, exact action RBAC, server pagination, and docs agree | In progress |
 | Chat persistence convergence | Eight-table PostgreSQL authority, API/SDK pagination, concurrency, readiness, recovery, and docs agree | In progress |
 | Production hardening | Security, streaming, financial, load, recovery, observability, and HA gates pass | Planned |
 | Commercial beta | Clean release candidate, signed artifacts, runbooks, support controls, and reviewed evidence | Planned |

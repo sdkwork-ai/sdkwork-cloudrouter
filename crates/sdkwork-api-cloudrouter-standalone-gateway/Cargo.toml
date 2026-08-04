@@ -1,0 +1,14 @@
+[package]
+name = "sdkwork-api-cloudrouter-standalone-gateway"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+axum.workspace = true
+sdkwork-api-cloudrouter-assembly.workspace = true
+sdkwork-cloudrouter-config.workspace = true
+sdkwork-cloudrouter-http.workspace = true
+sdkwork-web-bootstrap.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tower.workspace = true

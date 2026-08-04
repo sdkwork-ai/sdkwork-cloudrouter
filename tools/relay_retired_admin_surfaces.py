@@ -1,8 +1,8 @@
-"""Shared retired Claw Router admin portal surfaces (relay-only alignment)."""
+"""Shared retired Cloud Router admin portal surfaces (relay-only alignment)."""
 
 from __future__ import annotations
 
-# Portal route prefixes removed from apps/sdkwork-clawrouter-pc App.tsx admin shell.
+# Portal route prefixes removed from apps/sdkwork-cloudrouter-pc App.tsx admin shell.
 RELAY_RETIRED_ADMIN_PORTAL_ROUTE_PREFIXES: tuple[str, ...] = (
     "/admin/catalog",
     "/admin/orders",
@@ -73,22 +73,22 @@ def is_relay_retired_admin_operation_route(route: str) -> bool:
 
 # PC admin package path segments removed from relay portal (commerce/platform/file-platform).
 RELAY_RETIRED_ADMIN_PACKAGE_SEGMENTS: tuple[str, ...] = (
-    "sdkwork-clawrouter-pc-admin-catalog",
-    "sdkwork-clawrouter-pc-admin-orders",
-    "sdkwork-clawrouter-pc-admin-wallet",
-    "sdkwork-clawrouter-pc-admin-finance",
-    "sdkwork-clawrouter-pc-admin-inventory",
-    "sdkwork-clawrouter-pc-admin-messaging",
-    "sdkwork-clawrouter-pc-admin-agents",
-    "sdkwork-clawrouter-pc-admin-skill",
-    "sdkwork-clawrouter-pc-admin-prompts",
-    "sdkwork-clawrouter-pc-admin-mcp",
-    "sdkwork-clawrouter-pc-admin-announcement",
-    "sdkwork-clawrouter-pc-admin-user",
-    "sdkwork-clawrouter-pc-admin-organization",
-    "sdkwork-clawrouter-pc-admin-oauth",
-    "sdkwork-clawrouter-pc-admin-service-provider",
-    "sdkwork-clawrouter-pc-admin-file-platform",
+    "sdkwork-cloudrouter-pc-admin-catalog",
+    "sdkwork-cloudrouter-pc-admin-orders",
+    "sdkwork-cloudrouter-pc-admin-wallet",
+    "sdkwork-cloudrouter-pc-admin-finance",
+    "sdkwork-cloudrouter-pc-admin-inventory",
+    "sdkwork-cloudrouter-pc-admin-messaging",
+    "sdkwork-cloudrouter-pc-admin-agents",
+    "sdkwork-cloudrouter-pc-admin-skill",
+    "sdkwork-cloudrouter-pc-admin-prompts",
+    "sdkwork-cloudrouter-pc-admin-mcp",
+    "sdkwork-cloudrouter-pc-admin-announcement",
+    "sdkwork-cloudrouter-pc-admin-user",
+    "sdkwork-cloudrouter-pc-admin-organization",
+    "sdkwork-cloudrouter-pc-admin-oauth",
+    "sdkwork-cloudrouter-pc-admin-service-provider",
+    "sdkwork-cloudrouter-pc-admin-file-platform",
 )
 
 ROUTE_MANIFEST_BOOTSTRAP_SOURCE = "tools/bootstrap_frontend_contract_from_route_manifest.py"

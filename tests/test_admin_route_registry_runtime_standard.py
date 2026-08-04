@@ -4,9 +4,9 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PORTAL_ROOT = ROOT / "apps" / "sdkwork-clawrouter-pc"
+PORTAL_ROOT = ROOT / "apps" / "sdkwork-cloudrouter-pc"
 APP = PORTAL_ROOT / "src" / "App.tsx"
-REGISTRY = PORTAL_ROOT / "packages" / "sdkwork-clawrouter-pc-admin-shell" / "src" / "adminModuleRegistry.ts"
+REGISTRY = PORTAL_ROOT / "packages" / "sdkwork-cloudrouter-pc-admin-shell" / "src" / "adminModuleRegistry.ts"
 
 
 def _collect_registry_paths(source: str) -> set[str]:

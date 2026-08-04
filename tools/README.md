@@ -4,7 +4,7 @@
 `tools/` stores reusable developer, validation, generation, migration, and operator tools that are not shipped as application runtime code.
 
 ## Owner
-SDKWork Claw Router tooling maintainers.
+SDKWork Cloud Router tooling maintainers.
 
 ## Allowed Content
 Python guardians, generators, validators, migration helpers, operator utilities, schemas for tools, and tool-local tests when appropriate.

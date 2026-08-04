@@ -2,7 +2,7 @@
 /**
  * Ensures the retired vendor/ workspace layout is not tracked in git.
  *
- * Claw Router owns commerce platform crates and packages under this repository root.
+ * Cloud Router owns commerce platform crates and packages under this repository root.
  * The vendor/ directory must not appear in the git index.
  */
 import { execSync } from 'node:child_process';

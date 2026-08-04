@@ -1,5 +1,5 @@
 <!--
-Thank you for contributing to SDKWork Claw Router.
+Thank you for contributing to SDKWork Cloud Router.
 Read CONTRIBUTING.md and AGENTS.md before submitting.
 -->
 
@@ -22,7 +22,7 @@ Read CONTRIBUTING.md and AGENTS.md before submitting.
 
 - [ ] Rust gateway / router-service
 - [ ] Rust admin-api / app-api
-- [ ] Rust crates (claw-http / claw-security / claw-config / claw-observability)
+- [ ] Rust crates (cloud-http / cloud-security / cloud-config / cloud-observability)
 - [ ] Provider adapter
 - [ ] Frontend PC application
 - [ ] Database schema / migrations / seeds
@@ -46,13 +46,13 @@ contract boundary changes.
 - [ ] `cargo fmt --check`
 - [ ] `cargo check --all-targets` with `RUSTFLAGS=-D warnings`
 - [ ] Touched Rust crate tests (`pnpm test:rust:auto -- --changed-file <path>`)
-- [ ] `pnpm --dir apps/sdkwork-clawrouter-pc typecheck`
+- [ ] `pnpm --dir apps/sdkwork-cloudrouter-pc typecheck`
 - [ ] `pnpm verify:fast`
 - [ ] `pnpm verify` (required before merge)
 - [ ] `pnpm test:postgres:required` (if database or SQL repository touched)
-- [ ] `CLAWROUTER_BROWSER_SMOKE_REQUIRED=1 pnpm verify` (if frontend touched)
-- [ ] `CLAWROUTER_EDGE_DEV_SMOKE_REQUIRED=1 pnpm verify -- --with-edge-dev-smoke` (if runtime/gateway touched)
-- [ ] Contract regeneration: `python -B -m tools.clawrouter_openapi_generator && python -B -m tools.schema_quality_gate`
+- [ ] `CLOUDROUTER_BROWSER_SMOKE_REQUIRED=1 pnpm verify` (if frontend touched)
+- [ ] `CLOUDROUTER_EDGE_DEV_SMOKE_REQUIRED=1 pnpm verify -- --with-edge-dev-smoke` (if runtime/gateway touched)
+- [ ] Contract regeneration: `python -B -m tools.cloudrouter_openapi_generator && python -B -m tools.schema_quality_gate`
 - [ ] `pnpm check:agent-workflow-standard`
 - [ ] `pnpm check:pnpm-script-standard`
 

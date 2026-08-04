@@ -9,9 +9,9 @@ ROOT = Path(__file__).resolve().parents[1]
 RANKINGS_PACKAGE = (
     ROOT
     / "apps"
-    / "sdkwork-clawrouter-pc"
+    / "sdkwork-cloudrouter-pc"
     / "packages"
-    / "sdkwork-clawrouter-pc-rankings"
+    / "sdkwork-cloudrouter-pc-rankings"
 )
 CLASSIFICATION_PATH = ROOT / "docs" / "schema-registry" / "frontend-route-classification.yaml"
 
@@ -35,8 +35,8 @@ class RankingsRuntimeStandardTest(unittest.TestCase):
     def test_rankings_page_uses_testable_snapshot_catalog_module(self) -> None:
         page_path = RANKINGS_PACKAGE / "src" / "Rankings.tsx"
         catalog_path = RANKINGS_PACKAGE / "src" / "rankingCatalog.ts"
-        runtime_test_path = ROOT / "apps" / "sdkwork-clawrouter-pc" / "rankings-runtime.test.ts"
-        verifier_path = ROOT / "scripts" / "verify-claw-router-application.mjs"
+        runtime_test_path = ROOT / "apps" / "sdkwork-cloudrouter-pc" / "rankings-runtime.test.ts"
+        verifier_path = ROOT / "scripts" / "verify-cloud-router-application.mjs"
 
         self.assertTrue(catalog_path.exists(), "Rankings business logic must live in a pure catalog module.")
         self.assertTrue(runtime_test_path.exists(), "Rankings runtime behavior must have executable Node tests.")
@@ -118,7 +118,7 @@ class RankingsRuntimeStandardTest(unittest.TestCase):
         self.assertIn("modality: \"llm\"", runtime_test_source)
         self.assertIn("searchQuery: \"gpt\"", runtime_test_source)
         self.assertIn("portal rankings runtime tests", verifier_source)
-        self.assertIn("apps/sdkwork-clawrouter-pc/rankings-runtime.test.ts", verifier_source)
+        self.assertIn("apps/sdkwork-cloudrouter-pc/rankings-runtime.test.ts", verifier_source)
 
     def test_rankings_service_preserves_required_model_ranking_metrics(self) -> None:
         catalog_path = RANKINGS_PACKAGE / "src" / "rankingCatalog.ts"
@@ -186,17 +186,17 @@ class RankingsRuntimeStandardTest(unittest.TestCase):
         self.assertEqual("app", route["api_surface"])
         self.assertNotIn("static_delivery", route)
         self.assertIn(
-            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/src/rankingCatalog.ts",
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-rankings/src/rankingCatalog.ts",
             route["evidence"],
         )
         self.assertIn(
-            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/src/rankingService.ts",
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-rankings/src/rankingService.ts",
             route["evidence"],
         )
 
     def test_rankings_production_smoke_covers_route_and_chunk_semantics(self) -> None:
-        smoke_path = ROOT / "apps" / "sdkwork-clawrouter-pc" / "scripts" / "smoke-production-browser.mjs"
-        product_test_path = ROOT / "scripts" / "run-claw-router-application.test.mjs"
+        smoke_path = ROOT / "apps" / "sdkwork-cloudrouter-pc" / "scripts" / "smoke-production-browser.mjs"
+        product_test_path = ROOT / "scripts" / "run-cloud-router-application.test.mjs"
         catalog_path = RANKINGS_PACKAGE / "src" / "rankingCatalog.ts"
 
         smoke_source = smoke_path.read_text(encoding="utf-8")

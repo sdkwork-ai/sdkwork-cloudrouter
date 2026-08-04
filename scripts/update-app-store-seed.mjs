@@ -6,15 +6,15 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
-  resolveClawRouterAppStandardToolsRoot,
-  resolveClawRouterBusinessAppsRoot,
-} from './claw-router-layout.mjs';
+  resolveCloudRouterAppStandardToolsRoot,
+  resolveCloudRouterBusinessAppsRoot,
+} from './cloud-router-layout.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DEFAULT_WORKSPACE_ROOT = path.resolve(__dirname, '..');
-const DEFAULT_APPS_ROOT = resolveClawRouterBusinessAppsRoot(DEFAULT_WORKSPACE_ROOT);
-const DEFAULT_APP_STANDARD_TOOLS_ROOT = resolveClawRouterAppStandardToolsRoot(DEFAULT_WORKSPACE_ROOT);
+const DEFAULT_APPS_ROOT = resolveCloudRouterBusinessAppsRoot(DEFAULT_WORKSPACE_ROOT);
+const DEFAULT_APP_STANDARD_TOOLS_ROOT = resolveCloudRouterAppStandardToolsRoot(DEFAULT_WORKSPACE_ROOT);
 const DEFAULT_ENVIRONMENT = 'production';
 const DEFAULT_CHANNEL = 'STABLE';
 const FIELD_ICON = 'icon';
@@ -250,7 +250,7 @@ function canonicalAppSeedBundle(bundle) {
     ...bundle,
     source: {
       ...(isRecord(bundle.source) ? bundle.source : {}),
-      generatedBy: 'apps/sdkwork-clawrouter/scripts/update-app-store-seed.mjs',
+      generatedBy: 'apps/sdkwork-cloudrouter/scripts/update-app-store-seed.mjs',
     },
     apps: Array.isArray(bundle.apps)
       ? bundle.apps.map((entry, index) => {
@@ -283,7 +283,7 @@ Options:
   --architecture <value>   Optional package architecture selector.
   --distro <value>         Optional Linux distro selector.
   --check                  Check data/app seed files without writing them.
-  --sync-db                After writing seed files, run clawrouterctl ensure through Cargo.
+  --sync-db                After writing seed files, run cloudrouterctl ensure through Cargo.
   --no-initialize-missing  Do not create missing sdkwork.app.config.json files.
   --force                  Rewrite existing app manifests through the standard initializer.
   --dry-run                Print intended writes and commands without changing files or database.
@@ -431,7 +431,7 @@ export function buildAppStoreSeedCommandPlan(settings, { workspaceRoot = DEFAULT
     steps.push({
       name: 'sync-database',
       command: 'cargo',
-      args: ['run', '-p', 'sdkwork-claw-installer', '--', 'ensure'],
+      args: ['run', '-p', 'sdkwork-cloudrouter-installer', '--', 'ensure'],
       requiresDatabaseUrl: true,
     });
   }
@@ -668,7 +668,7 @@ async function syncDatabase(settings, workspaceRoot) {
     throw new Error('--sync-db requires SDKWORK_DATABASE_URL to be set');
   }
 
-  await runCommand('cargo', ['run', '-p', 'sdkwork-claw-installer', '--', 'ensure'], {
+  await runCommand('cargo', ['run', '-p', 'sdkwork-cloudrouter-installer', '--', 'ensure'], {
     cwd: workspaceRoot,
     dryRun: settings.dryRun,
     quiet: settings.json,
@@ -760,7 +760,7 @@ function printSummary(summary) {
     console.log(`[app-store-seed] initializedManifests=${summary.initializedManifests}`);
   }
   if (summary.databaseSynced) {
-    console.log('[app-store-seed] database synchronized through clawrouterctl ensure');
+    console.log('[app-store-seed] database synchronized through cloudrouterctl ensure');
   }
 }
 

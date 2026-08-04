@@ -1,6 +1,6 @@
-# SDKWork Claw Router Commercial Authorization
+# SDKWork Cloud Router Commercial Authorization
 
-The SDKWork Claw Router application source is licensed under
+The SDKWork Cloud Router application source is licensed under
 `AGPL-3.0-or-later AND LicenseRef-SDKWork-Commercial-Restriction`.
 
 Commercial use is prohibited unless SDKWork grants prior written commercial

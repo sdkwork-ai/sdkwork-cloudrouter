@@ -1,7 +1,7 @@
 -- sdkwork:migration
 -- id: 0003_standardize_upstream_supplier_routing
 -- engine: postgres
--- module: clawrouter
+-- module: cloudrouter
 -- purpose: Replace provider/site/channel persistence with supplier/account/account-group aggregates.
 -- reversible: false
 -- rollback: forward-fix

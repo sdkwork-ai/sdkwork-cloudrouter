@@ -110,26 +110,26 @@ class AccessTokenHeaderStandardTest(unittest.TestCase):
             ROOT.parents[1] / "specs" / "CONFIG_SPEC.md",
             ROOT.parents[1] / "specs" / "IAM_SPEC.md",
             ROOT / "specs" / "API_SPEC.md",
-            ROOT / "tools" / "clawrouter_openapi_generator.py",
+            ROOT / "tools" / "cloudrouter_openapi_generator.py",
             ROOT / "docs" / "schema-registry" / "frontend-field-contracts.yaml",
             ROOT / "generated" / "api" / "api-contract-manifest.json",
-            ROOT / "generated" / "openapi" / "clawrouter-app-openapi.json",
-            ROOT / "generated" / "openapi" / "clawrouter-backend-openapi.json",
-            ROOT / "sdks" / "clawrouter-app-sdk" / "openapi" / "clawrouter-app-sdk.openapi.json",
-            ROOT / "sdks" / "clawrouter-app-sdk" / "openapi" / "clawrouter-app-sdk.sdkgen.json",
-            ROOT / "sdks" / "clawrouter-backend-sdk" / "openapi" / "clawrouter-backend-sdk.openapi.json",
-            ROOT / "sdks" / "clawrouter-backend-sdk" / "openapi" / "clawrouter-backend-sdk.sdkgen.json",
-            ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "http" / "client.ts",
-            ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "dist" / "index.js",
-            ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "dist" / "index.cjs",
-            ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "dist" / "types" / "iam-session-response.d.ts",
-            ROOT / "sdks" / "clawrouter-backend-sdk" / "clawrouter-backend-sdk-typescript" / "src" / "http" / "client.ts",
-            ROOT / "sdks" / "clawrouter-backend-sdk" / "clawrouter-backend-sdk-typescript" / "dist" / "index.js",
-            ROOT / "sdks" / "clawrouter-backend-sdk" / "clawrouter-backend-sdk-typescript" / "dist" / "index.cjs",
-            ROOT / "sdks" / "clawrouter-open-sdk" / "clawrouter-open-sdk-typescript" / "src" / "http" / "client.ts",
-            ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "README.md",
-            ROOT / "sdks" / "clawrouter-backend-sdk" / "clawrouter-backend-sdk-typescript" / "README.md",
-            ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "types" / "iam-session-response.ts",
+            ROOT / "generated" / "openapi" / "cloudrouter-app-openapi.json",
+            ROOT / "generated" / "openapi" / "cloudrouter-backend-openapi.json",
+            ROOT / "sdks" / "cloudrouter-app-sdk" / "openapi" / "cloudrouter-app-sdk.openapi.json",
+            ROOT / "sdks" / "cloudrouter-app-sdk" / "openapi" / "cloudrouter-app-sdk.sdkgen.json",
+            ROOT / "sdks" / "cloudrouter-backend-sdk" / "openapi" / "cloudrouter-backend-sdk.openapi.json",
+            ROOT / "sdks" / "cloudrouter-backend-sdk" / "openapi" / "cloudrouter-backend-sdk.sdkgen.json",
+            ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src" / "http" / "client.ts",
+            ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "dist" / "index.js",
+            ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "dist" / "index.cjs",
+            ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "dist" / "types" / "iam-session-response.d.ts",
+            ROOT / "sdks" / "cloudrouter-backend-sdk" / "cloudrouter-backend-sdk-typescript" / "src" / "http" / "client.ts",
+            ROOT / "sdks" / "cloudrouter-backend-sdk" / "cloudrouter-backend-sdk-typescript" / "dist" / "index.js",
+            ROOT / "sdks" / "cloudrouter-backend-sdk" / "cloudrouter-backend-sdk-typescript" / "dist" / "index.cjs",
+            ROOT / "sdks" / "cloudrouter-open-sdk" / "cloudrouter-open-sdk-typescript" / "src" / "http" / "client.ts",
+            ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "README.md",
+            ROOT / "sdks" / "cloudrouter-backend-sdk" / "cloudrouter-backend-sdk-typescript" / "README.md",
+            ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src" / "types" / "iam-session-response.ts",
             DOCUMENTS_API_REFERENCE_SRC / "playgroundRequest.ts",
         ]
 
@@ -143,13 +143,13 @@ class AccessTokenHeaderStandardTest(unittest.TestCase):
                 self.assertIn("Access-Token", source)
                 self.assertNotIn(forbidden_header, source)
                 if path.name in {
-                    "clawrouter_openapi_generator.py",
-                    "clawrouter-app-openapi.json",
-                    "clawrouter-backend-openapi.json",
-                    "clawrouter-app-sdk.openapi.json",
-                    "clawrouter-app-sdk.sdkgen.json",
-                    "clawrouter-backend-sdk.openapi.json",
-                    "clawrouter-backend-sdk.sdkgen.json",
+                    "cloudrouter_openapi_generator.py",
+                    "cloudrouter-app-openapi.json",
+                    "cloudrouter-backend-openapi.json",
+                    "cloudrouter-app-sdk.openapi.json",
+                    "cloudrouter-app-sdk.sdkgen.json",
+                    "cloudrouter-backend-sdk.openapi.json",
+                    "cloudrouter-backend-sdk.sdkgen.json",
                 }:
                     self.assertIn('"AccessToken"', source)
                     self.assertNotIn(f'"{forbidden_scheme}"', source)
@@ -166,7 +166,7 @@ class AccessTokenHeaderStandardTest(unittest.TestCase):
                     )
 
     def test_audit_rejects_branded_access_token_security_scheme_names(self) -> None:
-        audit_source = (ROOT / "tools" / "clawrouter_openapi_contract_audit.py").read_text(
+        audit_source = (ROOT / "tools" / "cloudrouter_openapi_contract_audit.py").read_text(
             encoding="utf-8"
         )
 
@@ -178,9 +178,9 @@ class AccessTokenHeaderStandardTest(unittest.TestCase):
 
     def test_generated_transport_sdks_do_not_emit_branded_access_token_protocol_names(self) -> None:
         sdk_families = [
-            "clawrouter-app-sdk",
-            "clawrouter-backend-sdk",
-            "clawrouter-open-sdk",
+            "cloudrouter-app-sdk",
+            "cloudrouter-backend-sdk",
+            "cloudrouter-open-sdk",
         ]
         text_suffixes = {
             ".cs",
@@ -252,8 +252,8 @@ class AccessTokenHeaderStandardTest(unittest.TestCase):
         backend_api_barrel = (
             ROOT
             / "sdks"
-            / "clawrouter-backend-sdk"
-            / "clawrouter-backend-sdk-typescript"
+            / "cloudrouter-backend-sdk"
+            / "cloudrouter-backend-sdk-typescript"
             / "dist"
             / "api"
             / "index.d.ts"
@@ -261,8 +261,8 @@ class AccessTokenHeaderStandardTest(unittest.TestCase):
         app_api_barrel = (
             ROOT
             / "sdks"
-            / "clawrouter-app-sdk"
-            / "clawrouter-app-sdk-typescript"
+            / "cloudrouter-app-sdk"
+            / "cloudrouter-app-sdk-typescript"
             / "dist"
             / "api"
             / "index.d.ts"
@@ -275,8 +275,8 @@ class AccessTokenHeaderStandardTest(unittest.TestCase):
         app_commerce_api = (
             ROOT
             / "sdks"
-            / "clawrouter-app-sdk"
-            / "clawrouter-app-sdk-typescript"
+            / "cloudrouter-app-sdk"
+            / "cloudrouter-app-sdk-typescript"
             / "dist"
             / "api"
             / "commerce.d.ts"

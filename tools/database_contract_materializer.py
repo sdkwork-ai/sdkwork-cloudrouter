@@ -48,7 +48,7 @@ COMMON_LOGICAL_TYPES = {
 DATABASE_ROLE = "authoritative-server"
 DATABASE_ENGINE = "postgres"
 RETIRED_SERVER_SCHEMA_PATHS = (
-    "database/ddl/baseline/sqlite/0001_clawrouter_baseline.sql",
+    "database/ddl/baseline/sqlite/0001_cloudrouter_baseline.sql",
     "generated/schema/sqlite/schema.sql",
 )
 
@@ -71,21 +71,21 @@ class DatabaseModuleSpec:
 
 
 ROOT_MODULE = DatabaseModuleSpec(
-    module_id="clawrouter",
-    service_code="CLAW_ROUTER",
-    display_name="Claw Router AI Database",
-    owner="claw-router-platform",
+    module_id="cloudrouter",
+    service_code="CLOUD_ROUTER",
+    display_name="Cloud Router AI Database",
+    owner="cloud-router-platform",
     table_prefix="ai_",
     baseline_anchor_table="ai_upstream_supplier",
-    baseline_file="0001_clawrouter_baseline.sql",
+    baseline_file="0001_cloudrouter_baseline.sql",
     relative_root="database",
 )
 
 AUXILIARY_MODULES = (
     DatabaseModuleSpec(
         module_id="gateway-iam",
-        service_code="CLAW_ROUTER_GATEWAY_IAM",
-        display_name="Claw Router Gateway IAM Database",
+        service_code="CLOUD_ROUTER_GATEWAY_IAM",
+        display_name="Cloud Router Gateway IAM Database",
         owner="gateway-iam-service",
         table_prefix="iam_gateway_",
         baseline_anchor_table="iam_gateway_api_key",
@@ -94,9 +94,9 @@ AUXILIARY_MODULES = (
     ),
     DatabaseModuleSpec(
         module_id="operations",
-        service_code="CLAW_ROUTER_OPERATIONS",
-        display_name="Claw Router Operations Database",
-        owner="claw-router-platform",
+        service_code="CLOUD_ROUTER_OPERATIONS",
+        display_name="Cloud Router Operations Database",
+        owner="cloud-router-platform",
         table_prefix="ops_",
         baseline_anchor_table="ops_gateway_instance",
         baseline_file="0001_operations_baseline.sql",
@@ -126,7 +126,7 @@ class DatabaseContractMaterializer:
         self.registry_path = (
             Path(registry_path).resolve()
             if registry_path is not None
-            else self.root / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+            else self.root / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
         )
         self.module_spec = module_spec
         self.module_root = self.root / Path(module_spec.relative_root)
@@ -358,7 +358,7 @@ class DatabaseContractMaterializer:
             "domain": table.get("domain"),
             "profile": table.get("profile"),
             "compliance_level": table.get("compliance_level", "L2"),
-            "write_owner": table.get("write_owner", "claw-router-platform"),
+            "write_owner": table.get("write_owner", "cloud-router-platform"),
             "system_of_record": table.get("system_of_record"),
             "tenant_scope": policy.get("tenant_scope"),
             "soft_delete_policy": policy.get("soft_delete_policy"),
@@ -524,7 +524,7 @@ class DatabaseContractMaterializer:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Materialize Claw Router database lifecycle assets.")
+    parser = argparse.ArgumentParser(description="Materialize Cloud Router database lifecycle assets.")
     parser.add_argument("--root", type=Path, default=Path.cwd())
     parser.add_argument("--registry", type=Path, default=None)
     parser.add_argument("--check", action="store_true")

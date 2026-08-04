@@ -60,7 +60,7 @@ class DomainTypeGenerator:
         self.registry_path = (
             Path(registry_path).resolve()
             if registry_path is not None
-            else self.root / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+            else self.root / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
         )
 
     def generate(self) -> dict[Path, str]:
@@ -260,7 +260,7 @@ class DomainTypeGenerator:
 
     def _generate_rust(self, definitions: list[DomainTypeDefinition]) -> str:
         rendered: list[str] = [
-            "// Generated from docs/schema-registry/sdkwork-clawrouter.tables.yaml.\n"
+            "// Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.\n"
             "// Do not edit by hand; update Schema Registry and regenerate."
         ]
         matched = False
@@ -329,7 +329,7 @@ class DomainTypeGenerator:
 
     def _generate_typescript(self, definitions: list[DomainTypeDefinition]) -> str:
         rendered: list[str] = [
-            "// Generated from docs/schema-registry/sdkwork-clawrouter.tables.yaml.\n"
+            "// Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.\n"
             "// Do not edit by hand; update Schema Registry and regenerate."
         ]
         matched = False
@@ -387,7 +387,7 @@ class DomainTypeGenerator:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate cross-language domain enum types from Schema Registry.")
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     parser.add_argument("--registry", type=Path, default=None, help="schema registry YAML path")
     parser.add_argument("--check", action="store_true", help="validate that generated domain type files are current")
     args = parser.parse_args()

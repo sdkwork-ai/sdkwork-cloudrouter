@@ -6,7 +6,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-API_DIR = Path("services/sdkwork-clawrouter-router-service/src/api")
+API_DIR = Path("services/sdkwork-cloudrouter-router-service/src/api")
 
 DUPLICATE_BLOCK = re.compile(
     r",\s*\n\): State<[^>]+>,\n(?:    .+\n)*?\) ->",

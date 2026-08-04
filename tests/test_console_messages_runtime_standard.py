@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PORTAL_PACKAGES = ROOT / "apps" / "sdkwork-clawrouter-pc" / "packages"
+PORTAL_PACKAGES = ROOT / "apps" / "sdkwork-cloudrouter-pc" / "packages"
 
 
 def first_existing_path(*candidates: Path) -> Path:
@@ -15,22 +15,22 @@ def first_existing_path(*candidates: Path) -> Path:
 
 class ConsoleMessagesRuntimeStandardTest(unittest.TestCase):
     def test_console_notification_route_and_navbar_use_notification_naming(self) -> None:
-        app = (ROOT / "apps" / "sdkwork-clawrouter-pc" / "src" / "App.tsx").read_text(
+        app = (ROOT / "apps" / "sdkwork-cloudrouter-pc" / "src" / "App.tsx").read_text(
             encoding="utf-8"
         )
         console_layout_path = first_existing_path(
-            PORTAL_PACKAGES / "sdkwork-clawrouter-pc-console-shell" / "src" / "ConsoleLayout.tsx",
-            PORTAL_PACKAGES / "sdkwork-clawrouter-pc-console-core" / "src" / "ConsoleLayout.tsx",
+            PORTAL_PACKAGES / "sdkwork-cloudrouter-pc-console-shell" / "src" / "ConsoleLayout.tsx",
+            PORTAL_PACKAGES / "sdkwork-cloudrouter-pc-console-core" / "src" / "ConsoleLayout.tsx",
         )
         if not console_layout_path.exists():
-            self.skipTest("console shell package is not available in this claw router surface")
+            self.skipTest("console shell package is not available in this cloud router surface")
         console_layout = console_layout_path.read_text(encoding="utf-8")
         navbar = (
             ROOT
             / "apps"
-            / "sdkwork-clawrouter-pc"
+            / "sdkwork-cloudrouter-pc"
             / "packages"
-            / "sdkwork-clawroutes-pc-commons"
+            / "sdkwork-cloudroutes-pc-commons"
             / "src"
             / "components"
             / "Navbar.tsx"
@@ -49,18 +49,18 @@ class ConsoleMessagesRuntimeStandardTest(unittest.TestCase):
     def test_console_messages_ui_is_read_only_until_command_contract_exists(self) -> None:
         messages_view_path = (
             PORTAL_PACKAGES
-            / "sdkwork-clawrouter-pc-console-messages"
+            / "sdkwork-cloudrouter-pc-console-messages"
             / "src"
             / "MessagesView.tsx"
         )
         messages_service_path = (
             PORTAL_PACKAGES
-            / "sdkwork-clawrouter-pc-console-messages"
+            / "sdkwork-cloudrouter-pc-console-messages"
             / "src"
             / "messagesService.ts"
         )
         if not messages_view_path.exists() or not messages_service_path.exists():
-            self.skipTest("console messages package is not available in this claw router surface")
+            self.skipTest("console messages package is not available in this cloud router surface")
 
         messages_view = messages_view_path.read_text(encoding="utf-8")
         messages_service = messages_service_path.read_text(encoding="utf-8")
@@ -69,8 +69,8 @@ class ConsoleMessagesRuntimeStandardTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
         notification_operation_marker = (
             "  - route: /console/notifications\n"
-            "    source: apps/sdkwork-clawrouter-pc/packages/"
-            "sdkwork-clawrouter-pc-console-messages/src/messagesService.ts\n"
+            "    source: apps/sdkwork-cloudrouter-pc/packages/"
+            "sdkwork-cloudrouter-pc-console-messages/src/messagesService.ts\n"
             "    operation: fetchMessages"
         )
         notification_operation_start = contract.index(notification_operation_marker)

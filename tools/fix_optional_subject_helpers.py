@@ -6,7 +6,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-API_DIR = Path(__file__).resolve().parents[1] / "services" / "sdkwork-clawrouter-router-service" / "src" / "api"
+API_DIR = Path(__file__).resolve().parents[1] / "services" / "sdkwork-cloudrouter-router-service" / "src" / "api"
 
 OPTIONAL_MATCH = re.compile(
     r"match crate::api::subject::optional_trusted_subject\(([^)]+)\) \{\s*"

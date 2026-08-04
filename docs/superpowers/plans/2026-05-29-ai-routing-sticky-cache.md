@@ -13,9 +13,9 @@
 ### Task 1: Route Snapshot Query Contract
 
 **Files:**
-- Modify: `services/sdkwork-clawrouter-router-service/tests/sql_pricing_catalog_contract.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/queries/snapshot.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/queries.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/tests/sql_pricing_catalog_contract.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/queries/snapshot.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/sqlite/queries.rs`
 
 - [ ] Write failing tests that `load_provider_routes` is derived from normalized channel/resource/credential facts.
 - [ ] Change Postgres and SQLite snapshot SQL to derive routes from `ai_channel_resource`, `ai_channel_credential`, `ai_channel`, resource groups, and model mapping rules.
@@ -34,8 +34,8 @@
 ### Task 3: Runtime Cache Namespaces
 
 **Files:**
-- Modify: `services/sdkwork-clawrouter-router-service/tests/cache_runtime.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/application/cache_runtime.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/tests/cache_runtime.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/application/cache_runtime.rs`
 
 - [ ] Write failing tests for default routing cache namespaces.
 - [ ] Add route snapshot, provider object route, idempotency, config version, and disabled channel namespaces.
@@ -44,8 +44,8 @@
 ### Task 4: Sticky Route Domain Model
 
 **Files:**
-- Modify: `services/sdkwork-clawrouter-router-service/src/domain/routing.rs`
-- Modify: `services/sdkwork-clawrouter-edge-runtime/src/openai_route_taxonomy.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/domain/routing.rs`
+- Modify: `services/sdkwork-cloudrouter-edge-runtime/src/openai_route_taxonomy.rs`
 
 - [ ] Write failing tests for route strategy classification on stateless, create-sticky, parent-sticky, lookup-sticky, and primary-channel API families.
 - [ ] Add route strategy/failure/model requirement enums and extend OpenAI classification.

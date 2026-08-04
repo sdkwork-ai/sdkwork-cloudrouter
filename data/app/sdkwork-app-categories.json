@@ -6,9 +6,9 @@
     "appSeedKind": "sdkwork.platform_app.seed",
     "appCount": 30,
     "appSeedSource": {
-      "rootAppKey": "sdkwork-clawrouter",
+      "rootAppKey": "sdkwork-cloudrouter",
       "appsRoot": "sdkwork-space",
-      "generatedBy": "sdkwork-clawrouter/scripts/update-app-store-seed.mjs",
+      "generatedBy": "sdkwork-cloudrouter/scripts/update-app-store-seed.mjs",
       "environment": "production",
       "channel": "STABLE"
     }

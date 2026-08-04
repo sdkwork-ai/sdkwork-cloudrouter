@@ -1,0 +1,433 @@
+{
+  "schemaVersion": 1,
+  "sdkFamily": "cloudrouter-app-sdk",
+  "sdkName": "cloudrouter-app-sdk",
+  "packageName": "@sdkwork/cloudrouter-app-sdk",
+  "transportPackageName": "cloudrouter-app-sdk-generated-typescript",
+  "typescript": {
+    "composedRoot": "cloudrouter-app-sdk-typescript",
+    "composedEntry": "cloudrouter-app-sdk-typescript/src/index.ts",
+    "transportRoot": "cloudrouter-app-sdk-typescript/generated/server-openapi",
+    "transportEntry": "cloudrouter-app-sdk-typescript/generated/server-openapi/src/index.ts"
+  },
+  "workspace": "cloudrouter-app-sdk",
+  "title": "SDKWork Cloud Router app API SDK",
+  "apiVersion": "0.1.0",
+  "authoritySpec": "openapi/cloudrouter-app-sdk.openapi.json",
+  "generationInputSpec": "openapi/cloudrouter-app-sdk.openapi.json",
+  "derivedSpecs": {},
+  "sdkOwner": "sdkwork-cloudrouter",
+  "apiAuthority": "sdkwork-cloudrouter.app",
+  "discoverySurface": {
+    "sdkTarget": "app",
+    "apiPrefix": "/app/v3/api",
+    "generatedProtocols": [
+      "http"
+    ],
+    "manualTransports": []
+  },
+  "sdkDependencies": [
+    {
+      "workspace": "sdkwork-iam-app-sdk",
+      "role": "appbase-app-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/app/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/iam-app-sdk",
+        "flutter": "sdkwork_iam_app_sdk",
+        "rust": "sdkwork-iam-app-sdk",
+        "java": "com.sdkwork:sdkwork-iam-app-sdk",
+        "csharp": "SDKWork.Appbase.AppSdk",
+        "swift": "sdkwork-iam-app-sdk",
+        "kotlin": "com.sdkwork:sdkwork-iam-app-sdk",
+        "go": "github.com/sdkwork/sdkwork-iam-app-sdk",
+        "python": "sdkwork-iam-app-sdk"
+      }
+    },
+    {
+      "workspace": "sdkwork-messaging-app-sdk",
+      "role": "messaging-app-verification-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/app/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/messaging-app-sdk"
+      }
+    },
+    {
+      "workspace": "sdkwork-account-app-sdk",
+      "role": "account-app-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/app/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/account-app-sdk"
+      }
+    },
+    {
+      "workspace": "sdkwork-membership-app-sdk",
+      "role": "membership-app-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/app/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/membership-app-sdk"
+      }
+    },
+    {
+      "workspace": "sdkwork-catalog-app-sdk",
+      "role": "catalog-app-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/app/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/catalog-app-sdk"
+      }
+    },
+    {
+      "workspace": "sdkwork-order-app-sdk",
+      "role": "order-app-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/app/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/order-app-sdk"
+      }
+    },
+    {
+      "workspace": "sdkwork-payment-app-sdk",
+      "role": "payment-app-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/app/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/payment-app-sdk"
+      }
+    },
+    {
+      "workspace": "sdkwork-promotion-app-sdk",
+      "role": "promotion-app-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/app/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/promotion-app-sdk"
+      }
+    },
+    {
+      "workspace": "sdkwork-models-app-sdk",
+      "role": "models-app-catalog-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/app/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/models-app-sdk"
+      }
+    },
+    {
+      "workspace": "sdkwork-drive-app-sdk",
+      "role": "drive-app-storage-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/app/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/drive-app-sdk"
+      }
+    }
+  ],
+  "dependencyApiExports": [],
+  "languages": [
+    {
+      "language": "typescript",
+      "workspace": "cloudrouter-app-sdk-typescript",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "cloudrouter-app-sdk-typescript/generated/server-openapi",
+      "packagePath": "cloudrouter-app-sdk-typescript",
+      "manifestPath": "cloudrouter-app-sdk-typescript/package.json",
+      "name": "@sdkwork/cloudrouter-app-sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Cloud Router app API SDK",
+      "entrypoints": {
+        "main": "./dist/index.cjs",
+        "module": "./dist/index.js",
+        "types": "./dist/index.d.ts"
+      },
+      "consumerSurface": {
+        "primaryClient": "SdkworkAppClient",
+        "apiPrefix": "/app/v3/api"
+      },
+      "packages": [
+        {
+          "layer": "generated-output",
+          "packagePath": "cloudrouter-app-sdk-typescript/generated/server-openapi",
+          "manifestPath": "cloudrouter-app-sdk-typescript/generated/server-openapi/package.json",
+          "name": "cloudrouter-app-sdk-generated-typescript",
+          "version": "0.1.0",
+          "description": "SDKWork Cloud Router app API SDK generator-owned transport output",
+          "entrypoints": {
+            "main": "./dist/index.cjs",
+            "module": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+          }
+        },
+        {
+          "layer": "package",
+          "packagePath": "cloudrouter-app-sdk-typescript",
+          "manifestPath": "cloudrouter-app-sdk-typescript/package.json",
+          "name": "@sdkwork/cloudrouter-app-sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Cloud Router app API SDK",
+          "entrypoints": {
+            "main": "./dist/index.cjs",
+            "module": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+          }
+        }
+      ]
+    },
+    {
+      "language": "flutter",
+      "workspace": "cloudrouter-app-sdk-flutter",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "cloudrouter-app-sdk-flutter/generated/server-openapi",
+      "manifestPath": "cloudrouter-app-sdk-flutter/generated/server-openapi/pubspec.yaml",
+      "name": "cloudrouter_app_sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Cloud Router app API SDK flutter generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "cloudrouter-app-sdk-flutter/generated/server-openapi",
+          "manifestPath": "cloudrouter-app-sdk-flutter/generated/server-openapi/pubspec.yaml",
+          "name": "cloudrouter_app_sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Cloud Router app API SDK flutter generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "cloudrouter-app-sdk-flutter/composed",
+          "status": "reserved",
+          "name": "cloudrouter_app_sdk",
+          "version": "",
+          "description": "Reserved composed flutter SDK boundary for cloudrouter-app-sdk"
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "workspace": "cloudrouter-app-sdk-rust",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "cloudrouter-app-sdk-rust/generated/server-openapi",
+      "manifestPath": "cloudrouter-app-sdk-rust/generated/server-openapi/Cargo.toml",
+      "name": "cloudrouter-app-sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Cloud Router app API SDK rust generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "cloudrouter-app-sdk-rust/generated/server-openapi",
+          "manifestPath": "cloudrouter-app-sdk-rust/generated/server-openapi/Cargo.toml",
+          "name": "cloudrouter-app-sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Cloud Router app API SDK rust generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "cloudrouter-app-sdk-rust/composed",
+          "status": "reserved",
+          "name": "cloudrouter-app-sdk",
+          "version": "",
+          "description": "Reserved composed rust SDK boundary for cloudrouter-app-sdk"
+        }
+      ]
+    },
+    {
+      "language": "java",
+      "workspace": "cloudrouter-app-sdk-java",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "cloudrouter-app-sdk-java/generated/server-openapi",
+      "manifestPath": "cloudrouter-app-sdk-java/generated/server-openapi/pom.xml",
+      "name": "com.sdkwork.cloudrouter:cloudrouter-app-sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Cloud Router app API SDK java generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "cloudrouter-app-sdk-java/generated/server-openapi",
+          "manifestPath": "cloudrouter-app-sdk-java/generated/server-openapi/pom.xml",
+          "name": "com.sdkwork.cloudrouter:cloudrouter-app-sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Cloud Router app API SDK java generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "cloudrouter-app-sdk-java/composed",
+          "status": "reserved",
+          "name": "com.sdkwork.cloudrouter:cloudrouter-app-sdk",
+          "version": "",
+          "description": "Reserved composed java SDK boundary for cloudrouter-app-sdk"
+        }
+      ]
+    },
+    {
+      "language": "csharp",
+      "workspace": "cloudrouter-app-sdk-csharp",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "cloudrouter-app-sdk-csharp/generated/server-openapi",
+      "manifestPath": "cloudrouter-app-sdk-csharp/generated/server-openapi/Sdkwork.CloudRouter.App.Sdk.csproj",
+      "name": "Sdkwork.CloudRouter.App.Sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Cloud Router app API SDK csharp generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "cloudrouter-app-sdk-csharp/generated/server-openapi",
+          "manifestPath": "cloudrouter-app-sdk-csharp/generated/server-openapi/Sdkwork.CloudRouter.App.Sdk.csproj",
+          "name": "Sdkwork.CloudRouter.App.Sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Cloud Router app API SDK csharp generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "cloudrouter-app-sdk-csharp/composed",
+          "status": "reserved",
+          "name": "Sdkwork.CloudRouter.App.Sdk",
+          "version": "",
+          "description": "Reserved composed csharp SDK boundary for cloudrouter-app-sdk"
+        }
+      ]
+    },
+    {
+      "language": "swift",
+      "workspace": "cloudrouter-app-sdk-swift",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "cloudrouter-app-sdk-swift/generated/server-openapi",
+      "manifestPath": "cloudrouter-app-sdk-swift/generated/server-openapi/Package.swift",
+      "name": "CloudRouterAppSdk",
+      "version": "0.1.0",
+      "description": "SDKWork Cloud Router app API SDK swift generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "cloudrouter-app-sdk-swift/generated/server-openapi",
+          "manifestPath": "cloudrouter-app-sdk-swift/generated/server-openapi/Package.swift",
+          "name": "CloudRouterAppSdk",
+          "version": "0.1.0",
+          "description": "SDKWork Cloud Router app API SDK swift generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "cloudrouter-app-sdk-swift/composed",
+          "status": "reserved",
+          "name": "CloudRouterAppSdk",
+          "version": "",
+          "description": "Reserved composed swift SDK boundary for cloudrouter-app-sdk"
+        }
+      ]
+    },
+    {
+      "language": "kotlin",
+      "workspace": "cloudrouter-app-sdk-kotlin",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "cloudrouter-app-sdk-kotlin/generated/server-openapi",
+      "manifestPath": "cloudrouter-app-sdk-kotlin/generated/server-openapi/build.gradle.kts",
+      "name": "com.sdkwork.cloudrouter:cloudrouter-app-sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Cloud Router app API SDK kotlin generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "cloudrouter-app-sdk-kotlin/generated/server-openapi",
+          "manifestPath": "cloudrouter-app-sdk-kotlin/generated/server-openapi/build.gradle.kts",
+          "name": "com.sdkwork.cloudrouter:cloudrouter-app-sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Cloud Router app API SDK kotlin generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "cloudrouter-app-sdk-kotlin/composed",
+          "status": "reserved",
+          "name": "com.sdkwork.cloudrouter:cloudrouter-app-sdk",
+          "version": "",
+          "description": "Reserved composed kotlin SDK boundary for cloudrouter-app-sdk"
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "workspace": "cloudrouter-app-sdk-go",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "cloudrouter-app-sdk-go/generated/server-openapi",
+      "manifestPath": "cloudrouter-app-sdk-go/generated/server-openapi/go.mod",
+      "name": "github.com/sdkwork/cloudrouter-app-sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Cloud Router app API SDK go generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "cloudrouter-app-sdk-go/generated/server-openapi",
+          "manifestPath": "cloudrouter-app-sdk-go/generated/server-openapi/go.mod",
+          "name": "github.com/sdkwork/cloudrouter-app-sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Cloud Router app API SDK go generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "cloudrouter-app-sdk-go/composed",
+          "status": "reserved",
+          "name": "github.com/sdkwork/cloudrouter-app-sdk",
+          "version": "",
+          "description": "Reserved composed go SDK boundary for cloudrouter-app-sdk"
+        }
+      ]
+    },
+    {
+      "language": "python",
+      "workspace": "cloudrouter-app-sdk-python",
+      "generationState": "materialized",
+      "releaseState": "not_published",
+      "generatedPath": "cloudrouter-app-sdk-python/generated/server-openapi",
+      "manifestPath": "cloudrouter-app-sdk-python/generated/server-openapi/pyproject.toml",
+      "name": "sdkwork-cloudrouter-app-sdk",
+      "version": "0.1.0",
+      "description": "SDKWork Cloud Router app API SDK python generated transport SDK",
+      "packages": [
+        {
+          "layer": "generated",
+          "packagePath": "cloudrouter-app-sdk-python/generated/server-openapi",
+          "manifestPath": "cloudrouter-app-sdk-python/generated/server-openapi/pyproject.toml",
+          "name": "sdkwork-cloudrouter-app-sdk",
+          "version": "0.1.0",
+          "description": "SDKWork Cloud Router app API SDK python generated transport SDK"
+        },
+        {
+          "layer": "composed",
+          "packagePath": "cloudrouter-app-sdk-python/composed",
+          "status": "reserved",
+          "name": "sdkwork-cloudrouter-app-sdk",
+          "version": "",
+          "description": "Reserved composed python SDK boundary for cloudrouter-app-sdk"
+        }
+      ]
+    }
+  ]
+}

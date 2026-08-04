@@ -4,7 +4,7 @@
 `examples/` stores runnable examples, integration examples, sample configs, and SDK or API usage examples for consumers and verification.
 
 ## Owner
-SDKWork Claw Router developer experience maintainers.
+SDKWork Cloud Router developer experience maintainers.
 
 ## Allowed Content
 Small runnable examples, sample requests, sample configs, SDK usage snippets, example fixtures, and README-driven walkthroughs.

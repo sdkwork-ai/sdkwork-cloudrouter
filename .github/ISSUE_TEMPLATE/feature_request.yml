@@ -1,5 +1,5 @@
 name: Feature Request
-description: Propose a new capability or enhancement for SDKWork Claw Router
+description: Propose a new capability or enhancement for SDKWork Cloud Router
 title: "feat(<scope>): <short description>"
 labels: ["enhancement", "triage"]
 body:
@@ -31,7 +31,7 @@ body:
         - admin-api (backend management)
         - app-api (portal backend)
         - edge server (all-in-one)
-        - installer (clawrouterctl)
+        - installer (cloudrouterctl)
         - portal (React PC app)
         - sdk (generated client)
         - database / migrations

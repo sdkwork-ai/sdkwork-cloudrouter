@@ -1,23 +1,23 @@
 {
   "schemaVersion": 1,
   "kind": "sdkwork.deployment-index",
-  "application": "sdkwork-clawrouter",
+  "application": "sdkwork-cloudrouter",
   "defaultProfile": "standalone.development",
   "environments": {
     "development": {
-      "applicationOrigin": "http://clawrouter-dev.sdkwork.com:3900/",
+      "applicationOrigin": "http://cloudrouter-dev.sdkwork.com:3900/",
       "cloudApiBaseUrl": "https://api-dev.sdkwork.com/"
     },
     "test": {
-      "applicationOrigin": "https://clawrouter-test.sdkwork.com/",
+      "applicationOrigin": "https://cloudrouter-test.sdkwork.com/",
       "cloudApiBaseUrl": "https://api-test.sdkwork.com/"
     },
     "staging": {
-      "applicationOrigin": "https://clawrouter-staging.sdkwork.com/",
+      "applicationOrigin": "https://cloudrouter-staging.sdkwork.com/",
       "cloudApiBaseUrl": "https://api-staging.sdkwork.com/"
     },
     "production": {
-      "applicationOrigin": "https://clawrouter.sdkwork.com/",
+      "applicationOrigin": "https://cloudrouter.sdkwork.com/",
       "cloudApiBaseUrl": "https://api.sdkwork.com/"
     }
   },

@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "sdkwork-routes-cloudrouter-app-api",
+    "displayName": "SDKWork Router App API",
+    "version": "0.1.0",
+    "type": "rust-route-crate",
+    "root": "sdkwork-cloudrouter/crates/sdkwork-routes-cloudrouter-app-api",
+    "domain": "platform",
+    "capability": "router",
+    "surface": "app-api",
+    "languages": ["rust"],
+    "generated": false,
+    "manifests": ["Cargo.toml"]
+  },
+  "canonicalSpecs": [
+    { "file": "API_SPEC.md", "path": "../../../sdkwork-specs/API_SPEC.md", "purpose": "HTTP API surface and route manifest rules." },
+    { "file": "APPLICATION_GATEWAY_SPEC.md", "path": "../../../sdkwork-specs/APPLICATION_GATEWAY_SPEC.md", "purpose": "Assembly-based dependency API composition." },
+    { "file": "WEB_FRAMEWORK_SPEC.md", "path": "../../../sdkwork-specs/WEB_FRAMEWORK_SPEC.md", "purpose": "Shared request context and HTTP framework wiring." },
+    { "file": "WEB_BACKEND_SPEC.md", "path": "../../../sdkwork-specs/WEB_BACKEND_SPEC.md", "purpose": "Dependency business router composition boundaries." },
+    { "file": "SDK_WORKSPACE_GENERATION_SPEC.md", "path": "../../../sdkwork-specs/SDK_WORKSPACE_GENERATION_SPEC.md", "purpose": "Route crate placement and SDK workspace materialization rules." },
+    { "file": "SDK_SPEC.md", "path": "../../../sdkwork-specs/SDK_SPEC.md", "purpose": "SDK family and API authority naming rules." },
+    { "file": "COMPONENT_SPEC.md", "path": "../../../sdkwork-specs/COMPONENT_SPEC.md", "purpose": "Component manifest requirements." },
+    { "file": "TEST_SPEC.md", "path": "../../../sdkwork-specs/TEST_SPEC.md", "purpose": "Route crate verification requirements." },
+    { "file": "CODE_STYLE_SPEC.md", "path": "../../../sdkwork-specs/CODE_STYLE_SPEC.md", "purpose": "Authored source structure rules." },
+    { "file": "NAMING_SPEC.md", "path": "../../../sdkwork-specs/NAMING_SPEC.md", "purpose": "Route crate naming rules." },
+    { "file": "RUST_CODE_SPEC.md", "path": "../../../sdkwork-specs/RUST_CODE_SPEC.md", "purpose": "Rust route crate layout rules." }
+  ],
+  "contracts": {
+    "publicExports": ["."],
+    "requiredPorts": [
+      {
+        "name": "accountWalletAppApi",
+        "export": "sdkwork_routes_account_app_api::app_account_wallet_router_with_postgres_pool"
+      },
+      {
+        "name": "paymentAppApi",
+        "export": "sdkwork_routes_payment_app_api::routes::build_payment_app_router"
+      },
+      {
+        "name": "promotionAppApi",
+        "export": "sdkwork_routes_promotion_app_api::app_promotion_router_with_postgres_pool"
+      },
+      {
+        "name": "membershipAppApi",
+        "export": "sdkwork_routes_membership_app_api::app_membership_router_with_postgres_pool"
+      },
+      {
+        "name": "orderAppApi",
+        "export": "sdkwork_api_order_assembly::ApiAssembly::from_database_pool"
+      }
+    ],
+    "runtimeEntrypoints": [
+      "src/manifest.rs#route_manifest",
+      "src/routes.rs#build_sdkwork_cloudrouter_router_app_api_router",
+      "src/routes.rs#build_sdkwork_cloudrouter_router_app_api_router_from_env",
+      "src/commerce_runtime.rs#merge_federated_commerce_app_routers"
+    ],
+    "routeManifest": "src/manifest.rs",
+    "sdkClients": [],
+    "sdkDependencies": [],
+    "dependencyApiExports": [],
+    "dependencyApiSurfaces": [
+      {
+        "workspace": "sdkwork-account",
+        "sdkFamily": "sdkwork-account-app-sdk",
+        "apiAuthority": "sdkwork-account-app-api",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "runtimeMode": "same-origin-mounted",
+        "profileCoverage": ["standalone"],
+        "cargoDependency": "sdkwork_routes_account_app_api",
+        "embeddedExecutableExport": "sdkwork_routes_account_app_api::app_account_wallet_router_with_postgres_pool",
+        "coverageEvidence": [
+          "src/commerce_runtime.rs",
+          "src/routes.rs",
+          "../../../sdkwork-account/apis/app-api/account/account-app-api.openapi.json"
+        ]
+      },
+      {
+        "workspace": "sdkwork-payment",
+        "sdkFamily": "sdkwork-payment-app-sdk",
+        "apiAuthority": "sdkwork-payment-app-api",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "runtimeMode": "same-origin-mounted",
+        "profileCoverage": ["standalone"],
+        "cargoDependency": "sdkwork_routes_payment_app_api",
+        "embeddedExecutableExport": "sdkwork_routes_payment_app_api::routes::build_payment_app_router",
+        "coverageEvidence": [
+          "src/commerce_runtime.rs",
+          "src/routes.rs",
+          "../../../sdkwork-payment/apis/app-api/payment/sdkwork-payment-app-api.openapi.yaml"
+        ]
+      },
+      {
+        "workspace": "sdkwork-promotion",
+        "sdkFamily": "sdkwork-promotion-app-sdk",
+        "apiAuthority": "sdkwork-promotion-app-api",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "runtimeMode": "same-origin-mounted",
+        "profileCoverage": ["standalone"],
+        "cargoDependency": "sdkwork_routes_promotion_app_api",
+        "embeddedExecutableExport": "sdkwork_routes_promotion_app_api::app_promotion_router_with_postgres_pool",
+        "coverageEvidence": [
+          "src/commerce_runtime.rs",
+          "src/routes.rs",
+          "../../../sdkwork-promotion/apis/app-api/promotion/sdkwork-promotion-app-api.openapi.json"
+        ]
+      },
+      {
+        "workspace": "sdkwork-membership",
+        "sdkFamily": "sdkwork-membership-app-sdk",
+        "apiAuthority": "sdkwork-membership-app-api",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "runtimeMode": "same-origin-mounted",
+        "profileCoverage": ["standalone"],
+        "cargoDependency": "sdkwork_routes_membership_app_api",
+        "embeddedExecutableExport": "sdkwork_routes_membership_app_api::app_membership_router_with_postgres_pool",
+        "coverageEvidence": [
+          "src/commerce_runtime.rs",
+          "src/routes.rs",
+          "../../../sdkwork-membership/apis/app-api/membership/membership-app-api.openapi.json"
+        ]
+      },
+      {
+        "workspace": "sdkwork-order",
+        "sdkFamily": "sdkwork-order-app-sdk",
+        "apiAuthority": "sdkwork-order-app-api",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "runtimeMode": "same-origin-mounted",
+        "profileCoverage": ["standalone"],
+        "cargoDependency": "sdkwork_api_order_assembly",
+        "embeddedExecutableExport": "sdkwork_api_order_assembly::ApiAssembly::from_database_pool",
+        "coverageEvidence": [
+          "src/commerce_runtime.rs",
+          "src/routes.rs",
+          "../../../sdkwork-order/crates/sdkwork-api-order-assembly/assembly-manifest.json",
+          "../../../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+        ]
+      }
+    ],
+    "events": [],
+    "configKeys": [
+      "SDKWORK_CLOUDROUTER_CONFIG_FILE",
+      "SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING",
+      "SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING_FILE"
+    ]
+  },
+  "verification": { "commands": ["cargo check -p sdkwork-routes-cloudrouter-app-api"] }
+}

@@ -126,7 +126,7 @@ class FlywaySchemaContractAudit:
         self.registry_path = (
             Path(registry_path).resolve()
             if registry_path is not None
-            else self.root / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+            else self.root / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
         )
         self._explicit_flyway_paths = flyway_paths is not None
         self.flyway_paths = (
@@ -696,7 +696,7 @@ class FlywaySchemaContractAudit:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Audit upstream Flyway DDL against Schema Registry contracts.")
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     parser.add_argument("--registry", type=Path, default=None, help="schema registry YAML path")
     parser.add_argument(
         "--flyway",

@@ -1,15 +1,15 @@
-# SDKWork Claw Router Service Level Agreement
+# SDKWork Cloud Router Service Level Agreement
 
 **Document Version:** 1.0
 **Last Updated:** 2026-06-27
 **Status:** active
 **Owner:** SDKWork operations
-**Application:** sdkwork-clawrouter
+**Application:** sdkwork-cloudrouter
 
 ## 1. Overview
 
 This Service Level Agreement (SLA) governs the commercial service levels for
-SDKWork Claw Router Pro Edition and Enterprise Edition customers. It defines
+SDKWork Cloud Router Pro Edition and Enterprise Edition customers. It defines
 the availability commitments, incident response times, service credit policy,
 rate-limit tiers, and support channels for commercial deployments.
 
@@ -23,7 +23,7 @@ This SLA applies to:
 
 - Pro Edition subscriptions.
 - Enterprise Edition subscriptions.
-- The Claw Router managed gateway endpoints (`/v1/*`, `/app/v3/api`,
+- The Cloud Router managed gateway endpoints (`/v1/*`, `/app/v3/api`,
   `/backend/v3/api`) and the edge server health endpoints (`/healthz`,
   `/readyz`).
 
@@ -31,7 +31,7 @@ This SLA does not apply to:
 
 - Community Edition self-deployments.
 - Customer-supplied upstream AI provider latency or outages, except where
-  the failure is the direct result of a Claw Router defect.
+  the failure is the direct result of a Cloud Router defect.
 - Customer-side network issues, DNS misconfiguration, or client
   misconfiguration.
 - Preview, beta, or experimental features explicitly marked as not covered
@@ -60,7 +60,7 @@ Where:
 - `total_minutes_in_month` is the number of minutes in the calendar month
   (43,200 for a 30-day month, 44,640 for a 31-day month, 40,320 for February).
 - `unavailable_minutes` is the number of minutes in which all retry attempts
-  against the licensed Claw Router endpoints return an HTTP 5xx error or
+  against the licensed Cloud Router endpoints return an HTTP 5xx error or
   fail to respond within 30 seconds. A minute is counted as unavailable only
   when the downtime is continuous for at least 5 consecutive minutes.
 
@@ -85,7 +85,7 @@ The following are not counted as downtime:
   and notified at least 72 hours in advance under section 8.
 - Customer-side network, DNS, certificate, or client configuration issues.
 - Failures of upstream AI providers (OpenAI, Anthropic, Google, Alibaba,
-  Tencent, ByteDance, and others) when the failure occurs outside Claw
+  Tencent, ByteDance, and others) when the failure occurs outside Cloud
   Router's control and the configured circuit-breaker failover has no
   healthy alternative route available.
 - Force majeure events described in section 9.
@@ -132,7 +132,7 @@ Response times apply during the customer's support coverage window:
 
 ## 6. Service Credits Policy
 
-When Claw Router fails to meet the committed monthly uptime, the customer is
+When Cloud Router fails to meet the committed monthly uptime, the customer is
 eligible for service credits applied to the next billing cycle. Service
 credits are not paid out as cash.
 
@@ -183,7 +183,7 @@ technical account manager.
 
 ## 7. Rate Limit Tiers
 
-Claw Router enforces per-tenant rate limits. The default tier is determined
+Cloud Router enforces per-tenant rate limits. The default tier is determined
 by the subscription edition and may be upgraded based on payment history and
 historical usage. Rate limits are expressed as requests per minute (RPM) and
 tokens per minute (TPM).
@@ -209,7 +209,7 @@ of OpenAI Platform and Anthropic Console rate-limit responses.
 
 ### 8.1 Scheduled maintenance window
 
-- Claw Router scheduled maintenance occurs on the second Sunday of every
+- Cloud Router scheduled maintenance occurs on the second Sunday of every
   month, 02:00-06:00 UTC.
 - Maintenance is performed within this window and is expected to last no
   longer than 2 hours, although the full 4-hour window is reserved.

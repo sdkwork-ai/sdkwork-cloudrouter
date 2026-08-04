@@ -5,14 +5,14 @@
 
 鏁版嵁搴撹璁′互鏈」鐩牴鐩綍锟?[../DATABASE_SPEC.md](../DATABASE_SPEC.md) 涓哄己绾︽潫銆傝瑙勮寖瑕佹眰锟?
 - 鏂拌〃鍏堝啓鏁版嵁濂戠害锛屽啀鐢熸垚鎴栨牎锟?DDL銆丱RM銆丏TO銆丼DK锟?- 鏂颁笟鍔¤〃绗竴娈靛繀椤绘槸鍙楁帶涓氬姟妯″潡鍓嶇紑锛屼笉鑳戒娇鐢ㄤ骇鍝佸悕銆侀」鐩悕鎴栨妧鏈爤鍚嶏拷?- 澶氱鎴枫€佽处鎴枫€佹潈闄愩€佹秷鎭€乄ebhook銆佽法鏈嶅姟鍐欏叆琛ㄨ嚦锟?L2锟?- 璧勯噾銆佸嚟璇併€侀殣绉併€佹硶鍔＄暀瀛樸€佸叧閿璁¤〃锟?L3 璁捐锟?- `id` 涓哄唴锟?int64锛孉PI 搴忓垪鍖栦负 string锟?- 閲戦浣跨敤 decimal锛孉PI 搴忓垪鍖栦负 string锟?- 鏂拌〃楂橀绉熸埛绱㈠紩蹇呴』锟?`tenant_id` 寮€濮嬶拷?
-鍓嶇椤甸潰绾ц鐩栧拰鍙牎楠岃〃濂戠害锟?[13-椤甸潰绾ф暟鎹粨鏋勮鐩栦笌SchemaRegistry钀藉湴璁捐.md](./13-椤甸潰绾ф暟鎹粨鏋勮鐩栦笌SchemaRegistry钀藉湴璁捐.md)銆乕14-鏁版嵁缁撴瀯缁嗚妭澶嶆牳涓庤ˉ寮鸿锟?md](./14-鏁版嵁缁撴瀯缁嗚妭澶嶆牳涓庤ˉ寮鸿锟?md) 锟?[schema-registry/sdkwork-clawrouter.tables.yaml](./schema-registry/sdkwork-clawrouter.tables.yaml) 涓哄噯銆傛湰鏂囧畾涔夋€讳綋鏁版嵁搴撶瓥鐣ワ紝Registry 瀹氫箟鍚庣画 DDL銆丒ntity銆丏TO銆丱penAPI銆丼DK 鐨勪笂娓稿绾︼拷?
+鍓嶇椤甸潰绾ц鐩栧拰鍙牎楠岃〃濂戠害锟?[13-椤甸潰绾ф暟鎹粨鏋勮鐩栦笌SchemaRegistry钀藉湴璁捐.md](./13-椤甸潰绾ф暟鎹粨鏋勮鐩栦笌SchemaRegistry钀藉湴璁捐.md)銆乕14-鏁版嵁缁撴瀯缁嗚妭澶嶆牳涓庤ˉ寮鸿锟?md](./14-鏁版嵁缁撴瀯缁嗚妭澶嶆牳涓庤ˉ寮鸿锟?md) 锟?[schema-registry/sdkwork-cloudrouter.tables.yaml](./schema-registry/sdkwork-cloudrouter.tables.yaml) 涓哄噯銆傛湰鏂囧畾涔夋€讳綋鏁版嵁搴撶瓥鐣ワ紝Registry 瀹氫箟鍚庣画 DDL銆丒ntity銆丏TO銆丱penAPI銆丼DK 鐨勪笂娓稿绾︼拷?
 ## 2. 琛ㄧ粨鏋勬€讳綋绛栫暐
 
-`sdkwork-clawrouter` 鏁版嵁搴撳垎涓ょ被锟?
+`sdkwork-cloudrouter` 鏁版嵁搴撳垎涓ょ被锟?
 | 绫诲瀷 | 琛ㄥ悕 | 绛栫暐 |
 | --- | --- | --- |
-| 瀛橀噺鍏煎锟?| `legacy-java-plus-entity` 涓殑 `plus_*` 锟?| 淇濇寔鐗╃悊琛ㄥ悕銆佸瓧娈点€佺储寮曘€佸疄浣撶粨鏋勫畬鍏ㄤ竴鑷达紝涓嶅湪 claw-router 涓垱寤烘浛浠ｈ〃 |
-| 鏂版爣鍑嗚〃 | claw-router 鏂板鑳藉姏锟?| 锟?`DATABASE_SPEC.md` 浣跨敤 `ai_`銆乣integration_`銆乣iam_`銆乣commerce_`銆乣studio_`銆乣content_`銆乣ops_` 鍓嶇紑 |
+| 瀛橀噺鍏煎锟?| `legacy-java-plus-entity` 涓殑 `plus_*` 锟?| 淇濇寔鐗╃悊琛ㄥ悕銆佸瓧娈点€佺储寮曘€佸疄浣撶粨鏋勫畬鍏ㄤ竴鑷达紝涓嶅湪 cloud-router 涓垱寤烘浛浠ｈ〃 |
+| 鏂版爣鍑嗚〃 | cloud-router 鏂板鑳藉姏锟?| 锟?`DATABASE_SPEC.md` 浣跨敤 `ai_`銆乣integration_`銆乣iam_`銆乣commerce_`銆乣studio_`銆乣content_`銆乣ops_` 鍓嶇紑 |
 
 閲嶈瑁佸喅锟?
 - 鐢ㄦ埛銆乂IP銆乤ccount銆佷紭鎯犲埜銆佺Н鍒嗗厖鍊笺€佽鍗曘€佹敮浠樸€侀€€娆俱€佸彂绁ㄧ瓑蹇呴』浣跨敤鏃㈡湁 `plus_*` 琛拷?- 鏁版嵁搴撹璁℃ā鍨嬮噰锟?Java Entity first锛氫换浣曟柊琛ㄨ繘鍏ヨ璁″墠锛屽繀椤诲厛锟?`legacy-java-plus-entity` 妫€绱㈡槸鍚﹀凡锟?`Plus*` Entity锛涜嫢瀛樺湪锛屽垯鐧昏鏃㈡湁 `plus_*` 琛ㄤ负 L0 legacy compatible锛岀墿鐞嗙粨鏋勪繚鎸佸畬鍏ㄤ竴鑷达紝涓嶅緱鏂板缓鍚屼箟鏇夸唬琛拷?- 鏂板缃戝叧璺敱銆丳rovider銆乽sage fact銆乨ecision log銆乷ps event銆乻ecret reference 绛変娇鐢ㄦ爣鍑嗗墠缂€琛拷?- 瀛橀噺 `plus_*` 琛ㄥ湪鏈郴缁熶腑瑙嗕负 L0 legacy compatible锛屼絾涓嶅緱鍥犱负鏈疆璁捐鑷姩鏀瑰悕锟?- 濡傛灉鏈潵瑕佹妸 `plus_*` 杩佺Щ锟?`iam_`銆乣commerce_` 绛夋爣鍑嗗悕锛屽繀椤诲彟璧疯縼绉婚」鐩紝璁捐鍏煎瑙嗗浘銆佸弻鍐欍€佸洖濉€佹牎楠屻€佸洖婊氬拰鍓嶆粴鏂规锟?
@@ -220,7 +220,7 @@ bounded_context: provider-integration
 profile: tenant_entity
 compliance_level: L3
 system_of_record: true
-write_owner: claw-router-control
+write_owner: cloud-router-control
 columns:
   id: { type: int64, primary_key: true }
   uuid: { type: string, length: 64, unique: true }
@@ -256,7 +256,7 @@ bounded_context: ai-routing-metering
 profile: event_log
 compliance_level: L3
 system_of_record: true
-write_owner: claw-router-gateway
+write_owner: cloud-router-gateway
 columns:
   id: { type: int64, primary_key: true }
   uuid: { type: string, length: 64, unique: true }
@@ -294,27 +294,27 @@ retention:
 - [ ] 鏂拌〃鍓嶇紑宸茬櫥锟?owner 锟?bounded context锟?- [ ] 鏂拌〃宸插０鏄庣敾鍍忓拰 L1/L2/L3 绛夌骇锟?- [ ] 楂橀鏌ヨ宸茬粦瀹氱储寮曪拷?- [ ] 澶氱鎴疯〃绱㈠紩锟?`tenant_id` 璧峰锟?- [ ] 璧勯噾銆佸嚟璇併€佸璁¤〃杈惧埌 L3锟?- [ ] API int64 锟?decimal 搴忓垪鍖栦负 string锟?- [ ] Provider secret 鍙瓨 secret reference锟?- [ ] 鐢ㄦ埛銆乂IP銆佽处鎴枫€佷紭鎯犲埜銆佺Н鍒嗗厖鍊笺€佷氦鏄撹处鎴峰煙鏈垱寤烘浛浠ｈ〃锟?- [ ] 缁撴瀯鍙樻洿銆丱RM銆丱penAPI銆丼DK 淇濇寔鍚屾锟?
 ## 11. 鏁版嵁浜嬪疄鏉ユ簮鍒嗗眰
 
-鏁版嵁搴撲笉鏄寜椤甸潰鎴栭儴缃插舰鎬佹媶鍒嗭紝鑰屾槸鎸変簨瀹炴潵婧愬拰鍐欏叆 owner 鍒嗗眰銆俙sdkwork-clawrouter` 鍦ㄦ湰鍦版闈€丼erver銆丏ocker銆並8S 涓嬮兘浣跨敤鍚屼竴濂楁暟鎹绾︼紝鍙厑璁哥墿鐞嗘暟鎹簱鏂硅█銆佸垎鍖鸿兘鍔涘拰閮ㄧ讲鍙傛暟涓嶅悓锟?
+鏁版嵁搴撲笉鏄寜椤甸潰鎴栭儴缃插舰鎬佹媶鍒嗭紝鑰屾槸鎸変簨瀹炴潵婧愬拰鍐欏叆 owner 鍒嗗眰銆俙sdkwork-cloudrouter` 鍦ㄦ湰鍦版闈€丼erver銆丏ocker銆並8S 涓嬮兘浣跨敤鍚屼竴濂楁暟鎹绾︼紝鍙厑璁哥墿鐞嗘暟鎹簱鏂硅█銆佸垎鍖鸿兘鍔涘拰閮ㄧ讲鍙傛暟涓嶅悓锟?
 | 灞傜骇 | 浜嬪疄鏉ユ簮 | 锟?| 鍐欏叆 owner | 璇存槑 |
 | --- | --- | --- | --- | --- |
-| L0 瀛橀噺涓绘暟鎹眰 | `legacy-java-plus-entity` | `plus_user`銆乣plus_account`銆乣plus_vip_*`銆乣plus_order`銆乣plus_payment` 锟?| 鏃㈡湁 Java service/repository | 琛ㄧ粨鏋勫畬鍏ㄤ繚鎸佷竴鑷达紱claw-router 鍙€氳繃鏍囧噯 service/API/SDK 鎺ュ叆 |
-| L1/L2 鎺у埗闈富鏁版嵁锟?| claw-router 鎺у埗锟?| `iam_`銆乣integration_`銆乣ai_`銆乣promotion_` 閰嶇疆涓昏〃 | control-plane service | API Key 鎵╁睍銆丳rovider銆佹笭閬撱€佹ā鍨嬨€佺瓥鐣ャ€佸崱鍒歌惀閿€绛夋爣鍑嗕簨瀹炴潵锟?|
+| L0 瀛橀噺涓绘暟鎹眰 | `legacy-java-plus-entity` | `plus_user`銆乣plus_account`銆乣plus_vip_*`銆乣plus_order`銆乣plus_payment` 锟?| 鏃㈡湁 Java service/repository | 琛ㄧ粨鏋勫畬鍏ㄤ繚鎸佷竴鑷达紱cloud-router 鍙€氳繃鏍囧噯 service/API/SDK 鎺ュ叆 |
+| L1/L2 鎺у埗闈富鏁版嵁锟?| cloud-router 鎺у埗锟?| `iam_`銆乣integration_`銆乣ai_`銆乣promotion_` 閰嶇疆涓昏〃 | control-plane service | API Key 鎵╁睍銆丳rovider銆佹笭閬撱€佹ā鍨嬨€佺瓥鐣ャ€佸崱鍒歌惀閿€绛夋爣鍑嗕簨瀹炴潵锟?|
 | L3 浜嬩欢浜嬪疄锟?| gateway/worker | `ai_routing_decision_log`銆乣ai_request_trace`銆乣ai_usage`銆乣ops_audit_log` | gateway銆亀orker銆乤dmin | append-only 鎴栧噯 append-only锛岀敤浜庡璁°€佽璐广€佸洖鏀惧拰鏁呴殰瀹氫綅 |
 | L2/L3 鎶曞奖涓庡璐﹀眰 | worker/ops | `commerce_usage_settlement`銆乣commerce_billing_export`銆乣integration_provider_health_snapshot` | settlement worker銆乷ps worker | 涓嶆浛浠ｈ祫閲戣处鏈紝鍙繚瀛樼敤閲忕粨绠椼€佸鍑哄拰鍋ュ悍蹇収璇佹嵁 |
 | 浜嬩欢涓€鑷存€у眰 | outbox/inbox | `ops_outbox_event`銆乣ops_inbox_event` | 鍚勫啓鍏ユ湇锟?| 淇濋殰璺ㄦ湇鍔°€佽法閮ㄧ讲銆佸紓姝ユ姇褰辩殑鍙潬鍙戝竷鍜屽箓绛夋秷锟?|
 
 鍏抽敭绾︽潫锟?
-- `plus_*` 琛ㄦ槸鏃㈡湁涓氬姟鍩熺殑浜嬪疄鏉ユ簮锛屼笉鍥犱负 claw-router 寮曞叆鑰屾敼鍚嶃€佹敼瀛楁鎴栧缓鍚屼箟琛拷?- 鏂拌〃鍙壙杞界綉鍏冲煙鏂板鑳藉姏锛屼笉鎵胯浇鐢ㄦ埛銆乂IP銆佽处鎴枫€佷紭鎯犲埜銆佸厖鍊笺€佽鍗曘€佹敮浠樸€侀€€娆俱€佸彂绁ㄧ瓑鏃㈡湁浜ゆ槗浜嬪疄锟?- 浠讳綍椤甸潰闇€瑕佽仛鍚堜俊鎭椂锛屼紭鍏堥€氳繃 API composition銆佽妯″瀷鎴栨姇褰卞疄鐜帮紝涓嶆妸澶氫釜浜嬪疄鏉ユ簮鎻夋垚涓€涓笉鍙不鐞嗙殑澶у琛拷?- 鎵€鏈夎法鏈嶅姟鍐欏叆蹇呴』锟?`request_id`銆乣idempotency_key` 锟?outbox/inbox 鍘婚噸閿拷?
+- `plus_*` 琛ㄦ槸鏃㈡湁涓氬姟鍩熺殑浜嬪疄鏉ユ簮锛屼笉鍥犱负 cloud-router 寮曞叆鑰屾敼鍚嶃€佹敼瀛楁鎴栧缓鍚屼箟琛拷?- 鏂拌〃鍙壙杞界綉鍏冲煙鏂板鑳藉姏锛屼笉鎵胯浇鐢ㄦ埛銆乂IP銆佽处鎴枫€佷紭鎯犲埜銆佸厖鍊笺€佽鍗曘€佹敮浠樸€侀€€娆俱€佸彂绁ㄧ瓑鏃㈡湁浜ゆ槗浜嬪疄锟?- 浠讳綍椤甸潰闇€瑕佽仛鍚堜俊鎭椂锛屼紭鍏堥€氳繃 API composition銆佽妯″瀷鎴栨姇褰卞疄鐜帮紝涓嶆妸澶氫釜浜嬪疄鏉ユ簮鎻夋垚涓€涓笉鍙不鐞嗙殑澶у琛拷?- 鎵€鏈夎法鏈嶅姟鍐欏叆蹇呴』锟?`request_id`銆乣idempotency_key` 锟?outbox/inbox 鍘婚噸閿拷?
 ## 12. 瀛橀噺琛ㄥ鐢ㄥ锟?
 鐢ㄦ埛瑕佹眰鐢ㄦ埛銆乂IP銆乤ccount銆佷紭鎯犲埜銆佺Н鍒嗗厖鍊肩瓑璁捐锟?`legacy-java-plus-entity` 瀹屽叏涓€鑷达紝鏈」鐩惤鍦版椂鎸変互涓嬪绾︽墽琛岋拷?
-| 涓氬姟锟?| 浜嬪疄鏉ユ簮锟?| claw-router 鍙仛 | claw-router 绂佹锟?|
+| 涓氬姟锟?| 浜嬪疄鏉ユ簮锟?| cloud-router 鍙仛 | cloud-router 绂佹锟?|
 | --- | --- | --- | --- |
 | 鐢ㄦ埛涓庤韩锟?| `plus_user`銆乣plus_user_address`銆乣plus_oauth_account`銆乣plus_tenant`銆乣plus_organization*`銆乣plus_role*` | 璇诲彇鐢ㄦ埛銆佺鎴枫€佺粍缁囥€佽鑹叉潈闄愪笂涓嬫枃锛涢€氳繃 app/backend 鏍囧噯 API 璋冪敤鐢ㄦ埛鑳藉姏 | 鏂板缓 `iam_user`銆乣iam_account_user` 绛夋浛浠ｈ〃锛涘鍒跺瘑鐮併€佹墜鏈哄彿銆丱Auth 鏄庣粏鍒版柊锟?|
 | VIP 涓庣Н锟?| `plus_vip_user`銆乣plus_vip_level`銆乣plus_vip_recharge*`銆乣plus_vip_point_change` | 灞曠ず VIP 鐘舵€併€佸厖鍊煎寘銆佺Н鍒嗗彉鍔紱灏嗙綉鍏崇敤閲忕粨绠楃粨鏋滀氦缁欐棦鏈夎处锟?VIP鏈嶅姟 | 鏂板缓 `commerce_vip_user`銆乣commerce_point_change`銆乣router_recharge` 绛夋浛浠ｈ〃 |
 | 璐︽埛涓庤处锟?| `plus_account`銆乣plus_account_history`銆乣plus_ledger_bridge`銆乣plus_currency`銆乣plus_exchange_rate` | 閫氳繃璐︽埛鏈嶅姟鎵ｅ噺銆佸喕缁撱€佸厖鍊笺€侀€€娆撅紱锟?`commerce_usage_settlement` 淇濈暀鐢ㄩ噺缁撶畻璇佹嵁 | 鐩存帴缁曡繃鏈嶅姟鏀逛綑棰濓紱鍙敼浣欓涓嶅啓娴佹按锛涙柊锟?`commerce_account` 浣滀负浣欓浜嬪疄鏉ユ簮 |
-| 鍟嗗搧銆佽鍗曘€佹敮浠樸€侀€€娆俱€佸彂锟?| `plus_product`銆乣plus_sku`銆乣plus_order*`銆乣plus_payment*`銆乣plus_refund`銆乣plus_invoice*` | 鍏宠仈浠锋牸璁″垝銆佸垱寤鸿锟?鏀粯/閫€娆捐姹傘€佸睍绀轰氦鏄撶粨锟?| 鏂板缓 claw-router 绉佹湁璁㈠崟銆佹敮浠樸€侀€€娆俱€佸彂绁ㄤ富锟?|
+| 鍟嗗搧銆佽鍗曘€佹敮浠樸€侀€€娆俱€佸彂锟?| `plus_product`銆乣plus_sku`銆乣plus_order*`銆乣plus_payment*`銆乣plus_refund`銆乣plus_invoice*` | 鍏宠仈浠锋牸璁″垝銆佸垱寤鸿锟?鏀粯/閫€娆捐姹傘€佸睍绀轰氦鏄撶粨锟?| 鏂板缓 cloud-router 绉佹湁璁㈠崟銆佹敮浠樸€侀€€娆俱€佸彂绁ㄤ富锟?|
 
-璁㈠崟娲惧彂鍜屾湇鍔¤鍗曡兘鍔涗篃锟?Java 瀹炰綋涓哄噯锛歚plus_order_dispatch_rule`銆乣plus_order_worker_dispatch_profile` 宸插瓨鍦ㄤ簬 `legacy-java-plus-entity`锛屽洜锟?claw-router 鍙兘鐧昏鍜岃皟鐢紝涓嶅啀鏂板缓 `commerce_order_dispatch_*` 锟?`router_worker_profile`锟?| 鍗″埜钀ラ攢 | `promotion_offer`銆乣promotion_offer_version`銆乣promotion_offer_scope`銆乣promotion_offer_audience_rule`銆乣promotion_offer_time_window`銆乣promotion_budget_account`銆乣promotion_coupon_stock`銆乣promotion_code`銆乣promotion_user_coupon`銆乣promotion_discount_application`銆乣promotion_discount_allocation`銆乣promotion_coupon_ledger_entry`銆乣promotion_external_binding`銆乣promotion_event_outbox` | 锟?promotion bounded context 缁熶竴绠＄悊鍒稿畾涔夈€佺増鏈€佽寖鍥淬€佷汉缇ゃ€侀绠椼€佸簱瀛樸€佸厬鎹㈢爜銆佺敤鎴峰埜銆佹牳閿€銆佸垎鎽娿€佹祦姘淬€佸閮ㄥ钩鍙扮粦瀹氬拰浜嬩欢 | 鏂板缓锟?`promotion_` 鐨勫崱鍒稿悓涔夎〃 |
+璁㈠崟娲惧彂鍜屾湇鍔¤鍗曡兘鍔涗篃锟?Java 瀹炰綋涓哄噯锛歚plus_order_dispatch_rule`銆乣plus_order_worker_dispatch_profile` 宸插瓨鍦ㄤ簬 `legacy-java-plus-entity`锛屽洜锟?cloud-router 鍙兘鐧昏鍜岃皟鐢紝涓嶅啀鏂板缓 `commerce_order_dispatch_*` 锟?`router_worker_profile`锟?| 鍗″埜钀ラ攢 | `promotion_offer`銆乣promotion_offer_version`銆乣promotion_offer_scope`銆乣promotion_offer_audience_rule`銆乣promotion_offer_time_window`銆乣promotion_budget_account`銆乣promotion_coupon_stock`銆乣promotion_code`銆乣promotion_user_coupon`銆乣promotion_discount_application`銆乣promotion_discount_allocation`銆乣promotion_coupon_ledger_entry`銆乣promotion_external_binding`銆乣promotion_event_outbox` | 锟?promotion bounded context 缁熶竴绠＄悊鍒稿畾涔夈€佺増鏈€佽寖鍥淬€佷汉缇ゃ€侀绠椼€佸簱瀛樸€佸厬鎹㈢爜銆佺敤鎴峰埜銆佹牳閿€銆佸垎鎽娿€佹祦姘淬€佸閮ㄥ钩鍙扮粦瀹氬拰浜嬩欢 | 鏂板缓锟?`promotion_` 鐨勫崱鍒稿悓涔夎〃 |
 
 瀛橀噺琛ㄥ湪鏈」鐩腑鐨勫吋瀹圭瓑绾ф槸 L0 legacy compatible銆侺0 鐨勫惈涔夋槸鈥滆鍏煎鍜屾槧灏勨€濓紝涓嶆槸鈥滃厑璁哥户缁鍒朵笉鏍囧噯璁捐鈥濄€傛柊鍔熻兘鑻ュ繀椤绘墿灞曡繖浜涗笟鍔″煙锛屽簲鍏堣瘎瀹℃槸鍚﹁兘閫氳繃鏃㈡湁 Java 鏈嶅姟鎵╁睍锛涘彧鏈夊湪鐢ㄦ埛鏄庣‘鎵瑰噯鐙珛杩佺Щ椤圭洰鏃讹紝鎵嶈锟?`plus_*` 鍒版爣鍑嗗墠缂€琛ㄧ殑鐗╃悊杩佺Щ锟?
 ## 13. 鏂拌〃钀藉湴浼樺厛锟?
@@ -328,7 +328,7 @@ retention:
 
 API Key 鐨勭涓€闃舵鏈変袱绉嶅悎娉曡矾绾匡細
 
-- 濡傛灉 Java `plus_api_key` 宸茬粡浣滀负 app/backend API 鐨勬爣鍑嗕簨瀹炴潵婧愶紝锟?P0/P1 鍏堝锟?`plus_api_key`锛屾柊锟?`ai_channel_group`銆乣iam_gateway_access_policy` 绛夋墿灞曡〃閫氳繃 `legacy_api_key_id` 鍏宠仈锛屼笉锟?`plus_api_key` 瀛楁锟?- 濡傛灉 claw-router 闇€瑕佺嫭绔嬬殑楂樺畨鍏ㄧ綉锟?Key 绱㈠紩锛屾墠鏂板 `iam_gateway_api_key`銆傝琛ㄥ彧淇濆瓨 `key_prefix`銆乣key_hash`銆佺瓥鐣ュ紩鐢ㄣ€佺姸鎬佸拰瀹¤淇℃伅锛屼笉淇濆瓨 API Key 鏄庢枃锛涗笌 `plus_api_key` 鐨勫叧绯诲繀椤诲湪濂戠害涓０鏄庯拷?
+- 濡傛灉 Java `plus_api_key` 宸茬粡浣滀负 app/backend API 鐨勬爣鍑嗕簨瀹炴潵婧愶紝锟?P0/P1 鍏堝锟?`plus_api_key`锛屾柊锟?`ai_channel_group`銆乣iam_gateway_access_policy` 绛夋墿灞曡〃閫氳繃 `legacy_api_key_id` 鍏宠仈锛屼笉锟?`plus_api_key` 瀛楁锟?- 濡傛灉 cloud-router 闇€瑕佺嫭绔嬬殑楂樺畨鍏ㄧ綉锟?Key 绱㈠紩锛屾墠鏂板 `iam_gateway_api_key`銆傝琛ㄥ彧淇濆瓨 `key_prefix`銆乣key_hash`銆佺瓥鐣ュ紩鐢ㄣ€佺姸鎬佸拰瀹¤淇℃伅锛屼笉淇濆瓨 API Key 鏄庢枃锛涗笌 `plus_api_key` 鐨勫叧绯诲繀椤诲湪濂戠害涓０鏄庯拷?
 ## 14. 鏍稿績鏁版嵁閾捐矾
 
 ### 14.1 Provider 鍜岃矾鐢遍厤缃摼锟?

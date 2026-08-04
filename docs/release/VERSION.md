@@ -3,9 +3,9 @@
 - Current Version: `0.3.0`
 - Release Date: `2026-05-17`
 - Status: `Released successfully on GitHub`
-- GitHub Release: `https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/releases/tag/v0.3.0`
-- Release Workflow: `https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/actions/runs/25969690825`
-- Release Asset Prefix: `clawrouter-*`
+- GitHub Release: `https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/releases/tag/v0.3.0`
+- Release Workflow: `https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/actions/runs/25969690825`
+- Release Asset Prefix: `cloudrouter-*`
 - Previous Version: `0.2.0`
 - Previous Status: `Released successfully on GitHub`
 

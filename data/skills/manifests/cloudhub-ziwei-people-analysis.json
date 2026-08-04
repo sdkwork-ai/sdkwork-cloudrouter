@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "agent-skill-manifest.v1",
+  "id": 8205,
+  "uuid": "skill-cloudhub-ziwei-people-analysis",
+  "skillKey": "cloudhub-ziwei-people-analysis",
+  "name": "紫微识人管人报告生成",
+  "summary": "紫微斗数识人管人报告生成。输入命盘输出八层管理策略（驱动力/软肋/沟通方式/成长路径/合盘适配）",
+  "version": "1.0.0",
+  "runtime": "metadata",
+  "entrypoint": "cloudhub.skills.ziwei_people_analysis",
+  "provider": "CloudHub",
+  "licenseName": "MIT-0",
+  "capabilities": [
+    "cloudhub.metadata"
+  ],
+  "configSchema": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "defaultConfig": {
+    "portal": {
+      "developer": "yifan",
+      "features": [
+        "紫微斗数识人管人报告生成。输入命盘输出八层管理策略（驱动力/软肋/沟通方式/成长路径/合盘适配）"
+      ],
+      "frameworks": [
+        "CloudHub",
+        "Agent Skill"
+      ],
+      "sizeText": "Metadata",
+      "cloudhubImage": "cloudhub://skills/ziwei-people-analysis@1.0.0",
+      "screenshots": [
+        "https://avatars.githubusercontent.com/u/270716855?v=4"
+      ]
+    },
+    "source": {
+      "vendor": "cloudhub",
+      "slug": "ziwei-people-analysis",
+      "url": "https://cloudhub.ai/skills/ziwei-people-analysis"
+    }
+  },
+  "source": {
+    "vendor": "cloudhub",
+    "slug": "ziwei-people-analysis",
+    "url": "https://cloudhub.ai/skills/ziwei-people-analysis",
+    "fetchedAt": "2026-06-22T01:26:13.984Z",
+    "rawDetailPath": "data/skills/cloudhub/raw/details/ziwei-people-analysis-2989b6d375a8bdc6.json"
+  },
+  "artifacts": [
+    {
+      "artifactRef": "cloudhub://skills/ziwei-people-analysis@1.0.0",
+      "artifact": {
+        "kind": "document",
+        "source": "provider_asset",
+        "uri": "data/skills/artifacts/cloudhub-ziwei-people-analysis-1.0.0.json"
+      },
+      "version": "1.0.0",
+      "runtime": "metadata",
+      "checksumHash": "sha256:72ca36dc7a40eacfc974e49e3107e0c3029eabb160d0264777ed35f009e7c17b",
+      "artifactSizeBytes": 2027
+    }
+  ],
+  "permissions": {
+    "network": false,
+    "filesystem": "none",
+    "secrets": []
+  },
+  "publishedAt": "2026-06-22T01:09:57.492Z"
+}

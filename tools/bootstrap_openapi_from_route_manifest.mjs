@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Merge missing routes from sdkwork-routes-* route manifests into clawrouter OpenAPI authorities.
+ * Merge missing routes from sdkwork-routes-* route manifests into cloudrouter OpenAPI authorities.
  * Authority: API_SPEC.md section 15 SdkWorkApiResponse envelopes.
  */
 import { readFile, writeFile } from "node:fs/promises";
@@ -13,20 +13,20 @@ const workspaceRoot = path.resolve(scriptDir, "..");
 const TARGETS = [
   {
     surface: "app",
-    manifestPath: "sdks/_route-manifests/app-api/sdkwork-routes-clawrouter-app-api.route-manifest.json",
+    manifestPath: "sdks/_route-manifests/app-api/sdkwork-routes-cloudrouter-app-api.route-manifest.json",
     openApiPaths: [
-      "generated/openapi/clawrouter-app-openapi.json",
-      "apis/app-api/clawrouter/clawrouter-app-api.openapi.json",
+      "generated/openapi/cloudrouter-app-openapi.json",
+      "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json",
     ],
     apiPrefix: "/app/v3/api",
     routeScope: "console",
   },
   {
     surface: "backend",
-    manifestPath: "sdks/_route-manifests/backend-api/sdkwork-routes-clawrouter-backend-api.route-manifest.json",
+    manifestPath: "sdks/_route-manifests/backend-api/sdkwork-routes-cloudrouter-backend-api.route-manifest.json",
     openApiPaths: [
-      "generated/openapi/clawrouter-backend-openapi.json",
-      "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json",
+      "generated/openapi/cloudrouter-backend-openapi.json",
+      "apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json",
     ],
     apiPrefix: "/backend/v3/api",
     routeScope: "admin",
@@ -117,12 +117,12 @@ function buildStubOperation(route, target) {
     "x-read-sources": ["ops_audit_log"],
     "x-write-tables": [],
     "x-file-targets": [],
-    "x-sdkwork-owner": "sdkwork-clawrouter",
-    "x-sdkwork-api-authority": target.surface === "app" ? "sdkwork-clawrouter-app-api" : "sdkwork-clawrouter-backend-api",
+    "x-sdkwork-owner": "sdkwork-cloudrouter",
+    "x-sdkwork-api-authority": target.surface === "app" ? "sdkwork-cloudrouter-app-api" : "sdkwork-cloudrouter-backend-api",
     "x-sdkwork-request-context": "WebRequestContext",
     "x-sdkwork-api-surface": target.surface === "app" ? "app-api" : "backend-api",
     "x-sdkwork-source-route-crate":
-      target.surface === "app" ? "sdkwork-routes-clawrouter-app-api" : "sdkwork-routes-clawrouter-backend-api",
+      target.surface === "app" ? "sdkwork-routes-cloudrouter-app-api" : "sdkwork-routes-cloudrouter-backend-api",
     "x-source-file": "tools/bootstrap_openapi_from_route_manifest.mjs",
     "x-recovered-from-route-manifest": true,
     "x-ui-route": inferUiRoute(route.path, target.apiPrefix, target.routeScope),

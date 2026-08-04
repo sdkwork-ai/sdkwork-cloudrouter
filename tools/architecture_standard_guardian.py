@@ -52,7 +52,7 @@ class ArchitectureStandardGuardian:
         '.sdkwork/skills/README.md',
         '.sdkwork/plugins/README.md',
     )
-    PC_APPLICATION_ROOT = 'apps/sdkwork-clawrouter-pc'
+    PC_APPLICATION_ROOT = 'apps/sdkwork-cloudrouter-pc'
     PC_APPLICATION_REQUIRED_PATHS: tuple[str, ...] = (
         'AGENTS.md',
         'CLAUDE.md',
@@ -121,11 +121,11 @@ class ArchitectureStandardGuardian:
             relative_path="docs/02-??????.md",
             required_terms=(
                 "Rust-first",
-                "sdkwork-clawrouter-edge-runtime",
-                "sdkwork-api-clawrouter-assembly",
-                "sdkwork-api-clawrouter-standalone-gateway",
-                "sdkwork-routes-clawrouter-app-api",
-                "sdkwork-routes-clawrouter-backend-api",
+                "sdkwork-cloudrouter-edge-runtime",
+                "sdkwork-api-cloudrouter-assembly",
+                "sdkwork-api-cloudrouter-standalone-gateway",
+                "sdkwork-routes-cloudrouter-app-api",
+                "sdkwork-routes-cloudrouter-backend-api",
                 "/app/v3/api",
                 "/backend/v3/api",
                 "/v1",
@@ -168,10 +168,10 @@ class ArchitectureStandardGuardian:
                 "server",
                 "docker",
                 "kubernetes",
-                "SDKWORK_CLAW_DEPLOYMENT_MODE",
-                "SDKWORK_CLAW_GATEWAY_BIND",
-                "SDKWORK_CLAW_APP_API_BIND",
-                "SDKWORK_CLAW_ADMIN_API_BIND",
+                "SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE",
+                "SDKWORK_CLOUDROUTER_GATEWAY_BIND",
+                "SDKWORK_CLOUDROUTER_APP_API_BIND",
+                "SDKWORK_CLOUDROUTER_ADMIN_API_BIND",
             ),
         ),
     )
@@ -364,8 +364,8 @@ class ArchitectureStandardGuardian:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate sdkwork-clawrouter SDKWork architecture and workspace standards.")
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-clawrouter root directory")
+    parser = argparse.ArgumentParser(description="Validate sdkwork-cloudrouter SDKWork architecture and workspace standards.")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="sdkwork-cloudrouter root directory")
     args = parser.parse_args()
 
     result = ArchitectureStandardGuardian(root=args.root).run()

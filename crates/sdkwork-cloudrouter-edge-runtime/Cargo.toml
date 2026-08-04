@@ -1,0 +1,56 @@
+[package]
+name = "sdkwork-cloudrouter-edge-runtime"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+
+[[bin]]
+name = "sdkwork-cloudrouter-edge-runtime"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+axum.workspace = true
+bytes.workspace = true
+futures-util.workspace = true
+getrandom.workspace = true
+hex.workspace = true
+http-body-util.workspace = true
+hyper.workspace = true
+hyper-rustls.workspace = true
+hyper-util.workspace = true
+prometheus.workspace = true
+redis.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sdkwork-cloudrouter-config.workspace = true
+sdkwork-cloudrouter-security.workspace = true
+sdkwork-cloudrouter-http.workspace = true
+sdkwork-cloudrouter-observability.workspace = true
+sdkwork-cloudrouter-provider-adapter-contract.workspace = true
+sdkwork-cloudrouter-provider-adapter-http.workspace = true
+sdkwork-cloudrouter-provider-adapter-registry.workspace = true
+sdkwork-cloudrouter-router-service.workspace = true
+sdkwork-cloudrouter-database-host.workspace = true
+sdkwork-database-config.workspace = true
+sdkwork-database-sqlx.workspace = true
+sdkwork-routes-cloudrouter-app-api.workspace = true
+sdkwork-routes-cloudrouter-backend-api.workspace = true
+sdkwork_payment_service_host.workspace = true
+sdkwork-sdk-generator-client.workspace = true
+sdkwork_models_catalog_repository_sqlx.workspace = true
+async-trait.workspace = true
+sdkwork-web-chain.workspace = true
+sdkwork-web-core.workspace = true
+sdkwork-web-store-redis.workspace = true
+sha2.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+tower.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+futures-core.workspace = true
+serde_json.workspace = true
+sdkwork-cloudrouter-test-support.workspace = true
+sdkwork-web-core.workspace = true

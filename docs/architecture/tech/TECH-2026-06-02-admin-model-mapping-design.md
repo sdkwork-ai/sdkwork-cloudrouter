@@ -63,5 +63,5 @@ Backend management APIs:
 - `DELETE /backend/v3/api/ai/model_mappings/{mappingId}`
 - `POST /backend/v3/api/ai/model_mappings/resolve`
 
-Requests and responses expose `bindings` and `mappingItems`. The frontend must call these APIs through generated `@sdkwork/clawrouter-backend-sdk`, exposed as `getClawRouterBackendSdkClient().ai.modelMappings.*`.
+Requests and responses expose `bindings` and `mappingItems`. The frontend must call these APIs through generated `@sdkwork/cloudrouter-backend-sdk`, exposed as `getCloudRouterBackendSdkClient().ai.modelMappings.*`.
 

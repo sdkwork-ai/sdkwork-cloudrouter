@@ -25,7 +25,7 @@ class FrontendStaticSourceManifestTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/data.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/data.ts",
                 """
                 export const demoContent = [{ title: 'Demo' }];
                 """,
@@ -33,13 +33,13 @@ class FrontendStaticSourceManifestTest(unittest.TestCase):
             snapshots = self.write_snapshots(
                 root,
                 """
-                schema: sdkwork-clawrouter-frontend-static-source-snapshots
+                schema: sdkwork-cloudrouter-frontend-static-source-snapshots
                 version: 1
                 snapshots:
                   - id: static-route:/demo
                     route: /demo
                     mode: curated_seed_content
-                    source_ref: apps/sdkwork-clawrouter-pc/packages/demo/src/data.ts
+                    source_ref: apps/sdkwork-cloudrouter-pc/packages/demo/src/data.ts
                     observed_at: "2026-05-03"
                     schema_tables: [content_demo]
                 """,
@@ -48,7 +48,7 @@ class FrontendStaticSourceManifestTest(unittest.TestCase):
             manifest = FrontendStaticSourceManifest(root=root, snapshots_path=snapshots).generate()
 
             snapshot = manifest["snapshots"]["static-route:/demo"]
-            self.assertEqual("sdkwork-clawrouter-frontend-static-source-manifest", manifest["schema"])
+            self.assertEqual("sdkwork-cloudrouter-frontend-static-source-manifest", manifest["schema"])
             self.assertEqual(1, manifest["version"])
             self.assertEqual("/demo", snapshot["route"])
             self.assertEqual("curated_seed_content", snapshot["mode"])
@@ -60,7 +60,7 @@ class FrontendStaticSourceManifestTest(unittest.TestCase):
             root = Path(tmp)
             self.write_file(
                 root,
-                "apps/sdkwork-clawrouter-pc/packages/demo/src/data.ts",
+                "apps/sdkwork-cloudrouter-pc/packages/demo/src/data.ts",
                 """
                 export const demoContent = [];
                 """,
@@ -68,13 +68,13 @@ class FrontendStaticSourceManifestTest(unittest.TestCase):
             snapshots = self.write_snapshots(
                 root,
                 """
-                schema: sdkwork-clawrouter-frontend-static-source-snapshots
+                schema: sdkwork-cloudrouter-frontend-static-source-snapshots
                 version: 1
                 snapshots:
                   - id: static-route:/demo
                     route: /demo
                     mode: curated_seed_content
-                    source_ref: apps/sdkwork-clawrouter-pc/packages/demo/src/data.ts
+                    source_ref: apps/sdkwork-cloudrouter-pc/packages/demo/src/data.ts
                     observed_at: "2026-05-03"
                     schema_tables: [content_demo]
                 """,
@@ -94,7 +94,7 @@ class FrontendStaticSourceManifestTest(unittest.TestCase):
             snapshots = self.write_snapshots(
                 root,
                 """
-                schema: sdkwork-clawrouter-frontend-static-source-snapshots
+                schema: sdkwork-cloudrouter-frontend-static-source-snapshots
                 version: 1
                 snapshots:
                   - id: static-route:/demo

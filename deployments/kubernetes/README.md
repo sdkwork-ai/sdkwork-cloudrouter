@@ -1,32 +1,32 @@
-# SDKWork Claw Router — Kubernetes Deployment Example
+# SDKWork Cloud Router — Kubernetes Deployment Example
 
-This example targets a distributed **cloud** production deployment (`SDKWORK_CLAW_ROUTER_DEPLOYMENT_PROFILE=cloud`, `SDKWORK_CLAW_ROUTER_RUNTIME_TARGET=container`) with PostgreSQL and Redis managed outside the cluster.
+This example targets a distributed **cloud** production deployment (`SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE=cloud`, `SDKWORK_CLOUDROUTER_ROUTER_RUNTIME_TARGET=container`) with PostgreSQL and Redis managed outside the cluster.
 
 ## Prerequisites
 
 - PostgreSQL reachable from the cluster
 - Managed Redis reachable from the cluster (required for cloud/server deployment profiles)
 - Cilium installed with `CiliumNetworkPolicy` and DNS proxy support enabled
-- `sdkwork-clawrouter-redis-auth` provisioned by an external secret controller;
+- `sdkwork-cloudrouter-redis-auth` provisioned by an external secret controller;
   never apply the placeholder Redis credentials to a production namespace
-- `sdkwork-clawrouter-config` mounted with `clawrouter.toml`, the runtime
+- `sdkwork-cloudrouter-config` mounted with `cloudrouter.toml`, the runtime
   database identity, and the separately privileged
   `database-migrator-url`, API key pepper, session signing material,
   trusted-subject secret, and Redis URL
-- Ingress controller (for example NGINX) and TLS issuer when using `claw-router-ingress.yaml`
+- Ingress controller (for example NGINX) and TLS issuer when using `cloud-router-ingress.yaml`
 
 ## Apply
 
 ```bash
-kubectl apply -f deployments/kubernetes/claw-router-network-policy.yaml
-kubectl apply -f deployments/kubernetes/claw-router-egress-cilium-policy.yaml
-kubectl apply -f deployments/kubernetes/claw-router-migration-job.yaml
-kubectl wait --for=condition=complete job/sdkwork-clawrouter-db-upgrade-0-3-0 --timeout=600s
-kubectl apply -f deployments/kubernetes/claw-router-gateway.yaml
-kubectl apply -f deployments/kubernetes/claw-router-app-api.yaml
-kubectl apply -f deployments/kubernetes/claw-router-admin-api.yaml
-kubectl apply -f deployments/kubernetes/claw-router-edge.yaml
-kubectl apply -f deployments/kubernetes/claw-router-ingress.yaml
+kubectl apply -f deployments/kubernetes/cloud-router-network-policy.yaml
+kubectl apply -f deployments/kubernetes/cloud-router-egress-cilium-policy.yaml
+kubectl apply -f deployments/kubernetes/cloud-router-migration-job.yaml
+kubectl wait --for=condition=complete job/sdkwork-cloudrouter-db-upgrade-0-3-0 --timeout=600s
+kubectl apply -f deployments/kubernetes/cloud-router-gateway.yaml
+kubectl apply -f deployments/kubernetes/cloud-router-app-api.yaml
+kubectl apply -f deployments/kubernetes/cloud-router-admin-api.yaml
+kubectl apply -f deployments/kubernetes/cloud-router-edge.yaml
+kubectl apply -f deployments/kubernetes/cloud-router-ingress.yaml
 ```
 
 The migration Job name is release-versioned. Every release must update the Job
@@ -35,9 +35,9 @@ release is not migration evidence for a newer image. The Job uses a dedicated
 migrator credential; runtime workloads must not receive schema-owner privileges.
 
 Redis is **required** for distributed rate limiting when running more than one
-gateway replica. `SDKWORK_CLAW_REDIS_URL` is read from the
-`sdkwork-clawrouter-redis-auth` Secret. Production uses a managed TLS endpoint;
-`claw-router-redis.yaml` is a non-production integration fixture only.
+gateway replica. `SDKWORK_CLOUDROUTER_REDIS_URL` is read from the
+`sdkwork-cloudrouter-redis-auth` Secret. Production uses a managed TLS endpoint;
+`cloud-router-redis.yaml` is a non-production integration fixture only.
 
 Gateway handles OpenAI-compatible invocation (`/v1/*`) on port **18080**. Edge (port **3900**) proxies portal traffic and upstream app/backend APIs.
 
@@ -46,13 +46,13 @@ Gateway handles OpenAI-compatible invocation (`/v1/*`) on port **18080**. Edge (
 Use canonical deployment metadata:
 
 ```text
-SDKWORK_CLAW_ROUTER_CONFIG_PROFILE=prod
-SDKWORK_CLAW_ROUTER_ENVIRONMENT=production
-SDKWORK_CLAW_ROUTER_DEPLOYMENT_PROFILE=cloud
-SDKWORK_CLAW_ROUTER_RUNTIME_TARGET=container
+SDKWORK_CLOUDROUTER_ROUTER_CONFIG_PROFILE=prod
+SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT=production
+SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE=cloud
+SDKWORK_CLOUDROUTER_ROUTER_RUNTIME_TARGET=container
 ```
 
-`SDKWORK_CLAW_DEPLOYMENT_MODE=cloud` is retired and rejected at startup.
+`SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE=cloud` is retired and rejected at startup.
 
 ## Probes
 
@@ -68,15 +68,15 @@ unavailable or a lease cannot be acquired. The generator is fenced immediately w
 ownership is lost or its last successful heartbeat expires; `/readyz` then returns `503` while a
 bounded-backoff recovery worker acquires a new lease.
 
-The metrics endpoint exports `clawrouter_runtime_id_generator_ready` and
-`clawrouter_runtime_id_failures_total{operation,reason}` for this lifecycle. Scrape them per Pod;
+The metrics endpoint exports `cloudrouter_runtime_id_generator_ready` and
+`cloudrouter_runtime_id_failures_total{operation,reason}` for this lifecycle. Scrape them per Pod;
 the labels are bounded operational codes and never contain Pod identity, lease tokens, or raw
 database errors. Production alert rules and their failure-series tests remain part of the release
 evidence gate and must be reviewed before rollout.
 
 The manifests inject `SDKWORK_NODE_HOSTNAME` from the Pod name and
 `SDKWORK_NODE_INSTANCE_ID` from the Pod UID for lease diagnostics. Do not set
-`SDKWORK_CLAW_SNOWFLAKE_NODE_ID` on Kubernetes workloads and never share a static Snowflake node
+`SDKWORK_CLOUDROUTER_SNOWFLAKE_NODE_ID` on Kubernetes workloads and never share a static Snowflake node
 ID across replicas. Pod identity improves diagnostics but does not replace the PostgreSQL lease,
 random ownership token, and monotonic fencing version.
 
@@ -102,9 +102,9 @@ Edge `resources` follow Google SRE Book capacity-planning guidance: CPU `request
 
 ## Network Policy
 
-`claw-router-network-policy.yaml` provides default deny, CoreDNS-only DNS,
+`cloud-router-network-policy.yaml` provides default deny, CoreDNS-only DNS,
 PostgreSQL, Redis, and internal service rules. Provider HTTPS is owned by
-`claw-router-egress-cilium-policy.yaml`, which allows only the declared provider
+`cloud-router-egress-cilium-policy.yaml`, which allows only the declared provider
 FQDNs and denies private, link-local, metadata, documentation, multicast, and
 reserved DNS answers on port 443. A custom provider cannot be activated until
 its reviewed hostname is added to that policy and the policy rollout succeeds.
@@ -117,7 +117,7 @@ Use the versioned Kubernetes Job before starting the release workload. For a
 manual operator-controlled upgrade with the same dedicated migrator identity:
 
 ```bash
-clawrouterctl upgrade --config-file /etc/sdkwork/clawrouter.toml
+cloudrouterctl upgrade --config-file /etc/sdkwork/cloudrouter.toml
 ```
 
 Do not rely on concurrent `ensure_installed` from multiple replicas during first rollout.

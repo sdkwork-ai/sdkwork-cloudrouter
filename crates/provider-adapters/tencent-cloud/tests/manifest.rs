@@ -1,4 +1,4 @@
-use sdkwork_claw_provider_adapter_contract::AdapterEndpointRuntimeState;
+use sdkwork_cloudrouter_provider_adapter_contract::AdapterEndpointRuntimeState;
 
 #[test]
 fn tencent_cloud_adapter_exposes_definition_only_vidu_standard_endpoint_mapping() {
@@ -45,14 +45,14 @@ fn tc3_credentials_debug_redacts_secret_key() {
     assert!(debug.contains("[REDACTED]"));
 }
 
-fn sample_request() -> sdkwork_claw_provider_adapter_contract::AdapterInvocationRequest {
-    use sdkwork_claw_provider_adapter_contract::{
+fn sample_request() -> sdkwork_cloudrouter_provider_adapter_contract::AdapterInvocationRequest {
+    use sdkwork_cloudrouter_provider_adapter_contract::{
         AdapterInvocationMetadata, AdapterInvocationShape, AdapterProviderContext, AdapterSecret,
         AdapterSubject,
     };
     use serde_json::json;
 
-    sdkwork_claw_provider_adapter_contract::AdapterInvocationRequest {
+    sdkwork_cloudrouter_provider_adapter_contract::AdapterInvocationRequest {
         invocation: AdapterInvocationMetadata {
             id: "inv-1".to_owned(),
             endpoint_key: "video.start_end2video".to_owned(),

@@ -1,10 +1,10 @@
 # Archived
 
-Superseded for **Claw Router** implementation. Claw Router no longer integrates via legacy commerce service facades or deleted monolithic commerce SDK families.
+Superseded for **Cloud Router** implementation. Cloud Router no longer integrates via legacy commerce service facades or deleted monolithic commerce SDK families.
 
-**Live Claw Router authority:**
+**Live Cloud Router authority:**
 
-- Backend: `getClawRouterBackendSdkClient().<domain>.*` via `@sdkwork/clawroutes-pc-commons/sdk-clients`
+- Backend: `getCloudRouterBackendSdkClient().<domain>.*` via `@sdkwork/cloudroutes-pc-commons/sdk-clients`
 - Console T1: `@sdkwork/account-*`, `@sdkwork/membership-*`, `@sdkwork/promotion-*`, `@sdkwork/payment-*`, `@sdkwork/order-*` via `domain-service-providers.ts`
 - Governance: `node scripts/check-commerce-debt.mjs`
 

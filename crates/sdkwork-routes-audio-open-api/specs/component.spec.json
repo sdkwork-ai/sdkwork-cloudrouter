@@ -6,7 +6,7 @@
     "displayName": "SDKWork Router Audio Open API",
     "version": "0.1.0",
     "type": "rust-route-crate",
-    "root": "sdkwork-clawrouter/crates/sdkwork-routes-audio-open-api",
+    "root": "sdkwork-cloudrouter/crates/sdkwork-routes-audio-open-api",
     "domain": "intelligence",
     "capability": "audio",
     "surface": "open-api",

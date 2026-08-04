@@ -1,0 +1,1267 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.route.manifest",
+  "packageName": "sdkwork-routes-cloudrouter-app-api",
+  "surface": "app-api",
+  "owner": "sdkwork-cloudrouter",
+  "domain": "platform",
+  "capability": "router",
+  "apiAuthority": "sdkwork-cloudrouter-app-api",
+  "sdkFamily": "cloudrouter-app-sdk",
+  "prefix": "/app/v3/api",
+  "source": {
+    "crateRoot": "crates/sdkwork-routes-cloudrouter-app-api",
+    "crateImport": "sdkwork_routes_cloudrouter_app_api",
+    "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+  },
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/app/v3/api/ai/dashboard/overview",
+      "operationId": "dashboard.overview.retrieve",
+      "tags": [
+        "ai"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/ai/gateway/traces",
+      "operationId": "gateway.traces.list",
+      "tags": [
+        "ai"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/ai/generations",
+      "operationId": "generations.list",
+      "tags": [
+        "ai"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/ai/generations/images/text_to_image",
+      "operationId": "generations.images.textToImage.create",
+      "tags": [
+        "ai"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/ai/generations/workspace",
+      "operationId": "generations.workspace.list",
+      "tags": [
+        "ai"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/ai/routing/account_groups",
+      "operationId": "routing.accountGroups.list",
+      "tags": [
+        "ai"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/ai/routing/api_keys",
+      "operationId": "routing.apiKeys.list",
+      "tags": [
+        "ai"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/ai/routing/request_traces",
+      "operationId": "routing.requestTraces.list",
+      "tags": [
+        "ai"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/ai/routing/usage",
+      "operationId": "routing.usage.retrieve",
+      "tags": [
+        "ai"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/ai/usage/logs",
+      "operationId": "usage.logs.list",
+      "tags": [
+        "ai"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/chat/conversations",
+      "operationId": "conversations.list",
+      "tags": [
+        "chat"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/chat/conversations",
+      "operationId": "conversations.create",
+      "tags": [
+        "chat"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/chat/conversations/{conversationId}",
+      "operationId": "conversations.retrieve",
+      "tags": [
+        "chat"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/chat/conversations/{conversationId}/messages",
+      "operationId": "conversations.messages.list",
+      "tags": [
+        "chat"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/chat/conversations/{conversationId}/turns",
+      "operationId": "conversations.turns.create",
+      "tags": [
+        "chat"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response",
+      "operationId": "conversations.turns.response.create",
+      "tags": [
+        "chat"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/iam/api_keys",
+      "operationId": "apiKeys.list",
+      "tags": [
+        "iam"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/iam/api_keys",
+      "operationId": "apiKeys.create",
+      "tags": [
+        "iam"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "DELETE",
+      "path": "/app/v3/api/iam/api_keys/{apiKeyId}",
+      "operationId": "apiKeys.delete",
+      "tags": [
+        "iam"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "PATCH",
+      "path": "/app/v3/api/iam/api_keys/{apiKeyId}",
+      "operationId": "apiKeys.update",
+      "tags": [
+        "iam"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/iam/users/settings",
+      "operationId": "users.settings.retrieve",
+      "tags": [
+        "iam"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "PUT",
+      "path": "/app/v3/api/iam/users/settings",
+      "operationId": "users.settings.update",
+      "tags": [
+        "iam"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memory/entries/{entryId}",
+      "operationId": "entries.retrieve",
+      "tags": [
+        "memory"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memory/spaces",
+      "operationId": "spaces.list",
+      "tags": [
+        "memory"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/memory/spaces",
+      "operationId": "spaces.create",
+      "tags": [
+        "memory"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memory/spaces/{spaceId}",
+      "operationId": "spaces.retrieve",
+      "tags": [
+        "memory"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memory/spaces/{spaceId}/entries",
+      "operationId": "spaces.entries.list",
+      "tags": [
+        "memory"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/memory/spaces/{spaceId}/entries",
+      "operationId": "spaces.entries.create",
+      "tags": [
+        "memory"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/notification/notifications",
+      "operationId": "notifications.list",
+      "tags": [
+        "notification"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/notification/notifications/{notificationId}/acknowledge",
+      "operationId": "notifications.acknowledge.create",
+      "tags": [
+        "notification"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/notification/notifications/{notificationId}/popup_seen",
+      "operationId": "notifications.popupSeen.create",
+      "tags": [
+        "notification"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/runtime/invocations",
+      "operationId": "invocations.list",
+      "tags": [
+        "runtime"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/runtime/invocations",
+      "operationId": "invocations.create",
+      "tags": [
+        "runtime"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/runtime/invocations/{invocationId}",
+      "operationId": "invocations.retrieve",
+      "tags": [
+        "runtime"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/runtime/invocations/{invocationId}/artifacts",
+      "operationId": "invocations.artifacts.list",
+      "tags": [
+        "runtime"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/runtime/invocations/{invocationId}/artifacts",
+      "operationId": "invocations.artifacts.create",
+      "tags": [
+        "runtime"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/runtime/invocations/{invocationId}/completions",
+      "operationId": "invocations.completions.create",
+      "tags": [
+        "runtime"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/runtime/invocations/{invocationId}/events",
+      "operationId": "invocations.events.list",
+      "tags": [
+        "runtime"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/runtime/invocations/{invocationId}/events",
+      "operationId": "invocations.events.create",
+      "tags": [
+        "runtime"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/runtime/invocations/{invocationId}/events/stream",
+      "operationId": "invocations.events.stream.list",
+      "tags": [
+        "runtime"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/system/site/runtime",
+      "operationId": "site.runtime.retrieve",
+      "tags": [
+        "system"
+      ],
+      "auth": {
+        "mode": "public",
+        "required": false
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/package_groups",
+      "operationId": "packageGroups.list",
+      "tags": [
+        "memberships"
+      ],
+      "auth": {
+        "mode": "public",
+        "required": false
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/package_groups/{packageGroupId}",
+      "operationId": "packageGroups.retrieve",
+      "tags": [
+        "memberships"
+      ],
+      "auth": {
+        "mode": "public",
+        "required": false
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/package_groups/{packageGroupId}/packages",
+      "operationId": "packageGroups.packages.list",
+      "tags": [
+        "memberships"
+      ],
+      "auth": {
+        "mode": "public",
+        "required": false
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/packages",
+      "operationId": "packages.list",
+      "tags": [
+        "memberships"
+      ],
+      "auth": {
+        "mode": "public",
+        "required": false
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/packages/{packageId}",
+      "operationId": "packages.retrieve",
+      "tags": [
+        "memberships"
+      ],
+      "auth": {
+        "mode": "public",
+        "required": false
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/plans",
+      "operationId": "plans.list",
+      "tags": [
+        "memberships"
+      ],
+      "auth": {
+        "mode": "public",
+        "required": false
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/memberships/benefits",
+      "operationId": "benefits.list",
+      "tags": [
+        "memberships"
+      ],
+      "auth": {
+        "mode": "public",
+        "required": false
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    }
+  ]
+}

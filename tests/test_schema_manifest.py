@@ -7,7 +7,7 @@ from tools.schema_manifest import SchemaManifestGenerator
 
 class SchemaManifestGeneratorTest(unittest.TestCase):
     def write_registry(self, root: Path, content: str) -> Path:
-        registry = root / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
+        registry = root / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.yaml"
         registry.parent.mkdir(parents=True, exist_ok=True)
         registry.write_text(textwrap.dedent(content).strip() + "\n", encoding="utf-8")
         return registry
@@ -19,7 +19,7 @@ class SchemaManifestGeneratorTest(unittest.TestCase):
                 root,
                 """
                 schema_registry:
-                  name: sdkwork-clawrouter
+                  name: sdkwork-cloudrouter
                   version: 0.1.0
                   api_prefixes:
                     app: /app/v3/api
@@ -44,7 +44,7 @@ class SchemaManifestGeneratorTest(unittest.TestCase):
 
             manifest = SchemaManifestGenerator(root=root, registry_path=registry).generate()
 
-            self.assertEqual("sdkwork-clawrouter", manifest["schema"]["name"])
+            self.assertEqual("sdkwork-cloudrouter", manifest["schema"]["name"])
             self.assertEqual(2, manifest["summary"]["table_count"])
             self.assertEqual(1, manifest["summary"]["generated_table_count"])
             self.assertEqual(1, manifest["summary"]["legacy_table_count"])
@@ -64,7 +64,7 @@ class SchemaManifestGeneratorTest(unittest.TestCase):
                 root,
                 """
                 schema_registry:
-                  name: sdkwork-clawrouter
+                  name: sdkwork-cloudrouter
                 table_fragments:
                   - tables/system.yaml
                   - tables/ai.yaml
@@ -113,7 +113,7 @@ class SchemaManifestGeneratorTest(unittest.TestCase):
                 root,
                 """
                 schema_registry:
-                  name: sdkwork-clawrouter
+                  name: sdkwork-cloudrouter
                 tables:
                   - table: ai_model_vendor
                     domain: ai
@@ -121,7 +121,7 @@ class SchemaManifestGeneratorTest(unittest.TestCase):
             )
             generator = SchemaManifestGenerator(root=root, registry_path=registry)
             generator.write()
-            snapshot = root / "generated" / "schema" / "registry" / "sdkwork-clawrouter.tables.effective.yaml"
+            snapshot = root / "generated" / "schema" / "registry" / "sdkwork-cloudrouter.tables.effective.yaml"
             snapshot.write_text(snapshot.read_text(encoding="utf-8").replace("ai_model_vendor", "stale_table"), encoding="utf-8")
 
             result = generator.check()
@@ -139,7 +139,7 @@ class SchemaManifestGeneratorTest(unittest.TestCase):
                 root,
                 '''
                 schema_registry:
-                  name: sdkwork-clawrouter
+                  name: sdkwork-cloudrouter
                   standard: ../../specs/DATABASE_SPEC.md
                   api_standard: ../../specs/API_SPEC.md
                 tables:

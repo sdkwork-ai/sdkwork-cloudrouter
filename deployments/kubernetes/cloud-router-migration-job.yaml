@@ -1,0 +1,71 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sdkwork-cloudrouter-db-upgrade-0-3-0
+  labels:
+    app: sdkwork-cloudrouter
+    component: migration
+    app.kubernetes.io/version: 0.3.0
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        app: sdkwork-cloudrouter
+        component: migration
+        app.kubernetes.io/version: 0.3.0
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: upgrade
+          image: registry.sdkwork.com/apps/sdkwork-cloudrouter:0.3.0
+          command: ["cloudrouterctl", "upgrade"]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          env:
+            - name: SDKWORK_CLOUDROUTER_ROUTER_CONFIG_PROFILE
+              value: prod
+            - name: SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT
+              value: production
+            - name: SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE
+              value: cloud
+            - name: SDKWORK_CLOUDROUTER_ROUTER_RUNTIME_TARGET
+              value: container
+            - name: SDKWORK_CLOUDROUTER_CONFIG_FILE
+              value: /etc/sdkwork/cloudrouter.toml
+            - name: SDKWORK_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sdkwork-cloudrouter-config
+                  key: database-migrator-url
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/sdkwork
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          secret:
+            secretName: sdkwork-cloudrouter-config
+        - name: tmp
+          emptyDir: {}

@@ -1,8 +1,8 @@
 packages:
-  - "apps/sdkwork-clawrouter-common"
-  - "apps/sdkwork-clawrouter-common/packages/*"
-  - "apps/sdkwork-clawrouter-pc"
-  - "apps/sdkwork-clawrouter-pc/packages/*"
+  - "apps/sdkwork-cloudrouter-common"
+  - "apps/sdkwork-cloudrouter-common/packages/*"
+  - "apps/sdkwork-cloudrouter-pc"
+  - "apps/sdkwork-cloudrouter-pc/packages/*"
   - "sdks/*/*-typescript"
   - "../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-contracts"
   - "../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-runtime"
@@ -236,3 +236,4 @@ catalog:
   esbuild: ^0.28.0
   pnpm: ^10.33.0
   turbo: ^2.9.4
+  - "../../sdkwork-membership/apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-core"

@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "baseUrl": "../..",
+    "paths": {
+      "@sdkwork/cloudroutes-pc-commons/components/BusinessState": [
+        "./packages/sdkwork-cloudroutes-pc-commons/src/components/BusinessState.tsx"
+      ],
+      "@sdkwork/cloudroutes-pc-commons/api-result": [
+        "./packages/sdkwork-cloudroutes-pc-commons/src/api-result.ts"
+      ],
+      "@sdkwork/cloudroutes-pc-commons/sdk-clients": [
+        "./packages/sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts"
+      ],
+      "@sdkwork/cloudroutes-pc-commons/sdk-request-boundary": [
+        "./packages/sdkwork-cloudroutes-pc-commons/src/sdk-request-boundary.ts"
+      ]
+    },
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": [
+    "src"
+  ]
+}

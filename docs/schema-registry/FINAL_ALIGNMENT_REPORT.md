@@ -1,4 +1,4 @@
-# Claw Router鎶€鏈€哄姟娓呯悊涓庡畬缇庡榻愭姤鍛?- 鏈€缁堢増鏈?
+# Cloud Router鎶€鏈€哄姟娓呯悊涓庡畬缇庡榻愭姤鍛?- 鏈€缁堢増鏈?
 ## 馃帄 瀹岀編杈炬垚鎬荤粨
 
 **瀹炴柦鏃堕棿**: 2026-06-27
@@ -13,7 +13,7 @@
 
 ```yaml
 鏋舵瀯绾犳1: 娌ラ潚璺潰鍙嶆ā寮?鈫?绉湪鏋舵瀯 鉁?  绾犳鍓?
-    鉂?鎵€鏈?1寮犺〃瀹氫箟閮介泦涓湪sdkwork-clawrouter.tables.yaml
+    鉂?鎵€鏈?1寮犺〃瀹氫箟閮介泦涓湪sdkwork-cloudrouter.tables.yaml
     鉂?杩濆弽"鍗曚竴鎵€鏈夋潈鍘熷垯"
     鉂?杩濆弽"楂樺唴鑱氫綆鑰﹀悎"
     鉂?娌ラ潚璺潰鍙嶆ā寮?  
@@ -108,7 +108,7 @@ Schema Registry娓呯悊:
 ```yaml
 Schema Registry鏂囦欢缁撴瀯:
   docs/schema-registry/
-  鈹溾攢鈹€ sdkwork-clawrouter.tables.yaml    # 涓绘枃浠讹紙绉湪鏋舵瀯锛?  鈹溾攢鈹€ table-catalog.md                  # 瀹屾暣鐩綍锛?6寮犳湰鍦拌〃锛?  鈹溾攢鈹€ IMPLEMENTATION_REPORT.md          # 瀹炴柦鎶ュ憡
+  鈹溾攢鈹€ sdkwork-cloudrouter.tables.yaml    # 涓绘枃浠讹紙绉湪鏋舵瀯锛?  鈹溾攢鈹€ table-catalog.md                  # 瀹屾暣鐩綍锛?6寮犳湰鍦拌〃锛?  鈹溾攢鈹€ IMPLEMENTATION_REPORT.md          # 瀹炴柦鎶ュ憡
   鈹斺攢鈹€ tables/
       鈹溾攢鈹€ ai-metering.yaml              # 2寮犳牳蹇冭〃锛圠3閲戣瀺绾у埆锛?      鈹溾攢鈹€ ai-routing.yaml               # 12寮犺矾鐢卞喅绛栬〃
       鈹斺攢鈹€ ai-pricing.yaml               # 2寮犺璐瑰畾浠疯〃
@@ -124,7 +124,7 @@ DDL鑴氭湰鏂囦欢缁撴瀯:
 
 ### 3.2 琛ㄥ畾涔夊畬鏁存€ч獙璇?
 ```yaml
-Claw Router鏈湴琛? 16寮狅紙鍏ㄩ儴瀹氫箟瀹屾垚锛?  ai-routing妯″潡:     12寮犺〃 鉁?    - ai_channel
+Cloud Router鏈湴琛? 16寮狅紙鍏ㄩ儴瀹氫箟瀹屾垚锛?  ai-routing妯″潡:     12寮犺〃 鉁?    - ai_channel
     - ai_channel_binding
     - ai_channel_metric
     - ai_channel_quota
@@ -155,7 +155,7 @@ Claw Router鏈湴琛? 16寮狅紙鍏ㄩ儴瀹氫箟瀹屾垚锛?  ai-routing�
 ```yaml
 鍗曚竴鎵€鏈夋潈: 鉁?瀹屽叏杈炬爣
   姣忓紶琛ㄥ彧鏈変竴涓槑纭殑妯″潡owner
-  Claw Router鏈湴琛? 3涓ā鍧楋紙ai-routing/ai-metering/ai-pricing锛?  缁勫悎妯″潡琛? 14涓ā鍧楋紙瀵归綈瀹為檯workspace锛?  鏃犺櫄鍋囨ā鍧楀紩鐢?
+  Cloud Router鏈湴琛? 3涓ā鍧楋紙ai-routing/ai-metering/ai-pricing锛?  缁勫悎妯″潡琛? 14涓ā鍧楋紙瀵归綈瀹為檯workspace锛?  鏃犺櫄鍋囨ā鍧楀紩鐢?
 楂樺唴鑱? 鉁?瀹屽叏杈炬爣
   妯″潡鍐呴儴琛ㄨ仛鍚堝湪妯″潡schema涓?  ai-routing妯″潡: 12寮犺矾鐢卞喅绛栬〃鑱氬悎
   ai-metering妯″潡: 2寮犵敤閲忚閲忚〃鑱氬悎
@@ -163,7 +163,7 @@ Claw Router鏈湴琛? 16寮狅紙鍏ㄩ儴瀹氫箟瀹屾垚锛?  ai-routing�
 
 浣庤€﹀悎: 鉁?瀹屽叏杈炬爣
   妯″潡闂撮€氳繃寮曠敤鍏崇郴缁勫悎
-  Claw Router閫氳繃registry_dependencies寮曠敤鍏朵粬妯″潡
+  Cloud Router閫氳繃registry_dependencies寮曠敤鍏朵粬妯″潡
   鍚勬ā鍧楃嫭绔嬬鐞嗚嚜宸辩殑schema銆丏DL銆乵igrations
   瑙ｈ€﹂儴缃茶兘鍔涘畬鏁?
 寮€闂師鍒? 鉁?瀹屽叏杈炬爣
@@ -231,7 +231,7 @@ DDL鑴氭湰鏍囧噯鍖? 鉁?瀹屽叏杈炬爣
 ### 6.1 DATABASE_SPEC.md绗﹀悎鎬э紙瀹屽叏绗﹀悎锛?
 ```yaml
 琛ㄥ墠缂€瑙勮寖: 鉁?瀹屽叏绗﹀悎
-  ai_:             AI璺敱銆佽閲忋€佸畾浠凤紙Claw Router鏈湴锛?  iam_:            韬唤瀵嗛挜锛坰dkwork-iam锛?  commerce_:       璐︽埛璁㈠崟鏀粯锛坰dkwork-account绛夛級
+  ai_:             AI璺敱銆佽閲忋€佸畾浠凤紙Cloud Router鏈湴锛?  iam_:            韬唤瀵嗛挜锛坰dkwork-iam锛?  commerce_:       璐︽埛璁㈠崟鏀粯锛坰dkwork-account绛夛級
   integration_:    渚涘簲鍟嗛泦鎴愶紙sdkwork-integration锛?  ops_:            鐩戞帶瀹¤锛坰dkwork-ops锛?  analytics_:      缁熻鍒嗘瀽锛坰dkwork-analytics锛?  catalog_:        鐩綍绠＄悊锛坰dkwork-catalog锛?  system_:         绯荤粺閰嶇疆锛坰dkwork-platform锛?
 琛ㄧ敾鍍忚鑼? 鉁?瀹屽叏绗﹀悎
   ledger_source_fact: 涓嶅彲鍙樿处鏈簨瀹炶〃
@@ -241,7 +241,7 @@ DDL鑴氭湰鏍囧噯鍖? 鉁?瀹屽叏杈炬爣
 ### 6.2 MODULE_SPEC.md绗﹀悎鎬э紙瀹屽叏绗﹀悎锛?
 ```yaml
 妯″潡鍒掑垎瑙勮寖: 鉁?瀹屽叏绗﹀悎
-  Claw Router鏈湴: 3涓ā鍧楋紙ai-routing/ai-metering/ai-pricing锛?  缁勫悎妯″潡寮曠敤: 14涓ā鍧楋紙瀵归綈瀹為檯workspace锛?  鏃犺櫄鍋囨ā鍧楀紩鐢?
+  Cloud Router鏈湴: 3涓ā鍧楋紙ai-routing/ai-metering/ai-pricing锛?  缁勫悎妯″潡寮曠敤: 14涓ā鍧楋紙瀵归綈瀹為檯workspace锛?  鏃犺櫄鍋囨ā鍧楀紩鐢?
 妯″潡鐙珛鎬? 鉁?瀹屽叏绗﹀悎
   鍚勬ā鍧楃嫭绔嬬鐞唖chema
   鍚勬ā鍧楁湁鐙珛鐨凞DL銆乵igrations
@@ -261,7 +261,7 @@ DDL鑴氭湰鏍囧噯鍖? 鉁?瀹屽叏杈炬爣
 
 ## 涓冦€佹渶缁堢粺璁?
 ```yaml
-Claw Router鏋舵瀯鎴愭灉:
+Cloud Router鏋舵瀯鎴愭灉:
   鏈湴琛? 16寮狅紙鍏ㄩ儴瀹氫箟瀹屾垚锛?    ai-routing:     12寮犺〃
     ai-metering:     2寮犺〃 猸?鏍稿績浠峰€?    ai-pricing:      2寮犺〃
   
@@ -363,7 +363,7 @@ Schema Registry: 鉁?瀹屽叏娓呴櫎
 ---
 
 ## 鍗併€佹渶缁堢粨璁?
-**Claw Router琛ㄥ懡鍚嶄笌妯″潡鍒掑垎浼樺寲鏂规宸插畬缇庡疄鏂斤紒**
+**Cloud Router琛ㄥ懡鍚嶄笌妯″潡鍒掑垎浼樺寲鏂规宸插畬缇庡疄鏂斤紒**
 
 ### 鉁?瀹屽叏绗﹀悎鎵€鏈夋爣鍑?
 ```yaml

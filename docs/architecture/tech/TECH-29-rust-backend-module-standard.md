@@ -1,4 +1,4 @@
-# Claw Router Rust Backend Module Standard
+# Cloud Router Rust Backend Module Standard
 
 Status: active  
 Owner: SDKWork maintainers  
@@ -7,7 +7,7 @@ Specs: `RUST_CODE_SPEC.md`, `CODE_STYLE_SPEC.md`, `NAMING_SPEC.md`, `DATABASE_SP
 
 ## 1. Goal
 
-Claw Router is Rust-first and follows Hexagonal architecture. It keeps route,
+Cloud Router is Rust-first and follows Hexagonal architecture. It keeps route,
 application, domain, port, provider, persistence, and runtime composition
 responsibilities explicit. This local standard records repository-specific
 module ownership; global SDKWork specs remain normative.
@@ -16,18 +16,18 @@ module ownership; global SDKWork specs remain normative.
 
 | Module | Responsibility |
 | --- | --- |
-| `sdkwork-claw-contract` | Stable contract metadata and shared values |
-| `sdkwork-claw-config` | Typed runtime, database, security, and provider configuration |
-| `sdkwork-claw-http` | Shared HTTP/framework boundaries and outbound transport helpers |
-| `sdkwork-claw-security` | Redaction, credential-safe logging, and egress policy |
-| `sdkwork-claw-observability` | Tracing and telemetry bootstrap |
-| `sdkwork-api-clawrouter-assembly` | Host-neutral App, Backend, and Open API composition |
-| `sdkwork-api-clawrouter-standalone-gateway` | Standalone public HTTP listener and process infrastructure |
-| `sdkwork-clawrouter-edge-runtime` | Invocation runtime composition and OpenAI-compatible dispatch |
-| `sdkwork-routes-clawrouter-app-api` | App API route composition |
-| `sdkwork-routes-clawrouter-backend-api` | Backend API route composition |
-| `sdkwork-clawrouter-router-service` | Domain, application ports/use cases, and remaining adapters |
-| `sdkwork-clawrouter-*-repository-sqlx` | Capability-owned PostgreSQL repositories |
+| `sdkwork-cloudrouter-contract` | Stable contract metadata and shared values |
+| `sdkwork-cloudrouter-config` | Typed runtime, database, security, and provider configuration |
+| `sdkwork-cloudrouter-http` | Shared HTTP/framework boundaries and outbound transport helpers |
+| `sdkwork-cloudrouter-security` | Redaction, credential-safe logging, and egress policy |
+| `sdkwork-cloudrouter-observability` | Tracing and telemetry bootstrap |
+| `sdkwork-api-cloudrouter-assembly` | Host-neutral App, Backend, and Open API composition |
+| `sdkwork-api-cloudrouter-standalone-gateway` | Standalone public HTTP listener and process infrastructure |
+| `sdkwork-cloudrouter-edge-runtime` | Invocation runtime composition and OpenAI-compatible dispatch |
+| `sdkwork-routes-cloudrouter-app-api` | App API route composition |
+| `sdkwork-routes-cloudrouter-backend-api` | Backend API route composition |
+| `sdkwork-cloudrouter-router-service` | Domain, application ports/use cases, and remaining adapters |
+| `sdkwork-cloudrouter-*-repository-sqlx` | Capability-owned PostgreSQL repositories |
 
 Runnable listeners are gateways, not retired `api-server` crates.
 The HTTP stack is `axum` on `tokio`, composed through `tower` and
@@ -145,8 +145,8 @@ errors only.
 
 Payment callbacks are unauthenticated provider ingress and must not use
 `app_request_subject_boundary`. `PaymentWebhookConfig` requires
-`SDKWORK_CLAW_PAYMENT_WEBHOOK_SECRET` and bounds clock skew through
-`SDKWORK_CLAW_PAYMENT_WEBHOOK_MAX_CLOCK_SKEW_SECONDS`; unsigned payment
+`SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET` and bounds clock skew through
+`SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_MAX_CLOCK_SKEW_SECONDS`; unsigned payment
 callbacks are forbidden.
 
 Provider event id, nonce, payload digest, payment identity, and recharge
@@ -171,8 +171,8 @@ forbidden and sub-cent callback precision must be rejected.
 
 ```text
 cargo fmt --all -- --check
-cargo test -p sdkwork-clawrouter-router-service --test upstream_route_selector
-cargo test -p sdkwork-clawrouter-router-service --test invocation_route_planning
+cargo test -p sdkwork-cloudrouter-router-service --test upstream_route_selector
+cargo test -p sdkwork-cloudrouter-router-service --test invocation_route_planning
 python -B -m tools.rust_backend_architecture_guardian
 node ../sdkwork-specs/tools/check-application-layering.mjs --root .
 node ../sdkwork-specs/tools/check-rust-backend-composition.mjs --root .

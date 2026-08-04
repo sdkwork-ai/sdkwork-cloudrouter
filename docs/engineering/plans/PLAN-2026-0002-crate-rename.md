@@ -1,7 +1,7 @@
 # Historical Crate Responsibility Rename Plan
 
 Status: superseded
-Application: sdkwork-clawrouter
+Application: sdkwork-cloudrouter
 Superseded by: `REQ-2026-0001`, `ADR-20260710`, and `PLAN-2026-0001`
 
 This retained entry records that an earlier crate-rename pass occurred. It is not

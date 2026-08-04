@@ -31,7 +31,7 @@ equivalence, or evidence of a high-availability deployment.
   candidates until provider idempotency is formally declared.
 - [x] Production provider passthrough and Adapter clients reject plaintext HTTP
   and validate targets before credential forwarding and transport construction.
-- [x] `SDKWORK_CLAW_PROVIDER_RESPONSE_MAX_BYTES` is injected into the unified
+- [x] `SDKWORK_CLOUDROUTER_PROVIDER_RESPONSE_MAX_BYTES` is injected into the unified
   `InvocationHttpDispatcher`; zero or unrepresentable values fail during
   gateway assembly instead of being silently ignored.
 - [x] `gateway_invocation_body_max_bytes` is parsed once during gateway
@@ -146,12 +146,12 @@ public contracts, security behavior, migrations, or deployment governance:
 
 | Surface | Authored authority | Derived chain | Canonical write commands | Freshness/closure |
 | --- | --- | --- | --- | --- |
-| App/backend operations and DTO fields | `docs/schema-registry/frontend-field-contracts.yaml` | `generated/api/api-contract-manifest.json` -> `generated/openapi/*` -> `apis/app-api/**` and `apis/backend-api/**` | `python -B -m tools.api_contract_manifest`; `python -B -m tools.clawrouter_openapi_generator` | same commands with `--check`; `pnpm api:materialize:check` |
-| Public OpenAI-compatible operations | `tools/clawrouter_gateway_openapi_generator.py` | `apps/sdkwork-clawrouter-pc/public/openapi.json` -> `sdks/clawrouter-open-sdk/openapi/clawrouter-open-sdk.openapi.json` -> `apis/open-api/clawrouter/clawrouter-open-api.openapi.json` | `python -B -m tools.clawrouter_gateway_openapi_generator`; `python -B -m tools.clawrouter_sdk_runtime_standardizer --sdk-dir clawrouter-open-sdk --openapi-only`; `pnpm api:materialize:write` | generator `--check`; SDK guardian; `pnpm api:materialize:check` |
+| App/backend operations and DTO fields | `docs/schema-registry/frontend-field-contracts.yaml` | `generated/api/api-contract-manifest.json` -> `generated/openapi/*` -> `apis/app-api/**` and `apis/backend-api/**` | `python -B -m tools.api_contract_manifest`; `python -B -m tools.cloudrouter_openapi_generator` | same commands with `--check`; `pnpm api:materialize:check` |
+| Public OpenAI-compatible operations | `tools/cloudrouter_gateway_openapi_generator.py` | `apps/sdkwork-cloudrouter-pc/public/openapi.json` -> `sdks/cloudrouter-open-sdk/openapi/cloudrouter-open-sdk.openapi.json` -> `apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json` | `python -B -m tools.cloudrouter_gateway_openapi_generator`; `python -B -m tools.cloudrouter_sdk_runtime_standardizer --sdk-dir cloudrouter-open-sdk --openapi-only`; `pnpm api:materialize:write` | generator `--check`; SDK guardian; `pnpm api:materialize:check` |
 | Route manifests and Rust manifests | authored OpenAPI above | `sdks/_route-manifests/**` -> `crates/sdkwork-routes-*/src/http_route_manifest.rs` | `pnpm api:standard-extensions:write`; `pnpm api:http-route-manifest:write` | corresponding `:check` commands plus route collision check |
-| App/open SDKs | `apis/*` authorities above | `sdks/<family>/openapi/*.openapi.json` and `*.sdkgen.json` -> generated language transports -> composed facade | `python -B -m tools.clawrouter_sdk_runtime_standardizer --sdk-dir <family> --openapi-only`; `node sdks/<family>/bin/generate-sdk.mjs --all` | `python -B -m tools.clawrouter_sdk_guardian`; SDK standard, consumer-import, build, and typecheck gates |
+| App/open SDKs | `apis/*` authorities above | `sdks/<family>/openapi/*.openapi.json` and `*.sdkgen.json` -> generated language transports -> composed facade | `python -B -m tools.cloudrouter_sdk_runtime_standardizer --sdk-dir <family> --openapi-only`; `node sdks/<family>/bin/generate-sdk.mjs --all` | `python -B -m tools.cloudrouter_sdk_guardian`; SDK standard, consumer-import, build, and typecheck gates |
 | Account hold/settlement prerequisite | Exact Token Bank operations in `../sdkwork-account/apis/backend-api/account/account-backend-api.openapi.json`: `POST /backend/v3/api/token_bank/holds`, `POST /backend/v3/api/token_bank/holds/{holdId}/settle`, `POST /backend/v3/api/token_bank/holds/{holdId}/release`, plus an exact status query; Rust commands under `../sdkwork-account/crates/sdkwork-account-service/src/commands/**` and Account repository migrations | Account backend OpenAPI -> `../sdkwork-account/sdks/sdkwork-account-backend-sdk/openapi/**` -> composed `@sdkwork/account-backend-sdk`; embedded Rust service/repository implements identical command semantics | `pnpm --dir ../sdkwork-account sync:openapi`; `pnpm --dir ../sdkwork-account sdk:generate:backend` | Account API/envelope/pagination checks, `cargo test --manifest-path ../sdkwork-account/Cargo.toml --workspace`, and `pnpm --dir ../sdkwork-account verify` |
-| Models key-domain prerequisite | `../sdkwork-models/crates/sdkwork-models-catalog-service/src/domain/access.rs` plus an owning Models REQ/ADR and its consumer inventory | reviewed Models domain release -> pinned Claw Router Cargo/workflow dependency revision | owning Models code/test commands, then immutable commit handoff; no local copy or generated edit | `cargo test --manifest-path ../sdkwork-models/Cargo.toml --workspace`; `pnpm --dir ../sdkwork-models verify`; Claw Router consumer/build/composition tests at the pinned SHA |
+| Models key-domain prerequisite | `../sdkwork-models/crates/sdkwork-models-catalog-service/src/domain/access.rs` plus an owning Models REQ/ADR and its consumer inventory | reviewed Models domain release -> pinned Cloud Router Cargo/workflow dependency revision | owning Models code/test commands, then immutable commit handoff; no local copy or generated edit | `cargo test --manifest-path ../sdkwork-models/Cargo.toml --workspace`; `pnpm --dir ../sdkwork-models verify`; Cloud Router consumer/build/composition tests at the pinned SHA |
 | Runtime route composition | hand-written route crates and router-service constructors | executable axum routers | Rust implementation only; never modify generated route manifests to match an undeclared route | runtime inventory tests plus exact `(surface, method, path)` parity |
 | Component/permission composition | root/module `specs/component.spec.json`, module IAM manifests, `sdkwork.app.config.json` | `generated/composition.resolved.json` | `node ../sdkwork-specs/tools/resolve-composition.mjs --root . --write` | all eight composition closure commands in Task 1 |
 | Database | Authored `database/ddl/baseline/{postgres,sqlite}/*.sql`, `database/contract/prefix-registry.json`, seeds, and reviewed paired `database/migrations/{postgres,sqlite}/*.up.sql`/`*.down.sql` | `pnpm db:materialize:contract` derives `database/contract/schema.yaml`, `database/contract/table-registry.json`, and materialized fields in `database/database.manifest.json`; the runtime records versions in `ops_schema_migration_history` | change authored SQL/inputs, then `pnpm db:materialize:contract`; use `pnpm db:plan` and reviewed `pnpm db:migrate` for upgrades | `pnpm db:validate`; second materialization is clean; `pnpm db:drift:check`; PostgreSQL/SQLite clean-install, upgrade, down/forward-fix, and recovery tests |
@@ -194,9 +194,9 @@ No task may replace these chains with direct edits to generated output.
 - [ ] Reconcile the 148 unique business tables referenced by the 76 stores against table registry,
       clean-install baselines, and module owners. Current discovery found only 42/148 in the registry
       and 45/148 in baselines while `database/database.manifest.json` composes only Models and IAM.
-      Classify every remaining table as Claw Router-owned or an external module-owned dependency,
-      add the owning module composition, and forbid copying foreign tables into Claw Router DDL.
-- [ ] Require owner review for Account/payment/order/messaging/storage/promotion and other non-Claw
+      Classify every remaining table as Cloud Router-owned or an external module-owned dependency,
+      add the owning module composition, and forbid copying foreign tables into Cloud Router DDL.
+- [ ] Require owner review for Account/payment/order/messaging/storage/promotion and other non-Cloud
       systems of record before extraction or writes. Record read/write ownership and service/API port
       closure in the migration manifest; unresolved ownership blocks the Ready gate.
 - [ ] Add `specs/component.spec.json` ownership contracts to all six migrated repository-sqlx crates.
@@ -206,15 +206,15 @@ No task may replace these chains with direct edits to generated output.
 - [ ] Add contract tests for topology-profile lookup and current root contract references; observe
       the historical-profile and missing-contract RED failures, then make them green.
 - [ ] Add RED environment tests for split lifecycle namespaces and invalid `release` config-profile
-      aliases. Migrate application lifecycle keys to `SDKWORK_CLAW_ROUTER_CONFIG_PROFILE`,
+      aliases. Migrate application lifecycle keys to `SDKWORK_CLOUDROUTER_ROUTER_CONFIG_PROFILE`,
       `_ENVIRONMENT`, `_DEPLOYMENT_PROFILE`, and `_RUNTIME_TARGET` across Rust, scripts, templates,
       and Kubernetes with no legacy fallback; `.env.release` uses config profile `prod` and runtime
       target `server`. Use the globally mandated `SDKWORK_DATABASE_*` workspace database
-      authority and keep Claw Router-owned `SDKWORK_CLAW_REDIS_*` settings unchanged.
+      authority and keep Cloud Router-owned `SDKWORK_CLOUDROUTER_REDIS_*` settings unchanged.
 - [ ] Obtain human review of the production manifest/env-key diff, then make
       `specs/application-env-standard.md` describe only the resulting v4 profiles and namespaces.
 - [ ] Resolve the PC core IAM manifest path and add an inherited permission-catalog entry for
-      `clawrouter-app-wallet-capability`; do not add a fake root IAM manifest.
+      `cloudrouter-app-wallet-capability`; do not add a fake root IAM manifest.
 - [ ] Materialize composition with
       `node ../sdkwork-specs/tools/resolve-composition.mjs --root . --write`.
 - [ ] Run and retain all composition rows before Task 2:
@@ -233,11 +233,11 @@ No task may replace these chains with direct edits to generated output.
 **Authored authority:** `docs/schema-registry/frontend-field-contracts.yaml` is already GET-only.
 
 **Runtime files:**
-- Modify: `crates/sdkwork-routes-clawrouter-app-api/src/routes.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/api/mod.rs`
-- Retire: `services/sdkwork-clawrouter-router-service/src/api/app_routing_channel_command.rs`
+- Modify: `crates/sdkwork-routes-cloudrouter-app-api/src/routes.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/api/mod.rs`
+- Retire: `services/sdkwork-cloudrouter-router-service/src/api/app_routing_channel_command.rs`
 - Modify/retire: command-route tests that currently require the shadow API
-- Test: `services/sdkwork-clawrouter-standalone-gateway/tests/database_config_router.rs`
+- Test: `services/sdkwork-cloudrouter-standalone-gateway/tests/database_config_router.rs`
 - Test: route crate/runtime inventory parity tests
 
 - [ ] Add a runtime route-matrix test: GET collection remains available; POST collection is 405;
@@ -247,15 +247,15 @@ No task may replace these chains with direct edits to generated output.
 - [ ] Delete dead App-only handlers and reverse/retire tests that advertised undeclared mutation.
 - [ ] Run App contract freshness in authority order: API manifest `--check`, App OpenAPI `--check`,
       `pnpm api:standard-extensions:check`, and `pnpm api:http-route-manifest:check`.
-- [ ] Regenerate `clawrouter-app-sdk` only if an authored input changes, then run its all-language
+- [ ] Regenerate `cloudrouter-app-sdk` only if an authored input changes, then run its all-language
       generator, SDK guardian, composed TypeScript build, PC typecheck, permission, and route parity.
 
 ## Task 3: Restrict Public Compatibility APIs To Inference And Media
 
 **Files:**
-- Modify: `tools/clawrouter_gateway_openapi_generator.py`
-- Modify: `crates/sdkwork-clawrouter-edge-runtime/src/openai_passthrough_routes.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/application/invocation/openai_classifier.rs`
+- Modify: `tools/cloudrouter_gateway_openapi_generator.py`
+- Modify: `crates/sdkwork-cloudrouter-edge-runtime/src/openai_passthrough_routes.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/application/invocation/openai_classifier.rs`
 - Modify: `data/ai-routing/resources/openai-resources.json`
 - Modify: `data/ai-routing/resource-groups/official-provider-groups.json`
 - Modify: `data/ai-routing/resource-groups/admin-api-groups.json`
@@ -269,7 +269,7 @@ No task may replace these chains with direct edits to generated output.
 - [ ] Preserve coherent chat, responses, embeddings, moderation, image, audio, video, approved batch
       inference/file dependencies, and model-discovery operations with method-level tests.
 - [ ] Run gateway generator, open SDK snapshot, API materialization, route-manifest generation, and
-      `node sdks/clawrouter-open-sdk/bin/generate-sdk.mjs --all` in that authority order.
+      `node sdks/cloudrouter-open-sdk/bin/generate-sdk.mjs --all` in that authority order.
 - [ ] Run API operation/envelope, external-protocol metadata, route parity, SDK provenance/standard,
       and all-language build tests. Record the public SDK contraction for human review.
 
@@ -277,9 +277,9 @@ No task may replace these chains with direct edits to generated output.
 
 **Files:**
 - Modify/retire: `ProviderPassthroughRuntime::forward_openai`
-- Modify/retire: `crates/sdkwork-clawrouter-edge-runtime/src/provider_passthrough_transport.rs`
-- Modify: `crates/sdkwork-clawrouter-edge-runtime/src/openai_passthrough_routes.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/api/app_runtime.rs`
+- Modify/retire: `crates/sdkwork-cloudrouter-edge-runtime/src/provider_passthrough_transport.rs`
+- Modify: `crates/sdkwork-cloudrouter-edge-runtime/src/openai_passthrough_routes.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/api/app_runtime.rs`
 - Modify: gateway/router composition for `InvocationDispatcher` and `DispatchExecutor`
 - Test: public compatibility dispatch-path integration tests
 
@@ -302,10 +302,10 @@ No task may replace these chains with direct edits to generated output.
 ## Task 5: Implement Reusable Fail-Closed Upstream Egress Policy
 
 **Files:**
-- Create: `crates/sdkwork-claw-security/src/egress.rs` and focused tests
+- Create: `crates/sdkwork-cloudrouter-security/src/egress.rs` and focused tests
 - Create: `configs/security/provider-egress-policy.json` with exact provider-code host/port policy
-- Modify: `services/sdkwork-clawrouter-router-service/src/api/admin_channel.rs`
-- Modify: `crates/sdkwork-clawrouter-edge-runtime/src/invocation_dispatcher.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/api/admin_channel.rs`
+- Modify: `crates/sdkwork-cloudrouter-edge-runtime/src/invocation_dispatcher.rs`
 - Modify: approved provider HTTP adapters that currently construct clients independently
 - Modify: Kubernetes NetworkPolicy and deployment validation fixtures
 
@@ -318,7 +318,7 @@ No task may replace these chains with direct edits to generated output.
       it resolves only to global addresses. Official provider codes match exact hosts or reviewed
       label-boundary suffix patterns and approved ports; backend-admin channel input may only narrow
       an operator-authored policy, never add a destination.
-- [ ] Implement `EgressPolicy` and a filtering resolver in `sdkwork-claw-security`; research confirmed
+- [ ] Implement `EgressPolicy` and a filtering resolver in `sdkwork-cloudrouter-security`; research confirmed
       `sdkwork-utils-rust` has no URL/DNS ownership, so reuse its generic error/string utilities only
       where their contract fits.
 - [ ] Use `HttpConnector::new_with_resolver` so the exact socket addresses Hyper can connect to are
@@ -341,17 +341,17 @@ No task may replace these chains with direct edits to generated output.
 `docs/schema-registry/frontend-field-contracts.yaml`.
 
 **Consumers:**
-- Modify: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts`
-- Modify: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/ApiKeysView.tsx`
-- Modify: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/CreateKeyDrawer.tsx`
-- Modify: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/usage-details/ApiKeyUsageDetailsDrawer.tsx`
+- Modify: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts`
+- Modify: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/ApiKeysView.tsx`
+- Modify: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/CreateKeyDrawer.tsx`
+- Modify: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/usage-details/ApiKeyUsageDetailsDrawer.tsx`
 - Modify: API-key i18n and focused consumer tests
-- Test: `apps/sdkwork-clawrouter-pc/api-key-runtime.test.ts`
-- Test: `services/sdkwork-clawrouter-router-service/tests/app_api_keys.rs`
-- Test: `services/sdkwork-clawrouter-standalone-gateway/tests/database_config_router.rs`
-- Test: `tests/test_api_contract_manifest.py`, `tests/test_clawrouter_openapi_generator.py`,
-  `tests/test_clawrouter_openapi_precision_audit.py`, and `tests/test_clawrouter_payload_sdk_audit.py`
-- Regenerate: `clawrouter-app-sdk` through the authority map
+- Test: `apps/sdkwork-cloudrouter-pc/api-key-runtime.test.ts`
+- Test: `services/sdkwork-cloudrouter-router-service/tests/app_api_keys.rs`
+- Test: `services/sdkwork-cloudrouter-standalone-gateway/tests/database_config_router.rs`
+- Test: `tests/test_api_contract_manifest.py`, `tests/test_cloudrouter_openapi_generator.py`,
+  `tests/test_cloudrouter_openapi_precision_audit.py`, and `tests/test_cloudrouter_payload_sdk_audit.py`
+- Regenerate: `cloudrouter-app-sdk` through the authority map
 
 - [ ] Add a RED authority test proving API-key entries still derive `NoData`/
       `Record<string, never>` instead of typed request, item, list, and create-secret contracts.
@@ -410,12 +410,12 @@ No task may replace these chains with direct edits to generated output.
 ## Task 8: Customer-Key And Provider-Credential Runtime Completion
 
 **Files:**
-- Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/crypto.rs`
-- Create: a Claw Router-owned API-key identity/read model without recoverable secret material
+- Modify: `services/sdkwork-cloudrouter-router-service/src/infrastructure/crypto.rs`
+- Create: a Cloud Router-owned API-key identity/read model without recoverable secret material
 - Modify/extract: PostgreSQL and SQLite API-key command/read stores
 - Modify/extract: PostgreSQL and SQLite provider-secret stores
-- Modify: `services/sdkwork-clawrouter-router-service/src/api/app_api_keys.rs`
-- Modify: `crates/sdkwork-claw-config/src/api_key.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/api/app_api_keys.rs`
+- Modify: `crates/sdkwork-cloudrouter-config/src/api_key.rs`
 - Create: `docs/engineering/prerequisites/PREREQ-2026-0002-sdkwork-models-api-key-secret-removal.md`
 
 - [ ] Add RED authentication, create/show-once, rotate, revoke, key-ID, cross-domain, tamper,
@@ -423,11 +423,11 @@ No task may replace these chains with direct edits to generated output.
 - [ ] Store new customer keys only as a versioned verifier plus non-secret display fields. Use constant-
       time verification after one unique indexed selector lookup and rate-limit negative lookups.
 - [ ] Stop using `sdkwork_models_catalog_service::domain::access::GatewayApiKey.copyable_key` as the
-      Claw Router persistence/API model. Create an owner-reviewed Models REQ/ADR for the exact owning
+      Cloud Router persistence/API model. Create an owner-reviewed Models REQ/ADR for the exact owning
       file `../sdkwork-models/crates/sdkwork-models-catalog-service/src/domain/access.rs`, audit every
       Models consumer, remove recoverable secret material there, run Models full verification, publish
-      an immutable commit, and record it in PREREQ-2026-0002 before Claw Router cutover.
-- [ ] Adapt Claw Router at the Models boundary with key identity/policy only; pin the exact Models
+      an immutable commit, and record it in PREREQ-2026-0002 before Cloud Router cutover.
+- [ ] Adapt Cloud Router at the Models boundary with key identity/policy only; pin the exact Models
       commit in workflow/dependency evidence and prove no unreviewed path checkout can enter a release.
 - [ ] Implement provider KMS/envelope key rings with explicit key IDs, authenticated encryption,
       dual-read/single-write rotation, audit events, and fail-closed unavailable-key behavior.
@@ -439,8 +439,8 @@ No task may replace these chains with direct edits to generated output.
 
 **Files:**
 - Create: focused gateway streaming body/parser modules
-- Modify: `crates/sdkwork-clawrouter-edge-runtime/src/invocation_dispatcher.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/application/invocation/usage_extraction.rs`
+- Modify: `crates/sdkwork-cloudrouter-edge-runtime/src/invocation_dispatcher.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/application/invocation/usage_extraction.rs`
 - Test: streaming relay, first-frame, cancellation, backpressure, and terminal accounting
 
 - [x] Regression tests prove that the unified invocation path exposes headers
@@ -469,7 +469,7 @@ No task may replace these chains with direct edits to generated output.
 ## Task 10: Financial Contract And State Machine
 
 **Files:**
-- Create/modify: Claw Router authorization estimate, Account hold reference, terminal usage,
+- Create/modify: Cloud Router authorization estimate, Account hold reference, terminal usage,
   reconciliation, and outbox ports/models
 - Create: `docs/engineering/prerequisites/PREREQ-2026-0001-sdkwork-account-ai-hold-settlement.md`
 - Prerequisite reviewed change: `../sdkwork-account` hold/settle/release contract and implementation
@@ -496,7 +496,7 @@ No task may replace these chains with direct edits to generated output.
       snapshot, tenant policy, and currency. Reject requests whose bound cannot be proven.
 - [ ] Keep financial commands separate from HTTP DTOs and use decimal/minor-unit types only.
 - [ ] Preserve ownership: `sdkwork-account` owns balances, holds, settlement, release, and ledger;
-      Claw Router owns price bounds, invocation/attempt/usage facts, Account hold references, and the
+      Cloud Router owns price bounds, invocation/attempt/usage facts, Account hold references, and the
       transactional outbox. Delete any design that writes Account-owned commerce tables directly.
 - [ ] Add an Account prerequisite contract for idempotent `hold(maximum)`, atomic
       `settle(actual)+release(remainder)`, full release, status lookup, and reconciliation. The current
@@ -508,7 +508,7 @@ No task may replace these chains with direct edits to generated output.
 - [ ] Change the Account authored backend OpenAPI, command model, PostgreSQL/SQLite repositories, and
       tests in its owning review; then run `pnpm --dir ../sdkwork-account sync:openapi`,
       `pnpm --dir ../sdkwork-account sdk:generate:backend`, and Account `verify` before updating the
-      Claw Router dependency revision/composition.
+      Cloud Router dependency revision/composition.
 - [ ] If operator APIs are added, author them in the schema registry, generate standard envelopes and
       SDKs, and keep customer surfaces read-only unless a product requirement explicitly owns a command.
 
@@ -517,9 +517,9 @@ No task may replace these chains with direct edits to generated output.
 **Database authorities:** same contract/baseline/migration ownership as Task 7.
 
 - [ ] Add RED database contract tests proving hold-reference uniqueness, append-only invocation/
-      attempt/usage facts, reconciliation state, and Claw Router outbox atomicity are absent; add
+      attempt/usage facts, reconciliation state, and Cloud Router outbox atomicity are absent; add
       separate Account RED tests for hold and ledger idempotency.
-- [ ] In Claw Router, design L3 tables/indexes only for Account hold references, attempt facts, usage
+- [ ] In Cloud Router, design L3 tables/indexes only for Account hold references, attempt facts, usage
       lines, reconciliation discrepancies, and transactional outbox. Account-owned hold/balance/
       settlement/ledger schema changes stay in `../sdkwork-account` migrations.
 - [ ] Produce additive PostgreSQL/SQLite migrations plus backfill, validation, cutover, rollback/forward-
@@ -535,9 +535,9 @@ No task may replace these chains with direct edits to generated output.
 ## Task 12: Pre-Dispatch Reservation, Atomic Settlement, And Reconciliation
 
 **Files:**
-- Create: Claw Router SQLx usage/hold-reference/reconciliation/outbox adapters under owning crates
+- Create: Cloud Router SQLx usage/hold-reference/reconciliation/outbox adapters under owning crates
 - Create: `FundsReservationPort` in router-service and
-  `crates/sdkwork-clawrouter-account-adapter` as its concrete embedded Account adapter
+  `crates/sdkwork-cloudrouter-account-adapter` as its concrete embedded Account adapter
 - Integrate: approved Account Rust service commands; no TypeScript SDK, raw HTTP, backend-admin token,
   direct Account repository dependency from router-service, or direct commerce SQL
 - Modify: dispatcher policy ports and gateway composition
@@ -557,14 +557,14 @@ No task may replace these chains with direct edits to generated output.
 - [ ] Create an Account hold for the bounded maximum before selecting/dispatching an upstream with a
       stable invocation key. A missing, rejected, expired, or ambiguous hold blocks dispatch.
 - [ ] Persist trace/attempt/usage/hold-reference facts and enqueue the Account settlement command in
-      one Claw Router transaction. Account atomically settles actual cost and releases the remainder
+      one Cloud Router transaction. Account atomically settles actual cost and releases the remainder
       under the same idempotency key; do not claim a distributed SQL transaction.
 - [ ] Put successful streams with missing usage into reconciliation-required state, alert operators,
       and retain the reservation; only an explicit free model contract may settle zero.
 - [ ] Implement idempotent workers, lease/skip-locked semantics, retry/backoff, poison handling, and
       operator-visible Account/provider-statement discrepancies. Holds remain conservative until an
       Account acknowledgement or explicit reconciliation result is durable.
-- [ ] Remove existing direct `commerce_account`/ledger mutation from Claw Router after Account parity
+- [ ] Remove existing direct `commerce_account`/ledger mutation from Cloud Router after Account parity
       and migration checks pass; prove the database role cannot write Account-owned tables.
 - [ ] Pin the approved Account commit in `sdkwork.workflow.json`/candidate dependency evidence and
       verify standalone plus cloud composition uses that exact source revision.
@@ -634,13 +634,13 @@ No task may replace these chains with direct edits to generated output.
 ## Task 15: Production Observability, Health, Dashboards, And Alerts
 
 **Files:**
-- Modify: `crates/sdkwork-claw-observability/**`
-- Modify: `crates/sdkwork-claw-http/src/metrics.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/application/invocation/telemetry.rs`
-- Modify: `services/sdkwork-clawrouter-router-service/src/application/invocation/metrics_interceptor.rs`
+- Modify: `crates/sdkwork-cloudrouter-observability/**`
+- Modify: `crates/sdkwork-cloudrouter-http/src/metrics.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/application/invocation/telemetry.rs`
+- Modify: `services/sdkwork-cloudrouter-router-service/src/application/invocation/metrics_interceptor.rs`
 - Modify: gateway health/readiness and trace propagation composition
-- Modify: `deployments/prometheus/claw-router-alerts.yaml`
-- Modify: `deployments/grafana/claw-router-http-operations-dashboard.json`
+- Modify: `deployments/prometheus/cloud-router-alerts.yaml`
+- Modify: `deployments/grafana/cloud-router-http-operations-dashboard.json`
 - Test: metric contract, cardinality, redaction, trace, readiness, dashboard, and alert fixtures
 
 - [ ] Add RED tests proving required invocation/security/financial signals are absent or use unsafe
@@ -674,7 +674,7 @@ No task may replace these chains with direct edits to generated output.
 ## Task 16: Finish Repository Extraction And Composition Debt
 
 **Files:**
-- Create/complete: `crates/sdkwork-clawrouter-<capability>-repository-sqlx` owners from the Task 1 manifest
+- Create/complete: `crates/sdkwork-cloudrouter-<capability>-repository-sqlx` owners from the Task 1 manifest
 - Modify: router-service ports and composition only; no service-to-concrete-repository dependency
 - Modify: root/module component specs, package exports, PC composition, and permission catalogs
 
@@ -725,7 +725,7 @@ No task may replace these chains with direct edits to generated output.
 **Files:**
 - Modify: PRD, requirement, architecture, current TECH shards, API docs, SDK docs, and operator runbooks
 - Regenerate: current audit facts only through their generators
-- Create: `scripts/fingerprint-clawrouter-worktree.mjs` for pre-candidate evidence
+- Create: `scripts/fingerprint-cloudrouter-worktree.mjs` for pre-candidate evidence
 - Remove/archive: documents that assert retired commands, routes, env profiles, recoverable keys,
   unsafe administration passthrough, or unverified production readiness
 
@@ -796,7 +796,7 @@ pnpm topology:validate
 python -B tools/sdkwork_standard_alignment_guardian.py --strict
 pnpm db:validate
 pnpm db:drift:check
-pnpm --dir apps/sdkwork-clawrouter-pc typecheck
+pnpm --dir apps/sdkwork-cloudrouter-pc typecheck
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 pnpm test:postgres:required

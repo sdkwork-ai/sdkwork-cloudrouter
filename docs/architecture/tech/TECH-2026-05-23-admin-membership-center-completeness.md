@@ -5,39 +5,39 @@
 
 **Goal:** Complete the admin Membership Center with independent CRUD page components, drawer-based create/edit flows, generated backend SDK service coverage, and seed integrity diagnostics.
 
-**Architecture:** Keep the portal package boundary stable by exporting `MembershipsAdmin` from `index.tsx`, but move each membership subpage into focused `pages/*Page.tsx` files and drawer forms into `forms/*DrawerForm.tsx`. Keep all remote calls inside `membershipsService.ts` through `getClawRouterBackendSdkClient().memberships.*`; add Rust seed diagnostics in the membership SQLx seed module without schema changes.
+**Architecture:** Keep the portal package boundary stable by exporting `MembershipsAdmin` from `index.tsx`, but move each membership subpage into focused `pages/*Page.tsx` files and drawer forms into `forms/*DrawerForm.tsx`. Keep all remote calls inside `membershipsService.ts` through `getCloudRouterBackendSdkClient().memberships.*`; add Rust seed diagnostics in the membership SQLx seed module without schema changes.
 
-**Tech Stack:** React 19, TypeScript, lucide-react, generated `@sdkwork/clawrouter-backend-sdk`, Node `node:test`, Rust, Axum, SQLx SQLite/Postgres.
+**Tech Stack:** React 19, TypeScript, lucide-react, generated `@sdkwork/cloudrouter-backend-sdk`, Node `node:test`, Rust, Axum, SQLx SQLite/Postgres.
 
 ---
 
 ## File Structure
 
-- Modify: `apps/sdkwork-clawrouter-pc/admin-membership-entitlement-runtime.test.ts`
+- Modify: `apps/sdkwork-cloudrouter-pc/admin-membership-entitlement-runtime.test.ts`
   - Add static coverage for independent admin membership pages, drawer forms, service CRUD functions, and read-only entitlements.
-- Modify: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts`
+- Modify: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts`
   - Add typed mutation inputs and service functions for package groups, packages, plan update/delete, member status update, and filtered reads.
-- Replace: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/index.tsx`
+- Replace: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/index.tsx`
   - Keep only `MembershipsAdmin` export and `sectionId` dispatch.
-- Create: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/components/MembershipAdminPageShell.tsx`
+- Create: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/components/MembershipAdminPageShell.tsx`
   - Shared page heading, actions, loading/error/empty wrappers.
-- Create: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/components/MembershipDrawer.tsx`
+- Create: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/components/MembershipDrawer.tsx`
   - Right-side drawer shell for create/edit/status forms.
-- Create: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/components/MembershipStatusBadge.tsx`
+- Create: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/components/MembershipStatusBadge.tsx`
   - Shared status badge rendering.
-- Create: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/components/MembershipEmptyState.tsx`
+- Create: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/components/MembershipEmptyState.tsx`
   - Small reusable empty state.
-- Create: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/forms/MembershipPlanDrawerForm.tsx`
-- Create: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/forms/MembershipPackageDrawerForm.tsx`
-- Create: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/forms/MembershipPackageGroupDrawerForm.tsx`
-- Create: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/forms/MembershipRechargePackageDrawerForm.tsx`
-- Create: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/forms/MembershipMemberStatusDrawerForm.tsx`
-- Create: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipPackagesPage.tsx`
-- Create: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipPackageGroupsPage.tsx`
-- Create: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipPlansPage.tsx`
-- Create: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipMembersPage.tsx`
-- Create: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipEntitlementsPage.tsx`
-- Create: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipRechargePackagesPage.tsx`
+- Create: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/forms/MembershipPlanDrawerForm.tsx`
+- Create: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/forms/MembershipPackageDrawerForm.tsx`
+- Create: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/forms/MembershipPackageGroupDrawerForm.tsx`
+- Create: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/forms/MembershipRechargePackageDrawerForm.tsx`
+- Create: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/forms/MembershipMemberStatusDrawerForm.tsx`
+- Create: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/pages/MembershipPackagesPage.tsx`
+- Create: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/pages/MembershipPackageGroupsPage.tsx`
+- Create: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/pages/MembershipPlansPage.tsx`
+- Create: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/pages/MembershipMembersPage.tsx`
+- Create: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/pages/MembershipEntitlementsPage.tsx`
+- Create: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/pages/MembershipRechargePackagesPage.tsx`
 - Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-membership-sqlx-rust/src/seed.rs`
   - Add seed integrity report structs and SQLite/Postgres diagnostic checks.
 - Modify: `sdkwork-appbase/packages/native-rust/commerce/sdkwork-商���-membership-sqlx-rust/src/lib.rs`
@@ -48,21 +48,21 @@
 ## Task 1: Portal Runtime Tests
 
 **Files:**
-- Modify: `apps/sdkwork-clawrouter-pc/admin-membership-entitlement-runtime.test.ts`
+- Modify: `apps/sdkwork-cloudrouter-pc/admin-membership-entitlement-runtime.test.ts`
 
 - [ ] **Step 1: Write failing tests for page decomposition and CRUD service coverage**
 
 Add assertions that:
 
 ```ts
-const indexSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-memberships/src/index.tsx");
-const serviceSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts");
-const packagesPage = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipPackagesPage.tsx");
-const groupsPage = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipPackageGroupsPage.tsx");
-const plansPage = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipPlansPage.tsx");
-const membersPage = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipMembersPage.tsx");
-const entitlementsPage = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipEntitlementsPage.tsx");
-const rechargePage = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-memberships/src/pages/MembershipRechargePackagesPage.tsx");
+const indexSource = readPortalFile("./packages/sdkwork-cloudrouter-pc-admin-memberships/src/index.tsx");
+const serviceSource = readPortalFile("./packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts");
+const packagesPage = readPortalFile("./packages/sdkwork-cloudrouter-pc-admin-memberships/src/pages/MembershipPackagesPage.tsx");
+const groupsPage = readPortalFile("./packages/sdkwork-cloudrouter-pc-admin-memberships/src/pages/MembershipPackageGroupsPage.tsx");
+const plansPage = readPortalFile("./packages/sdkwork-cloudrouter-pc-admin-memberships/src/pages/MembershipPlansPage.tsx");
+const membersPage = readPortalFile("./packages/sdkwork-cloudrouter-pc-admin-memberships/src/pages/MembershipMembersPage.tsx");
+const entitlementsPage = readPortalFile("./packages/sdkwork-cloudrouter-pc-admin-memberships/src/pages/MembershipEntitlementsPage.tsx");
+const rechargePage = readPortalFile("./packages/sdkwork-cloudrouter-pc-admin-memberships/src/pages/MembershipRechargePackagesPage.tsx");
 
 assert.match(indexSource, /MembershipPackagesPage/);
 assert.match(indexSource, /MembershipPackageGroupsPage/);
@@ -149,17 +149,17 @@ Expected: FAIL because integrity report functions/types do not exist.
 ## Task 3: Service CRUD Boundary
 
 **Files:**
-- Modify: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts`
+- Modify: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts`
 
 - [ ] **Step 1: Implement minimal service functions to satisfy portal tests**
 
 Add typed inputs and functions for package groups, packages, plans, and member status. Use only:
 
 ```ts
-getClawRouterBackendSdkClient().memberships.packageGroups.*
-getClawRouterBackendSdkClient().memberships.packages.*
-getClawRouterBackendSdkClient().memberships.plans.*
-getClawRouterBackendSdkClient().memberships.members.status.update
+getCloudRouterBackendSdkClient().memberships.packageGroups.*
+getCloudRouterBackendSdkClient().memberships.packages.*
+getCloudRouterBackendSdkClient().memberships.plans.*
+getCloudRouterBackendSdkClient().memberships.members.status.update
 ```
 
 - [ ] **Step 2: Add validation helpers**
@@ -186,7 +186,7 @@ Expected: still FAIL until page files are created.
 ## Task 4: Page and Drawer Components
 
 **Files:**
-- Replace: `apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships/src/index.tsx`
+- Replace: `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/index.tsx`
 - Create all `components/*`, `forms/*`, and `pages/*` files listed above.
 
 - [ ] **Step 1: Implement shared components**
@@ -303,7 +303,7 @@ Expected: PASS.
 Run:
 
 ```powershell
-pnpm --dir apps/sdkwork-clawrouter-pc typecheck
+pnpm --dir apps/sdkwork-cloudrouter-pc typecheck
 ```
 
 Expected: PASS or report exact pre-existing/non-membership failures.

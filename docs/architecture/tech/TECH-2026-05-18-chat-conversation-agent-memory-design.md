@@ -1,13 +1,13 @@
 # First-Party Chat Persistence Design
 
 Status: active  
-Owner: clawrouter-platform  
+Owner: cloudrouter-platform  
 Updated: 2026-07-30  
 Decision: [ADR-20260730](../decisions/ADR-20260730-own-chat-runtime-postgres-authority.md)
 
 ## Goal
 
-Provide durable, user-scoped conversation history for Claw Router's current
+Provide durable, user-scoped conversation history for Cloud Router's current
 first-party Chat API without treating raw OpenAI-compatible gateway requests as
 product conversations. The design must remain correct under concurrent writers,
 bounded in memory, observable at startup, and explicit about capabilities that

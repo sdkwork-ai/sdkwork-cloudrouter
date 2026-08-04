@@ -1,7 +1,7 @@
 > Migrated from `docs/installation/en-US/release-install.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
-This guide explains how to install SDKWork Claw Router from a formal release package. The current release version comes from [docs/release/VERSION.md](../../release/VERSION.md); the current version is `0.3.0`.
+This guide explains how to install SDKWork Cloud Router from a formal release package. The current release version comes from [docs/release/VERSION.md](../../release/VERSION.md); the current version is `0.3.0`.
 
 Use the platform-native installers for the fastest deployment path:
 
@@ -21,7 +21,7 @@ Package IDs use three dimensions:
 
 Service package IDs keep the internal `service` deployment mode because they drive systemd,
 launchd, and Windows service integration. Public release asset names use `server` for that
-same mode, for example `linux-x64-service` builds `clawrouter-linux-x64-server-0.3.0.deb`.
+same mode, for example `linux-x64-service` builds `cloudrouter-linux-x64-server-0.3.0.deb`.
 
 Supported platforms:
 
@@ -44,20 +44,20 @@ Supported deployment modes:
 Common package names:
 
 ```text
-clawrouter-linux-x64-server-0.3.0.deb
-clawrouter-linux-x64-desktop-0.3.0.deb
-clawrouter-windows-x64-server-0.3.0.msi
-clawrouter-windows-x64-desktop-0.3.0.msi
-clawrouter-macos-arm64-server-0.3.0.pkg
-clawrouter-macos-arm64-desktop-0.3.0.pkg
-clawrouter-linux-x64-archive-0.3.0.tar.gz
-clawrouter-windows-x64-archive-0.3.0.zip
+cloudrouter-linux-x64-server-0.3.0.deb
+cloudrouter-linux-x64-desktop-0.3.0.deb
+cloudrouter-windows-x64-server-0.3.0.msi
+cloudrouter-windows-x64-desktop-0.3.0.msi
+cloudrouter-macos-arm64-server-0.3.0.pkg
+cloudrouter-macos-arm64-desktop-0.3.0.pkg
+cloudrouter-linux-x64-archive-0.3.0.tar.gz
+cloudrouter-windows-x64-archive-0.3.0.zip
 ```
 
 From a source checkout, inspect the full matrix:
 
 ```bash
-node scripts/plan-claw-router-install-packages.mjs --json
+node scripts/plan-cloud-router-install-packages.mjs --json
 ```
 
 Build a Linux x64 service release from a source checkout:
@@ -70,7 +70,7 @@ pnpm install:package:build -- --package-id linux-x64-service
 ```
 
 The resulting Ubuntu/Debian package uses the public asset name
-`clawrouter-linux-x64-server-0.3.0.deb`.
+`cloudrouter-linux-x64-server-0.3.0.deb`.
 
 ## 2. Fast Install Recipes
 
@@ -79,23 +79,23 @@ The resulting Ubuntu/Debian package uses the public asset name
 Use this path for a long-running server on Ubuntu or Debian:
 
 ```bash
-sudo apt install ./clawrouter-linux-x64-server-0.3.0.deb
-sudo editor /etc/sdkwork/router/clawrouter.toml
+sudo apt install ./cloudrouter-linux-x64-server-0.3.0.deb
+sudo editor /etc/sdkwork/router/cloudrouter.toml
 sudo editor /etc/sdkwork/router/database.secret
-sudo systemctl start clawrouter
+sudo systemctl start cloudrouter
 curl http://127.0.0.1:3900/healthz
 curl http://127.0.0.1:3900/readyz
 ```
 
-The `.deb` package creates the `sdkwork` system user, `/etc/sdkwork/router/clawrouter.toml`, `/etc/sdkwork/router/clawrouter.env`, `/etc/sdkwork/router/database.secret`, `/var/lib/sdkwork/router`, `/var/log/sdkwork/router`, and the systemd unit. On systemd hosts it enables `clawrouter.service` during installation but does not start it until the operator configures PostgreSQL. The first service start runs `clawrouterctl ensure` and `clawrouterctl refresh-catalog --force` automatically from `ExecStartPre`. The generated systemd unit uses a restricted runtime profile with `NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome=true`, systemd-managed state/log/config directories, kernel and control-group protections, native syscall architecture filtering, and `LimitNOFILE=65535`. The service can write data and logs, while `/etc/sdkwork/router` remains read-only to the running process.
+The `.deb` package creates the `sdkwork` system user, `/etc/sdkwork/router/cloudrouter.toml`, `/etc/sdkwork/router/cloudrouter.env`, `/etc/sdkwork/router/database.secret`, `/var/lib/sdkwork/router`, `/var/log/sdkwork/router`, and the systemd unit. On systemd hosts it enables `cloudrouter.service` during installation but does not start it until the operator configures PostgreSQL. The first service start runs `cloudrouterctl ensure` and `cloudrouterctl refresh-catalog --force` automatically from `ExecStartPre`. The generated systemd unit uses a restricted runtime profile with `NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome=true`, systemd-managed state/log/config directories, kernel and control-group protections, native syscall architecture filtering, and `LimitNOFILE=65535`. The service can write data and logs, while `/etc/sdkwork/router` remains read-only to the running process.
 
 The post-install output prints a short configuration summary with the runtime TOML, service environment file, PostgreSQL password file, service name, and first-start commands:
 
 ```text
-Runtime TOML: /etc/sdkwork/router/clawrouter.toml
-Service environment: /etc/sdkwork/router/clawrouter.env
+Runtime TOML: /etc/sdkwork/router/cloudrouter.toml
+Service environment: /etc/sdkwork/router/cloudrouter.env
 PostgreSQL password file: /etc/sdkwork/router/database.secret
-Systemd service: clawrouter.service
+Systemd service: cloudrouter.service
 ```
 
 The default server database configuration is external PostgreSQL:
@@ -198,7 +198,7 @@ payment_callback_body_max_bytes = 65536
 deployment_mode = "server"
 ```
 
-Edit `/etc/sdkwork/router/clawrouter.toml` before first start. For most service deployments, keep the password in `/etc/sdkwork/router/database.secret`:
+Edit `/etc/sdkwork/router/cloudrouter.toml` before first start. For most service deployments, keep the password in `/etc/sdkwork/router/database.secret`:
 
 ```bash
 sudo install -o root -g sdkwork -m 0640 /dev/null /etc/sdkwork/router/database.secret
@@ -208,7 +208,7 @@ sudo editor /etc/sdkwork/router/database.secret
 The package-created `database.secret` contains the placeholder `change-me`.
 Replace it with the real PostgreSQL password before starting the service.
 Startup rejects server configurations that still use `db.example.com` or
-`change-me`. `password_file` may be absolute, relative to `clawrouter.toml`, or
+`change-me`. `password_file` may be absolute, relative to `cloudrouter.toml`, or
 use `${VAR}`, `$VAR`, `%VAR%`, or `~` expansion for platform-managed secret
 paths.
 
@@ -229,26 +229,26 @@ max_connections = 16
 deployment_mode = "server"
 ```
 
-`SDKWORK_DATABASE_URL` remains available in `/etc/sdkwork/router/clawrouter.env` only as an explicit operator override for emergency operations or platform-managed secret injection.
+`SDKWORK_DATABASE_URL` remains available in `/etc/sdkwork/router/cloudrouter.env` only as an explicit operator override for emergency operations or platform-managed secret injection.
 
 The `.deb` post-install script creates:
 
-- `/usr/bin/clawrouter`
-- `/usr/bin/clawrouterctl`
+- `/usr/bin/cloudrouter`
+- `/usr/bin/cloudrouterctl`
 - `/usr/lib/sdkwork/router`
 - `/etc/sdkwork/router`
-- `/etc/sdkwork/router/clawrouter.env`
+- `/etc/sdkwork/router/cloudrouter.env`
 - `/etc/sdkwork/router/database.secret`
 - `/var/lib/sdkwork/router`
 - `/var/log/sdkwork/router`
-- `/lib/systemd/system/clawrouter.service` for `service` packages
+- `/lib/systemd/system/cloudrouter.service` for `service` packages
 
 Linux `.deb` payloads follow standard system locations: immutable private runtime assets live under `/usr/lib/sdkwork/router`, public operator commands under `/usr/bin`, service configuration under `/etc/sdkwork/router`, mutable state under `/var/lib/sdkwork/router`, and logs under `/var/log/sdkwork/router`. Service config files and templates are owned by `root:sdkwork` with `0640` file modes; `/etc/sdkwork/router`, `/var/lib/sdkwork/router`, and `/var/log/sdkwork/router` use `0750` directory modes.
 
 Read startup logs and capture the first admin password if initialization happened during startup:
 
 ```bash
-sudo journalctl -u clawrouter -n 200 --no-pager
+sudo journalctl -u cloudrouter -n 200 --no-pager
 ```
 
 ### Linux Desktop
@@ -256,20 +256,20 @@ sudo journalctl -u clawrouter -n 200 --no-pager
 Use this path for a local Linux trial with SQLite:
 
 ```bash
-sudo apt install ./clawrouter-linux-x64-desktop-0.3.0.deb
-/usr/bin/clawrouterctl ensure
-/usr/bin/clawrouterctl refresh-catalog --force
-/usr/bin/clawrouter
+sudo apt install ./cloudrouter-linux-x64-desktop-0.3.0.deb
+/usr/bin/cloudrouterctl ensure
+/usr/bin/cloudrouterctl refresh-catalog --force
+/usr/bin/cloudrouter
 ```
 
-The desktop profile uses the current OS user's config and data directories and does not require PostgreSQL unless you explicitly configure it. The Linux desktop `.deb` installs the shared template under `/usr/share/sdkwork/router/config/clawrouter.toml.example`; it does not create `/etc/sdkwork/router/clawrouter.toml`, `/etc/sdkwork/router/database.secret`, or a systemd service.
+The desktop profile uses the current OS user's config and data directories and does not require PostgreSQL unless you explicitly configure it. The Linux desktop `.deb` installs the shared template under `/usr/share/sdkwork/router/config/cloudrouter.toml.example`; it does not create `/etc/sdkwork/router/cloudrouter.toml`, `/etc/sdkwork/router/database.secret`, or a systemd service.
 
 ### Windows Desktop Or Service Files
 
 Install the MSI:
 
 ```powershell
-msiexec /i .\clawrouter-windows-x64-desktop-0.3.0.msi
+msiexec /i .\cloudrouter-windows-x64-desktop-0.3.0.msi
 ```
 
 Default install root:
@@ -283,9 +283,9 @@ Initialize and start from an elevated PowerShell when using a server/service pro
 ```powershell
 $installRoot = Join-Path $env:USERPROFILE "sdkwork\router"
 Set-Location $installRoot
-.\bin\clawrouterctl.exe ensure
-.\bin\clawrouterctl.exe refresh-catalog --force
-.\bin\clawrouter.exe
+.\bin\cloudrouterctl.exe ensure
+.\bin\cloudrouterctl.exe refresh-catalog --force
+.\bin\cloudrouter.exe
 ```
 
 For Windows server/service deployment, set PostgreSQL in the runtime TOML before starting the gateway. A protected process override remains available when the service manager injects secrets:
@@ -301,31 +301,31 @@ Windows `.msi` packages keep program binaries under `%ProgramFiles%/sdkwork/rout
 Install the package:
 
 ```bash
-sudo installer -pkg clawrouter-macos-arm64-desktop-0.3.0.pkg -target /
+sudo installer -pkg cloudrouter-macos-arm64-desktop-0.3.0.pkg -target /
 ```
 
 Default runtime files:
 
 ```text
 Binaries: /opt/sdkwork/router/bin
-Desktop config template: /usr/local/share/sdkwork/router/config/clawrouter.toml.example
-Desktop runtime config: ~/.sdkwork/router/config/clawrouter.toml
-Service config template: /Library/Application Support/sdkwork/router/clawrouter.toml.example
-Service plist for service package: /Library/LaunchDaemons/com.sdkwork.clawrouter.plist
-Service runner for service package: /Library/Application Support/sdkwork/router/service/macos/clawrouter-service-runner
+Desktop config template: /usr/local/share/sdkwork/router/config/cloudrouter.toml.example
+Desktop runtime config: ~/.sdkwork/router/config/cloudrouter.toml
+Service config template: /Library/Application Support/sdkwork/router/cloudrouter.toml.example
+Service plist for service package: /Library/LaunchDaemons/com.sdkwork.cloudrouter.plist
+Service runner for service package: /Library/Application Support/sdkwork/router/service/macos/cloudrouter-service-runner
 ```
 
 Initialize and start:
 
 ```bash
-/opt/sdkwork/router/bin/clawrouterctl ensure
-/opt/sdkwork/router/bin/clawrouterctl refresh-catalog --force
-/opt/sdkwork/router/bin/clawrouter
+/opt/sdkwork/router/bin/cloudrouterctl ensure
+/opt/sdkwork/router/bin/cloudrouterctl refresh-catalog --force
+/opt/sdkwork/router/bin/cloudrouter
 ```
 
-For macOS service packages, launchd starts the service runner. The runner executes `clawrouterctl ensure` and `clawrouterctl refresh-catalog --force`, then replaces itself with the gateway process.
+For macOS service packages, launchd starts the service runner. The runner executes `cloudrouterctl ensure` and `cloudrouterctl refresh-catalog --force`, then replaces itself with the gateway process.
 
-macOS service packages install service runtime files under `/Library/Application Support/sdkwork/router` with `root:wheel` ownership, `0750` on the service root, `0640` on service templates and copied runtime TOML, and `0644` on `/Library/LaunchDaemons/com.sdkwork.clawrouter.plist`. macOS desktop packages keep runtime config and local SQLite data under `~/.sdkwork/router`.
+macOS service packages install service runtime files under `/Library/Application Support/sdkwork/router` with `root:wheel` ownership, `0750` on the service root, `0640` on service templates and copied runtime TOML, and `0644` on `/Library/LaunchDaemons/com.sdkwork.cloudrouter.plist`. macOS desktop packages keep runtime config and local SQLite data under `~/.sdkwork/router`.
 
 ### Portable Archive
 
@@ -335,38 +335,38 @@ Linux/macOS:
 
 ```bash
 mkdir -p /opt/sdkwork/router
-tar -xzf clawrouter-linux-x64-archive-0.3.0.tar.gz -C /opt/sdkwork/router
+tar -xzf cloudrouter-linux-x64-archive-0.3.0.tar.gz -C /opt/sdkwork/router
 cd /opt/sdkwork/router
 cp .env.release.example .env.release
 editor .env.release
-./bin/clawrouterctl ensure
-./bin/clawrouterctl refresh-catalog --force
-./bin/clawrouter
+./bin/cloudrouterctl ensure
+./bin/cloudrouterctl refresh-catalog --force
+./bin/cloudrouter
 ```
 
 Windows:
 
 ```powershell
 $installRoot = Join-Path $env:USERPROFILE "sdkwork\router"
-Expand-Archive .\clawrouter-windows-x64-archive-0.3.0.zip -DestinationPath $installRoot
+Expand-Archive .\cloudrouter-windows-x64-archive-0.3.0.zip -DestinationPath $installRoot
 Set-Location $installRoot
 Copy-Item .env.release.example .env.release
 notepad .env.release
-.\bin\clawrouterctl.exe ensure
-.\bin\clawrouterctl.exe refresh-catalog --force
-.\bin\clawrouter.exe
+.\bin\cloudrouterctl.exe ensure
+.\bin\cloudrouterctl.exe refresh-catalog --force
+.\bin\cloudrouter.exe
 ```
 
 ## 3. Package Contents
 
-Release packages include the runtime files needed to start Claw Router:
+Release packages include the runtime files needed to start Cloud Router:
 
-- `bin/clawrouter` or `bin/clawrouter.exe`
-- `bin/clawrouterctl` or `bin/clawrouterctl.exe`
+- `bin/cloudrouter` or `bin/cloudrouter.exe`
+- `bin/cloudrouterctl` or `bin/cloudrouterctl.exe`
 - `portal/dist`
 - `portal/dist/sdk-archives`
 - `.env.release.example`
-- `config/clawrouter.toml.example`
+- `config/cloudrouter.toml.example`
 - `INSTALL.md`
 - `install-manifest.json`
 
@@ -378,23 +378,23 @@ Release packages include the runtime files needed to start Claw Router:
 
 `archive` and `container` release assets remain portable `.tar.gz` or `.zip` packages.
 
-Every package manifest includes an `installConfiguration` section with the runtime TOML, template, database policy, required fields, password path, first-start commands, and next steps. Native installer manifests also include `nativeInstall`, a machine-readable final install layout covering paths such as `/usr/bin/clawrouter`, `/usr/lib/sdkwork/router/portal/dist`, `/etc/sdkwork/router/clawrouter.toml`, `/etc/sdkwork/router/database.secret`, `/lib/systemd/system/clawrouter.service`, service startup policy, permissions, and operator commands. Use these fields for deployment automation instead of scraping `INSTALL.md`.
+Every package manifest includes an `installConfiguration` section with the runtime TOML, template, database policy, required fields, password path, first-start commands, and next steps. Native installer manifests also include `nativeInstall`, a machine-readable final install layout covering paths such as `/usr/bin/cloudrouter`, `/usr/lib/sdkwork/router/portal/dist`, `/etc/sdkwork/router/cloudrouter.toml`, `/etc/sdkwork/router/database.secret`, `/lib/systemd/system/cloudrouter.service`, service startup policy, permissions, and operator commands. Use these fields for deployment automation instead of scraping `INSTALL.md`.
 
-Never package or commit `.env.release`. Archive deployments may generate it on the target host, while Linux service deployments use `/etc/sdkwork/router/clawrouter.env` for protected process overrides and `/etc/sdkwork/router/clawrouter.toml` for the primary runtime configuration. Keep `PORTAL_PUBLIC_*` values browser-safe; do not put database passwords, provider secrets, or admin credentials in `PORTAL_PUBLIC_*` variables.
+Never package or commit `.env.release`. Archive deployments may generate it on the target host, while Linux service deployments use `/etc/sdkwork/router/cloudrouter.env` for protected process overrides and `/etc/sdkwork/router/cloudrouter.toml` for the primary runtime configuration. Keep `PORTAL_PUBLIC_*` values browser-safe; do not put database passwords, provider secrets, or admin credentials in `PORTAL_PUBLIC_*` variables.
 
 ## 4. Database Policy
 
 `desktop` packages use SQLite by default:
 
 ```text
-Windows: %USERPROFILE%/.sdkwork/router/data/clawrouter.sqlite
-Linux: ~/.sdkwork/router/data/clawrouter.sqlite
-macOS: ~/.sdkwork/router/data/clawrouter.sqlite
+Windows: %USERPROFILE%/.sdkwork/router/data/cloudrouter.sqlite
+Linux: ~/.sdkwork/router/data/cloudrouter.sqlite
+macOS: ~/.sdkwork/router/data/cloudrouter.sqlite
 ```
 
-This desktop SQLite policy is independent from the explicit product server PostgreSQL development profile used by `pnpm dev`, `pnpm dev:server`, and `pnpm dev:server:postgres` for the backend service runtime. Gateway-backed client commands such as `pnpm dev:desktop` and `pnpm dev:desktop:sqlite` run through `sdkwork-api-cloud-gateway` and do not start a Claw Router backend service. Desktop packages must not require PostgreSQL for first run unless the user explicitly configures an external database.
+This desktop SQLite policy is independent from the explicit product server PostgreSQL development profile used by `pnpm dev`, `pnpm dev:server`, and `pnpm dev:server:postgres` for the backend service runtime. Gateway-backed client commands such as `pnpm dev:desktop` and `pnpm dev:desktop:sqlite` run through `sdkwork-api-cloud-gateway` and do not start a Cloud Router backend service. Desktop packages must not require PostgreSQL for first run unless the user explicitly configures an external database.
 
-`archive`, `service`, and `container` packages use PostgreSQL by default. Configure PostgreSQL with structured TOML fields: `host`, `port`, `database`, `username`, and either `password_file` or `password`. Keep `password_file` as the normal production path. Use direct `password` only when `clawrouter.toml` is protected as a secret-bearing file.
+`archive`, `service`, and `container` packages use PostgreSQL by default. Configure PostgreSQL with structured TOML fields: `host`, `port`, `database`, `username`, and either `password_file` or `password`. Keep `password_file` as the normal production path. Use direct `password` only when `cloudrouter.toml` is protected as a secret-bearing file.
 
 Redis is part of the same runtime TOML standard. It is enabled and required by default for `archive`, `service`, and `container` server packages:
 
@@ -408,7 +408,7 @@ database = 0
 # url = "redis://redis.example.com:6379/0"
 # password_file = "/etc/sdkwork/router/redis.secret"
 # password = "change-me"
-key_prefix = "clawrouter"
+key_prefix = "cloudrouter"
 tls = false
 max_connections = 16
 connect_timeout_millis = 2000
@@ -429,33 +429,33 @@ Run initialization before first startup whenever possible:
 Linux/macOS package root:
 
 ```bash
-./bin/clawrouterctl status
-./bin/clawrouterctl ensure
-./bin/clawrouterctl refresh-catalog --force
+./bin/cloudrouterctl status
+./bin/cloudrouterctl ensure
+./bin/cloudrouterctl refresh-catalog --force
 ```
 
 Windows package root:
 
 ```powershell
-.\bin\clawrouterctl.exe status
-.\bin\clawrouterctl.exe ensure
-.\bin\clawrouterctl.exe refresh-catalog --force
+.\bin\cloudrouterctl.exe status
+.\bin\cloudrouterctl.exe ensure
+.\bin\cloudrouterctl.exe refresh-catalog --force
 ```
 
 Native Linux `.deb` install path:
 
 ```bash
-/usr/bin/clawrouterctl status
-/usr/bin/clawrouterctl ensure
-/usr/bin/clawrouterctl refresh-catalog --force
+/usr/bin/cloudrouterctl status
+/usr/bin/cloudrouterctl ensure
+/usr/bin/cloudrouterctl refresh-catalog --force
 ```
 
 Native macOS `.pkg` desktop install path:
 
 ```bash
-/opt/sdkwork/router/bin/clawrouterctl status
-/opt/sdkwork/router/bin/clawrouterctl ensure
-/opt/sdkwork/router/bin/clawrouterctl refresh-catalog --force
+/opt/sdkwork/router/bin/cloudrouterctl status
+/opt/sdkwork/router/bin/cloudrouterctl ensure
+/opt/sdkwork/router/bin/cloudrouterctl refresh-catalog --force
 ```
 
 Installer commands print JSON. A successful first install can include:
@@ -477,19 +477,19 @@ Catalog refresh success returns:
 Start from a package root:
 
 ```bash
-./bin/clawrouter
+./bin/cloudrouter
 ```
 
 Windows:
 
 ```powershell
-.\bin\clawrouter.exe
+.\bin\cloudrouter.exe
 ```
 
 Linux service:
 
 ```bash
-sudo systemctl status clawrouter --no-pager
+sudo systemctl status cloudrouter --no-pager
 ```
 
 Default portal:
@@ -549,13 +549,13 @@ Use `--cert-name`, `--cert-root`, `--output`, or `--output-root` when your certi
 Example:
 
 ```bash
-tar -xzf clawrouter-linux-x64-container-0.3.0.tar.gz -C /opt/sdkwork/router
+tar -xzf cloudrouter-linux-x64-container-0.3.0.tar.gz -C /opt/sdkwork/router
 cd /opt/sdkwork/router
-docker build -f container/Containerfile -t clawrouter:0.3.0 .
+docker build -f container/Containerfile -t cloudrouter:0.3.0 .
 docker run --rm -p 3900:3900 \
-  -v "$PWD/config/clawrouter.toml.example:/etc/sdkwork/router/clawrouter.toml:ro" \
+  -v "$PWD/config/cloudrouter.toml.example:/etc/sdkwork/router/cloudrouter.toml:ro" \
   -v "$PWD/secrets/postgres-password:/run/secrets/sdkwork/router/postgres-password:ro" \
-  clawrouter:0.3.0
+  cloudrouter:0.3.0
 ```
 
 Service and container deployments must mount runtime configuration, logs, and mutable data as writable resources, and must inject database credentials through protected TOML files, password files, or platform secrets. `SDKWORK_DATABASE_URL` remains available only for explicit operator override.
@@ -566,9 +566,9 @@ Service and container deployments must mount runtime configuration, logs, and mu
 2. Back up the database and runtime configuration.
 3. Stop the old service.
 4. Install or extract the new release package.
-5. Preserve target-local `/etc/sdkwork/router/clawrouter.env`, `/etc/sdkwork/router/database.secret`, `.env.release` if used by archive deployments, and runtime TOML files.
+5. Preserve target-local `/etc/sdkwork/router/cloudrouter.env`, `/etc/sdkwork/router/database.secret`, `.env.release` if used by archive deployments, and runtime TOML files.
 6. For Linux service packages, start the service and let systemd run `ensure` and `refresh-catalog --force`.
-7. For archive/manual deployments, run `clawrouterctl ensure` and `clawrouterctl refresh-catalog --force`.
+7. For archive/manual deployments, run `cloudrouterctl ensure` and `cloudrouterctl refresh-catalog --force`.
 8. Start the new version and check `/healthz` and `/readyz`.
 
 ## 9. Troubleshooting
@@ -580,5 +580,5 @@ Service and container deployments must mount runtime configuration, logs, and mu
 - `catalog_error`: model catalog path, version, or content validation failed.
 - `commerce_error`: commerce bootstrap schema or seed initialization failed.
 - `/healthz` succeeds but `/readyz` fails: the edge process is up, but gateway/admin/app/portal upstreams or database dependencies are not ready.
-- Linux service exits immediately: check `/etc/sdkwork/router/clawrouter.toml`, `/etc/sdkwork/router/database.secret`, `/etc/sdkwork/router/clawrouter.env`, and `journalctl -u clawrouter`.
+- Linux service exits immediately: check `/etc/sdkwork/router/cloudrouter.toml`, `/etc/sdkwork/router/database.secret`, `/etc/sdkwork/router/cloudrouter.env`, and `journalctl -u cloudrouter`.
 

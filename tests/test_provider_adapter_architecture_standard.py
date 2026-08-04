@@ -5,10 +5,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_provider_adapter_workspace_boundaries_are_explicit():
-    assert (ROOT / "crates/sdkwork-claw-provider-adapter-contract").is_dir()
-    assert (ROOT / "crates/sdkwork-claw-provider-adapter-registry").is_dir()
-    assert (ROOT / "crates/sdkwork-claw-provider-adapter").is_dir()
-    assert (ROOT / "crates/sdkwork-claw-provider-adapter-http").is_dir()
+    assert (ROOT / "crates/sdkwork-cloudrouter-provider-adapter-contract").is_dir()
+    assert (ROOT / "crates/sdkwork-cloudrouter-provider-adapter-registry").is_dir()
+    assert (ROOT / "crates/sdkwork-cloudrouter-provider-adapter").is_dir()
+    assert (ROOT / "crates/sdkwork-cloudrouter-provider-adapter-http").is_dir()
 
     for provider in ("tencent-cloud", "alicloud"):
         assert (ROOT / f"crates/provider-adapters/{provider}/Cargo.toml").is_file()
@@ -17,29 +17,29 @@ def test_provider_adapter_workspace_boundaries_are_explicit():
 
 
 def test_gateway_does_not_depend_on_concrete_provider_adapter_packages():
-    gateway_cargo = (ROOT / "crates/sdkwork-clawrouter-edge-runtime/Cargo.toml").read_text(
+    gateway_cargo = (ROOT / "crates/sdkwork-cloudrouter-edge-runtime/Cargo.toml").read_text(
         encoding="utf-8"
     )
 
     assert "sdkwork-provider-adapter-vidu" not in gateway_cargo
     assert "sdkwork-provider-adapter-tencent-cloud" not in gateway_cargo
     assert "sdkwork-provider-adapter-alicloud" not in gateway_cargo
-    assert "sdkwork-claw-provider-adapter-registry" in gateway_cargo
-    assert "sdkwork-claw-provider-adapter-http" in gateway_cargo
+    assert "sdkwork-cloudrouter-provider-adapter-registry" in gateway_cargo
+    assert "sdkwork-cloudrouter-provider-adapter-http" in gateway_cargo
 
 
 def test_adapter_service_owns_concrete_provider_package_composition():
     service_cargo = (
-        ROOT / "services/sdkwork-claw-provider-adapter/Cargo.toml"
+        ROOT / "services/sdkwork-cloudrouter-provider-adapter/Cargo.toml"
     ).read_text(encoding="utf-8")
     service_providers = (
-        ROOT / "services/sdkwork-claw-provider-adapter/src/providers.rs"
+        ROOT / "services/sdkwork-cloudrouter-provider-adapter/src/providers.rs"
     ).read_text(encoding="utf-8")
     service_runtime = (
-        ROOT / "services/sdkwork-claw-provider-adapter/src/runtime.rs"
+        ROOT / "services/sdkwork-cloudrouter-provider-adapter/src/runtime.rs"
     ).read_text(encoding="utf-8")
     service_tests = (
-        ROOT / "services/sdkwork-claw-provider-adapter/tests/http_adapter_service.rs"
+        ROOT / "services/sdkwork-cloudrouter-provider-adapter/tests/http_adapter_service.rs"
     ).read_text(encoding="utf-8")
 
     assert "sdkwork-provider-adapter-vidu" not in service_cargo
@@ -81,17 +81,17 @@ def test_provider_adapter_architecture_document_records_runtime_contract():
         "selected account provider code",
         "falls back to direct HTTP with the selected account's base URL and rendered credentials",
         "protects both `/internal/adapter-manifest` and provider invocation routes with gateway bearer authentication",
-        "SDKWORK_CLAW_PROVIDER_ADAPTER_BIND",
+        "SDKWORK_CLOUDROUTER_PROVIDER_ADAPTER_BIND",
         "[services.provider_adapter].bind",
-        "Configure the service-side bearer token with `SDKWORK_CLAW_PROVIDER_ADAPTER_GATEWAY_TOKEN` or `SDKWORK_CLAW_PROVIDER_ADAPTER_GATEWAY_TOKEN_FILE`",
+        "Configure the service-side bearer token with `SDKWORK_CLOUDROUTER_PROVIDER_ADAPTER_GATEWAY_TOKEN` or `SDKWORK_CLOUDROUTER_PROVIDER_ADAPTER_GATEWAY_TOKEN_FILE`",
         "Adapter routes are opt-in",
         "The gateway expands `manifest.providers[*].providerCodes x endpoints` into explicit registry routes",
         '"adapterBaseUrl"',
         '"manifest"',
         "adapter_base_url",
         "manifest_file",
-        "SDKWORK_CLAW_PROVIDER_ADAPTER_BASE_URL",
-        "SDKWORK_CLAW_PROVIDER_ADAPTER_MANIFEST_FILE",
+        "SDKWORK_CLOUDROUTER_PROVIDER_ADAPTER_BASE_URL",
+        "SDKWORK_CLOUDROUTER_PROVIDER_ADAPTER_MANIFEST_FILE",
         "`json` and `json_file` remain the backward-compatible full configuration entry points",
         "the gateway treats this as explicit manifest discovery",
         "GET /internal/adapter-manifest",
@@ -99,7 +99,7 @@ def test_provider_adapter_architecture_document_records_runtime_contract():
         "without `adapter_base_url`, the gateway does not contact the adapter service",
         "An empty manifest expands to zero routes",
         "internal HTTP adapter service",
-        "Its default router is built from `services/sdkwork-claw-provider-adapter/src/providers.rs`",
+        "Its default router is built from `services/sdkwork-cloudrouter-provider-adapter/src/providers.rs`",
         "`router_with_default_adapters` is the service-level composition entry point",
         "The default manifest is intentionally conservative",
         "Tencent Cloud can declare `video.start_end2video` because that endpoint represents a non-standard Tencent Cloud access path",
@@ -108,7 +108,7 @@ def test_provider_adapter_architecture_document_records_runtime_contract():
         "ProviderAdapterRegistry",
         "`invocationShape` is route metadata",
         "gateway-resolved provider-native passthrough credentials from either static runtime config or the selected database account-pool channel",
-        "SDKWORK_CLAW_PROVIDER_ADAPTER_JSON",
+        "SDKWORK_CLOUDROUTER_PROVIDER_ADAPTER_JSON",
         "crates/provider-adapters/",
         "Vidu official standard API is not an adapter package",
         "Tencent Cloud can declare adapter endpoints whose standard paths live under `/vidu/...`",
@@ -119,17 +119,17 @@ def test_provider_adapter_architecture_document_records_runtime_contract():
 
 
 def test_provider_native_passthrough_uses_explicit_registry_hit_before_adapter():
-    passthrough = (ROOT / "crates/sdkwork-clawrouter-edge-runtime/src/passthrough.rs").read_text(
+    passthrough = (ROOT / "crates/sdkwork-cloudrouter-edge-runtime/src/passthrough.rs").read_text(
         encoding="utf-8"
     )
     matcher = (
-        ROOT / "crates/sdkwork-claw-provider-adapter-registry/src/matcher.rs"
+        ROOT / "crates/sdkwork-cloudrouter-provider-adapter-registry/src/matcher.rs"
     ).read_text(encoding="utf-8")
     route_config = (
-        ROOT / "crates/sdkwork-claw-provider-adapter-registry/src/config.rs"
+        ROOT / "crates/sdkwork-cloudrouter-provider-adapter-registry/src/config.rs"
     ).read_text(encoding="utf-8")
     snapshot = (
-        ROOT / "crates/sdkwork-claw-provider-adapter-registry/src/snapshot.rs"
+        ROOT / "crates/sdkwork-cloudrouter-provider-adapter-registry/src/snapshot.rs"
     ).read_text(encoding="utf-8")
 
     assert "ProviderNativeAdapterRuntime" in passthrough
@@ -154,7 +154,7 @@ def test_provider_native_passthrough_uses_explicit_registry_hit_before_adapter()
 
 def test_provider_native_database_channel_route_adapter_tests_lock_route_order():
     gateway_tests = (
-        ROOT / "crates/sdkwork-clawrouter-edge-runtime/tests/provider_passthrough_route.rs"
+        ROOT / "crates/sdkwork-cloudrouter-edge-runtime/tests/provider_passthrough_route.rs"
     ).read_text(encoding="utf-8")
 
     assert (

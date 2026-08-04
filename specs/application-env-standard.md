@@ -1,13 +1,13 @@
-# Claw Router Application Environment Contract
+# Cloud Router Application Environment Contract
 
 - Status: Current
 - Contract version: 4
-- Application: `sdkwork-clawrouter`
+- Application: `sdkwork-cloudrouter`
 - Authority: `../../sdkwork-specs/CONFIG_SPEC.md`,
   `../../sdkwork-specs/ENVIRONMENT_SPEC.md`, and
   `../../sdkwork-specs/APP_RUNTIME_TOPOLOGY_SPEC.md`
 
-This contract narrows the SDKWork environment standards for the Claw Router
+This contract narrows the SDKWork environment standards for the Cloud Router
 application. It defines only active profiles and namespaces. Runtime code,
 environment writers, deployment manifests, and checked-in templates must use
 the same values.
@@ -18,10 +18,10 @@ The four application lifecycle axes are independent:
 
 | Axis | Process key | Allowed values |
 | --- | --- | --- |
-| Config profile | `SDKWORK_CLAW_ROUTER_CONFIG_PROFILE` | `dev`, `test`, `staging`, `prod` |
-| Environment | `SDKWORK_CLAW_ROUTER_ENVIRONMENT` | `development`, `test`, `staging`, `production` |
-| Deployment profile | `SDKWORK_CLAW_ROUTER_DEPLOYMENT_PROFILE` | `standalone`, `cloud` |
-| Runtime target | `SDKWORK_CLAW_ROUTER_RUNTIME_TARGET` | `browser`, `desktop`, `server`, `container`, `test-runner` |
+| Config profile | `SDKWORK_CLOUDROUTER_ROUTER_CONFIG_PROFILE` | `dev`, `test`, `staging`, `prod` |
+| Environment | `SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT` | `development`, `test`, `staging`, `production` |
+| Deployment profile | `SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE` | `standalone`, `cloud` |
+| Runtime target | `SDKWORK_CLOUDROUTER_ROUTER_RUNTIME_TARGET` | `browser`, `desktop`, `server`, `container`, `test-runner` |
 
 Implementations read these application-scoped keys exclusively. A profile
 writer must replace invalid or stale lifecycle assignments with the canonical
@@ -31,14 +31,14 @@ values for the selected lifecycle; it must not preserve alternate aliases.
 
 | Lifecycle artifact | Config profile | Environment | Deployment profile | Runtime target |
 | --- | --- | --- | --- | --- |
-| `apps/sdkwork-clawrouter-pc/.env.development` | `dev` | `development` | `standalone` | `browser` |
-| `apps/sdkwork-clawrouter-pc/.env.production` | `prod` | `production` | `standalone` | `browser` |
+| `apps/sdkwork-cloudrouter-pc/.env.development` | `dev` | `development` | `standalone` | `browser` |
+| `apps/sdkwork-cloudrouter-pc/.env.production` | `prod` | `production` | `standalone` | `browser` |
 | `.env.release` | `prod` | `production` | `standalone` | `server` |
 | Kubernetes workloads | `prod` | `production` | `cloud` | `container` |
 
 The checked-in `*.example` files are non-secret templates. Host profile files
 without the `.example` suffix are generated or refreshed by
-`scripts/dev/claw-router-application-env.mjs` and are not committed.
+`scripts/dev/cloud-router-application-env.mjs` and are not committed.
 
 ## Topology Profiles
 
@@ -58,8 +58,8 @@ authority for profile lookup and surface bindings.
 ## Browser And Process Visibility
 
 - `VITE_*` is the only namespace available to browser application code.
-- `SDKWORK_CLAW_ROUTER_*`, `SDKWORK_CLAW_BROWSER_DEV_PROXY_*`, and
-  `SDKWORK_CLAW_EDGE_*` are process-side values and must not be emitted into a
+- `SDKWORK_CLOUDROUTER_ROUTER_*`, `SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_*`, and
+  `SDKWORK_CLOUDROUTER_EDGE_*` are process-side values and must not be emitted into a
   browser runtime bag.
 - `PORTAL_PUBLIC_*` values are release-host inputs. The edge renderer maps only
   approved public values to their `VITE_*` runtime equivalents.
@@ -76,16 +76,16 @@ authority for profile lookup and surface bindings.
 ## Shared Infrastructure Namespace
 
 Database settings use the workspace-wide `SDKWORK_DATABASE_*` authority across
-all applications and embedded modules. Claw Router-owned Redis settings remain
-under `SDKWORK_CLAW_REDIS_*`; database identity must never use an application
+all applications and embedded modules. Cloud Router-owned Redis settings remain
+under `SDKWORK_CLOUDROUTER_REDIS_*`; database identity must never use an application
 prefix.
 
 ## Lifecycle Commands
 
 ```bash
-node scripts/ensure-claw-router-env.mjs --lifecycle dev
-node scripts/ensure-claw-router-env.mjs --lifecycle build
-node scripts/ensure-claw-router-env.mjs --lifecycle start
+node scripts/ensure-cloud-router-env.mjs --lifecycle dev
+node scripts/ensure-cloud-router-env.mjs --lifecycle build
+node scripts/ensure-cloud-router-env.mjs --lifecycle start
 pnpm check:application-env
 pnpm topology:validate
 ```

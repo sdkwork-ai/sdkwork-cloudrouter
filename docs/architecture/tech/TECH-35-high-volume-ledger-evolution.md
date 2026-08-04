@@ -1,12 +1,12 @@
 # High-Volume Ledger And Trace Evolution
 
 Status: proposed, implementation review required before PostgreSQL DDL cutover
-Owner: claw-router-platform / clawrouter-data
+Owner: cloud-router-platform / cloudrouter-data
 Updated: 2026-07-12
 
 ## Scope
 
-This decision governs the four fastest-growing Claw Router tables:
+This decision governs the four fastest-growing Cloud Router tables:
 
 - `ai_request_trace`
 - `ai_routing_decision_log`
@@ -120,8 +120,8 @@ benchmarks are not acceptance evidence.
 ## Migration Contract
 
 ```yaml
-migration_id: clawrouter-high-volume-archive-v1
-owner: clawrouter-data
+migration_id: cloudrouter-high-volume-archive-v1
+owner: cloudrouter-data
 scope:
   producers:
     - router-service
