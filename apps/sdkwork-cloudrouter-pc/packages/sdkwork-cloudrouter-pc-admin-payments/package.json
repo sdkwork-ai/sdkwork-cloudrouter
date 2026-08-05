@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@sdkwork/appbase-pc-react": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-core": "workspace:*",
     "@sdkwork/cloudroutes-pc-commons": "workspace:*",
     "@sdkwork/payment-pc-admin-provider": "workspace:*",

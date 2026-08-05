@@ -881,7 +881,7 @@ export function ApiKeysView() {
         {showSuccessModal && createdKeys.length > 0 && (
           <div
             className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-            onClick={(event) => {
+            onPointerDown={(event) => {
               if (event.target === event.currentTarget) {
                 closeSuccessDialog();
               }

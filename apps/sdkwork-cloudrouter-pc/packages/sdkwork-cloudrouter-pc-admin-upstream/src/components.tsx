@@ -130,7 +130,7 @@ export function Modal({
   return (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm"
-      onClick={(event) => {
+      onPointerDown={(event) => {
         if (closeOnClickOutside && event.target === event.currentTarget) {
           onClose();
         }
@@ -166,7 +166,7 @@ export function SidePanel({ title, subtitle, children, onClose, closeOnClickOuts
   const { t } = useTranslation();
   return (
     <div className="fixed inset-0 z-[60] flex justify-end bg-slate-950/30 backdrop-blur-[1px]">
-      <button type="button" aria-label={t('admin.upstream.common.aria.close')} className="min-w-0 flex-1" onClick={() => { if (closeOnClickOutside) onClose(); }} />
+      <button type="button" aria-label={t('admin.upstream.common.aria.close')} className="min-w-0 flex-1" onPointerDown={() => { if (closeOnClickOutside) onClose(); }} />
       <aside className="flex h-full w-full max-w-3xl flex-col border-l border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#171717]">
         <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 dark:border-white/10">
           <div className="min-w-0">

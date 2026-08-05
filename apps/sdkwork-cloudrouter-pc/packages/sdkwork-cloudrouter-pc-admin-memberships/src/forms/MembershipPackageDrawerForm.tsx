@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { SdkworkBaseDataCurrencySelect } from '@sdkwork/appbase-pc-react';
 import {
   MembershipFormActions,
   MembershipFormFrame,
@@ -19,10 +20,12 @@ import type {
   MembershipsAdminPlanItem,
 } from '../membershipsService';
 
-const baseCurrencyCodeOptions = [
+// Base-data currency options (sdkwork-appbase base_currency) with a minimal
+// fallback set so the select keeps working during a base-data outage.
+const fallbackCurrencyCodeOptions = [
   { value: 'CNY', label: 'CNY' },
   { value: 'USD', label: 'USD' },
-];
+] as const;
 
 const baseDurationDayValues = ['1', '7', '30', '90', '365'];
 
@@ -73,7 +76,6 @@ export function MembershipPackageDrawerForm({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const currencyCodeOptions = includeCurrentOption(baseCurrencyCodeOptions, currencyCode);
   const durationDayOptions = includeCurrentOption(
     membershipDurationDayOptions(t, translationKeyPrefix),
     durationDays,
@@ -148,12 +150,18 @@ export function MembershipPackageDrawerForm({
       ) : null}
       <div className="grid grid-cols-2 gap-4">
         <MembershipTextField label={t(`${translationKeyPrefix}.form.price`, 'Price')} value={priceAmount} onChange={setPriceAmount} placeholder="69.90" />
-        <MembershipSelectField
-          label={t(`${translationKeyPrefix}.form.currency`, 'Currency')}
-          value={currencyCode}
-          options={currencyCodeOptions}
-          onChange={(value) => setCurrencyCode(normalizeCurrencyCodeValue(value))}
-        />
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            {t(`${translationKeyPrefix}.form.currency`, 'Currency')}
+          </span>
+          <SdkworkBaseDataCurrencySelect
+            emptyText={t(`${translationKeyPrefix}.form.currencyEmpty`, 'No matching currency')}
+            fallbackOptions={fallbackCurrencyCodeOptions}
+            searchPlaceholder={t(`${translationKeyPrefix}.form.currencySearch`, 'Search currency by code or name')}
+            value={currencyCode}
+            onValueChange={(value) => setCurrencyCode(normalizeCurrencyCodeValue(value))}
+          />
+        </label>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <MembershipSelectField

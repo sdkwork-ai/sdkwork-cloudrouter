@@ -375,7 +375,7 @@ async fn list_recharge_records(
             COALESCE(NULLIF(u.email, ''), NULLIF(u.username, ''), '') AS user_name,
             COALESCE(pa.amount, '0')::text AS amount,
             COALESCE(NULLIF(pa.callback_payload::jsonb ->> 'points', ''), '0') AS point_amount,
-            COALESCE(NULLIF(pm.display_name, ''), NULLIF(pa.provider, ''), 'manual') AS method,
+            COALESCE(NULLIF(pm.display_name, ''), NULLIF(pa.payment_method, ''), 'manual') AS method,
             COALESCE(NULLIF(o.status, ''), NULLIF(pa.status, ''), 'pending') AS status,
             COALESCE(pa.paid_at, pa.updated_at, pa.created_at, o.updated_at::timestamptz, o.created_at::timestamptz)::text AS time,
             COUNT(*) OVER() AS total
@@ -388,7 +388,7 @@ async fn list_recharge_records(
         LEFT JOIN commerce_payment_method pm
           ON pm.tenant_id = pa.tenant_id
          AND (pm.organization_id IS NULL OR pa.organization_id IS NULL OR pm.organization_id = pa.organization_id)
-         AND pm.method_key = pa.provider
+         AND pm.method_key = pa.payment_method
         LEFT JOIN iam_user u
           ON u.id = pa.owner_user_id::text
          AND u.tenant_id = pa.tenant_id
@@ -432,7 +432,7 @@ async fn load_recharge_record(
             COALESCE(NULLIF(u.email, ''), NULLIF(u.username, ''), '') AS user_name,
             COALESCE(pa.amount, '0')::text AS amount,
             COALESCE(NULLIF(pa.callback_payload::jsonb ->> 'points', ''), '0') AS point_amount,
-            COALESCE(NULLIF(pm.display_name, ''), NULLIF(pa.provider, ''), 'manual') AS method,
+            COALESCE(NULLIF(pm.display_name, ''), NULLIF(pa.payment_method, ''), 'manual') AS method,
             COALESCE(NULLIF(o.status, ''), NULLIF(pa.status, ''), 'pending') AS status,
             COALESCE(pa.paid_at, pa.updated_at, pa.created_at, o.updated_at::timestamptz, o.created_at::timestamptz)::text AS time
         FROM commerce_payment_attempt pa
@@ -444,7 +444,7 @@ async fn load_recharge_record(
         LEFT JOIN commerce_payment_method pm
           ON pm.tenant_id = pa.tenant_id
          AND (pm.organization_id IS NULL OR pa.organization_id IS NULL OR pm.organization_id = pa.organization_id)
-         AND pm.method_key = pa.provider
+         AND pm.method_key = pa.payment_method
         LEFT JOIN iam_user u
           ON u.id = pa.owner_user_id::text
          AND u.tenant_id = pa.tenant_id
@@ -1785,7 +1785,7 @@ async fn list_payment_attempts(
         SELECT
             pa.id::text AS id,
             COALESCE(NULLIF(o.order_no, ''), NULLIF(pa.out_trade_no, ''), '') AS order_no,
-            pa.provider AS provider,
+            pa.provider_code AS provider,
             COALESCE(pa.amount, '0')::text AS amount,
             pa.status AS status,
             COALESCE(pa.paid_at, pa.updated_at, pa.created_at)::text AS created_at,

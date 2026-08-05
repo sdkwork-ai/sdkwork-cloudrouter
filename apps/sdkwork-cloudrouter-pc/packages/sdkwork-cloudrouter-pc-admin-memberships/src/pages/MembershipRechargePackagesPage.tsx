@@ -2,11 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pencil, Plus, Save, Trash2 } from 'lucide-react';
 import { formatMoney, formatMoneyDigits } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
+import { SdkworkSearchableSelect } from '@sdkwork/appbase-pc-react';
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
 import { MembershipDrawer } from '../components/MembershipDrawer';
 import {
   MembershipFormError,
-  MembershipSelectField,
   MembershipTextField,
 } from '../components/MembershipFormControls';
 import {
@@ -226,12 +226,18 @@ export function MembershipRechargePackagesPage() {
 
               {settingsError ? <MembershipFormError message={settingsError} /> : null}
 
-              <MembershipSelectField
-                label={t('admin.commerce.memberships.rechargeSettings.baseCurrencyCode', 'Base currency')}
-                value={settingsDraft.baseCurrencyCode}
-                options={supportedCurrencyCodes.map((value) => ({ value }))}
-                onChange={(value) => setSettingsDraft((current) => ({ ...current, baseCurrencyCode: (value as string) || 'CNY' }))}
-              />
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  {t('admin.commerce.memberships.rechargeSettings.baseCurrencyCode', 'Base currency')}
+                </span>
+                <SdkworkSearchableSelect
+                  emptyText={t('admin.commerce.memberships.rechargeSettings.currencyEmpty', 'No matching currency')}
+                  options={supportedCurrencyCodes.map((value) => ({ value, label: value }))}
+                  searchPlaceholder={t('admin.commerce.memberships.rechargeSettings.currencySearch', 'Search currency by code')}
+                  value={settingsDraft.baseCurrencyCode}
+                  onValueChange={(value) => setSettingsDraft((current) => ({ ...current, baseCurrencyCode: value || 'CNY' }))}
+                />
+              </label>
               <MembershipTextField
                 label={t('admin.commerce.memberships.rechargeSettings.basePointsPerCny', 'Base points per CNY')}
                 value={settingsDraft.basePointsPerCny}

@@ -250,48 +250,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "system",
         "site.runtime.retrieve",
     ),
-    HttpRoute::public(
-        HttpMethod::Get,
-        "/app/v3/api/memberships/package_groups",
-        "memberships",
-        "packageGroups.list",
-    ),
-    HttpRoute::public(
-        HttpMethod::Get,
-        "/app/v3/api/memberships/package_groups/{packageGroupId}",
-        "memberships",
-        "packageGroups.retrieve",
-    ),
-    HttpRoute::public(
-        HttpMethod::Get,
-        "/app/v3/api/memberships/package_groups/{packageGroupId}/packages",
-        "memberships",
-        "packageGroups.packages.list",
-    ),
-    HttpRoute::public(
-        HttpMethod::Get,
-        "/app/v3/api/memberships/packages",
-        "memberships",
-        "packages.list",
-    ),
-    HttpRoute::public(
-        HttpMethod::Get,
-        "/app/v3/api/memberships/packages/{packageId}",
-        "memberships",
-        "packages.retrieve",
-    ),
-    HttpRoute::public(
-        HttpMethod::Get,
-        "/app/v3/api/memberships/plans",
-        "memberships",
-        "plans.list",
-    ),
-    HttpRoute::public(
-        HttpMethod::Get,
-        "/app/v3/api/memberships/benefits",
-        "memberships",
-        "benefits.list",
-    ),
 ];
 
 pub fn http_route_manifest() -> HttpRouteManifest {

@@ -36,7 +36,7 @@
       "pathPrefix": null,
       "mountOrder": 2,
       "componentRef": "crates/sdkwork-routes-cloudrouter-app-api/specs/component.spec.json",
-      "routeManifestRef": "crates/sdkwork-routes-cloudrouter-app-api/src/manifest.rs",
+      "routeManifestRef": "crates/sdkwork-routes-cloudrouter-app-api/src/http_route_manifest.rs",
       "sourceRef": "crates/sdkwork-routes-cloudrouter-app-api/Cargo.toml"
     },
     {
@@ -47,7 +47,7 @@
       "pathPrefix": null,
       "mountOrder": 3,
       "componentRef": "crates/sdkwork-routes-cloudrouter-backend-api/specs/component.spec.json",
-      "routeManifestRef": "crates/sdkwork-routes-cloudrouter-backend-api/src/manifest.rs",
+      "routeManifestRef": "crates/sdkwork-routes-cloudrouter-backend-api/src/http_route_manifest.rs",
       "sourceRef": "crates/sdkwork-routes-cloudrouter-backend-api/Cargo.toml"
     },
     {

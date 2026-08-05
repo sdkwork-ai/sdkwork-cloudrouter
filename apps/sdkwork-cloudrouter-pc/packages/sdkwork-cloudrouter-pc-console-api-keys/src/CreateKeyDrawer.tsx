@@ -193,7 +193,7 @@ export function CreateKeyDrawer({
   return (
     <div
       className="fixed inset-0 z-[100] flex justify-end bg-black/50 backdrop-blur-sm animate-in fade-in duration-300"
-      onClick={(event) => {
+      onPointerDown={(event) => {
         if (closeOnClickOutside && event.target === event.currentTarget) {
           onClose();
         }

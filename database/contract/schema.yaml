@@ -6,7 +6,7 @@ contract_version: 0.4.0
 owner_team: cloud-router-platform
 compliance_level: L2
 engines:
-- postgres
+  - postgres
 table_prefix: ai_
 source_registry: docs/schema-registry/sdkwork-cloudrouter.tables.yaml
 tables:

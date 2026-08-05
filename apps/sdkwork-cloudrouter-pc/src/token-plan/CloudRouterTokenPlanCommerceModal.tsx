@@ -189,11 +189,11 @@ export function CloudRouterTokenPlanTokenBankPurchaseModal({
     <SdkworkPointsRechargeDialog
       copy={{
         account: t("points_recharge.account", "Cloud Router"),
-        agreement: t("points_recharge.agreement", "支付前请阅读并同意《算力元充值服务协议》"),
-        agreementAccepted: t("points_recharge.agreement_accepted", "您已同意《算力元充值服务协议》"),
-        agreementRequired: t("points_recharge.agreement_required", "请先同意算力元充值服务协议"),
+        agreement: t("points_recharge.agreement", "支付前请阅读并同意《算力积分充值服务协议》"),
+        agreementAccepted: t("points_recharge.agreement_accepted", "您已同意《算力积分充值服务协议》"),
+        agreementRequired: t("points_recharge.agreement_required", "请先同意算力积分充值服务协议"),
         close: t("close", "关闭"),
-        completed: t("points_recharge.completed", "支付完成，算力元已到账"),
+        completed: t("points_recharge.completed", "支付完成，算力积分已到账"),
         confirmPayment: t("points_recharge.confirm_payment", "同意并支付"),
         creatingPayment: t("points_recharge.creating_payment", "正在生成支付二维码..."),
         emptyPackages: t("points_recharge.empty_packages", "暂无可用充值套餐"),
@@ -205,21 +205,21 @@ export function CloudRouterTokenPlanTokenBankPurchaseModal({
         expiresIn: t("points_recharge.expires_in", "订单剩余支付时间"),
         loadFailed: t("points_recharge.load_failed", "充值套餐加载失败"),
         loadingPackages: t("points_recharge.loading_packages", "正在加载充值套餐..."),
-        myPoints: t("points_recharge.my_points", "我的算力元"),
+        myPoints: t("points_recharge.my_points", "我的算力积分"),
         notice: t(
           "points_recharge.notice",
-          "温馨提示：算力元不可兑换会员、不可转赠，也不可提现；充值后有效期以平台规则为准。",
+          "温馨提示：算力积分不可兑换会员、不可转赠，也不可提现；充值后有效期以平台规则为准。",
         ),
         paymentUnavailable: t("points_recharge.payment_unavailable", "支付暂不可用"),
         paymentUnavailableDescription: t(
           "points_recharge.payment_unavailable_description",
           "暂时无法生成支付二维码，请稍后重试。",
         ),
-        pointsUnit: t("points_recharge.points_unit", "算力元"),
+        pointsUnit: t("points_recharge.points_unit", "算力积分"),
         retry: t("points_recharge.retry", "重新加载"),
         retryPayment: t("points_recharge.retry_payment", "重新支付"),
         scanPrompt: t("points_recharge.scan_prompt", "请扫码完成支付"),
-        title: t("points_recharge.title", "算力元购买"),
+        title: t("points_recharge.title", "算力积分购买"),
       }}
       currentPoints={currentTokenBank}
       isOpen={isOpen}
@@ -270,7 +270,7 @@ function CloudRouterTokenPlanCommerceModal({
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             exit={{ opacity: 0 }}
             initial={{ opacity: 0 }}
-            onClick={() => {
+            onPointerDown={() => {
               if (closeOnClickOutside) {
                 onClose();
               }

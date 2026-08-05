@@ -11,6 +11,10 @@ import { useCallback, useEffect, useState, type FormEvent, type InputHTMLAttribu
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, X } from 'lucide-react';
 import {
+  SdkworkBaseDataCountrySelect,
+  SdkworkBaseDataCurrencySelect,
+} from '@sdkwork/appbase-pc-react';
+import {
   readAdminResourceRecordList,
   type AdminResourceRecord,
 } from '@sdkwork/cloudroutes-pc-commons';
@@ -23,8 +27,6 @@ import type {
   UpdateRouteRuleCommand,
 } from '@sdkwork/payment-backend-sdk';
 import {
-  backendBaseDataCountriesList,
-  backendBaseDataCurrenciesList,
   backendBaseDataDictionariesList,
   backendPaymentProviderAccountsList,
   backendPaymentsChannelsList,
@@ -271,7 +273,7 @@ export function PaymentDialog({ title, description, saving, onClose, onSubmit, c
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
       role="presentation"
-      onClick={(event) => {
+      onPointerDown={(event) => {
         if (!saving && event.target === event.currentTarget) {
           onClose();
         }
@@ -341,7 +343,7 @@ export function PaymentConfirmDialog({ title, description, confirmLabel, process
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
       role="presentation"
-      onClick={(event) => {
+      onPointerDown={(event) => {
         if (!processing && event.target === event.currentTarget) {
           onClose();
         }
@@ -441,6 +443,23 @@ function useProviderAccountOptions() {
   return options;
 }
 
+// Provider account select label: locale display name first, then the canonical
+// account name, then the machine account no. Locale maps are filled by payment
+// locale seeds; operator-edited names come through the account update flow.
+function providerAccountOptionLabel(
+  account: AdminResourceRecord,
+  language?: string,
+): string {
+  const i18nMap = account.accountNameI18n;
+  const localized =
+    typeof i18nMap === 'object' && i18nMap !== null && language
+      ? (i18nMap as Record<string, unknown>)[language]
+      : undefined;
+  const name = String(localized ?? account.accountName ?? account.accountNo ?? '');
+  const providerCode = account.providerCode ?? '';
+  return providerCode ? `${name} (${providerCode})` : name;
+}
+
 function useMethodOptions() {
   const [options, setOptions] = useState<AdminResourceRecord[]>([]);
   useEffect(() => {
@@ -512,16 +531,6 @@ function useBaseDataRecords(load: () => Promise<unknown>): AdminResourceRecord[]
 
 const ACTIVE_STATUS = 'active';
 
-function useCurrencyRecords(): AdminResourceRecord[] | null {
-  const load = useCallback(() => backendBaseDataCurrenciesList({ page: 1, pageSize: 200, status: ACTIVE_STATUS }), []);
-  return useBaseDataRecords(load);
-}
-
-function useCountryRecords(): AdminResourceRecord[] | null {
-  const load = useCallback(() => backendBaseDataCountriesList({ page: 1, pageSize: 200, status: ACTIVE_STATUS }), []);
-  return useBaseDataRecords(load);
-}
-
 function useDictionaryRecords(typeCode: string): AdminResourceRecord[] | null {
   const load = useCallback(
     () => backendBaseDataDictionariesList({ typeCode, page: 1, pageSize: 200, status: ACTIVE_STATUS }),
@@ -546,14 +555,6 @@ function dictionaryOptionLabel(record: AdminResourceRecord): string {
   return String(record.localizedName ?? record.name ?? record.entryCode ?? '');
 }
 
-/** Keeps an unknown persisted value selectable when editing legacy records. */
-function includeCurrentOption(options: SelectOption[], currentValue: string, legacyLabel: string): SelectOption[] {
-  if (!currentValue) return options;
-  const known = options.some((option) => (typeof option === 'string' ? option : option.value) === currentValue);
-  if (known) return options;
-  return [{ label: `${currentValue} (${legacyLabel})`, value: currentValue }, ...options];
-}
-
 /** Dictionary-driven options with the built-in constants as fallback. */
 function useDictionaryOptions(typeCode: string, fallback: readonly string[]): SelectOption[] {
   const records = useDictionaryRecords(typeCode);
@@ -567,36 +568,16 @@ function useDictionaryOptions(typeCode: string, fallback: readonly string[]): Se
 }
 
 /**
- * Currency/country picker backed by the base-data service. When the service
- * is unreachable the field degrades to the previous free-text input, so the
- * admin surface stays functional during a dependency outage.
+ * Field label wrapper matching the dialog text/select field layout for the
+ * shared searchable base-data selects (which do not render their own label).
  */
-function BaseDataSelectOrText({ label, records, optionLabel, optionValue, value, onChange, maxLength, placeholder, required }: {
-  label: string;
-  records: AdminResourceRecord[] | null;
-  optionLabel: (record: AdminResourceRecord) => string;
-  optionValue: (record: AdminResourceRecord) => string;
-  value: string;
-  onChange: (value: string) => void;
-  maxLength?: number;
-  placeholder?: string;
-  required?: boolean;
-}) {
-  const { t } = useTranslation();
-  if (records === null) {
-    return (
-      <TextField label={label} maxLength={maxLength} placeholder={placeholder} required={required} value={value} onChange={onChange} />
-    );
-  }
-  let options: SelectOption[] = records.map((record) => ({
-    label: optionLabel(record),
-    value: optionValue(record),
-  }));
-  options = includeCurrentOption(options, value, t('admin.commerce.payments.form.legacyValue', 'legacy'));
-  if (!value) {
-    options = [{ label: '', value: '' }, ...options];
-  }
-  return <SelectField label={label} value={value} onChange={onChange} options={options} />;
+function BaseDataFieldLabel({ children, label }: { children: ReactNode; label: string }) {
+  return (
+    <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+      <span>{label}</span>
+      <div className="mt-1.5">{children}</div>
+    </label>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -615,8 +596,6 @@ export function MethodFormDialog({ mode, initial, saving, onClose, onSubmit }: M
   const { t } = useTranslation();
   const [values, setValues] = useState<PaymentMethodFormValues>(() => initial ?? emptyMethodFormValues());
   const [error, setError] = useState<string | null>(null);
-  const currencyRecords = useCurrencyRecords();
-  const countryRecords = useCountryRecords();
   const providerOptions = useDictionaryOptions('payment_provider', PROVIDER_CODES);
   const statusOptions = useDictionaryOptions('payment_status', STATUS_OPTIONS);
   const scopeOptions = useDictionaryOptions('payment_scope', SCOPE_OPTIONS);
@@ -648,26 +627,26 @@ export function MethodFormDialog({ mode, initial, saving, onClose, onSubmit }: M
       <SelectField disabled={mode === 'edit'} label={t('admin.commerce.payments.methods.form.providerCode', 'Provider')} value={values.providerCode} onChange={(value) => set('providerCode', value)} options={providerOptions} />
       <SelectField label={t('admin.commerce.payments.methods.form.status', 'Status')} value={values.status} onChange={(value) => set('status', value)} options={statusOptions} translateOptionPrefix="admin.commerce.payments.value.status" />
       <SelectField label={t('admin.commerce.payments.methods.form.scope', 'Scope')} value={values.scope} onChange={(value) => set('scope', value)} options={scopeOptions} translateOptionPrefix="admin.commerce.payments.value.scope" />
-      <BaseDataSelectOrText
-        label={t('admin.commerce.payments.methods.form.currencyCode', 'Currency code')}
-        records={currencyRecords}
-        optionLabel={currencyOptionLabel}
-        optionValue={(record) => String(record.code ?? '')}
-        maxLength={3}
-        placeholder="CNY"
-        value={values.currencyCode}
-        onChange={(value) => set('currencyCode', value)}
-      />
-      <BaseDataSelectOrText
-        label={t('admin.commerce.payments.methods.form.countryCode', 'Country code')}
-        records={countryRecords}
-        optionLabel={countryOptionLabel}
-        optionValue={(record) => String(record.alpha2 ?? '')}
-        maxLength={2}
-        placeholder="CN"
-        value={values.countryCode}
-        onChange={(value) => set('countryCode', value)}
-      />
+      <BaseDataFieldLabel label={t('admin.commerce.payments.methods.form.currencyCode', 'Currency code')}>
+        <SdkworkBaseDataCurrencySelect
+          emptyText={t('admin.commerce.payments.form.currencyEmpty', 'No matching currency')}
+          maxLength={3}
+          placeholder="CNY"
+          searchPlaceholder={t('admin.commerce.payments.form.currencySearch', 'Search currency by code or name')}
+          value={values.currencyCode}
+          onValueChange={(value) => set('currencyCode', value)}
+        />
+      </BaseDataFieldLabel>
+      <BaseDataFieldLabel label={t('admin.commerce.payments.methods.form.countryCode', 'Country code')}>
+        <SdkworkBaseDataCountrySelect
+          emptyText={t('admin.commerce.payments.form.countryEmpty', 'No matching country')}
+          maxLength={2}
+          placeholder="CN"
+          searchPlaceholder={t('admin.commerce.payments.form.countrySearch', 'Search country by code or name')}
+          value={values.countryCode}
+          onValueChange={(value) => set('countryCode', value)}
+        />
+      </BaseDataFieldLabel>
       <TextField label={t('admin.commerce.payments.methods.form.sortOrder', 'Sort order')} pattern="[0-9]*" type="number" value={values.sortOrder} onChange={(value) => set('sortOrder', value)} />
       {error ? <FormError message={error} /> : null}
     </PaymentDialog>
@@ -685,13 +664,11 @@ export interface ChannelFormDialogProps {
 }
 
 export function ChannelFormDialog({ saving, onClose, onSubmit }: ChannelFormDialogProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [values, setValues] = useState<PaymentChannelFormValues>(emptyChannelFormValues);
   const [error, setError] = useState<string | null>(null);
   const providerAccounts = useProviderAccountOptions();
   const methods = useMethodOptions();
-  const currencyRecords = useCurrencyRecords();
-  const countryRecords = useCountryRecords();
   const providerOptions = useDictionaryOptions('payment_provider', PROVIDER_CODES);
   const sceneOptions = useDictionaryOptions('payment_scene', SCENE_OPTIONS);
   const statusOptions = useDictionaryOptions('payment_status', STATUS_OPTIONS);
@@ -719,32 +696,30 @@ export function ChannelFormDialog({ saving, onClose, onSubmit }: ChannelFormDial
     <PaymentDialog onClose={onClose} onSubmit={handleSubmit} saving={saving} title={t('admin.commerce.payments.channels.create.title', 'Create payment channel')}>
       <TextField label={t('admin.commerce.payments.channels.form.channelNo', 'Channel no')} required value={values.channelNo} onChange={(value) => set('channelNo', value)} />
       <TextField label={t('admin.commerce.payments.channels.form.channelName', 'Channel name')} value={values.channelName} onChange={(value) => set('channelName', value)} />
-      <SelectField label={t('admin.commerce.payments.channels.form.providerAccountId', 'Provider account')} value={values.providerAccountId} onChange={(value) => set('providerAccountId', value)} options={providerAccounts.map((account) => ({ label: `${String(account.accountNo ?? account.id ?? '')} (${String(account.providerCode ?? '')})`, value: String(account.id ?? '') }))} />
+      <SelectField label={t('admin.commerce.payments.channels.form.providerAccountId', 'Provider account')} value={values.providerAccountId} onChange={(value) => set('providerAccountId', value)} options={providerAccounts.map((account) => ({ label: providerAccountOptionLabel(account, i18n.language), value: String(account.id ?? '') }))} />
       <SelectField label={t('admin.commerce.payments.channels.form.methodId', 'Payment method')} value={values.methodId} onChange={(value) => set('methodId', value)} options={methods.map((method) => ({ label: String(method.methodKey ?? method.id ?? ''), value: String(method.id ?? '') }))} />
       <SelectField label={t('admin.commerce.payments.channels.form.providerCode', 'Provider')} value={values.providerCode} onChange={(value) => set('providerCode', value)} options={providerOptions} />
       <SelectField label={t('admin.commerce.payments.channels.form.sceneCode', 'Scene')} value={values.sceneCode} onChange={(value) => set('sceneCode', value)} options={sceneOptions} translateOptionPrefix="admin.commerce.payments.value.scene" />
-      <BaseDataSelectOrText
-        label={t('admin.commerce.payments.channels.form.currencyCode', 'Currency code')}
-        records={currencyRecords}
-        optionLabel={currencyOptionLabel}
-        optionValue={(record) => String(record.code ?? '')}
-        maxLength={3}
-        placeholder="CNY"
-        required
-        value={values.currencyCode}
-        onChange={(value) => set('currencyCode', value)}
-      />
-      <BaseDataSelectOrText
-        label={t('admin.commerce.payments.channels.form.countryCode', 'Country code')}
-        records={countryRecords}
-        optionLabel={countryOptionLabel}
-        optionValue={(record) => String(record.alpha2 ?? '')}
-        maxLength={2}
-        placeholder="CN"
-        required
-        value={values.countryCode}
-        onChange={(value) => set('countryCode', value)}
-      />
+      <BaseDataFieldLabel label={t('admin.commerce.payments.channels.form.currencyCode', 'Currency code')}>
+        <SdkworkBaseDataCurrencySelect
+          emptyText={t('admin.commerce.payments.form.currencyEmpty', 'No matching currency')}
+          maxLength={3}
+          placeholder="CNY"
+          searchPlaceholder={t('admin.commerce.payments.form.currencySearch', 'Search currency by code or name')}
+          value={values.currencyCode}
+          onValueChange={(value) => set('currencyCode', value)}
+        />
+      </BaseDataFieldLabel>
+      <BaseDataFieldLabel label={t('admin.commerce.payments.channels.form.countryCode', 'Country code')}>
+        <SdkworkBaseDataCountrySelect
+          emptyText={t('admin.commerce.payments.form.countryEmpty', 'No matching country')}
+          maxLength={2}
+          placeholder="CN"
+          searchPlaceholder={t('admin.commerce.payments.form.countrySearch', 'Search country by code or name')}
+          value={values.countryCode}
+          onValueChange={(value) => set('countryCode', value)}
+        />
+      </BaseDataFieldLabel>
       <TextField label={t('admin.commerce.payments.channels.form.priority', 'Priority')} type="number" value={values.priority} onChange={(value) => set('priority', value)} />
       <TextField label={t('admin.commerce.payments.channels.form.sortOrder', 'Sort order')} type="number" value={values.sortOrder} onChange={(value) => set('sortOrder', value)} />
       <SelectField label={t('admin.commerce.payments.channels.form.status', 'Status')} value={values.status} onChange={(value) => set('status', value)} options={statusOptions} translateOptionPrefix="admin.commerce.payments.value.status" />
@@ -770,8 +745,6 @@ export function RouteRuleFormDialog({ mode, initial, saving, onClose, onSubmit }
   const [values, setValues] = useState<RouteRuleFormValues>(() => initial ?? emptyRouteRuleFormValues());
   const [error, setError] = useState<string | null>(null);
   const channels = useChannelOptions();
-  const currencyRecords = useCurrencyRecords();
-  const countryRecords = useCountryRecords();
   const statusOptions = useDictionaryOptions('payment_status', STATUS_OPTIONS);
   const set = <K extends keyof RouteRuleFormValues>(key: K, value: RouteRuleFormValues[K]) => setValues((prev) => ({ ...prev, [key]: value }));
 
@@ -799,26 +772,26 @@ export function RouteRuleFormDialog({ mode, initial, saving, onClose, onSubmit }
       <TextField disabled={mode === 'edit'} label={t('admin.commerce.payments.routeRules.form.ruleNo', 'Rule no')} required value={values.ruleNo} onChange={(value) => set('ruleNo', value)} />
       <TextField label={t('admin.commerce.payments.routeRules.form.priority', 'Priority')} type="number" value={values.priority} onChange={(value) => set('priority', value)} />
       <TextField label={t('admin.commerce.payments.routeRules.form.purchaseType', 'Purchase type')} value={values.purchaseType} onChange={(value) => set('purchaseType', value)} />
-      <BaseDataSelectOrText
-        label={t('admin.commerce.payments.routeRules.form.countryCode', 'Country code')}
-        records={countryRecords}
-        optionLabel={countryOptionLabel}
-        optionValue={(record) => String(record.alpha2 ?? '')}
-        maxLength={2}
-        placeholder="CN"
-        value={values.countryCode}
-        onChange={(value) => set('countryCode', value)}
-      />
-      <BaseDataSelectOrText
-        label={t('admin.commerce.payments.routeRules.form.currencyCode', 'Currency code')}
-        records={currencyRecords}
-        optionLabel={currencyOptionLabel}
-        optionValue={(record) => String(record.code ?? '')}
-        maxLength={3}
-        placeholder="CNY"
-        value={values.currencyCode}
-        onChange={(value) => set('currencyCode', value)}
-      />
+      <BaseDataFieldLabel label={t('admin.commerce.payments.routeRules.form.countryCode', 'Country code')}>
+        <SdkworkBaseDataCountrySelect
+          emptyText={t('admin.commerce.payments.form.countryEmpty', 'No matching country')}
+          maxLength={2}
+          placeholder="CN"
+          searchPlaceholder={t('admin.commerce.payments.form.countrySearch', 'Search country by code or name')}
+          value={values.countryCode}
+          onValueChange={(value) => set('countryCode', value)}
+        />
+      </BaseDataFieldLabel>
+      <BaseDataFieldLabel label={t('admin.commerce.payments.routeRules.form.currencyCode', 'Currency code')}>
+        <SdkworkBaseDataCurrencySelect
+          emptyText={t('admin.commerce.payments.form.currencyEmpty', 'No matching currency')}
+          maxLength={3}
+          placeholder="CNY"
+          searchPlaceholder={t('admin.commerce.payments.form.currencySearch', 'Search currency by code or name')}
+          value={values.currencyCode}
+          onValueChange={(value) => set('currencyCode', value)}
+        />
+      </BaseDataFieldLabel>
       <TextField label={t('admin.commerce.payments.routeRules.form.clientPlatform', 'Client platform')} value={values.clientPlatform} onChange={(value) => set('clientPlatform', value)} />
       <TextField label={t('admin.commerce.payments.routeRules.form.amountMin', 'Amount min')} value={values.amountMin} onChange={(value) => set('amountMin', value)} />
       <TextField label={t('admin.commerce.payments.routeRules.form.amountMax', 'Amount max')} value={values.amountMax} onChange={(value) => set('amountMax', value)} />
@@ -844,11 +817,10 @@ export interface ReconciliationRunFormDialogProps {
 }
 
 export function ReconciliationRunFormDialog({ saving, onClose, onSubmit }: ReconciliationRunFormDialogProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [values, setValues] = useState<ReconciliationRunFormValues>(emptyReconciliationRunFormValues);
   const [error, setError] = useState<string | null>(null);
   const providerAccounts = useProviderAccountOptions();
-  const currencyRecords = useCurrencyRecords();
   const providerOptions = useDictionaryOptions('payment_provider', PROVIDER_CODES);
   const reconciliationTypeOptions = useDictionaryOptions('reconciliation_type', RECONCILIATION_TYPE_OPTIONS);
   const set = <K extends keyof ReconciliationRunFormValues>(key: K, value: ReconciliationRunFormValues[K]) => setValues((prev) => ({ ...prev, [key]: value }));
@@ -870,21 +842,20 @@ export function ReconciliationRunFormDialog({ saving, onClose, onSubmit }: Recon
   return (
     <PaymentDialog onClose={onClose} onSubmit={handleSubmit} saving={saving} title={t('admin.commerce.payments.reconciliationRuns.create.title', 'Create reconciliation run')}>
       <SelectField label={t('admin.commerce.payments.reconciliationRuns.form.providerCode', 'Provider')} value={values.providerCode} onChange={(value) => set('providerCode', value)} options={providerOptions} />
-      <SelectField label={t('admin.commerce.payments.reconciliationRuns.form.providerAccountId', 'Provider account')} value={values.providerAccountId} onChange={(value) => set('providerAccountId', value)} options={providerAccounts.map((account) => ({ label: `${String(account.accountNo ?? account.id ?? '')} (${String(account.providerCode ?? '')})`, value: String(account.id ?? '') }))} />
+      <SelectField label={t('admin.commerce.payments.reconciliationRuns.form.providerAccountId', 'Provider account')} value={values.providerAccountId} onChange={(value) => set('providerAccountId', value)} options={providerAccounts.map((account) => ({ label: providerAccountOptionLabel(account, i18n.language), value: String(account.id ?? '') }))} />
       <SelectField label={t('admin.commerce.payments.reconciliationRuns.form.reconciliationType', 'Reconciliation type')} value={values.reconciliationType} onChange={(value) => set('reconciliationType', value)} options={reconciliationTypeOptions} translateOptionPrefix="admin.commerce.payments.value.reconciliationType" />
       <TextField label={t('admin.commerce.payments.reconciliationRuns.form.periodStart', 'Period start')} required type="datetime-local" value={values.periodStart} onChange={(value) => set('periodStart', value)} />
       <TextField label={t('admin.commerce.payments.reconciliationRuns.form.periodEnd', 'Period end')} required type="datetime-local" value={values.periodEnd} onChange={(value) => set('periodEnd', value)} />
-      <BaseDataSelectOrText
-        label={t('admin.commerce.payments.reconciliationRuns.form.currencyCode', 'Currency code')}
-        records={currencyRecords}
-        optionLabel={currencyOptionLabel}
-        optionValue={(record) => String(record.code ?? '')}
-        maxLength={3}
-        placeholder="CNY"
-        required
-        value={values.currencyCode}
-        onChange={(value) => set('currencyCode', value)}
-      />
+      <BaseDataFieldLabel label={t('admin.commerce.payments.reconciliationRuns.form.currencyCode', 'Currency code')}>
+        <SdkworkBaseDataCurrencySelect
+          emptyText={t('admin.commerce.payments.form.currencyEmpty', 'No matching currency')}
+          maxLength={3}
+          placeholder="CNY"
+          searchPlaceholder={t('admin.commerce.payments.form.currencySearch', 'Search currency by code or name')}
+          value={values.currencyCode}
+          onValueChange={(value) => set('currencyCode', value)}
+        />
+      </BaseDataFieldLabel>
       {error ? <FormError message={error} /> : null}
     </PaymentDialog>
   );

@@ -20,10 +20,12 @@ import {
   createPaymentProviderAdminController,
   type PaymentProviderAdminCapabilities,
 } from '@sdkwork/payment-pc-admin-provider';
+import {
+  useSdkworkBaseDataCountryOptions,
+  useSdkworkBaseDataCurrencyOptions,
+} from '@sdkwork/appbase-pc-react';
 import { getCloudRouterPaymentBackendService } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import {
-  backendBaseDataCountriesList,
-  backendBaseDataCurrenciesList,
   backendPaymentChannelsCreate,
   backendPaymentDevSandboxTrigger,
   backendPaymentMethodsCreate,
@@ -121,23 +123,9 @@ function PaymentProviderAccountsAdmin() {
     [],
   );
 
-  const countryOptions = usePaymentBaseDataOptions(
-    useCallback(() => backendBaseDataCountriesList({ page: 1, pageSize: 200, status: 'active' }), []),
-    (record) => {
-      const code = String(record.alpha2 ?? '');
-      const name = String(record.name ?? '');
-      return { value: code, label: name ? `${code} - ${name}` : code };
-    },
-  );
+  const countryOptions = useSdkworkBaseDataCountryOptions();
 
-  const currencyOptions = usePaymentBaseDataOptions(
-    useCallback(() => backendBaseDataCurrenciesList({ page: 1, pageSize: 200, status: 'active' }), []),
-    (record) => {
-      const code = String(record.code ?? '');
-      const name = String(record.localizedName ?? record.name ?? '');
-      return { value: code, label: name ? `${code} - ${name}` : code };
-    },
-  );
+  const currencyOptions = useSdkworkBaseDataCurrencyOptions();
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col gap-3 overflow-hidden" data-admin-payments-provider-workspace>
@@ -182,7 +170,7 @@ type PaymentDialogState =
 const PENDING_PAYMENT_STATUSES = new Set(['created', 'pending', 'processing']);
 
 function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentResourceTab }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [dialog, setDialog] = useState<PaymentDialogState>(null);
   const [detailIntentId, setDetailIntentId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -195,6 +183,10 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
     const formatScene = formatEnumCell(t, 'admin.commerce.payments.value.scene');
     const formatReconciliationType = formatEnumCell(t, 'admin.commerce.payments.value.reconciliationType');
     const formatCapabilities = formatEnumArrayCell(t, 'admin.commerce.payments.value.capability');
+    const formatLocalizedMethodName = (value: unknown, record: AdminResourceRecord) =>
+      formatLocalizedName(i18n, record, 'displayNameI18n', value);
+    const formatLocalizedChannelName = (value: unknown, record: AdminResourceRecord) =>
+      formatLocalizedName(i18n, record, 'channelNameI18n', value);
     return [
     createPaymentListSection({
       id: 'providers',
@@ -208,7 +200,7 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       load: backendPaymentsProvidersList,
       columns: [
         { key: 'providerCode', label: t('admin.col.provider', 'Provider') },
-        { key: 'displayName', label: t('admin.col.name', 'Name') },
+        { key: 'displayName', label: t('admin.col.name', 'Name'), format: formatLocalizedMethodName },
         { key: 'providerType', label: t('admin.col.type', 'Type') },
         { key: 'supportedCountries', label: t('admin.col.countries', 'Countries'), format: formatArrayCell },
         { key: 'supportedCurrencies', label: t('admin.col.currencies', 'Currencies'), format: formatArrayCell },
@@ -239,7 +231,7 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       }],
       columns: [
         { key: 'methodKey', label: t('admin.commerce.payments.col.methodKey', 'Method Key') },
-        { key: 'displayName', label: t('admin.col.name', 'Name') },
+        { key: 'displayName', label: t('admin.col.name', 'Name'), format: formatLocalizedMethodName },
         { key: 'providerCode', label: t('admin.col.provider', 'Provider') },
         { key: 'scope', label: t('admin.col.scope', 'Scope'), format: formatScope },
         { key: 'currencyCode', label: t('admin.col.currency', 'Currency') },
@@ -266,7 +258,7 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       },
       columns: [
         { key: 'channelNo', label: t('admin.col.channel', 'Channel') },
-        { key: 'channelName', label: t('admin.commerce.payments.col.channelName', 'Channel Name') },
+        { key: 'channelName', label: t('admin.commerce.payments.col.channelName', 'Channel Name'), format: formatLocalizedChannelName },
         { key: 'methodId', label: t('admin.commerce.payments.col.methodId', 'Method ID') },
         { key: 'providerCode', label: t('admin.col.provider', 'Provider') },
         { key: 'providerAccountId', label: t('admin.col.account', 'Account') },
@@ -440,7 +432,7 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       help: sectionHelp(t, 'reconciliationRuns', 6, 3),
     }),
     ];
-  }, [t]);
+  }, [t, i18n]);
 
   async function submitMethodForm(values: PaymentMethodFormValues, state: Extract<PaymentDialogState, { kind: 'method-create' } | { kind: 'method-edit' }>) {
     if (state.kind === 'method-create') {
@@ -696,31 +688,6 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
  * unreachable; the host passes an empty array in that case so the form
  * degrades to free-text country/currency inputs.
  */
-function usePaymentBaseDataOptions(
-  load: () => Promise<unknown>,
-  mapRecord: (record: AdminResourceRecord) => { value: string; label: string },
-): { value: string; label: string }[] | null {
-  const [options, setOptions] = useState<{ value: string; label: string }[] | null>(null);
-  useEffect(() => {
-    let active = true;
-    void load()
-      .then((result) => {
-        if (active) setOptions(readAdminResourceRecordList(result).map(mapRecord));
-      })
-      .catch((error) => {
-        if (active) {
-          console.warn('[base-data] provider account country/currency options unavailable, falling back to free-text inputs', error);
-          setOptions(null);
-        }
-      });
-    return () => {
-      active = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  return options;
-}
-
 function usePaymentProviderAdminCapabilities(): PaymentProviderAdminCapabilities {
   const [permissionScope, setPermissionScope] = useState(() => readPortalPermissionScope());
 
@@ -783,6 +750,38 @@ function formatArrayCell(value: unknown): string {
     return value.map((item) => String(item)).join(', ');
   }
   return value === null || value === undefined ? '-' : String(value);
+}
+
+/**
+ * Resolves a localized reference-data name from the backend-provided
+ * `*I18n` locale map (`{"zh-CN": "...", "en-US": "..."}`) using the current
+ * i18n language, falling back to the base display name when the locale key
+ * is absent. Locale candidates try the full tag first, then the language
+ * part (`zh-CN` -> `zh`).
+ */
+function formatLocalizedName(
+  i18n: { language?: string },
+  record: AdminResourceRecord,
+  i18nKey: string,
+  fallback: unknown,
+): string {
+  const fallbackText = fallback === null || fallback === undefined ? '-' : String(fallback);
+  const map = record[i18nKey];
+  if (!map || typeof map !== 'object') {
+    return fallbackText;
+  }
+  const language = i18n.language ?? '';
+  const candidates = [language, language.split('-')[0]];
+  for (const candidate of candidates) {
+    if (!candidate) {
+      continue;
+    }
+    const localized = (map as Record<string, unknown>)[candidate];
+    if (typeof localized === 'string' && localized.trim()) {
+      return localized;
+    }
+  }
+  return fallbackText;
 }
 
 type PaymentTranslate = ReturnType<typeof useTranslation>['t'];

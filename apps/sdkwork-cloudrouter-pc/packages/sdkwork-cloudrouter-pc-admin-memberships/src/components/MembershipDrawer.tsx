@@ -26,7 +26,7 @@ export function MembershipDrawer({
   return (
     <div
       className="fixed inset-0 z-50 flex justify-end bg-black/40"
-      onClick={(event) => {
+      onPointerDown={(event) => {
         if (closeOnClickOutside && event.target === event.currentTarget) {
           onClose();
         }

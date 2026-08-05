@@ -309,7 +309,7 @@ export function GroupPicker({
           aria-modal="true"
           aria-label={labels.title ?? 'Select groups'}
           className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
-          onClick={(event) => {
+          onPointerDown={(event) => {
             if (closeOnClickOutside && event.target === event.currentTarget) {
               cancel();
             }

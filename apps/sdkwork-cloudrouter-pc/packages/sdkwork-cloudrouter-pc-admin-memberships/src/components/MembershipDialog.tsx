@@ -29,7 +29,7 @@ export function MembershipDialog({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6"
-      onClick={(event) => {
+      onPointerDown={(event) => {
         if (closeOnClickOutside && event.target === event.currentTarget) {
           onClose();
         }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SdkworkBaseDataCurrencySelect } from '@sdkwork/appbase-pc-react';
 import {
   type CouponOfferCreateFormValues,
   type CouponOfferBenefitKind,
@@ -187,12 +188,13 @@ export function CouponOfferCreateDrawerForm({
             />
           </MarketingField>
           <MarketingField label={t('admin.marketing.coupon.form.currencyCode', 'Currency')} required>
-            <input
-              type="text"
-              value={values.currencyCode}
-              onChange={(event) => update('currencyCode', event.target.value.toUpperCase())}
+            <SdkworkBaseDataCurrencySelect
               className={marketingInputClassName}
+              emptyText={t('admin.marketing.coupon.form.currencyEmpty', 'No matching currency')}
+              onValueChange={(value) => update('currencyCode', value)}
               placeholder={t('admin.marketing.coupon.form.currencyCodePlaceholder', 'CNY')}
+              searchPlaceholder={t('admin.marketing.coupon.form.currencySearch', 'Search currency by code or name')}
+              value={values.currencyCode}
             />
           </MarketingField>
         </>
@@ -224,12 +226,13 @@ export function CouponOfferCreateDrawerForm({
             />
           </MarketingField>
           <MarketingField label={t('admin.marketing.coupon.form.currencyCode', 'Currency')} required>
-            <input
-              type="text"
-              value={values.currencyCode}
-              onChange={(event) => update('currencyCode', event.target.value.toUpperCase())}
+            <SdkworkBaseDataCurrencySelect
               className={marketingInputClassName}
+              emptyText={t('admin.marketing.coupon.form.currencyEmpty', 'No matching currency')}
+              onValueChange={(value) => update('currencyCode', value)}
               placeholder={t('admin.marketing.coupon.form.currencyCodePlaceholder', 'CNY')}
+              searchPlaceholder={t('admin.marketing.coupon.form.currencySearch', 'Search currency by code or name')}
+              value={values.currencyCode}
             />
           </MarketingField>
         </>

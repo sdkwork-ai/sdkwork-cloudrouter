@@ -170,6 +170,25 @@ fn transaction_center_mainstream_payment_supplier_codes_match_aggregate_contract
             "transaction center provider account mutations must allow mainstream provider {provider}"
         );
     }
+    assert!(
+        supplier_codes.contains("\"sandbox\""),
+        "transaction center provider allowlist must accept the seeded sandbox provider"
+    );
+    let method_codes = API
+        .split("const PAYMENT_METHOD_CODES")
+        .nth(1)
+        .expect("transaction center method code allowlist");
+    for method in [
+        "stripe_card",
+        "alipay_qr",
+        "wechat_native",
+        "sandbox_test",
+    ] {
+        assert!(
+            method_codes.contains(&format!("\"{method}\"")),
+            "transaction center method allowlist must accept seeded catalog method {method}"
+        );
+    }
     for extension in [
         "unionpay",
         "yeepay",
@@ -277,8 +296,18 @@ fn transaction_center_payment_provider_and_method_projections_match_generated_it
         );
     }
     assert!(
-        source.contains("NULLIF(provider, 'wallet_balance')"),
+        source.contains("NULLIF(provider_code, 'wallet_balance')"),
         "postgres payment method projection must expose wallet_balance providerCode as null to match the SDK enum"
+    );
+    assert!(
+        source.contains("'providerCode', NULLIF(provider_code, 'wallet_balance')")
+            && source.contains("'sortOrder', sort_order")
+            && source.contains("'methodKey', method_key")
+            && source.contains("'scope', scope")
+            && source.contains("'currencyCode', currency_code")
+            && source.contains("'countryCode', country_code")
+            && source.contains("'displayNameI18n', display_name_i18n"),
+        "postgres payment method projection must expose canonical method columns (provider_code, sort_order, scope, currency, country, localized names)"
     );
 }
 
@@ -312,27 +341,42 @@ fn transaction_center_payment_provider_projection_exposes_only_canonical_api_fie
 }
 
 #[test]
-fn transaction_center_payment_runtime_projection_standardizes_method_provider_and_subject_codes() {
+fn transaction_center_payment_runtime_projection_uses_canonical_columns() {
     let source = POSTGRES_STORE;
     for expected in [
-        "WHEN pi.provider = 'stripe' THEN 'card'",
-        "WHEN pa.provider = 'stripe' THEN 'card'",
-        "WHEN pi.provider = 'card' THEN 'stripe'",
-        "WHEN pa.provider = 'card' THEN 'stripe'",
-        "WHEN pi.provider IN ('wechat', 'wechatpay') THEN 'wechat_pay'",
-        "WHEN pa.provider IN ('wechat', 'wechatpay') THEN 'wechat_pay'",
+        "'paymentMethod', pi.payment_method",
+        "'methodCode', pi.payment_method",
+        "'providerCode', pi.provider_code",
+        "'paymentIntentNo', pi.payment_intent_no",
+        "'ownerUserId', pi.owner_user_id",
+        "'methodCode', pa.payment_method",
+        "'providerCode', pa.provider_code",
+        "'attemptNo', COALESCE(pa.attempt_no, pa.out_trade_no)",
+        "'paymentIntentId', pa.payment_intent_id",
+        "'providerTransactionId', pa.provider_transaction_id",
         "WHEN 'membership' THEN 'membership_purchase'",
     ] {
         assert!(
             source.contains(expected),
-            "postgres payment runtime projection must include normalization fragment {expected}"
+            "postgres payment runtime projection must expose canonical column fragment {expected}"
         );
     }
-    assert!(
-        !source.contains("'providerCode', pi.provider")
-            && !source.contains("'providerCode', pa.provider")
-            && !source.contains("pi.provider AS providerCode")
-            && !source.contains("pa.provider AS providerCode"),
-        "postgres payment runtime projection must not expose raw provider as providerCode"
-    );
+    for forbidden in [
+        "pi.provider =",
+        "pa.provider =",
+        "pi.provider AS",
+        "pa.provider AS",
+        "pi.provider, pi.id",
+        "'provider', pi.provider,",
+        "'provider', pa.provider,",
+        "'providerCode', pi.provider,",
+        "'providerCode', pa.provider,",
+        "'sort_weight', sort_weight",
+        "'provider', provider,",
+    ] {
+        assert!(
+            !source.contains(forbidden),
+            "postgres payment runtime projection must not reference legacy column fragment {forbidden}"
+        );
+    }
 }

@@ -108,6 +108,11 @@ where
     let identity = match ApiKeyIdentity::from_headers_and_uri(&headers, &uri) {
         Ok(identity) => identity,
         Err(error) => {
+            tracing::warn!(
+                path = %uri.path(),
+                error = ?error,
+                "gateway balance query rejected: missing or malformed api key identity"
+            );
             return openai_error(
                 StatusCode::BAD_REQUEST,
                 "invalid_request",
@@ -116,10 +121,29 @@ where
             );
         }
     };
+    tracing::info!(
+        path = %uri.path(),
+        api_key_id = identity.api_key_id(),
+        credential_source = ?identity.credential_source(),
+        "gateway balance query: api key identity parsed"
+    );
     let context = match authenticate(&state, &identity) {
         Ok(context) => context,
-        Err(error) => return *error,
+        Err(error) => {
+            tracing::warn!(
+                path = %uri.path(),
+                api_key_id = identity.api_key_id(),
+                "gateway balance query rejected: api key authentication failed"
+            );
+            return *error;
+        }
     };
+    tracing::info!(
+        tenant_id = context.tenant_id,
+        organization_id = context.organization_id,
+        user_id = context.user_id,
+        "gateway balance query authenticated"
+    );
     match state
         .store
         .retrieve_token_bank_balance(
@@ -129,20 +153,40 @@ where
         )
         .await
     {
-        Ok(balance) => Json(GatewayBalanceResponse {
-            object: "balance".to_owned(),
-            balance: balance.available,
-            frozen: balance.frozen,
-            unit: balance.unit,
-        })
-        .into_response(),
-        Err(message) => openai_error(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "balance_query_failed",
-            "api_error",
-            message,
-        )
-        .into_response(),
+        Ok(balance) => {
+            tracing::info!(
+                tenant_id = context.tenant_id,
+                organization_id = context.organization_id,
+                user_id = context.user_id,
+                unit = %balance.unit,
+                available = %balance.available,
+                frozen = %balance.frozen,
+                "gateway balance query succeeded"
+            );
+            Json(GatewayBalanceResponse {
+                object: "balance".to_owned(),
+                balance: balance.available,
+                frozen: balance.frozen,
+                unit: balance.unit,
+            })
+            .into_response()
+        }
+        Err(message) => {
+            tracing::warn!(
+                tenant_id = context.tenant_id,
+                organization_id = context.organization_id,
+                user_id = context.user_id,
+                error = %message,
+                "gateway balance query failed: token bank wallet store error"
+            );
+            openai_error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "balance_query_failed",
+                "api_error",
+                message,
+            )
+            .into_response()
+        }
     }
 }
 

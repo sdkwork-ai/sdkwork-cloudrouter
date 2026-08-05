@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { computeGrantAmount, type RechargeSettingsSnapshot } from '@sdkwork/cloudroutes-pc-commons';
+import { SdkworkSearchableSelect } from '@sdkwork/appbase-pc-react';
 import {
   MembershipFormActions,
   MembershipFormFrame,
@@ -92,12 +93,18 @@ export function MembershipRechargePackageDrawerForm({
         onChange={setPriceAmount}
         placeholder="10.00"
       />
-      <MembershipSelectField
-        label={t('admin.commerce.memberships.rechargePackages.form.currencyCode', 'Currency')}
-        value={currencyCode}
-        options={supportedCurrencyCodes.map((value) => ({ value }))}
-        onChange={(value) => setCurrencyCode((value as string) || settings.baseCurrencyCode)}
-      />
+      <label className="block">
+        <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+          {t('admin.commerce.memberships.rechargePackages.form.currencyCode', 'Currency')}
+        </span>
+        <SdkworkSearchableSelect
+          emptyText={t('admin.commerce.memberships.rechargePackages.form.currencyEmpty', 'No matching currency')}
+          options={supportedCurrencyCodes.map((value) => ({ value, label: value }))}
+          searchPlaceholder={t('admin.commerce.memberships.rechargePackages.form.currencySearch', 'Search currency by code')}
+          value={currencyCode}
+          onValueChange={(value) => setCurrencyCode(value || settings.baseCurrencyCode)}
+        />
+      </label>
       <MembershipTextField
         label={t('admin.commerce.memberships.rechargePackages.form.bonusPoints', 'Bonus points')}
         value={bonusPoints}

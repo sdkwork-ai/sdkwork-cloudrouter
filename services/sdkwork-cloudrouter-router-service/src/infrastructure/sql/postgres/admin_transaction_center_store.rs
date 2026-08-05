@@ -558,6 +558,7 @@ async fn list_payment_providers(
             'id', id,
             'providerCode', provider_code,
             'displayName', display_name,
+            'displayNameI18n', display_name_i18n,
             'providerType', provider_type,
             'supportedCountries', COALESCE(NULLIF(supported_countries::text, '')::json, '[]'::json),
             'supportedCurrencies', COALESCE(NULLIF(supported_currencies::text, '')::json, '[]'::json),
@@ -1353,10 +1354,17 @@ async fn list_payment_methods(
             'organization_id', organization_id,
             'method_key', method_key,
             'methodCode', method_key,
+            'methodKey', method_key,
             'display_name', display_name,
             'displayName', display_name,
-            'provider', provider,
-            'providerCode', NULLIF(provider, 'wallet_balance'),
+            'displayNameI18n', display_name_i18n,
+            'provider_code', provider_code,
+            'providerCode', NULLIF(provider_code, 'wallet_balance'),
+            'scope', scope,
+            'currency_code', currency_code,
+            'currencyCode', currency_code,
+            'country_code', country_code,
+            'countryCode', country_code,
             'methodType', CASE method_key
                 WHEN 'wechat_pay' THEN 'domestic_wallet'
                 WHEN 'alipay' THEN 'domestic_wallet'
@@ -1372,8 +1380,8 @@ async fn list_payment_methods(
                 ELSE '["checkout","membership_purchase","points_recharge","wallet_recharge","subscription","invoice"]'::json
             END,
             'status', status,
-            'sort_weight', sort_weight,
-            'sortOrder', sort_weight,
+            'sort_order', sort_order,
+            'sortOrder', sort_order,
             'request_no', request_no,
             'idempotency_key', idempotency_key,
             'created_at', created_at,
@@ -1386,14 +1394,14 @@ async fn list_payment_methods(
         WHERE tenant_id IN (CAST($1 AS TEXT), '0')
           AND (organization_id = CAST($2 AS TEXT) OR organization_id = '0')
           AND (CAST($3 AS TEXT) IS NULL OR status = CAST($3 AS TEXT))
-          AND (CAST($4 AS TEXT) IS NULL OR provider = CAST($4 AS TEXT))
+          AND (CAST($4 AS TEXT) IS NULL OR provider_code = CAST($4 AS TEXT))
           AND (CAST($5 AS TEXT) IS NULL OR method_key = CAST($5 AS TEXT))
         ORDER BY
             CASE
                 WHEN tenant_id = CAST($1 AS TEXT) AND organization_id = CAST($2 AS TEXT) THEN 0
                 ELSE 1
             END ASC,
-            sort_weight ASC,
+            sort_order ASC,
             updated_at DESC NULLS LAST,
             id DESC
         LIMIT $6 OFFSET $7
@@ -1425,9 +1433,13 @@ async fn list_payment_channels(
             'organization_id', c.organization_id,
             'channel_no', c.channel_no,
             'channelNo', c.channel_no,
+            'channel_name', c.channel_name,
+            'channelName', c.channel_name,
+            'channelNameI18n', c.channel_name_i18n,
             'provider_account_id', c.provider_account_id,
             'providerAccountId', c.provider_account_id,
             'method_id', c.method_id,
+            'methodId', c.method_id,
             'methodCode', m.method_key,
             'providerCode', a.provider_code,
             'scene_code', c.scene_code,
@@ -1497,16 +1509,19 @@ async fn list_payment_route_rules(
             'ruleNo', r.rule_no,
             'priority', r.priority,
             'purchase_type', r.purchase_type,
+            'purchaseType', r.purchase_type,
             'sceneCode', COALESCE(r.purchase_type, c.scene_code),
             'country_code', r.country_code,
             'countryCode', COALESCE(r.country_code, c.country_code),
             'currency_code', r.currency_code,
             'currencyCode', COALESCE(r.currency_code, c.currency_code),
             'client_platform', r.client_platform,
+            'clientPlatform', r.client_platform,
             'amount_min', r.amount_min,
             'amount_max', r.amount_max,
             'user_segment', r.user_segment,
             'risk_level', r.risk_level,
+            'riskLevel', r.risk_level,
             'account_id', r.channel_id,
             'channelId', r.channel_id,
             'fallbackChannelId', NULL,
@@ -1527,7 +1542,7 @@ async fn list_payment_route_rules(
         WHERE r.tenant_id IN (CAST($1 AS TEXT), '0')
           AND (r.organization_id = CAST($2 AS TEXT) OR r.organization_id = '0')
           AND (CAST($3 AS TEXT) IS NULL OR r.status = CAST($3 AS TEXT))
-          AND (CAST($4 AS TEXT) IS NULL OR m.provider = CAST($4 AS TEXT))
+          AND (CAST($4 AS TEXT) IS NULL OR m.provider_code = CAST($4 AS TEXT))
           AND (CAST($5 AS TEXT) IS NULL OR m.method_key = CAST($5 AS TEXT))
           AND (CAST($6 AS TEXT) IS NULL OR r.country_code = CAST($6 AS TEXT))
           AND (CAST($7 AS TEXT) IS NULL OR r.currency_code = CAST($7 AS TEXT))
@@ -1569,19 +1584,16 @@ async fn list_payment_intents(
             'tenant_id', pi.tenant_id,
             'organization_id', pi.organization_id,
             'owner_user_id', pi.owner_user_id,
+            'ownerUserId', pi.owner_user_id,
             'order_id', pi.order_id,
             'orderId', pi.order_id,
-            'provider', pi.provider,
-            'methodCode', CASE
-                WHEN pi.provider = 'stripe' THEN 'card'
-                WHEN pi.provider IN ('wechat', 'wechatpay') THEN 'wechat_pay'
-                ELSE pi.provider
-            END,
-            'providerCode', CASE
-                WHEN pi.provider = 'card' THEN 'stripe'
-                WHEN pi.provider IN ('wechat', 'wechatpay') THEN 'wechat_pay'
-                ELSE pi.provider
-            END,
+            'payment_intent_no', pi.payment_intent_no,
+            'paymentIntentNo', pi.payment_intent_no,
+            'payment_method', pi.payment_method,
+            'paymentMethod', pi.payment_method,
+            'provider', pi.provider_code,
+            'providerCode', pi.provider_code,
+            'methodCode', pi.payment_method,
             'amount', pi.amount,
             'currency_code', pi.currency_code,
             'currencyCode', pi.currency_code,
@@ -1612,11 +1624,7 @@ async fn list_payment_intents(
         WHERE pi.tenant_id = CAST($1 AS TEXT)
           AND pi.organization_id = CAST($2 AS TEXT)
           AND (CAST($3 AS TEXT) IS NULL OR pi.status = CAST($3 AS TEXT))
-          AND (CAST($4 AS TEXT) IS NULL OR CASE
-                WHEN pi.provider = 'card' THEN 'stripe'
-                WHEN pi.provider IN ('wechat', 'wechatpay') THEN 'wechat_pay'
-                ELSE pi.provider
-              END = CAST($4 AS TEXT))
+          AND (CAST($4 AS TEXT) IS NULL OR pi.provider_code = CAST($4 AS TEXT))
           AND (CAST($5 AS TEXT) IS NULL OR pi.order_id = CAST($5 AS TEXT))
           AND (CAST($6 AS TEXT) IS NULL OR pi.id = CAST($6 AS TEXT) OR pi.request_no = CAST($6 AS TEXT))
         ORDER BY pi.created_at DESC NULLS LAST, pi.id DESC
@@ -1649,24 +1657,22 @@ async fn list_payment_attempts(
             'tenant_id', pa.tenant_id,
             'organization_id', pa.organization_id,
             'owner_user_id', pa.owner_user_id,
+            'ownerUserId', pa.owner_user_id,
             'payment_intent_id', pa.payment_intent_id,
+            'paymentIntentId', pa.payment_intent_id,
             'intentId', pa.payment_intent_id,
             'order_id', pa.order_id,
             'orderId', pa.order_id,
-            'provider', pa.provider,
-            'methodCode', CASE
-                WHEN pa.provider = 'stripe' THEN 'card'
-                WHEN pa.provider IN ('wechat', 'wechatpay') THEN 'wechat_pay'
-                ELSE pa.provider
-            END,
-            'providerCode', CASE
-                WHEN pa.provider = 'card' THEN 'stripe'
-                WHEN pa.provider IN ('wechat', 'wechatpay') THEN 'wechat_pay'
-                ELSE pa.provider
-            END,
+            'attempt_no', pa.attempt_no,
+            'attemptNo', COALESCE(pa.attempt_no, pa.out_trade_no),
+            'provider', pa.provider_code,
+            'providerCode', pa.provider_code,
+            'methodCode', pa.payment_method,
             'out_trade_no', pa.out_trade_no,
-            'attemptNo', pa.out_trade_no,
+            'outTradeNo', pa.out_trade_no,
             'externalTradeNo', pa.out_trade_no,
+            'provider_transaction_id', pa.provider_transaction_id,
+            'providerTransactionId', pa.provider_transaction_id,
             'amount', pa.amount,
             'currency_code', pa.currency_code,
             'currencyCode', pa.currency_code,
@@ -1684,11 +1690,7 @@ async fn list_payment_attempts(
         WHERE pa.tenant_id = CAST($1 AS TEXT)
           AND pa.organization_id = CAST($2 AS TEXT)
           AND (CAST($3 AS TEXT) IS NULL OR pa.status = CAST($3 AS TEXT))
-          AND (CAST($4 AS TEXT) IS NULL OR CASE
-                WHEN pa.provider = 'card' THEN 'stripe'
-                WHEN pa.provider IN ('wechat', 'wechatpay') THEN 'wechat_pay'
-                ELSE pa.provider
-              END = CAST($4 AS TEXT))
+          AND (CAST($4 AS TEXT) IS NULL OR pa.provider_code = CAST($4 AS TEXT))
           AND (CAST($5 AS TEXT) IS NULL OR pa.order_id = CAST($5 AS TEXT))
           AND (CAST($6 AS TEXT) IS NULL OR pa.payment_intent_id = CAST($6 AS TEXT))
         ORDER BY pa.created_at DESC NULLS LAST, pa.id DESC
@@ -1720,35 +1722,35 @@ async fn list_payment_webhook_events(
             'id', id,
             'tenant_id', tenant_id,
             'organization_id', organization_id,
-            'provider', provider,
-            'providerCode', provider,
+            'provider', provider_code,
+            'providerCode', provider_code,
             'event_id', event_id,
+            'eventId', event_id,
             'eventNo', event_id,
             'externalEventId', event_id,
-            'nonce', nonce,
-            'signature', signature,
-            'request_timestamp', request_timestamp,
-            'out_trade_no', out_trade_no,
-            'eventType', out_trade_no,
-            'transaction_id', transaction_id,
-            'payload_digest', payload_digest,
+            'event_type', event_type,
+            'eventType', event_type,
+            'payload', payload,
             'status', status,
             'processStatus', status,
-            'message', message,
-            'request_no', request_no,
-            'idempotency_key', idempotency_key,
-            'created_at', created_at,
-            'receivedAt', created_at,
+            'retries', retries,
+            'last_error', last_error,
+            'lastError', last_error,
+            'received_at', received_at,
+            'receivedAt', received_at,
             'processed_at', processed_at,
             'processedAt', processed_at,
-            'updated_at', updated_at
+            'created_at', created_at,
+            'createdAt', created_at,
+            'updated_at', updated_at,
+            'updatedAt', updated_at
         ) AS item,
         COUNT(*) OVER() AS total
         FROM commerce_payment_webhook_event
         WHERE tenant_id = CAST($1 AS TEXT)
           AND organization_id = CAST($2 AS TEXT)
           AND (CAST($3 AS TEXT) IS NULL OR status = CAST($3 AS TEXT))
-          AND (CAST($4 AS TEXT) IS NULL OR provider = CAST($4 AS TEXT))
+          AND (CAST($4 AS TEXT) IS NULL OR provider_code = CAST($4 AS TEXT))
         ORDER BY created_at DESC NULLS LAST, id DESC
         LIMIT $5 OFFSET $6
         "#,
@@ -1782,28 +1784,30 @@ async fn list_payment_reconciliation_runs(
             'providerCode', provider_code,
             'provider_account_id', provider_account_id,
             'providerAccountId', provider_account_id,
-            'settlement_currency', settlement_currency,
-            'settlementCurrency', settlement_currency,
+            'reconciliation_type', reconciliation_type,
+            'reconciliationType', reconciliation_type,
             'period_start', period_start,
+            'periodStart', period_start,
             'businessDate', period_start,
             'period_end', period_end,
+            'periodEnd', period_end,
             'status', status,
-            'total_provider_amount', total_provider_amount,
-            'total_internal_amount', total_internal_amount,
-            'difference_amount', difference_amount,
             'matched_count', matched_count,
+            'matchedCount', matched_count,
             'mismatched_count', mismatched_count,
-            'missing_provider_count', missing_provider_count,
-            'missing_internal_count', missing_internal_count,
-            'report_file_ref', report_file_ref,
-            'started_at', started_at,
-            'completed_at', completed_at,
-            'finishedAt', completed_at,
+            'mismatchedCount', mismatched_count,
+            'unmatched_count', unmatched_count,
+            'unmatchedCount', unmatched_count,
+            'total_difference_amount', total_difference_amount,
+            'differenceAmount', total_difference_amount,
+            'currency_code', currency_code,
+            'currencyCode', currency_code,
             'request_no', request_no,
             'idempotency_key', idempotency_key,
             'created_at', created_at,
             'createdAt', created_at,
-            'updated_at', updated_at
+            'updated_at', updated_at,
+            'updatedAt', updated_at
         ) AS item,
         COUNT(*) OVER() AS total
         FROM commerce_payment_reconciliation_run
@@ -1849,6 +1853,10 @@ fn payment_provider_account_json_sql(
             'accountNo', account_no,
             'provider_code', provider_code,
             'providerCode', provider_code,
+            'account_name', account_name,
+            'accountName', account_name,
+            'account_name_i18n', account_name_i18n,
+            'accountNameI18n', account_name_i18n,
             'accountRole', (
                 SELECT audit.change_summary->>'accountRole'
                 FROM ops_audit_log audit

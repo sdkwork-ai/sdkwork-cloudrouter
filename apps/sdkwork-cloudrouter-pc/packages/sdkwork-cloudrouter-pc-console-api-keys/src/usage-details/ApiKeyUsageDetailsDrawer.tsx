@@ -105,7 +105,7 @@ export function ApiKeyUsageDetailsDrawer({
   return (
     <div
       className="fixed inset-0 z-[110] bg-black/50 backdrop-blur-sm animate-in fade-in duration-300"
-      onClick={(event) => {
+      onPointerDown={(event) => {
         if (closeOnClickOutside && event.target === event.currentTarget) {
           onClose();
         }

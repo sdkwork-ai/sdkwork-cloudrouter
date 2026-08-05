@@ -550,6 +550,30 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "system",
         "site.settings.update",
     ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/backend/v3/api/ai/upstream_resource_catalog",
+        "ai",
+        "upstreamResourceCatalog.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/backend/v3/api/system/chains/policy",
+        "system",
+        "chains.policy.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Patch,
+        "/backend/v3/api/system/chains/policy",
+        "system",
+        "chains.policy.update",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/backend/v3/api/system/chains/policy/keys/{apiKeyId}",
+        "system",
+        "chains.policy.apiKey.retrieve",
+    ),
 ];
 
 pub fn http_route_manifest() -> HttpRouteManifest {

@@ -2380,6 +2380,110 @@
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "backend-api"
+    },
+    {
+      "method": "GET",
+      "path": "/backend/v3/api/ai/upstream_resource_catalog",
+      "operationId": "upstreamResourceCatalog.retrieve",
+      "tags": [
+        "ai"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-backend-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "backend-api"
+    },
+    {
+      "method": "GET",
+      "path": "/backend/v3/api/system/chains/policy",
+      "operationId": "chains.policy.retrieve",
+      "tags": [
+        "system"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-backend-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "backend-api"
+    },
+    {
+      "method": "PATCH",
+      "path": "/backend/v3/api/system/chains/policy",
+      "operationId": "chains.policy.update",
+      "tags": [
+        "system"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-backend-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "backend-api"
+    },
+    {
+      "method": "GET",
+      "path": "/backend/v3/api/system/chains/policy/keys/{apiKeyId}",
+      "operationId": "chains.policy.apiKey.retrieve",
+      "tags": [
+        "system"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-backend-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "backend-api"
     }
   ]
 }

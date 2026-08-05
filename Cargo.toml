@@ -125,8 +125,11 @@ sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio",
 tokio = { version = "1.51", features = ["macros", "rt-multi-thread", "net", "time", "test-util", "fs", "io-util"] }
 tower = { version = "0.5", features = ["util"] }
 tower-http = { version = "0.6", features = ["cors", "trace"] }
-# tracing 0.1.42+ triggers nondeterministic rustc const-eval ICEs on Windows in FieldName.
-tracing = "=0.1.41"
+# tracing 0.1.42+ previously triggered nondeterministic rustc const-eval ICEs on
+# Windows in FieldName (observed with rustc 1.90/1.91); verified clean on rustc
+# 1.97.1, so the caret range keeps 0.1.x patch upgrades available for the IM
+# workspace's aws-runtime 1.8+ requirement (tracing ^0.1.44).
+tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
 async-trait = "0.1"
 arc-swap = "1.9"

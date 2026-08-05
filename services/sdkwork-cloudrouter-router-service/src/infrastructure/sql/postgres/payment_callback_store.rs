@@ -15,6 +15,32 @@ const POINTS_CURRENCY_CODE: &str = "POINT";
 const ORDER_STATUS_PAID: &str = "paid";
 const ORDER_STATUS_CANCELLED: &str = "cancelled";
 const ORDER_STATUS_PENDING_PAYMENT: &str = "pending_payment";
+/// Canonical `commerce_payment_webhook_event.status` written by callback
+/// ingestion. Terminal processed events are treated as idempotent duplicates;
+/// any other status is reset for retry.
+const CANONICAL_WEBHOOK_EVENT_PROCESSED: &str = "processed";
+/// Normalized `commerce_payment_webhook_event.event_type` for provider
+/// callbacks ingested through the Cloud Router transit store.
+const CANONICAL_WEBHOOK_EVENT_TYPE: &str = "payment.callback";
+
+fn canonical_webhook_event_status(status: &str) -> &'static str {
+    match status {
+        "SUCCESS" => "processed",
+        _ => "failed",
+    }
+}
+
+fn callback_webhook_event_payload(command: &PaymentCallbackCommand) -> Value {
+    serde_json::json!({
+        "nonce": command.nonce,
+        "signature": command.signature,
+        "requestTimestamp": command.request_timestamp,
+        "outTradeNo": command.out_trade_no,
+        "transactionId": command.transaction_id,
+        "payloadDigest": command.payload_digest,
+        "message": "received webhook event",
+    })
+}
 
 #[derive(Debug, Clone)]
 pub struct PostgresPaymentCallbackStore {
@@ -127,7 +153,7 @@ async fn begin_webhook_delivery(
         SELECT event_id
         FROM commerce_payment_webhook_delivery
         WHERE tenant_id = $1
-          AND supplier_code = $2
+          AND provider_code = $2
           AND nonce = $3
         LIMIT 1
         "#,
@@ -157,7 +183,7 @@ async fn begin_webhook_delivery(
         SELECT id
         FROM commerce_payment_webhook_delivery
         WHERE tenant_id = $1
-          AND supplier_code = $2
+          AND provider_code = $2
           AND event_id = $3
         LIMIT 1
         FOR UPDATE
@@ -178,7 +204,7 @@ async fn begin_webhook_delivery(
     let id: String = sqlx::query_scalar(
         r#"
         INSERT INTO commerce_payment_webhook_delivery
-            (id, tenant_id, organization_id, delivery_no, supplier_code, provider_account_id, event_id, nonce, request_timestamp, signature, signature_algorithm, headers_json, payload_digest, payload_ref, source_ip, user_agent, verification_status, delivery_status, failure_code, failure_message, received_at, verified_at, normalized_event_id, processed_at, created_at, updated_at)
+            (id, tenant_id, organization_id, delivery_no, provider_code, provider_account_id, event_id, nonce, request_timestamp, signature, signature_algorithm, headers_json, payload_digest, payload_ref, source_ip, user_agent, verification_status, delivery_status, failure_code, failure_message, received_at, verified_at, normalized_event_id, processed_at, created_at, updated_at)
         VALUES
             ($1, '0', NULL, $2, $3, NULL, $4, $5, $6, $7, 'HMAC_SHA256', NULL, $8, NULL, NULL, NULL, 'VERIFIED', 'RECEIVED', NULL, 'received webhook delivery', $9::timestamp AT TIME ZONE 'UTC', CURRENT_TIMESTAMP, NULL, NULL, $9::timestamp AT TIME ZONE 'UTC', $9::timestamp AT TIME ZONE 'UTC')
         RETURNING id
@@ -234,37 +260,12 @@ async fn begin_webhook_event(
     tx: &mut Transaction<'_, Postgres>,
     command: &PaymentCallbackCommand,
 ) -> Result<WebhookEvent, DomainError> {
-    let nonce_replay = sqlx::query(
-        r#"
-        SELECT event_id
-        FROM commerce_payment_webhook_event
-        WHERE tenant_id = $1
-          AND provider = $2
-          AND nonce = $3
-        LIMIT 1
-        "#,
-    )
-    .bind("0")
-    .bind(&command.supplier_code)
-    .bind(&command.nonce)
-    .fetch_optional(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to check payment callback nonce replay", error))?;
-    if let Some(row) = nonce_replay {
-        let existing_event_id = string_cell(&row, "event_id");
-        if existing_event_id != command.event_id {
-            return Err(DomainError::conflict(
-                "payment callback nonce replay detected",
-            ));
-        }
-    }
-
     let existing = sqlx::query(
         r#"
         SELECT id, status
         FROM commerce_payment_webhook_event
         WHERE tenant_id = $1
-          AND provider = $2
+          AND provider_code = $2
           AND event_id = $3
         LIMIT 1
         FOR UPDATE
@@ -279,7 +280,7 @@ async fn begin_webhook_event(
     if let Some(row) = existing {
         let id = string_cell(&row, "id");
         let status = string_cell(&row, "status");
-        if status == "SUCCESS" {
+        if status == CANONICAL_WEBHOOK_EVENT_PROCESSED {
             return Ok(WebhookEvent {
                 id: id.clone(),
                 duplicate: true,
@@ -288,11 +289,10 @@ async fn begin_webhook_event(
         sqlx::query(
             r#"
             UPDATE commerce_payment_webhook_event
-            SET status = 'RECEIVED',
-                out_trade_no = $1,
-                transaction_id = $2,
-                payload_digest = $3,
-                message = 'retrying webhook event',
+            SET status = 'queued',
+                retries = COALESCE(retries, 0) + 1,
+                last_error = 'retrying webhook event',
+                payload = payload || jsonb_build_object('outTradeNo', $1, 'transactionId', $2, 'payloadDigest', $3),
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = $4
             "#,
@@ -313,21 +313,17 @@ async fn begin_webhook_event(
     let id: String = sqlx::query_scalar(
         r#"
         INSERT INTO commerce_payment_webhook_event
-            (id, tenant_id, organization_id, provider, event_id, nonce, signature, request_timestamp, out_trade_no, transaction_id, payload_digest, status, message, request_no, idempotency_key, created_at, processed_at, updated_at)
+            (id, tenant_id, organization_id, event_id, event_type, provider_code, payload, status, retries, received_at, created_at, updated_at)
         VALUES
-            ($1, '0', NULL, $2, $3, $4, $5, $6, $7, $8, $9, 'RECEIVED', 'received webhook event', $3, $4, $10::timestamp AT TIME ZONE 'UTC', NULL, $10::timestamp AT TIME ZONE 'UTC')
+            ($1, '0', NULL, $2, $3, $4, $5::jsonb, 'queued', 0, $6::timestamp AT TIME ZONE 'UTC', $6::timestamp AT TIME ZONE 'UTC', $6::timestamp AT TIME ZONE 'UTC')
         RETURNING id
         "#,
     )
     .bind(&command.event_uuid)
-    .bind(&command.supplier_code)
     .bind(&command.event_id)
-    .bind(&command.nonce)
-    .bind(command.signature.as_deref())
-    .bind(command.request_timestamp)
-    .bind(&command.out_trade_no)
-    .bind(&command.transaction_id)
-    .bind(&command.payload_digest)
+    .bind(CANONICAL_WEBHOOK_EVENT_TYPE)
+    .bind(&command.supplier_code)
+    .bind(callback_webhook_event_payload(command).to_string())
     .bind(&command.received_at)
     .fetch_one(&mut **tx)
     .await
@@ -345,19 +341,19 @@ async fn finish_webhook_event(
     command: &PaymentCallbackCommand,
     message: &str,
 ) -> Result<(), DomainError> {
+    let canonical_status = canonical_webhook_event_status(status);
     sqlx::query(
         r#"
         UPDATE commerce_payment_webhook_event
         SET status = $1,
             processed_at = CURRENT_TIMESTAMP,
             updated_at = CURRENT_TIMESTAMP,
-            out_trade_no = $2,
-            transaction_id = $3,
-            message = $4
+            last_error = CASE WHEN $1 = 'failed' THEN $4 ELSE NULL END,
+            payload = payload || jsonb_build_object('outTradeNo', $2, 'transactionId', $3, 'message', $4)
         WHERE id = $5
         "#,
     )
-    .bind(status)
+    .bind(canonical_status)
     .bind(&command.out_trade_no)
     .bind(&command.transaction_id)
     .bind(truncate_message(message))
@@ -464,7 +460,7 @@ async fn load_payment_for_callback(
             pa.owner_user_id AS user_id,
             CAST(COALESCE(pa.amount, '0') AS TEXT) AS amount,
             pa.status AS status,
-            pa.provider AS provider,
+            pa.provider_code AS provider,
             COALESCE(NULLIF(o.subject, ''), 'order') AS purpose,
             pa.callback_payload
         FROM commerce_payment_attempt pa
@@ -476,7 +472,7 @@ async fn load_payment_for_callback(
           ON pi.id = pa.payment_intent_id
          AND pi.tenant_id = pa.tenant_id
          AND (pi.organization_id IS NULL OR pa.organization_id IS NULL OR pi.organization_id = pa.organization_id)
-        WHERE pa.provider = $1
+        WHERE pa.provider_code = $1
           AND pa.out_trade_no = $2
         LIMIT 1
         FOR UPDATE OF pa, o, pi

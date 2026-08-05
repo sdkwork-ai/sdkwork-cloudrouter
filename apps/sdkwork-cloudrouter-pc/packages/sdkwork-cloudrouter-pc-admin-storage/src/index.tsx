@@ -396,7 +396,7 @@ function StorageDialog({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
       role="presentation"
-      onClick={(event) => {
+      onPointerDown={(event) => {
         if (closeOnClickOutside && event.target === event.currentTarget) {
           onClose();
         }

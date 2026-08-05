@@ -45,7 +45,7 @@ export const consoleSettlementsMessages = {
     "console.settlements.settlementsview.text.1nwe0xs": "本月多模态日均消耗趋势",
     "console.settlements.settlementsview.text.rljyf2": "文本",
     "console.settlements.settlementsview.text.1cxv2g7": "月度账单分析报告",
-    "console.settlements.settlementsview.text.ogoiqg": "所有消耗均以算力元结算",
+    "console.settlements.settlementsview.text.ogoiqg": "所有消耗均以算力积分结算",
     "console.settlements.settlementsview.text.wj6yv6": "至",
     "console.settlements.settlementsview.text.1wmsouy": "API 使用类型费用分布",
     "console.settlements.settlementsview.text.1ljc32i": "文本/LLM",
@@ -67,6 +67,6 @@ export const consoleSettlementsMessages = {
     "console.settlements.states.emptyDescription": "当前年份还没有结算图表或账单记录。",
     "console.settlements.states.defaultVisualTitle": "默认结算视图",
     "console.settlements.states.defaultVisualDescription": "当前年份暂无结算记录，系统展示默认视觉布局；真实花费、账单数和未出账金额均保持为 0。",
-    "console.settlements.settlementsview.text.pointsAmount": "{{amount}} 算力元",
+    "console.settlements.settlementsview.text.pointsAmount": "{{amount}} 算力积分",
   },
 } satisfies I18nMessageBundle;

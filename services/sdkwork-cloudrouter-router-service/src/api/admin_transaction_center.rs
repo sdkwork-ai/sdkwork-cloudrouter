@@ -43,6 +43,7 @@ const PAYMENT_PROVIDER_CODES: &[&str] = &[
     "paypal",
     "apple_pay",
     "google_pay",
+    "sandbox",
 ];
 const PAYMENT_METHOD_CODES: &[&str] = &[
     "wechat_pay",
@@ -52,6 +53,21 @@ const PAYMENT_METHOD_CODES: &[&str] = &[
     "apple_pay",
     "google_pay",
     "wallet_balance",
+    "stripe_card",
+    "stripe_apple_pay",
+    "stripe_google_pay",
+    "stripe_alipay",
+    "stripe_wechat_pay",
+    "alipay_qr",
+    "alipay_pc",
+    "alipay_wap",
+    "alipay_app",
+    "alipay_jsapi",
+    "wechat_native",
+    "wechat_jsapi",
+    "wechat_h5",
+    "wechat_app",
+    "sandbox_test",
 ];
 const PAYMENT_PROVIDER_ENVIRONMENTS: &[&str] = &["sandbox", "production"];
 const PAYMENT_CONFIG_STATUSES: &[&str] = &["active", "inactive", "disabled"];

@@ -202,7 +202,7 @@ async fn load_route_candidates(
                c.id AS channel_id,
                c.priority AS channel_priority,
                a.id AS provider_account_id,
-               a.supplier_code,
+               a.provider_code AS supplier_code,
                a.account_no,
                a.merchant_id,
                a.environment,
@@ -214,7 +214,7 @@ async fn load_route_candidates(
         INNER JOIN commerce_payment_channel c
           ON c.tenant_id = r.tenant_id
          AND c.organization_id = r.organization_id
-         AND c.id = r.account_id
+         AND c.id = r.channel_id
         INNER JOIN commerce_payment_method m
           ON m.tenant_id = c.tenant_id
          AND m.organization_id = c.organization_id
@@ -229,8 +229,8 @@ async fn load_route_candidates(
           AND c.status = 'active'
           AND m.status = 'active'
           AND a.status = 'active'
-          AND LOWER(a.supplier_code) = LOWER($3)
-          AND LOWER(m.provider) = LOWER($3)
+          AND LOWER(a.provider_code) = LOWER($3)
+          AND LOWER(m.provider_code) = LOWER($3)
           AND m.method_key = $4
           AND c.scene_code = $5
           AND UPPER(c.currency_code) = UPPER($6)
@@ -295,7 +295,7 @@ async fn load_persisted_route_account(
     let rows = sqlx::query(
         r#"
         SELECT a.id AS provider_account_id,
-               a.supplier_code,
+               a.provider_code AS supplier_code,
                a.account_no,
                a.merchant_id,
                a.environment,
@@ -313,7 +313,7 @@ async fn load_persisted_route_account(
           AND c.id = $3
           AND c.provider_account_id = $4
           AND a.id = $4
-          AND LOWER(a.supplier_code) = LOWER($5)
+          AND LOWER(a.provider_code) = LOWER($5)
           AND c.status = 'active'
           AND a.status = 'active'
           AND LOWER(a.environment) = ANY($6::text[])

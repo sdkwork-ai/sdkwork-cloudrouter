@@ -29,7 +29,7 @@ fn payment_callback_payment_lookup_uses_appbase_order_payment_attempt_and_intent
         "FROM commerce_payment_attempt pa",
         "JOIN commerce_order o",
         "JOIN commerce_payment_intent pi",
-        "WHERE pa.provider = $1 AND pa.out_trade_no = $2",
+        "WHERE pa.provider_code = $1 AND pa.out_trade_no = $2",
         "FOR UPDATE OF pa, o, pi",
         "required_string_cell(&row, \"status\", \"payment\")?",
     ] {
@@ -40,6 +40,7 @@ fn payment_callback_payment_lookup_uses_appbase_order_payment_attempt_and_intent
         "FROM plus_payment p",
         "JOIN plus_order o",
         "CAST(COALESCE(p.status, 0) AS TEXT) AS status",
+        "pa.provider = $1",
     ] {
         assert_sql_not_contains(POSTGRES_PAYMENT_CALLBACK_STORE, unexpected);
     }
@@ -69,20 +70,40 @@ fn payment_callback_points_account_creation_uses_appbase_account_unique_key_conf
 }
 
 #[test]
-fn payment_callback_webhook_event_queries_lock_and_scope_idempotency_by_provider_event_and_nonce() {
+fn payment_callback_webhook_event_queries_lock_and_scope_idempotency_by_provider_and_event() {
     for expected in [
-        "SELECT event_id FROM commerce_payment_webhook_event WHERE tenant_id = $1 AND provider = $2 AND nonce = $3 LIMIT 1",
-        "SELECT id, status FROM commerce_payment_webhook_event WHERE tenant_id = $1 AND provider = $2 AND event_id = $3 LIMIT 1 FOR UPDATE",
-        "UPDATE commerce_payment_webhook_event SET status = 'RECEIVED'",
+        "SELECT id, status FROM commerce_payment_webhook_event WHERE tenant_id = $1 AND provider_code = $2 AND event_id = $3 LIMIT 1 FOR UPDATE",
+        "INSERT INTO commerce_payment_webhook_event (id, tenant_id, organization_id, event_id, event_type, provider_code, payload, status, retries, received_at, created_at, updated_at)",
         "RETURNING id",
+        "last_error = CASE WHEN $1 = 'failed' THEN $4 ELSE NULL END",
+        "retries = COALESCE(retries, 0) + 1",
     ] {
         assert_sql_contains(POSTGRES_PAYMENT_CALLBACK_STORE, expected);
     }
 
-    assert_sql_not_contains(
-        POSTGRES_PAYMENT_CALLBACK_STORE,
+    for unexpected in [
+        "provider = $2 AND nonce = $3",
+        "SET status = 'RECEIVED'",
+        "out_trade_no = $1",
         "plus_payment_webhook_event",
-    );
+    ] {
+        assert_sql_not_contains(POSTGRES_PAYMENT_CALLBACK_STORE, unexpected);
+    }
+}
+
+#[test]
+fn payment_callback_webhook_delivery_uses_canonical_provider_code_column() {
+    for expected in [
+        "SELECT event_id FROM commerce_payment_webhook_delivery WHERE tenant_id = $1 AND provider_code = $2 AND nonce = $3 LIMIT 1",
+        "SELECT id FROM commerce_payment_webhook_delivery WHERE tenant_id = $1 AND provider_code = $2 AND event_id = $3 LIMIT 1 FOR UPDATE",
+        "INSERT INTO commerce_payment_webhook_delivery (id, tenant_id, organization_id, delivery_no, provider_code,",
+    ] {
+        assert_sql_contains(POSTGRES_PAYMENT_CALLBACK_STORE, expected);
+    }
+
+    for unexpected in [", supplier_code,", "supplier_code = $"] {
+        assert_sql_not_contains(POSTGRES_PAYMENT_CALLBACK_STORE, unexpected);
+    }
 }
 
 #[test]

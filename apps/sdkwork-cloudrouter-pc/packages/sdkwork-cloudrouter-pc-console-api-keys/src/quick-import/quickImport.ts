@@ -265,7 +265,20 @@ export function buildQuickImportDeepLink(
     params.set('usageAutoInterval', '60');
     params.set('usageScript', btoa(CC_SWITCH_RELAY_USAGE_SCRIPT));
   }
-  return `${target.scheme}://v1/import?${params.toString()}`;
+  const link = `${target.scheme}://v1/import?${params.toString()}`;
+  // Debugging aid: log the link with secrets masked, so the endpoint /
+  // usageBaseUrl / usageScript actually shipped can be checked against CC
+  // Switch without leaking the gateway key into the browser console.
+  console.log(
+    `[quick-import] ${target.id} deep link (apiKey/usageApiKey masked):`,
+    maskDeepLinkSecrets(link),
+  );
+  return link;
+}
+
+/** Masks `apiKey` / `usageApiKey` / `usageAccessToken` query values for logs. */
+function maskDeepLinkSecrets(link: string): string {
+  return link.replace(/([?&](?:apiKey|usageApiKey|usageAccessToken)=)[^&]*/g, '$1***');
 }
 
 /**

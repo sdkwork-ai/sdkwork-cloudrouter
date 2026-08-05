@@ -25,4 +25,5 @@ export * from './share-url';
 export * from './portal-auth';
 export * from './recharge-math';
 export * from './queryClient';
+import './base-data-pc-react-config';
 export * from './PortalErrorBoundary';

@@ -40,19 +40,19 @@ afterEach(() => {
 describe('ConfirmDialog click-outside', () => {
   it('calls onCancel when the backdrop is clicked', () => {
     const { onCancel, backdrop } = renderDialog();
-    fireEvent.click(backdrop);
+    fireEvent.pointerDown(backdrop);
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
   it('does not call onCancel when clicking inside the panel', () => {
     const { onCancel, panel } = renderDialog();
-    fireEvent.click(panel);
+    fireEvent.pointerDown(panel);
     expect(onCancel).not.toHaveBeenCalled();
   });
 
   it('does not close on backdrop click when closeOnClickOutside is false', () => {
     const { onCancel, backdrop } = renderDialog(false);
-    fireEvent.click(backdrop);
+    fireEvent.pointerDown(backdrop);
     expect(onCancel).not.toHaveBeenCalled();
   });
 });
