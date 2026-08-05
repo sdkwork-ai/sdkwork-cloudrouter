@@ -5,9 +5,6 @@ use axum::body::{to_bytes, Body};
 use axum::extract::ConnectInfo;
 use axum::http::{header, HeaderMap, HeaderValue, Request, StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
-use sdkwork_cloudrouter_security::{
-    INTERNAL_GATEWAY_AUTH_HEADERS, INTERNAL_GATEWAY_ROUTE_PREFIX, REDACTED,
-};
 use sdkwork_cloudrouter_router_service::application::{
     BillingMode, DeferredStreamInvocation, DeferredStreamResponse, DispatchMode,
     GatewayInvocationPolicyViolation, Invocation, InvocationBody, InvocationClassification,
@@ -17,6 +14,9 @@ use sdkwork_cloudrouter_router_service::application::{
     ProviderNativeResourceClassifier, ResourceType,
 };
 use sdkwork_cloudrouter_router_service::ports::{PricingCatalog, UpstreamAccountRouteCatalog};
+use sdkwork_cloudrouter_security::{
+    INTERNAL_GATEWAY_AUTH_HEADERS, INTERNAL_GATEWAY_ROUTE_PREFIX, REDACTED,
+};
 use serde_json::{json, Value};
 
 use crate::gateway_api_key_auth::{
@@ -177,10 +177,11 @@ where
         parts.headers,
         body,
     );
+    let account_group_id = auth_context.group_id;
     let subject = InvocationSubject::from_api_key_context(auth_context);
     let mut invocation = Invocation::new(request, subject, resource, billing);
     invocation.routing = routing;
-    apply_gateway_dispatch_defaults(&mut invocation, state.catalog.as_ref());
+    apply_gateway_dispatch_defaults(&mut invocation, state.catalog.as_ref(), account_group_id);
 
     match state.pipeline.execute_for_response(invocation).await {
         Ok(InvocationPipelineExecution::Completed(invocation)) => invocation
@@ -391,8 +392,11 @@ fn invocation_request_from_http(
     request
 }
 
-fn apply_gateway_dispatch_defaults<C>(invocation: &mut Invocation, catalog: &C)
-where
+fn apply_gateway_dispatch_defaults<C>(
+    invocation: &mut Invocation,
+    catalog: &C,
+    account_group_id: i64,
+) where
     C: PricingCatalog,
 {
     if invocation.resource.surface == InvocationSurface::OpenAiCompatible
@@ -421,6 +425,52 @@ where
             json!({
                 "object": "list",
                 "data": models
+            }),
+        ));
+        return;
+    }
+
+    if invocation.resource.surface == InvocationSurface::OpenAiCompatible
+        && invocation.resource.resource_type == ResourceType::FreeEndpoint
+        && invocation.resource.api_code == "openai.vendors"
+        && invocation.request.method == axum::http::Method::GET
+        && invocation.request.path == "/v1/vendors"
+    {
+        // Cloud Router extension: vendors (with their models) reachable for
+        // the authenticated key's account group, mirroring the router path.
+        let data = sdkwork_cloudrouter_router_service::api::list_group_scoped_vendors(
+            catalog,
+            account_group_id,
+        )
+        .into_iter()
+        .map(|vendor| {
+            let models = vendor
+                .models
+                .into_iter()
+                .map(|model| {
+                    let mut entry = json!({ "id": model.id, "displayName": model.display_name });
+                    if let Some(context_tokens) = model.context_tokens {
+                        entry["contextTokens"] = json!(context_tokens);
+                    }
+                    if let Some(max_output_tokens) = model.max_output_tokens {
+                        entry["maxOutputTokens"] = json!(max_output_tokens);
+                    }
+                    entry
+                })
+                .collect::<Vec<_>>();
+            json!({
+                "code": vendor.code,
+                "name": vendor.name,
+                "models": models
+            })
+        })
+        .collect::<Vec<_>>();
+        invocation.dispatch.mode = DispatchMode::SyntheticLocalResponse;
+        invocation.dispatch.response = Some(InvocationDispatchResponse::json(
+            200,
+            json!({
+                "object": "list",
+                "data": data
             }),
         ));
         return;
@@ -713,4 +763,130 @@ fn content_length_from_headers(headers: &HeaderMap) -> Option<usize> {
 
 fn invalid_request(message: impl Into<String>) -> InvocationError {
     InvocationError::new(InvocationErrorKind::InvalidRequest, message)
+}
+
+#[cfg(test)]
+mod gateway_dispatch_defaults_tests {
+    use super::apply_gateway_dispatch_defaults;
+    use axum::http::Method;
+    use sdkwork_cloudrouter_router_service::application::{
+        AuthenticatedApiKeyContext, DispatchMode, Invocation, InvocationBilling, InvocationRequest,
+        InvocationResource, InvocationSubject,
+    };
+    use sdkwork_cloudrouter_router_service::domain::{
+        AiModel, DecimalValue, GatewayApiKey, ModelUpstreamRoute, ModelVendor,
+        ModelVendorDefinition, RoutingCapability, UpstreamAccountGroup, UpstreamAccountRoute,
+    };
+    use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
+
+    fn subject() -> InvocationSubject {
+        InvocationSubject::from_api_key_context(AuthenticatedApiKeyContext {
+            tenant_id: 100001,
+            organization_id: 0,
+            user_id: 30,
+            api_key_id: 100,
+            api_key_name_snapshot: "Test key".to_owned(),
+            group_id: 10,
+            group_code: "standard-group".to_owned(),
+            pricing_plan_code: "standard".to_owned(),
+        })
+    }
+
+    fn vendors_invocation() -> Invocation {
+        Invocation::new(
+            InvocationRequest::new(Method::GET, "/v1/vendors"),
+            subject(),
+            InvocationResource::free_endpoint(
+                "openai/management/vendors",
+                "openai.vendors",
+                RoutingCapability::Network,
+            ),
+            InvocationBilling::free(),
+        )
+    }
+
+    fn catalog() -> InMemoryPricingCatalog {
+        let mut catalog = InMemoryPricingCatalog::default();
+        catalog.add_vendor(ModelVendorDefinition::new(
+            "openai",
+            ModelVendor::OpenAi,
+            "OpenAI",
+        ));
+        catalog.add_model(AiModel::new(
+            "gpt-4o-mini",
+            "GPT-4o mini",
+            "openai",
+            vec!["chat", "tools"],
+        ));
+        catalog.add_upstream_account_group(UpstreamAccountGroup::new(
+            10,
+            "standard-group",
+            "standard",
+            DecimalValue::parse("1.000000").unwrap(),
+            DecimalValue::parse("1.100000").unwrap(),
+        ));
+        catalog.add_upstream_account_route(
+            UpstreamAccountRoute::new("openai-supplier", 1001)
+                .with_account_group_binding(10, 100, 100)
+                .with_upstream_endpoint(Some("https://api.openai.com"), Some("cred:openai")),
+        );
+        catalog.add_model_upstream_route(ModelUpstreamRoute::new(
+            "gpt-4o-mini",
+            "openai-supplier",
+            1001,
+            "gpt-4o-mini",
+        ));
+        catalog.add_api_key(GatewayApiKey::new(101, 10, "sk-live", "hash"));
+        catalog
+    }
+
+    #[test]
+    fn vendors_request_becomes_synthetic_response_scoped_to_the_account_group() {
+        let mut invocation = vendors_invocation();
+        apply_gateway_dispatch_defaults(&mut invocation, &catalog(), 10);
+        assert_eq!(
+            invocation.dispatch.mode,
+            DispatchMode::SyntheticLocalResponse
+        );
+        let response = invocation.dispatch.response.expect("synthetic response");
+        assert_eq!(200, response.status_code);
+        let body = response.body.expect("json body");
+        assert_eq!("list", body["object"]);
+        let vendors = body["data"].as_array().expect("vendor data array");
+        assert_eq!(1, vendors.len());
+        assert_eq!("openai", vendors[0]["code"]);
+        assert_eq!("OpenAI", vendors[0]["name"]);
+        assert_eq!("gpt-4o-mini", vendors[0]["models"][0]["id"]);
+        assert_eq!("GPT-4o mini", vendors[0]["models"][0]["displayName"]);
+    }
+
+    #[test]
+    fn vendors_response_is_empty_for_groups_without_callable_accounts() {
+        let mut invocation = vendors_invocation();
+        apply_gateway_dispatch_defaults(&mut invocation, &catalog(), 99);
+        assert_eq!(
+            invocation.dispatch.mode,
+            DispatchMode::SyntheticLocalResponse
+        );
+        let response = invocation.dispatch.response.expect("synthetic response");
+        let body = response.body.expect("json body");
+        assert_eq!(0, body["data"].as_array().expect("data array").len());
+    }
+
+    #[test]
+    fn other_free_endpoints_keep_the_noop_free_dispatch() {
+        let mut invocation = Invocation::new(
+            InvocationRequest::new(Method::GET, "/v1/batches"),
+            subject(),
+            InvocationResource::free_endpoint(
+                "openai/management/batches",
+                "openai.batches",
+                RoutingCapability::Network,
+            ),
+            InvocationBilling::free(),
+        );
+        apply_gateway_dispatch_defaults(&mut invocation, &catalog(), 10);
+        assert_eq!(invocation.dispatch.mode, DispatchMode::NoopFree);
+        assert!(invocation.dispatch.response.is_none());
+    }
 }

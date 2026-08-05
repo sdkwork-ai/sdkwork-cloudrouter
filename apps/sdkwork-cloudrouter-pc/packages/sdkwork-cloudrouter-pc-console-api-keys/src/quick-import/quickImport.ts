@@ -221,6 +221,12 @@ export interface QuickImportDeepLinkOptions {
  * `GET /v1/user/balance` + the matching `usageScript`), so the imported
  * provider shows the Token Bank balance without further configuration.
  *
+ * For Birdcoder the link additionally carries the gateway's OpenAI-compatible
+ * base URL as `modelsBaseUrl`: Birdcoder queries `GET {modelsBaseUrl}/vendors`
+ * with the same API key during import and writes the reachable vendors and
+ * their models straight into the channel offerings — no vendor selection in
+ * the console needed.
+ *
  * Note: the link carries the plaintext gateway key, matching the CC Switch
  * deep link standard; the console only opens it after an explicit user click.
  */
@@ -264,6 +270,11 @@ export function buildQuickImportDeepLink(
     params.set('usageApiKey', key.rawKey);
     params.set('usageAutoInterval', '60');
     params.set('usageScript', btoa(CC_SWITCH_RELAY_USAGE_SCRIPT));
+  }
+  if (targetId === 'birdcoder') {
+    // Birdcoder fetches the key-scoped vendor/model catalog through this
+    // base (its `GET {base}/vendors` extension) during the import.
+    params.set('modelsBaseUrl', toAbsoluteGatewayUrl(openAiBaseUrl));
   }
   const link = `${target.scheme}://v1/import?${params.toString()}`;
   // Debugging aid: log the link with secrets masked, so the endpoint /

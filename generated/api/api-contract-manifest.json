@@ -10131,24 +10131,34 @@
               "nullable": true,
               "type": "string"
             },
+            "name": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
             "pathStyleEnabled": {
               "nullable": true,
               "type": "boolean"
             },
             "providerCode": {
               "maxLength": 96,
-              "minLength": 1,
+              "nullable": true,
               "type": "string"
             },
             "providerType": {
               "enum": [
                 "aws_s3",
+                "baidu_bos",
                 "cloudflare_r2",
                 "cos_s3",
+                "huawei_obs",
+                "jdcloud_oss",
                 "local_dev_s3",
                 "minio",
                 "oss_s3",
-                "s3_compatible"
+                "qiniu_kodo",
+                "s3_compatible",
+                "volcengine_tos"
               ],
               "type": "string"
             },
@@ -10171,7 +10181,7 @@
             }
           },
           "required": [
-            "providerCode",
+            "name",
             "providerType",
             "credentialRef"
           ],
@@ -10358,6 +10368,10 @@
                     "maxLength": 64,
                     "type": "string"
                   },
+                  "name": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
                   "pathStyleEnabled": {
                     "type": "boolean"
                   },
@@ -10394,6 +10408,7 @@
                 "required": [
                   "id",
                   "providerCode",
+                  "name",
                   "providerType",
                   "endpointUrl",
                   "region",

@@ -13,7 +13,8 @@ pub struct UpstreamCredentialSecurityConfig {
 
 impl UpstreamCredentialSecurityConfig {
     pub const ENV_KEY_RING: &'static str = "SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING";
-    pub const ENV_KEY_RING_FILE: &'static str = "SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING_FILE";
+    pub const ENV_KEY_RING_FILE: &'static str =
+        "SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING_FILE";
     pub const MIN_KEY_BYTES: usize = 32;
     pub const MAX_KEY_BYTES: usize = 4 * 1024;
     pub const MAX_KEY_RING_BYTES: usize = 128 * 1024;

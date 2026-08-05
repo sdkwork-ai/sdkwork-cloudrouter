@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::domain::{DomainError, DomainResult};
 use crate::ports::{
-    AdminAuthSettings, AdminAuthVerificationPolicy, AdminAuthWechatMini, AdminAuthWechatOfficial,
-    AdminAuthWechatSettings,
+    AdminAuthInviteCodePolicy, AdminAuthSettings, AdminAuthVerificationPolicy, AdminAuthWechatMini,
+    AdminAuthWechatOfficial, AdminAuthWechatSettings,
 };
 
 pub(crate) const AUTH_SETTINGS_SOURCE_TABLE: &str = "iam_auth_runtime_settings";
@@ -25,12 +25,27 @@ pub(crate) struct StoredAuthSettings {
     pub recovery_methods: Vec<String>,
     pub register_methods: Vec<String>,
     pub verification_policy: StoredAuthVerificationPolicy,
+    pub invite_code_policy: StoredAuthInviteCodePolicy,
     pub wechat: StoredAuthWechatSettings,
 }
 
 impl Default for StoredAuthSettings {
     fn default() -> Self {
         AdminAuthSettings::default().into()
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[serde(default)]
+pub(crate) struct StoredAuthInviteCodePolicy {
+    pub register_required: bool,
+    pub login_required: bool,
+}
+
+impl Default for StoredAuthInviteCodePolicy {
+    fn default() -> Self {
+        AdminAuthInviteCodePolicy::default().into()
     }
 }
 
@@ -150,6 +165,7 @@ impl From<AdminAuthSettings> for StoredAuthSettings {
             recovery_methods: value.recovery_methods,
             register_methods: value.register_methods,
             verification_policy: value.verification_policy.into(),
+            invite_code_policy: value.invite_code_policy.into(),
             wechat: value.wechat.into(),
         }
     }
@@ -168,7 +184,26 @@ impl From<StoredAuthSettings> for AdminAuthSettings {
             recovery_methods: value.recovery_methods,
             register_methods: value.register_methods,
             verification_policy: value.verification_policy.into(),
+            invite_code_policy: value.invite_code_policy.into(),
             wechat: value.wechat.into(),
+        }
+    }
+}
+
+impl From<AdminAuthInviteCodePolicy> for StoredAuthInviteCodePolicy {
+    fn from(value: AdminAuthInviteCodePolicy) -> Self {
+        Self {
+            register_required: value.register_required,
+            login_required: value.login_required,
+        }
+    }
+}
+
+impl From<StoredAuthInviteCodePolicy> for AdminAuthInviteCodePolicy {
+    fn from(value: StoredAuthInviteCodePolicy) -> Self {
+        Self {
+            register_required: value.register_required,
+            login_required: value.login_required,
         }
     }
 }

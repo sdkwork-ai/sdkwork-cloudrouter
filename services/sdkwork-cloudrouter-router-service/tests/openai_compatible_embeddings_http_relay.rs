@@ -8,9 +8,7 @@ use sdkwork_cloudrouter_router_service::domain::ProviderAuthProfile;
 use sdkwork_cloudrouter_router_service::infrastructure::provider::{
     OpenAiCompatibleEmbeddingsRelay, UpstreamProviderEndpoint,
 };
-use sdkwork_cloudrouter_router_service::ports::{
-    EmbeddingsRelay, EmbeddingsRelayRequest,
-};
+use sdkwork_cloudrouter_router_service::ports::{EmbeddingsRelay, EmbeddingsRelayRequest};
 use serde_json::json;
 
 #[derive(Debug, Default)]

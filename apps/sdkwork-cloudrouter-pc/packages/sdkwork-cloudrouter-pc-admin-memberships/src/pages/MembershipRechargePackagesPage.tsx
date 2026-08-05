@@ -33,6 +33,7 @@ import {
   listRechargeCurrencyCodes,
   normalizeRechargeSettings,
 } from '@sdkwork/cloudroutes-pc-commons';
+import { formatMembershipDateTime } from '../membershipFormat';
 
 type RechargeSettingsDraft = {
   baseCurrencyCode: string;
@@ -203,7 +204,7 @@ export function MembershipRechargePackagesPage() {
           </button>
         )}
       >
-        <div className="grid gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
+        <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto lg:grid-cols-[360px_minmax(0,1fr)]">
           <div className="lg:col-span-2">
             <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
               {t('admin.commerce.memberships.rechargePackages.title', 'Recharge Packages')}
@@ -295,7 +296,7 @@ export function MembershipRechargePackagesPage() {
                         {formatMoney(item.amount, { currency: item.currencyCode, locale: displayLocale, mode: 'symbol' }) ?? `${item.currencyCode} ${item.amount}`}
                       </span>
                       <span className="font-semibold text-lobster-600 dark:text-lobster-300">
-                        {formatMoneyDigits(item.grantAmount, 'USD', displayLocale, 'decimal', 0, 0)} pts
+                        {t('admin.commerce.memberships.pointsCount', '{{points}} pts', { points: formatMoneyDigits(item.grantAmount, 'USD', displayLocale, 'decimal', 0, 0) ?? '0' })}
                       </span>
                     </div>
                   ))}
@@ -343,12 +344,14 @@ export function MembershipRechargePackagesPage() {
                     <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">
                       {formatMoney(item.priceAmount, { currency: item.currencyCode, locale: displayLocale, mode: 'symbol' }) ?? `${item.priceAmount} ${item.currencyCode}`}
                     </td>
-                    <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">{item.bonusPoints}</td>
+                    <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">
+                      {t('admin.commerce.memberships.pointsCount', '{{points}} pts', { points: item.bonusPoints })}
+                    </td>
                     <td className="px-4 py-2.5 text-right font-semibold text-lobster-600 dark:text-lobster-300">
-                      {formatMoneyDigits(item.grantAmount, 'USD', displayLocale, 'decimal', 0, 0)}
+                      {t('admin.commerce.memberships.pointsCount', '{{points}} pts', { points: formatMoneyDigits(item.grantAmount, 'USD', displayLocale, 'decimal', 0, 0) ?? '0' })}
                     </td>
                     <td className="px-4 py-2.5"><MembershipStatusBadge status={item.status} /></td>
-                    <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{item.updatedAt}</td>
+                    <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{formatMembershipDateTime(item.updatedAt, displayLocale)}</td>
                     <td className="px-4 py-2.5">
                       <MembershipTableActions>
                         <MembershipIconActionButton label={t('admin.commerce.memberships.rechargePackages.edit', 'Edit')} icon={<Pencil className="h-4 w-4" />} onClick={() => openEditDrawer(item)} />

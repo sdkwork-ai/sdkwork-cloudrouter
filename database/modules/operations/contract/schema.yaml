@@ -1813,6 +1813,299 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+  - name: ops_referral_invite_code
+    domain: ops
+    profile: operational_state
+    compliance_level: L2
+    write_owner: cloudrouter-ops-runtime
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      user_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      invite_code:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+    constraints:
+      - name: pk_ops_referral_invite_code
+        type: primary_key
+        columns:
+          - id
+      - name: uk_ops_referral_invite_code_tenant_user
+        type: unique
+        columns: &id_ops_referral_invite_code_tenant_user
+          - tenant_id
+          - organization_id
+          - user_id
+        where: null
+      - name: uk_ops_referral_invite_code_tenant_code
+        type: unique
+        columns: &id_ops_referral_invite_code_tenant_code
+          - tenant_id
+          - organization_id
+          - invite_code
+        where: null
+    indexes:
+      - name: uk_ops_referral_invite_code_tenant_user
+        columns: *id_ops_referral_invite_code_tenant_user
+        unique: true
+        where: null
+      - name: uk_ops_referral_invite_code_tenant_code
+        columns: *id_ops_referral_invite_code_tenant_code
+        unique: true
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+  - name: ops_referral_relation
+    domain: ops
+    profile: operational_state
+    compliance_level: L2
+    write_owner: cloudrouter-ops-runtime
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      invitee_user_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      inviter_user_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      invite_code:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      source:
+        type: string(16)
+        required: true
+        postgres_type: VARCHAR(16)
+        constraints: NOT NULL DEFAULT 'register'
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      reward_status:
+        type: string(16)
+        required: true
+        postgres_type: VARCHAR(16)
+        constraints: NOT NULL DEFAULT 'pending'
+      claimed_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+    constraints:
+      - name: pk_ops_referral_relation
+        type: primary_key
+        columns:
+          - id
+      - name: uk_ops_referral_relation_tenant_invitee
+        type: unique
+        columns: &id_ops_referral_relation_tenant_invitee
+          - tenant_id
+          - organization_id
+          - invitee_user_id
+        where: null
+    indexes:
+      - name: uk_ops_referral_relation_tenant_invitee
+        columns: *id_ops_referral_relation_tenant_invitee
+        unique: true
+        where: null
+      - name: idx_ops_referral_relation_inviter
+        columns: &id_ops_referral_relation_inviter
+          - tenant_id
+          - organization_id
+          - inviter_user_id
+          - created_at
+          - id
+        unique: false
+        where: null
+      - name: idx_ops_referral_relation_code
+        columns: &id_ops_referral_relation_code
+          - tenant_id
+          - organization_id
+          - invite_code
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+  - name: ops_referral_strategy
+    domain: ops
+    profile: operational_state
+    compliance_level: L2
+    write_owner: cloudrouter-ops-runtime
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      name:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      description:
+        type: string(512)
+        required: true
+        postgres_type: VARCHAR(512)
+        constraints: NOT NULL DEFAULT ''
+      status:
+        type: string(16)
+        required: true
+        postgres_type: VARCHAR(16)
+        constraints: NOT NULL DEFAULT 'disabled'
+      reward_type:
+        type: string(16)
+        required: true
+        postgres_type: VARCHAR(16)
+        constraints: NOT NULL DEFAULT 'POINTS'
+      reward_value:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      reward_target:
+        type: string(16)
+        required: true
+        postgres_type: VARCHAR(16)
+        constraints: NOT NULL DEFAULT 'INVITER'
+      trigger_event:
+        type: string(16)
+        required: true
+        postgres_type: VARCHAR(16)
+        constraints: NOT NULL DEFAULT 'REGISTER'
+      max_rewards_per_inviter:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      starts_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      ends_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+    constraints:
+      - name: pk_ops_referral_strategy
+        type: primary_key
+        columns:
+          - id
+    indexes:
+      - name: idx_ops_referral_strategy_tenant_status
+        columns: &id_ops_referral_strategy_tenant_status
+          - tenant_id
+          - organization_id
+          - status
+          - created_at
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
   - name: ops_notification_message
     domain: ops
     profile: operational_state

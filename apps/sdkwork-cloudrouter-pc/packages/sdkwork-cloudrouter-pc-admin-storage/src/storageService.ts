@@ -4,7 +4,10 @@ import { createClientOperationToken } from '@sdkwork/cloudroutes-pc-commons/runt
 type BackendStorageService = ReturnType<typeof getCloudRouterBackendSdkClient>['storage'];
 
 export type StorageProviderCreateInput = Parameters<BackendStorageService['oss']['providers']['create']>[0];
+export type StorageProviderRecord = Awaited<ReturnType<typeof backendStorageProvidersList>>['items'][number];
+export type StorageBucketRecord = Awaited<ReturnType<typeof backendStorageBucketsList>>['items'][number];
 export type StorageBucketCreateInput = Parameters<BackendStorageService['oss']['buckets']['create']>[0];
+export type StorageStatusUpdateInput = Parameters<BackendStorageService['oss']['buckets']['update']>[1];
 export type StorageQuotaCreateInput = Parameters<BackendStorageService['oss']['quotas']['create']>[0];
 export type StorageDefaultBucketUpdateInput = Parameters<BackendStorageService['defaultBuckets']['update']>[1];
 export type StorageReconciliationCreateInput = NonNullable<Parameters<BackendStorageService['oss']['storageReconciliationRuns']['create']>[1]>;
@@ -32,6 +35,10 @@ export async function backendStorageBucketCreate(body: StorageBucketCreateInput)
   return getCloudRouterBackendSdkClient().storage.oss.buckets.create(body, {
     idempotencyKey: createClientOperationToken('storage-bucket'),
   });
+}
+
+export async function backendStorageBucketUpdate(bucketId: string, body: StorageStatusUpdateInput) {
+  return getCloudRouterBackendSdkClient().storage.oss.buckets.update(bucketId, body);
 }
 
 export async function backendStorageDefaultBucketsList(pageSize = 100) {

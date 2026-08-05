@@ -10,6 +10,7 @@ import {
   upstreamSharedMessages,
   upstreamSupplierMessages,
 } from '@sdkwork/cloudrouter-pc-admin-upstream/i18n';
+import { cloudRouterIamAdminMessages } from '@sdkwork/cloudrouter-pc-admin-iam/i18n';
 import { mergeI18nBundles } from './merge';
 import { adminAnalyticsRecordMessages } from './admin/analytics-record';
 import { adminAuthSettingsMessages } from './admin/auth-settings';
@@ -77,6 +78,7 @@ export const resources = mergeI18nBundles([
   upstreamSupplierMessages,
   upstreamAccountMessages,
   upstreamAccountGroupMessages,
+  cloudRouterIamAdminMessages,
   consoleAccountMessages,
   consoleApiKeysMessages,
   consoleBillingMessages,

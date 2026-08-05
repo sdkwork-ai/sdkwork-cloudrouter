@@ -2339,11 +2339,7 @@ async fn service_router_surface_openapi_documents_local_business_centers_only() 
             "/backend/v3/api/payments/providers",
             "providers.list",
         ),
-        (
-            "get",
-            "/backend/v3/api/recharges/packages",
-            "packages.list",
-        ),
+        ("get", "/backend/v3/api/recharges/packages", "packages.list"),
         (
             "get",
             "/backend/v3/api/storage/providers",
@@ -2410,11 +2406,7 @@ async fn service_router_backend_openapi_documents_local_standalone_business_cent
             "/backend/v3/api/payments/providers",
             "providers.list",
         ),
-        (
-            "get",
-            "/backend/v3/api/recharges/packages",
-            "packages.list",
-        ),
+        ("get", "/backend/v3/api/recharges/packages", "packages.list"),
         (
             "get",
             "/backend/v3/api/storage/providers",
@@ -2570,10 +2562,11 @@ async fn fetch_surface_openapi(
     surface: ApiSurface,
     path: &str,
 ) -> Value {
-    let response = sdkwork_cloudrouter_http::service_router_with_contract_routes(service_name, surface)
-        .oneshot(Request::builder().uri(path).body(Body::empty()).unwrap())
-        .await
-        .unwrap();
+    let response =
+        sdkwork_cloudrouter_http::service_router_with_contract_routes(service_name, surface)
+            .oneshot(Request::builder().uri(path).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
     assert_eq!(StatusCode::OK, response.status());
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await

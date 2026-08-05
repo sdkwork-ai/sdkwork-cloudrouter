@@ -620,7 +620,10 @@ fn modalities(values: Option<Vec<String>>) -> RequestResult<Vec<String>> {
     let mut seen: Vec<String> = Vec::new();
     for value in values {
         let normalized = value.trim().to_lowercase();
-        if !SUPPORTED_MODALITIES.iter().any(|modality| *modality == normalized) {
+        if !SUPPORTED_MODALITIES
+            .iter()
+            .any(|modality| *modality == normalized)
+        {
             return Err(problem(
                 SdkWorkResultCode::InvalidParameter,
                 format!(

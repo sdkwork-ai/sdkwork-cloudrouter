@@ -9,7 +9,8 @@ pub struct AppSessionConfig {
 
 impl AppSessionConfig {
     pub const ENV_APP_SESSION_SECRET: &'static str = "SDKWORK_CLOUDROUTER_APP_SESSION_SECRET";
-    pub const ENV_APP_SESSION_TTL_SECONDS: &'static str = "SDKWORK_CLOUDROUTER_APP_SESSION_TTL_SECONDS";
+    pub const ENV_APP_SESSION_TTL_SECONDS: &'static str =
+        "SDKWORK_CLOUDROUTER_APP_SESSION_TTL_SECONDS";
     pub const ENV_APP_SESSION_MAX_CLOCK_SKEW_SECONDS: &'static str =
         "SDKWORK_CLOUDROUTER_APP_SESSION_MAX_CLOCK_SKEW_SECONDS";
     pub const MIN_SIGNING_SECRET_LEN: usize = 32;

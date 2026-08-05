@@ -169,7 +169,10 @@ impl RedisTenantInflightCounter {
         config: TenantInflightConfig,
     ) -> Result<Self, String> {
         let client = redis::Client::open(redis_config.url()).map_err(|e| format!("{e}"))?;
-        let prefix = redis_config.key_prefix().unwrap_or("cloudrouter").to_owned();
+        let prefix = redis_config
+            .key_prefix()
+            .unwrap_or("cloudrouter")
+            .to_owned();
         Ok(Self {
             client,
             connection_manager: Arc::new(tokio::sync::OnceCell::const_new()),

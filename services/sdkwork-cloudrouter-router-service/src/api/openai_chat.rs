@@ -16,6 +16,7 @@ use sdkwork_cloudrouter_http::ApiKeyIdentity;
 use sdkwork_cloudrouter_security::redact_error_message;
 use serde_json::Value;
 
+use crate::api::openai_auth_token::OpenAiAuthTokenAuthenticator;
 use crate::api::openai_contract::OpenAiChatCompletionRequest;
 use crate::api::openai_error::openai_error;
 use crate::api::openai_invocation::{
@@ -48,6 +49,9 @@ use crate::ports::{
     ChatCompletionStreamRelay, GatewayUsageRecorder, GetRuntimeRegionSettingsQuery,
     RuntimeRegionSettingsStore, RuntimeRegionSettingsSubject, UpstreamAccountRouteCatalog,
 };
+use sdkwork_web_core::{
+    default_open_api_bearer_classifier, DynOpenApiBearerCredentialClassifier, OpenApiCredentialKind,
+};
 
 const MAX_STREAM_USAGE_EVENT_BUFFER_BYTES: usize = 256 * 1024;
 const MAX_SSE_EVENT_DELIMITER_BYTES: usize = 4;
@@ -65,6 +69,12 @@ struct OpenAiChatState<C> {
     failure_strategy: OpenAiRuntimeFailureStrategy,
     default_retry_policy: ProviderRetryPolicy,
     region_settings_store: Option<Arc<dyn RuntimeRegionSettingsStore + Send + Sync>>,
+    /// Resolves non-API-key bearer credentials (auth tokens) into an account
+    /// route context; `None` fails closed for the auth-token channel.
+    auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator>>,
+    /// Classifies a single bearer credential into the API key or auth token
+    /// channel (default: `sk-`/`sp-` prefixes).
+    bearer_classifier: DynOpenApiBearerCredentialClassifier,
 }
 
 impl<C> Clone for OpenAiChatState<C> {
@@ -80,7 +90,21 @@ impl<C> Clone for OpenAiChatState<C> {
             failure_strategy: self.failure_strategy,
             default_retry_policy: self.default_retry_policy.clone(),
             region_settings_store: self.region_settings_store.clone(),
+            auth_token_authenticator: self.auth_token_authenticator.clone(),
+            bearer_classifier: Arc::clone(&self.bearer_classifier),
         }
+    }
+}
+
+impl<C> OpenAiChatState<C> {
+    fn with_auth_extensions(
+        mut self,
+        auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator>>,
+        bearer_classifier: DynOpenApiBearerCredentialClassifier,
+    ) -> Self {
+        self.auth_token_authenticator = auth_token_authenticator;
+        self.bearer_classifier = bearer_classifier;
+        self
     }
 }
 
@@ -476,7 +500,55 @@ where
             failure_strategy: runtime_config.failure_strategy,
             default_retry_policy: runtime_config.default_retry_policy,
             region_settings_store: runtime_config.region_settings_store.clone(),
+            auth_token_authenticator: None,
+            bearer_classifier: default_open_api_bearer_classifier(),
         })
+}
+
+/// Like [`openai_chat_completions_router_with_optional_relays_and_runtime_config`],
+/// plus the auth extensions for the flexible bearer channel: an optional
+/// auth-token authenticator (non-`sk-`/`sp-` credentials) and an overridable
+/// bearer classifier.
+pub fn openai_chat_completions_router_with_auth_extensions<C>(
+    catalog: Arc<C>,
+    api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
+    relay: Option<Arc<dyn ChatCompletionRelay + Send + Sync>>,
+    stream_relay: Option<Arc<dyn ChatCompletionStreamRelay + Send + Sync>>,
+    usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
+    plugins: Vec<OpenAiInvocationPluginRef>,
+    runtime_config: OpenAiRuntimeRouteConfig,
+    auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator>>,
+    bearer_classifier: DynOpenApiBearerCredentialClassifier,
+) -> Router
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    let usage_recording = usage_recorder.as_ref().map(|usage_recorder| {
+        Arc::new(OpenAiUsageRecorder::new(
+            Arc::clone(&catalog),
+            Arc::clone(usage_recorder),
+        ))
+    });
+
+    Router::new()
+        .route("/v1/chat/completions", post(create_chat_completion::<C>))
+        .with_state(
+            OpenAiChatState {
+                catalog,
+                api_key_hasher,
+                relay,
+                stream_relay,
+                usage_recorder,
+                usage_recording,
+                plugins: with_builtin_invocation_plugins(plugins),
+                failure_strategy: runtime_config.failure_strategy,
+                default_retry_policy: runtime_config.default_retry_policy,
+                region_settings_store: runtime_config.region_settings_store.clone(),
+                auth_token_authenticator: None,
+                bearer_classifier: default_open_api_bearer_classifier(),
+            }
+            .with_auth_extensions(auth_token_authenticator, bearer_classifier),
+        )
 }
 
 async fn create_chat_completion<C>(
@@ -510,13 +582,40 @@ where
             );
         }
     };
-    let context = match authenticate_api_key(
-        state.catalog.as_ref(),
-        state.api_key_hasher.as_ref(),
-        &identity,
-    ) {
-        Ok(context) => context,
-        Err(response) => return *response,
+    let Some(credential_secret) = identity.credential_secret() else {
+        return openai_error(
+            StatusCode::UNAUTHORIZED,
+            "invalid_api_key",
+            "invalid_request_error",
+            "missing api key credential",
+        );
+    };
+    // Flexible bearer channel: API-key prefixed credentials (`sk-`/`sp-`)
+    // authenticate through the gateway API key store; any other bearer value
+    // is treated as an SDKWork auth token.
+    let context = match state.bearer_classifier.classify(credential_secret) {
+        OpenApiCredentialKind::ApiKey => match authenticate_api_key(
+            state.catalog.as_ref(),
+            state.api_key_hasher.as_ref(),
+            &identity,
+        ) {
+            Ok(context) => context,
+            Err(response) => return *response,
+        },
+        OpenApiCredentialKind::AuthToken => {
+            let Some(authenticator) = state.auth_token_authenticator.as_deref() else {
+                return openai_error(
+                    StatusCode::UNAUTHORIZED,
+                    "invalid_auth_token",
+                    "invalid_request_error",
+                    "auth token authentication is not configured",
+                );
+            };
+            match authenticator.authenticate(credential_secret).await {
+                Ok(context) => context,
+                Err(response) => return *response,
+            }
+        }
     };
     let invocation_context = OpenAiInvocationContext::new(
         OpenAiInvocationEndpoint::ChatCompletions,

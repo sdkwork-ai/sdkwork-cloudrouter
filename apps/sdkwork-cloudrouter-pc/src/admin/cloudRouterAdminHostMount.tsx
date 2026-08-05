@@ -1,5 +1,6 @@
 import { lazy, type ComponentType, type LazyExoticComponent, type ReactElement } from 'react';
 import { Navigate, Route, useParams } from 'react-router-dom';
+import { IAM_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-iam/contribution';
 
 export type CloudRouterAdminRouteContribution = {
   path: string;
@@ -40,6 +41,44 @@ const MembershipsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-ad
 const MarketingAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-marketing'), 'MarketingAdmin');
 const PaymentsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-payments'), 'PaymentsAdmin');
 const StorageAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-storage'), 'StorageAdmin');
+const IamUsersAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamUsersAdmin');
+const IamTenantsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamTenantsAdmin');
+const IamOrganizationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOrganizationsAdmin');
+const IamOrganizationStructureAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOrganizationStructureAdmin');
+const IamRolesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamRolesAdmin');
+const IamPermissionsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamPermissionsAdmin');
+const IamPoliciesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamPoliciesAdmin');
+const IamAuthorizationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamAuthorizationsAdmin');
+const IamOauthAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthAdmin');
+const IamOauthProviderConnectionsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthProviderConnectionsAdmin');
+const IamOauthMiniProgramsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthMiniProgramsAdmin');
+const IamOauthOfficialAccountsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthOfficialAccountsAdmin');
+const IamOauthScanLoginAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthScanLoginAdmin');
+const IamAccountBindingAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamAccountBindingAdmin');
+const IamAuditAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamAuditAdmin');
+
+/**
+ * Lazy route elements for the IAM admin module; paths mirror
+ * @sdkwork/cloudrouter-pc-admin-iam IAM_ADMIN_ROUTE_RECORDS. The bare `iam`
+ * record is a redirect handled by `IAM_ADMIN_ROUTE_RECORDS[].redirectTo`.
+ */
+const IAM_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>> = {
+  'iam/users': <IamUsersAdmin />,
+  'iam/tenants': <IamTenantsAdmin />,
+  'iam/organizations': <IamOrganizationsAdmin />,
+  'iam/organizations/:organizationId/structure': <IamOrganizationStructureAdmin />,
+  'iam/roles': <IamRolesAdmin />,
+  'iam/permissions': <IamPermissionsAdmin />,
+  'iam/policies': <IamPoliciesAdmin />,
+  'iam/authorizations': <IamAuthorizationsAdmin />,
+  'iam/oauth': <IamOauthAdmin />,
+  'iam/oauth/providers': <IamOauthProviderConnectionsAdmin />,
+  'iam/oauth/mini-programs': <IamOauthMiniProgramsAdmin />,
+  'iam/oauth/official-accounts': <IamOauthOfficialAccountsAdmin />,
+  'iam/oauth/scan-login': <IamOauthScanLoginAdmin />,
+  'iam/account-binding': <IamAccountBindingAdmin />,
+  'iam/audit': <IamAuditAdmin />,
+};
 
 export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRouteContribution[] = [
   route('dashboard', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-dashboard', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <DashboardAdmin />),
@@ -63,6 +102,18 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   route('marketing/:sectionId?/:batchId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-marketing', ['sdkwork-promotion-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminMarketingRoute component={MarketingAdmin} />),
   route('payments/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-payments', ['sdkwork-payment-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={PaymentsAdmin} />),
   route('storage/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-storage', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={StorageAdmin} />),
+  ...IAM_ADMIN_ROUTE_RECORDS.map((record) =>
+    route(
+      record.path,
+      'sdkwork-cloudrouter',
+      '@sdkwork/cloudrouter-pc-admin-iam',
+      ['sdkwork-iam-backend-sdk'],
+      record.requiredPermission,
+      record.redirectTo
+        ? <Navigate to={record.redirectTo} replace />
+        : IAM_ADMIN_ROUTE_ELEMENTS[record.path]!,
+    ),
+  ),
 ];
 
 function AdminSectionRoute({ component: Component }: { component: ComponentType<{ sectionId?: string }> }) {

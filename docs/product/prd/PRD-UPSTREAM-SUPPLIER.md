@@ -2,15 +2,21 @@
 
 Status: active  
 Owner: cloud-router-platform  
-Updated: 2026-08-04  
-Decision: [ADR-20260728](../../architecture/decisions/ADR-20260728-standardize-upstream-supplier-routing.md)
+Updated: 2026-08-06  
+Decision: [ADR-20260728](../../architecture/decisions/ADR-20260728-standardize-upstream-supplier-routing.md)  
+Architecture: [TECH-2026-05-10-group-account-pool-routing](../../architecture/tech/TECH-2026-05-10-group-account-pool-routing.md)
 
 ## Product Goal
 
 Cloud Router provides one standardized operator workflow for configuring an
 official AI provider or relay supplier, attaching credentialed accounts,
 grouping those accounts for routing and settlement, and explaining why an API
-request selected or rejected each candidate.
+request selected or rejected each candidate. It also serves as the account-pool
+routing gateway for product consumers (e.g. SDKWork Agents chat): consumers
+authenticate with their login auth token — **no per-user API key or upstream
+credential configuration is required** — and Cloud Router routes the model
+request through the tenant's default account group, managing resource usage,
+health, quota, and settlement centrally.
 
 ## Product Dictionary
 
@@ -22,10 +28,32 @@ request selected or rejected each candidate.
 | Upstream account | One credentialed, billable account at one supplier | Supplier or account group |
 | Account group | Routable group of accounts with routing and financial policy | Pool or supplier |
 | Resource | Model, API, or capability that may be routed | Supplier adapter |
+| API key credential | Gateway credential (`sk-`/`sp-` prefixed) bound to a group | Upstream account credential |
+| Auth token credential | Product login token accepted by the gateway auth-token channel | API key credential |
 
 The Chinese UI uses "上游供应商", "上游账号", "账号分组", "Base URL",
 "认证方式", "资源", and "资源分组". It does not use "站点", "渠道",
 "供应商密钥", "服务商", or "池" for this capability.
+
+## Authentication
+
+The OpenAI-compatible open API accepts a single `Authorization: Bearer`
+credential and classifies it by prefix (default `sk-` / `sp-`):
+
+- **API key channel**: `sk-`/`sp-` prefixed credentials are resolved through
+  the gateway API key store (`iam_gateway_api_key`), which binds the key to a
+  default account group and optional multi-group route bindings (priority and
+  weight).
+- **Auth token channel**: any other bearer value is treated as a product login
+  auth token, resolved through IAM to the tenant/organization/user identity,
+  and routed through the tenant's **default account group** (`code="default"`,
+  name `Default`). The channel is available to product integrations such as
+  SDKWork Agents chat, enabling **API-key-free chat** where resource usage is
+  managed by the account pool.
+
+Both channels produce the same identity context consumed by the route selector.
+The auth-token channel is an injectable authenticator (fails closed when not
+wired).
 
 ## Supplier Workflow
 
@@ -101,21 +129,57 @@ facts.
 
 ## API Request Lifecycle
 
-1. Authenticate and resolve tenant, organization, API key, and entitlements.
-2. Normalize API operation and requested resource/model.
-3. Resolve ordered account groups from routing policy.
-4. Intersect supplier, group, and entitlement resources.
+1. Authenticate through the API key or auth token channel and resolve tenant,
+   organization, identity, and the account group context (default group for
+   auth-token sessions; bound groups for API keys).
+2. Normalize API operation and requested resource/model (catalog key).
+3. Resolve ordered account groups from the API key's group bindings
+   (priority/weight) or the auth-token default group.
+4. Intersect supplier, group, and entitlement resources; empty intersection is
+   fail-closed.
 5. Filter by lifecycle, time window, protocol, region, auth, credential, quota,
-   health, and circuit state.
-6. Apply the group strategy and fallback from one immutable candidate snapshot.
+   health, and circuit state — unhealthy accounts/endpoints and open circuit
+   breakers are excluded before selection.
+6. Apply the group routing strategy (weighted / round-robin / least-latency /
+   least-cost / failover) and fallback mode (none / same-supplier / sequential /
+   cross-supplier) from one immutable candidate snapshot; order endpoints and
+   credentials by their own priority/weight.
 7. Select a compatible endpoint and active credential version, validate egress,
-   and dispatch through the adapter.
+   and dispatch through the adapter; apply model mapping rules (account > group
+   > endpoint > supplier > vendor > global) to resolve the supplier-native model.
 8. Record result, usage, cost, sale amount, health feedback, settlement, and an
-   audit-safe route explanation.
+   audit-safe route explanation (decision log: request/trace/policy/rule/selected
+   supplier/account/credential/candidate snapshot/fallback chain/latency).
 
-No request may fall back across tenants, use another account's credential,
-route a resource absent from the effective allowlist, or attach a secret before
-the target passes egress validation.
+Routing behavior notes:
+
+- **Quota** is enforced at the gateway admission layer (requests per second/day,
+  burst, block duration) and does not select or skip accounts.
+- **Retry** applies only to non-streaming, replay-safe requests; **candidate
+  failover** to the next account requires `failure_strategy = Failover`.
+- **Pricing gate**: a candidate is selected only when its procurement cost
+  (reference cost × contract/member/group multipliers) is resolvable.
+- No request may fall back across tenants, use another account's credential,
+  route a resource absent from the effective allowlist, or attach a secret before
+  the target passes egress validation.
+
+## Model Routing And Mapping
+
+A request model is matched against the effective resource entitlements
+(catalog key / model / provider-native model / vendor / API / modality). The
+requested model may be mapped to a supplier-native model through
+`ai_model_mapping_rule` (exact/alias, six binding levels). When no supplier
+supports the requested model and no mapping applies, the request fails with a
+deterministic `model_not_found` error so operators can configure the mapping or
+supplier resource grants.
+
+## Agents Integration Scenario
+
+Product consumers (SDKWork Agents) call `POST /v1/chat/completions` with their
+login auth token; no API key or upstream credential configuration is needed on
+the consumer side. The gateway resolves the tenant default group and routes the
+model through the account pool. This keeps resource usage (accounts, quotas,
+health, settlement) managed centrally by Cloud Router.
 
 ## Roles And Permissions
 
@@ -166,7 +230,14 @@ snapshot used for reconciliation.
 - Routing reads use an immutable cached snapshot and avoid N+1 control-plane
   queries and per-request route deep copies.
 - Health checks have bounded concurrency and timeout, redacted errors, and
-  dedicated account/endpoint health-state authorities.
+  dedicated account/endpoint health-state authorities. Circuit recovery uses a
+  configurable recovery window (default 60 seconds) applied at snapshot load.
+- Quota policies are enforced at the gateway admission layer; quota exhaustion
+  must never block unrelated routes and must not be used as a routing signal.
+- Route decision facts (policy, rule, selected supplier/account/credential,
+  candidate snapshot, fallback chain, latency) are recorded for audit and
+  route-explanation; the decision-log read side is available to dashboards and
+  usage logs.
 - Configuration export, restore, and drift comparison exclude secret material.
 - Metrics use bounded labels and expose candidate count, rejection reason,
   strategy, fallback count, health, credential expiry, and settlement failure.
@@ -182,11 +253,22 @@ snapshot used for reconciliation.
   authentication methods.
 - `api_key`, `bearer_token`, and `custom` credentials can be created and rotated
   without any read response exposing raw material.
-- Supplier/group/entitlement resource intersection is enforced and explained.
+- The open API accepts both `sk-`/`sp-` prefixed API keys and product auth
+  tokens through a single bearer credential, with the auth-token channel
+  routing to the tenant default account group.
+- Supplier/group/entitlement resource intersection is enforced and explained;
+  unsupported models fail with a deterministic `model_not_found` error.
 - Weighted, round-robin, least-latency, least-cost, and failover strategies are
   deterministic and covered by tests.
+- Health and circuit state exclude unhealthy accounts/endpoints before
+  selection; recovery windows and half-open probes are tested.
 - Cost and sale multipliers are independently configurable and reconciled from
-  immutable snapshots.
+  immutable snapshots; unpriced candidates are never selected.
+- Model mapping rules resolve supplier-native models with documented binding
+  priority.
+- Product integrations (SDKWork Agents) can complete a chat turn through the
+  auth-token channel without any per-user API key or upstream credential
+  configuration.
 - No retired provider/site/channel/pool or duplicate integration aggregate
   remains in executable or current contract surfaces.
 - Clean PostgreSQL installation, contract generation, Rust tests, frontend

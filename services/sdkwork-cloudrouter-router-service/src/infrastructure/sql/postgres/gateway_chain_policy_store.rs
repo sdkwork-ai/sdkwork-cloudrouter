@@ -1,8 +1,8 @@
 //! PostgreSQL read model for `iam_gateway_chain_policy`.
 
 use async_trait::async_trait;
-use sqlx::Row;
 use sqlx::PgPool;
+use sqlx::Row;
 
 use crate::ports::{ChainPolicyRecord, GatewayChainPolicyStore};
 
@@ -20,11 +20,7 @@ impl PostgresGatewayChainPolicyStore {
 
 #[async_trait]
 impl GatewayChainPolicyStore for PostgresGatewayChainPolicyStore {
-    async fn find_chain_policy(
-        &self,
-        scope_type: i32,
-        scope_id: i64,
-    ) -> Option<ChainPolicyRecord> {
+    async fn find_chain_policy(&self, scope_type: i32, scope_id: i64) -> Option<ChainPolicyRecord> {
         let row = sqlx::query(
             "SELECT scope_type, scope_id, payload
              FROM iam_gateway_chain_policy

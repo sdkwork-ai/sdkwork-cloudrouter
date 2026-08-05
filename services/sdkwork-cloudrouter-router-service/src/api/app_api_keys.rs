@@ -8,8 +8,8 @@ use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, patch};
 use axum::{Json, Router};
-use serde::{Deserialize, Serialize};
 use sdkwork_web_chain::ChainPolicy;
+use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
@@ -24,10 +24,11 @@ use crate::domain::{
 };
 use crate::ports::{
     AccountGroupBindingInput, AdminChainPolicyStore, AdminChainPolicySubject,
-    CreateGatewayApiKeyCommand, DeleteGatewayApiKeyCommand, EnsureDefaultUpstreamAccountGroupCommand,
-    GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore,
-    GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery, PricingCatalog,
-    UpdateGatewayApiKeyCommand, UpsertChainPolicyCommand, ADMIN_CHAIN_POLICY_SCOPE_API_KEY,
+    CreateGatewayApiKeyCommand, DeleteGatewayApiKeyCommand,
+    EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore,
+    GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery,
+    PricingCatalog, UpdateGatewayApiKeyCommand, UpsertChainPolicyCommand,
+    ADMIN_CHAIN_POLICY_SCOPE_API_KEY,
 };
 
 const DEFAULT_ACCOUNT_GROUP: &str = "default";
@@ -358,12 +359,14 @@ async fn create_key_inner(
     let groups = resolve_groups(&snapshot, &request, subject, &state).await?;
     for group in &groups {
         if snapshot.find_upstream_account_group(group.id).is_none() {
-            response_snapshot.upstream_account_groups.push(group.clone());
+            response_snapshot
+                .upstream_account_groups
+                .push(group.clone());
         }
     }
-    let default_group = groups
-        .first()
-        .ok_or_else(|| AppApiKeyCreateError::BadRequest("accountGroups must not be empty".to_owned()))?;
+    let default_group = groups.first().ok_or_else(|| {
+        AppApiKeyCreateError::BadRequest("accountGroups must not be empty".to_owned())
+    })?;
     let name = normalize_name(request.name.as_deref())?;
     let quota_limit = normalize_quota_limit(&request)?;
     let requested_modalities = normalize_modalities(request.modalities)?;
@@ -564,10 +567,7 @@ async fn update_key_inner(
         if let Some(chain_store) = &state.chain_policy_store {
             chain_store
                 .upsert_chain_policy(build_app_chain_policy_command(
-                    &state,
-                    &subject,
-                    api_key_id,
-                    policy,
+                    &state, &subject, api_key_id, policy,
                 )?)
                 .await
                 .map_err(|error| {
@@ -804,8 +804,11 @@ fn account_group_codes(
         .map(|binding| binding.account_group_code.trim().to_owned())
         .filter(|code| !code.is_empty())
         .collect::<Vec<_>>();
-    let default_code =
-        group_code(snapshot.find_upstream_account_group(api_key.default_account_group_id).as_ref());
+    let default_code = group_code(
+        snapshot
+            .find_upstream_account_group(api_key.default_account_group_id)
+            .as_ref(),
+    );
     if default_code != "unassigned" && !codes.iter().any(|code| code == &default_code) {
         codes.push(default_code);
     }
@@ -867,7 +870,9 @@ async fn resolve_groups(
     if let Some(codes) = &request.account_groups {
         return resolve_group_codes(snapshot, codes, subject, state).await;
     }
-    Ok(vec![resolve_group(snapshot, request, subject, state).await?])
+    Ok(vec![
+        resolve_group(snapshot, request, subject, state).await?,
+    ])
 }
 
 async fn resolve_group_codes(

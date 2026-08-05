@@ -75,8 +75,8 @@ fn main() {
         println!("cargo:rerun-if-changed={}", changed_path.display());
     }
 
-    let build_mode =
-        env::var("SDKWORK_CLOUDROUTER_HTTP_OPENAPI_BUILD_MODE").unwrap_or_else(|_| "generate".to_owned());
+    let build_mode = env::var("SDKWORK_CLOUDROUTER_HTTP_OPENAPI_BUILD_MODE")
+        .unwrap_or_else(|_| "generate".to_owned());
     if build_mode == "copy" {
         copy_openapi_if_changed(
             workspace_root

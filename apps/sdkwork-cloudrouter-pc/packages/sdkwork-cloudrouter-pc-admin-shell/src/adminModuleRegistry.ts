@@ -29,15 +29,18 @@ import {
   ShieldAlert,
   ShieldCheck,
   TicketPercent,
+  Undo2,
   Users,
   UsersRound,
   WalletCards,
   Wrench,
   type LucideIcon,
 } from 'lucide-react';
+import { IAM_ADMIN_MENU, IAM_ADMIN_MODULE_DEF } from '@sdkwork/cloudrouter-pc-admin-iam/contribution';
 
 export type AdminModuleId =
   | 'home'
+  | 'iam'
   | 'membershipCenter'
   | 'marketingCenter'
   | 'paymentCenter'
@@ -96,6 +99,7 @@ export const ADMIN_MODULES: AdminModuleDef[] = [
       '/admin/analytics',
     ],
   }),
+  IAM_ADMIN_MODULE_DEF,
   moduleBlock({
     id: 'membershipCenter',
     nameKey: 'admin.header.membershipCenter',
@@ -164,6 +168,7 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
       ]),
     ],
   },
+  IAM_ADMIN_MENU,
   {
     moduleId: 'membershipCenter',
     groups: [
@@ -219,6 +224,7 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
         itemBlock({ path: '/admin/payments/attempts', labelKey: 'admin.menu.payments.attempts', icon: Activity }),
         itemBlock({ path: '/admin/payments/webhookEvents', labelKey: 'admin.menu.payments.webhookEvents', icon: RefreshCcw }),
         itemBlock({ path: '/admin/payments/reconciliationRuns', labelKey: 'admin.menu.payments.reconciliation', icon: DatabaseZap }),
+        itemBlock({ path: '/admin/payments/refunds', labelKey: 'admin.menu.payments.refunds', icon: Undo2 }),
       ]),
     ],
   },

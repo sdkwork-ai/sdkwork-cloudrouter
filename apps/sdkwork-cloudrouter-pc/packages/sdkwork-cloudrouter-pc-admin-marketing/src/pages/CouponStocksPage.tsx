@@ -1,44 +1,25 @@
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ApiRecord } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { MarketingStatusBadge } from '../components/MarketingDrawer';
 import { MarketingListView, type MarketingColumn } from '../components/MarketingListView';
-import { backendPromotionCouponStocksList, backendPromotionOffersList } from '../marketingService';
+import { marketingEnumLabel } from '../components/MarketingValueBadge';
+import { backendPromotionCouponStocksList } from '../marketingService';
+import { usePromotionReferences } from '../usePromotionReferences';
 
 export function CouponStocksPage() {
   const { t } = useTranslation();
-  const [offerNames, setOfferNames] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    let cancelled = false;
-    void backendPromotionOffersList({ page: 1, pageSize: 200 })
-      .then((page) => {
-        if (!cancelled) {
-          const mapping: Record<string, string> = {};
-          for (const item of page.items) {
-            mapping[String(item['id'])] = String(item['display_name'] ?? '');
-          }
-          setOfferNames(mapping);
-        }
-      })
-      .catch(() => {
-        // 名称映射失败不影响列表
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { offerNames } = usePromotionReferences();
 
   const columns: MarketingColumn<ApiRecord>[] = [
-    { key: 'stock_no', label: t('admin.col.stock', 'Stock') },
+    { key: 'stockNo', label: t('admin.col.stock', 'Stock') },
     {
-      key: 'offer_id',
+      key: 'offerId',
       label: t('admin.col.offer', 'Offer'),
       render: (value) => offerNames[String(value)] || String(value),
     },
-    { key: 'stock_type', label: t('admin.col.stockType', 'Stock Type') },
+    { key: 'stockType', label: t('admin.col.stockType', 'Stock Type'), render: (value) => marketingEnumLabel(value, 'admin.marketing.enums.stockType', t) },
     {
-      key: 'code_issue_mode',
+      key: 'codeIssueMode',
       label: t('admin.col.codeIssueMode', 'Code Mode'),
       render: (value) => (
         <span className="text-xs">
@@ -48,11 +29,11 @@ export function CouponStocksPage() {
         </span>
       ),
     },
-    { key: 'total_quantity', label: t('admin.col.total', 'Total'), align: 'right' },
-    { key: 'available_quantity', label: t('admin.col.available', 'Available'), align: 'right' },
-    { key: 'claimed_quantity', label: t('admin.col.claimed', 'Claimed'), align: 'right' },
-    { key: 'redeemed_quantity', label: t('admin.col.redeemed', 'Redeemed'), align: 'right' },
-    { key: 'per_user_limit', label: t('admin.col.perUserLimit', 'Per User'), align: 'right' },
+    { key: 'totalQuantity', label: t('admin.col.total', 'Total'), align: 'right' },
+    { key: 'availableQuantity', label: t('admin.col.available', 'Available'), align: 'right' },
+    { key: 'claimedQuantity', label: t('admin.col.claimed', 'Claimed'), align: 'right' },
+    { key: 'redeemedQuantity', label: t('admin.col.redeemed', 'Redeemed'), align: 'right' },
+    { key: 'perUserLimit', label: t('admin.col.perUserLimit', 'Per User'), align: 'right' },
     {
       key: 'status',
       label: t('admin.col.status', 'Status'),
@@ -64,8 +45,8 @@ export function CouponStocksPage() {
         />
       ),
     },
-    { key: 'claim_starts_at', label: t('admin.col.claimStartsAt', 'Claim Starts') },
-    { key: 'claim_ends_at', label: t('admin.col.claimEndsAt', 'Claim Ends') },
+    { key: 'claimStartsAt', label: t('admin.col.claimStartsAt', 'Claim Starts') },
+    { key: 'claimEndsAt', label: t('admin.col.claimEndsAt', 'Claim Ends') },
   ];
 
   return (

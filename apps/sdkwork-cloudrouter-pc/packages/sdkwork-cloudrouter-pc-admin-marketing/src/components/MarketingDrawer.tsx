@@ -86,9 +86,9 @@ export function MarketingStatusBadge({
 export function MarketingBatchStatusBadge({ status }: { status: unknown }) {
   const { t } = useTranslation();
   const value = String(status ?? '').toUpperCase();
-  const tone = value === 'READY'
+  const tone = value === 'READY' || value === 'SUCCEEDED' || value === 'COMPLETED'
     ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
-    : value === 'GENERATING' || value === 'PROCESSING'
+    : value === 'GENERATING' || value === 'PROCESSING' || value === 'RUNNING' || value === 'PENDING'
       ? 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'
       : value === 'FAILED'
         ? 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400'
@@ -98,7 +98,9 @@ export function MarketingBatchStatusBadge({ status }: { status: unknown }) {
     GENERATING: t('admin.marketing.status.generating', 'Generating'),
     PENDING: t('admin.marketing.status.pending', 'Pending'),
     PROCESSING: t('admin.marketing.status.processing', 'Processing'),
+    RUNNING: t('admin.marketing.status.processing', 'Processing'),
     COMPLETED: t('admin.marketing.status.completed', 'Completed'),
+    SUCCEEDED: t('admin.marketing.status.completed', 'Completed'),
     FAILED: t('admin.marketing.status.failed', 'Failed'),
   };
   return (

@@ -3,7 +3,6 @@ use std::sync::Mutex;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
-use sdkwork_cloudrouter_test_support::assert_server_generated_request_id;
 use sdkwork_cloudrouter_router_service::api::{
     OpenAiInvocationContext, OpenAiInvocationFault, OpenAiInvocationPlugin,
     OpenAiInvocationPluginError, OpenAiInvocationPluginFuture, OpenAiInvocationRelayOutcome,
@@ -27,6 +26,7 @@ use sdkwork_cloudrouter_router_service::ports::{
     ChatCompletionStreamRelay, ChatCompletionStreamRelayResponse, GatewayRequestTraceCommand,
     GatewayUsageRecordCommand, GatewayUsageRecorder,
 };
+use sdkwork_cloudrouter_test_support::assert_server_generated_request_id;
 use tower::ServiceExt;
 
 fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
@@ -2055,9 +2055,11 @@ impl ChatCompletionRelay for FailingRelay {
         >,
     > {
         Box::pin(async {
-            Err(sdkwork_cloudrouter_router_service::domain::DomainError::new(
-                "upstream connection failed",
-            ))
+            Err(
+                sdkwork_cloudrouter_router_service::domain::DomainError::new(
+                    "upstream connection failed",
+                ),
+            )
         })
     }
 }
@@ -2165,9 +2167,11 @@ impl ChatCompletionRelay for FailingPrimaryRelay {
         self.captured.lock().unwrap().push(request);
         Box::pin(async move {
             if supplier_code == self.failing_supplier_code {
-                return Err(sdkwork_cloudrouter_router_service::domain::DomainError::new(
-                    "upstream connection failed",
-                ));
+                return Err(
+                    sdkwork_cloudrouter_router_service::domain::DomainError::new(
+                        "upstream connection failed",
+                    ),
+                );
             }
             Ok(ChatCompletionRelayResponse::json(
                 200,
@@ -2276,9 +2280,11 @@ impl ChatCompletionStreamRelay for FailingPrimaryStreamRelay {
         self.captured.lock().unwrap().push(request);
         Box::pin(async move {
             if supplier_code == self.failing_supplier_code {
-                return Err(sdkwork_cloudrouter_router_service::domain::DomainError::new(
-                    "upstream stream connection failed",
-                ));
+                return Err(
+                    sdkwork_cloudrouter_router_service::domain::DomainError::new(
+                        "upstream stream connection failed",
+                    ),
+                );
             }
             Ok(ChatCompletionStreamRelayResponse::new(
                 200,

@@ -26,7 +26,7 @@ const client = new SdkworkAiClient({
 client.setApiKey('your-api-key');
 
 // Use the SDK
-const result = await client.models.list();
+const result = await client.user.balance.list();
 ```
 
 ## Authentication Modes (Mutually Exclusive)
@@ -92,6 +92,7 @@ const client = new SdkworkAiClient({
 - `client.files` - file API
 - `client.images` - image API
 - `client.models` - model API
+- `client.user` - user API
 - `client.moderations` - moderation API
 - `client.realtime` - realtime API
 - `client.responses` - response API
@@ -102,6 +103,7 @@ const client = new SdkworkAiClient({
 - `client.videosVidu` - videos_vidu API
 - `client.imagesVidu` - images_vidu API
 - `client.videosVolcengine` - videos_volcengine API
+- `client.vendor` - vendor API
 
 ## Usage Examples
 
@@ -445,6 +447,13 @@ const result = await client.images.edits.create(body);
 const result = await client.models.list();
 ```
 
+### user
+
+```typescript
+// Retrieve account balance
+const result = await client.user.balance.list();
+```
+
 ### moderation
 
 ```typescript
@@ -631,13 +640,20 @@ const body = {
 const result = await client.videosVolcengine.api.v3.contents.generations.tasks.create(body);
 ```
 
+### vendor
+
+```typescript
+// List vendors
+const result = await client.vendor.list();
+```
+
 ## Error Handling
 
 ```typescript
 import { SdkworkAiClient, NetworkError, TimeoutError, AuthenticationError } from '@sdkwork/cloudrouter-open-sdk';
 
 try {
-  const result = await client.models.list();
+  const result = await client.user.balance.list();
 } catch (error) {
   if (error instanceof AuthenticationError) {
     console.error('Authentication failed:', error.message);

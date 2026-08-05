@@ -47,12 +47,10 @@ async fn wire_agents_app_router(database_config: &DatabaseConfig) -> Result<Rout
     let contribution = sdkwork_api_agents_assembly::assemble_app_api_contribution()
         .await
         .map_err(|error| format!("compose sdkwork-agents app-api contribution failed: {error}"))?;
-    Ok(contribution
-        .router
-        .layer(from_fn_with_state(
-            contribution.domain_context_injectors,
-            inject_agents_domain_context,
-        )))
+    Ok(contribution.router.layer(from_fn_with_state(
+        contribution.domain_context_injectors,
+        inject_agents_domain_context,
+    )))
 }
 
 /// Merges the Agents App API surface into the unified Cloud Router app router.

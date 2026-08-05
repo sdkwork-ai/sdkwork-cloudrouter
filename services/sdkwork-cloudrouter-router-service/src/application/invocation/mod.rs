@@ -5,6 +5,7 @@ mod billing_policy;
 mod body;
 mod circuit_breaker;
 mod classification;
+mod decision_log;
 mod dispatch;
 mod dispatch_executor;
 mod error;
@@ -47,6 +48,7 @@ pub use circuit_breaker::{
 pub use classification::{
     InvocationClassification, InvocationClassificationRequest, InvocationResourceClassifier,
 };
+pub use decision_log::RoutingDecisionLogInterceptor;
 pub use dispatch::{
     DispatchMode, InvocationAdapterTarget, InvocationDispatch, InvocationDispatchResponse,
     InvocationProviderRequest, InvocationResponseMemoryGuard, InvocationShape,

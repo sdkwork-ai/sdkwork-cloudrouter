@@ -263,6 +263,16 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
             RoutingCapability::Network,
         ));
     }
+    if method == Method::GET && path == "/v1/vendors" {
+        // Cloud Router extension: vendors/models reachable for the gateway
+        // key, served as a synthetic local response (see
+        // `apply_gateway_dispatch_defaults`).
+        return Ok(free_endpoint(
+            "openai/management/vendors",
+            "openai.vendors",
+            RoutingCapability::Network,
+        ));
+    }
     if path == "/v1/files" {
         if method == Method::POST {
             return Ok(create_api(

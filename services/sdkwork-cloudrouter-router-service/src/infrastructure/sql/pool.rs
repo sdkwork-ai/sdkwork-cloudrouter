@@ -109,7 +109,9 @@ pub async fn connect_postgres_runtime_pool(
         .ok_or_else(|| sqlx::Error::Configuration("expected PostgreSQL database pool".into()))
 }
 
-pub fn postgres_database_readiness_check(pool: PgPool) -> sdkwork_cloudrouter_http::ReadinessCheckFn {
+pub fn postgres_database_readiness_check(
+    pool: PgPool,
+) -> sdkwork_cloudrouter_http::ReadinessCheckFn {
     std::sync::Arc::new(move || {
         let pool = pool.clone();
         Box::pin(async move {

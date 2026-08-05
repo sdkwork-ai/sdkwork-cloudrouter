@@ -2,16 +2,16 @@ use std::sync::Arc;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
-use sdkwork_web_core::{
-    ServerRequestId, WebApiSurface, WebAuthMode, WebDeploymentMode, WebEnvironment,
-    WebLoginScope, WebRequestContext, WebRequestPrincipal, WebTransportFacts,
-};
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
     ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, RouteCandidate,
     RoutingPolicy, RoutingPolicyScope, RoutingRule, UpstreamAccountGroup, UpstreamAccountRoute,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
+use sdkwork_web_core::{
+    ServerRequestId, WebApiSurface, WebAuthMode, WebDeploymentMode, WebEnvironment, WebLoginScope,
+    WebRequestContext, WebRequestPrincipal, WebTransportFacts,
+};
 use tower::ServiceExt;
 
 fn catalog() -> InMemoryPricingCatalog {
@@ -115,7 +115,6 @@ fn catalog() -> InMemoryPricingCatalog {
     catalog
 }
 
-
 fn admin_web_context(path: &str, method: &str) -> WebRequestContext {
     let principal = WebRequestPrincipal::builder()
         .tenant_id("10")
@@ -154,7 +153,8 @@ fn admin_web_context(path: &str, method: &str) -> WebRequestContext {
 
 #[tokio::test]
 async fn injected_product_catalog_route_overrides_manifest_fallback() {
-    let router = sdkwork_cloudrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
+    let router =
+        sdkwork_cloudrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
     let response = router
         .oneshot(
             Request::builder()
@@ -185,7 +185,8 @@ async fn injected_product_catalog_route_overrides_manifest_fallback() {
 
 #[tokio::test]
 async fn runtime_route_explain_uses_selector_and_masks_provider_secrets() {
-    let router = sdkwork_cloudrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
+    let router =
+        sdkwork_cloudrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
     let response = router
         .oneshot(
             Request::builder()
@@ -221,7 +222,10 @@ async fn runtime_route_explain_uses_selector_and_masks_provider_secrets() {
         payload["data"]["item"]["resourceCode"]
     );
     assert_eq!("openai/gpt-4o-mini", payload["data"]["item"]["catalogKey"]);
-    assert_eq!(serde_json::json!([]), payload["data"]["item"]["blockedReasons"]);
+    assert_eq!(
+        serde_json::json!([]),
+        payload["data"]["item"]["blockedReasons"]
+    );
     assert_eq!(serde_json::json!([]), payload["data"]["item"]["warnings"]);
     assert_eq!(
         1,
@@ -230,7 +234,10 @@ async fn runtime_route_explain_uses_selector_and_masks_provider_secrets() {
             .unwrap()
             .len()
     );
-    assert_eq!("model", payload["data"]["item"]["selectedCandidates"][0]["kind"]);
+    assert_eq!(
+        "model",
+        payload["data"]["item"]["selectedCandidates"][0]["kind"]
+    );
     assert_eq!(
         "openrouter",
         payload["data"]["item"]["selectedCandidates"][0]["supplierCode"]
@@ -253,7 +260,8 @@ async fn runtime_route_explain_uses_selector_and_masks_provider_secrets() {
 
 #[tokio::test]
 async fn runtime_route_explain_reports_selector_pricing_blocking_reason() {
-    let router = sdkwork_cloudrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
+    let router =
+        sdkwork_cloudrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
     let response = router
         .oneshot(
             Request::builder()
@@ -282,12 +290,18 @@ async fn runtime_route_explain_reports_selector_pricing_blocking_reason() {
     assert_eq!("runtime_selector", payload["data"]["item"]["source"]);
     assert_eq!(false, payload["data"]["item"]["ready"]);
     assert_eq!(0, payload["data"]["item"]["candidateCount"]);
-    assert_eq!(serde_json::json!([]), payload["data"]["item"]["selectedCandidates"]);
+    assert_eq!(
+        serde_json::json!([]),
+        payload["data"]["item"]["selectedCandidates"]
+    );
     assert_eq!(
         "pricing.unavailable",
         payload["data"]["item"]["blockedReasons"][0]["code"]
     );
-    assert_eq!("blocking", payload["data"]["item"]["blockedReasons"][0]["severity"]);
+    assert_eq!(
+        "blocking",
+        payload["data"]["item"]["blockedReasons"][0]["severity"]
+    );
     assert!(payload["data"]["item"]["blockedReasons"][0]["message"]
         .as_str()
         .unwrap()
@@ -296,7 +310,8 @@ async fn runtime_route_explain_reports_selector_pricing_blocking_reason() {
 
 #[tokio::test]
 async fn runtime_route_explain_reports_selector_route_blocking_reason() {
-    let router = sdkwork_cloudrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
+    let router =
+        sdkwork_cloudrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
     let response = router
         .oneshot(
             Request::builder()
@@ -325,12 +340,18 @@ async fn runtime_route_explain_reports_selector_route_blocking_reason() {
     assert_eq!("runtime_selector", payload["data"]["item"]["source"]);
     assert_eq!(false, payload["data"]["item"]["ready"]);
     assert_eq!(0, payload["data"]["item"]["candidateCount"]);
-    assert_eq!(serde_json::json!([]), payload["data"]["item"]["selectedCandidates"]);
+    assert_eq!(
+        serde_json::json!([]),
+        payload["data"]["item"]["selectedCandidates"]
+    );
     assert_eq!(
         "route.unavailable",
         payload["data"]["item"]["blockedReasons"][0]["code"]
     );
-    assert_eq!("blocking", payload["data"]["item"]["blockedReasons"][0]["severity"]);
+    assert_eq!(
+        "blocking",
+        payload["data"]["item"]["blockedReasons"][0]["severity"]
+    );
     assert!(payload["data"]["item"]["blockedReasons"][0]["message"]
         .as_str()
         .unwrap()

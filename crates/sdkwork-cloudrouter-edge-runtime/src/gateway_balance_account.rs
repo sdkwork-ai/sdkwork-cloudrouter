@@ -7,9 +7,7 @@
 
 use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
 use sdkwork_account_service::WalletAccountListQuery;
-use sdkwork_cloudrouter_router_service::api::{
-    GatewayBalanceStore, GatewayTokenBankBalance,
-};
+use sdkwork_cloudrouter_router_service::api::{GatewayBalanceStore, GatewayTokenBankBalance};
 use sdkwork_contract_service::CommerceAccountAssetType;
 
 /// Token Bank asset unit label (matches the account platform convention).

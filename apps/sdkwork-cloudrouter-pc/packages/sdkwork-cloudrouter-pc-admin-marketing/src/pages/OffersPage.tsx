@@ -15,6 +15,7 @@ import {
 import { MarketingListView, type MarketingColumn } from '../components/MarketingListView';
 import { CouponOfferCreateDrawerForm } from '../forms/CouponOfferCreateDrawerForm';
 import { CouponBenefitSummary } from '../components/CouponBenefitSummary';
+import { marketingEnumLabel } from '../components/MarketingValueBadge';
 import {
   backendPromotionOffersList,
   createCouponOffer,
@@ -24,9 +25,11 @@ import {
   updatePromotionOfferStatus,
   type CouponOfferCreateFormValues,
 } from '../marketingService';
+import { usePromotionReferences } from '../usePromotionReferences';
 
 export function OffersPage() {
   const { t } = useTranslation();
+  const { stockByOffer } = usePromotionReferences();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -71,7 +74,7 @@ export function OffersPage() {
 
   const handleDelete = async (record: ApiRecord) => {
     const offerId = String(record['id']);
-    const name = String(record['display_name'] ?? offerId);
+    const name = String(record['displayName'] ?? offerId);
     const active = record['status'] === 'active';
     if (active) {
       window.alert(t('admin.marketing.promotions.offers.disableFirst', 'Disable the offer before deleting it.'));
@@ -89,14 +92,47 @@ export function OffersPage() {
   };
 
   const columns: MarketingColumn<ApiRecord>[] = [
-    { key: 'offer_no', label: t('admin.col.offerNo', 'Offer No') },
-    { key: 'display_name', label: t('admin.col.name', 'Name') },
-    { key: 'offer_type', label: t('admin.col.type', 'Type') },
-    { key: 'audience_scope', label: t('admin.col.audience', 'Audience') },
+    { key: 'offerNo', label: t('admin.col.offerNo', 'Offer No') },
+    { key: 'displayName', label: t('admin.col.name', 'Name') },
     {
-      key: 'coupon_benefit',
+      key: 'offerType',
+      label: t('admin.col.type', 'Type'),
+      render: (value) => marketingEnumLabel(value, 'admin.marketing.enums.offerType', t),
+    },
+    {
+      key: 'audienceScope',
+      label: t('admin.col.audience', 'Audience'),
+      render: (value) => marketingEnumLabel(value, 'admin.marketing.enums.audience', t),
+    },
+    {
+      key: 'couponBenefit',
       label: t('admin.col.benefit', 'Benefit'),
       render: (_value, record) => <CouponBenefitSummary record={record} />,
+    },
+    {
+      key: 'issuance',
+      label: t('admin.col.issuance', 'Issued / Stock'),
+      render: (_value, record) => {
+        const stocks = stockByOffer[String(record['id'])] ?? [];
+        if (stocks.length === 0) {
+          return '-';
+        }
+        const claimed = stocks.reduce((sum, stock) => sum + Number(stock['claimedQuantity'] ?? 0), 0);
+        const unlimited = stocks.some((stock) => stock['stockType'] === 'UNLIMITED');
+        if (unlimited) {
+          return (
+            <span className="text-xs tabular-nums">
+              {claimed.toLocaleString()} / <span className="text-slate-400">∞</span>
+            </span>
+          );
+        }
+        const total = stocks.reduce((sum, stock) => sum + Number(stock['totalQuantity'] ?? 0), 0);
+        return (
+          <span className="text-xs tabular-nums">
+            {claimed.toLocaleString()} / {total.toLocaleString()}
+          </span>
+        );
+      },
     },
     {
       key: 'status',
@@ -109,9 +145,9 @@ export function OffersPage() {
         />
       ),
     },
-    { key: 'starts_at', label: t('admin.col.starts', 'Starts') },
-    { key: 'ends_at', label: t('admin.col.ends', 'Ends') },
-    { key: 'updated_at', label: t('admin.col.updated', 'Updated') },
+    { key: 'startsAt', label: t('admin.col.starts', 'Starts') },
+    { key: 'endsAt', label: t('admin.col.ends', 'Ends') },
+    { key: 'updatedAt', label: t('admin.col.updated', 'Updated') },
   ];
 
   return (
@@ -150,7 +186,7 @@ export function OffersPage() {
               <MarketingIconActionButton
                 label={t('admin.marketing.promotions.offers.copy', 'Duplicate')}
                 icon={<Copy className="h-4 w-4" />}
-                onClick={() => openCreateDrawer(offerRecordToFormValues(record))}
+                onClick={() => openCreateDrawer(offerRecordToFormValues(record, t('admin.marketing.coupon.form.copySuffix', ' (Copy)')))}
               />
               <MarketingIconActionButton
                 label={active

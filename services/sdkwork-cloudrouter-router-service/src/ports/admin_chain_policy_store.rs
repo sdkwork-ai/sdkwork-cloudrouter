@@ -81,8 +81,11 @@ impl AdminChainPolicyStoreError {
 #[async_trait]
 pub trait AdminChainPolicyStore: Send + Sync {
     /// Active row for the scope, when configured.
-    async fn get_chain_policy(&self, scope_type: i32, scope_id: i64)
-        -> Option<AdminChainPolicyItem>;
+    async fn get_chain_policy(
+        &self,
+        scope_type: i32,
+        scope_id: i64,
+    ) -> Option<AdminChainPolicyItem>;
 
     /// Inserts or updates the active row for the scope, recording an audit
     /// log entry and a config snapshot.

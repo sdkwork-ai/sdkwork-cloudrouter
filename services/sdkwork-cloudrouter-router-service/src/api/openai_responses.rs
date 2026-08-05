@@ -375,7 +375,12 @@ where
             .map(|settings| settings.current_region_code),
         None => None,
     };
-    let mut route_plan = match validate_responses_model(&state, &context, &request.model, tenant_region_code.as_deref()) {
+    let mut route_plan = match validate_responses_model(
+        &state,
+        &context,
+        &request.model,
+        tenant_region_code.as_deref(),
+    ) {
         Ok(route_plan) => route_plan,
         Err(response) => {
             let http_status = response.status().as_u16();

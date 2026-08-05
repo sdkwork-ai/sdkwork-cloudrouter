@@ -5,6 +5,7 @@ import {
   MembershipFormFrame,
   MembershipSelectField,
 } from '../components/MembershipFormControls';
+import { membershipStatusLabel } from '../components/MembershipStatusBadge';
 import type {
   MembershipsAdminMemberStatus,
   MembershipsAdminRecord,
@@ -50,7 +51,7 @@ export function MembershipMemberStatusDrawerForm({
       <MembershipSelectField
         label={t('admin.commerce.memberships.members.table.status', 'Status')}
         value={status}
-        options={statuses.map((item) => ({ value: item }))}
+        options={statuses.map((item) => ({ value: item, label: membershipStatusLabel(item, t) }))}
         onChange={(value) => setStatus(value as MembershipsAdminMemberStatus)}
       />
       <MembershipFormActions

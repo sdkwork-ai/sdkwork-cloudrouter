@@ -968,20 +968,24 @@ fn static_portal_contract_response(state: &EdgeServerState, request: &Request) -
     }
 
     match request.uri().path() {
-        sdkwork_cloudrouter_http::OPENAPI_SCHEMA_TABS_PATH => Some(
-            sdkwork_cloudrouter_http::openapi_schema_tabs_response_for_surface(None),
-        ),
+        sdkwork_cloudrouter_http::OPENAPI_SCHEMA_TABS_PATH => {
+            Some(sdkwork_cloudrouter_http::openapi_schema_tabs_response_for_surface(None))
+        }
         sdkwork_cloudrouter_http::GATEWAY_OPENAPI_PATH => {
             Some(sdkwork_cloudrouter_http::gateway_openapi_response())
         }
         sdkwork_cloudrouter_http::PAYMENT_AGGREGATE_OPENAPI_PATH => {
             Some(sdkwork_cloudrouter_http::payment_aggregate_openapi_response())
         }
-        sdkwork_cloudrouter_http::PAAS_OPENAPI_PATH => Some(sdkwork_cloudrouter_http::paas_openapi_response()),
+        sdkwork_cloudrouter_http::PAAS_OPENAPI_PATH => {
+            Some(sdkwork_cloudrouter_http::paas_openapi_response())
+        }
         sdkwork_cloudrouter_http::CLOUD_SERVICES_OPENAPI_PATH => {
             Some(sdkwork_cloudrouter_http::cloud_services_openapi_response())
         }
-        sdkwork_cloudrouter_http::APP_OPENAPI_PATH => Some(sdkwork_cloudrouter_http::app_openapi_response()),
+        sdkwork_cloudrouter_http::APP_OPENAPI_PATH => {
+            Some(sdkwork_cloudrouter_http::app_openapi_response())
+        }
         sdkwork_cloudrouter_http::BACKEND_OPENAPI_PATH => {
             Some(sdkwork_cloudrouter_http::backend_openapi_response())
         }
@@ -1971,7 +1975,8 @@ fn build_fetch_snippet(method: &str, url: &str, body: Option<&serde_json::Value>
     lines.push(format!("const response = await fetch(\"{url}\", {{"));
     lines.push(format!("  method: \"{}\",", method.to_ascii_uppercase()));
     lines.push("  headers: {".to_owned());
-    lines.push("    Authorization: `Bearer ${process.env.CLOUDROUTER_API_KEY ?? \"\"}`,".to_owned());
+    lines
+        .push("    Authorization: `Bearer ${process.env.CLOUDROUTER_API_KEY ?? \"\"}`,".to_owned());
     if body.is_some() {
         lines.push("    \"Content-Type\": \"application/json\",".to_owned());
     }
@@ -2003,7 +2008,8 @@ fn build_axios_snippet(method: &str, url: &str, body: Option<&serde_json::Value>
     lines.push(format!("  method: \"{}\",", method.to_ascii_uppercase()));
     lines.push(format!("  url: \"{url}\","));
     lines.push("  headers: {".to_owned());
-    lines.push("    Authorization: `Bearer ${process.env.CLOUDROUTER_API_KEY ?? \"\"}`,".to_owned());
+    lines
+        .push("    Authorization: `Bearer ${process.env.CLOUDROUTER_API_KEY ?? \"\"}`,".to_owned());
     if body.is_some() {
         lines.push("    \"Content-Type\": \"application/json\",".to_owned());
     }
@@ -2024,7 +2030,8 @@ fn build_python_snippet(method: &str, url: &str, body: Option<&serde_json::Value
         String::new(),
         format!("url = \"{url}\""),
         "headers = {".to_owned(),
-        "    \"Authorization\": f\"Bearer {os.environ.get('CLOUDROUTER_API_KEY', '')}\",".to_owned(),
+        "    \"Authorization\": f\"Bearer {os.environ.get('CLOUDROUTER_API_KEY', '')}\","
+            .to_owned(),
     ];
     if body.is_some() {
         lines.push("    \"Content-Type\": \"application/json\",".to_owned());
@@ -2888,11 +2895,14 @@ fn normalize_portal_csp_origin(value: &str) -> Result<String, String> {
         );
     }
     let uri = trimmed.parse::<Uri>().map_err(|error| {
-        format!("SDKWORK_CLOUDROUTER_EDGE_CSP_CONNECT_SRC entry must be an HTTP/HTTPS origin: {error}")
+        format!(
+            "SDKWORK_CLOUDROUTER_EDGE_CSP_CONNECT_SRC entry must be an HTTP/HTTPS origin: {error}"
+        )
     })?;
     if !matches!(uri.scheme_str(), Some("http" | "https")) || uri.authority().is_none() {
         return Err(
-            "SDKWORK_CLOUDROUTER_EDGE_CSP_CONNECT_SRC entries must be HTTP/HTTPS origins".to_owned(),
+            "SDKWORK_CLOUDROUTER_EDGE_CSP_CONNECT_SRC entries must be HTTP/HTTPS origins"
+                .to_owned(),
         );
     }
     if uri.path() != "/" || uri.query().is_some() {

@@ -1,5 +1,6 @@
 const ADMIN_API_LIB: &str = include_str!("../src/lib.rs");
-const ADMIN_API_ROUTES: &str = include_str!("../../../crates/sdkwork-routes-cloudrouter-backend-api/src/routes.rs");
+const ADMIN_API_ROUTES: &str =
+    include_str!("../../../crates/sdkwork-routes-cloudrouter-backend-api/src/routes.rs");
 
 #[test]
 fn admin_api_database_runtime_mounts_mcp_center() {

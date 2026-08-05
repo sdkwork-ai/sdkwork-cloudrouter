@@ -134,10 +134,7 @@ async fn app_api_key_list_returns_stored_raw_key_material() {
     let payload = json_payload(response).await;
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("701", payload["data"]["items"][0]["id"]);
-    assert_eq!(
-        "sk-test-secret-raw",
-        payload["data"]["items"][0]["rawKey"]
-    );
+    assert_eq!("sk-test-secret-raw", payload["data"]["items"][0]["rawKey"]);
     assert_eq!(
         "sk-test********CRET",
         payload["data"]["items"][0]["maskedKey"]

@@ -1,7 +1,9 @@
 use std::fmt;
 
 use sdkwork_cloudrouter_provider_adapter_contract::ProviderAdapterManifest;
-use sdkwork_cloudrouter_provider_adapter_registry::{ProviderAdapterRouteConfig, ProviderAdapterSnapshot};
+use sdkwork_cloudrouter_provider_adapter_registry::{
+    ProviderAdapterRouteConfig, ProviderAdapterSnapshot,
+};
 use serde::Deserialize;
 
 #[derive(Clone, PartialEq, Eq)]

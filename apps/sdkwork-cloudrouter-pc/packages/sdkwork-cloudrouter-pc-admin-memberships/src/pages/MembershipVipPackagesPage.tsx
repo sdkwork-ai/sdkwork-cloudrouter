@@ -188,7 +188,7 @@ export function MembershipVipPackagesPage() {
           </button>
         )}
       >
-        <div data-admin-membership-vip-packages-page className="grid gap-4">
+        <div data-admin-membership-vip-packages-page className="flex min-h-0 flex-1 flex-col gap-4">
           <div>
             <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
               {t('admin.commerce.memberships.vipPackages.title', 'VIP Packages')}
@@ -212,7 +212,7 @@ export function MembershipVipPackagesPage() {
                 }}
                 onPreviousPage={() => setPackagePage((current) => Math.max(1, current - 1))}
                 page={packagePage}
-                pageLabel={membershipPageLabel(t('common.pagination.page', 'Page'), packagePage, packagePageInfo)}
+                pageLabel={membershipPageLabel(t, packagePage, packagePageInfo)}
                 pageSize={packagePageSize}
                 pageSizeLabel={t('common.pagination.rows', 'Rows')}
                 pageSizeOptions={[20, 50, 100]}
@@ -252,7 +252,7 @@ export function MembershipVipPackagesPage() {
                       <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">
                         {formatMoney(item.priceAmount, { currency: item.currencyCode, locale: displayLocale, mode: 'symbol' }) ?? `${item.priceAmount} ${item.currencyCode}`}
                       </td>
-                      <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{item.durationDays}d</td>
+                      <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{t('admin.commerce.memberships.vipPackages.form.durationOptionDays', '{{days}} days', { days: item.durationDays })}</td>
                       <td className="px-4 py-2.5"><MembershipStatusBadge status={item.status} /></td>
                       <td className="px-4 py-2.5">
                         <MembershipTableActions>

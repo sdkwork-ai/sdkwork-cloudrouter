@@ -7,7 +7,8 @@ pub struct PaymentWebhookConfig {
 }
 
 impl PaymentWebhookConfig {
-    pub const ENV_PAYMENT_WEBHOOK_SECRET: &'static str = "SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET";
+    pub const ENV_PAYMENT_WEBHOOK_SECRET: &'static str =
+        "SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET";
     pub const ENV_PAYMENT_WEBHOOK_MAX_CLOCK_SKEW_SECONDS: &'static str =
         "SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_MAX_CLOCK_SKEW_SECONDS";
     pub const MIN_SIGNING_SECRET_LEN: usize = 32;

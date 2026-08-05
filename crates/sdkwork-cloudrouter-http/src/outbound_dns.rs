@@ -108,8 +108,8 @@ mod tests {
             "10.0.0.8:443".parse().unwrap(),
         ];
 
-        let error = validate_resolved_addresses(addresses, OutboundTargetPolicy::Production)
-            .unwrap_err();
+        let error =
+            validate_resolved_addresses(addresses, OutboundTargetPolicy::Production).unwrap_err();
 
         assert_eq!(std::io::ErrorKind::PermissionDenied, error.kind());
     }

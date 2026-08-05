@@ -20,8 +20,8 @@ use axum::http::{HeaderMap, StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
-use serde::{Deserialize, Serialize};
 use sdkwork_cloudrouter_http::ApiKeyIdentity;
+use serde::{Deserialize, Serialize};
 
 use crate::api::openai_error::openai_error;
 use crate::application::{
@@ -53,6 +53,30 @@ pub trait GatewayBalanceStore: Send + Sync {
         organization_id: i64,
         user_id: i64,
     ) -> Result<GatewayTokenBankBalance, String>;
+}
+
+/// Balance store for gateway surfaces that have no Token Bank ledger
+/// (relay-only / client-local deployments).
+///
+/// The balance endpoint stays mounted on every surface that serves the
+/// OpenAI-compatible API so CC Switch usage scripts never hit a 404; without
+/// a ledger the honest answer is a zero balance in the standard shape.
+pub struct ZeroGatewayBalanceStore;
+
+#[async_trait::async_trait]
+impl GatewayBalanceStore for ZeroGatewayBalanceStore {
+    async fn retrieve_token_bank_balance(
+        &self,
+        _tenant_id: i64,
+        _organization_id: i64,
+        _user_id: i64,
+    ) -> Result<GatewayTokenBankBalance, String> {
+        Ok(GatewayTokenBankBalance {
+            available: "0".to_owned(),
+            frozen: "0".to_owned(),
+            unit: "TOKEN_BANK".to_owned(),
+        })
+    }
 }
 
 struct GatewayBalanceState<C> {
@@ -146,11 +170,7 @@ where
     );
     match state
         .store
-        .retrieve_token_bank_balance(
-            context.tenant_id,
-            context.organization_id,
-            context.user_id,
-        )
+        .retrieve_token_bank_balance(context.tenant_id, context.organization_id, context.user_id)
         .await
     {
         Ok(balance) => {
@@ -223,7 +243,7 @@ where
 mod tests {
     use super::*;
     use axum::body::Body;
-    use axum::http::{Request, header::AUTHORIZATION};
+    use axum::http::{header::AUTHORIZATION, Request};
     use http_body_util::BodyExt;
     use tower::ServiceExt;
 
@@ -239,39 +259,94 @@ mod tests {
     struct EmptyPricingCatalog;
 
     impl PricingCatalog for EmptyPricingCatalog {
-        fn visit_models(&self, _vendor_code: Option<&str>, _visitor: &mut dyn FnMut(&AiModel) -> bool) {}
-        fn list_model_upstream_routes(&self, _model: &str) -> Vec<ModelUpstreamRoute> { Vec::new() }
-        fn list_upstream_account_routes(&self) -> Vec<UpstreamAccountRoute> { Vec::new() }
-        fn list_routing_policies(&self) -> Vec<RoutingPolicy> { Vec::new() }
-        fn list_routing_rules(&self, _profile_id: i64) -> Vec<RoutingRule> { Vec::new() }
-        fn list_model_mappings(&self) -> Vec<ModelMappingRule> { Vec::new() }
-        fn list_api_keys(&self) -> Vec<GatewayApiKey> { Vec::new() }
-        fn list_upstream_account_groups(&self) -> Vec<UpstreamAccountGroup> { Vec::new() }
-        fn list_model_prices(&self, _model: &str, _side: PriceSide, _meter: BillingMeter) -> Vec<ModelPrice> { Vec::new() }
-        fn list_model_prices_for_side(&self, _model: &str, _side: PriceSide) -> Vec<ModelPrice> { Vec::new() }
-        fn find_api_key(&self, _api_key_id: i64) -> Option<GatewayApiKey> { None }
-        fn find_api_key_by_hash(&self, _key_hash: &str) -> Option<GatewayApiKey> { None }
-        fn find_upstream_account_group(&self, _account_group_id: i64) -> Option<UpstreamAccountGroup> { None }
-        fn find_access_policy(&self, _policy_id: i64) -> Option<GatewayAccessPolicy> { None }
-        fn find_quota_policy(&self, _policy_id: i64) -> Option<QuotaPolicy> { None }
-        fn list_gateway_risk_rules(&self) -> Vec<GatewayRiskRule> { Vec::new() }
+        fn visit_models(
+            &self,
+            _vendor_code: Option<&str>,
+            _visitor: &mut dyn FnMut(&AiModel) -> bool,
+        ) {
+        }
+        fn list_model_upstream_routes(&self, _model: &str) -> Vec<ModelUpstreamRoute> {
+            Vec::new()
+        }
+        fn list_upstream_account_routes(&self) -> Vec<UpstreamAccountRoute> {
+            Vec::new()
+        }
+        fn list_routing_policies(&self) -> Vec<RoutingPolicy> {
+            Vec::new()
+        }
+        fn list_routing_rules(&self, _profile_id: i64) -> Vec<RoutingRule> {
+            Vec::new()
+        }
+        fn list_model_mappings(&self) -> Vec<ModelMappingRule> {
+            Vec::new()
+        }
+        fn list_api_keys(&self) -> Vec<GatewayApiKey> {
+            Vec::new()
+        }
+        fn list_upstream_account_groups(&self) -> Vec<UpstreamAccountGroup> {
+            Vec::new()
+        }
+        fn list_model_prices(
+            &self,
+            _model: &str,
+            _side: PriceSide,
+            _meter: BillingMeter,
+        ) -> Vec<ModelPrice> {
+            Vec::new()
+        }
+        fn list_model_prices_for_side(&self, _model: &str, _side: PriceSide) -> Vec<ModelPrice> {
+            Vec::new()
+        }
+        fn find_api_key(&self, _api_key_id: i64) -> Option<GatewayApiKey> {
+            None
+        }
+        fn find_api_key_by_hash(&self, _key_hash: &str) -> Option<GatewayApiKey> {
+            None
+        }
+        fn find_upstream_account_group(
+            &self,
+            _account_group_id: i64,
+        ) -> Option<UpstreamAccountGroup> {
+            None
+        }
+        fn find_access_policy(&self, _policy_id: i64) -> Option<GatewayAccessPolicy> {
+            None
+        }
+        fn find_quota_policy(&self, _policy_id: i64) -> Option<QuotaPolicy> {
+            None
+        }
+        fn list_gateway_risk_rules(&self) -> Vec<GatewayRiskRule> {
+            Vec::new()
+        }
         fn find_latest_upstream_account_group_metric_snapshot(
             &self,
             _account_group_id: i64,
-        ) -> Option<UpstreamAccountGroupMetricSnapshot> { None }
-        fn find_pricing_plan(&self, _plan_code: &str) -> Option<PricingPlan> { None }
-        fn find_model(&self, _model: &str) -> Option<AiModel> { None }
-        fn find_vendor(&self, _vendor_code: &str) -> Option<ModelVendorDefinition> { None }
+        ) -> Option<UpstreamAccountGroupMetricSnapshot> {
+            None
+        }
+        fn find_pricing_plan(&self, _plan_code: &str) -> Option<PricingPlan> {
+            None
+        }
+        fn find_model(&self, _model: &str) -> Option<AiModel> {
+            None
+        }
+        fn find_vendor(&self, _vendor_code: &str) -> Option<ModelVendorDefinition> {
+            None
+        }
         fn resolve_model_mapping(
             &self,
             _source_model: &str,
             _context: &ResolveModelMappingContext,
-        ) -> Option<ModelMappingRule> { None }
+        ) -> Option<ModelMappingRule> {
+            None
+        }
         fn find_model_upstream_route(
             &self,
             _model: &str,
             _supplier_code: &str,
-        ) -> Option<ModelUpstreamRoute> { None }
+        ) -> Option<ModelUpstreamRoute> {
+            None
+        }
         fn find_model_price(
             &self,
             _model: &str,
@@ -279,7 +354,9 @@ mod tests {
             _meter: BillingMeter,
             _supplier_code: Option<&str>,
             _pricing_plan_code: Option<&str>,
-        ) -> Option<ModelPrice> { None }
+        ) -> Option<ModelPrice> {
+            None
+        }
     }
 
     /// Pass-through hasher so the auth path always yields a hash that is not

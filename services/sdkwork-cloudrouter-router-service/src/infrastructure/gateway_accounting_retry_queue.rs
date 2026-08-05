@@ -924,7 +924,10 @@ mod tests {
             "  cloudrouter-production:::  ",
         )
         .expect("construct Redis retry queue");
-        assert_eq!(Some("cloudrouter-production"), redis_hash_tag(&queue.stream));
+        assert_eq!(
+            Some("cloudrouter-production"),
+            redis_hash_tag(&queue.stream)
+        );
         assert_eq!(redis_hash_tag(&queue.stream), redis_hash_tag(&queue.dlq));
         assert_eq!(
             redis_hash_tag(&queue.stream),

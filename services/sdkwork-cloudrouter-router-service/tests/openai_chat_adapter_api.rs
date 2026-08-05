@@ -12,7 +12,9 @@ use sdkwork_cloudrouter_provider_adapter_contract::{
     AdapterEndpointRuntimeState, AdapterInvocationRequest, AdapterInvocationResponse,
     AdapterInvocationShape, AdapterKind, AdapterRouteStatus, AdapterSecret,
 };
-use sdkwork_cloudrouter_provider_adapter_registry::{ProviderAdapterRegistry, ProviderAdapterRouteConfig};
+use sdkwork_cloudrouter_provider_adapter_registry::{
+    ProviderAdapterRegistry, ProviderAdapterRouteConfig,
+};
 use sdkwork_cloudrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
@@ -328,12 +330,13 @@ async fn openai_chat_stream_registry_hit_calls_internal_adapter_without_direct_s
     let hasher =
         Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
     let key_hash = hasher.hash_secret("sk-standard-secret").unwrap();
-    let router = sdkwork_cloudrouter_router_service::api::openai_chat_completions_router_with_relays(
-        Arc::new(catalog_with_hashed_api_key(key_hash)),
-        hasher,
-        relay,
-        Arc::new(adapter_stream_relay),
-    );
+    let router =
+        sdkwork_cloudrouter_router_service::api::openai_chat_completions_router_with_relays(
+            Arc::new(catalog_with_hashed_api_key(key_hash)),
+            hasher,
+            relay,
+            Arc::new(adapter_stream_relay),
+        );
 
     let response = router
         .oneshot(

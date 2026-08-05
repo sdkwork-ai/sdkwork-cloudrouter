@@ -7815,10 +7815,11 @@ frontend_operations:
           name: AdminStorageProvider
           type: object
           additionalProperties: false
-          required: [id, providerCode, providerType, endpointUrl, region, credentialRef, pathStyleEnabled, supportsMultipart, supportsLifecycle, supportsObjectLock, status, healthStatus, lastHealthCheckAt, createdAt, updatedAt]
+          required: [id, providerCode, name, providerType, endpointUrl, region, credentialRef, pathStyleEnabled, supportsMultipart, supportsLifecycle, supportsObjectLock, status, healthStatus, lastHealthCheckAt, createdAt, updatedAt]
           properties:
             id: { type: string, maxLength: 128 }
             providerCode: { type: string, maxLength: 96 }
+            name: { type: string, maxLength: 128 }
             providerType: { type: string, maxLength: 64 }
             endpointUrl: { type: string, maxLength: 512 }
             region: { type: string, maxLength: 64 }
@@ -7881,24 +7882,33 @@ frontend_operations:
   request_schema:
     name: AdminStorageProviderCreateRequest
     required:
-    - providerCode
+    - name
     - providerType
     - credentialRef
     properties:
       providerCode:
         type: string
-        minLength: 1
+        nullable: true
         maxLength: 96
+      name:
+        type: string
+        minLength: 1
+        maxLength: 128
       providerType:
         type: string
         enum:
         - aws_s3
+        - baidu_bos
         - cloudflare_r2
         - cos_s3
+        - huawei_obs
+        - jdcloud_oss
         - local_dev_s3
         - minio
         - oss_s3
+        - qiniu_kodo
         - s3_compatible
+        - volcengine_tos
       endpointUrl:
         type: string
         nullable: true

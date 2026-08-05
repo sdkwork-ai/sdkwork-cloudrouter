@@ -4,8 +4,8 @@ use axum::extract::{Extension, Query, State};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::Router;
-use serde::Deserialize;
 use sdkwork_web_core::WebRequestContext;
+use serde::Deserialize;
 
 use crate::api::app_sql_subject::{map_optional_app_sql_subject, ResolvedAppSqlScopedSubject};
 use crate::api::response::{
@@ -136,9 +136,7 @@ async fn fetch_routing_account_groups(
         Ok(query) => query,
         Err(message) => return bad_request(message),
     };
-    let locale = request_context
-        .map(|context| context.0.locale)
-        .flatten();
+    let locale = request_context.map(|context| context.0.locale).flatten();
 
     match state
         .read_store
@@ -170,9 +168,7 @@ async fn fetch_routing_api_keys(
         Ok(query) => query,
         Err(message) => return bad_request(message),
     };
-    let locale = request_context
-        .map(|context| context.0.locale)
-        .flatten();
+    let locale = request_context.map(|context| context.0.locale).flatten();
 
     match state
         .read_store
@@ -204,9 +200,7 @@ async fn fetch_routing_request_traces(
         Ok(query) => query,
         Err(message) => return bad_request(message),
     };
-    let locale = request_context
-        .map(|context| context.0.locale)
-        .flatten();
+    let locale = request_context.map(|context| context.0.locale).flatten();
 
     match state
         .read_store

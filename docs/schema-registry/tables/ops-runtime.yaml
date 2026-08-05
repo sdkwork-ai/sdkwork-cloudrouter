@@ -849,3 +849,192 @@ tables:
     - app_id
     - popup_seen_at
     - id
+- table: ops_referral_invite_code
+  domain: ops
+  profile: operational_state
+  compliance_level: L2
+  system_of_record: true
+  write_owner: cloudrouter-ops-runtime
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id:
+      type: int64
+      constraints: NOT NULL PRIMARY KEY
+    tenant_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    organization_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    user_id:
+      type: int64
+      constraints: NOT NULL
+    invite_code:
+      type: string(32)
+      constraints: NOT NULL
+    status:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    created_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+  unique_constraints:
+  - name: uk_ops_referral_invite_code_tenant_user
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+  - name: uk_ops_referral_invite_code_tenant_code
+    columns:
+    - tenant_id
+    - organization_id
+    - invite_code
+  indexes:
+  - name: uk_ops_referral_invite_code_tenant_user
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    unique: true
+  - name: uk_ops_referral_invite_code_tenant_code
+    columns:
+    - tenant_id
+    - organization_id
+    - invite_code
+    unique: true
+- table: ops_referral_relation
+  domain: ops
+  profile: operational_state
+  compliance_level: L2
+  system_of_record: true
+  write_owner: cloudrouter-ops-runtime
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id:
+      type: int64
+      constraints: NOT NULL PRIMARY KEY
+    tenant_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    organization_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    invitee_user_id:
+      type: int64
+      constraints: NOT NULL
+    inviter_user_id:
+      type: int64
+      constraints: NOT NULL
+    invite_code:
+      type: string(32)
+      constraints: NOT NULL
+    source:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'register'
+    status:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    reward_status:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'pending'
+    claimed_at: instant
+    created_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+  unique_constraints:
+  - name: uk_ops_referral_relation_tenant_invitee
+    columns:
+    - tenant_id
+    - organization_id
+    - invitee_user_id
+  indexes:
+  - name: uk_ops_referral_relation_tenant_invitee
+    columns:
+    - tenant_id
+    - organization_id
+    - invitee_user_id
+    unique: true
+  - name: idx_ops_referral_relation_inviter
+    columns:
+    - tenant_id
+    - organization_id
+    - inviter_user_id
+    - created_at
+    - id
+  - name: idx_ops_referral_relation_code
+    columns:
+    - tenant_id
+    - organization_id
+    - invite_code
+- table: ops_referral_strategy
+  domain: ops
+  profile: operational_state
+  compliance_level: L2
+  system_of_record: true
+  write_owner: cloudrouter-ops-runtime
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id:
+      type: int64
+      constraints: NOT NULL PRIMARY KEY
+    tenant_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    organization_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    name:
+      type: string(128)
+      constraints: NOT NULL
+    description:
+      type: string(512)
+      constraints: NOT NULL DEFAULT ''
+    status:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'disabled'
+    reward_type:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'POINTS'
+    reward_value:
+      type: string(64)
+      constraints: NOT NULL
+    reward_target:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'INVITER'
+    trigger_event:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'REGISTER'
+    max_rewards_per_inviter:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    starts_at: instant
+    ends_at: instant
+    created_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+  indexes:
+  - name: idx_ops_referral_strategy_tenant_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - created_at
+    - id

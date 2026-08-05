@@ -6,6 +6,7 @@ import type { ApiRecord } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { MarketingDrawer, MarketingBatchStatusBadge } from '../components/MarketingDrawer';
 import { MarketingIconActionButton, MarketingTableActions } from '../components/MarketingPageControls';
 import { MarketingListView, type MarketingColumn } from '../components/MarketingListView';
+import { marketingEnumLabel } from '../components/MarketingValueBadge';
 import { CodeBatchCreateDrawerForm } from '../forms/CodeBatchCreateDrawerForm';
 import {
   backendPromotionCodeBatchesList,
@@ -15,10 +16,12 @@ import {
   createPromotionCodeBatch,
   type CodeBatchCreateFormValues,
 } from '../marketingService';
+import { usePromotionReferences } from '../usePromotionReferences';
 
 export function CodeBatchesPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { stockNames } = usePromotionReferences();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -29,9 +32,9 @@ export function CodeBatchesPage() {
     const page = await backendPromotionCouponStocksList({ page: 1, pageSize: 200 });
     setStockOptions(page.items.map((item) => ({
       id: String(item['id']),
-      label: `${String(item['stock_no'])} (${String(item['stock_type'])})`,
+      label: `${String(item['stockNo'])} (${marketingEnumLabel(item['stockType'], 'admin.marketing.enums.stockType', t)})`,
     })));
-  }, []);
+  }, [t]);
 
   const openCreateDrawer = () => {
     setSaveError(null);
@@ -56,19 +59,19 @@ export function CodeBatchesPage() {
   };
 
   const columns: MarketingColumn<ApiRecord>[] = [
-    { key: 'batch_no', label: t('admin.col.batchNo', 'Batch No') },
-    { key: 'stock_id', label: t('admin.col.stock', 'Stock') },
-    { key: 'code_type', label: t('admin.col.type', 'Type') },
-    { key: 'requested_quantity', label: t('admin.col.requested', 'Requested'), align: 'right' },
-    { key: 'generated_quantity', label: t('admin.col.generated', 'Generated'), align: 'right' },
-    { key: 'code_length', label: t('admin.col.codeLength', 'Length'), align: 'right' },
-    { key: 'code_prefix', label: t('admin.col.codePrefix', 'Prefix') },
+    { key: 'batchNo', label: t('admin.col.batchNo', 'Batch No') },
+    { key: 'stockId', label: t('admin.col.stock', 'Stock'), render: (value) => stockNames[String(value)] || String(value) },
+    { key: 'codeType', label: t('admin.col.type', 'Type'), render: (value) => marketingEnumLabel(value, 'admin.marketing.enums.codeType', t) },
+    { key: 'requestedQuantity', label: t('admin.col.requested', 'Requested'), align: 'right' },
+    { key: 'generatedQuantity', label: t('admin.col.generated', 'Generated'), align: 'right' },
+    { key: 'codeLength', label: t('admin.col.codeLength', 'Length'), align: 'right' },
+    { key: 'codePrefix', label: t('admin.col.codePrefix', 'Prefix') },
     {
       key: 'status',
       label: t('admin.col.status', 'Status'),
       render: (value) => <MarketingBatchStatusBadge status={value} />,
     },
-    { key: 'created_at', label: t('admin.col.createdAt', 'Created') },
+    { key: 'createdAt', label: t('admin.col.createdAt', 'Created') },
   ];
 
   return (

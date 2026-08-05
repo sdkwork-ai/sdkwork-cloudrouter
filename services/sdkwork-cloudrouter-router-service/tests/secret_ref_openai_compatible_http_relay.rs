@@ -8,8 +8,7 @@ use axum::{Json, Router};
 use sdkwork_cloudrouter_router_service::domain::ProviderAuthProfile;
 use sdkwork_cloudrouter_router_service::infrastructure::provider::SecretRefOpenAiCompatibleChatCompletionRelay;
 use sdkwork_cloudrouter_router_service::ports::{
-    ChatCompletionRelay, ChatCompletionRelayRequest,
-    ProviderSecretResolver,
+    ChatCompletionRelay, ChatCompletionRelayRequest, ProviderSecretResolver,
 };
 use serde_json::json;
 

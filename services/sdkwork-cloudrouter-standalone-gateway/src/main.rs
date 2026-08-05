@@ -7,11 +7,13 @@ async fn main() -> anyhow::Result<()> {
         sdkwork_cloudrouter_standalone_gateway::SERVICE_NAME,
         "SDKWORK_CLOUDROUTER_APP_API_BIND",
         "0.0.0.0:18082",
-        std::env::var("SDKWORK_CLOUDROUTER_APP_API_BIND").ok().or_else(|| {
-            runtime_toml
-                .as_ref()
-                .and_then(|config| config.services.app_api.bind.clone())
-        }),
+        std::env::var("SDKWORK_CLOUDROUTER_APP_API_BIND")
+            .ok()
+            .or_else(|| {
+                runtime_toml
+                    .as_ref()
+                    .and_then(|config| config.services.app_api.bind.clone())
+            }),
         std::env::var(sdkwork_cloudrouter_config::DeploymentMode::ENV_DEPLOYMENT_MODE)
             .ok()
             .or_else(|| {

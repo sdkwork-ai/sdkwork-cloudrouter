@@ -9,9 +9,9 @@ use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     AccountGroupBindingInput, ApiKeyCommandStoreFuture, CreateGatewayApiKeyCommand,
-    CreatedGatewayApiKey, DeleteGatewayApiKeyCommand,
-    DeleteGatewayApiKeyForOrganizationCommand, EnsureDefaultUpstreamAccountGroupCommand,
-    GatewayApiKeyCommandStore, UpdateGatewayApiKeyCommand, UpdatedGatewayApiKey,
+    CreatedGatewayApiKey, DeleteGatewayApiKeyCommand, DeleteGatewayApiKeyForOrganizationCommand,
+    EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore,
+    UpdateGatewayApiKeyCommand, UpdatedGatewayApiKey,
 };
 
 const API_KEY_STATUS_REVOKED: i32 = 4;
@@ -250,10 +250,12 @@ fn upstream_account_group_from_row(
         &row.try_get::<String, _>("pricing_plan_code")
             .map_err(row_error)?,
         crate::domain::DecimalValue::parse(
-            &row.try_get::<String, _>("cost_multiplier").map_err(row_error)?,
+            &row.try_get::<String, _>("cost_multiplier")
+                .map_err(row_error)?,
         )?,
         crate::domain::DecimalValue::parse(
-            &row.try_get::<String, _>("sale_multiplier").map_err(row_error)?,
+            &row.try_get::<String, _>("sale_multiplier")
+                .map_err(row_error)?,
         )?,
     )
     .with_name(&row.try_get::<String, _>("name").map_err(row_error)?))
@@ -553,7 +555,12 @@ async fn soft_delete_account_group_bindings(
     .bind(api_key_id)
     .execute(&mut **tx)
     .await
-    .map_err(|error| store_error("failed to soft-delete api key account group bindings", error))?;
+    .map_err(|error| {
+        store_error(
+            "failed to soft-delete api key account group bindings",
+            error,
+        )
+    })?;
     Ok(())
 }
 
@@ -561,7 +568,8 @@ fn encode_api_key_secret_for_storage(
     secret_storage: &ApiKeySecretStorageConfig,
     command: &CreateGatewayApiKeyCommand,
     api_key_id: i64,
-) -> DomainResult<(String, Option<String>, Option<String>, Option<String>)> {    if !secret_storage.is_ciphertext() {
+) -> DomainResult<(String, Option<String>, Option<String>, Option<String>)> {
+    if !secret_storage.is_ciphertext() {
         return Ok((
             API_KEY_SECRET_MODE_PLAINTEXT.to_owned(),
             Some(command.raw_key.clone()),

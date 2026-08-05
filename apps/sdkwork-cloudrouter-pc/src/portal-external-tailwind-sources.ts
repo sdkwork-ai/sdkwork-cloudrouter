@@ -7,6 +7,7 @@ export const PORTAL_EXTERNAL_TAILWIND_SOURCES = [
   '../src',
   '../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src',
   '../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-react/src',
+  '../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-*/src',
   '../../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src',
   '../../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-sdk-reference/src',
   '../../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-commons/src',

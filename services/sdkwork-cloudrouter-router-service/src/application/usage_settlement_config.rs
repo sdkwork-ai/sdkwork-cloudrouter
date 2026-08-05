@@ -89,8 +89,8 @@ fn parse_non_negative_i64_config(
     config_value: Option<i64>,
     default_value: i64,
 ) -> Result<i64, String> {
-    let parsed =
-        sdkwork_cloudrouter_config::runtime::config_i64(name, config_value)?.unwrap_or(default_value);
+    let parsed = sdkwork_cloudrouter_config::runtime::config_i64(name, config_value)?
+        .unwrap_or(default_value);
     if parsed < 0 {
         return Err(format!("{name} must be a non-negative integer"));
     }
@@ -102,8 +102,8 @@ fn parse_positive_i64_config(
     config_value: Option<i64>,
     default_value: i64,
 ) -> Result<i64, String> {
-    let parsed =
-        sdkwork_cloudrouter_config::runtime::config_i64(name, config_value)?.unwrap_or(default_value);
+    let parsed = sdkwork_cloudrouter_config::runtime::config_i64(name, config_value)?
+        .unwrap_or(default_value);
     if parsed <= 0 {
         return Err(format!("{name} must be a positive integer"));
     }
@@ -130,8 +130,8 @@ fn parse_positive_u64_config(
     config_value: Option<u64>,
     default_value: u64,
 ) -> Result<u64, String> {
-    let parsed =
-        sdkwork_cloudrouter_config::runtime::config_u64(name, config_value)?.unwrap_or(default_value);
+    let parsed = sdkwork_cloudrouter_config::runtime::config_u64(name, config_value)?
+        .unwrap_or(default_value);
     if parsed == 0 {
         return Err(format!("{name} must be a positive integer"));
     }

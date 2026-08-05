@@ -83,12 +83,34 @@ export function hasNextMembershipPage(
   return itemCount >= pageSize;
 }
 
+type MembershipTranslate = (key: string, fallback: string, options?: Record<string, unknown>) => string;
+
 export function membershipPageLabel(
-  label: string,
+  t: MembershipTranslate,
   page: number,
   pageInfo: MembershipPageInfoLike | null,
 ): string {
-  return typeof pageInfo?.totalPages === 'number'
-    ? `${label} ${page} / ${pageInfo.totalPages}`
-    : `${label} ${page}`;
+  const totalPages = typeof pageInfo?.totalPages === 'number' ? pageInfo.totalPages : null;
+  if (totalPages !== null) {
+    return t('admin.commerce.memberships.pagination.pageOfTotal', 'Page {{page}} / {{totalPages}}', { page, totalPages });
+  }
+  return t('admin.commerce.memberships.pagination.page', 'Page {{page}}', { page });
+}
+
+const billingCycleTranslationKeys: Record<string, string> = {
+  one_time: 'admin.commerce.memberships.groups.form.billingCycle.oneTime',
+  day: 'admin.commerce.memberships.groups.form.billingCycle.day',
+  week: 'admin.commerce.memberships.groups.form.billingCycle.week',
+  month: 'admin.commerce.memberships.groups.form.billingCycle.month',
+  quarter: 'admin.commerce.memberships.groups.form.billingCycle.quarter',
+  year: 'admin.commerce.memberships.groups.form.billingCycle.year',
+};
+
+export function membershipBillingCycleLabel(billingCycle: string, t: MembershipTranslate): string {
+  const normalized = billingCycle.trim().toLowerCase();
+  const translationKey = billingCycleTranslationKeys[normalized];
+  if (!translationKey) {
+    return billingCycle;
+  }
+  return t(translationKey, billingCycle);
 }

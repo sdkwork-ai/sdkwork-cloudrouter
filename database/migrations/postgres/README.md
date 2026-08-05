@@ -34,6 +34,12 @@ Current migrations:
   set (`modalities` JSONB array of text/audio/image/video/music) to
   `ai_upstream_account_group`, with a vendor lookup index. It is a
   column-addition-only migration with no row backfill.
+- `0014_ops_referral_invite.up.sql` adds the invite-code registration capability
+  tables: `ops_referral_invite_code` (per-user referral code),
+  `ops_referral_relation` (inviter/invitee binding on invite-code registration),
+  and `ops_referral_strategy` (marketing-center referral reward strategy
+  configuration). Reward granting is a follow-up phase; relations carry a
+  `reward_status` marker only.
 
 ## Naming
 

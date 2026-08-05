@@ -1,8 +1,9 @@
+mod call_chain;
 pub mod edge_server;
 mod edge_server_runtime_config;
-mod call_chain;
 mod gateway_api_key_auth;
 mod gateway_balance_account;
+mod iam_auth_token_authenticator;
 mod internal_gateway_replay_store;
 mod invocation_dispatcher;
 mod invocation_http;
@@ -18,6 +19,7 @@ mod provider_passthrough_transport;
 mod request_identity;
 pub mod runtime;
 
+pub use call_chain::{CallChainInterceptor, StaticChainPolicyResolver};
 pub use edge_server::{
     all_in_one_edge_router_from_env, edge_server_router,
     edge_server_router_with_in_process_upstreams, serve,
@@ -40,7 +42,6 @@ pub use invocation_router::{
     invocation_router_with_full_pipeline_provider_adapter_and_tenant_inflight,
     InvocationRouterOptions,
 };
-pub use call_chain::{CallChainInterceptor, StaticChainPolicyResolver};
 #[rustfmt::skip]
 pub use openai_passthrough_routes::{openai_compatible_passthrough_paths, openai_method_passthrough_paths, stored_chat_completion_passthrough_paths};
 #[rustfmt::skip]

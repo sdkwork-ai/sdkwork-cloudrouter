@@ -22,6 +22,11 @@ import {
   type SdkworkAppConfig as SdkworkMemoryAppConfig,
 } from '@sdkwork/memory-app-sdk';
 import {
+  createClient as createCommunityAppSdkClient,
+  type SdkworkAppConfig as SdkworkCommunityAppConfig,
+  type SdkworkCommunityAppClient,
+} from '@sdkwork/community-app-sdk';
+import {
   createClient as createPromptsAppSdkClient,
   type SdkworkAppConfig as SdkworkPromptsAppConfig,
   type SdkworkPromptsAppClient as PromptsAppClient,
@@ -392,6 +397,13 @@ export interface SdkworkMemoryAppSdkClientOptions {
   timeout?: number;
 }
 
+export interface SdkworkCommunityAppSdkClientOptions {
+  appBaseUrl?: string;
+  platform?: string;
+  tokenManager?: AuthTokenManager;
+  timeout?: number;
+}
+
 export interface SdkworkPromptsAppSdkClientOptions {
   appBaseUrl?: string;
   platform?: string;
@@ -448,6 +460,7 @@ export type SdkworkAppbaseBackendSdkClient = SdkworkAppbaseBackendClient;
 export type SdkworkMessagingAppSdkClient = MessagingAppClient;
 export type SdkworkGenerationsAppSdkClient = SdkworkGenerationsAppClient;
 export type SdkworkMemoryAppSdkClient = SdkworkMemoryAppClient;
+export type SdkworkCommunityAppSdkClient = SdkworkCommunityAppClient;
 export type SdkworkPromptsAppSdkClient = PromptsAppClient;
 export type SdkworkAgentAppSdkClient = SdkworkAgentAppClient;
 export type SdkworkAgentBackendSdkClient = SdkworkAgentBackendClient;
@@ -495,6 +508,7 @@ type CloudRouterSdkRuntimeHost = typeof globalThis & {
   __SDKWORK_MESSAGING_APP_SDK_CLIENT__?: SdkworkMessagingAppSdkClient | null;
   __SDKWORK_GENERATIONS_APP_SDK_CLIENT__?: SdkworkGenerationsAppSdkClient | null;
   __SDKWORK_MEMORY_APP_SDK_CLIENT__?: SdkworkMemoryAppSdkClient | null;
+  __SDKWORK_COMMUNITY_APP_SDK_CLIENT__?: SdkworkCommunityAppSdkClient | null;
   __SDKWORK_AGENT_APP_SDK_CLIENT__?: SdkworkAgentAppSdkClient | null;
   __SDKWORK_AGENT_BACKEND_SDK_CLIENT__?: SdkworkAgentBackendSdkClient | null;
   __SDKWORK_DRIVE_APP_SDK_CLIENT__?: SdkworkDriveAppSdkClient | null;
@@ -531,6 +545,7 @@ let appbaseBackendClient: SdkworkAppbaseBackendClient | null = null;
 let messagingAppClient: MessagingAppClient | null = null;
 let generationsAppClient: SdkworkGenerationsAppClient | null = null;
 let memoryAppClient: SdkworkMemoryAppClient | null = null;
+let communityAppClient: SdkworkCommunityAppClient | null = null;
 let promptsAppClient: PromptsAppClient | null = null;
 let agentAppClient: SdkworkAgentAppClient | null = null;
 let agentBackendClient: SdkworkAgentBackendClient | null = null;
@@ -589,6 +604,12 @@ export function createSdkworkMemoryAppSdkClient(
   options: SdkworkMemoryAppSdkClientOptions = {},
 ): SdkworkMemoryAppClient {
   return attachCloudRouterSdkSessionAuthBoundary(new SdkworkMemoryAppClient(buildMemoryAppConfig(options)));
+}
+
+export function createSdkworkCommunityAppSdkClient(
+  options: SdkworkCommunityAppSdkClientOptions = {},
+): SdkworkCommunityAppClient {
+  return attachCloudRouterSdkSessionAuthBoundary(createCommunityAppSdkClient(buildCommunityAppConfig(options)));
 }
 
 export function createSdkworkPromptsAppSdkClient(
@@ -840,6 +861,22 @@ export function getSdkworkMemoryAppSdkClient(
   return memoryAppClient;
 }
 
+export function getSdkworkCommunityAppSdkClient(
+  options: SdkworkCommunityAppSdkClientOptions = {},
+): SdkworkCommunityAppSdkClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkCommunityAppSdkClient(options);
+  }
+  const injected = readInjectedCommunityAppSdkClient();
+  if (injected) {
+    return attachCloudRouterSdkSessionAuthBoundary(injected);
+  }
+  if (!communityAppClient) {
+    communityAppClient = createSdkworkCommunityAppSdkClient();
+  }
+  return communityAppClient;
+}
+
 export function getSdkworkPromptsAppSdkClient(
   options: SdkworkPromptsAppSdkClientOptions = {},
 ): SdkworkPromptsAppSdkClient {
@@ -1085,6 +1122,7 @@ function resetCloudRouterSdkClientCaches(): void {
   messagingAppClient = null;
   generationsAppClient = null;
   memoryAppClient = null;
+  communityAppClient = null;
   agentAppClient = null;
   agentBackendClient = null;
   promptsBackendClient = null;
@@ -1374,6 +1412,21 @@ function buildMemoryAppConfig(options: SdkworkMemoryAppSdkClientOptions): Sdkwor
   };
 }
 
+function buildCommunityAppConfig(options: SdkworkCommunityAppSdkClientOptions): SdkworkCommunityAppConfig {
+  return {
+    baseUrl: normalizeGeneratedSdkBaseUrl(
+      options.appBaseUrl
+      ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_COMMUNITY_APP_API_BASE_URL')
+      ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_APP_API_BASE_URL')
+      ?? APP_API_PREFIX,
+      APP_API_PREFIX,
+    ),
+    platform: options.platform ?? 'web',
+    tokenManager: resolveCloudRouterSdkTokenManager(options.tokenManager),
+    timeout: options.timeout,
+  };
+}
+
 function buildPromptsAppConfig(options: SdkworkPromptsAppSdkClientOptions): SdkworkPromptsAppConfig {
   return {
     baseUrl: normalizeGeneratedSdkBaseUrl(
@@ -1554,6 +1607,7 @@ function hasRuntimeOverrides(
     | SdkworkAppbaseBackendSdkClientOptions
     | SdkworkGenerationsAppSdkClientOptions
     | SdkworkMemoryAppSdkClientOptions
+    | SdkworkCommunityAppSdkClientOptions
     | SdkworkPromptsAppSdkClientOptions
     | SdkworkAgentAppSdkClientOptions
     | SdkworkAgentBackendSdkClientOptions
@@ -1653,6 +1707,10 @@ function readInjectedGenerationsAppSdkClient(): SdkworkGenerationsAppSdkClient |
 
 function readInjectedMemoryAppSdkClient(): SdkworkMemoryAppSdkClient | undefined {
   return (globalThis as CloudRouterSdkRuntimeHost).__SDKWORK_MEMORY_APP_SDK_CLIENT__ ?? undefined;
+}
+
+function readInjectedCommunityAppSdkClient(): SdkworkCommunityAppSdkClient | undefined {
+  return (globalThis as CloudRouterSdkRuntimeHost).__SDKWORK_COMMUNITY_APP_SDK_CLIENT__ ?? undefined;
 }
 
 function readInjectedAgentAppSdkClient(): SdkworkAgentAppSdkClient | undefined {

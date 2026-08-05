@@ -53,30 +53,30 @@ impl CallChainInterceptor {
         Self::new(chain)
     }
 
-/// Emits a structured audit log line for chain rejections so operations can
-/// correlate denials (IP blocks, concurrency limits) with API keys and
-/// client IPs without digging through request traces.
-fn log_chain_rejection(
-    reason: Option<&sdkwork_web_chain::RejectReason>,
-    invocation: &Invocation,
-    client_ip: Option<IpAddr>,
-) {
-    let Some(reason) = reason else {
-        return;
-    };
-    tracing::info!(
-        event = "call_chain.rejected",
-        stage_kind = ?reason.kind,
-        http_status = reason.http_status,
-        api_key_id = invocation.subject.api_key_id,
-        tenant_id = invocation.subject.tenant_id,
-        organization_id = invocation.subject.organization_id,
-        client_ip = ?client_ip,
-        request_id = %invocation.request.request_id,
-        message = %reason.message,
-        "open-api call chain rejected invocation"
-    );
-}
+    /// Emits a structured audit log line for chain rejections so operations can
+    /// correlate denials (IP blocks, concurrency limits) with API keys and
+    /// client IPs without digging through request traces.
+    fn log_chain_rejection(
+        reason: Option<&sdkwork_web_chain::RejectReason>,
+        invocation: &Invocation,
+        client_ip: Option<IpAddr>,
+    ) {
+        let Some(reason) = reason else {
+            return;
+        };
+        tracing::info!(
+            event = "call_chain.rejected",
+            stage_kind = ?reason.kind,
+            http_status = reason.http_status,
+            api_key_id = invocation.subject.api_key_id,
+            tenant_id = invocation.subject.tenant_id,
+            organization_id = invocation.subject.organization_id,
+            client_ip = ?client_ip,
+            request_id = %invocation.request.request_id,
+            message = %reason.message,
+            "open-api call chain rejected invocation"
+        );
+    }
 
     fn error_from_outcome(outcome: ChainOutcome) -> InvocationError {
         match outcome {
@@ -201,18 +201,13 @@ mod tests {
         InvocationAuthType, InvocationBilling, InvocationBody, InvocationRequest,
         InvocationResource, InvocationSubject,
     };
-    use sdkwork_web_chain::{
-        ChainPolicy, ConcurrencyPolicy, IpAccessMode, IpAccessPolicy,
-    };
+    use sdkwork_web_chain::{ChainPolicy, ConcurrencyPolicy, IpAccessMode, IpAccessPolicy};
     use sdkwork_web_core::memory_concurrent_admission_store;
     use std::sync::Arc;
 
     fn test_invocation(api_key_id: i64, client_ip: Option<&str>) -> Invocation {
-        let mut request = InvocationRequest::new(
-            axum::http::Method::POST,
-            "/v1/chat/completions",
-        )
-        .with_request_id("call-chain-test");
+        let mut request = InvocationRequest::new(axum::http::Method::POST, "/v1/chat/completions")
+            .with_request_id("call-chain-test");
         request.client_ip = client_ip.map(str::to_owned);
         Invocation::new(
             request,
@@ -277,20 +272,17 @@ mod tests {
             }));
         let interceptor = CallChainInterceptor::standard(store.clone(), resolver);
         let mut invocation = test_invocation(1, Some("8.8.8.8"));
-        interceptor
-            .before(&mut invocation)
-            .await
-            .expect("passes");
+        interceptor.before(&mut invocation).await.expect("passes");
         assert!(invocation.call_chain.is_some());
         interceptor.after(&mut invocation).await.expect("release");
         // Exactly-once: a second release is a no-op and must not double count.
-        interceptor.after(&mut invocation).await.expect("idempotent");
+        interceptor
+            .after(&mut invocation)
+            .await
+            .expect("idempotent");
         // Slot is free for another key after release.
         let mut second = test_invocation(2, Some("8.8.4.4"));
-        interceptor
-            .before(&mut second)
-            .await
-            .expect("slot free");
+        interceptor.before(&mut second).await.expect("slot free");
         interceptor.after(&mut second).await.expect("release");
     }
 
@@ -335,7 +327,10 @@ mod tests {
         let mut invocation = test_invocation(1, None);
         interceptor.before(&mut invocation).await.expect("acquired");
         let error = InvocationError::new(InvocationErrorKind::Dispatch, "upstream failed");
-        interceptor.on_error(&mut invocation, &error).await.expect("released");
+        interceptor
+            .on_error(&mut invocation, &error)
+            .await
+            .expect("released");
         assert!(invocation.call_chain.is_none());
         // The released slot is available again.
         let mut retry = test_invocation(1, None);

@@ -145,7 +145,8 @@ async fn adapter_service_exposes_health_and_manifest() {
 #[tokio::test]
 async fn adapter_service_default_manifest_composes_provider_packages_without_false_endpoint_claims()
 {
-    let router = sdkwork_cloudrouter_provider_adapter_host::router_with_default_adapters("test-token");
+    let router =
+        sdkwork_cloudrouter_provider_adapter_host::router_with_default_adapters("test-token");
 
     let manifest = router
         .oneshot(
@@ -210,10 +211,7 @@ async fn adapter_service_default_manifest_composes_provider_packages_without_fal
         "text_generation.generate",
         alicloud["endpoints"][0]["endpointKey"]
     );
-    assert_eq!(
-        "definition_only",
-        alicloud["endpoints"][0]["runtimeState"]
-    );
+    assert_eq!("definition_only", alicloud["endpoints"][0]["runtimeState"]);
 
     let cloud_storage = providers
         .iter()
@@ -298,7 +296,8 @@ async fn adapter_service_default_manifest_composes_provider_packages_without_fal
 
 #[tokio::test]
 async fn adapter_service_default_manifest_covers_cloud_storage_openapi_operations() {
-    let router = sdkwork_cloudrouter_provider_adapter_host::router_with_default_adapters("test-token");
+    let router =
+        sdkwork_cloudrouter_provider_adapter_host::router_with_default_adapters("test-token");
 
     let manifest = router
         .oneshot(
@@ -381,7 +380,8 @@ async fn adapter_service_default_manifest_covers_cloud_storage_openapi_operation
 
 #[tokio::test]
 async fn adapter_service_default_manifest_covers_cloud_iaas_openapi_operations() {
-    let router = sdkwork_cloudrouter_provider_adapter_host::router_with_default_adapters("test-token");
+    let router =
+        sdkwork_cloudrouter_provider_adapter_host::router_with_default_adapters("test-token");
 
     let manifest = router
         .oneshot(
@@ -501,9 +501,10 @@ async fn adapter_http_client_fetches_manifest_from_adapter_service() {
     let server = tokio::spawn(async move {
         axum::serve(listener, router).await.unwrap();
     });
-    let client = sdkwork_cloudrouter_provider_adapter_http::ProviderAdapterHttpClient::for_development(
-        "test-token",
-    );
+    let client =
+        sdkwork_cloudrouter_provider_adapter_http::ProviderAdapterHttpClient::for_development(
+            "test-token",
+        );
 
     let manifest = client.fetch_manifest(format!("{base_url}/")).await.unwrap();
 
@@ -528,9 +529,10 @@ async fn adapter_http_client_rejects_manifest_fetch_with_wrong_token() {
     let server = tokio::spawn(async move {
         axum::serve(listener, router).await.unwrap();
     });
-    let client = sdkwork_cloudrouter_provider_adapter_http::ProviderAdapterHttpClient::for_development(
-        "wrong-token",
-    );
+    let client =
+        sdkwork_cloudrouter_provider_adapter_http::ProviderAdapterHttpClient::for_development(
+            "wrong-token",
+        );
 
     let error = client
         .fetch_manifest(base_url)
@@ -758,8 +760,10 @@ fn adapter_service_bind_addr_uses_runtime_toml_before_default() {
     let _env_lock = env_lock().lock().unwrap();
     clear_bind_env();
 
-    let bind_addr =
-        sdkwork_cloudrouter_provider_adapter_host::bind_addr_from_env_or_toml(Some("127.0.0.1:39111")).unwrap();
+    let bind_addr = sdkwork_cloudrouter_provider_adapter_host::bind_addr_from_env_or_toml(Some(
+        "127.0.0.1:39111",
+    ))
+    .unwrap();
 
     assert_eq!("127.0.0.1:39111", bind_addr);
 }
@@ -773,8 +777,10 @@ fn adapter_service_bind_addr_env_precedes_runtime_toml() {
         "127.0.0.1:49111",
     );
 
-    let bind_addr =
-        sdkwork_cloudrouter_provider_adapter_host::bind_addr_from_env_or_toml(Some("127.0.0.1:39111")).unwrap();
+    let bind_addr = sdkwork_cloudrouter_provider_adapter_host::bind_addr_from_env_or_toml(Some(
+        "127.0.0.1:39111",
+    ))
+    .unwrap();
 
     assert_eq!("127.0.0.1:49111", bind_addr);
 
@@ -833,8 +839,12 @@ fn env_lock() -> &'static Mutex<()> {
 }
 
 fn clear_gateway_token_env() {
-    std::env::remove_var(sdkwork_cloudrouter_provider_adapter_host::ENV_PROVIDER_ADAPTER_GATEWAY_TOKEN);
-    std::env::remove_var(sdkwork_cloudrouter_provider_adapter_host::ENV_PROVIDER_ADAPTER_GATEWAY_TOKEN_FILE);
+    std::env::remove_var(
+        sdkwork_cloudrouter_provider_adapter_host::ENV_PROVIDER_ADAPTER_GATEWAY_TOKEN,
+    );
+    std::env::remove_var(
+        sdkwork_cloudrouter_provider_adapter_host::ENV_PROVIDER_ADAPTER_GATEWAY_TOKEN_FILE,
+    );
 }
 
 fn clear_bind_env() {

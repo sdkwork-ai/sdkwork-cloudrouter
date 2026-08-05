@@ -19,7 +19,11 @@ fn embedded_manifest_exposes_sdk_domain_for_runtime_contract_filters() {
     let manifest = ContractManifest::from_embedded().unwrap();
 
     let operation = manifest
-        .find_operation(ApiSurface::App, "GET", "/app/v3/api/notification/notifications")
+        .find_operation(
+            ApiSurface::App,
+            "GET",
+            "/app/v3/api/notification/notifications",
+        )
         .unwrap();
 
     assert_eq!(Some("notification"), operation.sdk_domain.as_deref());

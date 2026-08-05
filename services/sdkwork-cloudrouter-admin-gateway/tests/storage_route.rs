@@ -39,12 +39,18 @@ async fn default_router_acknowledges_storage_contract_without_serving_it_locally
             .unwrap_or_else(|| panic!("{path}: problem detail expected"));
         assert_eq!(
             501,
-            object.get("status").and_then(Value::as_u64).unwrap_or_default(),
+            object
+                .get("status")
+                .and_then(Value::as_u64)
+                .unwrap_or_default(),
             "{path}"
         );
         assert_eq!(
             "Not implemented",
-            object.get("title").and_then(Value::as_str).unwrap_or_default(),
+            object
+                .get("title")
+                .and_then(Value::as_str)
+                .unwrap_or_default(),
             "{path}"
         );
         assert!(

@@ -9,22 +9,22 @@ use axum::middleware::from_fn_with_state;
 use axum::middleware::Next;
 use axum::response::Response;
 use axum::Router;
+use sdkwork_cloudrouter_admin_analytics_repository_sqlx::PostgresAdminAnalyticsReadStore;
+use sdkwork_cloudrouter_admin_dashboard_repository_sqlx::PostgresAdminDashboardReadStore;
+use sdkwork_cloudrouter_admin_monitor_repository_sqlx::PostgresAdminMonitorReadStore;
 use sdkwork_cloudrouter_config::{
     ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig, DatabaseEngine, DeploymentMode,
     RedisConfig, RequestLimitsConfig, RuntimeTomlConfig, StartupInstallMode, TrustedSubjectConfig,
     UpstreamCredentialSecurityConfig,
 };
-use sdkwork_cloudrouter_http::TrustedRequestSubject;
-use sdkwork_cloudrouter_admin_analytics_repository_sqlx::PostgresAdminAnalyticsReadStore;
-use sdkwork_cloudrouter_admin_dashboard_repository_sqlx::PostgresAdminDashboardReadStore;
-use sdkwork_cloudrouter_admin_monitor_repository_sqlx::PostgresAdminMonitorReadStore;
 use sdkwork_cloudrouter_database_host::connect_cloud_router_database;
+use sdkwork_cloudrouter_http::TrustedRequestSubject;
 use sdkwork_cloudrouter_router_service::application::{
     default_desktop_cache_manager, default_service_cache_manager,
     AiRoutingCacheInvalidatingAdminAiResourceStore, AiRoutingCacheInvalidatingAdminModelStore,
-    AiRoutingCacheInvalidatingAdminUpstreamStore, ApiKeySecretHasher,
-    ApiKeySecretStorageConfig, ModelRankingsService, RedisCacheBackend, RuntimeCacheManager,
-    UpstreamCredentialSecretCodec, DEFAULT_CACHE_KEY_PREFIX, DEFAULT_REDIS_CONNECTION_PROFILE_NAME,
+    AiRoutingCacheInvalidatingAdminUpstreamStore, ApiKeySecretHasher, ApiKeySecretStorageConfig,
+    ModelRankingsService, RedisCacheBackend, RuntimeCacheManager, UpstreamCredentialSecretCodec,
+    DEFAULT_CACHE_KEY_PREFIX, DEFAULT_REDIS_CONNECTION_PROFILE_NAME,
     DEFAULT_SERVICE_CACHE_INSTANCE_NAME,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::{
@@ -38,9 +38,9 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::pool::connect_stand
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
     PostgresAdminAnnouncementStore, PostgresAdminApiKeyRateLimitStore,
     PostgresAdminAuthSettingsStore, PostgresAdminCatalogStore, PostgresAdminChainPolicyStore,
-    PostgresAdminFinanceStore, PostgresAdminFirewallRuleStore, PostgresAdminInventoryStore,
-    PostgresAdminIpRateLimitStore, PostgresAdminMarketingStore, PostgresAdminMcpStore,
-    PostgresAdminModelRateLimitStore, PostgresAdminRecordStore, PostgresAdminServiceNodeStore,
+    PostgresAdminFinanceStore, PostgresAdminFirewallRuleStore, PostgresAdminIpRateLimitStore,
+    PostgresAdminMarketingStore, PostgresAdminMcpStore, PostgresAdminModelRateLimitStore,
+    PostgresAdminRecordStore, PostgresAdminReferralStore, PostgresAdminServiceNodeStore,
     PostgresAdminStorageStore, PostgresAdminTransactionCenterStore,
     PostgresAdminUpstreamAccountVerifier, PostgresAdminUpstreamStore, PostgresCatalogLoadError,
     PostgresGatewayApiKeyCommandStore, PostgresPricingCatalogLoader,
@@ -50,16 +50,16 @@ use sdkwork_cloudrouter_router_service::infrastructure::OsApiKeySecretGenerator;
 use sdkwork_cloudrouter_router_service::ports::{
     AdminAnalyticsReadStore, AdminAnnouncementStore, AdminApiKeyRateLimitStore,
     AdminAuthSettingsStore, AdminCatalogStore, AdminChainPolicyStore, AdminDashboardReadStore,
-    AdminFinanceStore, AdminFirewallRuleStore, AdminInventoryStore, AdminIpRateLimitStore,
-    AdminMarketingStore, AdminMcpStore, AdminModelRateLimitStore, AdminMonitorReadStore,
-    AdminRecordStore, AdminServiceNodeStore, AdminStorageStore, AdminTransactionCenterStore,
+    AdminFinanceStore, AdminFirewallRuleStore, AdminIpRateLimitStore, AdminMarketingStore,
+    AdminMcpStore, AdminModelRateLimitStore, AdminMonitorReadStore, AdminRecordStore,
+    AdminReferralStore, AdminServiceNodeStore, AdminStorageStore, AdminTransactionCenterStore,
     AdminUpstreamAccountVerifier, AdminUpstreamStore, GatewayApiKeyCommandStore,
     ModelRankingRefreshStore, ModelRankingsReadModelStore, RuntimeRegionSettingsStore,
     SiteSettingsStore, UpstreamAccountRouteCatalog,
 };
-use sdkwork_database_sqlx::DatabasePool;
 use sdkwork_commerce_promotion_repository_sqlx::PostgresPromotionAdminRepository;
 use sdkwork_commerce_promotion_service::{PromotionAdminRepositoryPort, PromotionAdminService};
+use sdkwork_database_sqlx::DatabasePool;
 use sdkwork_models_catalog_repository_sqlx::{
     PostgresAdminAiResourceStore as CatalogPostgresAdminAiResourceStore,
     PostgresModelCatalogAdminStore, PostgresModelRankingRefreshStore,
@@ -91,7 +91,6 @@ type AdminAnnouncementRuntimeStore = Arc<dyn AdminAnnouncementStore + Send + Syn
 type AdminAuthSettingsRuntimeStore = Arc<dyn AdminAuthSettingsStore + Send + Sync>;
 type ApiKeyCommandRuntimeStore = Arc<dyn GatewayApiKeyCommandStore + Send + Sync>;
 type AdminCatalogRuntimeStore = Arc<dyn AdminCatalogStore + Send + Sync>;
-type AdminInventoryRuntimeStore = Arc<dyn AdminInventoryStore + Send + Sync>;
 type SiteSettingsRuntimeStore = Arc<dyn SiteSettingsStore + Send + Sync>;
 type RuntimeRegionSettingsRuntimeStore = Arc<dyn RuntimeRegionSettingsStore + Send + Sync>;
 type AdminAiResourceRuntimeStore = Arc<dyn AdminAiResourceStore + Send + Sync>;
@@ -106,6 +105,7 @@ type AdminModelRuntimeStore = Arc<dyn ModelCatalogAdminStore + Send + Sync>;
 type AdminFinanceRuntimeStore = Arc<dyn AdminFinanceStore + Send + Sync>;
 type AdminMarketingRuntimeStore = Arc<dyn AdminMarketingStore + Send + Sync>;
 type AdminMcpRuntimeStore = Arc<dyn AdminMcpStore + Send + Sync>;
+type AdminReferralRuntimeStore = Arc<dyn AdminReferralStore + Send + Sync>;
 type AdminServiceNodeRuntimeStore = Arc<dyn AdminServiceNodeStore + Send + Sync>;
 type AdminStorageRuntimeStore = Arc<dyn AdminStorageStore + Send + Sync>;
 type AdminTransactionCenterRuntimeStore = Arc<dyn AdminTransactionCenterStore + Send + Sync>;
@@ -154,7 +154,6 @@ struct AdminRouterRuntime<'a> {
     auth_settings_store: Option<AdminAuthSettingsRuntimeStore>,
     api_key_command_store: Option<ApiKeyCommandRuntimeStore>,
     catalog_store: Option<AdminCatalogRuntimeStore>,
-    inventory_store: Option<AdminInventoryRuntimeStore>,
     site_settings_store: Option<SiteSettingsRuntimeStore>,
     runtime_region_settings_store: Option<RuntimeRegionSettingsRuntimeStore>,
     ai_resource_store: Option<AdminAiResourceRuntimeStore>,
@@ -169,6 +168,7 @@ struct AdminRouterRuntime<'a> {
     finance_store: Option<AdminFinanceRuntimeStore>,
     marketing_store: Option<AdminMarketingRuntimeStore>,
     mcp_store: Option<AdminMcpRuntimeStore>,
+    referral_store: Option<AdminReferralRuntimeStore>,
     service_node_store: Option<AdminServiceNodeRuntimeStore>,
     storage_store: Option<AdminStorageRuntimeStore>,
     transaction_center_store: Option<AdminTransactionCenterRuntimeStore>,
@@ -217,7 +217,9 @@ fn router_with_database_status(
     }
 }
 
-fn product_local_contract_operation(operation: &sdkwork_cloudrouter_http::ContractOperation) -> bool {
+fn product_local_contract_operation(
+    operation: &sdkwork_cloudrouter_http::ContractOperation,
+) -> bool {
     operation.sdk_domain.as_deref() != Some("commerce")
         && !is_commerce_dependency_contract_path(&operation.path)
         && !is_drive_dependency_contract_path(&operation.path)
@@ -297,7 +299,6 @@ where
         auth_settings_store,
         api_key_command_store,
         catalog_store,
-        inventory_store,
         site_settings_store,
         runtime_region_settings_store,
         ai_resource_store,
@@ -312,6 +313,7 @@ where
         finance_store,
         marketing_store,
         mcp_store,
+        referral_store,
         service_node_store,
         storage_store,
         transaction_center_store,
@@ -420,15 +422,6 @@ where
             admin_model_rankings_router(),
         ),
     };
-    if let Some(store) = inventory_store {
-        let inventory_router =
-            sdkwork_cloudrouter_router_service::api::admin_inventory_router_with_store(store);
-        router = merge_admin_router_with_subject_boundary(
-            router,
-            &admin_subject_boundary_config,
-            inventory_router,
-        );
-    }
     if let Some(store) = catalog_store {
         let catalog_product_router =
             sdkwork_cloudrouter_router_service::api::admin_catalog_router_with_store(store);
@@ -577,6 +570,15 @@ where
                 ),
             ));
         }
+        if let Some(store) = referral_store {
+            router = router.merge(layer_with_admin_subject_boundary(
+                admin_subject_boundary_config.clone(),
+                sdkwork_cloudrouter_router_service::api::admin_referral_router_with_store(
+                    store,
+                    Arc::new(OsApiKeySecretGenerator),
+                ),
+            ));
+        }
         if let Some(store) = mcp_store {
             router = router.merge(layer_with_admin_subject_boundary(
                 admin_subject_boundary_config.clone(),
@@ -586,7 +588,9 @@ where
         if let Some(store) = service_node_store {
             router = router.merge(layer_with_admin_subject_boundary(
                 admin_subject_boundary_config.clone(),
-                sdkwork_cloudrouter_router_service::api::admin_service_node_router_with_store(store),
+                sdkwork_cloudrouter_router_service::api::admin_service_node_router_with_store(
+                    store,
+                ),
             ));
         }
         if let Some(store) = storage_store {
@@ -622,7 +626,9 @@ where
         if let Some(store) = monitor_read_store {
             router = router.merge(layer_with_admin_subject_boundary(
                 admin_subject_boundary_config.clone(),
-                sdkwork_cloudrouter_router_service::api::admin_monitor_router_with_read_store(store),
+                sdkwork_cloudrouter_router_service::api::admin_monitor_router_with_read_store(
+                    store,
+                ),
             ));
         }
         if let Some(store) = record_store {
@@ -679,13 +685,10 @@ pub async fn router_with_postgres_product_catalog(
         .await?;
     let catalog_store: AdminCatalogRuntimeStore =
         Arc::new(PostgresAdminCatalogStore::new(pool.clone()));
-    let inventory_store: AdminInventoryRuntimeStore =
-        Arc::new(PostgresAdminInventoryStore::new(pool));
     Ok(router_with_product_catalog_and_runtime(
         Arc::new(snapshot),
         AdminRouterRuntime {
             catalog_store: Some(catalog_store),
-            inventory_store: Some(inventory_store),
             ..AdminRouterRuntime::default()
         },
     ))
@@ -736,16 +739,13 @@ pub fn router_with_postgres_shared_runtime(
         Arc::new(PostgresAdminAnnouncementStore::new(pool.clone()));
     let auth_settings_store: AdminAuthSettingsRuntimeStore =
         Arc::new(PostgresAdminAuthSettingsStore::new(pool.clone()));
-    let api_key_command_store: ApiKeyCommandRuntimeStore = Arc::new(
-        PostgresGatewayApiKeyCommandStore::new(
+    let api_key_command_store: ApiKeyCommandRuntimeStore =
+        Arc::new(PostgresGatewayApiKeyCommandStore::new(
             pool.clone(),
             build_api_key_secret_storage_config(&api_key_security_config)?,
-        ),
-    );
+        ));
     let catalog_store: AdminCatalogRuntimeStore =
         Arc::new(PostgresAdminCatalogStore::new(pool.clone()));
-    let inventory_store: AdminInventoryRuntimeStore =
-        Arc::new(PostgresAdminInventoryStore::new(pool.clone()));
     let site_settings_store: SiteSettingsRuntimeStore =
         Arc::new(PostgresSiteSettingsStore::new(pool.clone()));
     let runtime_region_settings_store: RuntimeRegionSettingsRuntimeStore =
@@ -778,6 +778,8 @@ pub fn router_with_postgres_shared_runtime(
         Arc::new(PostgresAdminFinanceStore::new(pool.clone()));
     let marketing_store: AdminMarketingRuntimeStore =
         Arc::new(PostgresAdminMarketingStore::new(pool.clone()));
+    let referral_store: AdminReferralRuntimeStore =
+        Arc::new(PostgresAdminReferralStore::new(pool.clone()));
     let mcp_store: AdminMcpRuntimeStore = Arc::new(PostgresAdminMcpStore::new(pool.clone()));
     let service_node_store: AdminServiceNodeRuntimeStore =
         Arc::new(PostgresAdminServiceNodeStore::new(pool.clone()));
@@ -817,7 +819,6 @@ pub fn router_with_postgres_shared_runtime(
             auth_settings_store: Some(auth_settings_store),
             api_key_command_store: Some(api_key_command_store),
             catalog_store: Some(catalog_store),
-            inventory_store: Some(inventory_store),
             site_settings_store: Some(site_settings_store),
             runtime_region_settings_store: Some(runtime_region_settings_store),
             ai_resource_store: Some(ai_resource_store),
@@ -832,6 +833,7 @@ pub fn router_with_postgres_shared_runtime(
             finance_store: Some(finance_store),
             marketing_store: Some(marketing_store),
             mcp_store: Some(mcp_store),
+            referral_store: Some(referral_store),
             service_node_store: Some(service_node_store),
             storage_store,
             transaction_center_store: Some(transaction_center_store),
@@ -989,16 +991,13 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
         Arc::new(PostgresAdminAnnouncementStore::new(pool.clone()));
     let auth_settings_store: AdminAuthSettingsRuntimeStore =
         Arc::new(PostgresAdminAuthSettingsStore::new(pool.clone()));
-    let api_key_command_store: ApiKeyCommandRuntimeStore = Arc::new(
-        PostgresGatewayApiKeyCommandStore::new(
+    let api_key_command_store: ApiKeyCommandRuntimeStore =
+        Arc::new(PostgresGatewayApiKeyCommandStore::new(
             pool.clone(),
             build_api_key_secret_storage_config(&api_key_security_config)?,
-        ),
-    );
+        ));
     let catalog_store: AdminCatalogRuntimeStore =
         Arc::new(PostgresAdminCatalogStore::new(pool.clone()));
-    let inventory_store: AdminInventoryRuntimeStore =
-        Arc::new(PostgresAdminInventoryStore::new(pool.clone()));
     let site_settings_store: SiteSettingsRuntimeStore =
         Arc::new(PostgresSiteSettingsStore::new(pool.clone()));
     let runtime_region_settings_store: RuntimeRegionSettingsRuntimeStore =
@@ -1033,6 +1032,8 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
         Arc::new(PostgresAdminFinanceStore::new(pool.clone()));
     let marketing_store: AdminMarketingRuntimeStore =
         Arc::new(PostgresAdminMarketingStore::new(pool.clone()));
+    let referral_store: AdminReferralRuntimeStore =
+        Arc::new(PostgresAdminReferralStore::new(pool.clone()));
     let mcp_store: AdminMcpRuntimeStore = Arc::new(PostgresAdminMcpStore::new(pool.clone()));
     let service_node_store: AdminServiceNodeRuntimeStore =
         Arc::new(PostgresAdminServiceNodeStore::new(pool.clone()));
@@ -1063,7 +1064,6 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
                             auth_settings_store: Some(auth_settings_store),
                     api_key_command_store: Some(api_key_command_store),
                     catalog_store: Some(catalog_store),
-                    inventory_store: Some(inventory_store),
                     site_settings_store: Some(site_settings_store),
                     runtime_region_settings_store: Some(runtime_region_settings_store),
                     ai_resource_store: Some(ai_resource_store),
@@ -1078,6 +1078,7 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
                     finance_store: Some(finance_store),
                     marketing_store: Some(marketing_store),
                     mcp_store: Some(mcp_store),
+                    referral_store: Some(referral_store),
                     service_node_store: Some(service_node_store),
                     storage_store,
                     transaction_center_store: Some(transaction_center_store),
@@ -1756,7 +1757,10 @@ mod tests {
         restore_env_var("SDKWORK_DATABASE_URL", saved_database_url);
         restore_env_var("SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE", saved_deployment_mode);
         restore_env_var("SDKWORK_CLOUDROUTER_CONFIG_FILE", saved_config_file);
-        restore_env_var("SDKWORK_CLOUDROUTER_SNOWFLAKE_NODE_ID", saved_snowflake_node_id);
+        restore_env_var(
+            "SDKWORK_CLOUDROUTER_SNOWFLAKE_NODE_ID",
+            saved_snowflake_node_id,
+        );
     }
 
     fn unique_runtime_config_path() -> std::path::PathBuf {
@@ -1765,7 +1769,9 @@ mod tests {
             .unwrap()
             .as_millis();
         let mut path = std::env::temp_dir();
-        path.push(format!("sdkwork-cloudrouter-admin-gateway-runtime-{millis}"));
+        path.push(format!(
+            "sdkwork-cloudrouter-admin-gateway-runtime-{millis}"
+        ));
         path.push("sdkwork-cloudrouter.toml");
         path
     }

@@ -89,6 +89,30 @@
       "lifecycle_status": "active",
       "profile": "read_model",
       "system_of_record": false
+    },
+    {
+      "table_name": "ops_referral_invite_code",
+      "owner": "cloudrouter-ops-runtime",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "operational_state",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ops_referral_relation",
+      "owner": "cloudrouter-ops-runtime",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "operational_state",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ops_referral_strategy",
+      "owner": "cloudrouter-ops-runtime",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "operational_state",
+      "system_of_record": true
     }
   ]
 }

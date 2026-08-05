@@ -5,7 +5,9 @@ use std::sync::{Arc, Mutex};
 
 use axum::body::Body;
 use axum::http::{header, HeaderValue, StatusCode};
-use sdkwork_cloudrouter_router_service::api::{app_settings_router, app_settings_router_with_store};
+use sdkwork_cloudrouter_router_service::api::{
+    app_settings_router, app_settings_router_with_store,
+};
 use sdkwork_cloudrouter_router_service::application::EntityUuidGenerator;
 use sdkwork_cloudrouter_router_service::domain::{DomainError, DomainResult};
 use sdkwork_cloudrouter_router_service::ports::{

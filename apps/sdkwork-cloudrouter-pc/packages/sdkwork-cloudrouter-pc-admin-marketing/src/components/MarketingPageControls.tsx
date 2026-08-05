@@ -65,9 +65,14 @@ export function hasNextMarketingPage(
   return itemCount >= pageSize;
 }
 
-export function marketingPageLabel(label: string, page: number, pageInfo: ApiRecord | null): string {
+type MarketingTranslate = (key: string, fallback: string, options?: Record<string, unknown>) => string;
+
+export function marketingPageLabel(t: MarketingTranslate, page: number, pageInfo: ApiRecord | null): string {
   const totalPages = pageInfo?.['totalPages'];
-  return typeof totalPages === 'number' ? `${label} ${page} / ${totalPages}` : `${label} ${page}`;
+  if (typeof totalPages === 'number') {
+    return t('admin.marketing.pagination.pageOfTotal', 'Page {{page}} / {{totalPages}}', { page, totalPages });
+  }
+  return t('admin.marketing.pagination.page', 'Page {{page}}', { page });
 }
 
 export function marketingStatusLabel(status: unknown, active: string, inactive: string): string {

@@ -18,9 +18,9 @@ use tower::ServiceExt;
 
 #[tokio::test]
 async fn admin_storage_route_exposes_complete_oss_management_center() {
-    let router = sdkwork_cloudrouter_router_service::api::admin_storage_router_with_store(Arc::new(
-        TestAdminStorageStore,
-    ));
+    let router = sdkwork_cloudrouter_router_service::api::admin_storage_router_with_store(
+        Arc::new(TestAdminStorageStore),
+    );
 
     for (path, expected_id) in [
         ("/backend/v3/api/storage/providers", "provider-1"),
@@ -60,9 +60,9 @@ async fn admin_storage_route_exposes_complete_oss_management_center() {
 
 #[tokio::test]
 async fn admin_storage_cursor_pages_are_opaque_and_do_not_skip_rows() {
-    let router = sdkwork_cloudrouter_router_service::api::admin_storage_router_with_store(Arc::new(
-        TestAdminStorageStore,
-    ));
+    let router = sdkwork_cloudrouter_router_service::api::admin_storage_router_with_store(
+        Arc::new(TestAdminStorageStore),
+    );
     let mut path = "/backend/v3/api/storage/providers?page_size=1".to_owned();
     let mut ids = Vec::new();
 
@@ -97,9 +97,9 @@ async fn admin_storage_cursor_pages_are_opaque_and_do_not_skip_rows() {
 
 #[tokio::test]
 async fn admin_storage_list_rejects_pagination_aliases_and_plain_cursors() {
-    let router = sdkwork_cloudrouter_router_service::api::admin_storage_router_with_store(Arc::new(
-        TestAdminStorageStore,
-    ));
+    let router = sdkwork_cloudrouter_router_service::api::admin_storage_router_with_store(
+        Arc::new(TestAdminStorageStore),
+    );
 
     for (key, value) in [
         ("pageSize", "1"),
@@ -124,22 +124,48 @@ async fn admin_storage_list_rejects_pagination_aliases_and_plain_cursors() {
 
 #[tokio::test]
 async fn admin_storage_route_exposes_provider_bucket_quota_and_job_commands() {
-    let router = sdkwork_cloudrouter_router_service::api::admin_storage_router_with_store(Arc::new(
-        TestAdminStorageStore,
-    ));
+    let router = sdkwork_cloudrouter_router_service::api::admin_storage_router_with_store(
+        Arc::new(TestAdminStorageStore),
+    );
 
     let provider = request_json(
         router.clone(),
         trusted_json_request(
             "POST",
             "/backend/v3/api/storage/providers",
-            r#"{"providerCode":"aws-primary","providerType":"aws_s3","region":"us-east-1","endpointUrl":"https://s3.amazonaws.com","credentialRef":"secret://oss/aws-primary","supportsMultipart":true,"supportsLifecycle":true,"supportsObjectLock":false}"#,
+            r#"{"providerCode":"aws-primary","name":"AWS Primary","providerType":"aws_s3","region":"us-east-1","endpointUrl":"https://s3.amazonaws.com","credentialRef":"secret://oss/aws-primary","supportsMultipart":true,"supportsLifecycle":true,"supportsObjectLock":false}"#,
         ),
     )
     .await;
     assert_eq!(0, provider["code"].as_i64().unwrap());
     assert_eq!("provider-created", provider["data"]["provider"]["id"]);
     assert_eq!("aws-primary", provider["data"]["provider"]["providerCode"]);
+    assert_eq!("AWS Primary", provider["data"]["provider"]["name"]);
+
+    let chinese_name = request_json(
+        router.clone(),
+        trusted_json_request(
+            "POST",
+            "/backend/v3/api/storage/providers",
+            r#"{"providerCode":"aws-primary","name":"华为云主存储","providerType":"huawei_obs","region":"cn-north-4","endpointUrl":"https://obs.cn-north-4.myhuaweicloud.com","credentialRef":"plain:ak:sk","supportsMultipart":true,"supportsLifecycle":true,"supportsObjectLock":false}"#,
+        ),
+    )
+    .await;
+    // 校验链验证：中文名称通过 normalize_display_text（TestStore 的
+    // create_provider 断言 command.name == "华为云主存储"）。
+    assert_eq!(0, chinese_name["code"].as_i64().unwrap());
+
+    let auto_code = request_json(
+        router.clone(),
+        trusted_json_request(
+            "POST",
+            "/backend/v3/api/storage/providers",
+            r#"{"name":"自动编码服务商","providerType":"oss_s3","region":"cn-hangzhou","endpointUrl":"https://oss-cn-hangzhou.aliyuncs.com","credentialRef":"plain:ak:sk","supportsMultipart":true,"supportsLifecycle":true,"supportsObjectLock":false}"#,
+        ),
+    )
+    .await;
+    // 未提供 providerCode 时自动生成（TestStore 断言 command.supplier_code 以 provider- 开头）。
+    assert_eq!(0, auto_code["code"].as_i64().unwrap());
 
     let provider_update = request_json(
         router.clone(),
@@ -251,9 +277,9 @@ async fn admin_storage_route_exposes_provider_bucket_quota_and_job_commands() {
 
 #[tokio::test]
 async fn admin_storage_route_rejects_missing_trusted_subject_before_store_access() {
-    let router = sdkwork_cloudrouter_router_service::api::admin_storage_router_with_store(Arc::new(
-        TestAdminStorageStore,
-    ));
+    let router = sdkwork_cloudrouter_router_service::api::admin_storage_router_with_store(
+        Arc::new(TestAdminStorageStore),
+    );
 
     let response = router
         .oneshot(
@@ -305,7 +331,17 @@ impl AdminStorageStore for TestAdminStorageStore {
         command: CreateStorageProviderCommand,
     ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
         Box::pin(async move {
-            assert_eq!("aws-primary", command.supplier_code);
+            assert!(
+                command.supplier_code == "aws-primary"
+                    || command.supplier_code.starts_with("provider-"),
+                "unexpected supplier code: {}",
+                command.supplier_code,
+            );
+            assert!(
+                command.name == "AWS Primary" || command.name == "华为云主存储" || command.name == "自动编码服务商",
+                "unexpected provider name: {}",
+                command.name,
+            );
             Ok(provider_record("provider-created"))
         })
     }
@@ -480,6 +516,7 @@ fn provider_record(id: &str) -> AdminStorageJsonRecord {
     record([
         ("id", json!(id)),
         ("providerCode", json!("aws-primary")),
+        ("name", json!("AWS Primary")),
         ("providerType", json!("aws_s3")),
         ("region", json!("us-east-1")),
         ("endpointUrl", json!("https://s3.amazonaws.com")),

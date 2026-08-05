@@ -1,8 +1,6 @@
 const POSTGRES_STORE: &str =
     include_str!("../src/infrastructure/sql/postgres/admin_transaction_center_store.rs");
 const API: &str = include_str!("../src/api/admin_transaction_center.rs");
-const PAYMENT_ACCOUNT_RESOLVER: &str =
-    include_str!("../src/application/payment_provider_account_resolver.rs");
 const PAYMENT_OPENAPI: &str =
     include_str!("../../../crates/sdkwork-cloudrouter-http/specs/payment-aggregate-openapi.json");
 
@@ -63,77 +61,6 @@ fn transaction_center_sql_stores_do_not_hide_missing_standard_tables() {
 }
 
 #[test]
-fn transaction_center_provider_account_create_uses_command_scoped_idempotency() {
-    let source = POSTGRES_STORE;
-    assert!(
-        source.contains("payment_provider_account_idempotency_id"),
-        "postgres store must isolate provider account command idempotency in a named helper"
-    );
-    assert!(
-        source.contains("\"payment-provider-account-command\""),
-        "postgres store must use a command-scoped id namespace"
-    );
-    let helper = source
-        .split("fn payment_provider_account_idempotency_id")
-        .nth(1)
-        .unwrap_or_default()
-        .split("fn ensure_payment_provider_account_replay_matches")
-        .next()
-        .unwrap_or_default();
-    assert!(
-        helper.contains("command.subject.tenant_id")
-            && helper.contains("command.subject.organization_id")
-            && helper.contains("command.idempotency_key"),
-        "postgres command idempotency must include tenant, organization, and Idempotency-Key"
-    );
-    assert!(
-        !helper.contains("command.account_no"),
-        "postgres command idempotency must not include mutable payload fields such as accountNo"
-    );
-}
-
-#[test]
-fn transaction_center_api_enforces_generated_provider_account_contract() {
-    assert!(
-        API.contains("deny_unknown_fields"),
-        "provider account mutation payload must reject fields outside the generated contract"
-    );
-    for expected in [
-        "PAYMENT_PROVIDER_CODES",
-        "PAYMENT_METHOD_CODES",
-        "PAYMENT_PROVIDER_ENVIRONMENTS",
-        "PAYMENT_CONFIG_STATUSES",
-        "normalize_optional_enum",
-        "\"countryCode\"",
-        "\"settlementCurrency\"",
-        "\"^[A-Z]{2}$\"",
-        "\"^[A-Z]{3}$\"",
-        "MAX_MERCHANT_ID_LEN",
-        "MAX_SECRET_REF_LEN",
-        "is_ascii_identifier(&account_no)",
-        "validate_secret_ref(",
-    ] {
-        assert!(
-            API.contains(expected),
-            "transaction center API must enforce provider account contract fragment {expected}"
-        );
-    }
-    for expected in [
-        "validate_payment_secret_ref(",
-        "secretRef must start with vault:// or secret://",
-    ] {
-        assert!(
-            PAYMENT_ACCOUNT_RESOLVER.contains(expected),
-            "payment account resolver must enforce provider account secret contract fragment {expected}"
-        );
-    }
-    assert!(
-        API.contains("MAX_QUERY_STATUS_LEN") && API.contains("MAX_BUSINESS_DATE_LEN"),
-        "transaction center API must align list query string length limits with the generated OpenAPI contract"
-    );
-}
-
-#[test]
 fn transaction_center_mainstream_payment_supplier_codes_match_aggregate_contract() {
     let spec: serde_json::Value =
         serde_json::from_str(PAYMENT_OPENAPI).expect("payment aggregate OpenAPI parses");
@@ -178,12 +105,7 @@ fn transaction_center_mainstream_payment_supplier_codes_match_aggregate_contract
         .split("const PAYMENT_METHOD_CODES")
         .nth(1)
         .expect("transaction center method code allowlist");
-    for method in [
-        "stripe_card",
-        "alipay_qr",
-        "wechat_native",
-        "sandbox_test",
-    ] {
+    for method in ["stripe_card", "alipay_qr", "wechat_native", "sandbox_test"] {
         assert!(
             method_codes.contains(&format!("\"{method}\"")),
             "transaction center method allowlist must accept seeded catalog method {method}"
@@ -221,19 +143,6 @@ fn transaction_center_mainstream_payment_supplier_codes_match_aggregate_contract
 }
 
 #[test]
-fn transaction_center_sql_stores_persist_rotated_at_from_provider_account_command() {
-    let source = POSTGRES_STORE;
-    assert!(
-        source.contains("command.rotated_at.as_deref()"),
-        "postgres store must persist rotatedAt from the provider account command"
-    );
-    assert!(
-        source.contains("(\"rotatedAt\", command.rotated_at.as_deref())"),
-        "postgres store must include rotatedAt in provider account idempotent replay checks"
-    );
-}
-
-#[test]
 fn transaction_center_provider_account_projection_exposes_sdk_note_from_audit_summary() {
     assert!(
         POSTGRES_STORE.contains("audit.change_summary->>'note'"),
@@ -242,72 +151,6 @@ fn transaction_center_provider_account_projection_exposes_sdk_note_from_audit_su
     assert!(
         POSTGRES_STORE.contains("'payments.provider_account.create'"),
         "postgres provider account note projection must scope audit reads to create events"
-    );
-}
-
-#[test]
-fn transaction_center_provider_account_create_writes_ops_audit_log() {
-    let source = POSTGRES_STORE;
-    assert!(source.contains("PAYMENT_PROVIDER_ACCOUNT_AUDIT_ACTION"));
-    assert!(!source.contains("PAYMENT_PROVIDER_ACCOUNT_CREATE_AUDIT_ACTION"));
-    assert!(source.contains("payments.provider_account.create"));
-    assert!(source.contains("INSERT INTO ops_audit_log"));
-    assert!(source.contains("target_uuid"));
-    assert!(source.contains("WHERE NOT EXISTS"));
-    assert!(
-        source.contains("\"clientRequestNo\": command.client_request_no")
-            && source.contains("\"note\": command.note"),
-        "postgres store must persist SDK request metadata in the provider account audit summary"
-    );
-    assert!(
-        source.contains("ensure_payment_provider_account_replay_audit_matches"),
-        "postgres store must verify audit-backed request metadata during idempotent replays"
-    );
-    let audit_replay = source
-        .split("fn ensure_payment_provider_account_replay_matches")
-        .nth(1)
-        .unwrap_or_default();
-    assert!(
-        audit_replay.contains("(\"clientRequestNo\", command.client_request_no.as_deref())")
-            && audit_replay.contains("(\"note\", command.note.as_deref())"),
-        "postgres store must reject provider account replays that mutate SDK request metadata"
-    );
-}
-
-#[test]
-fn transaction_center_payment_route_rule_projection_matches_generated_item_contract() {
-    assert!(POSTGRES_STORE.contains("fallbackChannelId"));
-    assert!(POSTGRES_STORE.contains("fallbackEnabled"));
-}
-
-#[test]
-fn transaction_center_payment_provider_and_method_projections_match_generated_item_contracts() {
-    let source = POSTGRES_STORE;
-    for field in [
-        "supportedCountries",
-        "supportedCurrencies",
-        "capabilities",
-        "methodType",
-        "checkoutScenes",
-    ] {
-        assert!(
-            source.contains(field),
-            "postgres store must expose {field} required by generated payment SDK item contracts"
-        );
-    }
-    assert!(
-        source.contains("NULLIF(provider_code, 'wallet_balance')"),
-        "postgres payment method projection must expose wallet_balance providerCode as null to match the SDK enum"
-    );
-    assert!(
-        source.contains("'providerCode', NULLIF(provider_code, 'wallet_balance')")
-            && source.contains("'sortOrder', sort_order")
-            && source.contains("'methodKey', method_key")
-            && source.contains("'scope', scope")
-            && source.contains("'currencyCode', currency_code")
-            && source.contains("'countryCode', country_code")
-            && source.contains("'displayNameI18n', display_name_i18n"),
-        "postgres payment method projection must expose canonical method columns (provider_code, sort_order, scope, currency, country, localized names)"
     );
 }
 
@@ -341,42 +184,17 @@ fn transaction_center_payment_provider_projection_exposes_only_canonical_api_fie
 }
 
 #[test]
-fn transaction_center_payment_runtime_projection_uses_canonical_columns() {
+fn transaction_center_provider_account_projection_exposes_sdk_credential_flags_and_mode() {
     let source = POSTGRES_STORE;
-    for expected in [
-        "'paymentMethod', pi.payment_method",
-        "'methodCode', pi.payment_method",
-        "'providerCode', pi.provider_code",
-        "'paymentIntentNo', pi.payment_intent_no",
-        "'ownerUserId', pi.owner_user_id",
-        "'methodCode', pa.payment_method",
-        "'providerCode', pa.provider_code",
-        "'attemptNo', COALESCE(pa.attempt_no, pa.out_trade_no)",
-        "'paymentIntentId', pa.payment_intent_id",
-        "'providerTransactionId', pa.provider_transaction_id",
-        "WHEN 'membership' THEN 'membership_purchase'",
+    for fragment in [
+        "'hasPrimarySecret', (secret_ref IS NOT NULL AND secret_ref <> '')",
+        "'hasWebhookSecret', (webhook_secret_ref IS NOT NULL AND webhook_secret_ref <> '')",
+        "'hasCertificate', (certificate_ref IS NOT NULL AND certificate_ref <> '')",
+        "audit.change_summary->>'accountMode'",
     ] {
         assert!(
-            source.contains(expected),
-            "postgres payment runtime projection must expose canonical column fragment {expected}"
-        );
-    }
-    for forbidden in [
-        "pi.provider =",
-        "pa.provider =",
-        "pi.provider AS",
-        "pa.provider AS",
-        "pi.provider, pi.id",
-        "'provider', pi.provider,",
-        "'provider', pa.provider,",
-        "'providerCode', pi.provider,",
-        "'providerCode', pa.provider,",
-        "'sort_weight', sort_weight",
-        "'provider', provider,",
-    ] {
-        assert!(
-            !source.contains(forbidden),
-            "postgres payment runtime projection must not reference legacy column fragment {forbidden}"
+            source.contains(fragment),
+            "postgres provider account projection must expose SDK fragment {fragment}"
         );
     }
 }

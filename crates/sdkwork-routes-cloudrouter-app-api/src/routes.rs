@@ -9,8 +9,8 @@ use sdkwork_cloudrouter_config::{
     RuntimeConfigProfile, RuntimeTomlConfig, StartupInstallMode, TrustedSubjectConfig,
     UpstreamCredentialSecurityConfig,
 };
-use sdkwork_cloudrouter_http::AppSubjectBoundaryConfig;
 use sdkwork_cloudrouter_database_host::connect_cloud_router_database;
+use sdkwork_cloudrouter_http::AppSubjectBoundaryConfig;
 use sdkwork_cloudrouter_router_service::application::{
     bootstrap_payment_provider_registry, payment_runtime_environment, ApiKeySecretHasher,
     ApiKeySecretStorageConfig, EntityUuidGenerator, InMemoryRuntimeStreamBus,
@@ -29,13 +29,12 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::installer::{
 };
 use sdkwork_cloudrouter_router_service::infrastructure::sql::pool::connect_standard_database_pool;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
-    PostgresAdminChainPolicyStore, PostgresAdminTransactionCenterStore, PostgresAppChatStore,
-    PostgresAppGatewayTracesReadStore, PostgresAppNotificationStore,
+    PostgresAdminAuthSettingsStore, PostgresAdminTransactionCenterStore, PostgresAppChatStore,
+    PostgresAppGatewayTracesReadStore, PostgresAppInviteStore, PostgresAppNotificationStore,
     PostgresAppRoutingReadStore, PostgresAppRoutingStrategyStore, PostgresAppRuntimeStore,
-    PostgresCatalogLoadError, PostgresDashboardOverviewReadStore,
-    PostgresGatewayApiKeyCommandStore, PostgresPaymentCallbackStore,
-    PostgresPaymentIntentRuntimeStore, PostgresPricingCatalogLoader, PostgresSettingsStore,
-    PostgresSiteSettingsStore, PostgresUsageLogsReadStore,
+    PostgresCatalogLoadError, PostgresDashboardOverviewReadStore, PostgresGatewayApiKeyCommandStore,
+    PostgresPaymentCallbackStore, PostgresPaymentIntentRuntimeStore, PostgresPricingCatalogLoader,
+    PostgresSettingsStore, PostgresSiteSettingsStore, PostgresUsageLogsReadStore,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::{
     AppRuntimeGatewayHttpClient, OsApiKeySecretGenerator, RedisRuntimeStreamBus,
@@ -44,12 +43,12 @@ use sdkwork_cloudrouter_router_service::ports::AdminTransactionCenterSubject;
 use sdkwork_cloudrouter_router_service::ports::ChatCompletionStreamRelay;
 use sdkwork_cloudrouter_router_service::ports::UpstreamAccountRouteCatalog;
 use sdkwork_cloudrouter_router_service::ports::{
-    AdminChainPolicyStore, AppChatStore, AppGatewayTracesReadStore, AppNotificationStore,
-    AppRoutingReadStore, AppRoutingStrategyStore, AppRuntimeStore, DashboardOverviewReadStore,
-    GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore, ModelRankingRefreshOutcome,
-    ModelRankingRefreshRunStatus, ModelRankingRefreshStore, ModelRankingsCacheInvalidation,
-    ModelRankingsReadModelStore, PaymentCallbackStore, SettingsStore,
-    SettlementsDashboardReadStore, SiteSettingsStore, UsageLogsReadStore,
+    AdminAuthSettingsStore, AppChatStore, AppGatewayTracesReadStore, AppInviteStore,
+    AppNotificationStore, AppRoutingReadStore, AppRoutingStrategyStore, AppRuntimeStore,
+    DashboardOverviewReadStore, GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore,
+    ModelRankingRefreshOutcome, ModelRankingRefreshRunStatus, ModelRankingRefreshStore,
+    ModelRankingsCacheInvalidation, ModelRankingsReadModelStore, PaymentCallbackStore,
+    SettingsStore, SettlementsDashboardReadStore, SiteSettingsStore, UsageLogsReadStore,
 };
 use sdkwork_cloudrouter_settlements_dashboard_repository_sqlx::PostgresSettlementsDashboardReadStore;
 use sdkwork_content_documents_sdk_reference::app_sdk_reference_router;
@@ -75,12 +74,13 @@ pub struct RouterApiRouteModule {
 pub const SERVICE_NAME: &str = "sdkwork-cloudrouter-standalone-gateway";
 const DEFAULT_APP_RUNTIME_CATALOG_REFRESH_INTERVAL_MILLIS: u64 = 60_000;
 type CredentialCodec = Arc<dyn UpstreamCredentialSecretCodec + Send + Sync>;
+type AppInviteRuntimeStore = Arc<dyn AppInviteStore + Send + Sync>;
+type AdminAuthSettingsRuntimeStore = Arc<dyn AdminAuthSettingsStore + Send + Sync>;
 
 struct AppApiKeyRuntimeDeps {
     read_store: Arc<dyn GatewayApiKeyManagementReadStore + Send + Sync>,
     command_store: Arc<dyn GatewayApiKeyCommandStore + Send + Sync>,
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
-    chain_policy_store: Option<Arc<dyn AdminChainPolicyStore + Send + Sync>>,
 }
 
 fn app_api_key_runtime_deps_for_postgres(
@@ -90,8 +90,9 @@ fn app_api_key_runtime_deps_for_postgres(
 ) -> Result<AppApiKeyRuntimeDeps, ProductCatalogRouterError> {
     let api_key_hasher = HmacSha256ApiKeySecretHasher::new(api_key_security_config.pepper_secret())
         .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?;
-    let api_key_secret_codec = RingAeadApiKeySecretCodec::new(api_key_security_config.pepper_secret())
-        .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?;
+    let api_key_secret_codec =
+        RingAeadApiKeySecretCodec::new(api_key_security_config.pepper_secret())
+            .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?;
     let api_key_secret_storage = ApiKeySecretStorageConfig::new(
         api_key_security_config.secret_storage_mode(),
         Arc::new(api_key_secret_codec),
@@ -109,7 +110,6 @@ fn app_api_key_runtime_deps_for_postgres(
             api_key_secret_storage,
         )),
         api_key_hasher: Arc::new(api_key_hasher),
-        chain_policy_store: Some(Arc::new(PostgresAdminChainPolicyStore::new(pool))),
     })
 }
 
@@ -200,7 +200,9 @@ fn router_with_database_status(
     }
 }
 
-fn product_local_contract_operation(operation: &sdkwork_cloudrouter_http::ContractOperation) -> bool {
+fn product_local_contract_operation(
+    operation: &sdkwork_cloudrouter_http::ContractOperation,
+) -> bool {
     !matches!(
         operation.sdk_domain.as_deref(),
         Some("commerce" | "promotion")
@@ -321,6 +323,8 @@ async fn finalize_product_router_with_federated_capabilities(
 
 struct AppRouterRuntime<'a> {
     app_site_settings_store: Option<AppSiteSettingsRuntimeStore>,
+    app_invite_store: Option<AppInviteRuntimeStore>,
+    auth_settings_store: Option<AdminAuthSettingsRuntimeStore>,
     entity_uuid_generator: EntityUuidGen,
     trusted_subject_config: TrustedSubjectConfig,
     app_session_config: AppSessionConfig,
@@ -353,6 +357,8 @@ struct AppRouterRuntime<'a> {
 fn router_with_runtime_stores_and_database_status(runtime: AppRouterRuntime<'_>) -> Router {
     let AppRouterRuntime {
         app_site_settings_store,
+        app_invite_store,
+        auth_settings_store,
         entity_uuid_generator,
         trusted_subject_config,
         app_session_config,
@@ -390,6 +396,13 @@ fn router_with_runtime_stores_and_database_status(runtime: AppRouterRuntime<'_>)
         ),
         None => router.merge(sdkwork_cloudrouter_router_service::api::app_site_settings_router()),
     };
+    if let (Some(invite_store), Some(auth_settings_store)) = (app_invite_store, auth_settings_store)
+    {
+        router = router.merge(sdkwork_cloudrouter_router_service::api::app_invite_router_with_store(
+            invite_store,
+            auth_settings_store,
+        ));
+    }
     if let Some(model_catalog_router) = model_catalog_router {
         router = router.merge(model_catalog_router);
     }
@@ -538,7 +551,9 @@ fn router_with_runtime_stores_and_database_status(runtime: AppRouterRuntime<'_>)
             ),
             subject_boundary_config.clone(),
         ),
-        None => router.merge(sdkwork_cloudrouter_router_service::api::app_routing_strategy_router()),
+        None => {
+            router.merge(sdkwork_cloudrouter_router_service::api::app_routing_strategy_router())
+        }
     };
     if let Some(api_key_runtime) = api_key_runtime {
         router = sdkwork_cloudrouter_http::merge_web_framework_scoped_app_router(
@@ -618,6 +633,8 @@ pub async fn router_with_postgres_product_catalog(
     let app_routing_strategy_store = Arc::new(PostgresAppRoutingStrategyStore::new(pool.clone()));
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
     let app_site_settings_store = Arc::new(PostgresSiteSettingsStore::new(pool.clone()));
+    let app_invite_store = Arc::new(PostgresAppInviteStore::new(pool.clone()));
+    let auth_settings_store = Arc::new(PostgresAdminAuthSettingsStore::new(pool.clone()));
     let api_key_runtime = Some(app_api_key_runtime_deps_for_postgres(
         pool.clone(),
         &api_key_security_config,
@@ -628,6 +645,8 @@ pub async fn router_with_postgres_product_catalog(
     finalize_product_router_with_federated_capabilities(
         router_with_runtime_stores_and_database_status(AppRouterRuntime {
             app_site_settings_store: Some(app_site_settings_store),
+            app_invite_store: Some(app_invite_store),
+            auth_settings_store: Some(auth_settings_store),
             entity_uuid_generator,
             trusted_subject_config,
             app_session_config,
@@ -740,6 +759,10 @@ pub async fn router_with_postgres_shared_runtime(
     finalize_product_router_with_federated_capabilities(
         router_with_runtime_stores_and_database_status(AppRouterRuntime {
             app_site_settings_store: Some(Arc::new(PostgresSiteSettingsStore::new(pool.clone()))),
+            app_invite_store: Some(Arc::new(PostgresAppInviteStore::new(pool.clone()))),
+            auth_settings_store: Some(Arc::new(PostgresAdminAuthSettingsStore::new(
+                pool.clone(),
+            ))),
             entity_uuid_generator,
             trusted_subject_config,
             app_session_config,
@@ -999,6 +1022,10 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
     finalize_product_router_with_federated_capabilities(
         router_with_runtime_stores_and_database_status(AppRouterRuntime {
             app_site_settings_store: Some(Arc::new(PostgresSiteSettingsStore::new(pool.clone()))),
+            app_invite_store: Some(Arc::new(PostgresAppInviteStore::new(pool.clone()))),
+            auth_settings_store: Some(Arc::new(PostgresAdminAuthSettingsStore::new(
+                pool.clone(),
+            ))),
             entity_uuid_generator,
             trusted_subject_config,
             app_session_config,
@@ -1263,7 +1290,8 @@ fn app_runtime_gateway_base_url(runtime_toml: Option<&RuntimeTomlConfig>) -> Str
 fn app_runtime_catalog_refresh_interval_from_env_or_toml(
     runtime_toml: Option<&RuntimeTomlConfig>,
 ) -> Result<Duration, String> {
-    const CATALOG_REFRESH_INTERVAL: &str = "SDKWORK_CLOUDROUTER_PROVIDER_CATALOG_REFRESH_INTERVAL_MILLIS";
+    const CATALOG_REFRESH_INTERVAL: &str =
+        "SDKWORK_CLOUDROUTER_PROVIDER_CATALOG_REFRESH_INTERVAL_MILLIS";
     let catalog_refresh_interval_millis = parse_positive_u64_config(
         CATALOG_REFRESH_INTERVAL,
         runtime_toml.and_then(|config| {
@@ -1665,7 +1693,8 @@ fn parse_non_negative_i64_config(
     config_value: Option<i64>,
     default: i64,
 ) -> Result<i64, String> {
-    let parsed = sdkwork_cloudrouter_config::runtime::config_i64(name, config_value)?.unwrap_or(default);
+    let parsed =
+        sdkwork_cloudrouter_config::runtime::config_i64(name, config_value)?.unwrap_or(default);
     if parsed < 0 {
         return Err(format!("{name} must be a non-negative integer"));
     }
@@ -1677,7 +1706,8 @@ fn parse_positive_i64_config(
     config_value: Option<i64>,
     default: i64,
 ) -> Result<i64, String> {
-    let parsed = sdkwork_cloudrouter_config::runtime::config_i64(name, config_value)?.unwrap_or(default);
+    let parsed =
+        sdkwork_cloudrouter_config::runtime::config_i64(name, config_value)?.unwrap_or(default);
     if parsed <= 0 {
         return Err(format!("{name} must be a positive integer"));
     }
@@ -1689,7 +1719,8 @@ fn parse_positive_u64_config(
     config_value: Option<u64>,
     default: u64,
 ) -> Result<u64, String> {
-    let parsed = sdkwork_cloudrouter_config::runtime::config_u64(name, config_value)?.unwrap_or(default);
+    let parsed =
+        sdkwork_cloudrouter_config::runtime::config_u64(name, config_value)?.unwrap_or(default);
     if parsed == 0 {
         return Err(format!("{name} must be a positive integer"));
     }
@@ -1932,9 +1963,15 @@ mod tests {
         for name in names {
             std::env::remove_var(name);
         }
-        std::env::set_var("SDKWORK_CLOUDROUTER_MODEL_RANKING_RUN_TIMEOUT_MILLIS", "120000");
+        std::env::set_var(
+            "SDKWORK_CLOUDROUTER_MODEL_RANKING_RUN_TIMEOUT_MILLIS",
+            "120000",
+        );
         std::env::set_var("SDKWORK_CLOUDROUTER_MODEL_RANKING_MAX_RETRY_ATTEMPTS", "4");
-        std::env::set_var("SDKWORK_CLOUDROUTER_MODEL_RANKING_RETRY_BACKOFF_MILLIS", "250");
+        std::env::set_var(
+            "SDKWORK_CLOUDROUTER_MODEL_RANKING_RETRY_BACKOFF_MILLIS",
+            "250",
+        );
         std::env::set_var("SDKWORK_CLOUDROUTER_MODEL_RANKING_RUN_ON_STARTUP", "false");
         std::env::set_var(
             "SDKWORK_CLOUDROUTER_MODEL_RANKING_ALERT_AFTER_CONSECUTIVE_FAILURES",
@@ -1995,13 +2032,19 @@ mod tests {
         restore_env_var("SDKWORK_DATABASE_URL", saved_database_url);
         restore_env_var("SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE", saved_deployment_mode);
         restore_env_var("SDKWORK_CLOUDROUTER_CONFIG_FILE", saved_config_file);
-        restore_env_var("SDKWORK_CLOUDROUTER_SNOWFLAKE_NODE_ID", saved_snowflake_node_id);
+        restore_env_var(
+            "SDKWORK_CLOUDROUTER_SNOWFLAKE_NODE_ID",
+            saved_snowflake_node_id,
+        );
         restore_env_var("SDKWORK_CLOUDROUTER_API_KEY_PEPPER", saved_api_key_pepper);
         restore_env_var(
             "SDKWORK_CLOUDROUTER_TRUSTED_SUBJECT_SECRET",
             saved_trusted_subject_secret,
         );
-        restore_env_var("SDKWORK_CLOUDROUTER_APP_SESSION_SECRET", saved_app_session_secret);
+        restore_env_var(
+            "SDKWORK_CLOUDROUTER_APP_SESSION_SECRET",
+            saved_app_session_secret,
+        );
         restore_env_var(
             "SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET",
             saved_payment_webhook_secret,
@@ -2059,7 +2102,10 @@ mod tests {
         restore_env_var("SDKWORK_DATABASE_URL", saved_database_url);
         restore_env_var("SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE", saved_deployment_mode);
         restore_env_var("SDKWORK_CLOUDROUTER_CONFIG_FILE", saved_config_file);
-        restore_env_var("SDKWORK_CLOUDROUTER_SNOWFLAKE_NODE_ID", saved_snowflake_node_id);
+        restore_env_var(
+            "SDKWORK_CLOUDROUTER_SNOWFLAKE_NODE_ID",
+            saved_snowflake_node_id,
+        );
     }
 
     #[test]

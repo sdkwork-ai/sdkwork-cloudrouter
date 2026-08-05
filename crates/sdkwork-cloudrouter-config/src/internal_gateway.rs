@@ -8,7 +8,8 @@ pub struct InternalGatewaySecurityConfig {
 }
 
 impl InternalGatewaySecurityConfig {
-    pub const ENV_SIGNING_SECRET: &'static str = "SDKWORK_CLOUDROUTER_INTERNAL_GATEWAY_SIGNING_SECRET";
+    pub const ENV_SIGNING_SECRET: &'static str =
+        "SDKWORK_CLOUDROUTER_INTERNAL_GATEWAY_SIGNING_SECRET";
     pub const ENV_REQUEST_TTL_SECONDS: &'static str =
         "SDKWORK_CLOUDROUTER_INTERNAL_GATEWAY_REQUEST_TTL_SECONDS";
     pub const ENV_MAX_CLOCK_SKEW_SECONDS: &'static str =

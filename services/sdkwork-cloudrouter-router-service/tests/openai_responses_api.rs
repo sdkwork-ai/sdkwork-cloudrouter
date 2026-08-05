@@ -3,7 +3,6 @@ use std::sync::Mutex;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
-use sdkwork_cloudrouter_test_support::assert_server_generated_request_id;
 use sdkwork_cloudrouter_router_service::api::{
     OpenAiInvocationContext, OpenAiInvocationPlugin, OpenAiInvocationPluginFuture,
     OpenAiInvocationRelayOutcome, OpenAiUpstreamRoute,
@@ -21,6 +20,7 @@ use sdkwork_cloudrouter_router_service::ports::{
     GatewayUsageRecordCommand, GatewayUsageRecorder, ResponsesRelay, ResponsesRelayRequest,
     ResponsesRelayResponse,
 };
+use sdkwork_cloudrouter_test_support::assert_server_generated_request_id;
 use tower::ServiceExt;
 
 fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {

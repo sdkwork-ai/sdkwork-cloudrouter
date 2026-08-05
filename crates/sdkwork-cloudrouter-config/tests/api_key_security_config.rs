@@ -97,7 +97,10 @@ fn api_key_secret_storage_mode_parses_explicit_values() {
 
 #[test]
 fn api_key_secret_storage_mode_reads_env_var_and_rejects_invalid_values() {
-    std::env::set_var(ApiKeySecurityConfig::ENV_API_KEY_PEPPER, "0123456789abcdef0123456789abcdef");
+    std::env::set_var(
+        ApiKeySecurityConfig::ENV_API_KEY_PEPPER,
+        "0123456789abcdef0123456789abcdef",
+    );
     std::env::set_var(
         sdkwork_cloudrouter_config::ApiKeySecretStorageMode::ENV_SECRET_STORAGE,
         "ciphertext",

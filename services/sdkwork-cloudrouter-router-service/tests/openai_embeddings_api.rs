@@ -3,7 +3,6 @@ use std::sync::Mutex;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
-use sdkwork_cloudrouter_test_support::assert_server_generated_request_id;
 use sdkwork_cloudrouter_router_service::api::{
     OpenAiInvocationContext, OpenAiInvocationPlugin, OpenAiInvocationPluginFuture,
     OpenAiInvocationRelayOutcome, OpenAiUpstreamRoute,
@@ -21,6 +20,7 @@ use sdkwork_cloudrouter_router_service::ports::{
     EmbeddingsRelay, EmbeddingsRelayRequest, EmbeddingsRelayResponse, GatewayUsageRecordCommand,
     GatewayUsageRecorder,
 };
+use sdkwork_cloudrouter_test_support::assert_server_generated_request_id;
 use tower::ServiceExt;
 
 fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
@@ -846,8 +846,10 @@ async fn openai_embeddings_rejects_chat_only_model_before_fake_success() {
         )
         .with_catalog_key("openai/gpt-4o-mini"),
     );
-    let router =
-        sdkwork_cloudrouter_router_service::api::openai_embeddings_router(Arc::new(catalog), hasher);
+    let router = sdkwork_cloudrouter_router_service::api::openai_embeddings_router(
+        Arc::new(catalog),
+        hasher,
+    );
 
     let response = router
         .oneshot(

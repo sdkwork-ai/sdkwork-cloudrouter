@@ -20,7 +20,8 @@ use tower::ServiceExt;
 #[tokio::test]
 async fn admin_mcp_route_manages_servers_revisions_tools_health_and_bindings() {
     let store = Arc::new(TestAdminMcpStore::default());
-    let router = sdkwork_cloudrouter_router_service::api::admin_mcp_router_with_store(store.clone());
+    let router =
+        sdkwork_cloudrouter_router_service::api::admin_mcp_router_with_store(store.clone());
 
     let create_server = request_json(
         router.clone(),

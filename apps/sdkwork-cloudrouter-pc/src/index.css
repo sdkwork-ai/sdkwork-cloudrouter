@@ -3,6 +3,7 @@
 @source "../src";
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src";
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-react/src";
+@source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-*/src";
 @source "../../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src";
 @source "../../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-sdk-reference/src";
 @source "../../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-commons/src";

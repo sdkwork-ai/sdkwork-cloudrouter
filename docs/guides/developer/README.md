@@ -229,6 +229,7 @@ Switch the active provider to the Cloud Router entry, then launch (or restart) t
 - Prefer `127.0.0.1` over `localhost` in Base URLs; some CLI agents reject `localhost`.
 - cc-switch writes the chosen base URL and token into the CLI agent's own config (`~/.claude`, `~/.codex`, Gemini CLI config). To return to the official upstream, switch the active provider back in cc-switch rather than hand-editing those files.
 - For streaming, the standalone dev profile streams directly with no buffering proxy in front.
+- The console's quick-import deep links follow the CC Switch `v1/import` contract (`birdcoder://v1/import` / `ccswitch://v1/import`). Birdcoder links additionally carry the gateway's OpenAI-compatible base URL as `modelsBaseUrl` (`&modelsBaseUrl={host}/v1`). At import time Birdcoder queries the Cloud Router extension `GET {modelsBaseUrl}/vendors` with the same API key; the endpoint returns the vendors the key can actually reach (scoped to its account group) with their models (`id` / `displayName` / `contextTokens` / `maxOutputTokens`), and Birdcoder writes them straight into the channel offerings — no vendor selection in the console, and the imported channel's models are selectable in Settings → Model Access right away. Links without `modelsBaseUrl` (or when the query fails) fall back to the legacy `vendor` parameters, then to a channel without offerings.
 
 ## 9. Related
 

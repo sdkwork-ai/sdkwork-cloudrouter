@@ -22,6 +22,12 @@ pub struct AdminAuthVerificationPolicy {
     pub phone_registration_verification_required: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct AdminAuthInviteCodePolicy {
+    pub register_required: bool,
+    pub login_required: bool,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AdminAuthWechatOfficial {
     pub key: String,
@@ -68,6 +74,7 @@ pub struct AdminAuthSettings {
     pub recovery_methods: Vec<String>,
     pub register_methods: Vec<String>,
     pub verification_policy: AdminAuthVerificationPolicy,
+    pub invite_code_policy: AdminAuthInviteCodePolicy,
     pub wechat: AdminAuthWechatSettings,
 }
 
@@ -84,6 +91,7 @@ impl Default for AdminAuthSettings {
             recovery_methods: vec!["email".to_owned(), "phone".to_owned()],
             register_methods: vec!["email".to_owned(), "phone".to_owned()],
             verification_policy: AdminAuthVerificationPolicy::default(),
+            invite_code_policy: AdminAuthInviteCodePolicy::default(),
             wechat: AdminAuthWechatSettings::default(),
         }
     }

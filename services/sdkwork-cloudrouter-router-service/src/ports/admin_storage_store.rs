@@ -56,6 +56,7 @@ pub struct AdminStorageCollection {
 pub struct CreateStorageProviderCommand {
     pub subject: AdminStorageSubject,
     pub supplier_code: String,
+    pub name: String,
     pub provider_type: String,
     pub endpoint_url: Option<String>,
     pub region: Option<String>,

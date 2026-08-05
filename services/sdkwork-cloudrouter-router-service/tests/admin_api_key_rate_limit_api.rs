@@ -16,10 +16,11 @@ use tower::ServiceExt;
 #[tokio::test]
 async fn admin_api_key_rate_limit_route_creates_and_lists_token_limits() {
     let store = Arc::new(TestApiKeyRateLimitStore::default());
-    let router = sdkwork_cloudrouter_router_service::api::admin_api_key_rate_limit_router_with_store(
-        store.clone(),
-        Arc::new(TestUuidGenerator),
-    );
+    let router =
+        sdkwork_cloudrouter_router_service::api::admin_api_key_rate_limit_router_with_store(
+            store.clone(),
+            Arc::new(TestUuidGenerator),
+        );
 
     let create_response = router
         .clone()
@@ -69,10 +70,11 @@ async fn admin_api_key_rate_limit_route_creates_and_lists_token_limits() {
 #[tokio::test]
 async fn admin_api_key_rate_limit_route_rejects_placeholder_prefix_without_calling_store() {
     let store = Arc::new(TestApiKeyRateLimitStore::default());
-    let router = sdkwork_cloudrouter_router_service::api::admin_api_key_rate_limit_router_with_store(
-        store.clone(),
-        Arc::new(TestUuidGenerator),
-    );
+    let router =
+        sdkwork_cloudrouter_router_service::api::admin_api_key_rate_limit_router_with_store(
+            store.clone(),
+            Arc::new(TestUuidGenerator),
+        );
 
     let response = router
         .oneshot(
@@ -101,10 +103,11 @@ async fn admin_api_key_rate_limit_route_rejects_placeholder_prefix_without_calli
 
 #[tokio::test]
 async fn admin_api_key_rate_limit_route_rejects_missing_trusted_subject() {
-    let router = sdkwork_cloudrouter_router_service::api::admin_api_key_rate_limit_router_with_store(
-        Arc::new(TestApiKeyRateLimitStore::default()),
-        Arc::new(TestUuidGenerator),
-    );
+    let router =
+        sdkwork_cloudrouter_router_service::api::admin_api_key_rate_limit_router_with_store(
+            Arc::new(TestApiKeyRateLimitStore::default()),
+            Arc::new(TestUuidGenerator),
+        );
 
     let response = router
         .oneshot(

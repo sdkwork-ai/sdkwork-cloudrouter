@@ -4,7 +4,9 @@ pub mod video;
 
 use std::sync::Arc;
 
-use sdkwork_cloudrouter_provider_adapter::{EndpointAdapter, ProviderAdapter, ProviderAdapterEndpoint};
+use sdkwork_cloudrouter_provider_adapter::{
+    EndpointAdapter, ProviderAdapter, ProviderAdapterEndpoint,
+};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct AliCloudProviderAdapter;

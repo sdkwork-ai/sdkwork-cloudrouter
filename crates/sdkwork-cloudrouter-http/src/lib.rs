@@ -70,6 +70,7 @@ pub use router::{
     service_router_with_filtered_contract_routes_database_config_readiness_check_and_deployment_mode,
     ContractOperationFilter,
 };
+pub use rustls_provider::ensure_rustls_crypto_provider;
 pub use sdkwork_cloudrouter_contract::{ApiSurface, ContractOperation};
 pub use sdkwork_iam_web_adapter::TenantSigningKeyResolver;
 pub use shutdown::{subscribe_shutdown_signal, wait_for_shutdown_signal};
@@ -95,4 +96,3 @@ pub use web_framework_compat::{
 pub use web_security::{
     cloud_service_security_policy, resolve_cloud_web_environment_from_process_env,
 };
-pub use rustls_provider::ensure_rustls_crypto_provider;

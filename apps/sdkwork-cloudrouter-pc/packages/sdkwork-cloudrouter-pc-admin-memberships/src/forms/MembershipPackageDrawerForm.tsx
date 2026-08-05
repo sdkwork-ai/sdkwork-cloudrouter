@@ -8,6 +8,7 @@ import {
   MembershipSelectField,
   MembershipTextField,
 } from '../components/MembershipFormControls';
+import { membershipStatusLabel } from '../components/MembershipStatusBadge';
 import {
   formatMembershipFormValidationError,
   parseRequiredMoneyAmountField,
@@ -130,7 +131,7 @@ export function MembershipPackageDrawerForm({
           pagination={groupPagination}
           previousLabel={t('common.pagination.previous', 'Previous page')}
           nextLabel={t('common.pagination.next', 'Next page')}
-          pageLabel={t('common.pagination.page', 'Page')}
+          pageLabel={t('admin.commerce.memberships.pagination.page', 'Page {{page}}', { page: groupPagination.page })}
         />
       ) : null}
       <MembershipSelectField
@@ -145,7 +146,7 @@ export function MembershipPackageDrawerForm({
           pagination={planPagination}
           previousLabel={t('common.pagination.previous', 'Previous page')}
           nextLabel={t('common.pagination.next', 'Next page')}
-          pageLabel={t('common.pagination.page', 'Page')}
+          pageLabel={t('admin.commerce.memberships.pagination.page', 'Page {{page}}', { page: planPagination.page })}
         />
       ) : null}
       <div className="grid grid-cols-2 gap-4">
@@ -174,9 +175,9 @@ export function MembershipPackageDrawerForm({
           label={t(`${translationKeyPrefix}.form.status`, 'Status')}
           value={status}
           options={[
-            { value: 'active' },
-            { value: 'inactive' },
-            { value: 'disabled' },
+            { value: 'active', label: membershipStatusLabel('active', t) },
+            { value: 'inactive', label: membershipStatusLabel('inactive', t) },
+            { value: 'disabled', label: membershipStatusLabel('disabled', t) },
           ]}
           onChange={(value) => setStatus(value as 'active' | 'inactive' | 'disabled')}
         />
@@ -217,7 +218,7 @@ function MembershipReferencePageControls({
         <ChevronLeft className="h-4 w-4" />
       </button>
       <span className="min-w-16 text-center text-xs text-slate-500 dark:text-slate-400">
-        {pageLabel} {pagination.page}
+        {pageLabel}
       </span>
       <button
         type="button"

@@ -220,6 +220,7 @@ sdkwork_merchandise_repository_sqlx = { package = "sdkwork-merchandise-repositor
 sdkwork_catalog_repository_sqlx = { package = "sdkwork-catalog-repository-sqlx", path = "../sdkwork-catalog/crates/sdkwork-catalog-repository-sqlx" }
 sdkwork_inventory_service = { package = "sdkwork-inventory-service", path = "../sdkwork-inventory/crates/sdkwork-inventory-service" }
 sdkwork_inventory_repository_sqlx = { package = "sdkwork-inventory-repository-sqlx", path = "../sdkwork-inventory/crates/sdkwork-inventory-repository-sqlx" }
+sdkwork_api_inventory_assembly = { package = "sdkwork-api-inventory-assembly", path = "../sdkwork-inventory/crates/sdkwork-api-inventory-assembly" }
 sdkwork_order_service = { package = "sdkwork-order-service", path = "../sdkwork-order/crates/sdkwork-order-service" }
 sdkwork_order_repository_sqlx = { package = "sdkwork-order-repository-sqlx", path = "../sdkwork-order/crates/sdkwork-order-repository-sqlx" }
 sdkwork_commerce_promotion_service = { package = "sdkwork-commerce-promotion-service", path = "../sdkwork-promotion/crates/sdkwork-commerce-promotion-service" }
@@ -239,6 +240,7 @@ sdkwork_routes_account_app_api = { package = "sdkwork-routes-account-app-api", p
 sdkwork_account_service_host = { package = "sdkwork-account-service-host", path = "../sdkwork-account/crates/sdkwork-account-service-host" }
 sdkwork_account_database_host = { package = "sdkwork-account-database-host", path = "../sdkwork-account/crates/sdkwork-account-database-host" }
 sdkwork_routes_payment_app_api = { package = "sdkwork-routes-payment-app-api", path = "../sdkwork-payment/crates/sdkwork-routes-payment-app-api" }
+sdkwork_api_payment_assembly = { package = "sdkwork-api-payment-assembly", path = "../sdkwork-payment/crates/sdkwork-api-payment-assembly" }
 sdkwork_payment_service_host = { package = "sdkwork-payment-service-host", path = "../sdkwork-payment/crates/sdkwork-payment-service-host" }
 sdkwork_payment_database_host = { package = "sdkwork-payment-database-host", path = "../sdkwork-payment/crates/sdkwork-payment-database-host" }
 sdkwork_payment_providers = { package = "sdkwork-payment-providers", path = "../sdkwork-payment/crates/sdkwork-payment-providers" }
@@ -273,6 +275,7 @@ sdkwork-iam-embedded-application-bootstrap = { path = "../sdkwork-iam/crates/sdk
 sdkwork-iam-database-host = { path = "../sdkwork-iam/crates/sdkwork-iam-database-host" }
 sdkwork-routes-iam-app-api = { path = "../sdkwork-iam/crates/sdkwork-routes-iam-app-api" }
 sdkwork-routes-iam-backend-api = { path = "../sdkwork-iam/crates/sdkwork-routes-iam-backend-api" }
+sdkwork_api_iam_assembly = { package = "sdkwork-api-iam-assembly", path = "../sdkwork-iam/crates/sdkwork-api-iam-assembly" }
 
 # SDKWork appbase base-data capability
 sdkwork_base_data_service_host = { package = "sdkwork-base-data-service-host", path = "../sdkwork-appbase/crates/sdkwork-base-data-service-host" }

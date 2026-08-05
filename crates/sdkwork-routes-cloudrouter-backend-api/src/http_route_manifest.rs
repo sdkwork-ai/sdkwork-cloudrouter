@@ -120,6 +120,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
+        "/backend/v3/api/ai/upstream_resource_catalog",
+        "ai",
+        "upstreamResourceCatalog.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
         "/backend/v3/api/ai/upstream_suppliers",
         "ai",
         "upstreamSuppliers.list",
@@ -186,18 +192,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
-        "/backend/v3/api/billing/referrals/stats",
-        "billing",
-        "referralStats.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/backend/v3/api/payments/providers",
-        "payments",
-        "providers.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
         "/backend/v3/api/billing/recharges/records",
         "billing",
         "rechargeRecords.list",
@@ -207,6 +201,18 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/backend/v3/api/billing/recharges/records/{orderNo}",
         "billing",
         "rechargeRecords.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/backend/v3/api/billing/referrals/stats",
+        "billing",
+        "referralStats.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/backend/v3/api/payments/providers",
+        "payments",
+        "providers.list",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -408,6 +414,24 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
+        "/backend/v3/api/system/chains/policy",
+        "system",
+        "chains.policy.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Patch,
+        "/backend/v3/api/system/chains/policy",
+        "system",
+        "chains.policy.update",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/backend/v3/api/system/chains/policy/keys/{apiKeyId}",
+        "system",
+        "chains.policy.apiKey.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
         "/backend/v3/api/system/dashboard/admin/overview",
         "system",
         "dashboard.admin.overview.retrieve",
@@ -549,30 +573,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/backend/v3/api/system/site/settings",
         "system",
         "site.settings.update",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/backend/v3/api/ai/upstream_resource_catalog",
-        "ai",
-        "upstreamResourceCatalog.retrieve",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/backend/v3/api/system/chains/policy",
-        "system",
-        "chains.policy.retrieve",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Patch,
-        "/backend/v3/api/system/chains/policy",
-        "system",
-        "chains.policy.update",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/backend/v3/api/system/chains/policy/keys/{apiKeyId}",
-        "system",
-        "chains.policy.apiKey.retrieve",
     ),
 ];
 

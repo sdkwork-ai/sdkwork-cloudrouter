@@ -12,6 +12,8 @@ export interface AdminStorageProvider {
   id: string;
   /** Last health check at field on admin storage provider. */
   lastHealthCheckAt: string;
+  /** Name field on admin storage provider. */
+  name: string;
   /** Path style enabled field on admin storage provider. */
   pathStyleEnabled: boolean;
   /** Provider code field on admin storage provider. */

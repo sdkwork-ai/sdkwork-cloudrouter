@@ -85,7 +85,10 @@ function getApiKeyProductErrorMessage(error: unknown, fallback: string, t: Trans
 
 export function ApiKeysView() {
   const { t, i18n } = useTranslation();
-  /** 按 key.id 保存 GroupPicker 句柄，供分组预览弹层中的「修改分组」按钮编程式打开弹窗 */
+  /** 最新分组列表镜像，供异步流程（导入弹窗厂商解析）在 setState 生效前读取 */
+  const groupsRef = useRef<AccountGroup[]>([]);
+  /** 进行中的分组加载 promise：并发调用方共享同一批加载并等待其完成 */
+  const groupsLoadingPromiseRef = useRef<Promise<void> | null>(null);
   const groupPickerHandlesRef = useRef<Record<string, GroupPickerHandle | null>>({});
   const [keysData, setKeysData] = useState<ApiKey[]>([]);
   const [totalKeys, setTotalKeys] = useState(0);
@@ -199,7 +202,9 @@ export function ApiKeysView() {
       return;
     }
     // Birdcoder unifies model configuration: configure name / default model
-    // in the same dialog without the app grid, then import directly.
+    // in the same dialog without the app grid, then import directly. The
+    // vendors/models are resolved by Birdcoder itself through the gateway
+    // `/v1/vendors` endpoint at import time, so no vendor selection here.
     setQuickImportAppPicker({ key, result, targetId });
   };
 
@@ -281,21 +286,37 @@ export function ApiKeysView() {
     };
   }, [currentPage, searchQuery, t]);
 
-  const ensureGroupsLoaded = async () => {
-    if (groupsLoaded || groupsLoading) {
-      return;
+  /**
+   * Ensures the account group list is loaded and returns it. Concurrent
+   * callers share the in-flight request; the result is mirrored into
+   * `groupsRef` so async flows (e.g. the import dialog vendor resolution)
+   * can read it before React commits the state update.
+   */
+  const ensureGroupsLoaded = async (): Promise<AccountGroup[]> => {
+    if (groupsLoaded) {
+      return groupsRef.current;
+    }
+    if (groupsLoadingPromiseRef.current) {
+      await groupsLoadingPromiseRef.current;
+      return groupsRef.current;
     }
     setGroupsLoading(true);
     setError(null);
-    try {
-      const items = await ApiKeyService.fetchGroups();
-      setGroups(items);
-      setGroupsLoaded(true);
-    } catch (reason) {
-      setError(getApiKeyProductErrorMessage(reason, t('console.apiKeys.errors.loadGroupsFallback', '令牌分组加载失败。'), t));
-    } finally {
-      setGroupsLoading(false);
-    }
+    groupsLoadingPromiseRef.current = (async () => {
+      try {
+        const items = await ApiKeyService.fetchGroups();
+        groupsRef.current = items;
+        setGroups(items);
+        setGroupsLoaded(true);
+      } catch (reason) {
+        setError(getApiKeyProductErrorMessage(reason, t('console.apiKeys.errors.loadGroupsFallback', '令牌分组加载失败。'), t));
+      } finally {
+        setGroupsLoading(false);
+        groupsLoadingPromiseRef.current = null;
+      }
+    })();
+    await groupsLoadingPromiseRef.current;
+    return groupsRef.current;
   };
 
   const openCreateDrawer = async () => {
@@ -792,7 +813,7 @@ export function ApiKeysView() {
       {quickImportMenu &&
         createPortal(
           <div
-            className="fixed z-[130] w-48 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-xl animate-in fade-in zoom-in-95 duration-150 dark:border-white/10 dark:bg-[#1e1e1e]"
+            className="fixed z-[200] w-48 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-xl animate-in fade-in zoom-in-95 duration-150 dark:border-white/10 dark:bg-[#1e1e1e]"
             style={{ top: quickImportMenu.top, left: quickImportMenu.left }}
             onMouseEnter={cancelCloseQuickImportMenu}
             onMouseLeave={scheduleCloseQuickImportMenu}

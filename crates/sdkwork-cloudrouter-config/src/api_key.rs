@@ -105,8 +105,7 @@ impl ApiKeySecurityConfig {
             std::env::var(ApiKeySecretStorageMode::ENV_SECRET_STORAGE)
                 .ok()
                 .or_else(|| {
-                    runtime_toml
-                        .and_then(|config| config.security.api_key_secret_storage.clone())
+                    runtime_toml.and_then(|config| config.security.api_key_secret_storage.clone())
                 }),
         )?;
         Self::from_parts(pepper_secret, secret_storage_mode).map(Some)

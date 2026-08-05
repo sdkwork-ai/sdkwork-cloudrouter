@@ -1,7 +1,10 @@
 /**
  * Route permission hints for relay-focused admin navigation.
  * Codes reference IMF module catalogs (iam, cloudrouter) — consumers do not redefine catalogs.
+ * IAM hints are owned by @sdkwork/cloudrouter-pc-admin-iam/contribution.
  */
+import { IAM_ADMIN_PERMISSION_HINTS } from '@sdkwork/cloudrouter-pc-admin-iam/contribution';
+
 export type AdminRoutePermissionHint = {
   pathPrefix: string;
   requiredPermission: string;
@@ -24,6 +27,7 @@ export const ADMIN_ROUTE_PERMISSION_HINTS: readonly AdminRoutePermissionHint[] =
   { pathPrefix: '/admin/marketing', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/payments', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/storage', requiredPermission: 'cloudrouter.admin.access' },
+  ...IAM_ADMIN_PERMISSION_HINTS,
   { pathPrefix: '/admin/relay', requiredPermission: 'cloudrouter.gateway.read' },
 ];
 

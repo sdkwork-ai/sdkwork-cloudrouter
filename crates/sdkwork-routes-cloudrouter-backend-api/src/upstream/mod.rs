@@ -6,9 +6,7 @@ mod supplier;
 
 use axum::Router;
 
-use self::shared::{
-    UpstreamResourceStore, UpstreamState, UpstreamStore, UpstreamVerifier,
-};
+use self::shared::{UpstreamResourceStore, UpstreamState, UpstreamStore, UpstreamVerifier};
 
 pub(crate) fn admin_upstream_router_with_store(
     store: UpstreamStore,

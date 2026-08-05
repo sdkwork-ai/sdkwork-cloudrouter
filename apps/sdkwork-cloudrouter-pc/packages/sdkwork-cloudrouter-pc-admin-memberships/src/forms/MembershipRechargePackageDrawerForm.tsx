@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { computeGrantAmount, type RechargeSettingsSnapshot } from '@sdkwork/cloudroutes-pc-commons';
+import { formatMoneyDigits } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 import { SdkworkSearchableSelect } from '@sdkwork/appbase-pc-react';
 import {
   MembershipFormActions,
@@ -8,6 +9,7 @@ import {
   MembershipSelectField,
   MembershipTextField,
 } from '../components/MembershipFormControls';
+import { membershipStatusLabel } from '../components/MembershipStatusBadge';
 import {
   formatMembershipFormValidationError,
   parseRequiredMoneyAmountField,
@@ -35,7 +37,8 @@ export function MembershipRechargePackageDrawerForm({
   onCancel,
   onSubmit,
 }: MembershipRechargePackageDrawerFormProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const displayLocale = i18n.resolvedLanguage ?? i18n.language ?? 'en-US';
   const [priceAmount, setPriceAmount] = useState(initialValue?.priceAmount ?? '');
   const [currencyCode, setCurrencyCode] = useState(initialValue?.currencyCode ?? settings.baseCurrencyCode);
   const [bonusPoints, setBonusPoints] = useState(String(initialValue?.bonusPoints ?? 0));
@@ -116,7 +119,7 @@ export function MembershipRechargePackageDrawerForm({
         <div className="flex items-center justify-between gap-3">
           <span>{t('admin.commerce.memberships.rechargeSettings.preview', 'Preview')}</span>
           <span className="font-semibold text-lobster-600 dark:text-lobster-300">
-            {previewGrantAmount.toLocaleString()} pts
+            {t('admin.commerce.memberships.pointsCount', '{{points}} pts', { points: formatMoneyDigits(previewGrantAmount, 'USD', displayLocale, 'decimal', 0, 0) ?? '0' })}
           </span>
         </div>
       </div>
@@ -124,8 +127,8 @@ export function MembershipRechargePackageDrawerForm({
         label={t('admin.commerce.memberships.rechargePackages.form.status', 'Status')}
         value={status}
         options={[
-          { value: 'active' },
-          { value: 'inactive' },
+          { value: 'active', label: membershipStatusLabel('active', t) },
+          { value: 'inactive', label: membershipStatusLabel('inactive', t) },
         ]}
         onChange={(value) => setStatus(value as 'active' | 'inactive')}
       />

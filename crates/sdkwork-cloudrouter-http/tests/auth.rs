@@ -538,14 +538,18 @@ fn app_request_subject_boundary_rejects_swapped_auth_and_access_token_types() {
         expires_at: 1_800_000_300,
         kid: None,
     };
-    let auth_header_token =
-        sdkwork_cloudrouter_http::sign_app_session_token_with_claims(&app_session_config, &common_claims);
+    let auth_header_token = sdkwork_cloudrouter_http::sign_app_session_token_with_claims(
+        &app_session_config,
+        &common_claims,
+    );
     let mut access_claims = common_claims.clone();
     access_claims.token_kind = AppSessionTokenKind::Auth;
     access_claims.issued_at += 1;
     access_claims.expires_at += 1;
-    let access_header_token =
-        sdkwork_cloudrouter_http::sign_app_session_token_with_claims(&app_session_config, &access_claims);
+    let access_header_token = sdkwork_cloudrouter_http::sign_app_session_token_with_claims(
+        &app_session_config,
+        &access_claims,
+    );
     let mut headers = HeaderMap::new();
     headers.insert(
         "authorization",
@@ -600,10 +604,14 @@ fn app_request_subject_boundary_rejects_access_token_from_different_session() {
     access_claims.session_id = "session-access".to_owned();
     access_claims.issued_at += 1;
     access_claims.expires_at += 1;
-    let auth_token =
-        sdkwork_cloudrouter_http::sign_app_session_token_with_claims(&app_session_config, &auth_claims);
-    let access_token =
-        sdkwork_cloudrouter_http::sign_app_session_token_with_claims(&app_session_config, &access_claims);
+    let auth_token = sdkwork_cloudrouter_http::sign_app_session_token_with_claims(
+        &app_session_config,
+        &auth_claims,
+    );
+    let access_token = sdkwork_cloudrouter_http::sign_app_session_token_with_claims(
+        &app_session_config,
+        &access_claims,
+    );
     let mut headers = HeaderMap::new();
     headers.insert(
         "authorization",

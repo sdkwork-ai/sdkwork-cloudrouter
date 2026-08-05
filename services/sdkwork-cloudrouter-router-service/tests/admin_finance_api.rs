@@ -13,9 +13,9 @@ use tower::ServiceExt;
 
 #[tokio::test]
 async fn admin_finance_route_lists_transactions_and_billing_records() {
-    let router = sdkwork_cloudrouter_router_service::api::admin_finance_router_with_store(Arc::new(
-        TestAdminFinanceStore,
-    ));
+    let router = sdkwork_cloudrouter_router_service::api::admin_finance_router_with_store(
+        Arc::new(TestAdminFinanceStore),
+    );
 
     let transactions = request_json(
         router.clone(),
@@ -58,9 +58,9 @@ async fn admin_finance_route_lists_transactions_and_billing_records() {
 
 #[tokio::test]
 async fn admin_finance_route_rejects_missing_trusted_subject() {
-    let router = sdkwork_cloudrouter_router_service::api::admin_finance_router_with_store(Arc::new(
-        TestAdminFinanceStore,
-    ));
+    let router = sdkwork_cloudrouter_router_service::api::admin_finance_router_with_store(
+        Arc::new(TestAdminFinanceStore),
+    );
 
     let response = router
         .oneshot(

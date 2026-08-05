@@ -499,10 +499,13 @@ mod tests {
             StatusCode::OK,
         )
         .await;
+        // Dependency-owned membership app surface is not part of the
+        // Cloud Router-owned route inventory; the cloud profile does not
+        // expose it (external dependency upstream serves it).
         assert_status(
             &router,
             get("/app/v3/api/memberships/package_groups"),
-            StatusCode::OK,
+            StatusCode::NOT_FOUND,
         )
         .await;
         assert_status(

@@ -19,7 +19,7 @@ use sdkwork_web_chain::{ChainPolicy, ChainScopes, PolicyResolver, ResolvedChainP
 
 use crate::domain::GatewayRiskRule;
 use crate::ports::{
-    CHAIN_POLICY_SCOPE_API_KEY, CHAIN_POLICY_SCOPE_GLOBAL, GatewayChainPolicyStore,
+    GatewayChainPolicyStore, CHAIN_POLICY_SCOPE_API_KEY, CHAIN_POLICY_SCOPE_GLOBAL,
 };
 
 const RULE_TYPE_DENY: i32 = 2;
@@ -79,7 +79,10 @@ impl<C: PricingCatalog + Send + Sync> PolicyResolver for GatewayChainPolicyResol
     async fn resolve(&self, scopes: &ChainScopes) -> ResolvedChainPolicy {
         let global = self.cached_policy(CHAIN_POLICY_SCOPE_GLOBAL, 0).await;
         let per_key = match scopes.api_key_id {
-            Some(api_key_id) => self.cached_policy(CHAIN_POLICY_SCOPE_API_KEY, api_key_id).await,
+            Some(api_key_id) => {
+                self.cached_policy(CHAIN_POLICY_SCOPE_API_KEY, api_key_id)
+                    .await
+            }
             None => None,
         };
         let mut resolved = sdkwork_web_chain::merge_chain_policies(
@@ -192,12 +195,8 @@ fn rule_applies_to_scopes(rule: &GatewayRiskRule, scopes: &ChainScopes) -> bool 
     }
     match (rule.scope_type, rule.scope_id) {
         (None, _) | (Some(0), _) => true,
-        (Some(SCOPE_TYPE_API_KEY), Some(scope_id)) => {
-            scopes.api_key_id == Some(scope_id)
-        }
-        (Some(SCOPE_TYPE_ORGANIZATION), Some(scope_id)) => {
-            scopes.organization_id == Some(scope_id)
-        }
+        (Some(SCOPE_TYPE_API_KEY), Some(scope_id)) => scopes.api_key_id == Some(scope_id),
+        (Some(SCOPE_TYPE_ORGANIZATION), Some(scope_id)) => scopes.organization_id == Some(scope_id),
         (Some(_), Some(0)) => true,
         (Some(_), None) => true,
         _ => false,
@@ -217,7 +216,12 @@ mod tests {
     use super::*;
     use sdkwork_web_chain::IpAccessPolicy;
 
-    fn deny_rule(id: i64, scope_type: Option<i32>, scope_id: Option<i64>, target: &str) -> GatewayRiskRule {
+    fn deny_rule(
+        id: i64,
+        scope_type: Option<i32>,
+        scope_id: Option<i64>,
+        target: &str,
+    ) -> GatewayRiskRule {
         GatewayRiskRule {
             id,
             tenant_id: 10,
@@ -280,13 +284,13 @@ mod tests {
             }
         });
         let policy = parse_chain_policy(&payload).expect("parses");
-        assert_eq!(policy.concurrency.expect("concurrency").max_inflight, Some(20));
+        assert_eq!(
+            policy.concurrency.expect("concurrency").max_inflight,
+            Some(20)
+        );
         let ip = policy.ip_access.expect("ip");
         assert_eq!(ip.allowlist, vec!["1.2.3.0/24".to_owned()]);
-        assert_eq!(
-            ip.mode,
-            sdkwork_web_chain::IpAccessMode::AllowlistOnly
-        );
+        assert_eq!(ip.mode, sdkwork_web_chain::IpAccessMode::AllowlistOnly);
     }
 
     #[test]
@@ -355,7 +359,9 @@ pub fn validate_chain_policy(policy: &ChainPolicy) -> Result<(), String> {
 fn validate_chain_limit(value: Option<u32>, field: &str) -> Result<(), String> {
     if let Some(value) = value {
         if i64::from(value) > MAX_CHAIN_POLICY_INFLIGHT_LIMIT {
-            return Err(format!("{field} must be at most {MAX_CHAIN_POLICY_INFLIGHT_LIMIT}"));
+            return Err(format!(
+                "{field} must be at most {MAX_CHAIN_POLICY_INFLIGHT_LIMIT}"
+            ));
         }
     }
     Ok(())
@@ -487,9 +493,7 @@ mod validation_tests {
         let policy = ChainPolicy {
             concurrency: Some(sdkwork_web_chain::ConcurrencyPolicy {
                 max_inflight: Some(100),
-                max_inflight_per_scope: Some(
-                    [("apiKey".to_owned(), 10_u32)].into_iter().collect(),
-                ),
+                max_inflight_per_scope: Some([("apiKey".to_owned(), 10_u32)].into_iter().collect()),
             }),
             ip_access: Some(sdkwork_web_chain::IpAccessPolicy {
                 mode: sdkwork_web_chain::IpAccessMode::AllowlistOnly,

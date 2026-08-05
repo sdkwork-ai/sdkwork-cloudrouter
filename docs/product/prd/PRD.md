@@ -84,9 +84,12 @@ evidence.
 ### Invocation Plane
 
 - OpenAI-compatible inference entrypoints under `/v1`.
-- Authentication, tenant and organization resolution, entitlement checks,
-  request normalization, route planning, adapter dispatch, streaming, usage
-  capture, and normalized error handling.
+- Dual-channel bearer authentication: `sk-`/`sp-` prefixed gateway API keys or
+  product login auth tokens (auth-token sessions route through the tenant's
+  default account group, enabling API-key-free product chat).
+- Tenant and organization resolution, entitlement checks, request
+  normalization, route planning, adapter dispatch, streaming, usage capture,
+  and normalized error handling.
 - Bounded request/response handling, timeout, retry, circuit-breaker, quota, and
   concurrency policies.
 

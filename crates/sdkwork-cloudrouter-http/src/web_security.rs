@@ -68,7 +68,8 @@ pub fn cloud_service_security_policy(environment: &WebEnvironment) -> SecurityPo
 #[cfg(test)]
 mod tests {
     use super::{
-        cloud_service_security_policy, resolve_cloud_web_environment_from_process_env, split_env_list,
+        cloud_service_security_policy, resolve_cloud_web_environment_from_process_env,
+        split_env_list,
     };
     use sdkwork_web_core::WebEnvironment;
 

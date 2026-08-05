@@ -28,12 +28,6 @@ pub fn admin_monitor_router_with_read_store(
     read_store: Arc<dyn AdminMonitorReadStore + Send + Sync>,
 ) -> Router {
     Router::new()
-        .route("/backend/v3/api/router/monitor/nodes", get(fetch_nodes))
-        .route("/backend/v3/api/router/monitor/alerts", get(fetch_alerts))
-        .route(
-            "/backend/v3/api/router/monitor/performance",
-            get(fetch_performance),
-        )
         .route("/backend/v3/api/system/monitor/nodes", get(fetch_nodes))
         .route("/backend/v3/api/system/monitor/alerts", get(fetch_alerts))
         .route(

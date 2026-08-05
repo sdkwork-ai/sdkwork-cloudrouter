@@ -102,6 +102,24 @@
       "lock": "lightweight",
       "lock_timeout": "2s",
       "statement_timeout": "30s"
+    },
+    "0013_add_object_provider_name.up.sql": {
+      "engine": "postgres",
+      "reversible": "false",
+      "rollback": "forward-fix",
+      "transactional": "true",
+      "lock": "lightweight",
+      "lock_timeout": "2s",
+      "statement_timeout": "30s"
+    },
+    "0014_ops_referral_invite.up.sql": {
+      "engine": "postgres",
+      "reversible": "false",
+      "rollback": "forward-fix",
+      "transactional": "true",
+      "lock": "lightweight",
+      "lock_timeout": "2s",
+      "statement_timeout": "30s"
     }
   }
 }

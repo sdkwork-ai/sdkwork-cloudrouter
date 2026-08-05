@@ -161,6 +161,7 @@ export function MembershipPackagesPage() {
     () => groups.find((group) => group.id === selectedGroupId) ?? null,
     [groups, selectedGroupId],
   );
+  const planNameById = useMemo(() => new Map(plans.map((plan) => [plan.id, plan.name])), [plans]);
   const openCreateDrawer = () => {
     setEditingPackage(null);
     setIsDrawerOpen(true);
@@ -254,7 +255,7 @@ export function MembershipPackagesPage() {
           </button>
         )}
       >
-        <div className="grid min-h-[560px] gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="grid min-h-0 flex-1 auto-rows-[minmax(0,1fr)] gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
           <div className="flex min-h-0 flex-col rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5">
             <div data-admin-membership-package-groups-header className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-white/10">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t('admin.commerce.memberships.groups.title', 'Package Groups')}</h3>
@@ -320,7 +321,7 @@ export function MembershipPackagesPage() {
                 onClick={() => setGroupPage((current) => Math.max(1, current - 1))}
               />
               <span className="text-xs text-slate-500 dark:text-slate-400">
-                {membershipPageLabel(t('common.pagination.page', 'Page'), groupPage, groupPageInfo)}
+                {membershipPageLabel(t, groupPage, groupPageInfo)}
               </span>
               <MembershipIconActionButton
                 label={t('common.pagination.next', 'Next page')}
@@ -345,7 +346,7 @@ export function MembershipPackagesPage() {
                 }}
                 onPreviousPage={() => setPackagePage((current) => Math.max(1, current - 1))}
                 page={packagePage}
-                pageLabel={membershipPageLabel(t('common.pagination.page', 'Page'), packagePage, packagePageInfo)}
+                pageLabel={membershipPageLabel(t, packagePage, packagePageInfo)}
                 pageSize={packagePageSize}
                 pageSizeLabel={t('common.pagination.rows', 'Rows')}
                 pageSizeOptions={[20, 50, 100]}
@@ -381,11 +382,13 @@ export function MembershipPackagesPage() {
                         <div className="font-medium text-slate-900 dark:text-white">{item.name || item.packageNo}</div>
                         <div className="text-xs text-slate-400">{item.packageNo}</div>
                       </td>
-                      <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{item.planId}</td>
+                      <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">
+                        {planNameById.get(item.planId) ?? item.planId}
+                      </td>
                       <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">
                         {formatMoney(item.priceAmount, { currency: item.currencyCode, locale: displayLocale, mode: 'symbol' }) ?? `${item.priceAmount} ${item.currencyCode}`}
                       </td>
-                      <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{item.durationDays}d</td>
+                      <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{t('admin.commerce.memberships.packages.form.durationOptionDays', '{{days}} days', { days: item.durationDays })}</td>
                       <td className="px-4 py-2.5"><MembershipStatusBadge status={item.status} /></td>
                       <td className="px-4 py-2.5">
                         <MembershipTableActions>

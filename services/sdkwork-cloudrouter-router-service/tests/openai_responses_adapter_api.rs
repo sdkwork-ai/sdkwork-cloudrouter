@@ -11,7 +11,9 @@ use sdkwork_cloudrouter_provider_adapter_contract::{
     AdapterEndpointRuntimeState, AdapterInvocationRequest, AdapterInvocationResponse,
     AdapterInvocationShape, AdapterKind, AdapterRouteStatus, AdapterSecret,
 };
-use sdkwork_cloudrouter_provider_adapter_registry::{ProviderAdapterRegistry, ProviderAdapterRouteConfig};
+use sdkwork_cloudrouter_provider_adapter_registry::{
+    ProviderAdapterRegistry, ProviderAdapterRouteConfig,
+};
 use sdkwork_cloudrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,

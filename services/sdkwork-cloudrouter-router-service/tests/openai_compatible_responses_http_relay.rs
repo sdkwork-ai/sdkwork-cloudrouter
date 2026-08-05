@@ -8,9 +8,7 @@ use sdkwork_cloudrouter_router_service::domain::ProviderAuthProfile;
 use sdkwork_cloudrouter_router_service::infrastructure::provider::{
     OpenAiCompatibleResponsesRelay, UpstreamProviderEndpoint,
 };
-use sdkwork_cloudrouter_router_service::ports::{
-    ResponsesRelay, ResponsesRelayRequest,
-};
+use sdkwork_cloudrouter_router_service::ports::{ResponsesRelay, ResponsesRelayRequest};
 use serde_json::json;
 
 #[derive(Debug, Default)]

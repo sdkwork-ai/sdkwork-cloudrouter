@@ -11,9 +11,7 @@ use sdkwork_cloudrouter_router_service::domain::{
 use sdkwork_cloudrouter_router_service::infrastructure::provider::{
     OpenAiCompatibleChatCompletionRelay, ProviderResponseMemoryBudget, UpstreamProviderEndpoint,
 };
-use sdkwork_cloudrouter_router_service::ports::{
-    ChatCompletionRelay, ChatCompletionRelayRequest,
-};
+use sdkwork_cloudrouter_router_service::ports::{ChatCompletionRelay, ChatCompletionRelayRequest};
 use serde_json::json;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 

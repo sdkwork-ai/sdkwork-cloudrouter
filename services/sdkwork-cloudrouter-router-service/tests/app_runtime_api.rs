@@ -11,7 +11,6 @@ use bytes::Bytes;
 use futures_util::stream;
 use futures_util::StreamExt as FuturesStreamExt;
 use http_body_util::BodyExt;
-use sdkwork_cloudrouter_security::InternalGatewayPrincipal;
 use sdkwork_cloudrouter_router_service::application::{
     EntityUuidGenerator, InMemoryRuntimeStreamBus,
 };
@@ -25,6 +24,7 @@ use sdkwork_cloudrouter_router_service::ports::{
     CreateAppRuntimeArtifactCommand, CreateAppRuntimeEventCommand,
     CreateAppRuntimeInvocationCommand,
 };
+use sdkwork_cloudrouter_security::InternalGatewayPrincipal;
 use serde_json::json;
 use serde_json::Value;
 use tokio::sync::Notify;
@@ -4079,19 +4079,21 @@ impl sdkwork_cloudrouter_router_service::ports::PricingCatalog for TestRuntimeCa
         if profile_id != 9101 {
             return Vec::new();
         }
-        vec![sdkwork_cloudrouter_router_service::domain::RoutingRule::new(
-            9102,
-            TEST_TENANT_ID,
-            TEST_ORGANIZATION_ID,
-            9101,
-            "openai-chat",
-            1,
-            &format!(r#"{{"catalogKey":"{}"}}"#, self.catalog_key),
-            &self.catalog_key,
-        )
-        .with_candidate_account_groups(vec![
-            sdkwork_cloudrouter_router_service::domain::RouteCandidate::new(10, 100),
-        ])]
+        vec![
+            sdkwork_cloudrouter_router_service::domain::RoutingRule::new(
+                9102,
+                TEST_TENANT_ID,
+                TEST_ORGANIZATION_ID,
+                9101,
+                "openai-chat",
+                1,
+                &format!(r#"{{"catalogKey":"{}"}}"#, self.catalog_key),
+                &self.catalog_key,
+            )
+            .with_candidate_account_groups(vec![
+                sdkwork_cloudrouter_router_service::domain::RouteCandidate::new(10, 100),
+            ]),
+        ]
     }
 
     fn list_model_mappings(
@@ -4151,15 +4153,19 @@ impl sdkwork_cloudrouter_router_service::ports::PricingCatalog for TestRuntimeCa
                 10,
                 "standard",
                 "standard",
-                sdkwork_cloudrouter_router_service::domain::DecimalValue::parse("1.000000").unwrap(),
-                sdkwork_cloudrouter_router_service::domain::DecimalValue::parse("1.000000").unwrap(),
+                sdkwork_cloudrouter_router_service::domain::DecimalValue::parse("1.000000")
+                    .unwrap(),
+                sdkwork_cloudrouter_router_service::domain::DecimalValue::parse("1.000000")
+                    .unwrap(),
             ),
             sdkwork_cloudrouter_router_service::domain::UpstreamAccountGroup::new(
                 20,
                 "unroutable",
                 "standard",
-                sdkwork_cloudrouter_router_service::domain::DecimalValue::parse("1.000000").unwrap(),
-                sdkwork_cloudrouter_router_service::domain::DecimalValue::parse("1.000000").unwrap(),
+                sdkwork_cloudrouter_router_service::domain::DecimalValue::parse("1.000000")
+                    .unwrap(),
+                sdkwork_cloudrouter_router_service::domain::DecimalValue::parse("1.000000")
+                    .unwrap(),
             ),
         ]
     }
@@ -4260,7 +4266,8 @@ impl sdkwork_cloudrouter_router_service::ports::PricingCatalog for TestRuntimeCa
     fn find_latest_upstream_account_group_metric_snapshot(
         &self,
         _group_id: i64,
-    ) -> Option<sdkwork_cloudrouter_router_service::domain::UpstreamAccountGroupMetricSnapshot> {
+    ) -> Option<sdkwork_cloudrouter_router_service::domain::UpstreamAccountGroupMetricSnapshot>
+    {
         None
     }
 
@@ -4275,7 +4282,8 @@ impl sdkwork_cloudrouter_router_service::ports::PricingCatalog for TestRuntimeCa
             sdkwork_cloudrouter_router_service::domain::PricingPlan::new(
                 "standard",
                 sdkwork_cloudrouter_router_service::domain::PriceSide::OfficialReference,
-                sdkwork_cloudrouter_router_service::domain::DecimalValue::parse("1.000000").unwrap(),
+                sdkwork_cloudrouter_router_service::domain::DecimalValue::parse("1.000000")
+                    .unwrap(),
                 sdkwork_cloudrouter_router_service::domain::Money::usd("0.000000").unwrap(),
             )
         })
@@ -4330,7 +4338,8 @@ impl sdkwork_cloudrouter_router_service::ports::PricingCatalog for TestRuntimeCa
         pricing_plan_code: Option<&str>,
     ) -> Option<sdkwork_cloudrouter_router_service::domain::ModelPrice> {
         if model != self.catalog_key
-            || price_side != sdkwork_cloudrouter_router_service::domain::PriceSide::OfficialReference
+            || price_side
+                != sdkwork_cloudrouter_router_service::domain::PriceSide::OfficialReference
             || billing_meter
                 != sdkwork_cloudrouter_router_service::domain::BillingMeter::LlmInputToken
             || supplier_code.is_some()
@@ -4450,9 +4459,11 @@ impl ChatCompletionStreamRelay for FailingStreamRelay {
         >,
     > {
         Box::pin(async {
-            Err(sdkwork_cloudrouter_router_service::domain::DomainError::new(
-                "provider connection failed before stream",
-            ))
+            Err(
+                sdkwork_cloudrouter_router_service::domain::DomainError::new(
+                    "provider connection failed before stream",
+                ),
+            )
         })
     }
 }

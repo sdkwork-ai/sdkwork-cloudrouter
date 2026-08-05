@@ -36,7 +36,9 @@ fn payment_webhook_config_rejects_missing_blank_short_and_invalid_skew() {
 
     let short =
         PaymentWebhookConfig::from_optional_parts(Some("too-short".to_owned()), None).unwrap_err();
-    assert!(short.contains("SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET must be at least 32 characters"));
+    assert!(
+        short.contains("SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET must be at least 32 characters")
+    );
 
     let invalid_skew = PaymentWebhookConfig::from_optional_parts(
         Some("payment-webhook-secret-0123456789abcdef".to_owned()),
@@ -52,8 +54,9 @@ fn payment_webhook_config_rejects_missing_blank_short_and_invalid_skew() {
         Some((PaymentWebhookConfig::MAX_CLOCK_SKEW_SECONDS + 1).to_string()),
     )
     .unwrap_err();
-    assert!(excessive_skew
-        .contains("SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_MAX_CLOCK_SKEW_SECONDS must be at most 3600"));
+    assert!(excessive_skew.contains(
+        "SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_MAX_CLOCK_SKEW_SECONDS must be at most 3600"
+    ));
 }
 
 #[test]

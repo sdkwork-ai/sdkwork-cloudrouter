@@ -1,7 +1,7 @@
-use std::sync::Arc;
 use axum::http::StatusCode;
 use axum::response::Response;
 use sdkwork_cloudrouter_http::ApiKeyIdentity;
+use std::sync::Arc;
 
 use crate::api::openai_error::openai_error;
 use crate::application::{
@@ -62,7 +62,8 @@ pub struct OpenAiRuntimeRouteConfig {
     /// Optional tenant runtime region settings store (REGION_SPEC §9 step 2).
     /// When present, route planning prefetches the tenant's configured region
     /// and prefers it over the deployment region default.
-    pub region_settings_store: Option<Arc<dyn crate::ports::RuntimeRegionSettingsStore + Send + Sync>>,
+    pub region_settings_store:
+        Option<Arc<dyn crate::ports::RuntimeRegionSettingsStore + Send + Sync>>,
 }
 
 impl OpenAiRuntimeRouteConfig {
@@ -79,7 +80,9 @@ impl OpenAiRuntimeRouteConfig {
 
     pub fn with_region_settings_store(
         mut self,
-        region_settings_store: Option<Arc<dyn crate::ports::RuntimeRegionSettingsStore + Send + Sync>>,
+        region_settings_store: Option<
+            Arc<dyn crate::ports::RuntimeRegionSettingsStore + Send + Sync>,
+        >,
     ) -> Self {
         self.region_settings_store = region_settings_store;
         self

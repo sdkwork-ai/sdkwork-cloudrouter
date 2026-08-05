@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react';
 import type { ApiRecord } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { MarketingBatchStatusBadge, MarketingDrawer } from '../components/MarketingDrawer';
 import { MarketingListView, type MarketingColumn } from '../components/MarketingListView';
+import { marketingEnumLabel } from '../components/MarketingValueBadge';
 import { DistributionTaskCreateDrawerForm } from '../forms/DistributionTaskCreateDrawerForm';
 import {
   backendPromotionCouponStocksList,
@@ -12,9 +13,11 @@ import {
   createIdempotencyKey,
   createPromotionDistributionTask,
 } from '../marketingService';
+import { usePromotionReferences } from '../usePromotionReferences';
 
 export function DistributionTasksPage() {
   const { t } = useTranslation();
+  const { stockNames } = usePromotionReferences();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -25,9 +28,9 @@ export function DistributionTasksPage() {
     const page = await backendPromotionCouponStocksList({ page: 1, pageSize: 200 });
     setStockOptions(page.items.map((item) => ({
       id: String(item['id']),
-      label: `${String(item['stock_no'])} (${String(item['stock_type'])})`,
+      label: `${String(item['stockNo'])} (${marketingEnumLabel(item['stockType'], 'admin.marketing.enums.stockType', t)})`,
     })));
-  }, []);
+  }, [t]);
 
   const openCreateDrawer = () => {
     setSaveError(null);
@@ -52,19 +55,23 @@ export function DistributionTasksPage() {
   };
 
   const columns: MarketingColumn<ApiRecord>[] = [
-    { key: 'task_no', label: t('admin.col.taskNo', 'Task No') },
-    { key: 'distribution_type', label: t('admin.col.distributionType', 'Type') },
-    { key: 'stock_id', label: t('admin.col.stock', 'Stock') },
-    { key: 'requested_quantity', label: t('admin.col.requested', 'Requested'), align: 'right' },
-    { key: 'succeeded_quantity', label: t('admin.col.succeeded', 'Succeeded'), align: 'right' },
-    { key: 'failed_quantity', label: t('admin.col.failed', 'Failed'), align: 'right' },
+    { key: 'taskNo', label: t('admin.col.taskNo', 'Task No') },
+    {
+      key: 'distributionType',
+      label: t('admin.col.distributionType', 'Type'),
+      render: (value) => marketingEnumLabel(value, 'admin.marketing.enums.distributionType', t),
+    },
+    { key: 'stockId', label: t('admin.col.stock', 'Stock'), render: (value) => stockNames[String(value)] || String(value) },
+    { key: 'requestedQuantity', label: t('admin.col.requested', 'Requested'), align: 'right' },
+    { key: 'succeededQuantity', label: t('admin.col.succeeded', 'Succeeded'), align: 'right' },
+    { key: 'failedQuantity', label: t('admin.col.failed', 'Failed'), align: 'right' },
     {
       key: 'status',
       label: t('admin.col.status', 'Status'),
       render: (value) => <MarketingBatchStatusBadge status={value} />,
     },
-    { key: 'created_at', label: t('admin.col.createdAt', 'Created') },
-    { key: 'completed_at', label: t('admin.col.completedAt', 'Completed') },
+    { key: 'createdAt', label: t('admin.col.createdAt', 'Created') },
+    { key: 'completedAt', label: t('admin.col.completedAt', 'Completed') },
   ];
 
   return (

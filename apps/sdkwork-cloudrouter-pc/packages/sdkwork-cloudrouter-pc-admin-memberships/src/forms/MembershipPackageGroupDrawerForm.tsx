@@ -6,6 +6,7 @@ import {
   MembershipSelectField,
   MembershipTextField,
 } from '../components/MembershipFormControls';
+import { membershipStatusLabel } from '../components/MembershipStatusBadge';
 import {
   formatMembershipFormValidationError,
   parseOptionalNonNegativeIntegerField,
@@ -119,9 +120,9 @@ export function MembershipPackageGroupDrawerForm({
           label={t('admin.commerce.memberships.groups.form.status', 'Status')}
           value={status}
           options={[
-            { value: 'active' },
-            { value: 'inactive' },
-            { value: 'disabled' },
+            { value: 'active', label: membershipStatusLabel('active', t) },
+            { value: 'inactive', label: membershipStatusLabel('inactive', t) },
+            { value: 'disabled', label: membershipStatusLabel('disabled', t) },
           ]}
           onChange={(value) => setStatus(value as 'active' | 'inactive' | 'disabled')}
         />

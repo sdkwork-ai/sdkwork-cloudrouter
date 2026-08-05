@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ApiRecord } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { MarketingDrawer } from './MarketingDrawer';
+import { marketingEnumLabel } from './MarketingValueBadge';
 import {
-  minorUnitsToYuan,
+  formatMarketingAmountMinor,
   readCouponBenefit,
   retrievePromotionOffer,
 } from '../marketingService';
+import { usePromotionReferences } from '../usePromotionReferences';
 
 interface OfferDetailDrawerProps {
   offerId: string | null;
@@ -31,9 +33,10 @@ function DetailRow({ label, value }: { label: string; value: unknown }) {
 }
 
 export function OfferDetailDrawer({ offerId, onClose }: OfferDetailDrawerProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [offer, setOffer] = useState<ApiRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { stockByOffer } = usePromotionReferences();
 
   useEffect(() => {
     if (!offerId) {
@@ -60,10 +63,12 @@ export function OfferDetailDrawer({ offerId, onClose }: OfferDetailDrawerProps) 
     };
   }, [offerId]);
 
+  const stocks = offerId ? (stockByOffer[offerId] ?? []) : [];
+
   return (
     <MarketingDrawer
       title={t('admin.marketing.offers.detail.title', 'Coupon Offer Detail')}
-      description={offer ? String(offer['display_name']) : undefined}
+      description={offer ? String(offer['displayName'] ?? '') : undefined}
       isOpen={offerId !== null}
       onClose={onClose}
     >
@@ -74,25 +79,30 @@ export function OfferDetailDrawer({ offerId, onClose }: OfferDetailDrawerProps) 
           <h4 className="mb-2 text-sm font-semibold text-slate-900 dark:text-white">
             {t('admin.marketing.offers.detail.basic', 'Basic Information')}
           </h4>
-          <DetailRow label={t('admin.col.offerNo', 'Offer No')} value={offer['offer_no']} />
-          <DetailRow label={t('admin.marketing.coupon.form.name', 'Coupon Name')} value={offer['display_name']} />
-          <DetailRow label={t('admin.col.type', 'Type')} value={offer['offer_type']} />
-          <DetailRow label={t('admin.col.audience', 'Audience')} value={offer['audience_scope']} />
-          <DetailRow label={t('admin.marketing.coupon.form.combinability', 'Combinability')} value={offer['combinability']} />
-          <DetailRow label={t('admin.marketing.coupon.form.goodsScope', 'Goods Scope')} value={offer['goods_scope']} />
+          <DetailRow label={t('admin.col.offerNo', 'Offer No')} value={offer['offerNo']} />
+          <DetailRow label={t('admin.marketing.coupon.form.name', 'Coupon Name')} value={offer['displayName']} />
+          <DetailRow label={t('admin.col.type', 'Type')} value={marketingEnumLabel(offer['offerType'], 'admin.marketing.enums.offerType', t)} />
+          <DetailRow label={t('admin.col.audience', 'Audience')} value={marketingEnumLabel(offer['audienceScope'], 'admin.marketing.enums.audience', t)} />
+          <DetailRow label={t('admin.marketing.coupon.form.combinability', 'Combinability')} value={marketingEnumLabel(offer['combinability'], 'admin.marketing.enums.combinability', t)} />
+          <DetailRow label={t('admin.marketing.coupon.form.goodsScope', 'Goods Scope')} value={marketingEnumLabel(offer['goodsScope'], 'admin.marketing.enums.goodsScope', t)} />
           <DetailRow label={t('admin.marketing.coupon.form.priority', 'Priority')} value={offer['priority']} />
-          <DetailRow label={t('admin.marketing.coupon.form.startsAt', 'Starts At')} value={offer['starts_at']} />
-          <DetailRow label={t('admin.marketing.coupon.form.endsAt', 'Ends At')} value={offer['ends_at']} />
-          <DetailRow label={t('admin.col.status', 'Status')} value={offer['status']} />
+          <DetailRow label={t('admin.marketing.coupon.form.startsAt', 'Starts At')} value={offer['startsAt']} />
+          <DetailRow label={t('admin.marketing.coupon.form.endsAt', 'Ends At')} value={offer['endsAt']} />
+          <DetailRow
+            label={t('admin.col.status', 'Status')}
+            value={offer['status'] === 'active'
+              ? t('admin.marketing.promotions.status.active', 'Active')
+              : t('admin.marketing.promotions.status.inactive', 'Inactive')}
+          />
           <DetailRow label={t('admin.col.version', 'Version')} value={offer['version']} />
-          <DetailRow label={t('admin.col.updated', 'Updated')} value={offer['updated_at']} />
+          <DetailRow label={t('admin.col.updated', 'Updated')} value={offer['updatedAt']} />
 
           <h4 className="mb-2 mt-5 text-sm font-semibold text-slate-900 dark:text-white">
             {t('admin.marketing.offers.detail.benefit', 'Benefit')}
           </h4>
-          <DetailRow label={t('admin.col.discountType', 'Discount Type')} value={offer['discount_type']} />
-          <DetailRow label={t('admin.marketing.coupon.form.minimumAmount', 'Minimum Amount')} value={offer['minimum_amount']} />
-          <DetailRow label={t('admin.marketing.coupon.form.currencyCode', 'Currency')} value={offer['currency_code']} />
+          <DetailRow label={t('admin.col.discountType', 'Discount Type')} value={marketingEnumLabel(offer['discountType'], 'admin.marketing.enums.discountType', t)} />
+          <DetailRow label={t('admin.marketing.coupon.form.minimumAmount', 'Minimum Amount')} value={offer['minimumAmount']} />
+          <DetailRow label={t('admin.marketing.coupon.form.currencyCode', 'Currency')} value={offer['currencyCode']} />
           {(() => {
             const benefit = readCouponBenefit(offer as ApiRecord);
             if (!benefit) {
@@ -123,7 +133,7 @@ export function OfferDetailDrawer({ offerId, onClose }: OfferDetailDrawerProps) 
                     <DetailRow label={t('admin.marketing.coupon.form.benefitKind', 'Benefit Type')} value={kindLabel} />
                     <DetailRow
                       label={t('admin.marketing.coupon.form.cashGrantAmount', 'Grant Amount (CNY)')}
-                      value={minorUnitsToYuan(benefit.grantAmount)}
+                      value={formatMarketingAmountMinor(benefit.grantAmount, String(offer['currencyCode'] ?? ''), i18n.language)}
                     />
                   </>
                 );
@@ -134,7 +144,7 @@ export function OfferDetailDrawer({ offerId, onClose }: OfferDetailDrawerProps) 
                     <DetailRow label={t('admin.marketing.coupon.form.productId', 'Product Id')} value={benefit.productId} />
                     <DetailRow label={t('admin.marketing.coupon.form.skuId', 'Sku Id')} value={benefit.skuId} />
                     <DetailRow label={t('admin.marketing.coupon.form.packageId', 'Package Id')} value={benefit.packageId} />
-                    <DetailRow label={t('admin.marketing.coupon.form.period', 'Period')} value={benefit.period} />
+                    <DetailRow label={t('admin.marketing.coupon.form.period', 'Period')} value={marketingEnumLabel(benefit.period, 'admin.marketing.enums.period', t)} />
                     <DetailRow label={t('admin.marketing.coupon.form.durationDays', 'Duration Days')} value={benefit.durationDays} />
                     <DetailRow label={t('admin.marketing.coupon.form.dailyQuota', 'Daily Quota')} value={benefit.dailyQuota} />
                     <DetailRow label={t('admin.marketing.coupon.form.totalQuota', 'Total Quota')} value={benefit.totalQuota} />
@@ -142,6 +152,36 @@ export function OfferDetailDrawer({ offerId, onClose }: OfferDetailDrawerProps) 
                 );
             }
           })()}
+
+          {stocks.length > 0 ? (
+            <>
+              <h4 className="mb-2 mt-5 text-sm font-semibold text-slate-900 dark:text-white">
+                {t('admin.marketing.offers.detail.issuance', 'Issuance Settings')}
+              </h4>
+              {stocks.map((stock) => (
+                <div key={String(stock['id'])}>
+                  <DetailRow label={t('admin.col.stock', 'Stock')} value={stock['stockNo']} />
+                  <DetailRow label={t('admin.col.stockType', 'Stock Type')} value={marketingEnumLabel(stock['stockType'], 'admin.marketing.enums.stockType', t)} />
+                  <DetailRow
+                    label={t('admin.col.codeIssueMode', 'Code Mode')}
+                    value={stock['codeIssueMode'] === 'BATCH'
+                      ? t('admin.marketing.promotions.codeIssue.batch', 'Batch Pool')
+                      : t('admin.marketing.promotions.codeIssue.realtime', 'Realtime')}
+                  />
+                  <DetailRow
+                    label={t('admin.col.total', 'Total')}
+                    value={stock['stockType'] === 'UNLIMITED' ? '∞' : stock['totalQuantity']}
+                  />
+                  <DetailRow label={t('admin.col.available', 'Available')} value={stock['availableQuantity']} />
+                  <DetailRow label={t('admin.col.claimed', 'Claimed')} value={stock['claimedQuantity']} />
+                  <DetailRow label={t('admin.col.redeemed', 'Redeemed')} value={stock['redeemedQuantity']} />
+                  <DetailRow label={t('admin.col.perUserLimit', 'Per User')} value={stock['perUserLimit']} />
+                  <DetailRow label={t('admin.col.claimStartsAt', 'Claim Starts')} value={stock['claimStartsAt']} />
+                  <DetailRow label={t('admin.col.claimEndsAt', 'Claim Ends')} value={stock['claimEndsAt']} />
+                </div>
+              ))}
+            </>
+          ) : null}
 
           {offer['description'] ? (
             <>

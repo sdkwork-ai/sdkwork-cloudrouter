@@ -517,8 +517,11 @@ fn create_command(
 ) -> RequestResult<SaveAdminUpstreamSupplierCommand> {
     let supplier_name = required_text(request.supplier_name, "supplierName", MAX_NAME_LENGTH)?;
     let supplier_type = supplier_type(request.supplier_type)?;
-    let default_vendor_code =
-        optional_text(request.default_vendor_code, "defaultVendorCode", MAX_CODE_LENGTH)?;
+    let default_vendor_code = optional_text(
+        request.default_vendor_code,
+        "defaultVendorCode",
+        MAX_CODE_LENGTH,
+    )?;
     if supplier_type == "official" && default_vendor_code.is_none() {
         return Err(problem(
             SdkWorkResultCode::InvalidParameter,

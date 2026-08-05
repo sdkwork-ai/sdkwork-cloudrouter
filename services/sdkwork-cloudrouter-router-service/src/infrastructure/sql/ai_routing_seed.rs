@@ -191,8 +191,7 @@ static DEFAULT_ADMIN_UPSTREAM_ACCOUNTS: [DefaultAdminUpstreamAccountSeed; 1] =
 
 /// Modality whitelist for account groups, mirroring SUPPORTED_MODALITIES in the
 /// admin upstream account group route.
-const ACCOUNT_GROUP_SUPPORTED_MODALITIES: [&str; 5] =
-    ["text", "audio", "image", "video", "music"];
+const ACCOUNT_GROUP_SUPPORTED_MODALITIES: [&str; 5] = ["text", "audio", "image", "video", "music"];
 
 /// Resource catalog capability/modality codes mapped to account group modality
 /// codes. llm maps to text; embedding/network are not account group modalities.
@@ -219,18 +218,6 @@ const VENDOR_RESOURCE_GROUP_BINDINGS: [(&str, &str); 9] = [
     ("volcengine", "official.volcengine.full"),
 ];
 
-const VENDOR_DISPLAY_NAMES: [(&str, &str); 9] = [
-    ("openai", "OpenAI"),
-    ("openai_compatible", "OpenAI Compatible"),
-    ("anthropic", "Anthropic"),
-    ("gemini", "Gemini"),
-    ("kling", "Kling"),
-    ("jimeng", "Jimeng"),
-    ("minimax", "MiniMax"),
-    ("vidu", "Vidu"),
-    ("volcengine", "Volcengine"),
-];
-
 /// Localized vendor display names: (vendor_code, en-US, zh-CN).
 const VENDOR_LOCALIZED_NAMES: [(&str, &str, &str); 9] = [
     ("openai", "OpenAI", "OpenAI"),
@@ -242,14 +229,6 @@ const VENDOR_LOCALIZED_NAMES: [(&str, &str, &str); 9] = [
     ("minimax", "MiniMax", "MiniMax"),
     ("vidu", "Vidu", "Vidu"),
     ("volcengine", "Volcengine", "火山引擎"),
-];
-
-const MODALITY_DISPLAY_NAMES: [(&str, &str); 5] = [
-    ("text", "Text"),
-    ("audio", "Audio"),
-    ("image", "Image"),
-    ("video", "Video"),
-    ("music", "Music"),
 ];
 
 /// Localized modality display names: (modality_code, en-US, zh-CN).
@@ -1662,17 +1641,6 @@ fn account_group_modality_code(candidate: &str) -> Option<&'static str> {
     }
 }
 
-fn curated_display_name<'a>(
-    names: &[(&'static str, &'static str)],
-    code: &'a str,
-) -> &'a str {
-    names
-        .iter()
-        .find(|(candidate, _)| *candidate == code)
-        .map(|(_, name)| *name)
-        .unwrap_or(code)
-}
-
 /// Resolves the localized (en-US, zh-CN) names for a code, falling back to the
 /// code itself when no entry exists.
 fn localized_names<'a>(
@@ -2112,7 +2080,11 @@ mod tests {
             if group.group_code == "standard-group" {
                 continue;
             }
-            assert!(group.account_code.is_none(), "{} must be memberless", group.group_code);
+            assert!(
+                group.account_code.is_none(),
+                "{} must be memberless",
+                group.group_code
+            );
             assert!(
                 group.vendor_code.is_some(),
                 "{} must be vendor-bound",
@@ -2155,8 +2127,8 @@ mod tests {
     #[test]
     fn vendor_group_localized_names_are_bilingual() {
         for group in test_groups() {
-            let i18n: serde_json::Value =
-                serde_json::from_str(&group.group_name_i18n).unwrap_or_else(|_| {
+            let i18n: serde_json::Value = serde_json::from_str(&group.group_name_i18n)
+                .unwrap_or_else(|_| {
                     panic!("{} group_name_i18n is not valid JSON", group.group_code)
                 });
             for locale in ["en-US", "zh-CN"] {
@@ -2267,8 +2239,4 @@ mod tests {
             );
         }
     }
-
-
-
-
 }

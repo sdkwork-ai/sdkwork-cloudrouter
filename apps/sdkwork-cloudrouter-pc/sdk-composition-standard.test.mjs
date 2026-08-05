@@ -288,37 +288,67 @@ test('admin host composes owner admin modules through the backend-admin core SDK
 
   assert.match(appSource, /CloudRouterAdminHostRoutes/);
   assert.doesNotMatch(appSource, /const (?:Dashboard|Model|Upstream)Admin = lazyRoute/);
-  assert.equal((hostSource.match(/\broute\('/g) ?? []).length, 18);
+  assert.equal((hostSource.match(/\broute\('/g) ?? []).length, 21);
   assert.match(hostSource, /'sdkwork-models', '@sdkwork\/models-pc-admin-catalog', \['sdkwork-models-backend-sdk'\]/);
   assert.match(hostSource, /'sdkwork-cloudrouter', '@sdkwork\/cloudrouter-pc-admin-upstream', \['cloudrouter-backend-sdk'\]/);
 
   const contributions = [...hostSource.matchAll(
-    /\broute\(\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*\[([^\]]*)\]\s*,\s*'([^']+)'/g,
+    /\broute\(\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*\[([^\]]*)\]\s*,\s*'([^']+)'\s*,\s*(.+?)\)\s*,?\s*$/gm,
   )].map((match) => ({
     path: `/admin/${match[1]}`,
     owner: match[2],
     adminPackage: match[3],
     backendSdkFamilies: [...match[4].matchAll(/'([^']+)'/g)].map((sdkMatch) => sdkMatch[1]),
     requiredPermission: match[5],
+    redirect: /<Navigate/.test(match[6]),
   }));
-  const menuPaths = [...menuSource.matchAll(/itemBlock\(\{\s*path:\s*'([^']+)'/g)].map((match) => match[1]);
-  const permissionHints = [...permissionSource.matchAll(
-    /\{\s*pathPrefix:\s*'([^']+)'\s*,\s*requiredPermission:\s*'([^']+)'\s*\}/g,
-  )].map((match) => ({ pathPrefix: match[1], requiredPermission: match[2] }));
-  const contributionPaths = contributions.map((contribution) => contribution.path);
+  // The IAM admin module composes routes from module-owned records
+  // (@sdkwork/cloudrouter-pc-admin-iam/contribution) instead of literal route() calls.
+  const iamContributionSource = source('packages/sdkwork-cloudrouter-pc-admin-iam/src/iamAdminContribution.ts');
+  const iamMenuPaths = [...iamContributionSource.matchAll(
+    /\{\s*path:\s*'(\/admin\/[^']+)'\s*,\s*labelKey:/g,
+  )].map((match) => match[1]);
+  const menuPaths = [
+    ...[...menuSource.matchAll(/itemBlock\(\{\s*path:\s*'([^']+)'/g)].map((match) => match[1]),
+    ...iamMenuPaths,
+  ];
+  const permissionHints = [
+    ...[...permissionSource.matchAll(
+      /\{\s*pathPrefix:\s*'([^']+)'\s*,\s*requiredPermission:\s*'([^']+)'\s*\}/g,
+    )].map((match) => ({ pathPrefix: match[1], requiredPermission: match[2] })),
+    ...[...iamContributionSource.matchAll(
+      /\{\s*pathPrefix:\s*'([^']+)'\s*,\s*requiredPermission:\s*'([^']+)'\s*\}/g,
+    )].map((match) => ({ pathPrefix: match[1], requiredPermission: match[2] })),
+  ];
+  const iamContributions = [...iamContributionSource.matchAll(
+    /\{\s*path:\s*'([^']+)'\s*,\s*requiredPermission:\s*'([^']+)'\s*(?:,\s*redirectTo:\s*'([^']+)')?\s*\}/g,
+  )].map((match) => ({
+    path: `/admin/${match[1]}`,
+    owner: 'sdkwork-cloudrouter',
+    adminPackage: '@sdkwork/cloudrouter-pc-admin-iam',
+    backendSdkFamilies: ['sdkwork-iam-backend-sdk'],
+    requiredPermission: match[2],
+    redirect: Boolean(match[3]),
+  }));
+  const allContributions = [...contributions, ...iamContributions];
+  const contributionPaths = allContributions.map((contribution) => contribution.path);
 
-  assert.equal(new Set(contributionPaths).size, contributions.length, 'admin host routes must be unique');
+  assert.equal(new Set(contributionPaths).size, contributionPaths.length, 'admin host routes must be unique');
   for (const menuPath of menuPaths) {
-    const matchingContributions = contributions.filter((contribution) => contributionCoversMenuPath(contribution.path, menuPath));
+    const matchingContributions = allContributions.filter((contribution) => contributionCoversMenuPath(contribution.path, menuPath));
     assert.equal(matchingContributions.length, 1, `menu route ${menuPath} must resolve to exactly one host contribution`);
   }
-  for (const contributionPath of contributionPaths) {
+  for (const contribution of allContributions) {
+    const isRedirect = contribution.redirect;
+    const isDetailRoute = contribution.path.includes(':');
     assert.ok(
-      menuPaths.some((menuPath) => contributionCoversMenuPath(contributionPath, menuPath)),
-      `host contribution ${contributionPath} must expose at least one menu route`,
+      isRedirect
+      || isDetailRoute
+      || menuPaths.some((menuPath) => contributionCoversMenuPath(contribution.path, menuPath)),
+      `host contribution ${contribution.path} must expose at least one menu route`,
     );
   }
-  for (const contribution of contributions) {
+  for (const contribution of allContributions) {
     const matchingHint = permissionHints
       .filter((hint) => contribution.path === hint.pathPrefix || contribution.path.startsWith(`${hint.pathPrefix}/`))
       .sort((left, right) => right.pathPrefix.length - left.pathPrefix.length)[0];
@@ -366,11 +396,10 @@ test('admin host composes owner admin modules through the backend-admin core SDK
 });
 
 function contributionCoversMenuPath(contributionPath, menuPath) {
-  const optionalSectionSuffix = '/:sectionId?';
-  if (!contributionPath.endsWith(optionalSectionSuffix)) {
+  const basePath = contributionPath.replace(/\/:[^/]+\?/g, '');
+  if (basePath === contributionPath) {
     return contributionPath === menuPath;
   }
-  const basePath = contributionPath.slice(0, -optionalSectionSuffix.length);
   if (menuPath === basePath) {
     return true;
   }

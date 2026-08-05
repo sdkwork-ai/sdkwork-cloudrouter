@@ -206,7 +206,7 @@ export function GroupCellPopover({
             <div
               ref={panelRef}
               role="tooltip"
-              className="fixed z-[60] w-72 max-w-[calc(100vw-16px)]"
+              className="fixed z-[200] w-72 max-w-[calc(100vw-16px)]"
               style={{
                 top: placement?.top ?? 0,
                 left: placement?.left ?? 0,

@@ -26,8 +26,10 @@ const PAAS_OPENAPI_JSON: &str = include_str!("../specs/paas-openapi.json");
 const CLOUD_SERVICES_OPENAPI_JSON: &str = include_str!("../specs/cloud-services-openapi.json");
 const APP_OPENAPI_JSON: &str =
     include_str!(concat!(env!("OUT_DIR"), "/cloudrouter-app-openapi.json"));
-const BACKEND_OPENAPI_JSON: &str =
-    include_str!(concat!(env!("OUT_DIR"), "/cloudrouter-backend-openapi.json"));
+const BACKEND_OPENAPI_JSON: &str = include_str!(concat!(
+    env!("OUT_DIR"),
+    "/cloudrouter-backend-openapi.json"
+));
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]

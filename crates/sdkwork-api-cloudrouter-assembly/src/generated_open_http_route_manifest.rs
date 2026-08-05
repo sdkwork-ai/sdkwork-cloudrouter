@@ -498,6 +498,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "retrieveModel",
     ),
     HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/v1/user/balance",
+        "Models",
+        "retrieveUserBalance",
+    ),
+    HttpRoute::dual_token(
         HttpMethod::Post,
         "/v1/moderations",
         "Moderations",
@@ -909,6 +915,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "Videos/volcengine",
         "volcengineRetrieveContentGenerationTask",
     ),
+    HttpRoute::dual_token(HttpMethod::Get, "/v1/vendors", "Vendors", "listVendors"),
 ];
 
 pub fn http_route_manifest() -> HttpRouteManifest {

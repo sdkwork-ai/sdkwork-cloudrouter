@@ -103,14 +103,18 @@ impl PostgresTestContext {
             .connect(&database_url)
             .await
             .unwrap();
-        sqlx::query(sqlx::AssertSqlSafe(format!("DROP SCHEMA IF EXISTS {quoted_schema} CASCADE")))
-            .execute(&admin_pool)
-            .await
-            .unwrap();
-        sqlx::query(sqlx::AssertSqlSafe(format!("CREATE SCHEMA {quoted_schema}")))
-            .execute(&admin_pool)
-            .await
-            .unwrap();
+        sqlx::query(sqlx::AssertSqlSafe(format!(
+            "DROP SCHEMA IF EXISTS {quoted_schema} CASCADE"
+        )))
+        .execute(&admin_pool)
+        .await
+        .unwrap();
+        sqlx::query(sqlx::AssertSqlSafe(format!(
+            "CREATE SCHEMA {quoted_schema}"
+        )))
+        .execute(&admin_pool)
+        .await
+        .unwrap();
         admin_pool.close().await;
 
         let schema_for_connections = schema.clone();
@@ -119,9 +123,12 @@ impl PostgresTestContext {
             .after_connect(move |connection, _metadata| {
                 let schema = schema_for_connections.clone();
                 Box::pin(async move {
-                    sqlx::query(sqlx::AssertSqlSafe(format!("SET search_path TO {}", quote_identifier(&schema))))
-                        .execute(&mut *connection)
-                        .await?;
+                    sqlx::query(sqlx::AssertSqlSafe(format!(
+                        "SET search_path TO {}",
+                        quote_identifier(&schema)
+                    )))
+                    .execute(&mut *connection)
+                    .await?;
                     Ok(())
                 })
             })

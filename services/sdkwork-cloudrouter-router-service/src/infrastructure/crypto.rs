@@ -213,7 +213,11 @@ pub struct RingAeadApiKeySecretCodec {
 impl RingAeadApiKeySecretCodec {
     pub fn new(pepper_secret: impl AsRef<str>) -> DomainResult<Self> {
         let pepper_secret = validated_key_secret(pepper_secret.as_ref())?;
-        let digest = derived_key(API_KEY_SECRET_KDF_SALT, API_KEY_SECRET_AEAD_KEY_DOMAIN, pepper_secret);
+        let digest = derived_key(
+            API_KEY_SECRET_KDF_SALT,
+            API_KEY_SECRET_AEAD_KEY_DOMAIN,
+            pepper_secret,
+        );
         let unbound_key = UnboundKey::new(&AES_256_GCM, &digest)
             .map_err(|_| DomainError::new("api key secret codec key is invalid"))?;
         Ok(Self {
@@ -337,7 +341,11 @@ fn derived_key_id(secret: &str) -> String {
 }
 
 fn api_key_derived_key_id(secret: &str) -> String {
-    derived_key_id_for_domain(API_KEY_SECRET_KDF_SALT, API_KEY_SECRET_AEAD_KEY_DOMAIN, secret)
+    derived_key_id_for_domain(
+        API_KEY_SECRET_KDF_SALT,
+        API_KEY_SECRET_AEAD_KEY_DOMAIN,
+        secret,
+    )
 }
 
 fn derived_key_id_for_domain(salt: &[u8], domain: &[u8], secret: &str) -> String {
@@ -460,7 +468,11 @@ mod tests {
         assert_eq!(
             "sk-plaintext-secret",
             codec
-                .decode_secret(api_key_context(400001), &encoded.key_id, &encoded.ciphertext)
+                .decode_secret(
+                    api_key_context(400001),
+                    &encoded.key_id,
+                    &encoded.ciphertext
+                )
                 .unwrap()
         );
     }
@@ -473,7 +485,11 @@ mod tests {
             .unwrap();
 
         assert!(codec
-            .decode_secret(api_key_context(400002), &encoded.key_id, &encoded.ciphertext)
+            .decode_secret(
+                api_key_context(400002),
+                &encoded.key_id,
+                &encoded.ciphertext
+            )
             .is_err());
         assert!(codec
             .decode_secret(
@@ -495,7 +511,11 @@ mod tests {
             .decode_secret(api_key_context(400001), "key-unknown", &encoded.ciphertext)
             .is_err());
         assert!(codec
-            .decode_secret(api_key_context(400001), &encoded.key_id, "v1:not-hex:not-hex")
+            .decode_secret(
+                api_key_context(400001),
+                &encoded.key_id,
+                "v1:not-hex:not-hex"
+            )
             .is_err());
     }
 }

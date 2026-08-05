@@ -13,10 +13,10 @@ use hyper_util::rt::TokioExecutor;
 use sdkwork_cloudrouter_config::{
     ProviderPassthroughAuth, ProviderPassthroughAuthType, ProviderPassthroughHeader,
 };
-use sdkwork_cloudrouter_http::{upsert_query_parameter, OutboundDnsResolver};
 use sdkwork_cloudrouter_http::ensure_rustls_crypto_provider;
-use sdkwork_cloudrouter_security::{validate_outbound_url, OutboundTargetPolicy};
+use sdkwork_cloudrouter_http::{upsert_query_parameter, OutboundDnsResolver};
 use sdkwork_cloudrouter_router_service::infrastructure::provider::ProviderRelayHttpPoolConfig;
+use sdkwork_cloudrouter_security::{validate_outbound_url, OutboundTargetPolicy};
 use std::collections::HashSet;
 use std::time::Duration;
 
@@ -338,8 +338,8 @@ mod tests {
     use axum::Router;
     use bytes::Bytes;
     use sdkwork_cloudrouter_config::ProviderPassthroughAuth;
-    use sdkwork_cloudrouter_security::OutboundTargetPolicy;
     use sdkwork_cloudrouter_router_service::infrastructure::provider::ProviderRelayHttpPoolConfig;
+    use sdkwork_cloudrouter_security::OutboundTargetPolicy;
     use std::collections::HashSet;
     use std::time::Duration;
 

@@ -17,6 +17,7 @@ import {
   type SdkworkPromotionOffer,
   type SdkworkPromotionOfferRequest,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
+import { formatMoneyMinorUnits } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 
 type BackendPromotionsService = ReturnType<typeof getSdkworkPromotionBackendSdkClient>['promotions'];
 type CloudBackendReferralStatsService = ReturnType<typeof getCloudRouterBackendSdkClient>['billing']['referralStats'];
@@ -123,7 +124,7 @@ export async function fetchPromotionOverview(): Promise<ApiRecord> {
   if (!isRecord(payload)) {
     throw new Error('Promotion overview is required');
   }
-  return payload;
+  return toCamelCaseRecord(payload);
 }
 
 export async function retrievePromotionOffer(offerId: string): Promise<SdkworkPromotionOffer> {
@@ -370,6 +371,22 @@ export function minorUnitsToYuan(value: string | undefined): string {
   return `${whole.replace(/^0+(?=\d)/, '') || '0'}.${fraction}`;
 }
 
+/** 最小单位金额 + 币种 → 本地化金额文案（如 "5.00 CNY"）；无效值回退 '-'。 */
+export function formatMarketingAmountMinor(
+  value: string | undefined,
+  currency: string,
+  locale: string,
+): string {
+  const normalized = value?.trim();
+  const minor = Number(normalized);
+  if (!normalized || !Number.isInteger(minor)) {
+    return '-';
+  }
+  const currencyCode = currency || 'CNY';
+  const amount = formatMoneyMinorUnits(minor, currencyCode, locale, 'decimal');
+  return amount ? `${amount} ${currencyCode}` : `${String(value)} ${currencyCode}`;
+}
+
 /** 从 offer 记录中读取结构化的券权益信息（用于列表与详情展示）。 */
 export interface CouponBenefitDisplay {
   kind: CouponOfferBenefitKind;
@@ -389,7 +406,12 @@ export interface CouponBenefitDisplay {
 }
 
 export function readCouponBenefit(record: ApiRecord): CouponBenefitDisplay | null {
-  const benefit = isRecord(record['coupon_benefit']) ? record['coupon_benefit'] : null;
+  // 响应契约为 camelCase（couponBenefit）；兼容历史 snake_case 数据
+  const benefit = isRecord(record['couponBenefit'])
+    ? record['couponBenefit']
+    : isRecord(record['coupon_benefit'])
+      ? record['coupon_benefit']
+      : null;
   if (!benefit) {
     return null;
   }
@@ -418,44 +440,54 @@ export function readCouponBenefit(record: ApiRecord): CouponBenefitDisplay | nul
   };
 }
 
-/** 将后端优惠券记录映射为创建表单初始值（用于复制优惠券）。 */
-export function offerRecordToFormValues(record: ApiRecord): CouponOfferCreateFormValues {
-  const benefit = isRecord(record['coupon_benefit']) ? record['coupon_benefit'] : null;
-  const kind = benefit?.['kind'];
+/** 将后端记录的 snake_case 键归一化为 camelCase（幂等：已 camelCase 的键保持不变）。 */
+export function toCamelCaseRecord(record: ApiRecord): ApiRecord {
+  const normalized: ApiRecord = {};
+  for (const [key, value] of Object.entries(record)) {
+    normalized[key.replace(/_([a-z])/g, (_match, letter: string) => letter.toUpperCase())] = value;
+  }
+  return normalized;
+}
+
+/** 将后端优惠券记录映射为创建表单初始值（用于复制优惠券）。copySuffix 为展示名称追加的本地化后缀。 */
+export function offerRecordToFormValues(
+  record: ApiRecord,
+  copySuffix = ' (Copy)',
+): CouponOfferCreateFormValues {
+  const benefit = readCouponBenefit(record);
+  const kind = benefit?.kind;
   const benefitKind: CouponOfferBenefitKind =
     kind === 'points_credit' || kind === 'cash_credit' || kind === 'subscription'
       ? kind
       : 'token_bank_credit';
   return {
-    displayName: `${String(record['display_name'] ?? '')} (Copy)`,
-    offerType: String(record['offer_type'] ?? 'COUPON'),
+    displayName: `${String(record['displayName'] ?? '')}${copySuffix}`,
+    offerType: String(record['offerType'] ?? 'COUPON'),
     description: record['description'] ? String(record['description']) : '',
-    audienceScope: String(record['audience_scope'] ?? 'ALL'),
+    audienceScope: String(record['audienceScope'] ?? 'ALL'),
     combinability: String(record['combinability'] ?? 'EXCLUSIVE'),
-    goodsScope: String(record['goods_scope'] ?? 'ALL'),
+    goodsScope: String(record['goodsScope'] ?? 'ALL'),
     priority: Number(record['priority'] ?? 100),
-    startsAt: toDatetimeLocal(String(record['starts_at'] ?? '')),
-    endsAt: record['ends_at'] ? toDatetimeLocal(String(record['ends_at'])) : '',
+    startsAt: toDatetimeLocal(String(record['startsAt'] ?? '')),
+    endsAt: record['endsAt'] ? toDatetimeLocal(String(record['endsAt'])) : '',
     status: record['status'] === 'disabled' ? 'disabled' : 'active',
     benefitKind,
-    currencyCode: String(record['currency_code'] ?? 'CNY'),
+    currencyCode: String(record['currencyCode'] ?? 'CNY'),
     // 现金券金额后端存最小单位（分），表单以元输入，回读时换算
     grantAmount: benefitKind === 'cash_credit'
-      ? minorUnitsToYuan(benefit ? String(benefit['grantAmount'] ?? '') : undefined)
-      : benefit
-        ? String(benefit['grantAmount'] ?? '')
-        : '',
-    bonusAmount: benefit && benefit['bonusAmount'] ? String(benefit['bonusAmount']) : '',
-    grantPoints: benefit ? String(benefit['grantPoints'] ?? '') : '',
-    productId: benefitKind === 'subscription' && benefit ? String(benefit['productId'] ?? '') : '',
-    skuId: benefitKind === 'subscription' && benefit ? String(benefit['skuId'] ?? '') : '',
-    packageId: benefitKind === 'subscription' && benefit ? String(benefit['packageId'] ?? '') : '',
+      ? minorUnitsToYuan(benefit?.grantAmount)
+      : benefit?.grantAmount ?? '',
+    bonusAmount: benefit?.bonusAmount ?? '',
+    grantPoints: benefit?.grantPoints ?? '',
+    productId: benefitKind === 'subscription' && benefit ? String(benefit.productId ?? '') : '',
+    skuId: benefitKind === 'subscription' && benefit ? String(benefit.skuId ?? '') : '',
+    packageId: benefitKind === 'subscription' && benefit ? String(benefit.packageId ?? '') : '',
     period: benefitKind === 'subscription' && benefit
-      ? (benefit['period'] as 'day' | 'week' | 'month' | 'year' | undefined) ?? 'month'
+      ? (benefit.period as 'day' | 'week' | 'month' | 'year' | undefined) ?? 'month'
       : 'month',
-    durationDays: benefitKind === 'subscription' && benefit ? String(benefit['durationDays'] ?? '') : '30',
-    dailyQuota: benefitKind === 'subscription' && benefit ? String(benefit['dailyQuota'] ?? '') : '',
-    totalQuota: benefitKind === 'subscription' && benefit ? String(benefit['totalQuota'] ?? '') : '',
+    durationDays: benefitKind === 'subscription' && benefit ? String(benefit.durationDays ?? '') : '30',
+    dailyQuota: benefitKind === 'subscription' && benefit ? String(benefit.dailyQuota ?? '') : '',
+    totalQuota: benefitKind === 'subscription' && benefit ? String(benefit.totalQuota ?? '') : '',
     stockType: 'LIMITED',
     codeIssueMode: 'REALTIME',
     totalQuantity: '',
@@ -506,7 +538,7 @@ function readRequiredPromotionItems(result: unknown, message: string): ApiRecord
     .map((value) => {
       const item = readRequiredRecord(value, message);
       readRequiredString(item, 'id', 'Promotion record id is required');
-      return item;
+      return toCamelCaseRecord(item);
     });
 }
 
@@ -516,9 +548,9 @@ function readRequiredPromotionPage(result: unknown, message: string): PromotionP
     throw new Error(`${message}: pageInfo is required`);
   }
   return {
-    ...payload,
+    ...toCamelCaseRecord(payload),
     items: readRequiredPromotionItems(payload, message),
-    pageInfo: payload['pageInfo'],
+    pageInfo: toCamelCaseRecord(payload['pageInfo']),
   };
 }
 
@@ -527,7 +559,7 @@ function readRequiredItem<T>(result: unknown, message: string): T {
   if (!isRecord(payload)) {
     throw new Error(`${message}: item is required`);
   }
-  return payload as T;
+  return toCamelCaseRecord(payload) as T;
 }
 
 function readRequiredRecord(value: unknown, message: string): ApiRecord {

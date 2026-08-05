@@ -105,7 +105,10 @@ async fn resource_catalog(
     success_response(
         axum::http::StatusCode::OK,
         ResourceCatalogResponse {
-            resources: resources.into_iter().map(ResourceCatalogItem::from).collect(),
+            resources: resources
+                .into_iter()
+                .map(ResourceCatalogItem::from)
+                .collect(),
             resource_groups: resource_groups
                 .into_iter()
                 .map(ResourceGroupCatalogItem::from)

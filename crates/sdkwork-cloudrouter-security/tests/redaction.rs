@@ -1,16 +1,32 @@
 #[test]
 fn sensitive_headers_are_matched_case_insensitively() {
-    assert!(sdkwork_cloudrouter_security::is_sensitive_header("Authorization"));
-    assert!(sdkwork_cloudrouter_security::is_sensitive_header("Access-Token"));
-    assert!(sdkwork_cloudrouter_security::is_sensitive_header("X-API-Key"));
-    assert!(sdkwork_cloudrouter_security::is_sensitive_header("set-cookie"));
-    assert!(!sdkwork_cloudrouter_security::is_sensitive_header("x-request-id"));
+    assert!(sdkwork_cloudrouter_security::is_sensitive_header(
+        "Authorization"
+    ));
+    assert!(sdkwork_cloudrouter_security::is_sensitive_header(
+        "Access-Token"
+    ));
+    assert!(sdkwork_cloudrouter_security::is_sensitive_header(
+        "X-API-Key"
+    ));
+    assert!(sdkwork_cloudrouter_security::is_sensitive_header(
+        "set-cookie"
+    ));
+    assert!(!sdkwork_cloudrouter_security::is_sensitive_header(
+        "x-request-id"
+    ));
 }
 
 #[test]
 fn secrets_are_redacted_without_exposing_full_values() {
-    assert_eq!("[REDACTED]", sdkwork_cloudrouter_security::redact_secret(""));
-    assert_eq!("[REDACTED]", sdkwork_cloudrouter_security::redact_secret("short"));
+    assert_eq!(
+        "[REDACTED]",
+        sdkwork_cloudrouter_security::redact_secret("")
+    );
+    assert_eq!(
+        "[REDACTED]",
+        sdkwork_cloudrouter_security::redact_secret("short")
+    );
     assert_eq!(
         "sk-p...[REDACTED]...7890",
         sdkwork_cloudrouter_security::redact_secret("sk-prod-1234567890")
@@ -64,12 +80,18 @@ fn redact_url_preserves_port() {
 #[test]
 fn redact_url_redacts_empty_and_invalid_input() {
     assert_eq!("[REDACTED]", sdkwork_cloudrouter_security::redact_url(""));
-    assert_eq!("[REDACTED]", sdkwork_cloudrouter_security::redact_url("not a url"));
+    assert_eq!(
+        "[REDACTED]",
+        sdkwork_cloudrouter_security::redact_url("not a url")
+    );
     assert_eq!(
         "[REDACTED]",
         sdkwork_cloudrouter_security::redact_url("://missing-scheme")
     );
-    assert_eq!("[REDACTED]", sdkwork_cloudrouter_security::redact_url("https://"));
+    assert_eq!(
+        "[REDACTED]",
+        sdkwork_cloudrouter_security::redact_url("https://")
+    );
 }
 
 #[test]

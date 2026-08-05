@@ -41,14 +41,14 @@ export function MarketingOverviewBar() {
 
   const cards = overview
     ? [
-        { key: 'active_offers', label: t('admin.marketing.overview.activeOffers', 'Active Offers') },
-        { key: 'total_offers', label: t('admin.marketing.overview.totalOffers', 'Total Offers') },
-        { key: 'total_coupon_stock', label: t('admin.marketing.overview.totalStock', 'Total Stock') },
-        { key: 'available_coupons', label: t('admin.marketing.overview.available', 'Available') },
-        { key: 'claimed_coupons', label: t('admin.marketing.overview.claimed', 'Claimed') },
-        { key: 'redeemed_coupons', label: t('admin.marketing.overview.redeemed', 'Redeemed') },
-        { key: 'active_codes', label: t('admin.marketing.overview.activeCodes', 'Active Codes') },
-        { key: 'discount_applications', label: t('admin.marketing.overview.applications', 'Applications') },
+        { key: 'activeOffers', label: t('admin.marketing.overview.activeOffers', 'Active Offers') },
+        { key: 'totalOffers', label: t('admin.marketing.overview.totalOffers', 'Total Offers') },
+        { key: 'totalCouponStock', label: t('admin.marketing.overview.totalStock', 'Total Stock') },
+        { key: 'availableCoupons', label: t('admin.marketing.overview.available', 'Available') },
+        { key: 'claimedCoupons', label: t('admin.marketing.overview.claimed', 'Claimed') },
+        { key: 'redeemedCoupons', label: t('admin.marketing.overview.redeemed', 'Redeemed') },
+        { key: 'activeCodes', label: t('admin.marketing.overview.activeCodes', 'Active Codes') },
+        { key: 'discountApplications', label: t('admin.marketing.overview.applications', 'Applications') },
       ]
     : [];
 

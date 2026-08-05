@@ -26,6 +26,5 @@ pub struct ChainPolicyRecord {
 #[async_trait]
 pub trait GatewayChainPolicyStore: Send + Sync {
     /// Active (status = 1) row for the given scope, if any.
-    async fn find_chain_policy(&self, scope_type: i32, scope_id: i64)
-        -> Option<ChainPolicyRecord>;
+    async fn find_chain_policy(&self, scope_type: i32, scope_id: i64) -> Option<ChainPolicyRecord>;
 }

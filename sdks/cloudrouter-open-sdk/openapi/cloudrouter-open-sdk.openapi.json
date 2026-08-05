@@ -1058,6 +1058,34 @@
         ],
         "type": "object"
       },
+      "GatewayUserBalance": {
+        "description": "Token Bank balance snapshot for the authenticated relay API key owner. Amounts follow the account platform wallet convention (minor-unit integer strings).",
+        "type": "object",
+        "required": [
+          "object",
+          "balance",
+          "frozen",
+          "unit"
+        ],
+        "properties": {
+          "object": {
+            "description": "Object type discriminator; always 'balance'.",
+            "type": "string"
+          },
+          "balance": {
+            "description": "Available balance (stored minor-unit string).",
+            "type": "string"
+          },
+          "frozen": {
+            "description": "Frozen (held) balance (stored minor-unit string).",
+            "type": "string"
+          },
+          "unit": {
+            "description": "Asset unit label; TOKEN_BANK for the token bank wallet.",
+            "type": "string"
+          }
+        }
+      },
       "GoogleBatchEmbedContentsRequest": {
         "additionalProperties": {
           "allOf": [
@@ -10047,6 +10075,86 @@
             "type": "string"
           }
         },
+        "type": "object"
+      },
+      "OpenAiVendor": {
+        "additionalProperties": false,
+        "description": "Model provider (vendor) the authenticated gateway key can reach, with its models (used by /v1/vendors).",
+        "properties": {
+          "code": {
+            "description": "Stable vendor code (e.g. openai, anthropic, deepseek).",
+            "type": "string"
+          },
+          "name": {
+            "description": "Display name of the vendor.",
+            "type": "string"
+          },
+          "models": {
+            "description": "Models available through this vendor for the key.",
+            "items": {
+              "$ref": "#/components/schemas/OpenAiVendorModel"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "models"
+        ],
+        "type": "object"
+      },
+      "OpenAiVendorList": {
+        "additionalProperties": false,
+        "description": "Cloud Router /v1/vendors response: vendors reachable for the authenticated gateway key.",
+        "properties": {
+          "data": {
+            "description": "Vendor entries available to the caller.",
+            "items": {
+              "$ref": "#/components/schemas/OpenAiVendor"
+            },
+            "type": "array"
+          },
+          "object": {
+            "description": "Object type, always list.",
+            "enum": [
+              "list"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "object",
+          "data"
+        ],
+        "type": "object"
+      },
+      "OpenAiVendorModel": {
+        "description": "Model available through a Cloud Router vendor (used by /v1/vendors).",
+        "properties": {
+          "id": {
+            "description": "Model id the gateway accepts (equals the catalog model id).",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Human readable model name for channel offerings.",
+            "type": "string"
+          },
+          "contextTokens": {
+            "description": "Context window in tokens, when the catalog knows it.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "maxOutputTokens": {
+            "description": "Maximum output tokens, when the catalog knows it.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "displayName"
+        ],
         "type": "object"
       },
       "OpenAiVideo": {
@@ -20814,6 +20922,68 @@
         "x-sdkwork-external-protocol-id": "openai-v1"
       }
     },
+    "/v1/user/balance": {
+      "get": {
+        "description": "Returns the Token Bank balance of the authenticated relay API key owner (CC Switch usage-script compatible).",
+        "operationId": "retrieveUserBalance",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayUserBalance"
+                }
+              }
+            },
+            "description": "Token Bank balance snapshot for the authenticated key owner."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Balance query failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Retrieve account balance",
+        "tags": [
+          "Models"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "openai-v1"
+      }
+    },
     "/v1/moderations": {
       "post": {
         "description": "Classifies text or multimodal input through an OpenAI-compatible moderation request.",
@@ -28122,6 +28292,88 @@
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
         "x-sdkwork-external-protocol-id": "volcengine-v1"
+      }
+    },
+    "/v1/vendors": {
+      "get": {
+        "description": "Lists the model providers (vendors) the authenticated gateway key can reach, each with the models available through it. Cloud Router extension used by desktop clients (e.g. Birdcoder imports) to build channel offerings from the key itself.",
+        "operationId": "listVendors",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiVendorList"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List vendors",
+        "tags": [
+          "Vendors"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "openai-v1"
       }
     }
   },

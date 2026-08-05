@@ -3,13 +3,19 @@ import {
   getSdkworkBaseDataBackendSdkClient,
   getSdkworkPaymentBackendSdkClient,
 } from '@sdkwork/cloudroutes-pc-commons/sdk-clients';
+import { createIdempotencyParams } from '@sdkwork/cloudroutes-pc-commons/idempotency';
 import type {
   CreatePaymentChannelCommand,
   CreatePaymentMethodCommand,
   CreateReconciliationRunCommand,
+  CreateRefundCommand,
   CreateRouteRuleCommand,
+  CreateTestPaymentCommand,
   PaymentIntent,
+  Refund,
+  RetryRefundCommand,
   SandboxTriggerCommand,
+  TestPayment,
   UpdatePaymentMethodCommand,
   UpdateRouteRuleCommand,
 } from '@sdkwork/payment-backend-sdk';
@@ -22,6 +28,8 @@ export type { CreatePaymentChannelCommand as PaymentChannelCreateInput } from '@
 export type { CreatePaymentMethodCommand as PaymentMethodCreateInput } from '@sdkwork/payment-backend-sdk';
 export type { UpdatePaymentMethodCommand as PaymentMethodUpdateInput } from '@sdkwork/payment-backend-sdk';
 export type { CreateReconciliationRunCommand as ReconciliationRunCreateInput } from '@sdkwork/payment-backend-sdk';
+export type { CreateRefundCommand as RefundCreateInput } from '@sdkwork/payment-backend-sdk';
+export type { RetryRefundCommand as RefundRetryInput } from '@sdkwork/payment-backend-sdk';
 export type { CreateRouteRuleCommand as RouteRuleCreateInput } from '@sdkwork/payment-backend-sdk';
 export type { UpdateRouteRuleCommand as RouteRuleUpdateInput } from '@sdkwork/payment-backend-sdk';
 
@@ -40,11 +48,11 @@ export async function backendPaymentsMethodsList(params?: Parameters<BackendPaym
 }
 
 export async function backendPaymentMethodsCreate(body: CreatePaymentMethodCommand) {
-  return getSdkworkPaymentBackendSdkClient().payments.methods.create(body);
+  return getSdkworkPaymentBackendSdkClient().payments.methods.create(body, createIdempotencyParams('payment-method-create'));
 }
 
 export async function backendPaymentMethodsUpdate(methodKey: string, body: UpdatePaymentMethodCommand) {
-  return getSdkworkPaymentBackendSdkClient().payments.methods.update(methodKey, body);
+  return getSdkworkPaymentBackendSdkClient().payments.methods.update(methodKey, body, createIdempotencyParams('payment-method-update'));
 }
 
 export async function backendPaymentsChannelsList(params?: Parameters<BackendPaymentsService['channels']['list']>[0]) {
@@ -52,7 +60,7 @@ export async function backendPaymentsChannelsList(params?: Parameters<BackendPay
 }
 
 export async function backendPaymentChannelsCreate(body: CreatePaymentChannelCommand) {
-  return getSdkworkPaymentBackendSdkClient().payments.channels.create(body);
+  return getSdkworkPaymentBackendSdkClient().payments.channels.create(body, createIdempotencyParams('payment-channel-create'));
 }
 
 export async function backendPaymentsRouteRulesList(params?: Parameters<BackendPaymentsService['routeRules']['list']>[0]) {
@@ -60,11 +68,11 @@ export async function backendPaymentsRouteRulesList(params?: Parameters<BackendP
 }
 
 export async function backendPaymentRouteRulesCreate(body: CreateRouteRuleCommand) {
-  return getSdkworkPaymentBackendSdkClient().payments.routeRules.create(body);
+  return getSdkworkPaymentBackendSdkClient().payments.routeRules.create(body, createIdempotencyParams('payment-route-rule-create'));
 }
 
 export async function backendPaymentRouteRulesUpdate(routeRuleId: string, body: UpdateRouteRuleCommand) {
-  return getSdkworkPaymentBackendSdkClient().payments.routeRules.update(routeRuleId, body);
+  return getSdkworkPaymentBackendSdkClient().payments.routeRules.update(routeRuleId, body, createIdempotencyParams('payment-route-rule-update'));
 }
 
 export async function backendPaymentRouteRulesDelete(routeRuleId: string) {
@@ -98,11 +106,40 @@ export async function backendPaymentsReconciliationRunsList(
 }
 
 export async function backendPaymentReconciliationRunsCreate(body: CreateReconciliationRunCommand) {
-  return getSdkworkPaymentBackendSdkClient().payments.reconciliationRuns.create(body);
+  return getSdkworkPaymentBackendSdkClient().payments.reconciliationRuns.create(body, createIdempotencyParams('reconciliation-run-create'));
 }
 
 export async function backendPaymentDevSandboxTrigger(body: SandboxTriggerCommand) {
-  return getSdkworkPaymentBackendSdkClient().payments.dev.sandboxTrigger(body);
+  return getSdkworkPaymentBackendSdkClient().payments.dev.sandboxTrigger(body, createIdempotencyParams('dev-sandbox-trigger'));
+}
+
+export async function backendPaymentDevTestPayment(body: CreateTestPaymentCommand): Promise<TestPayment> {
+  return getSdkworkPaymentBackendSdkClient().payments.dev.testPayments(
+    body,
+    createIdempotencyParams('test-payment'),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Refund management (payment capability backend surface)
+// ---------------------------------------------------------------------------
+
+export async function backendPaymentsRefundsList(
+  params?: Parameters<BackendPaymentsService['refunds']['list']>[0],
+) {
+  return getSdkworkPaymentBackendSdkClient().payments.refunds.list(params);
+}
+
+export async function backendPaymentRefundsRetrieve(refundId: string): Promise<Refund> {
+  return getSdkworkPaymentBackendSdkClient().payments.refunds.retrieve(refundId);
+}
+
+export async function backendPaymentRefundsCreate(body: CreateRefundCommand, idempotencyKey: string): Promise<Refund> {
+  return getSdkworkPaymentBackendSdkClient().payments.refunds.create(body, { idempotencyKey });
+}
+
+export async function backendPaymentRefundsRetry(refundId: string, body: RetryRefundCommand, idempotencyKey: string) {
+  return getSdkworkPaymentBackendSdkClient().payments.refunds.retry(refundId, body, { idempotencyKey });
 }
 
 // ---------------------------------------------------------------------------

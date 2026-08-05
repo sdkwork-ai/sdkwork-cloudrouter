@@ -1,14 +1,16 @@
 import { useTranslation } from 'react-i18next';
 import type { ApiRecord } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import {
-  minorUnitsToYuan,
+  formatMarketingAmountMinor,
   readCouponBenefit,
   type CouponBenefitDisplay,
 } from '../marketingService';
+import { marketingEnumLabel } from './MarketingValueBadge';
 
 function benefitValueText(
   benefit: CouponBenefitDisplay,
   currencyCode: string,
+  locale: string,
   t: (key: string, fallback: string, options?: Record<string, string>) => string,
 ): string {
   switch (benefit.kind) {
@@ -24,13 +26,12 @@ function benefitValueText(
         points: benefit.grantPoints ?? '-',
       });
     case 'cash_credit':
-      return t('admin.marketing.coupon.summary.cash', '{{amount}} {{currency}}', {
-        amount: minorUnitsToYuan(benefit.grantAmount) || '-',
-        currency: currencyCode || '-',
+      return t('admin.marketing.coupon.summary.cash', '{{amount}}', {
+        amount: formatMarketingAmountMinor(benefit.grantAmount, currencyCode, locale),
       });
     case 'subscription':
       return t('admin.marketing.coupon.summary.subscription', '{{period}} x {{days}}d', {
-        period: benefit.period ?? '-',
+        period: marketingEnumLabel(benefit.period, 'admin.marketing.enums.period', t),
         days: benefit.durationDays ?? '-',
       });
   }
@@ -41,17 +42,18 @@ function benefitValueText(
  * 对齐不同券类型（额度/赠送、积分、现金、订阅周期）的差异化表达。
  */
 export function CouponBenefitSummary({ record }: { record: ApiRecord }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const benefit = readCouponBenefit(record);
   if (!benefit) {
     return <span className="text-slate-400 dark:text-slate-500">-</span>;
   }
   const kindLabel = t(`admin.marketing.coupon.form.benefit.${benefit.kind}`);
-  const currencyCode = String(record['currency_code'] ?? '');
+  // 响应契约为 camelCase（currencyCode）；兼容历史 snake_case 数据
+  const currencyCode = String(record['currencyCode'] ?? record['currency_code'] ?? '');
   return (
     <div className="flex flex-col gap-0.5">
       <span className="text-xs text-slate-400 dark:text-slate-500">{kindLabel}</span>
-      <span className="text-slate-800 dark:text-slate-100">{benefitValueText(benefit, currencyCode, t)}</span>
+      <span className="text-slate-800 dark:text-slate-100">{benefitValueText(benefit, currencyCode, i18n.language, t)}</span>
     </div>
   );
 }

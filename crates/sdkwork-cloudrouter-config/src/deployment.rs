@@ -77,7 +77,8 @@ impl DeploymentMode {
 }
 
 impl DeploymentProfile {
-    pub const ENV_DEPLOYMENT_PROFILE: &'static str = "SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE";
+    pub const ENV_DEPLOYMENT_PROFILE: &'static str =
+        "SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE";
 
     pub const fn as_str(self) -> &'static str {
         match self {
@@ -202,7 +203,9 @@ pub fn resolve_region_code() -> Result<String, String> {
         ));
     }
     if normalized.len() > MAX_REGION_CODE_LEN {
-        return Err(format!("{ENV_REGION_CODE} exceeds {MAX_REGION_CODE_LEN} characters"));
+        return Err(format!(
+            "{ENV_REGION_CODE} exceeds {MAX_REGION_CODE_LEN} characters"
+        ));
     }
     Ok(normalized.to_owned())
 }
@@ -494,8 +497,14 @@ mod tests {
     fn deployment_runtime_ignores_retired_unscoped_lifecycle_keys() {
         with_env(
             &[
-                ("SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE", Some("cloud")),
-                ("SDKWORK_CLOUDROUTER_ROUTER_RUNTIME_TARGET", Some("container")),
+                (
+                    "SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE",
+                    Some("cloud"),
+                ),
+                (
+                    "SDKWORK_CLOUDROUTER_ROUTER_RUNTIME_TARGET",
+                    Some("container"),
+                ),
                 ("SDKWORK_CLOUDROUTER_DEPLOYMENT_PROFILE", Some("standalone")),
                 ("SDKWORK_CLOUDROUTER_RUNTIME_TARGET", Some("server")),
                 (DeploymentMode::ENV_DEPLOYMENT_MODE, None),

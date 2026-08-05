@@ -269,7 +269,11 @@ fn unique_schema_name() -> String {
         .duration_since(UNIX_EPOCH)
         .map(|duration| duration.as_nanos())
         .unwrap_or(0);
-    format!("sdkwork_cloudrouter_migration_{}_{}", std::process::id(), nanos)
+    format!(
+        "sdkwork_cloudrouter_migration_{}_{}",
+        std::process::id(),
+        nanos
+    )
 }
 
 fn quote_identifier(value: &str) -> String {

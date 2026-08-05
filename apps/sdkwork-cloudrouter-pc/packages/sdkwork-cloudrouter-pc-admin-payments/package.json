@@ -14,10 +14,12 @@
     "@sdkwork/cloudroutes-pc-commons": "workspace:*",
     "@sdkwork/payment-pc-admin-provider": "workspace:*",
     "lucide-react": "catalog:",
+    "qrcode": "catalog:",
     "react": "catalog:",
     "react-i18next": "catalog:"
   },
   "devDependencies": {
+    "@types/qrcode": "catalog:",
     "@types/react": "catalog:",
     "typescript": "catalog:"
   }

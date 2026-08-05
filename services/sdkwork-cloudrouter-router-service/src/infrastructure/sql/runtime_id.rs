@@ -19,7 +19,10 @@ use crate::domain::{DomainError, DomainResult};
 pub(crate) fn to_standard_database_config(
     config: &sdkwork_cloudrouter_config::DatabaseConfig,
 ) -> Result<StandardDatabaseConfig, RuntimeIdConfigurationError> {
-    if !matches!(config.engine, sdkwork_cloudrouter_config::DatabaseEngine::Postgres) {
+    if !matches!(
+        config.engine,
+        sdkwork_cloudrouter_config::DatabaseEngine::Postgres
+    ) {
         return Err(RuntimeIdConfigurationError::new(
             "Cloud Router server runtime requires PostgreSQL; SQLite is client-local only",
         ));

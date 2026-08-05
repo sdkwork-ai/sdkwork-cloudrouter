@@ -9,6 +9,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@sdkwork/cloudroutes-pc-commons": "workspace:*"
+    "@sdkwork/cloudroutes-pc-commons": "workspace:*",
+    "@sdkwork/drive-pc-sandbox-explorer": "workspace:*",
+    "@sdkwork/drive-pc-sandbox-explorer-sdk-adapter": "workspace:*"
   }
 }

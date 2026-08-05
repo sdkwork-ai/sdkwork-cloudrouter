@@ -18,6 +18,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@sdkwork/cloudrouter-pc-admin-iam": "workspace:*",
     "@sdkwork/cloudroutes-pc-commons": "workspace:*",
     "@sdkwork/iam-contracts": "workspace:*"
   },

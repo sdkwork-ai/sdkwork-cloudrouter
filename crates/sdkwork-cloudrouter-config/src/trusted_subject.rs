@@ -7,7 +7,8 @@ pub struct TrustedSubjectConfig {
 }
 
 impl TrustedSubjectConfig {
-    pub const ENV_TRUSTED_SUBJECT_SECRET: &'static str = "SDKWORK_CLOUDROUTER_TRUSTED_SUBJECT_SECRET";
+    pub const ENV_TRUSTED_SUBJECT_SECRET: &'static str =
+        "SDKWORK_CLOUDROUTER_TRUSTED_SUBJECT_SECRET";
     pub const ENV_TRUSTED_SUBJECT_MAX_CLOCK_SKEW_SECONDS: &'static str =
         "SDKWORK_CLOUDROUTER_TRUSTED_SUBJECT_MAX_CLOCK_SKEW_SECONDS";
     pub const MIN_SIGNING_SECRET_LEN: usize = 32;

@@ -18,9 +18,7 @@ const ENV_EDGE_UPSTREAM_READY_TIMEOUT_MILLIS: &str =
     "SDKWORK_CLOUDROUTER_EDGE_UPSTREAM_READY_TIMEOUT_MILLIS";
 const ENV_EDGE_CSP_CONNECT_SRC: &str = "SDKWORK_CLOUDROUTER_EDGE_CSP_CONNECT_SRC";
 
-pub fn edge_server_enabled(
-    runtime_toml: Option<&RuntimeTomlConfig>,
-) -> Result<bool, String> {
+pub fn edge_server_enabled(runtime_toml: Option<&RuntimeTomlConfig>) -> Result<bool, String> {
     sdkwork_cloudrouter_config::runtime::config_bool(
         ENV_EDGE_SERVER_ENABLED,
         runtime_toml.and_then(|config| config.edge.enabled),
@@ -52,7 +50,11 @@ pub fn edge_server_config_from_env_or_runtime_toml(
         ENV_EDGE_PORTAL_BASE_URL,
         edge.and_then(|config| config.portal_base_url.as_deref()),
     )
-    .or_else(|| portal_static_dist.as_ref().map(|_| app_api_base_url.clone()))
+    .or_else(|| {
+        portal_static_dist
+            .as_ref()
+            .map(|_| app_api_base_url.clone())
+    })
     .ok_or_else(|| format!("{ENV_EDGE_PORTAL_BASE_URL} is required when edge server is enabled"))?;
 
     let mut config = EdgeServerConfig::try_new(

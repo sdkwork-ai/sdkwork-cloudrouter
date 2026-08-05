@@ -26,7 +26,10 @@ async fn gateway_env_startup_rejects_zero_config_server_placeholder_postgres() {
     restore_env_var("SDKWORK_DATABASE_URL", saved_database_url);
     restore_env_var("SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE", saved_deployment_mode);
     restore_env_var("SDKWORK_CLOUDROUTER_CONFIG_FILE", saved_config_file);
-    restore_env_var("SDKWORK_CLOUDROUTER_SNOWFLAKE_NODE_ID", saved_snowflake_node_id);
+    restore_env_var(
+        "SDKWORK_CLOUDROUTER_SNOWFLAKE_NODE_ID",
+        saved_snowflake_node_id,
+    );
     restore_env_var("SDKWORK_CLOUDROUTER_API_KEY_PEPPER", saved_api_key_pepper);
 
     let error = router_result
@@ -58,7 +61,10 @@ async fn gateway_env_startup_rejects_static_server_snowflake_node_id_before_data
     restore_env_var("SDKWORK_DATABASE_URL", saved_database_url);
     restore_env_var("SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE", saved_deployment_mode);
     restore_env_var("SDKWORK_CLOUDROUTER_CONFIG_FILE", saved_config_file);
-    restore_env_var("SDKWORK_CLOUDROUTER_SNOWFLAKE_NODE_ID", saved_snowflake_node_id);
+    restore_env_var(
+        "SDKWORK_CLOUDROUTER_SNOWFLAKE_NODE_ID",
+        saved_snowflake_node_id,
+    );
 
     let error = router_result
         .expect_err("gateway server startup must reject a static Snowflake node ID")

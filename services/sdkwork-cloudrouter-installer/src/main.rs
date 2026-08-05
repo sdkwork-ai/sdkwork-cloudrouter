@@ -1,6 +1,8 @@
 use argon2::password_hash::{rand_core::OsRng, PasswordHasher, SaltString};
 use argon2::Argon2;
-use sdkwork_cloudrouter_config::{DatabaseConfig, DatabaseEngine, DeploymentMode, RuntimeConfigProfile};
+use sdkwork_cloudrouter_config::{
+    DatabaseConfig, DatabaseEngine, DeploymentMode, RuntimeConfigProfile,
+};
 use sdkwork_cloudrouter_database_host::connect_cloud_router_database;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::installer::{
     CatalogRefreshOptions, CatalogRefreshReport, DatabaseInstallError, DatabaseInstaller,
@@ -18,7 +20,8 @@ use std::fmt::{Display, Formatter};
 use std::process::ExitCode;
 use std::sync::Arc;
 
-const SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD_ENV: &str = "SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD";
+const SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD_ENV: &str =
+    "SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD";
 
 #[tokio::main]
 async fn main() -> ExitCode {

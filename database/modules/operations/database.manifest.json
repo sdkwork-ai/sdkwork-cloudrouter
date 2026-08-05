@@ -45,7 +45,7 @@
     "provider": "default",
     "hooks": []
   },
-  "materializedTableCount": 10,
+  "materializedTableCount": 14,
   "materializedTables": [
     "ops_alert_event",
     "ops_audit_log",
@@ -57,6 +57,9 @@
     "ops_notification_delivery",
     "ops_notification_message",
     "ops_notification_recipient",
-    "ops_referral_stat_snapshot"
+    "ops_referral_invite_code",
+    "ops_referral_relation",
+    "ops_referral_stat_snapshot",
+    "ops_referral_strategy"
   ]
 }

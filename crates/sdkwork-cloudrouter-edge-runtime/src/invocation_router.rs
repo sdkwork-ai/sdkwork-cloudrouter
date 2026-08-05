@@ -11,7 +11,6 @@ use sdkwork_cloudrouter_config::{
     ProviderAdapterConfig, RedisConfig, RequestLimitsConfig, RuntimeTomlConfig,
 };
 use sdkwork_cloudrouter_http::QueryStringApiKeyPolicy;
-use sdkwork_cloudrouter_security::{InternalGatewayRequestVerifier, INTERNAL_GATEWAY_ROUTE_PREFIX};
 use sdkwork_cloudrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::application::{
     AccountResolutionInterceptor, BillingPolicyInterceptor, CircuitBreakerConfig,
@@ -19,14 +18,17 @@ use sdkwork_cloudrouter_router_service::application::{
     GatewayInvocationRateLimiter, IdempotencyInterceptor, InvocationPipeline, MetricsInterceptor,
     PayloadExtractionInterceptor, PricingFinalizationInterceptor, PricingPreflightInterceptor,
     PricingSettlementInterceptor, ProviderAdapterDispatchInterceptor,
-    ResponseNormalizationInterceptor, RoutePlanningInterceptor, StickyCommitInterceptor,
-    StickyResolutionInterceptor, TenantInflightConfig, TenantInflightInterceptor,
-    TraceTelemetryInterceptor, UsageExtractionInterceptor, UsageRecordingInterceptor,
+    ResponseNormalizationInterceptor, RoutePlanningInterceptor, RoutingDecisionLogInterceptor,
+    StickyCommitInterceptor, StickyResolutionInterceptor, TenantInflightConfig,
+    TenantInflightInterceptor, TraceTelemetryInterceptor, UsageExtractionInterceptor,
+    UsageRecordingInterceptor,
 };
 use sdkwork_cloudrouter_router_service::ports::{
     GatewayUsageRecorder, InvocationDispatcher, ProviderAdapterRouteResolver,
-    ProviderSecretResolver, StickyRouteStore, UpstreamAccountRouteCatalog,
+    ProviderSecretResolver, RoutingDecisionLogRecorder, StickyRouteStore,
+    UpstreamAccountRouteCatalog,
 };
+use sdkwork_cloudrouter_security::{InternalGatewayRequestVerifier, INTERNAL_GATEWAY_ROUTE_PREFIX};
 
 use crate::call_chain::CallChainInterceptor;
 use crate::invocation_http::handle_invocation;
@@ -101,6 +103,7 @@ pub struct InvocationRouterOptions<'a> {
     pub secret_resolver: Option<Arc<dyn ProviderSecretResolver + Send + Sync>>,
     pub sticky_store: Option<Arc<dyn StickyRouteStore>>,
     pub usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
+    pub decision_log_recorder: Option<Arc<dyn RoutingDecisionLogRecorder + Send + Sync>>,
     pub provider_adapter_config: Option<ProviderAdapterConfig>,
     pub invocation_policy_guard: Option<Arc<GatewayInvocationPolicyGuard>>,
     pub tenant_inflight_config: Option<TenantInflightConfig>,
@@ -121,6 +124,7 @@ impl Default for InvocationRouterOptions<'_> {
             secret_resolver: None,
             sticky_store: None,
             usage_recorder: None,
+            decision_log_recorder: None,
             provider_adapter_config: None,
             invocation_policy_guard: None,
             tenant_inflight_config: None,
@@ -148,6 +152,7 @@ where
         secret_resolver,
         sticky_store,
         usage_recorder,
+        decision_log_recorder,
         provider_adapter_config,
         invocation_policy_guard,
         tenant_inflight_config,
@@ -168,6 +173,7 @@ where
         secret_resolver,
         sticky_store,
         usage_recorder,
+        decision_log_recorder,
         adapter_resolver,
         redis_config,
         tenant_inflight_config,
@@ -408,6 +414,7 @@ struct InvocationPipelineInput<'a, C> {
     secret_resolver: Option<Arc<dyn ProviderSecretResolver + Send + Sync>>,
     sticky_store: Option<Arc<dyn StickyRouteStore>>,
     usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
+    decision_log_recorder: Option<Arc<dyn RoutingDecisionLogRecorder + Send + Sync>>,
     adapter_resolver: Option<Arc<dyn ProviderAdapterRouteResolver>>,
     redis_config: Option<&'a RedisConfig>,
     tenant_inflight_config: Option<TenantInflightConfig>,
@@ -424,6 +431,7 @@ where
         secret_resolver,
         sticky_store,
         usage_recorder,
+        decision_log_recorder,
         adapter_resolver,
         redis_config,
         tenant_inflight_config,
@@ -498,6 +506,16 @@ where
     }
     if let Some(usage_recorder) = usage_recorder {
         pipeline = pipeline.with_interceptor(UsageRecordingInterceptor::new(usage_recorder));
+    }
+    // Records the audit-safe route decision facts after dispatch so the row
+    // captures the resolved account, attempt chain, and latency. Runs before
+    // settlement so the decision log stays decision-only (settlement facts
+    // live in `ai_usage`).
+    if let Some(decision_log_recorder) = decision_log_recorder {
+        pipeline = pipeline.with_interceptor(RoutingDecisionLogInterceptor::new(
+            Arc::clone(&catalog),
+            decision_log_recorder,
+        ));
     }
 
     pipeline

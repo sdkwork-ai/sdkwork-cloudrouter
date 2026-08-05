@@ -40,9 +40,9 @@ impl CloudRouterDatabaseHost {
     ) -> Result<RegistryLifecycleOrchestrator, String> {
         let mut builder = DatabaseModuleRegistry::builder();
         for module in &self.modules {
-            builder = builder
-                .register(module.as_ref().clone())
-                .map_err(|error| format!("register cloud router database module failed: {error}"))?;
+            builder = builder.register(module.as_ref().clone()).map_err(|error| {
+                format!("register cloud router database module failed: {error}")
+            })?;
         }
         Ok(
             RegistryLifecycleOrchestrator::new(self.pool.clone(), builder.build())
@@ -96,7 +96,9 @@ impl CloudRouterDatabaseHost {
 /// Loads the canonical database module around an existing pool without
 /// creating history tables, applying a baseline, running migrations, or
 /// seeding data.
-pub fn connect_cloud_router_database(pool: DatabasePool) -> Result<CloudRouterDatabaseHost, String> {
+pub fn connect_cloud_router_database(
+    pool: DatabasePool,
+) -> Result<CloudRouterDatabaseHost, String> {
     let app_root = resolve_app_root();
     let modules = load_modules(&app_root)?;
     Ok(CloudRouterDatabaseHost { pool, modules })
@@ -118,7 +120,8 @@ pub async fn bootstrap_cloud_router_database(
     let host = connect_cloud_router_database(pool)?;
     let options = lifecycle_options_from_env("CLOUD_ROUTER", host.module().manifest());
     if options.auto_migrate {
-        let environment = std::env::var("SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT").unwrap_or_default();
+        let environment =
+            std::env::var("SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT").unwrap_or_default();
         if production_like_environment(&environment) {
             return Err(
                 "production/staging runtime must not auto-migrate the Cloud Router database; run the explicit lifecycle migrate command before startup"

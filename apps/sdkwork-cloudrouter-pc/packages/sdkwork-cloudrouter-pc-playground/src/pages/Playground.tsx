@@ -4,7 +4,9 @@ import {
 } from '@sdkwork/agents-pc/workbench';
 import {
   getSdkworkAgentAppSdkClient,
+  getSdkworkCommunityAppSdkClient,
   getSdkworkDriveAppSdkClient,
+  getSdkworkGenerationsAppSdkClient,
   getSdkworkMemoryAppSdkClient,
   getSdkworkPromptsAppSdkClient,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
@@ -17,7 +19,9 @@ import {
 
 configureAgentsWorkbenchRuntime({
   getAgentsAppSdkClient: getSdkworkAgentAppSdkClient,
+  getCommunityAppSdkClient: getSdkworkCommunityAppSdkClient,
   getDriveAppSdkClient: getSdkworkDriveAppSdkClient,
+  getGenerationsAppSdkClient: getSdkworkGenerationsAppSdkClient,
   getMemoryAppSdkClient: getSdkworkMemoryAppSdkClient,
   getPromptsAppSdkClient: getSdkworkPromptsAppSdkClient,
   tokenPlan: {

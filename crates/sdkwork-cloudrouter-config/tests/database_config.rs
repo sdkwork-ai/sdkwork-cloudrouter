@@ -518,7 +518,10 @@ fn from_env_or_initialize_creates_server_postgres_template_and_requires_real_dat
         ),
         ("SDKWORK_DATABASE_URL", None),
         ("SDKWORK_DATABASE_MAX_CONNECTIONS", None),
-        ("SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE", Some("server".to_owned())),
+        (
+            "SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE",
+            Some("server".to_owned()),
+        ),
         (
             "ProgramData",
             Some(program_data.to_string_lossy().to_string()),
@@ -564,7 +567,10 @@ fn explicit_runtime_config_file_uses_neighbor_data_directory_for_server_template
         ),
         ("SDKWORK_DATABASE_URL", None),
         ("SDKWORK_DATABASE_MAX_CONNECTIONS", None),
-        ("SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE", Some("server".to_owned())),
+        (
+            "SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE",
+            Some("server".to_owned()),
+        ),
         (
             "ProgramData",
             Some(program_data.to_string_lossy().to_string()),
@@ -786,7 +792,10 @@ deployment_mode = "desktop"
         RuntimeConfigProfile::from_env_or_runtime_toml(Some(&runtime_toml)).unwrap()
     );
 
-    let _guard = EnvGuard::set(&[("SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE", Some("server".to_owned()))]);
+    let _guard = EnvGuard::set(&[(
+        "SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE",
+        Some("server".to_owned()),
+    )]);
     assert_eq!(
         RuntimeConfigProfile::Server,
         RuntimeConfigProfile::from_env_or_runtime_toml(Some(&runtime_toml)).unwrap()

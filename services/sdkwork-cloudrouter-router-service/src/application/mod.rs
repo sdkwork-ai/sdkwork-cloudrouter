@@ -45,10 +45,10 @@ pub use alipay_payment_adapter::{
     AlipayHyperOpenApiClient, AlipayOpenApiClient, AlipayPaymentProviderAdapter,
     AlipayPaymentProviderConfig, AlipaySigner,
 };
-pub use api_key_secret_generator::{ApiKeySecretGenerator, EntityUuidGenerator};
 pub use api_key_secret_codec::{
     ApiKeySecretCodec, ApiKeySecretContext, ApiKeySecretStorageConfig, EncodedApiKeySecret,
 };
+pub use api_key_secret_generator::{ApiKeySecretGenerator, EntityUuidGenerator};
 pub use cache_runtime::{
     default_desktop_cache_manager, default_desktop_cache_runtime, default_service_cache_manager,
     default_service_cache_runtime, CacheBackend, CacheBackendCursor, CacheBackendFuture,
@@ -97,9 +97,9 @@ pub use invocation::{
     PricingSettlementInterceptor, ProviderAdapterDispatchInterceptor,
     ProviderNativeResourceClassifier, RequestTransformInterceptor, ResolvedProviderSecret,
     ResourceType, ResponseNormalizationInterceptor, RoutePlanningInterceptor,
-    SecretResolutionInterceptor, StickyCommitInterceptor, StickyMode, StickyResolutionInterceptor,
-    StickyRouteConstraint, StickyRouting, StickyScope, StreamTerminalOutcome,
-    StreamingUsageAccumulator, StreamingUsageFormat, TenantInflightConfig,
+    RoutingDecisionLogInterceptor, SecretResolutionInterceptor, StickyCommitInterceptor,
+    StickyMode, StickyResolutionInterceptor, StickyRouteConstraint, StickyRouting, StickyScope,
+    StreamTerminalOutcome, StreamingUsageAccumulator, StreamingUsageFormat, TenantInflightConfig,
     TenantInflightInterceptor, TraceTelemetryInterceptor, UsageExtractionInterceptor,
     UsageRecordingInterceptor,
 };

@@ -167,6 +167,7 @@ async fn list_providers(
         SELECT
             CAST(p.id AS TEXT) AS id,
             p.supplier_code AS "providerCode",
+            COALESCE(p.name, '') AS name,
             p.provider_type AS "providerType",
             COALESCE(p.endpoint_url, '') AS "endpointUrl",
             COALESCE(p.region, '') AS region,
@@ -220,10 +221,10 @@ async fn create_provider(
         r#"
         INSERT INTO object_provider
             (uuid, tenant_id, organization_id, supplier_code, provider_type, endpoint_url, region,
-             credential_ref, path_style_enabled, supports_multipart, supports_lifecycle,
+             credential_ref, name, path_style_enabled, supports_multipart, supports_lifecycle,
              supports_object_lock, health_status, idempotency_key, request_id, id)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'unknown', $13, $14, $15)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'unknown', $14, $15, $16)
         RETURNING id
         "#,
     )
@@ -243,6 +244,7 @@ async fn create_provider(
     .bind(command.endpoint_url.as_deref())
     .bind(command.region.as_deref())
     .bind(&command.credential_ref)
+    .bind(&command.name)
     .bind(command.path_style_enabled.unwrap_or(false))
     .bind(command.supports_multipart.unwrap_or(true))
     .bind(command.supports_lifecycle.unwrap_or(false))
@@ -1569,6 +1571,7 @@ enum Field {
 const PROVIDER_FIELDS: &[Field] = &[
     Field::String("id"),
     Field::String("providerCode"),
+    Field::String("name"),
     Field::String("providerType"),
     Field::String("endpointUrl"),
     Field::String("region"),

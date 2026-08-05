@@ -157,6 +157,7 @@
     "@sdkwork/cloudrouter-backend-sdk": "workspace:*",
     "@sdkwork/cloudrouter-open-sdk": "workspace:*",
     "@sdkwork/cloudrouter-pc-core": "workspace:*",
+    "@sdkwork/community-app-sdk": "workspace:*",
     "@sdkwork/documents-app-sdk": "workspace:*",
     "@sdkwork/documents-pc-commons": "workspace:*",
     "@sdkwork/drive-app-sdk": "workspace:*",

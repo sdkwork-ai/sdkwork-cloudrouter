@@ -7,7 +7,8 @@ pub struct ProviderSecretMapConfig {
 }
 
 impl ProviderSecretMapConfig {
-    pub const ENV_PROVIDER_SECRET_MAP_JSON: &'static str = "SDKWORK_CLOUDROUTER_PROVIDER_SECRET_MAP_JSON";
+    pub const ENV_PROVIDER_SECRET_MAP_JSON: &'static str =
+        "SDKWORK_CLOUDROUTER_PROVIDER_SECRET_MAP_JSON";
 
     pub fn from_optional_json(secret_map_json: Option<String>) -> Result<Option<Self>, String> {
         match secret_map_json {

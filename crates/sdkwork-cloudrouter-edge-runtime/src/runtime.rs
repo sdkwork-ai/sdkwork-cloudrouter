@@ -1,7 +1,10 @@
 use std::num::NonZeroUsize;
 use std::sync::Arc;
 
+use crate::gateway_balance_account::PostgresGatewayBalanceStore;
+use crate::iam_auth_token_authenticator::IamAuthTokenAuthenticator;
 use axum::Router;
+use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
 use sdkwork_cloudrouter_config::{
     ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig, DatabaseEngine, DeploymentMode,
     DeploymentRuntime, InternalGatewaySecurityConfig, PaymentWebhookConfig, ProviderAdapterConfig,
@@ -9,18 +12,16 @@ use sdkwork_cloudrouter_config::{
     RedisConfig, RequestLimitsConfig, RuntimeConfigProfile, RuntimeTomlConfig, StartupInstallMode,
     TrustedSubjectConfig, UpstreamCredentialSecurityConfig,
 };
+use sdkwork_cloudrouter_database_host::bootstrap_cloud_router_database;
 use sdkwork_cloudrouter_http::QueryStringApiKeyPolicy;
 use sdkwork_cloudrouter_provider_adapter_contract::AdapterRouteStatus;
 use sdkwork_cloudrouter_provider_adapter_http::ProviderAdapterHttpClient;
-use sdkwork_cloudrouter_provider_adapter_registry::{ProviderAdapterRegistry, ProviderAdapterRouteConfig};
-use sdkwork_cloudrouter_security::{
-    redact_error_message, InMemoryInternalGatewayReplayStore, InternalGatewayReplayStore,
-    InternalGatewayRequestVerifier,
+use sdkwork_cloudrouter_provider_adapter_registry::{
+    ProviderAdapterRegistry, ProviderAdapterRouteConfig,
 };
-use sdkwork_cloudrouter_database_host::bootstrap_cloud_router_database;
 use sdkwork_cloudrouter_router_service::api::{
-    GatewayBalanceStore, OpenAiInvocationPluginRef, OpenAiRuntimeFailureStrategy,
-    OpenAiRuntimeRouteConfig,
+    GatewayBalanceStore, OpenAiAuthTokenAuthenticator, OpenAiInvocationPluginRef,
+    OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig,
 };
 use sdkwork_cloudrouter_router_service::application::{
     resolve_usage_settlement_worker_config, ApiKeySecretHasher, GatewayAccountingRetryHealth,
@@ -32,7 +33,6 @@ use sdkwork_cloudrouter_router_service::domain::{
     ProviderRetryPolicy, DEFAULT_PROVIDER_CIRCUIT_BREAKER_RECOVERY_WINDOW_SECONDS,
     DEFAULT_PROVIDER_RETRY_ATTEMPTS, DEFAULT_RETRYABLE_PROVIDER_STATUS_CODES,
 };
-use sdkwork_cloudrouter_router_service::ports::RuntimeRegionSettingsStore;
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::{
     HmacSha256ApiKeySecretHasher, RingAeadCredentialSecretCodec,
 };
@@ -56,21 +56,24 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::installer::{
 };
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
     PostgresCatalogLoadError, PostgresGatewayUsageRecorder, PostgresPricingCatalogLoader,
-    PostgresUsageSettlementStore,
+    PostgresRoutingDecisionLogRecorder, PostgresUsageSettlementStore,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::{
     InMemoryGatewayAccountingRetryQueue, RedisGatewayAccountingRetryQueue,
 };
+use sdkwork_cloudrouter_router_service::ports::RuntimeRegionSettingsStore;
 use sdkwork_cloudrouter_router_service::ports::{
     ChatCompletionRelay, ChatCompletionStreamRelay, EmbeddingsRelay,
     GatewayAccountingRecordContext, GatewayAccountingRetryQueue, GatewayRequestTraceCommand,
     GatewayTraceAttribution, GatewayUsageRecordCommand, GatewayUsageRecordFuture,
-    GatewayUsageRecorder, ProviderSecretResolver, ResponsesRelay, StickyRouteStore,
-    UpstreamAccountRouteCatalog, UsageSettlementStore,
+    GatewayUsageRecorder, ProviderSecretResolver, ResponsesRelay, RoutingDecisionLogRecorder,
+    StickyRouteStore, UpstreamAccountRouteCatalog, UsageSettlementStore,
 };
-use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
+use sdkwork_cloudrouter_security::{
+    redact_error_message, InMemoryInternalGatewayReplayStore, InternalGatewayReplayStore,
+    InternalGatewayRequestVerifier,
+};
 use sdkwork_models_catalog_repository_sqlx::PostgresModelCatalogAdminStore;
-use crate::gateway_balance_account::PostgresGatewayBalanceStore;
 use sqlx::PgPool;
 use tokio::sync::Notify;
 use tokio::time::{sleep, Duration};
@@ -94,7 +97,8 @@ type AccountingRetryQueue = Arc<dyn GatewayAccountingRetryQueue + Send + Sync>;
 type SettlementStore = Arc<dyn UsageSettlementStore + Send + Sync>;
 
 const CLOUD_ROUTER_GATEWAY_INSTANCE_ID_ENV: &str = "SDKWORK_CLOUDROUTER_ROUTER_GATEWAY_INSTANCE_ID";
-const CLOUD_ROUTER_GATEWAY_INSTANCE_CODE_ENV: &str = "SDKWORK_CLOUDROUTER_ROUTER_GATEWAY_INSTANCE_CODE";
+const CLOUD_ROUTER_GATEWAY_INSTANCE_CODE_ENV: &str =
+    "SDKWORK_CLOUDROUTER_ROUTER_GATEWAY_INSTANCE_CODE";
 const CLOUD_ROUTER_GATEWAY_NODE_NAME_ENV: &str = "SDKWORK_CLOUDROUTER_ROUTER_GATEWAY_NODE_NAME";
 
 fn gateway_trace_attribution() -> GatewayTraceAttribution {
@@ -163,6 +167,7 @@ struct InvocationRuntimeRoutesInput<'a, C> {
     provider_secret_resolver: Option<Arc<RefreshableProviderSecretMapResolver>>,
     sticky_store: Option<Arc<dyn StickyRouteStore>>,
     usage_recorder: Option<UsageRecorder>,
+    decision_log_recorder: Option<Arc<dyn RoutingDecisionLogRecorder + Send + Sync>>,
     provider_adapter_config: Option<ProviderAdapterConfig>,
     query_string_api_key_policy: QueryStringApiKeyPolicy,
     runtime_toml: Option<&'a RuntimeTomlConfig>,
@@ -191,6 +196,7 @@ where
         provider_secret_resolver,
         sticky_store,
         usage_recorder,
+        decision_log_recorder,
         provider_adapter_config,
         query_string_api_key_policy,
         runtime_toml,
@@ -209,9 +215,10 @@ where
         let resolver: Arc<dyn ProviderSecretResolver + Send + Sync> = resolver;
         resolver
     });
-    let redis_config = sdkwork_cloudrouter_config::RedisConfig::from_env_or_runtime_toml(runtime_toml)
-        .ok()
-        .flatten();
+    let redis_config =
+        sdkwork_cloudrouter_config::RedisConfig::from_env_or_runtime_toml(runtime_toml)
+            .ok()
+            .flatten();
     let dispatcher = InvocationHttpDispatcher::with_provider_runtime_and_shared_memory_budget(
         response_max_bytes,
         response_memory_budget,
@@ -228,6 +235,7 @@ where
                 secret_resolver,
                 sticky_store,
                 usage_recorder,
+                decision_log_recorder,
                 provider_adapter_config,
                 invocation_policy_guard: Some(
                     crate::invocation_router::invocation_policy_guard_from_runtime_toml_with_instance_count(
@@ -311,6 +319,7 @@ struct DatabaseRuntimeRoutesInput<'a, C> {
     provider_secret_resolver: Option<Arc<RefreshableProviderSecretMapResolver>>,
     invocation_sticky_store: Option<Arc<dyn StickyRouteStore>>,
     usage_recorder: Option<UsageRecorder>,
+    decision_log_recorder: Option<Arc<dyn RoutingDecisionLogRecorder + Send + Sync>>,
     provider_passthrough_config: Option<ProviderRelayConfig>,
     provider_adapter_config: Option<ProviderAdapterConfig>,
     provider_runtime_config: ProviderRelayRuntimeConfig,
@@ -322,6 +331,9 @@ struct DatabaseRuntimeRoutesInput<'a, C> {
     /// runtimes without the account-domain wallet store (e.g. relay-only
     /// test fixtures).
     gateway_balance_store: Option<Arc<dyn GatewayBalanceStore>>,
+    /// Resolves non-API-key bearer credentials (auth tokens) into an account
+    /// route context for the open-api chat completions route.
+    auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator>>,
 }
 
 fn router_with_database_runtime_routes<C>(
@@ -337,6 +349,7 @@ where
         provider_secret_resolver,
         invocation_sticky_store,
         usage_recorder,
+        decision_log_recorder,
         provider_passthrough_config,
         provider_adapter_config,
         provider_runtime_config,
@@ -345,6 +358,7 @@ where
         request_limits_config,
         call_chain,
         gateway_balance_store,
+        auth_token_authenticator,
     } = input;
     let internal_gateway_verifier = build_internal_gateway_request_verifier(runtime_toml)?;
     let dispatcher_response_max_bytes =
@@ -363,6 +377,7 @@ where
             provider_secret_resolver,
             sticky_store: invocation_sticky_store,
             usage_recorder: usage_recorder.clone(),
+            decision_log_recorder: decision_log_recorder.clone(),
             provider_adapter_config: provider_adapter_config.clone(),
             query_string_api_key_policy,
             runtime_toml,
@@ -396,11 +411,13 @@ where
             api_key_hasher: Arc::clone(&api_key_hasher),
             relays,
             usage_recorder: usage_recorder.clone(),
+            decision_log_recorder: decision_log_recorder.clone(),
             invocation_plugins: Vec::new(),
             failure_strategy: provider_runtime_config.failure_strategy,
             default_retry_policy: provider_runtime_config.default_retry_policy.clone(),
             region_settings_store: None,
             include_openai_models_router: false,
+            auth_token_authenticator,
         });
         router_with_invocation_runtime_routes(InvocationRuntimeRoutesInput {
             base_router: router,
@@ -409,6 +426,7 @@ where
             provider_secret_resolver: None,
             sticky_store: invocation_sticky_store,
             usage_recorder: usage_recorder.clone(),
+            decision_log_recorder,
             provider_adapter_config: provider_adapter_config.clone(),
             query_string_api_key_policy,
             runtime_toml,
@@ -424,16 +442,23 @@ where
             call_chain,
         })?
     };
-    let router = match &gateway_balance_store {
-        Some(store) => router.merge(
-            sdkwork_cloudrouter_router_service::api::gateway_balance_router(
-                Arc::clone(&catalog),
-                Arc::clone(&api_key_hasher),
-                Arc::clone(store),
-            ),
+    // The balance endpoint must stay reachable on every surface that serves
+    // the OpenAI-compatible API: CC Switch deep links always ship a usage
+    // script against `GET /v1/user/balance`, and a missing route would make
+    // the query fail with 404 instead of showing a balance. Surfaces without
+    // an account-domain Token Bank ledger (relay-only / client-local) fall
+    // back to the zero-balance store — a well-formed response rather than a
+    // missing route.
+    let gateway_balance_store = gateway_balance_store.unwrap_or_else(|| {
+        Arc::new(sdkwork_cloudrouter_router_service::api::ZeroGatewayBalanceStore)
+    });
+    let router = router.merge(
+        sdkwork_cloudrouter_router_service::api::gateway_balance_router(
+            Arc::clone(&catalog),
+            Arc::clone(&api_key_hasher),
+            gateway_balance_store,
         ),
-        None => router,
-    };
+    );
     Ok(merge_relay_authenticated_openai_passthrough(
         RelayAuthenticatedOpenAiPassthroughInput {
             router,
@@ -701,11 +726,15 @@ struct OpenAiRuntimeRoutesInput<C> {
     api_key_hasher: ApiKeyHasher,
     relays: OpenAiRuntimeRelays,
     usage_recorder: Option<UsageRecorder>,
+    decision_log_recorder: Option<Arc<dyn RoutingDecisionLogRecorder + Send + Sync>>,
     invocation_plugins: Vec<OpenAiInvocationPluginRef>,
     failure_strategy: OpenAiRuntimeFailureStrategy,
     default_retry_policy: ProviderRetryPolicy,
     region_settings_store: Option<Arc<dyn RuntimeRegionSettingsStore + Send + Sync>>,
     include_openai_models_router: bool,
+    /// Resolves non-API-key bearer credentials (auth tokens) into an account
+    /// route context for the chat completions route.
+    auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator>>,
 }
 
 pub fn router_with_product_catalog_and_api_key_hasher<C>(
@@ -721,11 +750,13 @@ where
         api_key_hasher,
         relays: OpenAiRuntimeRelays::default(),
         usage_recorder: None,
+        decision_log_recorder: None,
         invocation_plugins: Vec::new(),
         failure_strategy: OpenAiRuntimeFailureStrategy::default(),
         default_retry_policy: ProviderRetryPolicy::default(),
         region_settings_store: None,
         include_openai_models_router: true,
+        auth_token_authenticator: None,
     })
 }
 
@@ -748,11 +779,13 @@ where
             responses: None,
         },
         usage_recorder: None,
+        decision_log_recorder: None,
         invocation_plugins: Vec::new(),
         failure_strategy: OpenAiRuntimeFailureStrategy::default(),
         default_retry_policy: ProviderRetryPolicy::default(),
         region_settings_store: None,
         include_openai_models_router: true,
+        auth_token_authenticator: None,
     })
 }
 
@@ -775,11 +808,13 @@ where
             responses: None,
         },
         usage_recorder: None,
+        decision_log_recorder: None,
         invocation_plugins: Vec::new(),
         failure_strategy: OpenAiRuntimeFailureStrategy::default(),
         default_retry_policy: ProviderRetryPolicy::default(),
         region_settings_store: None,
         include_openai_models_router: true,
+        auth_token_authenticator: None,
     })
 }
 
@@ -802,11 +837,13 @@ where
             responses: None,
         },
         usage_recorder: None,
+        decision_log_recorder: None,
         invocation_plugins: Vec::new(),
         failure_strategy: OpenAiRuntimeFailureStrategy::default(),
         default_retry_policy: ProviderRetryPolicy::default(),
         region_settings_store: None,
         include_openai_models_router: true,
+        auth_token_authenticator: None,
     })
 }
 
@@ -829,11 +866,13 @@ where
             responses: Some(responses_relay),
         },
         usage_recorder: None,
+        decision_log_recorder: None,
         invocation_plugins: Vec::new(),
         failure_strategy: OpenAiRuntimeFailureStrategy::default(),
         default_retry_policy: ProviderRetryPolicy::default(),
         region_settings_store: None,
         include_openai_models_router: true,
+        auth_token_authenticator: None,
     })
 }
 
@@ -847,68 +886,108 @@ where
         api_key_hasher,
         relays,
         usage_recorder,
+        decision_log_recorder,
         invocation_plugins,
         failure_strategy,
         default_retry_policy,
         region_settings_store,
         include_openai_models_router,
+        auth_token_authenticator,
     } = input;
+    // The decision log is a built-in surface plugin for every OpenAI-compatible
+    // endpoint; the routing algorithm never calls it directly.
+    let mut invocation_plugins = invocation_plugins;
+    if let Some(decision_log_recorder) = decision_log_recorder {
+        invocation_plugins.push(Arc::new(
+            sdkwork_cloudrouter_router_service::api::RoutingDecisionLogPlugin::new(
+                Arc::clone(&catalog),
+                decision_log_recorder,
+            ),
+        ));
+    }
     let chat_router = match (relays.chat, relays.chat_stream) {
         (Some(relay), Some(stream_relay)) => {
             if let Some(usage_recorder) = usage_recorder.clone() {
-                sdkwork_cloudrouter_router_service::api::openai_chat_completions_router_with_relays_usage_recorder_plugins_and_runtime_config(
+                sdkwork_cloudrouter_router_service::api::openai_chat_completions_router_with_auth_extensions(
                     Arc::clone(&catalog),
                     Arc::clone(&api_key_hasher),
-                    relay,
-                    stream_relay,
-                    usage_recorder,
+                    Some(relay),
+                    Some(stream_relay),
+                    Some(usage_recorder),
                     invocation_plugins.clone(),
                     OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy)
                         .with_region_settings_store(region_settings_store.clone()),
+                    auth_token_authenticator.clone(),
+                    sdkwork_web_core::default_open_api_bearer_classifier(),
                 )
             } else {
-                sdkwork_cloudrouter_router_service::api::openai_chat_completions_router_with_relays_and_failure_strategy(
+                sdkwork_cloudrouter_router_service::api::openai_chat_completions_router_with_auth_extensions(
                     Arc::clone(&catalog),
                     Arc::clone(&api_key_hasher),
-                    relay,
-                    stream_relay,
-                    failure_strategy,
+                    Some(relay),
+                    Some(stream_relay),
+                    None,
+                    invocation_plugins.clone(),
+                    OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy),
+                    auth_token_authenticator.clone(),
+                    sdkwork_web_core::default_open_api_bearer_classifier(),
                 )
             }
         }
         (Some(relay), None) => {
             if let Some(usage_recorder) = usage_recorder.clone() {
-                sdkwork_cloudrouter_router_service::api::openai_chat_completions_router_with_relay_usage_recorder_plugins_and_runtime_config(
+                sdkwork_cloudrouter_router_service::api::openai_chat_completions_router_with_auth_extensions(
                     Arc::clone(&catalog),
                     Arc::clone(&api_key_hasher),
-                    relay,
-                    usage_recorder,
+                    Some(relay),
+                    None,
+                    Some(usage_recorder),
                     invocation_plugins.clone(),
                     OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy)
                         .with_region_settings_store(region_settings_store.clone()),
+                    auth_token_authenticator.clone(),
+                    sdkwork_web_core::default_open_api_bearer_classifier(),
                 )
             } else {
-                sdkwork_cloudrouter_router_service::api::openai_chat_completions_router_with_relay_plugins_and_failure_strategy(
+                sdkwork_cloudrouter_router_service::api::openai_chat_completions_router_with_auth_extensions(
                     Arc::clone(&catalog),
                     Arc::clone(&api_key_hasher),
-                    relay,
+                    Some(relay),
+                    None,
+                    None,
                     invocation_plugins.clone(),
-                    failure_strategy,
+                    OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy),
+                    auth_token_authenticator.clone(),
+                    sdkwork_web_core::default_open_api_bearer_classifier(),
                 )
             }
         }
         (None, Some(stream_relay)) => {
-            sdkwork_cloudrouter_router_service::api::openai_chat_completions_router_with_streaming_relay_and_failure_strategy(
+            sdkwork_cloudrouter_router_service::api::openai_chat_completions_router_with_auth_extensions(
                 Arc::clone(&catalog),
                 Arc::clone(&api_key_hasher),
-                stream_relay,
-                failure_strategy,
+                None,
+                Some(stream_relay),
+                None,
+                invocation_plugins.clone(),
+                OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy),
+                auth_token_authenticator.clone(),
+                sdkwork_web_core::default_open_api_bearer_classifier(),
             )
         }
-        (None, None) => sdkwork_cloudrouter_router_service::api::openai_chat_completions_router(
-            Arc::clone(&catalog),
-            Arc::clone(&api_key_hasher),
-        ),
+        (None, None) => {
+            sdkwork_cloudrouter_router_service::api::openai_chat_completions_router_with_auth_extensions(
+                Arc::clone(&catalog),
+                Arc::clone(&api_key_hasher),
+                None,
+                None,
+                None,
+                invocation_plugins.clone(),
+                OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy),
+                auth_token_authenticator.clone(),
+                sdkwork_web_core::default_open_api_bearer_classifier(),
+            )
+        }
     };
     let responses_failure_strategy = OpenAiRuntimeFailureStrategy::FailClosed;
     let responses_router = match relays.responses {
@@ -969,13 +1048,25 @@ where
     };
 
     let router = if include_openai_models_router {
-        base_router.merge(
-            sdkwork_cloudrouter_router_service::api::openai_models_router(
-                Arc::clone(&catalog),
-                Arc::clone(&api_key_hasher),
-            ),
-        )
+        // Test/relay fixtures: concrete axum routes serve both endpoints and
+        // the invocation pipeline is not involved.
+        base_router
+            .merge(
+                sdkwork_cloudrouter_router_service::api::openai_models_router(
+                    Arc::clone(&catalog),
+                    Arc::clone(&api_key_hasher),
+                ),
+            )
+            .merge(
+                sdkwork_cloudrouter_router_service::api::openai_vendors_router(
+                    Arc::clone(&catalog),
+                    Arc::clone(&api_key_hasher),
+                ),
+            )
     } else {
+        // Production: both `/v1/models` and `/v1/vendors` are served by the
+        // invocation pipeline (see `apply_gateway_dispatch_defaults`), so
+        // policy/rate-limit guards apply uniformly.
         base_router
     };
 
@@ -1199,7 +1290,9 @@ where
             defaults.concurrency = Some(sdkwork_web_chain::ConcurrencyPolicy {
                 max_inflight: None,
                 max_inflight_per_scope: Some(
-                    [("tenant".to_owned(), config.max_inflight)].into_iter().collect(),
+                    [("tenant".to_owned(), config.max_inflight)]
+                        .into_iter()
+                        .collect(),
                 ),
             });
         }
@@ -1342,9 +1435,10 @@ async fn router_with_database_bootstrap(
                 );
         let readiness_check =
             combine_accounting_retry_readiness(readiness_check, accounting_retry_health);
-        let redis_config = sdkwork_cloudrouter_config::RedisConfig::from_env_or_runtime_toml(runtime_toml)
-            .ok()
-            .flatten();
+        let redis_config =
+            sdkwork_cloudrouter_config::RedisConfig::from_env_or_runtime_toml(runtime_toml)
+                .ok()
+                .flatten();
         let call_chain = build_gateway_call_chain(
             &pool,
             &catalog,
@@ -1359,11 +1453,14 @@ async fn router_with_database_bootstrap(
                 readiness_check,
                 Some(deployment_mode),
             ),
-            catalog,
+            catalog: catalog.clone(),
             api_key_hasher,
             provider_secret_resolver: provider_secret_resolver.clone(),
             invocation_sticky_store: invocation_sticky,
             usage_recorder: Some(usage_recorder),
+            decision_log_recorder: Some(Arc::new(PostgresRoutingDecisionLogRecorder::new(
+                pool.clone(),
+            ))),
             provider_passthrough_config,
             provider_adapter_config: provider_adapter_config.clone(),
             provider_runtime_config: provider_runtime,
@@ -1371,10 +1468,14 @@ async fn router_with_database_bootstrap(
             runtime_toml,
             request_limits_config,
             call_chain,
-            // The balance endpoint reads the account-domain Token Bank wallet
-            // (`acct_*` tables), which only the all-in-one server runtime
-            // bootstraps; relay-only / client-local surfaces keep it disabled.
+            // The all-in-one server runtime bootstraps the account-domain
+            // Token Bank wallet (`acct_*` tables); other surfaces fall back
+            // to the zero-balance store inside router_with_database_runtime_routes.
             gateway_balance_store: None,
+            auth_token_authenticator: Some(Arc::new(IamAuthTokenAuthenticator::new(
+                database_pool.clone(),
+                catalog.clone(),
+            ))),
         })
     }
 }
@@ -1561,6 +1662,37 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
         .await
         .map_err(anyhow::Error::msg)?;
     let backend_router = backend_router.merge(membership_assembly.router);
+    // Federated commerce payment backend surface (`/backend/v3/api/payments/*`)
+    // is dependency-owned. It enters through the payment API assembly
+    // entrypoint on the shared commerce pool — not through a direct
+    // `sdkwork-routes-*` import — per API_ASSEMBLY_SPEC §3/§6.1, and must be
+    // merged before the Web Framework layer is installed by
+    // `finalize_all_in_one_route_surfaces`.
+    let payment_backend_assembly =
+        sdkwork_api_payment_assembly::assemble_backend_business_router(payment_host.clone()).await;
+    let backend_router = backend_router.merge(payment_backend_assembly.router);
+    // Federated commerce order backend surface (`/backend/v3/api/orders/*`,
+    // `/backend/v3/api/shipments/*`) is dependency-owned. It enters through
+    // the order API assembly entrypoint on the shared commerce pool — not
+    // through a direct `sdkwork-routes-*` import — per API_ASSEMBLY_SPEC
+    // §3/§6.1, and must be merged before the Web Framework layer is installed
+    // by `finalize_all_in_one_route_surfaces`.
+    let order_backend_assembly =
+        sdkwork_api_order_assembly::assemble_backend_business_router_from_env()
+            .await
+            .map_err(anyhow::Error::msg)?;
+    let backend_router = backend_router.merge(order_backend_assembly.router);
+    // Federated commerce inventory backend surface (`/backend/v3/api/inventory/*`)
+    // is dependency-owned. It enters through the inventory API assembly
+    // entrypoint on the shared commerce pool — not through a direct
+    // `sdkwork-routes-*` import — per API_ASSEMBLY_SPEC §3/§6.1, and must be
+    // merged before the Web Framework layer is installed by
+    // `finalize_all_in_one_route_surfaces`.
+    let inventory_backend_assembly =
+        sdkwork_api_inventory_assembly::assemble_backend_api_contribution_from_env()
+            .await
+            .map_err(anyhow::Error::msg)?;
+    let backend_router = backend_router.merge(inventory_backend_assembly.router);
     // Base-data backend surface (`/backend/v3/api/base_data/*`) is owned by the
     // sdkwork-appbase base-data capability. It enters through the base-data
     // route crate on its own database host (per-module lifecycle manifest),
@@ -1594,6 +1726,17 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
     let med_data_router =
         sdkwork_routes_med_data_backend_api::gateway_mount_business(med_data_host);
     let backend_router = backend_router.merge(med_data_router);
+    // IAM backend surface (`/backend/v3/api/iam/*`, `/backend/v3/api/oauth/*`,
+    // `/backend/v3/api/system/iam/*`) is owned by the sdkwork-iam IAM
+    // capability. It enters through the IAM API assembly backend contribution
+    // on the IAM database host (per-module lifecycle manifest) — not through a
+    // direct `sdkwork-routes-*` import — per API_ASSEMBLY_SPEC §3/§6.1, and
+    // must be merged before the Web Framework layer is installed by
+    // `finalize_all_in_one_route_surfaces`.
+    let iam_backend_assembly = sdkwork_api_iam_assembly::assemble_backend_api_contribution()
+        .await
+        .map_err(anyhow::Error::msg)?;
+    let backend_router = backend_router.merge(iam_backend_assembly.router);
     let app_router = sdkwork_routes_cloudrouter_app_api::router_with_postgres_shared_runtime(
         sdkwork_routes_cloudrouter_app_api::PostgresSharedRuntime {
             config: context.database_config.clone(),
@@ -1880,15 +2023,18 @@ async fn build_gateway_router_from_all_in_one_context(
         );
     let readiness_check =
         combine_accounting_retry_readiness(readiness_check, accounting_retry_health);
-    let redis_config = sdkwork_cloudrouter_config::RedisConfig::from_env_or_runtime_toml(runtime_toml.as_ref())
-        .ok()
-        .flatten();
+    let redis_config =
+        sdkwork_cloudrouter_config::RedisConfig::from_env_or_runtime_toml(runtime_toml.as_ref())
+            .ok()
+            .flatten();
     let call_chain = build_gateway_call_chain(
         &pool,
         &context.catalog,
         redis_config.as_ref(),
         Some(context.provider_runtime_config.tenant_inflight_config),
-        context.provider_runtime_config.tenant_inflight_use_chain_stage,
+        context
+            .provider_runtime_config
+            .tenant_inflight_use_chain_stage,
     );
 
     let gateway_balance_store = Arc::new(PostgresGatewayBalanceStore::new(
@@ -1905,8 +2051,13 @@ async fn build_gateway_router_from_all_in_one_context(
         catalog: Arc::clone(&context.catalog),
         api_key_hasher,
         provider_secret_resolver: context.provider_secret_resolver.clone(),
-        invocation_sticky_store: Some(Arc::new(InvocationStickyObjectRouteStore::postgres(pool))),
+        invocation_sticky_store: Some(Arc::new(InvocationStickyObjectRouteStore::postgres(
+            pool.clone(),
+        ))),
         usage_recorder: Some(usage_recorder),
+        decision_log_recorder: Some(Arc::new(PostgresRoutingDecisionLogRecorder::new(
+            pool.clone(),
+        ))),
         provider_passthrough_config: context.provider_relay_config.clone(),
         provider_adapter_config: context.provider_adapter_config.clone(),
         provider_runtime_config: context.provider_runtime_config.clone(),
@@ -1915,6 +2066,7 @@ async fn build_gateway_router_from_all_in_one_context(
         request_limits_config: context.request_limits_config,
         call_chain,
         gateway_balance_store: Some(gateway_balance_store),
+        auth_token_authenticator: None,
     })
     .map_err(anyhow::Error::new)
 }
@@ -1965,9 +2117,11 @@ async fn prepare_cloud_router_database_lifecycle(
     // lifecycle switches: auto-migrate and seed-on-boot run in guarded
     // development/staging and are rejected for production environments
     // (DATABASE_FRAMEWORK_SPEC.md §4.3).
-    bootstrap_cloud_router_database(pool).await.map_err(|error| {
-        GatewayRouterError::Installer(DatabaseInstallError::InvalidState(error))
-    })?;
+    bootstrap_cloud_router_database(pool)
+        .await
+        .map_err(|error| {
+            GatewayRouterError::Installer(DatabaseInstallError::InvalidState(error))
+        })?;
     Ok(())
 }
 
@@ -2294,7 +2448,8 @@ fn parse_positive_u64_config(
     config_value: Option<u64>,
     default: u64,
 ) -> Result<u64, String> {
-    let parsed = sdkwork_cloudrouter_config::runtime::config_u64(name, config_value)?.unwrap_or(default);
+    let parsed =
+        sdkwork_cloudrouter_config::runtime::config_u64(name, config_value)?.unwrap_or(default);
     if parsed == 0 {
         return Err(format!("{name} must be a positive integer"));
     }
@@ -2770,13 +2925,16 @@ fn provider_relay_runtime_config_from_env_or_toml(
     runtime_toml: Option<&RuntimeTomlConfig>,
 ) -> Result<ProviderRelayRuntimeConfig, String> {
     const RESPONSE_TIMEOUT: &str = "SDKWORK_CLOUDROUTER_PROVIDER_RESPONSE_TIMEOUT_MILLIS";
-    const STREAM_RESPONSE_TIMEOUT: &str = "SDKWORK_CLOUDROUTER_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS";
+    const STREAM_RESPONSE_TIMEOUT: &str =
+        "SDKWORK_CLOUDROUTER_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS";
     const RESPONSE_MAX_BYTES: &str = "SDKWORK_CLOUDROUTER_PROVIDER_RESPONSE_MAX_BYTES";
-    const RESPONSE_MEMORY_BUDGET_BYTES: &str = "SDKWORK_CLOUDROUTER_PROVIDER_RESPONSE_MEMORY_BUDGET_BYTES";
+    const RESPONSE_MEMORY_BUDGET_BYTES: &str =
+        "SDKWORK_CLOUDROUTER_PROVIDER_RESPONSE_MEMORY_BUDGET_BYTES";
     const RETRY_MAX_ATTEMPTS: &str = "SDKWORK_CLOUDROUTER_PROVIDER_RETRY_MAX_ATTEMPTS";
     const RETRY_STATUS_CODES: &str = "SDKWORK_CLOUDROUTER_PROVIDER_RETRYABLE_STATUS_CODES";
     const RETRY_BACKOFF: &str = "SDKWORK_CLOUDROUTER_PROVIDER_RETRY_BACKOFF_MILLIS";
-    const CATALOG_REFRESH_INTERVAL: &str = "SDKWORK_CLOUDROUTER_PROVIDER_CATALOG_REFRESH_INTERVAL_MILLIS";
+    const CATALOG_REFRESH_INTERVAL: &str =
+        "SDKWORK_CLOUDROUTER_PROVIDER_CATALOG_REFRESH_INTERVAL_MILLIS";
     const CIRCUIT_BREAKER_RECOVERY_WINDOW: &str =
         "SDKWORK_CLOUDROUTER_PROVIDER_CIRCUIT_BREAKER_RECOVERY_WINDOW_MILLIS";
     const FAILURE_STRATEGY: &str = "SDKWORK_CLOUDROUTER_PROVIDER_FAILURE_STRATEGY";
@@ -2784,7 +2942,8 @@ fn provider_relay_runtime_config_from_env_or_toml(
     const POOL_MAX_IDLE_PER_HOST: &str = "SDKWORK_CLOUDROUTER_PROVIDER_HTTP_POOL_MAX_IDLE_PER_HOST";
     const HTTP2_KEEP_ALIVE_INTERVAL: &str =
         "SDKWORK_CLOUDROUTER_PROVIDER_HTTP2_KEEP_ALIVE_INTERVAL_SECONDS";
-    const HTTP2_KEEP_ALIVE_TIMEOUT: &str = "SDKWORK_CLOUDROUTER_PROVIDER_HTTP2_KEEP_ALIVE_TIMEOUT_SECONDS";
+    const HTTP2_KEEP_ALIVE_TIMEOUT: &str =
+        "SDKWORK_CLOUDROUTER_PROVIDER_HTTP2_KEEP_ALIVE_TIMEOUT_SECONDS";
     const CONNECT_TIMEOUT: &str = "SDKWORK_CLOUDROUTER_PROVIDER_HTTP_CONNECT_TIMEOUT_SECONDS";
     const ESTIMATED_INSTANCE_COUNT: &str =
         "SDKWORK_CLOUDROUTER_PROVIDER_RATE_LIMIT_ESTIMATED_INSTANCE_COUNT";
@@ -2939,7 +3098,8 @@ fn provider_relay_runtime_config_from_env_or_toml(
     let tenant_inflight_config = TenantInflightConfig {
         max_inflight: tenant_max_inflight,
     };
-    const TENANT_INFLIGHT_USE_CHAIN_STAGE: &str = "SDKWORK_CLOUDROUTER_PROVIDER_TENANT_INFLIGHT_USE_CHAIN_STAGE";
+    const TENANT_INFLIGHT_USE_CHAIN_STAGE: &str =
+        "SDKWORK_CLOUDROUTER_PROVIDER_TENANT_INFLIGHT_USE_CHAIN_STAGE";
     let tenant_inflight_use_chain_stage = parse_optional_bool_config(
         TENANT_INFLIGHT_USE_CHAIN_STAGE,
         rate_limit_section.and_then(|section| section.tenant_inflight_use_chain_stage),
@@ -2969,7 +3129,8 @@ fn parse_positive_u32_config(
     config_value: Option<u32>,
     default: u32,
 ) -> Result<u32, String> {
-    let parsed = sdkwork_cloudrouter_config::runtime::config_u32(name, config_value)?.unwrap_or(default);
+    let parsed =
+        sdkwork_cloudrouter_config::runtime::config_u32(name, config_value)?.unwrap_or(default);
     if parsed == 0 {
         return Err(format!("{name} must be a positive integer"));
     }
@@ -3153,6 +3314,111 @@ gateway_invocation_body_max_bytes = 37
         let finalize_at = source
             .find("= finalize_all_in_one_route_surfaces(")
             .expect("framework finalize call after membership merge");
+        assert!(merge_at < finalize_at);
+    }
+
+    #[test]
+    fn all_in_one_backend_composes_payment_backend_surface_through_assembly() {
+        let source = include_str!("runtime.rs");
+
+        // Dependency-owned payment backend surface enters through the payment
+        // API assembly entrypoint on the shared commerce pool
+        // (API_ASSEMBLY_SPEC §3/§6.1), never through a direct route-crate import.
+        assert!(source.contains("sdkwork_api_payment_assembly::assemble_backend_business_router("));
+        let forbidden_route_crate_import = ["sdkwork_routes_payment", "_backend_api::"].concat();
+        assert!(
+            !source.contains(&forbidden_route_crate_import),
+            "payment backend surface must not import the dependency route crate directly"
+        );
+        // The payment backend router must be merged before the Web Framework
+        // layer is installed by `finalize_all_in_one_route_surfaces`; a merge
+        // after framework installation would leave it without request context.
+        let merge_at = source
+            .find(".merge(payment_backend_assembly.router)")
+            .expect("payment backend router merge before framework finalize");
+        let finalize_at = source
+            .find("= finalize_all_in_one_route_surfaces(")
+            .expect("framework finalize call after payment merge");
+        assert!(merge_at < finalize_at);
+    }
+
+    #[test]
+    fn all_in_one_backend_composes_order_backend_surface_through_assembly() {
+        let source = include_str!("runtime.rs");
+
+        // Dependency-owned order backend surface enters through the order API
+        // assembly entrypoint on the shared commerce pool (API_ASSEMBLY_SPEC
+        // §3/§6.1), never through a direct route-crate import.
+        assert!(source
+            .contains("sdkwork_api_order_assembly::assemble_backend_business_router_from_env("));
+        let forbidden_route_crate_import = ["sdkwork_routes_order", "_backend_api::"].concat();
+        assert!(
+            !source.contains(&forbidden_route_crate_import),
+            "order backend surface must not import the dependency route crate directly"
+        );
+        // The order backend router must be merged before the Web Framework
+        // layer is installed by `finalize_all_in_one_route_surfaces`; a merge
+        // after framework installation would leave it without request context.
+        let merge_at = source
+            .find(".merge(order_backend_assembly.router)")
+            .expect("order backend router merge before framework finalize");
+        let finalize_at = source
+            .find("= finalize_all_in_one_route_surfaces(")
+            .expect("framework finalize call after order merge");
+        assert!(merge_at < finalize_at);
+    }
+
+    #[test]
+    fn all_in_one_backend_composes_inventory_backend_surface_through_assembly() {
+        let source = include_str!("runtime.rs");
+
+        // Dependency-owned inventory backend surface enters through the
+        // inventory API assembly entrypoint on the shared commerce pool
+        // (API_ASSEMBLY_SPEC §3/§6.1), never through a direct route-crate
+        // import.
+        assert!(source.contains(
+            "sdkwork_api_inventory_assembly::assemble_backend_api_contribution_from_env("
+        ));
+        let forbidden_route_crate_import = ["sdkwork_routes_inventory", "_backend_api::"].concat();
+        assert!(
+            !source.contains(&forbidden_route_crate_import),
+            "inventory backend surface must not import the dependency route crate directly"
+        );
+        // The inventory backend router must be merged before the Web Framework
+        // layer is installed by `finalize_all_in_one_route_surfaces`; a merge
+        // after framework installation would leave it without request context.
+        let merge_at = source
+            .find(".merge(inventory_backend_assembly.router)")
+            .expect("inventory backend router merge before framework finalize");
+        let finalize_at = source
+            .find("= finalize_all_in_one_route_surfaces(")
+            .expect("framework finalize call after inventory merge");
+        assert!(merge_at < finalize_at);
+    }
+
+    #[test]
+    fn all_in_one_backend_composes_iam_backend_surface_through_assembly() {
+        let source = include_str!("runtime.rs");
+
+        // Dependency-owned IAM backend surface enters through the IAM API
+        // assembly backend contribution on the IAM database host
+        // (API_ASSEMBLY_SPEC §3/§6.1), never through a direct route-crate
+        // import.
+        assert!(source.contains("sdkwork_api_iam_assembly::assemble_backend_api_contribution()"));
+        let forbidden_route_crate_import = ["sdkwork_routes_iam", "_backend_api::"].concat();
+        assert!(
+            !source.contains(&forbidden_route_crate_import),
+            "iam backend surface must not import the dependency route crate directly"
+        );
+        // The IAM backend router must be merged before the Web Framework layer
+        // is installed by `finalize_all_in_one_route_surfaces`; a merge after
+        // framework installation would leave it without request context.
+        let merge_at = source
+            .find(".merge(iam_backend_assembly.router)")
+            .expect("iam backend router merge before framework finalize");
+        let finalize_at = source
+            .find("= finalize_all_in_one_route_surfaces(")
+            .expect("framework finalize call after iam merge");
         assert!(merge_at < finalize_at);
     }
 

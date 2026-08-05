@@ -9,7 +9,9 @@ use sdkwork_web_core::{
 };
 use tower::ServiceExt;
 
-use sdkwork_cloudrouter_http::{project_trusted_subject_from_web_request_context, TrustedRequestSubject};
+use sdkwork_cloudrouter_http::{
+    project_trusted_subject_from_web_request_context, TrustedRequestSubject,
+};
 
 async fn echo_subject(subject: Option<TrustedRequestSubject>) -> String {
     subject

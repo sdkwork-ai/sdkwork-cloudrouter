@@ -215,8 +215,11 @@ The retired upstream aggregates are not valid production authorities:
 
 ## 5. Invocation And Routing Lifecycle
 
-1. Authenticate the request and resolve tenant, organization, API key, and
-   permissions from typed request context.
+1. Authenticate the request through the dual-channel bearer credential
+   (`sk-`/`sp-` prefixed gateway API key, or product login auth token resolved
+   through IAM) and resolve tenant, organization, identity, and the account
+   group context — API keys use their default/bound groups; auth-token sessions
+   use the tenant default group (`code="default"`).
 2. Normalize the API operation, model/resource, capability, region, streaming,
    and idempotency/sticky identity.
 3. Resolve ordered account groups from routing policy and API-key entitlement.
@@ -232,6 +235,10 @@ The retired upstream aggregates are not valid production authorities:
    the selected adapter. Retry only when policy and request idempotency allow it.
 9. Record redacted routing decision, usage, health feedback, procurement cost,
    customer charge, audit, and settlement facts.
+
+The detailed account-pool routing pipeline (policy scopes, rule matching,
+in-group ordering, circuit breaker, model mapping) is documented in
+[TECH-2026-05-10-group-account-pool-routing](TECH-2026-05-10-group-account-pool-routing.md).
 
 No fallback crosses tenant/organization boundaries. No credential may be used
 for another account, auth method, or endpoint target. Candidate snapshots,

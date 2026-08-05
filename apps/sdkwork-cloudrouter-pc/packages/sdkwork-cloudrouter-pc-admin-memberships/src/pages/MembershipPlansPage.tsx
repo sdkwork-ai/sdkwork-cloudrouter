@@ -22,9 +22,11 @@ import {
   type MembershipsAdminPlanMutationInput,
   type MembershipsAdminPageInfo,
 } from '../membershipsService';
+import { formatMembershipDateTime } from '../membershipFormat';
 
 export function MembershipPlansPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const displayLocale = i18n.resolvedLanguage ?? i18n.language ?? 'en-US';
   const [plans, setPlans] = useState<MembershipsAdminPlanItem[]>([]);
   const [editingPlan, setEditingPlan] = useState<MembershipsAdminPlanItem | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -118,7 +120,7 @@ export function MembershipPlansPage() {
               }}
               onPreviousPage={() => setPage((current) => Math.max(1, current - 1))}
               page={page}
-              pageLabel={membershipPageLabel(t('common.pagination.page', 'Page'), page, pageInfo)}
+              pageLabel={membershipPageLabel(t, page, pageInfo)}
               pageSize={pageSize}
               pageSizeLabel={t('common.pagination.rows', 'Rows')}
               pageSizeOptions={[20, 50, 100]}
@@ -150,7 +152,7 @@ export function MembershipPlansPage() {
                     <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">{plan.rank}</td>
                     <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">{plan.benefitCount}</td>
                     <td className="px-4 py-2.5"><MembershipStatusBadge status={plan.status} /></td>
-                    <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{plan.updatedAt}</td>
+                    <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{formatMembershipDateTime(plan.updatedAt, displayLocale)}</td>
                     <td className="px-4 py-2.5">
                       <MembershipTableActions>
                         <MembershipIconActionButton label={t('common.actions.edit', 'Edit')} icon={<Pencil className="h-4 w-4" />} onClick={() => openEditDrawer(plan)} />

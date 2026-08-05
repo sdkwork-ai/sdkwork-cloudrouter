@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BottomPagination } from '@sdkwork/cloudroutes-pc-commons';
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
@@ -29,23 +29,35 @@ export function MembershipEntitlementsPage({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [pageInfo, setPageInfo] = useState<MembershipsAdminPageInfo | null>(null);
+  const requestIdRef = useRef(0);
 
   const loadRecords = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setIsLoading(true);
     setError(null);
     try {
       const result = await loadEntitlements({ page, pageSize });
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
       setEntitlements(result.items);
       setPageInfo(result.pageInfo);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : t('admin.commerce.memberships.entitlements.error', 'Entitlements could not be loaded'));
+      if (requestId === requestIdRef.current) {
+        setError(loadError instanceof Error ? loadError.message : t('admin.commerce.memberships.entitlements.error', 'Entitlements could not be loaded'));
+      }
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [loadEntitlements, page, pageSize, t]);
 
   useEffect(() => {
     void loadRecords();
+    return () => {
+      requestIdRef.current += 1;
+    };
   }, [loadRecords]);
 
   return (
@@ -68,7 +80,7 @@ export function MembershipEntitlementsPage({
             }}
             onPreviousPage={() => setPage((current) => Math.max(1, current - 1))}
             page={page}
-            pageLabel={membershipPageLabel(t('common.pagination.page', 'Page'), page, pageInfo)}
+            pageLabel={membershipPageLabel(t, page, pageInfo)}
             pageSize={pageSize}
             pageSizeLabel={t('common.pagination.rows', 'Rows')}
             pageSizeOptions={[20, 50, 100]}

@@ -15,17 +15,16 @@ use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::Router;
-use serde::{Deserialize, Serialize};
 use sdkwork_web_chain::ChainPolicy;
+use serde::{Deserialize, Serialize};
 
 use crate::api::admin_sql_subject::SqlScopedAdminSubject;
 use crate::api::request_id::generate_server_request_id;
 use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::{validate_chain_policy, EntityUuidGenerator};
 use crate::ports::{
-    AdminChainPolicyItem, AdminChainPolicyStore, AdminChainPolicySubject,
+    AdminChainPolicyItem, AdminChainPolicyStore, AdminChainPolicySubject, UpsertChainPolicyCommand,
     ADMIN_CHAIN_POLICY_SCOPE_API_KEY, ADMIN_CHAIN_POLICY_SCOPE_GLOBAL,
-    UpsertChainPolicyCommand,
 };
 
 const MAX_POLICY_NAME_LEN: usize = 128;
@@ -117,9 +116,8 @@ fn json_chain_policy_response(
                 scope_type: requested_scope_type,
                 scope_id: requested_scope_id,
                 policy_name: String::new(),
-                payload: serde_json::to_value(ChainPolicy::default()).unwrap_or_else(|_| {
-                    serde_json::json!({})
-                }),
+                payload: serde_json::to_value(ChainPolicy::default())
+                    .unwrap_or_else(|_| serde_json::json!({})),
                 updated_at: String::new(),
             };
             Json(success_envelope(AdminChainPolicyItemEnvelope { item })).into_response()
@@ -199,8 +197,9 @@ fn build_upsert_command(
     scope_id: i64,
     policy: ChainPolicy,
 ) -> Result<UpsertChainPolicyCommand, String> {
-    let request_id = request_id_from_headers(headers)
-        .unwrap_or_else(|| generate_server_request_id().unwrap_or_else(|_| "chain-policy".to_owned()));
+    let request_id = request_id_from_headers(headers).unwrap_or_else(|| {
+        generate_server_request_id().unwrap_or_else(|_| "chain-policy".to_owned())
+    });
     let requested_at = current_timestamp_string();
     let audit_log_uuid = state
         .entity_uuid_generator
@@ -217,9 +216,8 @@ fn build_upsert_command(
         policy_name,
         scope_type,
         scope_id,
-        payload: serde_json::to_value(policy).map_err(|error| {
-            format!("chain policy could not be serialized: {error}")
-        })?,
+        payload: serde_json::to_value(policy)
+            .map_err(|error| format!("chain policy could not be serialized: {error}"))?,
         request_id,
         requested_at,
     })
@@ -266,7 +264,6 @@ fn civil_from_days(days: i64) -> (i64, i64, i64) {
     let m = if mp < 10 { mp + 3 } else { mp - 9 };
     (if m <= 2 { y + 1 } else { y }, m, d)
 }
-
 
 fn bad_request(message: impl Into<String>) -> Response {
     problem_from_wire_code("4001", message.into()).into_response()

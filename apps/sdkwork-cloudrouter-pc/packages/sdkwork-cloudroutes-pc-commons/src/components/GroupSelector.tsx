@@ -380,7 +380,7 @@ export function GroupSelector({
               onMouseEnter={scheduleHoverShow}
               onMouseLeave={scheduleHoverHide}
               data-sdk-group-selector-hover-card
-              className="fixed z-[110] rounded-xl border border-slate-200 bg-white p-3 shadow-lg animate-in fade-in zoom-in-95 duration-100 dark:border-white/10 dark:bg-[#1a1a1a]"
+              className="fixed z-[200] rounded-xl border border-slate-200 bg-white p-3 shadow-lg animate-in fade-in zoom-in-95 duration-100 dark:border-white/10 dark:bg-[#1a1a1a]"
               style={{ top: hoverStyle.top, left: hoverStyle.left, width: hoverStyle.width }}
             >
               {isMultiple ? (
@@ -433,7 +433,7 @@ export function GroupSelector({
               role="listbox"
               aria-multiselectable={isMultiple}
               data-sdk-group-selector
-              className="fixed z-[110] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl animate-in fade-in zoom-in-95 duration-150 dark:border-white/10 dark:bg-[#1a1a1a]"
+              className="fixed z-[200] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl animate-in fade-in zoom-in-95 duration-150 dark:border-white/10 dark:bg-[#1a1a1a]"
               style={{ top: panelStyle.top, left: panelStyle.left, width: panelStyle.width }}
             >
               {filterable ? (

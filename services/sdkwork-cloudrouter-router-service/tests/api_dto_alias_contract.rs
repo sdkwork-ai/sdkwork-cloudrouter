@@ -9,10 +9,6 @@ const PRODUCT_API_SOURCES: &[(&str, &str)] = &[
         include_str!("../src/api/admin_finance.rs"),
     ),
     (
-        "admin_inventory.rs",
-        include_str!("../src/api/admin_inventory.rs"),
-    ),
-    (
         "admin_marketing.rs",
         include_str!("../src/api/admin_marketing.rs"),
     ),

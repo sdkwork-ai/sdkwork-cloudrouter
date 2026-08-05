@@ -292,7 +292,7 @@
     },
     {
       "path": "src/types/admin-storage-provider-create-request.ts",
-      "sha256": "5688f5f918a083282c301df51ab88fa946689f88aaacf200a07beaaf2be3fd35"
+      "sha256": "2291b2f25f582c0b5abf11f3cecd461c0f9ff111819273cbbdeaa0128f0e6516"
     },
     {
       "path": "src/types/admin-storage-provider-list-response.ts",
@@ -300,7 +300,7 @@
     },
     {
       "path": "src/types/admin-storage-provider.ts",
-      "sha256": "3f1c1dd66a6558adad37e6e65113e6519ae7b86a5abdf19c54444e461cc195d8"
+      "sha256": "4f4e86156d3ab095dfa9923230724452ff9eb6af2c7ac5ad9757cfb743d5d917"
     },
     {
       "path": "src/types/admin-storage-quota-create-request.ts",

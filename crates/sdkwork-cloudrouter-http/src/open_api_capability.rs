@@ -199,6 +199,9 @@ mod tests {
                 OpenApiCapability::Knowledgebase,
             ),
             (Method::POST, "/v1/chat/completions", OpenApiCapability::Llm),
+            // Gateway-native balance endpoint: registered in the open-api
+            // authority so both standalone and cloud hosts dispatch it.
+            (Method::GET, "/v1/user/balance", OpenApiCapability::Llm),
             (Method::POST, "/v1/conversations", OpenApiCapability::Memory),
             (
                 Method::POST,

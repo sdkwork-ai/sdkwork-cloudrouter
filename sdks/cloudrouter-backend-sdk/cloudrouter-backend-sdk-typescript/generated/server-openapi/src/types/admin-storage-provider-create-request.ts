@@ -4,12 +4,14 @@ export interface AdminStorageProviderCreateRequest {
   credentialRef: string;
   /** Endpoint url field on admin storage provider create request. */
   endpointUrl?: string | null;
+  /** Name field on admin storage provider create request. */
+  name: string;
   /** Path style enabled field on admin storage provider create request. */
   pathStyleEnabled?: boolean | null;
   /** Provider code field on admin storage provider create request. */
-  providerCode: string;
+  providerCode?: string | null;
   /** Provider type field on admin storage provider create request. */
-  providerType: 'aws_s3' | 'cloudflare_r2' | 'cos_s3' | 'local_dev_s3' | 'minio' | 'oss_s3' | 's3_compatible';
+  providerType: 'aws_s3' | 'baidu_bos' | 'cloudflare_r2' | 'cos_s3' | 'huawei_obs' | 'jdcloud_oss' | 'local_dev_s3' | 'minio' | 'oss_s3' | 'qiniu_kodo' | 's3_compatible' | 'volcengine_tos';
   /** Region field on admin storage provider create request. */
   region?: string | null;
   /** Supports lifecycle field on admin storage provider create request. */

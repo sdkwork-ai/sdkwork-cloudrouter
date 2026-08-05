@@ -14,7 +14,7 @@ use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::ports::{
-    AdminAuthSettings, AdminAuthSettingsStore, AdminAuthSettingsSubject,
+    AdminAuthInviteCodePolicy, AdminAuthSettings, AdminAuthSettingsStore, AdminAuthSettingsSubject,
     AdminAuthVerificationPolicy, AdminAuthWechatMini, AdminAuthWechatOfficial,
     AdminAuthWechatSettings, GetAdminAuthSettingsQuery, UpdateAdminAuthSettingsCommand,
 };
@@ -38,7 +38,15 @@ struct AdminAuthSettingsUpdateRequest {
     recovery_methods: Option<Vec<String>>,
     register_methods: Option<Vec<String>>,
     verification_policy: Option<AdminAuthVerificationPolicyUpdateRequest>,
+    invite_code_policy: Option<AdminAuthInviteCodePolicyUpdateRequest>,
     wechat: Option<AdminAuthWechatUpdateRequest>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AdminAuthInviteCodePolicyUpdateRequest {
+    register_required: Option<bool>,
+    login_required: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -100,7 +108,15 @@ struct AdminAuthSettingsResponse {
     recovery_methods: Vec<String>,
     register_methods: Vec<String>,
     verification_policy: AdminAuthVerificationPolicyResponse,
+    invite_code_policy: AdminAuthInviteCodePolicyResponse,
     wechat: AdminAuthWechatResponse,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AdminAuthInviteCodePolicyResponse {
+    register_required: bool,
+    login_required: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -282,6 +298,9 @@ fn merge_update_request(
     if let Some(value) = request.verification_policy {
         current.verification_policy = merge_verification_policy(current.verification_policy, value);
     }
+    if let Some(value) = request.invite_code_policy {
+        current.invite_code_policy = merge_invite_code_policy(current.invite_code_policy, value);
+    }
     if let Some(value) = request.wechat {
         current.wechat = merge_wechat_settings(current.wechat, value)?;
     }
@@ -305,6 +324,19 @@ fn merge_verification_policy(
     }
     if let Some(value) = request.phone_registration_verification_required {
         current.phone_registration_verification_required = value;
+    }
+    current
+}
+
+fn merge_invite_code_policy(
+    mut current: AdminAuthInviteCodePolicy,
+    request: AdminAuthInviteCodePolicyUpdateRequest,
+) -> AdminAuthInviteCodePolicy {
+    if let Some(value) = request.register_required {
+        current.register_required = value;
+    }
+    if let Some(value) = request.login_required {
+        current.login_required = value;
     }
     current
 }
@@ -697,6 +729,10 @@ fn to_response(settings: AdminAuthSettings) -> AdminAuthSettingsResponse {
                 .verification_policy
                 .phone_registration_verification_required,
         },
+        invite_code_policy: AdminAuthInviteCodePolicyResponse {
+            register_required: settings.invite_code_policy.register_required,
+            login_required: settings.invite_code_policy.login_required,
+        },
         wechat: to_wechat_response(settings.wechat),
     }
 }
@@ -792,6 +828,21 @@ fn civil_from_days(days: i64) -> (i64, i64, i64) {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn merge_update_request_merges_invite_code_policy_partial() {
+        let request: AdminAuthSettingsUpdateRequest = serde_json::from_value(json!({
+            "inviteCodePolicy": {
+                "registerRequired": true
+            }
+        }))
+        .unwrap();
+
+        let settings = merge_update_request(AdminAuthSettings::default(), request).unwrap();
+
+        assert!(settings.invite_code_policy.register_required);
+        assert!(!settings.invite_code_policy.login_required);
+    }
 
     #[test]
     fn merge_update_request_accepts_compact_wechat_qr_settings() {

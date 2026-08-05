@@ -11,6 +11,7 @@ import {
   MembershipTablePanel,
   confirmMembershipAction,
   hasNextMembershipPage,
+  membershipBillingCycleLabel,
   membershipPageLabel,
 } from '../components/MembershipPageControls';
 import { MembershipStatusBadge } from '../components/MembershipStatusBadge';
@@ -133,7 +134,7 @@ export function MembershipPackageGroupsPage() {
               }}
               onPreviousPage={() => setPage((current) => Math.max(1, current - 1))}
               page={page}
-              pageLabel={membershipPageLabel(t('common.pagination.page', 'Page'), page, pageInfo)}
+              pageLabel={membershipPageLabel(t, page, pageInfo)}
               pageSize={pageSize}
               pageSizeLabel={t('common.pagination.rows', 'Rows')}
               pageSizeOptions={[20, 50, 100]}
@@ -163,8 +164,8 @@ export function MembershipPackageGroupsPage() {
                       <div className="font-medium text-slate-900 dark:text-white">{group.name}</div>
                       <div className="text-xs text-slate-400">{group.code}</div>
                     </td>
-                    <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{group.billingCycle}</td>
-                    <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">{group.durationDays}d</td>
+                    <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{membershipBillingCycleLabel(group.billingCycle, t)}</td>
+                    <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">{t('admin.commerce.memberships.groups.form.durationOptionDays', '{{days}} days', { days: group.durationDays })}</td>
                     <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">{group.packageCount}</td>
                     <td className="px-4 py-2.5"><MembershipStatusBadge status={group.status} /></td>
                     <td className="px-4 py-2.5">

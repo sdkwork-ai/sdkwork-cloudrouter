@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Activity, BarChart3, CheckCircle2, CreditCard, Eye, Pencil, Plus, Receipt, RotateCcw, ShieldCheck, Trash2 } from 'lucide-react';
+import { Activity, BarChart3, CheckCircle2, CreditCard, Eye, Pencil, Plus, QrCode, Receipt, RotateCcw, ShieldCheck, Trash2, Undo2 } from 'lucide-react';
 import {
   AdminResourceCenter,
   AdminResourceHelpButton,
@@ -32,6 +32,8 @@ import {
   backendPaymentMethodsUpdate,
   backendPaymentProviderAccountsList,
   backendPaymentReconciliationRunsCreate,
+  backendPaymentRefundsCreate,
+  backendPaymentRefundsRetry,
   backendPaymentRouteRulesCreate,
   backendPaymentRouteRulesDelete,
   backendPaymentRouteRulesUpdate,
@@ -42,6 +44,7 @@ import {
   backendPaymentsMethodsList,
   backendPaymentsProvidersList,
   backendPaymentsReconciliationRunsList,
+  backendPaymentsRefundsList,
   backendPaymentsRouteRulesList,
   backendPaymentsWebhookEventsList,
 } from './paymentsService';
@@ -64,7 +67,18 @@ import {
   type ReconciliationRunFormValues,
   type RouteRuleFormValues,
 } from './forms/PaymentMaintenanceDialogs';
+import {
+  buildRefundCreateCommand,
+  buildRefundRetryCommand,
+  formatRefundAmount,
+  RefundCreateDialog,
+  RefundRetryDialog,
+  type RefundCreateFormValues,
+  type RefundRetryFormValues,
+} from './forms/RefundDialogs';
 import { IntentDetailDrawer } from './components/IntentDetailDrawer';
+import { RefundDetailDrawer } from './components/RefundDetailDrawer';
+import { PaymentTestDialog } from './components/PaymentTestDialog';
 
 type PaymentsAdminTab =
   | 'providers'
@@ -75,7 +89,8 @@ type PaymentsAdminTab =
   | 'intents'
   | 'attempts'
   | 'webhookEvents'
-  | 'reconciliationRuns';
+  | 'reconciliationRuns'
+  | 'refunds';
 
 type PaymentResourceTab = Exclude<PaymentsAdminTab, 'providerAccounts'>;
 type PaymentsAdminGroup = string;
@@ -101,6 +116,7 @@ function resolvePaymentsSectionId(sectionId?: string): PaymentsAdminTab {
     || sectionId === 'attempts'
     || sectionId === 'webhookEvents'
     || sectionId === 'reconciliationRuns'
+    || sectionId === 'refunds'
   ) {
     return sectionId;
   }
@@ -129,7 +145,9 @@ function PaymentProviderAccountsAdmin() {
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col gap-3 overflow-hidden" data-admin-payments-provider-workspace>
-      <div className="min-h-0 flex-1 overflow-auto">
+      {/* The workspace manages its own scroll inside the tab content so the
+          tab header stays visible and the list fills the available height. */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <PaymentProviderAdminWorkspace
           capabilities={capabilities}
           controller={controller}
@@ -157,6 +175,7 @@ function PaymentProviderAccountsAdmin() {
 type PaymentDialogState =
   | { kind: 'method-create' }
   | { kind: 'method-edit'; record: AdminResourceRecord }
+  | { kind: 'method-test-payment'; record: AdminResourceRecord }
   | { kind: 'channel-create' }
   | { kind: 'routeRule-create' }
   | { kind: 'routeRule-edit'; record: AdminResourceRecord }
@@ -165,20 +184,31 @@ type PaymentDialogState =
   | { kind: 'webhook-replay'; record: AdminResourceRecord }
   | { kind: 'sandbox-trigger-intent'; record: AdminResourceRecord }
   | { kind: 'sandbox-trigger-attempt'; record: AdminResourceRecord }
+  | { kind: 'refund-create'; intentId?: string; intentNo?: string }
+  | { kind: 'refund-retry'; record: AdminResourceRecord }
   | null;
 
 const PENDING_PAYMENT_STATUSES = new Set(['created', 'pending', 'processing']);
+
+/**
+ * Provider codes whose checkout returns a scan-to-pay QR code; the one-cent
+ * test action is offered only for these payment methods.
+ */
+const QR_TEST_PROVIDER_CODES = new Set(['wechat_pay', 'alipay', 'sandbox']);
 
 function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentResourceTab }) {
   const { t, i18n } = useTranslation();
   const [dialog, setDialog] = useState<PaymentDialogState>(null);
   const [detailIntentId, setDetailIntentId] = useState<string | null>(null);
+  const [detailRefundId, setDetailRefundId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ kind: 'error' | 'success'; text: string } | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const paymentSections = useMemo<AdminResourceSection<PaymentResourceTab, PaymentsAdminGroup>[]>(() => {
     const formatStatus = formatEnumCell(t, 'admin.commerce.payments.value.status');
+    const formatReasonCode = formatEnumCell(t, 'admin.commerce.payments.value.reasonCode');
+    const formatRequestedByType = formatEnumCell(t, 'admin.commerce.payments.value.requestedByType');
     const formatScope = formatEnumCell(t, 'admin.commerce.payments.value.scope');
     const formatScene = formatEnumCell(t, 'admin.commerce.payments.value.scene');
     const formatReconciliationType = formatEnumCell(t, 'admin.commerce.payments.value.reconciliationType');
@@ -228,6 +258,12 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
         label: t('admin.commerce.payments.methods.edit', 'Edit'),
         icon: <Pencil className="h-3.5 w-3.5" />,
         onClick: (record) => setDialog({ kind: 'method-edit', record }),
+      }, {
+        label: t('admin.commerce.payments.methods.testPayment.action', 'One-cent test'),
+        icon: <QrCode className="h-3.5 w-3.5" />,
+        isVisible: (record) => QR_TEST_PROVIDER_CODES.has(String(record.providerCode ?? ''))
+          && String(record.status ?? '') === 'active',
+        onClick: (record) => setDialog({ kind: 'method-test-payment', record }),
       }],
       columns: [
         { key: 'methodKey', label: t('admin.commerce.payments.col.methodKey', 'Method Key') },
@@ -325,6 +361,15 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
         label: t('admin.commerce.payments.intents.detail.open', 'Details'),
         icon: <Eye className="h-3.5 w-3.5" />,
         onClick: (record) => setDetailIntentId(String(record.id ?? '')),
+      }, {
+        label: t('admin.commerce.payments.refunds.create.intentAction', 'Refund'),
+        icon: <Undo2 className="h-3.5 w-3.5" />,
+        isVisible: (record) => String(record.status ?? '') === 'succeeded',
+        onClick: (record) => setDialog({
+          kind: 'refund-create',
+          intentId: String(record.id ?? ''),
+          intentNo: String(record.paymentIntentNo ?? ''),
+        }),
       }, {
         label: t('admin.commerce.payments.sandboxTrigger.action', 'Simulate success callback'),
         icon: <RotateCcw className="h-3.5 w-3.5" />,
@@ -431,6 +476,44 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       searchFields: ['runNo', 'providerCode', 'reconciliationType', 'status', 'periodStart', 'periodEnd'],
       help: sectionHelp(t, 'reconciliationRuns', 6, 3),
     }),
+    createPaymentListSection({
+      id: 'refunds',
+      title: t('admin.commerce.payments.refunds.title', 'Refunds'),
+      description: t('admin.commerce.payments.refunds.desc', 'Operator-initiated refunds with idempotent creation, retry of failed refunds, and amount-bounded processing.'),
+      icon: <Undo2 className="h-4 w-4" />,
+      group: t('admin.commerce.payments.group.riskReconciliation', 'Risk & Reconciliation'),
+      load: backendPaymentsRefundsList,
+      action: {
+        label: t('admin.commerce.payments.refunds.create.action', 'Create refund'),
+        icon: <Plus className="h-4 w-4" />,
+        onClick: () => setDialog({ kind: 'refund-create' }),
+      },
+      rowActions: [{
+        label: t('admin.commerce.payments.refunds.detail.open', 'Details'),
+        icon: <Eye className="h-3.5 w-3.5" />,
+        onClick: (record) => setDetailRefundId(String(record.id ?? '')),
+      }, {
+        label: t('admin.commerce.payments.refunds.retry.action', 'Retry'),
+        icon: <RotateCcw className="h-3.5 w-3.5" />,
+        isVisible: (record) => String(record.status ?? '') === 'failed',
+        onClick: (record) => setDialog({ kind: 'refund-retry', record }),
+      }],
+      columns: [
+        { key: 'refundNo', label: t('admin.commerce.payments.col.refundNo', 'Refund No') },
+        { key: 'orderId', label: t('admin.col.order', 'Order') },
+        { key: 'paymentIntentId', label: t('admin.commerce.payments.col.paymentIntentId', 'Intent ID') },
+        { key: 'providerCode', label: t('admin.col.provider', 'Provider') },
+        { key: 'amount', label: t('admin.col.amount', 'Amount'), align: 'right', format: (value, record) => formatRefundAmount(value, String(record.currencyCode ?? '')) },
+        { key: 'currencyCode', label: t('admin.col.currency', 'Currency') },
+        { key: 'status', label: t('admin.col.status', 'Status'), format: formatStatus },
+        { key: 'reasonCode', label: t('admin.commerce.payments.col.reasonCode', 'Reason'), format: formatReasonCode },
+        { key: 'requestedByType', label: t('admin.commerce.payments.col.requestedByType', 'Requested By'), format: formatRequestedByType },
+        { key: 'createdAt', label: t('admin.col.created', 'Created') },
+        { key: 'updatedAt', label: t('admin.col.updated', 'Updated') },
+      ],
+      searchFields: ['refundNo', 'orderId', 'paymentIntentId', 'status', 'reasonCode'],
+      help: sectionHelp(t, 'refunds', 5, 3),
+    }),
     ];
   }, [t, i18n]);
 
@@ -456,6 +539,14 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
 
   async function submitReconciliationForm(values: ReconciliationRunFormValues) {
     await backendPaymentReconciliationRunsCreate(buildReconciliationRunCreateCommand(values));
+  }
+
+  async function submitRefundCreateForm(values: RefundCreateFormValues) {
+    await backendPaymentRefundsCreate(buildRefundCreateCommand(values), values.idempotencyKey);
+  }
+
+  async function submitRefundRetryForm(values: RefundRetryFormValues, state: Extract<PaymentDialogState, { kind: 'refund-retry' }>) {
+    await backendPaymentRefundsRetry(String(state.record.id ?? ''), buildRefundRetryCommand(values), values.idempotencyKey);
   }
 
   async function runDialogAction(action: () => Promise<unknown>, successText: string, errorText: string) {
@@ -577,6 +668,12 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
           saving={saving}
         />
       ) : null}
+      {dialog?.kind === 'method-test-payment' ? (
+        <PaymentTestDialog
+          onClose={() => setDialog(null)}
+          record={dialog.record}
+        />
+      ) : null}
       {dialog?.kind === 'channel-create' ? (
         <ChannelFormDialog
           onClose={() => setDialog(null)}
@@ -621,6 +718,31 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
             t('admin.commerce.payments.operationSuccess', 'Operation completed successfully.'),
             t('admin.commerce.payments.operationError', 'Operation failed.'),
           )}
+          saving={saving}
+        />
+      ) : null}
+      {dialog?.kind === 'refund-create' ? (
+        <RefundCreateDialog
+          initialIntentId={dialog.intentId}
+          initialIntentNo={dialog.intentNo}
+          onClose={() => setDialog(null)}
+          onSubmit={(values) => void runDialogAction(
+            () => submitRefundCreateForm(values),
+            t('admin.commerce.payments.refunds.create.success', 'Refund submitted successfully.'),
+            t('admin.commerce.payments.refunds.create.error', 'Refund could not be submitted.'),
+          )}
+          saving={saving}
+        />
+      ) : null}
+      {dialog?.kind === 'refund-retry' ? (
+        <RefundRetryDialog
+          onClose={() => setDialog(null)}
+          onSubmit={(values) => void runDialogAction(
+            () => submitRefundRetryForm(values, dialog),
+            t('admin.commerce.payments.refunds.retry.success', 'Refund retry submitted successfully.'),
+            t('admin.commerce.payments.refunds.retry.error', 'Refund retry could not be submitted.'),
+          )}
+          record={dialog.record}
           saving={saving}
         />
       ) : null}
@@ -677,6 +799,10 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       <IntentDetailDrawer
         intentId={detailIntentId}
         onClose={() => setDetailIntentId(null)}
+      />
+      <RefundDetailDrawer
+        refundId={detailRefundId}
+        onClose={() => setDetailRefundId(null)}
       />
     </div>
   );

@@ -936,6 +936,35 @@ pub struct OpenAiModelResponse {
     pub extra: Map<String, Value>,
 }
 
+/// Response of the Cloud Router `GET /v1/vendors` extension endpoint: the
+/// model providers the authenticated gateway key can actually reach, each
+/// with the models available through it. Consumers (e.g. Birdcoder imports)
+/// write this straight into their channel offerings.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OpenAiVendorListResponse {
+    #[serde(rename = "object")]
+    pub object: String,
+    pub data: Vec<OpenAiVendorResponse>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OpenAiVendorResponse {
+    pub code: String,
+    pub name: String,
+    pub models: Vec<OpenAiVendorModelResponse>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OpenAiVendorModelResponse {
+    pub id: String,
+    #[serde(rename = "displayName")]
+    pub display_name: String,
+    #[serde(rename = "contextTokens", skip_serializing_if = "Option::is_none")]
+    pub context_tokens: Option<i64>,
+    #[serde(rename = "maxOutputTokens", skip_serializing_if = "Option::is_none")]
+    pub max_output_tokens: Option<i64>,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct OpenAiErrorEnvelope {
     pub error: OpenAiErrorBody,

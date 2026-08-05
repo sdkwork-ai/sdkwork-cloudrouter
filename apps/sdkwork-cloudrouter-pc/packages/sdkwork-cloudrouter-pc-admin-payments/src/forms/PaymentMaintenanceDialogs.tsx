@@ -382,7 +382,7 @@ export function PaymentConfirmDialog({ title, description, confirmLabel, process
   );
 }
 
-function TextField({ description, label, onChange, ...props }: { description?: string; label: string; onChange: (value: string) => void } & Omit<InputHTMLAttributes<HTMLInputElement>, 'className' | 'onChange'>) {
+export function TextField({ description, label, onChange, ...props }: { description?: string; label: string; onChange: (value: string) => void } & Omit<InputHTMLAttributes<HTMLInputElement>, 'className' | 'onChange'>) {
   return (
     <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
       <span>{label}</span>
@@ -394,7 +394,7 @@ function TextField({ description, label, onChange, ...props }: { description?: s
 
 type SelectOption = string | { label: string; value: string };
 
-function SelectField({ disabled, label, onChange, options, translateOptionPrefix, value }: {
+export function SelectField({ disabled, label, onChange, options, translateOptionPrefix, value }: {
   disabled?: boolean;
   label: string;
   onChange: (value: string) => void;
@@ -571,7 +571,7 @@ function useDictionaryOptions(typeCode: string, fallback: readonly string[]): Se
  * Field label wrapper matching the dialog text/select field layout for the
  * shared searchable base-data selects (which do not render their own label).
  */
-function BaseDataFieldLabel({ children, label }: { children: ReactNode; label: string }) {
+export function DialogFieldLabel({ children, label }: { children: ReactNode; label: string }) {
   return (
     <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
       <span>{label}</span>
@@ -627,7 +627,7 @@ export function MethodFormDialog({ mode, initial, saving, onClose, onSubmit }: M
       <SelectField disabled={mode === 'edit'} label={t('admin.commerce.payments.methods.form.providerCode', 'Provider')} value={values.providerCode} onChange={(value) => set('providerCode', value)} options={providerOptions} />
       <SelectField label={t('admin.commerce.payments.methods.form.status', 'Status')} value={values.status} onChange={(value) => set('status', value)} options={statusOptions} translateOptionPrefix="admin.commerce.payments.value.status" />
       <SelectField label={t('admin.commerce.payments.methods.form.scope', 'Scope')} value={values.scope} onChange={(value) => set('scope', value)} options={scopeOptions} translateOptionPrefix="admin.commerce.payments.value.scope" />
-      <BaseDataFieldLabel label={t('admin.commerce.payments.methods.form.currencyCode', 'Currency code')}>
+      <DialogFieldLabel label={t('admin.commerce.payments.methods.form.currencyCode', 'Currency code')}>
         <SdkworkBaseDataCurrencySelect
           emptyText={t('admin.commerce.payments.form.currencyEmpty', 'No matching currency')}
           maxLength={3}
@@ -636,8 +636,8 @@ export function MethodFormDialog({ mode, initial, saving, onClose, onSubmit }: M
           value={values.currencyCode}
           onValueChange={(value) => set('currencyCode', value)}
         />
-      </BaseDataFieldLabel>
-      <BaseDataFieldLabel label={t('admin.commerce.payments.methods.form.countryCode', 'Country code')}>
+      </DialogFieldLabel>
+      <DialogFieldLabel label={t('admin.commerce.payments.methods.form.countryCode', 'Country code')}>
         <SdkworkBaseDataCountrySelect
           emptyText={t('admin.commerce.payments.form.countryEmpty', 'No matching country')}
           maxLength={2}
@@ -646,7 +646,7 @@ export function MethodFormDialog({ mode, initial, saving, onClose, onSubmit }: M
           value={values.countryCode}
           onValueChange={(value) => set('countryCode', value)}
         />
-      </BaseDataFieldLabel>
+      </DialogFieldLabel>
       <TextField label={t('admin.commerce.payments.methods.form.sortOrder', 'Sort order')} pattern="[0-9]*" type="number" value={values.sortOrder} onChange={(value) => set('sortOrder', value)} />
       {error ? <FormError message={error} /> : null}
     </PaymentDialog>
@@ -700,7 +700,7 @@ export function ChannelFormDialog({ saving, onClose, onSubmit }: ChannelFormDial
       <SelectField label={t('admin.commerce.payments.channels.form.methodId', 'Payment method')} value={values.methodId} onChange={(value) => set('methodId', value)} options={methods.map((method) => ({ label: String(method.methodKey ?? method.id ?? ''), value: String(method.id ?? '') }))} />
       <SelectField label={t('admin.commerce.payments.channels.form.providerCode', 'Provider')} value={values.providerCode} onChange={(value) => set('providerCode', value)} options={providerOptions} />
       <SelectField label={t('admin.commerce.payments.channels.form.sceneCode', 'Scene')} value={values.sceneCode} onChange={(value) => set('sceneCode', value)} options={sceneOptions} translateOptionPrefix="admin.commerce.payments.value.scene" />
-      <BaseDataFieldLabel label={t('admin.commerce.payments.channels.form.currencyCode', 'Currency code')}>
+      <DialogFieldLabel label={t('admin.commerce.payments.channels.form.currencyCode', 'Currency code')}>
         <SdkworkBaseDataCurrencySelect
           emptyText={t('admin.commerce.payments.form.currencyEmpty', 'No matching currency')}
           maxLength={3}
@@ -709,8 +709,8 @@ export function ChannelFormDialog({ saving, onClose, onSubmit }: ChannelFormDial
           value={values.currencyCode}
           onValueChange={(value) => set('currencyCode', value)}
         />
-      </BaseDataFieldLabel>
-      <BaseDataFieldLabel label={t('admin.commerce.payments.channels.form.countryCode', 'Country code')}>
+      </DialogFieldLabel>
+      <DialogFieldLabel label={t('admin.commerce.payments.channels.form.countryCode', 'Country code')}>
         <SdkworkBaseDataCountrySelect
           emptyText={t('admin.commerce.payments.form.countryEmpty', 'No matching country')}
           maxLength={2}
@@ -719,7 +719,7 @@ export function ChannelFormDialog({ saving, onClose, onSubmit }: ChannelFormDial
           value={values.countryCode}
           onValueChange={(value) => set('countryCode', value)}
         />
-      </BaseDataFieldLabel>
+      </DialogFieldLabel>
       <TextField label={t('admin.commerce.payments.channels.form.priority', 'Priority')} type="number" value={values.priority} onChange={(value) => set('priority', value)} />
       <TextField label={t('admin.commerce.payments.channels.form.sortOrder', 'Sort order')} type="number" value={values.sortOrder} onChange={(value) => set('sortOrder', value)} />
       <SelectField label={t('admin.commerce.payments.channels.form.status', 'Status')} value={values.status} onChange={(value) => set('status', value)} options={statusOptions} translateOptionPrefix="admin.commerce.payments.value.status" />
@@ -772,7 +772,7 @@ export function RouteRuleFormDialog({ mode, initial, saving, onClose, onSubmit }
       <TextField disabled={mode === 'edit'} label={t('admin.commerce.payments.routeRules.form.ruleNo', 'Rule no')} required value={values.ruleNo} onChange={(value) => set('ruleNo', value)} />
       <TextField label={t('admin.commerce.payments.routeRules.form.priority', 'Priority')} type="number" value={values.priority} onChange={(value) => set('priority', value)} />
       <TextField label={t('admin.commerce.payments.routeRules.form.purchaseType', 'Purchase type')} value={values.purchaseType} onChange={(value) => set('purchaseType', value)} />
-      <BaseDataFieldLabel label={t('admin.commerce.payments.routeRules.form.countryCode', 'Country code')}>
+      <DialogFieldLabel label={t('admin.commerce.payments.routeRules.form.countryCode', 'Country code')}>
         <SdkworkBaseDataCountrySelect
           emptyText={t('admin.commerce.payments.form.countryEmpty', 'No matching country')}
           maxLength={2}
@@ -781,8 +781,8 @@ export function RouteRuleFormDialog({ mode, initial, saving, onClose, onSubmit }
           value={values.countryCode}
           onValueChange={(value) => set('countryCode', value)}
         />
-      </BaseDataFieldLabel>
-      <BaseDataFieldLabel label={t('admin.commerce.payments.routeRules.form.currencyCode', 'Currency code')}>
+      </DialogFieldLabel>
+      <DialogFieldLabel label={t('admin.commerce.payments.routeRules.form.currencyCode', 'Currency code')}>
         <SdkworkBaseDataCurrencySelect
           emptyText={t('admin.commerce.payments.form.currencyEmpty', 'No matching currency')}
           maxLength={3}
@@ -791,7 +791,7 @@ export function RouteRuleFormDialog({ mode, initial, saving, onClose, onSubmit }
           value={values.currencyCode}
           onValueChange={(value) => set('currencyCode', value)}
         />
-      </BaseDataFieldLabel>
+      </DialogFieldLabel>
       <TextField label={t('admin.commerce.payments.routeRules.form.clientPlatform', 'Client platform')} value={values.clientPlatform} onChange={(value) => set('clientPlatform', value)} />
       <TextField label={t('admin.commerce.payments.routeRules.form.amountMin', 'Amount min')} value={values.amountMin} onChange={(value) => set('amountMin', value)} />
       <TextField label={t('admin.commerce.payments.routeRules.form.amountMax', 'Amount max')} value={values.amountMax} onChange={(value) => set('amountMax', value)} />
@@ -846,7 +846,7 @@ export function ReconciliationRunFormDialog({ saving, onClose, onSubmit }: Recon
       <SelectField label={t('admin.commerce.payments.reconciliationRuns.form.reconciliationType', 'Reconciliation type')} value={values.reconciliationType} onChange={(value) => set('reconciliationType', value)} options={reconciliationTypeOptions} translateOptionPrefix="admin.commerce.payments.value.reconciliationType" />
       <TextField label={t('admin.commerce.payments.reconciliationRuns.form.periodStart', 'Period start')} required type="datetime-local" value={values.periodStart} onChange={(value) => set('periodStart', value)} />
       <TextField label={t('admin.commerce.payments.reconciliationRuns.form.periodEnd', 'Period end')} required type="datetime-local" value={values.periodEnd} onChange={(value) => set('periodEnd', value)} />
-      <BaseDataFieldLabel label={t('admin.commerce.payments.reconciliationRuns.form.currencyCode', 'Currency code')}>
+      <DialogFieldLabel label={t('admin.commerce.payments.reconciliationRuns.form.currencyCode', 'Currency code')}>
         <SdkworkBaseDataCurrencySelect
           emptyText={t('admin.commerce.payments.form.currencyEmpty', 'No matching currency')}
           maxLength={3}
@@ -855,7 +855,7 @@ export function ReconciliationRunFormDialog({ saving, onClose, onSubmit }: Recon
           value={values.currencyCode}
           onValueChange={(value) => set('currencyCode', value)}
         />
-      </BaseDataFieldLabel>
+      </DialogFieldLabel>
       {error ? <FormError message={error} /> : null}
     </PaymentDialog>
   );
@@ -865,7 +865,7 @@ export function ReconciliationRunFormDialog({ saving, onClose, onSubmit }: Recon
 // Helpers
 // ---------------------------------------------------------------------------
 
-function FormError({ message }: { message: string }) {
+export function FormError({ message }: { message: string }) {
   return (
     <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 md:col-span-2" role="alert">
       {message}

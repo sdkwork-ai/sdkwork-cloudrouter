@@ -29,6 +29,7 @@ const DEFAULT_LIMIT: i64 = 20;
 const MAX_LIMIT: i64 = 200;
 const MAX_ID_LEN: usize = 128;
 const MAX_CODE_LEN: usize = 96;
+const MAX_PROVIDER_NAME_LEN: usize = 128;
 const MAX_TYPE_LEN: usize = 64;
 const MAX_URL_LEN: usize = 512;
 const MAX_CREDENTIAL_REF_LEN: usize = 256;
@@ -39,12 +40,17 @@ const IDEMPOTENCY_KEY_HEADER: &str = "Idempotency-Key";
 
 const PROVIDER_TYPES: &[&str] = &[
     "aws_s3",
+    "baidu_bos",
     "cloudflare_r2",
     "cos_s3",
+    "huawei_obs",
+    "jdcloud_oss",
     "local_dev_s3",
     "minio",
     "oss_s3",
+    "qiniu_kodo",
     "s3_compatible",
+    "volcengine_tos",
 ];
 const LOGICAL_SCOPES: &[&str] = &[
     "migration_import",
@@ -105,7 +111,8 @@ struct AdminStorageCursorPayload {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct CreateStorageProviderRequest {
-    provider_code: String,
+    provider_code: Option<String>,
+    name: String,
     provider_type: String,
     endpoint_url: Option<String>,
     region: Option<String>,
@@ -720,11 +727,13 @@ fn validated_provider_create_command(
     ensure_enum(&provider_type, PROVIDER_TYPES, "providerType")?;
     Ok(CreateStorageProviderCommand {
         subject,
-        supplier_code: normalize_required_text(
-            request.provider_code,
-            "providerCode",
-            MAX_CODE_LEN,
-        )?,
+        supplier_code: match request.provider_code.map(|code| code.trim().to_owned()) {
+            Some(code) if !code.is_empty() => {
+                normalize_required_text(code, "providerCode", MAX_CODE_LEN)?
+            }
+            _ => generate_provider_code()?,
+        },
+        name: normalize_display_text(request.name, "name", MAX_PROVIDER_NAME_LEN)?,
         provider_type,
         endpoint_url: normalize_optional_text(request.endpoint_url, "endpointUrl", MAX_URL_LEN)?,
         region: normalize_optional_text(request.region, "region", MAX_TYPE_LEN)?,
@@ -975,6 +984,19 @@ fn optional_header(headers: &HeaderMap, name: &str) -> Result<Option<String>, Ap
     normalize_optional_text(Some(value.to_owned()), name, MAX_REQUEST_ID_LEN)
 }
 
+/// 自动生成唯一服务商编码：provider-<16位随机hex>。
+/// 数据库唯一索引（tenant+org+supplier_code）兜底保证唯一性。
+fn generate_provider_code() -> Result<String, ApiResponseError> {
+    let mut bytes = [0u8; 8];
+    getrandom::fill(&mut bytes).map_err(|error| {
+        ApiResponseError::from(storage_system_response(
+            "failed to generate provider code",
+            DomainError::new(error.to_string()),
+        ))
+    })?;
+    Ok(format!("provider-{:016x}", u64::from_be_bytes(bytes)))
+}
+
 fn normalize_required_text(
     value: String,
     field_name: &str,
@@ -1003,6 +1025,26 @@ fn normalize_optional_text(
         .into());
     }
     Ok(Some(value.to_owned()))
+}
+
+/// 显示名称类字段的规范化：允许任意 Unicode 文本（中文等），
+/// 仅拒绝控制字符并限制长度。与编码类字段（visible ASCII）区分。
+fn normalize_display_text(
+    value: String,
+    field_name: &str,
+    max_len: usize,
+) -> Result<String, ApiResponseError> {
+    let value = value.trim();
+    if value.is_empty() {
+        return Err(bad_request(format!("{field_name} is required")).into());
+    }
+    if value.chars().count() > max_len || value.chars().any(|ch| ch.is_control()) {
+        return Err(bad_request(format!(
+            "{field_name} must not contain control characters and at most {max_len} characters"
+        ))
+        .into());
+    }
+    Ok(value.to_owned())
 }
 
 fn ensure_enum(value: &str, allowed: &[&str], field_name: &str) -> Result<(), ApiResponseError> {

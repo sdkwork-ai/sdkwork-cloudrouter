@@ -223,7 +223,7 @@ export function MarketingListView<T extends object>({
             }}
             onPreviousPage={() => setPage((current) => Math.max(1, current - 1))}
             page={page}
-            pageLabel={marketingPageLabel(t('common.pagination.page', 'Page'), page, pageInfo)}
+            pageLabel={marketingPageLabel(t, page, pageInfo)}
             pageSize={pageSize}
             pageSizeLabel={t('common.pagination.rows', 'Rows')}
             pageSizeOptions={[20, 50, 100]}

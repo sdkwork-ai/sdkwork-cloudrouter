@@ -142,7 +142,9 @@ mod tests {
     };
 
     use super::CloudRouterAppDomainInjector;
-    use sdkwork_cloudrouter_http::{trusted_request_subject_from_web_context, TrustedRequestSubject};
+    use sdkwork_cloudrouter_http::{
+        trusted_request_subject_from_web_context, TrustedRequestSubject,
+    };
     use sdkwork_web_core::DomainContextInjector;
 
     #[test]

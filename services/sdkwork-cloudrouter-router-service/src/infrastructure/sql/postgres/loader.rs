@@ -7,7 +7,8 @@ use crate::application::{
     UpstreamCredentialSecretContext,
 };
 use crate::domain::{
-    DomainError, DomainResult, GatewayApiKey, DEFAULT_PROVIDER_CIRCUIT_BREAKER_RECOVERY_WINDOW_SECONDS,
+    DomainError, DomainResult, GatewayApiKey,
+    DEFAULT_PROVIDER_CIRCUIT_BREAKER_RECOVERY_WINDOW_SECONDS,
 };
 use crate::infrastructure::sql::catalog::{PricingCatalogRows, SqlPricingCatalogSnapshot};
 use crate::infrastructure::sql::model_catalog_import::{
@@ -350,11 +351,7 @@ impl GatewayApiKeyManagementReadStore for PostgresPricingCatalogLoader {
                 .cloned()
                 .map(GatewayApiKeyRow::try_into_domain)
                 .collect::<DomainResult<Vec<_>>>()?;
-            attach_api_key_raw_keys(
-                &mut items,
-                &rows,
-                self.api_key_secret_storage.as_ref(),
-            )?;
+            attach_api_key_raw_keys(&mut items, &rows, self.api_key_secret_storage.as_ref())?;
             Ok(GatewayApiKeyListPage {
                 items,
                 total,
@@ -465,9 +462,7 @@ mod tests {
         UpstreamCredentialSecretContext,
     };
     use crate::domain::GatewayApiKey;
-    use crate::infrastructure::crypto::{
-        RingAeadApiKeySecretCodec, RingAeadCredentialSecretCodec,
-    };
+    use crate::infrastructure::crypto::{RingAeadApiKeySecretCodec, RingAeadCredentialSecretCodec};
     use crate::infrastructure::sql::rows::{GatewayApiKeyRow, UpstreamAccountRouteRow};
     use sdkwork_cloudrouter_config::ApiKeySecretStorageMode;
 
@@ -620,12 +615,22 @@ mod tests {
         // instead of failing the whole management read.
         let rows = vec![
             api_key_row(1, "plaintext", Some("sk-plain-1"), None, None),
-            api_key_row(2, "ciphertext", None, Some("v1:deadbeef:deadbeef"), Some("key-x")),
+            api_key_row(
+                2,
+                "ciphertext",
+                None,
+                Some("v1:deadbeef:deadbeef"),
+                Some("key-x"),
+            ),
         ];
         let mut keys = vec![api_key_domain(1), api_key_domain(2)];
 
-        attach_api_key_raw_keys(&mut keys, &rows, Some(&ciphertext_storage("fedcba9876543210fedcba9876543210")))
-            .unwrap();
+        attach_api_key_raw_keys(
+            &mut keys,
+            &rows,
+            Some(&ciphertext_storage("fedcba9876543210fedcba9876543210")),
+        )
+        .unwrap();
 
         assert_eq!(Some("sk-plain-1".to_owned()), keys[0].raw_key);
         assert_eq!(None, keys[1].raw_key);
@@ -633,7 +638,13 @@ mod tests {
 
     #[test]
     fn api_key_raw_keys_without_storage_wiring_stay_masked() {
-        let rows = vec![api_key_row(1, "ciphertext", None, Some("v1:aa:bb"), Some("key-x"))];
+        let rows = vec![api_key_row(
+            1,
+            "ciphertext",
+            None,
+            Some("v1:aa:bb"),
+            Some("key-x"),
+        )];
         let mut keys = vec![api_key_domain(1)];
 
         attach_api_key_raw_keys(&mut keys, &rows, None).unwrap();

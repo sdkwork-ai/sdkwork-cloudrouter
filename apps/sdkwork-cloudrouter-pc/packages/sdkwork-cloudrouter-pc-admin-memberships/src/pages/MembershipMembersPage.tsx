@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pencil } from 'lucide-react';
 import { BottomPagination } from '@sdkwork/cloudroutes-pc-commons';
@@ -14,6 +14,7 @@ import {
 } from '../components/MembershipPageControls';
 import { MembershipStatusBadge } from '../components/MembershipStatusBadge';
 import { MembershipMemberStatusDrawerForm } from '../forms/MembershipMemberStatusDrawerForm';
+import { formatMembershipDateTime } from '../membershipFormat';
 import {
   fetchMembershipAdminMembers,
   updateMembershipAdminMemberStatus,
@@ -23,7 +24,8 @@ import {
 } from '../membershipsService';
 
 export function MembershipMembersPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const displayLocale = i18n.resolvedLanguage ?? i18n.language ?? 'en-US';
   const [members, setMembers] = useState<MembershipsAdminRecord[]>([]);
   const [editingMember, setEditingMember] = useState<MembershipsAdminRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,23 +33,35 @@ export function MembershipMembersPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [pageInfo, setPageInfo] = useState<MembershipsAdminPageInfo | null>(null);
+  const requestIdRef = useRef(0);
 
   const loadMembers = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setIsLoading(true);
     setError(null);
     try {
       const result = await fetchMembershipAdminMembers({ page, pageSize });
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
       setMembers(result.items);
       setPageInfo(result.pageInfo);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : t('admin.commerce.memberships.members.error', 'Membership records could not be loaded'));
+      if (requestId === requestIdRef.current) {
+        setError(loadError instanceof Error ? loadError.message : t('admin.commerce.memberships.members.error', 'Membership records could not be loaded'));
+      }
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [page, pageSize, t]);
 
   useEffect(() => {
     void loadMembers();
+    return () => {
+      requestIdRef.current += 1;
+    };
   }, [loadMembers]);
 
   const handleUpdateStatus = async (status: MembershipsAdminMemberStatus) => {
@@ -80,7 +94,7 @@ export function MembershipMembersPage() {
               }}
               onPreviousPage={() => setPage((current) => Math.max(1, current - 1))}
               page={page}
-              pageLabel={membershipPageLabel(t('common.pagination.page', 'Page'), page, pageInfo)}
+              pageLabel={membershipPageLabel(t, page, pageInfo)}
               pageSize={pageSize}
               pageSizeLabel={t('common.pagination.rows', 'Rows')}
               pageSizeOptions={[20, 50, 100]}
@@ -110,7 +124,7 @@ export function MembershipMembersPage() {
                     <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{recordText(member, ['owner_user_id', 'user_id'])}</td>
                     <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{recordText(member, ['plan_id', 'plan_no'])}</td>
                     <td className="px-4 py-2.5"><MembershipStatusBadge status={recordText(member, ['status'])} /></td>
-                    <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{recordText(member, ['expires_at', 'expiresAt'])}</td>
+                    <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{formatMembershipDateTime(recordText(member, ['expires_at', 'expiresAt']), displayLocale)}</td>
                     <td className="px-4 py-2.5">
                       <MembershipTableActions>
                         <MembershipIconActionButton label={t('admin.commerce.memberships.members.statusForm.edit', 'Update status')} icon={<Pencil className="h-4 w-4" />} onClick={() => setEditingMember(member)} />
