@@ -80,6 +80,7 @@ struct NormalizedReferralStrategyMutation {
     ends_at: Option<String>,
 }
 
+#[derive(Debug)]
 enum AdminReferralCommandBuildError {
     BadRequest(String),
     System(DomainError),
@@ -800,7 +801,8 @@ mod tests {
             "name": "Launch Referral",
             "rewardType": "CASH",
             "rewardValue": "5.00",
-            "rewardTarget": "INVITEE"
+            "rewardTarget": "INVITEE",
+            "triggerEvent": "REGISTER"
         }))
         .unwrap();
 
@@ -839,6 +841,7 @@ mod tests {
             "rewardType": "POINTS",
             "rewardValue": "100",
             "rewardTarget": "INVITER",
+            "triggerEvent": "REGISTER",
             "startsAt": "2026-08-10 00:00:00",
             "endsAt": "2026-08-01 00:00:00"
         }))

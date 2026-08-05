@@ -5720,6 +5720,213 @@
         ],
         "description": "Users settings update result schema exposed by Cloud Router.",
         "x-operation-id": "users.settings.update"
+      },
+      "AppInvitePolicyResponse": {
+        "additionalProperties": false,
+        "description": "App invite policy schema exposed by Cloud Router.",
+        "properties": {
+          "loginRequired": {
+            "description": "loginRequired field on app invite policy.",
+            "type": "boolean"
+          },
+          "registerRequired": {
+            "description": "registerRequired field on app invite policy.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "registerRequired",
+          "loginRequired"
+        ],
+        "type": "object"
+      },
+      "InvitePolicyRetrieveResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by invite policy retrieve result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AppInvitePolicyResponse"
+                  }
+                ],
+                "description": "Typed AppInvitePolicyResponse response data."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Invite policy retrieve result schema exposed by Cloud Router.",
+        "x-operation-id": "iam.invite.policy.retrieve"
+      },
+      "AppInviteValidateRequest": {
+        "additionalProperties": false,
+        "description": "AppInviteValidateRequest contract.",
+        "properties": {
+          "inviteCode": {
+            "description": "inviteCode field on AppInviteValidateRequest.",
+            "type": "string",
+            "maxLength": 32
+          }
+        },
+        "required": [
+          "inviteCode"
+        ],
+        "type": "object"
+      },
+      "AppInviteValidateResponse": {
+        "additionalProperties": false,
+        "description": "App invite validate response schema exposed by Cloud Router.",
+        "properties": {
+          "message": {
+            "description": "message field on app invite validate response.",
+            "type": "string",
+            "maxLength": 256
+          },
+          "valid": {
+            "description": "valid field on app invite validate response.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "valid",
+          "message"
+        ],
+        "type": "object"
+      },
+      "InviteValidateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by invite validate result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AppInviteValidateResponse"
+                  }
+                ],
+                "description": "Typed AppInviteValidateResponse response data."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Invite validate result schema exposed by Cloud Router.",
+        "x-operation-id": "iam.invites.validate"
+      },
+      "AppInviteCodeResponse": {
+        "additionalProperties": false,
+        "description": "App invite code response schema exposed by Cloud Router.",
+        "properties": {
+          "inviteCode": {
+            "description": "inviteCode field on app invite code response.",
+            "type": "string",
+            "maxLength": 32
+          }
+        },
+        "required": [
+          "inviteCode"
+        ],
+        "type": "object"
+      },
+      "InviteIssueResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by invite issue result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AppInviteCodeResponse"
+                  }
+                ],
+                "description": "Typed AppInviteCodeResponse response data."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Invite issue result schema exposed by Cloud Router.",
+        "x-operation-id": "iam.invites.issue"
+      },
+      "AppInviteClaimRequest": {
+        "additionalProperties": false,
+        "description": "AppInviteClaimRequest contract.",
+        "properties": {
+          "inviteCode": {
+            "description": "inviteCode field on AppInviteClaimRequest.",
+            "type": "string",
+            "maxLength": 32
+          }
+        },
+        "required": [
+          "inviteCode"
+        ],
+        "type": "object"
+      },
+      "AppInviteClaimResponse": {
+        "additionalProperties": false,
+        "description": "App invite claim response schema exposed by Cloud Router.",
+        "properties": {
+          "rewardStatus": {
+            "description": "rewardStatus field on app invite claim response.",
+            "type": "string",
+            "maxLength": 16
+          }
+        },
+        "required": [
+          "rewardStatus"
+        ],
+        "type": "object"
+      },
+      "InviteClaimResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by invite claim result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AppInviteClaimResponse"
+                  }
+                ],
+                "description": "Typed AppInviteClaimResponse response data."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Invite claim result schema exposed by Cloud Router.",
+        "x-operation-id": "iam.invites.claim"
       }
     },
     "securitySchemes": {
@@ -9981,6 +10188,348 @@
         "x-sdkwork-resource": "site.runtime",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/siteBranding.ts",
         "x-write-tables": []
+      }
+    },
+    "/app/v3/api/iam/invite/policy": {
+      "get": {
+        "description": "List invite code policy. Reads ops_config_snapshot. Writes none. File targets none.",
+        "operationId": "iam.invite.policy.retrieve",
+        "parameters": [
+          {
+            "description": "Tenant code query parameter.",
+            "in": "query",
+            "name": "tenant_code",
+            "required": false,
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Organization code query parameter.",
+            "in": "query",
+            "name": "organization_code",
+            "required": false,
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitePolicyRetrieveResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [],
+        "summary": "List invite code policy",
+        "tags": [
+          "iam"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ops_config_snapshot"
+        ],
+        "x-route-scope": "public",
+        "x-sdk-domain": "iam"
+      }
+    },
+    "/app/v3/api/iam/invites/validate": {
+      "post": {
+        "description": "Validate invite code. Reads ops_referral_invite_code. Writes none. File targets none.",
+        "operationId": "iam.invites.validate",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppInviteValidateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteValidateResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [],
+        "summary": "Validate invite code",
+        "tags": [
+          "iam"
+        ],
+        "x-contract-kind": "command",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ops_referral_invite_code"
+        ],
+        "x-route-scope": "public",
+        "x-sdk-domain": "iam"
+      }
+    },
+    "/app/v3/api/iam/invites/issue": {
+      "post": {
+        "description": "Issue personal invite code. Reads ops_referral_invite_code. Writes ops_referral_invite_code. File targets none.",
+        "operationId": "iam.invites.issue",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteIssueResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Issue personal invite code",
+        "tags": [
+          "iam"
+        ],
+        "x-contract-kind": "command",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ops_referral_invite_code"
+        ],
+        "x-route-scope": "user",
+        "x-sdk-domain": "iam",
+        "x-write-targets": [
+          "ops_referral_invite_code"
+        ]
+      }
+    },
+    "/app/v3/api/iam/invites/claim": {
+      "post": {
+        "description": "Claim invite relation after registration. Reads ops_referral_invite_code, ops_referral_relation. Writes ops_referral_relation. File targets none.",
+        "operationId": "iam.invites.claim",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppInviteClaimRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteClaimResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Claim invite relation",
+        "tags": [
+          "iam"
+        ],
+        "x-contract-kind": "command",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ops_referral_invite_code",
+          "ops_referral_relation"
+        ],
+        "x-route-scope": "user",
+        "x-sdk-domain": "iam",
+        "x-write-targets": [
+          "ops_referral_relation"
+        ]
       }
     }
   },

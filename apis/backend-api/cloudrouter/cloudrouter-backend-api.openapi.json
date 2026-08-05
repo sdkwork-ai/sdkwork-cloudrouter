@@ -681,6 +681,14 @@
             },
             "description": "wechat field on AdminAuthSettingsResponse.",
             "type": "object"
+          },
+          "inviteCodePolicy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminAuthInviteCodePolicy"
+              }
+            ],
+            "description": "inviteCodePolicy field on AdminAuthSettingsResponse."
           }
         },
         "required": [
@@ -808,6 +816,14 @@
             },
             "description": "wechat field on AdminAuthSettingsUpdateRequest.",
             "type": "object"
+          },
+          "inviteCodePolicy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminAuthInviteCodePolicyUpdateRequest"
+              }
+            ],
+            "description": "inviteCodePolicy field on AdminAuthSettingsUpdateRequest."
           }
         },
         "type": "object"
@@ -10532,6 +10548,405 @@
             "minimum": 100,
             "nullable": true,
             "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "AdminAuthInviteCodePolicy": {
+        "additionalProperties": false,
+        "description": "AdminAuthInviteCodePolicy contract.",
+        "properties": {
+          "loginRequired": {
+            "description": "loginRequired field on AdminAuthInviteCodePolicy.",
+            "type": "boolean"
+          },
+          "registerRequired": {
+            "description": "registerRequired field on AdminAuthInviteCodePolicy.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "registerRequired",
+          "loginRequired"
+        ],
+        "type": "object"
+      },
+      "AdminAuthInviteCodePolicyUpdateRequest": {
+        "additionalProperties": false,
+        "description": "AdminAuthInviteCodePolicyUpdateRequest contract.",
+        "properties": {
+          "loginRequired": {
+            "description": "loginRequired field on AdminAuthInviteCodePolicyUpdateRequest.",
+            "type": "boolean"
+          },
+          "registerRequired": {
+            "description": "registerRequired field on AdminAuthInviteCodePolicyUpdateRequest.",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "AdminReferralRelation": {
+        "additionalProperties": false,
+        "description": "Admin referral relation schema exposed by Cloud Router.",
+        "properties": {
+          "claimedAt": {
+            "description": "Claimed at field on admin referral relation.",
+            "type": "string",
+            "maxLength": 64
+          },
+          "id": {
+            "description": "Id field on admin referral relation.",
+            "type": "string",
+            "maxLength": 32
+          },
+          "inviteCode": {
+            "description": "Invite code field on admin referral relation.",
+            "type": "string",
+            "maxLength": 32
+          },
+          "invitee": {
+            "description": "Invitee field on admin referral relation.",
+            "type": "string",
+            "maxLength": 320
+          },
+          "inviter": {
+            "description": "Inviter field on admin referral relation.",
+            "type": "string",
+            "maxLength": 320
+          },
+          "rewardStatus": {
+            "description": "Reward status field on admin referral relation.",
+            "type": "string",
+            "maxLength": 16
+          },
+          "source": {
+            "description": "Source field on admin referral relation.",
+            "type": "string",
+            "maxLength": 16
+          }
+        },
+        "required": [
+          "id",
+          "inviter",
+          "invitee",
+          "inviteCode",
+          "source",
+          "rewardStatus",
+          "claimedAt"
+        ],
+        "type": "object"
+      },
+      "AdminReferralRelationListResponse": {
+        "additionalProperties": false,
+        "description": "Admin referral relation list response schema exposed by Cloud Router.",
+        "name": "AdminReferralRelationListResponse",
+        "properties": {
+          "items": {
+            "description": "Items field on admin referral relation list response.",
+            "items": {
+              "$ref": "#/components/schemas/AdminReferralRelation"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on admin referral relation list response."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
+      "ReferralRelationListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by referral relation list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminReferralRelationListResponse"
+                  }
+                ],
+                "description": "Data field on referral relation list result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Referral relation list result schema exposed by Cloud Router.",
+        "x-operation-id": "referralRelations.list"
+      },
+      "AdminReferralStrategy": {
+        "additionalProperties": false,
+        "description": "Admin referral strategy schema exposed by Cloud Router.",
+        "properties": {
+          "description": {
+            "description": "Description field on admin referral strategy.",
+            "type": "string",
+            "maxLength": 512
+          },
+          "endsAt": {
+            "description": "Ends at field on admin referral strategy.",
+            "type": "string",
+            "maxLength": 64
+          },
+          "id": {
+            "description": "Id field on admin referral strategy.",
+            "type": "string",
+            "maxLength": 32
+          },
+          "maxRewardsPerInviter": {
+            "description": "Max rewards per inviter field on admin referral strategy.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "name": {
+            "description": "Name field on admin referral strategy.",
+            "type": "string",
+            "maxLength": 128
+          },
+          "rewardTarget": {
+            "description": "Reward target field on admin referral strategy.",
+            "type": "string",
+            "maxLength": 16
+          },
+          "rewardType": {
+            "description": "Reward type field on admin referral strategy.",
+            "type": "string",
+            "maxLength": 16
+          },
+          "rewardValue": {
+            "description": "Reward value field on admin referral strategy.",
+            "type": "string",
+            "maxLength": 64
+          },
+          "startsAt": {
+            "description": "Starts at field on admin referral strategy.",
+            "type": "string",
+            "maxLength": 64
+          },
+          "status": {
+            "description": "Status field on admin referral strategy.",
+            "type": "string",
+            "maxLength": 16
+          },
+          "triggerEvent": {
+            "description": "Trigger event field on admin referral strategy.",
+            "type": "string",
+            "maxLength": 16
+          },
+          "updatedAt": {
+            "description": "Updated at field on admin referral strategy.",
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "status",
+          "rewardType",
+          "rewardValue",
+          "rewardTarget",
+          "triggerEvent",
+          "maxRewardsPerInviter",
+          "startsAt",
+          "endsAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "AdminReferralStrategyListResponse": {
+        "additionalProperties": false,
+        "description": "Admin referral strategy list response schema exposed by Cloud Router.",
+        "name": "AdminReferralStrategyListResponse",
+        "properties": {
+          "items": {
+            "description": "Items field on admin referral strategy list response.",
+            "items": {
+              "$ref": "#/components/schemas/AdminReferralStrategy"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on admin referral strategy list response."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
+      "ReferralStrategiesListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by referral strategies list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminReferralStrategyListResponse"
+                  }
+                ],
+                "description": "Data field on referral strategies list result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Referral strategies list result schema exposed by Cloud Router.",
+        "x-operation-id": "referralStrategies.list"
+      },
+      "ReferralStrategyRetrieveResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by referral strategy retrieve result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminReferralStrategy"
+                  }
+                ],
+                "description": "Typed AdminReferralStrategy response data."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Referral strategy retrieve result schema exposed by Cloud Router.",
+        "x-operation-id": "referralStrategies.retrieve"
+      },
+      "ReferralStrategyCreateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by referral strategy create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminReferralStrategy"
+                  }
+                ],
+                "description": "Typed AdminReferralStrategy response data."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Referral strategy create result schema exposed by Cloud Router.",
+        "x-operation-id": "referralStrategies.create"
+      },
+      "AdminReferralStrategyMutationRequest": {
+        "additionalProperties": false,
+        "description": "AdminReferralStrategyMutationRequest contract.",
+        "properties": {
+          "description": {
+            "description": "description field on AdminReferralStrategyMutationRequest.",
+            "type": "string",
+            "maxLength": 512
+          },
+          "endsAt": {
+            "description": "endsAt field on AdminReferralStrategyMutationRequest.",
+            "type": "string",
+            "maxLength": 64
+          },
+          "maxRewardsPerInviter": {
+            "anyOf": [
+              {
+                "format": "int64",
+                "pattern": "^[0-9]+$",
+                "type": "string",
+                "x-sdkwork-int64-string": true,
+                "x-sdkwork-rust-type": "i64"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              }
+            ],
+            "description": "maxRewardsPerInviter field on AdminReferralStrategyMutationRequest."
+          },
+          "name": {
+            "description": "name field on AdminReferralStrategyMutationRequest.",
+            "type": "string",
+            "maxLength": 128
+          },
+          "rewardTarget": {
+            "description": "rewardTarget field on AdminReferralStrategyMutationRequest.",
+            "type": "string",
+            "maxLength": 16
+          },
+          "rewardType": {
+            "description": "rewardType field on AdminReferralStrategyMutationRequest.",
+            "type": "string",
+            "maxLength": 16
+          },
+          "rewardValue": {
+            "description": "rewardValue field on AdminReferralStrategyMutationRequest.",
+            "type": "string",
+            "maxLength": 64
+          },
+          "startsAt": {
+            "description": "startsAt field on AdminReferralStrategyMutationRequest.",
+            "type": "string",
+            "maxLength": 64
+          },
+          "status": {
+            "description": "status field on AdminReferralStrategyMutationRequest.",
+            "type": "string",
+            "maxLength": 16
+          },
+          "triggerEvent": {
+            "description": "triggerEvent field on AdminReferralStrategyMutationRequest.",
+            "type": "string",
+            "maxLength": 16
           }
         },
         "type": "object"
@@ -20566,6 +20981,568 @@
         "x-write-tables": [
           "ops_config_snapshot",
           "ops_audit_log"
+        ]
+      }
+    },
+    "/backend/v3/api/billing/referrals/relations": {
+      "get": {
+        "description": "Reads ops_referral_strategy. Writes none. File targets none.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferralStrategiesListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "tags": [
+          "billing"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ops_referral_relation"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "billing",
+        "operationId": "referralRelations.list",
+        "parameters": [
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "summary": "List referral relations"
+      }
+    },
+    "/backend/v3/api/billing/referral_strategies": {
+      "get": {
+        "description": "Reads ops_referral_strategy. Writes none. File targets none.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferralStrategiesListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "tags": [
+          "billing"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ops_referral_strategy"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "billing",
+        "operationId": "referralStrategies.list",
+        "parameters": [
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Status query parameter.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "active",
+                "disabled"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "List referral strategies"
+      },
+      "post": {
+        "description": "Create referral strategy. Reads ops_referral_strategy. Writes ops_referral_strategy. File targets none.",
+        "operationId": "referralStrategies.create",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminReferralStrategyMutationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferralStrategyCreateResult"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Create referral strategy",
+        "tags": [
+          "billing"
+        ],
+        "x-contract-kind": "command",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ops_referral_strategy"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "billing",
+        "x-write-targets": [
+          "ops_referral_strategy"
+        ]
+      }
+    },
+    "/backend/v3/api/billing/referral_strategies/{strategy_id}": {
+      "get": {
+        "description": "Reads ops_referral_strategy. Writes none. File targets none.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferralStrategyRetrieveResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "tags": [
+          "billing"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ops_referral_strategy"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "billing",
+        "operationId": "referralStrategies.retrieve",
+        "parameters": [
+          {
+            "description": "Strategy id path parameter.",
+            "in": "path",
+            "name": "strategy_id",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Retrieve referral strategy"
+      },
+      "patch": {
+        "description": "Update referral strategy. Reads ops_referral_strategy. Writes ops_referral_strategy. File targets none.",
+        "operationId": "referralStrategies.update",
+        "parameters": [
+          {
+            "description": "Strategy id path parameter.",
+            "in": "path",
+            "name": "strategy_id",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminReferralStrategyMutationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferralStrategyRetrieveResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Update referral strategy",
+        "tags": [
+          "billing"
+        ],
+        "x-contract-kind": "command",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ops_referral_strategy"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "billing",
+        "x-write-targets": [
+          "ops_referral_strategy"
+        ]
+      },
+      "delete": {
+        "description": "Delete referral strategy. Reads ops_referral_strategy. Writes ops_referral_strategy. File targets none.",
+        "operationId": "referralStrategies.delete",
+        "parameters": [
+          {
+            "description": "Strategy id path parameter.",
+            "in": "path",
+            "name": "strategy_id",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Delete referral strategy",
+        "tags": [
+          "billing"
+        ],
+        "x-contract-kind": "command",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ops_referral_strategy"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "billing",
+        "x-write-targets": [
+          "ops_referral_strategy"
         ]
       }
     }
