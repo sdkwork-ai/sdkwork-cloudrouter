@@ -32,7 +32,7 @@ usage_by_request AS (
         request_id,
         MAX(owner_name_snapshot) AS owner_name_snapshot,
         MAX(api_key_name_snapshot) AS api_key_name_snapshot,
-        MAX(upstream_account_group_snapshot) AS upstream_account_group_snapshot,
+        MAX(account_group_snapshot) AS upstream_account_group_snapshot,
         MAX(catalog_key) AS catalog_key,
         MAX(requested_model_catalog_key) AS requested_model_catalog_key,
         MAX(model) AS model,

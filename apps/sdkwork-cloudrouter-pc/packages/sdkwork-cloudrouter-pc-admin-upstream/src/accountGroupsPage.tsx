@@ -35,19 +35,35 @@ type TranslationFunction = ReturnType<typeof useTranslation>['t'];
 const emptyMember = (accountId = ''): UpstreamAccountGroupMemberInput => ({ accountId, enabled: true, priority: 100, routingWeight: 100, status: 1 });
 const emptyResource = (): UpstreamResourceEntitlementInput => ({ resourceCode: '', resourceGroupCode: '', grantType: 'allow', priority: 100, status: 1 });
 
+function groupLanguage(language: string | undefined): string {
+  const lang = language ?? 'zh-CN';
+  if (lang.toLowerCase().startsWith('zh')) return 'zh-CN';
+  if (lang.toLowerCase().startsWith('en')) return 'en-US';
+  return lang;
+}
+
+function resolveGroupDisplayName(group: Pick<UpstreamAccountGroup, 'groupName' | 'groupNameI18n'>, language: string | undefined): string {
+  if (!group.groupNameI18n) return group.groupName;
+  try {
+    const map = JSON.parse(group.groupNameI18n) as Record<string, string>;
+    const value = map[groupLanguage(language)] ?? map['zh-CN'] ?? map['en-US'];
+    if (value && value.trim()) return value;
+  } catch {
+    // malformed i18n payload; fall back to the default group name
+  }
+  return group.groupName;
+}
+
 export function UpstreamAccountGroupAdmin() {
   return (
-    <UpstreamPageShell
-      titleKey="admin.upstream.accountGroups.title"
-      subtitleKey="admin.upstream.accountGroups.subtitle"
-    >
+    <UpstreamPageShell>
       <AccountGroupAdminPanel />
     </UpstreamPageShell>
   );
 }
 
 export function AccountGroupAdminPanel() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [items, setItems] = useState<UpstreamAccountGroup[]>([]);
   const [accounts, setAccounts] = useState<UpstreamAccount[]>([]);
   const [query, setQuery] = useState('');
@@ -125,7 +141,7 @@ export function AccountGroupAdminPanel() {
           <tbody className="divide-y divide-slate-100 dark:divide-white/5">
             {items.length === 0 ? <TableState loading={loading} empty={t('admin.upstream.accountGroup.empty')} colSpan={7} /> : items.map((group) => (
               <tr key={group.id} className="text-slate-700 hover:bg-slate-50/80 dark:text-slate-200 dark:hover:bg-white/[0.03]">
-                <td className="px-4 py-3"><button type="button" className="text-left" onClick={() => setSelected(group)}><span className="block font-semibold text-slate-900 dark:text-white">{group.groupName}</span><span className="block font-mono text-xs text-slate-500">{group.groupCode}</span></button></td>
+                <td className="px-4 py-3"><button type="button" className="text-left" onClick={() => setSelected(group)}><span className="block font-semibold text-slate-900 dark:text-white">{resolveGroupDisplayName(group, i18n.language)}</span><span className="block font-mono text-xs text-slate-500">{group.groupCode}</span></button></td>
                 <td className="px-4 py-3">{labelStrategy(group.routingStrategy, t)}</td><td className="px-4 py-3">{labelFallback(group.fallbackMode, t)}</td><td className="px-4 py-3 font-mono">{group.costMultiplier}</td><td className="px-4 py-3 font-mono">{group.saleMultiplier}</td><td className="px-4 py-3"><StatusBadge status={group.status} /></td>
                 <td className="px-4 py-3"><div className="flex justify-end gap-1"><button type="button" className={secondaryButtonClass} onClick={() => setSelected(group)} title={t('admin.upstream.common.actions.configure')}><Settings2 className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setEditing(group)} title={t('common.actions.edit')}><Edit3 className="h-4 w-4" /></button><button type="button" className={dangerButtonClass} onClick={() => setDeleteTarget(group)} title={t('common.actions.delete')}><Trash2 className="h-4 w-4" /></button></div></td>
               </tr>
@@ -135,18 +151,18 @@ export function AccountGroupAdminPanel() {
       </AdminTableShell>
       {editing !== undefined ? <AccountGroupModal group={editing} busy={busy} onSubmit={submitGroup} onClose={() => setEditing(undefined)} /> : null}
       {selected ? <AccountGroupConfiguration group={selected} accounts={accounts} onChanged={(group) => { setSelected(group); setItems((current) => current.map((item) => item.id === group.id ? group : item)); }} onClose={() => setSelected(null)} /> : null}
-      {deleteTarget ? <ConfirmDialog title={t('admin.upstream.accountGroup.delete.title')} description={t('admin.upstream.accountGroup.delete.description', { name: deleteTarget.groupName })} confirmLabel={t('common.actions.delete')} tone="danger" isBusy={busy} onCancel={() => setDeleteTarget(null)} onConfirm={() => void deleteGroup()} /> : null}
+      {deleteTarget ? <ConfirmDialog title={t('admin.upstream.accountGroup.delete.title')} description={t('admin.upstream.accountGroup.delete.description', { name: resolveGroupDisplayName(deleteTarget, i18n.language) })} confirmLabel={t('common.actions.delete')} tone="danger" isBusy={busy} onCancel={() => setDeleteTarget(null)} onConfirm={() => void deleteGroup()} /> : null}
     </div>
   );
 }
 
 function AccountGroupModal({ group, busy, onSubmit, onClose }: { group: UpstreamAccountGroup | null; busy: boolean; onSubmit: (event: FormEvent<HTMLFormElement>) => void; onClose: () => void }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   return (
     <Modal title={group ? t('admin.upstream.accountGroup.form.editTitle') : t('admin.upstream.accountGroup.form.createTitle')} busy={busy} submitLabel={group ? t('common.actions.saveChanges') : t('admin.upstream.accountGroup.form.createAction')} onSubmit={onSubmit} onClose={onClose}>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label={t('admin.upstream.accountGroup.form.groupCode')} required><input name="groupCode" className={inputClass} defaultValue={group?.groupCode} disabled={Boolean(group)} required /></Field>
-        <Field label={t('admin.upstream.accountGroup.form.groupName')} required><input name="groupName" className={inputClass} defaultValue={group?.groupName} required /></Field>
+        <Field label={t('admin.upstream.accountGroup.form.groupName')} required><input name="groupName" className={inputClass} defaultValue={group ? resolveGroupDisplayName(group, i18n.language) : ''} required /></Field>
         <Field label={t('admin.upstream.accountGroup.form.groupType')}><input name="groupType" className={inputClass} defaultValue={group?.groupType ?? 'standard'} /></Field>
         <Field label={t('admin.upstream.common.fields.environment')}><select name="environment" className={selectClass} defaultValue={group?.environment ?? 1}><option value="1">{t('admin.upstream.common.environment.production')}</option><option value="2">{t('admin.upstream.common.environment.sandbox')}</option></select></Field>
         <Field label={t('admin.upstream.accountGroup.form.routingStrategy')}><select name="routingStrategy" className={selectClass} defaultValue={group?.routingStrategy ?? 'weighted'}><option value="weighted">{t('admin.upstream.accountGroup.strategy.weighted')}</option><option value="round_robin">{t('admin.upstream.accountGroup.strategy.roundRobin')}</option><option value="least_latency">{t('admin.upstream.accountGroup.strategy.leastLatency')}</option><option value="least_cost">{t('admin.upstream.accountGroup.strategy.leastCost')}</option><option value="failover">{t('admin.upstream.accountGroup.strategy.failover')}</option></select></Field>
@@ -162,7 +178,7 @@ function AccountGroupModal({ group, busy, onSubmit, onClose }: { group: Upstream
 }
 
 function AccountGroupConfiguration({ group, accounts, onChanged, onClose }: { group: UpstreamAccountGroup; accounts: UpstreamAccount[]; onChanged: (group: UpstreamAccountGroup) => void; onClose: () => void }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [members, setMembers] = useState<UpstreamAccountGroupMemberInput[]>([]);
   const [resources, setResources] = useState<UpstreamResourceEntitlementInput[]>([]);
   const [loading, setLoading] = useState(true);
@@ -228,7 +244,7 @@ function AccountGroupConfiguration({ group, accounts, onChanged, onClose }: { gr
   };
 
   return (
-    <SidePanel title={group.groupName} subtitle={`${labelStrategy(group.routingStrategy, t)} / ${labelFallback(group.fallbackMode, t)}`} onClose={onClose}>
+    <SidePanel title={resolveGroupDisplayName(group, i18n.language)} subtitle={`${labelStrategy(group.routingStrategy, t)} / ${labelFallback(group.fallbackMode, t)}`} onClose={onClose}>
       <div className="grid gap-6">
         <InlineError message={error} />
         <Section title={t('admin.upstream.accountGroup.members.title')} action={<button type="button" className={secondaryButtonClass} disabled={accounts.length === 0} onClick={() => setMembers((current) => [...current, emptyMember(accounts.find((account) => !current.some((member) => member.accountId === account.id))?.id)])}><Plus className="h-4 w-4" />{t('admin.upstream.common.actions.add')}</button>}>

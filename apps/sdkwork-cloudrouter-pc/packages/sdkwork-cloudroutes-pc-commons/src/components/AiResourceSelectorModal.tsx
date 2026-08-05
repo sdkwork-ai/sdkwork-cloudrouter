@@ -30,6 +30,10 @@ export interface AiResourceSelectorModalLabels {
   done: string;
   close: string;
   retry?: string;
+  /** 空值占位文案，例如 "N/A"；缺省时显示 "-" */
+  noData?: string;
+  /** 状态值展示格式化；缺省时显示原始状态值 */
+  statusLabel?: (status: string) => string;
   columns: {
     resource: string;
     kind: string;
@@ -66,6 +70,8 @@ export interface AiResourceSelectorModalProps {
   searchQuery?: string;
   onSearchQueryChange?: (query: string) => void;
   searchDataAttribute?: string;
+  /** 点击遮罩（弹窗外）时是否调用 onClose 关闭；默认 true */
+  closeOnClickOutside?: boolean;
 }
 
 export function AiResourceSelectorModal({
@@ -84,6 +90,7 @@ export function AiResourceSelectorModal({
   searchQuery,
   selectedCodes,
   selectionMode = 'single',
+  closeOnClickOutside = true,
 }: AiResourceSelectorModalProps) {
   const selected = new Set(selectedCodes);
   const [localSearchQuery, setLocalSearchQuery] = useState('');
@@ -108,7 +115,14 @@ export function AiResourceSelectorModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm"
+      onClick={(event) => {
+        if (closeOnClickOutside && event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       <div
         className="flex h-[76vh] max-h-[76vh] w-[88vw] max-w-6xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#1a1a1a]"
         role="dialog"
@@ -194,8 +208,8 @@ export function AiResourceSelectorModal({
                           ))}
                       </div>
                     </td>
-                    <td className="px-5 py-3">{option.vendorCode ?? '-'}</td>
-                    <td className="px-5 py-3">{option.status}</td>
+                    <td className="px-5 py-3">{option.vendorCode ?? labels.noData ?? '-'}</td>
+                    <td className="px-5 py-3">{labels.statusLabel ? labels.statusLabel(option.status) : option.status}</td>
                   </tr>
                 ))}
               </tbody>

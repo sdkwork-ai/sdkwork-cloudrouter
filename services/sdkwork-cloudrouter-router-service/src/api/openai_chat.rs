@@ -45,7 +45,8 @@ use crate::domain::{BillingMeter, ProviderRetryPolicy, RoutingCapability};
 use crate::ports::GatewayUsageRecordFuture;
 use crate::ports::{
     require_stream_usage, ChatCompletionRelay, ChatCompletionRelayRequest,
-    ChatCompletionStreamRelay, GatewayUsageRecorder, UpstreamAccountRouteCatalog,
+    ChatCompletionStreamRelay, GatewayUsageRecorder, GetRuntimeRegionSettingsQuery,
+    RuntimeRegionSettingsStore, RuntimeRegionSettingsSubject, UpstreamAccountRouteCatalog,
 };
 
 const MAX_STREAM_USAGE_EVENT_BUFFER_BYTES: usize = 256 * 1024;
@@ -63,6 +64,7 @@ struct OpenAiChatState<C> {
     plugins: Vec<OpenAiInvocationPluginRef>,
     failure_strategy: OpenAiRuntimeFailureStrategy,
     default_retry_policy: ProviderRetryPolicy,
+    region_settings_store: Option<Arc<dyn RuntimeRegionSettingsStore + Send + Sync>>,
 }
 
 impl<C> Clone for OpenAiChatState<C> {
@@ -77,6 +79,7 @@ impl<C> Clone for OpenAiChatState<C> {
             plugins: self.plugins.clone(),
             failure_strategy: self.failure_strategy,
             default_retry_policy: self.default_retry_policy.clone(),
+            region_settings_store: self.region_settings_store.clone(),
         }
     }
 }
@@ -472,6 +475,7 @@ where
             plugins: with_builtin_invocation_plugins(plugins),
             failure_strategy: runtime_config.failure_strategy,
             default_retry_policy: runtime_config.default_retry_policy,
+            region_settings_store: runtime_config.region_settings_store.clone(),
         })
 }
 
@@ -540,6 +544,21 @@ where
         notify_error(&state.plugins, &invocation_context, None, &error).await;
         return error.into_openai_response();
     }
+    let tenant_region_code = match state.region_settings_store.as_ref() {
+        Some(store) => store
+            .get_runtime_region_settings(GetRuntimeRegionSettingsQuery {
+                subject: RuntimeRegionSettingsSubject {
+                    tenant_id: context.tenant_id,
+                    organization_id: context.organization_id,
+                    operator_id: 0,
+                    operator_type: 0,
+                },
+            })
+            .await
+            .ok()
+            .map(|settings| settings.current_region_code),
+        None => None,
+    };
     let mut route_plan = match resolve_openai_upstream_route_plan(
         state.catalog.as_ref(),
         &context,
@@ -548,6 +567,7 @@ where
         "chat",
         RoutingCapability::Chat,
         BillingMeter::LlmInputToken,
+        tenant_region_code.as_deref(),
     ) {
         Ok(route_plan) => route_plan,
         Err(response) => {

@@ -34,10 +34,7 @@ type TranslationFunction = ReturnType<typeof useTranslation>['t'];
 
 export function UpstreamAccountAdmin() {
   return (
-    <UpstreamPageShell
-      titleKey="admin.upstream.accounts.title"
-      subtitleKey="admin.upstream.accounts.subtitle"
-    >
+    <UpstreamPageShell>
       <AccountAdminPanel />
     </UpstreamPageShell>
   );

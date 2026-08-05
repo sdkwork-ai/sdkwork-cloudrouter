@@ -13,6 +13,21 @@ import { MessagesService } from "./packages/sdkwork-cloudrouter-pc-console-messa
 import { UserService } from "./packages/sdkwork-cloudrouter-pc-console-user/src/userService.ts";
 import { ChatService } from "./packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts";
 import { PlaygroundService } from "./packages/sdkwork-cloudrouter-pc-playground/src/playgroundService.ts";
+import type {
+  PlaygroundGenerationConfig,
+  PlaygroundGenerationTargetType,
+  PlaygroundModelOption,
+  PlaygroundReferenceImageInput,
+} from "./packages/sdkwork-cloudrouter-pc-playground/src/playgroundTypes.ts";
+
+// Minimal stub for skipped account runtime tests (service no longer exposed as a static class).
+const AccountService = {
+  fetchAccountDetails: async (): Promise<{
+    id: string;
+    email: string;
+    availableCredits: number;
+  }> => ({ id: "acct-1", email: "ops@example.com", availableCredits: 125.5 }),
+};
 
 const originalFetch = globalThis.fetch;
 const originalWindowDescriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
@@ -25,7 +40,7 @@ type CapturedSdkRequest = {
   url: string;
   method: string;
   headers?: Record<string, string>;
-  body?: unknown;
+  body?: any;
 };
 
 type QueuedSdkHttpResponse = {
@@ -251,7 +266,7 @@ async function withAppSdkResponses<T>(
   }
 }
 
-function createChatTestModel() {
+function createChatTestModel(): PlaygroundModelOption {
   return {
     id: "gpt-4.1-mini",
     catalogKey: "openai/gpt-4.1-mini",
@@ -267,6 +282,7 @@ function createChatTestModel() {
     inputModalities: ["text"],
     outputModalities: ["text"],
     capabilities: ["chat"],
+    providerCodes: [],
     officialReferencePrices: [],
     priceAvailability: { status: "unavailable" },
     supportsStreaming: true,
@@ -1612,7 +1628,7 @@ test("playground service creates agent generation runs through standard Agent an
             name: "storyboard.png",
             mimeType: "image/png",
             sizeBytes: 128,
-            dataUrl: "data:image/png;base64,cmVmZXJlbmNl",
+            resource: mediaResource("image", "https://example.com/storyboard.png") as unknown as PlaygroundReferenceImageInput["resource"],
           },
         ],
       });
@@ -1767,11 +1783,11 @@ test("playground generation sends image, responses, Claude, and Gemini models th
       ],
       async (captured) => {
         await PlaygroundService.runAgentGeneration({
-          generationConfig: scenario.generationConfig,
+          generationConfig: scenario.generationConfig as PlaygroundGenerationConfig | undefined,
           prompt: scenario.prompt,
-          referenceImages: scenario.referenceImages,
+          referenceImages: scenario.referenceImages as PlaygroundReferenceImageInput[] | undefined,
           selectedModel: scenario.selectedModel,
-          targetType: scenario.targetType,
+          targetType: scenario.targetType as PlaygroundGenerationTargetType | undefined,
         });
 
         const sessionBody = captured[1].body as Record<string, unknown>;
@@ -2099,7 +2115,7 @@ test("playground generation agent maps image and audio family assets from Runtim
         createAgentRunStepResponse(),
         [
           'data: {"id":"runtime-event-1","invocationId":"runtime-invocation-1","eventNo":1,"eventType":"message.delta","eventSource":"runtime","textDelta":"Asset ready.","payloadJson":{},"createdAt":"2026-05-17T08:00:01Z"}',
-          `data: {"id":"runtime-event-2","invocationId":"runtime-invocation-1","eventNo":2,"eventType":"generation.asset","eventSource":"generation","payloadJson":{"modality":"${targetType}","resource":${JSON.stringify(mediaResource(targetType === "video" ? "video" : targetType === "image" ? "image" : "audio", assetLocator, { durationSeconds: 6 }))}},"createdAt":"2026-05-17T08:00:02Z"}`,
+          `data: {"id":"runtime-event-2","invocationId":"runtime-invocation-1","eventNo":2,"eventType":"generation.asset","eventSource":"generation","payloadJson":{"modality":"${targetType}","resource":${JSON.stringify(mediaResource((targetType as string) === "video" ? "video" : (targetType as string) === "image" ? "image" : "audio", assetLocator, { durationSeconds: 6 }))}},"createdAt":"2026-05-17T08:00:02Z"}`,
           "data: [DONE]",
           "",
         ].join("\n"),
@@ -2185,7 +2201,7 @@ test("playground generation agent infers artifact modality from MIME type when R
         createAgentRuntimeInvocationResponse(),
         createAgentRunStepResponse(),
         [
-          `data: {"id":"runtime-event-1","invocationId":"runtime-invocation-1","eventNo":1,"eventType":"generation.asset","eventSource":"generation","payloadJson":{"resource":${JSON.stringify(mediaResource(targetType === "video" ? "video" : targetType === "image" ? "image" : "audio", assetLocator, { durationSeconds: 5, mimeType }))}},"createdAt":"2026-05-17T08:00:01Z"}`,
+          `data: {"id":"runtime-event-1","invocationId":"runtime-invocation-1","eventNo":1,"eventType":"generation.asset","eventSource":"generation","payloadJson":{"resource":${JSON.stringify(mediaResource((targetType as string) === "video" ? "video" : (targetType as string) === "image" ? "image" : "audio", assetLocator, { durationSeconds: 5, mimeType }))}},"createdAt":"2026-05-17T08:00:01Z"}`,
           "data: [DONE]",
           "",
         ].join("\n"),
@@ -3845,6 +3861,7 @@ test("playground chat SSE preserves whitespace-only runtime deltas", async () =>
           priceAvailability: { status: "unavailable" },
           supportsStreaming: true,
           supportsTools: false,
+          providerCodes: [],
           supportsJsonSchema: false,
         },
       });

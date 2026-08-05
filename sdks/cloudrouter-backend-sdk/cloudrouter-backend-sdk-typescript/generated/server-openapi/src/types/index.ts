@@ -152,8 +152,12 @@ export type { UpstreamAccountListResponse } from './upstream-account-list-respon
 export type { UpstreamAccountVerification } from './upstream-account-verification';
 export type { UpstreamAccountVerificationResponse } from './upstream-account-verification-response';
 
+export type { UpstreamResourceCatalogItem } from './upstream-resource-catalog-item';
+export type { UpstreamResourceCatalogResponse } from './upstream-resource-catalog-response';
+
 export type { UpstreamResourceEntitlement } from './upstream-resource-entitlement';
 export type { UpstreamResourceEntitlementInput } from './upstream-resource-entitlement-input';
+export type { UpstreamResourceGroupCatalogItem } from './upstream-resource-group-catalog-item';
 export type { UpstreamRouteExplainCandidate } from './upstream-route-explain-candidate';
 export type { UpstreamRouteExplainIssue } from './upstream-route-explain-issue';
 export type { UpstreamSupplier } from './upstream-supplier';

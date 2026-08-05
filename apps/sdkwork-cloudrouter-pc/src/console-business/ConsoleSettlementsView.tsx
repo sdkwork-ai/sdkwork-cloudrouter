@@ -132,7 +132,7 @@ function SettlementsPagination({ controller }: { controller: SdkworkOrderControl
   }
 
   return (
-    <div className="flex flex-col gap-3 border-t border-[var(--sdk-color-border-subtle)] px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex shrink-0 flex-col gap-3 border-t border-[var(--sdk-color-border-subtle)] px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="text-xs text-[var(--sdk-color-text-secondary)]">
         {formatPaginationSummary(shown, total)}
       </div>
@@ -219,168 +219,168 @@ function SettlementsPageContent({ controller }: { controller: SdkworkOrderContro
   const showTable = !showInitialLoading && !showEmpty;
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="w-full max-w-none">
-        <div className="space-y-4">
-          {/* Header */}
-          <header className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <h1 className="text-2xl font-semibold tracking-tight text-[var(--sdk-color-text-primary)]">
-                {copy.page.title}
-              </h1>
-              <p className="mt-1.5 text-sm leading-6 text-[var(--sdk-color-text-secondary)]">
-                {copy.page.description}
-              </p>
-            </div>
-            <Button
-              disabled={state.isLoading}
-              onClick={() => void controller.refresh()}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              <RefreshCw className={state.isLoading ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
-              <span>{zh ? '刷新' : 'Refresh'}</span>
-            </Button>
-          </header>
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
+      <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
+        {/* Header */}
+        <header className="flex shrink-0 items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--sdk-color-text-primary)]">
+              {copy.page.title}
+            </h1>
+            <p className="mt-1.5 text-sm leading-6 text-[var(--sdk-color-text-secondary)]">
+              {copy.page.description}
+            </p>
+          </div>
+          <Button
+            disabled={state.isLoading}
+            onClick={() => void controller.refresh()}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            <RefreshCw className={state.isLoading ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
+            <span>{zh ? '刷新' : 'Refresh'}</span>
+          </Button>
+        </header>
 
-          {/* Stats */}
-          <div className="grid gap-3 grid-cols-2 xl:grid-cols-4">
-            {stats.map((stat) => {
-              const Icon = stat.icon;
+        {/* Stats */}
+        <div className="grid shrink-0 grid-cols-2 gap-3 xl:grid-cols-4">
+          {stats.map((stat) => {
+            const Icon = stat.icon;
 
-              return (
-                <div
-                  className="rounded-2xl border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] p-4 shadow-[var(--sdk-shadow-sm)]"
-                  key={stat.label}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm text-[var(--sdk-color-text-secondary)]">{stat.label}</span>
-                    <div
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-                      style={createSdkworkOrderToneStyle(stat.tone, { backgroundWeight: 14, borderWeight: 24 })}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </div>
-                  </div>
-                  <div className="mt-2 text-2xl font-semibold tracking-tight tabular-nums text-[var(--sdk-color-text-primary)]">
-                    {stat.value}
+            return (
+              <div
+                className="rounded-2xl border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] p-4 shadow-[var(--sdk-shadow-sm)]"
+                key={stat.label}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-[var(--sdk-color-text-secondary)]">{stat.label}</span>
+                  <div
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                    style={createSdkworkOrderToneStyle(stat.tone, { backgroundWeight: 14, borderWeight: 24 })}
+                  >
+                    <Icon className="h-4 w-4" />
                   </div>
                 </div>
+                <div className="mt-2 text-2xl font-semibold tracking-tight tabular-nums text-[var(--sdk-color-text-primary)]">
+                  {stat.value}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Error */}
+        {state.lastError ? (
+          <StatusNotice title={copy.page.errorTitle} tone="danger">
+            {state.lastError}
+          </StatusNotice>
+        ) : null}
+
+        {/* Table panel */}
+        <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] shadow-[var(--sdk-shadow-sm)]">
+          {/* Filter tabs */}
+          <div className="flex shrink-0 items-center gap-1 border-b border-[var(--sdk-color-border-subtle)] px-3 py-2">
+            {SETTLEMENTS_FILTERS.map((filter) => {
+              const active = state.activeFilter === filter;
+
+              return (
+                <button
+                  className={
+                    active
+                      ? 'rounded-lg bg-[var(--sdk-color-brand-primary)] px-3 py-1.5 text-sm font-medium text-white transition-colors'
+                      : 'rounded-lg px-3 py-1.5 text-sm font-medium text-[var(--sdk-color-text-secondary)] transition-colors hover:bg-[var(--sdk-color-surface-panel-muted)] hover:text-[var(--sdk-color-text-primary)]'
+                  }
+                  key={filter}
+                  onClick={() => void controller.setFilter(filter)}
+                  type="button"
+                >
+                  {formatFilter(filter)}
+                </button>
               );
             })}
           </div>
 
-          {/* Error */}
-          {state.lastError ? (
-            <StatusNotice title={copy.page.errorTitle} tone="danger">
-              {state.lastError}
-            </StatusNotice>
-          ) : null}
-
-          {/* Table panel */}
-          <section className="overflow-hidden rounded-2xl border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] shadow-[var(--sdk-shadow-sm)]">
-            {/* Filter tabs */}
-            <div className="flex items-center gap-1 border-b border-[var(--sdk-color-border-subtle)] px-3 py-2">
-              {SETTLEMENTS_FILTERS.map((filter) => {
-                const active = state.activeFilter === filter;
-
-                return (
-                  <button
-                    className={
-                      active
-                        ? 'rounded-lg bg-[var(--sdk-color-brand-primary)] px-3 py-1.5 text-sm font-medium text-white transition-colors'
-                        : 'rounded-lg px-3 py-1.5 text-sm font-medium text-[var(--sdk-color-text-secondary)] transition-colors hover:bg-[var(--sdk-color-surface-panel-muted)] hover:text-[var(--sdk-color-text-primary)]'
-                    }
-                    key={filter}
-                    onClick={() => void controller.setFilter(filter)}
-                    type="button"
-                  >
-                    {formatFilter(filter)}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Content */}
-            {showInitialLoading ? (
+          {/* Content */}
+          {showInitialLoading ? (
+            <div className="flex min-h-0 flex-1 items-center justify-center px-6 py-10">
               <LoadingBlock label={copy.page.loading} />
-            ) : showEmpty ? (
-              <div className="px-6 py-12">
-                <EmptyState
-                  description={copy.views.empty}
-                  title={copy.views.title}
-                />
-              </div>
-            ) : showTable ? (
-              <>
-                <div className="overflow-x-auto" aria-busy={state.isLoading || undefined}>
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-[var(--sdk-color-border-subtle)]">
-                        <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
-                          {zh ? '账单编号' : 'Bill ID'}
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
-                          {zh ? '摘要' : 'Subject'}
-                        </th>
-                        <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
-                          {copy.detail.status}
-                        </th>
-                        <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
-                          {copy.overview.createdAt}
-                        </th>
-                        <th className="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
-                          {zh ? '金额' : 'Amount'}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[var(--sdk-color-border-subtle)]">
-                      {state.visibleOrders.map((order) => {
-                        const tone = resolveStatusTone(order.status);
-                        const billId = order.orderSn || `#${order.id.slice(-8)}`;
+            </div>
+          ) : showEmpty ? (
+            <div className="flex min-h-0 flex-1 items-center justify-center px-6 py-10">
+              <EmptyState
+                description={copy.views.empty}
+                title={copy.views.title}
+              />
+            </div>
+          ) : showTable ? (
+            <>
+              <div className="min-h-0 flex-1 overflow-auto" aria-busy={state.isLoading || undefined}>
+                <table className="w-full">
+                  <thead className="sticky top-0 z-10 bg-[var(--sdk-color-surface-panel)]">
+                    <tr className="border-b border-[var(--sdk-color-border-subtle)]">
+                      <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
+                        {zh ? '账单编号' : 'Bill ID'}
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
+                        {zh ? '摘要' : 'Subject'}
+                      </th>
+                      <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
+                        {copy.detail.status}
+                      </th>
+                      <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
+                        {copy.overview.createdAt}
+                      </th>
+                      <th className="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
+                        {zh ? '金额' : 'Amount'}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--sdk-color-border-subtle)]">
+                    {state.visibleOrders.map((order) => {
+                      const tone = resolveStatusTone(order.status);
+                      const billId = order.orderSn || `#${order.id.slice(-8)}`;
 
-                        return (
-                          <tr
-                            className="cursor-pointer select-none transition-colors hover:bg-[var(--sdk-color-surface-panel-muted)]"
-                            key={order.id}
-                            onClick={() => void controller.openDetail(order.id)}
-                          >
-                            <td className="whitespace-nowrap px-4 py-3.5 text-sm font-mono text-[var(--sdk-color-text-secondary)]">
-                              {billId}
-                            </td>
-                            <td className="max-w-[20rem] truncate px-4 py-3.5 text-sm font-medium text-[var(--sdk-color-text-primary)]">
-                              {order.subject}
-                            </td>
-                            <td className="whitespace-nowrap px-4 py-3.5">
+                      return (
+                        <tr
+                          className="cursor-pointer select-none transition-colors hover:bg-[var(--sdk-color-surface-panel-muted)]"
+                          key={order.id}
+                          onClick={() => void controller.openDetail(order.id)}
+                        >
+                          <td className="whitespace-nowrap px-4 py-3.5 text-sm font-mono text-[var(--sdk-color-text-secondary)]">
+                            {billId}
+                          </td>
+                          <td className="max-w-[20rem] truncate px-4 py-3.5 text-sm font-medium text-[var(--sdk-color-text-primary)]">
+                            {order.subject}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3.5">
+                            <span
+                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium"
+                              style={createSdkworkOrderToneStyle(tone, { backgroundWeight: 10, borderWeight: 20 })}
+                            >
                               <span
-                                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium"
-                                style={createSdkworkOrderToneStyle(tone, { backgroundWeight: 10, borderWeight: 20 })}
-                              >
-                                <span
-                                  className="h-1.5 w-1.5 rounded-full"
-                                  style={createSdkworkOrderToneStyle(tone, { backgroundWeight: 50 })}
-                                />
-                                {formatStatus(order.status, order.statusLabel)}
-                              </span>
-                            </td>
-                            <td className="whitespace-nowrap px-4 py-3.5 text-sm text-[var(--sdk-color-text-secondary)]">
-                              {formatTimestamp(order.createdAt)}
-                            </td>
-                            <td className="whitespace-nowrap px-4 py-3.5 text-right text-sm font-semibold tabular-nums text-[var(--sdk-color-text-primary)]">
-                              {formatMoney(order.totalAmountCny, { currency: 'CNY', locale, mode: 'symbol' }) ?? '--'}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                <SettlementsPagination controller={controller} />
-              </>
-            ) : null}
-          </section>
-        </div>
+                                className="h-1.5 w-1.5 rounded-full"
+                                style={createSdkworkOrderToneStyle(tone, { backgroundWeight: 50 })}
+                              />
+                              {formatStatus(order.status, order.statusLabel)}
+                            </span>
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3.5 text-sm text-[var(--sdk-color-text-secondary)]">
+                            {formatTimestamp(order.createdAt)}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3.5 text-right text-sm font-semibold tabular-nums text-[var(--sdk-color-text-primary)]">
+                            {formatMoney(order.totalAmountCny, { currency: 'CNY', locale, mode: 'symbol' }) ?? '--'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <SettlementsPagination controller={controller} />
+            </>
+          ) : null}
+        </section>
       </div>
 
       <SdkworkOrderDetailDrawer controller={controller} />

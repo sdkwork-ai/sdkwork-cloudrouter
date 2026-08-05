@@ -90,42 +90,42 @@ test("production chunks let Rollup keep qrcode with its CommonJS dependencies", 
   assert.ok(output && !Array.isArray(output));
   assert.equal(typeof output.manualChunks, "function");
   assert.equal(
-    output.manualChunks(
+    (output.manualChunks as (id: string, meta: unknown) => string | null | undefined)(
       "E:/sdkwork-space/sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/AdminDashboardPage.tsx",
       {} as never,
     ),
     "route-admin-dashboard",
   );
   assert.equal(
-    output.manualChunks(
+    (output.manualChunks as (id: string, meta: unknown) => string | null | undefined)(
       "E:/sdkwork-space/sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-core/src/index.ts",
       {} as never,
     ),
     undefined,
   );
   assert.equal(
-    output.manualChunks(
+    (output.manualChunks as (id: string, meta: unknown) => string | null | undefined)(
       "C:/workspace/node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/browser.js",
       {} as never,
     ),
     undefined,
   );
   assert.equal(
-    output.manualChunks(
+    (output.manualChunks as (id: string, meta: unknown) => string | null | undefined)(
       "C:/workspace/node_modules/.pnpm/jspdf@3.0.4/node_modules/jspdf/dist/jspdf.es.min.js",
       {} as never,
     ),
     "vendor-pdf",
   );
   assert.equal(
-    output.manualChunks(
+    (output.manualChunks as (id: string, meta: unknown) => string | null | undefined)(
       "E:/sdkwork-space/sdkwork-account/sdks/sdkwork-account-app-sdk/sdkwork-account-app-sdk-typescript/src/index.ts",
       {} as never,
     ),
     "vendor-sdkwork-sdk",
   );
   assert.equal(
-    output.manualChunks(
+    (output.manualChunks as (id: string, meta: unknown) => string | null | undefined)(
       "E:/sdkwork-space/sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/node_modules/@sdkwork/cloudrouter-backend-sdk/dist/index.js",
       {} as never,
     ),
@@ -326,7 +326,7 @@ test("portal resolves CloudRouter generated SDK imports through workspace packag
       /[\\/]node_modules[\\/]@sdkwork[\\/]cloudrouter-(?:app|backend|open)-sdk[\\/].*index\.(?:js|ts)$/u,
       `${packageName} must resolve through the portal install graph`,
     );
-    assert.ok(existsSync(resolvedEntry), `${packageName} must resolve to an existing workspace entry`);
+    assert.ok(existsSync(resolvedEntry as string), `${packageName} must resolve to an existing workspace entry`);
   }
 });
 

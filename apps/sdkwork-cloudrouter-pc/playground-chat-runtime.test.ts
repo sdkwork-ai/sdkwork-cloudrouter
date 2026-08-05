@@ -348,7 +348,7 @@ test("runtime delta reader extracts text from supported provider envelopes", () 
           type: "content_block_delta",
         },
       },
-    } as Parameters<typeof readRuntimeTextDelta>[0]),
+    } as unknown as Parameters<typeof readRuntimeTextDelta>[0]),
     claudeText,
   );
 
@@ -361,7 +361,7 @@ test("runtime delta reader extracts text from supported provider envelopes", () 
           candidates: [{ content: { parts: [{ text: geminiText }] } }],
         },
       },
-    } as Parameters<typeof readRuntimeTextDelta>[0]),
+    } as unknown as Parameters<typeof readRuntimeTextDelta>[0]),
     geminiText,
   );
 
@@ -369,7 +369,7 @@ test("runtime delta reader extracts text from supported provider envelopes", () 
     readRuntimeTextDelta({
       eventType: "runtime.completed",
       payloadJson: { providerEvent: { text: "must not be emitted" } },
-    } as Parameters<typeof readRuntimeTextDelta>[0]),
+    } as unknown as Parameters<typeof readRuntimeTextDelta>[0]),
     "",
   );
 });
@@ -383,7 +383,7 @@ test("runtime delta reader bounds untrusted stream payload width and delta size"
       eventType: "message.delta",
       payloadJson: {},
       textDelta: oversizedDelta,
-    } as Parameters<typeof readRuntimeTextDelta>[0]),
+    } as unknown as Parameters<typeof readRuntimeTextDelta>[0]),
     "x".repeat(boundedLength),
   );
 
@@ -391,7 +391,7 @@ test("runtime delta reader bounds untrusted stream payload width and delta size"
   const boundedPayload = readRuntimeTextDelta({
     eventType: "response.delta",
     payloadJson: { providerEvent: { output: textParts } },
-  } as Parameters<typeof readRuntimeTextDelta>[0]);
+  } as unknown as Parameters<typeof readRuntimeTextDelta>[0]);
 
   assert.equal(boundedPayload.split("\n").length, 128);
   assert.equal(boundedPayload.length, 255);

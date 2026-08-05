@@ -11388,6 +11388,11 @@
               "maxLength": 128,
               "type": "string"
             },
+            "defaultVendorCode": {
+              "maxLength": 64,
+              "nullable": true,
+              "type": "string"
+            },
             "description": {
               "maxLength": 4000,
               "nullable": true,
@@ -11998,6 +12003,188 @@
           },
           "required": [
             "item"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/upstream",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/upstream_resource_catalog",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts#fetchUpstreamResourceCatalog@/admin/upstream",
+      "kind": "read",
+      "module": "pc-admin-upstream",
+      "openapi_exposed": true,
+      "operation": "fetchUpstreamResourceCatalog",
+      "operation_id": "upstreamResourceCatalog.retrieve",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_resource",
+        "ai_resource_group"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "UpstreamResourceCatalogResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "UpstreamResourceCatalogResponse",
+          "properties": {
+            "resourceGroups": {
+              "items": {
+                "additionalProperties": false,
+                "name": "UpstreamResourceGroupCatalogItem",
+                "properties": {
+                  "capabilities": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "description": {
+                    "maxLength": 512,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "groupCode": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "groupName": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "groupType": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "resourceCount": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "selectionMode": {
+                    "maxLength": 32,
+                    "type": "string"
+                  },
+                  "sortOrder": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "vendorCodes": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "groupCode",
+                  "groupName",
+                  "groupType",
+                  "selectionMode",
+                  "description",
+                  "vendorCodes",
+                  "capabilities",
+                  "resourceCount",
+                  "sortOrder"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "resources": {
+              "items": {
+                "additionalProperties": false,
+                "name": "UpstreamResourceCatalogItem",
+                "properties": {
+                  "apiEndpointCode": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "capabilities": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "capability": {
+                    "maxLength": 64,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "modalityCode": {
+                    "maxLength": 64,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "resourceCode": {
+                    "maxLength": 192,
+                    "type": "string"
+                  },
+                  "resourceType": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "sortOrder": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "vendorCode": {
+                    "maxLength": 64,
+                    "nullable": true,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "resourceCode",
+                  "resourceType",
+                  "displayName",
+                  "vendorCode",
+                  "modalityCode",
+                  "apiEndpointCode",
+                  "capability",
+                  "capabilities",
+                  "sortOrder"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "resources",
+            "resourceGroups"
           ],
           "type": "object"
         }
@@ -12625,6 +12812,12 @@
                   },
                   "groupName": {
                     "maxLength": 200,
+                    "type": "string"
+                  },
+                  "groupNameI18n": {
+                    "description": "Localized group name map as JSON (locale -> display name); null means no localized names.",
+                    "maxLength": 4096,
+                    "nullable": true,
                     "type": "string"
                   },
                   "groupType": {
@@ -13383,6 +13576,11 @@
                     "maxLength": 128,
                     "type": "string"
                   },
+                  "defaultVendorCode": {
+                    "maxLength": 64,
+                    "nullable": true,
+                    "type": "string"
+                  },
                   "description": {
                     "maxLength": 4000,
                     "nullable": true,
@@ -13468,6 +13666,7 @@
                   "displayName",
                   "description",
                   "supplierType",
+                  "defaultVendorCode",
                   "adapterCode",
                   "protocolCode",
                   "websiteUrl",
@@ -14079,6 +14278,11 @@
           "properties": {
             "adapterCode": {
               "maxLength": 128,
+              "type": "string"
+            },
+            "defaultVendorCode": {
+              "maxLength": 64,
+              "nullable": true,
               "type": "string"
             },
             "description": {
@@ -27636,24 +27840,24 @@
   "summary": {
     "api_method_counts": {
       "DELETE": 19,
-      "GET": 125,
+      "GET": 126,
       "PATCH": 20,
       "POST": 72,
       "PUT": 10
     },
     "api_surface_counts": {
       "app": 90,
-      "backend": 156
+      "backend": 157
     },
-    "operation_count": 246,
+    "operation_count": 247,
     "route_scope_counts": {
-      "admin": 156,
+      "admin": 157,
       "console": 30,
       "public": 60
     },
     "sdk_client_counts": {
       "SdkworkAppClient": 90,
-      "SdkworkBackendClient": 156
+      "SdkworkBackendClient": 157
     }
   }
 }

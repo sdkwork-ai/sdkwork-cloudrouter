@@ -78,6 +78,7 @@ impl UsageLogsReadStore for EmptyUsageLogsReadStore {
         &'a self,
         query: UsageLogsQuery,
         _subject: Option<UsageLogsSubject>,
+        _locale: Option<&'a str>,
     ) -> UsageLogsReadFuture<'a> {
         Box::pin(async move {
             Ok(UsageLogsPage {
@@ -134,7 +135,11 @@ async fn fetch_usage_logs(
 
     match state
         .read_store
-        .load_usage_logs(validated_query.query, subject)
+        .load_usage_logs(
+            validated_query.query,
+            subject,
+            ctx.as_ref().and_then(|context| context.locale.as_deref()),
+        )
         .await
     {
         Ok(page) => json_success_list_response(

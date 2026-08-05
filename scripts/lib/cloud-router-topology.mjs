@@ -10,6 +10,12 @@ import {
   waitForHttpHealthy,
 } from '@sdkwork/app-topology';
 
+import {
+  DATABASE_SEED_LOCALE_ENV,
+  REGION_CODE_ENV,
+  resolveRegionEnvironment,
+} from './cloud-router-region.mjs';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -302,12 +308,26 @@ export function loadTopologyProfileForWorkspace({
   deploymentProfile = 'standalone',
   env = process.env,
   includeIamDatabase = false,
+  regionCode,
 } = {}) {
   const profileId = resolveDevProfileId(deploymentProfile);
   const profileEnv = loadProfile(profileId);
+  // Region deployment dimension (REGION_SPEC.md): orthogonal to the
+  // deployment profile. The profile layer declares the deployment default
+  // (etc/topology/*.env -> cn); an explicit --region only overrides it when
+  // provided, so the profile default is never clobbered by the resolver.
+  const regionEnv = regionCode
+    ? resolveRegionEnvironment({
+        ...env,
+        [REGION_CODE_ENV]: regionCode,
+      })
+    : undefined;
   const layers = [
     env,
     profileEnv,
+    ...(regionEnv
+      ? [{ [REGION_CODE_ENV]: regionEnv.regionCode, [DATABASE_SEED_LOCALE_ENV]: regionEnv.seedLocale }]
+      : []),
     ...(includeIamDatabase ? [resolveIamDevEnv(env)] : []),
     IAM_APPLICATION_BOOTSTRAP_ENV,
   ];
@@ -315,6 +335,7 @@ export function loadTopologyProfileForWorkspace({
   return {
     profileId,
     profileEnv,
+    regionEnv,
     env: mergedEnv,
   };
 }

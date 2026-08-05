@@ -617,7 +617,6 @@ test("admin IP limit list fails closed when backend omits or corrupts status", a
             rps: 15,
             rpm: 900,
             blockDuration: "10m",
-            status: "active",
             ...patch,
           } as Record<string, unknown>;
           if (patch.status === undefined) {
@@ -671,7 +670,6 @@ test("admin token limit list fails closed when backend omits or corrupts status"
             rps: 2,
             rpd: 10000,
             burst: 8,
-            status: "active",
             ...patch,
           } as Record<string, unknown>;
           if (patch.status === undefined) {
@@ -732,7 +730,6 @@ test("admin model limit list fails closed when backend omits or corrupts status"
             accountGroup: "enterprise",
             rpm: 60,
             tpm: 200000,
-            status: "active",
             ...patch,
           } as Record<string, unknown>;
           if (patch.status === undefined) {

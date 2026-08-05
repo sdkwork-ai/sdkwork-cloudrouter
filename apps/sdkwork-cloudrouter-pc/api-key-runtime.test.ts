@@ -12,6 +12,7 @@ import {
   type ApiKeyFormValues,
 } from "./packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyForm.ts";
 import { ApiKeyService } from "./packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts";
+import type { AccountGroup } from "./packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts";
 import {
   resolveAccountGroupCode,
   resolveAccountGroupName,
@@ -193,9 +194,9 @@ test("console api key drawer uses the default group when no groups are available
 });
 
 test("console account group labels use group names while preserving submitted group codes", () => {
-  const groups = [
-    { id: "GRP-premium", code: "premium", name: "Premium accounts", description: "Premium routing pool", rate: "0.80" },
-    { id: "group-default", code: "default", name: "Default routing", description: null, rate: null },
+  const groups: AccountGroup[] = [
+    { id: "GRP-premium", code: "premium", name: "Premium accounts", description: "Premium routing pool", rate: "0.80", vendorCode: null, modalities: [] },
+    { id: "group-default", code: "default", name: "Default routing", description: null, rate: null, vendorCode: null, modalities: [] },
   ];
 
   assert.equal(resolveAccountGroupName("premium", groups), "Premium accounts");
@@ -464,7 +465,7 @@ test("console api key usage details profiles cover supported tool setup tabs", a
 
   assert.deepEqual(
     API_KEY_USAGE_TOOL_PROFILES.map((profile) => profile.id),
-    ["codex", "claude-code", "gemini", "opencode", "openclaw", "hermes-agent"],
+    ["codex", "claude-code", "gemini", "opencode", "openclaw", "hermes-agent", "mimo-code", "rig"],
   );
   assert.equal(resolveGatewayEndpoint("https://console.example.test/v1", "openai"), "https://console.example.test/v1");
   assert.equal(resolveGatewayEndpoint("https://console.example.test/v1", "anthropic"), "https://console.example.test/anthropic");
@@ -478,15 +479,23 @@ test("console api key usage details profiles cover supported tool setup tabs", a
   });
 
   assert.match(snippets.codex, /model_provider = "cloudrouter"/);
-  assert.match(snippets.codex, /env_key = "CLOUD_ROUTER_API_KEY"/);
+  assert.match(snippets.codex, /env_key = "CLOUDROUTER_API_KEY"/);
+  assert.match(snippets.codex, /wire_api = "responses"/);
   assert.match(snippets["claude-code"], /ANTHROPIC_BASE_URL="https:\/\/console\.example\.test\/anthropic"/);
   assert.match(snippets.gemini, /GOOGLE_GEMINI_BASE_URL="https:\/\/console\.example\.test\/google\/v1beta"/);
+  assert.match(snippets.gemini, /"selectedType": "gemini-api-key"/);
   assert.match(snippets.opencode, /"npm": "@ai-sdk\/openai-compatible"/);
   assert.match(snippets.opencode, /"options": \{/);
-  assert.match(snippets.openclaw, /base_url: https:\/\/console\.example\.test\/v1/);
-  assert.match(snippets["hermes-agent"], /baseUrl: "https:\/\/console\.example\.test\/v1"/);
-  assert.match(snippets["hermes-agent"], /protocol: openai/);
+  assert.match(snippets.openclaw, /"baseUrl": "https:\/\/console\.example\.test\/v1"/);
+  assert.match(snippets.openclaw, /"api": "openai-completions"/);
+  assert.match(snippets["hermes-agent"], /base_url: https:\/\/console\.example\.test\/v1/);
+  assert.match(snippets["hermes-agent"], /api_mode: openai_chat/);
+  assert.doesNotMatch(snippets["hermes-agent"], /protocol: openai/);
   assert.doesNotMatch(snippets["hermes-agent"], /OPENAI_API_KEY/);
+  assert.match(snippets["mimo-code"], /mimocode\.jsonc/);
+  assert.match(snippets["mimo-code"], /"npm": "@ai-sdk\/openai-compatible"/);
+  assert.match(snippets.rig, /openai::Client::builder\(\)/);
+  assert.match(snippets.rig, /\.base_url\("https:\/\/console\.example\.test\/v1"\)/);
 });
 
 test("console api key usage details drawer never exposes persisted full-key copy", async () => {

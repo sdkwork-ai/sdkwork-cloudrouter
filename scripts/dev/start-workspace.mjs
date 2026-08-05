@@ -516,6 +516,7 @@ export function parseWorkspaceArgs(argv = [], {
     runtimeModeExplicit: false,
     explicitForwarding: false,
     deploymentProfile: 'standalone',
+    regionCode: undefined,
     profileId: undefined,
     gatewayBindExplicit: false,
     adminApiBindExplicit: false,
@@ -594,6 +595,10 @@ export function parseWorkspaceArgs(argv = [], {
         settings.deploymentProfile = requireValue(argv, index, arg);
         index += 1;
         break;
+      case '--region':
+        settings.regionCode = requireValue(argv, index, arg);
+        index += 1;
+        break;
       case '--hosting':
         throw new Error(
           '--hosting is retired; use --deployment-profile (standalone or cloud)',
@@ -663,6 +668,7 @@ export function parseWorkspaceArgs(argv = [], {
     deploymentProfile: settings.deploymentProfile,
     env: process.env,
     includeIamDatabase: false,
+    regionCode: settings.regionCode,
   });
   applyTopologyProfileToWorkspaceSettings(settings, topologyProfile.profileEnv);
   const legacyBindEnv = bridgeTopologyBindEnvToLegacyRustEnv(
@@ -1166,6 +1172,7 @@ Use --client-only for a remote API client session that starts no local API host.
 
 Options:
   --deployment-profile <standalone|cloud>
+  --region <global|cn>                               Deployment region (REGION_SPEC.md); default global
                          Deployment profile (default standalone)
   --distributed          Use local split-process debugging; does not change the topology profile
   --database-url <url>    Optional shared SDKWORK_DATABASE_URL override (default ${defaultPostgresDatabaseUrl()})

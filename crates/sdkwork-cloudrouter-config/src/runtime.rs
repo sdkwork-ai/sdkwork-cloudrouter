@@ -348,6 +348,7 @@ pub struct ModelRankingSectionConfig {
 pub struct InstallSectionConfig {
     pub environment: Option<String>,
     pub seed_profile: Option<String>,
+    pub seed_locale: Option<String>,
     pub models_catalog_root: Option<String>,
     pub startup_mode: Option<String>,
 }

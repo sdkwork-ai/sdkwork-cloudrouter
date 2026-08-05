@@ -1,7 +1,7 @@
 import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
-import type { CreateUpstreamAccountCredentialRequest, CreateUpstreamAccountGroupRequest, CreateUpstreamAccountRequest, CreateUpstreamSupplierRequest, ExplainUpstreamAccountGroupRouteRequest, ReplaceUpstreamAccountGroupMembersRequest, ReplaceUpstreamAccountGroupResourcesRequest, ReplaceUpstreamSupplierAuthMethodsRequest, ReplaceUpstreamSupplierEndpointsRequest, ReplaceUpstreamSupplierResourcesRequest, UpdateUpstreamAccountGroupRequest, UpdateUpstreamAccountRequest, UpdateUpstreamSupplierRequest, UpstreamAccount, UpstreamAccountCredential, UpstreamAccountCredentialListResponse, UpstreamAccountGroup, UpstreamAccountGroupListResponse, UpstreamAccountGroupMemberCollection, UpstreamAccountGroupMemberListResponse, UpstreamAccountGroupResourceCollection, UpstreamAccountGroupResourceListResponse, UpstreamAccountGroupRouteExplanation, UpstreamAccountListResponse, UpstreamAccountVerification, UpstreamSupplier, UpstreamSupplierAuthMethodCollection, UpstreamSupplierAuthMethodListResponse, UpstreamSupplierEndpointCollection, UpstreamSupplierEndpointListResponse, UpstreamSupplierListResponse, UpstreamSupplierResourceCollection, UpstreamSupplierResourceListResponse, VerifyUpstreamAccountRequest } from '../types';
+import type { CreateUpstreamAccountCredentialRequest, CreateUpstreamAccountGroupRequest, CreateUpstreamAccountRequest, CreateUpstreamSupplierRequest, ExplainUpstreamAccountGroupRouteRequest, ReplaceUpstreamAccountGroupMembersRequest, ReplaceUpstreamAccountGroupResourcesRequest, ReplaceUpstreamSupplierAuthMethodsRequest, ReplaceUpstreamSupplierEndpointsRequest, ReplaceUpstreamSupplierResourcesRequest, UpdateUpstreamAccountGroupRequest, UpdateUpstreamAccountRequest, UpdateUpstreamSupplierRequest, UpstreamAccount, UpstreamAccountCredential, UpstreamAccountCredentialListResponse, UpstreamAccountGroup, UpstreamAccountGroupListResponse, UpstreamAccountGroupMemberCollection, UpstreamAccountGroupMemberListResponse, UpstreamAccountGroupResourceCollection, UpstreamAccountGroupResourceListResponse, UpstreamAccountGroupRouteExplanation, UpstreamAccountListResponse, UpstreamAccountVerification, UpstreamResourceCatalogResponse, UpstreamSupplier, UpstreamSupplierAuthMethodCollection, UpstreamSupplierAuthMethodListResponse, UpstreamSupplierEndpointCollection, UpstreamSupplierEndpointListResponse, UpstreamSupplierListResponse, UpstreamSupplierResourceCollection, UpstreamSupplierResourceListResponse, VerifyUpstreamAccountRequest } from '../types';
 
 
 export interface AiUpstreamSuppliersResourcesUpdateParams {
@@ -169,6 +169,20 @@ export class AiUpstreamSuppliersApi {
       {}
     );
     return this.client.request<UpstreamSupplier>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
+  }
+}
+
+export class AiUpstreamResourceCatalogApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List upstream resource catalog */
+  async retrieve(requestOptions?: ApiRequestOptions): Promise<UpstreamResourceCatalogResponse> {
+    return this.client.request<UpstreamResourceCatalogResponse>(backendApiPath(`/ai/upstream_resource_catalog`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -445,12 +459,14 @@ export class AiApi {
   private client: HttpClient;
   public readonly upstreamAccountGroups: AiUpstreamAccountGroupsApi;
   public readonly upstreamAccounts: AiUpstreamAccountsApi;
+  public readonly upstreamResourceCatalog: AiUpstreamResourceCatalogApi;
   public readonly upstreamSuppliers: AiUpstreamSuppliersApi;
 
   constructor(client: HttpClient) {
     this.client = client;
     this.upstreamAccountGroups = new AiUpstreamAccountGroupsApi(client);
     this.upstreamAccounts = new AiUpstreamAccountsApi(client);
+    this.upstreamResourceCatalog = new AiUpstreamResourceCatalogApi(client);
     this.upstreamSuppliers = new AiUpstreamSuppliersApi(client);
   }
 

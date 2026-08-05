@@ -195,7 +195,7 @@ async fn list_orders(
             'subject', o.subject,
             'status', o.status,
             'pay_status', COALESCE(pi.status, o.status),
-            'total_amount', COALESCE(ab.payable_amount, pi.amount, '0'),
+            'total_amount', COALESCE(ab.payable_amount, pi.amount::text, '0'),
             'currency_code', o.currency_code,
             'request_no', o.request_no,
             'idempotency_key', o.idempotency_key,
@@ -251,7 +251,7 @@ async fn load_order(
             'subject', o.subject,
             'status', o.status,
             'pay_status', COALESCE(pi.status, o.status),
-            'total_amount', COALESCE(ab.payable_amount, pi.amount, '0'),
+            'total_amount', COALESCE(ab.payable_amount, pi.amount::text, '0'),
             'currency_code', o.currency_code,
             'request_no', o.request_no,
             'idempotency_key', o.idempotency_key,
@@ -438,7 +438,7 @@ async fn list_fulfillments(
             'status', status,
             'warehouse_id', warehouse_id,
             'address_snapshot_id', address_snapshot_id,
-            'supplier_code', supplier_code,
+            'provider_code', provider_code,
             'created_at', created_at,
             'completed_at', completed_at,
             'updated_at', updated_at
@@ -556,7 +556,7 @@ async fn list_payment_providers(
         r#"
         SELECT json_build_object(
             'id', id,
-            'providerCode', supplier_code,
+            'providerCode', provider_code,
             'displayName', display_name,
             'providerType', provider_type,
             'supportedCountries', COALESCE(NULLIF(supported_countries::text, '')::json, '[]'::json),
@@ -572,7 +572,7 @@ async fn list_payment_providers(
         WHERE tenant_id IN (CAST($1 AS TEXT), '0')
           AND (organization_id = CAST($2 AS TEXT) OR organization_id = '0')
           AND (CAST($3 AS TEXT) IS NULL OR status = CAST($3 AS TEXT))
-          AND (CAST($4 AS TEXT) IS NULL OR supplier_code = CAST($4 AS TEXT))
+          AND (CAST($4 AS TEXT) IS NULL OR provider_code = CAST($4 AS TEXT))
         ORDER BY
             CASE
                 WHEN tenant_id = CAST($1 AS TEXT) AND organization_id = CAST($2 AS TEXT) THEN 0
@@ -607,7 +607,7 @@ async fn list_payment_provider_accounts(
         WHERE tenant_id IN (CAST($1 AS TEXT), '0')
           AND (organization_id = CAST($2 AS TEXT) OR organization_id = '0')
           AND (CAST($3 AS TEXT) IS NULL OR status = CAST($3 AS TEXT))
-          AND (CAST($4 AS TEXT) IS NULL OR supplier_code = CAST($4 AS TEXT))
+          AND (CAST($4 AS TEXT) IS NULL OR provider_code = CAST($4 AS TEXT))
           AND (CAST($5 AS TEXT) IS NULL OR id = CAST($5 AS TEXT) OR account_no = CAST($5 AS TEXT))
         ORDER BY
             CASE
@@ -669,11 +669,11 @@ async fn create_payment_provider_account(
     let insert_result = sqlx::query(
         r#"
         INSERT INTO commerce_payment_provider_account
-            (id, tenant_id, organization_id, account_no, supplier_code, merchant_id, environment,
+            (id, tenant_id, organization_id, account_no, provider_code, merchant_id, environment,
              country_code, settlement_currency, secret_ref, webhook_secret_ref, certificate_ref,
              status, rotated_at, created_at, updated_at)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::timestamptz, $16::timestamptz)
         "#,
     )
     .bind(&id)
@@ -764,7 +764,7 @@ async fn update_payment_provider_account(
     let update_result = sqlx::query(
         r#"
         UPDATE commerce_payment_provider_account
-        SET supplier_code = $1,
+        SET provider_code = $1,
             merchant_id = $2,
             environment = $3,
             country_code = $4,
@@ -774,7 +774,7 @@ async fn update_payment_provider_account(
             certificate_ref = $8,
             status = $9,
             rotated_at = $10,
-            updated_at = $11
+            updated_at = $11::timestamptz
         WHERE tenant_id = CAST($12 AS TEXT)
           AND organization_id = CAST($13 AS TEXT)
           AND id = $14
@@ -877,7 +877,7 @@ async fn update_payment_provider_account_status(
         r#"
         UPDATE commerce_payment_provider_account
         SET status = $1,
-            updated_at = $2
+            updated_at = $2::timestamptz
         WHERE tenant_id = CAST($3 AS TEXT)
           AND organization_id = CAST($4 AS TEXT)
           AND id = $5
@@ -950,7 +950,7 @@ async fn load_payment_provider_account_channel_scope(
 ) -> DomainResult<Option<PaymentProviderAccountChannelScope>> {
     let row = sqlx::query(
         r#"
-        SELECT supplier_code, environment, country_code, settlement_currency
+        SELECT provider_code, environment, country_code, settlement_currency
         FROM commerce_payment_provider_account
         WHERE tenant_id = CAST($1 AS TEXT)
           AND organization_id = CAST($2 AS TEXT)
@@ -971,7 +971,7 @@ async fn load_payment_provider_account_channel_scope(
         tenant_id: subject.tenant_id,
         organization_id: subject.organization_id,
         provider_account_id: provider_account_id.to_owned(),
-        supplier_code: string_cell(&row, "supplier_code")?,
+        supplier_code: string_cell(&row, "provider_code")?,
         environment: string_cell(&row, "environment")?,
         country_code: string_cell(&row, "country_code")?,
         settlement_currency: string_cell(&row, "settlement_currency")?,
@@ -991,11 +991,11 @@ async fn deactivate_peer_payment_provider_accounts_for_channel_scope(
         r#"
         UPDATE commerce_payment_provider_account
         SET status = 'inactive',
-            updated_at = $1
+            updated_at = $1::timestamptz
         WHERE tenant_id = CAST($2 AS TEXT)
           AND organization_id = CAST($3 AS TEXT)
           AND id <> $4
-          AND supplier_code = $5
+          AND provider_code = $5
           AND environment = $6
           AND country_code = $7
           AND settlement_currency = $8
@@ -1218,7 +1218,7 @@ async fn insert_payment_provider_account_mutation_audit(
             (uuid, tenant_id, organization_id, request_id, operator_id, operator_type,
              action, target_type, target_uuid, created_at, change_summary, id)
         SELECT
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10::timestamptz, $11::jsonb, $12
         WHERE NOT EXISTS (
             SELECT 1
             FROM ops_audit_log
@@ -1429,7 +1429,7 @@ async fn list_payment_channels(
             'providerAccountId', c.provider_account_id,
             'method_id', c.method_id,
             'methodCode', m.method_key,
-            'providerCode', a.supplier_code,
+            'providerCode', a.provider_code,
             'scene_code', c.scene_code,
             'sceneCode', c.scene_code,
             'currency_code', c.currency_code,
@@ -1450,7 +1450,7 @@ async fn list_payment_channels(
         WHERE c.tenant_id IN (CAST($1 AS TEXT), '0')
           AND (c.organization_id = CAST($2 AS TEXT) OR c.organization_id = '0')
           AND (CAST($3 AS TEXT) IS NULL OR c.status = CAST($3 AS TEXT))
-          AND (CAST($4 AS TEXT) IS NULL OR a.supplier_code = CAST($4 AS TEXT))
+          AND (CAST($4 AS TEXT) IS NULL OR a.provider_code = CAST($4 AS TEXT))
           AND (CAST($5 AS TEXT) IS NULL OR c.provider_account_id = CAST($5 AS TEXT))
           AND (CAST($6 AS TEXT) IS NULL OR m.method_key = CAST($6 AS TEXT))
           AND (CAST($7 AS TEXT) IS NULL OR c.country_code = CAST($7 AS TEXT))
@@ -1507,8 +1507,8 @@ async fn list_payment_route_rules(
             'amount_max', r.amount_max,
             'user_segment', r.user_segment,
             'risk_level', r.risk_level,
-            'account_id', r.account_id,
-            'channelId', r.account_id,
+            'account_id', r.channel_id,
+            'channelId', r.channel_id,
             'fallbackChannelId', NULL,
             'fallbackEnabled', false,
             'methodCode', m.method_key,
@@ -1522,7 +1522,7 @@ async fn list_payment_route_rules(
         ) AS item,
         COUNT(*) OVER() AS total
         FROM commerce_payment_route_rule r
-        LEFT JOIN commerce_payment_channel c ON c.tenant_id = r.tenant_id AND c.id = r.account_id
+        LEFT JOIN commerce_payment_channel c ON c.tenant_id = r.tenant_id AND c.id = r.channel_id
         LEFT JOIN commerce_payment_method m ON m.tenant_id = c.tenant_id AND m.id = c.method_id
         WHERE r.tenant_id IN (CAST($1 AS TEXT), '0')
           AND (r.organization_id = CAST($2 AS TEXT) OR r.organization_id = '0')
@@ -1778,8 +1778,8 @@ async fn list_payment_reconciliation_runs(
             'organization_id', organization_id,
             'run_no', run_no,
             'runNo', run_no,
-            'supplier_code', supplier_code,
-            'providerCode', supplier_code,
+            'provider_code', provider_code,
+            'providerCode', provider_code,
             'provider_account_id', provider_account_id,
             'providerAccountId', provider_account_id,
             'settlement_currency', settlement_currency,
@@ -1810,8 +1810,8 @@ async fn list_payment_reconciliation_runs(
         WHERE tenant_id = CAST($1 AS TEXT)
           AND organization_id = CAST($2 AS TEXT)
           AND (CAST($3 AS TEXT) IS NULL OR status = CAST($3 AS TEXT))
-          AND (CAST($4 AS TEXT) IS NULL OR supplier_code = CAST($4 AS TEXT))
-          AND (CAST($5 AS TEXT) IS NULL OR period_start = CAST($5 AS TEXT))
+          AND (CAST($4 AS TEXT) IS NULL OR provider_code = CAST($4 AS TEXT))
+          AND (CAST($5 AS TEXT) IS NULL OR period_start = CAST($5 AS timestamptz))
         ORDER BY created_at DESC NULLS LAST, id DESC
         LIMIT $6 OFFSET $7
         "#,
@@ -1847,8 +1847,8 @@ fn payment_provider_account_json_sql(
             'organization_id', organization_id,
             'account_no', account_no,
             'accountNo', account_no,
-            'supplier_code', supplier_code,
-            'providerCode', supplier_code,
+            'provider_code', provider_code,
+            'providerCode', provider_code,
             'accountRole', (
                 SELECT audit.change_summary->>'accountRole'
                 FROM ops_audit_log audit
@@ -2008,14 +2008,18 @@ fn stable_id(prefix: &str, parts: &[&str]) -> String {
 fn payment_provider_account_idempotency_id(
     command: &CreateAdminPaymentProviderAccountCommand,
 ) -> String {
-    stable_id(
+    // The generated id is also stored in `ops_audit_log.target_uuid`
+    // (VARCHAR(64)), so keep the command-scoped namespace under 64 chars.
+    let mut id = stable_id(
         "payment-provider-account-command",
         &[
             &command.subject.tenant_id.to_string(),
             &command.subject.organization_id.to_string(),
             &command.idempotency_key,
         ],
-    )
+    );
+    id.truncate(64);
+    id
 }
 
 fn ensure_payment_provider_account_replay_matches(

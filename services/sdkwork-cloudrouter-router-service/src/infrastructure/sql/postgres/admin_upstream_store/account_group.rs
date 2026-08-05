@@ -13,7 +13,8 @@ use crate::ports::{
 };
 
 const GROUP_COLUMNS: &str = r#"
-    id, uuid, group_code, group_name, description, group_type,
+    id, uuid, group_code, group_name, group_name_i18n::text AS group_name_i18n,
+    description, group_type,
     routing_strategy, fallback_mode, priority,
     cost_multiplier::text AS cost_multiplier,
     sale_multiplier::text AS sale_multiplier,
@@ -530,6 +531,11 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamAccountGroupItem> {
             &row,
             "group_name",
             "failed to map upstream account group name",
+        )?,
+        group_name_i18n: column(
+            &row,
+            "group_name_i18n",
+            "failed to map upstream account group localized name",
         )?,
         description: column(
             &row,

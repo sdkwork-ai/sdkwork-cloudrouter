@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useState,
+  type ReactNode,
+  type Ref,
+} from 'react';
 import {
   ChevronDown,
   Image as ImageIcon,
@@ -37,6 +44,7 @@ export interface GroupPickerLabels {
   /** 触发器占位文案 */
   triggerPlaceholder?: string;
   title?: string;
+  /** 穿梭器左右列搜索框占位文案 */
   searchPlaceholder?: string;
   empty?: string;
   emptySearch?: string;
@@ -54,6 +62,11 @@ export interface GroupPickerLabels {
   rate?: string;
   /** 模态标签覆盖，key 为模态 code（text/audio/image/video/music） */
   modalityLabels?: Record<string, string>;
+}
+
+export interface GroupPickerHandle {
+  /** 编程式打开选择弹窗（如分组 cell 预览弹层中的编辑按钮） */
+  open: () => void;
 }
 
 export interface GroupPickerProps {
@@ -74,6 +87,12 @@ export interface GroupPickerProps {
   /** 触发器文本覆盖（优先于已选计数/占位文案） */
   triggerLabel?: string;
   triggerClassName?: string;
+  /** 禁用点击触发器打开弹窗（仍可通过 ref.open() 编程式打开）；默认 false */
+  disableTriggerOpen?: boolean;
+  /** 点击遮罩（弹窗外）时是否关闭选择弹窗；默认 true */
+  closeOnClickOutside?: boolean;
+  /** 命令式句柄：编程式打开选择弹窗 */
+  ref?: Ref<GroupPickerHandle>;
 }
 
 const GROUP_MODALITIES = [
@@ -99,6 +118,37 @@ function deriveVendors(options: GroupPickerOption[]): GroupPickerVendor[] {
   return Array.from(seen, ([code]) => ({ code, label: code }));
 }
 
+function matchesQuery(option: GroupPickerOption, query: string): boolean {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) {
+    return true;
+  }
+  return [option.label, option.description, option.value, option.vendorCode].some((text) =>
+    (text ?? '').toLowerCase().includes(normalizedQuery),
+  );
+}
+
+/** 高亮命中搜索词的文本片段 */
+function HighlightedText({ text, query }: { text: string; query: string }) {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) {
+    return <>{text}</>;
+  }
+  const index = text.toLowerCase().indexOf(normalized);
+  if (index === -1) {
+    return <>{text}</>;
+  }
+  return (
+    <>
+      {text.slice(0, index)}
+      <mark className="rounded-sm bg-blue-100 px-0.5 text-blue-700 dark:bg-blue-500/25 dark:text-blue-300">
+        {text.slice(index, index + normalized.length)}
+      </mark>
+      {text.slice(index + normalized.length)}
+    </>
+  );
+}
+
 export function GroupPicker({
   options,
   value,
@@ -111,12 +161,16 @@ export function GroupPicker({
   onOpen,
   triggerLabel,
   triggerClassName,
+  disableTriggerOpen = false,
+  closeOnClickOutside = true,
+  ref,
 }: GroupPickerProps) {
   const [open, setOpen] = useState(false);
   const [draftValue, setDraftValue] = useState<string[]>([]);
   const [activeVendor, setActiveVendor] = useState('all');
   const [activeModality, setActiveModality] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [availableQuery, setAvailableQuery] = useState('');
+  const [selectedQuery, setSelectedQuery] = useState('');
 
   const isMultiple = selectionMode === 'multiple';
   const resolvedVendors = vendors ?? deriveVendors(options);
@@ -126,9 +180,13 @@ export function GroupPicker({
       return;
     }
     setDraftValue(Array.isArray(value) ? [...value] : []);
+    setAvailableQuery('');
+    setSelectedQuery('');
     setOpen(true);
     onOpen?.();
   };
+
+  useImperativeHandle(ref, () => ({ open: openDialog }), [openDialog]);
 
   const cancel = () => setOpen(false);
 
@@ -152,17 +210,9 @@ export function GroupPicker({
 
   const selectedSet = useMemo(() => new Set(draftValue), [draftValue]);
 
+  /** vendor/模态全局过滤后的候选池（顶部筛选条） */
   const filteredOptions = useMemo(() => {
-    const normalizedQuery = searchQuery.trim().toLowerCase();
     return options.filter((option) => {
-      if (
-        normalizedQuery &&
-        ![option.label, option.description, option.value, option.vendorCode].some((text) =>
-          (text ?? '').toLowerCase().includes(normalizedQuery),
-        )
-      ) {
-        return false;
-      }
       if (activeVendor !== 'all' && option.vendorCode && option.vendorCode !== activeVendor) {
         return false;
       }
@@ -174,10 +224,26 @@ export function GroupPicker({
       }
       return true;
     });
-  }, [activeModality, activeVendor, options, searchQuery]);
+  }, [activeModality, activeVendor, options]);
 
-  const availableOptions = filteredOptions.filter((option) => !selectedSet.has(option.value));
-  const selectedOptions = options.filter((option) => selectedSet.has(option.value));
+  const availableOptions = useMemo(
+    () => filteredOptions.filter((option) => !selectedSet.has(option.value)),
+    [filteredOptions, selectedSet],
+  );
+  const selectedOptions = useMemo(
+    () => options.filter((option) => selectedSet.has(option.value)),
+    [options, selectedSet],
+  );
+
+  /** 左右穿梭器各自的搜索过滤结果 */
+  const filteredAvailableOptions = useMemo(
+    () => availableOptions.filter((option) => matchesQuery(option, availableQuery)),
+    [availableOptions, availableQuery],
+  );
+  const filteredSelectedOptions = useMemo(
+    () => selectedOptions.filter((option) => matchesQuery(option, selectedQuery)),
+    [selectedOptions, selectedQuery],
+  );
 
   const moveToSelected = (option: GroupPickerOption) => {
     if (option.disabled) {
@@ -202,7 +268,7 @@ export function GroupPicker({
     }
     setDraftValue((previous) => {
       const next = new Set(previous);
-      for (const option of availableOptions) {
+      for (const option of filteredAvailableOptions) {
         next.add(option.value);
       }
       return Array.from(next);
@@ -216,7 +282,7 @@ export function GroupPicker({
       <button
         type="button"
         disabled={disabled}
-        onClick={openDialog}
+        onClick={disableTriggerOpen ? undefined : openDialog}
         className={cn(
           'inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-[#252525] dark:text-slate-200 dark:hover:bg-white/5',
           triggerClassName,
@@ -243,8 +309,13 @@ export function GroupPicker({
           aria-modal="true"
           aria-label={labels.title ?? 'Select groups'}
           className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
+          onClick={(event) => {
+            if (closeOnClickOutside && event.target === event.currentTarget) {
+              cancel();
+            }
+          }}
         >
-          <div className="flex h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#1a1a1a]">
+          <div className="flex h-[80vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#1a1a1a]">
             <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 px-5 py-3.5 dark:border-white/10">
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
                 {labels.title ?? 'Select groups'}
@@ -253,7 +324,7 @@ export function GroupPicker({
                 type="button"
                 onClick={cancel}
                 aria-label={labels.cancel ?? 'Cancel'}
-                className="rounded-full p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-200"
+                className="rounded-full p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:hover:bg-white/10 dark:hover:text-slate-200"
               >
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -295,24 +366,18 @@ export function GroupPicker({
                   );
                 })}
               </div>
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.currentTarget.value)}
-                  placeholder={labels.searchPlaceholder ?? 'Search groups'}
-                  className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-2 text-xs text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-[#121212] dark:text-white dark:focus:border-blue-500"
-                />
-              </div>
             </div>
 
-            <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 p-4 sm:grid-cols-2">
+            <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 p-5 sm:grid-cols-2">
               <TransferColumn
                 title={labels.available?.(availableOptions.length) ?? `${availableOptions.length} available`}
-                options={availableOptions}
+                totalCount={availableOptions.length}
+                options={filteredAvailableOptions}
+                query={availableQuery}
+                onQueryChange={setAvailableQuery}
+                searchPlaceholder={labels.searchPlaceholder ?? 'Search groups'}
                 emptyText={
-                  searchQuery.trim()
+                  availableQuery.trim()
                     ? (labels.emptySearch ?? 'No matching groups')
                     : (labels.empty ?? 'No groups')
                 }
@@ -325,8 +390,16 @@ export function GroupPicker({
               />
               <TransferColumn
                 title={labels.selected?.(selectedOptions.length) ?? `${selectedOptions.length} selected`}
-                options={selectedOptions}
-                emptyText={labels.emptySelected ?? 'Nothing selected'}
+                totalCount={selectedOptions.length}
+                options={filteredSelectedOptions}
+                query={selectedQuery}
+                onQueryChange={setSelectedQuery}
+                searchPlaceholder={labels.searchPlaceholder ?? 'Search groups'}
+                emptyText={
+                  selectedQuery.trim()
+                    ? (labels.emptySearch ?? 'No matching groups')
+                    : (labels.emptySelected ?? 'Nothing selected')
+                }
                 showDescription={showDescription}
                 labels={labels}
                 actionLabel={isMultiple ? (labels.removeAll ?? 'Remove all') : undefined}
@@ -345,7 +418,7 @@ export function GroupPicker({
                   <button
                     type="button"
                     onClick={removeAllSelected}
-                    className="rounded px-1.5 py-0.5 text-xs font-semibold text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10"
+                    className="rounded px-1.5 py-0.5 text-xs font-semibold text-blue-600 transition-colors hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:text-blue-400 dark:hover:bg-blue-500/10"
                   >
                     {labels.clear ?? 'Clear'}
                   </button>
@@ -355,14 +428,14 @@ export function GroupPicker({
                 <button
                   type="button"
                   onClick={cancel}
-                  className="rounded-lg border border-slate-200 px-3.5 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5"
+                  className="rounded-lg border border-slate-200 px-3.5 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5"
                 >
                   {labels.cancel ?? 'Cancel'}
                 </button>
                 <button
                   type="button"
                   onClick={confirm}
-                  className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+                  className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
                 >
                   {labels.confirm ?? 'Confirm'}
                 </button>
@@ -405,7 +478,11 @@ function FilterChip({
 
 function TransferColumn({
   title,
+  totalCount,
   options,
+  query,
+  onQueryChange,
+  searchPlaceholder,
   emptyText,
   showDescription,
   labels,
@@ -415,7 +492,12 @@ function TransferColumn({
   actionIcon,
 }: {
   title: string;
+  totalCount: number;
+  /** 已应用本列搜索过滤后的选项 */
   options: GroupPickerOption[];
+  query: string;
+  onQueryChange: (query: string) => void;
+  searchPlaceholder: string;
   emptyText: string;
   showDescription: boolean;
   labels: GroupPickerLabels;
@@ -424,20 +506,52 @@ function TransferColumn({
   onSelect: (option: GroupPickerOption) => void;
   actionIcon?: ReactNode;
 }) {
+  const searching = query.trim().length > 0;
   return (
-    <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-slate-200 dark:border-white/10" data-sdk-group-picker-column>
+    <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-white/10 dark:bg-[#1a1a1a]" data-sdk-group-picker-column>
       <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2 dark:border-white/5 dark:bg-white/[0.02]">
-        <span className="truncate text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          {title}
+        <span className="flex min-w-0 items-center gap-1.5">
+          <span className="truncate text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            {title}
+          </span>
+          {searching ? (
+            <span className="shrink-0 rounded-full bg-slate-200/80 px-1.5 py-px font-mono text-[10px] font-bold leading-4 text-slate-600 dark:bg-white/10 dark:text-slate-300">
+              {options.length}/{totalCount}
+            </span>
+          ) : null}
         </span>
         {actionLabel && onAction ? (
           <button
             type="button"
             onClick={onAction}
-            className="inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-semibold text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10"
+            className="inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-semibold text-blue-600 transition-colors hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:text-blue-400 dark:hover:bg-blue-500/10"
           >
             {actionIcon}
             {actionLabel}
+          </button>
+        ) : null}
+      </div>
+      <div className="relative shrink-0 bg-slate-50 px-2 pb-2 pt-1.5 dark:bg-white/[0.02]">
+        <Search
+          className="pointer-events-none absolute left-[13px] top-1/2 h-3 w-3 -translate-y-1/2 text-slate-400"
+          aria-hidden="true"
+        />
+        <input
+          type="text"
+          value={query}
+          onChange={(event) => onQueryChange(event.currentTarget.value)}
+          placeholder={searchPlaceholder}
+          data-sdk-group-picker-search
+          className="h-7 w-full rounded-md border border-slate-200 bg-white pl-7 pr-6 text-xs text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-[#121212] dark:text-white dark:focus:border-blue-500"
+        />
+        {searching ? (
+          <button
+            type="button"
+            onClick={() => onQueryChange('')}
+            aria-label="Clear search"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-white/10 dark:hover:text-slate-200"
+          >
+            <X className="h-3 w-3" aria-hidden="true" />
           </button>
         ) : null}
       </div>
@@ -455,16 +569,16 @@ function TransferColumn({
               disabled={option.disabled}
               onClick={() => onSelect(option)}
               data-sdk-group-picker-option
-              className="group/picker-item flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-slate-50 disabled:opacity-50 dark:hover:bg-white/5"
+              className="group/picker-item flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 disabled:opacity-50 dark:hover:bg-white/5"
             >
               <OptionIconTile option={option} size="sm" />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium text-slate-800 dark:text-white">
-                  {option.label}
+                  <HighlightedText text={option.label} query={query} />
                 </span>
                 {showDescription && option.description ? (
                   <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
-                    {option.description}
+                    <HighlightedText text={option.description} query={query} />
                   </span>
                 ) : null}
               </span>

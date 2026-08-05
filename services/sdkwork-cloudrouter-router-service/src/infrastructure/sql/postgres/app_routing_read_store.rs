@@ -13,7 +13,7 @@ const LOAD_ROUTING_ACCOUNT_GROUPS: &str = r#"
 SELECT
     CAST(g.id AS TEXT) AS id,
     g.group_code,
-    g.group_name,
+    COALESCE(NULLIF(g.group_name_i18n->>$7, ''), g.group_name) AS group_name,
     COALESCE(g.description, '') AS description,
     g.routing_strategy,
     g.fallback_mode,
@@ -179,7 +179,7 @@ LEFT JOIN LATERAL (
             jsonb_build_object(
                 'id', CAST(g.id AS TEXT),
                 'code', g.group_code,
-                'name', g.group_name
+                'name', COALESCE(NULLIF(g.group_name_i18n->>$7, ''), g.group_name)
             ) ORDER BY g.priority, g.group_code, g.id
         ),
         '[]'::jsonb
@@ -315,7 +315,7 @@ SELECT
     COALESCE(NULLIF(t.account_name_snapshot, ''), NULLIF(a.account_name, ''), '') AS upstream_account_name,
     COALESCE(CAST(t.account_group_id AS TEXT), '') AS upstream_account_group_id,
     COALESCE(NULLIF(g.group_code, ''), '') AS upstream_account_group_code,
-    COALESCE(NULLIF(t.account_group_snapshot, ''), NULLIF(g.group_name, ''), '') AS upstream_account_group_name,
+    COALESCE(NULLIF(t.account_group_snapshot, ''), NULLIF(g.group_name_i18n->>$7, ''), NULLIF(g.group_name, ''), '') AS upstream_account_group_name,
     COALESCE(NULLIF(t.request_path, ''), '') AS request_path,
     COALESCE(NULLIF(t.http_method, ''), '') AS http_method,
     t.http_status AS http_status,
@@ -477,6 +477,7 @@ impl AppRoutingReadStore for PostgresAppRoutingReadStore {
         &'a self,
         subject: Option<AppRoutingSubject>,
         query: AppRoutingListQuery,
+        locale: Option<&'a str>,
     ) -> AppRoutingReadFuture<'a, AppRoutingAccountGroupListPage> {
         Box::pin(async move {
             let subject = require_subject(subject)?;
@@ -488,6 +489,7 @@ impl AppRoutingReadStore for PostgresAppRoutingReadStore {
                 .bind(search)
                 .bind(query.page_size.max(1))
                 .bind(query.offset.max(0))
+                .bind(locale)
                 .fetch_all(&self.pool)
                 .await
                 .map_err(sql_error)?;
@@ -512,6 +514,7 @@ impl AppRoutingReadStore for PostgresAppRoutingReadStore {
         &'a self,
         subject: Option<AppRoutingSubject>,
         query: AppRoutingListQuery,
+        locale: Option<&'a str>,
     ) -> AppRoutingReadFuture<'a, AppRoutingApiKeyListPage> {
         Box::pin(async move {
             let subject = require_subject(subject)?;
@@ -523,6 +526,7 @@ impl AppRoutingReadStore for PostgresAppRoutingReadStore {
                 .bind(search)
                 .bind(query.page_size.max(1))
                 .bind(query.offset.max(0))
+                .bind(locale)
                 .fetch_all(&self.pool)
                 .await
                 .map_err(sql_error)?;
@@ -547,6 +551,7 @@ impl AppRoutingReadStore for PostgresAppRoutingReadStore {
         &'a self,
         subject: Option<AppRoutingSubject>,
         query: AppRoutingListQuery,
+        locale: Option<&'a str>,
     ) -> AppRoutingReadFuture<'a, AppRoutingRequestTraceListPage> {
         Box::pin(async move {
             let subject = require_subject(subject)?;
@@ -558,6 +563,7 @@ impl AppRoutingReadStore for PostgresAppRoutingReadStore {
                 .bind(search)
                 .bind(query.page_size.max(1))
                 .bind(query.offset.max(0))
+                .bind(locale)
                 .fetch_all(&self.pool)
                 .await
                 .map_err(sql_error)?;

@@ -1210,8 +1210,8 @@ test("runtime model catalog rejects unsafe identifiers and caps public runtime t
   assert.equal(models[0].name.length <= 80, true);
   assert.equal(models[0].name.endsWith("..."), true);
   assert.equal(models[0].provider, "New Vendor");
-  assert.equal(models[0].pricing.reason?.length <= 160, true);
-  assert.equal(models[0].pricing.reason?.endsWith("..."), true);
+  assert.equal((models[0]?.pricing?.reason?.length ?? 0) <= 160, true);
+  assert.equal((models[0]?.pricing?.reason?.endsWith("...") ?? false), true);
   assert.equal(models[0].capabilities.every((capability) => capability.length <= 64), true);
 });
 

@@ -159,6 +159,63 @@ pub fn resolve_deployment_runtime(
     resolve_legacy_deployment_runtime(runtime_toml)
 }
 
+/// Canonical deployment/market region code per `REGION_SPEC.md` (§4, §8):
+/// lowercase ASCII `^[a-z][a-z0-9_]*$`, max 64 chars, default `global`.
+/// The region is orthogonal to deployment profile and environment and is
+/// injected through `SDKWORK_CLOUDROUTER_ROUTER_REGION_CODE`.
+pub const DEFAULT_REGION_CODE: &'static str = "global";
+pub const ENV_REGION_CODE: &'static str = "SDKWORK_CLOUDROUTER_ROUTER_REGION_CODE";
+const MAX_REGION_CODE_LEN: usize = 64;
+
+/// Bundled REGION_SPEC region registry (etc/region.registry.json), compiled
+/// into the binary so deployment region validation works in every runtime.
+const REGION_REGISTRY_JSON: &str = include_str!("../../../etc/region.registry.json");
+
+/// Returns true when the code is an active (deployable) region per the
+/// bundled REGION_SPEC registry.
+pub fn is_active_region_code(code: &str) -> bool {
+    let registry: serde_json::Value = match serde_json::from_str(REGION_REGISTRY_JSON) {
+        Ok(value) => value,
+        Err(_) => return false,
+    };
+    registry
+        .get("regions")
+        .and_then(serde_json::Value::as_array)
+        .map(|regions| {
+            regions.iter().any(|region| {
+                region.get("status").and_then(serde_json::Value::as_str) == Some("active")
+                    && region.get("regionCode").and_then(serde_json::Value::as_str) == Some(code)
+            })
+        })
+        .unwrap_or(false)
+}
+
+/// Resolves the deployment region code from the environment, validating it
+/// against the REGION_SPEC format and falling back to `global`.
+pub fn resolve_region_code() -> Result<String, String> {
+    let region = crate::runtime::env_optional(ENV_REGION_CODE)
+        .unwrap_or_else(|| DEFAULT_REGION_CODE.to_owned());
+    let normalized = region.trim();
+    if normalized.is_empty() || !is_valid_region_code(normalized) {
+        return Err(format!(
+            "{ENV_REGION_CODE} must match ^[a-z][a-z0-9_]*$, got `{region}`"
+        ));
+    }
+    if normalized.len() > MAX_REGION_CODE_LEN {
+        return Err(format!("{ENV_REGION_CODE} exceeds {MAX_REGION_CODE_LEN} characters"));
+    }
+    Ok(normalized.to_owned())
+}
+
+fn is_valid_region_code(code: &str) -> bool {
+    let mut chars = code.chars();
+    match chars.next() {
+        Some(first) if first.is_ascii_alphabetic() && first.is_ascii_lowercase() => {}
+        _ => return false,
+    }
+    chars.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+}
+
 impl Default for DeploymentRuntime {
     fn default() -> Self {
         Self {
@@ -343,7 +400,7 @@ mod tests {
         static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
         LOCK.get_or_init(|| Mutex::new(()))
             .lock()
-            .expect("deployment env test lock")
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 
     fn with_env(vars: &[(&str, Option<&str>)], test: impl FnOnce()) {
@@ -463,5 +520,50 @@ mod tests {
                 assert_eq!(DeploymentMode::Kubernetes, runtime.mode);
             },
         );
+    }
+
+    #[test]
+    fn region_code_defaults_to_global() {
+        with_env(&[(ENV_REGION_CODE, None)], || {
+            assert_eq!(resolve_region_code().unwrap(), DEFAULT_REGION_CODE);
+        });
+    }
+
+    #[test]
+    fn region_code_reads_environment() {
+        with_env(&[(ENV_REGION_CODE, Some("cn"))], || {
+            assert_eq!(resolve_region_code().unwrap(), "cn");
+        });
+    }
+
+    #[test]
+    fn region_code_rejects_invalid_format() {
+        for invalid in ["1cn", "cn-east", "cn.", "cn/", "Cn", "CN", "cn-", "-cn"] {
+            with_env(&[(ENV_REGION_CODE, Some(invalid))], || {
+                assert!(
+                    resolve_region_code().is_err(),
+                    "region `{invalid}` must be rejected"
+                );
+            });
+        }
+    }
+
+    #[test]
+    fn region_code_rejects_overlong_value() {
+        let overlong = format!("r{}", "a".repeat(64));
+        with_env(&[(ENV_REGION_CODE, Some(&overlong))], || {
+            assert!(resolve_region_code().is_err());
+        });
+    }
+
+    #[test]
+    fn active_region_codes_match_registry() {
+        assert!(is_active_region_code("global"));
+        assert!(is_active_region_code("cn"));
+        assert!(!is_active_region_code("us"));
+        assert!(!is_active_region_code("eu"));
+        assert!(!is_active_region_code("asia"));
+        assert!(!is_active_region_code("unknown-region"));
+        assert!(!is_active_region_code(""));
     }
 }

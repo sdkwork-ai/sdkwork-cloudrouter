@@ -61,7 +61,6 @@ if (!i18n.isInitialized) {
       fallbackLng: "en",
       resources: { en: { translation: {} } },
       interpolation: { escapeValue: false },
-      initImmediate: false,
     });
 }
 
@@ -707,25 +706,29 @@ test("api reference loads available payment aggregate, paas, cloud storage and a
         serviceGroups: [
           {
             code: "ocr",
-            name: "OCR璇嗗埆",
+            name: "OCR识别",
+            description: "OCR services cover general text, document, and card recognition.",
             providerCodes: ["baidu", "alibaba", "tencent"],
             operations: ["general_text", "document_text", "id_card", "bank_card", "business_license"],
           },
           {
             code: "face_compare",
-            name: "浜鸿劯姣斿",
+            name: "人脸比对",
+            description: "Face comparison services for identity verification.",
             providerCodes: ["baidu", "alibaba", "tencent"],
             operations: ["one_to_one", "one_to_many", "quality_check"],
           },
           {
             code: "face_liveness_verification",
-            name: "浜鸿劯鏍歌韩",
+            name: "人脸核身",
+            description: "Face liveness detection and identity verification.",
             providerCodes: ["baidu", "alibaba", "tencent"],
             operations: ["liveness_detection", "id_verification", "video_liveness"],
           },
           {
             code: "content_moderation",
-            name: "鍐呭瀹夊叏",
+            name: "内容安全",
+            description: "Image, text, audio, and video content moderation.",
             providerCodes: ["baidu", "alibaba", "tencent"],
             operations: ["image_moderation", "text_moderation", "audio_moderation", "video_moderation"],
           },

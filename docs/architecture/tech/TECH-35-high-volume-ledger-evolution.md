@@ -6,12 +6,16 @@ Updated: 2026-07-12
 
 ## Scope
 
-This decision governs the four fastest-growing Cloud Router tables:
+This decision governs the three fastest-growing Cloud Router tables:
 
 - `ai_request_trace`
 - `ai_routing_decision_log`
 - `ai_usage`
-- `ai_usage_service_provider_edge`
+
+> Retired prototype: `ai_usage_service_provider_edge` was the pre-release
+> settlement prototype. Migrations `0003`/`0005` retire it (guarded on
+> `to_regclass`), and the folded baseline no longer creates it, so it is
+> excluded from this scope.
 
 The portable PostgreSQL and SQLite baselines remain unpartitioned. PostgreSQL
 partitioning is an engine-specific production migration and must not be added
@@ -27,11 +31,9 @@ include a time partition key:
 | `ai_request_trace` | `(tenant_id, organization_id, request_id, attempt_no)` |
 | `ai_routing_decision_log` | `(tenant_id, organization_id, request_id)` |
 | `ai_usage` | idempotency key and `(tenant_id, organization_id, request_id, usage_type)` |
-| `ai_usage_service_provider_edge` | `(tenant_id, organization_id, usage_fact_id, edge_depth, amount_role)` |
 
-`ai_usage_service_provider_edge` also references `ai_usage` through
-`(tenant_id, organization_id, usage_fact_id)`. The runtime recorders rely on
-these constraints for idempotent retry and settlement protection.
+The runtime recorders rely on these constraints for idempotent retry and
+settlement protection.
 
 The first commercial safety phase therefore keeps these tables as indexed hot
 stores and adds:

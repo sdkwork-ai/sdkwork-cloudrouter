@@ -3482,6 +3482,7 @@ where
         "chat",
         RoutingCapability::Chat,
         BillingMeter::LlmInputToken,
+        None,
     )
     .map_err(|response| openai_route_response_error(&response))?;
     let route = route_plan

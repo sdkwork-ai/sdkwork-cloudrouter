@@ -33,7 +33,7 @@ const SYSTEM_DATA_SCOPE: i32 = 1;
 const DEFAULT_ADMIN_DATA_SCOPE: i32 = 1;
 const MAX_SEED_UUID_LENGTH: usize = 64;
 const DEFAULT_OPENAI_BASE_URL: &str = "https://api.openai.com/v1";
-const DEFAULT_ADMIN_ROUTING_TOPOLOGY_SEED_SOURCE: &str = "default-admin-routing-topology-seed.v2|openai-default|standard-group|official.openai.full|openai|official|openai_compatible|https://api.openai.com/v1";
+const DEFAULT_ADMIN_ROUTING_TOPOLOGY_SEED_SOURCE: &str = "default-admin-routing-topology-seed.v4|openai-default|standard-group|official.openai.full|openai|official|openai_compatible|https://api.openai.com/v1|vendor-modality-groups|i18n-zh-en";
 
 #[derive(Debug)]
 pub(crate) enum AiRoutingSeedLoadError {
@@ -151,17 +151,21 @@ struct DefaultAdminUpstreamAccountSeed {
     account_code: &'static str,
     account_name: &'static str,
     account_type: &'static str,
+    supplier_display_name_i18n: &'static str,
     priority: i32,
     routing_weight: i32,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 struct DefaultAdminUpstreamAccountGroupSeed {
-    group_code: &'static str,
-    group_name: &'static str,
+    group_code: String,
+    group_name: String,
+    group_name_i18n: String,
     group_type: &'static str,
-    account_code: &'static str,
-    resource_group_code: &'static str,
+    account_code: Option<String>,
+    resource_group_code: String,
+    vendor_code: Option<String>,
+    modalities: Vec<String>,
     priority: i32,
     routing_weight: i32,
 }
@@ -180,20 +184,97 @@ static DEFAULT_ADMIN_UPSTREAM_ACCOUNTS: [DefaultAdminUpstreamAccountSeed; 1] =
         account_code: "openai-default",
         account_name: "OpenAI Default",
         account_type: "standard",
+        supplier_display_name_i18n: "{\"en-US\":\"OpenAI\",\"zh-CN\":\"OpenAI\"}",
         priority: 100,
         routing_weight: 100,
     }];
 
-static DEFAULT_ADMIN_UPSTREAM_ACCOUNT_GROUPS: [DefaultAdminUpstreamAccountGroupSeed; 1] =
-    [DefaultAdminUpstreamAccountGroupSeed {
-        group_code: "standard-group",
-        group_name: "Standard Group",
+/// Modality whitelist for account groups, mirroring SUPPORTED_MODALITIES in the
+/// admin upstream account group route.
+const ACCOUNT_GROUP_SUPPORTED_MODALITIES: [&str; 5] =
+    ["text", "audio", "image", "video", "music"];
+
+/// Resource catalog capability/modality codes mapped to account group modality
+/// codes. llm maps to text; embedding/network are not account group modalities.
+const VENDOR_MODALITY_MAPPING: [(&str, &str); 5] = [
+    ("llm", "text"),
+    ("image", "image"),
+    ("video", "video"),
+    ("audio", "audio"),
+    ("music", "music"),
+];
+
+/// Curated binding from vendor code to the resource group granted to that
+/// vendor's default account groups. Every vendor declared in the bundled
+/// resources must have a binding (validated at seed load time).
+const VENDOR_RESOURCE_GROUP_BINDINGS: [(&str, &str); 9] = [
+    ("openai", "official.openai.full"),
+    ("openai_compatible", "api.openai_compatible.all"),
+    ("anthropic", "official.anthropic.claude_code"),
+    ("gemini", "official.gemini.full"),
+    ("kling", "official.kling.full"),
+    ("jimeng", "official.jimeng.full"),
+    ("minimax", "official.minimax.music"),
+    ("vidu", "official.vidu.full"),
+    ("volcengine", "official.volcengine.full"),
+];
+
+const VENDOR_DISPLAY_NAMES: [(&str, &str); 9] = [
+    ("openai", "OpenAI"),
+    ("openai_compatible", "OpenAI Compatible"),
+    ("anthropic", "Anthropic"),
+    ("gemini", "Gemini"),
+    ("kling", "Kling"),
+    ("jimeng", "Jimeng"),
+    ("minimax", "MiniMax"),
+    ("vidu", "Vidu"),
+    ("volcengine", "Volcengine"),
+];
+
+/// Localized vendor display names: (vendor_code, en-US, zh-CN).
+const VENDOR_LOCALIZED_NAMES: [(&str, &str, &str); 9] = [
+    ("openai", "OpenAI", "OpenAI"),
+    ("openai_compatible", "OpenAI Compatible", "OpenAI 兼容"),
+    ("anthropic", "Anthropic", "Anthropic"),
+    ("gemini", "Gemini", "谷歌 Gemini"),
+    ("kling", "Kling", "可灵"),
+    ("jimeng", "Jimeng", "即梦"),
+    ("minimax", "MiniMax", "MiniMax"),
+    ("vidu", "Vidu", "Vidu"),
+    ("volcengine", "Volcengine", "火山引擎"),
+];
+
+const MODALITY_DISPLAY_NAMES: [(&str, &str); 5] = [
+    ("text", "Text"),
+    ("audio", "Audio"),
+    ("image", "Image"),
+    ("video", "Video"),
+    ("music", "Music"),
+];
+
+/// Localized modality display names: (modality_code, en-US, zh-CN).
+const MODALITY_LOCALIZED_NAMES: [(&str, &str, &str); 5] = [
+    ("text", "Text", "文本"),
+    ("audio", "Audio", "音频"),
+    ("image", "Image", "图片"),
+    ("video", "Video", "视频"),
+    ("music", "Music", "音乐"),
+];
+
+fn standard_admin_upstream_account_group() -> DefaultAdminUpstreamAccountGroupSeed {
+    DefaultAdminUpstreamAccountGroupSeed {
+        group_code: "standard-group".to_owned(),
+        group_name: "标准分组".to_owned(),
+        group_name_i18n: "{\"en-US\":\"Standard Group\",\"zh-CN\":\"标准分组\"}".to_owned(),
         group_type: "shared",
-        account_code: "openai-default",
-        resource_group_code: "official.openai.full",
+        account_code: Some("openai-default".to_owned()),
+        resource_group_code: "official.openai.full".to_owned(),
+        vendor_code: None,
+        modalities: Vec::new(),
         priority: 100,
         routing_weight: 100,
-    }];
+    }
+}
 
 impl EndpointSeedDefinition<'_> {
     fn api_code(&self) -> &str {
@@ -300,6 +381,7 @@ pub(crate) async fn postgres_ai_routing_seed_complete(pool: &PgPool) -> Result<b
 async fn postgres_default_admin_upstream_topology_complete(
     pool: &PgPool,
 ) -> Result<bool, sqlx::Error> {
+    let catalog = AiRoutingSeedCatalog::load().map_err(json_decode_error)?;
     for account in default_admin_upstream_accounts() {
         let exists = sqlx::query_scalar::<_, bool>(
             r#"
@@ -356,48 +438,82 @@ async fn postgres_default_admin_upstream_topology_complete(
         }
     }
 
-    for group in default_admin_upstream_account_groups() {
-        let exists = sqlx::query_scalar::<_, bool>(
-            r#"
-            SELECT EXISTS (
-                SELECT 1
-                FROM ai_upstream_account_group account_group
-                JOIN ai_upstream_account_group_member member
-                  ON member.tenant_id = account_group.tenant_id
-                 AND member.organization_id = account_group.organization_id
-                 AND member.account_group_id = account_group.id
-                 AND member.status = 1
-                 AND member.enabled
-                 AND member.deleted_at IS NULL
-                JOIN ai_upstream_account account
-                  ON account.tenant_id = member.tenant_id
-                 AND account.organization_id = member.organization_id
-                 AND account.id = member.account_id
-                 AND account.account_code = $4
-                 AND account.deleted_at IS NULL
-                JOIN ai_upstream_account_group_resource group_resource
-                  ON group_resource.tenant_id = account_group.tenant_id
-                 AND group_resource.organization_id = account_group.organization_id
-                 AND group_resource.account_group_id = account_group.id
-                 AND group_resource.resource_group_code = $5
-                 AND group_resource.grant_type = 'allow'
-                 AND group_resource.status = 1
-                 AND group_resource.deleted_at IS NULL
-                WHERE account_group.tenant_id = $1::bigint
-                  AND account_group.organization_id = $2::bigint
-                  AND account_group.group_code = $3
-                  AND account_group.status = 1
-                  AND account_group.deleted_at IS NULL
+    for group in default_admin_upstream_account_groups(&catalog).map_err(json_decode_error)? {
+        let exists = if let Some(account_code) = group.account_code.as_deref() {
+            sqlx::query_scalar::<_, bool>(
+                r#"
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM ai_upstream_account_group account_group
+                    JOIN ai_upstream_account_group_member member
+                      ON member.tenant_id = account_group.tenant_id
+                     AND member.organization_id = account_group.organization_id
+                     AND member.account_group_id = account_group.id
+                     AND member.status = 1
+                     AND member.enabled
+                     AND member.deleted_at IS NULL
+                    JOIN ai_upstream_account account
+                      ON account.tenant_id = member.tenant_id
+                     AND account.organization_id = member.organization_id
+                     AND account.id = member.account_id
+                     AND account.account_code = $4
+                     AND account.deleted_at IS NULL
+                    JOIN ai_upstream_account_group_resource group_resource
+                      ON group_resource.tenant_id = account_group.tenant_id
+                     AND group_resource.organization_id = account_group.organization_id
+                     AND group_resource.account_group_id = account_group.id
+                     AND group_resource.resource_group_code = $5
+                     AND group_resource.grant_type = 'allow'
+                     AND group_resource.status = 1
+                     AND group_resource.deleted_at IS NULL
+                    WHERE account_group.tenant_id = $1::bigint
+                      AND account_group.organization_id = $2::bigint
+                      AND account_group.group_code = $3
+                      AND account_group.status = 1
+                      AND account_group.deleted_at IS NULL
+                )
+                "#,
             )
-            "#,
-        )
-        .bind(DEFAULT_IAM_TENANT_ID)
-        .bind(DEFAULT_IAM_ORGANIZATION_ID)
-        .bind(group.group_code)
-        .bind(group.account_code)
-        .bind(group.resource_group_code)
-        .fetch_one(pool)
-        .await?;
+            .bind(DEFAULT_IAM_TENANT_ID)
+            .bind(DEFAULT_IAM_ORGANIZATION_ID)
+            .bind(group.group_code.as_str())
+            .bind(account_code)
+            .bind(group.resource_group_code.as_str())
+            .fetch_one(pool)
+            .await?
+        } else {
+            // Vendor groups are seeded as empty pools (no member binding), so
+            // completeness only requires the group and its resource grant.
+            sqlx::query_scalar::<_, bool>(
+                r#"
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM ai_upstream_account_group account_group
+                    JOIN ai_upstream_account_group_resource group_resource
+                      ON group_resource.tenant_id = account_group.tenant_id
+                     AND group_resource.organization_id = account_group.organization_id
+                     AND group_resource.account_group_id = account_group.id
+                     AND group_resource.resource_group_code = $4
+                     AND group_resource.grant_type = 'allow'
+                     AND group_resource.status = 1
+                     AND group_resource.deleted_at IS NULL
+                    WHERE account_group.tenant_id = $1::bigint
+                      AND account_group.organization_id = $2::bigint
+                      AND account_group.group_code = $3
+                      AND account_group.vendor_code = $5
+                      AND account_group.status = 1
+                      AND account_group.deleted_at IS NULL
+                )
+                "#,
+            )
+            .bind(DEFAULT_IAM_TENANT_ID)
+            .bind(DEFAULT_IAM_ORGANIZATION_ID)
+            .bind(group.group_code.as_str())
+            .bind(group.resource_group_code.as_str())
+            .bind(group.vendor_code.as_deref())
+            .fetch_one(pool)
+            .await?
+        };
         if !exists {
             return Ok(false);
         }
@@ -474,6 +590,7 @@ async fn import_postgres_resources(
             .bind(&item.resource_code)
             .bind(&item.resource_type)
             .bind(&item.display_name)
+            .bind(resource_display_name_i18n(item))
             .bind(&item.vendor_code)
             .bind(&item.modality_code)
             .bind(&item.api_code)
@@ -700,16 +817,17 @@ async fn import_postgres_default_admin_upstream_topology(
             r#"
             INSERT INTO ai_upstream_supplier (
                 id, uuid, tenant_id, organization_id, data_scope, status, metadata,
-                supplier_code, supplier_name, display_name, supplier_type,
+                supplier_code, supplier_name, display_name, display_name_i18n, supplier_type,
                 adapter_code, protocol_code, environment, sort_order
             ) VALUES (
                 $1, $2, $3, $4, $5, 1, $6::jsonb,
-                $7, $8, $8, $9,
-                $10, $11, 1, $12
+                $7, $8, $8, $9::jsonb, $10,
+                $11, $12, 1, $13
             )
             ON CONFLICT (tenant_id, organization_id, supplier_code) DO UPDATE SET
                 supplier_name = EXCLUDED.supplier_name,
                 display_name = EXCLUDED.display_name,
+                display_name_i18n = EXCLUDED.display_name_i18n,
                 supplier_type = EXCLUDED.supplier_type,
                 adapter_code = EXCLUDED.adapter_code,
                 protocol_code = EXCLUDED.protocol_code,
@@ -736,6 +854,7 @@ async fn import_postgres_default_admin_upstream_topology(
         .bind(&metadata)
         .bind(account.supplier_code)
         .bind(account.supplier_name)
+        .bind(account.supplier_display_name_i18n)
         .bind(account.supplier_type)
         .bind(account.adapter_code)
         .bind(account.protocol_code)
@@ -979,49 +1098,58 @@ async fn import_postgres_default_admin_upstream_topology(
         .await?;
     }
 
-    for group in default_admin_upstream_account_groups() {
-        let account_id = sqlx::query_scalar::<_, i64>(
-            r#"
-            SELECT id
-            FROM ai_upstream_account
-            WHERE tenant_id = $1 AND organization_id = $2
-              AND account_code = $3 AND deleted_at IS NULL
-            "#,
-        )
-        .bind(DEFAULT_IAM_TENANT_ID)
-        .bind(DEFAULT_IAM_ORGANIZATION_ID)
-        .bind(group.account_code)
-        .fetch_one(&mut **tx)
-        .await?;
-        let account_group_id = default_admin_upstream_account_group_id(group);
+    for group in default_admin_upstream_account_groups(catalog).map_err(json_decode_error)? {
+        let account_id = match group.account_code.as_deref() {
+            Some(account_code) => Some(
+                sqlx::query_scalar::<_, i64>(
+                    r#"
+                    SELECT id
+                    FROM ai_upstream_account
+                    WHERE tenant_id = $1 AND organization_id = $2
+                      AND account_code = $3 AND deleted_at IS NULL
+                    "#,
+                )
+                .bind(DEFAULT_IAM_TENANT_ID)
+                .bind(DEFAULT_IAM_ORGANIZATION_ID)
+                .bind(account_code)
+                .fetch_one(&mut **tx)
+                .await?,
+            ),
+            None => None,
+        };
+        let account_group_id = default_admin_upstream_account_group_id(&group);
         let metadata = seed_metadata(
             catalog,
             "default_admin_upstream_account_group",
-            group.group_code,
+            &group.group_code,
             serde_json::json!({
-                "groupCode": group.group_code,
-                "accountCode": group.account_code,
-                "resourceGroupCode": group.resource_group_code,
+                "groupCode": group.group_code.as_str(),
+                "accountCode": &group.account_code,
+                "resourceGroupCode": group.resource_group_code.as_str(),
+                "vendorCode": &group.vendor_code,
+                "modalities": &group.modalities,
             }),
         );
+        let modalities_json = serde_json::json!(&group.modalities).to_string();
 
         sqlx::query(
             r#"
             INSERT INTO ai_upstream_account_group (
                 id, uuid, tenant_id, organization_id, data_scope, status, metadata,
-                group_code, group_name, description, group_type,
+                group_code, group_name, group_name_i18n, description, group_type,
                 routing_strategy, fallback_mode, priority, environment,
                 pricing_plan_code, cost_multiplier, sale_multiplier,
-                billing_type, allowed_origin
+                billing_type, allowed_origin, vendor_code, modalities
             ) VALUES (
                 $1, $2, $3, $4, $5, 1, $6::jsonb,
-                $7, $8, $9, $10,
-                'weighted', 'sequential', $11, 1,
+                $7, $8, $9::jsonb, $10, $11,
+                'weighted', 'sequential', $12, 1,
                 'standard', 1.000000000000, 1.000000000000,
-                1, '[]'::jsonb
+                1, '[]'::jsonb, $13, $14::jsonb
             )
             ON CONFLICT (tenant_id, organization_id, group_code) DO UPDATE SET
                 group_name = EXCLUDED.group_name,
+                group_name_i18n = EXCLUDED.group_name_i18n,
                 description = EXCLUDED.description,
                 group_type = EXCLUDED.group_type,
                 routing_strategy = EXCLUDED.routing_strategy,
@@ -1033,6 +1161,8 @@ async fn import_postgres_default_admin_upstream_topology(
                 sale_multiplier = EXCLUDED.sale_multiplier,
                 billing_type = EXCLUDED.billing_type,
                 allowed_origin = EXCLUDED.allowed_origin,
+                vendor_code = EXCLUDED.vendor_code,
+                modalities = EXCLUDED.modalities,
                 status = EXCLUDED.status,
                 metadata = EXCLUDED.metadata,
                 deleted_at = NULL,
@@ -1045,71 +1175,77 @@ async fn import_postgres_default_admin_upstream_topology(
             &[
                 &DEFAULT_IAM_TENANT_ID.to_string(),
                 &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
-                group.group_code,
+                group.group_code.as_str(),
             ],
         ))
         .bind(DEFAULT_IAM_TENANT_ID)
         .bind(DEFAULT_IAM_ORGANIZATION_ID)
         .bind(DEFAULT_ADMIN_DATA_SCOPE)
         .bind(&metadata)
-        .bind(group.group_code)
-        .bind(group.group_name)
+        .bind(group.group_code.as_str())
+        .bind(group.group_name.as_str())
+        .bind(group.group_name_i18n.as_str())
         .bind(format!(
             "Default routing group authorized for {}",
             group.resource_group_code
         ))
         .bind(group.group_type)
         .bind(group.priority)
+        .bind(group.vendor_code.as_deref())
+        .bind(modalities_json)
         .execute(&mut **tx)
         .await?;
 
-        sqlx::query(
-            r#"
-            INSERT INTO ai_upstream_account_group_member (
-                id, uuid, tenant_id, organization_id, data_scope, status, metadata,
-                account_group_id, account_id, priority, routing_weight, enabled
-            ) VALUES (
-                $1, $2, $3, $4, $5, 1, $6::jsonb,
-                $7, $8, $9, $10, TRUE
+        if let Some(account_id) = account_id {
+            let account_code = group.account_code.as_deref().unwrap_or_default();
+            sqlx::query(
+                r#"
+                INSERT INTO ai_upstream_account_group_member (
+                    id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+                    account_group_id, account_id, priority, routing_weight, enabled
+                ) VALUES (
+                    $1, $2, $3, $4, $5, 1, $6::jsonb,
+                    $7, $8, $9, $10, TRUE
+                )
+                ON CONFLICT (tenant_id, organization_id, account_group_id, account_id) DO UPDATE SET
+                    priority = EXCLUDED.priority,
+                    routing_weight = EXCLUDED.routing_weight,
+                    enabled = EXCLUDED.enabled,
+                    status = EXCLUDED.status,
+                    metadata = EXCLUDED.metadata,
+                    deleted_at = NULL,
+                    deleted_by = NULL
+                "#,
             )
-            ON CONFLICT (tenant_id, organization_id, account_group_id, account_id) DO UPDATE SET
-                priority = EXCLUDED.priority,
-                routing_weight = EXCLUDED.routing_weight,
-                enabled = EXCLUDED.enabled,
-                status = EXCLUDED.status,
-                metadata = EXCLUDED.metadata,
-                deleted_at = NULL,
-                deleted_by = NULL
-            "#,
-        )
-        .bind(stable_seed_id(
-            "sdk-ai-upstream-account-group-member-id",
-            &[
-                &DEFAULT_IAM_TENANT_ID.to_string(),
-                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
-                group.group_code,
-                group.account_code,
-            ],
-        ))
-        .bind(stable_seed_uuid(
-            "sdk-ai-upstream-account-group-member",
-            &[
-                &DEFAULT_IAM_TENANT_ID.to_string(),
-                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
-                group.group_code,
-                group.account_code,
-            ],
-        ))
-        .bind(DEFAULT_IAM_TENANT_ID)
-        .bind(DEFAULT_IAM_ORGANIZATION_ID)
-        .bind(DEFAULT_ADMIN_DATA_SCOPE)
-        .bind(&metadata)
-        .bind(account_group_id)
-        .bind(account_id)
-        .bind(group.priority)
-        .bind(group.routing_weight)
-        .execute(&mut **tx)
-        .await?;
+            .bind(stable_seed_id(
+                "sdk-ai-upstream-account-group-member-id",
+                &[
+                    &DEFAULT_IAM_TENANT_ID.to_string(),
+                    &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                    group.group_code.as_str(),
+                    account_code,
+                ],
+            ))
+            .bind(stable_seed_uuid(
+                "sdk-ai-upstream-account-group-member",
+                &[
+                    &DEFAULT_IAM_TENANT_ID.to_string(),
+                    &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                    group.group_code.as_str(),
+                    account_code,
+                ],
+            ))
+            .bind(DEFAULT_IAM_TENANT_ID)
+            .bind(DEFAULT_IAM_ORGANIZATION_ID)
+            .bind(DEFAULT_ADMIN_DATA_SCOPE)
+            .bind(&metadata)
+            .bind(account_group_id)
+            .bind(account_id)
+            .bind(group.priority)
+            .bind(group.routing_weight)
+            .execute(&mut **tx)
+            .await?;
+        }
 
         sqlx::query(
             r#"
@@ -1144,8 +1280,8 @@ async fn import_postgres_default_admin_upstream_topology(
             &[
                 &DEFAULT_IAM_TENANT_ID.to_string(),
                 &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
-                group.group_code,
-                group.resource_group_code,
+                group.group_code.as_str(),
+                group.resource_group_code.as_str(),
             ],
         ))
         .bind(stable_seed_uuid(
@@ -1153,8 +1289,8 @@ async fn import_postgres_default_admin_upstream_topology(
             &[
                 &DEFAULT_IAM_TENANT_ID.to_string(),
                 &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
-                group.group_code,
-                group.resource_group_code,
+                group.group_code.as_str(),
+                group.resource_group_code.as_str(),
             ],
         ))
         .bind(DEFAULT_IAM_TENANT_ID)
@@ -1162,7 +1298,7 @@ async fn import_postgres_default_admin_upstream_topology(
         .bind(DEFAULT_ADMIN_DATA_SCOPE)
         .bind(&metadata)
         .bind(account_group_id)
-        .bind(group.resource_group_code)
+        .bind(group.resource_group_code.as_str())
         .bind(group.priority)
         .execute(&mut **tx)
         .await?;
@@ -1225,7 +1361,7 @@ fn default_admin_upstream_account_group_id(group: &DefaultAdminUpstreamAccountGr
         &[
             &DEFAULT_IAM_TENANT_ID.to_string(),
             &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
-            group.group_code,
+            group.group_code.as_str(),
         ],
     )
 }
@@ -1413,19 +1549,161 @@ fn default_admin_upstream_accounts() -> &'static [DefaultAdminUpstreamAccountSee
     &DEFAULT_ADMIN_UPSTREAM_ACCOUNTS
 }
 
-fn default_admin_upstream_account_groups() -> &'static [DefaultAdminUpstreamAccountGroupSeed] {
-    &DEFAULT_ADMIN_UPSTREAM_ACCOUNT_GROUPS
+fn default_admin_upstream_account_groups(
+    catalog: &AiRoutingSeedCatalog,
+) -> Result<Vec<DefaultAdminUpstreamAccountGroupSeed>, AiRoutingSeedLoadError> {
+    let mut groups = Vec::new();
+    groups.push(standard_admin_upstream_account_group());
+    groups.extend(derive_vendor_account_group_seeds(catalog)?);
+    Ok(groups)
+}
+
+/// Derives one default account group per vendor-modality pair from the bundled
+/// resource catalog. Each group binds the vendor's curated resource group,
+/// keeps the default 1x cost/sale multipliers, and is seeded as an empty pool
+/// (no account member) for admins to attach accounts later.
+fn derive_vendor_account_group_seeds(
+    catalog: &AiRoutingSeedCatalog,
+) -> Result<Vec<DefaultAdminUpstreamAccountGroupSeed>, AiRoutingSeedLoadError> {
+    let vendor_modalities = vendor_account_group_modalities(catalog)?;
+    let resource_group_codes: BTreeSet<&str> = catalog
+        .resource_groups
+        .iter()
+        .map(|group| group.group_code.as_str())
+        .collect();
+    let mut seeds = Vec::new();
+    for (vendor_code, modalities) in vendor_modalities {
+        let resource_group_code = VENDOR_RESOURCE_GROUP_BINDINGS
+            .iter()
+            .find(|(code, _)| *code == vendor_code.as_str())
+            .map(|(_, group_code)| *group_code)
+            .ok_or_else(|| {
+                AiRoutingSeedLoadError::Validation(format!(
+                    "AI routing vendor `{vendor_code}` has no default account group resource group binding"
+                ))
+            })?;
+        if !resource_group_codes.contains(resource_group_code) {
+            return Err(AiRoutingSeedLoadError::Validation(format!(
+                "AI routing vendor `{vendor_code}` binds unknown resource group `{resource_group_code}`"
+            )));
+        }
+        for modality in modalities {
+            let (vendor_en, vendor_zh) = localized_names(&VENDOR_LOCALIZED_NAMES, &vendor_code);
+            let (modality_en, modality_zh) = localized_names(&MODALITY_LOCALIZED_NAMES, &modality);
+            seeds.push(DefaultAdminUpstreamAccountGroupSeed {
+                group_code: format!("{vendor_code}.{modality}"),
+                // The single-language column carries the zh-CN name because the
+                // default deployment is China mainland; the i18n map keeps the
+                // bilingual names for locale-aware surfaces.
+                group_name: format!("{vendor_zh} {modality_zh}分组"),
+                group_name_i18n: localized_name_json(
+                    &format!("{vendor_en} {modality_en} Group"),
+                    &format!("{vendor_zh} {modality_zh}分组"),
+                ),
+                group_type: "shared",
+                account_code: None,
+                resource_group_code: resource_group_code.to_owned(),
+                vendor_code: Some(vendor_code.clone()),
+                modalities: vec![modality],
+                priority: 100,
+                routing_weight: 100,
+            });
+        }
+    }
+    Ok(seeds)
+}
+
+/// Aggregates the account group modalities supported by each vendor declared in
+/// the bundled resources: vendor resources carry capabilities, api_endpoint
+/// resources carry a modality code. Codes outside the account group modality
+/// whitelist are ignored.
+fn vendor_account_group_modalities(
+    catalog: &AiRoutingSeedCatalog,
+) -> Result<BTreeMap<String, Vec<String>>, AiRoutingSeedLoadError> {
+    let mut vendor_modalities: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for resource in &catalog.resources {
+        let Some(vendor_code) = resource.vendor_code.as_deref() else {
+            continue;
+        };
+        let candidates: Vec<&str> = if resource.resource_type == "vendor" {
+            resource.capabilities.iter().map(String::as_str).collect()
+        } else {
+            resource.modality_code.iter().map(String::as_str).collect()
+        };
+        for candidate in candidates {
+            if let Some(modality) = account_group_modality_code(candidate) {
+                vendor_modalities
+                    .entry(vendor_code.to_owned())
+                    .or_default()
+                    .insert(modality.to_owned());
+            }
+        }
+    }
+    if vendor_modalities.is_empty() {
+        return Err(AiRoutingSeedLoadError::Validation(
+            "AI routing resource data declares no vendor account group modalities".to_owned(),
+        ));
+    }
+    Ok(vendor_modalities
+        .into_iter()
+        .map(|(vendor_code, modalities)| (vendor_code, modalities.into_iter().collect()))
+        .collect())
+}
+
+fn account_group_modality_code(candidate: &str) -> Option<&'static str> {
+    let modality = VENDOR_MODALITY_MAPPING
+        .iter()
+        .find(|(source, _)| *source == candidate)
+        .map(|(_, modality)| *modality)?;
+    if ACCOUNT_GROUP_SUPPORTED_MODALITIES.contains(&modality) {
+        Some(modality)
+    } else {
+        None
+    }
+}
+
+fn curated_display_name<'a>(
+    names: &[(&'static str, &'static str)],
+    code: &'a str,
+) -> &'a str {
+    names
+        .iter()
+        .find(|(candidate, _)| *candidate == code)
+        .map(|(_, name)| *name)
+        .unwrap_or(code)
+}
+
+/// Resolves the localized (en-US, zh-CN) names for a code, falling back to the
+/// code itself when no entry exists.
+fn localized_names<'a>(
+    entries: &[(&'static str, &'static str, &'static str)],
+    code: &'a str,
+) -> (&'a str, &'a str) {
+    entries
+        .iter()
+        .find(|(candidate, _, _)| *candidate == code)
+        .map(|(_, en, zh)| (*en, *zh))
+        .unwrap_or((code, code))
+}
+
+fn localized_name_json(en: &str, zh: &str) -> String {
+    serde_json::json!({
+        "en-US": en,
+        "zh-CN": zh,
+    })
+    .to_string()
 }
 
 fn resource_upsert_postgres() -> &'static str {
     r#"
     INSERT INTO ai_resource
-        (uuid, tenant_id, organization_id, data_scope, status, metadata, resource_code, resource_type, display_name, vendor_code, modality_code, api_code, catalog_key, model, provider_native_model, resource_schema, metadata_schema, description, sort_order, id)
+        (uuid, tenant_id, organization_id, data_scope, status, metadata, resource_code, resource_type, display_name, display_name_i18n, vendor_code, modality_code, api_code, catalog_key, model, provider_native_model, resource_schema, metadata_schema, description, sort_order, id)
     VALUES
-        ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::jsonb, $17::jsonb, $18, $19, $20)
+        ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10::jsonb, $11, $12, $13, $14, $15, $16, $17::jsonb, $18::jsonb, $19, $20, $21)
     ON CONFLICT(tenant_id, organization_id, resource_code) DO UPDATE SET
         resource_type = excluded.resource_type,
         display_name = excluded.display_name,
+        display_name_i18n = excluded.display_name_i18n,
         vendor_code = excluded.vendor_code,
         modality_code = excluded.modality_code,
         api_code = excluded.api_code,
@@ -1441,6 +1719,22 @@ fn resource_upsert_postgres() -> &'static str {
         deleted_by = NULL,
         status = excluded.status
     "#
+}
+
+/// Localized display name for bundled vendor resources; every other resource
+/// type keeps an empty i18n map and falls back to the single-language column.
+fn resource_display_name_i18n(item: &ResourceSeed) -> String {
+    if item.resource_type != "vendor" {
+        return "{}".to_owned();
+    }
+    let Some(vendor_code) = item.vendor_code.as_deref() else {
+        return "{}".to_owned();
+    };
+    let (vendor_en, vendor_zh) = localized_names(&VENDOR_LOCALIZED_NAMES, vendor_code);
+    if vendor_en == vendor_code && vendor_zh == vendor_code {
+        return "{}".to_owned();
+    }
+    localized_name_json(vendor_en, vendor_zh)
 }
 
 fn group_item_upsert_postgres() -> &'static str {
@@ -1741,4 +2035,240 @@ fn source_hash() -> String {
 
 fn json_decode_error(error: AiRoutingSeedLoadError) -> sqlx::Error {
     sqlx::Error::Protocol(format!("invalid bundled AI routing seed data: {error}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_catalog() -> AiRoutingSeedCatalog {
+        AiRoutingSeedCatalog::load().expect("bundled AI routing seed catalog must load")
+    }
+
+    fn test_groups() -> Vec<DefaultAdminUpstreamAccountGroupSeed> {
+        default_admin_upstream_account_groups(&test_catalog())
+            .expect("default account groups must derive")
+    }
+
+    #[test]
+    fn standard_group_is_preserved() {
+        let groups = test_groups();
+        let standard = groups
+            .iter()
+            .find(|group| group.group_code == "standard-group")
+            .expect("standard-group must be seeded");
+        assert_eq!(standard.group_type, "shared");
+        assert_eq!(standard.account_code.as_deref(), Some("openai-default"));
+        assert_eq!(standard.resource_group_code, "official.openai.full");
+        assert!(standard.vendor_code.is_none());
+        assert!(standard.modalities.is_empty());
+    }
+
+    #[test]
+    fn vendor_group_codes_match_expected_catalog() {
+        let groups = test_groups();
+        let codes: BTreeSet<&str> = groups
+            .iter()
+            .map(|group| group.group_code.as_str())
+            .collect();
+        let expected = [
+            "standard-group",
+            "openai.text",
+            "openai.image",
+            "openai.audio",
+            "openai.video",
+            "openai_compatible.text",
+            "openai_compatible.image",
+            "openai_compatible.audio",
+            "anthropic.text",
+            "gemini.text",
+            "gemini.image",
+            "gemini.video",
+            "gemini.audio",
+            "kling.image",
+            "kling.video",
+            "jimeng.image",
+            "jimeng.video",
+            "vidu.image",
+            "vidu.video",
+            "volcengine.image",
+            "volcengine.video",
+            "minimax.music",
+            "minimax.audio",
+        ];
+        assert_eq!(
+            codes.len(),
+            expected.len(),
+            "unexpected group code set: {codes:?}"
+        );
+        for code in expected {
+            assert!(codes.contains(code), "missing group code {code}");
+        }
+    }
+
+    #[test]
+    fn vendor_groups_are_memberless_with_single_modality() {
+        for group in test_groups() {
+            if group.group_code == "standard-group" {
+                continue;
+            }
+            assert!(group.account_code.is_none(), "{} must be memberless", group.group_code);
+            assert!(
+                group.vendor_code.is_some(),
+                "{} must be vendor-bound",
+                group.group_code
+            );
+            assert_eq!(
+                group.modalities.len(),
+                1,
+                "{} must carry exactly one modality",
+                group.group_code
+            );
+        }
+    }
+
+    #[test]
+    fn vendor_group_modalities_are_supported() {
+        for group in test_groups() {
+            for modality in &group.modalities {
+                assert!(
+                    ACCOUNT_GROUP_SUPPORTED_MODALITIES.contains(&modality.as_str()),
+                    "{} uses unsupported modality {modality}",
+                    group.group_code
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn vendor_group_codes_are_unique() {
+        let mut seen = BTreeSet::new();
+        for group in test_groups() {
+            assert!(
+                seen.insert(group.group_code.clone()),
+                "duplicate group code {}",
+                group.group_code
+            );
+        }
+    }
+
+    #[test]
+    fn vendor_group_localized_names_are_bilingual() {
+        for group in test_groups() {
+            let i18n: serde_json::Value =
+                serde_json::from_str(&group.group_name_i18n).unwrap_or_else(|_| {
+                    panic!("{} group_name_i18n is not valid JSON", group.group_code)
+                });
+            for locale in ["en-US", "zh-CN"] {
+                let name = i18n
+                    .get(locale)
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or_else(|| {
+                        panic!("{} missing {locale} name in {}", group.group_code, i18n)
+                    });
+                assert!(
+                    !name.trim().is_empty(),
+                    "{} has empty {locale} name",
+                    group.group_code
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn vendor_group_chinese_names_follow_convention() {
+        let groups = test_groups();
+        let by_code: BTreeMap<&str, &DefaultAdminUpstreamAccountGroupSeed> = groups
+            .iter()
+            .map(|group| (group.group_code.as_str(), group))
+            .collect();
+        let expectations: [(&str, &str); 4] = [
+            ("kling.video", "可灵 视频分组"),
+            ("gemini.image", "谷歌 Gemini 图片分组"),
+            ("minimax.music", "MiniMax 音乐分组"),
+            ("volcengine.image", "火山引擎 图片分组"),
+        ];
+        for (code, expected_zh) in expectations {
+            let group = by_code
+                .get(code)
+                .unwrap_or_else(|| panic!("missing group {code}"));
+            let i18n: serde_json::Value =
+                serde_json::from_str(&group.group_name_i18n).expect("valid i18n JSON");
+            assert_eq!(
+                i18n.get("zh-CN").and_then(serde_json::Value::as_str),
+                Some(expected_zh),
+                "{code} zh-CN name"
+            );
+            assert!(
+                i18n.get("en-US")
+                    .and_then(serde_json::Value::as_str)
+                    .is_some_and(|name| !name.trim().is_empty()),
+                "{code} en-US name"
+            );
+        }
+    }
+
+    #[test]
+    fn every_bundled_vendor_resource_has_derived_groups() {
+        let catalog = test_catalog();
+        let groups = default_admin_upstream_account_groups(&catalog)
+            .expect("every vendor must derive groups");
+        let bound: BTreeSet<&str> = groups
+            .iter()
+            .filter_map(|group| group.vendor_code.as_deref())
+            .collect();
+        for resource in &catalog.resources {
+            if resource.resource_type != "vendor" {
+                continue;
+            }
+            let vendor = resource
+                .vendor_code
+                .as_deref()
+                .expect("vendor resource must declare vendorCode");
+            assert!(
+                bound.contains(vendor),
+                "vendor {vendor} has no derived account groups"
+            );
+        }
+    }
+
+    #[test]
+    fn vendor_resource_group_bindings_exist_in_catalog() {
+        let catalog = test_catalog();
+        let group_codes: BTreeSet<&str> = catalog
+            .resource_groups
+            .iter()
+            .map(|group| group.group_code.as_str())
+            .collect();
+        for (vendor, group_code) in VENDOR_RESOURCE_GROUP_BINDINGS {
+            assert!(
+                group_codes.contains(group_code),
+                "vendor {vendor} binds unknown resource group {group_code}"
+            );
+        }
+    }
+
+    #[test]
+    fn every_derived_group_binds_an_existing_resource_group() {
+        let catalog = test_catalog();
+        let group_codes: BTreeSet<&str> = catalog
+            .resource_groups
+            .iter()
+            .map(|group| group.group_code.as_str())
+            .collect();
+        for group in default_admin_upstream_account_groups(&catalog)
+            .expect("default account groups must derive")
+        {
+            assert!(
+                group_codes.contains(group.resource_group_code.as_str()),
+                "{} binds unknown resource group {}",
+                group.group_code,
+                group.resource_group_code
+            );
+        }
+    }
+
+
+
+
 }

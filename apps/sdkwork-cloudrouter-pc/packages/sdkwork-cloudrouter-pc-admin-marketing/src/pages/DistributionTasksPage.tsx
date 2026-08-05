@@ -45,7 +45,7 @@ export function DistributionTasksPage() {
       setIsDrawerOpen(false);
       setRefreshKey((current) => current + 1);
     } catch (createError) {
-      setSaveError(createError instanceof Error ? createError.message : 'Failed to send coupons');
+      setSaveError(createError instanceof Error ? createError.message : t('admin.marketing.promotions.distribution.createError', 'Failed to send coupons'));
     } finally {
       setIsSaving(false);
     }

@@ -2,7 +2,7 @@
 
 Status: active  
 Owner: cloud-router-platform  
-Updated: 2026-07-29  
+Updated: 2026-08-04  
 Decision: [ADR-20260728](../../architecture/decisions/ADR-20260728-standardize-upstream-supplier-routing.md)
 
 ## Product Goal
@@ -39,6 +39,32 @@ Supplier detail contains Overview, Base URLs, Authentication, Resources,
 Accounts, Health, and Audit views. Each Base URL has independent region,
 environment, priority, weight, timeout, and health. Authentication entries
 declare safe configuration schemas; they never store real credential material.
+
+### Supplier Types
+
+- **Official supplier (`official`)** is a direct integration with a model
+  vendor's official API. It **must** bind a vendor (`defaultVendorCode`) from
+  the resource catalog; the adapter and protocol suggestions are carried over
+  from the selected vendor and remain operator-editable. The operator may grant
+  the vendor's full resource set with one action.
+- **Relay supplier (`relay`)** is a third-party aggregation service. It does
+  not bind a vendor and may grant any resources or resource groups.
+
+The supplier type is immutable in behavior only; an operator may change it
+later, but an official supplier must keep a bound vendor at all times.
+
+### Supported Resources
+
+Resource granting is part of the create flow, not a post-creation step: the
+operator picks resources (vendor, modality, or API-endpoint level) and/or
+resource groups in the same form, and the grant is persisted atomically with
+the supplier identity through a create-then-replace sequence. The picker loads
+the read-only resource catalog (`ai_resource` + `ai_resource_group`) with
+search, type filters, vendor grouping, select-all, and per-group quick grant.
+
+Each grant is exactly one of `resourceCode` or `resourceGroupCode` with
+`grantType` `allow`/`deny`. When a resource save fails after supplier creation,
+the UI keeps the supplier and surfaces a retry path in the detail panel.
 
 ## Account Workflow
 

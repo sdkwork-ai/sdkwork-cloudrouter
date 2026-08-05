@@ -35,7 +35,8 @@ use crate::api::openai_usage::{
 use crate::application::{ApiKeySecretHasher, AuthenticatedApiKeyContext};
 use crate::domain::{BillingMeter, ProviderRetryPolicy, RoutingCapability};
 use crate::ports::{
-    GatewayUsageRecorder, ResponsesRelay, ResponsesRelayRequest, UpstreamAccountRouteCatalog,
+    GatewayUsageRecorder, GetRuntimeRegionSettingsQuery, ResponsesRelay, ResponsesRelayRequest,
+    RuntimeRegionSettingsStore, RuntimeRegionSettingsSubject, UpstreamAccountRouteCatalog,
 };
 
 struct OpenAiResponsesState<C> {
@@ -47,6 +48,7 @@ struct OpenAiResponsesState<C> {
     plugins: Vec<OpenAiInvocationPluginRef>,
     failure_strategy: OpenAiRuntimeFailureStrategy,
     default_retry_policy: ProviderRetryPolicy,
+    region_settings_store: Option<Arc<dyn RuntimeRegionSettingsStore + Send + Sync>>,
 }
 
 impl<C> Clone for OpenAiResponsesState<C> {
@@ -60,6 +62,7 @@ impl<C> Clone for OpenAiResponsesState<C> {
             plugins: self.plugins.clone(),
             failure_strategy: self.failure_strategy,
             default_retry_policy: self.default_retry_policy.clone(),
+            region_settings_store: self.region_settings_store.clone(),
         }
     }
 }
@@ -282,6 +285,7 @@ where
             plugins: with_builtin_invocation_plugins(plugins),
             failure_strategy: responses_create_failure_strategy(runtime_config.failure_strategy),
             default_retry_policy: runtime_config.default_retry_policy,
+            region_settings_store: runtime_config.region_settings_store.clone(),
         })
 }
 
@@ -356,7 +360,22 @@ where
         notify_error(&state.plugins, &invocation_context, None, &error).await;
         return error.into_openai_response();
     }
-    let mut route_plan = match validate_responses_model(&state, &context, &request.model) {
+    let tenant_region_code = match state.region_settings_store.as_ref() {
+        Some(store) => store
+            .get_runtime_region_settings(GetRuntimeRegionSettingsQuery {
+                subject: RuntimeRegionSettingsSubject {
+                    tenant_id: context.tenant_id,
+                    organization_id: context.organization_id,
+                    operator_id: 0,
+                    operator_type: 0,
+                },
+            })
+            .await
+            .ok()
+            .map(|settings| settings.current_region_code),
+        None => None,
+    };
+    let mut route_plan = match validate_responses_model(&state, &context, &request.model, tenant_region_code.as_deref()) {
         Ok(route_plan) => route_plan,
         Err(response) => {
             let http_status = response.status().as_u16();
@@ -504,6 +523,7 @@ fn validate_responses_model<C>(
     state: &OpenAiResponsesState<C>,
     context: &AuthenticatedApiKeyContext,
     model: &str,
+    tenant_region_code: Option<&str>,
 ) -> Result<ResolvedOpenAiUpstreamRoutePlan, OpenAiRouteError>
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
@@ -516,6 +536,7 @@ where
         "responses",
         RoutingCapability::Chat,
         BillingMeter::LlmInputToken,
+        tenant_region_code.as_deref(),
     )
 }
 

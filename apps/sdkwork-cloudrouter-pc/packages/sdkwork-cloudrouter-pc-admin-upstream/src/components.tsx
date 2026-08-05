@@ -13,15 +13,17 @@ export function Field({
   label,
   required,
   hint,
+  className,
   children,
 }: {
   label: string;
   required?: boolean;
   hint?: string;
+  className?: string;
   children: ReactNode;
 }) {
   return (
-    <label className="grid min-w-0 gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+    <label className={`grid min-w-0 gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200 ${className ?? ''}`}>
       <span>{label}{required ? <span className="ml-1 text-red-500">*</span> : null}</span>
       {children}
       {hint ? <span className="text-xs font-normal text-slate-500 dark:text-slate-400">{hint}</span> : null}
@@ -96,24 +98,9 @@ export function TableState({ loading, empty, colSpan }: { loading: boolean; empt
   );
 }
 
-export function UpstreamPageShell({
-  titleKey,
-  subtitleKey,
-  children,
-}: {
-  titleKey: string;
-  subtitleKey: string;
-  children: ReactNode;
-}) {
-  const { t } = useTranslation();
+export function UpstreamPageShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-full min-h-0 flex-col gap-4 p-4 sm:p-6" data-admin-upstream>
-      <header className="flex shrink-0 flex-col gap-3 border-b border-slate-200 pb-4 dark:border-white/10">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t(titleKey)}</h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t(subtitleKey)}</p>
-        </div>
-      </header>
       <div className="flex min-h-0 flex-1 flex-col">{children}</div>
     </div>
   );
@@ -127,6 +114,7 @@ export function Modal({
   children,
   onSubmit,
   onClose,
+  closeOnClickOutside = true,
 }: {
   title: string;
   description?: string;
@@ -135,10 +123,19 @@ export function Modal({
   children: ReactNode;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onClose: () => void;
+  /** 点击遮罩（弹窗外）时是否关闭；默认 true */
+  closeOnClickOutside?: boolean;
 }) {
   const { t } = useTranslation();
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm"
+      onClick={(event) => {
+        if (closeOnClickOutside && event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       <form
         onSubmit={onSubmit}
         className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#171717]"
@@ -165,11 +162,11 @@ export function Modal({
   );
 }
 
-export function SidePanel({ title, subtitle, children, onClose }: { title: string; subtitle?: string; children: ReactNode; onClose: () => void }) {
+export function SidePanel({ title, subtitle, children, onClose, closeOnClickOutside = true }: { title: string; subtitle?: string; children: ReactNode; onClose: () => void; /** 点击遮罩（抽屉外）时是否关闭；默认 true */ closeOnClickOutside?: boolean }) {
   const { t } = useTranslation();
   return (
     <div className="fixed inset-0 z-[60] flex justify-end bg-slate-950/30 backdrop-blur-[1px]">
-      <button type="button" aria-label={t('admin.upstream.common.aria.close')} className="min-w-0 flex-1" onClick={onClose} />
+      <button type="button" aria-label={t('admin.upstream.common.aria.close')} className="min-w-0 flex-1" onClick={() => { if (closeOnClickOutside) onClose(); }} />
       <aside className="flex h-full w-full max-w-3xl flex-col border-l border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#171717]">
         <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 dark:border-white/10">
           <div className="min-w-0">

@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 interface MembershipStatusBadgeProps {
   status: string;
 }
@@ -13,11 +15,12 @@ const statusClasses: Record<string, string> = {
 };
 
 export function MembershipStatusBadge({ status }: MembershipStatusBadgeProps) {
+  const { t } = useTranslation();
   const normalized = status.trim().toLowerCase() || 'unknown';
   const className = statusClasses[normalized] ?? 'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300';
   return (
     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${className}`}>
-      {normalized}
+      {t(`admin.commerce.memberships.status.${normalized}`, normalized)}
     </span>
   );
 }

@@ -96,6 +96,7 @@ packages:
   - "../sdkwork-membership/apps/sdkwork-membership-common/packages/sdkwork-membership-contracts"
   - "../sdkwork-membership/apps/sdkwork-membership-common/packages/sdkwork-membership-sdk-ports"
   - "../sdkwork-membership/apps/sdkwork-membership-common/packages/sdkwork-membership-service"
+  - "../sdkwork-membership/apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-core"
   - "../sdkwork-membership/apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-membership"
   - "../sdkwork-membership/apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-subscription"
   - "../sdkwork-catalog/sdks/sdkwork-catalog-app-sdk/sdkwork-catalog-app-sdk-typescript"
@@ -103,6 +104,7 @@ packages:
   - "../sdkwork-order/sdks/sdkwork-order-backend-sdk/sdkwork-order-backend-sdk-typescript"
   - "../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-service"
   - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-checkout"
+  - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-core"
   - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-order"
   - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-recharge"
   - "../sdkwork-payment/sdks/sdkwork-payment-app-sdk/sdkwork-payment-app-sdk-typescript"
@@ -112,6 +114,7 @@ packages:
   - "../sdkwork-payment/apps/sdkwork-payment-common/packages/sdkwork-payment-service"
   - "../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-admin-core"
   - "../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-admin-provider"
+  - "../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-core"
   - "../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-payment"
   - "../sdkwork-promotion/sdks/sdkwork-promotion-app-sdk/sdkwork-promotion-app-sdk-typescript"
   - "../sdkwork-promotion/sdks/sdkwork-promotion-backend-sdk/sdkwork-promotion-backend-sdk-typescript"
@@ -145,7 +148,7 @@ catalog:
   tailwind-merge: ^3.5.0
   tailwindcss-animate: ^1.0.7
   class-variance-authority: ^0.7.1
-  i18next: ^26.0.3
+  i18next: ^26.3.4
   react-i18next: ^17.0.2
   react-router: ^7.14.0
   react-router-dom: ^7.14.0
@@ -236,4 +239,3 @@ catalog:
   esbuild: ^0.28.0
   pnpm: ^10.33.0
   turbo: ^2.9.4
-  - "../../sdkwork-membership/apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-core"

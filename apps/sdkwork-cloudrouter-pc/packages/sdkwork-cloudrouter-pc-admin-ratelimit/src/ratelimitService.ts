@@ -20,6 +20,7 @@ import type {
   AdminIpLimitCreateRequest,
   AdminModelLimitCreateRequest,
   AdminTokenLimitCreateRequest,
+  ChainPolicyInput,
 } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 
 export interface IpLimitRule {
@@ -424,7 +425,12 @@ function normalizeChainPolicy(value: unknown): ChainPolicy {
       ? {
           maxInflight: optionalInt64Text(payload.concurrency.maxInflight),
           maxInflightPerScope: isRecord(payload.concurrency.maxInflightPerScope)
-            ? payload.concurrency.maxInflightPerScope
+            ? Object.fromEntries(
+                Object.entries(payload.concurrency.maxInflightPerScope).map(([scope, limit]) => [
+                  scope,
+                  limit == null ? '' : String(limit),
+                ]),
+              )
             : null,
         }
       : null,
@@ -452,7 +458,7 @@ function optionalInt64Text(value: unknown): string | null {
   return null;
 }
 
-function toChainPolicyInput(policy: ChainPolicy): unknown {
+function toChainPolicyInput(policy: ChainPolicy): ChainPolicyInput {
   return {
     policyName: policy.policyName || undefined,
     concurrency: policy.concurrency

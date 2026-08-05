@@ -89,6 +89,7 @@ export interface AdminResourceCenterProps<TSectionId extends string = string, TG
   onRecordOpen?: (record: AdminResourceRecord, section: AdminResourceSection<TSectionId, TGroup>) => void;
   recordActionColumnLabel?: string;
   recordOpenLabel?: string;
+  retryLabel?: string;
 }
 
 const INITIAL_STATE: AdminResourceState = {
@@ -115,6 +116,7 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
   recordOpenLabel = 'Details',
   reloadLabel = 'Reload',
   refreshKey,
+  retryLabel,
   searchPlaceholder = 'Search records',
   sections,
   showSectionNavigation = true,
@@ -359,6 +361,7 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
             description={activeState.error}
             kind="error"
             onRetry={() => void loadSection(activeSection, activePagination ? activePageState : undefined)}
+            retryLabel={retryLabel}
             title={errorTitle}
           />
         ) : (

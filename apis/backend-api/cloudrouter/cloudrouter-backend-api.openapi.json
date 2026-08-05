@@ -4309,6 +4309,12 @@
             "maxLength": 128,
             "type": "string"
           },
+          "defaultVendorCode": {
+            "description": "Default vendor code field on create upstream supplier request.",
+            "maxLength": 64,
+            "nullable": true,
+            "type": "string"
+          },
           "description": {
             "description": "Description field on create upstream supplier request.",
             "maxLength": 4000,
@@ -7416,6 +7422,12 @@
             "maxLength": 128,
             "type": "string"
           },
+          "defaultVendorCode": {
+            "description": "Default vendor code field on update upstream supplier request.",
+            "maxLength": 64,
+            "nullable": true,
+            "type": "string"
+          },
           "description": {
             "description": "Description field on update upstream supplier request.",
             "maxLength": 4000,
@@ -7815,6 +7827,12 @@
           "groupName": {
             "description": "Group name field on upstream account group.",
             "maxLength": 200,
+            "type": "string"
+          },
+          "groupNameI18n": {
+            "description": "Group name i 18 n field on upstream account group.",
+            "maxLength": 4096,
+            "nullable": true,
             "type": "string"
           },
           "groupType": {
@@ -8930,6 +8948,133 @@
         "description": "Upstream accounts verify result schema exposed by Cloud Router.",
         "x-operation-id": "upstreamAccounts.verify"
       },
+      "UpstreamResourceCatalogItem": {
+        "additionalProperties": false,
+        "description": "Upstream resource catalog item schema exposed by Cloud Router.",
+        "properties": {
+          "apiEndpointCode": {
+            "description": "Api endpoint code field on upstream resource catalog item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "capabilities": {
+            "description": "Capabilities field on upstream resource catalog item.",
+            "items": {
+              "description": "Capabilities field on upstream resource catalog item.",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "capability": {
+            "description": "Capability field on upstream resource catalog item.",
+            "maxLength": 64,
+            "nullable": true,
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Display name field on upstream resource catalog item.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "modalityCode": {
+            "description": "Modality code field on upstream resource catalog item.",
+            "maxLength": 64,
+            "nullable": true,
+            "type": "string"
+          },
+          "resourceCode": {
+            "description": "Resource code field on upstream resource catalog item.",
+            "maxLength": 192,
+            "type": "string"
+          },
+          "resourceType": {
+            "description": "Resource type field on upstream resource catalog item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "sortOrder": {
+            "description": "Sort order field on upstream resource catalog item.",
+            "format": "int64",
+            "nullable": true,
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "vendorCode": {
+            "description": "Vendor code field on upstream resource catalog item.",
+            "maxLength": 64,
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "resourceCode",
+          "resourceType",
+          "displayName",
+          "vendorCode",
+          "modalityCode",
+          "apiEndpointCode",
+          "capability",
+          "capabilities",
+          "sortOrder"
+        ],
+        "type": "object"
+      },
+      "UpstreamResourceCatalogResponse": {
+        "additionalProperties": false,
+        "description": "Upstream resource catalog response schema exposed by Cloud Router.",
+        "name": "UpstreamResourceCatalogResponse",
+        "properties": {
+          "resourceGroups": {
+            "description": "Resource groups field on upstream resource catalog response.",
+            "items": {
+              "$ref": "#/components/schemas/UpstreamResourceGroupCatalogItem"
+            },
+            "type": "array"
+          },
+          "resources": {
+            "description": "Resources field on upstream resource catalog response.",
+            "items": {
+              "$ref": "#/components/schemas/UpstreamResourceCatalogItem"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "resources",
+          "resourceGroups"
+        ],
+        "type": "object"
+      },
+      "UpstreamResourceCatalogRetrieveResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by upstream resource catalog retrieve result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/UpstreamResourceCatalogResponse"
+                  }
+                ],
+                "description": "Data field on upstream resource catalog retrieve result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Upstream resource catalog retrieve result schema exposed by Cloud Router.",
+        "x-operation-id": "upstreamResourceCatalog.retrieve"
+      },
       "UpstreamResourceEntitlement": {
         "additionalProperties": false,
         "description": "Upstream resource entitlement schema exposed by Cloud Router.",
@@ -9018,6 +9163,83 @@
             "type": "integer"
           }
         },
+        "type": "object"
+      },
+      "UpstreamResourceGroupCatalogItem": {
+        "additionalProperties": false,
+        "description": "Upstream resource group catalog item schema exposed by Cloud Router.",
+        "properties": {
+          "capabilities": {
+            "description": "Capabilities field on upstream resource group catalog item.",
+            "items": {
+              "description": "Capabilities field on upstream resource group catalog item.",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "description": {
+            "description": "Description field on upstream resource group catalog item.",
+            "maxLength": 512,
+            "nullable": true,
+            "type": "string"
+          },
+          "groupCode": {
+            "description": "Group code field on upstream resource group catalog item.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "groupName": {
+            "description": "Group name field on upstream resource group catalog item.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "groupType": {
+            "description": "Group type field on upstream resource group catalog item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "resourceCount": {
+            "description": "Resource count field on upstream resource group catalog item.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "selectionMode": {
+            "description": "Selection mode field on upstream resource group catalog item.",
+            "maxLength": 32,
+            "type": "string"
+          },
+          "sortOrder": {
+            "description": "Sort order field on upstream resource group catalog item.",
+            "format": "int64",
+            "nullable": true,
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "vendorCodes": {
+            "description": "Vendor codes field on upstream resource group catalog item.",
+            "items": {
+              "description": "Vendor codes field on upstream resource group catalog item.",
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "groupCode",
+          "groupName",
+          "groupType",
+          "selectionMode",
+          "description",
+          "vendorCodes",
+          "capabilities",
+          "resourceCount",
+          "sortOrder"
+        ],
         "type": "object"
       },
       "UpstreamRouteExplainCandidate": {
@@ -9158,6 +9380,12 @@
             "maxLength": 128,
             "type": "string"
           },
+          "defaultVendorCode": {
+            "description": "Default vendor code field on upstream supplier.",
+            "maxLength": 64,
+            "nullable": true,
+            "type": "string"
+          },
           "description": {
             "description": "Description field on upstream supplier.",
             "maxLength": 4000,
@@ -9260,6 +9488,7 @@
           "displayName",
           "description",
           "supplierType",
+          "defaultVendorCode",
           "adapterCode",
           "protocolCode",
           "websiteUrl",
@@ -12231,6 +12460,87 @@
           "ai_upstream_account_credential",
           "ops_audit_log"
         ]
+      }
+    },
+    "/backend/v3/api/ai/upstream_resource_catalog": {
+      "get": {
+        "description": "List upstream resource catalog. Reads ai_resource, ai_resource_group. Writes none. File targets none.",
+        "operationId": "upstreamResourceCatalog.retrieve",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpstreamResourceCatalogRetrieveResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List upstream resource catalog",
+        "tags": [
+          "ai"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_resource",
+          "ai_resource_group"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "intelligence",
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-resource": "upstreamResourceCatalog",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/ai/upstream_suppliers": {

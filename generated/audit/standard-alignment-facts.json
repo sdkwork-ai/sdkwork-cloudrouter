@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-07-12T06:34:41.080Z",
+  "generatedAt": "2026-08-04T10:26:49.509Z",
   "facts": {
-    "generatedAt": "2026-07-12T06:34:41.080Z",
+    "generatedAt": "2026-08-04T10:26:49.509Z",
     "identity": {
       "appKey": "sdkwork-cloudrouter",
       "version": "0.3.0",
       "releaseChannels": [
         "STABLE"
       ],
-      "publishStatus": "ACTIVE",
+      "publishStatus": "DRAFT",
       "supportedDeploymentProfiles": [
         "cloud",
         "standalone"
@@ -24,7 +24,7 @@
       "workflowSbomRequired": true,
       "workflowOidcRequired": true,
       "workflowArtifactAttestations": true,
-      "installPackageTargetCount": 19
+      "installPackageTargetCount": 18
     },
     "ciSecurity": {
       "exists": true,
@@ -41,20 +41,34 @@
     },
     "migrations": {
       "postgresMigrationFiles": [
-        "0002_ai_request_trace_gateway_attribution.down.sql",
-        "0002_ai_request_trace_gateway_attribution.up.sql"
+        "0002_ai_request_trace_gateway_attribution.up.sql",
+        "0003_standardize_upstream_supplier_routing.up.sql",
+        "0004_add_chat_runtime_schema.up.sql",
+        "0005_reconcile_upstream_supplier_routing.up.sql",
+        "0006_align_chat_runtime_optional_cost.up.sql",
+        "0007_reconcile_canonical_contract_constraints.up.sql",
+        "0008_add_api_key_secret_storage.up.sql",
+        "0009_account_group_vendor_modalities.up.sql",
+        "0010_add_gateway_chain_policy.up.sql"
       ],
       "postgresBaselineExists": true,
       "postgresPairs": {
-        "complete": true,
-        "missingDown": [],
+        "complete": false,
+        "missingDown": [
+          "0002_ai_request_trace_gateway_attribution",
+          "0003_standardize_upstream_supplier_routing",
+          "0004_add_chat_runtime_schema",
+          "0005_reconcile_upstream_supplier_routing",
+          "0006_align_chat_runtime_optional_cost",
+          "0007_reconcile_canonical_contract_constraints",
+          "0008_add_api_key_secret_storage",
+          "0009_account_group_vendor_modalities",
+          "0010_add_gateway_chain_policy"
+        ],
         "missingUp": []
       },
-      "sqliteMigrationFiles": [
-        "0002_ai_request_trace_gateway_attribution.down.sql",
-        "0002_ai_request_trace_gateway_attribution.up.sql"
-      ],
-      "sqliteBaselineExists": true,
+      "sqliteMigrationFiles": [],
+      "sqliteBaselineExists": false,
       "sqlitePairs": {
         "complete": true,
         "missingDown": [],
@@ -66,7 +80,7 @@
         "cloud-router-admin-api.yaml",
         "cloud-router-app-api.yaml",
         "cloud-router-edge.yaml",
-        "cloud-router-egress-gateway.yaml",
+        "cloud-router-egress-cilium-policy.yaml",
         "cloud-router-gateway.yaml",
         "cloud-router-ingress.yaml",
         "cloud-router-migration-job.yaml",
@@ -89,40 +103,58 @@
     },
     "redisHa": {
       "exists": true,
+      "manifestPath": "deployments/kubernetes/cloud-router-redis.yaml",
       "replicas": 3,
+      "redisUrlScheme": "rediss",
       "hasSentinelContainer": true,
       "hasSentinelConfig": true,
+      "hasSentinelAuthentication": true,
       "hasPdb": true,
       "hasAuthSecret": true,
       "hasPodAntiAffinity": true,
-      "isHa": true
+      "hasReplicaConfiguration": false,
+      "runtimeSupportsSentinel": false,
+      "hasOperatorManagedFailover": false,
+      "hasWritablePrimaryDiscovery": false,
+      "redisUrlUsesTls": true,
+      "serverTlsEnabled": false,
+      "tlsTransportConsistent": false,
+      "isHa": false
+    },
+    "clientLocalSqlite": {
+      "declaresDesktopRuntime": true,
+      "desktopSqliteCommand": "node scripts/cloud-router-dev.mjs --target desktop --deployment-profile standalone --database sqlite",
+      "desktopSqliteCommandExists": true,
+      "desktopSqliteCommandTargetsSqlite": true,
+      "desktopLaunchIsClientOnly": false,
+      "tauriConfigPaths": [],
+      "hasNativeDesktopHost": false,
+      "clientLocalSqliteAuthorityPaths": [],
+      "hasClientLocalSqliteAuthority": false,
+      "serverRejectsSqlite": true,
+      "isImplemented": false,
+      "fixtureBaselineExists": false,
+      "fixtureMigrationFiles": [],
+      "note": "SQLite test fixtures and launch arguments do not establish a client-local runtime"
     },
     "i18n": {
       "exists": true,
-      "supportedLngs": [
-        "en",
-        "zh",
-        "de",
-        "fr",
-        "ja",
-        "ko",
-        "ru"
-      ],
-      "meetsPrdRequirement": true,
-      "fallbackLng": "en"
+      "supportedLngs": [],
+      "meetsPrdRequirement": false,
+      "fallbackLng": null
     },
     "circuitBreaker": {
       "exists": true,
       "implemented": true,
-      "lineCount": 1226,
+      "lineCount": 1483,
       "hasStateMachine": true,
       "hasRedisDistributedStore": true,
-      "hasChannelIdScope": true
+      "hasChannelIdScope": false
     },
     "idempotency": {
       "exists": true,
       "implemented": true,
-      "lineCount": 1434,
+      "lineCount": 1435,
       "hasRedisStore": true,
       "hasStreamingExclusion": true,
       "hasSyntheticLocalResponse": true
@@ -170,24 +202,29 @@
     },
     "techArch": {
       "exists": true,
-      "lineCount": 574,
-      "emptySections": [],
+      "lineCount": 500,
+      "emptySections": [
+        "## 4. Directory And Package Layout",
+        "## 5. API, SDK, And Data Ownership",
+        "## 6. Security, Privacy, And Observability",
+        "## 7. Deployment And Runtime Topology"
+      ],
       "isOnlyIndex": false
     },
     "metrics": {
       "exists": true,
-      "lineCount": 159,
+      "lineCount": 260,
       "hasOnlyAtomicU64Counters": false,
       "hasLabelVec": true
     },
     "tableConsistency": {
       "counts": {
-        "ddl": 43,
-        "registry": 43,
-        "schemaYaml": 43
+        "ddl": 53,
+        "registry": 38,
+        "schemaYaml": 0
       },
-      "consistent": true,
-      "note": "cloud-router-owned tables consistent across DDL, table-registry.json, and schema.yaml"
+      "consistent": false,
+      "note": "drift detected in cloud-router-owned table counts"
     },
     "tablePartition": {
       "exists": true,
@@ -206,12 +243,6 @@
         },
         {
           "name": "ai_usage",
-          "hasPartitionBy": false,
-          "hasDefaultPartition": false,
-          "partitioned": false
-        },
-        {
-          "name": "ai_usage_service_provider_edge",
           "hasPartitionBy": false,
           "hasDefaultPartition": false,
           "partitioned": false
@@ -262,20 +293,24 @@
       }
     },
     {
-      "id": "p0-sqlite-migration-chain",
-      "title": "SQLite baseline and paired migration chain",
-      "status": "done",
+      "id": "p0-client-local-sqlite-runtime",
+      "title": "Client-local SQLite runtime implementation",
+      "status": "pending",
       "evidence": {
-        "baselineExists": true,
-        "sqliteFiles": [
-          "0002_ai_request_trace_gateway_attribution.down.sql",
-          "0002_ai_request_trace_gateway_attribution.up.sql"
-        ],
-        "pairs": {
-          "complete": true,
-          "missingDown": [],
-          "missingUp": []
-        }
+        "declaresDesktopRuntime": true,
+        "desktopSqliteCommand": "node scripts/cloud-router-dev.mjs --target desktop --deployment-profile standalone --database sqlite",
+        "desktopSqliteCommandExists": true,
+        "desktopSqliteCommandTargetsSqlite": true,
+        "desktopLaunchIsClientOnly": false,
+        "tauriConfigPaths": [],
+        "hasNativeDesktopHost": false,
+        "clientLocalSqliteAuthorityPaths": [],
+        "hasClientLocalSqliteAuthority": false,
+        "serverRejectsSqlite": true,
+        "isImplemented": false,
+        "fixtureBaselineExists": false,
+        "fixtureMigrationFiles": [],
+        "note": "SQLite test fixtures and launch arguments do not establish a client-local runtime"
       }
     },
     {
@@ -291,23 +326,33 @@
       "title": "Prometheus histogram + OTLP metrics",
       "status": "done",
       "evidence": {
-        "lineCount": 159,
+        "lineCount": 260,
         "hasOnlyAtomicU64Counters": false
       }
     },
     {
       "id": "p0-redis-ha-manifest",
       "title": "Redis HA K8s manifest",
-      "status": "done",
+      "status": "pending",
       "evidence": {
         "exists": true,
+        "manifestPath": "deployments/kubernetes/cloud-router-redis.yaml",
         "replicas": 3,
+        "redisUrlScheme": "rediss",
         "hasSentinelContainer": true,
         "hasSentinelConfig": true,
+        "hasSentinelAuthentication": true,
         "hasPdb": true,
         "hasAuthSecret": true,
         "hasPodAntiAffinity": true,
-        "isHa": true
+        "hasReplicaConfiguration": false,
+        "runtimeSupportsSentinel": false,
+        "hasOperatorManagedFailover": false,
+        "hasWritablePrimaryDiscovery": false,
+        "redisUrlUsesTls": true,
+        "serverTlsEnabled": false,
+        "tlsTransportConsistent": false,
+        "isHa": false
       }
     },
     {
@@ -335,27 +380,32 @@
       "title": "TECH_ARCHITECTURE.md complete",
       "status": "done",
       "evidence": {
-        "emptySections": [],
-        "lineCount": 574
+        "emptySections": [
+          "## 4. Directory And Package Layout",
+          "## 5. API, SDK, And Data Ownership",
+          "## 6. Security, Privacy, And Observability",
+          "## 7. Deployment And Runtime Topology"
+        ],
+        "lineCount": 500
       }
     },
     {
       "id": "p0-table-count-consistency",
       "title": "Table count three-way consistency (DDL / registry / schema.yaml)",
-      "status": "done",
+      "status": "pending",
       "evidence": {
         "counts": {
-          "ddl": 43,
-          "registry": 43,
-          "schemaYaml": 43
+          "ddl": 53,
+          "registry": 38,
+          "schemaYaml": 0
         },
-        "consistent": true,
-        "note": "cloud-router-owned tables consistent across DDL, table-registry.json, and schema.yaml"
+        "consistent": false,
+        "note": "drift detected in cloud-router-owned table counts"
       }
     },
     {
       "id": "p0-high-traffic-table-partition",
-      "title": "High-traffic table partitioning (ai_request_trace / ai_routing_decision_log / ai_usage / ai_usage_service_provider_edge)",
+      "title": "High-traffic table partitioning (ai_request_trace / ai_routing_decision_log / ai_usage)",
       "status": "pending",
       "evidence": {
         "exists": true,
@@ -377,12 +427,6 @@
             "hasPartitionBy": false,
             "hasDefaultPartition": false,
             "partitioned": false
-          },
-          {
-            "name": "ai_usage_service_provider_edge",
-            "hasPartitionBy": false,
-            "hasDefaultPartition": false,
-            "partitioned": false
           }
         ],
         "allPartitioned": false,
@@ -395,7 +439,7 @@
   ],
   "summary": {
     "total": 11,
-    "done": 10,
-    "pending": 1
+    "done": 7,
+    "pending": 4
   }
 }

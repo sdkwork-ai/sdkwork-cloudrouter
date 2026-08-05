@@ -57,7 +57,7 @@ export function ServiceNodesAdmin() {
       const data = await ServiceNodeService.fetchNodes({ search: nextSearch, status: nextStatus });
       setNodes(data);
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : 'Failed to load service nodes');
+      setLoadError(error instanceof Error ? error.message : t('admin.serviceNodes.errors.load', 'Failed to load service nodes'));
     } finally {
       setLoading(false);
     }
@@ -103,7 +103,7 @@ export function ServiceNodesAdmin() {
       const updated = await ServiceNodeService.updateNodeStatus(node.id, nextStatus);
       setNodes((current) => current.map((item) => (item.id === updated.id ? updated : item)));
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : 'Failed to update service node status');
+      setLoadError(error instanceof Error ? error.message : t('admin.serviceNodes.errors.updateStatus', 'Failed to update service node status'));
     } finally {
       setBusyNodeId(null);
     }
@@ -119,7 +119,7 @@ export function ServiceNodesAdmin() {
       setNodes((current) => current.filter((node) => node.id !== deleteTarget.id));
       setDeleteTarget(null);
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : 'Failed to delete service node');
+      setLoadError(error instanceof Error ? error.message : t('admin.serviceNodes.errors.delete', 'Failed to delete service node'));
     } finally {
       setBusyNodeId(null);
     }
@@ -439,11 +439,14 @@ function ServiceNodeDialog({
   onCancel,
   onSubmit,
   t,
+  closeOnClickOutside = true,
 }: {
   state: DialogState;
   onCancel: () => void;
   onSubmit: (input: ServiceNodeInput) => Promise<void>;
   t: (key: string, fallback: string) => string;
+  /** 点击遮罩（弹窗外）时是否关闭；默认 true */
+  closeOnClickOutside?: boolean;
 }) {
   const [form, setForm] = useState<ServiceNodeForm>(() => state.mode === 'edit'
     ? {
@@ -474,7 +477,7 @@ function ServiceNodeDialog({
         status: form.status,
       });
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Failed to save service node');
+      setError(submitError instanceof Error ? submitError.message : t('admin.serviceNodes.errors.save', 'Failed to save service node'));
     } finally {
       setSaving(false);
     }
@@ -499,7 +502,14 @@ function ServiceNodeDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-slate-950/50 px-4 py-4 backdrop-blur-sm sm:items-center">
+    <div
+      className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-slate-950/50 px-4 py-4 backdrop-blur-sm sm:items-center"
+      onClick={(event) => {
+        if (closeOnClickOutside && event.target === event.currentTarget) {
+          onCancel();
+        }
+      }}
+    >
       <form
         onSubmit={save}
         className="max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-[#1a1a1a]"

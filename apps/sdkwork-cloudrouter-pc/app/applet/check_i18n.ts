@@ -11,8 +11,8 @@ function findMissingKeys() {
   const grepCommand = 'grep -rEo "t\\([\'\\"][a-zA-Z0-9_.-]+[\'\\"]" packages/ || true';
   const output = execSync(grepCommand, { encoding: 'utf8' });
 
-  const matches = output.match(/t\(['"]([a-zA-Z0-9_.-]+)['"]/g) || [];
-  const keys = new Set(matches.map(m => m.substring(3, m.length - 1)));
+  const matches: string[] = (output.match(/t\(['"]([a-zA-Z0-9_.-]+)['"]/g) || []) as string[];
+  const keys = new Set(matches.map((m) => m.substring(3, m.length - 1)));
 
   const missing = [];
   for (const key of keys) {

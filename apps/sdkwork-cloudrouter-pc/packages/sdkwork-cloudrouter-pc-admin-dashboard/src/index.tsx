@@ -107,7 +107,8 @@ const SUMMARY_CARD_COLORS = [
 type DashboardChartTab = 'modelDistribution' | 'userConsumption';
 
 export function DashboardAdmin() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const displayLocale = i18n.resolvedLanguage ?? i18n.language ?? 'en-US';
   const [chartTab, setChartTab] = useState<DashboardChartTab>('modelDistribution');
   const [trendMetric, setTrendMetric] = useState<DashboardTrendMetric>('tokens');
   const [chartType, setChartType] = useState<'area' | 'bar'>('area');
@@ -196,7 +197,7 @@ export function DashboardAdmin() {
                   {getTrendMetricLabel(entry.name) ?? String(entry.name === 'chartValue' ? label ?? entry.payload?.name ?? '' : entry.name ?? '')}
                 </span>
                 <span className="font-semibold text-slate-900 dark:text-white ml-auto pl-4">
-                  {formatLocalizedDecimalAmount(readTooltipValue(entry), 'en-US', 12, 0)}
+                  {formatLocalizedDecimalAmount(readTooltipValue(entry), displayLocale, 12, 0)}
                 </span>
               </div>
             ))}
@@ -545,7 +546,8 @@ export function DashboardAdmin() {
               ) : null}
               {recentUsage.map((item) => {
                 const isSuccess = item.status.trim().toLowerCase() === 'success';
-                const statusLabel = item.status.trim() || 'unknown';
+                const statusKey = item.status.trim().toLowerCase() || 'unknown';
+                const statusLabel = t(`admin.dashboard.status.${statusKey}`, statusKey);
                 return (
                 <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
                   <td className="px-4 py-3">
@@ -571,14 +573,14 @@ export function DashboardAdmin() {
                   <td className="px-4 py-3 font-mono text-xs">
                     {item.billingMode === 'token' ? (
                       <div className="flex items-center gap-3">
-                        <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400" title="Input Tokens">
+                        <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400" title={t('admin.dashboard.recentUsage.inputTokens', 'Input Tokens')}>
                           <span className="flex items-center justify-center w-4 h-4 rounded-full bg-emerald-50 dark:bg-emerald-500/10">
                             <ArrowDownRight className="w-3 h-3 text-emerald-500" />
                           </span>
                           <span className="font-medium text-slate-700 dark:text-slate-300">{item.usageIn?.toLocaleString()}</span>
                         </span>
                         <div className="w-px h-3 bg-slate-200 dark:bg-white/10"></div>
-                        <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400" title="Output Tokens">
+                        <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400" title={t('admin.dashboard.recentUsage.outputTokens', 'Output Tokens')}>
                           <span className="flex items-center justify-center w-4 h-4 rounded-full bg-blue-50 dark:bg-blue-500/10">
                             <ArrowUpRight className="w-3 h-3 text-blue-500" />
                           </span>
@@ -587,7 +589,7 @@ export function DashboardAdmin() {
                       </div>
                     ) : (
                        <span className="text-slate-700 dark:text-slate-300 font-medium bg-slate-100 dark:bg-white/5 px-2.5 py-1 rounded-md border border-slate-200 dark:border-white/10 flex items-center w-fit gap-1.5 shadow-sm">
-                         <Activity className="w-3 h-3 text-amber-500" /> {item.usageCount} <span className="opacity-60 text-[10px]">REQS</span>
+                         <Activity className="w-3 h-3 text-amber-500" /> {item.usageCount} <span className="opacity-60 text-[10px]">{t('admin.dashboard.recentUsage.requestsUnit', 'REQS')}</span>
                        </span>
                     )}
                   </td>

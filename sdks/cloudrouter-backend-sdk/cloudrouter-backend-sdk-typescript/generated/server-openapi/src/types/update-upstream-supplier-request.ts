@@ -2,6 +2,8 @@
 export interface UpdateUpstreamSupplierRequest {
   /** Adapter code field on update upstream supplier request. */
   adapterCode?: string;
+  /** Default vendor code field on update upstream supplier request. */
+  defaultVendorCode?: string | null;
   /** Description field on update upstream supplier request. */
   description?: string | null;
   /** Display name field on update upstream supplier request. */

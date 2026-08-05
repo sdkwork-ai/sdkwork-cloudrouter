@@ -70,8 +70,16 @@ CREATE INDEX IF NOT EXISTS idx_ai_pricing_import_snapshot_retention
 CREATE INDEX IF NOT EXISTS idx_ai_usage_retention
     ON ai_usage (retention_until, id);
 
-CREATE INDEX IF NOT EXISTS idx_ai_usage_service_provider_edge_retention
-    ON ai_usage_service_provider_edge (retention_until, id);
+-- The prototype settlement table was retired by the folded baseline, so
+-- index it only when a legacy installation still carries it.
+DO $sdkwork_migration$
+BEGIN
+    IF to_regclass('ai_usage_service_provider_edge') IS NOT NULL THEN
+        CREATE INDEX IF NOT EXISTS idx_ai_usage_service_provider_edge_retention
+            ON ai_usage_service_provider_edge (retention_until, id);
+    END IF;
+END
+$sdkwork_migration$;
 
 CREATE INDEX IF NOT EXISTS idx_ops_alert_event_tenant_status_latest
     ON ops_alert_event (tenant_id, organization_id, status, last_seen_at, id);

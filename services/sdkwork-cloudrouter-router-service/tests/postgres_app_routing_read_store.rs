@@ -25,7 +25,7 @@ async fn postgres_app_routing_projects_authorized_account_groups_api_keys_and_tr
     });
 
     let groups = store
-        .load_routing_account_groups(subject, list_query())
+        .load_routing_account_groups(subject, list_query(), None)
         .await
         .expect("load routing account groups from PostgreSQL");
     assert_eq!(3, groups.total);
@@ -64,7 +64,7 @@ async fn postgres_app_routing_projects_authorized_account_groups_api_keys_and_tr
     );
 
     let api_keys = store
-        .load_routing_api_keys(subject, list_query())
+        .load_routing_api_keys(subject, list_query(), None)
         .await
         .expect("load routing API keys from PostgreSQL");
     assert_eq!(1, api_keys.total);
@@ -78,7 +78,7 @@ async fn postgres_app_routing_projects_authorized_account_groups_api_keys_and_tr
     assert_eq!("fallback", api_key.account_groups[1].code);
 
     let traces = store
-        .load_routing_request_traces(subject, list_query())
+        .load_routing_request_traces(subject, list_query(), None)
         .await
         .expect("load routing request traces from PostgreSQL");
     assert_eq!(1, traces.total);

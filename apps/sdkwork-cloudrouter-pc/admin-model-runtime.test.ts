@@ -12,6 +12,7 @@ import {
   KNOWN_VENDORS as ADMIN_KNOWN_VENDORS,
   ModelService,
   selectPreferredModelVendorId,
+  type ModelRegionPriceInput,
 } from "./../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts";
 import { ResourceGroupService } from "./../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts";
 import { deriveModelRankingRefreshDiagnostics } from "./../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelRankingRefreshDiagnostics.ts";
@@ -117,7 +118,7 @@ function modelRegionPrice(
   priceIn: string,
   priceOut: string,
   overrides: Record<string, unknown> = {},
-): Record<string, unknown> {
+): ModelRegionPriceInput {
   return {
     regionCode: "global",
     currency: "USD",
@@ -523,6 +524,7 @@ test("admin ai model update input preserves current type marker for partial upda
     releaseStage: 1,
     shelfState: 1,
     routingState: 1,
+    regionPrices: [],
     replacementModel: null,
   });
 
@@ -856,7 +858,7 @@ test("admin model service calls generated backend SDK paths and normalizes model
     },
     async (captured) => {
       const vendors = await ModelService.fetchVendors();
-      const models = await ModelService.fetchModels();
+      const models = await ModelService.fetchModelsPage();
       const synced = await ModelService.syncVendorsAndModels();
       const vendor = await ModelService.addVendor({
         name: " Custom AI ",
@@ -883,10 +885,10 @@ test("admin model service calls generated backend SDK paths and normalizes model
       const deleted = await ModelService.deleteModel("model-3");
 
       assert.equal(vendors[0].status, "inactive");
-      assert.equal(models[0].type, "Image");
-      assert.equal(models[0].contextTokens, 128000);
-      assert.equal(models[0].calls, "1.2M");
-      assert.deepEqual(models[0].inputModalities, ["text", "image"]);
+      assert.equal(models.items[0].type, "Image");
+      assert.equal(models.items[0].contextTokens, 128000);
+      assert.equal(models.items[0].calls, "1.2M");
+      assert.deepEqual(models.items[0].inputModalities, ["text", "image"]);
       assert.equal(synced.synced, true);
       assert.equal(synced.source, "sdkwork_models");
       assert.equal(synced.mode, "official_refresh");
@@ -1450,12 +1452,12 @@ test("admin model list remains usable when model ranking enhancement fails", asy
       throw new Error(`Unexpected SDK request ${method} ${url}`);
     },
     async (captured) => {
-      const models = await ModelService.fetchModels();
+      const models = await ModelService.fetchModelsPage();
       const capturedRequests = captured.map((request) => `${request.method} ${request.url}`);
 
-      assert.equal(models.length, 1);
-      assert.equal(models[0].name, "gpt-4o-mini");
-      assert.equal(models[0].calls, "42");
+      assert.equal(models.items.length, 1);
+      assert.equal(models.items[0].name, "gpt-4o-mini");
+      assert.equal(models.items[0].calls, "42");
       assert.equal(capturedRequests[0], "GET /backend/v3/api/ai/models");
       assert.equal(capturedRequests.length >= 2, true);
       assert.equal(
@@ -1547,9 +1549,9 @@ test("admin model list keeps backend calls when ranking summary is malformed", a
       throw new Error(`Unexpected SDK request ${method} ${url}`);
     },
     async () => {
-      const models = await ModelService.fetchModels();
+      const models = await ModelService.fetchModelsPage();
 
-      assert.equal(models[0].calls, "42");
+      assert.equal(models.items[0].calls, "42");
     },
   );
 });
@@ -1591,9 +1593,9 @@ test("admin model list preserves regional prices and rejects missing region pric
       throw new Error(`Unexpected SDK request ${method} ${url}`);
     },
     async () => {
-      const models = await ModelService.fetchModels();
+      const models = await ModelService.fetchModelsPage();
 
-      assert.deepEqual(models[0].regionPrices, [
+      assert.deepEqual(models.items[0].regionPrices, [
         {
           regionCode: "cn",
           currency: "CNY",
@@ -1633,10 +1635,10 @@ test("admin model list preserves regional prices and rejects missing region pric
       throw new Error(`Unexpected SDK request ${method} ${url}`);
     },
     async () => {
-      const models = await ModelService.fetchModels();
+      const models = await ModelService.fetchModelsPage();
 
-      assert.equal(models.length, 1);
-      assert.deepEqual(models[0].regionPrices, []);
+      assert.equal(models.items.length, 1);
+      assert.deepEqual(models.items[0].regionPrices, []);
     },
   );
 
@@ -1660,7 +1662,7 @@ test("admin model list preserves regional prices and rejects missing region pric
     },
     async () => {
       await assert.rejects(
-        () => ModelService.fetchModels(),
+        () => ModelService.fetchModelsPage(),
         /Model region prices are required/,
       );
     },
@@ -1694,11 +1696,11 @@ test("admin model list keeps catalog rows when one pricing side is not available
       throw new Error(`Unexpected SDK request ${method} ${url}`);
     },
     async () => {
-      const models = await ModelService.fetchModels();
+      const models = await ModelService.fetchModelsPage();
 
-      assert.equal(models.length, 1);
-      assert.equal(models[0].name, "text-embedding-3-small");
-      assert.deepEqual(models[0].regionPrices, [
+      assert.equal(models.items.length, 1);
+      assert.equal(models.items[0].name, "text-embedding-3-small");
+      assert.deepEqual(models.items[0].regionPrices, [
         {
           regionCode: "global",
           currency: "USD",
@@ -1791,7 +1793,7 @@ test("admin model service rejects unsafe SDK path ids before calling generated b
         () =>
           ModelService.updateModel("model/3", {
             vendorId: "vendor-1",
-            name: "gpt-4o-mini",
+            model: "gpt-4o-mini",
             type: "Chat",
             currentType: "Chat",
             regionPrices: [modelRegionPrice("0.1", "0.2")],
@@ -1942,7 +1944,7 @@ test("admin model list fails closed when backend omits stable model ids", async 
     },
     async () => {
       await assert.rejects(
-        () => ModelService.fetchModels(),
+        () => ModelService.fetchModelsPage(),
         /Model id is required/,
       );
     },
@@ -1964,7 +1966,7 @@ test("admin model list fails closed when backend returns malformed rows", async 
     },
     async () => {
       await assert.rejects(
-        () => ModelService.fetchModels(),
+        () => ModelService.fetchModelsPage(),
         /Model record is required/,
       );
     },
@@ -1987,7 +1989,7 @@ test("admin model list fails closed when backend returns unsupported model types
     },
     async () => {
       await assert.rejects(
-        () => ModelService.fetchModels(),
+        () => ModelService.fetchModelsPage(),
         /Unsupported model type: Vision/,
       );
     },
@@ -2040,7 +2042,7 @@ test("admin model list fails closed when backend omits required model fields", a
       },
       async () => {
         await assert.rejects(
-          () => ModelService.fetchModels(),
+          () => ModelService.fetchModelsPage(),
           error,
         );
       },
@@ -2067,7 +2069,7 @@ test("admin model list fails closed when backend returns unsupported model statu
     },
     async () => {
       await assert.rejects(
-        () => ModelService.fetchModels(),
+        () => ModelService.fetchModelsPage(),
         /Unsupported model status: archived/,
       );
     },
@@ -2111,7 +2113,7 @@ test("admin model list fails closed when backend returns malformed model field c
       },
       async () => {
         await assert.rejects(
-          () => ModelService.fetchModels(),
+          () => ModelService.fetchModelsPage(),
           error,
         );
       },

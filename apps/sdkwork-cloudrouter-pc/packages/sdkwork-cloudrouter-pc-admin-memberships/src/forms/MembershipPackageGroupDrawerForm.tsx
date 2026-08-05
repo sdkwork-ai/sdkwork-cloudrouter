@@ -27,13 +27,7 @@ const billingCycleDurationDays: Record<MembershipPackageGroupBillingCycle, strin
   year: '365',
 };
 
-const baseDurationDayOptions = [
-  { value: '1', label: '1 day' },
-  { value: '7', label: '7 days' },
-  { value: '30', label: '30 days' },
-  { value: '90', label: '90 days' },
-  { value: '365', label: '365 days' },
-];
+const baseDurationDayValues = ['1', '7', '30', '90', '365'];
 
 interface MembershipPackageGroupDrawerFormProps {
   mode: 'create' | 'edit';
@@ -72,7 +66,7 @@ export function MembershipPackageGroupDrawerForm({
     { value: 'year', label: t('admin.commerce.memberships.groups.form.billingCycle.year', 'Yearly') },
   ] satisfies Array<{ value: MembershipPackageGroupBillingCycle; label: string }>;
   const durationDayOptions = includeCurrentOption(
-    baseDurationDayOptions,
+    membershipDurationDayOptions(t),
     durationDays,
     t('admin.commerce.memberships.groups.form.durationOptionDays', '{{days}} days', { days: durationDays }),
   );
@@ -184,4 +178,13 @@ function includeCurrentOption(
     return options;
   }
   return [...options, { value: currentValue, label: currentLabel }];
+}
+
+function membershipDurationDayOptions(
+  t: (key: string, fallback: string, options?: Record<string, unknown>) => string,
+): Array<{ value: string; label: string }> {
+  return baseDurationDayValues.map((value) => ({
+    value,
+    label: t('admin.commerce.memberships.groups.form.durationOptionDays', '{{days}} days', { days: value }),
+  }));
 }

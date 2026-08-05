@@ -21,18 +21,14 @@ test('cloud router i18n resources compose the canonical upstream administration 
     upstreamAccountGroupMessages,
   ]);
 
-  assert.equal(resources.en.translation['admin.menu.upstream.suppliers'], 'Upstream Suppliers');
-  assert.equal(resources.zh.translation['admin.menu.upstream.suppliers'], '上游供应商');
-  assert.equal(resources.en.translation['admin.menu.upstream.accounts'], 'Upstream Accounts');
-  assert.equal(resources.zh.translation['admin.menu.upstream.accounts'], '上游账号');
-  assert.equal(resources.en.translation['admin.menu.upstream.accountGroups'], 'Account Groups');
-  assert.equal(resources.zh.translation['admin.menu.upstream.accountGroups'], '账号分组');
-  assert.equal(resources.en.translation['admin.menu.home.upstreamManagement'], 'Upstream Management');
-  assert.equal(resources.zh.translation['admin.menu.home.upstreamManagement'], '上游管理');
-  assert.equal(resources.en.translation['admin.upstream.suppliers.title'], 'Upstream suppliers');
-  assert.equal(resources.zh.translation['admin.upstream.suppliers.title'], '上游供应商');
-  assert.equal(resources.en.translation['admin.upstream.accountGroups.title'], 'Account groups');
-  assert.equal(resources.zh.translation['admin.upstream.accountGroups.title'], '账号分组');
+  assert.equal(resources.en.translation['admin.menu.upstream.suppliers'], 'Suppliers');
+  assert.equal(resources.zh.translation['admin.menu.upstream.suppliers'], '供应商');
+  assert.equal(resources.en.translation['admin.menu.upstream.accounts'], 'Supplier Accounts');
+  assert.equal(resources.zh.translation['admin.menu.upstream.accounts'], '供应商账号');
+  assert.equal(resources.en.translation['admin.menu.upstream.accountGroups'], 'Supplier Account Groups');
+  assert.equal(resources.zh.translation['admin.menu.upstream.accountGroups'], '供应商账号分组');
+  assert.equal(resources.en.translation['admin.menu.home.upstreamManagement'], 'Supplier Management');
+  assert.equal(resources.zh.translation['admin.menu.home.upstreamManagement'], '供应商管理');
   assert.equal(resources.en.translation['admin.upstream.supplier.type.relay'], 'Relay supplier');
   assert.equal(resources.zh.translation['admin.upstream.supplier.type.relay'], '中转站供应商');
   assert.equal(

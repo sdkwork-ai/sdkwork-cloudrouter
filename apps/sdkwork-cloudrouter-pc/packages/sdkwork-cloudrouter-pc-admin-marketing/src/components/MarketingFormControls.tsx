@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export function MarketingField({
   label,
@@ -47,6 +48,7 @@ export function MarketingFormActions({
   submitLabel: string;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="mt-6 flex items-center justify-end gap-2 border-t border-slate-100 pt-4 dark:border-white/5">
       <button
@@ -55,14 +57,14 @@ export function MarketingFormActions({
         disabled={isSaving}
         className="inline-flex items-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
       >
-        Cancel
+        {t('common.actions.cancel', 'Cancel')}
       </button>
       <button
         type="submit"
         disabled={isSaving}
         className="inline-flex items-center rounded-md bg-lobster-600 px-4 py-2 text-sm font-medium text-white hover:bg-lobster-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {isSaving ? 'Saving...' : submitLabel}
+        {isSaving ? t('common.actions.saving', 'Saving...') : submitLabel}
       </button>
     </div>
   );

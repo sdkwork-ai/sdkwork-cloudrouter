@@ -8,6 +8,8 @@ interface MembershipDialogProps {
   isOpen: boolean;
   onClose: () => void;
   children: ReactNode;
+  /** 点击遮罩（弹窗外）时是否关闭；默认 true */
+  closeOnClickOutside?: boolean;
 }
 
 export function MembershipDialog({
@@ -16,6 +18,7 @@ export function MembershipDialog({
   isOpen,
   onClose,
   children,
+  closeOnClickOutside = true,
 }: MembershipDialogProps) {
   const { t } = useTranslation();
 
@@ -24,7 +27,14 @@ export function MembershipDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6"
+      onClick={(event) => {
+        if (closeOnClickOutside && event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       <section
         role="dialog"
         aria-modal="true"

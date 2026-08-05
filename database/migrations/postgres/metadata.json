@@ -12,6 +12,96 @@
       "lock": "table",
       "lock_timeout": "2s",
       "statement_timeout": "30s"
+    },
+    "0003_standardize_upstream_supplier_routing.up.sql": {
+      "engine": "postgres",
+      "reversible": "false",
+      "rollback": "forward-fix",
+      "transactional": "true",
+      "lock": "access-exclusive-on-legacy-routing-tables",
+      "lock_timeout": "5s",
+      "statement_timeout": "10min"
+    },
+    "0004_add_chat_runtime_schema.up.sql": {
+      "engine": "postgres",
+      "reversible": "false",
+      "rollback": "forward-fix",
+      "transactional": "true",
+      "lock": "catalog-and-new-table-ddl",
+      "lock_timeout": "2s",
+      "statement_timeout": "5min"
+    },
+    "0005_reconcile_upstream_supplier_routing.up.sql": {
+      "engine": "postgres",
+      "reversible": "false",
+      "rollback": "forward-fix",
+      "transactional": "true",
+      "lock": "access-exclusive-on-routing-and-gateway-iam-tables",
+      "lock_timeout": "5s",
+      "statement_timeout": "5min"
+    },
+    "0006_align_chat_runtime_optional_cost.up.sql": {
+      "engine": "postgres",
+      "reversible": "false",
+      "rollback": "forward-fix",
+      "transactional": "true",
+      "lock": "access-exclusive-on-chat-runtime-tables",
+      "lock_timeout": "2s",
+      "statement_timeout": "1min"
+    },
+    "0007_reconcile_canonical_contract_constraints.up.sql": {
+      "engine": "postgres",
+      "reversible": "false",
+      "rollback": "forward-fix",
+      "transactional": "true",
+      "lock": "access-exclusive-on-cloudrouter-contract-tables",
+      "lock_timeout": "5s",
+      "statement_timeout": "5min"
+    },
+    "0008_add_api_key_secret_storage.up.sql": {
+      "engine": "postgres",
+      "reversible": "false",
+      "rollback": "forward-fix",
+      "transactional": "true",
+      "lock": "lightweight",
+      "lock_timeout": "2s",
+      "statement_timeout": "30s"
+    },
+    "0009_account_group_vendor_modalities.up.sql": {
+      "engine": "postgres",
+      "reversible": "false",
+      "rollback": "forward-fix",
+      "transactional": "true",
+      "lock": "lightweight",
+      "lock_timeout": "2s",
+      "statement_timeout": "30s"
+    },
+    "0010_add_gateway_chain_policy.up.sql": {
+      "engine": "postgres",
+      "reversible": "false",
+      "rollback": "forward-fix",
+      "transactional": "true",
+      "lock": "lightweight",
+      "lock_timeout": "2s",
+      "statement_timeout": "30s"
+    },
+    "0011_add_localized_display_names.up.sql": {
+      "engine": "postgres",
+      "reversible": "false",
+      "rollback": "forward-fix",
+      "transactional": "true",
+      "lock": "lightweight",
+      "lock_timeout": "2s",
+      "statement_timeout": "30s"
+    },
+    "0012_ops_referral_stat_snapshot.up.sql": {
+      "engine": "postgres",
+      "reversible": "false",
+      "rollback": "forward-fix",
+      "transactional": "true",
+      "lock": "lightweight",
+      "lock_timeout": "2s",
+      "statement_timeout": "30s"
     }
   }
 }

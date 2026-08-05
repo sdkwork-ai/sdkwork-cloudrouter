@@ -512,7 +512,6 @@ function collectTablePartitionFacts() {
     "ai_request_trace",
     "ai_routing_decision_log",
     "ai_usage",
-    "ai_usage_service_provider_edge",
   ];
   const strategyDocumented = fileExists(strategyPath);
   if (!fileExists(ddlPath)) {
@@ -639,7 +638,7 @@ function buildP0Status(facts) {
 
   items.push({
     id: "p0-high-traffic-table-partition",
-    title: "High-traffic table partitioning (ai_request_trace / ai_routing_decision_log / ai_usage / ai_usage_service_provider_edge)",
+    title: "High-traffic table partitioning (ai_request_trace / ai_routing_decision_log / ai_usage)",
     status: facts.tablePartition.allPartitioned ? "done" : "pending",
     evidence: facts.tablePartition,
   });

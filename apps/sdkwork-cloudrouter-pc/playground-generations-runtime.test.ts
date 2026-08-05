@@ -359,12 +359,13 @@ test("playground asset generation emits mapped result artifacts and usage from s
     durationMs: 4300,
   });
 
+  const artifactView = artifacts as unknown as Array<{ modality?: string; asset?: { kind: string; url: string; mimeType: string; durationSeconds: number } }>;
   assert.equal(artifacts.length, 1);
-  assert.equal(artifacts[0]?.modality, "audio");
-  assert.equal(artifacts[0]?.asset.kind, "audio");
-  assert.equal(artifacts[0]?.asset.url, "https://cdn.example/generated.wav");
-  assert.equal(artifacts[0]?.asset.mimeType, "audio/wav");
-  assert.equal(artifacts[0]?.asset.durationSeconds, 4.3);
+  assert.equal(artifactView[0]?.modality, "audio");
+  assert.equal(artifactView[0]?.asset?.kind, "audio");
+  assert.equal(artifactView[0]?.asset?.url, "https://cdn.example/generated.wav");
+  assert.equal(artifactView[0]?.asset.mimeType, "audio/wav");
+  assert.equal(artifactView[0]?.asset.durationSeconds, 4.3);
   assert.equal(result.item.asset?.url, "https://cdn.example/generated.wav");
   assert.equal(result.usage.imageCount, 0);
   assert.equal(result.usage.videoSeconds, "0");

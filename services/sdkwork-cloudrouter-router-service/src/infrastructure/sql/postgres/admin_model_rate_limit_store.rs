@@ -246,7 +246,7 @@ async fn find_existing_policy(
           AND organization_id = $2
           AND subject_type = $3
           AND subject_id = $4
-          AND group_id = $5
+          AND account_group_id = $5
           AND model = $6
           AND quota_period = $7
           AND quota_unit = $8
@@ -277,7 +277,7 @@ async fn insert_quota_policy(
     sqlx::query(
         r#"
         INSERT INTO ai_quota_policy
-            (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, policy_code, name, subject_type, subject_id, subject_ref_hash, subject_ref_masked, scope_type, scope_id, group_id, model, quota_period, quota_unit, quota_limit, requests_per_minute, tokens_per_minute, effective_from, id)
+            (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, policy_code, name, subject_type, subject_id, subject_ref_hash, subject_ref_masked, scope_type, scope_id, account_group_id, model, quota_period, quota_unit, quota_limit, requests_per_minute, tokens_per_minute, effective_from, id)
         VALUES
             ($1, $2, $3, 1, 1, $4::timestamptz, $5::timestamptz, 0, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19::numeric, $20, $21, $22::timestamptz, $23)
         "#,
@@ -336,7 +336,7 @@ async fn update_quota_policy(
             subject_ref_masked = $9,
             scope_type = $10,
             scope_id = $11,
-            group_id = $12,
+            account_group_id = $12,
             model = $13,
             quota_period = $14,
             quota_unit = $15,
@@ -489,7 +489,7 @@ fn model_rate_limit_select_sql(predicate: &'static str) -> String {
             COALESCE(q.model, '') AS model,
             COALESCE(NULLIF(g.group_code, ''), NULLIF(g.group_name, ''), q.subject_ref_masked, '') AS account_group,
             COALESCE(g.group_name, '') AS account_group_name,
-            q.group_id,
+            q.account_group_id,
             q.requests_per_minute AS rpm,
             q.tokens_per_minute AS tpm,
             q.status,
@@ -498,7 +498,7 @@ fn model_rate_limit_select_sql(predicate: &'static str) -> String {
             COUNT(*) OVER() AS total
         FROM ai_quota_policy q
         LEFT JOIN ai_upstream_account_group g
-          ON q.group_id = g.id
+          ON q.account_group_id = g.id
         {predicate}
         "#
     )

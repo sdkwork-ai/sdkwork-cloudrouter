@@ -67,6 +67,7 @@ function parseArgs(argv) {
     database: undefined,
     legacyMode: undefined,
     devEnvFile: undefined,
+    regionCode: undefined,
     dryRun: false,
     help: false,
     passthrough: [],
@@ -123,6 +124,11 @@ function parseArgs(argv) {
       index += 1;
       continue;
     }
+    if (arg === '--region') {
+      settings.regionCode = argv[index + 1];
+      index += 1;
+      continue;
+    }
     if (arg === '--dev-env-file') {
       settings.devEnvFile = argv[index + 1];
       index += 1;
@@ -168,6 +174,7 @@ Topology-aware Cloud Router dev entry. Loads etc/topology profile env via @sdkwo
 Options:
   --deployment-profile <standalone|cloud>           Default: standalone
   --environment <development>                       Default: development
+  --region <global|cn>                              Deployment region (REGION_SPEC.md); default global
   --distributed                                      Use local split-process debugging
   --target <browser|browser-only|desktop|plan|service>
                                                     Default: browser (integrated product server)
@@ -195,17 +202,21 @@ function main() {
   }
 
   const profileId = resolveDevProfileId(settings.deploymentProfile);
-  const { env: mergedEnv } = loadTopologyProfileForWorkspace({
+  const { env: mergedEnv, regionEnv } = loadTopologyProfileForWorkspace({
     deploymentProfile: settings.deploymentProfile,
     env: process.env,
     includeIamDatabase: true,
+    regionCode: settings.regionCode,
   });
+  const resolvedRegionCode = regionEnv?.regionCode ?? mergedEnv.SDKWORK_CLOUDROUTER_ROUTER_REGION_CODE ?? 'cn';
 
   const summary = {
     repoRoot: REPO_ROOT,
     profileId,
     defaultDevProfileId: DEFAULT_DEV_PROFILE_ID,
     deploymentProfile: settings.deploymentProfile,
+    regionCode: resolvedRegionCode,
+    seedLocale: regionEnv?.seedLocale ?? mergedEnv.SDKWORK_DATABASE_SEED_LOCALE ?? 'zh-CN',
     environment: settings.environment,
     runtimeMode: settings.runtimeMode,
     target: settings.target,

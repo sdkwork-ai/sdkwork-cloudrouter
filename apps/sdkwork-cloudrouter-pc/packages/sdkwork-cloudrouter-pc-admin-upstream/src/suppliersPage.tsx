@@ -1,15 +1,17 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { Edit3, ExternalLink, Plus, RefreshCw, Settings2, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { Building2, Check, Edit3, ExternalLink, Plus, RefreshCw, Settings2, Share2, Trash2 } from 'lucide-react';
 import { AdminTableShell, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
 import { useTranslation } from 'react-i18next';
 import type {
   CreateUpstreamSupplierRequest,
+  UpstreamResourceCatalogResponse,
   UpstreamResourceEntitlementInput,
   UpstreamSupplier,
   UpstreamSupplierAuthMethodInput,
   UpstreamSupplierEndpointInput,
 } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import { upstreamService } from './upstreamService';
+import { emptyResourceSelection, ResourcePicker, type ResourceSelection } from './resourcePicker';
 import {
   dangerButtonClass,
   errorMessage,
@@ -29,14 +31,29 @@ import {
   UpstreamPageShell,
 } from './components';
 
-type TranslationFunction = ReturnType<typeof useTranslation>['t'];
+type SupplierType = 'official' | 'relay';
+
+interface SupplierFormValues {
+  supplierCode: string;
+  supplierName: string;
+  displayName: string;
+  description: string;
+  supplierType: SupplierType;
+  defaultVendorCode: string | null;
+  adapterCode: string;
+  protocolCode: string;
+  websiteUrl: string;
+  docsUrl: string;
+  regionCode: string;
+  environment: number;
+  sortOrder: number;
+  status: number;
+  resources: UpstreamResourceEntitlementInput[];
+}
 
 export function UpstreamSupplierAdmin() {
   return (
-    <UpstreamPageShell
-      titleKey="admin.upstream.suppliers.title"
-      subtitleKey="admin.upstream.suppliers.subtitle"
-    >
+    <UpstreamPageShell>
       <SupplierAdminPanel />
     </UpstreamPageShell>
   );
@@ -66,19 +83,38 @@ const emptyAuthMethod = (): UpstreamSupplierAuthMethodInput => ({
   },
 });
 
-const emptyResource = (): UpstreamResourceEntitlementInput => ({
-  resourceCode: '',
-  resourceGroupCode: '',
-  grantType: 'allow',
-  priority: 100,
-  status: 1,
-});
+function toEntitlements(selection: ResourceSelection): UpstreamResourceEntitlementInput[] {
+  return [
+    ...selection.resourceCodes.map((resourceCode) => ({ resourceCode, grantType: 'allow' as const, priority: 100, status: 1 })),
+    ...selection.resourceGroupCodes.map((resourceGroupCode) => ({ resourceGroupCode, grantType: 'allow' as const, priority: 100, status: 1 })),
+  ];
+}
+
+function toSelection(items: UpstreamResourceEntitlementInput[]): ResourceSelection {
+  return {
+    resourceCodes: items.filter((item) => item.resourceCode).map((item) => item.resourceCode as string),
+    resourceGroupCodes: items.filter((item) => item.resourceGroupCode).map((item) => item.resourceGroupCode as string),
+  };
+}
+
+function SupplierTypeBadge({ type }: { type: SupplierType }) {
+  const { t } = useTranslation();
+  const official = type === 'official';
+  return (
+    <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-1 text-xs font-semibold ${official ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300'}`}>
+      {official ? <Building2 className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}
+      {official ? t('admin.upstream.supplier.type.official') : t('admin.upstream.supplier.type.relay')}
+    </span>
+  );
+}
 
 export function SupplierAdminPanel() {
   const { t } = useTranslation();
   const [items, setItems] = useState<UpstreamSupplier[]>([]);
   const [query, setQuery] = useState('');
   const [appliedQuery, setAppliedQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'all' | SupplierType>('all');
+  const [catalog, setCatalog] = useState<UpstreamResourceCatalogResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,17 +138,66 @@ export function SupplierAdminPanel() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const submitSupplier = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const loadCatalog = useCallback(async () => {
+    if (catalog) return;
+    try {
+      const value = await upstreamService.fetchResourceCatalog();
+      if (!value || !Array.isArray(value.resources) || !Array.isArray(value.resourceGroups)) {
+        setError(t('admin.upstream.common.errors.operationFailed'));
+        return;
+      }
+      setCatalog(value);
+    } catch (cause) {
+      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+    }
+  }, [catalog, t]);
+
+  useEffect(() => { void loadCatalog(); }, [loadCatalog]);
+
+  const filteredItems = useMemo(() => {
+    if (typeFilter === 'all') return items;
+    return items.filter((item) => item.supplierType === typeFilter);
+  }, [items, typeFilter]);
+
+  const officialCount = useMemo(() => items.filter((item) => item.supplierType === 'official').length, [items]);
+  const relayCount = useMemo(() => items.filter((item) => item.supplierType === 'relay').length, [items]);
+
+  const submitSupplier = async (values: SupplierFormValues) => {
     setBusy(true);
     setError(null);
     try {
-      const form = new FormData(event.currentTarget);
-      const input = supplierInput(form, t);
+      const input: CreateUpstreamSupplierRequest = {
+        supplierCode: values.supplierCode,
+        supplierName: values.supplierName,
+        displayName: values.displayName || null,
+        description: values.description || null,
+        supplierType: values.supplierType,
+        defaultVendorCode: values.defaultVendorCode,
+        adapterCode: values.adapterCode,
+        protocolCode: values.protocolCode,
+        websiteUrl: values.websiteUrl || null,
+        docsUrl: values.docsUrl || null,
+        regionCode: values.regionCode || null,
+        environment: values.environment,
+        sortOrder: values.sortOrder,
+        status: values.status,
+      };
+      let supplier: UpstreamSupplier;
       if (editing) {
-        await upstreamService.suppliers.update(editing, input);
+        supplier = await upstreamService.suppliers.update(editing, input);
       } else {
-        await upstreamService.suppliers.create(input);
+        supplier = await upstreamService.suppliers.create(input);
+      }
+      if (values.resources.length > 0) {
+        try {
+          await upstreamService.suppliers.replaceResources(supplier, { items: values.resources });
+        } catch (cause) {
+          setEditing(undefined);
+          setSelected(supplier);
+          setError(t('admin.upstream.supplier.errors.resourcesNotSaved'));
+          await load();
+          return;
+        }
       }
       setEditing(undefined);
       await load();
@@ -144,10 +229,35 @@ export function SupplierAdminPanel() {
     setItems((current) => current.map((item) => item.id === supplier.id ? supplier : item));
   };
 
+  const typeFilterOptions: { value: 'all' | SupplierType; label: string }[] = [
+    { value: 'all', label: t('admin.upstream.supplier.filter.all') },
+    { value: 'official', label: t('admin.upstream.supplier.filter.official') },
+    { value: 'relay', label: t('admin.upstream.supplier.filter.relay') },
+  ];
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" data-admin-upstream-toolbar>
-        <div data-admin-upstream-search><SearchBox value={query} placeholder={t('admin.upstream.supplier.search.placeholder')} onChange={setQuery} onSubmit={() => setAppliedQuery(query.trim())} /></div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div data-admin-upstream-search><SearchBox value={query} placeholder={t('admin.upstream.supplier.search.placeholder')} onChange={setQuery} onSubmit={() => setAppliedQuery(query.trim())} /></div>
+          <div className="flex rounded-lg border border-slate-200 bg-white p-0.5 dark:border-white/10 dark:bg-[#171717]">
+            {typeFilterOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setTypeFilter(option.value)}
+                className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition ${typeFilter === option.value ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <div className="hidden items-center gap-2 text-xs text-slate-500 dark:text-slate-400 md:flex">
+            <span className="inline-flex items-center gap-1"><Building2 className="h-3.5 w-3.5 text-indigo-500" />{t('admin.upstream.supplier.stats.official', { count: officialCount })}</span>
+            <span className="text-slate-300 dark:text-slate-600">·</span>
+            <span className="inline-flex items-center gap-1"><Share2 className="h-3.5 w-3.5 text-amber-500" />{t('admin.upstream.supplier.stats.relay', { count: relayCount })}</span>
+          </div>
+        </div>
         <div className="flex gap-2">
           <button type="button" className={secondaryButtonClass} onClick={() => void load()} disabled={loading} title={t('common.actions.refresh')}>
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
@@ -173,7 +283,7 @@ export function SupplierAdminPanel() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-            {items.length === 0 ? <TableState loading={loading} empty={t('admin.upstream.supplier.empty')} colSpan={6} /> : items.map((supplier) => (
+            {filteredItems.length === 0 ? <TableState loading={loading} empty={t('admin.upstream.supplier.empty')} colSpan={6} /> : filteredItems.map((supplier) => (
               <tr key={supplier.id} className="text-slate-700 hover:bg-slate-50/80 dark:text-slate-200 dark:hover:bg-white/[0.03]">
                 <td className="px-4 py-3">
                   <button type="button" onClick={() => setSelected(supplier)} className="text-left">
@@ -181,7 +291,7 @@ export function SupplierAdminPanel() {
                     <span className="mt-0.5 block font-mono text-xs text-slate-500">{supplier.supplierCode}</span>
                   </button>
                 </td>
-                <td className="px-4 py-3 capitalize">{supplier.supplierType}</td>
+                <td className="px-4 py-3"><SupplierTypeBadge type={supplier.supplierType as SupplierType} /></td>
                 <td className="px-4 py-3"><span className="font-medium">{supplier.protocolCode}</span><span className="block text-xs text-slate-500">{supplier.adapterCode}</span></td>
                 <td className="px-4 py-3">{supplier.regionCode || '-'}</td>
                 <td className="px-4 py-3"><StatusBadge status={supplier.status} healthy={supplier.healthStatus} /></td>
@@ -199,7 +309,7 @@ export function SupplierAdminPanel() {
       </AdminTableShell>
 
       {editing !== undefined ? (
-        <SupplierModal supplier={editing} busy={busy} onSubmit={submitSupplier} onClose={() => setEditing(undefined)} />
+        <SupplierModal supplier={editing} catalog={catalog} busy={busy} onSubmit={(values) => void submitSupplier(values)} onClose={() => setEditing(undefined)} />
       ) : null}
       {selected ? (
         <SupplierCapabilities supplier={selected} onChanged={updateSelected} onClose={() => setSelected(null)} />
@@ -219,27 +329,193 @@ export function SupplierAdminPanel() {
   );
 }
 
-function SupplierModal({ supplier, busy, onSubmit, onClose }: { supplier: UpstreamSupplier | null; busy: boolean; onSubmit: (event: FormEvent<HTMLFormElement>) => void; onClose: () => void }) {
+function SupplierModal({ supplier, catalog, busy, onSubmit, onClose }: { supplier: UpstreamSupplier | null; catalog: UpstreamResourceCatalogResponse | null; busy: boolean; onSubmit: (values: SupplierFormValues) => void; onClose: () => void }) {
   const { t } = useTranslation();
+  const [supplierType, setSupplierType] = useState<SupplierType>(supplier?.supplierType as SupplierType ?? 'official');
+  const [defaultVendorCode, setDefaultVendorCode] = useState<string | null>(supplier?.defaultVendorCode ?? null);
+  const [adapterCode, setAdapterCode] = useState(supplier?.adapterCode ?? 'openai');
+  const [selection, setSelection] = useState<ResourceSelection>(emptyResourceSelection());
+  const [resourcesLoading, setResourcesLoading] = useState(Boolean(supplier));
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const vendorResources = useMemo(() => (catalog?.resources ?? []).filter((resource) => resource.resourceType === 'vendor'), [catalog]);
+  const grantableVendorResources = useMemo(() => {
+    if (!defaultVendorCode) return [];
+    return (catalog?.resources ?? []).filter((resource) => resource.vendorCode === defaultVendorCode);
+  }, [catalog, defaultVendorCode]);
+  const vendorGranted = useMemo(() => {
+    if (!defaultVendorCode) return false;
+    return grantableVendorResources.length > 0 && grantableVendorResources.every((resource) => selection.resourceCodes.includes(resource.resourceCode));
+  }, [grantableVendorResources, selection.resourceCodes]);
+
+  useEffect(() => {
+    if (!supplier) return;
+    let cancelled = false;
+    void upstreamService.suppliers.listResources(supplier.id)
+      .then((items) => {
+        if (!cancelled) setSelection(toSelection(items.map(({ resourceCode, resourceGroupCode, grantType, priority, status }) => ({ resourceCode, resourceGroupCode, grantType, priority, status }))));
+      })
+      .catch((cause) => {
+        if (!cancelled) setFormError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      })
+      .finally(() => {
+        if (!cancelled) setResourcesLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [supplier, t]);
+
+  const handleVendorChange = (vendorCode: string) => {
+    setDefaultVendorCode(vendorCode);
+    if (adapterCode === 'openai' || adapterCode === '') {
+      setAdapterCode(vendorCode);
+    }
+  };
+
+  const grantVendor = () => {
+    setSelection((current) => {
+      const selected = new Set(current.resourceCodes);
+      grantableVendorResources.forEach((resource) => selected.add(resource.resourceCode));
+      return { ...current, resourceCodes: [...selected] };
+    });
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFormError(null);
+    if (!supplierType) return;
+    if (supplierType === 'official' && !defaultVendorCode) {
+      setFormError(t('admin.upstream.supplier.form.vendor.required'));
+      return;
+    }
+    const values = valuesFromForm(event.currentTarget, supplierType, defaultVendorCode, selection);
+    if (!values) {
+      setFormError(t('admin.upstream.common.validation.required', { field: t('admin.upstream.supplier.form.supplierName') }));
+      return;
+    }
+    onSubmit(values);
+  };
+
   return (
-    <Modal title={supplier ? t('admin.upstream.supplier.form.editTitle') : t('admin.upstream.supplier.form.createTitle')} busy={busy} submitLabel={supplier ? t('common.actions.saveChanges') : t('admin.upstream.supplier.form.createAction')} onSubmit={onSubmit} onClose={onClose}>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={t('admin.upstream.supplier.form.supplierCode')} required><input name="supplierCode" className={inputClass} defaultValue={supplier?.supplierCode} disabled={Boolean(supplier)} required /></Field>
-        <Field label={t('admin.upstream.supplier.form.supplierName')} required><input name="supplierName" className={inputClass} defaultValue={supplier?.supplierName} required /></Field>
-        <Field label={t('admin.upstream.supplier.form.displayName')}><input name="displayName" className={inputClass} defaultValue={supplier?.displayName} /></Field>
-        <Field label={t('admin.upstream.supplier.form.supplierType')} required><select name="supplierType" className={selectClass} defaultValue={supplier?.supplierType ?? 'official'}><option value="official">{t('admin.upstream.supplier.type.official')}</option><option value="relay">{t('admin.upstream.supplier.type.relay')}</option></select></Field>
-        <Field label={t('admin.upstream.supplier.form.protocolCode')} required><input name="protocolCode" className={inputClass} defaultValue={supplier?.protocolCode ?? 'openai'} required /></Field>
-        <Field label={t('admin.upstream.supplier.form.adapterCode')} required><input name="adapterCode" className={inputClass} defaultValue={supplier?.adapterCode ?? 'openai'} required /></Field>
-        <Field label={t('admin.upstream.common.fields.regionCode')}><input name="regionCode" className={inputClass} defaultValue={supplier?.regionCode ?? ''} /></Field>
-        <Field label={t('admin.upstream.common.fields.environment')}><select name="environment" className={selectClass} defaultValue={supplier?.environment ?? 1}><option value="1">{t('admin.upstream.common.environment.production')}</option><option value="2">{t('admin.upstream.common.environment.sandbox')}</option></select></Field>
-        <Field label={t('admin.upstream.supplier.form.websiteUrl')}><input name="websiteUrl" type="url" className={inputClass} defaultValue={supplier?.websiteUrl ?? ''} /></Field>
-        <Field label={t('admin.upstream.supplier.form.documentationUrl')}><input name="docsUrl" type="url" className={inputClass} defaultValue={supplier?.docsUrl ?? ''} /></Field>
-        <Field label={t('admin.upstream.supplier.form.sortOrder')}><input name="sortOrder" type="number" min="0" className={inputClass} defaultValue={supplier?.sortOrder ?? 100} /></Field>
-        <Field label={t('admin.upstream.common.fields.status')}><select name="status" className={selectClass} defaultValue={supplier?.status ?? 1}><option value="1">{t('common.status.active')}</option><option value="0">{t('common.status.disabled')}</option></select></Field>
-        <div className="sm:col-span-2"><Field label={t('admin.upstream.common.fields.description')}><textarea name="description" className={textAreaClass} defaultValue={supplier?.description ?? ''} /></Field></div>
+    <Modal title={supplier ? t('admin.upstream.supplier.form.editTitle') : t('admin.upstream.supplier.form.createTitle')} busy={busy || resourcesLoading} submitLabel={supplier ? t('common.actions.saveChanges') : t('admin.upstream.supplier.form.createAction')} onSubmit={handleSubmit} onClose={onClose}>
+      <div className="grid gap-5">
+        <InlineError message={formError} />
+        <div>
+          <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-200">{t('admin.upstream.supplier.form.supplierType')}<span className="ml-1 text-red-500">*</span></p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setSupplierType('official')}
+              className={`flex items-start gap-3 rounded-lg border p-3 text-left transition ${supplierType === 'official' ? 'border-indigo-500 bg-indigo-50/70 ring-2 ring-indigo-500/20 dark:border-indigo-500/60 dark:bg-indigo-500/10' : 'border-slate-200 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/[0.03]'}`}
+            >
+              <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${supplierType === 'official' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400'}`}>
+                <Building2 className="h-4 w-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold text-slate-900 dark:text-white">{t('admin.upstream.supplier.type.official')}</span>
+                <span className="mt-0.5 block text-xs leading-relaxed text-slate-500 dark:text-slate-400">{t('admin.upstream.supplier.type.official.hint')}</span>
+              </span>
+              {supplierType === 'official' ? <Check className="ml-auto h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-300" /> : null}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setSupplierType('relay'); setDefaultVendorCode(null); }}
+              className={`flex items-start gap-3 rounded-lg border p-3 text-left transition ${supplierType === 'relay' ? 'border-amber-500 bg-amber-50/70 ring-2 ring-amber-500/20 dark:border-amber-500/60 dark:bg-amber-500/10' : 'border-slate-200 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/[0.03]'}`}
+            >
+              <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${supplierType === 'relay' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400'}`}>
+                <Share2 className="h-4 w-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold text-slate-900 dark:text-white">{t('admin.upstream.supplier.type.relay')}</span>
+                <span className="mt-0.5 block text-xs leading-relaxed text-slate-500 dark:text-slate-400">{t('admin.upstream.supplier.type.relay.hint')}</span>
+              </span>
+              {supplierType === 'relay' ? <Check className="ml-auto h-4 w-4 shrink-0 text-amber-500" /> : null}
+            </button>
+          </div>
+        </div>
+
+        {supplierType === 'official' ? (
+          <div className="rounded-md border border-slate-200 p-3 dark:border-white/10">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <Field label={t('admin.upstream.supplier.form.vendor.label')} required className="flex-1">
+                <select
+                  className={selectClass}
+                  value={defaultVendorCode ?? ''}
+                  onChange={(event) => handleVendorChange(event.currentTarget.value)}
+                  disabled={vendorResources.length === 0}
+                >
+                  <option value="">{t('admin.upstream.supplier.form.vendor.placeholder')}</option>
+                  {vendorResources.map((resource) => (
+                    <option key={resource.resourceCode} value={resource.vendorCode ?? ''}>{resource.displayName} ({resource.vendorCode})</option>
+                  ))}
+                </select>
+              </Field>
+              <button type="button" className={secondaryButtonClass} onClick={grantVendor} disabled={!defaultVendorCode || grantableVendorResources.length === 0}>
+                {vendorGranted ? <Check className="h-4 w-4 text-emerald-500" /> : null}
+                {vendorGranted ? t('admin.upstream.supplier.form.vendor.granted') : t('admin.upstream.supplier.form.vendor.grantAll')}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label={t('admin.upstream.supplier.form.supplierCode')} required><input name="supplierCode" className={inputClass} defaultValue={supplier?.supplierCode} disabled={Boolean(supplier)} required /></Field>
+          <Field label={t('admin.upstream.supplier.form.supplierName')} required><input name="supplierName" className={inputClass} defaultValue={supplier?.supplierName} required /></Field>
+          <Field label={t('admin.upstream.supplier.form.displayName')}><input name="displayName" className={inputClass} defaultValue={supplier?.displayName} /></Field>
+          <Field label={t('admin.upstream.supplier.form.protocolCode')} required><input name="protocolCode" className={inputClass} defaultValue={supplier?.protocolCode ?? 'openai'} required /></Field>
+          <Field label={t('admin.upstream.supplier.form.adapterCode')} required><input name="adapterCode" className={inputClass} value={adapterCode} onChange={(event) => setAdapterCode(event.currentTarget.value)} required /></Field>
+          <Field label={t('admin.upstream.common.fields.regionCode')}><input name="regionCode" className={inputClass} defaultValue={supplier?.regionCode ?? ''} /></Field>
+          <Field label={t('admin.upstream.common.fields.environment')}><select name="environment" className={selectClass} defaultValue={supplier?.environment ?? 1}><option value="1">{t('admin.upstream.common.environment.production')}</option><option value="2">{t('admin.upstream.common.environment.sandbox')}</option></select></Field>
+          <Field label={t('admin.upstream.common.fields.status')}><select name="status" className={selectClass} defaultValue={supplier?.status ?? 1}><option value="1">{t('common.status.active')}</option><option value="0">{t('common.status.disabled')}</option></select></Field>
+          <Field label={t('admin.upstream.supplier.form.websiteUrl')}><input name="websiteUrl" type="url" className={inputClass} defaultValue={supplier?.websiteUrl ?? ''} /></Field>
+          <Field label={t('admin.upstream.supplier.form.documentationUrl')}><input name="docsUrl" type="url" className={inputClass} defaultValue={supplier?.docsUrl ?? ''} /></Field>
+          <Field label={t('admin.upstream.supplier.form.sortOrder')}><input name="sortOrder" type="number" min="0" className={inputClass} defaultValue={supplier?.sortOrder ?? 100} /></Field>
+          <div className="sm:col-span-2"><Field label={t('admin.upstream.common.fields.description')}><textarea name="description" className={textAreaClass} defaultValue={supplier?.description ?? ''} /></Field></div>
+        </div>
+
+        <div>
+          <div className="mb-2">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{t('admin.upstream.supplier.form.resources.title')}</p>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{t('admin.upstream.supplier.form.resources.description')}</p>
+          </div>
+          {catalog ? (
+            <ResourcePicker resources={catalog.resources} resourceGroups={catalog.resourceGroups} selection={selection} onChange={setSelection} />
+          ) : (
+            <div className="rounded-md border border-slate-200 p-4 text-center text-sm text-slate-500 dark:border-white/10">{t('admin.upstream.common.errors.operationFailed')}</div>
+          )}
+        </div>
       </div>
     </Modal>
   );
+}
+
+function valuesFromForm(form: HTMLFormElement, supplierType: SupplierType, defaultVendorCode: string | null, selection: ResourceSelection): SupplierFormValues | null {
+  const formData = new FormData(form);
+  const read = (key: string) => String(formData.get(key) ?? '').trim();
+  const supplierCode = read('supplierCode');
+  const supplierName = read('supplierName');
+  if (!supplierCode || !supplierName) return null;
+  return {
+    supplierCode,
+    supplierName,
+    displayName: read('displayName'),
+    description: read('description'),
+    supplierType,
+    defaultVendorCode,
+    adapterCode: read('adapterCode') || 'openai',
+    protocolCode: read('protocolCode') || 'openai',
+    websiteUrl: read('websiteUrl'),
+    docsUrl: read('docsUrl'),
+    regionCode: read('regionCode'),
+    environment: numericFormValue(formData, 'environment', 1),
+    sortOrder: numericFormValue(formData, 'sortOrder', 100),
+    status: numericFormValue(formData, 'status', 1),
+    resources: toEntitlements(selection),
+  };
+}
+
+function numericFormValue(form: FormData, key: string, fallback: number): number {
+  const value = Number(form.get(key));
+  return Number.isFinite(value) ? value : fallback;
 }
 
 function SupplierCapabilities({ supplier, onChanged, onClose }: { supplier: UpstreamSupplier; onChanged: (supplier: UpstreamSupplier) => void; onClose: () => void }) {
@@ -247,6 +523,8 @@ function SupplierCapabilities({ supplier, onChanged, onClose }: { supplier: Upst
   const [endpoints, setEndpoints] = useState<UpstreamSupplierEndpointInput[]>([]);
   const [authMethods, setAuthMethods] = useState<UpstreamSupplierAuthMethodInput[]>([]);
   const [resources, setResources] = useState<UpstreamResourceEntitlementInput[]>([]);
+  const [catalog, setCatalog] = useState<UpstreamResourceCatalogResponse | null>(null);
+  const [resourcePickerOpen, setResourcePickerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busySection, setBusySection] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -271,6 +549,17 @@ function SupplierCapabilities({ supplier, onChanged, onClose }: { supplier: Upst
   }, [supplier.id, t]);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    let cancelled = false;
+    void upstreamService.fetchResourceCatalog()
+      .then((value) => {
+        if (!cancelled && value && Array.isArray(value.resources) && Array.isArray(value.resourceGroups)) {
+          setCatalog(value);
+        }
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, []);
 
   const save = async (section: 'endpoints' | 'authMethods' | 'resources') => {
     setBusySection(section);
@@ -282,11 +571,26 @@ function SupplierCapabilities({ supplier, onChanged, onClose }: { supplier: Upst
       const refreshed = await upstreamService.suppliers.retrieve(supplier.id);
       onChanged(refreshed);
       await load();
+      setResourcePickerOpen(false);
     } catch (cause) {
       setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
     } finally {
       setBusySection(null);
     }
+  };
+
+  const resourceSelection: ResourceSelection = toSelection(resources);
+  const setResourceSelection = (next: ResourceSelection) => {
+    setResources(toEntitlements(next));
+  };
+  const removeResource = (index: number) => {
+    setResources((current) => current.filter((_, itemIndex) => itemIndex !== index));
+  };
+  const resourceLabel = (item: UpstreamResourceEntitlementInput) => {
+    const code = item.resourceCode ?? item.resourceGroupCode ?? '';
+    const resource = catalog?.resources.find((entry) => entry.resourceCode === code);
+    const group = catalog?.resourceGroups.find((entry) => entry.groupCode === code);
+    return resource?.displayName ?? group?.groupName ?? code;
   };
 
   return (
@@ -334,41 +638,29 @@ function SupplierCapabilities({ supplier, onChanged, onClose }: { supplier: Upst
             <button type="button" className={primaryButtonClass} disabled={busySection !== null} onClick={() => void save('authMethods')}>{t('admin.upstream.supplier.auth.save')}</button>
           </div>
         </Section>
-        <Section title={t('admin.upstream.supplier.resources.title')} action={<button type="button" className={secondaryButtonClass} onClick={() => setResources((current) => [...current, emptyResource()])}><Plus className="h-4 w-4" />{t('admin.upstream.common.actions.add')}</button>}>
-          <div className="grid gap-2">
-            {resources.map((resource, index) => (
-              <div key={`${resource.resourceCode}-${index}`} className="grid gap-2 rounded-md border border-slate-200 p-3 dark:border-white/10 sm:grid-cols-[1fr_1fr_120px_40px]">
-                <input aria-label={t('admin.upstream.common.fields.resourceCode')} placeholder={t('admin.upstream.common.fields.resourceCode')} className={inputClass} value={resource.resourceCode ?? ''} onChange={(event) => setResources(updateAt(resources, index, { resourceCode: emptyToNull(event.currentTarget.value) }))} />
-                <input aria-label={t('admin.upstream.common.fields.resourceGroupCode')} placeholder={t('admin.upstream.common.fields.resourceGroupCode')} className={inputClass} value={resource.resourceGroupCode ?? ''} onChange={(event) => setResources(updateAt(resources, index, { resourceGroupCode: emptyToNull(event.currentTarget.value) }))} />
-                <select aria-label={t('admin.upstream.common.grant.label')} className={selectClass} value={resource.grantType ?? 'allow'} onChange={(event) => setResources(updateAt(resources, index, { grantType: event.currentTarget.value as 'allow' | 'deny' }))}><option value="allow">{t('admin.upstream.common.grant.allow')}</option><option value="deny">{t('admin.upstream.common.grant.deny')}</option></select>
-                <button type="button" title={t('common.actions.delete')} className={dangerButtonClass} onClick={() => setResources(removeAt(resources, index))}><Trash2 className="h-4 w-4" /></button>
-              </div>
-            ))}
-            {!loading && resources.length === 0 ? <p className="py-6 text-center text-sm text-slate-500">{t('admin.upstream.supplier.resources.empty')}</p> : null}
+        <Section title={t('admin.upstream.supplier.resources.title')} action={<button type="button" className={secondaryButtonClass} onClick={() => setResourcePickerOpen((current) => !current)}><Plus className="h-4 w-4" />{t('admin.upstream.supplier.resources.add')}</button>}>
+          <div className="grid gap-3">
+            {resourcePickerOpen && catalog ? (
+              <ResourcePicker resources={catalog.resources} resourceGroups={catalog.resourceGroups} selection={resourceSelection} onChange={setResourceSelection} />
+            ) : null}
+            {resources.length === 0 && !resourcePickerOpen ? <p className="py-6 text-center text-sm text-slate-500">{t('admin.upstream.supplier.resources.empty')}</p> : null}
+            <div className="flex flex-wrap gap-2">
+              {resources.map((resource, index) => (
+                <span key={`${resource.resourceCode ?? resource.resourceGroupCode}-${index}`} className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 py-1 pl-2.5 pr-1.5 dark:border-white/10 dark:bg-white/5">
+                  <span className="min-w-0">
+                    <span className="block truncate text-xs font-medium text-slate-700 dark:text-slate-200">{resourceLabel(resource)}</span>
+                    <span className="block truncate font-mono text-[10px] text-slate-400">{resource.resourceCode ?? resource.resourceGroupCode}</span>
+                  </span>
+                  <button type="button" title={t('common.actions.delete')} className="rounded-full p-0.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-300" onClick={() => removeResource(index)}><Trash2 className="h-3 w-3" /></button>
+                </span>
+              ))}
+            </div>
             <button type="button" className={primaryButtonClass} disabled={busySection !== null} onClick={() => void save('resources')}>{t('admin.upstream.supplier.resources.save')}</button>
           </div>
         </Section>
       </div>
     </SidePanel>
   );
-}
-
-function supplierInput(form: FormData, t: TranslationFunction): CreateUpstreamSupplierRequest {
-  return {
-    supplierCode: required(form, 'supplierCode', t('admin.upstream.supplier.form.supplierCode'), t),
-    supplierName: required(form, 'supplierName', t('admin.upstream.supplier.form.supplierName'), t),
-    displayName: optional(form, 'displayName'),
-    supplierType: required(form, 'supplierType', t('admin.upstream.supplier.form.supplierType'), t) as 'official' | 'relay',
-    protocolCode: required(form, 'protocolCode', t('admin.upstream.supplier.form.protocolCode'), t),
-    adapterCode: required(form, 'adapterCode', t('admin.upstream.supplier.form.adapterCode'), t),
-    regionCode: optional(form, 'regionCode'),
-    websiteUrl: optional(form, 'websiteUrl'),
-    docsUrl: optional(form, 'docsUrl'),
-    description: optional(form, 'description'),
-    environment: numeric(form, 'environment', 1),
-    sortOrder: numeric(form, 'sortOrder', 100),
-    status: numeric(form, 'status', 1),
-  };
 }
 
 function authTypePatch(authType: UpstreamSupplierAuthMethodInput['authType']): Partial<UpstreamSupplierAuthMethodInput> {
@@ -390,21 +682,6 @@ function updateAt<T>(items: T[], index: number, patch: Partial<T>): T[] {
 
 function removeAt<T>(items: T[], index: number): T[] {
   return items.filter((_, itemIndex) => itemIndex !== index);
-}
-
-function required(form: FormData, key: string, field: string, t: TranslationFunction): string {
-  const value = String(form.get(key) ?? '').trim();
-  if (!value) throw new Error(t('admin.upstream.common.validation.required', { field }));
-  return value;
-}
-
-function optional(form: FormData, key: string): string | null {
-  return String(form.get(key) ?? '').trim() || null;
-}
-
-function numeric(form: FormData, key: string, fallback: number): number {
-  const value = Number(form.get(key));
-  return Number.isFinite(value) ? value : fallback;
 }
 
 function emptyToNull(value: string): string | null {

@@ -19,12 +19,15 @@ import { adminCoreColumnsMessages } from './admin/core-columns';
 import { adminCoreNavigationMessages } from './admin/core-navigation';
 import { adminDashboardMessages } from './admin/dashboard';
 import { adminMarketingMessages } from './admin/marketing';
+import { adminMembershipsMessages } from './admin/memberships';
 import { adminMiscMessages } from './admin/misc';
 import { adminModelMessages } from './admin/model';
+import { adminMonitorMessages } from './admin/monitor';
 import { adminRateLimitMessages } from './admin/rate-limit';
 import { adminRuntimeRegionMessages } from './admin/runtime-region';
 import { adminServiceNodesMessages } from './admin/service-nodes';
 import { adminSiteSettingsMessages } from './admin/site-settings';
+import { adminStorageMessages } from './admin/storage';
 import { consoleAccountMessages } from './console/account';
 import { consoleApiKeysMessages } from './console/api-keys';
 import { consoleBillingMessages } from './console/billing';
@@ -59,12 +62,15 @@ export const resources = mergeI18nBundles([
   adminCoreNavigationMessages,
   adminDashboardMessages,
   adminMarketingMessages,
+  adminMembershipsMessages,
   adminMiscMessages,
   adminModelMessages,
+  adminMonitorMessages,
   adminRateLimitMessages,
   adminRuntimeRegionMessages,
   adminServiceNodesMessages,
   adminSiteSettingsMessages,
+  adminStorageMessages,
   upstreamSharedMessages,
   upstreamSupplierMessages,
   upstreamAccountMessages,

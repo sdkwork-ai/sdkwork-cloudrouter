@@ -31,7 +31,8 @@
       "ko-KR"
     ],
     "activeSeedLocales": [
-      "zh-CN"
+      "zh-CN",
+      "en-US"
     ],
     "driftCheckIntervalSec": 60
   },
@@ -84,7 +85,16 @@
     "ai_upstream_supplier_endpoint",
     "ai_upstream_supplier_endpoint_health_state",
     "ai_upstream_supplier_resource",
-    "ai_usage"
+    "ai_usage",
+    "object_provider",
+    "object_bucket",
+    "storage_default_bucket_policy",
+    "storage_quota_policy",
+    "storage_usage_counter",
+    "storage_usage_ledger",
+    "storage_usage_snapshot",
+    "storage_reconciliation_run",
+    "storage_gc_job"
   ],
   "databaseRole": "authoritative-server",
   "tablePrefix": "ai_"

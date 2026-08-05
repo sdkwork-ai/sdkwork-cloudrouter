@@ -111,7 +111,7 @@ frontend_operations:
           name: UpstreamSupplier
           type: object
           additionalProperties: false
-          required: [id, uuid, supplierCode, supplierName, displayName, description, supplierType, adapterCode, protocolCode, websiteUrl, docsUrl, regionCode, environment, healthStatus, sortOrder, status, version, updatedAt]
+          required: [id, uuid, supplierCode, supplierName, displayName, description, supplierType, defaultVendorCode, adapterCode, protocolCode, websiteUrl, docsUrl, regionCode, environment, healthStatus, sortOrder, status, version, updatedAt]
           properties:
             id: { type: string, maxLength: 32 }
             uuid: { type: string, maxLength: 64 }
@@ -120,6 +120,7 @@ frontend_operations:
             displayName: { type: string, maxLength: 200 }
             description: { type: string, maxLength: 4000, nullable: true }
             supplierType: { type: string, enum: [official, relay] }
+            defaultVendorCode: { type: string, maxLength: 64, nullable: true }
             adapterCode: { type: string, maxLength: 128 }
             protocolCode: { type: string, maxLength: 128 }
             websiteUrl: { type: string, maxLength: 2048, nullable: true }
@@ -170,6 +171,7 @@ frontend_operations:
       displayName: { type: string, maxLength: 200, nullable: true }
       description: { type: string, maxLength: 4000, nullable: true }
       supplierType: { type: string, enum: [official, relay] }
+      defaultVendorCode: { type: string, maxLength: 64, nullable: true }
       adapterCode: { type: string, maxLength: 128 }
       protocolCode: { type: string, maxLength: 128 }
       websiteUrl: { type: string, maxLength: 2048, nullable: true }
@@ -233,6 +235,7 @@ frontend_operations:
       displayName: { type: string, maxLength: 200, nullable: true }
       description: { type: string, maxLength: 4000, nullable: true }
       supplierType: { type: string, enum: [official, relay] }
+      defaultVendorCode: { type: string, maxLength: 64, nullable: true }
       adapterCode: { type: string, maxLength: 128 }
       protocolCode: { type: string, maxLength: 128 }
       websiteUrl: { type: string, maxLength: 2048, nullable: true }
@@ -264,6 +267,65 @@ frontend_operations:
   - ai_upstream_supplier
   - ops_audit_log
   - ops_config_snapshot
+- route: /admin/upstream
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
+  operation: fetchUpstreamResourceCatalog
+  operation_id: upstreamResourceCatalog.retrieve
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/ai/upstream_resource_catalog
+  sdk_domain: ai
+  read_sources:
+  - ai_resource
+  - ai_resource_group
+  response_schema:
+    name: UpstreamResourceCatalogResponse
+    type: object
+    additionalProperties: false
+    required: [resources, resourceGroups]
+    properties:
+      resources:
+        type: array
+        items:
+          name: UpstreamResourceCatalogItem
+          type: object
+          additionalProperties: false
+          required: [resourceCode, resourceType, displayName, vendorCode, modalityCode, apiEndpointCode, capability, capabilities, sortOrder]
+          properties:
+            resourceCode: { type: string, maxLength: 192 }
+            resourceType: { type: string, maxLength: 64 }
+            displayName: { type: string, maxLength: 128 }
+            vendorCode: { type: string, maxLength: 64, nullable: true }
+            modalityCode: { type: string, maxLength: 64, nullable: true }
+            apiEndpointCode: { type: string, maxLength: 128, nullable: true }
+            capability: { type: string, maxLength: 64, nullable: true }
+            capabilities:
+              type: array
+              items: { type: string }
+            sortOrder: { type: integer, format: int64, nullable: true }
+      resourceGroups:
+        type: array
+        items:
+          name: UpstreamResourceGroupCatalogItem
+          type: object
+          additionalProperties: false
+          required: [groupCode, groupName, groupType, selectionMode, description, vendorCodes, capabilities, resourceCount, sortOrder]
+          properties:
+            groupCode: { type: string, maxLength: 128 }
+            groupName: { type: string, maxLength: 128 }
+            groupType: { type: string, maxLength: 64 }
+            selectionMode: { type: string, maxLength: 32 }
+            description: { type: string, maxLength: 512, nullable: true }
+            vendorCodes:
+              type: array
+              items: { type: string }
+            capabilities:
+              type: array
+              items: { type: string }
+            resourceCount: { type: integer, format: int64 }
+            sortOrder: { type: integer, format: int64, nullable: true }
+  query_parameters: []
 - route: /admin/upstream
   source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamSupplierEndpoints
@@ -972,6 +1034,11 @@ frontend_operations:
             uuid: { type: string, maxLength: 64 }
             groupCode: { type: string, maxLength: 128 }
             groupName: { type: string, maxLength: 200 }
+            groupNameI18n:
+              type: string
+              nullable: true
+              maxLength: 4096
+              description: Localized group name map as JSON (locale -> display name); null means no localized names.
             description: { type: string, maxLength: 4000, nullable: true }
             groupType: { type: string, maxLength: 32 }
             routingStrategy: { type: string, enum: [weighted, round_robin, least_latency, least_cost, failover] }

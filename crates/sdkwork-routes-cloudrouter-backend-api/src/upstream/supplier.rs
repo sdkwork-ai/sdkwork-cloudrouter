@@ -34,6 +34,7 @@ struct SupplierCreateRequest {
     display_name: Option<String>,
     description: Option<String>,
     supplier_type: String,
+    default_vendor_code: Option<String>,
     adapter_code: String,
     protocol_code: String,
     website_url: Option<String>,
@@ -51,6 +52,7 @@ struct SupplierUpdateRequest {
     display_name: Option<String>,
     description: Option<String>,
     supplier_type: Option<String>,
+    default_vendor_code: Option<String>,
     adapter_code: Option<String>,
     protocol_code: Option<String>,
     website_url: Option<String>,
@@ -126,6 +128,7 @@ struct SupplierResponse {
     display_name: String,
     description: Option<String>,
     supplier_type: String,
+    default_vendor_code: Option<String>,
     adapter_code: String,
     protocol_code: String,
     website_url: Option<String>,
@@ -513,6 +516,15 @@ fn create_command(
     request: SupplierCreateRequest,
 ) -> RequestResult<SaveAdminUpstreamSupplierCommand> {
     let supplier_name = required_text(request.supplier_name, "supplierName", MAX_NAME_LENGTH)?;
+    let supplier_type = supplier_type(request.supplier_type)?;
+    let default_vendor_code =
+        optional_text(request.default_vendor_code, "defaultVendorCode", MAX_CODE_LENGTH)?;
+    if supplier_type == "official" && default_vendor_code.is_none() {
+        return Err(problem(
+            SdkWorkResultCode::InvalidParameter,
+            "defaultVendorCode is required for official suppliers",
+        ));
+    }
     Ok(SaveAdminUpstreamSupplierCommand {
         subject,
         supplier_id: None,
@@ -526,7 +538,8 @@ fn create_command(
             .unwrap_or_else(|| supplier_name.clone()),
         supplier_name,
         description: optional_text(request.description, "description", MAX_DESCRIPTION_LENGTH)?,
-        supplier_type: supplier_type(request.supplier_type)?,
+        supplier_type,
+        default_vendor_code,
         adapter_code: required_text(request.adapter_code, "adapterCode", MAX_CODE_LENGTH)?,
         protocol_code: required_text(request.protocol_code, "protocolCode", MAX_CODE_LENGTH)?,
         website_url: optional_text(request.website_url, "websiteUrl", MAX_URL_LENGTH)?,
@@ -545,6 +558,21 @@ fn update_command(
     expected_version: i64,
     request: SupplierUpdateRequest,
 ) -> RequestResult<SaveAdminUpstreamSupplierCommand> {
+    let supplier_type = request
+        .supplier_type
+        .map(supplier_type)
+        .transpose()?
+        .unwrap_or(existing.supplier_type);
+    let default_vendor_code = match request.default_vendor_code {
+        Some(value) => optional_text(Some(value), "defaultVendorCode", MAX_CODE_LENGTH)?,
+        None => existing.default_vendor_code,
+    };
+    if supplier_type == "official" && default_vendor_code.is_none() {
+        return Err(problem(
+            SdkWorkResultCode::InvalidParameter,
+            "defaultVendorCode is required for official suppliers",
+        ));
+    }
     Ok(SaveAdminUpstreamSupplierCommand {
         subject,
         supplier_id: Some(existing.id),
@@ -565,11 +593,8 @@ fn update_command(
             Some(value) => optional_text(Some(value), "description", MAX_DESCRIPTION_LENGTH)?,
             None => existing.description,
         },
-        supplier_type: request
-            .supplier_type
-            .map(supplier_type)
-            .transpose()?
-            .unwrap_or(existing.supplier_type),
+        supplier_type,
+        default_vendor_code,
         adapter_code: request
             .adapter_code
             .map(|value| required_text(value, "adapterCode", MAX_CODE_LENGTH))
@@ -779,6 +804,7 @@ impl From<AdminUpstreamSupplierItem> for SupplierResponse {
             display_name: item.display_name,
             description: item.description,
             supplier_type: item.supplier_type,
+            default_vendor_code: item.default_vendor_code,
             adapter_code: item.adapter_code,
             protocol_code: item.protocol_code,
             website_url: item.website_url,

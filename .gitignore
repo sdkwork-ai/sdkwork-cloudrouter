@@ -83,6 +83,8 @@ check-output*.txt
 check_err*.txt
 check_errors.txt
 full_check.txt
+tmp/
+.zcode/plans/
 
 # Monorepo uses root pnpm-lock.yaml only
 apps/*/packages/*/pnpm-lock.yaml

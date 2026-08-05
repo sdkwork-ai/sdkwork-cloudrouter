@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.region.registry",
+  "application": "sdkwork-cloudrouter",
+  "defaultRegionCode": "global",
+  "regions": [
+    {
+      "regionCode": "global",
+      "displayName": "Global",
+      "marketScope": "global",
+      "defaultCurrency": "USD",
+      "billingJurisdiction": "GLOBAL",
+      "defaultLocale": "zh-CN",
+      "status": "active"
+    },
+    {
+      "regionCode": "cn",
+      "displayName": "China mainland",
+      "marketScope": "china_mainland",
+      "defaultCurrency": "CNY",
+      "billingJurisdiction": "CN",
+      "defaultLocale": "zh-CN",
+      "status": "active"
+    },
+    {
+      "regionCode": "us",
+      "displayName": "United States",
+      "marketScope": "global",
+      "defaultCurrency": "USD",
+      "billingJurisdiction": "US",
+      "defaultLocale": "en-US",
+      "status": "reserved"
+    },
+    {
+      "regionCode": "eu",
+      "displayName": "European Union",
+      "marketScope": "international",
+      "defaultCurrency": "EUR",
+      "billingJurisdiction": "EU",
+      "defaultLocale": "en-US",
+      "status": "reserved"
+    },
+    {
+      "regionCode": "asia",
+      "displayName": "Asia-Pacific",
+      "marketScope": "international",
+      "defaultCurrency": "USD",
+      "billingJurisdiction": "GLOBAL",
+      "defaultLocale": "en-US",
+      "status": "reserved"
+    }
+  ]
+}

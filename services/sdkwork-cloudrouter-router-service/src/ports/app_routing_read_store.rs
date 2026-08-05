@@ -160,18 +160,21 @@ pub trait AppRoutingReadStore {
         &'a self,
         subject: Option<AppRoutingSubject>,
         query: AppRoutingListQuery,
+        locale: Option<&'a str>,
     ) -> AppRoutingReadFuture<'a, AppRoutingAccountGroupListPage>;
 
     fn load_routing_api_keys<'a>(
         &'a self,
         subject: Option<AppRoutingSubject>,
         query: AppRoutingListQuery,
+        locale: Option<&'a str>,
     ) -> AppRoutingReadFuture<'a, AppRoutingApiKeyListPage>;
 
     fn load_routing_request_traces<'a>(
         &'a self,
         subject: Option<AppRoutingSubject>,
         query: AppRoutingListQuery,
+        locale: Option<&'a str>,
     ) -> AppRoutingReadFuture<'a, AppRoutingRequestTraceListPage>;
 
     fn load_routing_usage<'a>(

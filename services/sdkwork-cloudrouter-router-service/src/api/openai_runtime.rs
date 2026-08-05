@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use axum::http::StatusCode;
 use axum::response::Response;
 use sdkwork_cloudrouter_http::ApiKeyIdentity;
@@ -54,10 +55,14 @@ impl OpenAiRuntimeFailureStrategy {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Clone, Default)]
 pub struct OpenAiRuntimeRouteConfig {
     pub default_retry_policy: ProviderRetryPolicy,
     pub failure_strategy: OpenAiRuntimeFailureStrategy,
+    /// Optional tenant runtime region settings store (REGION_SPEC §9 step 2).
+    /// When present, route planning prefetches the tenant's configured region
+    /// and prefers it over the deployment region default.
+    pub region_settings_store: Option<Arc<dyn crate::ports::RuntimeRegionSettingsStore + Send + Sync>>,
 }
 
 impl OpenAiRuntimeRouteConfig {
@@ -68,7 +73,16 @@ impl OpenAiRuntimeRouteConfig {
         Self {
             default_retry_policy,
             failure_strategy,
+            region_settings_store: None,
         }
+    }
+
+    pub fn with_region_settings_store(
+        mut self,
+        region_settings_store: Option<Arc<dyn crate::ports::RuntimeRegionSettingsStore + Send + Sync>>,
+    ) -> Self {
+        self.region_settings_store = region_settings_store;
+        self
     }
 }
 
@@ -190,6 +204,7 @@ where
         capability_label,
         capability,
         billing_meter,
+        None,
     )?
     .first_route()
     .ok_or_else(|| {
@@ -210,6 +225,7 @@ pub(crate) fn resolve_openai_upstream_route_plan<C>(
     capability_label: &str,
     capability: RoutingCapability,
     billing_meter: BillingMeter,
+    tenant_region_code: Option<&str>,
 ) -> Result<ResolvedOpenAiUpstreamRoutePlan, OpenAiRouteError>
 where
     C: UpstreamAccountRouteCatalog,
@@ -263,6 +279,7 @@ where
                 routing_catalog_key.as_str(),
                 selection,
                 &account_routes,
+                tenant_region_code,
             )
         })
         .collect::<Result<Vec<_>, _>>()?;
@@ -304,6 +321,7 @@ fn resolve_model_route(
     catalog_key: &str,
     selection: SelectedUpstreamModelRoute,
     account_routes: &[crate::domain::UpstreamAccountRoute],
+    tenant_region_code: Option<&str>,
 ) -> Result<ResolvedOpenAiUpstreamRoute, OpenAiRouteError> {
     let model_route = selection.route;
     let account_metadata =
@@ -399,8 +417,11 @@ fn resolve_model_route(
                 &model_route.provider_model,
             )
         });
-    let region_code =
-        resolved_deployment_region_code(&model_route.region_code, account_metadata.as_ref());
+    let region_code = resolved_deployment_region_code(
+        &model_route.region_code,
+        account_metadata.as_ref(),
+        tenant_region_code,
+    );
 
     Ok(ResolvedOpenAiUpstreamRoute {
         catalog_key: model_route.catalog_key,
@@ -498,22 +519,48 @@ fn normalize_region_code(value: &str) -> String {
     }
 }
 
+/// REGION_SPEC §9 resolution order: explicit model route region → tenant
+/// runtime region settings → account route region → deployment region
+/// (SDKWORK_CLOUDROUTER_ROUTER_REGION_CODE) → global default. The resolved
+/// code is validated against the active region registry; codes outside the
+/// registry fall back to global with a diagnostic.
 fn resolved_deployment_region_code(
     model_route_region: &str,
     account_metadata: Option<&crate::domain::UpstreamAccountRoute>,
+    tenant_region_code: Option<&str>,
 ) -> String {
     let model_route_region = model_route_region.trim();
     if !model_route_region.is_empty() {
-        return model_route_region.to_owned();
+        return active_region_or_global(model_route_region);
+    }
+    let tenant_region = tenant_region_code.unwrap_or_default().trim();
+    if !tenant_region.is_empty() {
+        return active_region_or_global(tenant_region);
     }
     let account_route_region = account_metadata
         .map(|route| route.region_code.as_str())
         .unwrap_or_default()
         .trim();
-    if account_route_region.is_empty() {
-        "global".to_owned()
+    if !account_route_region.is_empty() {
+        return active_region_or_global(account_route_region);
+    }
+    match sdkwork_cloudrouter_config::resolve_region_code() {
+        Ok(deployment_region) if !deployment_region.is_empty() => {
+            active_region_or_global(&deployment_region)
+        }
+        _ => "global".to_owned(),
+    }
+}
+
+fn active_region_or_global(region: &str) -> String {
+    if sdkwork_cloudrouter_config::is_active_region_code(region) {
+        region.to_owned()
     } else {
-        account_route_region.to_owned()
+        tracing::warn!(
+            region_code = region,
+            "resolved region is not an active REGION_SPEC registry code; falling back to global"
+        );
+        "global".to_owned()
     }
 }
 

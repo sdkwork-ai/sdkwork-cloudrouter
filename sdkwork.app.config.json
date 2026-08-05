@@ -57,7 +57,12 @@
       "cloud",
       "standalone"
     ],
-    "defaultDeploymentProfile": "cloud"
+    "defaultDeploymentProfile": "cloud",
+    "supportedRegions": [
+      "global",
+      "cn"
+    ],
+    "defaultRegionCode": "global"
   },
   "media": {
     "icons": {
@@ -334,6 +339,8 @@
   "metadata": {
     "standardOwner": "sdkwork-platform",
     "initializedAt": "2026-05-07T00:00:00Z",
-    "deploymentConfig": "etc/sdkwork.deployment.config.json"
+    "deploymentConfig": "etc/sdkwork.deployment.config.json",
+    "regionRegistry": "etc/region.registry.json",
+    "regionSpec": "specs/region.spec.json"
   }
 }

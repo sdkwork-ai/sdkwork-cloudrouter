@@ -4,27 +4,56 @@
   "i18nVersion": "1.0.0",
   "defaultLocale": "zh-CN",
   "fallbackLocale": "zh-CN",
-  "supportedLocales": ["zh-CN", "en-US", "ja-JP", "de-DE", "fr-FR", "ru-RU", "ko-KR"],
-  "activeLocales": ["zh-CN"],
+  "supportedLocales": [
+    "zh-CN",
+    "en-US",
+    "ja-JP",
+    "de-DE",
+    "fr-FR",
+    "ru-RU",
+    "ko-KR"
+  ],
+  "activeLocales": [
+    "zh-CN",
+    "en-US"
+  ],
   "localeSets": {
     "zh-CN": {
       "version": "1.0.0",
       "required": true,
-      "checksum": "sha256:cloudrouter-zh-cn-v1",
-      "files": []
+      "checksum": "sha256:de19b1da39c9fa68e0949273bbc428291beaf24ce79a0a3aeb83c291f1ed5ac0",
+      "files": [
+        "001_localized_names.sql"
+      ]
+    },
+    "en-US": {
+      "version": "1.0.0",
+      "required": true,
+      "checksum": "sha256:a023db2df4ee960cec4a8ebe4aeba93c3b6e248e8ee77b01c063ee5c855b9a1e",
+      "files": [
+        "001_localized_names.sql"
+      ]
     }
   },
   "profiles": {
     "minimal": {
       "common": [],
       "locales": {
-        "zh-CN": []
+        "zh-CN": [],
+        "en-US": []
       }
     },
     "standard": {
-      "common": ["001_bootstrap.sql"],
+      "common": [
+        "001_bootstrap.sql"
+      ],
       "locales": {
-        "zh-CN": []
+        "zh-CN": [
+          "001_localized_names.sql"
+        ],
+        "en-US": [
+          "001_localized_names.sql"
+        ]
       }
     }
   }

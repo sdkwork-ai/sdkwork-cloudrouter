@@ -49,7 +49,7 @@ function NodesTab() {
       setNodes(nodesPage.items);
       setTotalNodes(nodesPage.total);
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : 'Failed to load system metrics');
+      setLoadError(error instanceof Error ? error.message : t('admin.monitor.nodes.loadFallback', 'Failed to load system metrics'));
     } finally {
       setLoading(false);
     }
@@ -69,17 +69,17 @@ function NodesTab() {
   }, [totalNodes, pageSize]);
 
   if (loading) {
-    return <BusinessStatePanel kind="loading" title="Loading system metrics..." className="min-h-[420px]" />;
+    return <BusinessStatePanel kind="loading" title={t('admin.monitor.nodes.loadingTitle', 'Loading system metrics...')} className="min-h-[420px]" />;
   }
 
   if (loadError) {
     return (
       <BusinessStatePanel
         kind="error"
-        title="System metrics could not be loaded"
+        title={t('admin.monitor.nodes.loadErrorTitle', 'System metrics could not be loaded')}
         description={loadError}
         onRetry={() => { void loadNodes(); }}
-        retryLabel="Retry"
+        retryLabel={t('common.actions.retry', 'Retry')}
         className="min-h-[420px]"
       />
     );
@@ -96,10 +96,10 @@ function NodesTab() {
       {/* Overview Cards */}
       <div className="grid shrink-0 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { title: 'Total Nodes', value: String(totalNodes), desc: `Across ${regions} regions`, icon: Server, color: 'text-blue-500' },
-          { title: 'System Health', value: `${healthRate.toFixed(1)}%`, desc: `${onlineNodes}/${overviewNodes.length} nodes online`, icon: Activity, color: 'text-green-500' },
-          { title: 'Avg CPU Load', value: `${avgCpu.toFixed(1)}%`, desc: 'Backend reported average', icon: Cpu, color: 'text-yellow-500' },
-          { title: 'Active Incidents', value: String(activeIncidents), desc: 'Warning or offline nodes', icon: AlertTriangle, color: 'text-red-500' },
+          { title: t('admin.monitor.stats.totalNodes', 'Total Nodes'), value: String(totalNodes), desc: t('admin.monitor.stats.totalNodesDesc', 'Across {{regions}} regions', { regions }), icon: Server, color: 'text-blue-500' },
+          { title: t('admin.monitor.stats.systemHealth', 'System Health'), value: `${healthRate.toFixed(1)}%`, desc: t('admin.monitor.stats.systemHealthDesc', '{{online}}/{{total}} nodes online', { online: onlineNodes, total: overviewNodes.length }), icon: Activity, color: 'text-green-500' },
+          { title: t('admin.monitor.stats.avgCpu', 'Avg CPU Load'), value: `${avgCpu.toFixed(1)}%`, desc: t('admin.monitor.stats.avgCpuDesc', 'Backend reported average'), icon: Cpu, color: 'text-yellow-500' },
+          { title: t('admin.monitor.stats.activeIncidents', 'Active Incidents'), value: String(activeIncidents), desc: t('admin.monitor.stats.activeIncidentsDesc', 'Warning or offline nodes'), icon: AlertTriangle, color: 'text-red-500' },
         ].map((stat, i) => (
           <div key={i} className="bg-white dark:bg-[#1a1a1a] p-5 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm flex items-center justify-between">
             <div>
@@ -119,7 +119,7 @@ function NodesTab() {
       {/* Charts */}
       <div className="grid shrink-0 grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white dark:bg-[#1a1a1a] p-5 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-4">Cluster Resource Usage (Avg)</h3>
+          <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-4">{t('admin.monitor.chart.clusterResource', 'Cluster Resource Usage (Avg)')}</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={perfData}>
@@ -131,14 +131,14 @@ function NodesTab() {
                   itemStyle={{ color: '#fff' }}
                 />
                 <Legend />
-                <Line type="monotone" dataKey="cpu" name="CPU (%)" stroke="#3b82f6" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="memory" name="Memory (%)" stroke="#10b981" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="cpu" name={t('admin.monitor.chart.cpu', 'CPU (%)')} stroke="#3b82f6" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="memory" name={t('admin.monitor.chart.memory', 'Memory (%)')} stroke="#10b981" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
         <div className="bg-white dark:bg-[#1a1a1a] p-5 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-4">Network Traffic (Mbps)</h3>
+          <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-4">{t('admin.monitor.chart.network', 'Network Traffic (Mbps)')}</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={perfData}>
@@ -169,7 +169,7 @@ function NodesTab() {
         viewportClassName="min-h-0 flex-1"
         header={(
           <div className="p-4 border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
-          <h3 className="font-medium text-slate-900 dark:text-white">Active Nodes</h3>
+          <h3 className="font-medium text-slate-900 dark:text-white">{t('admin.monitor.nodes.activeNodes', 'Active Nodes')}</h3>
           <div className="flex gap-2">
              <div className="relative">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -177,7 +177,7 @@ function NodesTab() {
                   type="text"
                   value={nodeSearch}
                   onChange={(event) => setNodeSearch(event.target.value)}
-                  placeholder="Search nodes..."
+                  placeholder={t('admin.monitor.nodes.searchPlaceholder', 'Search nodes...')}
                   className="pl-9 pr-4 py-1.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50"
                 />
              </div>
@@ -213,12 +213,12 @@ function NodesTab() {
           <table className="w-full text-sm text-left">
             <thead className="sticky top-0 z-10 text-xs text-slate-500 uppercase bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
               <tr>
-                <th className="px-6 py-3 font-medium">Node / IP</th>
-                <th className="px-6 py-3 font-medium">Region</th>
-                <th className="px-6 py-3 font-medium">Status</th>
-                <th className="px-6 py-3 font-medium">CPU</th>
-                <th className="px-6 py-3 font-medium">Memory</th>
-                <th className="px-6 py-3 font-medium">Uptime</th>
+                <th className="px-6 py-3 font-medium">{t('admin.monitor.cols.nodeIp', 'Node / IP')}</th>
+                <th className="px-6 py-3 font-medium">{t('admin.monitor.cols.region', 'Region')}</th>
+                <th className="px-6 py-3 font-medium">{t('admin.monitor.cols.status', 'Status')}</th>
+                <th className="px-6 py-3 font-medium">{t('admin.monitor.cols.cpu', 'CPU')}</th>
+                <th className="px-6 py-3 font-medium">{t('admin.monitor.cols.memory', 'Memory')}</th>
+                <th className="px-6 py-3 font-medium">{t('admin.monitor.cols.uptime', 'Uptime')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-white/5">
@@ -240,19 +240,19 @@ function NodesTab() {
                     {node.status === 'online' && (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                        Online
+                        {t('admin.monitor.status.online', 'Online')}
                       </span>
                     )}
                     {node.status === 'warning' && (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400">
                         <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
-                        Warning
+                        {t('admin.monitor.status.warning', 'Warning')}
                       </span>
                     )}
                     {node.status === 'offline' && (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400">
                         <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                        Offline
+                        {t('admin.monitor.status.offline', 'Offline')}
                       </span>
                     )}
                   </td>
@@ -313,7 +313,7 @@ function AlertsTab() {
       setAlerts(alertsPage.items);
       setTotalAlerts(alertsPage.total);
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : 'Failed to load alerts');
+      setLoadError(error instanceof Error ? error.message : t('admin.monitor.alerts.loadFallback', 'Failed to load alerts'));
     } finally {
       setLoading(false);
     }
@@ -329,17 +329,17 @@ function AlertsTab() {
   }, [totalAlerts, pageSize]);
 
   if (loading) {
-    return <BusinessStatePanel kind="loading" title="Loading alerts..." className="min-h-[420px]" />;
+    return <BusinessStatePanel kind="loading" title={t('admin.monitor.alerts.loadingTitle', 'Loading alerts...')} className="min-h-[420px]" />;
   }
 
   if (loadError) {
     return (
       <BusinessStatePanel
         kind="error"
-        title="Alerts could not be loaded"
+        title={t('admin.monitor.alerts.loadErrorTitle', 'Alerts could not be loaded')}
         description={loadError}
         onRetry={() => { void loadAlerts(); }}
-        retryLabel="Retry"
+        retryLabel={t('common.actions.retry', 'Retry')}
         className="min-h-[420px]"
       />
     );
@@ -357,7 +357,7 @@ function AlertsTab() {
       <div className="grid shrink-0 grid-cols-1 md:grid-cols-3 gap-4">
          <div className="bg-red-50 dark:bg-red-500/5 p-5 rounded-xl border border-red-100 dark:border-red-500/10 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-red-600 dark:text-red-400">Critical Alerts</p>
+              <p className="text-sm font-medium text-red-600 dark:text-red-400">{t('admin.monitor.alerts.critical', 'Critical Alerts')}</p>
               <p className="text-3xl font-bold text-red-700 dark:text-red-500 mt-1">{overviewAlerts.filter((alert) => alert.severity === 'critical' && alert.status === 'active').length}</p>
             </div>
             <div className="p-3 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-500 rounded-lg">
@@ -366,7 +366,7 @@ function AlertsTab() {
          </div>
          <div className="bg-yellow-50 dark:bg-yellow-500/5 p-5 rounded-xl border border-yellow-100 dark:border-yellow-500/10 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400">Warnings</p>
+              <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400">{t('admin.monitor.alerts.warnings', 'Warnings')}</p>
               <p className="text-3xl font-bold text-yellow-700 dark:text-yellow-500 mt-1">{overviewAlerts.filter((alert) => alert.severity === 'warning' && alert.status === 'active').length}</p>
             </div>
             <div className="p-3 bg-yellow-100 dark:bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 rounded-lg">
@@ -375,7 +375,7 @@ function AlertsTab() {
          </div>
          <div className="bg-blue-50 dark:bg-blue-500/5 p-5 rounded-xl border border-blue-100 dark:border-blue-500/10 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Resolved Today</p>
+              <p className="text-sm font-medium text-blue-600 dark:text-blue-400">{t('admin.monitor.alerts.resolvedToday', 'Resolved Today')}</p>
               <p className="text-3xl font-bold text-blue-700 dark:text-blue-500 mt-1">{overviewAlerts.filter((alert) => alert.status === 'resolved').length}</p>
             </div>
             <div className="p-3 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-500 rounded-lg">
@@ -391,26 +391,26 @@ function AlertsTab() {
         viewportClassName="min-h-0 flex-1"
         header={(
           <div className="p-4 border-b border-slate-200 dark:border-white/10 flex flex-wrap items-center justify-between gap-4">
-          <h3 className="font-medium text-slate-900 dark:text-white">Recent Alerts</h3>
+          <h3 className="font-medium text-slate-900 dark:text-white">{t('admin.monitor.alerts.recent', 'Recent Alerts')}</h3>
           <div className="flex gap-2">
             <select
               value={severityFilter}
               onChange={(event) => setSeverityFilter(event.target.value as 'all' | Alert['severity'])}
               className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-500/50"
             >
-              <option value="all">All Severities</option>
-              <option value="critical">Critical</option>
-              <option value="warning">Warning</option>
-              <option value="info">Info</option>
+              <option value="all">{t('admin.monitor.alerts.allSeverities', 'All Severities')}</option>
+              <option value="critical">{t('admin.monitor.alerts.criticalShort', 'Critical')}</option>
+              <option value="warning">{t('admin.monitor.alerts.warningShort', 'Warning')}</option>
+              <option value="info">{t('admin.monitor.alerts.info', 'Info')}</option>
             </select>
             <select
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value as 'all' | Alert['status'])}
               className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-500/50"
             >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="resolved">Resolved</option>
+              <option value="all">{t('admin.monitor.alerts.allStatus', 'All Status')}</option>
+              <option value="active">{t('admin.monitor.alerts.active', 'Active')}</option>
+              <option value="resolved">{t('admin.monitor.alerts.resolved', 'Resolved')}</option>
             </select>
           </div>
         </div>
@@ -454,9 +454,9 @@ function AlertsTab() {
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="font-medium text-slate-900 dark:text-white">{alert.title}</h4>
                           {alert.status === 'active' ? (
-                            <span className="text-[10px] font-medium uppercase tracking-wider text-red-500 bg-red-100 dark:bg-red-500/10 px-2 py-0.5 rounded-full border border-red-200 dark:border-red-500/20">Active</span>
+                            <span className="text-[10px] font-medium uppercase tracking-wider text-red-500 bg-red-100 dark:bg-red-500/10 px-2 py-0.5 rounded-full border border-red-200 dark:border-red-500/20">{t('admin.monitor.alerts.active', 'Active')}</span>
                           ) : (
-                            <span className="text-[10px] font-medium uppercase tracking-wider text-green-500 bg-green-100 dark:bg-green-500/10 px-2 py-0.5 rounded-full border border-green-200 dark:border-green-500/20">Resolved</span>
+                            <span className="text-[10px] font-medium uppercase tracking-wider text-green-500 bg-green-100 dark:bg-green-500/10 px-2 py-0.5 rounded-full border border-green-200 dark:border-green-500/20">{t('admin.monitor.alerts.resolved', 'Resolved')}</span>
                           )}
                         </div>
                         <p className="text-sm text-slate-500">{alert.message}</p>

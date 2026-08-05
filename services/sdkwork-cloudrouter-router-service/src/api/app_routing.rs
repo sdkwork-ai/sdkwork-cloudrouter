@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
-use axum::extract::{Query, State};
+use axum::extract::{Extension, Query, State};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::Router;
 use serde::Deserialize;
+use sdkwork_web_core::WebRequestContext;
 
 use crate::api::app_sql_subject::{map_optional_app_sql_subject, ResolvedAppSqlScopedSubject};
 use crate::api::response::{
@@ -33,6 +34,7 @@ impl AppRoutingReadStore for EmptyAppRoutingReadStore {
         &'a self,
         _subject: Option<AppRoutingSubject>,
         query: AppRoutingListQuery,
+        _locale: Option<&str>,
     ) -> crate::ports::AppRoutingReadFuture<'a, crate::ports::AppRoutingAccountGroupListPage> {
         Box::pin(async move {
             Ok(crate::ports::AppRoutingAccountGroupListPage {
@@ -48,6 +50,7 @@ impl AppRoutingReadStore for EmptyAppRoutingReadStore {
         &'a self,
         _subject: Option<AppRoutingSubject>,
         query: AppRoutingListQuery,
+        _locale: Option<&str>,
     ) -> crate::ports::AppRoutingReadFuture<'a, crate::ports::AppRoutingApiKeyListPage> {
         Box::pin(async move {
             Ok(crate::ports::AppRoutingApiKeyListPage {
@@ -63,6 +66,7 @@ impl AppRoutingReadStore for EmptyAppRoutingReadStore {
         &'a self,
         _subject: Option<AppRoutingSubject>,
         query: AppRoutingListQuery,
+        _locale: Option<&str>,
     ) -> crate::ports::AppRoutingReadFuture<'a, crate::ports::AppRoutingRequestTraceListPage> {
         Box::pin(async move {
             Ok(crate::ports::AppRoutingRequestTraceListPage {
@@ -119,6 +123,7 @@ fn app_routing_router_with_state(
 async fn fetch_routing_account_groups(
     State(state): State<AppRoutingState>,
     ResolvedAppSqlScopedSubject(subject): ResolvedAppSqlScopedSubject,
+    request_context: Option<Extension<WebRequestContext>>,
     Query(request): Query<AppRoutingListQueryRequest>,
 ) -> Response {
     let subject = match map_optional_app_sql_subject(subject, state.require_subject, |scoped| {
@@ -131,10 +136,13 @@ async fn fetch_routing_account_groups(
         Ok(query) => query,
         Err(message) => return bad_request(message),
     };
+    let locale = request_context
+        .map(|context| context.0.locale)
+        .flatten();
 
     match state
         .read_store
-        .load_routing_account_groups(subject, query)
+        .load_routing_account_groups(subject, query, locale.as_deref())
         .await
     {
         Ok(page) => json_success_list_response(
@@ -149,6 +157,7 @@ async fn fetch_routing_account_groups(
 async fn fetch_routing_api_keys(
     State(state): State<AppRoutingState>,
     ResolvedAppSqlScopedSubject(subject): ResolvedAppSqlScopedSubject,
+    request_context: Option<Extension<WebRequestContext>>,
     Query(request): Query<AppRoutingListQueryRequest>,
 ) -> Response {
     let subject = match map_optional_app_sql_subject(subject, state.require_subject, |scoped| {
@@ -161,8 +170,15 @@ async fn fetch_routing_api_keys(
         Ok(query) => query,
         Err(message) => return bad_request(message),
     };
+    let locale = request_context
+        .map(|context| context.0.locale)
+        .flatten();
 
-    match state.read_store.load_routing_api_keys(subject, query).await {
+    match state
+        .read_store
+        .load_routing_api_keys(subject, query, locale.as_deref())
+        .await
+    {
         Ok(page) => json_success_list_response(
             None,
             page.items,
@@ -175,6 +191,7 @@ async fn fetch_routing_api_keys(
 async fn fetch_routing_request_traces(
     State(state): State<AppRoutingState>,
     ResolvedAppSqlScopedSubject(subject): ResolvedAppSqlScopedSubject,
+    request_context: Option<Extension<WebRequestContext>>,
     Query(request): Query<AppRoutingListQueryRequest>,
 ) -> Response {
     let subject = match map_optional_app_sql_subject(subject, state.require_subject, |scoped| {
@@ -187,10 +204,13 @@ async fn fetch_routing_request_traces(
         Ok(query) => query,
         Err(message) => return bad_request(message),
     };
+    let locale = request_context
+        .map(|context| context.0.locale)
+        .flatten();
 
     match state
         .read_store
-        .load_routing_request_traces(subject, query)
+        .load_routing_request_traces(subject, query, locale.as_deref())
         .await
     {
         Ok(page) => json_success_list_response(

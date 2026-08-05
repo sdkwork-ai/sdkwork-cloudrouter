@@ -49,7 +49,7 @@ export function CodeBatchesPage() {
       // 生成完成后直接进入批次券码页
       navigate(`/admin/marketing/codeBatches/${batch.id}`);
     } catch (createError) {
-      setSaveError(createError instanceof Error ? createError.message : 'Failed to generate code batch');
+      setSaveError(createError instanceof Error ? createError.message : t('admin.marketing.promotions.codeBatches.createError', 'Failed to generate code batch'));
     } finally {
       setIsSaving(false);
     }

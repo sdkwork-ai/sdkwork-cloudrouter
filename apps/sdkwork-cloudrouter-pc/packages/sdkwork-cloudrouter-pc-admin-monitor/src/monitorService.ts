@@ -147,12 +147,12 @@ function normalizeNode(value: unknown): SysNode {
   return {
     id: readRequiredString(item, 'id', 'System node id is required'),
     name: readRequiredString(item, 'name', 'System node name is required'),
-    region: readRequiredString(item, 'region', 'System node region is required'),
+    region: readString(item, 'region'),
     status: readNodeStatus(item),
     cpu: readRequiredNonNegativeNumber(item, 'cpu', 'System node cpu is required'),
     memory: readRequiredNonNegativeNumber(item, 'memory', 'System node memory is required'),
     uptime: readRequiredString(item, 'uptime', 'System node uptime is required'),
-    ip: readRequiredString(item, 'ip', 'System node ip is required'),
+    ip: readString(item, 'ip'),
   };
 }
 
@@ -161,11 +161,11 @@ function normalizeAlert(value: unknown): Alert {
   return {
     id: readRequiredString(item, 'id', 'Alert id is required'),
     severity: readAlertSeverity(item),
-    title: readRequiredString(item, 'title', 'Alert title is required'),
-    message: readRequiredString(item, 'message', 'Alert message is required'),
-    time: readRequiredString(item, 'time', 'Alert time is required'),
+    title: readString(item, 'title'),
+    message: readString(item, 'message'),
+    time: readString(item, 'time'),
     status: readAlertStatus(item),
-    source: readRequiredString(item, 'source', 'Alert source is required'),
+    source: readString(item, 'source'),
   };
 }
 

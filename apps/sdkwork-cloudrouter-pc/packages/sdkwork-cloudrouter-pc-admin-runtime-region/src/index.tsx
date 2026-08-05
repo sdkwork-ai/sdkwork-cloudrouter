@@ -17,12 +17,15 @@ export {
 } from './runtimeRegionService';
 export type { RuntimeRegionSettingsForm } from './runtimeRegionService';
 
-const REGION_CODE_PATTERN = /^[a-z0-9_-]+$/u;
+// REGION_SPEC §4.1: ^[a-z][a-z0-9_]*$ with a 64 character limit.
+const REGION_CODE_PATTERN = /^[a-z][a-z0-9_]*$/u;
+const MAX_REGION_CODE_LENGTH = 64;
 
 const REGION_PRESETS = [
-  { code: 'cn', name: 'China', labelKey: 'admin.runtimeRegion.presets.cn' },
+  { code: 'cn', name: 'China mainland', labelKey: 'admin.runtimeRegion.presets.cn' },
   { code: 'us', name: 'United States', labelKey: 'admin.runtimeRegion.presets.us' },
-  { code: 'eu', name: 'Europe', labelKey: 'admin.runtimeRegion.presets.eu' },
+  { code: 'eu', name: 'European Union', labelKey: 'admin.runtimeRegion.presets.eu' },
+  { code: 'asia', name: 'Asia-Pacific', labelKey: 'admin.runtimeRegion.presets.asia' },
   { code: 'global', name: 'Global', labelKey: 'admin.runtimeRegion.presets.global' },
 ] as const;
 
@@ -39,6 +42,9 @@ export function RuntimeRegionAdmin() {
     const code = form.currentRegionCode.trim();
     if (!code) {
       return t('admin.runtimeRegion.errors.regionCodeRequired');
+    }
+    if (code.length > MAX_REGION_CODE_LENGTH) {
+      return t('admin.runtimeRegion.errors.invalidRegionCode');
     }
     return REGION_CODE_PATTERN.test(code)
       ? null

@@ -81,6 +81,14 @@
       "lifecycle_status": "active",
       "profile": "relation_entity",
       "system_of_record": true
+    },
+    {
+      "table_name": "ops_referral_stat_snapshot",
+      "owner": "cloudrouter-ops-runtime",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "read_model",
+      "system_of_record": false
     }
   ]
 }

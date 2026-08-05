@@ -362,6 +362,17 @@ function resolvePortalPackageModuleFromRoot(parsedSpecifier, packageRoot) {
   return fs.existsSync(resolved) ? resolved : null;
 }
 
+// 模块 ID 必须收敛到符号链接的目标真实路径：同一物理文件经不同
+// importer 的 node_modules 符号链接会得到不同的模块 ID，导致 vite dev
+// 模块图里出现重复实例、模块级状态(如 service provider)各自独立。
+function canonicalizePortalModulePath(resolved) {
+  try {
+    return fs.realpathSync.native(resolved);
+  } catch {
+    return resolved;
+  }
+}
+
 export function resolvePortalPackageModule(specifier, configDir, parentUrl) {
   const compatSpecifier = resolvePortalCompatSpecifier(specifier);
   const cacheKey = `${compatSpecifier}::${parentUrl ?? ''}`;
@@ -388,6 +399,7 @@ export function resolvePortalPackageModule(specifier, configDir, parentUrl) {
   if (!resolved) {
     return null;
   }
+  resolved = canonicalizePortalModulePath(resolved);
   portalPackageModuleCache.set(cacheKey, resolved);
   return resolved;
 }

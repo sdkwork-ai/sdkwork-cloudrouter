@@ -1,10 +1,4 @@
 export const upstreamSharedZhCnMessages = {
-  'admin.upstream.suppliers.title': '上游供应商',
-  'admin.upstream.suppliers.subtitle': '管理上游供应商及其协议适配、端点与资源授权',
-  'admin.upstream.accounts.title': '上游账号',
-  'admin.upstream.accounts.subtitle': '管理上游账号凭证、认证方式与配额',
-  'admin.upstream.accountGroups.title': '账号分组',
-  'admin.upstream.accountGroups.subtitle': '按路由策略组织上游账号并配置成员与资源',
   'admin.upstream.common.actions.configure': '配置',
   'admin.upstream.common.actions.add': '添加',
   'admin.upstream.common.actions.remove': '移除',

@@ -28,12 +28,9 @@ type MembershipPlanBenefitFormValue = Omit<MembershipsAdminPlanBenefitInput, 'us
   usageLimitText: string;
 };
 
-const baseBenefitTypeOptions = [
-  { value: 'quota', label: 'Quota' },
-  { value: 'feature', label: 'Feature' },
-  { value: 'discount', label: 'Discount' },
-  { value: 'service', label: 'Service' },
-];
+type MembershipBenefitType = 'quota' | 'feature' | 'discount' | 'service';
+
+const baseBenefitTypeValues: MembershipBenefitType[] = ['quota', 'feature', 'discount', 'service'];
 
 export function MembershipPlanDrawerForm({
   mode,
@@ -132,7 +129,7 @@ export function MembershipPlanDrawerForm({
               <MembershipSelectField
                 label={t('admin.commerce.memberships.plans.form.benefitType', 'Type')}
                 value={benefit.type ?? 'quota'}
-                options={benefitTypeOptions(benefit.type)}
+                options={benefitTypeOptions(benefit.type, t)}
                 onChange={(value) => updateBenefit(index, { type: value || 'quota' })}
               />
               <MembershipTextField label={t('admin.commerce.memberships.plans.form.usageLimit', 'Usage limit')} value={benefit.usageLimitText} onChange={(value) => updateBenefit(index, { usageLimitText: value })} />
@@ -192,10 +189,17 @@ function buildMembershipPlanCode(name: string): string {
   return `membership-${normalizedName || 'plan'}-${suffix}`;
 }
 
-function benefitTypeOptions(currentType: string | undefined): Array<{ value: string; label: string }> {
+function benefitTypeOptions(
+  currentType: string | undefined,
+  t: (key: string, fallback: string, options?: Record<string, unknown>) => string,
+): Array<{ value: string; label: string }> {
+  const baseOptions = baseBenefitTypeValues.map((value) => ({
+    value,
+    label: t(`admin.commerce.memberships.plans.form.benefitType.${value}`, value),
+  }));
   const normalizedCurrentType = currentType?.trim() ?? '';
-  if (!normalizedCurrentType || baseBenefitTypeOptions.some((option) => option.value === normalizedCurrentType)) {
-    return baseBenefitTypeOptions;
+  if (!normalizedCurrentType || baseOptions.some((option) => option.value === normalizedCurrentType)) {
+    return baseOptions;
   }
-  return [...baseBenefitTypeOptions, { value: normalizedCurrentType, label: normalizedCurrentType }];
+  return [...baseOptions, { value: normalizedCurrentType, label: normalizedCurrentType }];
 }

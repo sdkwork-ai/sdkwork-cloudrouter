@@ -48,7 +48,7 @@ export function OfferDetailDrawer({ offerId, onClose }: OfferDetailDrawerProps) 
       })
       .catch((loadError: unknown) => {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : 'Failed to load offer');
+          setError(loadError instanceof Error ? loadError.message : t('admin.marketing.offers.detail.loadError', 'Failed to load offer'));
         }
       });
     return () => {

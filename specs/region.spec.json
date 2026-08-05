@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.app.region",
+  "appId": "sdkwork-cloudrouter",
+  "description": "SDKWork market region vocabulary and deployment region binding for sdkwork-cloudrouter. Region codes follow REGION_SPEC.md (regionCode registry, format ^[a-z][a-z0-9_]*$, default global). Region is orthogonal to deploymentProfile and environment: it is injected through SDKWORK_<APPLICATION_CODE>_REGION_CODE and never becomes a profile-id segment.",
+  "regionRoot": "etc",
+  "registryFile": "etc/region.registry.json",
+  "vocabulary": {
+    "regionCodePattern": "^[a-z][a-z0-9_]*$",
+    "maxRegionCodeLength": 64,
+    "defaultRegionCode": "global",
+    "status": [
+      "active",
+      "reserved"
+    ]
+  },
+  "envKeys": {
+    "regionCode": "SDKWORK_CLOUDROUTER_ROUTER_REGION_CODE",
+    "databaseSeedLocale": "SDKWORK_DATABASE_SEED_LOCALE"
+  },
+  "regionLocaleMapping": {
+    "global": "zh-CN",
+    "cn": "zh-CN",
+    "us": "en-US",
+    "eu": "en-US",
+    "asia": "en-US"
+  }
+}

@@ -85,5 +85,6 @@ pub trait UsageLogsReadStore {
         &'a self,
         query: UsageLogsQuery,
         subject: Option<UsageLogsSubject>,
+        locale: Option<&'a str>,
     ) -> UsageLogsReadFuture<'a>;
 }

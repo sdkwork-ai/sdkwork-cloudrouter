@@ -73,7 +73,7 @@ export function DistributionTaskCreateDrawerForm({
             value={userIdsText}
             onChange={(event) => setUserIdsText(event.target.value)}
             className="h-28 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-lobster-500 focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
-            placeholder="1001, 1002, 1003"
+            placeholder={t('admin.marketing.distribution.form.userIdsPlaceholder', '1001, 1002, 1003')}
           />
         </MarketingField>
       </MarketingFormSection>

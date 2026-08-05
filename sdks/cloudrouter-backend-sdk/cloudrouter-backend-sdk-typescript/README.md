@@ -27,7 +27,7 @@ client.setAuthToken('your-auth-token');
 client.setAccessToken('your-access-token');
 
 // Use the SDK
-const result = await client.billing.rechargeRecords.list();
+const result = await client.ai.upstreamResourceCatalog.retrieve();
 ```
 
 ## Authentication
@@ -66,13 +66,8 @@ const client = new SdkworkBackendClient({
 ### ai
 
 ```typescript
-// List upstream account groups
-const params = {
-  page: 1,
-  page_size: 2,
-  q: 'q',
-};
-const result = await client.ai.upstreamAccountGroups.list(params);
+// List upstream resource catalog
+const result = await client.ai.upstreamResourceCatalog.retrieve();
 ```
 
 ### billing
@@ -131,7 +126,7 @@ const result = await client.system.auth.settings.retrieve();
 import { SdkworkBackendClient, NetworkError, TimeoutError, AuthenticationError } from '@sdkwork/cloudrouter-backend-sdk';
 
 try {
-  const result = await client.billing.rechargeRecords.list();
+  const result = await client.ai.upstreamResourceCatalog.retrieve();
 } catch (error) {
   if (error instanceof AuthenticationError) {
     console.error('Authentication failed:', error.message);

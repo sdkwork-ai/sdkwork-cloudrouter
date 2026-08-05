@@ -36,6 +36,8 @@ interface KeyFormDrawerProps {
   onClose: () => void;
   onRequestGroups?: () => void;
   onSubmit?: (data: ApiKeyFormValues) => void | Promise<void>;
+  /** 点击遮罩（抽屉外）时是否关闭；默认 true */
+  closeOnClickOutside?: boolean;
 }
 
 const MODALITIES = [
@@ -58,6 +60,7 @@ export function CreateKeyDrawer({
   onClose,
   onRequestGroups,
   onSubmit,
+  closeOnClickOutside = true,
 }: KeyFormDrawerProps) {
   const { t, i18n } = useTranslation();
   const isView = mode === 'view';
@@ -188,7 +191,14 @@ export function CreateKeyDrawer({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex justify-end bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
+    <div
+      className="fixed inset-0 z-[100] flex justify-end bg-black/50 backdrop-blur-sm animate-in fade-in duration-300"
+      onClick={(event) => {
+        if (closeOnClickOutside && event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       <div
         className="flex h-full w-full max-w-xl animate-in slide-in-from-right flex-col border-l border-slate-200 bg-white shadow-2xl duration-300 dark:border-white/10 dark:bg-[#1e1e1e]"
         onClick={(event) => event.stopPropagation()}

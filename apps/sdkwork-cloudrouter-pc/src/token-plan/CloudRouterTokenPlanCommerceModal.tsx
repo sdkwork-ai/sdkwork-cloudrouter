@@ -28,6 +28,8 @@ type TokenPlanCommerceModalVariant = "token-bank-details" | "redeem";
 
 interface CloudRouterTokenPlanCommerceModalProps extends SdkworkSubscriptionCatalogModalProps {
   variant: TokenPlanCommerceModalVariant;
+  /** 点击遮罩（弹窗外）时是否关闭；默认 true */
+  closeOnClickOutside?: boolean;
 }
 
 const VARIANT_COPY: Record<
@@ -231,6 +233,7 @@ function CloudRouterTokenPlanCommerceModal({
   isOpen,
   onClose,
   variant,
+  closeOnClickOutside = true,
 }: CloudRouterTokenPlanCommerceModalProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -267,7 +270,11 @@ function CloudRouterTokenPlanCommerceModal({
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             exit={{ opacity: 0 }}
             initial={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={() => {
+              if (closeOnClickOutside) {
+                onClose();
+              }
+            }}
             type="button"
           />
 

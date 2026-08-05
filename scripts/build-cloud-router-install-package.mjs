@@ -26,10 +26,21 @@ import {
   WINDOWS_INSTALL_ROOT,
   validateInstallPackagePlan,
 } from './plan-cloud-router-install-packages.mjs';
+import { resolveRegionDefaultLocale } from './lib/cloud-router-region.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const workspaceRoot = path.resolve(__dirname, '..');
+
+function installRegionCode(env = process.env) {
+  const region = String(env.SDKWORK_CLOUDROUTER_ROUTER_REGION_CODE ?? '').trim();
+  return region || 'cn';
+}
+
+function installSeedLocale(env = process.env) {
+  const locale = String(env.SDKWORK_DATABASE_SEED_LOCALE ?? '').trim();
+  return locale || resolveRegionDefaultLocale(installRegionCode(env));
+}
 const AGGREGATE_MANIFEST_FILE = 'install-packages-manifest.json';
 const PACKAGE_MANIFEST_FILE = 'install-manifest.json';
 const INSTALL_MANIFEST_SCHEMA_VERSION = '2026-05-15.install-manifest.v1';
@@ -593,6 +604,8 @@ function createPackageManifest(buildPlan, artifactFiles, generatedArtifacts = []
       architecture: buildPlan.package.architecture,
       deploymentMode: buildPlan.package.deploymentMode,
       runtimeProfile: buildPlan.package.runtimeProfile,
+      regionCode: installRegionCode(process.env),
+      seedLocale: installSeedLocale(process.env),
       archiveName: buildPlan.package.archiveName,
       binaryName: buildPlan.package.binaryName,
       installerBinaryName: buildPlan.package.installerBinaryName,

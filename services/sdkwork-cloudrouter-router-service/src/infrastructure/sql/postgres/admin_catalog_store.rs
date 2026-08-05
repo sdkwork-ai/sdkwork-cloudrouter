@@ -974,8 +974,8 @@ async fn upsert_product(
             INSERT INTO commerce_product_spu
                 (id, tenant_id, organization_id, spu_no, title, subtitle, description, product_type, status, visible_surfaces, created_at, updated_at)
             VALUES
-                ($1, $2::text, $3::text, $4, $5, $6, $7, $8, $9, '["backend","app"]', $10, $10)
-            ON CONFLICT (tenant_id, spu_no) DO UPDATE SET
+                ($1, $2::text, $3::text, $4, $5, $6, $7, $8, $9, '["backend","app"]', $10::timestamptz, $10::timestamptz)
+            ON CONFLICT (tenant_id, organization_id, spu_no) DO UPDATE SET
                 title = EXCLUDED.title,
                 subtitle = EXCLUDED.subtitle,
                 description = EXCLUDED.description,
@@ -1225,8 +1225,8 @@ async fn upsert_sku(
             INSERT INTO commerce_product_sku
                 (id, tenant_id, organization_id, spu_id, sku_no, name, title, price_amount, original_price_amount, currency_code, fulfillment_type, inventory_tracking, status, spec_json, created_at, updated_at)
             VALUES
-                ($1, $2::text, $3::text, $4, $5, $6, $6, $7, NULL, $8, $9, $10, $11, $12, $13, $13)
-            ON CONFLICT (tenant_id, sku_no) DO UPDATE SET
+                ($1, $2::text, $3::text, $4, $5, $6, $6, $7, NULL, $8, $9, $10, $11, $12, $13::timestamptz, $13::timestamptz)
+            ON CONFLICT (tenant_id, organization_id, sku_no) DO UPDATE SET
                 spu_id = EXCLUDED.spu_id,
                 name = EXCLUDED.name,
                 title = EXCLUDED.title,

@@ -50,7 +50,7 @@ export function OffersPage() {
       setInitialValue(undefined);
       refresh();
     } catch (createError) {
-      const message = createError instanceof Error ? createError.message : 'Failed to create coupon';
+      const message = createError instanceof Error ? createError.message : t('admin.marketing.promotions.offers.createError', 'Failed to create coupon');
       // 优惠券创建接口无幂等键：部分失败后重试可能产生重复记录，提示先确认列表
       setSaveError(`${message} ${t('admin.marketing.coupon.form.retryHint', 'The coupon may have been created; refresh the list to confirm before retrying.')}`);
     } finally {

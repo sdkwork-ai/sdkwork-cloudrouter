@@ -72,6 +72,10 @@
       {
         "name": "iamAppApiContribution",
         "export": "sdkwork_api_cloudrouter_assembly::assemble_api_router"
+      },
+      {
+        "name": "membershipBackendBusinessContribution",
+        "export": "sdkwork_api_membership_assembly::assemble_backend_business_router_with_pool"
       }
     ],
     "runtimeEntrypoints": [
@@ -106,6 +110,22 @@
           "src/bootstrap/iam.rs#wire_iam_app_router",
           "src/bootstrap.rs#assemble_api_router",
           "../sdkwork-cloudrouter-edge-runtime/src/edge_server.rs#router_for_path"
+        ]
+      },
+      {
+        "workspace": "sdkwork-membership",
+        "sdkFamily": "sdkwork-membership-backend-sdk",
+        "apiAuthority": "sdkwork-membership-backend-api",
+        "surface": "backend-api",
+        "apiPrefix": "/backend/v3/api/memberships",
+        "runtimeMode": "same-origin-mounted",
+        "profileCoverage": [
+          "standalone"
+        ],
+        "cargoDependency": "sdkwork-api-membership-assembly",
+        "embeddedExecutableExport": "sdkwork_api_membership_assembly::assemble_backend_business_router_with_pool",
+        "coverageEvidence": [
+          "../sdkwork-cloudrouter-edge-runtime/src/runtime.rs#all_one_in_one_in_process_upstreams_from_env"
         ]
       }
     ],

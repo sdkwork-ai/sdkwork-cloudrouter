@@ -246,7 +246,7 @@ function collectLocalStringArrays(sourceFile: ts.SourceFile): Map<string, Map<st
       && ts.isArrayLiteralExpression(skipAsConst(node.initializer))
     ) {
       const values = new Map<string, string>();
-      for (const item of skipAsConst(node.initializer).elements) {
+      for (const item of (skipAsConst(node.initializer) as ts.ArrayLiteralExpression).elements) {
         if (!ts.isObjectLiteralExpression(item)) {
           continue;
         }
@@ -368,19 +368,22 @@ function collectLiteralJsxAttributeValues(
 ): Array<{ node: ts.Node; text: string }> {
   const result: Array<{ node: ts.Node; text: string }> = [];
   for (const property of attributes.properties) {
-    if (!ts.isJsxAttribute(property) || property.name.text !== attributeName || !property.initializer) {
+    if (!ts.isJsxAttribute(property) || (property.name as ts.Identifier).text !== attributeName || !property.initializer) {
       continue;
     }
     if (ts.isStringLiteral(property.initializer)) {
       result.push({ node: property.initializer, text: property.initializer.text });
-    } else if (ts.isJsxExpression(property.initializer) && property.initializer.expression) {
-      if (!isI18nCallExpression(property.initializer.expression)) {
-        result.push(
-          ...collectLiteralExpressionValues(property.initializer.expression).map((text) => ({
-            node: property.initializer!.expression!,
-            text,
-          })),
-        );
+    } else if (ts.isJsxExpression(property.initializer)) {
+      const jsxExpression = property.initializer as ts.JsxExpression;
+      if (jsxExpression.expression) {
+        if (!isI18nCallExpression(jsxExpression.expression)) {
+          result.push(
+            ...collectLiteralExpressionValues(jsxExpression.expression).map((text) => ({
+              node: jsxExpression.expression!,
+              text,
+            })),
+          );
+        }
       }
     }
   }

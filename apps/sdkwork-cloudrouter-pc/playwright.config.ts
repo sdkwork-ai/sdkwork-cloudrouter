@@ -48,6 +48,5 @@ export default defineConfig({
         url: PORTAL_BASE_URL,
         reuseExistingServer: !process.env.CI,
         timeout: 180_000,
-        reuseExistingServerTimeout: 30_000,
       },
 });

@@ -2,6 +2,7 @@ pub mod edge_server;
 mod edge_server_runtime_config;
 mod call_chain;
 mod gateway_api_key_auth;
+mod gateway_balance_account;
 mod internal_gateway_replay_store;
 mod invocation_dispatcher;
 mod invocation_http;

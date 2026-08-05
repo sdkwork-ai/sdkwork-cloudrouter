@@ -1049,7 +1049,7 @@ mod tests {
         GatewayTraceAttribution {
             gateway_instance_id: Some(7_001),
             gateway_instance_code_snapshot: Some("gateway-east-1".to_owned()),
-            gateway_region_code_snapshot: Some("cn-east".to_owned()),
+            gateway_region_code_snapshot: Some("cn".to_owned()),
             gateway_node_name_snapshot: Some("node-a".to_owned()),
         }
     }

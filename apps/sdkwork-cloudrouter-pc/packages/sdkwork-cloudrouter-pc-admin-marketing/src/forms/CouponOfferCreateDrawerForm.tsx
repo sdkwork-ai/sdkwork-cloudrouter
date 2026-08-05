@@ -149,7 +149,7 @@ export function CouponOfferCreateDrawerForm({
             value={values.displayName}
             onChange={(event) => update('displayName', event.target.value)}
             className={marketingInputClassName}
-            placeholder="e.g. New User Welcome Coupon"
+            placeholder={t('admin.marketing.coupon.form.namePlaceholder', 'e.g. New User Welcome Coupon')}
           />
         </MarketingField>
         <MarketingField label={t('admin.marketing.coupon.form.type', 'Offer Type')} required>
@@ -158,9 +158,9 @@ export function CouponOfferCreateDrawerForm({
             onChange={(event) => update('offerType', event.target.value)}
             className={marketingSelectClassName}
           >
-            <option value="COUPON">COUPON</option>
-            <option value="VOUCHER">VOUCHER</option>
-            <option value="DISCOUNT">DISCOUNT</option>
+            <option value="COUPON">{t('admin.marketing.enums.offerType.COUPON', 'Coupon')}</option>
+            <option value="VOUCHER">{t('admin.marketing.enums.offerType.VOUCHER', 'Voucher')}</option>
+            <option value="DISCOUNT">{t('admin.marketing.enums.offerType.DISCOUNT', 'Discount')}</option>
           </select>
         </MarketingField>
         <MarketingField label={t('admin.marketing.coupon.form.audience', 'Audience Scope')} required>
@@ -169,9 +169,9 @@ export function CouponOfferCreateDrawerForm({
             onChange={(event) => update('audienceScope', event.target.value)}
             className={marketingSelectClassName}
           >
-            <option value="ALL">ALL</option>
-            <option value="NEW_USER">NEW_USER</option>
-            <option value="RETURNING_USER">RETURNING_USER</option>
+            <option value="ALL">{t('admin.marketing.enums.audience.ALL', 'All users')}</option>
+            <option value="NEW_USER">{t('admin.marketing.enums.audience.NEW_USER', 'New users')}</option>
+            <option value="RETURNING_USER">{t('admin.marketing.enums.audience.RETURNING_USER', 'Returning users')}</option>
           </select>
         </MarketingField>
         <MarketingField label={t('admin.marketing.coupon.form.combinability', 'Combinability')} required>
@@ -180,8 +180,8 @@ export function CouponOfferCreateDrawerForm({
             onChange={(event) => update('combinability', event.target.value)}
             className={marketingSelectClassName}
           >
-            <option value="EXCLUSIVE">EXCLUSIVE</option>
-            <option value="COMBINABLE">COMBINABLE</option>
+            <option value="EXCLUSIVE">{t('admin.marketing.enums.combinability.EXCLUSIVE', 'Exclusive')}</option>
+            <option value="COMBINABLE">{t('admin.marketing.enums.combinability.COMBINABLE', 'Combinable')}</option>
           </select>
         </MarketingField>
         <MarketingField label={t('admin.marketing.coupon.form.goodsScope', 'Goods Scope')} required>
@@ -190,9 +190,9 @@ export function CouponOfferCreateDrawerForm({
             onChange={(event) => update('goodsScope', event.target.value)}
             className={marketingSelectClassName}
           >
-            <option value="ALL">ALL</option>
-            <option value="RECHARGE">RECHARGE</option>
-            <option value="SUBSCRIPTION">SUBSCRIPTION</option>
+            <option value="ALL">{t('admin.marketing.enums.goodsScope.ALL', 'All goods')}</option>
+            <option value="RECHARGE">{t('admin.marketing.enums.goodsScope.RECHARGE', 'Recharge')}</option>
+            <option value="SUBSCRIPTION">{t('admin.marketing.enums.goodsScope.SUBSCRIPTION', 'Subscription')}</option>
           </select>
         </MarketingField>
         <MarketingField label={t('admin.marketing.coupon.form.priority', 'Priority')} required>
@@ -247,7 +247,7 @@ export function CouponOfferCreateDrawerForm({
                 value={values.grantAmount}
                 onChange={(event) => update('grantAmount', event.target.value)}
                 className={marketingInputClassName}
-                placeholder="e.g. 500"
+                placeholder={t('admin.marketing.coupon.form.grantAmountPlaceholder', 'e.g. 500')}
               />
             </MarketingField>
             <MarketingField label={t('admin.marketing.coupon.form.discountType', 'Discount Type')} required>
@@ -256,9 +256,9 @@ export function CouponOfferCreateDrawerForm({
                 onChange={(event) => update('discountType', event.target.value)}
                 className={marketingSelectClassName}
               >
-                <option value="FIXED">FIXED</option>
-                <option value="PERCENT">PERCENT</option>
-                <option value="NONE">NONE</option>
+                <option value="FIXED">{t('admin.marketing.enums.discountType.FIXED', 'Fixed amount')}</option>
+                <option value="PERCENT">{t('admin.marketing.enums.discountType.PERCENT', 'Percent')}</option>
+                <option value="NONE">{t('admin.marketing.enums.discountType.NONE', 'None')}</option>
               </select>
             </MarketingField>
             <MarketingField label={t('admin.marketing.coupon.form.discountValue', 'Discount Value')} required>
@@ -267,7 +267,7 @@ export function CouponOfferCreateDrawerForm({
                 value={values.discountValue}
                 onChange={(event) => update('discountValue', event.target.value)}
                 className={marketingInputClassName}
-                placeholder="e.g. 10"
+                placeholder={t('admin.marketing.coupon.form.discountValuePlaceholder', 'e.g. 10')}
               />
             </MarketingField>
             <MarketingField label={t('admin.marketing.coupon.form.minimumAmount', 'Minimum Amount')} required>
@@ -276,7 +276,7 @@ export function CouponOfferCreateDrawerForm({
                 value={values.minimumAmount}
                 onChange={(event) => update('minimumAmount', event.target.value)}
                 className={marketingInputClassName}
-                placeholder="0"
+                placeholder={t('admin.marketing.coupon.form.minimumAmountPlaceholder', '0')}
               />
             </MarketingField>
             <MarketingField label={t('admin.marketing.coupon.form.maximumDiscountAmount', 'Maximum Discount Amount')}>
@@ -293,7 +293,7 @@ export function CouponOfferCreateDrawerForm({
                 value={values.currencyCode}
                 onChange={(event) => update('currencyCode', event.target.value.toUpperCase())}
                 className={marketingInputClassName}
-                placeholder="CNY"
+                placeholder={t('admin.marketing.coupon.form.currencyCodePlaceholder', 'CNY')}
               />
             </MarketingField>
           </>
@@ -329,10 +329,10 @@ export function CouponOfferCreateDrawerForm({
                 onChange={(event) => update('period', event.target.value as 'day' | 'week' | 'month' | 'year')}
                 className={marketingSelectClassName}
               >
-                <option value="day">day</option>
-                <option value="week">week</option>
-                <option value="month">month</option>
-                <option value="year">year</option>
+                <option value="day">{t('admin.marketing.enums.period.day', 'Day')}</option>
+                <option value="week">{t('admin.marketing.enums.period.week', 'Week')}</option>
+                <option value="month">{t('admin.marketing.enums.period.month', 'Month')}</option>
+                <option value="year">{t('admin.marketing.enums.period.year', 'Year')}</option>
               </select>
             </MarketingField>
             <MarketingField label={t('admin.marketing.coupon.form.durationDays', 'Duration Days')} required>
@@ -370,8 +370,8 @@ export function CouponOfferCreateDrawerForm({
             onChange={(event) => update('stockType', event.target.value as CouponStockType)}
             className={marketingSelectClassName}
           >
-            <option value="LIMITED">LIMITED</option>
-            <option value="UNLIMITED">UNLIMITED</option>
+            <option value="LIMITED">{t('admin.marketing.enums.stockType.LIMITED', 'Limited')}</option>
+            <option value="UNLIMITED">{t('admin.marketing.enums.stockType.UNLIMITED', 'Unlimited')}</option>
           </select>
         </MarketingField>
         <MarketingField label={t('admin.marketing.coupon.form.codeIssueMode', 'Code Issuance Mode')} required>
@@ -447,7 +447,7 @@ export function CouponOfferCreateDrawerForm({
               value={values.batchCodePrefix}
               onChange={(event) => update('batchCodePrefix', event.target.value.toUpperCase())}
               className={marketingInputClassName}
-              placeholder="e.g. WELCOME"
+              placeholder={t('admin.marketing.coupon.form.codePrefixPlaceholder', 'e.g. WELCOME')}
             />
           </MarketingField>
           <MarketingField label={t('admin.marketing.coupon.form.batchStartsAt', 'Codes Valid From')}>

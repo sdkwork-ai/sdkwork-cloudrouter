@@ -65,6 +65,10 @@ spec:
               value: cloud
             - name: SDKWORK_CLOUDROUTER_ROUTER_RUNTIME_TARGET
               value: container
+            - name: SDKWORK_CLOUDROUTER_ROUTER_REGION_CODE
+              value: cn
+            - name: SDKWORK_DATABASE_SEED_LOCALE
+              value: zh-CN
             - name: SDKWORK_NODE_HOSTNAME
               valueFrom:
                 fieldRef:

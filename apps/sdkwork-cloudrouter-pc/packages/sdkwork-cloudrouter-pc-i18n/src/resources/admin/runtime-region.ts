@@ -22,6 +22,7 @@ export const adminRuntimeRegionMessages = {
     "admin.runtimeRegion.presets.cn": "China",
     "admin.runtimeRegion.presets.us": "United States",
     "admin.runtimeRegion.presets.eu": "Europe",
+    "admin.runtimeRegion.presets.asia": "Asia-Pacific",
     "admin.runtimeRegion.presets.global": "Global",
   },
   zh: {
@@ -45,6 +46,7 @@ export const adminRuntimeRegionMessages = {
     "admin.runtimeRegion.presets.cn": "中国",
     "admin.runtimeRegion.presets.us": "美国",
     "admin.runtimeRegion.presets.eu": "欧洲",
+    "admin.runtimeRegion.presets.asia": "亚太",
     "admin.runtimeRegion.presets.global": "全球",
   },
 } satisfies I18nMessageBundle;

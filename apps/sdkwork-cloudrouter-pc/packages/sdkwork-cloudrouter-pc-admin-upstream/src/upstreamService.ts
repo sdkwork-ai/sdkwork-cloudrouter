@@ -20,9 +20,14 @@ import type {
   UpdateUpstreamSupplierRequest,
   UpstreamAccount,
   UpstreamAccountGroup,
+  UpstreamResourceCatalogResponse,
   UpstreamSupplier,
   VerifyUpstreamAccountRequest,
 } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
+
+export async function fetchUpstreamResourceCatalog(): Promise<UpstreamResourceCatalogResponse> {
+  return getCloudRouterBackendSdkClient().ai.upstreamResourceCatalog.retrieve();
+}
 
 export async function listUpstreamSuppliers(query: AiUpstreamSuppliersListParams = {}) {
   return getCloudRouterBackendSdkClient().ai.upstreamSuppliers.list(query);
@@ -247,6 +252,7 @@ export async function explainUpstreamAccountGroupRoute(
 }
 
 export const upstreamService = {
+  fetchResourceCatalog: fetchUpstreamResourceCatalog,
   suppliers: {
     list: listUpstreamSuppliers,
     retrieve: getUpstreamSupplier,

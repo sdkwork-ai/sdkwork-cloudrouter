@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "f73d3d202371fae845f052c68ebbee6bd03943c0798442a2b325c5335166a83f",
+  "changeFingerprint": "43b07495568fb5154929ca87ca7884224f23be52f2ac75d3341351bde54a6f25",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -184,8 +184,11 @@
           "src/types/upstream-account-verification-response.ts",
           "src/types/upstream-account-verification.ts",
           "src/types/upstream-account.ts",
+          "src/types/upstream-resource-catalog-item.ts",
+          "src/types/upstream-resource-catalog-response.ts",
           "src/types/upstream-resource-entitlement-input.ts",
           "src/types/upstream-resource-entitlement.ts",
+          "src/types/upstream-resource-group-catalog-item.ts",
           "src/types/upstream-route-explain-candidate.ts",
           "src/types/upstream-route-explain-issue.ts",
           "src/types/upstream-supplier-auth-method-collection-response.ts",
@@ -372,10 +375,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 269,
-    "models": 240,
+    "totalFiles": 273,
+    "models": 244,
     "apis": 6,
-    "types": 242
+    "types": 246
   },
   "warnings": [
     {
@@ -418,12 +421,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 187,
+    "writtenFiles": 190,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "f73d3d202371fae845f052c68ebbee6bd03943c0798442a2b325c5335166a83f",
+    "changeFingerprint": "43b07495568fb5154929ca87ca7884224f23be52f2ac75d3341351bde54a6f25",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -589,8 +592,11 @@
         "src/types/upstream-account-verification-response.ts",
         "src/types/upstream-account-verification.ts",
         "src/types/upstream-account.ts",
+        "src/types/upstream-resource-catalog-item.ts",
+        "src/types/upstream-resource-catalog-response.ts",
         "src/types/upstream-resource-entitlement-input.ts",
         "src/types/upstream-resource-entitlement.ts",
+        "src/types/upstream-resource-group-catalog-item.ts",
         "src/types/upstream-route-explain-candidate.ts",
         "src/types/upstream-route-explain-issue.ts",
         "src/types/upstream-supplier-auth-method-collection-response.ts",
@@ -793,8 +799,11 @@
             "src/types/upstream-account-verification-response.ts",
             "src/types/upstream-account-verification.ts",
             "src/types/upstream-account.ts",
+            "src/types/upstream-resource-catalog-item.ts",
+            "src/types/upstream-resource-catalog-response.ts",
             "src/types/upstream-resource-entitlement-input.ts",
             "src/types/upstream-resource-entitlement.ts",
+            "src/types/upstream-resource-group-catalog-item.ts",
             "src/types/upstream-route-explain-candidate.ts",
             "src/types/upstream-route-explain-issue.ts",
             "src/types/upstream-supplier-auth-method-collection-response.ts",

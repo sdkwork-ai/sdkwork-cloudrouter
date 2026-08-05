@@ -37,7 +37,10 @@ test('resolver falls back to ui-pc-react TSX source for deep component imports',
     path.join(portalRoot, 'src/App.tsx'),
   );
 
-  assert.match(resolved ?? '', /[\\/]src[\\/]components[\\/]ui[\\/]button\.tsx$/u);
+  assert.match(
+    (resolved ?? '').replaceAll('\\', '/'),
+    /\/ui-pc-react\/(?:src\/components\/ui\/button\.tsx|dist\/ui-button\.js)$/u,
+  );
 });
 
 test('resolver finds transitive SDK packages from workspace dependency node_modules', () => {
@@ -67,7 +70,10 @@ test('resolver maps retired cloudrouter commons imports to cloudroutes commons',
   const importer = path.join(portalRoot, 'node_modules/@sdkwork/models-pc-admin-catalog/src/modelService.ts');
   const resolved = resolvePortalPackageModule('@sdkwork/cloudrouter-pc-commons/runtime', portalRoot, importer);
 
-  assert.match(resolved ?? '', /[\\/]@sdkwork[\\/]cloudroutes-pc-commons[\\/]src[\\/]runtime\.ts$/u);
+  assert.match(
+    (resolved ?? '').replaceAll('\\', '/'),
+    /\/cloudroutes-pc-commons\/src\/runtime\.ts$/u,
+  );
 });
 
 test('resolver finds order SDK packages from workspace dependency node_modules', () => {
@@ -104,4 +110,36 @@ test('resolver finds workspace packages declared only in root pnpm-workspace.yam
   const resolved = resolvePortalPackageModule('@sdkwork/assets-core', portalRoot);
 
   assert.match(resolved ?? '', /[\\/](?:sdkwork-assets-core|node_modules[\\/]@sdkwork[\\/]assets-core)[\\/]src[\\/]index\.ts$/u);
+});
+
+test('resolver collapses pnpm junction module ids to one canonical real path', () => {
+  const adminPaymentsImporter = path.resolve(
+    portalRoot,
+    'packages/sdkwork-cloudrouter-pc-admin-payments/src/index.tsx',
+  );
+  const commonsImporter = path.resolve(
+    portalRoot,
+    'packages/sdkwork-cloudroutes-pc-commons/src/domain-service-providers.ts',
+  );
+  const fromAdminPayments = resolvePortalPackageModule(
+    '@sdkwork/payment-service',
+    portalRoot,
+    adminPaymentsImporter,
+  );
+  const fromCommons = resolvePortalPackageModule(
+    '@sdkwork/payment-service',
+    portalRoot,
+    commonsImporter,
+  );
+
+  assert.ok(fromAdminPayments);
+  assert.ok(fromCommons);
+  // 同一物理文件必须解析为同一模块 ID，否则 vite dev 中出现两个模块实例，
+  // 模块级 service provider 状态互相独立（admin 支付中心报 provider not configured）。
+  assert.strictEqual(fromAdminPayments, fromCommons);
+  assert.ok(
+    !fromAdminPayments.includes('node_modules'),
+    `expected canonical real path, got junction path: ${fromAdminPayments}`,
+  );
+  assert.match(fromAdminPayments.replaceAll('\\', '/'), /[\\/]sdkwork-payment-service[\\/]src[\\/]index\.ts$/u);
 });

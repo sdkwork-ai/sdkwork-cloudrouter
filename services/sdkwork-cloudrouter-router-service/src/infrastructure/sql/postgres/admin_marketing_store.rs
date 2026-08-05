@@ -377,7 +377,7 @@ async fn list_recharge_records(
             COALESCE(NULLIF(pa.callback_payload::jsonb ->> 'points', ''), '0') AS point_amount,
             COALESCE(NULLIF(pm.display_name, ''), NULLIF(pa.provider, ''), 'manual') AS method,
             COALESCE(NULLIF(o.status, ''), NULLIF(pa.status, ''), 'pending') AS status,
-            COALESCE(pa.paid_at, pa.updated_at, pa.created_at, o.updated_at, o.created_at)::text AS time,
+            COALESCE(pa.paid_at, pa.updated_at, pa.created_at, o.updated_at::timestamptz, o.created_at::timestamptz)::text AS time,
             COUNT(*) OVER() AS total
         FROM commerce_payment_attempt pa
         JOIN commerce_order o
@@ -394,7 +394,7 @@ async fn list_recharge_records(
          AND u.tenant_id = pa.tenant_id
         WHERE pa.tenant_id = $1::text
           AND pa.organization_id = $2::text
-        ORDER BY COALESCE(pa.paid_at, pa.updated_at, pa.created_at, o.updated_at, o.created_at) DESC, pa.id DESC
+        ORDER BY COALESCE(pa.paid_at, pa.updated_at, pa.created_at, o.updated_at::timestamptz, o.created_at::timestamptz) DESC, pa.id DESC
         LIMIT $3 OFFSET $4
         "#,
     )
@@ -434,7 +434,7 @@ async fn load_recharge_record(
             COALESCE(NULLIF(pa.callback_payload::jsonb ->> 'points', ''), '0') AS point_amount,
             COALESCE(NULLIF(pm.display_name, ''), NULLIF(pa.provider, ''), 'manual') AS method,
             COALESCE(NULLIF(o.status, ''), NULLIF(pa.status, ''), 'pending') AS status,
-            COALESCE(pa.paid_at, pa.updated_at, pa.created_at, o.updated_at, o.created_at)::text AS time
+            COALESCE(pa.paid_at, pa.updated_at, pa.created_at, o.updated_at::timestamptz, o.created_at::timestamptz)::text AS time
         FROM commerce_payment_attempt pa
         JOIN commerce_order o
           ON o.id = pa.order_id
@@ -1453,8 +1453,8 @@ async fn insert_recharge_product_row(
         INSERT INTO commerce_product_spu
             (id, tenant_id, organization_id, spu_no, title, subtitle, description, product_type, status, visible_surfaces, created_at, updated_at)
         VALUES
-            ($1, $2::text, $3::text, $4, $5, $6, $7, 'points_recharge', 'active', '["app","console","admin"]', $8, $9)
-        ON CONFLICT (tenant_id, spu_no) DO UPDATE SET
+            ($1, $2::text, $3::text, $4, $5, $6, $7, 'points_recharge', 'active', '["app","console","admin"]', $8::timestamptz, $9::timestamptz)
+        ON CONFLICT (tenant_id, organization_id, spu_no) DO UPDATE SET
             id = EXCLUDED.id,
             organization_id = EXCLUDED.organization_id,
             title = EXCLUDED.title,
@@ -1484,7 +1484,7 @@ async fn insert_recharge_product_row(
         INSERT INTO commerce_product_spu_category
             (id, tenant_id, organization_id, spu_id, category_id, primary_flag, sort_order, status, created_at, updated_at)
         VALUES
-            ($1, $2::text, $3::text, $4, 'commerce-recharge', 1, 0, 'active', $5, $6)
+            ($1, $2::text, $3::text, $4, 'commerce-recharge', true, 0, 'active', $5, $6)
         ON CONFLICT (tenant_id, spu_id, category_id) DO UPDATE SET
             organization_id = EXCLUDED.organization_id,
             primary_flag = EXCLUDED.primary_flag,
@@ -1516,8 +1516,8 @@ async fn insert_recharge_sku_row(
         INSERT INTO commerce_product_sku
             (id, tenant_id, organization_id, spu_id, sku_no, name, title, price_amount, original_price_amount, currency_code, fulfillment_type, inventory_tracking, status, spec_json, created_at, updated_at)
         VALUES
-            ($1, $2::text, $3::text, $4, $5, $6, $6, $7, $7, $8, 'points_credit', 'untracked', $9, $10, $11, $11)
-        ON CONFLICT (tenant_id, sku_no) DO UPDATE SET
+            ($1, $2::text, $3::text, $4, $5, $6, $6, $7, $7, $8, 'points_credit', 'untracked', $9, $10, $11::timestamptz, $11::timestamptz)
+        ON CONFLICT (tenant_id, organization_id, sku_no) DO UPDATE SET
             spu_id = EXCLUDED.spu_id,
             name = EXCLUDED.name,
             title = EXCLUDED.title,
@@ -1615,7 +1615,7 @@ async fn update_recharge_sku_status_by_id(
         r#"
         UPDATE commerce_product_sku
         SET status = $1,
-            updated_at = $2
+            updated_at = $2::timestamptz
         WHERE id = $3
           AND tenant_id = $4::text
           AND (
@@ -1659,7 +1659,7 @@ async fn refresh_recharge_product_status(
         UPDATE commerce_product_spu
         SET description = $1,
             status = $2,
-            updated_at = $3
+            updated_at = $3::timestamptz
         WHERE id = $4
         "#,
     )
@@ -1910,6 +1910,7 @@ fn recharge_status_label(value: &str) -> DomainResult<&'static str> {
         status if status == CommerceRechargeStatus::Paid.as_str() => Ok("success"),
         status if status == CommerceRechargeStatus::Fulfilled.as_str() => Ok("success"),
         "succeeded" | "success" => Ok("success"),
+        "processing" => Ok("processing"),
         "failed" | "cancelled" | "canceled" => Ok("failed"),
         status if status == CommerceRechargeStatus::Closed.as_str() => Ok("closed"),
         "expired" => Ok("closed"),
@@ -2007,9 +2008,11 @@ fn payment_status_label(value: &str) -> DomainResult<&'static str> {
         status if status == CommercePaymentStatus::Pending.as_str() => Ok("pending"),
         status if status == CommercePaymentStatus::Succeeded.as_str() => Ok("success"),
         "success" => Ok("success"),
+        "processing" => Ok("processing"),
         status if status == CommercePaymentStatus::Failed.as_str() => Ok("failed"),
         status if status == CommercePaymentStatus::Canceled.as_str() => Ok("expired"),
         "cancelled" | "expired" => Ok("expired"),
+        "closed" => Ok("closed"),
         status => Err(DomainError::new(format!(
             "unsupported admin payment attempt status: {status}"
         ))),

@@ -1,21 +1,6 @@
 {
   "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "paths": {
-      "@sdkwork/cloudroutes-pc-commons/api-result": [
-        "./packages/sdkwork-cloudroutes-pc-commons/src/api-result.ts"
-      ],
-      "@sdkwork/cloudroutes-pc-commons/sdk-clients": [
-        "./packages/sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts"
-      ],
-      "@sdkwork/cloudroutes-pc-commons/components/BusinessState": [
-        "./packages/sdkwork-cloudroutes-pc-commons/src/components/BusinessState.tsx"
-      ],
-      "@sdkwork/cloudroutes-pc-commons/components/ConfirmDialog": [
-        "./packages/sdkwork-cloudroutes-pc-commons/src/components/ConfirmDialog.tsx"
-      ]
-    }
-  },
+  "compilerOptions": {},
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",

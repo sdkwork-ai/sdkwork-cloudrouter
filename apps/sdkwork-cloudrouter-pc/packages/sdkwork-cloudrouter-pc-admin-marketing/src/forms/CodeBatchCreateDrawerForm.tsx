@@ -70,8 +70,8 @@ export function CodeBatchCreateDrawerForm({
         </MarketingField>
         <MarketingField label={t('admin.marketing.batch.form.codeType', 'Code Type')} required>
           <select value={codeType} onChange={(event) => setCodeType(event.target.value)} className={marketingSelectClassName}>
-            <option value="PUBLIC">PUBLIC</option>
-            <option value="PRIVATE">PRIVATE</option>
+            <option value="PUBLIC">{t('admin.marketing.enums.codeType.PUBLIC', 'Public')}</option>
+            <option value="PRIVATE">{t('admin.marketing.enums.codeType.PRIVATE', 'Private')}</option>
           </select>
         </MarketingField>
         <MarketingField label={t('admin.marketing.batch.form.quantity', 'Quantity')} required>
@@ -80,7 +80,7 @@ export function CodeBatchCreateDrawerForm({
             value={quantity}
             onChange={(event) => setQuantity(event.target.value)}
             className={marketingInputClassName}
-            placeholder="1 - 5000"
+            placeholder={t('admin.marketing.batch.form.quantityPlaceholder', '1 - 5000')}
           />
         </MarketingField>
         <MarketingField label={t('admin.marketing.batch.form.codeLength', 'Code Length')}>
@@ -99,7 +99,7 @@ export function CodeBatchCreateDrawerForm({
             value={codePrefix}
             onChange={(event) => setCodePrefix(event.target.value.toUpperCase())}
             className={marketingInputClassName}
-            placeholder="e.g. WELCOME"
+            placeholder={t('admin.marketing.batch.form.codePrefixPlaceholder', 'e.g. WELCOME')}
           />
         </MarketingField>
         <MarketingField label={t('admin.marketing.batch.form.startsAt', 'Codes Valid From')}>

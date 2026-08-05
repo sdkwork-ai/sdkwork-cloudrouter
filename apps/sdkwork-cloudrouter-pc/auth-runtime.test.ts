@@ -313,7 +313,7 @@ function installPortalAuthRedirectWindow({
       Object.defineProperty(globalThis, "window", descriptor);
       return;
     }
-    delete (globalThis as typeof globalThis & { window?: unknown }).window;
+    delete (globalThis as { window?: unknown }).window;
   };
 }
 
@@ -351,12 +351,12 @@ function createPortalSessionStorageHarness(): { openNewTab: () => void; restore:
       if (localStorageDescriptor) {
         Object.defineProperty(globalThis, "localStorage", localStorageDescriptor);
       } else {
-        delete (globalThis as typeof globalThis & { localStorage?: unknown }).localStorage;
+        delete (globalThis as { localStorage?: unknown }).localStorage;
       }
       if (sessionStorageDescriptor) {
         Object.defineProperty(globalThis, "sessionStorage", sessionStorageDescriptor);
       } else {
-        delete (globalThis as typeof globalThis & { sessionStorage?: unknown }).sessionStorage;
+        delete (globalThis as { sessionStorage?: unknown }).sessionStorage;
       }
     },
   };
@@ -585,15 +585,15 @@ test("cloud router auth controller reuses appbase runtime while preserving app S
 test("messaging verification adapter maps IAM inputs to generated SDK requests", async () => {
   const now = Date.parse("2026-08-02T10:00:00.000Z");
   const createCalls: Array<{
-    body: Record<string, unknown>;
+    body: any;
     params: { idempotencyKey: string };
   }> = [];
   const verifyCalls: Array<{
-    body: Record<string, unknown>;
+    body: any;
     params: { idempotencyKey: string };
   }> = [];
   const client = {
-    create: async (body: Record<string, unknown>, params: { idempotencyKey: string }) => {
+    create: async (body: any, params: { idempotencyKey: string }) => {
       createCalls.push({ body, params });
       return {
         codeId: "challenge-1",
@@ -602,7 +602,7 @@ test("messaging verification adapter maps IAM inputs to generated SDK requests",
         status: "pending" as const,
       };
     },
-    verify: async (body: Record<string, unknown>, params: { idempotencyKey: string }) => {
+    verify: async (body: any, params: { idempotencyKey: string }) => {
       verifyCalls.push({ body, params });
       return {
         requestId: "request-verify-1",
@@ -653,7 +653,7 @@ test("messaging verification adapter replaces an older challenge for the same IA
   const verifiedCodeIds: string[] = [];
   const service = createCloudRouterMessagingVerificationService({
     getClient: () => ({
-      create: async () => {
+      create: async (..._args: unknown[]) => {
         createCount += 1;
         return {
           codeId: `challenge-${createCount}`,
@@ -662,7 +662,7 @@ test("messaging verification adapter replaces an older challenge for the same IA
           status: "pending" as const,
         };
       },
-      verify: async (body: Record<string, unknown>) => {
+      verify: async (body: any, ..._args: unknown[]) => {
         verifiedCodeIds.push(String(body.codeId));
         return {
           requestId: "request-verify",
@@ -701,7 +701,7 @@ test("messaging verification adapter rejects a superseded concurrent create resp
   const verifiedCodeIds: string[] = [];
   const service = createCloudRouterMessagingVerificationService({
     getClient: () => ({
-      create: async () => {
+      create: async (..._args: unknown[]) => {
         createCount += 1;
         if (createCount === 1) {
           return firstCreateResult;
@@ -713,7 +713,7 @@ test("messaging verification adapter rejects a superseded concurrent create resp
           status: "pending" as const,
         };
       },
-      verify: async (body: Record<string, unknown>) => {
+      verify: async (body: any, ..._args: unknown[]) => {
         verifiedCodeIds.push(String(body.codeId));
         return {
           requestId: "request-verify",
@@ -749,13 +749,13 @@ test("messaging verification adapter rejects expired challenges without calling 
   let verifyCalls = 0;
   const service = createCloudRouterMessagingVerificationService({
     getClient: () => ({
-      create: async () => ({
+      create: async (..._args: unknown[]) => ({
         codeId: "expiring-challenge",
         expiresAt: "2026-08-02T10:00:01.000Z",
         requestId: "request-create",
         status: "pending" as const,
       }),
-      verify: async () => {
+      verify: async (body: any, ..._args: unknown[]) => {
         verifyCalls += 1;
         return {
           requestId: "request-verify",
@@ -787,7 +787,7 @@ test("messaging verification adapter bounds retained challenge memory", async ()
   const verifiedCodeIds: string[] = [];
   const service = createCloudRouterMessagingVerificationService({
     getClient: () => ({
-      create: async () => {
+      create: async (..._args: unknown[]) => {
         createCount += 1;
         return {
           codeId: `bounded-${createCount}`,
@@ -796,7 +796,7 @@ test("messaging verification adapter bounds retained challenge memory", async ()
           status: "pending" as const,
         };
       },
-      verify: async (body: Record<string, unknown>) => {
+      verify: async (body: any, ..._args: unknown[]) => {
         verifiedCodeIds.push(String(body.codeId));
         return {
           requestId: `request-verify-${verifiedCodeIds.length}`,
@@ -1081,7 +1081,7 @@ test("cloud router app auth composes the appbase IAM OAuth dependency SDK withou
   assert.doesNotMatch(appbaseAuthServiceSource, /loginQrCodes\?\.callback/);
   assert.doesNotMatch(appbaseIamRuntimeSource, /runtime\.service\.auth\.loginQrCodeCallbacks/);
   for (const [path, method] of appbaseOwnedAppRoutes) {
-    assert.equal(appbaseAppOpenApi.paths?.[path]?.[method]?.["x-sdkwork-owner"], "sdkwork-iam");
+    assert.equal((appbaseAppOpenApi.paths?.[path]?.[method] as Record<string, unknown> | undefined)?.["x-sdkwork-owner"], "sdkwork-iam");
   }
   assert.doesNotMatch(appOpenApiSource, /\/app\/v3\/api\/auth\//);
   assert.doesNotMatch(appOpenApiSource, /\/app\/v3\/api\/oauth\//);
@@ -1102,9 +1102,9 @@ test("cloud router app auth composes the appbase IAM OAuth dependency SDK withou
   assert.ok(backendOpenApi.components?.schemas?.AdminAuthSettingsResponse?.required?.includes("wechat"));
   assert.ok(backendOpenApi.components?.schemas?.AdminAuthSettingsUpdateRequest?.properties?.verificationPolicy);
   assert.ok(backendOpenApi.components?.schemas?.AdminAuthSettingsUpdateRequest?.properties?.wechat);
-  assert.equal(backendOpenApi.components?.schemas?.AdminAuthSettingsUpdateRequest?.properties?.loginMethods?.minItems, 1);
-  assert.equal(backendOpenApi.components?.schemas?.AdminAuthSettingsUpdateRequest?.properties?.registerMethods?.minItems, 1);
-  assert.equal(backendOpenApi.components?.schemas?.AdminAuthSettingsUpdateRequest?.properties?.recoveryMethods?.minItems, 1);
+  assert.equal((backendOpenApi.components?.schemas?.AdminAuthSettingsUpdateRequest?.properties?.loginMethods as { minItems?: number } | undefined)?.minItems, 1);
+  assert.equal((backendOpenApi.components?.schemas?.AdminAuthSettingsUpdateRequest?.properties?.registerMethods as { minItems?: number } | undefined)?.minItems, 1);
+  assert.equal((backendOpenApi.components?.schemas?.AdminAuthSettingsUpdateRequest?.properties?.recoveryMethods as { minItems?: number } | undefined)?.minItems, 1);
   assert.doesNotMatch(backendSdkIndexSource, /public readonly auth:/);
   assert.match(backendSdkSystemSource, /public readonly auth: SystemAuthApi/);
   assert.match(backendSdkSystemSource, /public readonly settings: SystemAuthSettingsApi/);
@@ -1524,20 +1524,20 @@ test("appbase IAM runtime auth service persists sessions before portal redirects
     service: {
       auth: {
         passwordResetRequests: {
-          create: async () => ({}),
+          create: async (..._args: unknown[]) => ({}),
         },
         passwordResets: {
-          create: async () => ({}),
+          create: async (..._args: unknown[]) => ({}),
         },
         registrations: {
-          create: async () => ({
+          create: async (..._args: unknown[]) => ({
             accessToken: "register-access",
             authToken: "register-auth",
             refreshToken: "register-refresh",
           }),
         },
         sessions: {
-          create: async (body: Record<string, unknown>) => ({
+          create: async (body: any) => ({
             accessToken: `${String(body.grantType)}-access`,
             authToken: `${String(body.grantType)}-auth`,
             refreshToken: `${String(body.grantType)}-refresh`,
@@ -1563,10 +1563,10 @@ test("appbase IAM runtime auth service persists sessions before portal redirects
       },
       oauth: {
         authorizationUrls: {
-          create: async () => ({ url: "https://auth.example.test/oauth" }),
+          create: async (..._args: unknown[]) => ({ url: "https://auth.example.test/oauth" }),
         },
         sessions: {
-          create: async () => ({
+          create: async (..._args: unknown[]) => ({
             accessToken: "oauth-access",
             authToken: "oauth-auth",
             refreshToken: "oauth-refresh",
@@ -1575,7 +1575,7 @@ test("appbase IAM runtime auth service persists sessions before portal redirects
       },
       messaging: {
         verificationCodes: {
-          create: async () => ({}),
+          create: async (..._args: unknown[]) => ({}),
           verify: async () => ({ verified: true }),
         },
       },

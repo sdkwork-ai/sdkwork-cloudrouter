@@ -110,7 +110,7 @@ fn sticky_binding(object_type: &str, object_id: &str) -> StickyObjectRouteBindin
         api_code: Some("openai.files".to_owned()),
         catalog_key: Some("openai/gpt-4o-mini".to_owned()),
         provider_model: Some("gpt-4o-mini".to_owned()),
-        region_code: Some("us-east-1".to_owned()),
+        region_code: Some("global".to_owned()),
         sticky_scope: Some("object".to_owned()),
     }
 }
@@ -119,7 +119,7 @@ fn routed_account() -> InvocationAccount {
     InvocationAccount {
         supplier_code: "openai".to_owned(),
         account_id: 300,
-        region_code: "us-east-1".to_owned(),
+        region_code: "global".to_owned(),
         credential_id: Some(400),
         credential_rotation: Some("primary".to_owned()),
         base_url: Some("https://api.openai.example".to_owned()),
@@ -170,7 +170,7 @@ async fn lookup_sticky_hit_binds_route_constraint() {
         sticky_route.catalog_key.as_deref()
     );
     assert_eq!(Some("gpt-4o-mini"), sticky_route.provider_model.as_deref());
-    assert_eq!(Some("us-east-1"), sticky_route.region_code.as_deref());
+    assert_eq!(Some("global"), sticky_route.region_code.as_deref());
     assert_eq!(
         Some("openai/gpt-4o-mini"),
         invocation.resource.requested_model_catalog_key.as_deref()

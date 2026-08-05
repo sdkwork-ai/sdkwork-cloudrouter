@@ -289,7 +289,7 @@ function cloudrouterTypeScriptTransform() {
       );
       if (error) {
         const message = ts.flattenDiagnosticMessageText(error.messageText, '\n');
-        this.error(`TypeScript transform failed for ${filePath}: ${message}`);
+        throw new Error(`TypeScript transform failed for ${filePath}: ${message}`);
       }
 
       return {

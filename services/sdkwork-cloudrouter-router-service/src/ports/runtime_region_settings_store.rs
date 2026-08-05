@@ -3,8 +3,8 @@ use std::pin::Pin;
 
 use crate::domain::DomainResult;
 
-pub const DEFAULT_RUNTIME_REGION_CODE: &str = "cn";
-pub const DEFAULT_RUNTIME_REGION_NAME: &str = "China";
+pub const DEFAULT_RUNTIME_REGION_CODE: &str = "global";
+pub const DEFAULT_RUNTIME_REGION_NAME: &str = "Global";
 
 pub type RuntimeRegionSettingsFuture<'a, T> =
     Pin<Box<dyn Future<Output = DomainResult<T>> + Send + 'a>>;
@@ -44,10 +44,11 @@ impl RuntimeRegionSettings {
         self.current_region_name = self.current_region_name.trim().to_owned();
         if self.current_region_name.is_empty() {
             self.current_region_name = match self.current_region_code.as_str() {
-                "cn" => DEFAULT_RUNTIME_REGION_NAME.to_owned(),
-                "global" => "Global".to_owned(),
+                "cn" => "China mainland".to_owned(),
+                "global" => DEFAULT_RUNTIME_REGION_NAME.to_owned(),
                 "us" => "United States".to_owned(),
-                "eu" => "Europe".to_owned(),
+                "eu" => "European Union".to_owned(),
+                "asia" => "Asia-Pacific".to_owned(),
                 region => region.to_owned(),
             };
         }

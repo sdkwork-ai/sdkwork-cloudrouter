@@ -11,8 +11,8 @@ import {
 export type RuntimeRegionSettingsForm = AdminRuntimeRegionSettingsResponse;
 
 export const DEFAULT_RUNTIME_REGION_SETTINGS: RuntimeRegionSettingsForm = {
-  currentRegionCode: 'cn',
-  currentRegionName: 'China',
+  currentRegionCode: 'global',
+  currentRegionName: 'Global',
   remark: 'Default runtime region for route, endpoint, and regional pricing selection.',
 };
 

@@ -244,6 +244,7 @@ sdkwork_routes_promotion_backend_api = { package = "sdkwork-routes-promotion-bac
 sdkwork_promotion_service_host = { package = "sdkwork-promotion-service-host", path = "../sdkwork-promotion/crates/sdkwork-promotion-service-host" }
 sdkwork_promotion_database_host = { package = "sdkwork-promotion-database-host", path = "../sdkwork-promotion/crates/sdkwork-promotion-database-host" }
 sdkwork_routes_membership_app_api = { package = "sdkwork-routes-membership-app-api", path = "../sdkwork-membership/crates/sdkwork-routes-membership-app-api" }
+sdkwork_api_membership_assembly = { package = "sdkwork-api-membership-assembly", path = "../sdkwork-membership/crates/sdkwork-api-membership-assembly" }
 sdkwork_membership_service_host = { package = "sdkwork-membership-service-host", path = "../sdkwork-membership/crates/sdkwork-membership-service-host" }
 sdkwork_membership_database_host = { package = "sdkwork-membership-database-host", path = "../sdkwork-membership/crates/sdkwork-membership-database-host" }
 sdkwork_api_order_assembly = { package = "sdkwork-api-order-assembly", path = "../sdkwork-order/crates/sdkwork-api-order-assembly" }

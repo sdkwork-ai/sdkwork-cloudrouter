@@ -32,9 +32,11 @@ import { CopyButton } from '@sdkwork/cloudroutes-pc-commons/components/CopyButto
 import { copyTextToClipboard } from '@sdkwork/cloudroutes-pc-commons/clipboard';
 import {
   GroupPicker,
+  type GroupPickerHandle,
   type GroupPickerOption,
 } from '@sdkwork/cloudroutes-pc-commons/components/GroupPicker';
 import { CreateKeyDrawer, type ApiKeyFormValues } from './CreateKeyDrawer';
+import { GroupCellPopover } from './GroupCellPopover';
 import { chainInputFromForm, createApiKeyInputsFromForm } from './apiKeyForm';
 import { ApiKeyService, type AccountGroup, type ApiKey } from './apiKeyService';
 import { toGroupPickerOptions } from './accountGroups';
@@ -48,11 +50,17 @@ import {
 } from './display';
 import { ApiKeyUsageDetailsDrawer } from './usage-details/ApiKeyUsageDetailsDrawer';
 import {
+  buildQuickImportDeepLink,
   buildQuickImportResult,
   QUICK_IMPORT_TARGETS,
+  resolveQuickImportTarget,
+  type CcSwitchApp,
+  type QuickImportDeepLinkOptions,
   type QuickImportResult,
   type QuickImportTargetId,
 } from './quick-import/quickImport';
+import { openDeeplink } from './quick-import/openDeeplink';
+import { QuickImportAppPickerDialog } from './quick-import/QuickImportAppPickerDialog';
 import { QuickImportResultDialog } from './quick-import/QuickImportResultDialog';
 
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
@@ -77,6 +85,8 @@ function getApiKeyProductErrorMessage(error: unknown, fallback: string, t: Trans
 
 export function ApiKeysView() {
   const { t, i18n } = useTranslation();
+  /** 按 key.id 保存 GroupPicker 句柄，供分组预览弹层中的「修改分组」按钮编程式打开弹窗 */
+  const groupPickerHandlesRef = useRef<Record<string, GroupPickerHandle | null>>({});
   const [keysData, setKeysData] = useState<ApiKey[]>([]);
   const [totalKeys, setTotalKeys] = useState(0);
   const [groups, setGroups] = useState<AccountGroup[]>([]);
@@ -99,6 +109,9 @@ export function ApiKeysView() {
   const [currentPage, setCurrentPage] = useState(1);
   const [quickImportMenu, setQuickImportMenu] = useState<QuickImportMenuAnchor | null>(null);
   const [quickImportResult, setQuickImportResult] = useState<QuickImportResult | null>(null);
+  const [quickImportAppUnavailable, setQuickImportAppUnavailable] = useState(false);
+  const [quickImportDeepLink, setQuickImportDeepLink] = useState<string | null>(null);
+  const [quickImportAppPicker, setQuickImportAppPicker] = useState<QuickImportAppPickerState | null>(null);
   const quickImportCloseTimerRef = useRef<number | null>(null);
 
   const itemsPerPage = 10;
@@ -175,9 +188,53 @@ export function ApiKeysView() {
       return;
     }
     const result = buildQuickImportResult(key, targetId);
-    if (result) {
-      setQuickImportResult(result);
+    if (!result) {
+      return;
     }
+    const target = resolveQuickImportTarget(targetId);
+    if (target.requiresAppSelection) {
+      // CC Switch keeps a separate provider list per app; ask which app the
+      // relay provider belongs to before building the import link.
+      setQuickImportAppPicker({ key, result, targetId });
+      return;
+    }
+    // Birdcoder unifies model configuration: configure name / default model
+    // in the same dialog without the app grid, then import directly.
+    setQuickImportAppPicker({ key, result, targetId });
+  };
+
+  const openImportDeepLink = (
+    key: ApiKey,
+    targetId: QuickImportTargetId,
+    app: CcSwitchApp,
+    result: QuickImportResult,
+    options?: QuickImportDeepLinkOptions,
+  ) => {
+    const deeplink = buildQuickImportDeepLink(key, targetId, app, options);
+    setQuickImportDeepLink(deeplink);
+    // Preferred flow: hand off directly to the desktop app through its custom
+    // protocol. When no app hand-off is detected (not installed / protocol not
+    // registered) fall back to the manual import dialog with an install banner.
+    if (!deeplink) {
+      setQuickImportAppUnavailable(false);
+      setQuickImportResult(result);
+      return;
+    }
+    openDeeplink(deeplink, () => {
+      setQuickImportAppUnavailable(true);
+      setQuickImportResult(result);
+    });
+  };
+
+  const retryQuickImportOpen = () => {
+    if (!quickImportDeepLink) {
+      return;
+    }
+    // The probe is a heuristic; a second attempt often succeeds when the first
+    // one raced the app startup or the browser's protocol prompt.
+    openDeeplink(quickImportDeepLink, () => {
+      setQuickImportAppUnavailable(true);
+    });
   };
 
   useEffect(() => {
@@ -392,6 +449,11 @@ export function ApiKeysView() {
     ];
   };
 
+  const boundGroupOptionsFor = (key: ApiKey): GroupPickerOption[] => {
+    const bound = boundGroupsFor(key);
+    return groupPickerOptionsFor(key).filter((option) => bound.includes(option.value));
+  };
+
   return (
     <div className="mx-auto box-border flex h-full w-full flex-col gap-3 overflow-hidden bg-slate-50 animate-in fade-in duration-500 dark:bg-[#121212]">
       <div className="shrink-0 flex flex-col gap-3 bg-white p-3 shadow-sm dark:bg-[#252525] md:flex-row md:items-center md:justify-between rounded-xl border border-slate-200 dark:border-white/5" data-console-api-keys-toolbar>
@@ -495,8 +557,25 @@ export function ApiKeysView() {
                       </div>
                     </td>
                     <td className="px-3 py-3">
-                      <div className="flex items-center gap-1.5">
+                      <GroupCellPopover
+                        options={boundGroupOptionsFor(key)}
+                        onHoverOpen={() => {
+                          void ensureGroupsLoaded();
+                        }}
+                        onEdit={() => {
+                          groupPickerHandlesRef.current[key.id]?.open();
+                        }}
+                        labels={{
+                          title: t('console.apiKeys.group', '分组'),
+                          empty: t('console.apiKeys.groupUnassigned', '未绑定分组'),
+                          editHint: t('console.apiKeys.editGroupsHint', '修改分组'),
+                        }}
+                      >
                         <GroupPicker
+                          ref={(handle) => {
+                            groupPickerHandlesRef.current[key.id] = handle;
+                          }}
+                          disableTriggerOpen
                           selectionMode="multiple"
                           options={groupPickerOptionsFor(key)}
                           value={boundGroupsFor(key)}
@@ -529,7 +608,7 @@ export function ApiKeysView() {
                             void ensureGroupsLoaded();
                           }}
                         />
-                      </div>
+                      </GroupCellPopover>
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-col gap-1 text-[11px]">
@@ -588,15 +667,16 @@ export function ApiKeysView() {
                                 openQuickImportMenu(key, event.currentTarget);
                               }
                             }}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-emerald-400"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:bg-transparent dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-emerald-400"
                             title={key.rawKey
-                              ? t('console.apiKeys.quickImport', '快速导入')
+                              ? t('console.apiKeys.quickImport', '导入到')
                               : t('console.apiKeys.quickImport.noPlaintext', '该令牌无明文值，无法快速导入')}
                             aria-label={key.rawKey
-                              ? t('console.apiKeys.quickImport', '快速导入')
+                              ? t('console.apiKeys.quickImport', '导入到')
                               : t('console.apiKeys.quickImport.noPlaintext', '该令牌无明文值，无法快速导入')}
                           >
                             <Download className="h-3.5 w-3.5" />
+                            {t('console.apiKeys.quickImport', '导入到')}
                           </button>
                         </div>
                         <button
@@ -733,10 +813,38 @@ export function ApiKeysView() {
           </div>,
           document.body,
         )}
+      {quickImportAppPicker && (
+        (() => {
+          const target = resolveQuickImportTarget(quickImportAppPicker.targetId);
+          return (
+            <QuickImportAppPickerDialog
+              keyName={quickImportAppPicker.result.keyName}
+              maskedKey={quickImportAppPicker.result.maskedKey}
+              rawKey={quickImportAppPicker.key.rawKey ?? ''}
+              showAppSelection={target.requiresAppSelection ? undefined : false}
+              confirmLabel={target.requiresAppSelection
+                ? undefined
+                : t(target.labelKey, target.fallbackLabel)}
+              onSelect={(app, options) => {
+                const picker = quickImportAppPicker;
+                setQuickImportAppPicker(null);
+                openImportDeepLink(picker.key, picker.targetId, app, picker.result, options);
+              }}
+              onClose={() => setQuickImportAppPicker(null)}
+            />
+          );
+        })()
+      )}
       {quickImportResult && (
         <QuickImportResultDialog
           result={quickImportResult}
-          onClose={() => setQuickImportResult(null)}
+          appUnavailable={quickImportAppUnavailable}
+          onRetryOpen={quickImportDeepLink ? retryQuickImportOpen : undefined}
+          onClose={() => {
+            setQuickImportAppUnavailable(false);
+            setQuickImportDeepLink(null);
+            setQuickImportResult(null);
+          }}
         />
       )}
       <CreateKeyDrawer
@@ -771,7 +879,14 @@ export function ApiKeysView() {
 
       <AnimatePresence>
         {showSuccessModal && createdKeys.length > 0 && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div
+            className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={(event) => {
+              if (event.target === event.currentTarget) {
+                closeSuccessDialog();
+              }
+            }}
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -853,4 +968,10 @@ interface QuickImportMenuAnchor {
   keyId: string;
   top: number;
   left: number;
+}
+
+interface QuickImportAppPickerState {
+  key: ApiKey;
+  result: QuickImportResult;
+  targetId: QuickImportTargetId;
 }

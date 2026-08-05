@@ -29,7 +29,7 @@ const RATELIMIT_TABS = [
   { id: 'token', label: (t: TranslationFunction) => t("admin.ratelimit.index.text.2fpnam", "令牌限额"), icon: <Key className="w-4 h-4" /> },
   { id: 'model', label: (t: TranslationFunction) => t("admin.ratelimit.index.text.1xzz6og", "模型频控策略"), icon: <Database className="w-4 h-4" /> },
   { id: 'firewall', label: (t: TranslationFunction) => t("admin.ratelimit.index.text.1tmo5ay", "黑白名单(WAF)"), icon: <Lock className="w-4 h-4" /> },
-  { id: 'chain', label: (t: TranslationFunction) => t("admin.ratelimit.index.text.1chain", "调用链"), icon: <Gauge className="w-4 h-4" /> },
+  { id: 'chain', label: (t: TranslationFunction) => t("admin.ratelimit.index.text.chainTab", "调用链"), icon: <Gauge className="w-4 h-4" /> },
 ];
 
 function RateLimitTableShell({
@@ -169,14 +169,14 @@ export function RateLimitAdmin() {
 function RiskDashboardView() {
   const { t } = useTranslation();
   const { data: snapshot, error, isLoading, refetch, isFetching } = useRateLimitDashboardQuery();
-  const loadError = error ? getLoadErrorMessage(error, 'Failed to load risk control dashboard.') : null;
+  const loadError = error ? getLoadErrorMessage(error, t('admin.ratelimit.index.text.dashboardLoadFallback', 'Failed to load risk control dashboard.')) : null;
   const loading = isLoading || isFetching;
 
   if (loading && !snapshot) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-slate-500">
         <Loader2 className="w-8 h-8 mb-3 animate-spin text-red-500" />
-        <span className="text-sm">Loading risk control rule aggregates...</span>
+        <span className="text-sm">{t('admin.ratelimit.index.text.dashboardLoading', 'Loading risk control rule aggregates...')}</span>
       </div>
     );
   }
@@ -253,7 +253,7 @@ function RiskDashboardView() {
                 <div className="font-mono text-red-600 dark:text-red-400">{rule.rps} rps</div>
               </div>
             ))}
-            {ipLimits.length === 0 && <p className="text-sm text-slate-500">No IP rate limit rules configured.</p>}
+            {ipLimits.length === 0 && <p className="text-sm text-slate-500">{t('admin.ratelimit.index.text.ipEmptyChart', 'No IP rate limit rules configured.')}</p>}
           </div>
         </div>
 
@@ -269,7 +269,7 @@ function RiskDashboardView() {
                 <div className="font-mono text-red-600 dark:text-red-400">{rule.tpm.toLocaleString()} tpm</div>
               </div>
             ))}
-            {modelLimits.length === 0 && <p className="text-sm text-slate-500">No model rate limit rules configured.</p>}
+            {modelLimits.length === 0 && <p className="text-sm text-slate-500">{t('admin.ratelimit.index.text.modelEmptyChart', 'No model rate limit rules configured.')}</p>}
           </div>
         </div>
       </div>
@@ -293,7 +293,7 @@ function IpRateLimitView() {
   const { data, error, isLoading, refetch, isFetching } = useIpRateLimitsQuery(filters);
   const limits = data?.items ?? [];
   const total = data?.total ?? 0;
-  const loadError = error ? getLoadErrorMessage(error, 'Failed to load IP limit rules.') : null;
+  const loadError = error ? getLoadErrorMessage(error, t('admin.ratelimit.index.text.ipLoadFallback', 'Failed to load IP limit rules.')) : null;
   const loading = isLoading || isFetching;
 
   useEffect(() => {
@@ -346,17 +346,17 @@ function IpRateLimitView() {
               <th className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{t("admin.ratelimit.index.text.1rgib0x", "每秒请求限制 (RPS)")}</th>
               <th className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{t("admin.ratelimit.index.text.guf972", "每分钟请求限制 (RPM)")}</th>
               <th className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{t("admin.ratelimit.index.text.oxt1rb", "惩罚封禁时长")}</th>
-              <th className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{t("admin.finance.index.text.1ccx4t4", "状态")}</th>
+              <th className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{t("admin.ratelimit.index.text.status", "状态")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-white/5 bg-white dark:bg-transparent">
             {loading ? (
-              <BusinessStateTableRow colSpan={6} kind="loading" title="Loading IP limit rules..." />
+              <BusinessStateTableRow colSpan={6} kind="loading" title={t('admin.ratelimit.index.text.ipLoading', 'Loading IP limit rules...')} />
             ) : loadError ? (
               <BusinessStateTableRow
                 colSpan={6}
                 kind="error"
-                title="IP limit rules could not be loaded"
+                title={t('admin.ratelimit.index.text.ipLoadError', 'IP limit rules could not be loaded')}
                 description={loadError}
                 onRetry={() => void refetch()}
               />
@@ -364,9 +364,9 @@ function IpRateLimitView() {
               <BusinessStateTableRow
                 colSpan={6}
                 kind="empty"
-                title="No IP limit rules found"
-                description="Create a rule to control request rates for an IP address or CIDR range."
-                action={{ label: 'Add IP rule', onClick: () => setIsModalOpen(true) }}
+                title={t('admin.ratelimit.index.text.ipEmpty', 'No IP limit rules found')}
+                description={t('admin.ratelimit.index.text.ipEmptyDesc', 'Create a rule to control request rates for an IP address or CIDR range.')}
+                action={{ label: t('admin.ratelimit.index.text.ipAdd', 'Add IP rule'), onClick: () => setIsModalOpen(true) }}
               />
             ) : limits.map(rule => (
               <tr key={rule.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
@@ -385,7 +385,14 @@ function IpRateLimitView() {
       </RateLimitTableShell>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsModalOpen(false);
+            }
+          }}
+        >
           <div className="bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col">
             <div className="flex justify-between items-center p-5 border-b border-slate-200 dark:border-white/10">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t("admin.ratelimit.index.text.6cu0iv", "配置IP限流规则")}</h3>
@@ -445,7 +452,7 @@ function TokenRateLimitView() {
   const { data, error, isLoading, refetch, isFetching } = useTokenRateLimitsQuery(filters);
   const limits = data?.items ?? [];
   const total = data?.total ?? 0;
-  const loadError = error ? getLoadErrorMessage(error, 'Failed to load token limit rules.') : null;
+  const loadError = error ? getLoadErrorMessage(error, t('admin.ratelimit.index.text.tokenLoadFallback', 'Failed to load token limit rules.')) : null;
   const loading = isLoading || isFetching;
 
   useEffect(() => {
@@ -503,12 +510,12 @@ function TokenRateLimitView() {
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-white/5 bg-white dark:bg-transparent">
             {loading ? (
-              <BusinessStateTableRow colSpan={6} kind="loading" title="Loading token limit rules..." />
+              <BusinessStateTableRow colSpan={6} kind="loading" title={t('admin.ratelimit.index.text.tokenLoading', 'Loading token limit rules...')} />
             ) : loadError ? (
               <BusinessStateTableRow
                 colSpan={6}
                 kind="error"
-                title="Token limit rules could not be loaded"
+                title={t('admin.ratelimit.index.text.tokenLoadError', 'Token limit rules could not be loaded')}
                 description={loadError}
                 onRetry={() => void refetch()}
               />
@@ -516,9 +523,9 @@ function TokenRateLimitView() {
               <BusinessStateTableRow
                 colSpan={6}
                 kind="empty"
-                title="No token limit rules found"
-                description="Create a token rule to control per-key request rates and daily quotas."
-                action={{ label: 'Add token rule', onClick: () => setIsModalOpen(true) }}
+                title={t('admin.ratelimit.index.text.tokenEmpty', 'No token limit rules found')}
+                description={t('admin.ratelimit.index.text.tokenEmptyDesc', 'Create a token rule to control per-key request rates and daily quotas.')}
+                action={{ label: t('admin.ratelimit.index.text.tokenAdd', 'Add token rule'), onClick: () => setIsModalOpen(true) }}
               />
             ) : limits.map(token => (
               <tr key={token.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
@@ -537,7 +544,14 @@ function TokenRateLimitView() {
       </RateLimitTableShell>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsModalOpen(false);
+            }
+          }}
+        >
           <div className="bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col">
             <div className="flex justify-between items-center p-5 border-b border-slate-200 dark:border-white/10">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -596,7 +610,7 @@ function ModelRateLimitView() {
   const { data, error, isLoading, refetch, isFetching } = useModelRateLimitsQuery(filters);
   const limits = data?.items ?? [];
   const total = data?.total ?? 0;
-  const loadError = error ? getLoadErrorMessage(error, 'Failed to load model limit rules.') : null;
+  const loadError = error ? getLoadErrorMessage(error, t('admin.ratelimit.index.text.modelLoadFallback', 'Failed to load model limit rules.')) : null;
   const loading = isLoading || isFetching;
 
   useEffect(() => {
@@ -653,12 +667,12 @@ function ModelRateLimitView() {
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-white/5 bg-white dark:bg-transparent">
              {loading ? (
-               <BusinessStateTableRow colSpan={5} kind="loading" title="Loading model limit rules..." />
+               <BusinessStateTableRow colSpan={5} kind="loading" title={t('admin.ratelimit.index.text.modelLoading', 'Loading model limit rules...')} />
              ) : loadError ? (
                <BusinessStateTableRow
                  colSpan={5}
                  kind="error"
-                 title="Model limit rules could not be loaded"
+                 title={t('admin.ratelimit.index.text.modelLoadError', 'Model limit rules could not be loaded')}
                  description={loadError}
                  onRetry={() => void refetch()}
                />
@@ -666,9 +680,9 @@ function ModelRateLimitView() {
                <BusinessStateTableRow
                  colSpan={5}
                  kind="empty"
-                 title="No model limit rules found"
-                 description="Create a model rule to control RPM and TPM limits for a model and group."
-                 action={{ label: 'Add model rule', onClick: () => setIsModalOpen(true) }}
+                 title={t('admin.ratelimit.index.text.modelEmpty', 'No model limit rules found')}
+                 description={t('admin.ratelimit.index.text.modelEmptyDesc', 'Create a model rule to control RPM and TPM limits for a model and group.')}
+                 action={{ label: t('admin.ratelimit.index.text.modelAdd', 'Add model rule'), onClick: () => setIsModalOpen(true) }}
                />
              ) : limits.map(m => (
                <tr key={m.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
@@ -686,7 +700,14 @@ function ModelRateLimitView() {
       </RateLimitTableShell>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsModalOpen(false);
+            }
+          }}
+        >
           <div className="bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col">
             <div className="flex justify-between items-center p-5 border-b border-slate-200 dark:border-white/10">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -703,7 +724,7 @@ function ModelRateLimitView() {
                   <input required name="model" type="text" placeholder={t("admin.ratelimit.index.text.14qa7he", "例如: gpt-4")} className="w-full bg-slate-50 dark:bg-black border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500 text-slate-900 dark:text-white font-mono" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">{t("admin.ratelimit.index.text.ev2ft0", "作用范围 (上游账号分组)")}</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">{t("admin.ratelimit.index.text.ev2ft0", "作用范围 (供应商账号分组)")}</label>
                   <input required name="accountGroup" type="text" placeholder={t("admin.ratelimit.index.text.144ztkk", "例如: 默认分组")} className="w-full bg-slate-50 dark:bg-black border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500 text-slate-900 dark:text-white" defaultValue={t("admin.ratelimit.index.text.1krzxor", "默认分组")} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -741,7 +762,7 @@ function FirewallView() {
   const { data, error, isLoading, refetch, isFetching } = useFirewallRulesQuery(filters);
   const rules = data?.items ?? [];
   const total = data?.total ?? 0;
-  const loadError = error ? getLoadErrorMessage(error, 'Failed to load firewall rules.') : null;
+  const loadError = error ? getLoadErrorMessage(error, t('admin.ratelimit.index.text.firewallLoadFallback', 'Failed to load firewall rules.')) : null;
   const loading = isLoading || isFetching;
   const [removeTarget, setRemoveTarget] = useState<FirewallRule | null>(null);
   const [removingFirewallId, setRemovingFirewallId] = useState<string | null>(null);
@@ -825,12 +846,12 @@ function FirewallView() {
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-white/5 bg-white dark:bg-transparent">
              {loading ? (
-               <BusinessStateTableRow colSpan={5} kind="loading" title="Loading firewall rules..." />
+               <BusinessStateTableRow colSpan={5} kind="loading" title={t('admin.ratelimit.index.text.firewallLoading', 'Loading firewall rules...')} />
              ) : loadError ? (
                <BusinessStateTableRow
                  colSpan={5}
                  kind="error"
-                 title="Firewall rules could not be loaded"
+                 title={t('admin.ratelimit.index.text.firewallLoadError', 'Firewall rules could not be loaded')}
                  description={loadError}
                  onRetry={() => void refetch()}
                />
@@ -838,9 +859,9 @@ function FirewallView() {
                <BusinessStateTableRow
                  colSpan={5}
                  kind="empty"
-                 title="No firewall rules found"
-                 description="Create a firewall rule to block or allow a specific IP, range, or identity."
-                 action={{ label: 'Add firewall rule', onClick: () => setIsModalOpen(true) }}
+                 title={t('admin.ratelimit.index.text.firewallEmpty', 'No firewall rules found')}
+                 description={t('admin.ratelimit.index.text.firewallEmptyDesc', 'Create a firewall rule to block or allow a specific IP, range, or identity.')}
+                 action={{ label: t('admin.ratelimit.index.text.firewallAdd', 'Add firewall rule'), onClick: () => setIsModalOpen(true) }}
                />
              ) : rules.map(f => (
                <tr key={f.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
@@ -863,7 +884,14 @@ function FirewallView() {
       </RateLimitTableShell>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsModalOpen(false);
+            }
+          }}
+        >
           <div className="bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col">
             <div className="flex justify-between items-center p-5 border-b border-slate-200 dark:border-white/10">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -904,9 +932,9 @@ function FirewallView() {
 
       {removeTarget && (
         <ConfirmDialog
-          title="Remove firewall rule?"
-          description={`This removes the firewall rule for "${removeTarget.value}". Traffic matching this object will no longer use this override after confirmation.`}
-          confirmLabel="Remove rule"
+          title={t('admin.ratelimit.index.text.removeFirewallTitle', 'Remove firewall rule?')}
+          description={t('admin.ratelimit.index.text.removeFirewallDesc', 'This removes the firewall rule for "{{value}}". Traffic matching this object will no longer use this override after confirmation.', { value: removeTarget.value })}
+          confirmLabel={t('admin.ratelimit.index.text.removeRule', 'Remove rule')}
           tone="danger"
           icon={<Trash2 className="h-4 w-4" />}
           isBusy={removingFirewallId === removeTarget.id}
@@ -941,13 +969,13 @@ function ChainPolicyView() {
     setIpAccessEnabled(!policy.stages?.disabled?.includes('ip_access'));
   }, [policy]);
 
-  const loadError = error ? getLoadErrorMessage(error, 'Failed to load chain policy.') : null;
+  const loadError = error ? getLoadErrorMessage(error, t('admin.ratelimit.index.text.chainLoadFallback', 'Failed to load chain policy.')) : null;
 
   if (isLoading && !policy) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-slate-500">
         <Loader2 className="w-8 h-8 mb-3 animate-spin text-red-500" />
-        <span className="text-sm">Loading call chain policy...</span>
+        <span className="text-sm">{t('admin.ratelimit.index.text.chainLoading', 'Loading call chain policy...')}</span>
       </div>
     );
   }
@@ -976,7 +1004,7 @@ function ChainPolicyView() {
       onError: (saveError) => {
         setMessage({
           kind: 'error',
-          text: getLoadErrorMessage(saveError, 'Failed to save chain policy.'),
+          text: getLoadErrorMessage(saveError, t('admin.ratelimit.index.text.chainSaveFallback', 'Failed to save chain policy.')),
         });
       },
     });
@@ -1101,7 +1129,7 @@ function ChainPolicyView() {
             {updateMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
             {t('common.actions.save')}
           </button>
-          {isFetching && <span className="text-xs text-slate-400">Syncing...</span>}
+          {isFetching && <span className="text-xs text-slate-400">{t('admin.ratelimit.index.text.chainSyncing', 'Syncing...')}</span>}
         </div>
       </div>
     </div>

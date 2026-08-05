@@ -39,6 +39,7 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
             expected_version: None,
             uuid: "test-upstream-supplier-openai".to_owned(),
             supplier_code: "openai".to_owned(),
+            default_vendor_code: None,
             supplier_name: "OpenAI".to_owned(),
             display_name: "OpenAI Official".to_owned(),
             description: Some("Official upstream".to_owned()),

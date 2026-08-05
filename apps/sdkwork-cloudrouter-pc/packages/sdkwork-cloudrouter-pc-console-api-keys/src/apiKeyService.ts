@@ -253,8 +253,8 @@ function toUpdateApiKeyRequest(input: UpdateApiKeyInput): UpdateApiKeyRequest {
   if (input.defaultForRuntime !== undefined) {
     request.defaultForRuntime = Boolean(input.defaultForRuntime);
   }
-  if (input.chain !== undefined) {
-    request.chain = normalizeChainInput(input.chain);
+  if (input.chain != null) {
+    request.chain = normalizeChainInput(input.chain as NonNullable<UpdateApiKeyRequest['chain']>);
   }
   return request as UpdateApiKeyRequest;
 }

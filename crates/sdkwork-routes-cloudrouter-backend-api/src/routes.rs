@@ -483,14 +483,23 @@ where
                 ),
             ));
         }
+        let upstream_resource_store = ai_resource_store.as_ref().map(|store| {
+            ai_routing_cache_invalidating_ai_resource_store(
+                store.clone(),
+                routing_cache_manager.clone(),
+            )
+        });
         if let Some(store) = ai_resource_store {
-            let store = ai_routing_cache_invalidating_ai_resource_store(
+            let catalog_store = ai_routing_cache_invalidating_ai_resource_store(
                 store,
                 routing_cache_manager.clone(),
             );
             router = router.merge(layer_with_admin_subject_boundary(
                 admin_subject_boundary_config.clone(),
-                admin_ai_resource_router_with_store(store, Arc::new(OsApiKeySecretGenerator)),
+                admin_ai_resource_router_with_store(
+                    catalog_store,
+                    Arc::new(OsApiKeySecretGenerator),
+                ),
             ));
         }
         if let Some(store) = upstream_store {
@@ -498,7 +507,11 @@ where
                 .expect("upstream verifier must be configured with the upstream store");
             router = router.merge(layer_with_admin_subject_boundary(
                 admin_subject_boundary_config.clone(),
-                crate::upstream::admin_upstream_router_with_store(store, verifier),
+                crate::upstream::admin_upstream_router_with_store(
+                    store,
+                    verifier,
+                    upstream_resource_store,
+                ),
             ));
         }
         if let Some(store) = ip_rate_limit_store {

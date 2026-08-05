@@ -225,7 +225,7 @@ export function RecordAdmin() {
                 <th className="px-4 py-3.5 font-medium text-right">{t("admin.record.index.text.w0yvd4", "输出")}</th>
                 <th className="px-4 py-3.5 font-medium text-right">{t("admin.record.index.text.1rex4lo", "实际扣费")}</th>
                 <th className="px-4 py-3.5 font-medium text-center relative">
-                  IP
+                  {t('admin.record.table.ip', 'IP')}
                   <Info className="w-3.5 h-3.5 inline-block ml-1 opacity-50 cursor-pointer" />
                 </th>
                 <th className="px-4 py-3.5 font-medium text-center">{t('admin.record.table.userAgent', 'User Agent')}</th>
@@ -234,22 +234,22 @@ export function RecordAdmin() {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-slate-700 dark:text-slate-300 relative text-xs">
               {loading ? (
-                <BusinessStateTableRow colSpan={14} kind="loading" title="Loading request records..." />
+                <BusinessStateTableRow colSpan={14} kind="loading" title={t('admin.record.states.loading', 'Loading request records...')} />
               ) : loadError ? (
                 <BusinessStateTableRow
                   colSpan={14}
                   kind="error"
-                  title="Request records could not be loaded"
+                  title={t('admin.record.states.error', 'Request records could not be loaded')}
                   description={loadError}
                   onRetry={() => { void loadRecords({ user: userFilter, token: tokenFilter, model: modelFilter }); }}
-                  retryLabel="Retry"
+                  retryLabel={t('common.actions.retry', 'Retry')}
                 />
               ) : logs.length === 0 ? (
                 <BusinessStateTableRow
                   colSpan={14}
                   kind="empty"
-                  title="No request records found"
-                  description="Adjust the filters or wait for gateway usage logs to be recorded."
+                  title={t('admin.record.states.empty', 'No request records found')}
+                  description={t('admin.record.states.emptyDesc', 'Adjust the filters or wait for gateway usage logs to be recorded.')}
                 />
               ) : logs.map((log) => {
                 const expanded = expandedIds.includes(log.id);

@@ -10,6 +10,7 @@ use sdkwork_cloudrouter_router_service::ports::{
     AdminUpstreamAccountVerificationError, AdminUpstreamAccountVerifier, AdminUpstreamListQuery,
     AdminUpstreamPage, AdminUpstreamStore, AdminUpstreamSubject,
 };
+use sdkwork_models_contract_service::AdminAiResourceStore;
 use sdkwork_utils_rust::{
     format_datetime, now, sha256_hash, uuid, PageInfo, PageMode, SdkWorkApiResponse,
     SdkWorkPageData, SdkWorkProblemDetail, SdkWorkResourceData, SdkWorkResultCode,
@@ -22,6 +23,7 @@ const MAX_IDEMPOTENCY_KEY_LENGTH: usize = 128;
 
 pub(super) type UpstreamStore = Arc<dyn AdminUpstreamStore + Send + Sync>;
 pub(super) type UpstreamVerifier = Arc<dyn AdminUpstreamAccountVerifier + Send + Sync>;
+pub(super) type UpstreamResourceStore = Arc<dyn AdminAiResourceStore + Send + Sync>;
 pub(super) type RequestResult<T> = Result<T, RequestProblem>;
 
 #[derive(Debug)]
@@ -50,6 +52,7 @@ impl IntoResponse for RequestProblem {
 pub(super) struct UpstreamState {
     pub store: UpstreamStore,
     pub verifier: UpstreamVerifier,
+    pub resource_store: Option<UpstreamResourceStore>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -332,7 +335,7 @@ pub(super) fn no_content_response() -> Response {
     response
 }
 
-fn success_response<T: Serialize>(status: StatusCode, data: T) -> Response {
+pub(super) fn success_response<T: Serialize>(status: StatusCode, data: T) -> Response {
     let trace_id = uuid();
     let body = SdkWorkApiResponse::success(data, trace_id.clone());
     let mut response = (status, Json(body)).into_response();

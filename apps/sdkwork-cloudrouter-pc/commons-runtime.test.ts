@@ -1397,7 +1397,7 @@ test("createAppSession stores dual IAM tokens returned as generated SDK data obj
   tokenManager.setTokens({ accessToken: "credential-entry-access-token" });
 
   try {
-    const result = await createAppSession({ tokenManager });
+    const result = (await createAppSession({ tokenManager }))!;
 
     assert.equal(captured.length, 1);
     assert.equal(captured[0].url, "/app/v3/api/auth/sessions");

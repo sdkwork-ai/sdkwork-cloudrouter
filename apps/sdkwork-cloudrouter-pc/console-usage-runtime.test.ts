@@ -233,7 +233,7 @@ test("console routed pages inherit shell-owned height and outer gutters", () => 
 test("console usage log time renders as local yyyy-MM-dd HH:mm:ss without ISO separator", async () => {
   const usageFormatting = await import("./packages/sdkwork-cloudrouter-pc-console-usage/src/usageFormatting.ts");
   const formatUsageLogLocalTime = (usageFormatting as {
-    formatUsageLogLocalTime?: (value: string) => string;
+    formatUsageLogLocalTime: (value: string) => string;
   }).formatUsageLogLocalTime;
 
   assert.equal(typeof formatUsageLogLocalTime, "function");

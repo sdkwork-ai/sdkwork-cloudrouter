@@ -37,6 +37,7 @@ mod app_settings;
 mod app_settlements;
 pub mod app_sql_subject;
 mod app_usage_logs;
+mod gateway_balance;
 mod openai_chat;
 pub mod openai_contract;
 mod openai_embeddings;
@@ -142,6 +143,7 @@ pub use openai_invocation::{
     OpenAiInvocationRelayOutcome, OpenAiUpstreamRoute,
 };
 pub use openai_models::openai_models_router;
+pub use gateway_balance::{gateway_balance_router, GatewayBalanceStore, GatewayTokenBankBalance};
 pub use openai_responses::openai_responses_router;
 pub use openai_responses::openai_responses_router_with_relay;
 pub use openai_responses::openai_responses_router_with_relay_and_plugins;

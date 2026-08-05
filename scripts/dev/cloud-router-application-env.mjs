@@ -34,6 +34,7 @@ import {
   buildReleaseHostEdgeGeneratedEnv,
   sanitizeReleaseHostEnvRecord,
 } from '../lib/cloud-router-edge-env-contract.mjs';
+import { resolveRegionDefaultLocale } from '../lib/cloud-router-region.mjs';
 import {
   buildBootstrapAccessTokenEnvRecord,
 } from '../../../sdkwork-iam/scripts/dev/create-dev-bootstrap-access-token-env.mjs';
@@ -239,11 +240,17 @@ export function buildCloudRouterReleaseGeneratedEnv({
   deploymentProfile = 'standalone',
   runtimeTarget = 'server',
 } = {}) {
+  // Default deployment is China mainland; international regions override explicitly.
+  const regionCode = normalizeText(env.SDKWORK_CLOUDROUTER_ROUTER_REGION_CODE) ?? 'cn';
+  const regionDefaultLocale = resolveRegionDefaultLocale(regionCode);
   return {
     [CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.configProfile]: 'prod',
     [CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.environment]: 'production',
     [CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.deploymentProfile]: deploymentProfile,
     [CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.runtimeTarget]: runtimeTarget,
+    SDKWORK_CLOUDROUTER_ROUTER_REGION_CODE: regionCode,
+    SDKWORK_DATABASE_SEED_LOCALE:
+      normalizeText(env.SDKWORK_DATABASE_SEED_LOCALE) ?? regionDefaultLocale,
     PORTAL_PUBLIC_SDK_BASE_URL:
       normalizeText(env.PORTAL_PUBLIC_SDK_BASE_URL) ?? '/',
     PORTAL_PUBLIC_API_BASE_URL:

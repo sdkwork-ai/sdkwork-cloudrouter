@@ -1227,7 +1227,7 @@ async fn ensure_provider_exists(
 ) -> DomainResult<()> {
     let exists: Option<i64> = sqlx::query_scalar(
         r#"
-        SELECT 1
+        SELECT 1::bigint
         FROM object_provider
         WHERE tenant_id = $1 AND organization_id = $2 AND id = $3
         LIMIT 1
@@ -1252,7 +1252,7 @@ async fn ensure_bucket_exists(
 ) -> DomainResult<()> {
     let exists: Option<i64> = sqlx::query_scalar(
         r#"
-        SELECT 1
+        SELECT 1::bigint
         FROM object_bucket
         WHERE tenant_id = $1 AND organization_id = $2 AND id = $3
         LIMIT 1
@@ -1309,7 +1309,7 @@ async fn insert_audit_if_absent(
         SELECT
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now(), $11
         WHERE NOT EXISTS (
-            SELECT 1
+            SELECT 1::bigint
             FROM ops_audit_log
             WHERE tenant_id = $12
               AND organization_id = $13

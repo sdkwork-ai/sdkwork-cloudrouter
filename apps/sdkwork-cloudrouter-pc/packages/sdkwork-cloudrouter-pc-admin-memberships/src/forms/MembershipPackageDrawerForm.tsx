@@ -24,13 +24,7 @@ const baseCurrencyCodeOptions = [
   { value: 'USD', label: 'USD' },
 ];
 
-const baseDurationDayOptions = [
-  { value: '1', label: '1 day' },
-  { value: '7', label: '7 days' },
-  { value: '30', label: '30 days' },
-  { value: '90', label: '90 days' },
-  { value: '365', label: '365 days' },
-];
+const baseDurationDayValues = ['1', '7', '30', '90', '365'];
 
 interface MembershipPackageDrawerFormProps {
   mode: 'create' | 'edit';
@@ -81,7 +75,7 @@ export function MembershipPackageDrawerForm({
   const [error, setError] = useState<string | null>(null);
   const currencyCodeOptions = includeCurrentOption(baseCurrencyCodeOptions, currencyCode);
   const durationDayOptions = includeCurrentOption(
-    baseDurationDayOptions,
+    membershipDurationDayOptions(t, translationKeyPrefix),
     durationDays,
     t(`${translationKeyPrefix}.form.durationOptionDays`, '{{days}} days', { days: durationDays }),
   );
@@ -257,4 +251,14 @@ function includeCurrentOption(
     return options;
   }
   return [...options, { value: currentValue, label: currentLabel }];
+}
+
+function membershipDurationDayOptions(
+  t: (key: string, fallback: string, options?: Record<string, unknown>) => string,
+  translationKeyPrefix: string,
+): Array<{ value: string; label: string }> {
+  return baseDurationDayValues.map((value) => ({
+    value,
+    label: t(`${translationKeyPrefix}.form.durationOptionDays`, '{{days}} days', { days: value }),
+  }));
 }

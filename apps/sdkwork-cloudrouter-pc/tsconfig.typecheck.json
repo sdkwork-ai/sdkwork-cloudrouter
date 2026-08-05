@@ -17,39 +17,6 @@
       "react-dom/*": [
         "./node_modules/@types/react-dom/*"
       ],
-      "@sdkwork/cloudrouter-pc-admin-analytics": [
-        "./packages/sdkwork-cloudrouter-pc-admin-analytics/src/index.tsx"
-      ],
-      "@sdkwork/cloudrouter-pc-admin-shell": [
-        "./packages/sdkwork-cloudrouter-pc-admin-shell/src/index.ts"
-      ],
-      "@sdkwork/cloudrouter-pc-shell": [
-        "./packages/sdkwork-cloudrouter-pc-shell/src/index.ts"
-      ],
-      "@sdkwork/cloudrouter-pc-admin-cache": [
-        "./packages/sdkwork-cloudrouter-pc-admin-cache/src/index.tsx"
-      ],
-      "@sdkwork/cloudrouter-pc-admin-core": [
-        "./packages/sdkwork-cloudrouter-pc-admin-core/src/index.ts"
-      ],
-      "@sdkwork/cloudrouter-pc-admin-service-nodes": [
-        "./packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/index.tsx"
-      ],
-      "@sdkwork/cloudrouter-pc-admin-runtime-region": [
-        "./packages/sdkwork-cloudrouter-pc-admin-runtime-region/src/index.tsx"
-      ],
-      "@sdkwork/cloudrouter-pc-admin-site": [
-        "./packages/sdkwork-cloudrouter-pc-admin-site/src/index.tsx"
-      ],
-      "@sdkwork/cloudrouter-pc-console-shell": [
-        "./packages/sdkwork-cloudrouter-pc-console-shell/src/index.ts"
-      ],
-      "@sdkwork/cloudrouter-pc-downloads": [
-        "./packages/sdkwork-cloudrouter-pc-downloads/src/index.ts"
-      ],
-      "@sdkwork/sdk-common": [
-        "node_modules/@sdkwork/sdk-common/dist/index.d.ts"
-      ],
       "@/*": [
         "./*"
       ]

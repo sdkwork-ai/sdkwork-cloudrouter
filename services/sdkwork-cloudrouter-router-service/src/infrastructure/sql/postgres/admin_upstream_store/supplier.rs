@@ -20,6 +20,7 @@ const SUPPLIER_COLUMNS: &str = r#"
     supplier.display_name,
     supplier.description,
     supplier.supplier_type,
+    supplier.default_vendor_code,
     supplier.adapter_code,
     supplier.protocol_code,
     supplier.website_url,
@@ -360,14 +361,14 @@ async fn insert(
             id, uuid, tenant_id, organization_id, data_scope, status,
             created_at, updated_at, version, metadata,
             supplier_code, supplier_name, display_name, description,
-            supplier_type, adapter_code, protocol_code, website_url, docs_url,
+            supplier_type, default_vendor_code, adapter_code, protocol_code, website_url, docs_url,
             region_code, environment, sort_order
         ) VALUES (
             $1, $2, $3, $4, $5, $6,
             $7::timestamptz, $7::timestamptz, 0, '{}'::jsonb,
             $8, $9, $10, $11,
-            $12, $13, $14, $15, $16,
-            $17, $18, $19
+            $12, $13, $14, $15, $16, $17,
+            $18, $19, $20
         )
         "#,
     )
@@ -383,6 +384,7 @@ async fn insert(
     .bind(command.display_name.trim())
     .bind(command.description.as_deref().map(str::trim))
     .bind(command.supplier_type.trim())
+    .bind(command.default_vendor_code.as_deref().map(str::trim))
     .bind(command.adapter_code.trim())
     .bind(command.protocol_code.trim())
     .bind(command.website_url.as_deref().map(str::trim))
@@ -448,24 +450,26 @@ async fn update(
             display_name = $2,
             description = $3,
             supplier_type = $4,
-            adapter_code = $5,
-            protocol_code = $6,
-            website_url = $7,
-            docs_url = $8,
-            region_code = $9,
-            environment = $10,
-            sort_order = $11,
-            status = $12,
+            default_vendor_code = $5,
+            adapter_code = $6,
+            protocol_code = $7,
+            website_url = $8,
+            docs_url = $9,
+            region_code = $10,
+            environment = $11,
+            sort_order = $12,
+            status = $13,
             version = version + 1,
-            updated_at = $13::timestamptz
-        WHERE tenant_id = $14 AND organization_id = $15
-          AND id = $16 AND version = $17 AND deleted_at IS NULL
+            updated_at = $14::timestamptz
+        WHERE tenant_id = $15 AND organization_id = $16
+          AND id = $17 AND version = $18 AND deleted_at IS NULL
         "#,
     )
     .bind(command.supplier_name.trim())
     .bind(command.display_name.trim())
     .bind(command.description.as_deref().map(str::trim))
     .bind(command.supplier_type.trim())
+    .bind(command.default_vendor_code.as_deref().map(str::trim))
     .bind(command.adapter_code.trim())
     .bind(command.protocol_code.trim())
     .bind(command.website_url.as_deref().map(str::trim))
@@ -537,6 +541,11 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamSupplierItem> {
             &row,
             "supplier_type",
             "failed to map upstream supplier type",
+        )?,
+        default_vendor_code: column(
+            &row,
+            "default_vendor_code",
+            "failed to map upstream supplier default vendor code",
         )?,
         adapter_code: column(
             &row,

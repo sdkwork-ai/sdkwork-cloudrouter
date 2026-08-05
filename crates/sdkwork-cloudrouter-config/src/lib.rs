@@ -21,8 +21,10 @@ pub use database::{
     RuntimeConfigInitializationReport, RuntimeConfigLocation, RuntimeConfigProfile,
 };
 pub use deployment::{
-    resolve_deployment_runtime, DeploymentMode, DeploymentProfile, DeploymentRuntime, RuntimeTarget,
+    resolve_deployment_runtime, resolve_region_code, DeploymentMode, DeploymentProfile,
+    DeploymentRuntime, RuntimeTarget, DEFAULT_REGION_CODE, ENV_REGION_CODE,
 };
+pub use deployment::is_active_region_code;
 pub use internal_gateway::InternalGatewaySecurityConfig;
 pub use payment_webhook::PaymentWebhookConfig;
 pub use provider_adapter::{ProviderAdapterConfig, ProviderAdapterManifestDiscoveryConfig};

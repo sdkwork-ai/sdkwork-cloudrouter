@@ -1,10 +1,4 @@
 export const upstreamSharedEnUsMessages = {
-  'admin.upstream.suppliers.title': 'Upstream suppliers',
-  'admin.upstream.suppliers.subtitle': 'Suppliers, protocol adapters, endpoints, and resource entitlements',
-  'admin.upstream.accounts.title': 'Upstream accounts',
-  'admin.upstream.accounts.subtitle': 'Account credentials, authentication methods, and quotas',
-  'admin.upstream.accountGroups.title': 'Account groups',
-  'admin.upstream.accountGroups.subtitle': 'Organize accounts by routing strategy with members and resources',
   'admin.upstream.common.actions.configure': 'Configure',
   'admin.upstream.common.actions.add': 'Add',
   'admin.upstream.common.actions.remove': 'Remove',

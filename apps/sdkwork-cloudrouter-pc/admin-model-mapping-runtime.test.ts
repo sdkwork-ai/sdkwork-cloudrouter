@@ -253,8 +253,8 @@ test('admin model mapping modal uses multi-row editable model mapping table', ()
   assert.ok(modalSource.includes('className="min-h-0 flex-1 overflow-y-auto p-5"'), 'mapping modal body should scroll independently from the action footer');
   assert.ok(modalSource.includes('className="shrink-0 border-t border-slate-200 px-5 py-4 dark:border-white/10"'), 'mapping modal footer should stay fixed to the bottom of the modal');
   assert.equal(modalSource.includes('className="flex min-h-0 flex-1 flex-col space-y-5 overflow-y-auto p-5"'), false, 'mapping modal form itself must not scroll because footer would move with dynamic rows');
-  assert.ok(mappingInputSource.includes('const bindings = readMappingBindingsFromForm(formData, errors)'), 'form payload should be built from binding JSON with validation metadata');
-  assert.ok(mappingInputSource.includes('const rows = readMappingRowsFromForm(formData, errors)'), 'form payload should be built from row JSON with validation metadata');
+  assert.ok(mappingInputSource.includes('const bindings = readMappingBindingsFromForm(formData, errors, t)'), 'form payload should be built from binding JSON with validation metadata');
+  assert.ok(mappingInputSource.includes('const rows = readMappingRowsFromForm(formData, errors, t)'), 'form payload should be built from row JSON with validation metadata');
   assert.ok(mappingInputSource.includes('bindings: bindings.map((binding'), 'form payload should persist associated binding content under one rule');
   assert.ok(mappingInputSource.includes('mappingItems: rows.map((row'), 'form payload should persist multiple mapping items under one rule');
   assert.equal(modalSource.includes('{!mapping && ('), false, 'edit mode must show add-row because rule items support CRUD');
@@ -276,14 +276,19 @@ test('admin model mapping modal uses multi-row editable model mapping table', ()
   assert.ok(modalSource.includes('scrollIntoView'), 'mapping modal should scroll to the first invalid form control');
   assert.ok(mappingInputSource.includes("readRequiredFormString(formData, 'sourceVendorCode'"), 'form should require source vendor');
   assert.ok(mappingInputSource.includes("readRequiredFormString(formData, 'targetVendorCode'"), 'form should require target vendor');
-  assert.ok(mappingInputSource.includes('Binding content is required'), 'non-global binding rows should require binding content');
-  assert.ok(mappingInputSource.includes('Source model is required'), 'each row should require source model');
-  assert.ok(mappingInputSource.includes('Target model is required'), 'each row should require target model');
+  for (const key of [
+    'admin.model.mapping.errors.bindingRequired',
+    'admin.model.mapping.errors.sourceModelRequired',
+    'admin.model.mapping.errors.targetModelRequired',
+    'admin.model.mapping.errors.duplicateSourceModel',
+  ]) {
+    assert.ok(mappingInputSource.includes(`t('${key}'`), `missing localized validation message: ${key}`);
+    assert.equal(modelI18nSource.split(`"${key}"`).length - 1, 2, `expected ${key} in English and Chinese resources`);
+  }
   assert.ok(modelAdminSource.includes('MODEL_MAPPING_MAX_ROWS'), 'form parsing should cap submitted mapping rows');
   assert.ok(modelAdminSource.includes('MODEL_MAPPING_MODEL_VALUE_MAX_LENGTH'), 'form parsing should cap model value length');
   assert.ok(mappingInputSource.includes('validateModelMappingModelValue'), 'form parsing should validate model value length');
-  assert.ok(mappingInputSource.includes('validateUniqueModelMappingRows(rows, errors)'), 'form parsing should reject duplicate source model rows');
-  assert.ok(mappingInputSource.includes('Duplicate source model mapping is not allowed'), 'duplicate source model rows should have an explicit error');
+  assert.ok(mappingInputSource.includes('validateUniqueModelMappingRows(rows, errors, t)'), 'form parsing should reject duplicate source model rows');
 
   for (const legacyFormToken of [
     'ModelMappingSaveState',
@@ -399,10 +404,10 @@ test('admin model mapping catalog tolerates models without region prices', async
       throw new Error(`Unexpected SDK request ${method} ${url}`);
     },
     async (captured) => {
-      const catalog = await ModelMappingService.fetchModelOptionsCatalog();
+      const catalog = await ModelMappingService.fetchModelOptionsPage();
 
-      assert.deepEqual(catalog.vendors.map((vendor) => vendor.vendorCode), ['openai']);
-      assert.deepEqual(catalog.models, [
+      assert.deepEqual(catalog.items.map((item) => item.vendorCode), ['openai']);
+      assert.deepEqual(catalog.items, [
         {
           id: 'model-gpt-4o-mini',
           vendorId: 'vendor-openai',
@@ -434,8 +439,8 @@ test('admin model mapping relation cell opens focused relation editor modal', ()
   assert.ok(relationCellSource.includes('onOpenEditor(mapping)'), 'relation cell should open the focused model mapping editor');
   assert.ok(relationModalSource.includes('function ModelMappingRelationEditorModal'), 'focused relation editor modal should exist');
   assert.ok(relationModalSource.includes('<ModelMappingRowsTable'), 'focused relation editor should reuse the same mapping rows table');
-  assert.ok(relationModalSource.includes('readMappingRowsFromForm(formData, errors)'), 'focused relation editor should reuse row parsing validation');
-  assert.ok(relationModalSource.includes('validateUniqueModelMappingRows(rows, errors)'), 'focused relation editor should reject duplicate source models');
+  assert.ok(relationModalSource.includes('readMappingRowsFromForm(formData, errors, t)'), 'focused relation editor should reuse row parsing validation');
+  assert.ok(relationModalSource.includes('validateUniqueModelMappingRows(rows, errors, t)'), 'focused relation editor should reject duplicate source models');
   assert.ok(relationModalSource.includes('ModelMappingService.updateMapping(mapping.id'), 'focused relation editor should update the existing rule');
   assert.equal(relationModalSource.includes('bindingType'), false, 'focused relation editor should not edit associated content bindings');
   assert.equal(relationModalSource.includes('sourceVendorCode'), false, 'focused relation editor should not edit rule vendor fields');

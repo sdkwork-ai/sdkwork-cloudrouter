@@ -64,7 +64,7 @@ SELECT
     COALESCE(NULLIF(t.request_id, ''), CAST(t.id AS TEXT)) AS request_id,
     CAST(COALESCE(t.started_at, t.created_at) AS TEXT) AS started_at,
     COALESCE(NULLIF(t.api_key_name_snapshot, ''), '-') AS api_key_name_snapshot,
-    COALESCE(NULLIF(g.group_name, ''), NULLIF(t.account_group_snapshot, ''), '-') AS upstream_account_group_display_name,
+    COALESCE(NULLIF(g.group_name_i18n->>$10, ''), NULLIF(g.group_name, ''), NULLIF(t.account_group_snapshot, ''), '-') AS upstream_account_group_display_name,
     COALESCE(
         u.modality,
         CASE
@@ -252,6 +252,7 @@ impl UsageLogsReadStore for PostgresUsageLogsReadStore {
         &'a self,
         query: UsageLogsQuery,
         subject: Option<UsageLogsSubject>,
+        locale: Option<&'a str>,
     ) -> UsageLogsReadFuture<'a> {
         Box::pin(async move {
             let subject = subject.ok_or_else(|| {
@@ -268,6 +269,7 @@ impl UsageLogsReadStore for PostgresUsageLogsReadStore {
                 .bind(status_code(query.status))
                 .bind(query.page_size)
                 .bind(query.offset)
+                .bind(locale)
                 .fetch_all(&self.pool)
                 .await
                 .map_err(sql_error)?;
@@ -589,9 +591,9 @@ mod tests {
         }
         assert!(
             LOAD_USAGE_LOGS.contains(
-                "COALESCE(NULLIF(g.group_name, ''), NULLIF(t.account_group_snapshot, ''), '-') AS upstream_account_group_display_name"
+                "COALESCE(NULLIF(g.group_name_i18n->>$10, ''), NULLIF(g.group_name, ''), NULLIF(t.account_group_snapshot, ''), '-') AS upstream_account_group_display_name"
             ),
-            "usage logs Postgres SQL must project the maintained channel group name with snapshot fallback"
+            "usage logs Postgres SQL must project the localized channel group name with maintained and snapshot fallbacks"
         );
     }
 

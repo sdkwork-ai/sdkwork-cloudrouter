@@ -2,6 +2,8 @@
 export interface UpstreamSupplier {
   /** Adapter code field on upstream supplier. */
   adapterCode: string;
+  /** Default vendor code field on upstream supplier. */
+  defaultVendorCode: string | null;
   /** Description field on upstream supplier. */
   description: string | null;
   /** Display name field on upstream supplier. */

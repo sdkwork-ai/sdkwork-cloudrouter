@@ -3,6 +3,7 @@ import {
   createSdkworkTheme,
   createThemeHostCssVariables,
   type SdkworkThemeColor,
+  type SdkworkThemeOverrides,
 } from '@sdkwork/ui-pc-react/theme';
 
 import type { ThemeColorPreference } from '../themePreference.ts';
@@ -58,6 +59,50 @@ function mapConsoleThemeColor(themeColor: ThemeColorPreference): SdkworkThemeCol
   }
 }
 
+// The SDKWork commerce theme defaults to a zinc palette, while the console
+// shell uses a slate palette (light: slate-50 canvas / white cards; dark:
+// #121212 canvas / #252525 cards / #1e1e1e sidebar). These overrides keep
+// every console commerce surface (settlements, wallet, dialogs) visually
+// aligned with the active console theme background.
+const CONSOLE_COMMERCE_SURFACE_OVERRIDES: Record<'light' | 'dark', SdkworkThemeOverrides> = {
+  light: {
+    surface: {
+      canvas: '#f8fafc', // slate-50 — console content background
+      panel: '#ffffff', // white — console cards
+      panelMuted: '#f1f5f9', // slate-100 — hover / inputs
+      elevated: '#f8fafc',
+    },
+    text: {
+      primary: '#0f172a', // slate-900
+      secondary: '#475569', // slate-600
+      muted: '#94a3b8', // slate-400
+    },
+    border: {
+      subtle: 'rgba(15, 23, 42, 0.06)',
+      default: '#e2e8f0', // slate-200 — console card borders
+      strong: '#cbd5e1', // slate-300
+    },
+  },
+  dark: {
+    surface: {
+      canvas: '#121212', // console content background
+      panel: '#252525', // console cards
+      panelMuted: '#1e1e1e', // console sidebar / inputs
+      elevated: '#2e2e2e',
+    },
+    text: {
+      primary: '#f8fafc', // slate-50
+      secondary: '#cbd5e1', // slate-300
+      muted: '#94a3b8', // slate-400
+    },
+    border: {
+      subtle: 'rgba(255, 255, 255, 0.06)',
+      default: 'rgba(255, 255, 255, 0.12)',
+      strong: 'rgba(255, 255, 255, 0.2)',
+    },
+  },
+};
+
 export function createConsoleCommerceThemeStyle(
   isDark: boolean,
   themeColor: ThemeColorPreference = 'lobster',
@@ -66,6 +111,7 @@ export function createConsoleCommerceThemeStyle(
   const theme = createSdkworkTheme({
     colorMode: isDark ? 'dark' : 'light',
     themeColor: sdkThemeColor,
+    ...CONSOLE_COMMERCE_SURFACE_OVERRIDES[isDark ? 'dark' : 'light'],
   });
 
   return createThemeHostCssVariables(theme, sdkThemeColor) as SdkCommerceThemeStyle;

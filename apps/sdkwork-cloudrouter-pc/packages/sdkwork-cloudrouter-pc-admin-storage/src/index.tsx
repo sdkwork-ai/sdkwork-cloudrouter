@@ -342,10 +342,15 @@ export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
       <div className="min-h-0 flex-1">
         <AdminResourceCenter
           activeSectionId={activeSectionId}
+          emptyDescription={t('admin.storage.emptyDesc', 'Adjust the search query or reload the current section.')}
           emptyTitle={t('admin.storage.empty', 'No storage records')}
           errorTitle={t('admin.storage.error', 'Storage data could not be loaded')}
           loadingTitle={t('admin.storage.loading', 'Loading storage records...')}
+          recordActionColumnLabel={t('admin.storage.action', 'Action')}
           refreshKey={refreshKey}
+          reloadLabel={t('admin.storage.reload', 'Reload')}
+          retryLabel={t('admin.storage.retry', 'Retry')}
+          searchPlaceholder={t('admin.storage.searchPlaceholder', 'Search records')}
           sections={sections}
           showSectionNavigation={false}
           tableViewportDataAttribute="admin-storage-table-viewport"
@@ -372,6 +377,7 @@ function StorageDialog({
   onClose,
   onSubmit,
   saving,
+  closeOnClickOutside = true,
 }: {
   form: StorageFormState;
   kind: StorageDialogKind;
@@ -379,13 +385,23 @@ function StorageDialog({
   onClose: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   saving: boolean;
+  /** 点击遮罩（弹窗外）时是否关闭；默认 true */
+  closeOnClickOutside?: boolean;
 }) {
   const { t } = useTranslation();
   const title = dialogTitle(kind, t);
   const set = <K extends keyof StorageFormState,>(key: K, value: StorageFormState[K]) => onChange({ ...form, [key]: value });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" role="presentation">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
+      role="presentation"
+      onClick={(event) => {
+        if (closeOnClickOutside && event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       <div aria-labelledby="storage-dialog-title" aria-modal="true" className="flex max-h-[min(880px,calc(100vh-2rem))] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#181818]" role="dialog">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-white/10">
           <div>
@@ -416,73 +432,79 @@ function StorageDialog({
 type FieldSetter = <K extends keyof StorageFormState>(key: K, value: StorageFormState[K]) => void;
 
 function ProviderFields({ form, set }: { form: StorageFormState; set: FieldSetter }) {
+  const { t } = useTranslation();
   return <>
-    <TextField label="Provider code" required value={form.providerCode} onChange={(value) => set('providerCode', value)} />
-    <SelectField label="Provider type" value={form.providerType} onChange={(value) => set('providerType', value as StorageFormState['providerType'])} options={['s3_compatible', 'aws_s3', 'cloudflare_r2', 'minio', 'oss_s3', 'cos_s3', 'local_dev_s3']} />
-    <TextField label="Endpoint URL" type="url" value={form.endpointUrl} onChange={(value) => set('endpointUrl', value)} />
-    <TextField label="Region" value={form.region} onChange={(value) => set('region', value)} />
-    <div className="md:col-span-2"><TextField description="Use a vault/KMS reference. Raw access keys are not accepted here." label="Credential reference" required value={form.credentialRef} onChange={(value) => set('credentialRef', value)} /></div>
-    <ToggleField checked={form.pathStyleEnabled} label="Path-style access" onChange={(value) => set('pathStyleEnabled', value)} />
-    <ToggleField checked={form.supportsMultipart} label="Multipart uploads" onChange={(value) => set('supportsMultipart', value)} />
-    <ToggleField checked={form.supportsLifecycle} label="Lifecycle policies" onChange={(value) => set('supportsLifecycle', value)} />
-    <ToggleField checked={form.supportsObjectLock} label="Object Lock" onChange={(value) => set('supportsObjectLock', value)} />
+    <TextField label={t('admin.storage.form.providerCode', 'Provider code')} required value={form.providerCode} onChange={(value) => set('providerCode', value)} />
+    <SelectField label={t('admin.storage.form.providerType', 'Provider type')} value={form.providerType} onChange={(value) => set('providerType', value as StorageFormState['providerType'])} options={['s3_compatible', 'aws_s3', 'cloudflare_r2', 'minio', 'oss_s3', 'cos_s3', 'local_dev_s3']} />
+    <TextField label={t('admin.storage.form.endpointUrl', 'Endpoint URL')} type="url" value={form.endpointUrl} onChange={(value) => set('endpointUrl', value)} />
+    <TextField label={t('admin.storage.form.region', 'Region')} value={form.region} onChange={(value) => set('region', value)} />
+    <div className="md:col-span-2"><TextField description={t('admin.storage.form.credentialRefDesc', 'Use a vault/KMS reference. Raw access keys are not accepted here.')} label={t('admin.storage.form.credentialRef', 'Credential reference')} required value={form.credentialRef} onChange={(value) => set('credentialRef', value)} /></div>
+    <ToggleField checked={form.pathStyleEnabled} label={t('admin.storage.form.pathStyle', 'Path-style access')} onChange={(value) => set('pathStyleEnabled', value)} />
+    <ToggleField checked={form.supportsMultipart} label={t('admin.storage.form.multipart', 'Multipart uploads')} onChange={(value) => set('supportsMultipart', value)} />
+    <ToggleField checked={form.supportsLifecycle} label={t('admin.storage.form.lifecycle', 'Lifecycle policies')} onChange={(value) => set('supportsLifecycle', value)} />
+    <ToggleField checked={form.supportsObjectLock} label={t('admin.storage.form.objectLock', 'Object Lock')} onChange={(value) => set('supportsObjectLock', value)} />
   </>;
 }
 
 function BucketFields({ form, set }: { form: StorageFormState; set: FieldSetter }) {
+  const { t } = useTranslation();
   return <>
-    <TextField label="Bucket name" required value={form.bucketName} onChange={(value) => set('bucketName', value)} />
-    <TextField label="Provider ID" required value={form.providerId} onChange={(value) => set('providerId', value)} />
-    <SelectField label="Logical scope" value={form.logicalScope} onChange={(value) => set('logicalScope', value as StorageFormState['logicalScope'])} options={['tenant_private', 'tenant_public_asset', 'system_temp', 'system_variant', 'system_archive', 'system_quarantine', 'migration_import']} />
-    <TextField label="Bucket region" value={form.bucketRegion} onChange={(value) => set('bucketRegion', value)} />
-    <TextField label="Data residency region" value={form.dataResidencyRegion} onChange={(value) => set('dataResidencyRegion', value)} />
-    <TextField label="Object key prefix" value={form.objectKeyPrefix} onChange={(value) => set('objectKeyPrefix', value)} />
-    <SelectField label="Storage class" value={form.defaultStorageClass} onChange={(value) => set('defaultStorageClass', value as StorageFormState['defaultStorageClass'])} options={['STANDARD', 'INTELLIGENT_TIERING', 'STANDARD_IA', 'ONEZONE_IA', 'GLACIER_IR', 'GLACIER', 'DEEP_ARCHIVE']} />
-    <SelectField label="Encryption" value={form.defaultEncryptionMode} onChange={(value) => set('defaultEncryptionMode', value as StorageFormState['defaultEncryptionMode'])} options={['sse_s3', 'sse_kms', 'none']} />
-    {form.defaultEncryptionMode === 'sse_kms' ? <div className="md:col-span-2"><TextField label="KMS key reference" required value={form.kmsKeyRef} onChange={(value) => set('kmsKeyRef', value)} /></div> : null}
-    <ToggleField checked={form.versioningEnabled} label="Versioning" onChange={(value) => set('versioningEnabled', value)} />
-    <ToggleField checked={form.objectLockEnabled} label="Object Lock" onChange={(value) => set('objectLockEnabled', value)} />
-    <ToggleField checked={form.lifecycleEnabled} label="Lifecycle policies" onChange={(value) => set('lifecycleEnabled', value)} />
-    <ToggleField checked={form.publicAccessBlocked} label="Block public access" onChange={(value) => set('publicAccessBlocked', value)} />
+    <TextField label={t('admin.storage.form.bucketName', 'Bucket name')} required value={form.bucketName} onChange={(value) => set('bucketName', value)} />
+    <TextField label={t('admin.storage.form.providerId', 'Provider ID')} required value={form.providerId} onChange={(value) => set('providerId', value)} />
+    <SelectField label={t('admin.storage.form.logicalScope', 'Logical scope')} value={form.logicalScope} onChange={(value) => set('logicalScope', value as StorageFormState['logicalScope'])} options={['tenant_private', 'tenant_public_asset', 'system_temp', 'system_variant', 'system_archive', 'system_quarantine', 'migration_import']} />
+    <TextField label={t('admin.storage.form.bucketRegion', 'Bucket region')} value={form.bucketRegion} onChange={(value) => set('bucketRegion', value)} />
+    <TextField label={t('admin.storage.form.dataResidencyRegion', 'Data residency region')} value={form.dataResidencyRegion} onChange={(value) => set('dataResidencyRegion', value)} />
+    <TextField label={t('admin.storage.form.objectKeyPrefix', 'Object key prefix')} value={form.objectKeyPrefix} onChange={(value) => set('objectKeyPrefix', value)} />
+    <SelectField label={t('admin.storage.form.storageClass', 'Storage class')} value={form.defaultStorageClass} onChange={(value) => set('defaultStorageClass', value as StorageFormState['defaultStorageClass'])} options={['STANDARD', 'INTELLIGENT_TIERING', 'STANDARD_IA', 'ONEZONE_IA', 'GLACIER_IR', 'GLACIER', 'DEEP_ARCHIVE']} />
+    <SelectField label={t('admin.storage.form.encryption', 'Encryption')} value={form.defaultEncryptionMode} onChange={(value) => set('defaultEncryptionMode', value as StorageFormState['defaultEncryptionMode'])} options={['sse_s3', 'sse_kms', 'none']} />
+    {form.defaultEncryptionMode === 'sse_kms' ? <div className="md:col-span-2"><TextField label={t('admin.storage.form.kmsKeyRef', 'KMS key reference')} required value={form.kmsKeyRef} onChange={(value) => set('kmsKeyRef', value)} /></div> : null}
+    <ToggleField checked={form.versioningEnabled} label={t('admin.storage.form.versioning', 'Versioning')} onChange={(value) => set('versioningEnabled', value)} />
+    <ToggleField checked={form.objectLockEnabled} label={t('admin.storage.form.objectLock', 'Object Lock')} onChange={(value) => set('objectLockEnabled', value)} />
+    <ToggleField checked={form.lifecycleEnabled} label={t('admin.storage.form.lifecycle', 'Lifecycle policies')} onChange={(value) => set('lifecycleEnabled', value)} />
+    <ToggleField checked={form.publicAccessBlocked} label={t('admin.storage.form.publicAccess', 'Block public access')} onChange={(value) => set('publicAccessBlocked', value)} />
   </>;
 }
 
 function DefaultBucketFields({ form, set }: { form: StorageFormState; set: FieldSetter }) {
+  const { t } = useTranslation();
   return <>
-    <SelectField label="Logical scope" value={form.logicalScope} onChange={(value) => set('logicalScope', value as StorageFormState['logicalScope'])} options={['tenant_private', 'tenant_public_asset', 'system_temp', 'system_variant', 'system_archive', 'system_quarantine', 'migration_import']} />
-    <TextField label="Bucket ID" required value={form.bucketId} onChange={(value) => set('bucketId', value)} />
-    <div className="md:col-span-2"><TextField label="Change reason" required value={form.reason} onChange={(value) => set('reason', value)} /></div>
+    <SelectField label={t('admin.storage.form.logicalScope', 'Logical scope')} value={form.logicalScope} onChange={(value) => set('logicalScope', value as StorageFormState['logicalScope'])} options={['tenant_private', 'tenant_public_asset', 'system_temp', 'system_variant', 'system_archive', 'system_quarantine', 'migration_import']} />
+    <TextField label={t('admin.storage.form.bucketId', 'Bucket ID')} required value={form.bucketId} onChange={(value) => set('bucketId', value)} />
+    <div className="md:col-span-2"><TextField label={t('admin.storage.form.changeReason', 'Change reason')} required value={form.reason} onChange={(value) => set('reason', value)} /></div>
   </>;
 }
 
 function QuotaFields({ form, set }: { form: StorageFormState; set: FieldSetter }) {
+  const { t } = useTranslation();
   return <>
-    <SelectField label="Scope type" value={form.scopeType} onChange={(value) => set('scopeType', value as StorageFormState['scopeType'])} options={['tenant', 'organization', 'app', 'space', 'user']} />
-    <TextField label="Scope ID" required value={form.scopeId} onChange={(value) => set('scopeId', value)} />
-    <TextField label="Quota limit (bytes)" pattern="[0-9]+" required value={form.quotaLimitBytes} onChange={(value) => set('quotaLimitBytes', value)} />
-    <TextField label="Single-file limit (bytes)" pattern="[0-9]*" value={form.singleFileLimitBytes} onChange={(value) => set('singleFileLimitBytes', value)} />
-    <SelectField label="Enforcement" value={form.enforcement} onChange={(value) => set('enforcement', value)} options={['hard', 'soft', 'observe']} />
+    <SelectField label={t('admin.storage.form.scopeType', 'Scope type')} value={form.scopeType} onChange={(value) => set('scopeType', value as StorageFormState['scopeType'])} options={['tenant', 'organization', 'app', 'space', 'user']} />
+    <TextField label={t('admin.storage.form.scopeId', 'Scope ID')} required value={form.scopeId} onChange={(value) => set('scopeId', value)} />
+    <TextField label={t('admin.storage.form.quotaLimit', 'Quota limit (bytes)')} pattern="[0-9]+" required value={form.quotaLimitBytes} onChange={(value) => set('quotaLimitBytes', value)} />
+    <TextField label={t('admin.storage.form.singleFileLimit', 'Single-file limit (bytes)')} pattern="[0-9]*" value={form.singleFileLimitBytes} onChange={(value) => set('singleFileLimitBytes', value)} />
+    <SelectField label={t('admin.storage.form.enforcement', 'Enforcement')} value={form.enforcement} onChange={(value) => set('enforcement', value)} options={['hard', 'soft', 'observe']} />
   </>;
 }
 
 function ReconciliationFields({ form, set }: { form: StorageFormState; set: FieldSetter }) {
+  const { t } = useTranslation();
   return <>
-    <SelectField label="Run type" value={form.runType} onChange={(value) => set('runType', value)} options={['full', 'provider', 'bucket', 'metadata']} />
-    <TextField label="Provider ID" value={form.providerId} onChange={(value) => set('providerId', value)} />
-    <TextField label="Bucket ID" value={form.bucketId} onChange={(value) => set('bucketId', value)} />
-    <TextField label="Reason" required value={form.reason} onChange={(value) => set('reason', value)} />
-    <ToggleField checked={form.dryRun} label="Dry run" onChange={(value) => set('dryRun', value)} />
+    <SelectField label={t('admin.storage.form.runType', 'Run type')} value={form.runType} onChange={(value) => set('runType', value)} options={['full', 'provider', 'bucket', 'metadata']} />
+    <TextField label={t('admin.storage.form.providerId', 'Provider ID')} value={form.providerId} onChange={(value) => set('providerId', value)} />
+    <TextField label={t('admin.storage.form.bucketId', 'Bucket ID')} value={form.bucketId} onChange={(value) => set('bucketId', value)} />
+    <TextField label={t('admin.storage.form.reason', 'Reason')} required value={form.reason} onChange={(value) => set('reason', value)} />
+    <ToggleField checked={form.dryRun} label={t('admin.storage.form.dryRun', 'Dry run')} onChange={(value) => set('dryRun', value)} />
   </>;
 }
 
 function GarbageCollectionFields({ form, set }: { form: StorageFormState; set: FieldSetter }) {
+  const { t } = useTranslation();
   return <>
-    <SelectField label="Job type" value={form.jobType} onChange={(value) => set('jobType', value)} options={['expired_objects', 'orphaned_objects', 'failed_uploads', 'temporary_objects']} />
-    <TextField label="Target" required value={form.target} onChange={(value) => set('target', value)} />
-    <TextField label="Retention window" required value={form.retentionWindow} onChange={(value) => set('retentionWindow', value)} />
-    <TextField label="Dry-run sample size" pattern="[0-9]+" value={form.dryRunSample} onChange={(value) => set('dryRunSample', value)} />
-    <div className="md:col-span-2"><TextAreaField label="Criteria (JSON)" value={form.criteria} onChange={(value) => set('criteria', value)} /></div>
-    <ToggleField checked={form.dryRun} label="Dry run" onChange={(value) => set('dryRun', value)} />
+    <SelectField label={t('admin.storage.form.jobType', 'Job type')} value={form.jobType} onChange={(value) => set('jobType', value)} options={['expired_objects', 'orphaned_objects', 'failed_uploads', 'temporary_objects']} />
+    <TextField label={t('admin.storage.form.target', 'Target')} required value={form.target} onChange={(value) => set('target', value)} />
+    <TextField label={t('admin.storage.form.retention', 'Retention window')} required value={form.retentionWindow} onChange={(value) => set('retentionWindow', value)} />
+    <TextField label={t('admin.storage.form.dryRunSample', 'Dry-run sample size')} pattern="[0-9]+" value={form.dryRunSample} onChange={(value) => set('dryRunSample', value)} />
+    <div className="md:col-span-2"><TextAreaField label={t('admin.storage.form.criteria', 'Criteria (JSON)')} value={form.criteria} onChange={(value) => set('criteria', value)} /></div>
+    <ToggleField checked={form.dryRun} label={t('admin.storage.form.dryRun', 'Dry run')} onChange={(value) => set('dryRun', value)} />
   </>;
 }
 

@@ -169,7 +169,7 @@ fn provider_request_context_keeps_routing_auth_and_region_separate_from_standard
         tenant_id: 100001,
         organization_id: 0,
         supplier_code: "alibaba".to_owned(),
-        region_code: Some("cn-hangzhou".to_owned()),
+        region_code: Some("cn".to_owned()),
         credential_ref: Some("secret://paas/alibaba/main".to_owned()),
         timeout_ms: Some(30_000),
     };
@@ -250,7 +250,7 @@ async fn metadata_only_provider_plugin_returns_explicit_not_configured_for_nativ
                 tenant_id: 1,
                 organization_id: 2,
                 supplier_code: "alibaba".to_owned(),
-                region_code: Some("cn-hangzhou".to_owned()),
+                region_code: Some("cn".to_owned()),
                 credential_ref: None,
                 timeout_ms: Some(1000),
             },

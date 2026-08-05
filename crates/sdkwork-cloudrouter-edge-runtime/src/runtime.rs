@@ -19,7 +19,8 @@ use sdkwork_cloudrouter_security::{
 };
 use sdkwork_cloudrouter_database_host::connect_cloud_router_database;
 use sdkwork_cloudrouter_router_service::api::{
-    OpenAiInvocationPluginRef, OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig,
+    GatewayBalanceStore, OpenAiInvocationPluginRef, OpenAiRuntimeFailureStrategy,
+    OpenAiRuntimeRouteConfig,
 };
 use sdkwork_cloudrouter_router_service::application::{
     resolve_usage_settlement_worker_config, ApiKeySecretHasher, GatewayAccountingRetryHealth,
@@ -31,6 +32,7 @@ use sdkwork_cloudrouter_router_service::domain::{
     ProviderRetryPolicy, DEFAULT_PROVIDER_CIRCUIT_BREAKER_RECOVERY_WINDOW_SECONDS,
     DEFAULT_PROVIDER_RETRY_ATTEMPTS, DEFAULT_RETRYABLE_PROVIDER_STATUS_CODES,
 };
+use sdkwork_cloudrouter_router_service::ports::RuntimeRegionSettingsStore;
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::{
     HmacSha256ApiKeySecretHasher, RingAeadCredentialSecretCodec,
 };
@@ -66,7 +68,9 @@ use sdkwork_cloudrouter_router_service::ports::{
     GatewayUsageRecorder, ProviderSecretResolver, ResponsesRelay, StickyRouteStore,
     UpstreamAccountRouteCatalog, UsageSettlementStore,
 };
+use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
 use sdkwork_models_catalog_repository_sqlx::PostgresModelCatalogAdminStore;
+use crate::gateway_balance_account::PostgresGatewayBalanceStore;
 use sqlx::PgPool;
 use tokio::sync::Notify;
 use tokio::time::{sleep, Duration};
@@ -92,7 +96,6 @@ type SettlementStore = Arc<dyn UsageSettlementStore + Send + Sync>;
 const CLOUD_ROUTER_GATEWAY_INSTANCE_ID_ENV: &str = "SDKWORK_CLOUDROUTER_ROUTER_GATEWAY_INSTANCE_ID";
 const CLOUD_ROUTER_GATEWAY_INSTANCE_CODE_ENV: &str = "SDKWORK_CLOUDROUTER_ROUTER_GATEWAY_INSTANCE_CODE";
 const CLOUD_ROUTER_GATEWAY_NODE_NAME_ENV: &str = "SDKWORK_CLOUDROUTER_ROUTER_GATEWAY_NODE_NAME";
-const CLOUD_ROUTER_REGION_CODE_ENV: &str = "SDKWORK_CLOUDROUTER_ROUTER_REGION_CODE";
 
 fn gateway_trace_attribution() -> GatewayTraceAttribution {
     let instance_code = first_runtime_identity(
@@ -115,7 +118,7 @@ fn gateway_trace_attribution() -> GatewayTraceAttribution {
     let attribution = GatewayTraceAttribution {
         gateway_instance_id: positive_runtime_i64(CLOUD_ROUTER_GATEWAY_INSTANCE_ID_ENV),
         gateway_instance_code_snapshot: instance_code,
-        gateway_region_code_snapshot: first_runtime_identity(&[CLOUD_ROUTER_REGION_CODE_ENV], 64),
+        gateway_region_code_snapshot: sdkwork_cloudrouter_config::resolve_region_code().ok(),
         gateway_node_name_snapshot: node_name,
     };
     if attribution.gateway_instance_code_snapshot.is_none() {
@@ -125,7 +128,6 @@ fn gateway_trace_attribution() -> GatewayTraceAttribution {
                 instance_code_env = CLOUD_ROUTER_GATEWAY_INSTANCE_CODE_ENV,
                 instance_id_env = CLOUD_ROUTER_GATEWAY_INSTANCE_ID_ENV,
                 node_name_env = CLOUD_ROUTER_GATEWAY_NODE_NAME_ENV,
-                region_code_env = CLOUD_ROUTER_REGION_CODE_ENV,
                 "gateway runtime identity is unavailable; new traces will keep nullable gateway attribution fields"
             );
         }
@@ -316,6 +318,10 @@ struct DatabaseRuntimeRoutesInput<'a, C> {
     runtime_toml: Option<&'a RuntimeTomlConfig>,
     request_limits_config: RequestLimitsConfig,
     call_chain: Option<CallChainInterceptor>,
+    /// Backs the gateway-native `GET /v1/user/balance` endpoint; absent in
+    /// runtimes without the account-domain wallet store (e.g. relay-only
+    /// test fixtures).
+    gateway_balance_store: Option<Arc<dyn GatewayBalanceStore>>,
 }
 
 fn router_with_database_runtime_routes<C>(
@@ -338,6 +344,7 @@ where
         runtime_toml,
         request_limits_config,
         call_chain,
+        gateway_balance_store,
     } = input;
     let internal_gateway_verifier = build_internal_gateway_request_verifier(runtime_toml)?;
     let dispatcher_response_max_bytes =
@@ -392,6 +399,7 @@ where
             invocation_plugins: Vec::new(),
             failure_strategy: provider_runtime_config.failure_strategy,
             default_retry_policy: provider_runtime_config.default_retry_policy.clone(),
+            region_settings_store: None,
             include_openai_models_router: false,
         });
         router_with_invocation_runtime_routes(InvocationRuntimeRoutesInput {
@@ -415,6 +423,16 @@ where
             internal_gateway_verifier: Arc::clone(&internal_gateway_verifier),
             call_chain,
         })?
+    };
+    let router = match &gateway_balance_store {
+        Some(store) => router.merge(
+            sdkwork_cloudrouter_router_service::api::gateway_balance_router(
+                Arc::clone(&catalog),
+                Arc::clone(&api_key_hasher),
+                Arc::clone(store),
+            ),
+        ),
+        None => router,
     };
     Ok(merge_relay_authenticated_openai_passthrough(
         RelayAuthenticatedOpenAiPassthroughInput {
@@ -686,6 +704,7 @@ struct OpenAiRuntimeRoutesInput<C> {
     invocation_plugins: Vec<OpenAiInvocationPluginRef>,
     failure_strategy: OpenAiRuntimeFailureStrategy,
     default_retry_policy: ProviderRetryPolicy,
+    region_settings_store: Option<Arc<dyn RuntimeRegionSettingsStore + Send + Sync>>,
     include_openai_models_router: bool,
 }
 
@@ -705,6 +724,7 @@ where
         invocation_plugins: Vec::new(),
         failure_strategy: OpenAiRuntimeFailureStrategy::default(),
         default_retry_policy: ProviderRetryPolicy::default(),
+        region_settings_store: None,
         include_openai_models_router: true,
     })
 }
@@ -731,6 +751,7 @@ where
         invocation_plugins: Vec::new(),
         failure_strategy: OpenAiRuntimeFailureStrategy::default(),
         default_retry_policy: ProviderRetryPolicy::default(),
+        region_settings_store: None,
         include_openai_models_router: true,
     })
 }
@@ -757,6 +778,7 @@ where
         invocation_plugins: Vec::new(),
         failure_strategy: OpenAiRuntimeFailureStrategy::default(),
         default_retry_policy: ProviderRetryPolicy::default(),
+        region_settings_store: None,
         include_openai_models_router: true,
     })
 }
@@ -783,6 +805,7 @@ where
         invocation_plugins: Vec::new(),
         failure_strategy: OpenAiRuntimeFailureStrategy::default(),
         default_retry_policy: ProviderRetryPolicy::default(),
+        region_settings_store: None,
         include_openai_models_router: true,
     })
 }
@@ -809,6 +832,7 @@ where
         invocation_plugins: Vec::new(),
         failure_strategy: OpenAiRuntimeFailureStrategy::default(),
         default_retry_policy: ProviderRetryPolicy::default(),
+        region_settings_store: None,
         include_openai_models_router: true,
     })
 }
@@ -826,6 +850,7 @@ where
         invocation_plugins,
         failure_strategy,
         default_retry_policy,
+        region_settings_store,
         include_openai_models_router,
     } = input;
     let chat_router = match (relays.chat, relays.chat_stream) {
@@ -838,7 +863,8 @@ where
                     stream_relay,
                     usage_recorder,
                     invocation_plugins.clone(),
-                    OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy),
+                    OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy)
+                        .with_region_settings_store(region_settings_store.clone()),
                 )
             } else {
                 sdkwork_cloudrouter_router_service::api::openai_chat_completions_router_with_relays_and_failure_strategy(
@@ -858,7 +884,8 @@ where
                     relay,
                     usage_recorder,
                     invocation_plugins.clone(),
-                    OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy),
+                    OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy)
+                        .with_region_settings_store(region_settings_store.clone()),
                 )
             } else {
                 sdkwork_cloudrouter_router_service::api::openai_chat_completions_router_with_relay_plugins_and_failure_strategy(
@@ -922,7 +949,8 @@ where
                     relay,
                     usage_recorder,
                     invocation_plugins.clone(),
-                    OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy),
+                    OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy)
+                        .with_region_settings_store(region_settings_store.clone()),
                 )
             } else {
                 sdkwork_cloudrouter_router_service::api::openai_embeddings_router_with_relay_plugins_and_failure_strategy(
@@ -1343,6 +1371,10 @@ async fn router_with_database_bootstrap(
             runtime_toml,
             request_limits_config,
             call_chain,
+            // The balance endpoint reads the account-domain Token Bank wallet
+            // (`acct_*` tables), which only the all-in-one server runtime
+            // bootstraps; relay-only / client-local surfaces keep it disabled.
+            gateway_balance_store: None,
         })
     }
 }
@@ -1517,6 +1549,18 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
             },
         )
         .map_err(anyhow::Error::new)?;
+    // Federated commerce membership backend surface (`/backend/v3/api/memberships/*`)
+    // is dependency-owned. It enters through the membership API assembly entrypoint
+    // on the shared commerce pool — not through a direct `sdkwork-routes-*` import —
+    // per API_ASSEMBLY_SPEC §3/§6.1, and must be merged before the Web Framework
+    // layer is installed by `finalize_all_in_one_route_surfaces`.
+    let membership_assembly =
+        sdkwork_api_membership_assembly::assemble_backend_business_router_with_pool(
+            payment_host.database_pool(),
+        )
+        .await
+        .map_err(anyhow::Error::msg)?;
+    let backend_router = backend_router.merge(membership_assembly.router);
     let app_router = sdkwork_routes_cloudrouter_app_api::router_with_postgres_shared_runtime(
         sdkwork_routes_cloudrouter_app_api::PostgresSharedRuntime {
             config: context.database_config.clone(),
@@ -1814,6 +1858,10 @@ async fn build_gateway_router_from_all_in_one_context(
         context.provider_runtime_config.tenant_inflight_use_chain_stage,
     );
 
+    let gateway_balance_store = Arc::new(PostgresGatewayBalanceStore::new(
+        PostgresCommerceAccountStore::new(resolve_account_pool().await?),
+    ));
+
     router_with_database_runtime_routes(DatabaseRuntimeRoutesInput {
         base_router: router_with_database_status_and_passthrough_placeholder(
             Some(&context.database_config),
@@ -1833,8 +1881,30 @@ async fn build_gateway_router_from_all_in_one_context(
         runtime_toml: runtime_toml.as_ref(),
         request_limits_config: context.request_limits_config,
         call_chain,
+        gateway_balance_store: Some(gateway_balance_store),
     })
     .map_err(anyhow::Error::new)
+}
+
+/// Bootstraps the account-domain service host and returns its PostgreSQL
+/// pool.
+///
+/// The Token Bank wallet lives in the account domain (`acct_*` tables, see
+/// the sdkwork-account database manifest). Bootstrapping the account host runs
+/// that domain's schema lifecycle inside the shared workspace database, so the
+/// gateway balance endpoint can read wallet balances — the cloudrouter main
+/// database does not contain the account tables.
+async fn resolve_account_pool() -> anyhow::Result<sqlx::PgPool> {
+    let account_pool = sdkwork_account_service_host::AccountServiceHost::from_env()
+        .await
+        .map_err(anyhow::Error::msg)?
+        .database_pool()
+        .as_postgres()
+        .cloned()
+        .ok_or_else(|| {
+            anyhow::Error::msg("all-in-one account runtime requires a PostgreSQL database pool")
+        })?;
+    Ok(account_pool)
 }
 
 fn validate_runtime_snowflake_node_id_configuration(
@@ -3020,6 +3090,33 @@ gateway_invocation_body_max_bytes = 37
 
         assert_eq!("server", payload["deployment_mode"]);
         assert_eq!(false, payload["database"]["configured"]);
+    }
+
+    #[test]
+    fn all_in_one_backend_composes_membership_backend_surface_through_assembly() {
+        let source = include_str!("runtime.rs");
+
+        // Dependency-owned membership backend surface enters through the
+        // membership API assembly entrypoint on the shared commerce pool
+        // (API_ASSEMBLY_SPEC §3/§6.1), never through a direct route-crate import.
+        assert!(source.contains(
+            "sdkwork_api_membership_assembly::assemble_backend_business_router_with_pool("
+        ));
+        let forbidden_route_crate_import = ["sdkwork_routes_membership", "_backend_api::"].concat();
+        assert!(
+            !source.contains(&forbidden_route_crate_import),
+            "membership backend surface must not import the dependency route crate directly"
+        );
+        // The membership backend router must be merged before the Web Framework
+        // layer is installed by `finalize_all_in_one_route_surfaces`; a merge
+        // after framework installation would leave it without request context.
+        let merge_at = source
+            .find(".merge(membership_assembly.router)")
+            .expect("membership backend router merge before framework finalize");
+        let finalize_at = source
+            .find("= finalize_all_in_one_route_surfaces(")
+            .expect("framework finalize call after membership merge");
+        assert!(merge_at < finalize_at);
     }
 
     #[test]

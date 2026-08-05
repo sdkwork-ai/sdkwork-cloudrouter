@@ -12,9 +12,11 @@
     "typescript": "~5.8.2"
   },
   "dependencies": {
+    "@monaco-editor/react": "catalog:",
     "@sdkwork/cloudrouter-pc-console-core": "workspace:*",
     "@sdkwork/cloudroutes-pc-commons": "workspace:*",
-    "@sdkwork/utils": "workspace:*"
+    "@sdkwork/utils": "workspace:*",
+    "monaco-editor": "^0.55.1"
   },
   "exports": {
     ".": {

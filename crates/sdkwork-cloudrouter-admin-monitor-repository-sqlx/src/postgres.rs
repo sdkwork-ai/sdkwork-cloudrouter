@@ -68,10 +68,10 @@ async fn list_monitor_nodes(
                 i.id,
                 COALESCE(NULLIF(i.node_name, ''), NULLIF(i.host_name, ''), NULLIF(i.instance_code, ''), i.uuid) AS name,
                 COALESCE(i.region, '') AS region,
-                i.health_status AS health_status,
-                h.cpu_percent::text AS cpu,
-                h.memory_percent::text AS memory,
-                h.uptime_seconds,
+                COALESCE(i.health_status, 0) AS health_status,
+                CAST(COALESCE(h.cpu_percent, 0) AS TEXT) AS cpu,
+                CAST(COALESCE(h.memory_percent, 0) AS TEXT) AS memory,
+                COALESCE(h.uptime_seconds, 0) AS uptime_seconds,
                 COALESCE(i.ip_address_masked, '') AS ip
             FROM ops_gateway_instance i
             LEFT JOIN LATERAL (

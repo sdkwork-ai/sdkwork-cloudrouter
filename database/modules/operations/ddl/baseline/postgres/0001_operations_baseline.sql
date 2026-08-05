@@ -232,6 +232,25 @@ CREATE TABLE IF NOT EXISTS ops_metric_snapshot (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_metric_snapshot ON ops_metric_snapshot (tenant_id, organization_id, metric_scope, metric_name, metric_period, period_start, dimension_key, dimension_value);
 
+CREATE TABLE IF NOT EXISTS ops_referral_stat_snapshot (
+    id BIGINT NOT NULL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    inviter_user_id BIGINT NOT NULL,
+    inviter_name_snapshot VARCHAR(256),
+    inviter_email_snapshot VARCHAR(256),
+    total_invited_count BIGINT NOT NULL DEFAULT 0,
+    total_revenue_amount NUMERIC(18, 2) NOT NULL DEFAULT 0,
+    reward_awarded_amount NUMERIC(18, 2) NOT NULL DEFAULT 0,
+    invite_link VARCHAR(512),
+    status INTEGER NOT NULL DEFAULT 1,
+    snapshot_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_referral_stat_snapshot ON ops_referral_stat_snapshot (tenant_id, organization_id, inviter_user_id, snapshot_at);
+
 CREATE TABLE IF NOT EXISTS ops_notification_message (
     id BIGINT NOT NULL PRIMARY KEY,
     uuid VARCHAR(64) NOT NULL,

@@ -8,6 +8,8 @@ interface MarketingDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   children: ReactNode;
+  /** 点击遮罩（抽屉外）时是否关闭；默认 true */
+  closeOnClickOutside?: boolean;
 }
 
 export function MarketingDrawer({
@@ -16,13 +18,21 @@ export function MarketingDrawer({
   isOpen,
   onClose,
   children,
+  closeOnClickOutside = true,
 }: MarketingDrawerProps) {
   if (!isOpen) {
     return null;
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex justify-end bg-black/40"
+      onClick={(event) => {
+        if (closeOnClickOutside && event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       <aside
         className="fixed inset-y-0 right-0 flex w-full max-w-[640px] flex-col bg-white shadow-2xl dark:bg-slate-950"
         onClick={(event) => event.stopPropagation()}

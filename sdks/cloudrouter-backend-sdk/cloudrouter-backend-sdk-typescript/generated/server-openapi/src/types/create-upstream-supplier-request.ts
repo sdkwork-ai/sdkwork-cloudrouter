@@ -2,6 +2,8 @@
 export interface CreateUpstreamSupplierRequest {
   /** Adapter code field on create upstream supplier request. */
   adapterCode: string;
+  /** Default vendor code field on create upstream supplier request. */
+  defaultVendorCode?: string | null;
   /** Description field on create upstream supplier request. */
   description?: string | null;
   /** Display name field on create upstream supplier request. */

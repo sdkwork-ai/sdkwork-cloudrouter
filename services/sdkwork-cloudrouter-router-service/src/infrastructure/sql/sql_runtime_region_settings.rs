@@ -83,11 +83,11 @@ mod tests {
     use crate::ports::RuntimeRegionSettings;
 
     #[test]
-    fn settings_from_payload_defaults_to_china() {
+    fn settings_from_payload_defaults_to_global() {
         let settings = settings_from_payload("").unwrap();
 
-        assert_eq!("cn", settings.current_region_code);
-        assert_eq!("China", settings.current_region_name);
+        assert_eq!("global", settings.current_region_code);
+        assert_eq!("Global", settings.current_region_name);
     }
 
     #[test]

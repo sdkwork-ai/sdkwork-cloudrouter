@@ -27,6 +27,7 @@ pub const DEFAULT_SEED_PROFILE: &str = "standard";
 pub const DEFAULT_INSTALL_ENVIRONMENT: &str = "production";
 pub const ENV_INSTALL_ENVIRONMENT: &str = "SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT";
 pub const ENV_INSTALL_SEED_PROFILE: &str = "SDKWORK_DATABASE_SEED_PROFILE";
+pub const ENV_INSTALL_SEED_LOCALE: &str = "SDKWORK_DATABASE_SEED_LOCALE";
 pub const ENV_MODELS_CATALOG_ROOT: &str = "SDKWORK_MODELS_CATALOG_ROOT";
 
 const MAX_REFRESH_SOURCE_LEN: usize = 64;
@@ -70,6 +71,7 @@ const MODEL_CATALOG_TABLES: &[&str] = &[
 pub struct DatabaseInstallOptions {
     pub environment: String,
     pub seed_profile: String,
+    pub seed_locale: Option<String>,
     pub models_catalog_root: Option<String>,
 }
 
@@ -78,6 +80,7 @@ impl DatabaseInstallOptions {
         Self {
             environment: DEFAULT_INSTALL_ENVIRONMENT.to_owned(),
             seed_profile: DEFAULT_SEED_PROFILE.to_owned(),
+            seed_locale: None,
             models_catalog_root: None,
         }
     }
@@ -101,11 +104,17 @@ impl DatabaseInstallOptions {
             runtime_toml.and_then(|config| config.install.seed_profile.as_deref()),
         )
         .unwrap_or_else(|| DEFAULT_SEED_PROFILE.to_owned());
+        let seed_locale = sdkwork_cloudrouter_config::runtime::config_value(
+            ENV_INSTALL_SEED_LOCALE,
+            runtime_toml.and_then(|config| config.install.seed_locale.as_deref()),
+        );
         let models_catalog_root = sdkwork_cloudrouter_config::runtime::config_value(
             ENV_MODELS_CATALOG_ROOT,
             runtime_toml.and_then(|config| config.install.models_catalog_root.as_deref()),
         );
-        Self::new(environment, seed_profile)?.with_models_catalog_root(models_catalog_root)
+        Self::new(environment, seed_profile)?
+            .with_seed_locale(seed_locale)?
+            .with_models_catalog_root(models_catalog_root)
     }
 
     pub fn new(
@@ -122,8 +131,25 @@ impl DatabaseInstallOptions {
         Ok(Self {
             environment,
             seed_profile,
+            seed_locale: None,
             models_catalog_root: None,
         })
+    }
+
+    pub fn with_seed_locale(
+        mut self,
+        seed_locale: Option<String>,
+    ) -> Result<Self, DatabaseInstallError> {
+        if let Some(locale) = seed_locale.as_deref() {
+            let normalized = locale.trim();
+            if normalized.is_empty() {
+                return Err(DatabaseInstallError::InvalidState(format!(
+                    "{ENV_INSTALL_SEED_LOCALE} must not be empty"
+                )));
+            }
+            self.seed_locale = Some(normalized.to_owned());
+        }
+        Ok(self)
     }
 
     pub fn with_models_catalog_root(

@@ -1711,6 +1711,108 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+  - name: ops_referral_stat_snapshot
+    domain: ops
+    profile: read_model
+    compliance_level: L2
+    write_owner: cloudrouter-ops-runtime
+    system_of_record: false
+    tenant_scope: tenant_required
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      inviter_user_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      inviter_name_snapshot:
+        type: string(256)
+        required: false
+        postgres_type: VARCHAR(256)
+        constraints: ''
+      inviter_email_snapshot:
+        type: string(256)
+        required: false
+        postgres_type: VARCHAR(256)
+        constraints: ''
+      total_invited_count:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      total_revenue_amount:
+        type: decimal(18,2)
+        required: true
+        postgres_type: NUMERIC(18, 2)
+        constraints: NOT NULL DEFAULT 0
+      reward_awarded_amount:
+        type: decimal(18,2)
+        required: true
+        postgres_type: NUMERIC(18, 2)
+        constraints: NOT NULL DEFAULT 0
+      invite_link:
+        type: string(512)
+        required: false
+        postgres_type: VARCHAR(512)
+        constraints: ''
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      snapshot_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+    constraints:
+      - name: pk_ops_referral_stat_snapshot
+        type: primary_key
+        columns:
+          - id
+      - name: uk_ops_referral_stat_snapshot
+        type: unique
+        columns: &id_ops_referral_stat_snapshot
+          - tenant_id
+          - organization_id
+          - inviter_user_id
+          - snapshot_at
+        where: null
+    indexes:
+      - name: uk_ops_referral_stat_snapshot
+        columns: *id_ops_referral_stat_snapshot
+        unique: true
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
   - name: ops_notification_message
     domain: ops
     profile: operational_state

@@ -10,6 +10,8 @@ export interface ConfirmDialogProps {
   isBusy?: boolean;
   tone?: 'danger' | 'default';
   icon?: ReactNode;
+  /** 点击遮罩（弹窗外）时是否调用 onCancel 关闭；默认 true */
+  closeOnClickOutside?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -23,6 +25,7 @@ export function ConfirmDialog({
   isBusy = false,
   tone = 'default',
   icon,
+  closeOnClickOutside = true,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -33,7 +36,14 @@ export function ConfirmDialog({
       : 'bg-slate-900 text-white hover:bg-slate-800 focus:ring-slate-500 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200';
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/50 px-4 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/50 px-4 backdrop-blur-sm"
+      onClick={(event) => {
+        if (closeOnClickOutside && event.target === event.currentTarget) {
+          onCancel();
+        }
+      }}
+    >
       <div
         role="alertdialog"
         aria-modal="true"

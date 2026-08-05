@@ -164,14 +164,23 @@ fn merge_update_request(
 
 fn normalize_region_code_field(field_name: &str, value: &str) -> Result<String, String> {
     let value = normalize_optional_field(field_name, Some(value), MAX_REGION_CODE_LEN)?;
-    if value.is_empty()
-        || !value
-            .chars()
-            .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-' || ch == '_')
-    {
-        return Err(format!("{field_name} must be a lowercase region code"));
+    if !is_valid_region_code(&value) {
+        return Err(format!(
+            "{field_name} must match ^[a-z][a-z0-9_]*$ (REGION_SPEC)"
+        ));
     }
     Ok(value)
+}
+
+/// REGION_SPEC §4.1 regionCode format: lowercase ASCII, alphabetic first
+/// character, then [a-z0-9_]*, at most 64 characters.
+fn is_valid_region_code(code: &str) -> bool {
+    let mut chars = code.chars();
+    match chars.next() {
+        Some(first) if first.is_ascii_alphabetic() && first.is_ascii_lowercase() => {}
+        _ => return false,
+    }
+    chars.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
 }
 
 fn normalize_optional_field(
