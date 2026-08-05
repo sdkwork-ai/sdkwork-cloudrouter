@@ -17,7 +17,7 @@ use sdkwork_cloudrouter_security::{
     redact_error_message, InMemoryInternalGatewayReplayStore, InternalGatewayReplayStore,
     InternalGatewayRequestVerifier,
 };
-use sdkwork_cloudrouter_database_host::connect_cloud_router_database;
+use sdkwork_cloudrouter_database_host::bootstrap_cloud_router_database;
 use sdkwork_cloudrouter_router_service::api::{
     GatewayBalanceStore, OpenAiInvocationPluginRef, OpenAiRuntimeFailureStrategy,
     OpenAiRuntimeRouteConfig,
@@ -1961,7 +1961,11 @@ fn require_postgres_server_database(config: &DatabaseConfig) -> Result<(), Gatew
 async fn prepare_cloud_router_database_lifecycle(
     pool: DatabasePool,
 ) -> Result<(), GatewayRouterError> {
-    connect_cloud_router_database(pool).map_err(|error| {
+    // Runtime bootstrap honors the module manifest and `SDKWORK_DATABASE_*`
+    // lifecycle switches: auto-migrate and seed-on-boot run in guarded
+    // development/staging and are rejected for production environments
+    // (DATABASE_FRAMEWORK_SPEC.md §4.3).
+    bootstrap_cloud_router_database(pool).await.map_err(|error| {
         GatewayRouterError::Installer(DatabaseInstallError::InvalidState(error))
     })?;
     Ok(())

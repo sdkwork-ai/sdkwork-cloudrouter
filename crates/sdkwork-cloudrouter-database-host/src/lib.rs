@@ -108,7 +108,10 @@ pub fn connect_cloud_router_database(pool: DatabasePool) -> Result<CloudRouterDa
 /// loads the module and retains a shared pool. A caller may enable the standard
 /// `SDKWORK_DATABASE_AUTO_MIGRATE` switch in a guarded development
 /// or controlled staging process; release and operator commands should call
-/// [`migrate_cloud_router_database`] instead.
+/// [`migrate_cloud_router_database`] instead. When
+/// `SDKWORK_DATABASE_SEED_ON_BOOT` is enabled, required seed sets are applied
+/// through the seed pipeline if not yet recorded for the selected locale/profile
+/// (DATABASE_FRAMEWORK_SPEC.md §4.3).
 pub async fn bootstrap_cloud_router_database(
     pool: DatabasePool,
 ) -> Result<CloudRouterDatabaseHost, String> {
@@ -123,6 +126,17 @@ pub async fn bootstrap_cloud_router_database(
             );
         }
         host.migrate("sdkwork-cloudrouter-runtime").await?;
+    }
+    if options.seed_on_boot {
+        host.orchestrator(host.module().clone(), "sdkwork-cloudrouter-runtime")
+            .seed(&options.seed_locale, &options.seed_profile)
+            .await
+            .map_err(|error| {
+                format!(
+                    "cloud router database module {} seed failed: {error}",
+                    host.module().manifest().module_id
+                )
+            })?;
     }
     Ok(host)
 }
