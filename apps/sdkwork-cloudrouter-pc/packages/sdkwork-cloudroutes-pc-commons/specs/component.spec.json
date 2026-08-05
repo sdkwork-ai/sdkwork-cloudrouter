@@ -549,6 +549,24 @@
           "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
           "tokenManager": "cloud-router-global"
         }
+      },
+      {
+        "sdkFamily": "sdkwork-base-data-backend-sdk",
+        "packageName": "@sdkwork/base-data-backend-sdk",
+        "surface": "backend-api",
+        "apiPrefix": "/backend/v3/api",
+        "sourceExport": "./sdk-clients",
+        "factory": "createSdkworkBaseDataBackendSdkClient",
+        "getter": "getSdkworkBaseDataBackendSdkClient",
+        "dependencyApiSurface": "sdkwork-base-data-backend-sdk",
+        "runtimeIntegration": {
+          "mode": "dependency-backend-api",
+          "sameOriginAllowed": true,
+          "baseUrlEnv": "VITE_SDKWORK_BASE_DATA_BACKEND_API_BASE_URL",
+          "fallbackBaseUrlEnv": "VITE_CLOUDROUTER_BACKEND_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "tokenManager": "cloud-router-global"
+        }
       }
     ],
     "events": [],

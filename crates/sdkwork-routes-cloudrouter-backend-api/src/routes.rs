@@ -230,6 +230,9 @@ fn is_appbase_dependency_contract_path(path: &str) -> bool {
         "/backend/v3/api/iam/",
         "/backend/v3/api/oauth/",
         "/backend/v3/api/system/iam/",
+        "/backend/v3/api/base_data/",
+        "/backend/v3/api/edu_data/",
+        "/backend/v3/api/med_data/",
     ];
 
     APPBASE_BACKEND_PREFIXES

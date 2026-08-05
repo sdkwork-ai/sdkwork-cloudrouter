@@ -138,16 +138,18 @@ function CloudRouterWalletPageContent() {
                   ) : activeTab === 'redeem' ? (
                     <SdkworkCouponRedemptionInline
                       copy={{
+                        cashCredited: t('coupon_recharge.cash_credited', '现金余额已到账'),
                         close: t('close', '关闭'),
                         codeLabel: t('console.billing.billingview.text.17khw81'),
                         codePlaceholder: t('console.billing.billingview.text.zreqwb'),
                         dailyQuota: t('coupon_recharge.daily_quota', '每日额度'),
                         description: t(
                           'coupon_recharge.description',
-                          '输入优惠券兑换码，为 Token Bank 充值算力额度或激活限额订阅。',
+                          '输入优惠券兑换码，为 Token Bank 充值算力额度、发放积分/现金或激活限额订阅。',
                         ),
                         expiresAt: t('coupon_recharge.expires_at', '有效期至'),
                         invalidCode: t('coupon_recharge.code_required', '请输入兑换码。'),
+                        pointsCredited: t('coupon_recharge.points_credited', '积分已发放'),
                         redeem: t('console.billing.billingview.text.cl1a9g'),
                         redeeming: t('coupon_recharge.redeeming', '正在兑换…'),
                         subscriptionActivated: t('coupon_recharge.subscription_activated', '订阅已激活'),

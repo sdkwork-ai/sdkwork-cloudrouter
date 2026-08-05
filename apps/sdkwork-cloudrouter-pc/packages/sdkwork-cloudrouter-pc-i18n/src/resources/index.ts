@@ -23,6 +23,7 @@ import { adminMembershipsMessages } from './admin/memberships';
 import { adminMiscMessages } from './admin/misc';
 import { adminModelMessages } from './admin/model';
 import { adminMonitorMessages } from './admin/monitor';
+import { adminPaymentsMessages } from './admin/payments';
 import { adminRateLimitMessages } from './admin/rate-limit';
 import { adminRuntimeRegionMessages } from './admin/runtime-region';
 import { adminServiceNodesMessages } from './admin/service-nodes';
@@ -66,6 +67,7 @@ export const resources = mergeI18nBundles([
   adminMiscMessages,
   adminModelMessages,
   adminMonitorMessages,
+  adminPaymentsMessages,
   adminRateLimitMessages,
   adminRuntimeRegionMessages,
   adminServiceNodesMessages,

@@ -2,6 +2,9 @@ export {
   getCloudRouterBackendSdkClient,
   getModelsBackendSdkClient,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
+export {
+  getCloudRouterPaymentBackendService,
+} from '@sdkwork/cloudroutes-pc-commons/domain-service-providers';
 import type { CloudRouterMediaResource } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import type {
   AdminAuthSettingsUpdateRequest as GeneratedAdminAuthSettingsUpdateRequest,

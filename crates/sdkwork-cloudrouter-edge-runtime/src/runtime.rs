@@ -1561,6 +1561,39 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
         .await
         .map_err(anyhow::Error::msg)?;
     let backend_router = backend_router.merge(membership_assembly.router);
+    // Base-data backend surface (`/backend/v3/api/base_data/*`) is owned by the
+    // sdkwork-appbase base-data capability. It enters through the base-data
+    // route crate on its own database host (per-module lifecycle manifest),
+    // and must be merged before the Web Framework layer is installed by
+    // `finalize_all_in_one_route_surfaces`.
+    let base_data_host = std::sync::Arc::new(
+        sdkwork_base_data_service_host::BaseDataServiceHost::from_env()
+            .await
+            .map_err(anyhow::Error::msg)?,
+    );
+    let base_data_router =
+        sdkwork_routes_base_data_backend_api::gateway_mount_business(base_data_host);
+    let backend_router = backend_router.merge(base_data_router);
+    // Edu-data and med-data backend surfaces (`/backend/v3/api/edu_data/*`,
+    // `/backend/v3/api/med_data/*`) are owned by the sdkwork-appbase edu-data
+    // and med-data capabilities; each enters through its own database host
+    // (per-module lifecycle manifest) and route crate.
+    let edu_data_host = std::sync::Arc::new(
+        sdkwork_edu_data_service_host::EduDataServiceHost::from_env()
+            .await
+            .map_err(anyhow::Error::msg)?,
+    );
+    let edu_data_router =
+        sdkwork_routes_edu_data_backend_api::gateway_mount_business(edu_data_host);
+    let backend_router = backend_router.merge(edu_data_router);
+    let med_data_host = std::sync::Arc::new(
+        sdkwork_med_data_service_host::MedDataServiceHost::from_env()
+            .await
+            .map_err(anyhow::Error::msg)?,
+    );
+    let med_data_router =
+        sdkwork_routes_med_data_backend_api::gateway_mount_business(med_data_host);
+    let backend_router = backend_router.merge(med_data_router);
     let app_router = sdkwork_routes_cloudrouter_app_api::router_with_postgres_shared_runtime(
         sdkwork_routes_cloudrouter_app_api::PostgresSharedRuntime {
             config: context.database_config.clone(),

@@ -14,6 +14,7 @@ import {
   createCouponOffer,
   createIdempotencyKey,
   offerRecordToFormValues,
+  readCouponBenefit,
   toDatetimeLocal,
   maskPromotionCode,
   toIsoString,
@@ -91,10 +92,6 @@ function baseFormValues(overrides: Partial<CouponOfferCreateFormValues> = {}): C
     endsAt: "",
     status: "active",
     benefitKind: "token_bank_credit",
-    discountType: "FIXED",
-    discountValue: "10",
-    minimumAmount: "0",
-    maximumDiscountAmount: "",
     currencyCode: "CNY",
     grantAmount: "500",
     stockType: "LIMITED",
@@ -170,6 +167,112 @@ test("subscription coupon form emits subscription benefit", () => {
   });
 });
 
+test("token bank coupon with bonus merges bonusAmount into benefit", () => {
+  const requests = buildCouponOfferCreateRequests(
+    baseFormValues({ bonusAmount: "50" }),
+    "idem-bonus-1",
+  );
+
+  assert.deepEqual(requests.offerRequest.couponBenefit, {
+    kind: "token_bank_credit",
+    grantAmount: "500",
+    bonusAmount: "50",
+  });
+});
+
+test("points coupon emits grant points benefit", () => {
+  const requests = buildCouponOfferCreateRequests(
+    baseFormValues({ benefitKind: "points_credit", grantPoints: "1000", grantAmount: undefined }),
+    "idem-points-1",
+  );
+
+  assert.deepEqual(requests.offerRequest.couponBenefit, {
+    kind: "points_credit",
+    grantPoints: "1000",
+  });
+});
+
+test("cash coupon converts yuan grant amount to minor units", () => {
+  const requests = buildCouponOfferCreateRequests(
+    baseFormValues({ benefitKind: "cash_credit", grantAmount: "100.50", grantPoints: undefined }),
+    "idem-cash-1",
+  );
+
+  assert.deepEqual(requests.offerRequest.couponBenefit, {
+    kind: "cash_credit",
+    grantAmount: "10050",
+  });
+});
+
+test("offerRecordToFormValues reads cash amount as yuan and keeps bonus and points", () => {
+  const tokenBank = offerRecordToFormValues({
+    id: "44",
+    display_name: "Bonus Coupon",
+    status: "active",
+    currency_code: "CNY",
+    coupon_benefit: {
+      kind: "token_bank_credit",
+      targetAsset: "token_bank",
+      grantAmount: "500",
+      bonusAmount: "50",
+    },
+  });
+  assert.equal(tokenBank.benefitKind, "token_bank_credit");
+  assert.equal(tokenBank.grantAmount, "500");
+  assert.equal(tokenBank.bonusAmount, "50");
+
+  const points = offerRecordToFormValues({
+    id: "45",
+    display_name: "Points Coupon",
+    status: "active",
+    coupon_benefit: { kind: "points_credit", grantPoints: "1000" },
+  });
+  assert.equal(points.benefitKind, "points_credit");
+  assert.equal(points.grantPoints, "1000");
+
+  const cash = offerRecordToFormValues({
+    id: "46",
+    display_name: "Cash Coupon",
+    status: "active",
+    coupon_benefit: { kind: "cash_credit", grantAmount: "10050" },
+  });
+  assert.equal(cash.benefitKind, "cash_credit");
+  assert.equal(cash.grantAmount, "100.50");
+});
+
+test("readCouponBenefit extracts structured benefit for display", () => {
+  const tokenBank = readCouponBenefit({
+    coupon_benefit: {
+      kind: "token_bank_credit",
+      targetAsset: "token_bank",
+      grantAmount: "500",
+      bonusAmount: "50",
+    },
+  });
+  assert.deepEqual(tokenBank, {
+    kind: "token_bank_credit",
+    grantAmount: "500",
+    bonusAmount: "50",
+  });
+
+  const points = readCouponBenefit({ coupon_benefit: { kind: "points_credit", grantPoints: "1000" } });
+  assert.equal(points?.kind, "points_credit");
+  assert.equal(points?.grantPoints, "1000");
+
+  const cash = readCouponBenefit({ coupon_benefit: { kind: "cash_credit", grantAmount: "10050" } });
+  assert.equal(cash?.kind, "cash_credit");
+  assert.equal(cash?.grantAmount, "10050");
+
+  const subscription = readCouponBenefit({
+    coupon_benefit: { kind: "subscription", packageId: "1002", durationDays: "30" },
+  });
+  assert.equal(subscription?.kind, "subscription");
+  assert.equal(subscription?.packageId, "1002");
+  assert.equal(subscription?.durationDays, "30");
+
+  assert.equal(readCouponBenefit({}), null);
+});
+
 test("code batch create form normalizes with idempotency key", () => {
   const request = buildCodeBatchCreateRequest(
     {
@@ -222,8 +325,6 @@ test("offerRecordToFormValues maps offer record for duplication", () => {
   assert.equal(values.displayName, "Welcome Coupon (Copy)");
   assert.equal(values.benefitKind, "token_bank_credit");
   assert.equal(values.grantAmount, "500");
-  assert.equal(values.discountValue, "10");
-  assert.equal(values.maximumDiscountAmount, "50");
   assert.equal(values.currencyCode, "CNY");
   assert.equal(new Date(values.startsAt).getTime(), new Date("2026-08-01T00:00:00.000Z").getTime());
   // 复制时发行设置重置为默认（库存/批次不复制）
@@ -270,7 +371,7 @@ test("offerRecordToFormValues maps subscription benefit", () => {
   assert.equal(values.packageId, "1002");
   assert.equal(values.dailyQuota, "1000");
   assert.equal(values.totalQuota, "30000");
-  assert.equal(values.status, 0);
+  assert.equal(values.status, "active");
 });
 
 test("createIdempotencyKey falls back outside secure contexts", () => {

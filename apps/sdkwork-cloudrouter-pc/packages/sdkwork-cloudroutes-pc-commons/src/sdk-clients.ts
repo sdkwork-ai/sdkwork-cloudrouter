@@ -10,6 +10,7 @@ import { SdkworkBackendClient as ModelsBackendClient } from '@sdkwork/models-bac
 import { SdkworkAppClient as ModelsAppClient } from '@sdkwork/models-app-sdk';
 import { SdkworkBackendClient as MembershipBackendClient } from '@sdkwork/membership-backend-sdk';
 import { SdkworkBackendClient as PaymentBackendClient } from '@sdkwork/payment-backend-sdk';
+import { SdkworkBackendClient as BaseDataBackendClient } from '@sdkwork/base-data-backend-sdk';
 import { SdkworkBackendClient as PromotionBackendClient } from '@sdkwork/promotion-backend-sdk';
 import { SdkworkAiClient, type SdkworkAiConfig } from '@sdkwork/cloudrouter-open-sdk';
 import {
@@ -454,12 +455,14 @@ export type SdkworkPromptsBackendSdkClient = SdkworkPromptsBackendClient;
 export type SdkworkDriveAppSdkClient = SdkworkDriveAppClient;
 export type SdkworkMembershipBackendSdkClient = MembershipBackendClient;
 export type SdkworkPaymentBackendSdkClient = PaymentBackendClient;
+export type SdkworkBaseDataBackendSdkClient = BaseDataBackendClient;
 export type SdkworkPromotionBackendSdkClient = PromotionBackendClient;
 export type {
   CouponStock as SdkworkPromotionCouponStock,
   CouponStockRequest as SdkworkPromotionCouponStockRequest,
   PromotionCodeBatch as SdkworkPromotionCodeBatch,
   PromotionCodeBatchRequest as SdkworkPromotionCodeBatchRequest,
+  PromotionCouponBenefitRequest as SdkworkPromotionCouponBenefitRequest,
   PromotionDistributionRequest as SdkworkPromotionDistributionRequest,
   PromotionDistributionTask as SdkworkPromotionDistributionTask,
   PromotionOffer as SdkworkPromotionOffer,
@@ -480,6 +483,7 @@ export type SdkworkPromotionAppSdkClientOptions = CloudRouterAppSdkClientOptions
 export type SdkworkMessagingAppSdkClientOptions = CloudRouterAppSdkClientOptions;
 export type SdkworkMembershipBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
 export type SdkworkPaymentBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
+export type SdkworkBaseDataBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
 export type SdkworkPromotionBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
 export type CloudRouterAiSdkClient = SdkworkAiClient;
 
@@ -535,6 +539,7 @@ let driveAppClient: SdkworkDriveAppClient | null = null;
 let driveBackendClient: DriveBackendSdkClient | null = null;
 let membershipBackendClient: MembershipBackendClient | null = null;
 let paymentBackendClient: PaymentBackendClient | null = null;
+let baseDataBackendClient: BaseDataBackendClient | null = null;
 let promotionBackendClient: PromotionBackendClient | null = null;
 let accountAppClient: AccountAppClient | null = null;
 let catalogAppClient: CatalogAppClient | null = null;
@@ -915,6 +920,26 @@ export function getSdkworkPaymentBackendSdkClient(
   return paymentBackendClient;
 }
 
+export function createSdkworkBaseDataBackendSdkClient(
+  options: SdkworkBaseDataBackendSdkClientOptions = {},
+): BaseDataBackendClient {
+  return attachCloudRouterSdkSessionAuthBoundary(
+    new BaseDataBackendClient(buildDependencyBackendConfig(options, 'VITE_SDKWORK_BASE_DATA_BACKEND_API_BASE_URL')),
+  );
+}
+
+export function getSdkworkBaseDataBackendSdkClient(
+  options: SdkworkBaseDataBackendSdkClientOptions = {},
+): BaseDataBackendClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkBaseDataBackendSdkClient(options);
+  }
+  if (!baseDataBackendClient) {
+    baseDataBackendClient = createSdkworkBaseDataBackendSdkClient();
+  }
+  return baseDataBackendClient;
+}
+
 export function getSdkworkPromotionBackendSdkClient(
   options: SdkworkPromotionBackendSdkClientOptions = {},
 ): PromotionBackendClient {
@@ -1067,6 +1092,7 @@ function resetCloudRouterSdkClientCaches(): void {
   driveBackendClient = null;
   membershipBackendClient = null;
   paymentBackendClient = null;
+  baseDataBackendClient = null;
   promotionBackendClient = null;
   accountAppClient = null;
   catalogAppClient = null;

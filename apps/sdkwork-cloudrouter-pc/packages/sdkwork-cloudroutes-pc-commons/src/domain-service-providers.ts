@@ -28,6 +28,8 @@ import {
   configureSdkworkPaymentAppServiceProvider,
   configureSdkworkPaymentSessionTokenProvider,
   createSdkworkPaymentAppService,
+  getSdkworkPaymentBackendService,
+  type SdkworkPaymentBackendService,
 } from '@sdkwork/payment-service';
 import type { PromotionAppSdkClient } from '@sdkwork/promotion-sdk-ports';
 import {
@@ -151,6 +153,10 @@ export function getCloudRouterMembershipCheckoutService(): SdkworkMembershipChec
 
 export function getCloudRouterAccountAppService(): SdkworkAccountAppService {
   return getSdkworkAccountService();
+}
+
+export function getCloudRouterPaymentBackendService(): SdkworkPaymentBackendService {
+  return getSdkworkPaymentBackendService();
 }
 
 export function getCloudRouterPointsRechargeService(): SdkworkPointsRechargeService {

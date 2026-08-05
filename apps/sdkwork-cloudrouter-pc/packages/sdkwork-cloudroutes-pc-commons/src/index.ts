@@ -5,6 +5,7 @@ export * from './components/JsonSyntaxHighlight';
 export * from './components/BusinessState';
 export * from './components/AdminTableShell';
 export * from './components/AdminResourceCenter';
+export * from './components/AdminResourceHelp';
 export * from './components/AdminCategoryManagementSidebar';
 export * from './components/AiResourceSelectorModal';
 export * from './components/GroupSelector';

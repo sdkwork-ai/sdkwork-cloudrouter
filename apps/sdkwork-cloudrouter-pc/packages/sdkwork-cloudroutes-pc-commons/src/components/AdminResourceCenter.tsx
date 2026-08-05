@@ -3,6 +3,7 @@ import { RefreshCw, Search } from 'lucide-react';
 import { AdminTableShell } from './AdminTableShell';
 import { BottomPagination } from './BottomPagination';
 import { BusinessStatePanel, BusinessStateTableRow } from './BusinessState';
+import { AdminResourceHelpButton, type AdminResourceHelpContent } from './AdminResourceHelp';
 
 export type AdminResourceRecord = Record<string, unknown>;
 export type AdminResourceLoadParams = {
@@ -38,6 +39,7 @@ export type AdminResourceSection<TSectionId extends string = string, TGroup exte
   actions?: AdminResourceAction[];
   pagination?: AdminResourcePagination;
   rowActions?: AdminResourceRowAction<TSectionId, TGroup>[];
+  help?: AdminResourceHelpContent;
 };
 
 export type AdminResourceAction = {
@@ -90,6 +92,9 @@ export interface AdminResourceCenterProps<TSectionId extends string = string, TG
   recordActionColumnLabel?: string;
   recordOpenLabel?: string;
   retryLabel?: string;
+  helpLabel?: string;
+  helpCloseLabel?: string;
+  helpNotesLabel?: string;
 }
 
 const INITIAL_STATE: AdminResourceState = {
@@ -121,6 +126,9 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
   sections,
   showSectionNavigation = true,
   tableViewportDataAttribute,
+  helpLabel,
+  helpCloseLabel,
+  helpNotesLabel,
 }: AdminResourceCenterProps<TSectionId, TGroup>) {
   const firstSection = sections[0];
   if (!firstSection) {
@@ -344,6 +352,14 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
                 {action.label}
               </button>
             ))}
+            {helpLabel && activeSection.help ? (
+              <AdminResourceHelpButton
+                closeLabel={helpCloseLabel}
+                content={activeSection.help}
+                label={helpLabel}
+                notesLabel={helpNotesLabel}
+              />
+            ) : null}
             <button
               className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
               onClick={() => void loadSection(activeSection, activePagination ? activePageState : undefined)}

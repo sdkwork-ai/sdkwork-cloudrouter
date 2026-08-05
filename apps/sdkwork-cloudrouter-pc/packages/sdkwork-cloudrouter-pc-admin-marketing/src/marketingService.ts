@@ -7,10 +7,11 @@ import {
   readRequiredNonNegativeInt64String,
   readRequiredString,
   type ApiRecord,
-  type SdkworkPromotionCouponStock,
-  type SdkworkPromotionCouponStockRequest,
   type SdkworkPromotionCodeBatch,
   type SdkworkPromotionCodeBatchRequest,
+  type SdkworkPromotionCouponBenefitRequest,
+  type SdkworkPromotionCouponStock,
+  type SdkworkPromotionCouponStockRequest,
   type SdkworkPromotionDistributionRequest,
   type SdkworkPromotionDistributionTask,
   type SdkworkPromotionOffer,
@@ -153,7 +154,7 @@ export async function updatePromotionOfferStatus(offerId: string, status: 'activ
   await getSdkworkPromotionBackendSdkClient().promotions.offers.status.update(offerId, { status });
 }
 
-export type CouponOfferBenefitKind = 'token_bank_credit' | 'subscription';
+export type CouponOfferBenefitKind = 'token_bank_credit' | 'points_credit' | 'cash_credit' | 'subscription';
 export type CouponCodeIssueMode = 'REALTIME' | 'BATCH';
 export type CouponStockType = 'LIMITED' | 'UNLIMITED';
 
@@ -169,12 +170,14 @@ export interface CouponOfferCreateFormValues {
   endsAt?: string;
   status: 'active' | 'disabled';
   benefitKind: CouponOfferBenefitKind;
-  discountType: string;
-  discountValue: string;
-  minimumAmount: string;
-  maximumDiscountAmount?: string;
-  currencyCode: string;
+  /** Token Bank 额度券：发放额度（整数最小单位）；现金券：发放金额（元，提交时转为最小单位）。 */
   grantAmount?: string;
+  /** Token Bank 额度券：赠送额度（可选，整数最小单位）。 */
+  bonusAmount?: string;
+  /** 积分券：发放积分（整数）。 */
+  grantPoints?: string;
+  /** 现金券/Token Bank 额度券使用的币种（现金券以元为单位输入）。 */
+  currencyCode: string;
   productId?: string;
   skuId?: string;
   packageId?: string;
@@ -205,18 +208,6 @@ export function buildCouponOfferCreateRequests(
   values: CouponOfferCreateFormValues,
   idempotencyKey: string,
 ): CouponOfferCreateRequests {
-  const couponBenefit = values.benefitKind === 'token_bank_credit'
-    ? { kind: 'token_bank_credit' as const, grantAmount: values.grantAmount ?? '' }
-    : {
-        kind: 'subscription' as const,
-        productId: values.productId ?? '',
-        skuId: values.skuId ?? '',
-        packageId: values.packageId ?? '',
-        period: values.period ?? 'month',
-        durationDays: values.durationDays ?? '0',
-        dailyQuota: values.dailyQuota ?? '0',
-        totalQuota: values.totalQuota ?? '0',
-      };
   const offerRequest: SdkworkPromotionOfferRequest = {
     offerType: values.offerType,
     displayName: values.displayName,
@@ -228,12 +219,13 @@ export function buildCouponOfferCreateRequests(
     startsAt: toIsoString(values.startsAt),
     endsAt: values.endsAt ? toIsoString(values.endsAt) : null,
     status: values.status,
-    discountType: values.discountType,
-    discountValue: values.discountValue,
-    minimumAmount: values.minimumAmount,
-    maximumDiscountAmount: values.maximumDiscountAmount || null,
+    // 满减/折扣抵扣字段为二期预留：发放型券统一按无门槛固定抵扣提交默认值
+    discountType: 'FIXED',
+    discountValue: '0',
+    minimumAmount: '0',
+    maximumDiscountAmount: null,
     currencyCode: values.currencyCode,
-    couponBenefit,
+    couponBenefit: buildCouponBenefit(values),
   };
   const stockRequest: SdkworkPromotionCouponStockRequest = {
     offerId: '',
@@ -259,6 +251,44 @@ export function buildCouponOfferCreateRequests(
       }
     : undefined;
   return { offerRequest, stockRequest, codeBatchRequest };
+}
+
+/** 按券类型构建权益载荷：现金券金额（元）转换为最小单位（分），Token Bank 赠送额度可省略。 */
+function buildCouponBenefit(values: CouponOfferCreateFormValues): SdkworkPromotionCouponBenefitRequest {
+  switch (values.benefitKind) {
+    case 'token_bank_credit':
+      return values.bonusAmount?.trim()
+        ? {
+            kind: 'token_bank_credit',
+            grantAmount: values.grantAmount?.trim() || '',
+            bonusAmount: values.bonusAmount.trim(),
+          }
+        : {
+            kind: 'token_bank_credit',
+            grantAmount: values.grantAmount?.trim() || '',
+          };
+    case 'points_credit':
+      return {
+        kind: 'points_credit',
+        grantPoints: values.grantPoints?.trim() || '',
+      };
+    case 'cash_credit':
+      return {
+        kind: 'cash_credit',
+        grantAmount: yuanToMinorUnits(values.grantAmount),
+      };
+    case 'subscription':
+      return {
+        kind: 'subscription',
+        productId: values.productId ?? '',
+        skuId: values.skuId ?? '',
+        packageId: values.packageId ?? '',
+        period: values.period ?? 'month',
+        durationDays: values.durationDays ?? '0',
+        dailyQuota: values.dailyQuota ?? '0',
+        totalQuota: values.totalQuota ?? '0',
+      };
+  }
 }
 
 export async function createCouponOffer(
@@ -317,10 +347,85 @@ export function toDatetimeLocal(iso: string): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+/** 元金额（最多两位小数）→ 最小单位（分）字符串；空值返回空串。 */
+export function yuanToMinorUnits(value: string | undefined): string {
+  const normalized = value?.trim();
+  if (!normalized) {
+    return '';
+  }
+  const [whole, fraction = ''] = normalized.split('.');
+  const cents = `${whole}${fraction.padEnd(2, '0').slice(0, 2)}`;
+  return cents.replace(/^0+(?=\d)/, '') || '0';
+}
+
+/** 最小单位（分）字符串 → 元金额字符串（最多两位小数）；空值返回空串。 */
+export function minorUnitsToYuan(value: string | undefined): string {
+  const normalized = value?.trim();
+  if (!normalized || !/^\d+$/.test(normalized)) {
+    return '';
+  }
+  const padded = normalized.padStart(3, '0');
+  const whole = padded.slice(0, -2);
+  const fraction = padded.slice(-2);
+  return `${whole.replace(/^0+(?=\d)/, '') || '0'}.${fraction}`;
+}
+
+/** 从 offer 记录中读取结构化的券权益信息（用于列表与详情展示）。 */
+export interface CouponBenefitDisplay {
+  kind: CouponOfferBenefitKind;
+  /** Token Bank 额度券发放额度 / 现金券最小单位金额。 */
+  grantAmount?: string;
+  /** Token Bank 额度券赠送额度。 */
+  bonusAmount?: string;
+  /** 积分券发放积分。 */
+  grantPoints?: string;
+  productId?: string;
+  skuId?: string;
+  packageId?: string;
+  period?: string;
+  durationDays?: string;
+  dailyQuota?: string;
+  totalQuota?: string;
+}
+
+export function readCouponBenefit(record: ApiRecord): CouponBenefitDisplay | null {
+  const benefit = isRecord(record['coupon_benefit']) ? record['coupon_benefit'] : null;
+  if (!benefit) {
+    return null;
+  }
+  const kind = benefit['kind'];
+  if (kind !== 'points_credit' && kind !== 'cash_credit' && kind !== 'subscription') {
+    return {
+      kind: 'token_bank_credit',
+      grantAmount: benefit['grantAmount'] ? String(benefit['grantAmount']) : undefined,
+      bonusAmount: benefit['bonusAmount'] ? String(benefit['bonusAmount']) : undefined,
+    };
+  }
+  return {
+    kind,
+    grantAmount: benefit['grantAmount'] ? String(benefit['grantAmount']) : undefined,
+    bonusAmount: benefit['bonusAmount'] ? String(benefit['bonusAmount']) : undefined,
+    grantPoints: benefit['grantPoints'] ? String(benefit['grantPoints']) : undefined,
+    productId: benefit['productId'] ? String(benefit['productId']) : undefined,
+    skuId: benefit['skuId'] ? String(benefit['skuId']) : undefined,
+    packageId: benefit['packageId'] ? String(benefit['packageId']) : undefined,
+    period: benefit['period'] ? String(benefit['period']) : undefined,
+    durationDays: benefit['durationDays'] !== undefined && benefit['durationDays'] !== null
+      ? String(benefit['durationDays'])
+      : undefined,
+    dailyQuota: benefit['dailyQuota'] ? String(benefit['dailyQuota']) : undefined,
+    totalQuota: benefit['totalQuota'] ? String(benefit['totalQuota']) : undefined,
+  };
+}
+
 /** 将后端优惠券记录映射为创建表单初始值（用于复制优惠券）。 */
 export function offerRecordToFormValues(record: ApiRecord): CouponOfferCreateFormValues {
   const benefit = isRecord(record['coupon_benefit']) ? record['coupon_benefit'] : null;
-  const benefitKind: CouponOfferBenefitKind = benefit?.['kind'] === 'subscription' ? 'subscription' : 'token_bank_credit';
+  const kind = benefit?.['kind'];
+  const benefitKind: CouponOfferBenefitKind =
+    kind === 'points_credit' || kind === 'cash_credit' || kind === 'subscription'
+      ? kind
+      : 'token_bank_credit';
   return {
     displayName: `${String(record['display_name'] ?? '')} (Copy)`,
     offerType: String(record['offer_type'] ?? 'COUPON'),
@@ -333,12 +438,15 @@ export function offerRecordToFormValues(record: ApiRecord): CouponOfferCreateFor
     endsAt: record['ends_at'] ? toDatetimeLocal(String(record['ends_at'])) : '',
     status: record['status'] === 'disabled' ? 'disabled' : 'active',
     benefitKind,
-    discountType: String(record['discount_type'] ?? 'FIXED'),
-    discountValue: String(record['discount_value'] ?? ''),
-    minimumAmount: String(record['minimum_amount'] ?? '0'),
-    maximumDiscountAmount: record['maximum_discount_amount'] ? String(record['maximum_discount_amount']) : '',
     currencyCode: String(record['currency_code'] ?? 'CNY'),
-    grantAmount: benefitKind === 'token_bank_credit' && benefit ? String(benefit['grantAmount'] ?? '') : '',
+    // 现金券金额后端存最小单位（分），表单以元输入，回读时换算
+    grantAmount: benefitKind === 'cash_credit'
+      ? minorUnitsToYuan(benefit ? String(benefit['grantAmount'] ?? '') : undefined)
+      : benefit
+        ? String(benefit['grantAmount'] ?? '')
+        : '',
+    bonusAmount: benefit && benefit['bonusAmount'] ? String(benefit['bonusAmount']) : '',
+    grantPoints: benefit ? String(benefit['grantPoints'] ?? '') : '',
     productId: benefitKind === 'subscription' && benefit ? String(benefit['productId'] ?? '') : '',
     skuId: benefitKind === 'subscription' && benefit ? String(benefit['skuId'] ?? '') : '',
     packageId: benefitKind === 'subscription' && benefit ? String(benefit['packageId'] ?? '') : '',

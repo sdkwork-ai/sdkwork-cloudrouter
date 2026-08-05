@@ -101,7 +101,7 @@ SELECT
         )
     END AS error_type,
     COALESCE(NULLIF(t.error_message_masked, ''), '') AS error_message,
-    t.latency_ms AS latency_ms,
+    COALESCE(t.latency_ms, 0) AS latency_ms,
     COALESCE(t.ttft_ms, 0) AS ttft_ms,
     CASE WHEN COALESCE(t.streaming, false) THEN 1 ELSE 0 END AS is_stream,
     COALESCE(u.prompt_tokens, CAST(COALESCE(t.prompt_tokens, 0) AS TEXT)) AS prompt_tokens,
@@ -653,6 +653,18 @@ mod tests {
         assert!(
             LOAD_USAGE_LOGS.contains("AS user_agent"),
             "usage logs Postgres SQL must expose a user_agent column for API serialization"
+        );
+    }
+
+    #[test]
+    fn usage_logs_query_defaults_null_latency_to_zero() {
+        assert!(
+            LOAD_USAGE_LOGS.contains("COALESCE(t.latency_ms, 0) AS latency_ms"),
+            "usage logs Postgres SQL must project latency_ms with a zero default so traces without measured latency do not fail the page"
+        );
+        assert!(
+            !LOAD_USAGE_LOGS.contains("t.latency_ms AS latency_ms"),
+            "usage logs Postgres SQL must not project raw nullable latency_ms"
         );
     }
 }

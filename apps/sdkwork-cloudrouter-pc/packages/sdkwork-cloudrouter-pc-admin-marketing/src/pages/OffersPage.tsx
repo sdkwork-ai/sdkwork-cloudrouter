@@ -14,6 +14,7 @@ import {
 } from '../components/MarketingPageControls';
 import { MarketingListView, type MarketingColumn } from '../components/MarketingListView';
 import { CouponOfferCreateDrawerForm } from '../forms/CouponOfferCreateDrawerForm';
+import { CouponBenefitSummary } from '../components/CouponBenefitSummary';
 import {
   backendPromotionOffersList,
   createCouponOffer,
@@ -93,9 +94,9 @@ export function OffersPage() {
     { key: 'offer_type', label: t('admin.col.type', 'Type') },
     { key: 'audience_scope', label: t('admin.col.audience', 'Audience') },
     {
-      key: 'discount_value',
-      label: t('admin.col.discount', 'Discount'),
-      render: (value, record) => (value === null || value === undefined ? '-' : `${value} ${String(record['currency_code'] ?? '')}`),
+      key: 'coupon_benefit',
+      label: t('admin.col.benefit', 'Benefit'),
+      render: (_value, record) => <CouponBenefitSummary record={record} />,
     },
     {
       key: 'status',

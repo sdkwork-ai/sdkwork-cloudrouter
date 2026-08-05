@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ApiRecord } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { MarketingDrawer } from './MarketingDrawer';
-import { retrievePromotionOffer } from '../marketingService';
+import {
+  minorUnitsToYuan,
+  readCouponBenefit,
+  retrievePromotionOffer,
+} from '../marketingService';
 
 interface OfferDetailDrawerProps {
   offerId: string | null;
@@ -87,26 +91,57 @@ export function OfferDetailDrawer({ offerId, onClose }: OfferDetailDrawerProps) 
             {t('admin.marketing.offers.detail.benefit', 'Benefit')}
           </h4>
           <DetailRow label={t('admin.col.discountType', 'Discount Type')} value={offer['discount_type']} />
-          <DetailRow label={t('admin.marketing.coupon.form.discountValue', 'Discount Value')} value={offer['discount_value']} />
           <DetailRow label={t('admin.marketing.coupon.form.minimumAmount', 'Minimum Amount')} value={offer['minimum_amount']} />
-          <DetailRow label={t('admin.marketing.coupon.form.maximumDiscountAmount', 'Maximum Discount Amount')} value={offer['maximum_discount_amount']} />
           <DetailRow label={t('admin.marketing.coupon.form.currencyCode', 'Currency')} value={offer['currency_code']} />
-          <DetailRow label={t('admin.marketing.coupon.form.benefitKind', 'Benefit Type')} value={offer['coupon_benefit'] ? (offer['coupon_benefit'] as ApiRecord)['kind'] : '-'} />
-          {offer['coupon_benefit'] ? (
-            (offer['coupon_benefit'] as ApiRecord)['kind'] === 'subscription' ? (
-              <>
-                <DetailRow label={t('admin.marketing.coupon.form.productId', 'Product Id')} value={(offer['coupon_benefit'] as ApiRecord)['productId']} />
-                <DetailRow label={t('admin.marketing.coupon.form.skuId', 'Sku Id')} value={(offer['coupon_benefit'] as ApiRecord)['skuId']} />
-                <DetailRow label={t('admin.marketing.coupon.form.packageId', 'Package Id')} value={(offer['coupon_benefit'] as ApiRecord)['packageId']} />
-                <DetailRow label={t('admin.marketing.coupon.form.period', 'Period')} value={(offer['coupon_benefit'] as ApiRecord)['period']} />
-                <DetailRow label={t('admin.marketing.coupon.form.durationDays', 'Duration Days')} value={(offer['coupon_benefit'] as ApiRecord)['durationDays']} />
-                <DetailRow label={t('admin.marketing.coupon.form.dailyQuota', 'Daily Quota')} value={(offer['coupon_benefit'] as ApiRecord)['dailyQuota']} />
-                <DetailRow label={t('admin.marketing.coupon.form.totalQuota', 'Total Quota')} value={(offer['coupon_benefit'] as ApiRecord)['totalQuota']} />
-              </>
-            ) : (
-              <DetailRow label={t('admin.marketing.coupon.form.grantAmount', 'Grant Amount')} value={(offer['coupon_benefit'] as ApiRecord)['grantAmount']} />
-            )
-          ) : null}
+          {(() => {
+            const benefit = readCouponBenefit(offer as ApiRecord);
+            if (!benefit) {
+              return <DetailRow label={t('admin.marketing.coupon.form.benefitKind', 'Benefit Type')} value="-" />;
+            }
+            const kindLabel = t(`admin.marketing.coupon.form.benefit.${benefit.kind}`);
+            switch (benefit.kind) {
+              case 'token_bank_credit':
+                return (
+                  <>
+                    <DetailRow label={t('admin.marketing.coupon.form.benefitKind', 'Benefit Type')} value={kindLabel} />
+                    <DetailRow label={t('admin.marketing.coupon.form.grantAmount', 'Grant Amount')} value={benefit.grantAmount} />
+                    {benefit.bonusAmount ? (
+                      <DetailRow label={t('admin.marketing.coupon.form.bonusAmount', 'Bonus Amount')} value={benefit.bonusAmount} />
+                    ) : null}
+                  </>
+                );
+              case 'points_credit':
+                return (
+                  <>
+                    <DetailRow label={t('admin.marketing.coupon.form.benefitKind', 'Benefit Type')} value={kindLabel} />
+                    <DetailRow label={t('admin.marketing.coupon.form.grantPoints', 'Grant Points')} value={benefit.grantPoints} />
+                  </>
+                );
+              case 'cash_credit':
+                return (
+                  <>
+                    <DetailRow label={t('admin.marketing.coupon.form.benefitKind', 'Benefit Type')} value={kindLabel} />
+                    <DetailRow
+                      label={t('admin.marketing.coupon.form.cashGrantAmount', 'Grant Amount (CNY)')}
+                      value={minorUnitsToYuan(benefit.grantAmount)}
+                    />
+                  </>
+                );
+              case 'subscription':
+                return (
+                  <>
+                    <DetailRow label={t('admin.marketing.coupon.form.benefitKind', 'Benefit Type')} value={kindLabel} />
+                    <DetailRow label={t('admin.marketing.coupon.form.productId', 'Product Id')} value={benefit.productId} />
+                    <DetailRow label={t('admin.marketing.coupon.form.skuId', 'Sku Id')} value={benefit.skuId} />
+                    <DetailRow label={t('admin.marketing.coupon.form.packageId', 'Package Id')} value={benefit.packageId} />
+                    <DetailRow label={t('admin.marketing.coupon.form.period', 'Period')} value={benefit.period} />
+                    <DetailRow label={t('admin.marketing.coupon.form.durationDays', 'Duration Days')} value={benefit.durationDays} />
+                    <DetailRow label={t('admin.marketing.coupon.form.dailyQuota', 'Daily Quota')} value={benefit.dailyQuota} />
+                    <DetailRow label={t('admin.marketing.coupon.form.totalQuota', 'Total Quota')} value={benefit.totalQuota} />
+                  </>
+                );
+            }
+          })()}
 
           {offer['description'] ? (
             <>

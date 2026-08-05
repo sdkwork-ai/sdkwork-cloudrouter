@@ -6,6 +6,7 @@ import {
   type CouponCodeIssueMode,
   type CouponStockType,
 } from '../marketingService';
+import { CouponBenefitTypeSelector } from '../components/CouponBenefitTypeSelector';
 import {
   marketingInputClassName,
   marketingSelectClassName,
@@ -34,12 +35,10 @@ const INITIAL_VALUES: CouponOfferCreateFormValues = {
   endsAt: '',
   status: 'active',
   benefitKind: 'token_bank_credit',
-  discountType: 'FIXED',
-  discountValue: '',
-  minimumAmount: '0',
-  maximumDiscountAmount: '',
   currencyCode: 'CNY',
   grantAmount: '',
+  bonusAmount: '',
+  grantPoints: '',
   productId: '',
   skuId: '',
   packageId: '',
@@ -59,6 +58,13 @@ const INITIAL_VALUES: CouponOfferCreateFormValues = {
   batchStartsAt: '',
   batchExpiresAt: '',
 };
+
+/** 正整数（Token Bank 额度/积分/配额）。 */
+const positiveIntegerPattern = /^[1-9][0-9]*$/;
+/** 非负整数（赠送额度）。 */
+const nonNegativeIntegerPattern = /^(0|[1-9][0-9]*)$/;
+/** 正金额（最多两位小数，现金券以元输入）。 */
+const positiveMoneyPattern = /^(0|[1-9][0-9]*)(\.[0-9]{1,2})?$/;
 
 export function CouponOfferCreateDrawerForm({
   isSaving,
@@ -86,6 +92,14 @@ export function CouponOfferCreateDrawerForm({
   const codeIssueMode: CouponCodeIssueMode = values.codeIssueMode;
   const stockType: CouponStockType = values.stockType;
 
+  const requirePositiveInteger = (value: string, message: string): boolean => {
+    if (!positiveIntegerPattern.test(value.trim())) {
+      setValidationError(message);
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     if (!values.displayName.trim() || !values.startsAt) {
@@ -97,33 +111,44 @@ export function CouponOfferCreateDrawerForm({
       return;
     }
     if (benefitKind === 'token_bank_credit') {
-      const amountFields = [
-        ['grantAmount', values.grantAmount],
-        ['discountValue', values.discountValue],
-        ['minimumAmount', values.minimumAmount],
-        ['maximumDiscountAmount', values.maximumDiscountAmount],
-      ] as const;
-      for (const [, value] of amountFields) {
-        if (value && !/^\d+(\.\d{1,2})?$/.test(value.trim())) {
-          setValidationError(t('admin.marketing.coupon.form.invalidAmount', 'Amount fields must be positive numbers with at most two decimals'));
-          return;
-        }
+      if (!requirePositiveInteger(values.grantAmount ?? '', t('admin.marketing.coupon.form.requiredGrant', 'Grant amount is required for token bank credit coupons'))) {
+        return;
+      }
+      if (values.bonusAmount?.trim() && !nonNegativeIntegerPattern.test(values.bonusAmount.trim())) {
+        setValidationError(t('admin.marketing.coupon.form.invalidBonus', 'Bonus amount must be a non-negative integer'));
+        return;
       }
     }
-    if (benefitKind === 'token_bank_credit' && !values.grantAmount?.trim()) {
-      setValidationError(t('admin.marketing.coupon.form.requiredGrant', 'Grant amount is required for token bank credit coupons'));
+    if (benefitKind === 'points_credit' && !requirePositiveInteger(values.grantPoints ?? '', t('admin.marketing.coupon.form.requiredPoints', 'Grant points are required for points coupons'))) {
       return;
     }
-    if (benefitKind === 'subscription' && (!values.packageId?.trim() || !values.dailyQuota?.trim() || !values.totalQuota?.trim())) {
-      setValidationError(t('admin.marketing.coupon.form.requiredSubscription', 'Package, daily quota and total quota are required for subscription coupons'));
+    if (benefitKind === 'cash_credit') {
+      const cashAmount = values.grantAmount?.trim() ?? '';
+      if (!cashAmount || !positiveMoneyPattern.test(cashAmount) || Number(cashAmount) <= 0) {
+        setValidationError(t('admin.marketing.coupon.form.requiredCash', 'Grant amount is required for cash coupons and must be a positive amount'));
+        return;
+      }
+    }
+    if (benefitKind === 'subscription') {
+      if (!values.packageId?.trim()) {
+        setValidationError(t('admin.marketing.coupon.form.requiredSubscription', 'Package, daily quota and total quota are required for subscription coupons'));
+        return;
+      }
+      if (!requirePositiveInteger(values.dailyQuota ?? '', t('admin.marketing.coupon.form.requiredSubscription', 'Package, daily quota and total quota are required for subscription coupons'))) {
+        return;
+      }
+      if (!requirePositiveInteger(values.totalQuota ?? '', t('admin.marketing.coupon.form.requiredSubscription', 'Package, daily quota and total quota are required for subscription coupons'))) {
+        return;
+      }
+      if (Number(values.totalQuota) < Number(values.dailyQuota)) {
+        setValidationError(t('admin.marketing.coupon.form.totalBelowDaily', 'Total quota must not be less than daily quota'));
+        return;
+      }
+    }
+    if (stockType === 'LIMITED' && !requirePositiveInteger(values.totalQuantity, t('admin.marketing.coupon.form.requiredQuantity', 'Total quantity is required for limited stock'))) {
       return;
     }
-    if (stockType === 'LIMITED' && !values.totalQuantity) {
-      setValidationError(t('admin.marketing.coupon.form.requiredQuantity', 'Total quantity is required for limited stock'));
-      return;
-    }
-    if (codeIssueMode === 'BATCH' && !values.batchQuantity) {
-      setValidationError(t('admin.marketing.coupon.form.requiredBatch', 'Batch quantity is required for batch code mode'));
+    if (codeIssueMode === 'BATCH' && !requirePositiveInteger(values.batchQuantity ?? '', t('admin.marketing.coupon.form.requiredBatch', 'Batch quantity is required for batch code mode'))) {
       return;
     }
     onSubmit({
@@ -132,12 +157,148 @@ export function CouponOfferCreateDrawerForm({
       codeIssueMode,
       stockType,
       endsAt: values.endsAt || undefined,
-      maximumDiscountAmount: values.maximumDiscountAmount || undefined,
       claimStartsAt: values.claimStartsAt || undefined,
       claimEndsAt: values.claimEndsAt || undefined,
       batchStartsAt: values.batchStartsAt || undefined,
       batchExpiresAt: values.batchExpiresAt || undefined,
     });
+  };
+
+  const renderBenefitFields = () => {
+    if (benefitKind === 'token_bank_credit') {
+      return (
+        <>
+          <MarketingField label={t('admin.marketing.coupon.form.grantAmount', 'Grant Amount')} required>
+            <input
+              type="text"
+              value={values.grantAmount ?? ''}
+              onChange={(event) => update('grantAmount', event.target.value)}
+              className={marketingInputClassName}
+              placeholder={t('admin.marketing.coupon.form.grantAmountPlaceholder', 'e.g. 500')}
+            />
+          </MarketingField>
+          <MarketingField label={t('admin.marketing.coupon.form.bonusAmount', 'Bonus Amount')} hint={t('admin.marketing.coupon.form.bonusAmountHint', 'Optional granted bonus on top of the grant amount')}>
+            <input
+              type="text"
+              value={values.bonusAmount ?? ''}
+              onChange={(event) => update('bonusAmount', event.target.value)}
+              className={marketingInputClassName}
+              placeholder={t('admin.marketing.coupon.form.bonusAmountPlaceholder', 'e.g. 50')}
+            />
+          </MarketingField>
+          <MarketingField label={t('admin.marketing.coupon.form.currencyCode', 'Currency')} required>
+            <input
+              type="text"
+              value={values.currencyCode}
+              onChange={(event) => update('currencyCode', event.target.value.toUpperCase())}
+              className={marketingInputClassName}
+              placeholder={t('admin.marketing.coupon.form.currencyCodePlaceholder', 'CNY')}
+            />
+          </MarketingField>
+        </>
+      );
+    }
+    if (benefitKind === 'points_credit') {
+      return (
+        <MarketingField label={t('admin.marketing.coupon.form.grantPoints', 'Grant Points')} required>
+          <input
+            type="text"
+            value={values.grantPoints ?? ''}
+            onChange={(event) => update('grantPoints', event.target.value)}
+            className={marketingInputClassName}
+            placeholder={t('admin.marketing.coupon.form.grantPointsPlaceholder', 'e.g. 1000')}
+          />
+        </MarketingField>
+      );
+    }
+    if (benefitKind === 'cash_credit') {
+      return (
+        <>
+          <MarketingField label={t('admin.marketing.coupon.form.cashGrantAmount', 'Grant Amount (CNY)')} required>
+            <input
+              type="text"
+              value={values.grantAmount ?? ''}
+              onChange={(event) => update('grantAmount', event.target.value)}
+              className={marketingInputClassName}
+              placeholder={t('admin.marketing.coupon.form.grantAmountPlaceholder', 'e.g. 500')}
+            />
+          </MarketingField>
+          <MarketingField label={t('admin.marketing.coupon.form.currencyCode', 'Currency')} required>
+            <input
+              type="text"
+              value={values.currencyCode}
+              onChange={(event) => update('currencyCode', event.target.value.toUpperCase())}
+              className={marketingInputClassName}
+              placeholder={t('admin.marketing.coupon.form.currencyCodePlaceholder', 'CNY')}
+            />
+          </MarketingField>
+        </>
+      );
+    }
+    return (
+      <>
+        <MarketingField label={t('admin.marketing.coupon.form.productId', 'Product Id')} required>
+          <input
+            type="text"
+            value={values.productId ?? ''}
+            onChange={(event) => update('productId', event.target.value)}
+            className={marketingInputClassName}
+          />
+        </MarketingField>
+        <MarketingField label={t('admin.marketing.coupon.form.skuId', 'Sku Id')} required>
+          <input
+            type="text"
+            value={values.skuId ?? ''}
+            onChange={(event) => update('skuId', event.target.value)}
+            className={marketingInputClassName}
+          />
+        </MarketingField>
+        <MarketingField label={t('admin.marketing.coupon.form.packageId', 'Package Id')} required>
+          <input
+            type="text"
+            value={values.packageId ?? ''}
+            onChange={(event) => update('packageId', event.target.value)}
+            className={marketingInputClassName}
+          />
+        </MarketingField>
+        <MarketingField label={t('admin.marketing.coupon.form.period', 'Period')} required>
+          <select
+            value={values.period ?? 'month'}
+            onChange={(event) => update('period', event.target.value as 'day' | 'week' | 'month' | 'year')}
+            className={marketingSelectClassName}
+          >
+            <option value="day">{t('admin.marketing.enums.period.day', 'Day')}</option>
+            <option value="week">{t('admin.marketing.enums.period.week', 'Week')}</option>
+            <option value="month">{t('admin.marketing.enums.period.month', 'Month')}</option>
+            <option value="year">{t('admin.marketing.enums.period.year', 'Year')}</option>
+          </select>
+        </MarketingField>
+        <MarketingField label={t('admin.marketing.coupon.form.durationDays', 'Duration Days')} required>
+          <input
+            type="text"
+            value={values.durationDays ?? '30'}
+            onChange={(event) => update('durationDays', event.target.value)}
+            className={marketingInputClassName}
+          />
+        </MarketingField>
+        <MarketingField label={t('admin.marketing.coupon.form.dailyQuota', 'Daily Quota')} required>
+          <input
+            type="text"
+            value={values.dailyQuota ?? ''}
+            onChange={(event) => update('dailyQuota', event.target.value)}
+            className={marketingInputClassName}
+          />
+        </MarketingField>
+        <MarketingField label={t('admin.marketing.coupon.form.totalQuota', 'Total Quota')} required>
+          <input
+            type="text"
+            value={values.totalQuota ?? ''}
+            onChange={(event) => update('totalQuota', event.target.value)}
+            className={marketingInputClassName}
+          />
+        </MarketingField>
+      </>
+    );
   };
 
   return (
@@ -152,38 +313,30 @@ export function CouponOfferCreateDrawerForm({
             placeholder={t('admin.marketing.coupon.form.namePlaceholder', 'e.g. New User Welcome Coupon')}
           />
         </MarketingField>
-        <MarketingField label={t('admin.marketing.coupon.form.type', 'Offer Type')} required>
-          <select
-            value={values.offerType}
-            onChange={(event) => update('offerType', event.target.value)}
-            className={marketingSelectClassName}
-          >
-            <option value="COUPON">{t('admin.marketing.enums.offerType.COUPON', 'Coupon')}</option>
-            <option value="VOUCHER">{t('admin.marketing.enums.offerType.VOUCHER', 'Voucher')}</option>
-            <option value="DISCOUNT">{t('admin.marketing.enums.offerType.DISCOUNT', 'Discount')}</option>
-          </select>
+        <MarketingField
+          label={t('admin.marketing.coupon.form.benefitKind', 'Benefit Type')}
+          required
+          className="sm:col-span-2"
+        >
+          <CouponBenefitTypeSelector value={benefitKind} onChange={(kind) => update('benefitKind', kind)} />
         </MarketingField>
-        <MarketingField label={t('admin.marketing.coupon.form.audience', 'Audience Scope')} required>
-          <select
-            value={values.audienceScope}
-            onChange={(event) => update('audienceScope', event.target.value)}
-            className={marketingSelectClassName}
-          >
-            <option value="ALL">{t('admin.marketing.enums.audience.ALL', 'All users')}</option>
-            <option value="NEW_USER">{t('admin.marketing.enums.audience.NEW_USER', 'New users')}</option>
-            <option value="RETURNING_USER">{t('admin.marketing.enums.audience.RETURNING_USER', 'Returning users')}</option>
-          </select>
+        <MarketingField
+          label={t('admin.marketing.coupon.form.description', 'Description')}
+          className="sm:col-span-2"
+        >
+          <textarea
+            value={values.description ?? ''}
+            onChange={(event) => update('description', event.target.value)}
+            className="h-20 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-lobster-500 focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
+          />
         </MarketingField>
-        <MarketingField label={t('admin.marketing.coupon.form.combinability', 'Combinability')} required>
-          <select
-            value={values.combinability}
-            onChange={(event) => update('combinability', event.target.value)}
-            className={marketingSelectClassName}
-          >
-            <option value="EXCLUSIVE">{t('admin.marketing.enums.combinability.EXCLUSIVE', 'Exclusive')}</option>
-            <option value="COMBINABLE">{t('admin.marketing.enums.combinability.COMBINABLE', 'Combinable')}</option>
-          </select>
-        </MarketingField>
+      </MarketingFormSection>
+
+      <MarketingFormSection title={t('admin.marketing.coupon.form.benefit', 'Coupon Benefit')}>
+        {renderBenefitFields()}
+      </MarketingFormSection>
+
+      <MarketingFormSection title={t('admin.marketing.coupon.form.usage', 'Usage Conditions')}>
         <MarketingField label={t('admin.marketing.coupon.form.goodsScope', 'Goods Scope')} required>
           <select
             value={values.goodsScope}
@@ -194,14 +347,6 @@ export function CouponOfferCreateDrawerForm({
             <option value="RECHARGE">{t('admin.marketing.enums.goodsScope.RECHARGE', 'Recharge')}</option>
             <option value="SUBSCRIPTION">{t('admin.marketing.enums.goodsScope.SUBSCRIPTION', 'Subscription')}</option>
           </select>
-        </MarketingField>
-        <MarketingField label={t('admin.marketing.coupon.form.priority', 'Priority')} required>
-          <input
-            type="number"
-            value={values.priority}
-            onChange={(event) => update('priority', Number(event.target.value))}
-            className={marketingInputClassName}
-          />
         </MarketingField>
         <MarketingField label={t('admin.marketing.coupon.form.startsAt', 'Starts At')} required>
           <input
@@ -214,153 +359,11 @@ export function CouponOfferCreateDrawerForm({
         <MarketingField label={t('admin.marketing.coupon.form.endsAt', 'Ends At')}>
           <input
             type="datetime-local"
-            value={values.endsAt}
+            value={values.endsAt ?? ''}
             onChange={(event) => update('endsAt', event.target.value)}
             className={marketingInputClassName}
           />
         </MarketingField>
-        <MarketingField label={t('admin.marketing.coupon.form.description', 'Description')}>
-          <textarea
-            value={values.description}
-            onChange={(event) => update('description', event.target.value)}
-            className="h-20 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-lobster-500 focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
-          />
-        </MarketingField>
-      </MarketingFormSection>
-
-      <MarketingFormSection title={t('admin.marketing.coupon.form.benefit', 'Coupon Benefit')}>
-        <MarketingField label={t('admin.marketing.coupon.form.benefitKind', 'Benefit Type')} required>
-          <select
-            value={benefitKind}
-            onChange={(event) => update('benefitKind', event.target.value as CouponOfferBenefitKind)}
-            className={marketingSelectClassName}
-          >
-            <option value="token_bank_credit">{t('admin.marketing.coupon.form.benefit.tokenBank', 'Token Bank Credit (amount)')}</option>
-            <option value="subscription">{t('admin.marketing.coupon.form.benefit.subscription', 'Subscription Entitlement')}</option>
-          </select>
-        </MarketingField>
-        {benefitKind === 'token_bank_credit' ? (
-          <>
-            <MarketingField label={t('admin.marketing.coupon.form.grantAmount', 'Grant Amount')} required>
-              <input
-                type="text"
-                value={values.grantAmount}
-                onChange={(event) => update('grantAmount', event.target.value)}
-                className={marketingInputClassName}
-                placeholder={t('admin.marketing.coupon.form.grantAmountPlaceholder', 'e.g. 500')}
-              />
-            </MarketingField>
-            <MarketingField label={t('admin.marketing.coupon.form.discountType', 'Discount Type')} required>
-              <select
-                value={values.discountType}
-                onChange={(event) => update('discountType', event.target.value)}
-                className={marketingSelectClassName}
-              >
-                <option value="FIXED">{t('admin.marketing.enums.discountType.FIXED', 'Fixed amount')}</option>
-                <option value="PERCENT">{t('admin.marketing.enums.discountType.PERCENT', 'Percent')}</option>
-                <option value="NONE">{t('admin.marketing.enums.discountType.NONE', 'None')}</option>
-              </select>
-            </MarketingField>
-            <MarketingField label={t('admin.marketing.coupon.form.discountValue', 'Discount Value')} required>
-              <input
-                type="text"
-                value={values.discountValue}
-                onChange={(event) => update('discountValue', event.target.value)}
-                className={marketingInputClassName}
-                placeholder={t('admin.marketing.coupon.form.discountValuePlaceholder', 'e.g. 10')}
-              />
-            </MarketingField>
-            <MarketingField label={t('admin.marketing.coupon.form.minimumAmount', 'Minimum Amount')} required>
-              <input
-                type="text"
-                value={values.minimumAmount}
-                onChange={(event) => update('minimumAmount', event.target.value)}
-                className={marketingInputClassName}
-                placeholder={t('admin.marketing.coupon.form.minimumAmountPlaceholder', '0')}
-              />
-            </MarketingField>
-            <MarketingField label={t('admin.marketing.coupon.form.maximumDiscountAmount', 'Maximum Discount Amount')}>
-              <input
-                type="text"
-                value={values.maximumDiscountAmount}
-                onChange={(event) => update('maximumDiscountAmount', event.target.value)}
-                className={marketingInputClassName}
-              />
-            </MarketingField>
-            <MarketingField label={t('admin.marketing.coupon.form.currencyCode', 'Currency')} required>
-              <input
-                type="text"
-                value={values.currencyCode}
-                onChange={(event) => update('currencyCode', event.target.value.toUpperCase())}
-                className={marketingInputClassName}
-                placeholder={t('admin.marketing.coupon.form.currencyCodePlaceholder', 'CNY')}
-              />
-            </MarketingField>
-          </>
-        ) : (
-          <>
-            <MarketingField label={t('admin.marketing.coupon.form.productId', 'Product Id')} required>
-              <input
-                type="text"
-                value={values.productId}
-                onChange={(event) => update('productId', event.target.value)}
-                className={marketingInputClassName}
-              />
-            </MarketingField>
-            <MarketingField label={t('admin.marketing.coupon.form.skuId', 'Sku Id')} required>
-              <input
-                type="text"
-                value={values.skuId}
-                onChange={(event) => update('skuId', event.target.value)}
-                className={marketingInputClassName}
-              />
-            </MarketingField>
-            <MarketingField label={t('admin.marketing.coupon.form.packageId', 'Package Id')} required>
-              <input
-                type="text"
-                value={values.packageId}
-                onChange={(event) => update('packageId', event.target.value)}
-                className={marketingInputClassName}
-              />
-            </MarketingField>
-            <MarketingField label={t('admin.marketing.coupon.form.period', 'Period')} required>
-              <select
-                value={values.period}
-                onChange={(event) => update('period', event.target.value as 'day' | 'week' | 'month' | 'year')}
-                className={marketingSelectClassName}
-              >
-                <option value="day">{t('admin.marketing.enums.period.day', 'Day')}</option>
-                <option value="week">{t('admin.marketing.enums.period.week', 'Week')}</option>
-                <option value="month">{t('admin.marketing.enums.period.month', 'Month')}</option>
-                <option value="year">{t('admin.marketing.enums.period.year', 'Year')}</option>
-              </select>
-            </MarketingField>
-            <MarketingField label={t('admin.marketing.coupon.form.durationDays', 'Duration Days')} required>
-              <input
-                type="text"
-                value={values.durationDays}
-                onChange={(event) => update('durationDays', event.target.value)}
-                className={marketingInputClassName}
-              />
-            </MarketingField>
-            <MarketingField label={t('admin.marketing.coupon.form.dailyQuota', 'Daily Quota')} required>
-              <input
-                type="text"
-                value={values.dailyQuota}
-                onChange={(event) => update('dailyQuota', event.target.value)}
-                className={marketingInputClassName}
-              />
-            </MarketingField>
-            <MarketingField label={t('admin.marketing.coupon.form.totalQuota', 'Total Quota')} required>
-              <input
-                type="text"
-                value={values.totalQuota}
-                onChange={(event) => update('totalQuota', event.target.value)}
-                className={marketingInputClassName}
-              />
-            </MarketingField>
-          </>
-        )}
       </MarketingFormSection>
 
       <MarketingFormSection title={t('admin.marketing.coupon.form.issuance', 'Issuance Settings')}>
@@ -406,7 +409,7 @@ export function CouponOfferCreateDrawerForm({
         <MarketingField label={t('admin.marketing.coupon.form.claimStartsAt', 'Claim Starts At')}>
           <input
             type="datetime-local"
-            value={values.claimStartsAt}
+            value={values.claimStartsAt ?? ''}
             onChange={(event) => update('claimStartsAt', event.target.value)}
             className={marketingInputClassName}
           />
@@ -414,7 +417,7 @@ export function CouponOfferCreateDrawerForm({
         <MarketingField label={t('admin.marketing.coupon.form.claimEndsAt', 'Claim Ends At')}>
           <input
             type="datetime-local"
-            value={values.claimEndsAt}
+            value={values.claimEndsAt ?? ''}
             onChange={(event) => update('claimEndsAt', event.target.value)}
             className={marketingInputClassName}
           />
@@ -426,7 +429,7 @@ export function CouponOfferCreateDrawerForm({
           <MarketingField label={t('admin.marketing.coupon.form.batchQuantity', 'Batch Quantity')} required>
             <input
               type="text"
-              value={values.batchQuantity}
+              value={values.batchQuantity ?? ''}
               onChange={(event) => update('batchQuantity', event.target.value)}
               className={marketingInputClassName}
             />
@@ -436,7 +439,7 @@ export function CouponOfferCreateDrawerForm({
               type="number"
               min={12}
               max={32}
-              value={values.batchCodeLength}
+              value={values.batchCodeLength ?? 16}
               onChange={(event) => update('batchCodeLength', Number(event.target.value))}
               className={marketingInputClassName}
             />
@@ -444,7 +447,7 @@ export function CouponOfferCreateDrawerForm({
           <MarketingField label={t('admin.marketing.coupon.form.batchCodePrefix', 'Code Prefix')}>
             <input
               type="text"
-              value={values.batchCodePrefix}
+              value={values.batchCodePrefix ?? ''}
               onChange={(event) => update('batchCodePrefix', event.target.value.toUpperCase())}
               className={marketingInputClassName}
               placeholder={t('admin.marketing.coupon.form.codePrefixPlaceholder', 'e.g. WELCOME')}
@@ -453,7 +456,7 @@ export function CouponOfferCreateDrawerForm({
           <MarketingField label={t('admin.marketing.coupon.form.batchStartsAt', 'Codes Valid From')}>
             <input
               type="datetime-local"
-              value={values.batchStartsAt}
+              value={values.batchStartsAt ?? ''}
               onChange={(event) => update('batchStartsAt', event.target.value)}
               className={marketingInputClassName}
             />
@@ -461,13 +464,56 @@ export function CouponOfferCreateDrawerForm({
           <MarketingField label={t('admin.marketing.coupon.form.batchExpiresAt', 'Codes Valid Until')}>
             <input
               type="datetime-local"
-              value={values.batchExpiresAt}
+              value={values.batchExpiresAt ?? ''}
               onChange={(event) => update('batchExpiresAt', event.target.value)}
               className={marketingInputClassName}
             />
           </MarketingField>
         </MarketingFormSection>
       ) : null}
+
+      <MarketingFormSection title={t('admin.marketing.coupon.form.rules', 'Usage Rules')}>
+        <MarketingField label={t('admin.marketing.coupon.form.audience', 'Audience Scope')} required>
+          <select
+            value={values.audienceScope}
+            onChange={(event) => update('audienceScope', event.target.value)}
+            className={marketingSelectClassName}
+          >
+            <option value="ALL">{t('admin.marketing.enums.audience.ALL', 'All users')}</option>
+            <option value="NEW_USER">{t('admin.marketing.enums.audience.NEW_USER', 'New users')}</option>
+            <option value="RETURNING_USER">{t('admin.marketing.enums.audience.RETURNING_USER', 'Returning users')}</option>
+          </select>
+        </MarketingField>
+        <MarketingField label={t('admin.marketing.coupon.form.combinability', 'Combinability')} required>
+          <select
+            value={values.combinability}
+            onChange={(event) => update('combinability', event.target.value)}
+            className={marketingSelectClassName}
+          >
+            <option value="EXCLUSIVE">{t('admin.marketing.enums.combinability.EXCLUSIVE', 'Exclusive')}</option>
+            <option value="COMBINABLE">{t('admin.marketing.enums.combinability.COMBINABLE', 'Combinable')}</option>
+          </select>
+        </MarketingField>
+        <MarketingField label={t('admin.marketing.coupon.form.priority', 'Priority')} required>
+          <input
+            type="number"
+            value={values.priority}
+            onChange={(event) => update('priority', Number(event.target.value))}
+            className={marketingInputClassName}
+          />
+        </MarketingField>
+        <MarketingField label={t('admin.marketing.coupon.form.offerType', 'Offer Type')} required>
+          <select
+            value={values.offerType}
+            onChange={(event) => update('offerType', event.target.value)}
+            className={marketingSelectClassName}
+          >
+            <option value="COUPON">{t('admin.marketing.enums.offerType.COUPON', 'Coupon')}</option>
+            <option value="VOUCHER">{t('admin.marketing.enums.offerType.VOUCHER', 'Voucher')}</option>
+            <option value="DISCOUNT">{t('admin.marketing.enums.offerType.DISCOUNT', 'Discount')}</option>
+          </select>
+        </MarketingField>
+      </MarketingFormSection>
 
       {validationError || error ? (
         <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-500/10 dark:text-red-400">

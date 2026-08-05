@@ -271,6 +271,14 @@ sdkwork-iam-database-host = { path = "../sdkwork-iam/crates/sdkwork-iam-database
 sdkwork-routes-iam-app-api = { path = "../sdkwork-iam/crates/sdkwork-routes-iam-app-api" }
 sdkwork-routes-iam-backend-api = { path = "../sdkwork-iam/crates/sdkwork-routes-iam-backend-api" }
 
+# SDKWork appbase base-data capability
+sdkwork_base_data_service_host = { package = "sdkwork-base-data-service-host", path = "../sdkwork-appbase/crates/sdkwork-base-data-service-host" }
+sdkwork_routes_base_data_backend_api = { package = "sdkwork-routes-base-data-backend-api", path = "../sdkwork-appbase/crates/sdkwork-routes-base-data-backend-api" }
+sdkwork_edu_data_service_host = { package = "sdkwork-edu-data-service-host", path = "../sdkwork-appbase/crates/sdkwork-edu-data-service-host" }
+sdkwork_routes_edu_data_backend_api = { package = "sdkwork-routes-edu-data-backend-api", path = "../sdkwork-appbase/crates/sdkwork-routes-edu-data-backend-api" }
+sdkwork_med_data_service_host = { package = "sdkwork-med-data-service-host", path = "../sdkwork-appbase/crates/sdkwork-med-data-service-host" }
+sdkwork_routes_med_data_backend_api = { package = "sdkwork-routes-med-data-backend-api", path = "../sdkwork-appbase/crates/sdkwork-routes-med-data-backend-api" }
+
 # SDKWork database dependencies
 sdkwork-database-config = { path = "../sdkwork-database/crates/sdkwork-database-config" }
 sdkwork-database-lifecycle = { path = "../sdkwork-database/crates/sdkwork-database-lifecycle" }

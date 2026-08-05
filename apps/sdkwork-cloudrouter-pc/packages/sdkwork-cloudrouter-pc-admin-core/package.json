@@ -13,6 +13,9 @@
     "@sdkwork/cloudrouter-backend-sdk": "workspace:*",
     "@sdkwork/models-backend-sdk": "workspace:*"
   },
+  "devDependencies": {
+    "typescript": "catalog:"
+  },
   "exports": {
     ".": {
       "types": "./src/index.ts",

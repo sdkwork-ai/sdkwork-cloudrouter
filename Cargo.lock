@@ -10591,6 +10591,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-agent-provider-mimo-code"
+version = "0.2.0"
+dependencies = [
+ "sdkwork-agent-kernel",
+ "sdkwork-agent-plugin-core",
+ "sdkwork-agent-provider-core",
+ "sdkwork-agent-provider-spi",
+ "sdkwork-agent-provider-transport-core",
+ "sdkwork-agent-provider-transport-node",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "sdkwork-agent-provider-openclaw"
 version = "0.2.0"
 dependencies = [
@@ -10711,6 +10725,7 @@ dependencies = [
  "sdkwork-agent-provider-codex",
  "sdkwork-agent-provider-gemini-cli",
  "sdkwork-agent-provider-hermes",
+ "sdkwork-agent-provider-mimo-code",
  "sdkwork-agent-provider-openclaw",
  "sdkwork-agent-provider-opencode",
  "sdkwork-agent-provider-rig",
@@ -10797,8 +10812,10 @@ dependencies = [
  "sdkwork-agent-provider-core",
  "sdkwork-agent-provider-gemini-cli",
  "sdkwork-agent-provider-hermes",
+ "sdkwork-agent-provider-mimo-code",
  "sdkwork-agent-provider-openclaw",
  "sdkwork-agent-provider-opencode",
+ "sdkwork-agent-provider-rig",
  "sdkwork-agent-provider-spi",
  "sdkwork-utils-rust",
  "serde",
@@ -10907,6 +10924,51 @@ dependencies = [
  "sdkwork-web-core",
  "serde_json",
  "tokio",
+]
+
+[[package]]
+name = "sdkwork-base-data-database-host"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "dotenvy",
+ "sdkwork-database-config",
+ "sdkwork-database-drift",
+ "sdkwork-database-id",
+ "sdkwork-database-lifecycle",
+ "sdkwork-database-spi",
+ "sdkwork-database-sqlx",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "sdkwork-base-data-repository-sqlx"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "sdkwork-base-data-service",
+ "serde_json",
+ "sqlx",
+]
+
+[[package]]
+name = "sdkwork-base-data-service"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "sdkwork-base-data-service-host"
+version = "0.1.0"
+dependencies = [
+ "sdkwork-base-data-database-host",
+ "sdkwork-database-spi",
+ "sdkwork-database-sqlx",
 ]
 
 [[package]]
@@ -11019,6 +11081,7 @@ dependencies = [
  "sdkwork-account-service",
  "sdkwork-account-service-host",
  "sdkwork-api-membership-assembly",
+ "sdkwork-base-data-service-host",
  "sdkwork-cloudrouter-config",
  "sdkwork-cloudrouter-database-host",
  "sdkwork-cloudrouter-http",
@@ -11032,10 +11095,15 @@ dependencies = [
  "sdkwork-contract-service",
  "sdkwork-database-config",
  "sdkwork-database-sqlx",
+ "sdkwork-edu-data-service-host",
+ "sdkwork-med-data-service-host",
  "sdkwork-models-catalog-repository-sqlx",
  "sdkwork-payment-service-host",
+ "sdkwork-routes-base-data-backend-api",
  "sdkwork-routes-cloudrouter-app-api",
  "sdkwork-routes-cloudrouter-backend-api",
+ "sdkwork-routes-edu-data-backend-api",
+ "sdkwork-routes-med-data-backend-api",
  "sdkwork-sdk-generator-client",
  "sdkwork-web-chain",
  "sdkwork-web-core",
@@ -11505,6 +11573,51 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-edu-data-database-host"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "dotenvy",
+ "sdkwork-database-config",
+ "sdkwork-database-drift",
+ "sdkwork-database-id",
+ "sdkwork-database-lifecycle",
+ "sdkwork-database-spi",
+ "sdkwork-database-sqlx",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "sdkwork-edu-data-repository-sqlx"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "sdkwork-edu-data-service",
+ "serde_json",
+ "sqlx",
+]
+
+[[package]]
+name = "sdkwork-edu-data-service"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "sdkwork-edu-data-service-host"
+version = "0.1.0"
+dependencies = [
+ "sdkwork-database-spi",
+ "sdkwork-database-sqlx",
+ "sdkwork-edu-data-database-host",
+]
+
+[[package]]
 name = "sdkwork-iam-bootstrap"
 version = "0.1.0"
 dependencies = [
@@ -11704,6 +11817,51 @@ dependencies = [
  "sdkwork-database-spi",
  "sdkwork-database-sqlx",
  "sdkwork-invoice-database-host",
+]
+
+[[package]]
+name = "sdkwork-med-data-database-host"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "dotenvy",
+ "sdkwork-database-config",
+ "sdkwork-database-drift",
+ "sdkwork-database-id",
+ "sdkwork-database-lifecycle",
+ "sdkwork-database-spi",
+ "sdkwork-database-sqlx",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "sdkwork-med-data-repository-sqlx"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "sdkwork-med-data-service",
+ "serde_json",
+ "sqlx",
+]
+
+[[package]]
+name = "sdkwork-med-data-service"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "sdkwork-med-data-service-host"
+version = "0.1.0"
+dependencies = [
+ "sdkwork-database-spi",
+ "sdkwork-database-sqlx",
+ "sdkwork-med-data-database-host",
 ]
 
 [[package]]
@@ -12173,6 +12331,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-routes-base-data-backend-api"
+version = "0.1.0"
+dependencies = [
+ "axum 0.8.9",
+ "sdkwork-base-data-repository-sqlx",
+ "sdkwork-base-data-service",
+ "sdkwork-base-data-service-host",
+ "sdkwork-database-sqlx",
+ "sdkwork-iam-web-adapter",
+ "sdkwork-utils-rust",
+ "sdkwork-web-axum",
+ "sdkwork-web-bootstrap",
+ "sdkwork-web-core",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+]
+
+[[package]]
 name = "sdkwork-routes-cloudrouter-app-api"
 version = "0.3.0"
 dependencies = [
@@ -12286,6 +12464,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-routes-edu-data-backend-api"
+version = "0.1.0"
+dependencies = [
+ "axum 0.8.9",
+ "sdkwork-database-sqlx",
+ "sdkwork-edu-data-repository-sqlx",
+ "sdkwork-edu-data-service",
+ "sdkwork-edu-data-service-host",
+ "sdkwork-iam-web-adapter",
+ "sdkwork-utils-rust",
+ "sdkwork-web-axum",
+ "sdkwork-web-bootstrap",
+ "sdkwork-web-core",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+]
+
+[[package]]
 name = "sdkwork-routes-iaas-open-api"
 version = "0.3.0"
 dependencies = [
@@ -12373,6 +12571,26 @@ dependencies = [
  "serde_json",
  "sqlx",
  "uuid",
+]
+
+[[package]]
+name = "sdkwork-routes-med-data-backend-api"
+version = "0.1.0"
+dependencies = [
+ "axum 0.8.9",
+ "sdkwork-database-sqlx",
+ "sdkwork-iam-web-adapter",
+ "sdkwork-med-data-repository-sqlx",
+ "sdkwork-med-data-service",
+ "sdkwork-med-data-service-host",
+ "sdkwork-utils-rust",
+ "sdkwork-web-axum",
+ "sdkwork-web-bootstrap",
+ "sdkwork-web-core",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
 ]
 
 [[package]]
@@ -14277,9 +14495,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.52.3"
+version = "1.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8fc7f01b389ac15039e4dc9531aa973a135d7a4135281b12d7c1bc79fd57fffe"
+checksum = "202caea871b69668250d242070849eb495be178ed697a3e98aebce5bc81a0bed"
 dependencies = [
  "bytes",
  "libc",

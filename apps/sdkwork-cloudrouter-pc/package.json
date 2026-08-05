@@ -15,6 +15,7 @@
     "../../../sdkwork-messaging/sdks/sdkwork-messaging-app-sdk/sdkwork-messaging-app-sdk-typescript",
     "../../../sdkwork-membership/sdks/sdkwork-membership-backend-sdk/sdkwork-membership-backend-sdk-typescript",
     "../../../sdkwork-payment/sdks/sdkwork-payment-backend-sdk/sdkwork-payment-backend-sdk-typescript",
+    "../../../sdkwork-appbase/sdks/sdkwork-base-data-backend-sdk/sdkwork-base-data-backend-sdk-typescript",
     "../../../sdkwork-promotion/sdks/sdkwork-promotion-backend-sdk/sdkwork-promotion-backend-sdk-typescript",
     "../sdkwork-cloudrouter-common/packages/*",
     "../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-appbase-pc-react",
@@ -254,7 +255,8 @@
     "victory-vendor": "^37.3.6",
     "vite": "^6.2.0",
     "void-elements": "^3.1.0",
-    "tailwindcss": "^4.1.14"
+    "tailwindcss": "^4.1.14",
+    "@sdkwork/base-data-backend-sdk": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",

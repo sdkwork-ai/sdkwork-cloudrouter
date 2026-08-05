@@ -6,14 +6,16 @@ export function MarketingField({
   required = false,
   children,
   hint,
+  className = '',
 }: {
   label: string;
   required?: boolean;
   children: ReactNode;
   hint?: string;
+  className?: string;
 }) {
   return (
-    <label className="block">
+    <label className={`block ${className}`}>
       <span className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
         {label}
         {required ? <span className="ml-0.5 text-red-500">*</span> : null}
