@@ -9,6 +9,7 @@
 //! Skipped unless `SDKWORK_DATABASE_URL` is set (same convention as
 //! `postgres_transaction_integration`).
 
+use chrono::{DateTime, Utc};
 use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
 use sdkwork_account_service::AppendLedgerEntryCommand;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::PostgresUsageSettlementStore;
@@ -57,18 +58,18 @@ async fn settlement_debits_user_points_wallet_and_marks_facts_settled() {
 
     assert_eq!(2, outcome.settled_count);
     assert_eq!(0, outcome.failed_count);
-    assert_eq!(60, outcome.debited_points);
+    assert_eq!(600, outcome.debited_points, "60.00 USD at 10 points per major unit");
 
     let (status, settled_at) = usage_fact_settlement(&ctx.pool, 1).await;
     assert_eq!(2, status, "usage fact must be marked settled");
     assert!(settled_at.is_some(), "successful settlement must record settled_at");
 
     let balance = points_balance(&ctx.pool, USER_ID).await;
-    assert_eq!(940, balance, "wallet must be debited through the account ledger");
+    assert_eq!(400, balance, "wallet must be debited through the account ledger");
 
     let debits = ledger_debit_total(&ctx.pool, USER_ID).await;
     assert_eq!(
-        60,
+        600,
         debits,
         "exactly one usage_settlement ledger entry must exist for the batch"
     );
@@ -133,7 +134,7 @@ async fn settlement_replays_idempotently_without_double_debit() {
         .await
         .expect("first settlement run");
     assert_eq!(1, first.settled_count);
-    assert_eq!(20, first.debited_points);
+    assert_eq!(200, first.debited_points, "20.00 USD at 10 points per major unit");
 
     // Second run must settle nothing and must not debit the wallet again.
     let second = settlement
@@ -144,9 +145,9 @@ async fn settlement_replays_idempotently_without_double_debit() {
     assert_eq!(0, second.debited_points);
 
     let balance = points_balance(&ctx.pool, USER_ID).await;
-    assert_eq!(980, balance, "wallet must be debited exactly once");
+    assert_eq!(800, balance, "wallet must be debited exactly once");
     let debits = ledger_debit_total(&ctx.pool, USER_ID).await;
-    assert_eq!(20, debits, "only one usage_settlement ledger entry may exist");
+    assert_eq!(200, debits, "only one usage_settlement ledger entry may exist");
 
     ctx.cleanup().await;
 }
@@ -156,9 +157,9 @@ async fn settlement_defers_zero_amount_groups() {
     let Some(ctx) = PostgresTestContext::new("usage_settlement_zero").await else {
         return;
     };
-    insert_usage_fact(&ctx.pool, 1, USER_ID, "settle-e2e-zero-1", "0.000000")
+    insert_usage_fact(&ctx.pool, 1, USER_ID, "settle-e2e-zero-1", "0.0000000001")
         .await
-        .expect("insert zero amount usage fact");
+        .expect("insert sub-point usage fact");
 
     let settlement = PostgresUsageSettlementStore::new(
         ctx.pool.clone(),
@@ -174,7 +175,11 @@ async fn settlement_defers_zero_amount_groups() {
     assert_eq!(0, outcome.debited_points);
 
     let (status, _) = usage_fact_settlement(&ctx.pool, 1).await;
-    assert_eq!(0, status, "micro zero-amount facts must stay pending for deferral");
+    assert_eq!(
+        0,
+        status,
+        "sub-point usage facts must stay pending for deferral until they aggregate"
+    );
 
     ctx.cleanup().await;
 }
@@ -198,11 +203,7 @@ async fn credit_points(pool: &PgPool, user_id: i64, idempotency_key: &str, point
         asset_type: CommerceAccountAssetType::Points,
         currency_code: Some("POINT".to_owned()),
         direction: CommerceLedgerDirection::Credit,
-        amount: {
-            let rendered = points.to_string();
-            eprintln!("DEBUG credit points value={rendered}");
-            CommerceMoney::new(&rendered).map_err(|error| error.to_string())?
-        },
+        amount: CommerceMoney::new(&points.to_string()).map_err(|error| error.to_string())?,
         business_type: "points_recharge".to_owned(),
         transaction_no: idempotency_key.to_owned(),
         request_no: idempotency_key.to_owned(),
@@ -218,10 +219,7 @@ async fn credit_points(pool: &PgPool, user_id: i64, idempotency_key: &str, point
         .append_ledger_entry(append, request_hash)
         .await
         .map(|_| ())
-        .map_err(|error| {
-            eprintln!("DEBUG append error code={} message={}", error.code(), error.message());
-            error.message().to_owned()
-        })
+        .map_err(|error| error.message().to_owned())
 }
 
 async fn insert_usage_fact(
@@ -262,10 +260,12 @@ async fn usage_fact_settlement(pool: &PgPool, id: i64) -> (i32, Option<String>) 
     .fetch_one(pool)
     .await
     .expect("read usage fact settlement state");
-    (
-        row.get::<i32, _>("settlement_status"),
-        row.get::<Option<String>, _>("settled_at"),
-    )
+    let settled_at = row
+        .try_get::<Option<DateTime<Utc>>, _>("settled_at")
+        .ok()
+        .flatten()
+        .map(|value| value.to_rfc3339());
+    (row.get::<i32, _>("settlement_status"), settled_at)
 }
 
 async fn points_balance(pool: &PgPool, user_id: i64) -> i64 {
@@ -294,13 +294,13 @@ async fn points_balance(pool: &PgPool, user_id: i64) -> i64 {
 async fn ledger_debit_total(pool: &PgPool, user_id: i64) -> i64 {
     let row = sqlx::query(
         r#"
-        SELECT COALESCE(SUM(amount), 0) AS total
+        SELECT CAST(COALESCE(SUM(amount), 0) AS BIGINT) AS total
         FROM acct_ledger_entry
         WHERE tenant_id = $1
           AND organization_id = $2
           AND owner_id = $3
           AND business_type = 'usage_settlement'
-          AND direction = 'debit'
+          AND direction = 'DEBIT'
         "#,
     )
     .bind(TENANT_ID)

@@ -63,5 +63,6 @@ sdkwork-web-store-redis.workspace = true
 [dev-dependencies]
 serde_json.workspace = true
 tower.workspace = true
+chrono.workspace = true
 sdkwork-cloudrouter-test-support.workspace = true
 sdkwork_commerce_promotion_service.workspace = true
