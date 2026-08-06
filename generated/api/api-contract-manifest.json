@@ -5356,6 +5356,334 @@
       "write_tables": []
     },
     {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/billing/referral_strategies",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts#createReferralStrategy@/admin/marketing/referralStrategies",
+      "kind": "create",
+      "module": "pc-admin-marketing",
+      "openapi_exposed": true,
+      "operation": "createReferralStrategy",
+      "operation_id": "referralStrategies.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ops_referral_strategy"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AdminReferralStrategyMutationRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminReferralStrategyMutationRequest",
+          "properties": {
+            "description": {
+              "maxLength": 512,
+              "type": "string"
+            },
+            "endsAt": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "maxRewardsPerInviter": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "name": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "rewardTarget": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "rewardType": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "rewardValue": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "startsAt": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "status": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "triggerEvent": {
+              "maxLength": 16,
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminReferralStrategy",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminReferralStrategy",
+          "properties": {
+            "description": {
+              "maxLength": 512,
+              "type": "string"
+            },
+            "endsAt": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "id": {
+              "maxLength": 32,
+              "type": "string"
+            },
+            "maxRewardsPerInviter": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "name": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "rewardTarget": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "rewardType": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "rewardValue": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "startsAt": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "status": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "triggerEvent": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "updatedAt": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "name",
+            "description",
+            "status",
+            "rewardType",
+            "rewardValue",
+            "rewardTarget",
+            "triggerEvent",
+            "maxRewardsPerInviter",
+            "startsAt",
+            "endsAt",
+            "updatedAt"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/marketing/referralStrategies",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "tag": "billing",
+      "write_tables": [
+        "ops_referral_strategy",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/billing/referral_strategies/{strategyId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts#deleteReferralStrategy@/admin/marketing/referralStrategies",
+      "kind": "delete",
+      "module": "pc-admin-marketing",
+      "openapi_exposed": true,
+      "operation": "deleteReferralStrategy",
+      "operation_id": "referralStrategies.delete",
+      "path_params": [
+        "strategyId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ops_referral_strategy"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/marketing/referralStrategies",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "tag": "billing",
+      "write_tables": [
+        "ops_referral_strategy",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/billing/referrals/relations",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts#fetchReferralRelations@/admin/marketing/referrals",
+      "kind": "read",
+      "module": "pc-admin-marketing",
+      "openapi_exposed": true,
+      "operation": "fetchReferralRelations",
+      "operation_id": "referralRelations.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ops_referral_relation"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AdminReferralRelationListResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminReferralRelationListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminReferralRelation",
+                "properties": {
+                  "claimedAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 32,
+                    "type": "string"
+                  },
+                  "inviteCode": {
+                    "maxLength": 32,
+                    "type": "string"
+                  },
+                  "invitee": {
+                    "maxLength": 320,
+                    "type": "string"
+                  },
+                  "inviter": {
+                    "maxLength": 320,
+                    "type": "string"
+                  },
+                  "rewardStatus": {
+                    "maxLength": 16,
+                    "type": "string"
+                  },
+                  "source": {
+                    "maxLength": 16,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "inviter",
+                  "invitee",
+                  "inviteCode",
+                  "source",
+                  "rewardStatus",
+                  "claimedAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/marketing/referrals",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "tag": "billing",
+      "write_tables": []
+    },
+    {
       "api_method": "GET",
       "api_path": "/backend/v3/api/billing/referrals/stats",
       "api_surface": "backend",
@@ -5468,6 +5796,439 @@
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
       "tag": "billing",
       "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/billing/referral_strategies",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts#fetchReferralStrategies@/admin/marketing/referralStrategies",
+      "kind": "read",
+      "module": "pc-admin-marketing",
+      "openapi_exposed": true,
+      "operation": "fetchReferralStrategies",
+      "operation_id": "referralStrategies.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "enum": [
+              "active",
+              "disabled"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ops_referral_strategy"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AdminReferralStrategyListResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminReferralStrategyListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminReferralStrategy",
+                "properties": {
+                  "description": {
+                    "maxLength": 512,
+                    "type": "string"
+                  },
+                  "endsAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 32,
+                    "type": "string"
+                  },
+                  "maxRewardsPerInviter": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "name": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "rewardTarget": {
+                    "maxLength": 16,
+                    "type": "string"
+                  },
+                  "rewardType": {
+                    "maxLength": 16,
+                    "type": "string"
+                  },
+                  "rewardValue": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "startsAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "status": {
+                    "maxLength": 16,
+                    "type": "string"
+                  },
+                  "triggerEvent": {
+                    "maxLength": 16,
+                    "type": "string"
+                  },
+                  "updatedAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "description",
+                  "status",
+                  "rewardType",
+                  "rewardValue",
+                  "rewardTarget",
+                  "triggerEvent",
+                  "maxRewardsPerInviter",
+                  "startsAt",
+                  "endsAt",
+                  "updatedAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/marketing/referralStrategies",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "tag": "billing",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/billing/referral_strategies/{strategyId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts#retrieveReferralStrategy@/admin/marketing/referralStrategies",
+      "kind": "read",
+      "module": "pc-admin-marketing",
+      "openapi_exposed": true,
+      "operation": "retrieveReferralStrategy",
+      "operation_id": "referralStrategies.retrieve",
+      "path_params": [
+        "strategyId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ops_referral_strategy"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AdminReferralStrategy",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminReferralStrategy",
+          "properties": {
+            "description": {
+              "maxLength": 512,
+              "type": "string"
+            },
+            "endsAt": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "id": {
+              "maxLength": 32,
+              "type": "string"
+            },
+            "maxRewardsPerInviter": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "name": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "rewardTarget": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "rewardType": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "rewardValue": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "startsAt": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "status": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "triggerEvent": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "updatedAt": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "name",
+            "description",
+            "status",
+            "rewardType",
+            "rewardValue",
+            "rewardTarget",
+            "triggerEvent",
+            "maxRewardsPerInviter",
+            "startsAt",
+            "endsAt",
+            "updatedAt"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/marketing/referralStrategies",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "tag": "billing",
+      "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/billing/referral_strategies/{strategyId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts#updateReferralStrategy@/admin/marketing/referralStrategies",
+      "kind": "update",
+      "module": "pc-admin-marketing",
+      "openapi_exposed": true,
+      "operation": "updateReferralStrategy",
+      "operation_id": "referralStrategies.update",
+      "path_params": [
+        "strategyId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ops_referral_strategy"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AdminReferralStrategyMutationRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminReferralStrategyMutationRequest",
+          "properties": {
+            "description": {
+              "maxLength": 512,
+              "type": "string"
+            },
+            "endsAt": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "maxRewardsPerInviter": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "name": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "rewardTarget": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "rewardType": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "rewardValue": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "startsAt": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "status": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "triggerEvent": {
+              "maxLength": 16,
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminReferralStrategy",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminReferralStrategy",
+          "properties": {
+            "description": {
+              "maxLength": 512,
+              "type": "string"
+            },
+            "endsAt": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "id": {
+              "maxLength": 32,
+              "type": "string"
+            },
+            "maxRewardsPerInviter": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "name": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "rewardTarget": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "rewardType": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "rewardValue": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "startsAt": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "status": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "triggerEvent": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "updatedAt": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "name",
+            "description",
+            "status",
+            "rewardType",
+            "rewardValue",
+            "rewardTarget",
+            "triggerEvent",
+            "maxRewardsPerInviter",
+            "startsAt",
+            "endsAt",
+            "updatedAt"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/marketing/referralStrategies",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "tag": "billing",
+      "write_tables": [
+        "ops_referral_strategy",
+        "ops_audit_log"
+      ]
     },
     {
       "api_method": "GET",
@@ -8513,6 +9274,14 @@
           "additionalProperties": false,
           "description": "AdminAuthSettingsResponse contract.",
           "properties": {
+            "inviteCodePolicy": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/AdminAuthInviteCodePolicy"
+                }
+              ],
+              "description": "inviteCodePolicy field on AdminAuthSettingsResponse."
+            },
             "leftRailMode": {
               "description": "leftRailMode field on AdminAuthSettingsResponse.",
               "enum": [
@@ -8611,7 +9380,8 @@
             "recoveryMethods",
             "registerMethods",
             "verificationPolicy",
-            "wechat"
+            "wechat",
+            "inviteCodePolicy"
           ],
           "type": "object"
         }
@@ -8653,6 +9423,14 @@
           "additionalProperties": false,
           "description": "AdminAuthSettingsUpdateRequest contract.",
           "properties": {
+            "inviteCodePolicy": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/AdminAuthInviteCodePolicyUpdateRequest"
+                }
+              ],
+              "description": "inviteCodePolicy field on AdminAuthSettingsUpdateRequest."
+            },
             "leftRailMode": {
               "description": "leftRailMode field on AdminAuthSettingsUpdateRequest.",
               "enum": [
@@ -8752,6 +9530,14 @@
           "additionalProperties": false,
           "description": "AdminAuthSettingsResponse contract.",
           "properties": {
+            "inviteCodePolicy": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/AdminAuthInviteCodePolicy"
+                }
+              ],
+              "description": "inviteCodePolicy field on AdminAuthSettingsResponse."
+            },
             "leftRailMode": {
               "description": "leftRailMode field on AdminAuthSettingsResponse.",
               "enum": [
@@ -8850,7 +9636,8 @@
             "recoveryMethods",
             "registerMethods",
             "verificationPolicy",
-            "wechat"
+            "wechat",
+            "inviteCodePolicy"
           ],
           "type": "object"
         }
@@ -23990,6 +24777,263 @@
       "write_tables": []
     },
     {
+      "api_method": "POST",
+      "api_path": "/app/v3/api/iam/invites/claim",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts#claimInviteRelation@/auth/register",
+      "kind": "create",
+      "module": "register",
+      "openapi_exposed": true,
+      "operation": "claimInviteRelation",
+      "operation_id": "invites.claim.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ops_referral_invite_code",
+        "ops_referral_relation"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AppInviteClaimRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AppInviteClaimRequest",
+          "properties": {
+            "inviteCode": {
+              "maxLength": 32,
+              "type": "string"
+            }
+          },
+          "required": [
+            "inviteCode"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AppInviteClaimResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AppInviteClaimResponse",
+          "properties": {
+            "rewardStatus": {
+              "maxLength": 16,
+              "type": "string"
+            }
+          },
+          "required": [
+            "rewardStatus"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/auth/register",
+      "route_scope": "public",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "iam",
+      "sdk_family": "cloudrouter-app-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
+      "tag": "iam",
+      "write_tables": [
+        "ops_referral_relation"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/iam/invite/policy",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts#fetchInvitePolicy@/auth/register",
+      "kind": "read",
+      "module": "register",
+      "openapi_exposed": true,
+      "operation": "fetchInvitePolicy",
+      "operation_id": "invite.policy.retrieve",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "tenant_code",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "organization_code",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ops_config_snapshot"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AppInvitePolicyResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AppInvitePolicyResponse",
+          "properties": {
+            "loginRequired": {
+              "type": "boolean"
+            },
+            "registerRequired": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "registerRequired",
+            "loginRequired"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/auth/register",
+      "route_scope": "public",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "iam",
+      "sdk_family": "cloudrouter-app-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
+      "tag": "iam",
+      "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/app/v3/api/iam/invites/issue",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts#issueInviteCode@/auth/register",
+      "kind": "create",
+      "module": "register",
+      "openapi_exposed": true,
+      "operation": "issueInviteCode",
+      "operation_id": "invites.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ops_referral_invite_code"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AppInviteCodeResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AppInviteCodeResponse",
+          "properties": {
+            "inviteCode": {
+              "maxLength": 32,
+              "type": "string"
+            }
+          },
+          "required": [
+            "inviteCode"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/auth/register",
+      "route_scope": "public",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "iam",
+      "sdk_family": "cloudrouter-app-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
+      "tag": "iam",
+      "write_tables": [
+        "ops_referral_invite_code"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/app/v3/api/iam/invites/validate",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts#validateInviteCode@/auth/register",
+      "kind": "create",
+      "module": "register",
+      "openapi_exposed": true,
+      "operation": "validateInviteCode",
+      "operation_id": "invites.validate.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ops_referral_invite_code"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AppInviteValidateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AppInviteValidateRequest",
+          "properties": {
+            "inviteCode": {
+              "maxLength": 32,
+              "type": "string"
+            }
+          },
+          "required": [
+            "inviteCode"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AppInviteValidateResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AppInviteValidateResponse",
+          "properties": {
+            "message": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "valid": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "valid",
+            "message"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/auth/register",
+      "route_scope": "public",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "iam",
+      "sdk_family": "cloudrouter-app-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
+      "tag": "iam",
+      "write_tables": []
+    },
+    {
       "api_method": "GET",
       "api_path": "/app/v3/api/chat/conversations/{conversationId}/messages",
       "api_surface": "app",
@@ -28088,25 +29132,25 @@
   },
   "summary": {
     "api_method_counts": {
-      "DELETE": 19,
-      "GET": 126,
-      "PATCH": 20,
-      "POST": 72,
+      "DELETE": 20,
+      "GET": 130,
+      "PATCH": 21,
+      "POST": 76,
       "PUT": 10
     },
     "api_surface_counts": {
-      "app": 90,
-      "backend": 157
+      "app": 94,
+      "backend": 163
     },
-    "operation_count": 247,
+    "operation_count": 257,
     "route_scope_counts": {
-      "admin": 157,
+      "admin": 163,
       "console": 30,
-      "public": 60
+      "public": 64
     },
     "sdk_client_counts": {
-      "SdkworkAppClient": 90,
-      "SdkworkBackendClient": 157
+      "SdkworkAppClient": 94,
+      "SdkworkBackendClient": 163
     }
   }
 }

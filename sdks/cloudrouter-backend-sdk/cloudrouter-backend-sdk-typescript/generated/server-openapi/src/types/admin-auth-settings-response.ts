@@ -1,7 +1,10 @@
+import type { AdminAuthInviteCodePolicy } from './admin-auth-invite-code-policy';
 import type { JsonValue } from './json-value';
 
 /** AdminAuthSettingsResponse contract. */
 export interface AdminAuthSettingsResponse {
+  /** inviteCodePolicy field on AdminAuthSettingsResponse. */
+  inviteCodePolicy: AdminAuthInviteCodePolicy;
   /** leftRailMode field on AdminAuthSettingsResponse. */
   leftRailMode: 'auto' | 'highlights-only' | 'qr-only';
   /** loginMethods field on AdminAuthSettingsResponse. */

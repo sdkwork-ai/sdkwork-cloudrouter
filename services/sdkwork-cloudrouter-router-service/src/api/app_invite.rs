@@ -143,6 +143,17 @@ async fn fetch_invite_policy(
             }))
             .into_response()
         }
+        // The auth settings read model is not authoritative for the register
+        // gate; fall back to the platform default (no invite code required)
+        // instead of failing the policy lookup. This keeps the public gate
+        // resolvable on fresh installations before any auth settings snapshot
+        // exists. Fail-open is intentional: the gate guides the register
+        // funnel and a 500 here would block the whole register flow.
+        Err(error) if error.is_not_found() => Json(success_envelope(AppInvitePolicyResponse {
+            register_required: false,
+            login_required: false,
+        }))
+        .into_response(),
         Err(error) => {
             invite_system_response("invite policy read model is unavailable", error)
         }
@@ -162,6 +173,10 @@ async fn validate_invite_code(
         Err(message) => return bad_request(message),
     };
 
+    // Invite codes are looked up globally (tenant-agnostic): the code index
+    // is tenant-scoped in the schema, and the standalone platform resolves to
+    // a single default tenant anyway. The claim step re-scopes the relation
+    // write to the authenticated subject's tenant.
     match state
         .store
         .validate_invite_code(ValidateAppInviteCodeQuery { invite_code })
@@ -291,7 +306,14 @@ fn generate_invite_code() -> Result<String, AppInviteCommandBuildError> {
 }
 
 fn normalize_invite_code(value: &str) -> Result<String, String> {
-    let value = value.trim().to_ascii_uppercase();
+    // Tolerate grouped/lowercase entry: strips separators and spaces so
+    // "abcd-efgh" or "abcd efgh" resolve to "ABCDEFGH" before validation.
+    let value = value
+        .trim()
+        .chars()
+        .filter(|ch| *ch != '-' && *ch != ' ' && *ch != '_')
+        .collect::<String>()
+        .to_ascii_uppercase();
     if value.is_empty() {
         return Err("inviteCode is required".to_owned());
     }
@@ -300,9 +322,9 @@ fn normalize_invite_code(value: &str) -> Result<String, String> {
     }
     if !value
         .bytes()
-        .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_')
+        .all(|byte| byte.is_ascii_alphanumeric())
     {
-        return Err("inviteCode may only contain letters, digits, -, and _".to_owned());
+        return Err("inviteCode may only contain letters and digits".to_owned());
     }
     Ok(value)
 }

@@ -1,14 +1,17 @@
 import { useTranslation } from 'react-i18next';
-import { Check, Coins, Crown, Wallet, Zap } from 'lucide-react';
+import { Check, Coins, Crown, Ticket, Wallet, Zap } from 'lucide-react';
 import type { CouponOfferBenefitKind } from '../marketingService';
 
+/** 券类型卡片：4 种权益券 + 兑换券（EXCHANGE，通过兑换码领取任意权益）。 */
+export type CouponOfferCardKind = CouponOfferBenefitKind | 'exchange';
+
 interface CouponBenefitTypeSelectorProps {
-  value: CouponOfferBenefitKind;
-  onChange: (kind: CouponOfferBenefitKind) => void;
+  value: CouponOfferCardKind;
+  onChange: (kind: CouponOfferCardKind) => void;
 }
 
 interface BenefitOption {
-  kind: CouponOfferBenefitKind;
+  kind: CouponOfferCardKind;
   icon: typeof Zap;
 }
 
@@ -17,11 +20,12 @@ const BENEFIT_OPTIONS: BenefitOption[] = [
   { kind: 'points_credit', icon: Coins },
   { kind: 'cash_credit', icon: Wallet },
   { kind: 'subscription', icon: Crown },
+  { kind: 'exchange', icon: Ticket },
 ];
 
 /**
  * 券类型卡片选择器：图标 + 名称 + 目标账户标签 + 一句话说明，
- * 对齐行业（美团/淘宝）专业券创建体验。
+ * 对齐行业（美团/淘宝）专业券创建体验。兑换券通过兑换码发放权益。
  */
 export function CouponBenefitTypeSelector({ value, onChange }: CouponBenefitTypeSelectorProps) {
   const { t } = useTranslation();

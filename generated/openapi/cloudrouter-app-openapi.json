@@ -260,6 +260,111 @@
         ],
         "type": "object"
       },
+      "AppInviteClaimRequest": {
+        "additionalProperties": false,
+        "description": "App invite claim request schema exposed by Cloud Router.",
+        "name": "AppInviteClaimRequest",
+        "properties": {
+          "inviteCode": {
+            "description": "Invite code field on app invite claim request.",
+            "maxLength": 32,
+            "type": "string"
+          }
+        },
+        "required": [
+          "inviteCode"
+        ],
+        "type": "object"
+      },
+      "AppInviteClaimResponse": {
+        "additionalProperties": false,
+        "description": "App invite claim response schema exposed by Cloud Router.",
+        "name": "AppInviteClaimResponse",
+        "properties": {
+          "rewardStatus": {
+            "description": "Reward status field on app invite claim response.",
+            "maxLength": 16,
+            "type": "string"
+          }
+        },
+        "required": [
+          "rewardStatus"
+        ],
+        "type": "object"
+      },
+      "AppInviteCodeResponse": {
+        "additionalProperties": false,
+        "description": "App invite code response schema exposed by Cloud Router.",
+        "name": "AppInviteCodeResponse",
+        "properties": {
+          "inviteCode": {
+            "description": "Invite code field on app invite code response.",
+            "maxLength": 32,
+            "type": "string"
+          }
+        },
+        "required": [
+          "inviteCode"
+        ],
+        "type": "object"
+      },
+      "AppInvitePolicyResponse": {
+        "additionalProperties": false,
+        "description": "App invite policy response schema exposed by Cloud Router.",
+        "name": "AppInvitePolicyResponse",
+        "properties": {
+          "loginRequired": {
+            "description": "Login required field on app invite policy response.",
+            "type": "boolean"
+          },
+          "registerRequired": {
+            "description": "Register required field on app invite policy response.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "registerRequired",
+          "loginRequired"
+        ],
+        "type": "object"
+      },
+      "AppInviteValidateRequest": {
+        "additionalProperties": false,
+        "description": "App invite validate request schema exposed by Cloud Router.",
+        "name": "AppInviteValidateRequest",
+        "properties": {
+          "inviteCode": {
+            "description": "Invite code field on app invite validate request.",
+            "maxLength": 32,
+            "type": "string"
+          }
+        },
+        "required": [
+          "inviteCode"
+        ],
+        "type": "object"
+      },
+      "AppInviteValidateResponse": {
+        "additionalProperties": false,
+        "description": "App invite validate response schema exposed by Cloud Router.",
+        "name": "AppInviteValidateResponse",
+        "properties": {
+          "message": {
+            "description": "Message field on app invite validate response.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "valid": {
+            "description": "Valid field on app invite validate response.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "valid",
+          "message"
+        ],
+        "type": "object"
+      },
       "AppRoutingAccountGroup": {
         "additionalProperties": false,
         "description": "App routing account group schema exposed by Cloud Router.",
@@ -2971,6 +3076,114 @@
         ],
         "description": "Generations workspace list result schema exposed by Cloud Router.",
         "x-operation-id": "generations.workspace.list"
+      },
+      "InvitePolicyRetrieveResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by invite policy retrieve result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AppInvitePolicyResponse"
+                  }
+                ],
+                "description": "Data field on invite policy retrieve result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Invite policy retrieve result schema exposed by Cloud Router.",
+        "x-operation-id": "invite.policy.retrieve"
+      },
+      "InvitesClaimCreateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by invites claim create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AppInviteClaimResponse"
+                  }
+                ],
+                "description": "Data field on invites claim create result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Invites claim create result schema exposed by Cloud Router.",
+        "x-operation-id": "invites.claim.create"
+      },
+      "InvitesCreateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by invites create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AppInviteCodeResponse"
+                  }
+                ],
+                "description": "Data field on invites create result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Invites create result schema exposed by Cloud Router.",
+        "x-operation-id": "invites.create"
+      },
+      "InvitesValidateCreateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by invites validate create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AppInviteValidateResponse"
+                  }
+                ],
+                "description": "Data field on invites validate create result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Invites validate create result schema exposed by Cloud Router.",
+        "x-operation-id": "invites.validate.create"
       },
       "InvocationsArtifactsCreateResult": {
         "allOf": [
@@ -7865,6 +8078,374 @@
           "ai_quota_policy",
           "ops_audit_log"
         ]
+      }
+    },
+    "/app/v3/api/iam/invite/policy": {
+      "get": {
+        "description": "List invite policy. Reads ops_config_snapshot. Writes none. File targets none.",
+        "operationId": "invite.policy.retrieve",
+        "parameters": [
+          {
+            "description": "Tenant code query parameter.",
+            "in": "query",
+            "name": "tenant_code",
+            "required": false,
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Organization code query parameter.",
+            "in": "query",
+            "name": "organization_code",
+            "required": false,
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitePolicyRetrieveResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List invite policy",
+        "tags": [
+          "iam"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ops_config_snapshot"
+        ],
+        "x-route-scope": "public",
+        "x-sdk-domain": "iam",
+        "x-sdkwork-domain": "iam",
+        "x-sdkwork-resource": "invite.policy",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
+        "x-write-tables": []
+      }
+    },
+    "/app/v3/api/iam/invites/claim": {
+      "post": {
+        "description": "Claim invite relation. Reads ops_referral_invite_code, ops_referral_relation. Writes ops_referral_relation. File targets none.",
+        "operationId": "invites.claim.create",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppInviteClaimRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for claim invite relation.",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitesClaimCreateResult"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Claim invite relation",
+        "tags": [
+          "iam"
+        ],
+        "x-contract-kind": "create",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ops_referral_invite_code",
+          "ops_referral_relation"
+        ],
+        "x-route-scope": "public",
+        "x-sdk-domain": "iam",
+        "x-sdkwork-domain": "iam",
+        "x-sdkwork-resource": "invites.claim",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
+        "x-write-tables": [
+          "ops_referral_relation"
+        ]
+      }
+    },
+    "/app/v3/api/iam/invites/issue": {
+      "post": {
+        "description": "Issue invite code. Reads ops_referral_invite_code. Writes ops_referral_invite_code. File targets none.",
+        "operationId": "invites.create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitesCreateResult"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Issue invite code",
+        "tags": [
+          "iam"
+        ],
+        "x-contract-kind": "create",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ops_referral_invite_code"
+        ],
+        "x-route-scope": "public",
+        "x-sdk-domain": "iam",
+        "x-sdkwork-domain": "iam",
+        "x-sdkwork-resource": "invites",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
+        "x-write-tables": [
+          "ops_referral_invite_code"
+        ]
+      }
+    },
+    "/app/v3/api/iam/invites/validate": {
+      "post": {
+        "description": "Validate invite code. Reads ops_referral_invite_code. Writes none. File targets none.",
+        "operationId": "invites.validate.create",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppInviteValidateRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for validate invite code.",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitesValidateCreateResult"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Validate invite code",
+        "tags": [
+          "iam"
+        ],
+        "x-contract-kind": "create",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ops_referral_invite_code"
+        ],
+        "x-route-scope": "public",
+        "x-sdk-domain": "iam",
+        "x-sdkwork-domain": "iam",
+        "x-sdkwork-resource": "invites.validate",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
+        "x-write-tables": []
       }
     },
     "/app/v3/api/iam/users/settings": {

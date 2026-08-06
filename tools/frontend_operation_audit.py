@@ -162,6 +162,8 @@ class FrontendOperationAudit:
     CLOUDROUTER_OWNED_IAM_APP_API_PATH_PREFIXES = (
         "/app/v3/api/iam/api_keys",
         "/app/v3/api/iam/users/settings",
+        "/app/v3/api/iam/invite/policy",
+        "/app/v3/api/iam/invites",
     )
     APPBASE_APP_SERVICE_CLIENT = "getSdkworkAppbaseAppSdkClient"
     APPBASE_BACKEND_SERVICE_CLIENT = "getSdkworkAppbaseBackendSdkClient"

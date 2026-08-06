@@ -15,7 +15,7 @@ fn assert_sql_contains(sql: &str, expected: &str) {
 }
 
 #[test]
-fn usage_settlement_locks_pending_usage_and_points_account_in_one_transaction() {
+fn usage_settlement_locks_pending_usage_facts_in_one_transaction() {
     for expected in [
         "FROM ai_metering_usage",
         "($1 <= 0 OR tenant_id = $1)",
@@ -23,10 +23,6 @@ fn usage_settlement_locks_pending_usage_and_points_account_in_one_transaction() 
         "settlement_status IN ($3, $4)",
         "ORDER BY COALESCE(occurred_at, CURRENT_TIMESTAMP), id",
         "FOR UPDATE SKIP LOCKED",
-        "FROM commerce_account",
-        "asset_type = $4",
-        "currency_code = $5",
-        "FOR UPDATE",
     ] {
         assert_sql_contains(POSTGRES_USAGE_SETTLEMENT_STORE, expected);
     }
@@ -53,36 +49,49 @@ fn usage_settlement_requires_explicit_pending_or_failed_status() {
 }
 
 #[test]
-fn usage_settlement_does_not_use_commerce_settlement_bridge_and_guards_against_double_debit() {
+fn usage_settlement_debits_through_account_port_without_legacy_ledger_sql() {
     assert!(
-        !compact_sql(POSTGRES_USAGE_SETTLEMENT_STORE).contains("INSERT INTO commerce_settlement"),
-        "Postgres usage settlement must not write the retired commerce_settlement bridge"
+        compact_sql(POSTGRES_USAGE_SETTLEMENT_STORE).contains("append_ledger_entry"),
+        "Postgres usage settlement must debit through the account-domain port"
     );
     assert!(
-        !compact_sql(POSTGRES_USAGE_SETTLEMENT_STORE).contains("FROM commerce_settlement"),
-        "Postgres usage settlement must not read the retired commerce_settlement bridge"
+        compact_sql(POSTGRES_USAGE_SETTLEMENT_STORE).contains("AppendLedgerEntryCommand"),
+        "Postgres usage settlement must build an account append command"
     );
-    for expected in [
+    for forbidden in [
+        "INSERT INTO commerce_settlement",
+        "FROM commerce_settlement",
+        "INSERT INTO commerce_account",
+        "FROM commerce_account",
+        "UPDATE commerce_account",
         "INSERT INTO commerce_account_ledger_entry",
-        "business_type, transaction_no, request_no, idempotency_key, source_type, source_id, remark, created_at",
-        "'usage'",
-        "'ai_metering_usage'",
-        "WHERE account_id = $1",
-        "AND transaction_no = $2",
+        "FROM commerce_account_ledger_entry",
     ] {
-        assert_sql_contains(POSTGRES_USAGE_SETTLEMENT_STORE, expected);
+        assert!(
+            !compact_sql(POSTGRES_USAGE_SETTLEMENT_STORE).contains(forbidden),
+            "Postgres usage settlement must not write/read legacy wallet SQL `{forbidden}`"
+        );
     }
 }
 
 #[test]
-fn usage_settlement_debits_account_with_atomic_balance_guard() {
+fn usage_settlement_uses_batch_no_as_idempotency_key_and_transaction_no() {
     for expected in [
-        "UPDATE commerce_account",
-        "version = version + 1",
-        "AND COALESCE(available_amount::numeric, 0) >= $3::numeric",
-        "usage settlement account points update was not applied atomically",
+        "USAGE_SETTLEMENT_BUSINESS_TYPE",
+        "transaction_no: transaction_id.to_owned()",
+        "request_no: transaction_id.to_owned()",
+        "idempotency_key: transaction_id.to_owned()",
+        "settlement_request_hash",
+        "CommerceAccountAssetType::Points",
+        "POINTS_CURRENCY_CODE",
+        "CommerceLedgerDirection::Debit",
+        "INSUFFICIENT_BALANCE_MESSAGE",
+        "INSUFFICIENT_POINTS",
     ] {
-        assert_sql_contains(POSTGRES_USAGE_SETTLEMENT_STORE, expected);
+        assert!(
+            POSTGRES_USAGE_SETTLEMENT_STORE.contains(expected),
+            "Postgres usage settlement store must keep account-port contract `{expected}`"
+        );
     }
 }
 

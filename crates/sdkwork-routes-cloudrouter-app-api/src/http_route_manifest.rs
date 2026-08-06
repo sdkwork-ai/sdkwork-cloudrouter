@@ -250,6 +250,30 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "system",
         "site.runtime.retrieve",
     ),
+    HttpRoute::public(
+        HttpMethod::Get,
+        "/app/v3/api/iam/invite/policy",
+        "iam",
+        "invite.policy.retrieve",
+    ),
+    HttpRoute::public(
+        HttpMethod::Post,
+        "/app/v3/api/iam/invites/validate",
+        "iam",
+        "invites.verify",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/iam/invites/issue",
+        "iam",
+        "invites.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/iam/invites/claim",
+        "iam",
+        "invites.confirm",
+    ),
 ];
 
 pub fn http_route_manifest() -> HttpRouteManifest {

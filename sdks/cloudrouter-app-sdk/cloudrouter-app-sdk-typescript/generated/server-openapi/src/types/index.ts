@@ -3,6 +3,12 @@ export type { AcknowledgeNotificationResponse } from './acknowledge-notification
 
 export type { AppApiKeyItem } from './app-api-key-item';
 export type { AppApiKeyListResponse } from './app-api-key-list-response';
+export type { AppInviteClaimRequest } from './app-invite-claim-request';
+export type { AppInviteClaimResponse } from './app-invite-claim-response';
+export type { AppInviteCodeResponse } from './app-invite-code-response';
+export type { AppInvitePolicyResponse } from './app-invite-policy-response';
+export type { AppInviteValidateRequest } from './app-invite-validate-request';
+export type { AppInviteValidateResponse } from './app-invite-validate-response';
 export type { AppRoutingAccountGroup } from './app-routing-account-group';
 export type { AppRoutingAccountGroupListResponse } from './app-routing-account-group-list-response';
 export type { AppRoutingApiKey } from './app-routing-api-key';

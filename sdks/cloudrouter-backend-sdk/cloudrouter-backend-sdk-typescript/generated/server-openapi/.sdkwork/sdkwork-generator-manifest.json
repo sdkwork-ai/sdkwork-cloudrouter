@@ -60,7 +60,7 @@
     },
     {
       "path": "src/api/billing.ts",
-      "sha256": "36c6f330ee93b02c1b4e7b44b9ea8dda6f029524a770fbbd3a51bcc4f5d92a5b"
+      "sha256": "f2081e6a4b80dc8bc956467c666190d2b39c12b103b523c52302ca5b6ad36a5b"
     },
     {
       "path": "src/api/index.ts",
@@ -143,12 +143,20 @@
       "sha256": "76384011c79d4a7c4baba1840f8ee2c99e6924afd12b1b068e8314c613dd09f4"
     },
     {
+      "path": "src/types/admin-auth-invite-code-policy-update-request.ts",
+      "sha256": "98b7d2d1d6418e66f06b38a8e261f26b1e75d8900b656a3c120386671aaf308a"
+    },
+    {
+      "path": "src/types/admin-auth-invite-code-policy.ts",
+      "sha256": "912036d6cb87d3e666309e1cbf6d66c0143424cdd68e33df36bbffdc011b3800"
+    },
+    {
       "path": "src/types/admin-auth-settings-response.ts",
-      "sha256": "8a0dd1e92db7217727d9f165ac6e923b3437bc91ad7bec26fddeac4773a6623f"
+      "sha256": "de5b3d377ca4a189890ba9aaaae0ecfe8b7d85319d3e2356be1e74c6001a61b3"
     },
     {
       "path": "src/types/admin-auth-settings-update-request.ts",
-      "sha256": "ea2083352ad0c2143576f7225f8612f43d3fc2c4184472c14b3285914e062c29"
+      "sha256": "e90733418d8b7acab778eb924726423614d7039d15fa8766e14c8ad97f515d58"
     },
     {
       "path": "src/types/admin-dashboard-overview.ts",
@@ -211,12 +219,32 @@
       "sha256": "dbd176645a933b89780974f62416fa1b90e7d6bf0752fb7f52291ab49b6ce5ab"
     },
     {
+      "path": "src/types/admin-referral-relation-list-response.ts",
+      "sha256": "9308f1980a0ce362743ab0a4c95129e32e295dc19854c0c729f5852b756a2eeb"
+    },
+    {
+      "path": "src/types/admin-referral-relation.ts",
+      "sha256": "53bbc56f8dabdaefea3d9392f8d5b30ff2b454d6319d03f525299a89118f0946"
+    },
+    {
       "path": "src/types/admin-referral-stat-list-response.ts",
       "sha256": "27b3c75bd781413192f51cac8b627920312c5d452e2399c0444c11cce1a710e9"
     },
     {
       "path": "src/types/admin-referral-stat.ts",
       "sha256": "4251e74c17e984b8183d411231fdc00b07eaf0d96a2970476c734876381493e2"
+    },
+    {
+      "path": "src/types/admin-referral-strategy-list-response.ts",
+      "sha256": "e861dc94fbd720b06f3131b1c3991fabb84049cf68fb40e9e737cacda8686da3"
+    },
+    {
+      "path": "src/types/admin-referral-strategy-mutation-request.ts",
+      "sha256": "4b85b5aa6b40725359ab9336d88db87e04ed9ef742c27d7a911902e26d3bf7a6"
+    },
+    {
+      "path": "src/types/admin-referral-strategy.ts",
+      "sha256": "0ba2aa30a6a50e3ffbb6ed01408a386e19710fce73283c2a4049217ad415fd8a"
     },
     {
       "path": "src/types/admin-runtime-region-settings-response.ts",
@@ -412,7 +440,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "9ba0854e556f015d5feef974d95fcc5ddb45fcafa728c8453ea35b3d548544f3"
+      "sha256": "2580829edb63a501eb1b583fda3e02c8acab737d930ac4a9f9703600d52e1c93"
     },
     {
       "path": "src/types/installation-status-response.ts",

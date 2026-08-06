@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import type { ApiRecord } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { MarketingBatchStatusBadge, MarketingStatusBadge } from '../components/MarketingDrawer';
+import { CopyablePromotionCode } from '../components/CopyablePromotionCode';
 import { MarketingListView, type MarketingColumn } from '../components/MarketingListView';
 import { marketingEnumLabel } from '../components/MarketingValueBadge';
 import {
@@ -47,7 +48,11 @@ export function BatchCodesPage({ batchId }: { batchId: string }) {
 
   const columns: MarketingColumn<ApiRecord>[] = [
     { key: 'codeNo', label: t('admin.col.codeNo', 'Code No') },
-    { key: 'promotionCode', label: t('admin.col.code', 'Code') },
+    {
+      key: 'promotionCode',
+      label: t('admin.col.code', 'Code'),
+      render: (value) => <CopyablePromotionCode code={String(value ?? '')} />,
+    },
     { key: 'codeType', label: t('admin.col.type', 'Type'), render: (value) => marketingEnumLabel(value, 'admin.marketing.enums.codeType', t) },
     { key: 'maxClaims', label: t('admin.col.maxClaims', 'Max Claims'), align: 'right' },
     { key: 'claimedQuantity', label: t('admin.col.claimed', 'Claimed'), align: 'right' },

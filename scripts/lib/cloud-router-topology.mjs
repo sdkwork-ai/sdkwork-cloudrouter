@@ -27,6 +27,7 @@ export const IAM_APPLICATION_BOOTSTRAP_ENV = {
   SDKWORK_APP_ROOT: REPO_ROOT,
   SDKWORK_CLOUDROUTER_ROUTER_APP_ROOT: REPO_ROOT,
   SDKWORK_IAM_APP_ROOT: IAM_REPO_ROOT,
+  SDKWORK_LOG_APP_ROOT: path.resolve(REPO_ROOT, '..', 'sdkwork-log'),
   SDKWORK_ACCOUNT_APP_ROOT: path.resolve(REPO_ROOT, '..', 'sdkwork-account'),
   SDKWORK_PAYMENT_APP_ROOT: path.resolve(REPO_ROOT, '..', 'sdkwork-payment'),
   SDKWORK_PROMOTION_APP_ROOT: path.resolve(REPO_ROOT, '..', 'sdkwork-promotion'),

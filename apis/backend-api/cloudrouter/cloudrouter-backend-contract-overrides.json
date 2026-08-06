@@ -19,7 +19,8 @@
         "recoveryMethods",
         "registerMethods",
         "verificationPolicy",
-        "wechat"
+        "wechat",
+        "inviteCodePolicy"
       ],
       "properties": {
         "leftRailMode": {
@@ -107,6 +108,14 @@
           "type": "object",
           "additionalProperties": true,
           "description": "wechat field on AdminAuthSettingsResponse."
+        },
+        "inviteCodePolicy": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AdminAuthInviteCodePolicy"
+            }
+          ],
+          "description": "inviteCodePolicy field on AdminAuthSettingsResponse."
         }
       },
       "description": "AdminAuthSettingsResponse contract."
@@ -203,6 +212,14 @@
           "type": "object",
           "additionalProperties": true,
           "description": "wechat field on AdminAuthSettingsUpdateRequest."
+        },
+        "inviteCodePolicy": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AdminAuthInviteCodePolicyUpdateRequest"
+            }
+          ],
+          "description": "inviteCodePolicy field on AdminAuthSettingsUpdateRequest."
         }
       },
       "description": "AdminAuthSettingsUpdateRequest contract."
@@ -2325,6 +2342,38 @@
         }
       },
       "description": "TokenLimitRulePage contract."
+    },
+    "AdminAuthInviteCodePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "registerRequired",
+        "loginRequired"
+      ],
+      "properties": {
+        "registerRequired": {
+          "description": "registerRequired field on AdminAuthInviteCodePolicy.",
+          "type": "boolean"
+        },
+        "loginRequired": {
+          "description": "loginRequired field on AdminAuthInviteCodePolicy.",
+          "type": "boolean"
+        }
+      }
+    },
+    "AdminAuthInviteCodePolicyUpdateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "registerRequired": {
+          "description": "registerRequired field on AdminAuthInviteCodePolicyUpdateRequest.",
+          "type": "boolean"
+        },
+        "loginRequired": {
+          "description": "loginRequired field on AdminAuthInviteCodePolicyUpdateRequest.",
+          "type": "boolean"
+        }
+      }
     }
   },
   "operations": {

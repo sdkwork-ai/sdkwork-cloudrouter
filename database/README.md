@@ -18,6 +18,7 @@ The product installer performs explicit lifecycle orchestration. It migrates `sd
 | --- | --- | --- |
 | `sdkwork-models` | `sdkwork-models` database host | Model catalog tables migrated before Cloud Router bootstrap |
 | `sdkwork-iam` | IAM service/database host | Authentication and identity data consumed through IAM boundaries |
+| `sdkwork-log` | `sdkwork-log` database host | `log_request` request-log tables (metadata + redacted bodies) — independent database host composed as a workspace dependency via `SDKWORK_LOG_APP_ROOT`; its lifecycle is orchestrated before application-data bootstrap |
 
 Gateway / routing / ops tables remain owned by `cloudrouter` in `generated/schema/postgres/schema.sql`.
 
@@ -25,23 +26,11 @@ See `docs/31-product-composition-model.md`.
 
 ## Initialization state
 
-The canonical baseline contains the complete current Cloud Router-owned schema,
-including app-chat and runtime usage-link tables. Product installation remains
-a composed lifecycle: migrate the `sdkwork-models` module first, migrate this
-module and its declared child modules, then bootstrap application data.
+This module is in **initialization state** for greenfield deployments:
 
-This authoritative-server module uses the following greenfield lifecycle:
-
-1. **Baseline** - `database/ddl/baseline/postgres/0001_cloudrouter_baseline.sql` contains the complete pre-release DDL snapshot.
-2. **Migrations** - `database/migrations/postgres/` contains guarded upgrade paths for pre-release installations. The folded baseline already reflects their canonical end state; fresh installs apply the baseline and record or skip compatible migrations through the lifecycle framework.
-3. **Drift** - run `pnpm db:drift:check` before release.
-
-Fresh installations must start from the generated PostgreSQL baseline. Historical pre-release schemas are not supported installation or rollback targets.
-
-SQLite is not a server engine for this module. A desktop client that needs local cache,
-offline projection, draft, preference, local search, or a resumable queue must own a separate
-`client-local` contract and migration history; it must not materialize this PostgreSQL authority
-as an interchangeable SQLite mirror.
+1. **Baseline** — `database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql` contains the full DDL snapshot.
+2. **Migrations** — `database/migrations/{engine}/` is reserved for post-GA incremental schema changes only. It is intentionally empty at initialization.
+3. **Drift** — run `pnpm db:drift:check` before release.
 
 ## Commands
 

@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.database.table-registry",
+  "tables": [
+    {
+      "table_name": "commerce_order",
+      "owner": "sdkwork-order",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    },
+    {
+      "table_name": "commerce_order_item",
+      "owner": "sdkwork-order",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    },
+    {
+      "table_name": "commerce_checkout_session",
+      "owner": "sdkwork-order",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    },
+    {
+      "table_name": "commerce_checkout_line",
+      "owner": "sdkwork-order",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    },
+    {
+      "table_name": "commerce_checkout_quote",
+      "owner": "sdkwork-order",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    },
+    {
+      "table_name": "commerce_fulfillment_order",
+      "owner": "sdkwork-order",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    },
+    {
+      "table_name": "commerce_order_amount_breakdown",
+      "owner": "sdkwork-order",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    },
+    {
+      "table_name": "commerce_recharge_package",
+      "owner": "sdkwork-order",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    },
+    {
+      "table_name": "commerce_account_value_package",
+      "owner": "sdkwork-order",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    },
+    {
+      "table_name": "commerce_token_bank_plan",
+      "owner": "sdkwork-order",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    },
+    {
+      "table_name": "commerce_order_refund_request",
+      "owner": "sdkwork-order",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    },
+    {
+      "table_name": "commerce_order_withdrawal_request",
+      "owner": "sdkwork-order",
+      "compliance_level": "L2",
+      "lifecycle_status": "active"
+    }
+  ]
+}

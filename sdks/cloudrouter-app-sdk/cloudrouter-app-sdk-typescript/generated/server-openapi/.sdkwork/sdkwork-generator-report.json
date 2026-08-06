@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "527b1d5590272035ffd51c1366eef440f7eb66212554c13c980c269d9eaf85d2",
+  "changeFingerprint": "7570350ea06bb7bfca7253e34ac5f509b77f9df1d4fb9f2d2b4e0da553a639e6",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -49,6 +49,12 @@
           "src/types/acknowledge-notification-response.ts",
           "src/types/app-api-key-item.ts",
           "src/types/app-api-key-list-response.ts",
+          "src/types/app-invite-claim-request.ts",
+          "src/types/app-invite-claim-response.ts",
+          "src/types/app-invite-code-response.ts",
+          "src/types/app-invite-policy-response.ts",
+          "src/types/app-invite-validate-request.ts",
+          "src/types/app-invite-validate-response.ts",
           "src/types/app-routing-account-group-list-response.ts",
           "src/types/app-routing-account-group.ts",
           "src/types/app-routing-api-key-account-group.ts",
@@ -296,10 +302,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 152,
-    "models": 122,
+    "totalFiles": 162,
+    "models": 132,
     "apis": 7,
-    "types": 124
+    "types": 134
   },
   "warnings": [
     {
@@ -346,12 +352,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 111,
+    "writtenFiles": 117,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "527b1d5590272035ffd51c1366eef440f7eb66212554c13c980c269d9eaf85d2",
+    "changeFingerprint": "7570350ea06bb7bfca7253e34ac5f509b77f9df1d4fb9f2d2b4e0da553a639e6",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -382,6 +388,12 @@
         "src/types/acknowledge-notification-response.ts",
         "src/types/app-api-key-item.ts",
         "src/types/app-api-key-list-response.ts",
+        "src/types/app-invite-claim-request.ts",
+        "src/types/app-invite-claim-response.ts",
+        "src/types/app-invite-code-response.ts",
+        "src/types/app-invite-policy-response.ts",
+        "src/types/app-invite-validate-request.ts",
+        "src/types/app-invite-validate-response.ts",
         "src/types/app-routing-account-group-list-response.ts",
         "src/types/app-routing-account-group.ts",
         "src/types/app-routing-api-key-account-group.ts",
@@ -510,6 +522,12 @@
             "src/types/acknowledge-notification-response.ts",
             "src/types/app-api-key-item.ts",
             "src/types/app-api-key-list-response.ts",
+            "src/types/app-invite-claim-request.ts",
+            "src/types/app-invite-claim-response.ts",
+            "src/types/app-invite-code-response.ts",
+            "src/types/app-invite-policy-response.ts",
+            "src/types/app-invite-validate-request.ts",
+            "src/types/app-invite-validate-response.ts",
             "src/types/app-routing-account-group-list-response.ts",
             "src/types/app-routing-account-group.ts",
             "src/types/app-routing-api-key-account-group.ts",

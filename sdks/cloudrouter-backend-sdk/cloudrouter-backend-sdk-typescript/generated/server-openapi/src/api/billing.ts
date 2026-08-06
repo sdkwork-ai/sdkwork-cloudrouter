@@ -1,7 +1,7 @@
 import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
-import type { AdminRechargeRecord, AdminRechargeRecordListResponse, AdminReferralStatListResponse } from '../types';
+import type { AdminRechargeRecord, AdminRechargeRecordListResponse, AdminReferralRelationListResponse, AdminReferralStatListResponse, AdminReferralStrategy, AdminReferralStrategyListResponse, AdminReferralStrategyMutationRequest } from '../types';
 
 
 export interface BillingReferralStatsListParams {
@@ -27,6 +27,78 @@ export class BillingReferralStatsApi {
   }
 }
 
+export interface BillingReferralRelationsListParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}
+
+export class BillingReferralRelationsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List referral relations */
+  async list(params?: BillingReferralRelationsListParams, requestOptions?: ApiRequestOptions): Promise<AdminReferralRelationListResponse> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<AdminReferralRelationListResponse>(appendQueryString(backendApiPath(`/billing/referrals/relations`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  }
+}
+
+export interface BillingReferralStrategiesListParams {
+  page?: number;
+  pageSize?: number;
+  status?: 'active' | 'disabled';
+  q?: string;
+}
+
+export class BillingReferralStrategiesApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List referral strategies */
+  async list(params?: BillingReferralStrategiesListParams, requestOptions?: ApiRequestOptions): Promise<AdminReferralStrategyListResponse> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<AdminReferralStrategyListResponse>(appendQueryString(backendApiPath(`/billing/referral_strategies`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  }
+
+/** Create referral strategy */
+  async create(body: AdminReferralStrategyMutationRequest, requestOptions?: ApiRequestOptions): Promise<AdminReferralStrategy> {
+    return this.client.request<AdminReferralStrategy>(backendApiPath(`/billing/referral_strategies`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+  }
+
+/** Delete referral strategy */
+  async delete(strategyId: string, requestOptions?: ApiRequestOptions): Promise<void> {
+    return this.client.request<void>(backendApiPath(`/billing/referral_strategies/${serializePathParameter(strategyId, { name: 'strategyId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+  }
+
+/** Retrieve referral strategy */
+  async retrieve(strategyId: string, requestOptions?: ApiRequestOptions): Promise<AdminReferralStrategy> {
+    return this.client.request<AdminReferralStrategy>(backendApiPath(`/billing/referral_strategies/${serializePathParameter(strategyId, { name: 'strategyId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+  }
+
+/** Update referral strategy */
+  async update(strategyId: string, body: AdminReferralStrategyMutationRequest, requestOptions?: ApiRequestOptions): Promise<AdminReferralStrategy> {
+    return this.client.request<AdminReferralStrategy>(backendApiPath(`/billing/referral_strategies/${serializePathParameter(strategyId, { name: 'strategyId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+  }
+}
+
 export class BillingRechargeRecordsApi {
   private client: HttpClient;
 
@@ -49,11 +121,15 @@ export class BillingRechargeRecordsApi {
 export class BillingApi {
   private client: HttpClient;
   public readonly rechargeRecords: BillingRechargeRecordsApi;
+  public readonly referralStrategies: BillingReferralStrategiesApi;
+  public readonly referralRelations: BillingReferralRelationsApi;
   public readonly referralStats: BillingReferralStatsApi;
 
   constructor(client: HttpClient) {
     this.client = client;
     this.rechargeRecords = new BillingRechargeRecordsApi(client);
+    this.referralStrategies = new BillingReferralStrategiesApi(client);
+    this.referralRelations = new BillingReferralRelationsApi(client);
     this.referralStats = new BillingReferralStatsApi(client);
   }
 

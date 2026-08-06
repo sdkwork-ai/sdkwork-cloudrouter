@@ -3,23 +3,19 @@ import { useTranslation } from 'react-i18next';
 import {
   marketingSelectClassName,
   MarketingField,
-  MarketingFormActions,
+  
   MarketingFormSection,
 } from '../components/MarketingFormControls';
 
 export interface DistributionTaskCreateDrawerFormProps {
-  isSaving: boolean;
   error: string | null;
   stockOptions: { id: string; label: string }[];
-  onCancel: () => void;
   onSubmit: (stockId: string, ownerUserIds: string[]) => void;
 }
 
 export function DistributionTaskCreateDrawerForm({
-  isSaving,
   error,
   stockOptions,
-  onCancel,
   onSubmit,
 }: DistributionTaskCreateDrawerFormProps) {
   const { t } = useTranslation();
@@ -55,7 +51,7 @@ export function DistributionTaskCreateDrawerForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex h-full flex-col">
+    <form id="distributionTaskCreateForm" onSubmit={handleSubmit} className="flex h-full flex-col">
       <MarketingFormSection title={t('admin.marketing.distribution.form.basic', 'Distribution Settings')}>
         <MarketingField label={t('admin.marketing.distribution.form.stock', 'Coupon Stock')} required>
           <select value={stockId} onChange={(event) => setStockId(event.target.value)} className={marketingSelectClassName}>
@@ -84,13 +80,6 @@ export function DistributionTaskCreateDrawerForm({
         </p>
       ) : null}
 
-      <div className="mt-auto">
-        <MarketingFormActions
-          isSaving={isSaving}
-          submitLabel={t('admin.marketing.distribution.form.create', 'Send Coupons')}
-          onCancel={onCancel}
-        />
-      </div>
     </form>
   );
 }

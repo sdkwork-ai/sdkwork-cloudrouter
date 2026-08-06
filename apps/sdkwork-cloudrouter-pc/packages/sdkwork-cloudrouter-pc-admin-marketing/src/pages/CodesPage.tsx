@@ -3,7 +3,8 @@ import type { ApiRecord } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { MarketingStatusBadge } from '../components/MarketingDrawer';
 import { MarketingListView, type MarketingColumn } from '../components/MarketingListView';
 import { marketingEnumLabel } from '../components/MarketingValueBadge';
-import { backendPromotionCodesList, maskPromotionCode } from '../marketingService';
+import { backendPromotionCodesList } from '../marketingService';
+import { CopyablePromotionCode } from '../components/CopyablePromotionCode';
 import { usePromotionReferences } from '../usePromotionReferences';
 
 export function CodesPage() {
@@ -15,7 +16,7 @@ export function CodesPage() {
     {
       key: 'promotionCode',
       label: t('admin.col.code', 'Code'),
-      render: (value) => maskPromotionCode(String(value ?? '')),
+      render: (value) => <CopyablePromotionCode code={String(value ?? '')} />,
     },
     { key: 'codeType', label: t('admin.col.type', 'Type'), render: (value) => marketingEnumLabel(value, 'admin.marketing.enums.codeType', t) },
     { key: 'stockId', label: t('admin.col.stock', 'Stock'), render: (value) => stockNames[String(value)] || String(value) },

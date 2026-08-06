@@ -181,6 +181,12 @@ async fn list_referral_relations(
         WHERE tenant_id = $1
           AND organization_id = $2
           AND status = 1
+          AND (
+                $5 = ''
+                OR invite_code ILIKE '%' || $5 || '%'
+                OR inviter_user_id::text ILIKE '%' || $5 || '%'
+                OR invitee_user_id::text ILIKE '%' || $5 || '%'
+              )
         ORDER BY created_at DESC, id DESC
         LIMIT $3 OFFSET $4
         "#,
@@ -189,6 +195,7 @@ async fn list_referral_relations(
     .bind(query.subject.organization_id)
     .bind(query.page_size)
     .bind(query.offset)
+    .bind(query.search.unwrap_or_default())
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to list referral relations", error))?;
@@ -242,6 +249,7 @@ async fn list_referral_strategies(
                 WHERE tenant_id = $1
                   AND organization_id = $2
                   AND status = 'active'
+                  AND ($5 = '' OR name ILIKE '%' || $5 || '%')
                 ORDER BY updated_at DESC, id DESC
                 LIMIT $3 OFFSET $4
                 "#,
@@ -268,6 +276,7 @@ async fn list_referral_strategies(
                 WHERE tenant_id = $1
                   AND organization_id = $2
                   AND status = 'disabled'
+                  AND ($5 = '' OR name ILIKE '%' || $5 || '%')
                 ORDER BY updated_at DESC, id DESC
                 LIMIT $3 OFFSET $4
                 "#,
@@ -293,6 +302,7 @@ async fn list_referral_strategies(
                 FROM ops_referral_strategy
                 WHERE tenant_id = $1
                   AND organization_id = $2
+                  AND ($5 = '' OR name ILIKE '%' || $5 || '%')
                 ORDER BY updated_at DESC, id DESC
                 LIMIT $3 OFFSET $4
                 "#,
@@ -303,6 +313,7 @@ async fn list_referral_strategies(
     .bind(query.subject.organization_id)
     .bind(query.page_size)
     .bind(query.offset)
+    .bind(query.search.unwrap_or_default())
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to list referral strategies", error))?;

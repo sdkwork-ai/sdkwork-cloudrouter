@@ -141,9 +141,6 @@ export function OfferDetailDrawer({ offerId, onClose }: OfferDetailDrawerProps) 
                 return (
                   <>
                     <DetailRow label={t('admin.marketing.coupon.form.benefitKind', 'Benefit Type')} value={kindLabel} />
-                    <DetailRow label={t('admin.marketing.coupon.form.productId', 'Product Id')} value={benefit.productId} />
-                    <DetailRow label={t('admin.marketing.coupon.form.skuId', 'Sku Id')} value={benefit.skuId} />
-                    <DetailRow label={t('admin.marketing.coupon.form.packageId', 'Package Id')} value={benefit.packageId} />
                     <DetailRow label={t('admin.marketing.coupon.form.period', 'Period')} value={marketingEnumLabel(benefit.period, 'admin.marketing.enums.period', t)} />
                     <DetailRow label={t('admin.marketing.coupon.form.durationDays', 'Duration Days')} value={benefit.durationDays} />
                     <DetailRow label={t('admin.marketing.coupon.form.dailyQuota', 'Daily Quota')} value={benefit.dailyQuota} />
@@ -164,13 +161,13 @@ export function OfferDetailDrawer({ offerId, onClose }: OfferDetailDrawerProps) 
                   <DetailRow label={t('admin.col.stockType', 'Stock Type')} value={marketingEnumLabel(stock['stockType'], 'admin.marketing.enums.stockType', t)} />
                   <DetailRow
                     label={t('admin.col.codeIssueMode', 'Code Mode')}
-                    value={stock['codeIssueMode'] === 'BATCH'
+                    value={stock['codeIssueMode'] === 'batch'
                       ? t('admin.marketing.promotions.codeIssue.batch', 'Batch Pool')
                       : t('admin.marketing.promotions.codeIssue.realtime', 'Realtime')}
                   />
                   <DetailRow
                     label={t('admin.col.total', 'Total')}
-                    value={stock['stockType'] === 'UNLIMITED' ? '∞' : stock['totalQuantity']}
+                    value={stock['stockType'] === 'unlimited' ? '∞' : stock['totalQuantity']}
                   />
                   <DetailRow label={t('admin.col.available', 'Available')} value={stock['availableQuantity']} />
                   <DetailRow label={t('admin.col.claimed', 'Claimed')} value={stock['claimedQuantity']} />

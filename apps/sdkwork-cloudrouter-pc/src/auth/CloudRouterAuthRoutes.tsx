@@ -6,6 +6,7 @@ import { resolveCloudRouterAuthAppearance } from './cloudRouterAuthAppearance';
 import { getCloudRouterAuthRuntime } from './cloudRouterAuthRuntime';
 import { CloudRouterAuthShell } from './CloudRouterAuthShell';
 import { useCloudRouterAuthRuntimeConfig } from './cloudRouterAuthConfig';
+import { InviteGate } from './InviteGate';
 import { cloudRouterTauriAuthHostReadiness } from './cloudRouterTauriAuthHost';
 
 const AUTH_METHOD_UNAVAILABLE_MESSAGE = 'This Cloud Router sign-in method is temporarily unavailable.';
@@ -18,17 +19,19 @@ export function CloudRouterAuthRoutes() {
 
   return (
     <CloudRouterAuthShell>
-      <SdkworkIamAuthRoutes
-        appearance={resolveCloudRouterAuthAppearance()}
-        basePath="/auth"
-        className="!bg-transparent"
-        getRuntime={getCloudRouterAuthRuntime}
-        homePath="/admin"
-        locale={i18n.language}
-        methodUnavailableMessage={AUTH_METHOD_UNAVAILABLE_MESSAGE}
-        runtimeConfig={runtimeConfig}
-        viewportMode="flow"
-      />
+      <InviteGate>
+        <SdkworkIamAuthRoutes
+          appearance={resolveCloudRouterAuthAppearance()}
+          basePath="/auth"
+          className="!bg-transparent"
+          getRuntime={getCloudRouterAuthRuntime}
+          homePath="/admin"
+          locale={i18n.language}
+          methodUnavailableMessage={AUTH_METHOD_UNAVAILABLE_MESSAGE}
+          runtimeConfig={runtimeConfig}
+          viewportMode="flow"
+        />
+      </InviteGate>
     </CloudRouterAuthShell>
   );
 }

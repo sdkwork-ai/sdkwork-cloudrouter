@@ -1,0 +1,379 @@
+{
+  "memberships": [
+    {
+      "id": "iamom_owner_1",
+      "tenant_id": "100001",
+      "organization_id": "0",
+      "user_id": "1",
+      "membership_kind": "owner",
+      "is_primary": 0,
+      "status": "active",
+      "created_at": "2026-07-14 14:26:30.452292+00"
+    },
+    {
+      "id": "100003",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "user_id": "1",
+      "membership_kind": "owner",
+      "is_primary": 1,
+      "status": "active",
+      "created_at": "2026-07-15 08:56:52.79721+00"
+    },
+    {
+      "id": "iamom_member_2",
+      "tenant_id": "100001",
+      "organization_id": "0",
+      "user_id": "2",
+      "membership_kind": "member",
+      "is_primary": 0,
+      "status": "active",
+      "created_at": "2026-07-11 04:14:41.980991+00"
+    },
+    {
+      "id": "100006",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "user_id": "2",
+      "membership_kind": "admin",
+      "is_primary": 1,
+      "status": "active",
+      "created_at": "2026-07-19 18:32:01.786273+00"
+    }
+  ],
+  "role_bindings": [
+    {
+      "id": "iamb_100003_organization_100002_org_admin",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "role_id": "iam-role-100001-org-admin",
+      "principal_kind": "organization_membership",
+      "principal_id": "100003",
+      "scope_kind": "organization",
+      "scope_id": "100002",
+      "effect": "allow",
+      "status": "active",
+      "created_at": "2026-07-15 08:56:52.79721+00"
+    },
+    {
+      "id": "iamb_100006_organization_100002_org_admin",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "role_id": "iam-role-100001-org-admin",
+      "principal_kind": "organization_membership",
+      "principal_id": "100006",
+      "scope_kind": "organization",
+      "scope_id": "100002",
+      "effect": "allow",
+      "status": "active",
+      "created_at": "2026-07-19 18:32:01.786273+00"
+    },
+    {
+      "id": "iamb_iamom_member_2_organization_0_org_admin",
+      "tenant_id": "100001",
+      "organization_id": "0",
+      "role_id": "iam-role-100001-org-admin",
+      "principal_kind": "organization_membership",
+      "principal_id": "iamom_member_2",
+      "scope_kind": "organization",
+      "scope_id": "0",
+      "effect": "allow",
+      "status": "inactive",
+      "created_at": "2026-07-11 04:14:41.980991+00"
+    },
+    {
+      "id": "iamb_iamom_owner_1_organization_0_org_admin",
+      "tenant_id": "100001",
+      "organization_id": "0",
+      "role_id": "iam-role-100001-org-admin",
+      "principal_kind": "organization_membership",
+      "principal_id": "iamom_owner_1",
+      "scope_kind": "organization",
+      "scope_id": "0",
+      "effect": "allow",
+      "status": "active",
+      "created_at": "2026-07-14 14:26:30.452292+00"
+    }
+  ],
+  "sessions": [
+    {
+      "id": "sdkwork-session-RdTLM-ikN8KllHFb_xSvbe7W2m0IZtu5C4rQHH9DUuY",
+      "tenant_id": "100001",
+      "organization_id": null,
+      "login_scope": "TENANT",
+      "user_id": "1",
+      "app_id": "sdkwork-clawrouter",
+      "created_at": "2026-07-14 15:53:33.355314+00"
+    },
+    {
+      "id": "sdkwork-session-6ddMfz4zWK2oASR0sg8ssozBw5EslZ0jHXpVApvqXWo",
+      "tenant_id": "100001",
+      "organization_id": null,
+      "login_scope": "TENANT",
+      "user_id": "1",
+      "app_id": "sdkwork-clawrouter",
+      "created_at": "2026-07-15 01:22:00.034719+00"
+    },
+    {
+      "id": "sdkwork-session-COQeJ-ppbMSUFLsp_8oA3gYXseozfND6z7xpmK2TBZk",
+      "tenant_id": "100001",
+      "organization_id": null,
+      "login_scope": "TENANT",
+      "user_id": "1",
+      "app_id": "sdkwork-clawrouter",
+      "created_at": "2026-07-15 02:22:26.86281+00"
+    },
+    {
+      "id": "sdkwork-session-QAWb4M2TdnJoRXJc6kg1q0LDEHbKzBy6rtPy3GDkeWw",
+      "tenant_id": "100001",
+      "organization_id": null,
+      "login_scope": "TENANT",
+      "user_id": "1",
+      "app_id": "sdkwork-clawrouter",
+      "created_at": "2026-07-15 02:30:53.11791+00"
+    },
+    {
+      "id": "sdkwork-session-poOPBuvazITvtVYTO_Ie1EKTya098zci1lireIoEJ2w",
+      "tenant_id": "100001",
+      "organization_id": null,
+      "login_scope": "TENANT",
+      "user_id": "1",
+      "app_id": "sdkwork-clawrouter",
+      "created_at": "2026-07-15 07:54:52.886628+00"
+    },
+    {
+      "id": "sdkwork-session-hSxJbYFa9zTezHzEPaQ67BfavF1WIBVzwlr-KcZxaJ4",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-clawrouter",
+      "created_at": "2026-07-15 15:15:34.422973+00"
+    },
+    {
+      "id": "sdkwork-session-PtVxrvc4hw4JZhguA-SbbrIiHt30fOTCykQ7POv9nKU",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-clawrouter",
+      "created_at": "2026-07-16 15:12:16.216195+00"
+    },
+    {
+      "id": "sdkwork-session-l66dg9efK1IP8_Md0dmjTgW7G3zq_61AWLMK0Cywx9I",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-clawrouter",
+      "created_at": "2026-07-16 15:12:28.631448+00"
+    },
+    {
+      "id": "sdkwork-session-SUebc8s4M2XT8CwO603DwFYvP38XLPTrQM7h0wxWgCM",
+      "tenant_id": "100001",
+      "organization_id": null,
+      "login_scope": "TENANT",
+      "user_id": "1",
+      "app_id": "sdkwork-clawrouter",
+      "created_at": "2026-07-16 15:12:52.35641+00"
+    },
+    {
+      "id": "sdkwork-session-hZTFYWEfAomFhdf1YOW-GQNA3Y5CW450DWQKcB6cyuY",
+      "tenant_id": "100001",
+      "organization_id": null,
+      "login_scope": "TENANT",
+      "user_id": "1",
+      "app_id": "sdkwork-clawrouter",
+      "created_at": "2026-07-16 15:13:11.073828+00"
+    },
+    {
+      "id": "sdkwork-session-WLoXTVnEv2FDxejW2lFa7W4pC9NAiA5BILI9wJCFwxk",
+      "tenant_id": "100001",
+      "organization_id": null,
+      "login_scope": "TENANT",
+      "user_id": "1",
+      "app_id": "sdkwork-manager-pc",
+      "created_at": "2026-07-18 10:56:02.551435+00"
+    },
+    {
+      "id": "sdkwork-session-WNZIhiXeQRxxpzRj_26fIhWBoDTfLGmhaqJrnvdUK6c",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-manager-pc",
+      "created_at": "2026-07-18 11:31:55.439725+00"
+    },
+    {
+      "id": "sdkwork-session-optHXsVcl6k2Zx6Na8Nwe6Q1RVlGgaN8oB3pjc95SF0",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-manager-pc",
+      "created_at": "2026-07-19 00:08:31.923924+00"
+    },
+    {
+      "id": "sdkwork-session-37OvEuQW7xe5-zM0AdBBIsUgNz4O5Lo2XEOJ_Fax9dg",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-clawrouter",
+      "created_at": "2026-07-19 01:32:26.863923+00"
+    },
+    {
+      "id": "sdkwork-session-xzUhcXZ6Gado9gLCT2E2hITnWIBFXSG2osJ6c1VKGuE",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-clawrouter",
+      "created_at": "2026-07-19 01:33:34.269929+00"
+    },
+    {
+      "id": "sdkwork-session-dchfy3C1R5yhcgqrqbxgiIM33gN3VmOdK3suCqd6i5w",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-manager-pc",
+      "created_at": "2026-07-19 03:06:50.945807+00"
+    },
+    {
+      "id": "sdkwork-session-7bxEpe_auFjZL9ju4mLwBwj3G6d59JDzxr2PcvJDc9c",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-manager-pc",
+      "created_at": "2026-07-19 04:04:03.155706+00"
+    },
+    {
+      "id": "sdkwork-session-nJ7GI-kLJ-pwFT4rJ-Q3Bj2yoMhNg7twrscsySHg4mI",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-manager-pc",
+      "created_at": "2026-07-19 07:16:30.788437+00"
+    },
+    {
+      "id": "sdkwork-session-F_RuBhGfOvqt7MIafCxtb7jU6-Zb9zJCJPlEl-QIQeA",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-manager-pc",
+      "created_at": "2026-07-20 10:14:09.712958+00"
+    },
+    {
+      "id": "sdkwork-session-kAQPdqpaSFgu1KwY9vErZvqJs6Xt-JvH8fdT71imSj8",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-clawrouter",
+      "created_at": "2026-07-26 03:01:01.968466+00"
+    },
+    {
+      "id": "sdkwork-session-sM9ptv23jzHOvzfFVsaXPRKacxli7_Vszm4GtYsUqmE",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-clawrouter",
+      "created_at": "2026-07-26 03:03:07.086774+00"
+    },
+    {
+      "id": "sdkwork-session-Z_NZIcwhAJITDB8jcQti4CY0b8e03PdWPG2JME16V2A",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-clawrouter",
+      "created_at": "2026-07-26 03:06:42.926972+00"
+    },
+    {
+      "id": "sdkwork-session-XUTnMHo2-z98f_c21SJb7ijULS0uN7A5RnhDISqaqrk",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-clawrouter",
+      "created_at": "2026-07-26 04:56:39.854213+00"
+    },
+    {
+      "id": "sdkwork-session-7yBTDuICXqGKTNC6vCmWNxHjtkUKLkgQKU8ZN8oiJzU",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-clawrouter",
+      "created_at": "2026-07-26 04:56:42.72021+00"
+    },
+    {
+      "id": "sdkwork-session-w_5tlqXblklxCi02rMsg49dy3tEQbfskrajLf0TZUxg",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-clawrouter",
+      "created_at": "2026-07-26 14:32:18.67477+00"
+    },
+    {
+      "id": "sdkwork-session-sOk_rKZS7Pn9WzCdUGEn3NG_Tal95nZ4l45vkOugxsE",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-webserver-pc",
+      "created_at": "2026-07-27 16:57:24.61922+00"
+    },
+    {
+      "id": "sdkwork-session-Kqb5sPdXsrerixTuH0NPA7bBNuzhoXXM1GZExoEMljk",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-webserver-pc",
+      "created_at": "2026-07-27 17:06:35.344617+00"
+    },
+    {
+      "id": "sdkwork-session-QzgUtdB_FG7b86sYIS4gFLLXYmxxr4BEIWVN9P2Q94c",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-webserver-pc",
+      "created_at": "2026-07-27 23:57:01.912398+00"
+    },
+    {
+      "id": "sdkwork-session-SryGdA2qsJktC38XulIQnRuFiQq2PfkIhrn6qkM4-Hs",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-clawrouter",
+      "created_at": "2026-07-28 00:32:25.863109+00"
+    },
+    {
+      "id": "sdkwork-session-pgEeG8ForaD5fJBJpFVXOyXxrS4bAQ37_abis9crhoo",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-clawrouter",
+      "created_at": "2026-08-04 01:14:37.706267+00"
+    },
+    {
+      "id": "sdkwork-session-n-FJi0wmTMKWapkNs1raeIfTvhQE_dQ8qjUdn_gjTAk",
+      "tenant_id": "100001",
+      "organization_id": "100002",
+      "login_scope": "ORGANIZATION",
+      "user_id": "1",
+      "app_id": "sdkwork-cloudrouter",
+      "created_at": "2026-08-04 15:05:45.256396+00"
+    }
+  ]
+}

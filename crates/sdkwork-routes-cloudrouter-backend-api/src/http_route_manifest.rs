@@ -574,6 +574,42 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "system",
         "site.settings.update",
     ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/backend/v3/api/billing/referrals/relations",
+        "billing",
+        "referralRelations.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/backend/v3/api/billing/referral_strategies",
+        "billing",
+        "referralStrategies.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/backend/v3/api/billing/referral_strategies",
+        "billing",
+        "referralStrategies.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/backend/v3/api/billing/referral_strategies/{strategy_id}",
+        "billing",
+        "referralStrategies.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Patch,
+        "/backend/v3/api/billing/referral_strategies/{strategy_id}",
+        "billing",
+        "referralStrategies.update",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Delete,
+        "/backend/v3/api/billing/referral_strategies/{strategy_id}",
+        "billing",
+        "referralStrategies.delete",
+    ),
 ];
 
 pub fn http_route_manifest() -> HttpRouteManifest {

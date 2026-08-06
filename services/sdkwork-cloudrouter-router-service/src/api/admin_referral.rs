@@ -49,6 +49,7 @@ struct AdminReferralListQueryRequest {
     page: Option<i64>,
     page_size: Option<i64>,
     status: Option<String>,
+    q: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -121,10 +122,12 @@ async fn fetch_referral_relations(
         Ok(parsed) => parsed,
         Err(error) => return error.into_response(),
     };
+    let search = normalize_search_query(params.q.as_deref());
     match state
         .store
         .list_referral_relations(ListAdminReferralRelationsQuery {
             subject,
+            search,
             page_no: parsed.page_no,
             page_size: parsed.page_size,
             offset: parsed.offset,
@@ -152,11 +155,13 @@ async fn fetch_referral_strategies(
         Ok(status) => status,
         Err(error) => return command_build_error_response(error),
     };
+    let search = normalize_search_query(params.q.as_deref());
     match state
         .store
         .list_referral_strategies(ListAdminReferralStrategiesQuery {
             subject,
             status,
+            search,
             page_no: parsed.page_no,
             page_size: parsed.page_size,
             offset: parsed.offset,
@@ -301,6 +306,13 @@ fn parse_referral_list_query(
         .map_err(|message| bad_request(message).into())
 }
 
+fn normalize_search_query(value: Option<&str>) -> Option<String> {
+    value
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(|value| value.chars().take(128).collect())
+}
+
 fn referral_list_response<T: Serialize>(page: AdminReferralListPage<T>) -> Response {
     json_success_list_response(
         None,
@@ -398,7 +410,7 @@ fn normalize_strategy_mutation(
         "referral strategy rewardType",
         &[REWARD_TYPE_POINTS, REWARD_TYPE_CASH, REWARD_TYPE_COUPON],
     )?;
-    let reward_value = normalize_reward_value(request.reward_value.as_ref())?;
+    let reward_value = normalize_reward_value(request.reward_value.as_ref(), &reward_type)?;
     let reward_target = normalize_enum_value(
         request.reward_target.as_deref(),
         "referral strategy rewardTarget",
@@ -462,7 +474,7 @@ fn merge_strategy_mutation(
         None => current.reward_type,
     };
     let reward_value = match request.reward_value {
-        Some(value) => normalize_reward_value(Some(&value))?,
+        Some(value) => normalize_reward_value(Some(&value), &reward_type)?,
         None => current.reward_value,
     };
     let reward_target = match request.reward_target {
@@ -513,10 +525,21 @@ fn validate_strategy_window(
     ends_at: Option<&str>,
 ) -> Result<(), AdminReferralCommandBuildError> {
     if let (Some(starts_at), Some(ends_at)) = (starts_at, ends_at) {
-        if starts_at >= ends_at {
-            return Err(AdminReferralCommandBuildError::BadRequest(
-                "referral strategy endsAt must be after startsAt".to_owned(),
-            ));
+        match (parse_wall_clock_seconds(starts_at), parse_wall_clock_seconds(ends_at)) {
+            (Some(starts), Some(ends)) if starts >= ends => {
+                return Err(AdminReferralCommandBuildError::BadRequest(
+                    "referral strategy endsAt must be after startsAt".to_owned(),
+                ));
+            }
+            // Values are already validated by normalize_optional_timestamp;
+            // the None arm is unreachable defensive handling.
+            (None, _) | (_, None) => {
+                return Err(AdminReferralCommandBuildError::BadRequest(
+                    "referral strategy startsAt and endsAt must use a valid timestamp format"
+                        .to_owned(),
+                ));
+            }
+            (Some(_), Some(_)) => {}
         }
     }
     Ok(())
@@ -616,6 +639,7 @@ fn normalize_optional_strategy_status(
 
 fn normalize_reward_value(
     value: Option<&Value>,
+    reward_type: &str,
 ) -> Result<String, AdminReferralCommandBuildError> {
     let raw = match value {
         Some(Value::String(value)) => value.trim().to_owned(),
@@ -636,7 +660,38 @@ fn normalize_reward_value(
             "referral strategy rewardValue must be at most {MAX_REWARD_VALUE_LEN} characters"
         )));
     }
+    let valid = match reward_type {
+        REWARD_TYPE_POINTS => {
+            !raw.is_empty() && raw.bytes().all(|byte| byte.is_ascii_digit())
+        }
+        REWARD_TYPE_CASH => is_cash_amount(&raw),
+        REWARD_TYPE_COUPON => raw
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_'),
+        _ => false,
+    };
+    if !valid {
+        return Err(AdminReferralCommandBuildError::BadRequest(format!(
+            "referral strategy rewardValue does not match rewardType {reward_type}"
+        )));
+    }
     Ok(raw)
+}
+
+/// Non-negative decimal amount with at most two fraction digits (e.g. "5" or
+/// "5.00"); the value is kept as text for the VARCHAR column.
+fn is_cash_amount(value: &str) -> bool {
+    let Some((integer, fraction)) = value.split_once('.') else {
+        return !value.is_empty() && value.bytes().all(|byte| byte.is_ascii_digit());
+    };
+    if fraction.contains('.') {
+        return false;
+    }
+    !integer.is_empty()
+        && integer.bytes().all(|byte| byte.is_ascii_digit())
+        && !fraction.is_empty()
+        && fraction.len() <= 2
+        && fraction.bytes().all(|byte| byte.is_ascii_digit())
 }
 
 fn normalize_max_rewards_per_inviter(
@@ -673,7 +728,136 @@ fn normalize_optional_timestamp(
             "{field_name} must be at most 64 characters"
         )));
     }
+    if !is_valid_timestamp(value) {
+        return Err(AdminReferralCommandBuildError::BadRequest(format!(
+            "{field_name} must be a timestamp in YYYY-MM-DD HH:MM:SS or ISO-8601 format"
+        )));
+    }
     Ok(Some(value.to_owned()))
+}
+
+/// Accepts `YYYY-MM-DD HH:MM:SS` with a space or `T` separator, plus an
+/// optional fractional-seconds / timezone suffix (ISO-8601 style). The
+/// wall-clock fields are validated (including calendar day validity) so the
+/// stored string parses cleanly in the TIMESTAMPTZ column instead of
+/// surfacing as a database error, and window comparisons stay consistent.
+fn is_valid_timestamp(value: &str) -> bool {
+    let Some(body) = value.get(..19) else {
+        return false;
+    };
+    let bytes = body.as_bytes();
+    if bytes[4] != b'-' || bytes[7] != b'-' || bytes[13] != b':' || bytes[16] != b':' {
+        return false;
+    }
+    if bytes[10] != b' ' && bytes[10] != b'T' {
+        return false;
+    }
+    if !bytes.iter().enumerate().all(|(index, byte)| {
+        matches!(index, 4 | 7 | 10 | 13 | 16) || byte.is_ascii_digit()
+    }) {
+        return false;
+    }
+    let parse = |index: usize, len: usize| {
+        bytes
+            .get(index..index + len)
+            .and_then(|part| std::str::from_utf8(part).ok())
+            .and_then(|part| part.parse::<i64>().ok())
+    };
+    let (Some(year), Some(month), Some(day)) = (parse(0, 4), parse(5, 2), parse(8, 2)) else {
+        return false;
+    };
+    let (Some(hour), Some(minute), Some(second)) = (parse(11, 2), parse(14, 2), parse(17, 2)) else {
+        return false;
+    };
+    if !(1..=12).contains(&month)
+        || !(1..=31).contains(&day)
+        || hour > 23
+        || minute > 59
+        || second > 59
+    {
+        return false;
+    }
+    // Reject impossible calendar days (e.g. February 30) via a civil round trip.
+    let Some(days) = days_from_civil(year, month, day) else {
+        return false;
+    };
+    if civil_from_days(days) != (year, month, day) {
+        return false;
+    }
+    is_valid_timestamp_suffix(&value[19..])
+}
+
+fn is_valid_timestamp_suffix(suffix: &str) -> bool {
+    let suffix = match suffix.strip_prefix('.') {
+        Some(fraction) => {
+            let digits = fraction
+                .chars()
+                .take_while(|ch| ch.is_ascii_digit())
+                .count();
+            if digits == 0 || digits > 9 {
+                return false;
+            }
+            &fraction[digits..]
+        }
+        None => suffix,
+    };
+    if suffix.is_empty() || suffix == "Z" || suffix == "z" {
+        return true;
+    }
+    let offset = match suffix.as_bytes().first() {
+        Some(b'+') | Some(b'-') => &suffix[1..],
+        _ => return false,
+    };
+    let (hours, minutes) = match offset.len() {
+        5 if offset.as_bytes().get(2) == Some(&b':') => (
+            offset[..2].parse::<i64>().ok(),
+            offset[3..5].parse::<i64>().ok(),
+        ),
+        4 => (
+            offset[..2].parse::<i64>().ok(),
+            offset[2..4].parse::<i64>().ok(),
+        ),
+        _ => return false,
+    };
+    matches!((hours, minutes), (Some(0..=23), Some(0..=59)))
+}
+
+/// Wall-clock seconds since the Unix epoch for a timestamp already accepted by
+/// `is_valid_timestamp`; timezone suffixes are ignored so window comparisons
+/// use the literal calendar fields the admin configured.
+fn parse_wall_clock_seconds(value: &str) -> Option<i64> {
+    if !is_valid_timestamp(value) {
+        return None;
+    }
+    let bytes = value.as_bytes();
+    let parse = |index: usize, len: usize| {
+        std::str::from_utf8(&bytes[index..index + len])
+            .ok()
+            .and_then(|part| part.parse::<i64>().ok())
+    };
+    let year = parse(0, 4)?;
+    let month = parse(5, 2)?;
+    let day = parse(8, 2)?;
+    let hour = parse(11, 2)?;
+    let minute = parse(14, 2)?;
+    let second = parse(17, 2)?;
+    let days = days_from_civil(year, month, day)?;
+    Some(days * 86_400 + hour * 3_600 + minute * 60 + second)
+}
+
+/// Inverse of `civil_from_days` (Howard Hinnant's days-from-civil algorithm);
+/// returns `None` for out-of-range month/day fields.
+fn days_from_civil(year: i64, month: i64, day: i64) -> Option<i64> {
+    if !(1..=12).contains(&month) || !(1..=31).contains(&day) {
+        return None;
+    }
+    let year = if month <= 2 { year - 1 } else { year };
+    let era = if year >= 0 { year } else { year - 399 } / 400;
+    let year_of_era = year - era * 400;
+    let month_prime = if month > 2 { month - 3 } else { month + 9 };
+    let day_of_year = (153 * month_prime + 2) / 5 + day - 1;
+    let day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year;
+    Some(era * 146_097 + day_of_era - 719_468)
 }
 
 fn normalize_path_id(value: &str, field_name: &str) -> Result<String, String> {
@@ -768,6 +952,94 @@ mod tests {
     use super::*;
     use serde_json::json;
 
+    fn seeded_strategy() -> AdminReferralStrategyItem {
+        AdminReferralStrategyItem {
+            id: "strategy-1".to_owned(),
+            name: "Launch Referral".to_owned(),
+            description: "Q3 campaign".to_owned(),
+            status: STATUS_ACTIVE.to_owned(),
+            reward_type: REWARD_TYPE_CASH.to_owned(),
+            reward_value: "5.00".to_owned(),
+            reward_target: REWARD_TARGET_INVITEE.to_owned(),
+            trigger_event: TRIGGER_EVENT_REGISTER.to_owned(),
+            max_rewards_per_inviter: 3,
+            starts_at: "2026-08-01 00:00:00".to_owned(),
+            ends_at: "2026-08-31 23:59:59".to_owned(),
+            updated_at: "2026-08-06 00:00:00".to_owned(),
+        }
+    }
+
+    #[test]
+    fn merge_strategy_mutation_keeps_current_values_for_omitted_fields() {
+        let request: ReferralStrategyMutationRequest =
+            serde_json::from_value(json!({ "name": "Renamed Referral" })).unwrap();
+
+        let mutation = merge_strategy_mutation(seeded_strategy(), request).unwrap();
+
+        assert_eq!("Renamed Referral", mutation.name);
+        assert_eq!("Q3 campaign", mutation.description);
+        assert_eq!(STATUS_ACTIVE, mutation.status);
+        assert_eq!(REWARD_TYPE_CASH, mutation.reward_type);
+        assert_eq!("5.00", mutation.reward_value);
+        assert_eq!(REWARD_TARGET_INVITEE, mutation.reward_target);
+        assert_eq!(3, mutation.max_rewards_per_inviter);
+        assert_eq!("2026-08-01 00:00:00", mutation.starts_at.unwrap());
+        assert_eq!("2026-08-31 23:59:59", mutation.ends_at.unwrap());
+    }
+
+    #[test]
+    fn merge_strategy_mutation_clears_optional_fields_with_empty_strings() {
+        let request: ReferralStrategyMutationRequest =
+            serde_json::from_value(json!({
+                "description": "",
+                "startsAt": "",
+                "endsAt": ""
+            }))
+            .unwrap();
+
+        let mutation = merge_strategy_mutation(seeded_strategy(), request).unwrap();
+
+        assert_eq!("", mutation.description);
+        assert_eq!(None, mutation.starts_at);
+        assert_eq!(None, mutation.ends_at);
+    }
+
+    #[test]
+    fn merge_strategy_mutation_rejects_reward_value_mismatching_merged_reward_type() {
+        let request: ReferralStrategyMutationRequest =
+            serde_json::from_value(json!({
+                "rewardType": "POINTS",
+                "rewardValue": "5.00"
+            }))
+            .unwrap();
+
+        let error = merge_strategy_mutation(seeded_strategy(), request).unwrap_err();
+        match error {
+            AdminReferralCommandBuildError::BadRequest(message) => {
+                assert!(message.contains("rewardValue"), "{message}");
+            }
+            _ => panic!("expected bad request"),
+        }
+    }
+
+    #[test]
+    fn merge_strategy_mutation_rejects_window_invalid_after_merge() {
+        let mut current = seeded_strategy();
+        current.ends_at = String::new();
+        let request: ReferralStrategyMutationRequest = serde_json::from_value(json!({
+            "endsAt": "2026-08-01 00:00:00"
+        }))
+        .unwrap();
+
+        let error = merge_strategy_mutation(current, request).unwrap_err();
+        match error {
+            AdminReferralCommandBuildError::BadRequest(message) => {
+                assert!(message.contains("endsAt"), "{message}");
+            }
+            _ => panic!("expected bad request"),
+        }
+    }
+
     #[test]
     fn normalize_strategy_mutation_accepts_compact_referral_strategy() {
         let request: ReferralStrategyMutationRequest = serde_json::from_value(json!({
@@ -854,5 +1126,100 @@ mod tests {
             }
             _ => panic!("expected bad request"),
         }
+    }
+
+    #[test]
+    fn normalize_strategy_mutation_rejects_ends_before_starts_across_formats() {
+        // Mixed formats trip lexicographic comparison (" " < "T"): the window
+        // must compare wall-clock values, not raw strings.
+        let request: ReferralStrategyMutationRequest = serde_json::from_value(json!({
+            "name": "Mixed Format Window",
+            "rewardType": "POINTS",
+            "rewardValue": "100",
+            "rewardTarget": "INVITER",
+            "triggerEvent": "REGISTER",
+            "startsAt": "2026-08-01 23:59:59",
+            "endsAt": "2026-08-01T23:00:00.000Z"
+        }))
+        .unwrap();
+
+        let error = normalize_strategy_mutation(request).unwrap_err();
+        match error {
+            AdminReferralCommandBuildError::BadRequest(message) => {
+                assert!(message.contains("endsAt"));
+            }
+            _ => panic!("expected bad request"),
+        }
+    }
+
+    #[test]
+    fn normalize_strategy_mutation_accepts_iso_timestamps() {
+        let request: ReferralStrategyMutationRequest = serde_json::from_value(json!({
+            "name": "ISO Window",
+            "rewardType": "CASH",
+            "rewardValue": "5.00",
+            "rewardTarget": "INVITER",
+            "triggerEvent": "REGISTER",
+            "startsAt": "2026-08-01T00:00:00.000Z",
+            "endsAt": "2026-08-31T23:59:59+08:00"
+        }))
+        .unwrap();
+
+        let mutation = normalize_strategy_mutation(request).unwrap();
+
+        assert_eq!("2026-08-01T00:00:00.000Z", mutation.starts_at.unwrap());
+    }
+
+    #[test]
+    fn normalize_optional_timestamp_rejects_invalid_formats() {
+        for value in [
+            "banana",
+            "2026-02-30 00:00:00",
+            "2026-13-01 00:00:00",
+            "2026-08-01 24:00:00",
+            "2026-8-1 0:0:0",
+            "2026-08-01 00:00:00+8:00",
+            "2026-08-01T00:00:00+08",
+        ] {
+            let error = normalize_optional_timestamp(Some(value), "referral strategy startsAt")
+                .unwrap_err();
+            match error {
+                AdminReferralCommandBuildError::BadRequest(message) => {
+                    assert!(message.contains("startsAt"), "{value}: {message}");
+                }
+                _ => panic!("expected bad request for {value}"),
+            }
+        }
+    }
+
+    #[test]
+    fn normalize_reward_value_validates_against_reward_type() {
+        let number = |raw: &str| Some(serde_json::Value::String(raw.to_owned()));
+
+        assert_eq!(
+            "200",
+            normalize_reward_value(number("200").as_ref(), REWARD_TYPE_POINTS).unwrap()
+        );
+        assert!(normalize_reward_value(number("200.5").as_ref(), REWARD_TYPE_POINTS).is_err());
+        assert!(normalize_reward_value(number("-5").as_ref(), REWARD_TYPE_POINTS).is_err());
+
+        assert_eq!(
+            "5.00",
+            normalize_reward_value(number("5.00").as_ref(), REWARD_TYPE_CASH).unwrap()
+        );
+        assert_eq!(
+            "5",
+            normalize_reward_value(number("5").as_ref(), REWARD_TYPE_CASH).unwrap()
+        );
+        assert!(normalize_reward_value(number("5.123").as_ref(), REWARD_TYPE_CASH).is_err());
+        assert!(normalize_reward_value(number("abc").as_ref(), REWARD_TYPE_CASH).is_err());
+        assert!(normalize_reward_value(number("-1").as_ref(), REWARD_TYPE_CASH).is_err());
+
+        assert_eq!(
+            "COUPON-2026",
+            normalize_reward_value(number("COUPON-2026").as_ref(), REWARD_TYPE_COUPON).unwrap()
+        );
+        assert!(normalize_reward_value(number("券码").as_ref(), REWARD_TYPE_COUPON).is_err());
+        assert!(normalize_reward_value(number("a b").as_ref(), REWARD_TYPE_COUPON).is_err());
     }
 }

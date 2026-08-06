@@ -2189,7 +2189,10 @@ async fn maybe_spawn_postgres_usage_settlement_worker(
         );
         return Ok(None);
     }
-    let store: SettlementStore = Arc::new(PostgresUsageSettlementStore::new(pool.clone()));
+    let store: SettlementStore = Arc::new(PostgresUsageSettlementStore::new(
+        pool.clone(),
+        PostgresCommerceAccountStore::new(pool.clone()),
+    ));
     let usage_settlement_wakeup = Arc::new(Notify::new());
     spawn_usage_settlement_worker(store, config, Some(Arc::clone(&usage_settlement_wakeup)));
     Ok(Some(usage_settlement_wakeup))

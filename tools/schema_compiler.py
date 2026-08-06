@@ -22,6 +22,7 @@ else:
 
 IDENTIFIER_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 STRING_TYPE_PATTERN = re.compile(r"^string\((\d+)\)$")
+DECIMAL_TYPE_PATTERN = re.compile(r"^decimal\((\d+),\s*(\d+)\)$")
 
 
 class SchemaCompileError(ValueError):
@@ -479,6 +480,18 @@ class SchemaCompiler:
             if length <= 0:
                 raise SchemaCompileError(f"invalid string length for {table_name}.{column_name}: {registry_type}")
             return f"VARCHAR({length})"
+
+        decimal_match = DECIMAL_TYPE_PATTERN.match(registry_type)
+        if decimal_match:
+            precision = int(decimal_match.group(1))
+            scale = int(decimal_match.group(2))
+            if precision <= 0 or scale < 0 or scale > precision:
+                raise SchemaCompileError(f"invalid decimal precision for {table_name}.{column_name}: {registry_type}")
+            if dialect == "postgres":
+                return f"NUMERIC({precision}, {scale})"
+            # SQLite stores the canonical decimal wire representation as exact
+            # text; precision/scale only constrain the postgres column.
+            return "TEXT"
 
         scalar_map = SCALAR_TYPE_MAP if dialect == "postgres" else SQLITE_SCALAR_TYPE_MAP
         mapped = scalar_map.get(registry_type)

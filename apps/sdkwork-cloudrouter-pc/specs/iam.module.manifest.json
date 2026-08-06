@@ -1,96 +1,114 @@
 {
-  "schemaVersion": 1,
-  "kind": "sdkwork.iam.module",
-  "moduleId": "cloudrouter",
-  "catalogVersion": "1.1.0",
-  "domain": "cloudrouter",
-  "owner": "sdkwork-cloudrouter",
-  "displayName": "SDKWork Cloud Router Gateway",
-  "permissions": {
-    "catalog": [
-      {
-        "code": "cloudrouter.console.access",
-        "name": "Access Cloud Router console surface",
-        "resource": "console",
-        "action": "access",
-        "status": "active",
-        "since": "1.0.0",
-        "replacementCode": null
-      },
-      {
-        "code": "cloudrouter.admin.access",
-        "name": "Access Cloud Router admin surface",
-        "resource": "admin",
-        "action": "access",
-        "status": "active",
-        "since": "1.0.0",
-        "replacementCode": null
-      },
-      {
-        "code": "cloudrouter.gateway.read",
-        "name": "Read gateway runtime and routing configuration",
-        "resource": "gateway",
-        "action": "read",
-        "status": "active",
-        "since": "1.0.0",
-        "replacementCode": null
-      },
-      {
-        "code": "cloudrouter.gateway.manage",
-        "name": "Manage gateway runtime and routing configuration",
-        "resource": "gateway",
-        "action": "manage",
-        "status": "active",
-        "since": "1.0.0",
-        "replacementCode": null
-      },
-      {
-        "code": "cloudrouter.system.read",
-        "name": "Read Cloud Router installation and system status",
-        "resource": "system",
-        "action": "read",
-        "status": "active",
-        "since": "1.0.0",
-        "replacementCode": null
-      }
-    ],
-    "openapiAuthorities": [
-      "cloudrouter-app-api",
-      "cloudrouter-backend-api",
-      "cloudrouter-open-api"
+ "schemaVersion": 1,
+ "kind": "sdkwork.iam.module",
+ "moduleId": "cloudrouter",
+ "catalogVersion": "1.1.0",
+ "domain": "cloudrouter",
+ "owner": "sdkwork-cloudrouter",
+ "displayName": "SDKWork Cloud Router Gateway",
+ "permissions": {
+  "catalog": [
+   {
+    "code": "cloudrouter.console.access",
+    "name": "Access Cloud Router console surface",
+    "resource": "console",
+    "action": "access",
+    "status": "active",
+    "since": "1.0.0",
+    "replacementCode": null
+   },
+   {
+    "code": "cloudrouter.admin.access",
+    "name": "Access Cloud Router admin surface",
+    "resource": "admin",
+    "action": "access",
+    "status": "active",
+    "since": "1.0.0",
+    "replacementCode": null
+   },
+   {
+    "code": "cloudrouter.gateway.read",
+    "name": "Read gateway runtime and routing configuration",
+    "resource": "gateway",
+    "action": "read",
+    "status": "active",
+    "since": "1.0.0",
+    "replacementCode": null
+   },
+   {
+    "code": "cloudrouter.gateway.manage",
+    "name": "Manage gateway runtime and routing configuration",
+    "resource": "gateway",
+    "action": "manage",
+    "status": "active",
+    "since": "1.0.0",
+    "replacementCode": null
+   },
+   {
+    "code": "cloudrouter.system.read",
+    "name": "Read Cloud Router installation and system status",
+    "resource": "system",
+    "action": "read",
+    "status": "active",
+    "since": "1.0.0",
+    "replacementCode": null
+   },
+   {
+    "code": "log.tenant.read",
+    "name": "Read request logs for the authenticated tenant",
+    "resource": "log",
+    "action": "read",
+    "status": "active",
+    "since": "1.1.0",
+    "replacementCode": null
+   },
+   {
+    "code": "log.platform.read",
+    "name": "Read request logs platform-wide (cross-tenant)",
+    "resource": "log",
+    "action": "read",
+    "status": "active",
+    "since": "1.1.0",
+    "replacementCode": null
+   }
+  ],
+  "openapiAuthorities": [
+   "cloudrouter-app-api",
+   "cloudrouter-backend-api",
+   "cloudrouter-open-api"
+  ]
+ },
+ "roles": {
+  "domainStandardRoles": [],
+  "roleGrantExtensions": [
+   {
+    "roleCode": "org_admin",
+    "patterns": [
+     "cloudrouter.*"
     ]
-  },
-  "roles": {
-    "domainStandardRoles": [],
-    "roleGrantExtensions": [
-      {
-        "roleCode": "org_admin",
-        "patterns": [
-          "cloudrouter.*"
-        ]
-      },
-      {
-        "roleCode": "platform_system_admin",
-        "patterns": [
-          "cloudrouter.*"
-        ]
-      }
-    ],
-    "roleExclusions": []
-  },
-  "directory": {
-    "organizationTemplates": [],
-    "departmentTemplates": [],
-    "positionTemplates": [],
-    "membershipTemplates": []
-  },
-  "policyConditions": {
-    "supportedAttributes": []
-  },
-  "oauthScopeMappings": [],
-  "dependencies": {
-    "requiresModules": [
-      "iam-kernel"
+   },
+   {
+    "roleCode": "platform_system_admin",
+    "patterns": [
+     "cloudrouter.*"
     ]
-  }
+   }
+  ],
+  "roleExclusions": []
+ },
+ "directory": {
+  "organizationTemplates": [],
+  "departmentTemplates": [],
+  "positionTemplates": [],
+  "membershipTemplates": []
+ },
+ "policyConditions": {
+  "supportedAttributes": []
+ },
+ "oauthScopeMappings": [],
+ "dependencies": {
+  "requiresModules": [
+   "iam-kernel"
+  ]
+ }
 }

@@ -225,6 +225,8 @@
     "@sdkwork/cloudrouter-pc-admin-site": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-storage": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-shell": "workspace:*",
+    "@sdkwork/log-pc-admin-request-log": "workspace:*",
+    "@sdkwork/log-pc-request-log": "workspace:*",
     "@sdkwork/documents-pc-api-reference": "workspace:*",
     "@sdkwork/cloudroutes-pc-commons": "workspace:*",
     "@sdkwork/documents-pc-commons": "workspace:*",

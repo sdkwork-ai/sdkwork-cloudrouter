@@ -1,7 +1,10 @@
+import type { AdminAuthInviteCodePolicyUpdateRequest } from './admin-auth-invite-code-policy-update-request';
 import type { JsonValue } from './json-value';
 
 /** AdminAuthSettingsUpdateRequest contract. */
 export interface AdminAuthSettingsUpdateRequest {
+  /** inviteCodePolicy field on AdminAuthSettingsUpdateRequest. */
+  inviteCodePolicy?: AdminAuthInviteCodePolicyUpdateRequest;
   /** leftRailMode field on AdminAuthSettingsUpdateRequest. */
   leftRailMode?: 'auto' | 'highlights-only' | 'qr-only';
   /** loginMethods field on AdminAuthSettingsUpdateRequest. */

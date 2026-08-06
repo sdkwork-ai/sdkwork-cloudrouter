@@ -10,7 +10,7 @@ export const adminPartnerMessages = {
     'admin.partner.menu.withdrawals': 'Withdrawals',
     'admin.partner.menu.stats': 'Stats',
   },
-  'zh-CN': {
+  zh: {
     'admin.partner.header': '合作伙伴中心',
     'admin.partner.menu.partners': '合作伙伴',
     'admin.partner.menu.tree': '代理树',

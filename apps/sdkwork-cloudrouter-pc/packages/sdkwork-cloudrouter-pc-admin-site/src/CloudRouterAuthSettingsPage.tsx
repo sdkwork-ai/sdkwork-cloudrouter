@@ -24,6 +24,11 @@ type WechatSettingsForm = {
   official: AdminAuthWechatOfficial[];
 };
 
+type InviteCodePolicyForm = {
+  registerRequired: boolean;
+  loginRequired: boolean;
+};
+
 type AuthSettingsForm = Required<Pick<
   AdminAuthSettingsUpdateRequest,
   'leftRailMode'
@@ -37,6 +42,7 @@ type AuthSettingsForm = Required<Pick<
   | 'verificationPolicy'
 >> & {
   oauthRegion: OAuthRegion;
+  inviteCodePolicy: InviteCodePolicyForm;
   wechat: WechatSettingsForm;
 };
 
@@ -84,6 +90,10 @@ const DEFAULT_AUTH_SETTINGS_FORM: AuthSettingsForm = {
     emailRegistrationVerificationRequired: false,
     phoneCodeLoginEnabled: false,
     phoneRegistrationVerificationRequired: false,
+  },
+  inviteCodePolicy: {
+    registerRequired: false,
+    loginRequired: false,
   },
   wechat: {
     mini: [],
@@ -282,6 +292,37 @@ export function CloudRouterAuthSettingsPage() {
                   !form.verificationPolicy.phoneRegistrationVerificationRequired,
                   setForm,
                 )}
+              />
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
+            <SectionHeader icon={<ShieldCheck className="h-5 w-5 text-violet-500" />} title={t('admin.authSettings.sections.inviteCodePolicy')} />
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              {t('admin.authSettings.descriptions.inviteCodePolicy')}
+            </p>
+            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <ToggleRow
+                label={t('admin.authSettings.fields.inviteCodeRegisterRequired')}
+                checked={form.inviteCodePolicy.registerRequired}
+                onChange={() => setForm((current) => ({
+                  ...current,
+                  inviteCodePolicy: {
+                    ...current.inviteCodePolicy,
+                    registerRequired: !current.inviteCodePolicy.registerRequired,
+                  },
+                }))}
+              />
+              <ToggleRow
+                label={t('admin.authSettings.fields.inviteCodeLoginRequired')}
+                checked={form.inviteCodePolicy.loginRequired}
+                onChange={() => setForm((current) => ({
+                  ...current,
+                  inviteCodePolicy: {
+                    ...current.inviteCodePolicy,
+                    loginRequired: !current.inviteCodePolicy.loginRequired,
+                  },
+                }))}
               />
             </div>
           </section>
@@ -728,6 +769,7 @@ export function toAuthSettingsForm(record: Record<string, unknown>): AuthSetting
     recoveryMethods: recoveryMethods(record.recoveryMethods),
     registerMethods: registerMethods(record.registerMethods),
     verificationPolicy: readVerificationPolicy(record.verificationPolicy),
+    inviteCodePolicy: readInviteCodePolicy(record.inviteCodePolicy),
     wechat: normalizeWechatSettings(record.wechat),
   };
 }
@@ -749,6 +791,7 @@ export function toAuthSettingsRequest(form: AuthSettingsForm): AdminAuthSettings
     recoveryMethods: [...form.recoveryMethods],
     registerMethods: [...form.registerMethods],
     verificationPolicy: { ...form.verificationPolicy },
+    inviteCodePolicy: { ...form.inviteCodePolicy },
     wechat,
   };
 }
@@ -1173,6 +1216,16 @@ function readVerificationPolicy(value: unknown): AuthSettingsForm['verificationP
       false,
       'verificationPolicy.phoneRegistrationVerificationRequired',
     ),
+  };
+}
+
+function readInviteCodePolicy(value: unknown): AuthSettingsForm['inviteCodePolicy'] {
+  if (!isRecord(value)) {
+    return { ...DEFAULT_AUTH_SETTINGS_FORM.inviteCodePolicy };
+  }
+  return {
+    registerRequired: readBooleanSetting(value.registerRequired, false, 'inviteCodePolicy.registerRequired'),
+    loginRequired: readBooleanSetting(value.loginRequired, false, 'inviteCodePolicy.loginRequired'),
   };
 }
 

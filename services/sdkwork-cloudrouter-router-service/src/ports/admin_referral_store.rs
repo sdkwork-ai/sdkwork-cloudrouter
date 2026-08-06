@@ -24,9 +24,10 @@ pub struct AdminReferralListPage<T> {
     pub page_size: i64,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListAdminReferralRelationsQuery {
     pub subject: AdminReferralSubject,
+    pub search: Option<String>,
     pub page_no: i64,
     pub page_size: i64,
     pub offset: i64,
@@ -36,6 +37,7 @@ pub struct ListAdminReferralRelationsQuery {
 pub struct ListAdminReferralStrategiesQuery {
     pub subject: AdminReferralSubject,
     pub status: Option<String>,
+    pub search: Option<String>,
     pub page_no: i64,
     pub page_size: i64,
     pub offset: i64,

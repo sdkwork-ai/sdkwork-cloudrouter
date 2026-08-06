@@ -109,12 +109,32 @@ export function CodeBatchesPage() {
         description={t('admin.marketing.batch.form.subtitle', 'Pre-generate a pool of coupon codes for a coupon stock.')}
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
+        side="left"
+        footer={(
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setIsDrawerOpen(false)}
+              className="rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+            >
+              {t('common.actions.cancel', 'Cancel')}
+            </button>
+            <button
+              type="submit"
+              form="codeBatchCreateForm"
+              disabled={isSaving}
+              className="rounded-md bg-lobster-600 px-4 py-2 text-sm font-medium text-white hover:bg-lobster-700 disabled:opacity-50"
+            >
+              {isSaving
+                ? t('common.actions.saving', 'Saving...')
+                : t('admin.marketing.batch.form.create', 'Generate Batch')}
+            </button>
+          </div>
+        )}
       >
         <CodeBatchCreateDrawerForm
-          isSaving={isSaving}
           error={saveError}
           stockOptions={stockOptions}
-          onCancel={() => setIsDrawerOpen(false)}
           onSubmit={(values) => void handleCreate(values)}
         />
       </MarketingDrawer>

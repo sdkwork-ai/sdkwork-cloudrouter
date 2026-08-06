@@ -23,7 +23,7 @@ export function CouponStocksPage() {
       label: t('admin.col.codeIssueMode', 'Code Mode'),
       render: (value) => (
         <span className="text-xs">
-          {value === 'BATCH'
+          {value === 'batch'
             ? t('admin.marketing.promotions.codeIssue.batch', 'Batch Pool')
             : t('admin.marketing.promotions.codeIssue.realtime', 'Realtime')}
         </span>

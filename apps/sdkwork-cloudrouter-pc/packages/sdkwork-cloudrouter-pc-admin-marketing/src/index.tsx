@@ -1,4 +1,5 @@
 import { BatchCodesPage } from './pages/BatchCodesPage';
+import { CampaignsPage } from './pages/CampaignsPage';
 import { CodeBatchesPage } from './pages/CodeBatchesPage';
 import { CodesPage } from './pages/CodesPage';
 import { CouponLedgerPage } from './pages/CouponLedgerPage';
@@ -6,10 +7,13 @@ import { DistributionTasksPage } from './pages/DistributionTasksPage';
 import { CouponStocksPage } from './pages/CouponStocksPage';
 import { DiscountApplicationsPage } from './pages/DiscountApplicationsPage';
 import { OffersPage } from './pages/OffersPage';
+import { ReferralRelationsPage } from './pages/ReferralRelationsPage';
+import { ReferralStrategiesPage } from './pages/ReferralStrategiesPage';
 import { ReferralsPage } from './pages/ReferralsPage';
 import { UserCouponsPage } from './pages/UserCouponsPage';
 
 type MarketingAdminTab =
+  | 'campaigns'
   | 'promotionOffers'
   | 'promotionCouponStocks'
   | 'codeBatches'
@@ -18,13 +22,16 @@ type MarketingAdminTab =
   | 'discountApplications'
   | 'distributionTasks'
   | 'promotionCouponLedger'
-  | 'referrals';
+  | 'referrals'
+  | 'referralRelations'
+  | 'referralStrategies';
 
 const DEFAULT_MARKETING_SECTION_ID: MarketingAdminTab = 'promotionOffers';
 
 function resolveMarketingSectionId(sectionId: string | undefined): MarketingAdminTab {
   if (
-    sectionId === 'promotionOffers'
+    sectionId === 'campaigns'
+    || sectionId === 'promotionOffers'
     || sectionId === 'promotionCouponStocks'
     || sectionId === 'codeBatches'
     || sectionId === 'promotionCodes'
@@ -33,6 +40,8 @@ function resolveMarketingSectionId(sectionId: string | undefined): MarketingAdmi
     || sectionId === 'distributionTasks'
     || sectionId === 'promotionCouponLedger'
     || sectionId === 'referrals'
+    || sectionId === 'referralRelations'
+    || sectionId === 'referralStrategies'
   ) {
     return sectionId;
   }
@@ -51,6 +60,8 @@ export function MarketingAdmin({ sectionId, batchId }: MarketingAdminProps = {})
   }
 
   switch (resolveMarketingSectionId(sectionId)) {
+    case 'campaigns':
+      return <CampaignsPage />;
     case 'promotionCouponStocks':
       return <CouponStocksPage />;
     case 'codeBatches':
@@ -67,6 +78,10 @@ export function MarketingAdmin({ sectionId, batchId }: MarketingAdminProps = {})
       return <CouponLedgerPage />;
     case 'referrals':
       return <ReferralsPage />;
+    case 'referralRelations':
+      return <ReferralRelationsPage />;
+    case 'referralStrategies':
+      return <ReferralStrategiesPage />;
     case 'promotionOffers':
     default:
       return <OffersPage />;

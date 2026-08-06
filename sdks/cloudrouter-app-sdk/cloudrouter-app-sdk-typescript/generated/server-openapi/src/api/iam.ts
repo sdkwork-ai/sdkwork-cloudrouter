@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
-import type { AppApiKeyItem, AppApiKeyListResponse, CreateApiKeyRequest, CreateApiKeyResponse, SettingsDataResponse, UpdateApiKeyRequest, UpdateSettingsRequest, UpdateSettingsResponse } from '../types';
+import type { AppApiKeyItem, AppApiKeyListResponse, AppInviteClaimRequest, AppInviteClaimResponse, AppInviteCodeResponse, AppInvitePolicyResponse, AppInviteValidateRequest, AppInviteValidateResponse, CreateApiKeyRequest, CreateApiKeyResponse, SettingsDataResponse, UpdateApiKeyRequest, UpdateSettingsRequest, UpdateSettingsResponse } from '../types';
 
 
 export class IamUsersSettingsApi {
@@ -32,6 +32,77 @@ export class IamUsersApi {
     this.settings = new IamUsersSettingsApi(client);
   }
 
+}
+
+export class IamInvitesValidateApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Validate invite code */
+  async create(body: AppInviteValidateRequest, requestOptions?: ApiRequestOptions): Promise<AppInviteValidateResponse> {
+    return this.client.request<AppInviteValidateResponse>(appApiPath(`/iam/invites/validate`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+  }
+}
+
+export class IamInvitesClaimApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Claim invite relation */
+  async create(body: AppInviteClaimRequest, requestOptions?: ApiRequestOptions): Promise<AppInviteClaimResponse> {
+    return this.client.request<AppInviteClaimResponse>(appApiPath(`/iam/invites/claim`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+  }
+}
+
+export interface IamInvitePolicyRetrieveParams {
+  tenantCode?: string;
+  organizationCode?: string;
+}
+
+export class IamInvitePolicyApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List invite policy */
+  async retrieve(params?: IamInvitePolicyRetrieveParams, requestOptions?: ApiRequestOptions): Promise<AppInvitePolicyResponse> {
+    const query = buildQueryString([
+      { name: 'tenant_code', value: params?.tenantCode, style: 'form', explode: true, allowReserved: false },
+      { name: 'organization_code', value: params?.organizationCode, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<AppInvitePolicyResponse>(appendQueryString(appApiPath(`/iam/invite/policy`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+  }
+}
+
+export class IamInviteApi {
+  private client: HttpClient;
+  public readonly policy: IamInvitePolicyApi;
+  public readonly claim: IamInvitesClaimApi;
+  public readonly validate: IamInvitesValidateApi;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+    this.policy = new IamInvitePolicyApi(client);
+    this.claim = new IamInvitesClaimApi(client);
+    this.validate = new IamInvitesValidateApi(client);
+  }
+
+
+/** Issue invite code */
+  async create(requestOptions?: ApiRequestOptions): Promise<AppInviteCodeResponse> {
+    return this.client.request<AppInviteCodeResponse>(appApiPath(`/iam/invites/issue`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, sdkworkUnwrapKind: 'data' });
+  }
 }
 
 export interface IamApiKeysListParams {
@@ -87,11 +158,13 @@ export class IamApiKeysApi {
 export class IamApi {
   private client: HttpClient;
   public readonly apiKeys: IamApiKeysApi;
+  public readonly invite: IamInviteApi;
   public readonly users: IamUsersApi;
 
   constructor(client: HttpClient) {
     this.client = client;
     this.apiKeys = new IamApiKeysApi(client);
+    this.invite = new IamInviteApi(client);
     this.users = new IamUsersApi(client);
   }
 

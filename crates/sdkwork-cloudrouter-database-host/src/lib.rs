@@ -239,7 +239,7 @@ mod tests {
             .map(|module| module.manifest().module_id.as_str())
             .collect::<Vec<_>>();
 
-        assert_eq!(vec!["cloudrouter", "gateway-iam", "operations"], module_ids);
+        assert_eq!(vec!["cloudrouter", "gateway-iam", "operations", "ai-metering"], module_ids);
         assert!(modules.iter().all(|module| {
             module.manifest().engines.as_slice() == ["postgres"]
                 && module.manifest().default_engine.as_deref() == Some("postgres")

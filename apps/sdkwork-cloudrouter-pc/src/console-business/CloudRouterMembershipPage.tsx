@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Clock3,
@@ -14,10 +14,15 @@ import {
   StatusNotice,
 } from '@sdkwork/ui-pc-react';
 import {
+  SdkworkMembershipFeatureGates,
   SdkworkMembershipIntlProvider,
+  SdkworkMembershipQuotaRechargePanel,
+  sdkworkMembershipService,
   useSdkworkMembershipController,
   useSdkworkMembershipControllerState,
   useSdkworkMembershipIntl,
+  type SdkworkMembershipPurchaseResult,
+  type SdkworkMembershipQuotaRechargeInput,
   type SdkworkMembershipSummary,
 } from '@sdkwork/membership-pc-membership';
 import {
@@ -51,6 +56,10 @@ function CloudRouterMembershipPageContent() {
   const walletController = useSdkworkWalletController();
   const walletState = useSdkworkWalletControllerState(walletController);
   const { copy } = useSdkworkMembershipIntl();
+  const { t } = useTranslation();
+  const [isRecharging, setIsRecharging] = useState(false);
+  const [rechargeResult, setRechargeResult] = useState<SdkworkMembershipPurchaseResult | null>(null);
+  const [rechargeError, setRechargeError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!state.isBootstrapped && !state.isLoading && !state.lastError) {
@@ -71,6 +80,27 @@ function CloudRouterMembershipPageContent() {
     });
   }
 
+  function handleRecharge(input: SdkworkMembershipQuotaRechargeInput) {
+    setRechargeError(null);
+    setRechargeResult(null);
+    setIsRecharging(true);
+    void sdkworkMembershipService
+      .rechargeQuota({ grantQuantity: input.grantQuantity, amountCny: input.amountCny })
+      .then((result) => {
+        setRechargeResult(result);
+        const paymentTarget = result.qrCode || result.cashierUrl;
+        if (paymentTarget) {
+          window.open(paymentTarget, '_blank', 'noopener,noreferrer');
+        }
+      })
+      .catch((error: unknown) => {
+        setRechargeError(error instanceof Error ? error.message : String(error));
+      })
+      .finally(() => setIsRecharging(false));
+  }
+
+  const isMember = state.dashboard.summary.isMember === true;
+
   return (
     <div className="h-full overflow-y-auto bg-zinc-50 text-zinc-950 dark:bg-black dark:text-white">
       <div className="w-full max-w-none">
@@ -81,6 +111,38 @@ function CloudRouterMembershipPageContent() {
           summary={state.dashboard.summary}
           tokenBankBalance={walletState.overview.account.tokenBankAvailable}
         />
+
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <SdkworkMembershipQuotaRechargePanel
+            disabled={isRecharging}
+            isMember={isMember}
+            isSubmitting={isRecharging}
+            onRecharge={handleRecharge}
+          />
+          <SdkworkMembershipFeatureGates service={sdkworkMembershipService} />
+        </div>
+
+        {rechargeError ? (
+          <div className="mt-4">
+            <StatusNotice tone="danger" title={copy.quota.title}>
+              <span className="text-sm">{rechargeError}</span>
+            </StatusNotice>
+          </div>
+        ) : null}
+
+        {rechargeResult ? (
+          <div className="mt-4">
+            <StatusNotice tone="success" title={t('console.membership.recharge.created', 'Recharge order created')}>
+              <span className="text-sm">
+                {t(
+                  'console.membership.recharge.amount',
+                  'Order {{orderId}} ({{amount}} CNY) — complete the payment in the opened window.',
+                  { orderId: rechargeResult.orderId ?? '-', amount: rechargeResult.amountCny ?? '-' },
+                )}
+              </span>
+            </StatusNotice>
+          </div>
+        ) : null}
 
         {state.isLoading && !state.isBootstrapped ? (
           <div className="mt-4 rounded-3xl border border-zinc-200 bg-white px-5 py-8 dark:border-zinc-800 dark:bg-zinc-950">

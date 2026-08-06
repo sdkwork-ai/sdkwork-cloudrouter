@@ -857,6 +857,67 @@ class SchemaCompilerTest(unittest.TestCase):
 
             self.assertTrue(result.ok, result.messages)
 
+    def test_compiles_decimal_precision_for_postgres_and_sqlite(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            registry = Path(root) / "tables.yaml"
+            registry.write_text(
+                """tables:
+                  - table: ops_ledger_entry
+                    domain: ops
+                    profile: operational_state
+                    compliance_level: L2
+                    system_of_record: true
+                    write_owner: cloudrouter-ops-runtime
+                    api_surfaces:
+                    - backend
+                    columns:
+                      id: int64
+                      tenant_id: int64
+                      organization_id: int64
+                      amount: decimal(18,2)
+                      rate: decimal
+                """,
+                encoding="utf-8",
+            )
+            compiler = SchemaCompiler(root=root, registry_path=registry)
+
+            postgres_sql = compiler.compile_postgres()
+
+            self.assertIn("    amount NUMERIC(18, 2),", postgres_sql)
+            self.assertIn("    rate NUMERIC(38, 12)", postgres_sql)
+
+            sqlite_sql = compiler.compile_sqlite()
+
+            self.assertIn("    amount TEXT,", sqlite_sql)
+            self.assertIn("    rate TEXT,", sqlite_sql)
+
+    def test_rejects_invalid_decimal_precision(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            registry = Path(root) / "tables.yaml"
+            registry.write_text(
+                """tables:
+                  - table: ops_ledger_entry
+                    domain: ops
+                    profile: operational_state
+                    compliance_level: L2
+                    system_of_record: true
+                    write_owner: cloudrouter-ops-runtime
+                    api_surfaces:
+                    - backend
+                    columns:
+                      id: int64
+                      tenant_id: int64
+                      organization_id: int64
+                      amount: decimal(18,25)
+                """,
+                encoding="utf-8",
+            )
+            compiler = SchemaCompiler(root=root, registry_path=registry)
+
+            with self.assertRaises(SchemaCompileError):
+                compiler.compile_postgres()
+
+
 
 if __name__ == "__main__":
     unittest.main()

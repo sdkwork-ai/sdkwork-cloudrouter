@@ -7,6 +7,8 @@ import {
   readRequiredNonNegativeInt64String,
   readRequiredString,
   type ApiRecord,
+  type SdkworkPromotionCampaign,
+  type SdkworkPromotionCampaignRequest,
   type SdkworkPromotionCodeBatch,
   type SdkworkPromotionCodeBatchRequest,
   type SdkworkPromotionCouponBenefitRequest,
@@ -21,6 +23,8 @@ import { formatMoneyMinorUnits } from '@sdkwork/cloudroutes-pc-commons/sdkwork-u
 
 type BackendPromotionsService = ReturnType<typeof getSdkworkPromotionBackendSdkClient>['promotions'];
 type CloudBackendReferralStatsService = ReturnType<typeof getCloudRouterBackendSdkClient>['billing']['referralStats'];
+type CloudBackendReferralRelationsService = ReturnType<typeof getCloudRouterBackendSdkClient>['billing']['referralRelations'];
+type CloudBackendReferralStrategiesService = ReturnType<typeof getCloudRouterBackendSdkClient>['billing']['referralStrategies'];
 type PromotionPage = ApiRecord & { items: ApiRecord[]; pageInfo: ApiRecord };
 
 export interface ReferralStat {
@@ -30,6 +34,48 @@ export interface ReferralStat {
   totalRevenue: string;
   bonusAwarded: string;
   link: string;
+}
+
+export interface ReferralRelation {
+  id: string;
+  inviter: string;
+  invitee: string;
+  inviteCode: string;
+  source: string;
+  rewardStatus: string;
+  claimedAt: string;
+}
+
+export type ReferralStrategyStatus = 'active' | 'disabled';
+export type ReferralStrategyRewardType = 'POINTS' | 'CASH' | 'COUPON';
+export type ReferralStrategyRewardTarget = 'INVITER' | 'INVITEE';
+
+export interface ReferralStrategy {
+  id: string;
+  name: string;
+  description: string;
+  status: ReferralStrategyStatus;
+  rewardType: ReferralStrategyRewardType;
+  rewardValue: string;
+  rewardTarget: ReferralStrategyRewardTarget;
+  triggerEvent: string;
+  maxRewardsPerInviter: string;
+  startsAt: string;
+  endsAt: string;
+  updatedAt: string;
+}
+
+export interface ReferralStrategyMutation {
+  name?: string;
+  description?: string;
+  status?: ReferralStrategyStatus;
+  rewardType?: ReferralStrategyRewardType;
+  rewardValue?: string;
+  rewardTarget?: ReferralStrategyRewardTarget;
+  triggerEvent?: string;
+  maxRewardsPerInviter?: number;
+  startsAt?: string;
+  endsAt?: string;
 }
 
 export class MarketingService {
@@ -42,6 +88,59 @@ export class MarketingService {
       ...page,
       items: page.items.map(normalizeReferralStat),
     };
+  }
+
+  static async fetchReferralRelations(
+    params?: Parameters<CloudBackendReferralRelationsService['list']>[0],
+  ): Promise<ApiRecord & { items: ReferralRelation[]; pageInfo: ApiRecord }> {
+    const result = await getCloudRouterBackendSdkClient().billing.referralRelations.list(params);
+    const page = readRequiredPromotionPage(result, 'Failed to fetch referral relations');
+    return {
+      ...page,
+      items: page.items.map(normalizeReferralRelation),
+    };
+  }
+
+  static async fetchReferralStrategies(
+    params?: Parameters<CloudBackendReferralStrategiesService['list']>[0],
+  ): Promise<ApiRecord & { items: ReferralStrategy[]; pageInfo: ApiRecord }> {
+    const result = await getCloudRouterBackendSdkClient().billing.referralStrategies.list(params);
+    const page = readRequiredPromotionPage(result, 'Failed to fetch referral strategies');
+    return {
+      ...page,
+      items: page.items.map(normalizeReferralStrategy),
+    };
+  }
+
+  static async createReferralStrategy(
+    input: ReferralStrategyMutation,
+  ): Promise<ReferralStrategy> {
+    const result = await getCloudRouterBackendSdkClient().billing.referralStrategies.create(input);
+    return normalizeReferralStrategy(readRequiredRecord(readApiData(result), 'Created referral strategy is required'));
+  }
+
+  static async retrieveReferralStrategy(strategyId: string): Promise<ReferralStrategy> {
+    const result = await getCloudRouterBackendSdkClient().billing.referralStrategies.retrieve(strategyId);
+    return normalizeReferralStrategy(readRequiredRecord(readApiData(result), 'Referral strategy is required'));
+  }
+
+  static async updateReferralStrategy(
+    strategyId: string,
+    input: ReferralStrategyMutation,
+  ): Promise<ReferralStrategy> {
+    const result = await getCloudRouterBackendSdkClient().billing.referralStrategies.update(strategyId, input);
+    return normalizeReferralStrategy(readRequiredRecord(readApiData(result), 'Updated referral strategy is required'));
+  }
+
+  static async deleteReferralStrategy(strategyId: string): Promise<void> {
+    await getCloudRouterBackendSdkClient().billing.referralStrategies.delete(strategyId);
+  }
+
+  static async updateReferralStrategyStatus(
+    strategyId: string,
+    status: ReferralStrategyStatus,
+  ): Promise<ReferralStrategy> {
+    return MarketingService.updateReferralStrategy(strategyId, { status });
   }
 }
 
@@ -156,10 +255,11 @@ export async function updatePromotionOfferStatus(offerId: string, status: 'activ
 }
 
 export type CouponOfferBenefitKind = 'token_bank_credit' | 'points_credit' | 'cash_credit' | 'subscription';
-export type CouponCodeIssueMode = 'REALTIME' | 'BATCH';
-export type CouponStockType = 'LIMITED' | 'UNLIMITED';
+export type CouponCodeIssueMode = 'realtime' | 'batch';
+export type CouponStockType = 'limited' | 'unlimited';
 
 export interface CouponOfferCreateFormValues {
+  campaignId?: string;
   displayName: string;
   offerType: string;
   description?: string;
@@ -179,10 +279,7 @@ export interface CouponOfferCreateFormValues {
   grantPoints?: string;
   /** 现金券/Token Bank 额度券使用的币种（现金券以元为单位输入）。 */
   currencyCode: string;
-  productId?: string;
-  skuId?: string;
-  packageId?: string;
-  period?: 'day' | 'week' | 'month' | 'year';
+  period?: 'day' | 'week' | 'month' | 'quarter' | 'year';
   durationDays?: string;
   dailyQuota?: string;
   totalQuota?: string;
@@ -210,6 +307,7 @@ export function buildCouponOfferCreateRequests(
   idempotencyKey: string,
 ): CouponOfferCreateRequests {
   const offerRequest: SdkworkPromotionOfferRequest = {
+    campaignId: values.campaignId?.trim() || null,
     offerType: values.offerType,
     displayName: values.displayName,
     description: values.description || null,
@@ -233,17 +331,17 @@ export function buildCouponOfferCreateRequests(
     stockType: values.stockType,
     codeIssueMode: values.codeIssueMode,
     // UNLIMITED 库存总量仅作统计，传 0
-    totalQuantity: values.stockType === 'UNLIMITED' ? '0' : values.totalQuantity,
+    totalQuantity: values.stockType === 'unlimited' ? '0' : values.totalQuantity,
     perUserLimit: values.perUserLimit,
     claimStartsAt: values.claimStartsAt ? toIsoString(values.claimStartsAt) : null,
     claimEndsAt: values.claimEndsAt ? toIsoString(values.claimEndsAt) : null,
     status: values.status,
   };
-  const codeBatchRequest: SdkworkPromotionCodeBatchRequest | undefined = values.codeIssueMode === 'BATCH'
+  const codeBatchRequest: SdkworkPromotionCodeBatchRequest | undefined = values.codeIssueMode === 'batch'
     ? {
         stockId: '',
         codeType: 'PUBLIC',
-        quantity: values.batchQuantity ?? '',
+        requestedQuantity: values.batchQuantity ?? '',
         codeLength: values.batchCodeLength ?? 16,
         codePrefix: values.batchCodePrefix ?? '',
         startsAt: values.batchStartsAt ? toIsoString(values.batchStartsAt) : null,
@@ -281,9 +379,6 @@ function buildCouponBenefit(values: CouponOfferCreateFormValues): SdkworkPromoti
     case 'subscription':
       return {
         kind: 'subscription',
-        productId: values.productId ?? '',
-        skuId: values.skuId ?? '',
-        packageId: values.packageId ?? '',
         period: values.period ?? 'month',
         durationDays: values.durationDays ?? '0',
         dailyQuota: values.dailyQuota ?? '0',
@@ -329,7 +424,7 @@ export function buildCodeBatchCreateRequest(
   return {
     stockId: values.stockId,
     codeType: values.codeType,
-    quantity: values.quantity,
+    requestedQuantity: values.quantity,
     codeLength: values.codeLength,
     codePrefix: values.codePrefix,
     startsAt: values.startsAt ? toIsoString(values.startsAt) : null,
@@ -396,9 +491,6 @@ export interface CouponBenefitDisplay {
   bonusAmount?: string;
   /** 积分券发放积分。 */
   grantPoints?: string;
-  productId?: string;
-  skuId?: string;
-  packageId?: string;
   period?: string;
   durationDays?: string;
   dailyQuota?: string;
@@ -428,9 +520,6 @@ export function readCouponBenefit(record: ApiRecord): CouponBenefitDisplay | nul
     grantAmount: benefit['grantAmount'] ? String(benefit['grantAmount']) : undefined,
     bonusAmount: benefit['bonusAmount'] ? String(benefit['bonusAmount']) : undefined,
     grantPoints: benefit['grantPoints'] ? String(benefit['grantPoints']) : undefined,
-    productId: benefit['productId'] ? String(benefit['productId']) : undefined,
-    skuId: benefit['skuId'] ? String(benefit['skuId']) : undefined,
-    packageId: benefit['packageId'] ? String(benefit['packageId']) : undefined,
     period: benefit['period'] ? String(benefit['period']) : undefined,
     durationDays: benefit['durationDays'] !== undefined && benefit['durationDays'] !== null
       ? String(benefit['durationDays'])
@@ -461,6 +550,7 @@ export function offerRecordToFormValues(
       ? kind
       : 'token_bank_credit';
   return {
+    campaignId: record['campaignId'] ? String(record['campaignId']) : '',
     displayName: `${String(record['displayName'] ?? '')}${copySuffix}`,
     offerType: String(record['offerType'] ?? 'COUPON'),
     description: record['description'] ? String(record['description']) : '',
@@ -479,17 +569,14 @@ export function offerRecordToFormValues(
       : benefit?.grantAmount ?? '',
     bonusAmount: benefit?.bonusAmount ?? '',
     grantPoints: benefit?.grantPoints ?? '',
-    productId: benefitKind === 'subscription' && benefit ? String(benefit.productId ?? '') : '',
-    skuId: benefitKind === 'subscription' && benefit ? String(benefit.skuId ?? '') : '',
-    packageId: benefitKind === 'subscription' && benefit ? String(benefit.packageId ?? '') : '',
     period: benefitKind === 'subscription' && benefit
       ? (benefit.period as 'day' | 'week' | 'month' | 'year' | undefined) ?? 'month'
       : 'month',
     durationDays: benefitKind === 'subscription' && benefit ? String(benefit.durationDays ?? '') : '30',
     dailyQuota: benefitKind === 'subscription' && benefit ? String(benefit.dailyQuota ?? '') : '',
     totalQuota: benefitKind === 'subscription' && benefit ? String(benefit.totalQuota ?? '') : '',
-    stockType: 'LIMITED',
-    codeIssueMode: 'REALTIME',
+    stockType: 'limited',
+    codeIssueMode: 'realtime',
     totalQuantity: '',
     perUserLimit: 1,
     claimStartsAt: '',
@@ -533,6 +620,74 @@ function normalizeReferralStat(value: unknown): ReferralStat {
   };
 }
 
+function normalizeReferralRelation(value: unknown): ReferralRelation {
+  const item = readRequiredRecord(value, 'Referral relation record is required');
+  return {
+    id: readRequiredString(item, 'id', 'Referral relation id is required'),
+    inviter: readRequiredString(item, 'inviter', 'Referral relation inviter is required'),
+    invitee: readRequiredString(item, 'invitee', 'Referral relation invitee is required'),
+    inviteCode: readRequiredString(item, 'inviteCode', 'Referral relation invite code is required'),
+    source: readRequiredString(item, 'source', 'Referral relation source is required'),
+    rewardStatus: readRequiredString(item, 'rewardStatus', 'Referral relation reward status is required'),
+    claimedAt: normalizeDatetime(readRequiredString(item, 'claimedAt', 'Referral relation claimed time is required')),
+  };
+}
+
+function normalizeReferralStrategy(value: unknown): ReferralStrategy {
+  const item = readRequiredRecord(value, 'Referral strategy record is required');
+  return {
+    id: readRequiredString(item, 'id', 'Referral strategy id is required'),
+    name: readRequiredString(item, 'name', 'Referral strategy name is required'),
+    description: readRequiredString(item, 'description', 'Referral strategy description is required'),
+    status: readReferralStrategyStatus(item),
+    rewardType: readReferralStrategyRewardType(item),
+    rewardValue: readRequiredString(item, 'rewardValue', 'Referral strategy reward value is required'),
+    rewardTarget: readReferralStrategyRewardTarget(item),
+    triggerEvent: readRequiredString(item, 'triggerEvent', 'Referral strategy trigger event is required'),
+    maxRewardsPerInviter: readRequiredNonNegativeInt64String(item, 'maxRewardsPerInviter', 'Referral strategy max rewards is required'),
+    startsAt: normalizeDatetime(readRequiredString(item, 'startsAt', 'Referral strategy starts at is required')),
+    endsAt: normalizeDatetime(readRequiredString(item, 'endsAt', 'Referral strategy ends at is required')),
+    updatedAt: normalizeDatetime(readRequiredString(item, 'updatedAt', 'Referral strategy updated at is required')),
+  };
+}
+
+/**
+ * Normalizes backend datetimes (PostgreSQL `::text` renders `YYYY-MM-DD
+ * HH:MM:SS+00` with a space separator) to ISO-8601 so list cells format as
+ * local time and edit forms can parse them; empty values stay empty.
+ */
+function normalizeDatetime(value: string): string {
+  if (!value) {
+    return '';
+  }
+  const date = new Date(value.includes(' ') ? value.replace(' ', 'T') : value);
+  return Number.isNaN(date.getTime()) ? value : date.toISOString();
+}
+
+function readReferralStrategyStatus(item: ApiRecord): ReferralStrategyStatus {
+  const value = readRequiredString(item, 'status', 'Referral strategy status is required');
+  if (value === 'active' || value === 'disabled') {
+    return value;
+  }
+  return 'disabled';
+}
+
+function readReferralStrategyRewardType(item: ApiRecord): ReferralStrategyRewardType {
+  const value = readRequiredString(item, 'rewardType', 'Referral strategy reward type is required');
+  if (value === 'POINTS' || value === 'CASH' || value === 'COUPON') {
+    return value;
+  }
+  return 'POINTS';
+}
+
+function readReferralStrategyRewardTarget(item: ApiRecord): ReferralStrategyRewardTarget {
+  const value = readRequiredString(item, 'rewardTarget', 'Referral strategy reward target is required');
+  if (value === 'INVITER' || value === 'INVITEE') {
+    return value;
+  }
+  return 'INVITER';
+}
+
 function readRequiredPromotionItems(result: unknown, message: string): ApiRecord[] {
   return readRequiredApiItems(result, message)
     .map((value) => {
@@ -567,4 +722,70 @@ function readRequiredRecord(value: unknown, message: string): ApiRecord {
     throw new Error(message);
   }
   return value;
+}
+
+
+/** 会员活动（Campaign）创建/编辑表单值。 */
+export interface CampaignFormValues {
+  displayName: string;
+  description?: string;
+  channelScope: string;
+  audienceScope: string;
+  startsAt: string;
+  endsAt?: string;
+  status: string;
+}
+
+export async function backendPromotionCampaignsList(
+  params?: Parameters<BackendPromotionsService['campaigns']['list']>[0],
+): Promise<PromotionPage> {
+  const result = await getSdkworkPromotionBackendSdkClient().promotions.campaigns.list(params);
+  return readRequiredPromotionPage(result, 'Promotion campaign records are required');
+}
+
+export async function retrievePromotionCampaign(campaignId: string): Promise<SdkworkPromotionCampaign> {
+  const result = await getSdkworkPromotionBackendSdkClient().promotions.campaigns.retrieve(campaignId);
+  return readRequiredItem<SdkworkPromotionCampaign>(result, 'Promotion campaign is required');
+}
+
+export async function createPromotionCampaign(input: SdkworkPromotionCampaignRequest): Promise<SdkworkPromotionCampaign> {
+  const result = await getSdkworkPromotionBackendSdkClient().promotions.campaigns.create(input);
+  return readRequiredItem<SdkworkPromotionCampaign>(result, 'Created promotion campaign is required');
+}
+
+export async function updatePromotionCampaign(
+  campaignId: string,
+  input: SdkworkPromotionCampaignRequest,
+): Promise<SdkworkPromotionCampaign> {
+  const result = await getSdkworkPromotionBackendSdkClient().promotions.campaigns.update(campaignId, input);
+  return readRequiredItem<SdkworkPromotionCampaign>(result, 'Updated promotion campaign is required');
+}
+
+export async function deletePromotionCampaign(campaignId: string): Promise<void> {
+  await getSdkworkPromotionBackendSdkClient().promotions.campaigns.delete(campaignId);
+}
+
+export function buildCampaignRequest(values: CampaignFormValues): SdkworkPromotionCampaignRequest {
+  return {
+    displayName: values.displayName,
+    description: values.description || null,
+    channelScope: values.channelScope,
+    audienceScope: values.audienceScope,
+    startsAt: toIsoString(values.startsAt),
+    endsAt: values.endsAt ? toIsoString(values.endsAt) : null,
+    status: values.status,
+  };
+}
+
+/** 后端活动记录 → 表单初始值（用于编辑）。 */
+export function campaignRecordToFormValues(record: ApiRecord): CampaignFormValues {
+  return {
+    displayName: String(record['displayName'] ?? ''),
+    description: record['description'] ? String(record['description']) : '',
+    channelScope: String(record['channelScope'] ?? 'ALL'),
+    audienceScope: String(record['audienceScope'] ?? 'ALL'),
+    startsAt: toDatetimeLocal(String(record['startsAt'] ?? '')),
+    endsAt: record['endsAt'] ? toDatetimeLocal(String(record['endsAt'])) : '',
+    status: String(record['status'] ?? 'draft'),
+  };
 }

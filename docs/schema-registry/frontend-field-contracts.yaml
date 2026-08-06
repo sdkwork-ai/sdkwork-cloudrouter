@@ -8455,6 +8455,350 @@ frontend_operations:
   - name: apiKeyId
     schema: { type: integer, format: int64 }
 
+
+- route: /admin/marketing/referrals
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts
+  operation: fetchReferralRelations
+  operation_id: referralRelations.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/billing/referrals/relations
+  read_sources:
+  - ops_referral_relation
+  response_schema:
+    name: AdminReferralRelationListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: AdminReferralRelation
+          type: object
+          additionalProperties: false
+          required: [id, inviter, invitee, inviteCode, source, rewardStatus, claimedAt]
+          properties:
+            id: { type: string, maxLength: 32 }
+            inviter: { type: string, maxLength: 320 }
+            invitee: { type: string, maxLength: 320 }
+            inviteCode: { type: string, maxLength: 32 }
+            source: { type: string, maxLength: 16 }
+            rewardStatus: { type: string, maxLength: 16 }
+            claimedAt: { type: string, maxLength: 64 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: page
+    schema: { type: integer, minimum: 1 }
+  - name: page_size
+    schema: { type: integer, minimum: 1, maximum: 200 }
+  - name: q
+    schema: { type: string, maxLength: 128 }
+- route: /admin/marketing/referralStrategies
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts
+  operation: fetchReferralStrategies
+  operation_id: referralStrategies.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/billing/referral_strategies
+  read_sources:
+  - ops_referral_strategy
+  response_schema:
+    name: AdminReferralStrategyListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: AdminReferralStrategy
+          type: object
+          additionalProperties: false
+          required: [id, name, description, status, rewardType, rewardValue, rewardTarget, triggerEvent, maxRewardsPerInviter, startsAt, endsAt, updatedAt]
+          properties:
+            id: { type: string, maxLength: 32 }
+            name: { type: string, maxLength: 128 }
+            description: { type: string, maxLength: 512 }
+            status: { type: string, maxLength: 16 }
+            rewardType: { type: string, maxLength: 16 }
+            rewardValue: { type: string, maxLength: 64 }
+            rewardTarget: { type: string, maxLength: 16 }
+            triggerEvent: { type: string, maxLength: 16 }
+            maxRewardsPerInviter: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            startsAt: { type: string, maxLength: 64 }
+            endsAt: { type: string, maxLength: 64 }
+            updatedAt: { type: string, maxLength: 64 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: page
+    schema: { type: integer, minimum: 1 }
+  - name: page_size
+    schema: { type: integer, minimum: 1, maximum: 200 }
+  - name: status
+    schema: { type: string, enum: [active, disabled] }
+  - name: q
+    schema: { type: string, maxLength: 128 }
+- route: /admin/marketing/referralStrategies
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts
+  operation: createReferralStrategy
+  operation_id: referralStrategies.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/billing/referral_strategies
+  read_sources:
+  - ops_referral_strategy
+  write_tables:
+  - ops_referral_strategy
+  - ops_audit_log
+  response_schema:
+    name: AdminReferralStrategy
+    type: object
+    additionalProperties: false
+    required: [id, name, description, status, rewardType, rewardValue, rewardTarget, triggerEvent, maxRewardsPerInviter, startsAt, endsAt, updatedAt]
+    properties:
+      id: { type: string, maxLength: 32 }
+      name: { type: string, maxLength: 128 }
+      description: { type: string, maxLength: 512 }
+      status: { type: string, maxLength: 16 }
+      rewardType: { type: string, maxLength: 16 }
+      rewardValue: { type: string, maxLength: 64 }
+      rewardTarget: { type: string, maxLength: 16 }
+      triggerEvent: { type: string, maxLength: 16 }
+      maxRewardsPerInviter: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+      startsAt: { type: string, maxLength: 64 }
+      endsAt: { type: string, maxLength: 64 }
+      updatedAt: { type: string, maxLength: 64 }
+  request_schema:
+    name: AdminReferralStrategyMutationRequest
+    type: object
+    additionalProperties: false
+    properties:
+      name: { type: string, maxLength: 128 }
+      description: { type: string, maxLength: 512 }
+      status: { type: string, maxLength: 16 }
+      rewardType: { type: string, maxLength: 16 }
+      rewardValue: { type: string, maxLength: 64 }
+      rewardTarget: { type: string, maxLength: 16 }
+      triggerEvent: { type: string, maxLength: 16 }
+      maxRewardsPerInviter: { type: integer, minimum: 0 }
+      startsAt: { type: string, maxLength: 64 }
+      endsAt: { type: string, maxLength: 64 }
+  request_body_required: true
+- route: /admin/marketing/referralStrategies
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts
+  operation: retrieveReferralStrategy
+  operation_id: referralStrategies.retrieve
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/billing/referral_strategies/{strategy_id}
+  read_sources:
+  - ops_referral_strategy
+  response_schema:
+    name: AdminReferralStrategy
+    type: object
+    additionalProperties: false
+    required: [id, name, description, status, rewardType, rewardValue, rewardTarget, triggerEvent, maxRewardsPerInviter, startsAt, endsAt, updatedAt]
+    properties:
+      id: { type: string, maxLength: 32 }
+      name: { type: string, maxLength: 128 }
+      description: { type: string, maxLength: 512 }
+      status: { type: string, maxLength: 16 }
+      rewardType: { type: string, maxLength: 16 }
+      rewardValue: { type: string, maxLength: 64 }
+      rewardTarget: { type: string, maxLength: 16 }
+      triggerEvent: { type: string, maxLength: 16 }
+      maxRewardsPerInviter: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+      startsAt: { type: string, maxLength: 64 }
+      endsAt: { type: string, maxLength: 64 }
+      updatedAt: { type: string, maxLength: 64 }
+  path_parameters:
+  - name: strategy_id
+    type: string
+    required: true
+    maxLength: 64
+  query_parameters: []
+- route: /admin/marketing/referralStrategies
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts
+  operation: updateReferralStrategy
+  operation_id: referralStrategies.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/billing/referral_strategies/{strategy_id}
+  read_sources:
+  - ops_referral_strategy
+  write_tables:
+  - ops_referral_strategy
+  - ops_audit_log
+  response_schema:
+    name: AdminReferralStrategy
+    type: object
+    additionalProperties: false
+    required: [id, name, description, status, rewardType, rewardValue, rewardTarget, triggerEvent, maxRewardsPerInviter, startsAt, endsAt, updatedAt]
+    properties:
+      id: { type: string, maxLength: 32 }
+      name: { type: string, maxLength: 128 }
+      description: { type: string, maxLength: 512 }
+      status: { type: string, maxLength: 16 }
+      rewardType: { type: string, maxLength: 16 }
+      rewardValue: { type: string, maxLength: 64 }
+      rewardTarget: { type: string, maxLength: 16 }
+      triggerEvent: { type: string, maxLength: 16 }
+      maxRewardsPerInviter: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+      startsAt: { type: string, maxLength: 64 }
+      endsAt: { type: string, maxLength: 64 }
+      updatedAt: { type: string, maxLength: 64 }
+  request_schema:
+    name: AdminReferralStrategyMutationRequest
+    type: object
+    additionalProperties: false
+    properties:
+      name: { type: string, maxLength: 128 }
+      description: { type: string, maxLength: 512 }
+      status: { type: string, maxLength: 16 }
+      rewardType: { type: string, maxLength: 16 }
+      rewardValue: { type: string, maxLength: 64 }
+      rewardTarget: { type: string, maxLength: 16 }
+      triggerEvent: { type: string, maxLength: 16 }
+      maxRewardsPerInviter: { type: integer, minimum: 0 }
+      startsAt: { type: string, maxLength: 64 }
+      endsAt: { type: string, maxLength: 64 }
+  request_body_required: true
+  path_parameters:
+  - name: strategy_id
+    type: string
+    required: true
+    maxLength: 64
+- route: /admin/marketing/referralStrategies
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts
+  operation: deleteReferralStrategy
+  operation_id: referralStrategies.delete
+  kind: delete
+  api_surface: backend
+  api_method: DELETE
+  api_path: /backend/v3/api/billing/referral_strategies/{strategy_id}
+  read_sources:
+  - ops_referral_strategy
+  write_tables:
+  - ops_referral_strategy
+  - ops_audit_log
+  response_schema:
+    name: NoData
+    properties: {}
+  path_parameters:
+  - name: strategy_id
+    type: string
+    required: true
+    maxLength: 64
+- route: /auth/register
+  source: apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts
+  operation: fetchInvitePolicy
+  operation_id: invite.policy.retrieve
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/iam/invite/policy
+  sdk_domain: iam
+  read_sources:
+  - ops_config_snapshot
+  response_schema:
+    name: AppInvitePolicyResponse
+    type: object
+    additionalProperties: false
+    required: [registerRequired, loginRequired]
+    properties:
+      registerRequired: { type: boolean }
+      loginRequired: { type: boolean }
+  query_parameters:
+  - name: tenant_code
+    schema: { type: string, maxLength: 64 }
+  - name: organization_code
+    schema: { type: string, maxLength: 64 }
+- route: /auth/register
+  source: apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts
+  operation: validateInviteCode
+  operation_id: invites.verify
+  kind: create
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/iam/invites/validate
+  sdk_domain: iam
+  read_sources:
+  - ops_referral_invite_code
+  response_schema:
+    name: AppInviteValidateResponse
+    type: object
+    additionalProperties: false
+    required: [valid, message]
+    properties:
+      valid: { type: boolean }
+      message: { type: string, maxLength: 256 }
+  request_schema:
+    name: AppInviteValidateRequest
+    type: object
+    additionalProperties: false
+    required: [inviteCode]
+    properties:
+      inviteCode: { type: string, maxLength: 32 }
+  request_body_required: true
+- route: /auth/register
+  source: apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts
+  operation: issueInviteCode
+  operation_id: invites.create
+  kind: create
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/iam/invites/issue
+  sdk_domain: iam
+  read_sources:
+  - ops_referral_invite_code
+  write_tables:
+  - ops_referral_invite_code
+  response_schema:
+    name: AppInviteCodeResponse
+    type: object
+    additionalProperties: false
+    required: [inviteCode]
+    properties:
+      inviteCode: { type: string, maxLength: 32 }
+  request_body_required: false
+- route: /auth/register
+  source: apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts
+  operation: claimInviteRelation
+  operation_id: invites.confirm
+  kind: create
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/iam/invites/claim
+  sdk_domain: iam
+  read_sources:
+  - ops_referral_invite_code
+  - ops_referral_relation
+  write_tables:
+  - ops_referral_relation
+  response_schema:
+    name: AppInviteClaimResponse
+    type: object
+    additionalProperties: false
+    required: [rewardStatus]
+    properties:
+      rewardStatus: { type: string, maxLength: 16 }
+  request_schema:
+    name: AppInviteClaimRequest
+    type: object
+    additionalProperties: false
+    required: [inviteCode]
+    properties:
+      inviteCode: { type: string, maxLength: 32 }
+  request_body_required: true
+
 routes:
 
 frontend_models:

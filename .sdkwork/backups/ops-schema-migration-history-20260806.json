@@ -1,0 +1,692 @@
+[
+  {
+    "module_id": "appstore",
+    "version": "0002",
+    "name": "appstore_extensions",
+    "engine": "postgres",
+    "checksum": "920201dc3b27fef33e695609cf2d7f21ba30d4f3db5246573c6c17045c944720",
+    "applied_at": "2026-08-03 21:10:45.559228+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 244
+  },
+  {
+    "module_id": "appstore",
+    "version": "0003",
+    "name": "appstore_rating_feedback",
+    "engine": "postgres",
+    "checksum": "fa7bfe89b6e056b704ecc83e194b92fd94b2ae75cea8a3eee8a4f1e588785008",
+    "applied_at": "2026-08-03 21:10:45.586680+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 22
+  },
+  {
+    "module_id": "appstore",
+    "version": "0004",
+    "name": "appstore_timestamps_timestamptz",
+    "engine": "postgres",
+    "checksum": "f052df26282ce0feaa7a478701082216631c287f684615838691b1e5e973071b",
+    "applied_at": "2026-08-03 22:30:35.649736+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 5348
+  },
+  {
+    "module_id": "base-data",
+    "version": "0040",
+    "name": "base_payment_provider",
+    "engine": "postgres",
+    "checksum": "b8158f039e5a4eee3ce0f85eb23b74aabf602cf5e702e6cbc5143e49ecae8c4e",
+    "applied_at": "2026-08-05 17:37:07.237721+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 55
+  },
+  {
+    "module_id": "clawrouter",
+    "version": "0002",
+    "name": "ai_request_trace_gateway_attribution",
+    "engine": "postgres",
+    "checksum": "82e9764c35d94c017084cbba6e3c7cad080a41ae7ef75a42655cded0aa3f1df3",
+    "applied_at": "2026-07-12 19:12:06.256582+08:00",
+    "applied_by": "clawrouterctl",
+    "execution_ms": 27
+  },
+  {
+    "module_id": "clawrouter",
+    "version": "0003",
+    "name": "standardize_upstream_supplier_routing",
+    "engine": "postgres",
+    "checksum": "da303d14de3454d89fbbba6e8c04b00ae368dceef77fd22fb576ff8f7957a266",
+    "applied_at": "2026-07-29 23:44:49.264463+08:00",
+    "applied_by": "sdkwork-dev-manual-fix",
+    "execution_ms": 0
+  },
+  {
+    "module_id": "clawrouter",
+    "version": "0004",
+    "name": "add_chat_runtime_schema",
+    "engine": "postgres",
+    "checksum": "8d62a85a3319df3ab568cf6327165b7319299e2fba831f95c4b48cd62a7ce41f",
+    "applied_at": "2026-07-30 21:33:14.973313+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 61
+  },
+  {
+    "module_id": "clawrouter",
+    "version": "0005",
+    "name": "reconcile_upstream_supplier_routing",
+    "engine": "postgres",
+    "checksum": "ac191609968ef3e429d0292ceb80c1eba3180389d5a42301e159dd35068995e4",
+    "applied_at": "2026-07-30 22:16:03.908921+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 62
+  },
+  {
+    "module_id": "clawrouter",
+    "version": "0006",
+    "name": "align_chat_runtime_optional_cost",
+    "engine": "postgres",
+    "checksum": "1aac0129af34b340011c7144e7913ce738710ec129cbd8c9ffd6dac240204f5f",
+    "applied_at": "2026-07-30 22:16:03.923938+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 7
+  },
+  {
+    "module_id": "clawrouter",
+    "version": "0007",
+    "name": "reconcile_canonical_contract_constraints",
+    "engine": "postgres",
+    "checksum": "810d14508edd1d97189b08ff8bda977214cbb715ae7625e4d1ef4efb16a19aed",
+    "applied_at": "2026-07-30 22:36:32.671583+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 34
+  },
+  {
+    "module_id": "clawrouter",
+    "version": "0008",
+    "name": "add_api_key_secret_storage",
+    "engine": "postgres",
+    "checksum": "e42e0e7c71d0ce092c545960ae1d8d0a7f085f2d537e1dcf688b35619ad7eeb0",
+    "applied_at": "2026-08-04 09:54:28.476116+08:00",
+    "applied_by": "clawrouterctl",
+    "execution_ms": 113
+  },
+  {
+    "module_id": "clawrouter",
+    "version": "0009",
+    "name": "account_group_vendor_modalities",
+    "engine": "postgres",
+    "checksum": "ccb8680d609fe48b52a452bc9859bd791b651afc111dcb13b111d3f5fc39f5a2",
+    "applied_at": "2026-08-04 09:54:28.514958+08:00",
+    "applied_by": "clawrouterctl",
+    "execution_ms": 30
+  },
+  {
+    "module_id": "clawrouter",
+    "version": "0010",
+    "name": "add_gateway_chain_policy",
+    "engine": "postgres",
+    "checksum": "2e66497dcfadec4779fc92f0c5e7db3adfa771c02e4b8d81c86cb0793f87b915",
+    "applied_at": "2026-08-04 14:08:52.114009+08:00",
+    "applied_by": "clawrouterctl",
+    "execution_ms": 51
+  },
+  {
+    "module_id": "cloudrouter",
+    "version": "0002",
+    "name": "ai_request_trace_gateway_attribution",
+    "engine": "postgres",
+    "checksum": "ec590410244f6950b1132632e9bead71f9dd04bf0c6f30b7d8dabed9a9aa7e6a",
+    "applied_at": "2026-08-04 18:00:25.335271+08:00",
+    "applied_by": "cloudrouterctl",
+    "execution_ms": 8
+  },
+  {
+    "module_id": "cloudrouter",
+    "version": "0003",
+    "name": "standardize_upstream_supplier_routing",
+    "engine": "postgres",
+    "checksum": "c43a8051487f6cdb48c97b2479541200f7ccfc5e736b9bfb316472c82f3ba9a0",
+    "applied_at": "2026-08-04 18:00:25.347900+08:00",
+    "applied_by": "cloudrouterctl",
+    "execution_ms": 3
+  },
+  {
+    "module_id": "cloudrouter",
+    "version": "0004",
+    "name": "add_chat_runtime_schema",
+    "engine": "postgres",
+    "checksum": "6d9a7bec0efaed98a113e8a42b20b79bfeadd41cdf5293445825fac54cb4142b",
+    "applied_at": "2026-08-04 18:00:25.360357+08:00",
+    "applied_by": "cloudrouterctl",
+    "execution_ms": 7
+  },
+  {
+    "module_id": "cloudrouter",
+    "version": "0005",
+    "name": "reconcile_upstream_supplier_routing",
+    "engine": "postgres",
+    "checksum": "4f40b0c68473afda6562a74710bb83568e7fcd836df2ab921aa2c0b354f9fcc2",
+    "applied_at": "2026-08-04 18:00:25.399484+08:00",
+    "applied_by": "cloudrouterctl",
+    "execution_ms": 32
+  },
+  {
+    "module_id": "cloudrouter",
+    "version": "0006",
+    "name": "align_chat_runtime_optional_cost",
+    "engine": "postgres",
+    "checksum": "78a24a04ca82589832c133c3757a361f9da0ed64b500181d40391d2c29509c06",
+    "applied_at": "2026-08-04 18:00:25.415727+08:00",
+    "applied_by": "cloudrouterctl",
+    "execution_ms": 9
+  },
+  {
+    "module_id": "cloudrouter",
+    "version": "0007",
+    "name": "reconcile_canonical_contract_constraints",
+    "engine": "postgres",
+    "checksum": "d94229c649616ea3d4255f6f4387e12fdde52dbcebb1cb647f92925534431562",
+    "applied_at": "2026-08-04 18:00:25.465026+08:00",
+    "applied_by": "cloudrouterctl",
+    "execution_ms": 45
+  },
+  {
+    "module_id": "cloudrouter",
+    "version": "0008",
+    "name": "add_api_key_secret_storage",
+    "engine": "postgres",
+    "checksum": "83c84c8fd12d091d48420aa156631951bd9f0eed42add0b206edc511884727be",
+    "applied_at": "2026-08-04 18:00:25.472521+08:00",
+    "applied_by": "cloudrouterctl",
+    "execution_ms": 3
+  },
+  {
+    "module_id": "cloudrouter",
+    "version": "0009",
+    "name": "account_group_vendor_modalities",
+    "engine": "postgres",
+    "checksum": "0430344bb1fd80bc98adb77d5a7f66d9f87ea38076dc1f7da2df6e6ff299f426",
+    "applied_at": "2026-08-04 18:00:25.481085+08:00",
+    "applied_by": "cloudrouterctl",
+    "execution_ms": 2
+  },
+  {
+    "module_id": "cloudrouter",
+    "version": "0010",
+    "name": "add_gateway_chain_policy",
+    "engine": "postgres",
+    "checksum": "04b29650e58c1bee158b0e1cdd90f04e76bfc8a170796fdd9eb5cf6f15426ba4",
+    "applied_at": "2026-08-04 18:00:25.488835+08:00",
+    "applied_by": "cloudrouterctl",
+    "execution_ms": 0
+  },
+  {
+    "module_id": "cloudrouter",
+    "version": "0011",
+    "name": "add_localized_display_names",
+    "engine": "postgres",
+    "checksum": "455095718d00c36b73d3485e32b7bc00f8fa192765bd046b41db28a19fa77074",
+    "applied_at": "2026-08-04 19:47:45.548111+08:00",
+    "applied_by": "cloudrouterctl",
+    "execution_ms": 13
+  },
+  {
+    "module_id": "cloudrouter",
+    "version": "0012",
+    "name": "ops_referral_stat_snapshot",
+    "engine": "postgres",
+    "checksum": "ccd9be750f53463e31fcb1622840561bf929726243ba31e16424d081dbdc08d0",
+    "applied_at": "2026-08-05 09:30:25.357199+08:00",
+    "applied_by": "cloudrouterctl",
+    "execution_ms": 0
+  },
+  {
+    "module_id": "cloudrouter",
+    "version": "0013",
+    "name": "add_object_provider_name",
+    "engine": "postgres",
+    "checksum": "e536fcf987d9a6a9629a6660854de992d209c42f28c1e5f345d707658a7237d4",
+    "applied_at": "2026-08-06 05:02:18.203787+08:00",
+    "applied_by": "cloudrouterctl",
+    "execution_ms": 62
+  },
+  {
+    "module_id": "drive",
+    "version": "0002",
+    "name": "drive_outbox_pending_dispatch_index",
+    "engine": "postgres",
+    "checksum": "55e13130e684c113c7a601f819fd722b4752a8bfa3a27911acb41488fcfecfd3",
+    "applied_at": "2026-07-06 16:11:32.389776+08:00",
+    "applied_by": "sdkwork-drive",
+    "execution_ms": 1
+  },
+  {
+    "module_id": "drive",
+    "version": "0003",
+    "name": "drive_tenant_quota",
+    "engine": "postgres",
+    "checksum": "5434aecaa572be3898f6406efbc94b4e53e6229dddddce0ffdaa0b9e641c57d5",
+    "applied_at": "2026-07-06 16:11:32.394696+08:00",
+    "applied_by": "sdkwork-drive",
+    "execution_ms": 0
+  },
+  {
+    "module_id": "drive",
+    "version": "0004",
+    "name": "drive_maintenance_leader",
+    "engine": "postgres",
+    "checksum": "6ade0bdc1826703a14841279fb22e71b524d646461144951b21e68b9b089c26c",
+    "applied_at": "2026-07-06 16:11:32.397657+08:00",
+    "applied_by": "sdkwork-drive",
+    "execution_ms": 0
+  },
+  {
+    "module_id": "drive",
+    "version": "0005",
+    "name": "drive_outbox_channel_delivery",
+    "engine": "postgres",
+    "checksum": "48de9928b63cbfd2cda5b419b583a073816c0abac610461d86839f16c8d08bce",
+    "applied_at": "2026-07-06 18:01:01.763240+08:00",
+    "applied_by": "sdkwork-drive",
+    "execution_ms": 1
+  },
+  {
+    "module_id": "drive",
+    "version": "0006",
+    "name": "drive_node_name_active_only",
+    "engine": "postgres",
+    "checksum": "c0afe47e376505978a8aa6affd468ae8383c141e7b4126de658e0f73a2de53ba",
+    "applied_at": "2026-07-06 19:44:45.504924+08:00",
+    "applied_by": "sdkwork-drive",
+    "execution_ms": 27
+  },
+  {
+    "module_id": "drive",
+    "version": "0007",
+    "name": "drive_sandbox_workspace",
+    "engine": "postgres",
+    "checksum": "f60718ff1f55a051335d406c3a0f9d09cb7dac5cefaa2b40bc7b750dfab192d9",
+    "applied_at": "2026-07-17 19:05:41.076649+08:00",
+    "applied_by": "sdkwork-drive",
+    "execution_ms": 29
+  },
+  {
+    "module_id": "drive",
+    "version": "0008",
+    "name": "drive_storage_provider_kind",
+    "engine": "postgres",
+    "checksum": "0b83fd669a3b38d85c1012b97091bc62878c0513f4fffd792651d4e48835d88b",
+    "applied_at": "2026-08-05 19:47:02.105861+08:00",
+    "applied_by": "sdkwork-drive",
+    "execution_ms": 86
+  },
+  {
+    "module_id": "iam",
+    "version": "0007",
+    "name": "drop_legacy_studio_tables",
+    "engine": "postgres",
+    "checksum": "2985bfe6448566807f455f360e136add2dfd496e7d9992ef2928a11fba554700",
+    "applied_at": "2026-07-05 10:52:24.843458+08:00",
+    "applied_by": "sdkwork-iam",
+    "execution_ms": 5
+  },
+  {
+    "module_id": "iam",
+    "version": "0008",
+    "name": "iam_query_performance_indexes",
+    "engine": "postgres",
+    "checksum": "bc0930e3c0722b8bb2ecc9ebb063d7af0d87db68ee51a02b2c7e684e445a5b2d",
+    "applied_at": "2026-07-05 17:58:41.135860+08:00",
+    "applied_by": "sdkwork-iam",
+    "execution_ms": 10
+  },
+  {
+    "module_id": "iam",
+    "version": "0009",
+    "name": "wechat_identity_scope",
+    "engine": "postgres",
+    "checksum": "2accd9b412dd4050a44e130583aa003daae1f7dc64f814d76c68e942c3e820d4",
+    "applied_at": "2026-07-14 20:19:52.830407+08:00",
+    "applied_by": "sdkwork-iam",
+    "execution_ms": 41
+  },
+  {
+    "module_id": "iam",
+    "version": "0012",
+    "name": "iam_service_account_credentials",
+    "engine": "postgres",
+    "checksum": "d1fdd8defafbc395c50ebe7179619b80e468afe3c7f2de8d046df4c16291d5b2",
+    "applied_at": "2026-07-18 15:33:59.326400+08:00",
+    "applied_by": "sdkwork-iam",
+    "execution_ms": 28
+  },
+  {
+    "module_id": "iam",
+    "version": "0013",
+    "name": "iam_session_principal_compatibility",
+    "engine": "postgres",
+    "checksum": "575c1ba05485cf2c0cde885c7a16e7befdab898048fb3b6345d4a4edab103057",
+    "applied_at": "2026-07-18 15:39:06.997526+08:00",
+    "applied_by": "sdkwork-iam",
+    "execution_ms": 2
+  },
+  {
+    "module_id": "im",
+    "version": "0002",
+    "name": "rewrite_legacy_conversation_id_prefixes",
+    "engine": "postgres",
+    "checksum": "b0f14cec4e680945005b7f88a23fa439c6d31b5ccc6efafbdc00242be7954edb",
+    "applied_at": "2026-08-03 10:34:43.062478+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 40
+  },
+  {
+    "module_id": "im",
+    "version": "0003",
+    "name": "group_knowledgebase_binding",
+    "engine": "postgres",
+    "checksum": "d181fa1f0f24fc3631767bd9393e179c7ec72368acb0d063a4c98dd0eb717edf",
+    "applied_at": "2026-08-03 10:34:43.086250+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 14
+  },
+  {
+    "module_id": "im",
+    "version": "0004",
+    "name": "stream_transactional_authority",
+    "engine": "postgres",
+    "checksum": "1523c86197da828e46248800f382bbdd5dbcc580033776483f48f60acd67da27",
+    "applied_at": "2026-08-03 10:34:43.098051+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 3
+  },
+  {
+    "module_id": "im",
+    "version": "0005",
+    "name": "agents_integration_expand",
+    "engine": "postgres",
+    "checksum": "455e054b254c5a86c19e800d65cfc9f535790878b1f6ee29cd98d3846dcafba4",
+    "applied_at": "2026-08-03 10:34:43.176652+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 70
+  },
+  {
+    "module_id": "im",
+    "version": "0006",
+    "name": "agents_integration_subject_guard",
+    "engine": "postgres",
+    "checksum": "a8417c3d526e1972d3fd0157edacc3ef81450e1fabca5e3491c3ad830ba12e68",
+    "applied_at": "2026-08-03 10:34:43.196917+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 10
+  },
+  {
+    "module_id": "im",
+    "version": "0008",
+    "name": "allow_system_assignment_actor",
+    "engine": "postgres",
+    "checksum": "e832b5b4d59214919b1ab90fce903bc19ecea975da1f841013a0a14d5b2c575c",
+    "applied_at": "2026-08-03 10:34:43.213264+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 6
+  },
+  {
+    "module_id": "im",
+    "version": "0009",
+    "name": "allow_zero_source_aggregate_version",
+    "engine": "postgres",
+    "checksum": "ce42b829f5505fc1f7fd146054b64ee5e0dec9c1442bd5608650d723ef77be9b",
+    "applied_at": "2026-08-03 10:34:43.228617+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 6
+  },
+  {
+    "module_id": "im",
+    "version": "0010",
+    "name": "normalized_conversation_commit",
+    "engine": "postgres",
+    "checksum": "9bdcfc1ac47c319b2be6d028625d8bf04d8f764e60401d95f0ced1b37e34144e",
+    "applied_at": "2026-08-03 10:39:28.221493+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 10
+  },
+  {
+    "module_id": "im",
+    "version": "0011",
+    "name": "typed_message_interaction_principals",
+    "engine": "postgres",
+    "checksum": "31313a9b7ae680bd46b24d4e44badfff54c2c4e801bee2b634d09f65a724c858",
+    "applied_at": "2026-08-03 10:39:28.248855+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 2
+  },
+  {
+    "module_id": "im",
+    "version": "0012",
+    "name": "conversation_typed_current_state",
+    "engine": "postgres",
+    "checksum": "0e5165ffe661cd372ce6172c8ae24b0173875036b9141d4fe7e67bb6de7b48e3",
+    "applied_at": "2026-08-03 10:39:28.259142+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 1
+  },
+  {
+    "module_id": "im",
+    "version": "0013",
+    "name": "message_search_tagged_payload_extraction",
+    "engine": "postgres",
+    "checksum": "f553fb2607586ad3e659c7443d0587160ad746fb6323e8b0c63784be08a60eb4",
+    "applied_at": "2026-08-03 14:15:41.605492+08:00",
+    "applied_by": "sdkwork-im",
+    "execution_ms": 6
+  },
+  {
+    "module_id": "knowledgebase",
+    "version": "202607150001",
+    "name": "group_knowledge_space",
+    "engine": "postgres",
+    "checksum": "748b3713d6a317f254fdc57c01dbc87ca926f2ae517194accb48863ade0bb436",
+    "applied_at": "2026-07-18 10:32:47.795093+08:00",
+    "applied_by": "sdkwork-knowledgebase",
+    "execution_ms": 62
+  },
+  {
+    "module_id": "knowledgebase",
+    "version": "202607160001",
+    "name": "group_knowledgebase_tenant_scope",
+    "engine": "postgres",
+    "checksum": "82ac214db5826dcdc9d632affa35713c258d56c78dafda46ac5426efade6f043",
+    "applied_at": "2026-07-18 10:32:47.813351+08:00",
+    "applied_by": "sdkwork-knowledgebase",
+    "execution_ms": 15
+  },
+  {
+    "module_id": "knowledgebase",
+    "version": "202607160002",
+    "name": "ingestion_job_lease",
+    "engine": "postgres",
+    "checksum": "28b40b19fb2d49f74dad6343fbd130beb0b596e95471f02879dd6f965f748c5c",
+    "applied_at": "2026-07-18 10:32:47.828143+08:00",
+    "applied_by": "sdkwork-knowledgebase",
+    "execution_ms": 11
+  },
+  {
+    "module_id": "knowledgebase",
+    "version": "202607200001",
+    "name": "knowledge_engine_provider_binding",
+    "engine": "postgres",
+    "checksum": "669ab293453ed1f86113a71f80d7aea1f9259365e847f51aa5a2ac389f44e672",
+    "applied_at": "2026-07-26 08:21:17.709845+08:00",
+    "applied_by": "sdkwork-knowledgebase",
+    "execution_ms": 55
+  },
+  {
+    "module_id": "knowledgebase",
+    "version": "202607210001",
+    "name": "live_wiki_publication",
+    "engine": "postgres",
+    "checksum": "eda6be288634fe5165fe62abc133eb40f4918d19fa2793ea72889bff41ee2c6d",
+    "applied_at": "2026-07-26 08:21:17.789597+08:00",
+    "applied_by": "sdkwork-knowledgebase",
+    "execution_ms": 75
+  },
+  {
+    "module_id": "knowledgebase",
+    "version": "202607310001",
+    "name": "core_organization_isolation",
+    "engine": "postgres",
+    "checksum": "8e2bd8ef8929f2cfb4f345ce9d9b9de2f5e16290b77ad744bc641e316cf05f34",
+    "applied_at": "2026-08-03 14:13:16.672466+08:00",
+    "applied_by": "sdkwork-knowledgebase",
+    "execution_ms": 504
+  },
+  {
+    "module_id": "knowledgebase",
+    "version": "202607310002",
+    "name": "outbox_claim_fencing",
+    "engine": "postgres",
+    "checksum": "0dca34646d1a7376ff0bcd7001c3cd02893b974d24a34af67c0df9e38454c842",
+    "applied_at": "2026-08-03 14:13:16.711683+08:00",
+    "applied_by": "sdkwork-knowledgebase",
+    "execution_ms": 33
+  },
+  {
+    "module_id": "manager",
+    "version": "0002",
+    "name": "manager_commercial_entitlements",
+    "engine": "postgres",
+    "checksum": "c23e0360759e1813bd6541dc0dbbbfe98a9f5dc40f5aadd644513ec0e656bd56",
+    "applied_at": "2026-07-18 12:51:37.309970+08:00",
+    "applied_by": "sdkwork-manager",
+    "execution_ms": 1
+  },
+  {
+    "module_id": "order",
+    "version": "0002",
+    "name": "membership_order_purchase_intent",
+    "engine": "postgres",
+    "checksum": "67bc5a66bd53f0b6057033890032b6230ece779ce4f03e935668862d2a31df18",
+    "applied_at": "2026-07-27 12:12:51.590351+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 2
+  },
+  {
+    "module_id": "order",
+    "version": "0003",
+    "name": "physical_goods_purchase",
+    "engine": "postgres",
+    "checksum": "b60760e2e23f709a457a75bfe2555f23173fb0cf906c300b3e41b1dec4664b43",
+    "applied_at": "2026-08-03 14:13:17.046153+08:00",
+    "applied_by": "sdkwork-order",
+    "execution_ms": 49
+  },
+  {
+    "module_id": "payment",
+    "version": "0002",
+    "name": "provider_credentials",
+    "engine": "postgres",
+    "checksum": "85e2c83491c296a6557a59c0d0599c890180d388fc7638b14b3dcd3163ddf98e",
+    "applied_at": "2026-07-19 21:07:09.176556+08:00",
+    "applied_by": "sdkwork-payment",
+    "execution_ms": 7
+  },
+  {
+    "module_id": "payment",
+    "version": "0003",
+    "name": "certificate_encrypted_content",
+    "engine": "postgres",
+    "checksum": "53e5bbe53b55eda82eca002e2867331ab111c44aaaa05efa0a4d5ebe06aec338",
+    "applied_at": "2026-07-19 21:07:09.222729+08:00",
+    "applied_by": "sdkwork-payment",
+    "execution_ms": 38
+  },
+  {
+    "module_id": "payment",
+    "version": "0004",
+    "name": "localized_display_names",
+    "engine": "postgres",
+    "checksum": "7f59e38aceb8778919b26fd6b55830ff3411fcadfd8c4202c7c10ee03c56d863",
+    "applied_at": "2026-08-05 19:47:13.617740+08:00",
+    "applied_by": "sdkwork-payment",
+    "execution_ms": 50
+  },
+  {
+    "module_id": "payment",
+    "version": "0005",
+    "name": "webhook_delivery_table",
+    "engine": "postgres",
+    "checksum": "cab9559698896abeedcef69e563b171b224ee30a88e68127cc69cb9c5c29e758",
+    "applied_at": "2026-08-05 19:47:13.662533+08:00",
+    "applied_by": "sdkwork-payment",
+    "execution_ms": 3
+  },
+  {
+    "module_id": "payment",
+    "version": "0006",
+    "name": "provider_account_localized_names",
+    "engine": "postgres",
+    "checksum": "13a27f4edc2eb3fcdd8e675292c5a9572d983ee074c04b060f8008f6fb351abe",
+    "applied_at": "2026-08-05 21:01:29.655829+08:00",
+    "applied_by": "sdkwork-payment",
+    "execution_ms": 9
+  },
+  {
+    "module_id": "promotion",
+    "version": "0002",
+    "name": "marketing_admin",
+    "engine": "postgres",
+    "checksum": "e992a89c75cc8f66458e58c6fd366d3e6b34f1efceae6f3b50d718a06e7abb12",
+    "applied_at": "2026-07-19 11:06:20.982078+08:00",
+    "applied_by": "sdkwork-promotion",
+    "execution_ms": 12
+  },
+  {
+    "module_id": "promotion",
+    "version": "0003",
+    "name": "coupon_code_issue_mode",
+    "engine": "postgres",
+    "checksum": "5faa9ade63a508ed34d6c1ae1dbaf5908088e081b0d0ce91265131380fd25b7d",
+    "applied_at": "2026-08-05 17:17:18.454451+08:00",
+    "applied_by": "sdkwork-cloudrouter-commerce",
+    "execution_ms": 63
+  },
+  {
+    "module_id": "web",
+    "version": "0001",
+    "name": "web_schema_hardening",
+    "engine": "postgres",
+    "checksum": "2c7dacbf9ed33fc9a20fda0d3ea629dc41ab76cd6def89f996209928357a20ad",
+    "applied_at": "2026-08-03 11:02:00.629790+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 118
+  },
+  {
+    "module_id": "web",
+    "version": "0002",
+    "name": "web_env_variable_rotation",
+    "engine": "postgres",
+    "checksum": "03162645ceb5bc33c0224968e04bdce389b3ef668d77dcd307852c113e6a7233",
+    "applied_at": "2026-08-03 11:02:00.653640+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 14
+  },
+  {
+    "module_id": "web",
+    "version": "0003",
+    "name": "web_certificate_lifecycle_completion",
+    "engine": "postgres",
+    "checksum": "e2e381ccaf8a459b1f6cadcc82dbf6517824a59984777b1c406f5f3e9fe93de6",
+    "applied_at": "2026-08-03 11:07:01.060537+08:00",
+    "applied_by": "sdkwork-database-lifecycle",
+    "execution_ms": 80
+  },
+  {
+    "module_id": "web",
+    "version": "0004",
+    "name": "web_list_index_hardening",
+    "engine": "postgres",
+    "checksum": "fdf568a3d004444bb58e608b2a2b6a61ffad13cff41875daba8e0dff2ab57f9a",
+    "applied_at": "2026-08-05 19:46:59.426706+08:00",
+    "applied_by": "sdkwork-webserver",
+    "execution_ms": 302
+  }
+]

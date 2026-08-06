@@ -260,6 +260,111 @@
         ],
         "type": "object"
       },
+      "AppInviteClaimRequest": {
+        "additionalProperties": false,
+        "description": "App invite claim request schema exposed by Cloud Router.",
+        "name": "AppInviteClaimRequest",
+        "properties": {
+          "inviteCode": {
+            "description": "Invite code field on app invite claim request.",
+            "maxLength": 32,
+            "type": "string"
+          }
+        },
+        "required": [
+          "inviteCode"
+        ],
+        "type": "object"
+      },
+      "AppInviteClaimResponse": {
+        "additionalProperties": false,
+        "description": "App invite claim response schema exposed by Cloud Router.",
+        "name": "AppInviteClaimResponse",
+        "properties": {
+          "rewardStatus": {
+            "description": "Reward status field on app invite claim response.",
+            "maxLength": 16,
+            "type": "string"
+          }
+        },
+        "required": [
+          "rewardStatus"
+        ],
+        "type": "object"
+      },
+      "AppInviteCodeResponse": {
+        "additionalProperties": false,
+        "description": "App invite code response schema exposed by Cloud Router.",
+        "name": "AppInviteCodeResponse",
+        "properties": {
+          "inviteCode": {
+            "description": "Invite code field on app invite code response.",
+            "maxLength": 32,
+            "type": "string"
+          }
+        },
+        "required": [
+          "inviteCode"
+        ],
+        "type": "object"
+      },
+      "AppInvitePolicyResponse": {
+        "additionalProperties": false,
+        "description": "App invite policy response schema exposed by Cloud Router.",
+        "name": "AppInvitePolicyResponse",
+        "properties": {
+          "loginRequired": {
+            "description": "Login required field on app invite policy response.",
+            "type": "boolean"
+          },
+          "registerRequired": {
+            "description": "Register required field on app invite policy response.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "registerRequired",
+          "loginRequired"
+        ],
+        "type": "object"
+      },
+      "AppInviteValidateRequest": {
+        "additionalProperties": false,
+        "description": "App invite validate request schema exposed by Cloud Router.",
+        "name": "AppInviteValidateRequest",
+        "properties": {
+          "inviteCode": {
+            "description": "Invite code field on app invite validate request.",
+            "maxLength": 32,
+            "type": "string"
+          }
+        },
+        "required": [
+          "inviteCode"
+        ],
+        "type": "object"
+      },
+      "AppInviteValidateResponse": {
+        "additionalProperties": false,
+        "description": "App invite validate response schema exposed by Cloud Router.",
+        "name": "AppInviteValidateResponse",
+        "properties": {
+          "message": {
+            "description": "Message field on app invite validate response.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "valid": {
+            "description": "Valid field on app invite validate response.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "valid",
+          "message"
+        ],
+        "type": "object"
+      },
       "AppRoutingAccountGroup": {
         "additionalProperties": false,
         "description": "App routing account group schema exposed by Cloud Router.",
@@ -2971,6 +3076,114 @@
         ],
         "description": "Generations workspace list result schema exposed by Cloud Router.",
         "x-operation-id": "generations.workspace.list"
+      },
+      "InvitePolicyRetrieveResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by invite policy retrieve result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AppInvitePolicyResponse"
+                  }
+                ],
+                "description": "Data field on invite policy retrieve result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Invite policy retrieve result schema exposed by Cloud Router.",
+        "x-operation-id": "invite.policy.retrieve"
+      },
+      "InvitesClaimCreateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by invites claim create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AppInviteClaimResponse"
+                  }
+                ],
+                "description": "Data field on invites claim create result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Invites claim create result schema exposed by Cloud Router.",
+        "x-operation-id": "invites.claim.create"
+      },
+      "InvitesCreateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by invites create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AppInviteCodeResponse"
+                  }
+                ],
+                "description": "Data field on invites create result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Invites create result schema exposed by Cloud Router.",
+        "x-operation-id": "invites.create"
+      },
+      "InvitesValidateCreateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by invites validate create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AppInviteValidateResponse"
+                  }
+                ],
+                "description": "Data field on invites validate create result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Invites validate create result schema exposed by Cloud Router.",
+        "x-operation-id": "invites.validate.create"
       },
       "InvocationsArtifactsCreateResult": {
         "allOf": [
@@ -5863,12 +6076,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/dashboardService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.dashboard_overview.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/ai/gateway/traces": {
@@ -5983,12 +6191,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/gatewayService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.gateway_traces.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/ai/generations": {
@@ -6070,12 +6273,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.generations.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/ai/generations/images/text_to_image": {
@@ -6159,12 +6357,7 @@
           "ai_usage"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.generations_images_textToImage.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/ai/generations/workspace": {
@@ -6246,12 +6439,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundGenerationsService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.generations_workspace.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/ai/routing/account_groups": {
@@ -6373,12 +6561,7 @@
         "x-source-file": "crates/sdkwork-routes-cloudrouter-app-api/src/http_route_manifest.rs",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.routing_accountGroups.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/ai/routing/api_keys": {
@@ -6499,12 +6682,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/routingApiOperations.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.routing_apiKeys.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/ai/routing/request_traces": {
@@ -6625,12 +6803,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/routingApiOperations.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.routing_requestTraces.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/ai/routing/usage": {
@@ -6714,12 +6887,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/routingApiOperations.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.routing_usage.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/ai/usage/logs": {
@@ -6874,12 +7042,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-usage/src/usageService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.usage_logs.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/chat/conversations": {
@@ -6987,12 +7150,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.conversations.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       },
       "post": {
         "description": "Create chat conversation. Reads ai_chat_conversation. Writes ai_chat_conversation. File targets none.",
@@ -7085,12 +7243,7 @@
           "ai_chat_conversation"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.conversations.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/chat/conversations/{conversationId}": {
@@ -7182,12 +7335,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.conversations.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/chat/conversations/{conversationId}/messages": {
@@ -7305,12 +7453,7 @@
         "x-source-file": "crates/sdkwork-routes-cloudrouter-app-api/src/http_route_manifest.rs",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.conversations_messages.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/chat/conversations/{conversationId}/turns": {
@@ -7418,12 +7561,7 @@
           "ai_chat_message_part"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.conversations_turns.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response": {
@@ -7548,12 +7686,7 @@
           "ai_runtime_usage_link"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.conversations_turns_response.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/iam/api_keys": {
@@ -7677,12 +7810,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.apiKeys.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       },
       "post": {
         "description": "Create key. Reads ai_upstream_account_group. Writes ai_upstream_account_group, iam_gateway_api_key, iam_gateway_access_policy, ai_quota_policy, ops_audit_log. File targets none.",
@@ -7792,12 +7920,7 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.apiKeys.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/iam/api_keys/{apiKeyId}": {
@@ -7885,12 +8008,7 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.apiKeys.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       },
       "patch": {
         "description": "Update key. Reads iam_gateway_api_key, ai_upstream_account_group, iam_gateway_access_policy, ai_quota_policy. Writes iam_gateway_api_key, iam_gateway_access_policy, ai_quota_policy, ops_audit_log. File targets none.",
@@ -7999,12 +8117,383 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.apiKeys.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+      }
+    },
+    "/app/v3/api/iam/invite/policy": {
+      "get": {
+        "description": "List invite policy. Reads ops_config_snapshot. Writes none. File targets none.",
+        "operationId": "invite.policy.retrieve",
+        "parameters": [
+          {
+            "description": "Tenant code query parameter.",
+            "in": "query",
+            "name": "tenant_code",
+            "required": false,
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Organization code query parameter.",
+            "in": "query",
+            "name": "organization_code",
+            "required": false,
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitePolicyRetrieveResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List invite policy",
+        "tags": [
+          "iam"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ops_config_snapshot"
+        ],
+        "x-route-scope": "public",
+        "x-sdk-domain": "iam",
+        "x-sdkwork-domain": "iam",
+        "x-sdkwork-resource": "invite.policy",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+      }
+    },
+    "/app/v3/api/iam/invites/claim": {
+      "post": {
+        "description": "Claim invite relation. Reads ops_referral_invite_code, ops_referral_relation. Writes ops_referral_relation. File targets none.",
+        "operationId": "invites.claim.create",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppInviteClaimRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for claim invite relation.",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitesClaimCreateResult"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Claim invite relation",
+        "tags": [
+          "iam"
+        ],
+        "x-contract-kind": "create",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ops_referral_invite_code",
+          "ops_referral_relation"
+        ],
+        "x-route-scope": "public",
+        "x-sdk-domain": "iam",
+        "x-sdkwork-domain": "iam",
+        "x-sdkwork-resource": "invites.claim",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
+        "x-write-tables": [
+          "ops_referral_relation"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+      }
+    },
+    "/app/v3/api/iam/invites/issue": {
+      "post": {
+        "description": "Issue invite code. Reads ops_referral_invite_code. Writes ops_referral_invite_code. File targets none.",
+        "operationId": "invites.create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitesCreateResult"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Issue invite code",
+        "tags": [
+          "iam"
+        ],
+        "x-contract-kind": "create",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ops_referral_invite_code"
+        ],
+        "x-route-scope": "public",
+        "x-sdk-domain": "iam",
+        "x-sdkwork-domain": "iam",
+        "x-sdkwork-resource": "invites",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
+        "x-write-tables": [
+          "ops_referral_invite_code"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+      }
+    },
+    "/app/v3/api/iam/invites/validate": {
+      "post": {
+        "description": "Validate invite code. Reads ops_referral_invite_code. Writes none. File targets none.",
+        "operationId": "invites.validate.create",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppInviteValidateRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for validate invite code.",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitesValidateCreateResult"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Validate invite code",
+        "tags": [
+          "iam"
+        ],
+        "x-contract-kind": "create",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ops_referral_invite_code"
+        ],
+        "x-route-scope": "public",
+        "x-sdk-domain": "iam",
+        "x-sdkwork-domain": "iam",
+        "x-sdkwork-resource": "invites.validate",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
+        "x-write-tables": [],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/iam/users/settings": {
@@ -8088,12 +8577,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-settings/src/settingsService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.users_settings.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       },
       "put": {
         "description": "Update settings. Reads iam_user_preference, integration_webhook_endpoint. Writes iam_user_preference, integration_webhook_endpoint. File targets none.",
@@ -8188,12 +8672,7 @@
           "integration_webhook_endpoint"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.users_settings.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/memory/entries/{entryId}": {
@@ -8285,12 +8764,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.entries.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/memory/spaces": {
@@ -8372,12 +8846,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.spaces.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       },
       "post": {
         "description": "Create memory space. Reads ai_agent. Writes ai_agent. File targets none.",
@@ -8459,12 +8928,7 @@
           "ai_agent"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.spaces.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/memory/spaces/{spaceId}": {
@@ -8556,12 +9020,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.spaces.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/memory/spaces/{spaceId}/entries": {
@@ -8653,12 +9112,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.spaces_entries.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       },
       "post": {
         "description": "Create memory entry. Reads ai_agent. Writes ai_agent. File targets none.",
@@ -8750,12 +9204,7 @@
           "ai_agent"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.spaces_entries.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/notification/notifications": {
@@ -8884,12 +9333,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/notificationService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.notifications.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/notification/notifications/{notificationId}/acknowledge": {
@@ -8994,12 +9438,7 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.notifications_acknowledge.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/notification/notifications/{notificationId}/popup_seen": {
@@ -9104,12 +9543,7 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.notifications_popupSeen.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/runtime/invocations": {
@@ -9277,12 +9711,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invocations.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       },
       "post": {
         "description": "Create runtime invocation. Reads ai_chat_conversation, ai_chat_turn, ai_agent_session. Writes ai_runtime_invocation. File targets none.",
@@ -9377,12 +9806,7 @@
           "ai_runtime_invocation"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invocations.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}": {
@@ -9474,12 +9898,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invocations.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}/artifacts": {
@@ -9597,12 +10016,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invocations_artifacts.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       },
       "post": {
         "description": "Create runtime artifact. Reads ai_runtime_invocation. Writes ai_runtime_artifact. File targets none.",
@@ -9705,12 +10119,7 @@
           "ai_runtime_artifact"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invocations_artifacts.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}/completions": {
@@ -9815,12 +10224,7 @@
           "ai_runtime_invocation"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invocations_completions.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}/events": {
@@ -9938,12 +10342,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invocations_events.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       },
       "post": {
         "description": "Create runtime event. Reads ai_runtime_invocation. Writes ai_runtime_invocation_event. File targets none.",
@@ -10046,12 +10445,7 @@
           "ai_runtime_invocation_event"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invocations_events.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}/events/stream": {
@@ -10158,12 +10552,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invocations_events_stream.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     },
     "/app/v3/api/system/site/runtime": {
@@ -10262,11 +10651,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/siteBranding.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.site_runtime.read"
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
     }
   },

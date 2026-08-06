@@ -5,23 +5,18 @@ import {
   marketingInputClassName,
   marketingSelectClassName,
   MarketingField,
-  MarketingFormActions,
   MarketingFormSection,
 } from '../components/MarketingFormControls';
 
 export interface CodeBatchCreateDrawerFormProps {
-  isSaving: boolean;
   error: string | null;
   stockOptions: { id: string; label: string }[];
-  onCancel: () => void;
   onSubmit: (values: CodeBatchCreateFormValues) => void;
 }
 
 export function CodeBatchCreateDrawerForm({
-  isSaving,
   error,
   stockOptions,
-  onCancel,
   onSubmit,
 }: CodeBatchCreateDrawerFormProps) {
   const { t } = useTranslation();
@@ -59,7 +54,7 @@ export function CodeBatchCreateDrawerForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex h-full flex-col">
+    <form id="codeBatchCreateForm" onSubmit={handleSubmit} className="flex h-full flex-col">
       <MarketingFormSection title={t('admin.marketing.batch.form.basic', 'Batch Settings')}>
         <MarketingField label={t('admin.marketing.batch.form.stock', 'Coupon Stock')} required>
           <select value={stockId} onChange={(event) => setStockId(event.target.value)} className={marketingSelectClassName}>
@@ -125,14 +120,6 @@ export function CodeBatchCreateDrawerForm({
           {validationError ?? error}
         </p>
       ) : null}
-
-      <div className="mt-auto">
-        <MarketingFormActions
-          isSaving={isSaving}
-          submitLabel={t('admin.marketing.batch.form.create', 'Generate Batch')}
-          onCancel={onCancel}
-        />
-      </div>
     </form>
   );
 }

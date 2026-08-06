@@ -75,7 +75,13 @@ impl AdminReferralStore for TestAdminReferralStore {
                 .lock()
                 .unwrap()
                 .iter()
-                .filter(|_item| query.subject.tenant_id == TEST_TENANT_ID)
+                .filter(|item| {
+                    query.subject.tenant_id == TEST_TENANT_ID
+                        && query
+                            .search
+                            .as_deref()
+                            .is_none_or(|search| item.invite_code.contains(search))
+                })
                 .cloned()
                 .collect::<Vec<_>>();
             Ok(AdminReferralListPage {
@@ -104,6 +110,10 @@ impl AdminReferralStore for TestAdminReferralStore {
                             Some("disabled") => item.status == "disabled",
                             _ => true,
                         }
+                        && query
+                            .search
+                            .as_deref()
+                            .is_none_or(|search| item.name.to_ascii_lowercase().contains(&search.to_ascii_lowercase()))
                 })
                 .cloned()
                 .collect::<Vec<_>>();
@@ -255,6 +265,30 @@ async fn admin_referral_route_lists_relations_and_strategies() {
     )
     .await;
     assert_eq!(1, active["data"]["items"].as_array().unwrap().len());
+
+    let searched = request_json(
+        router.clone(),
+        signed_request(
+            "GET",
+            "/backend/v3/api/billing/referral_strategies?q=bonus",
+            "",
+        ),
+    )
+    .await;
+    assert_eq!(1, searched["data"]["items"].as_array().unwrap().len());
+    assert_eq!("Invite Bonus", searched["data"]["items"][0]["name"]);
+
+    let relation_search = request_json(
+        router.clone(),
+        signed_request(
+            "GET",
+            "/backend/v3/api/billing/referrals/relations?q=ABC2",
+            "",
+        ),
+    )
+    .await;
+    assert_eq!(1, relation_search["data"]["items"].as_array().unwrap().len());
+    assert_eq!("relation-100", relation_search["data"]["items"][0]["id"]);
 }
 
 #[tokio::test]

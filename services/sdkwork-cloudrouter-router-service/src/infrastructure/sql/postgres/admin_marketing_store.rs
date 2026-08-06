@@ -589,12 +589,12 @@ async fn ensure_recharge_catalog_initialized(
             error,
         )
     })?;
-    ensure_recharge_catalog_initialized_in_transaction(
-        &mut tx,
-        subject.tenant_id,
-        subject.organization_id,
-    )
-    .await?;
+    // The recharge settings and package catalog is tenant-level reference data
+    // (SUBJECT_ID_SPEC: organization_id 0 means tenant-level scope). It must be
+    // seeded once per tenant at the root organization instead of lazily per
+    // session organization, otherwise every organization the admin visits
+    // receives its own duplicate catalog.
+    ensure_recharge_catalog_initialized_in_transaction(&mut tx, subject.tenant_id, 0).await?;
     tx.commit().await.map_err(|error| {
         store_error(
             "failed to commit recharge catalog initialization transaction",

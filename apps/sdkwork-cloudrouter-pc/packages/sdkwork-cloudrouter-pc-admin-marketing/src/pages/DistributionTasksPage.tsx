@@ -100,12 +100,32 @@ export function DistributionTasksPage() {
         description={t('admin.marketing.distribution.form.subtitle', 'Distribute coupons from a stock to specified users directly.')}
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
+        side="left"
+        footer={(
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setIsDrawerOpen(false)}
+              className="rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+            >
+              {t('common.actions.cancel', 'Cancel')}
+            </button>
+            <button
+              type="submit"
+              form="distributionTaskCreateForm"
+              disabled={isSaving}
+              className="rounded-md bg-lobster-600 px-4 py-2 text-sm font-medium text-white hover:bg-lobster-700 disabled:opacity-50"
+            >
+              {isSaving
+                ? t('common.actions.saving', 'Saving...')
+                : t('admin.marketing.distribution.form.create', 'Send Coupons')}
+            </button>
+          </div>
+        )}
       >
         <DistributionTaskCreateDrawerForm
-          isSaving={isSaving}
           error={saveError}
           stockOptions={stockOptions}
-          onCancel={() => setIsDrawerOpen(false)}
           onSubmit={(stockId, ownerUserIds) => void handleCreate(stockId, ownerUserIds)}
         />
       </MarketingDrawer>

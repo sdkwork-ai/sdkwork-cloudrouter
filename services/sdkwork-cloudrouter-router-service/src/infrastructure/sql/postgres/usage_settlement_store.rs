@@ -3,7 +3,13 @@ use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
 use std::time::Duration;
 
-use sdkwork_contract_service::{CommerceAccountAssetType, CommerceLedgerDirection};
+use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
+use sdkwork_account_service::AppendLedgerEntryCommand;
+use sdkwork_contract_service::{
+    CommerceAccountAssetType, CommerceLedgerDirection, CommerceMoney, CommerceRequestHash,
+    CommerceServiceError,
+};
+use sdkwork_utils_rust::sha256_hash;
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
 use crate::domain::DomainError;
@@ -14,6 +20,10 @@ use crate::ports::{
 };
 
 const POINTS_CURRENCY_CODE: &str = "POINT";
+const USAGE_SETTLEMENT_BUSINESS_TYPE: &str = "usage_settlement";
+/// Stable account-domain contract message for a debit that the wallet cannot
+/// satisfy (either the points account is missing or its balance is too low).
+const INSUFFICIENT_BALANCE_MESSAGE: &str = "insufficient account balance";
 const USAGE_SETTLEMENT_PENDING: i64 = 0;
 const USAGE_SETTLEMENT_SUCCESS: i64 = 2;
 const USAGE_SETTLEMENT_FAILED: i64 = 3;
@@ -63,11 +73,15 @@ impl From<DomainError> for SettlementStoreError {
 #[derive(Debug, Clone)]
 pub struct PostgresUsageSettlementStore {
     pool: PgPool,
+    /// Account-domain wallet store on the shared commerce pool. Usage
+    /// settlement debits the USER points wallet through this port — the
+    /// account ledger (`acct_*`) is the only writer of balances.
+    account_store: PostgresCommerceAccountStore,
 }
 
 impl PostgresUsageSettlementStore {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
+    pub fn new(pool: PgPool, account_store: PostgresCommerceAccountStore) -> Self {
+        Self { pool, account_store }
     }
 }
 
@@ -76,7 +90,9 @@ impl UsageSettlementStore for PostgresUsageSettlementStore {
         &'a self,
         command: UsageSettlementCommand,
     ) -> UsageSettlementFuture<'a> {
-        Box::pin(async move { settle_pending_usage(&self.pool, command).await })
+        Box::pin(async move {
+            settle_pending_usage(&self.pool, &self.account_store, command).await
+        })
     }
 }
 
@@ -86,7 +102,6 @@ struct UsageFactForSettlement {
     tenant_id: i64,
     organization_id: i64,
     user_id: i64,
-    request_id: String,
     amount: String,
     currency: String,
     pricing_snapshot_bytes: i64,
@@ -111,14 +126,9 @@ struct SettlementGroup {
     candidates: Vec<SettlementCandidate>,
 }
 
-#[derive(Debug, Clone)]
-struct PointsAccount {
-    id: String,
-    available_amount: i64,
-}
-
 async fn settle_pending_usage(
     pool: &PgPool,
+    account_store: &PostgresCommerceAccountStore,
     command: UsageSettlementCommand,
 ) -> Result<UsageSettlementOutcome, DomainError> {
     let command = command.bounded();
@@ -132,7 +142,7 @@ async fn settle_pending_usage(
 
     let mut attempt = 0_usize;
     loop {
-        match settle_pending_usage_once(pool, command.clone()).await {
+        match settle_pending_usage_once(pool, account_store, command.clone()).await {
             Ok(outcome) => return Ok(outcome),
             Err(error)
                 if error.is_retryable_transaction()
@@ -154,6 +164,7 @@ async fn settle_pending_usage(
 
 async fn settle_pending_usage_once(
     pool: &PgPool,
+    account_store: &PostgresCommerceAccountStore,
     command: UsageSettlementCommand,
 ) -> SettlementResult<UsageSettlementOutcome> {
     let mut tx = pool
@@ -168,7 +179,7 @@ async fn settle_pending_usage_once(
     };
     let groups = collect_settlement_groups(&mut tx, &command, usage_facts, &mut outcome).await?;
     for group in groups {
-        let group_outcome = settle_usage_group(&mut tx, &command, &group).await?;
+        let group_outcome = settle_usage_group(&mut tx, &command, &group, account_store).await?;
         outcome.settled_count += group_outcome.settled_count;
         outcome.failed_count += group_outcome.failed_count;
         outcome.debited_points += group_outcome.debited_points;
@@ -190,7 +201,6 @@ async fn load_settleable_usage_facts(
             CAST(tenant_id AS TEXT) AS tenant_id,
             CAST(organization_id AS TEXT) AS organization_id,
             CAST(COALESCE(user_id, owner_id, 0) AS TEXT) AS user_id,
-            request_id,
             CAST(COALESCE(NULLIF(CAST(customer_charge_amount AS TEXT), ''), '0') AS TEXT) AS amount,
             COALESCE(NULLIF(currency, ''), 'USD') AS currency,
             CAST(octet_length(CAST(COALESCE(pricing_snapshot, '{}'::jsonb) AS TEXT)) AS TEXT) AS pricing_snapshot_bytes
@@ -219,7 +229,6 @@ async fn load_settleable_usage_facts(
             tenant_id: integer_cell(row, "tenant_id"),
             organization_id: integer_cell(row, "organization_id"),
             user_id: integer_cell(row, "user_id"),
-            request_id: string_cell(row, "request_id"),
             amount: string_cell(row, "amount"),
             currency: string_cell(row, "currency"),
             pricing_snapshot_bytes: integer_cell(row, "pricing_snapshot_bytes"),
@@ -310,76 +319,6 @@ async fn settle_zero_usage_fact(
     mark_settlement_success(tx, command, usage_fact, usage_fact.id).await
 }
 
-async fn settle_usage_group(
-    tx: &mut Transaction<'_, Postgres>,
-    command: &UsageSettlementCommand,
-    group: &SettlementGroup,
-) -> SettlementResult<UsageSettlementOutcome> {
-    if group.candidates.is_empty() {
-        return Ok(empty_outcome());
-    }
-
-    let points = charge_points_from_scaled(group_total_scaled(group)?)?;
-    if points == 0 {
-        defer_usage_group(tx, group).await?;
-        return Ok(empty_outcome());
-    }
-
-    let first_usage_fact = &group.candidates[0].usage_fact;
-    let account = ensure_points_account(tx, command, first_usage_fact).await?;
-    // Validate that per-candidate rounding sums to the batch total. The
-    // per-candidate point allocation is no longer persisted (the
-    // commerce_settlement bridge is retired); settlement state lives on
-    // ai_metering_usage itself, keyed by the usage fact id.
-    let _ = allocate_candidate_points(&group.candidates, points)?;
-
-    let transaction_id = settlement_batch_no(&group.candidates);
-    match existing_account_ledger_entry_id(tx, &account.id, &transaction_id).await? {
-        Some(_) => {}
-        None => {
-            if account.available_amount < points {
-                for candidate in &group.candidates {
-                    mark_settlement_failed(
-                        tx,
-                        &candidate.usage_fact,
-                        candidate.usage_fact.id,
-                        "INSUFFICIENT_POINTS",
-                        "usage settlement account has insufficient points",
-                    )
-                    .await?;
-                }
-                return Ok(UsageSettlementOutcome {
-                    settled_count: 0,
-                    failed_count: group.candidates.len() as i64,
-                    debited_points: 0,
-                });
-            }
-            let balance_after = account.available_amount - points;
-            update_account_points(tx, &account.id, points, balance_after).await?;
-            insert_account_ledger_entry(
-                tx,
-                &stable_ledger_entry_id(&transaction_id),
-                first_usage_fact,
-                &account.id,
-                balance_after,
-                points,
-                &transaction_id,
-            )
-            .await?;
-        }
-    }
-
-    for candidate in &group.candidates {
-        mark_settlement_success(tx, command, &candidate.usage_fact, candidate.usage_fact.id)
-            .await?;
-    }
-    Ok(UsageSettlementOutcome {
-        settled_count: group.candidates.len() as i64,
-        failed_count: 0,
-        debited_points: points,
-    })
-}
-
 async fn already_settled(
     tx: &mut Transaction<'_, Postgres>,
     usage_fact: &UsageFactForSettlement,
@@ -408,198 +347,128 @@ async fn already_settled(
     Ok(row.is_some())
 }
 
-async fn ensure_points_account(
+async fn settle_usage_group(
     tx: &mut Transaction<'_, Postgres>,
     command: &UsageSettlementCommand,
+    group: &SettlementGroup,
+    account_store: &PostgresCommerceAccountStore,
+) -> SettlementResult<UsageSettlementOutcome> {
+    if group.candidates.is_empty() {
+        return Ok(empty_outcome());
+    }
+
+    let points = charge_points_from_scaled(group_total_scaled(group)?)?;
+    if points == 0 {
+        defer_usage_group(tx, group).await?;
+        return Ok(empty_outcome());
+    }
+
+    // Validate that per-candidate rounding sums to the batch total.
+    let _ = allocate_candidate_points(&group.candidates, points)?;
+
+    let first_usage_fact = &group.candidates[0].usage_fact;
+    let transaction_id = settlement_batch_no(&group.candidates);
+    match debit_user_points(account_store, first_usage_fact, points, &transaction_id).await {
+        Ok(_) => {
+            for candidate in &group.candidates {
+                mark_settlement_success(
+                    tx,
+                    command,
+                    &candidate.usage_fact,
+                    candidate.usage_fact.id,
+                )
+                .await?;
+            }
+            Ok(UsageSettlementOutcome {
+                settled_count: group.candidates.len() as i64,
+                failed_count: 0,
+                debited_points: points,
+            })
+        }
+        Err(error) if error.message() == INSUFFICIENT_BALANCE_MESSAGE => {
+            for candidate in &group.candidates {
+                mark_settlement_failed(
+                    tx,
+                    &candidate.usage_fact,
+                    candidate.usage_fact.id,
+                    "INSUFFICIENT_POINTS",
+                    "usage settlement account has insufficient points",
+                )
+                .await?;
+            }
+            Ok(UsageSettlementOutcome {
+                settled_count: 0,
+                failed_count: group.candidates.len() as i64,
+                debited_points: 0,
+            })
+        }
+        Err(error) => Err(settlement_account_error(error)),
+    }
+}
+
+/// Debits the USER points wallet through the account-domain port on the
+/// shared commerce pool. The batch number is both the transaction number and
+/// the idempotency key, so a crash between the debit commit and the usage-fact
+/// status update replays idempotently on the next settlement run — the account
+/// ledger (`acct_*`) is the only writer of balances.
+async fn debit_user_points(
+    account_store: &PostgresCommerceAccountStore,
     usage_fact: &UsageFactForSettlement,
-) -> SettlementResult<PointsAccount> {
-    let existing = sqlx::query(
-        r#"
-        SELECT id,
-               CAST(COALESCE(available_amount::numeric, 0) AS TEXT) AS available_amount
-        FROM commerce_account
-        WHERE tenant_id = CAST($1 AS TEXT)
-          AND (organization_id IS NULL OR organization_id = CAST($2 AS TEXT))
-          AND owner_user_id = CAST($3 AS TEXT)
-          AND asset_type = $4
-          AND currency_code = $5
-          AND status = 'active'
-        ORDER BY id ASC
-        LIMIT 1
-        FOR UPDATE
-        "#,
-    )
-    .bind(usage_fact.tenant_id)
-    .bind(usage_fact.organization_id)
-    .bind(usage_fact.user_id)
-    .bind(CommerceAccountAssetType::Points.as_str())
-    .bind(POINTS_CURRENCY_CODE)
-    .fetch_optional(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to load usage settlement points account", error))?;
-    if let Some(row) = existing {
-        return Ok(PointsAccount {
-            id: string_cell(&row, "id"),
-            available_amount: integer_cell(&row, "available_amount"),
-        });
-    }
-
-    let inserted = sqlx::query(
-        r#"
-        INSERT INTO commerce_account
-            (id, tenant_id, organization_id, owner_user_id, asset_type, currency_code, available_amount, frozen_amount, version, status, created_at, updated_at)
-        VALUES
-            ($1, CAST($2 AS TEXT), CAST($3 AS TEXT), CAST($4 AS TEXT), $5, $6, '0', '0', 0, 'active', $7::timestamp AT TIME ZONE 'UTC', $7::timestamp AT TIME ZONE 'UTC')
-        ON CONFLICT (tenant_id, organization_id, owner_user_id, asset_type, currency_code) DO NOTHING
-        RETURNING id
-        "#,
-    )
-    .bind(stable_account_id(usage_fact))
-    .bind(usage_fact.tenant_id)
-    .bind(usage_fact.organization_id)
-    .bind(usage_fact.user_id)
-    .bind(CommerceAccountAssetType::Points.as_str())
-    .bind(POINTS_CURRENCY_CODE)
-    .bind(&command.requested_at)
-    .fetch_optional(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to create usage settlement points account", error))?;
-    if let Some(row) = inserted {
-        return Ok(PointsAccount {
-            id: string_cell(&row, "id"),
-            available_amount: 0,
-        });
-    }
-
-    let row = sqlx::query(
-        r#"
-        SELECT id,
-               CAST(COALESCE(available_amount::numeric, 0) AS TEXT) AS available_amount
-        FROM commerce_account
-        WHERE tenant_id = CAST($1 AS TEXT)
-          AND (organization_id IS NULL OR organization_id = CAST($2 AS TEXT))
-          AND owner_user_id = CAST($3 AS TEXT)
-          AND asset_type = $4
-          AND currency_code = $5
-          AND status = 'active'
-        ORDER BY id ASC
-        LIMIT 1
-        FOR UPDATE
-        "#,
-    )
-    .bind(usage_fact.tenant_id)
-    .bind(usage_fact.organization_id)
-    .bind(usage_fact.user_id)
-    .bind(CommerceAccountAssetType::Points.as_str())
-    .bind(POINTS_CURRENCY_CODE)
-    .fetch_optional(&mut **tx)
-    .await
-    .map_err(|error| {
-        store_error(
-            "failed to load concurrently created usage settlement points account",
-            error,
-        )
-    })?
-    .ok_or_else(|| {
-        DomainError::conflict(
-            "usage settlement points account was not available after concurrent creation",
-        )
-    })?;
-
-    Ok(PointsAccount {
-        id: string_cell(&row, "id"),
-        available_amount: integer_cell(&row, "available_amount"),
-    })
-}
-
-async fn existing_account_ledger_entry_id(
-    tx: &mut Transaction<'_, Postgres>,
-    account_id: &str,
-    transaction_id: &str,
-) -> SettlementResult<Option<String>> {
-    let row = sqlx::query(
-        r#"
-        SELECT id
-        FROM commerce_account_ledger_entry
-        WHERE account_id = $1
-          AND transaction_no = $2
-          AND business_type = 'usage'
-        LIMIT 1
-        "#,
-    )
-    .bind(account_id)
-    .bind(transaction_id)
-    .fetch_optional(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to check usage settlement ledger idempotency", error))?;
-    Ok(row.map(|row| string_cell(&row, "id")))
-}
-
-async fn update_account_points(
-    tx: &mut Transaction<'_, Postgres>,
-    account_id: &str,
-    points: i64,
-    balance_after: i64,
-) -> SettlementResult<()> {
-    let result = sqlx::query(
-        r#"
-        UPDATE commerce_account
-        SET available_amount = $1,
-            version = version + 1,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = $2
-          AND COALESCE(available_amount::numeric, 0) >= $3::numeric
-        "#,
-    )
-    .bind(balance_after.to_string())
-    .bind(account_id)
-    .bind(points.to_string())
-    .execute(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to update usage settlement account points", error))?;
-    if result.rows_affected() != 1 {
-        return Err(DomainError::conflict(
-            "usage settlement account points update was not applied atomically",
-        )
-        .into());
-    }
-    Ok(())
-}
-
-async fn insert_account_ledger_entry(
-    tx: &mut Transaction<'_, Postgres>,
-    ledger_entry_id: &str,
-    usage_fact: &UsageFactForSettlement,
-    account_id: &str,
-    balance_after: i64,
     points: i64,
     transaction_id: &str,
-) -> SettlementResult<String> {
-    sqlx::query(
-        r#"
-        INSERT INTO commerce_account_ledger_entry
-            (id, tenant_id, organization_id, account_id, owner_user_id, asset_type, direction, amount, balance_after, business_type, transaction_no, request_no, idempotency_key, source_type, source_id, remark, created_at)
-        VALUES
-            ($1, CAST($2 AS TEXT), CAST($3 AS TEXT), $4, CAST($5 AS TEXT), $6, $7, $8, $9, 'usage', $10, $11, $10, 'ai_metering_usage', $12, $13, CURRENT_TIMESTAMP)
-        "#,
-    )
-    .bind(ledger_entry_id)
-    .bind(usage_fact.tenant_id)
-    .bind(usage_fact.organization_id)
-    .bind(account_id)
-    .bind(usage_fact.user_id)
-    .bind(CommerceAccountAssetType::Points.as_str())
-    .bind(CommerceLedgerDirection::Debit.as_str())
-    .bind(points.to_string())
-    .bind(balance_after.to_string())
-    .bind(transaction_id)
-    .bind(&usage_fact.request_id)
-    .bind(usage_fact.id.to_string())
-    .bind(format!("usage_request={}", usage_fact.request_id))
-    .execute(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to insert usage settlement account ledger entry", error))?;
-    Ok(ledger_entry_id.to_owned())
+) -> Result<(), CommerceServiceError> {
+    let append = AppendLedgerEntryCommand {
+        tenant_id: usage_fact.tenant_id.to_string(),
+        organization_id: Some(usage_fact.organization_id.to_string()),
+        owner_user_id: usage_fact.user_id.to_string(),
+        account_id: String::new(),
+        asset_type: CommerceAccountAssetType::Points,
+        currency_code: Some(POINTS_CURRENCY_CODE.to_owned()),
+        direction: CommerceLedgerDirection::Debit,
+        amount: CommerceMoney::new(&points.to_string())
+            .map_err(|error| CommerceServiceError::validation(format!(
+                "invalid usage settlement points amount: {error}"
+            )))?,
+        business_type: USAGE_SETTLEMENT_BUSINESS_TYPE.to_owned(),
+        transaction_no: transaction_id.to_owned(),
+        request_no: transaction_id.to_owned(),
+        idempotency_key: transaction_id.to_owned(),
+        owner_type: None,
+        account_purpose: None,
+        expires_at: None,
+        reversed_ledger_id: None,
+    };
+    let request_hash = settlement_request_hash(&append);
+    account_store
+        .append_ledger_entry(append, request_hash)
+        .await
+        .map(|_outcome| ())
+}
+
+/// Deterministic request hash for the settlement debit so the account-domain
+/// idempotency replay resolves to the same record for the same batch.
+fn settlement_request_hash(command: &AppendLedgerEntryCommand) -> CommerceRequestHash {
+    let canonical = format!(
+        "{}|{}|{}|{}|{}|{}|{}|{}|{}",
+        command.tenant_id,
+        command.organization_id.as_deref().unwrap_or_default(),
+        command.owner_user_id,
+        command.asset_type.as_str(),
+        command.direction.as_str(),
+        command.amount.as_str(),
+        command.business_type,
+        command.transaction_no,
+        command.idempotency_key,
+    );
+    let digest = sha256_hash(canonical.as_bytes());
+    CommerceRequestHash::new(&digest).expect("settlement request hash is never empty")
+}
+
+fn settlement_account_error(error: CommerceServiceError) -> SettlementStoreError {
+    SettlementStoreError::Domain(DomainError::new(format!(
+        "usage settlement account debit failed: {}",
+        error.message()
+    )))
 }
 
 async fn mark_settlement_success(
@@ -786,13 +655,6 @@ fn parse_decimal_scaled(value: &str) -> Result<i128, DomainError> {
     Ok(scaled)
 }
 
-fn stable_ledger_entry_id(transaction_id: &str) -> String {
-    let mut hasher = DefaultHasher::new();
-    "usage-ledger".hash(&mut hasher);
-    transaction_id.hash(&mut hasher);
-    format!("usage-ledger-{:016x}", hasher.finish())
-}
-
 fn settlement_batch_no(candidates: &[SettlementCandidate]) -> String {
     if candidates.len() == 1 {
         return settlement_no(candidates[0].usage_fact.id);
@@ -842,15 +704,6 @@ fn retryable_postgres_sqlstate(sqlstate: &str) -> Option<&'static str> {
         "40P01" => Some("40P01"),
         _ => None,
     }
-}
-
-fn stable_account_id(usage_fact: &UsageFactForSettlement) -> String {
-    let mut hasher = DefaultHasher::new();
-    "usage-account".hash(&mut hasher);
-    usage_fact.tenant_id.hash(&mut hasher);
-    usage_fact.organization_id.hash(&mut hasher);
-    usage_fact.user_id.hash(&mut hasher);
-    format!("usage-account-{:016x}", hasher.finish())
 }
 
 fn truncate_message(message: &str) -> String {

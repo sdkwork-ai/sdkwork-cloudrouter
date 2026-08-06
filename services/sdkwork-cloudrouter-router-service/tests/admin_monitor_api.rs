@@ -21,7 +21,7 @@ async fn admin_monitor_route_returns_nodes_alerts_and_performance() {
         .clone()
         .oneshot(signed_request(
             "GET",
-            "/backend/v3/api/router/monitor/nodes",
+            "/backend/v3/api/system/monitor/nodes",
         ))
         .await
         .unwrap();
@@ -39,7 +39,7 @@ async fn admin_monitor_route_returns_nodes_alerts_and_performance() {
         .clone()
         .oneshot(signed_request(
             "GET",
-            "/backend/v3/api/router/monitor/alerts",
+            "/backend/v3/api/system/monitor/alerts",
         ))
         .await
         .unwrap();
@@ -52,7 +52,7 @@ async fn admin_monitor_route_returns_nodes_alerts_and_performance() {
     let performance_response = router
         .oneshot(signed_request(
             "GET",
-            "/backend/v3/api/router/monitor/performance",
+            "/backend/v3/api/system/monitor/performance",
         ))
         .await
         .unwrap();
@@ -74,7 +74,7 @@ async fn admin_monitor_route_rejects_missing_trusted_subject() {
         .oneshot(
             Request::builder()
                 .method("GET")
-                .uri("/backend/v3/api/router/monitor/nodes")
+                .uri("/backend/v3/api/system/monitor/nodes")
                 .body(Body::empty())
                 .unwrap(),
         )
