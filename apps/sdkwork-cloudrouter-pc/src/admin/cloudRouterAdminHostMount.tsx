@@ -4,7 +4,7 @@ import { IAM_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-iam/contr
 
 export type CloudRouterAdminRouteContribution = {
   path: string;
-  owner: 'sdkwork-cloudrouter' | 'sdkwork-models';
+  owner: 'sdkwork-cloudrouter' | 'sdkwork-models' | 'sdkwork-log';
   adminPackage: `@sdkwork/${string}`;
   backendSdkFamilies: readonly string[];
   requiredPermission: string;
@@ -31,6 +31,7 @@ const ModelAdmin = lazyAdminRoute(() => import('@sdkwork/models-pc-admin-catalog
 const ModelMappingAdmin = lazyAdminRoute(() => import('@sdkwork/models-pc-admin-catalog'), 'ModelMappingAdmin');
 const ResourceAdmin = lazyAdminRoute(() => import('@sdkwork/models-pc-admin-resource'), 'ResourceAdmin');
 const RecordAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-record'), 'RecordAdmin');
+const RequestLogAdmin = lazyAdminRoute(() => import('@sdkwork/log-pc-admin-request-log'), 'RequestLogAdmin');
 const MonitorAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-monitor'), 'MonitorAdmin');
 const RateLimitAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-ratelimit'), 'RateLimitAdmin');
 const ServiceNodesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-service-nodes'), 'ServiceNodesAdmin');
@@ -39,6 +40,7 @@ const CloudRouterAuthSettingsPage = lazyAdminRoute(() => import('@sdkwork/cloudr
 const CloudRouterSiteSettingsPage = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-site'), 'CloudRouterSiteSettingsPage');
 const MembershipsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-memberships'), 'MembershipsAdmin');
 const MarketingAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-marketing'), 'MarketingAdmin');
+const PartnerAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-partner'), 'CloudRouterPartnerAdmin');
 const PaymentsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-payments'), 'PaymentsAdmin');
 const StorageAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-storage'), 'StorageAdmin');
 const IamUsersAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamUsersAdmin');
@@ -91,6 +93,7 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   route('model/resources', 'sdkwork-models', '@sdkwork/models-pc-admin-resource', ['sdkwork-models-backend-sdk'], 'cloudrouter.admin.access', <ResourceAdmin />),
   route('model/mappings', 'sdkwork-models', '@sdkwork/models-pc-admin-catalog', ['sdkwork-models-backend-sdk'], 'cloudrouter.admin.access', <ModelMappingAdmin />),
   route('record', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-record', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <RecordAdmin />),
+  route('request-log', 'sdkwork-log', '@sdkwork/log-pc-admin-request-log', ['sdkwork-log-backend-sdk'], 'cloudrouter.system.read', <RequestLogAdmin />),
   route('monitor', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-monitor', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <MonitorAdmin />),
   route('cache', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-cache', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <CacheAdmin />),
   route('ratelimit', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-ratelimit', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <RateLimitAdmin />),
@@ -100,6 +103,7 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   route('site', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-site', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <CloudRouterSiteSettingsPage />),
   route('memberships/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-memberships', ['sdkwork-membership-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={MembershipsAdmin} />),
   route('marketing/:sectionId?/:batchId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-marketing', ['sdkwork-promotion-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminMarketingRoute component={MarketingAdmin} />),
+  route('partner/:sectionId?', 'sdkwork-partner', '@sdkwork/cloudrouter-pc-admin-partner', ['sdkwork-partner-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={PartnerAdmin} />),
   route('payments/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-payments', ['sdkwork-payment-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={PaymentsAdmin} />),
   route('storage/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-storage', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={StorageAdmin} />),
   ...IAM_ADMIN_ROUTE_RECORDS.map((record) =>

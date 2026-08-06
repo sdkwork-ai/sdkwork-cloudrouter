@@ -59,6 +59,8 @@ use sdkwork_cloudrouter_router_service::ports::{
 };
 use sdkwork_commerce_promotion_repository_sqlx::PostgresPromotionAdminRepository;
 use sdkwork_commerce_promotion_service::{PromotionAdminRepositoryPort, PromotionAdminService};
+use sdkwork_commerce_partner_repository_sqlx::PostgresPartnerAdminRepository;
+use sdkwork_commerce_partner_service::backend_admin::{PartnerAdminRepositoryPort, PartnerAdminService};
 use sdkwork_database_sqlx::DatabasePool;
 use sdkwork_models_catalog_repository_sqlx::{
     PostgresAdminAiResourceStore as CatalogPostgresAdminAiResourceStore,
@@ -805,10 +807,43 @@ pub fn router_with_postgres_shared_runtime(
     // (bootstrapped by the commerce runtime), so the promotion repository
     // must use the commerce pool rather than the gateway pool.
     let promotion_repository: Arc<dyn PromotionAdminRepositoryPort> =
-        Arc::new(PostgresPromotionAdminRepository::new(commerce_pool));
+        Arc::new(PostgresPromotionAdminRepository::new(commerce_pool.clone()));
     let promotion_router = sdkwork_routes_promotion_backend_api::build_backend_promotion_router(
         Arc::new(PromotionAdminService::new(promotion_repository)),
     );
+
+    // Partner (multi-level agent) admin tables live in the federated commerce
+    // database (bootstrapped by the commerce runtime), so the partner
+    // repository uses the commerce pool like the promotion repository.
+    let partner_repository: Arc<dyn PartnerAdminRepositoryPort> =
+        Arc::new(PostgresPartnerAdminRepository::new(commerce_pool.clone()));
+    let partner_router = sdkwork_routes_partner_backend_api::build_backend_partner_router(
+        Arc::new(PartnerAdminService::new(partner_repository)),
+    );
+
+    // SDKWork log foundation: request log query router + full capture layer.
+    // One row per request is persisted through the sdkwork-log store (metadata
+    // plus redacted request/response bodies); the query API is served under
+    // `/backend/v3/api/log/*`. The tenant resolver reads the web-framework
+    // principal injected by the outer edge-runtime layer, so tenant isolation
+    // matches the admin subject boundary.
+    let log_store: Arc<dyn sdkwork_log_core::RequestLogStore> =
+        Arc::new(sdkwork_log_store_sqlx::SqlxRequestLogStore::new_postgres(
+            pool.clone(),
+        ));
+    let log_query_router =
+        sdkwork_routes_log_backend_api::build_router(Arc::clone(&log_store));
+    let log_capture_layer = sdkwork_log_tower_adapter::RequestLoggingLayer::new(log_store)
+        .with_service("sdkwork-cloudrouter")
+        .with_tenant_resolver(|extensions: &axum::http::Extensions| {
+            let principal = extensions
+                .get::<sdkwork_web_core::WebRequestContext>()
+                .and_then(|context| context.principal());
+            (
+                principal.map(|value| value.tenant_id().to_owned()),
+                principal.map(|value| value.user_id().to_owned()),
+            )
+        });
     Ok(router_with_product_catalog_and_runtime(
         catalog,
         AdminRouterRuntime {
@@ -852,7 +887,10 @@ pub fn router_with_postgres_shared_runtime(
             readiness_check: None,
         },
     )
-    .merge(promotion_router))
+    .merge(promotion_router)
+    .merge(partner_router)
+    .merge(log_query_router)
+    .layer(log_capture_layer))
 }
 
 pub async fn router_with_database_config(

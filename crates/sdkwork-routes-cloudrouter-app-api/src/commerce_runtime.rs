@@ -64,6 +64,8 @@ async fn bootstrap_federated_databases(pool: &DatabasePool) -> Result<(), String
         .map_err(|e| format!("load membership database module failed: {e}"))?;
     let promotion_module = sdkwork_promotion_database_host::database_module()
         .map_err(|e| format!("load promotion database module failed: {e}"))?;
+    let partner_module = sdkwork_partner_database_host::database_module()
+        .map_err(|e| format!("load partner database module failed: {e}"))?;
     let registry = DatabaseModuleRegistry::builder()
         .register(payment_module)
         .map_err(|e| format!("register payment database module failed: {e}"))?
@@ -73,6 +75,8 @@ async fn bootstrap_federated_databases(pool: &DatabasePool) -> Result<(), String
         .map_err(|e| format!("register membership database module failed: {e}"))?
         .register(promotion_module)
         .map_err(|e| format!("register promotion database module failed: {e}"))?
+        .register(partner_module)
+        .map_err(|e| format!("register partner database module failed: {e}"))?
         .build();
     let orchestrator = RegistryLifecycleOrchestrator::new(pool.clone(), registry)
         .with_applied_by("sdkwork-cloudrouter-commerce");

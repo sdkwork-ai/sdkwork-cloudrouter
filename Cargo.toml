@@ -248,6 +248,11 @@ sdkwork_routes_promotion_app_api = { package = "sdkwork-routes-promotion-app-api
 sdkwork_routes_promotion_backend_api = { package = "sdkwork-routes-promotion-backend-api", path = "../sdkwork-promotion/crates/sdkwork-routes-promotion-backend-api" }
 sdkwork_promotion_service_host = { package = "sdkwork-promotion-service-host", path = "../sdkwork-promotion/crates/sdkwork-promotion-service-host" }
 sdkwork_promotion_database_host = { package = "sdkwork-promotion-database-host", path = "../sdkwork-promotion/crates/sdkwork-promotion-database-host" }
+sdkwork_routes_partner_backend_api = { package = "sdkwork-routes-partner-backend-api", path = "../sdkwork-partner/crates/sdkwork-routes-partner-backend-api" }
+sdkwork_commerce_partner_service = { package = "sdkwork-commerce-partner-service", path = "../sdkwork-partner/crates/sdkwork-commerce-partner-service" }
+sdkwork_commerce_partner_repository_sqlx = { package = "sdkwork-commerce-partner-repository-sqlx", path = "../sdkwork-partner/crates/sdkwork-commerce-partner-repository-sqlx" }
+sdkwork_partner_service_host = { package = "sdkwork-partner-service-host", path = "../sdkwork-partner/crates/sdkwork-partner-service-host" }
+sdkwork_partner_database_host = { package = "sdkwork-partner-database-host", path = "../sdkwork-partner/crates/sdkwork-partner-database-host" }
 sdkwork_routes_membership_app_api = { package = "sdkwork-routes-membership-app-api", path = "../sdkwork-membership/crates/sdkwork-routes-membership-app-api" }
 sdkwork_api_membership_assembly = { package = "sdkwork-api-membership-assembly", path = "../sdkwork-membership/crates/sdkwork-api-membership-assembly" }
 sdkwork_membership_service_host = { package = "sdkwork-membership-service-host", path = "../sdkwork-membership/crates/sdkwork-membership-service-host" }
@@ -294,6 +299,13 @@ sdkwork-database-repository = { path = "../sdkwork-database/crates/sdkwork-datab
 sdkwork-database-id = { path = "../sdkwork-database/crates/sdkwork-database-id" }
 sdkwork-cloudrouter-database-host = { path = "crates/sdkwork-cloudrouter-database-host" }
 sdkwork-utils-rust = { path = "../sdkwork-utils/packages/sdkwork-utils-rust" }
+
+# SDKWork log foundation (request logs): domain contract, sqlx store, tower/axum
+# capture middleware, and query API router
+sdkwork-log-core = { path = "../sdkwork-log/crates/sdkwork-log-core" }
+sdkwork-log-store-sqlx = { path = "../sdkwork-log/crates/sdkwork-log-store-sqlx", default-features = false }
+sdkwork-log-tower-adapter = { path = "../sdkwork-log/crates/sdkwork-log-tower-adapter" }
+sdkwork-routes-log-backend-api = { path = "../sdkwork-log/crates/sdkwork-routes-log-backend-api" }
 
 # Asymmetric cryptography for per-tenant session token signing
 rsa = { version = "0.9", features = ["pem"] }

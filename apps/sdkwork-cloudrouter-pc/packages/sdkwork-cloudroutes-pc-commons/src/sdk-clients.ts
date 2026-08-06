@@ -12,6 +12,7 @@ import { SdkworkBackendClient as MembershipBackendClient } from '@sdkwork/member
 import { SdkworkBackendClient as PaymentBackendClient } from '@sdkwork/payment-backend-sdk';
 import { SdkworkBackendClient as BaseDataBackendClient } from '@sdkwork/base-data-backend-sdk';
 import { SdkworkBackendClient as PromotionBackendClient } from '@sdkwork/promotion-backend-sdk';
+import { SdkworkBackendClient as PartnerBackendClient } from '@sdkwork/partner-backend-sdk';
 import { SdkworkAiClient, type SdkworkAiConfig } from '@sdkwork/cloudrouter-open-sdk';
 import {
   SdkworkGenerationsAppSdkClient as SdkworkGenerationsAppClient,
@@ -473,6 +474,8 @@ export type SdkworkPromotionBackendSdkClient = PromotionBackendClient;
 export type {
   CouponStock as SdkworkPromotionCouponStock,
   CouponStockRequest as SdkworkPromotionCouponStockRequest,
+  PromotionCampaign as SdkworkPromotionCampaign,
+  PromotionCampaignRequest as SdkworkPromotionCampaignRequest,
   PromotionCodeBatch as SdkworkPromotionCodeBatch,
   PromotionCodeBatchRequest as SdkworkPromotionCodeBatchRequest,
   PromotionCouponBenefitRequest as SdkworkPromotionCouponBenefitRequest,
@@ -498,6 +501,7 @@ export type SdkworkMembershipBackendSdkClientOptions = CloudRouterBackendSdkClie
 export type SdkworkPaymentBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
 export type SdkworkBaseDataBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
 export type SdkworkPromotionBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
+export type SdkworkPartnerBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
 export type CloudRouterAiSdkClient = SdkworkAiClient;
 
 type CloudRouterSdkRuntimeHost = typeof globalThis & {
@@ -556,6 +560,7 @@ let membershipBackendClient: MembershipBackendClient | null = null;
 let paymentBackendClient: PaymentBackendClient | null = null;
 let baseDataBackendClient: BaseDataBackendClient | null = null;
 let promotionBackendClient: PromotionBackendClient | null = null;
+let partnerBackendClient: PartnerBackendClient | null = null;
 let accountAppClient: AccountAppClient | null = null;
 let catalogAppClient: CatalogAppClient | null = null;
 let membershipAppClient: MembershipAppClient | null = null;
@@ -657,6 +662,14 @@ export function createSdkworkPromotionBackendSdkClient(
 ): PromotionBackendClient {
   return attachCloudRouterSdkSessionAuthBoundary(
     new PromotionBackendClient(buildDependencyBackendConfig(options, 'VITE_SDKWORK_PROMOTION_BACKEND_API_BASE_URL')),
+  );
+}
+
+export function createSdkworkPartnerBackendSdkClient(
+  options: SdkworkPartnerBackendSdkClientOptions = {},
+): PartnerBackendClient {
+  return attachCloudRouterSdkSessionAuthBoundary(
+    new PartnerBackendClient(buildDependencyBackendConfig(options, 'VITE_SDKWORK_PARTNER_BACKEND_API_BASE_URL')),
   );
 }
 
@@ -989,6 +1002,18 @@ export function getSdkworkPromotionBackendSdkClient(
   return promotionBackendClient;
 }
 
+export function getSdkworkPartnerBackendSdkClient(
+  options: SdkworkPartnerBackendSdkClientOptions = {},
+): PartnerBackendClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkPartnerBackendSdkClient(options);
+  }
+  if (!partnerBackendClient) {
+    partnerBackendClient = createSdkworkPartnerBackendSdkClient();
+  }
+  return partnerBackendClient;
+}
+
 export type DriveBackendSdkClient = DriveBackendClient;
 export type DriveBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
 
@@ -1132,6 +1157,7 @@ function resetCloudRouterSdkClientCaches(): void {
   paymentBackendClient = null;
   baseDataBackendClient = null;
   promotionBackendClient = null;
+  partnerBackendClient = null;
   accountAppClient = null;
   catalogAppClient = null;
   membershipAppClient = null;
@@ -1614,6 +1640,7 @@ function hasRuntimeOverrides(
     | SdkworkMembershipBackendSdkClientOptions
     | SdkworkPaymentBackendSdkClientOptions
     | SdkworkPromotionBackendSdkClientOptions
+    | SdkworkPartnerBackendSdkClientOptions
     | SdkworkDriveAppSdkClientOptions
     | SdkworkAccountAppSdkClientOptions
     | SdkworkCatalogAppSdkClientOptions

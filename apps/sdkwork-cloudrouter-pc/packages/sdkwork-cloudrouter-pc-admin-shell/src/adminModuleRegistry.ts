@@ -18,11 +18,13 @@ import {
   Home,
   Layers3,
   LayoutDashboard,
+  Megaphone,
   Network,
   Package,
   ReceiptText,
   Recycle,
   RefreshCcw,
+  ScrollText,
   Server,
   Send,
   Settings,
@@ -43,6 +45,7 @@ export type AdminModuleId =
   | 'iam'
   | 'membershipCenter'
   | 'marketingCenter'
+  | 'partnerCenter'
   | 'paymentCenter'
   | 'storageCenter'
   | 'operations';
@@ -96,6 +99,7 @@ export const ADMIN_MODULES: AdminModuleDef[] = [
       '/admin/upstream',
       '/admin/model',
       '/admin/record',
+      '/admin/request-log',
       '/admin/analytics',
     ],
   }),
@@ -113,6 +117,13 @@ export const ADMIN_MODULES: AdminModuleDef[] = [
     icon: BadgePercent,
     defaultPath: '/admin/marketing/promotionOffers',
     pathPrefixes: ['/admin/marketing', '/admin/promotions'],
+  }),
+  moduleBlock({
+    id: 'partnerCenter',
+    nameKey: 'admin.header.partnerCenter',
+    icon: Network,
+    defaultPath: '/admin/partner/partners',
+    pathPrefixes: ['/admin/partner'],
   }),
   moduleBlock({
     id: 'paymentCenter',
@@ -164,6 +175,7 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
       ]),
       groupBlock('admin.menu.home.dataManagement', [
         itemBlock({ path: '/admin/record', labelKey: 'admin.menu.records', icon: Activity }),
+        itemBlock({ path: '/admin/request-log', labelKey: 'admin.menu.requestLog', icon: ScrollText }),
         itemBlock({ path: '/admin/analytics', labelKey: 'admin.menu.analytics', icon: BarChart3 }),
       ]),
     ],
@@ -188,9 +200,29 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
     ],
   },
   {
+    moduleId: 'partnerCenter',
+    groups: [
+      groupBlock('admin.menu.partner.manage', [
+        itemBlock({ path: '/admin/partner/partners', labelKey: 'admin.partner.menu.partners', icon: UsersRound }),
+        itemBlock({ path: '/admin/partner/tree', labelKey: 'admin.partner.menu.tree', icon: Network }),
+      ]),
+      groupBlock('admin.menu.partner.commission', [
+        itemBlock({ path: '/admin/partner/levels', labelKey: 'admin.partner.menu.levels', icon: BadgePercent }),
+        itemBlock({ path: '/admin/partner/config', labelKey: 'admin.partner.menu.config', icon: Settings }),
+        itemBlock({ path: '/admin/partner/events', labelKey: 'admin.partner.menu.events', icon: Activity }),
+        itemBlock({ path: '/admin/partner/ledger', labelKey: 'admin.partner.menu.ledger', icon: ReceiptText }),
+      ]),
+      groupBlock('admin.menu.partner.finance', [
+        itemBlock({ path: '/admin/partner/withdrawals', labelKey: 'admin.partner.menu.withdrawals', icon: WalletCards }),
+        itemBlock({ path: '/admin/partner/stats', labelKey: 'admin.partner.menu.stats', icon: BarChart3 }),
+      ]),
+    ],
+  },
+  {
     moduleId: 'marketingCenter',
     groups: [
       groupBlock('admin.menu.marketing.design', [
+        itemBlock({ path: '/admin/marketing/campaigns', labelKey: 'admin.menu.marketing.campaigns', icon: Megaphone }),
         itemBlock({ path: '/admin/marketing/promotionOffers', labelKey: 'admin.menu.marketing.offers', icon: BadgePercent }),
         itemBlock({ path: '/admin/marketing/promotionCouponStocks', labelKey: 'admin.menu.marketing.couponStocks', icon: Boxes }),
       ]),
@@ -205,7 +237,9 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
       ]),
       groupBlock('admin.menu.marketing.growth', [
         itemBlock({ path: '/admin/marketing/promotionCouponLedger', labelKey: 'admin.menu.marketing.couponLedger', icon: Database }),
+        itemBlock({ path: '/admin/marketing/referralStrategies', labelKey: 'admin.menu.marketing.referralStrategies', icon: Megaphone }),
         itemBlock({ path: '/admin/marketing/referrals', labelKey: 'admin.menu.marketing.referrals', icon: Users }),
+        itemBlock({ path: '/admin/marketing/referralRelations', labelKey: 'admin.menu.marketing.referralRelations', icon: Network }),
       ]),
     ],
   },
