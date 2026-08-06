@@ -10,7 +10,7 @@ fn settlements_dashboard_store_uses_scoped_postgres_commerce_read_models() {
         "commerce_usage_settlement",
         "commerce_billing_export",
         "commerce_invoice",
-        "ai_usage",
+        "ai_metering_usage",
     ] {
         assert!(
             POSTGRES_SETTLEMENTS_DASHBOARD_STORE.contains(table),

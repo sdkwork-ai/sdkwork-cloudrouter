@@ -174,7 +174,9 @@ runtime ID lease. A failed contract parse, missing schema fact, database error,
 or unhealthy ID lease reports not ready.
 
 `ai_runtime_usage_link` links Chat records to runtime and usage facts but is not
-the billing ledger; `ai_usage` remains the billing source of truth. Runtime
+the billing ledger; `ai_metering_usage` (ai-metering module, co-located with the
+account `acct_*` ledger in the federated commerce pool) remains the billing
+source of truth. Runtime
 events, runtime artifacts, agent state, and memory state are outside the current
 eight-table implementation. Data ownership and future transfer requirements are
 recorded in

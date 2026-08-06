@@ -13,7 +13,7 @@ const OWNER_TYPE_USER: i64 = 1;
 const SETTLEMENT_PENDING: i64 = 0;
 
 const UPSERT_TRACE: &str = r#"
-INSERT INTO ai_request_trace
+INSERT INTO ai_metering_request_trace
     (id, uuid, tenant_id, organization_id, user_id, request_id, trace_id, status, attempt_no,
      api_key_id, api_key_name_snapshot, account_group_id, account_group_snapshot,
      owner_type, owner_id, account_id, account_name_snapshot, requested_model,
@@ -43,10 +43,10 @@ ON CONFLICT (tenant_id, organization_id, request_id, attempt_no) DO UPDATE SET
     requested_model_catalog_key = excluded.requested_model_catalog_key,
     provider_model = excluded.provider_model,
     provider_native_model = excluded.provider_native_model,
-    gateway_instance_id = COALESCE(ai_request_trace.gateway_instance_id, excluded.gateway_instance_id),
-    gateway_instance_code_snapshot = COALESCE(ai_request_trace.gateway_instance_code_snapshot, excluded.gateway_instance_code_snapshot),
-    gateway_region_code_snapshot = COALESCE(ai_request_trace.gateway_region_code_snapshot, excluded.gateway_region_code_snapshot),
-    gateway_node_name_snapshot = COALESCE(ai_request_trace.gateway_node_name_snapshot, excluded.gateway_node_name_snapshot),
+    gateway_instance_id = COALESCE(ai_metering_request_trace.gateway_instance_id, excluded.gateway_instance_id),
+    gateway_instance_code_snapshot = COALESCE(ai_metering_request_trace.gateway_instance_code_snapshot, excluded.gateway_instance_code_snapshot),
+    gateway_region_code_snapshot = COALESCE(ai_metering_request_trace.gateway_region_code_snapshot, excluded.gateway_region_code_snapshot),
+    gateway_node_name_snapshot = COALESCE(ai_metering_request_trace.gateway_node_name_snapshot, excluded.gateway_node_name_snapshot),
     region_code = excluded.region_code,
     endpoint = excluded.endpoint,
     request_path = excluded.request_path,
@@ -67,16 +67,16 @@ ON CONFLICT (tenant_id, organization_id, request_id, attempt_no) DO UPDATE SET
     user_agent_hash = excluded.user_agent_hash
 WHERE NOT EXISTS (
     SELECT 1
-    FROM ai_usage settled_usage
-    WHERE settled_usage.tenant_id = ai_request_trace.tenant_id
-      AND settled_usage.organization_id = ai_request_trace.organization_id
-      AND settled_usage.request_id = ai_request_trace.request_id
+    FROM ai_metering_usage settled_usage
+    WHERE settled_usage.tenant_id = ai_metering_request_trace.tenant_id
+      AND settled_usage.organization_id = ai_metering_request_trace.organization_id
+      AND settled_usage.request_id = ai_metering_request_trace.request_id
       AND settled_usage.settlement_status IS DISTINCT FROM 0
 )
 "#;
 
 const UPSERT_USAGE_FACT: &str = r#"
-INSERT INTO ai_usage
+INSERT INTO ai_metering_usage
     (id, uuid, tenant_id, organization_id, user_id, request_id, trace_id, status,
      api_key_id, api_key_name_snapshot, account_group_id, upstream_account_group_snapshot,
      owner_type, owner_id, catalog_key, requested_model_catalog_key, model, provider_native_model,
@@ -135,7 +135,7 @@ ON CONFLICT (tenant_id, organization_id, request_id, usage_type) DO UPDATE SET
     idempotency_key = excluded.idempotency_key,
     occurred_at = excluded.occurred_at,
     settlement_status = excluded.settlement_status
-WHERE ai_usage.settlement_status = 0
+WHERE ai_metering_usage.settlement_status = 0
 "#;
 
 #[derive(Debug, Clone)]
@@ -271,7 +271,7 @@ async fn upsert_trace(
     let metadata = trace_metadata_json(command);
     let attribution = &context.attribution;
     sqlx::query(UPSERT_TRACE)
-        .bind(next_cloud_runtime_id("ai_request_trace")?)
+        .bind(next_cloud_runtime_id("ai_metering_request_trace")?)
         .bind(trace_uuid(command))
         .bind(command.tenant_id)
         .bind(command.organization_id)
@@ -325,7 +325,7 @@ async fn upsert_usage_fact(
     context: &GatewayAccountingRecordContext,
 ) -> Result<(), DomainError> {
     sqlx::query(UPSERT_USAGE_FACT)
-        .bind(next_cloud_runtime_id("ai_usage")?)
+        .bind(next_cloud_runtime_id("ai_metering_usage")?)
         .bind(usage_uuid(command))
         .bind(command.tenant_id)
         .bind(command.organization_id)

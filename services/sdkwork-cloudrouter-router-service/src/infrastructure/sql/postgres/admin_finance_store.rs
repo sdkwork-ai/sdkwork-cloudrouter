@@ -132,12 +132,12 @@ WITH billing_entries AS (
       ON pi.id = s.invoice_id
      AND pi.tenant_id = CAST(s.tenant_id AS TEXT)
      AND pi.organization_id = CAST(s.organization_id AS TEXT)
-    LEFT JOIN commerce_settlement us
-      ON us.status = 1
+    LEFT JOIN ai_metering_usage us
+      ON us.settlement_status = 2
      AND us.tenant_id = s.tenant_id
      AND us.organization_id = s.organization_id
-     AND us.created_at >= s.period_start
-     AND us.created_at <= s.period_end
+     AND us.settled_at >= s.period_start
+     AND us.settled_at <= s.period_end
     WHERE s.status = 1
       AND s.tenant_id = $1
       AND s.organization_id = $2

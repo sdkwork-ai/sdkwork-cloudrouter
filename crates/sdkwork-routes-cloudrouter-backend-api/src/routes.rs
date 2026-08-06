@@ -789,18 +789,24 @@ pub fn router_with_postgres_shared_runtime(
         Some(Arc::new(PostgresAdminStorageStore::new(pool.clone())));
     let transaction_center_store: AdminTransactionCenterRuntimeStore =
         Arc::new(PostgresAdminTransactionCenterStore::new(pool.clone()));
+    // Admin ai-metering read stores (dashboard, analytics, records) read
+    // `ai_metering_*` tables co-located with the account ledger in the
+    // federated commerce pool, so they use the commerce pool like the
+    // promotion/partner repositories below.
     let dashboard_read_store: AdminDashboardRuntimeReadStore =
-        Arc::new(PostgresAdminDashboardReadStore::new(pool.clone()));
+        Arc::new(PostgresAdminDashboardReadStore::new(commerce_pool.clone()));
     let analytics_read_store: AdminAnalyticsRuntimeReadStore =
-        Arc::new(PostgresAdminAnalyticsReadStore::new(pool.clone()));
+        Arc::new(PostgresAdminAnalyticsReadStore::new(commerce_pool.clone()));
     let monitor_read_store: AdminMonitorRuntimeReadStore =
         Arc::new(PostgresAdminMonitorReadStore::new(pool.clone()));
     let record_store: AdminRecordRuntimeStore =
-        Arc::new(PostgresAdminRecordStore::new(pool.clone()));
+        Arc::new(PostgresAdminRecordStore::new(commerce_pool.clone()));
     let model_rankings_store: ModelRankingsRuntimeStore =
         model_rankings_service(Arc::new(PostgresModelRankingsReadStore::new(pool.clone())));
+    // The model ranking refresh store reads `ai_metering_usage` (ai-metering
+    // module) which lives in the commerce pool.
     let model_ranking_refresh_store: ModelRankingRefreshRuntimeStore =
-        Arc::new(PostgresModelRankingRefreshStore::new(pool.clone()));
+        Arc::new(PostgresModelRankingRefreshStore::new(commerce_pool.clone()));
     let admin_access_checker = AdminAccessChecker(pool.clone());
 
     // Promotion admin tables live in the federated commerce database

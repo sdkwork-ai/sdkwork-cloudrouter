@@ -249,7 +249,6 @@ pub fn commerce_database_tables() -> Vec<&'static str> {
         "promotion_coupon_ledger_entry",
         "commerce_account",
         "commerce_account_ledger_entry",
-        "commerce_settlement",
         "commerce_statement",
         "commerce_order",
         "commerce_order_item",

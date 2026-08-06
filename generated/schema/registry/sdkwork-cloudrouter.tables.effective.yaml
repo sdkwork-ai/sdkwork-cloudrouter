@@ -3,7 +3,7 @@ kind: sdkwork.database.schema-registry
 owner: cloud-router-platform
 schema_registry:
   name: sdkwork-cloudrouter
-  version: 0.3.0
+  version: 0.4.0
   standard: ../../../../sdkwork-specs/DATABASE_SPEC.md
   common_column_groups:
     tenant_entity:
@@ -159,6 +159,15 @@ schema_registry:
     - deleted_at
     - deleted_by
     - metadata
+    user_runtime_entity:
+    - id
+    - uuid
+    - tenant_id
+    - organization_id
+    - user_id
+    - created_at
+    - updated_at
+    - metadata
   table_profile_policies:
     tenant_entity:
       tenant_scope: tenant_with_global_fallback
@@ -238,8 +247,8 @@ modules:
     compliance_level: L3
     tables_count: 2
     tables:
-    - ai_usage
-    - ai_request_trace
+    - ai_metering_usage
+    - ai_metering_request_trace
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
   ai-pricing:
     owner: cloud-router-platform
@@ -258,11 +267,12 @@ modules:
     description: Gateway-owned IAM API key, access policy, account-group binding,
       and risk rule tables used by Cloud Router runtime.
     compliance_level: L2
-    tables_count: 4
+    tables_count: 5
     tables:
     - iam_gateway_access_policy
     - iam_gateway_api_key
     - iam_gateway_api_key_account_group
+    - iam_gateway_chain_policy
     - iam_gateway_risk_rule
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
   ops-runtime:
@@ -284,11 +294,27 @@ modules:
     - ops_notification_recipient
     - ops_notification_delivery
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
+  ai-chat-runtime:
+    owner: cloud-router-platform
+    description: User-scoped chat transcript, context snapshot, runtime invocation,
+      and usage-link persistence.
+    compliance_level: L2
+    tables_count: 8
+    tables:
+    - ai_chat_conversation
+    - ai_chat_turn
+    - ai_chat_item
+    - ai_chat_message
+    - ai_chat_message_part
+    - ai_chat_context_snapshot
+    - ai_runtime_invocation
+    - ai_runtime_usage_link
+    ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
 data_flow:
   usage_to_account:
     description: 用量推送到账户模块
     steps:
-    - ai_usage写入（cloud-router本地）
+    - ai_metering_usage写入（cloud-router本地）
     - 发布UsageRecorded事件
     - sdkwork-account订阅事件
     - commerce_account_ledger_entry写入（sdkwork-account本地）
@@ -306,31 +332,32 @@ data_flow:
     - ops-runtime本地表提供可分页的监控、通知和审计读模型
     - ops_metric_snapshot、ops_job_execution、ops_audit_log写入（cloud-router本地）
 statistics:
-  cloud_router_local_tables: 45
+  cloud_router_local_tables: 52
   composed_dependency_tables: 19
-  total_tables: 64
+  total_tables: 71
   table_prefix_distribution:
-    ai_: 50
+    ai_: 57
     iam_: 4
     ops_: 10
   module_distribution:
-    cloud-router: 43
+    cloud-router: 52
     sdkwork-models: 19
     ai-routing: 23
-    ai-metering: 3
+    ai-metering: 2
     ai-pricing: 5
-    iam-gateway: 4
+    iam-gateway: 5
     ops-runtime: 10
+    ai-chat-runtime: 8
 compliance:
   financial_tables:
-  - ai_usage
+  - ai_metering_usage
   security_tables:
   - iam_gateway_access_policy
   - iam_gateway_api_key
   - iam_gateway_api_key_account_group
   - iam_gateway_risk_rule
   audit_tables:
-  - ai_request_trace
+  - ai_metering_request_trace
   - ai_routing_decision_log
   - ops_audit_log
   - ops_job_execution
@@ -483,6 +510,704 @@ tables:
   generated_by_this_project: false
   imported: true
   imported_from_module: sdkwork-models
+- table: ai_chat_context_snapshot
+  domain: ai
+  profile: user_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: user_runtime_entity
+  api_surfaces:
+  - app
+  - worker
+  columns:
+    status:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'active'
+    conversation_id:
+      type: int64
+      constraints: NOT NULL
+    turn_id:
+      type: int64
+      constraints: NOT NULL
+    runtime_invocation_id: int64
+    snapshot_no:
+      type: int64
+      constraints: NOT NULL
+    strategy:
+      type: string(64)
+      constraints: NOT NULL
+    included_item_ids:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
+    excluded_item_ids:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
+    included_memory_ids:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
+    excluded_memory_ids:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
+    memory_pack:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    memory_token_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    provider_conversation_id: string(128)
+    previous_response_id: string(128)
+    input_token_estimate:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    truncation_reason: string(128)
+    context_json:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+  required_columns:
+  - user_id
+  - conversation_id
+  - turn_id
+  - snapshot_no
+  - strategy
+  - included_item_ids
+  - excluded_item_ids
+  - included_memory_ids
+  - excluded_memory_ids
+  - memory_pack
+  - memory_token_count
+  - input_token_estimate
+  - context_json
+  unique_constraints:
+  - name: uk_ai_chat_context_snapshot_scope_id
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - id
+  - name: uk_ai_chat_context_snapshot_scope_uuid
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - uuid
+  - name: uk_ai_chat_context_snapshot_scope_turn_no
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - turn_id
+    - snapshot_no
+  foreign_keys:
+  - name: fk_ai_chat_context_snapshot_turn
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_id
+    - turn_id
+    references_table: ai_chat_turn
+    references_columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_id
+    - id
+    on_delete: CASCADE
+  - name: fk_ai_chat_context_snapshot_invocation
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - runtime_invocation_id
+    references_table: ai_runtime_invocation
+    references_columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_chat_context_snapshot_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+  - name: ck_ai_chat_context_snapshot_status
+    expression: status IN ('active', 'superseded', 'deleted')
+  - name: ck_ai_chat_context_snapshot_values
+    expression: snapshot_no > 0 AND memory_token_count >= 0 AND input_token_estimate
+      >= 0 AND length(trim(strategy)) > 0
+  indexes:
+  - name: idx_ai_chat_context_snapshot_conversation_created
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_id
+    - created_at
+    - id
+  - name: idx_ai_chat_context_snapshot_invocation
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - runtime_invocation_id
+    - id
+  imported: false
+- table: ai_chat_conversation
+  domain: ai
+  profile: user_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: user_runtime_entity
+  api_surfaces:
+  - app
+  - worker
+  columns:
+    data_scope:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    status:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'active'
+    version:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    deleted_at: instant
+    deleted_by: int64
+    conversation_code:
+      type: string(64)
+      constraints: NOT NULL
+    title:
+      type: string(256)
+      constraints: NOT NULL
+    source_surface:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'chat'
+    default_provider: string(128)
+    default_model: string(128)
+    agent_id: string(128)
+    agent_session_id: string(128)
+    memory_space_id: string(128)
+    last_message_preview: string(1024)
+    message_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    turn_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    item_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    input_token_total:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    output_token_total:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    cached_token_total:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    reasoning_token_total:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    cost_amount_total:
+      type: decimal
+      constraints: NOT NULL DEFAULT 0
+    currency: string(10)
+    last_turn_id: int64
+    last_item_id: int64
+  required_columns:
+  - user_id
+  - conversation_code
+  - title
+  - source_surface
+  unique_constraints:
+  - name: uk_ai_chat_conversation_scope_id
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - id
+  - name: uk_ai_chat_conversation_scope_uuid
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - uuid
+  - name: uk_ai_chat_conversation_scope_code
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_code
+  check_constraints:
+  - name: ck_ai_chat_conversation_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+  - name: ck_ai_chat_conversation_status
+    expression: status IN ('active', 'archived', 'deleted')
+  - name: ck_ai_chat_conversation_non_negative_counts
+    expression: message_count >= 0 AND turn_count >= 0 AND item_count >= 0 AND input_token_total
+      >= 0 AND output_token_total >= 0 AND cached_token_total >= 0 AND reasoning_token_total
+      >= 0 AND cost_amount_total >= 0 AND version >= 0
+  - name: ck_ai_chat_conversation_last_ids
+    expression: (last_turn_id IS NULL OR last_turn_id > 0) AND (last_item_id IS NULL
+      OR last_item_id > 0)
+  - name: ck_ai_chat_conversation_currency
+    expression: currency IS NULL OR length(trim(currency)) BETWEEN 3 AND 10
+  indexes:
+  - name: idx_ai_chat_conversation_user_status_updated
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - status
+    - updated_at
+    - id
+  imported: false
+- table: ai_chat_item
+  domain: ai
+  profile: user_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: user_runtime_entity
+  api_surfaces:
+  - app
+  - worker
+  columns:
+    conversation_id:
+      type: int64
+      constraints: NOT NULL
+    turn_id:
+      type: int64
+      constraints: NOT NULL
+    sequence_no:
+      type: int64
+      constraints: NOT NULL
+    item_type:
+      type: string(64)
+      constraints: NOT NULL
+    role: string(32)
+    direction:
+      type: string(16)
+      constraints: NOT NULL
+    status:
+      type: string(32)
+      constraints: NOT NULL
+    content_text: text
+    content_json: json
+    provider: string(128)
+    model: string(128)
+    runtime_invocation_id: string(128)
+    completed_at: instant
+  required_columns:
+  - user_id
+  - conversation_id
+  - turn_id
+  - sequence_no
+  - item_type
+  - direction
+  - status
+  unique_constraints:
+  - name: uk_ai_chat_item_scope_id
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - id
+  - name: uk_ai_chat_item_scope_uuid
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - uuid
+  - name: uk_ai_chat_item_scope_turn_id
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_id
+    - turn_id
+    - id
+  - name: uk_ai_chat_item_scope_conversation_sequence
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_id
+    - sequence_no
+  foreign_keys:
+  - name: fk_ai_chat_item_turn
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_id
+    - turn_id
+    references_table: ai_chat_turn
+    references_columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_id
+    - id
+    on_delete: CASCADE
+  check_constraints:
+  - name: ck_ai_chat_item_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+  - name: ck_ai_chat_item_sequence
+    expression: sequence_no > 0
+  - name: ck_ai_chat_item_values
+    expression: length(trim(item_type)) > 0 AND direction IN ('input', 'output', 'internal')
+      AND (role IS NULL OR role IN ('system', 'developer', 'user', 'assistant', 'tool'))
+      AND status IN ('pending', 'running', 'streaming', 'completed', 'failed', 'cancelled',
+      'deleted')
+  indexes:
+  - name: idx_ai_chat_item_turn_direction_status
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_id
+    - turn_id
+    - direction
+    - role
+    - status
+    - sequence_no
+    - id
+  imported: false
+- table: ai_chat_message
+  domain: ai
+  profile: user_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: user_runtime_entity
+  api_surfaces:
+  - app
+  - worker
+  columns:
+    conversation_id:
+      type: int64
+      constraints: NOT NULL
+    turn_id:
+      type: int64
+      constraints: NOT NULL
+    item_id:
+      type: int64
+      constraints: NOT NULL
+    message_no:
+      type: int64
+      constraints: NOT NULL
+    role:
+      type: string(32)
+      constraints: NOT NULL
+    message_kind:
+      type: string(64)
+      constraints: NOT NULL
+    direction:
+      type: string(16)
+      constraints: NOT NULL
+    status:
+      type: string(32)
+      constraints: NOT NULL
+    content_text:
+      type: text
+      constraints: NOT NULL
+    content_json: json
+    model: string(128)
+    provider: string(128)
+    runtime: string(128)
+    runtime_invocation_id: string(128)
+    usage_link_id: string(64)
+  required_columns:
+  - user_id
+  - conversation_id
+  - turn_id
+  - item_id
+  - message_no
+  - role
+  - message_kind
+  - direction
+  - status
+  - content_text
+  unique_constraints:
+  - name: uk_ai_chat_message_scope_id
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - id
+  - name: uk_ai_chat_message_scope_uuid
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - uuid
+  - name: uk_ai_chat_message_scope_item_id
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - item_id
+    - id
+  - name: uk_ai_chat_message_scope_conversation_no
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_id
+    - message_no
+  foreign_keys:
+  - name: fk_ai_chat_message_item
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_id
+    - turn_id
+    - item_id
+    references_table: ai_chat_item
+    references_columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_id
+    - turn_id
+    - id
+    on_delete: CASCADE
+  check_constraints:
+  - name: ck_ai_chat_message_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+  - name: ck_ai_chat_message_sequence
+    expression: message_no > 0
+  - name: ck_ai_chat_message_values
+    expression: role IN ('system', 'developer', 'user', 'assistant', 'tool') AND direction
+      IN ('input', 'output', 'internal') AND length(trim(message_kind)) > 0 AND status
+      IN ('pending', 'running', 'streaming', 'completed', 'failed', 'cancelled', 'deleted')
+  indexes:
+  - name: idx_ai_chat_message_turn_status
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_id
+    - turn_id
+    - role
+    - direction
+    - status
+    - message_no
+    - id
+  imported: false
+- table: ai_chat_message_part
+  domain: ai
+  profile: user_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: user_runtime_entity
+  api_surfaces:
+  - app
+  - worker
+  columns:
+    message_id:
+      type: int64
+      constraints: NOT NULL
+    item_id:
+      type: int64
+      constraints: NOT NULL
+    part_no:
+      type: int64
+      constraints: NOT NULL
+    part_type:
+      type: string(64)
+      constraints: NOT NULL
+    text_content: text
+    json_content: json
+  required_columns:
+  - user_id
+  - message_id
+  - item_id
+  - part_no
+  - part_type
+  unique_constraints:
+  - name: uk_ai_chat_message_part_scope_id
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - id
+  - name: uk_ai_chat_message_part_scope_uuid
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - uuid
+  - name: uk_ai_chat_message_part_scope_message_no
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - message_id
+    - part_no
+  foreign_keys:
+  - name: fk_ai_chat_message_part_message_item
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - item_id
+    - message_id
+    references_table: ai_chat_message
+    references_columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - item_id
+    - id
+    on_delete: CASCADE
+  check_constraints:
+  - name: ck_ai_chat_message_part_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+  - name: ck_ai_chat_message_part_values
+    expression: part_no > 0 AND length(trim(part_type)) > 0 AND (text_content IS NOT
+      NULL OR json_content IS NOT NULL)
+  indexes:
+  - name: idx_ai_chat_message_part_item
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - item_id
+    - message_id
+    - part_no
+    - id
+  imported: false
+- table: ai_chat_turn
+  domain: ai
+  profile: user_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: user_runtime_entity
+  api_surfaces:
+  - app
+  - worker
+  columns:
+    conversation_id:
+      type: int64
+      constraints: NOT NULL
+    turn_no:
+      type: int64
+      constraints: NOT NULL
+    mode: string(64)
+    status:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'queued'
+    completed_at: instant
+    provider: string(128)
+    model: string(128)
+    agent_id: string(128)
+    agent_session_id: string(128)
+    final_output_item_id: int64
+    input_token_total:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    output_token_total:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    cached_token_total:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    reasoning_token_total:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    cost_amount: decimal
+    currency: string(10)
+    response_snapshot: json
+    usage_snapshot: json
+    context_snapshot_id: int64
+    context_snapshot_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+  required_columns:
+  - user_id
+  - conversation_id
+  - turn_no
+  unique_constraints:
+  - name: uk_ai_chat_turn_scope_id
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - id
+  - name: uk_ai_chat_turn_scope_uuid
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - uuid
+  - name: uk_ai_chat_turn_scope_conversation_id
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_id
+    - id
+  - name: uk_ai_chat_turn_scope_conversation_no
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_id
+    - turn_no
+  foreign_keys:
+  - name: fk_ai_chat_turn_conversation
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_id
+    references_table: ai_chat_conversation
+    references_columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - id
+    on_delete: CASCADE
+  check_constraints:
+  - name: ck_ai_chat_turn_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+  - name: ck_ai_chat_turn_status
+    expression: status IN ('queued', 'running', 'streaming', 'requires_action', 'completed',
+      'failed', 'cancelled', 'deleted')
+  - name: ck_ai_chat_turn_non_negative_values
+    expression: turn_no > 0 AND input_token_total >= 0 AND output_token_total >= 0
+      AND cached_token_total >= 0 AND reasoning_token_total >= 0 AND (cost_amount
+      IS NULL OR cost_amount >= 0) AND context_snapshot_count >= 0 AND (final_output_item_id
+      IS NULL OR final_output_item_id > 0) AND (context_snapshot_id IS NULL OR context_snapshot_id
+      > 0)
+  - name: ck_ai_chat_turn_currency
+    expression: currency IS NULL OR length(trim(currency)) BETWEEN 3 AND 10
+  indexes:
+  - name: idx_ai_chat_turn_conversation_created
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_id
+    - created_at
+    - id
+  - name: idx_ai_chat_turn_conversation_status
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_id
+    - status
+    - updated_at
+    - id
+  imported: false
 - table: ai_config_change_event
   domain: ai
   profile: runtime_coordination_event
@@ -626,6 +1351,384 @@ tables:
     - status
     - deleted_at
     - id
+  imported: false
+- table: ai_metering_request_trace
+  domain: ai
+  profile: event_log
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: event_log
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    attempt_no: int32
+    decision_log_id: int64
+    api_key_id: int64
+    api_key_name_snapshot: string(128)
+    account_group_id: int64
+    account_group_snapshot: string(128)
+    owner_type: int32
+    owner_id: int64
+    owner_name_snapshot: string(128)
+    supplier_id: int64
+    account_id: int64
+    account_name_snapshot: string(128)
+    requested_model: string(256)
+    requested_model_catalog_key: string(256)
+    provider_model: string(256)
+    provider_native_model: string(256)
+    gateway_instance_id: int64
+    gateway_instance_code_snapshot: string(128)
+    gateway_region_code_snapshot: string(64)
+    gateway_node_name_snapshot: string(128)
+    region_code: string(64)
+    endpoint: string(256)
+    request_path: string(256)
+    http_method: string(16)
+    http_status: int32
+    provider_error_code: string(128)
+    error_type: string(128)
+    started_at: instant
+    ended_at: instant
+    latency_ms: int32
+    ttft_ms: int32
+    streaming: bool
+    request_bytes: int64
+    response_bytes: int64
+    prompt_tokens: int64
+    completion_tokens: int64
+    cached_tokens: int64
+    total_tokens: int64
+    request_payload_hash: string(128)
+    response_payload_hash: string(128)
+    error_message_masked: string(1024)
+    reasoning_effort: string(64)
+    client_ip_hash: string(128)
+    client_ip_masked: string(64)
+    client_ip_region: string(128)
+    user_agent_hash: string(128)
+  required_columns:
+  - request_id
+  - attempt_no
+  - started_at
+  unique_constraints:
+  - name: uk_ai_metering_request_trace_request_attempt
+    columns:
+    - tenant_id
+    - organization_id
+    - request_id
+    - attempt_no
+  check_constraints:
+  - name: ck_ai_metering_request_trace_attempt
+    expression: attempt_no >= 1
+  - name: ck_ai_metering_request_trace_http_status
+    expression: http_status IS NULL OR http_status BETWEEN 100 AND 599
+  - name: ck_ai_metering_request_trace_non_negative_metrics
+    expression: (latency_ms IS NULL OR latency_ms >= 0) AND (ttft_ms IS NULL OR ttft_ms
+      >= 0) AND (prompt_tokens IS NULL OR prompt_tokens >= 0) AND (completion_tokens
+      IS NULL OR completion_tokens >= 0) AND (cached_tokens IS NULL OR cached_tokens
+      >= 0) AND (total_tokens IS NULL OR total_tokens >= 0)
+  indexes:
+  - name: idx_ai_metering_request_trace_tenant_trace
+    columns:
+    - tenant_id
+    - organization_id
+    - trace_id
+  - name: idx_ai_metering_request_trace_api_key_started
+    columns:
+    - tenant_id
+    - organization_id
+    - api_key_id
+    - started_at
+    - id
+  - name: idx_ai_metering_request_trace_model_started
+    columns:
+    - tenant_id
+    - organization_id
+    - requested_model
+    - started_at
+    - id
+  - name: idx_ai_metering_request_trace_tenant_status_started
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - started_at
+    - id
+  - name: idx_ai_metering_request_trace_user_status_started
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - status
+    - started_at
+    - id
+  - name: idx_ai_metering_request_trace_retention
+    columns:
+    - retention_until
+    - id
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: router-service
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: router-service
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold
+        = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
+  imported: false
+- table: ai_metering_usage
+  domain: ai
+  profile: ledger_source_fact
+  compliance_level: L3
+  system_of_record: true
+  write_owner: router-service
+  common_columns: ledger_source_fact
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    decision_log_id: int64
+    api_key_id: int64
+    api_key_name_snapshot: string(128)
+    account_group_id: int64
+    account_group_snapshot: string(128)
+    owner_type: int32
+    owner_id: int64
+    owner_name_snapshot: string(128)
+    catalog_key:
+      type: string(256)
+      constraints: NOT NULL
+    requested_model_catalog_key: string(256)
+    model: string(256)
+    provider_native_model: string(256)
+    region_code: string(64)
+    supplier_id: int64
+    account_id: int64
+    modality: int32
+    usage_type: int32
+    billing_type: int32
+    billing_mode: int32
+    billing_meter_id: int64
+    billing_meter_code: string(64)
+    billing_tier: string(64)
+    billable_quantity: decimal
+    billable_unit: int32
+    prompt_tokens: int64
+    completion_tokens: int64
+    cached_tokens: int64
+    total_tokens: int64
+    request_count: int64
+    result_count: int64
+    item_count: int64
+    character_count: int64
+    image_count: int64
+    audio_seconds: decimal
+    video_seconds: decimal
+    storage_byte_hours: decimal
+    bandwidth_bytes: int64
+    base_input_unit_price: decimal
+    base_output_unit_price: decimal
+    cache_read_unit_price: decimal
+    rate_multiplier: decimal
+    reference_multiplier: decimal
+    official_reference_amount: decimal
+    upstream_cost_amount: decimal
+    customer_charge_amount: decimal
+    currency: string(10)
+    pricing_id: int64
+    pricing_plan_id: int64
+    pricing_plan_code: string(64)
+    pricing_rule_id: int64
+    pricing_tier_id: int64
+    pricing_snapshot: json
+    reasoning_effort: string(64)
+    occurred_at: instant
+    settlement_status: int32
+    settlement_id: int64
+  required_columns:
+  - request_id
+  - idempotency_key
+  - usage_type
+  - billing_meter_code
+  - billable_quantity
+  - currency
+  - occurred_at
+  - settlement_status
+  unique_constraints:
+  - name: uk_ai_metering_usage_scope_id
+    columns:
+    - tenant_id
+    - organization_id
+    - id
+  - name: uk_ai_metering_usage_idempotency
+    columns:
+    - tenant_id
+    - organization_id
+    - idempotency_key
+  - name: uk_ai_metering_usage_request
+    columns:
+    - tenant_id
+    - organization_id
+    - request_id
+    - usage_type
+  check_constraints:
+  - name: ck_ai_metering_usage_non_negative_counts
+    expression: (prompt_tokens IS NULL OR prompt_tokens >= 0) AND (completion_tokens
+      IS NULL OR completion_tokens >= 0) AND (cached_tokens IS NULL OR cached_tokens
+      >= 0) AND (total_tokens IS NULL OR total_tokens >= 0) AND (request_count IS
+      NULL OR request_count >= 0) AND (result_count IS NULL OR result_count >= 0)
+      AND (item_count IS NULL OR item_count >= 0) AND (character_count IS NULL OR
+      character_count >= 0) AND (image_count IS NULL OR image_count >= 0)
+  - name: ck_ai_metering_usage_non_negative_amounts
+    expression: billable_quantity >= 0 AND (audio_seconds IS NULL OR audio_seconds
+      >= 0) AND (video_seconds IS NULL OR video_seconds >= 0) AND (storage_byte_hours
+      IS NULL OR storage_byte_hours >= 0) AND (official_reference_amount IS NULL OR
+      official_reference_amount >= 0) AND (upstream_cost_amount IS NULL OR upstream_cost_amount
+      >= 0) AND (customer_charge_amount IS NULL OR customer_charge_amount >= 0)
+  - name: ck_ai_metering_usage_currency
+    expression: length(trim(currency)) BETWEEN 3 AND 10
+  indexes:
+  - name: idx_ai_metering_usage_tenant_owner_occurred
+    columns:
+    - tenant_id
+    - organization_id
+    - owner_type
+    - owner_id
+    - occurred_at
+    - id
+  - name: idx_ai_metering_usage_api_key_occurred
+    columns:
+    - tenant_id
+    - organization_id
+    - api_key_id
+    - occurred_at
+    - id
+  - name: idx_ai_metering_usage_model_occurred
+    columns:
+    - tenant_id
+    - organization_id
+    - catalog_key
+    - occurred_at
+    - id
+  - name: idx_ai_metering_usage_pricing_plan_occurred
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_plan_id
+    - occurred_at
+    - id
+  - name: idx_ai_metering_usage_meter_occurred
+    columns:
+    - tenant_id
+    - organization_id
+    - billing_meter_code
+    - occurred_at
+    - id
+  - name: idx_ai_metering_usage_settlement_status
+    columns:
+    - tenant_id
+    - organization_id
+    - settlement_status
+    - occurred_at
+    - id
+  - name: idx_ai_metering_usage_retention
+    columns:
+    - retention_until
+    - id
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: router-service
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: router-service
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold
+        = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
+  semantic_contracts:
+    ranking_refresh_source_fact:
+      time_field: occurred_at
+      window_predicate: half_open_utc
+      aggregation_grain:
+      - tenant_id
+      - organization_id
+      - catalog_key
   imported: false
 - table: ai_modality
   domain: ai
@@ -1616,8 +2719,9 @@ tables:
     model: string(256)
     vendor_code: string(64)
     region_code: string(64)
+    supplier_code: string(64)
     provider_code: string(64)
-    channel_id: int64
+    account_id: int64
     provider_model: string(256)
     platform_code: string(64)
     service_tier: string(64)
@@ -1693,12 +2797,12 @@ tables:
     - status
     - effective_from
     - id
-  - name: idx_ai_model_pricing_provider_channel
+  - name: idx_ai_model_pricing_supplier_account
     columns:
     - tenant_id
     - organization_id
-    - provider_code
-    - channel_id
+    - supplier_code
+    - account_id
     - catalog_key
     - price_side
     - status
@@ -1973,6 +3077,7 @@ tables:
 - table: ai_pricing_import_snapshot
   domain: ai
   profile: event_log
+  tenant_scope: tenant_with_global_fallback
   compliance_level: L2
   system_of_record: true
   write_owner: ai-pricing-service
@@ -2560,170 +3665,6 @@ tables:
     - account_group_id
     - status
   imported: false
-- table: ai_request_trace
-  domain: ai
-  profile: event_log
-  compliance_level: L2
-  system_of_record: true
-  write_owner: router-service
-  common_columns: event_log
-  api_surfaces:
-  - app
-  - backend
-  - worker
-  columns:
-    attempt_no: int32
-    decision_log_id: int64
-    api_key_id: int64
-    api_key_name_snapshot: string(128)
-    account_group_id: int64
-    account_group_snapshot: string(128)
-    owner_type: int32
-    owner_id: int64
-    owner_name_snapshot: string(128)
-    supplier_id: int64
-    account_id: int64
-    account_name_snapshot: string(128)
-    requested_model: string(256)
-    requested_model_catalog_key: string(256)
-    provider_model: string(256)
-    provider_native_model: string(256)
-    gateway_instance_id: int64
-    gateway_instance_code_snapshot: string(128)
-    gateway_region_code_snapshot: string(64)
-    gateway_node_name_snapshot: string(128)
-    region_code: string(64)
-    endpoint: string(256)
-    request_path: string(256)
-    http_method: string(16)
-    http_status: int32
-    provider_error_code: string(128)
-    error_type: string(128)
-    started_at: instant
-    ended_at: instant
-    latency_ms: int32
-    ttft_ms: int32
-    streaming: bool
-    request_bytes: int64
-    response_bytes: int64
-    prompt_tokens: int64
-    completion_tokens: int64
-    cached_tokens: int64
-    total_tokens: int64
-    request_payload_hash: string(128)
-    response_payload_hash: string(128)
-    error_message_masked: string(1024)
-    reasoning_effort: string(64)
-    client_ip_hash: string(128)
-    client_ip_masked: string(64)
-    client_ip_region: string(128)
-    user_agent_hash: string(128)
-  required_columns:
-  - request_id
-  - attempt_no
-  - started_at
-  unique_constraints:
-  - name: uk_ai_request_trace_request_attempt
-    columns:
-    - tenant_id
-    - organization_id
-    - request_id
-    - attempt_no
-  check_constraints:
-  - name: ck_ai_request_trace_attempt
-    expression: attempt_no >= 1
-  - name: ck_ai_request_trace_http_status
-    expression: http_status IS NULL OR http_status BETWEEN 100 AND 599
-  - name: ck_ai_request_trace_non_negative_metrics
-    expression: (latency_ms IS NULL OR latency_ms >= 0) AND (ttft_ms IS NULL OR ttft_ms
-      >= 0) AND (prompt_tokens IS NULL OR prompt_tokens >= 0) AND (completion_tokens
-      IS NULL OR completion_tokens >= 0) AND (cached_tokens IS NULL OR cached_tokens
-      >= 0) AND (total_tokens IS NULL OR total_tokens >= 0)
-  indexes:
-  - name: idx_ai_request_trace_tenant_trace
-    columns:
-    - tenant_id
-    - organization_id
-    - trace_id
-  - name: idx_ai_request_trace_api_key_started
-    columns:
-    - tenant_id
-    - organization_id
-    - api_key_id
-    - started_at
-    - id
-  - name: idx_ai_request_trace_model_started
-    columns:
-    - tenant_id
-    - organization_id
-    - requested_model
-    - started_at
-    - id
-  - name: idx_ai_request_trace_tenant_status_started
-    columns:
-    - tenant_id
-    - organization_id
-    - status
-    - started_at
-    - id
-  - name: idx_ai_request_trace_user_status_started
-    columns:
-    - tenant_id
-    - organization_id
-    - user_id
-    - status
-    - started_at
-    - id
-  - name: idx_ai_request_trace_retention
-    columns:
-    - retention_until
-    - id
-  lifecycle:
-    storage_strategy: indexed_append_only
-    retention:
-      online_retention: 12mo
-      archive_retention: 5y
-      grace_period: 24h
-    cleanup:
-      owner: router-service
-      scope: platform_cross_tenant
-      authorization:
-        mode: service_identity
-        service: router-service
-        audit_required: true
-      candidate_recheck:
-        required: true
-        operations:
-        - archive
-        - delete
-        key_columns:
-        - tenant_id
-        - organization_id
-        - id
-      batch_size: 1000
-      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold
-        = false
-      archive_before_delete: true
-      retry:
-        max_attempts: 5
-        backoff:
-          strategy: exponential
-          initial: 1s
-          maximum: 5m
-      monitoring:
-        metrics:
-        - cleanup_candidates
-        - cleanup_archived
-        - cleanup_deleted
-        - cleanup_skipped_legal_hold
-        - cleanup_failures
-        alerts:
-        - retention_lag
-        - retry_exhausted
-      dry_run:
-        supported: true
-        default: true
-  imported: false
 - table: ai_resource
   domain: ai
   profile: dictionary_entity
@@ -3167,6 +4108,227 @@ tables:
     - priority
     - status
   imported: false
+- table: ai_runtime_invocation
+  domain: ai
+  profile: user_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: user_runtime_entity
+  api_surfaces:
+  - app
+  - worker
+  columns:
+    conversation_id: string(128)
+    chat_turn_id: string(128)
+    chat_item_id: string(128)
+    agent_session_id: string(128)
+    agent_run_id: string(128)
+    agent_run_step_id: string(128)
+    invocation_no:
+      type: int64
+      constraints: NOT NULL
+    invocation_type:
+      type: string(128)
+      constraints: NOT NULL
+    runtime:
+      type: string(128)
+      constraints: NOT NULL
+    endpoint: string(128)
+    attempt_no:
+      type: int64
+      constraints: NOT NULL DEFAULT 1
+    status:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'running'
+    request_id: string(128)
+    trace_id: string(128)
+    provider_response_id: string(128)
+    provider_session_id: string(128)
+    provider_conversation_id: string(128)
+    provider_step_id: string(128)
+    model: string(128)
+    provider: string(128)
+    tool_name: string(128)
+    tool_call_id: string(128)
+    cwd: string(2048)
+    sandbox_policy: string(128)
+    approval_policy: string(128)
+    permission_mode: string(128)
+    streaming:
+      type: bool
+      constraints: NOT NULL DEFAULT FALSE
+    started_at:
+      type: instant
+      constraints: NOT NULL
+    completed_at: instant
+    latency_ms: int64
+    ttft_ms: int64
+    exit_code: int64
+    finish_reason: string(128)
+    error_type: string(128)
+    error_code: string(128)
+    error_message_masked: string(1024)
+    request_json:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    response_json: json
+    usage_json: json
+  required_columns:
+  - user_id
+  - invocation_no
+  - invocation_type
+  - runtime
+  - status
+  - started_at
+  - request_json
+  unique_constraints:
+  - name: uk_ai_runtime_invocation_scope_id
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - id
+  - name: uk_ai_runtime_invocation_scope_uuid
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - uuid
+  check_constraints:
+  - name: ck_ai_runtime_invocation_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+  - name: ck_ai_runtime_invocation_sequence
+    expression: invocation_no > 0 AND attempt_no > 0
+  - name: ck_ai_runtime_invocation_status
+    expression: status IN ('pending', 'running', 'streaming', 'completed', 'failed',
+      'cancelled')
+  - name: ck_ai_runtime_invocation_runtime
+    expression: length(trim(invocation_type)) > 0 AND length(trim(runtime)) > 0
+  - name: ck_ai_runtime_invocation_metrics
+    expression: (latency_ms IS NULL OR latency_ms >= 0) AND (ttft_ms IS NULL OR ttft_ms
+      >= 0)
+  indexes:
+  - name: idx_ai_runtime_invocation_user_created
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - created_at
+    - id
+  - name: idx_ai_runtime_invocation_chat_created
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_id
+    - chat_turn_id
+    - created_at
+    - id
+  - name: idx_ai_runtime_invocation_runtime_status
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - runtime
+    - status
+    - created_at
+    - id
+  imported: false
+- table: ai_runtime_usage_link
+  domain: ai
+  profile: user_entity
+  compliance_level: L3
+  system_of_record: true
+  write_owner: router-service
+  common_columns: user_runtime_entity
+  api_surfaces:
+  - app
+  - worker
+  columns:
+    conversation_id: string(128)
+    chat_turn_id: string(128)
+    message_id: string(128)
+    runtime_invocation_id: string(128)
+    usage_fact_id: int64
+    usage_type:
+      type: string(64)
+      constraints: NOT NULL
+    provider: string(128)
+    model: string(128)
+    input_tokens:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    output_tokens:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    cached_tokens:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    reasoning_tokens:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    total_tokens:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    cost_amount: decimal
+    currency: string(10)
+    occurred_at:
+      type: instant
+      constraints: NOT NULL
+  required_columns:
+  - user_id
+  - usage_type
+  - occurred_at
+  unique_constraints:
+  - name: uk_ai_runtime_usage_link_scope_id
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - id
+  - name: uk_ai_runtime_usage_link_scope_uuid
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - uuid
+  check_constraints:
+  - name: ck_ai_runtime_usage_link_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+  - name: ck_ai_runtime_usage_link_non_negative_values
+    expression: input_tokens >= 0 AND output_tokens >= 0 AND cached_tokens >= 0 AND
+      reasoning_tokens >= 0 AND total_tokens >= 0 AND (cost_amount IS NULL OR cost_amount
+      >= 0) AND (usage_fact_id IS NULL OR usage_fact_id > 0)
+  - name: ck_ai_runtime_usage_link_usage_type
+    expression: length(trim(usage_type)) > 0
+  - name: ck_ai_runtime_usage_link_currency
+    expression: currency IS NULL OR length(trim(currency)) BETWEEN 3 AND 10
+  indexes:
+  - name: idx_ai_runtime_usage_link_message
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - message_id
+    - occurred_at
+    - id
+  - name: idx_ai_runtime_usage_link_invocation
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - runtime_invocation_id
+    - occurred_at
+    - id
+  - name: idx_ai_runtime_usage_link_usage_fact
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - usage_fact_id
+    - id
+  imported: false
 - table: ai_upstream_account
   domain: ai
   profile: tenant_entity
@@ -3438,6 +4600,11 @@ tables:
     billing_type: int32
     capacity_limit: int64
     allowed_origin: json
+    vendor_code:
+      type: string(64)
+    modalities:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
   unique_constraints:
   - name: uk_ai_upstream_account_group_uuid
     columns:
@@ -3477,6 +4644,13 @@ tables:
     - pricing_plan_id
     - status
     - updated_at
+    - id
+  - name: idx_ai_upstream_account_group_vendor
+    columns:
+    - tenant_id
+    - organization_id
+    - vendor_code
+    - status
     - id
   imported: false
 - table: ai_upstream_account_group_member
@@ -3607,7 +4781,7 @@ tables:
   - ai_upstream_account_group
   - ai_upstream_account_group_member
   - ai_upstream_account
-  - ai_usage
+  - ai_metering_usage
   unique_constraints:
   - name: uk_ai_upstream_account_group_metric_snapshot_uuid
     columns:
@@ -4285,220 +5459,6 @@ tables:
     - priority
     - id
   imported: false
-- table: ai_usage
-  domain: ai
-  profile: ledger_source_fact
-  compliance_level: L3
-  system_of_record: true
-  write_owner: router-service
-  common_columns: ledger_source_fact
-  api_surfaces:
-  - app
-  - backend
-  - worker
-  columns:
-    decision_log_id: int64
-    api_key_id: int64
-    api_key_name_snapshot: string(128)
-    account_group_id: int64
-    account_group_snapshot: string(128)
-    owner_type: int32
-    owner_id: int64
-    owner_name_snapshot: string(128)
-    catalog_key:
-      type: string(256)
-      constraints: NOT NULL
-    requested_model_catalog_key: string(256)
-    model: string(256)
-    provider_native_model: string(256)
-    region_code: string(64)
-    supplier_id: int64
-    account_id: int64
-    modality: int32
-    usage_type: int32
-    billing_type: int32
-    billing_mode: int32
-    billing_meter_id: int64
-    billing_meter_code: string(64)
-    billing_tier: string(64)
-    billable_quantity: decimal
-    billable_unit: int32
-    prompt_tokens: int64
-    completion_tokens: int64
-    cached_tokens: int64
-    total_tokens: int64
-    request_count: int64
-    result_count: int64
-    item_count: int64
-    character_count: int64
-    image_count: int64
-    audio_seconds: decimal
-    video_seconds: decimal
-    storage_byte_hours: decimal
-    bandwidth_bytes: int64
-    base_input_unit_price: decimal
-    base_output_unit_price: decimal
-    cache_read_unit_price: decimal
-    rate_multiplier: decimal
-    reference_multiplier: decimal
-    official_reference_amount: decimal
-    upstream_cost_amount: decimal
-    customer_charge_amount: decimal
-    currency: string(10)
-    pricing_id: int64
-    pricing_plan_id: int64
-    pricing_plan_code: string(64)
-    pricing_rule_id: int64
-    pricing_tier_id: int64
-    pricing_snapshot: json
-    reasoning_effort: string(64)
-    occurred_at: instant
-    settlement_status: int32
-    settlement_id: int64
-  required_columns:
-  - request_id
-  - idempotency_key
-  - usage_type
-  - billing_meter_code
-  - billable_quantity
-  - currency
-  - occurred_at
-  - settlement_status
-  unique_constraints:
-  - name: uk_ai_usage_scope_id
-    columns:
-    - tenant_id
-    - organization_id
-    - id
-  - name: uk_ai_usage_idempotency
-    columns:
-    - tenant_id
-    - organization_id
-    - idempotency_key
-  - name: uk_ai_usage_request
-    columns:
-    - tenant_id
-    - organization_id
-    - request_id
-    - usage_type
-  check_constraints:
-  - name: ck_ai_usage_non_negative_counts
-    expression: (prompt_tokens IS NULL OR prompt_tokens >= 0) AND (completion_tokens
-      IS NULL OR completion_tokens >= 0) AND (cached_tokens IS NULL OR cached_tokens
-      >= 0) AND (total_tokens IS NULL OR total_tokens >= 0) AND (request_count IS
-      NULL OR request_count >= 0) AND (result_count IS NULL OR result_count >= 0)
-      AND (item_count IS NULL OR item_count >= 0) AND (character_count IS NULL OR
-      character_count >= 0) AND (image_count IS NULL OR image_count >= 0)
-  - name: ck_ai_usage_non_negative_amounts
-    expression: billable_quantity >= 0 AND (audio_seconds IS NULL OR audio_seconds
-      >= 0) AND (video_seconds IS NULL OR video_seconds >= 0) AND (storage_byte_hours
-      IS NULL OR storage_byte_hours >= 0) AND (official_reference_amount IS NULL OR
-      official_reference_amount >= 0) AND (upstream_cost_amount IS NULL OR upstream_cost_amount
-      >= 0) AND (customer_charge_amount IS NULL OR customer_charge_amount >= 0)
-  - name: ck_ai_usage_currency
-    expression: length(trim(currency)) BETWEEN 3 AND 10
-  indexes:
-  - name: idx_ai_usage_tenant_owner_occurred
-    columns:
-    - tenant_id
-    - organization_id
-    - owner_type
-    - owner_id
-    - occurred_at
-    - id
-  - name: idx_ai_usage_api_key_occurred
-    columns:
-    - tenant_id
-    - organization_id
-    - api_key_id
-    - occurred_at
-    - id
-  - name: idx_ai_usage_model_occurred
-    columns:
-    - tenant_id
-    - organization_id
-    - catalog_key
-    - occurred_at
-    - id
-  - name: idx_ai_usage_pricing_plan_occurred
-    columns:
-    - tenant_id
-    - organization_id
-    - pricing_plan_id
-    - occurred_at
-    - id
-  - name: idx_ai_usage_meter_occurred
-    columns:
-    - tenant_id
-    - organization_id
-    - billing_meter_code
-    - occurred_at
-    - id
-  - name: idx_ai_usage_settlement_status
-    columns:
-    - tenant_id
-    - organization_id
-    - settlement_status
-    - occurred_at
-    - id
-  - name: idx_ai_usage_retention
-    columns:
-    - retention_until
-    - id
-  lifecycle:
-    storage_strategy: indexed_append_only
-    retention:
-      online_retention: 12mo
-      archive_retention: 5y
-      grace_period: 24h
-    cleanup:
-      owner: router-service
-      scope: platform_cross_tenant
-      authorization:
-        mode: service_identity
-        service: router-service
-        audit_required: true
-      candidate_recheck:
-        required: true
-        operations:
-        - archive
-        - delete
-        key_columns:
-        - tenant_id
-        - organization_id
-        - id
-      batch_size: 1000
-      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold
-        = false
-      archive_before_delete: true
-      retry:
-        max_attempts: 5
-        backoff:
-          strategy: exponential
-          initial: 1s
-          maximum: 5m
-      monitoring:
-        metrics:
-        - cleanup_candidates
-        - cleanup_archived
-        - cleanup_deleted
-        - cleanup_skipped_legal_hold
-        - cleanup_failures
-        alerts:
-        - retention_lag
-        - retry_exhausted
-      dry_run:
-        supported: true
-        default: true
-  semantic_contracts:
-    ranking_refresh_source_fact:
-      time_field: occurred_at
-      window_predicate: half_open_utc
-      aggregation_grain:
-      - tenant_id
-      - organization_id
-      - catalog_key
-  imported: false
 - table: ai_vendor_api_endpoint
   domain: ai
   profile: relation_entity
@@ -4686,6 +5646,12 @@ tables:
     secret_version:
       type: int64
       constraints: NOT NULL
+    key_secret_mode:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'plaintext'
+    key_secret_plaintext: text
+    key_secret_ciphertext: text
+    key_secret_key_id: string(64)
     idempotency_key:
       type: string(128)
       constraints: NOT NULL
@@ -4827,6 +5793,41 @@ tables:
     - status
     - priority
     - id
+  imported: false
+- table: iam_gateway_chain_policy
+  domain: iam_gateway
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: gateway-iam-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    policy_name: string(128)
+    scope_type: int32
+    scope_id: int64
+    payload: json
+    effective_from: instant
+    effective_to: instant
+  unique_constraints:
+  - name: uk_iam_gateway_chain_policy_scope
+    columns:
+    - tenant_id
+    - organization_id
+    - scope_type
+    - scope_id
+    - status
+  indexes:
+  - name: idx_iam_gateway_chain_policy_scope_status
+    columns:
+    - tenant_id
+    - organization_id
+    - scope_type
+    - scope_id
+    - status
   imported: false
 - table: iam_gateway_risk_rule
   domain: iam_gateway
@@ -5364,7 +6365,7 @@ tables:
         - alertRecommended
         - sourceTables
         source_tables:
-        - ai_usage
+        - ai_metering_usage
         - ai_model
         - ai_model_rank_snapshot
       runtime_contract:
@@ -5753,5 +6754,271 @@ tables:
     - recipient_type
     - recipient_role_code
     - status
+    - id
+  imported: false
+- table: ops_referral_invite_code
+  domain: ops
+  profile: operational_state
+  compliance_level: L2
+  system_of_record: true
+  write_owner: cloudrouter-ops-runtime
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id:
+      type: int64
+      constraints: NOT NULL PRIMARY KEY
+    tenant_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    organization_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    user_id:
+      type: int64
+      constraints: NOT NULL
+    invite_code:
+      type: string(32)
+      constraints: NOT NULL
+    status:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    created_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+  unique_constraints:
+  - name: uk_ops_referral_invite_code_tenant_user
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+  - name: uk_ops_referral_invite_code_tenant_code
+    columns:
+    - tenant_id
+    - organization_id
+    - invite_code
+  indexes:
+  - name: uk_ops_referral_invite_code_tenant_user
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    unique: true
+  - name: uk_ops_referral_invite_code_tenant_code
+    columns:
+    - tenant_id
+    - organization_id
+    - invite_code
+    unique: true
+  - name: idx_ops_referral_invite_code_code
+    columns:
+    - invite_code
+  imported: false
+- table: ops_referral_relation
+  domain: ops
+  profile: operational_state
+  compliance_level: L2
+  system_of_record: true
+  write_owner: cloudrouter-ops-runtime
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id:
+      type: int64
+      constraints: NOT NULL PRIMARY KEY
+    tenant_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    organization_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    invitee_user_id:
+      type: int64
+      constraints: NOT NULL
+    inviter_user_id:
+      type: int64
+      constraints: NOT NULL
+    invite_code:
+      type: string(32)
+      constraints: NOT NULL
+    source:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'register'
+    status:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    reward_status:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'pending'
+    claimed_at: instant
+    created_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+  unique_constraints:
+  - name: uk_ops_referral_relation_tenant_invitee
+    columns:
+    - tenant_id
+    - organization_id
+    - invitee_user_id
+  indexes:
+  - name: uk_ops_referral_relation_tenant_invitee
+    columns:
+    - tenant_id
+    - organization_id
+    - invitee_user_id
+    unique: true
+  - name: idx_ops_referral_relation_inviter
+    columns:
+    - tenant_id
+    - organization_id
+    - inviter_user_id
+    - created_at
+    - id
+  - name: idx_ops_referral_relation_code
+    columns:
+    - tenant_id
+    - organization_id
+    - invite_code
+  - name: idx_ops_referral_relation_list
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - created_at
+    - id
+  imported: false
+- table: ops_referral_stat_snapshot
+  domain: ops
+  profile: read_model
+  compliance_level: L2
+  system_of_record: false
+  write_owner: cloudrouter-ops-runtime
+  api_surfaces:
+  - backend
+  columns:
+    id:
+      type: int64
+      constraints: NOT NULL PRIMARY KEY
+    tenant_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    organization_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    inviter_user_id:
+      type: int64
+      constraints: NOT NULL
+    inviter_name_snapshot:
+      type: string(256)
+    inviter_email_snapshot:
+      type: string(256)
+    total_invited_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    total_revenue_amount:
+      type: decimal(18,2)
+      constraints: NOT NULL DEFAULT 0
+    reward_awarded_amount:
+      type: decimal(18,2)
+      constraints: NOT NULL DEFAULT 0
+    invite_link:
+      type: string(512)
+    status:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    snapshot_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+  unique_constraints:
+  - name: uk_ops_referral_stat_snapshot
+    columns:
+    - tenant_id
+    - organization_id
+    - inviter_user_id
+    - snapshot_at
+  indexes:
+  - name: uk_ops_referral_stat_snapshot
+    columns:
+    - tenant_id
+    - organization_id
+    - inviter_user_id
+    - snapshot_at
+    unique: true
+  imported: false
+- table: ops_referral_strategy
+  domain: ops
+  profile: operational_state
+  compliance_level: L2
+  system_of_record: true
+  write_owner: cloudrouter-ops-runtime
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id:
+      type: int64
+      constraints: NOT NULL PRIMARY KEY
+    tenant_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    organization_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    name:
+      type: string(128)
+      constraints: NOT NULL
+    description:
+      type: string(512)
+      constraints: NOT NULL DEFAULT ''
+    status:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'disabled'
+    reward_type:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'POINTS'
+    reward_value:
+      type: string(64)
+      constraints: NOT NULL
+    reward_target:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'INVITER'
+    trigger_event:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'REGISTER'
+    max_rewards_per_inviter:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    starts_at: instant
+    ends_at: instant
+    created_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+  indexes:
+  - name: idx_ops_referral_strategy_tenant_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - created_at
     - id
   imported: false

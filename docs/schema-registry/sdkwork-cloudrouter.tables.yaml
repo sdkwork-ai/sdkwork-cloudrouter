@@ -252,8 +252,8 @@ modules:
     compliance_level: L3
     tables_count: 2
     tables:
-    - ai_usage
-    - ai_request_trace
+    - ai_metering_usage
+    - ai_metering_request_trace
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
   ai-pricing:
     owner: cloud-router-platform
@@ -469,7 +469,7 @@ data_flow:
   usage_to_account:
     description: "\u7528\u91CF\u63A8\u9001\u5230\u8D26\u6237\u6A21\u5757"
     steps:
-    - "ai_usage\u5199\u5165\uFF08cloud-router\u672C\u5730\uFF09"
+    - "ai_metering_usage\u5199\u5165\uFF08cloud-router\u672C\u5730\uFF09"
     - "\u53D1\u5E03UsageRecorded\u4E8B\u4EF6"
     - "sdkwork-account\u8BA2\u9605\u4E8B\u4EF6"
     - "commerce_account_ledger_entry\u5199\u5165\uFF08sdkwork-account\u672C\u5730\uFF09"
@@ -505,14 +505,14 @@ statistics:
     ai-chat-runtime: 8
 compliance:
   financial_tables:
-  - ai_usage
+  - ai_metering_usage
   security_tables:
   - iam_gateway_access_policy
   - iam_gateway_api_key
   - iam_gateway_api_key_account_group
   - iam_gateway_risk_rule
   audit_tables:
-  - ai_request_trace
+  - ai_metering_request_trace
   - ai_routing_decision_log
   - ops_audit_log
   - ops_job_execution

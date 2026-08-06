@@ -337,7 +337,7 @@ async fn create_schema(pool: &PgPool) {
             effective_to TIMESTAMPTZ,
             deleted_at TIMESTAMPTZ
         )"#,
-        r#"CREATE TABLE ai_request_trace (
+        r#"CREATE TABLE ai_metering_request_trace (
             id BIGINT PRIMARY KEY,
             request_id VARCHAR(128),
             trace_id VARCHAR(128),
@@ -368,7 +368,7 @@ async fn create_schema(pool: &PgPool) {
             latency_ms INTEGER,
             total_tokens BIGINT
         )"#,
-        r#"CREATE TABLE ai_usage (
+        r#"CREATE TABLE ai_metering_usage (
             id BIGINT PRIMARY KEY,
             tenant_id BIGINT NOT NULL,
             organization_id BIGINT NOT NULL,
@@ -411,8 +411,8 @@ async fn seed_routing_projection(pool: &PgPool) {
         "INSERT INTO ai_upstream_account_group_resource (id, tenant_id, organization_id, account_group_id, resource_group_code, grant_type, priority, status) VALUES (402, 100001, 0, 11, 'bundle.deepseek.chat', 'allow', 10, 1)",
         "INSERT INTO iam_gateway_api_key (id, tenant_id, organization_id, user_id, account_group_id, name, key_prefix, key_display_masked, status, created_at, updated_at) VALUES (501, 100001, 0, 30, 10, 'Production gateway key', 'sk-live', 'sk-live-****-0001', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
         "INSERT INTO iam_gateway_api_key_account_group (id, tenant_id, organization_id, api_key_id, account_group_id, binding_role, status, effective_to) VALUES (601, 100001, 0, 501, 11, 'route', 1, CURRENT_TIMESTAMP + INTERVAL '1 day'), (602, 100001, 0, 501, 12, 'route', 1, CURRENT_TIMESTAMP - INTERVAL '1 day')",
-        "INSERT INTO ai_request_trace (id, request_id, trace_id, tenant_id, organization_id, user_id, status, created_at, ended_at, account_group_id, account_group_snapshot, account_id, account_name_snapshot, requested_model, provider_model, request_path, http_method, http_status, request_payload_hash, response_payload_hash, request_bytes, response_bytes, streaming, started_at, latency_ms, total_tokens) VALUES (701, 'request-701', 'trace-701', 100001, 0, 30, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 10, 'Standard routing snapshot', 101, 'OpenAI primary snapshot', 'gpt-4.1', 'gpt-4.1-2026-01-01', '/v1/responses', 'POST', 200, 'request-hash', 'response-hash', 1024, 2048, true, CURRENT_TIMESTAMP - INTERVAL '125 milliseconds', 125, 20)",
-        "INSERT INTO ai_usage (id, tenant_id, organization_id, user_id, api_key_id, request_id, catalog_key, total_tokens, request_count, status) VALUES (801, 100001, 0, 30, 501, 'request-701', 'openai/gpt-4.1', 24, 3, 1)",
+        "INSERT INTO ai_metering_request_trace (id, request_id, trace_id, tenant_id, organization_id, user_id, status, created_at, ended_at, account_group_id, account_group_snapshot, account_id, account_name_snapshot, requested_model, provider_model, request_path, http_method, http_status, request_payload_hash, response_payload_hash, request_bytes, response_bytes, streaming, started_at, latency_ms, total_tokens) VALUES (701, 'request-701', 'trace-701', 100001, 0, 30, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 10, 'Standard routing snapshot', 101, 'OpenAI primary snapshot', 'gpt-4.1', 'gpt-4.1-2026-01-01', '/v1/responses', 'POST', 200, 'request-hash', 'response-hash', 1024, 2048, true, CURRENT_TIMESTAMP - INTERVAL '125 milliseconds', 125, 20)",
+        "INSERT INTO ai_metering_usage (id, tenant_id, organization_id, user_id, api_key_id, request_id, catalog_key, total_tokens, request_count, status) VALUES (801, 100001, 0, 30, 501, 'request-701', 'openai/gpt-4.1', 24, 3, 1)",
         "INSERT INTO ai_routing_decision_log (id, tenant_id, organization_id, request_id, resolved_model, selected_account_id, status) VALUES (901, 100001, 0, 'request-701', 'openai/gpt-4.1', 101, 1)",
     ] {
         sqlx::query(statement)

@@ -18,7 +18,7 @@ SELECT
     COALESCE(NULLIF(t.account_name_snapshot, ''), '-') AS upstream_account,
     CAST(TRUNC(EXTRACT(EPOCH FROM t.started_at) * 1000000) AS BIGINT) AS cursor_started_at_micros,
     t.id AS cursor_id
-FROM ai_request_trace t
+FROM ai_metering_request_trace t
 WHERE t.status = 1
   AND t.tenant_id = $1
   AND t.organization_id = $2

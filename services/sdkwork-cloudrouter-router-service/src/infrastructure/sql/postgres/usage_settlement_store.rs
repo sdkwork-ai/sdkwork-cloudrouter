@@ -7,7 +7,6 @@ use sdkwork_contract_service::{CommerceAccountAssetType, CommerceLedgerDirection
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
 use crate::domain::DomainError;
-use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     UsageSettlementCommand, UsageSettlementFuture, UsageSettlementOutcome, UsageSettlementStore,
@@ -88,11 +87,8 @@ struct UsageFactForSettlement {
     organization_id: i64,
     user_id: i64,
     request_id: String,
-    trace_id: Option<String>,
     amount: String,
-    tokens: i64,
     currency: String,
-    pricing_snapshot: String,
     pricing_snapshot_bytes: i64,
 }
 
@@ -119,13 +115,6 @@ struct SettlementGroup {
 struct PointsAccount {
     id: String,
     available_amount: i64,
-}
-
-fn projection_wallet_account(usage_fact: &UsageFactForSettlement) -> PointsAccount {
-    PointsAccount {
-        id: stable_account_id(usage_fact),
-        available_amount: i64::MAX,
-    }
 }
 
 async fn settle_pending_usage(
@@ -202,17 +191,10 @@ async fn load_settleable_usage_facts(
             CAST(organization_id AS TEXT) AS organization_id,
             CAST(COALESCE(user_id, owner_id, 0) AS TEXT) AS user_id,
             request_id,
-            trace_id,
             CAST(COALESCE(NULLIF(CAST(customer_charge_amount AS TEXT), ''), '0') AS TEXT) AS amount,
-            CAST(COALESCE(total_tokens, 0) AS TEXT) AS tokens,
             COALESCE(NULLIF(currency, ''), 'USD') AS currency,
-            CASE
-                WHEN octet_length(CAST(COALESCE(pricing_snapshot, '{}'::jsonb) AS TEXT)) <= $6
-                THEN CAST(COALESCE(pricing_snapshot, '{}'::jsonb) AS TEXT)
-                ELSE '{}'
-            END AS pricing_snapshot,
             CAST(octet_length(CAST(COALESCE(pricing_snapshot, '{}'::jsonb) AS TEXT)) AS TEXT) AS pricing_snapshot_bytes
-        FROM ai_usage
+        FROM ai_metering_usage
         WHERE ($1 <= 0 OR tenant_id = $1)
           AND ($2 <= 0 OR organization_id = $2)
           AND settlement_status IN ($3, $4)
@@ -226,7 +208,6 @@ async fn load_settleable_usage_facts(
     .bind(USAGE_SETTLEMENT_PENDING)
     .bind(USAGE_SETTLEMENT_FAILED)
     .bind(command.limit)
-    .bind(MAX_PRICING_SNAPSHOT_BYTES)
     .fetch_all(&mut **tx)
     .await
     .map_err(|error| store_error("failed to load settleable usage facts", error))?;
@@ -239,11 +220,8 @@ async fn load_settleable_usage_facts(
             organization_id: integer_cell(row, "organization_id"),
             user_id: integer_cell(row, "user_id"),
             request_id: string_cell(row, "request_id"),
-            trace_id: optional_string_cell(row, "trace_id"),
             amount: string_cell(row, "amount"),
-            tokens: integer_cell(row, "tokens"),
             currency: string_cell(row, "currency"),
-            pricing_snapshot: string_cell(row, "pricing_snapshot"),
             pricing_snapshot_bytes: integer_cell(row, "pricing_snapshot_bytes"),
         })
         .collect())
@@ -263,7 +241,6 @@ async fn collect_settlement_groups(
         if usage_fact.pricing_snapshot_bytes > i64::from(MAX_PRICING_SNAPSHOT_BYTES) {
             mark_invalid_usage_fact_failed(
                 tx,
-                command,
                 &usage_fact,
                 "INVALID_PRICING_SNAPSHOT",
                 "usage pricing snapshot exceeds the settlement byte budget",
@@ -277,7 +254,6 @@ async fn collect_settlement_groups(
             Err(error) => {
                 mark_invalid_usage_fact_failed(
                     tx,
-                    command,
                     &usage_fact,
                     "INVALID_USAGE_AMOUNT",
                     &error.to_string(),
@@ -312,15 +288,18 @@ async fn collect_settlement_groups(
 
 async fn mark_invalid_usage_fact_failed(
     tx: &mut Transaction<'_, Postgres>,
-    command: &UsageSettlementCommand,
     usage_fact: &UsageFactForSettlement,
     failure_code: &str,
     failure_message: &str,
 ) -> SettlementResult<()> {
-    let account = projection_wallet_account(usage_fact);
-    let settlement_id =
-        upsert_processing_settlement(tx, command, usage_fact, &account.id, 0).await?;
-    mark_settlement_failed(tx, usage_fact, settlement_id, failure_code, failure_message).await
+    mark_settlement_failed(
+        tx,
+        usage_fact,
+        usage_fact.id,
+        failure_code,
+        failure_message,
+    )
+    .await
 }
 
 async fn settle_zero_usage_fact(
@@ -328,10 +307,7 @@ async fn settle_zero_usage_fact(
     command: &UsageSettlementCommand,
     usage_fact: &UsageFactForSettlement,
 ) -> SettlementResult<()> {
-    let account = projection_wallet_account(usage_fact);
-    let settlement_id =
-        upsert_processing_settlement(tx, command, usage_fact, &account.id, 0).await?;
-    mark_settlement_success(tx, command, usage_fact, settlement_id, None).await
+    mark_settlement_success(tx, command, usage_fact, usage_fact.id).await
 }
 
 async fn settle_usage_group(
@@ -351,34 +327,22 @@ async fn settle_usage_group(
 
     let first_usage_fact = &group.candidates[0].usage_fact;
     let account = ensure_points_account(tx, command, first_usage_fact).await?;
-    let allocations = allocate_candidate_points(&group.candidates, points)?;
-    let mut settlement_ids = Vec::with_capacity(group.candidates.len());
-    for (candidate, allocated_points) in group.candidates.iter().zip(allocations.iter()) {
-        settlement_ids.push(
-            upsert_processing_settlement(
-                tx,
-                command,
-                &candidate.usage_fact,
-                &account.id,
-                *allocated_points,
-            )
-            .await?,
-        );
-    }
+    // Validate that per-candidate rounding sums to the batch total. The
+    // per-candidate point allocation is no longer persisted (the
+    // commerce_settlement bridge is retired); settlement state lives on
+    // ai_metering_usage itself, keyed by the usage fact id.
+    let _ = allocate_candidate_points(&group.candidates, points)?;
 
     let transaction_id = settlement_batch_no(&group.candidates);
-    let ledger_entry_id = match existing_account_ledger_entry_id(tx, &account.id, &transaction_id)
-        .await?
-    {
-        Some(ledger_entry_id) => ledger_entry_id,
+    match existing_account_ledger_entry_id(tx, &account.id, &transaction_id).await? {
+        Some(_) => {}
         None => {
             if account.available_amount < points {
-                for (candidate, settlement_id) in group.candidates.iter().zip(settlement_ids.iter())
-                {
+                for candidate in &group.candidates {
                     mark_settlement_failed(
                         tx,
                         &candidate.usage_fact,
-                        *settlement_id,
+                        candidate.usage_fact.id,
                         "INSUFFICIENT_POINTS",
                         "usage settlement account has insufficient points",
                     )
@@ -401,19 +365,13 @@ async fn settle_usage_group(
                 points,
                 &transaction_id,
             )
-            .await?
+            .await?;
         }
-    };
+    }
 
-    for (candidate, settlement_id) in group.candidates.iter().zip(settlement_ids.iter()) {
-        mark_settlement_success(
-            tx,
-            command,
-            &candidate.usage_fact,
-            *settlement_id,
-            Some(&ledger_entry_id),
-        )
-        .await?;
+    for candidate in &group.candidates {
+        mark_settlement_success(tx, command, &candidate.usage_fact, candidate.usage_fact.id)
+            .await?;
     }
     Ok(UsageSettlementOutcome {
         settled_count: group.candidates.len() as i64,
@@ -426,13 +384,16 @@ async fn already_settled(
     tx: &mut Transaction<'_, Postgres>,
     usage_fact: &UsageFactForSettlement,
 ) -> SettlementResult<bool> {
+    // Settlement state lives on the usage fact itself now that the
+    // commerce_settlement bridge is retired. The loader filters pending/failed
+    // facts already; this is a defensive guard for concurrent runs.
     let row = sqlx::query(
         r#"
-        SELECT account_ledger_entry_id
-        FROM commerce_settlement
+        SELECT 1
+        FROM ai_metering_usage
         WHERE tenant_id = $1
           AND organization_id = $2
-          AND usage_fact_id = $3
+          AND id = $3
           AND settlement_status = $4
         LIMIT 1
         "#,
@@ -551,84 +512,6 @@ async fn ensure_points_account(
     })
 }
 
-async fn upsert_processing_settlement(
-    tx: &mut Transaction<'_, Postgres>,
-    command: &UsageSettlementCommand,
-    usage_fact: &UsageFactForSettlement,
-    account_id: &str,
-    points: i64,
-) -> SettlementResult<i64> {
-    let row = sqlx::query(
-        r#"
-        INSERT INTO commerce_settlement
-            (uuid, tenant_id, organization_id, user_id, request_id, trace_id, status, created_at,
-             metadata, settlement_no, usage_fact_id, account_id, asset_type, direction, amount,
-             points, tokens, currency, price_snapshot, settlement_status, id)
-        VALUES
-            ($1, $2, $3, $4, $5, $6, 1, $7::timestamp AT TIME ZONE 'UTC', '{}'::jsonb, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17::jsonb, $18, $19)
-        ON CONFLICT (tenant_id, organization_id, usage_fact_id) DO UPDATE SET
-            user_id = excluded.user_id,
-            request_id = excluded.request_id,
-            trace_id = excluded.trace_id,
-            account_id = excluded.account_id,
-            asset_type = excluded.asset_type,
-            direction = excluded.direction,
-            amount = excluded.amount,
-            points = excluded.points,
-            tokens = excluded.tokens,
-            currency = excluded.currency,
-            price_snapshot = excluded.price_snapshot,
-            settlement_status = excluded.settlement_status,
-            failure_code = NULL,
-            failure_message = NULL
-        WHERE commerce_settlement.settlement_status <> $20
-        RETURNING id
-        "#,
-    )
-    .bind(stable_uuid("usage-settlement", usage_fact.id))
-    .bind(usage_fact.tenant_id)
-    .bind(usage_fact.organization_id)
-    .bind(usage_fact.user_id)
-    .bind(&usage_fact.request_id)
-    .bind(usage_fact.trace_id.as_deref())
-    .bind(&command.requested_at)
-    .bind(settlement_no(usage_fact.id))
-    .bind(usage_fact.id)
-    .bind(account_id)
-    .bind(CommerceAccountAssetType::Points.as_str())
-    .bind(CommerceLedgerDirection::Debit.as_str())
-    .bind(&usage_fact.amount)
-    .bind(points)
-    .bind(usage_fact.tokens)
-    .bind(&usage_fact.currency)
-    .bind(&usage_fact.pricing_snapshot)
-    .bind(USAGE_SETTLEMENT_PENDING)
-    .bind(next_cloud_runtime_id("commerce_settlement")?)
-    .bind(USAGE_SETTLEMENT_SUCCESS)
-    .fetch_optional(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to upsert usage settlement bridge", error))?;
-    if let Some(row) = row {
-        return Ok(integer_cell(&row, "id"));
-    }
-    sqlx::query_scalar(
-        r#"
-        SELECT id
-        FROM commerce_settlement
-        WHERE tenant_id = $1
-          AND organization_id = $2
-          AND usage_fact_id = $3
-        LIMIT 1
-        "#,
-    )
-    .bind(usage_fact.tenant_id)
-    .bind(usage_fact.organization_id)
-    .bind(usage_fact.id)
-    .fetch_one(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to read usage settlement bridge id", error))
-}
-
 async fn existing_account_ledger_entry_id(
     tx: &mut Transaction<'_, Postgres>,
     account_id: &str,
@@ -697,7 +580,7 @@ async fn insert_account_ledger_entry(
         INSERT INTO commerce_account_ledger_entry
             (id, tenant_id, organization_id, account_id, owner_user_id, asset_type, direction, amount, balance_after, business_type, transaction_no, request_no, idempotency_key, source_type, source_id, remark, created_at)
         VALUES
-            ($1, CAST($2 AS TEXT), CAST($3 AS TEXT), $4, CAST($5 AS TEXT), $6, $7, $8, $9, 'usage', $10, $11, $10, 'ai_usage', $12, $13, CURRENT_TIMESTAMP)
+            ($1, CAST($2 AS TEXT), CAST($3 AS TEXT), $4, CAST($5 AS TEXT), $6, $7, $8, $9, 'usage', $10, $11, $10, 'ai_metering_usage', $12, $13, CURRENT_TIMESTAMP)
         "#,
     )
     .bind(ledger_entry_id)
@@ -724,36 +607,19 @@ async fn mark_settlement_success(
     command: &UsageSettlementCommand,
     usage_fact: &UsageFactForSettlement,
     settlement_id: i64,
-    ledger_entry_id: Option<&str>,
 ) -> SettlementResult<()> {
     sqlx::query(
         r#"
-        UPDATE commerce_settlement
+        UPDATE ai_metering_usage
         SET settlement_status = $1,
-            account_ledger_entry_id = COALESCE($2, account_ledger_entry_id),
-            settled_at = $3::timestamp AT TIME ZONE 'UTC',
-            failure_code = NULL,
-            failure_message = NULL
+            settlement_id = $2,
+            settled_at = $3::timestamp AT TIME ZONE 'UTC'
         WHERE id = $4
         "#,
     )
     .bind(USAGE_SETTLEMENT_SUCCESS)
-    .bind(ledger_entry_id)
+    .bind(settlement_id)
     .bind(&command.requested_at)
-    .bind(settlement_id)
-    .execute(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to mark usage settlement success", error))?;
-    sqlx::query(
-        r#"
-        UPDATE ai_usage
-        SET settlement_status = $1,
-            settlement_id = $2
-        WHERE id = $3
-        "#,
-    )
-    .bind(USAGE_SETTLEMENT_SUCCESS)
-    .bind(settlement_id)
     .bind(usage_fact.id)
     .execute(&mut **tx)
     .await
@@ -770,32 +636,19 @@ async fn mark_settlement_failed(
 ) -> SettlementResult<()> {
     sqlx::query(
         r#"
-        UPDATE commerce_settlement
+        UPDATE ai_metering_usage
         SET settlement_status = $1,
-            failure_code = $2,
-            failure_message = $3,
-            account_ledger_entry_id = NULL,
-            settled_at = NULL
-        WHERE id = $4
+            settlement_id = $2,
+            settled_at = NULL,
+            failure_code = $3,
+            failure_message = $4
+        WHERE id = $5
         "#,
     )
     .bind(USAGE_SETTLEMENT_FAILED)
+    .bind(settlement_id)
     .bind(failure_code)
     .bind(truncate_message(failure_message))
-    .bind(settlement_id)
-    .execute(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to mark usage settlement failed", error))?;
-    sqlx::query(
-        r#"
-        UPDATE ai_usage
-        SET settlement_status = $1,
-            settlement_id = $2
-        WHERE id = $3
-        "#,
-    )
-    .bind(USAGE_SETTLEMENT_FAILED)
-    .bind(settlement_id)
     .bind(usage_fact.id)
     .execute(&mut **tx)
     .await
@@ -868,7 +721,7 @@ async fn defer_usage_group(
     for candidate in &group.candidates {
         sqlx::query(
             r#"
-            UPDATE ai_usage
+            UPDATE ai_metering_usage
             SET settlement_status = $1
             WHERE id = $2
             "#,
@@ -878,25 +731,6 @@ async fn defer_usage_group(
         .execute(&mut **tx)
         .await
         .map_err(|error| store_error("failed to defer micro usage settlement fact", error))?;
-        sqlx::query(
-            r#"
-            UPDATE commerce_settlement
-            SET settlement_status = $1,
-                settled_at = NULL,
-                failure_code = NULL,
-                failure_message = NULL
-            WHERE tenant_id = $2
-              AND organization_id = $3
-              AND usage_fact_id = $4
-            "#,
-        )
-        .bind(USAGE_SETTLEMENT_PENDING)
-        .bind(candidate.usage_fact.tenant_id)
-        .bind(candidate.usage_fact.organization_id)
-        .bind(candidate.usage_fact.id)
-        .execute(&mut **tx)
-        .await
-        .map_err(|error| store_error("failed to defer micro usage settlement bridge", error))?;
     }
     Ok(())
 }
@@ -950,13 +784,6 @@ fn parse_decimal_scaled(value: &str) -> Result<i128, DomainError> {
             .ok_or_else(|| DomainError::new("usage settlement amount is too large"))?;
     }
     Ok(scaled)
-}
-
-fn stable_uuid(prefix: &str, usage_fact_id: i64) -> String {
-    let mut hasher = DefaultHasher::new();
-    prefix.hash(&mut hasher);
-    usage_fact_id.hash(&mut hasher);
-    format!("{prefix}-{:016x}", hasher.finish())
 }
 
 fn stable_ledger_entry_id(transaction_id: &str) -> String {

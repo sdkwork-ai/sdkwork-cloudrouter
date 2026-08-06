@@ -17,7 +17,7 @@ fn assert_sql_contains(sql: &str, expected: &str) {
 #[test]
 fn usage_settlement_locks_pending_usage_and_points_account_in_one_transaction() {
     for expected in [
-        "FROM ai_usage",
+        "FROM ai_metering_usage",
         "($1 <= 0 OR tenant_id = $1)",
         "($2 <= 0 OR organization_id = $2)",
         "settlement_status IN ($3, $4)",
@@ -35,10 +35,7 @@ fn usage_settlement_locks_pending_usage_and_points_account_in_one_transaction() 
 #[test]
 fn usage_settlement_bounds_pricing_snapshot_bytes_before_loading_json_text() {
     for expected in [
-        "octet_length(CAST(COALESCE(pricing_snapshot, '{}'::jsonb) AS TEXT)) <= $6",
-        "ELSE '{}' END AS pricing_snapshot",
         "AS pricing_snapshot_bytes",
-        ".bind(MAX_PRICING_SNAPSHOT_BYTES)",
         "usage_fact.pricing_snapshot_bytes > i64::from(MAX_PRICING_SNAPSHOT_BYTES)",
         "INVALID_PRICING_SNAPSHOT",
         "usage pricing snapshot exceeds the settlement byte budget",
@@ -56,17 +53,20 @@ fn usage_settlement_requires_explicit_pending_or_failed_status() {
 }
 
 #[test]
-fn usage_settlement_upserts_bridge_and_returns_ids_without_double_debit() {
+fn usage_settlement_does_not_use_commerce_settlement_bridge_and_guards_against_double_debit() {
+    assert!(
+        !compact_sql(POSTGRES_USAGE_SETTLEMENT_STORE).contains("INSERT INTO commerce_settlement"),
+        "Postgres usage settlement must not write the retired commerce_settlement bridge"
+    );
+    assert!(
+        !compact_sql(POSTGRES_USAGE_SETTLEMENT_STORE).contains("FROM commerce_settlement"),
+        "Postgres usage settlement must not read the retired commerce_settlement bridge"
+    );
     for expected in [
-        "INSERT INTO commerce_settlement",
-        "ON CONFLICT (tenant_id, organization_id, usage_fact_id) DO UPDATE SET",
-        "WHERE commerce_settlement.settlement_status <> $20",
-        ".bind(USAGE_SETTLEMENT_SUCCESS)",
-        "RETURNING id",
         "INSERT INTO commerce_account_ledger_entry",
         "business_type, transaction_no, request_no, idempotency_key, source_type, source_id, remark, created_at",
         "'usage'",
-        "'ai_usage'",
+        "'ai_metering_usage'",
         "WHERE account_id = $1",
         "AND transaction_no = $2",
     ] {
@@ -131,12 +131,13 @@ fn usage_settlement_has_no_legacy_plus_account_dependency() {
 #[test]
 fn usage_settlement_marks_success_and_failure_on_source_fact() {
     for expected in [
-        "UPDATE ai_usage",
+        "UPDATE ai_metering_usage",
         "SET settlement_status = $1,",
         "settlement_id = $2",
+        "settled_at = $3::timestamp AT TIME ZONE 'UTC'",
         "INSUFFICIENT_POINTS",
-        "failure_code = $2",
-        "failure_message = $3",
+        "failure_code = $3",
+        "failure_message = $4",
     ] {
         assert_sql_contains(POSTGRES_USAGE_SETTLEMENT_STORE, expected);
     }

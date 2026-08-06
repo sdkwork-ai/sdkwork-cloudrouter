@@ -6,7 +6,14 @@ fn admin_finance_store_uses_appbase_commerce_finance_tables() {
     let source = POSTGRES_ADMIN_FINANCE_STORE;
     assert!(source.contains("commerce_account_ledger_entry"));
     assert!(source.contains("commerce_statement"));
-    assert!(source.contains("commerce_settlement"));
+    assert!(
+        source.contains("ai_metering_usage"),
+        "admin finance statement settlement count must join the ai-metering usage fact"
+    );
+    assert!(
+        !source.contains("commerce_settlement"),
+        "admin finance must not reference the retired commerce_settlement bridge"
+    );
     assert!(source.contains("commerce_invoice"));
     assert!(
         source.contains("pi.owner_user_id"),

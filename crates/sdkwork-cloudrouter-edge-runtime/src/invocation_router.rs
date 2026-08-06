@@ -510,7 +510,7 @@ where
     // Records the audit-safe route decision facts after dispatch so the row
     // captures the resolved account, attempt chain, and latency. Runs before
     // settlement so the decision log stays decision-only (settlement facts
-    // live in `ai_usage`).
+    // live in `ai_metering_usage`).
     if let Some(decision_log_recorder) = decision_log_recorder {
         pipeline = pipeline.with_interceptor(RoutingDecisionLogInterceptor::new(
             Arc::clone(&catalog),

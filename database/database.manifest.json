@@ -14,7 +14,8 @@
   "baselineAnchorTable": "ai_upstream_supplier",
   "modules": [
     "gateway-iam",
-    "operations"
+    "operations",
+    "ai-metering"
   ],
   "lifecycle": {
     "autoMigrate": false,

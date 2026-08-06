@@ -684,6 +684,10 @@ pub async fn router_with_postgres_product_catalog(
 pub struct PostgresSharedRuntime {
     pub config: DatabaseConfig,
     pub pool: PgPool,
+    /// Federated commerce shared pool. The ai-metering module (`ai_metering_*`
+    /// tables) is co-located with the account `acct_*` ledger in this pool,
+    /// so the ai-metering read stores must use it instead of the gateway pool.
+    pub commerce_pool: PgPool,
     pub catalog: Arc<RefreshableSqlPricingCatalog>,
     pub api_key_security_config: ApiKeySecurityConfig,
     pub upstream_credential_security_config: UpstreamCredentialSecurityConfig,
@@ -704,6 +708,7 @@ pub async fn router_with_postgres_shared_runtime(
     let PostgresSharedRuntime {
         config,
         pool,
+        commerce_pool,
         catalog,
         api_key_security_config,
         upstream_credential_security_config,
@@ -720,8 +725,10 @@ pub async fn router_with_postgres_shared_runtime(
         credential_secret_codec_from_config(&upstream_credential_security_config)?;
     let model_rankings_store =
         model_rankings_service(Arc::new(PostgresModelRankingsReadStore::new(pool.clone())));
+    // The model ranking refresh worker reads `ai_metering_usage` (ai-metering
+    // module) which is co-located with the account ledger in the commerce pool.
     maybe_spawn_postgres_model_ranking_refresh_worker(
-        &pool,
+        &commerce_pool,
         model_ranking_refresh_worker_config,
         Some(Arc::clone(&model_rankings_store)),
     )
@@ -737,16 +744,22 @@ pub async fn router_with_postgres_shared_runtime(
     let payment_intent_runtime_store =
         Arc::new(PostgresPaymentIntentRuntimeStore::new(pool.clone()));
     let payment_provider_registry = bootstrap_postgres_payment_provider_registry(&pool).await;
-    let dashboard_read_store = Arc::new(PostgresDashboardOverviewReadStore::new(pool.clone()));
+    // ai-metering read stores (`ai_metering_usage`/`ai_metering_request_trace`)
+    // run on the commerce pool where the ai-metering module is co-located with
+    // the account `acct_*` tables.
+    let dashboard_read_store =
+        Arc::new(PostgresDashboardOverviewReadStore::new(commerce_pool.clone()));
     let settlements_dashboard_read_store =
-        Arc::new(PostgresSettlementsDashboardReadStore::new(pool.clone()));
+        Arc::new(PostgresSettlementsDashboardReadStore::new(commerce_pool.clone()));
     let settings_store = Arc::new(PostgresSettingsStore::new(pool.clone()));
-    let usage_logs_read_store = Arc::new(PostgresUsageLogsReadStore::new(pool.clone()));
-    let gateway_traces_read_store = Arc::new(PostgresAppGatewayTracesReadStore::new(pool.clone()));
+    let usage_logs_read_store = Arc::new(PostgresUsageLogsReadStore::new(commerce_pool.clone()));
+    let gateway_traces_read_store =
+        Arc::new(PostgresAppGatewayTracesReadStore::new(commerce_pool.clone()));
     let app_notification_store = Arc::new(PostgresAppNotificationStore::new(pool.clone()));
     let app_chat_store = Arc::new(PostgresAppChatStore::new(pool.clone()));
     let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));
-    let app_routing_read_store = Arc::new(PostgresAppRoutingReadStore::new(pool.clone()));
+    let app_routing_read_store =
+        Arc::new(PostgresAppRoutingReadStore::new(commerce_pool.clone()));
     let app_routing_strategy_store = Arc::new(PostgresAppRoutingStrategyStore::new(pool.clone()));
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
     let api_key_runtime = Some(app_api_key_runtime_deps_for_postgres(
@@ -1493,7 +1506,7 @@ async fn postgres_model_ranking_schema_ready(pool: &PgPool) -> Result<bool, sqlx
         SELECT COUNT(1)
         FROM information_schema.tables
         WHERE table_schema = current_schema()
-          AND table_name IN ('ai_model', 'ai_usage', 'ai_model_rank_snapshot', 'ops_job_execution')
+          AND table_name IN ('ai_model', 'ai_metering_usage', 'ai_model_rank_snapshot', 'ops_job_execution')
         "#,
     )
     .fetch_one(pool)
@@ -1514,7 +1527,7 @@ async fn postgres_model_ranking_schema_ready(pool: &PgPool) -> Result<bool, sqlx
         SELECT COUNT(1)
         FROM information_schema.columns
         WHERE table_schema = current_schema()
-          AND table_name = 'ai_usage'
+          AND table_name = 'ai_metering_usage'
           AND column_name IN ('catalog_key', 'request_count', 'total_tokens', 'customer_charge_amount', 'occurred_at')
         "#,
     )

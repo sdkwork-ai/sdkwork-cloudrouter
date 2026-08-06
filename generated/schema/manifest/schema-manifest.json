@@ -1,8 +1,16 @@
 {
   "external_legacy_tables": [],
   "generated_tables": [
+    "ai_chat_context_snapshot",
+    "ai_chat_conversation",
+    "ai_chat_item",
+    "ai_chat_message",
+    "ai_chat_message_part",
+    "ai_chat_turn",
     "ai_config_change_event",
     "ai_config_version",
+    "ai_metering_request_trace",
+    "ai_metering_usage",
     "ai_model_mapping_rule",
     "ai_model_mapping_rule_binding",
     "ai_model_mapping_rule_item",
@@ -12,11 +20,12 @@
     "ai_pricing_rule",
     "ai_pricing_tier",
     "ai_quota_policy",
-    "ai_request_trace",
     "ai_routing_decision_log",
     "ai_routing_policy",
     "ai_routing_profile",
     "ai_routing_rule",
+    "ai_runtime_invocation",
+    "ai_runtime_usage_link",
     "ai_upstream_account",
     "ai_upstream_account_credential",
     "ai_upstream_account_group",
@@ -30,10 +39,10 @@
     "ai_upstream_supplier_endpoint",
     "ai_upstream_supplier_endpoint_health_state",
     "ai_upstream_supplier_resource",
-    "ai_usage",
     "iam_gateway_access_policy",
     "iam_gateway_api_key",
     "iam_gateway_api_key_account_group",
+    "iam_gateway_chain_policy",
     "iam_gateway_risk_rule",
     "ops_alert_event",
     "ops_audit_log",
@@ -44,7 +53,11 @@
     "ops_metric_snapshot",
     "ops_notification_delivery",
     "ops_notification_message",
-    "ops_notification_recipient"
+    "ops_notification_recipient",
+    "ops_referral_invite_code",
+    "ops_referral_relation",
+    "ops_referral_stat_snapshot",
+    "ops_referral_strategy"
   ],
   "routes": {
     "/": {
@@ -333,20 +346,20 @@
     "api_prefixes": {},
     "name": "sdkwork-cloudrouter",
     "registry_path": "docs/schema-registry/sdkwork-cloudrouter.tables.yaml",
-    "version": "0.3.0"
+    "version": "0.4.0"
   },
   "summary": {
     "api_surface_counts": {
-      "app": 53,
-      "backend": 63,
+      "app": 65,
+      "backend": 68,
       "openai_v1": 3,
-      "worker": 59
+      "worker": 71
     },
     "external_legacy_table_count": 0,
     "frontend_route_count": 18,
-    "generated_table_count": 44,
+    "generated_table_count": 57,
     "legacy_table_count": 0,
-    "table_count": 63
+    "table_count": 76
   },
   "tables": [
     {
@@ -936,6 +949,1662 @@
     {
       "api_surfaces": [
         "app",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "status",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "conversation_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "turn_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "runtime_invocation_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "snapshot_no",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "strategy",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "included_item_ids",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "excluded_item_ids",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "included_memory_ids",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "excluded_memory_ids",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "memory_pack",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "memory_token_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "provider_conversation_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "previous_response_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "input_token_estimate",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "truncation_reason",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "context_json",
+          "source": "explicit",
+          "type": "json"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ai",
+      "foreign_keys": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "conversation_id",
+            "turn_id"
+          ],
+          "name": "fk_ai_chat_context_snapshot_turn",
+          "references_columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "conversation_id",
+            "id"
+          ],
+          "references_table": "ai_chat_turn"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "runtime_invocation_id"
+          ],
+          "name": "fk_ai_chat_context_snapshot_invocation",
+          "references_columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "id"
+          ],
+          "references_table": "ai_runtime_invocation"
+        }
+      ],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "conversation_id",
+            "created_at",
+            "id"
+          ],
+          "name": "idx_ai_chat_context_snapshot_conversation_created",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "runtime_invocation_id",
+            "id"
+          ],
+          "name": "idx_ai_chat_context_snapshot_invocation",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "user_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ai_chat_context_snapshot",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "id"
+          ],
+          "name": "uk_ai_chat_context_snapshot_scope_id"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "uuid"
+          ],
+          "name": "uk_ai_chat_context_snapshot_scope_uuid"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "turn_id",
+            "snapshot_no"
+          ],
+          "name": "uk_ai_chat_context_snapshot_scope_turn_no"
+        }
+      ],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "data_scope",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "status",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "version",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "deleted_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "deleted_by",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "conversation_code",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "title",
+          "source": "explicit",
+          "type": "string(256)"
+        },
+        {
+          "name": "source_surface",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "default_provider",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "default_model",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "agent_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "agent_session_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "memory_space_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "last_message_preview",
+          "source": "explicit",
+          "type": "string(1024)"
+        },
+        {
+          "name": "message_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "turn_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "item_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "input_token_total",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "output_token_total",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "cached_token_total",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "reasoning_token_total",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "cost_amount_total",
+          "source": "explicit",
+          "type": "decimal"
+        },
+        {
+          "name": "currency",
+          "source": "explicit",
+          "type": "string(10)"
+        },
+        {
+          "name": "last_turn_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "last_item_id",
+          "source": "explicit",
+          "type": "int64"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ai",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "status",
+            "updated_at",
+            "id"
+          ],
+          "name": "idx_ai_chat_conversation_user_status_updated",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "user_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ai_chat_conversation",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "id"
+          ],
+          "name": "uk_ai_chat_conversation_scope_id"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "uuid"
+          ],
+          "name": "uk_ai_chat_conversation_scope_uuid"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "conversation_code"
+          ],
+          "name": "uk_ai_chat_conversation_scope_code"
+        }
+      ],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "conversation_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "turn_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "sequence_no",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "item_type",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "role",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "direction",
+          "source": "explicit",
+          "type": "string(16)"
+        },
+        {
+          "name": "status",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "content_text",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "content_json",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "provider",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "model",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "runtime_invocation_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "completed_at",
+          "source": "explicit",
+          "type": "instant"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ai",
+      "foreign_keys": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "conversation_id",
+            "turn_id"
+          ],
+          "name": "fk_ai_chat_item_turn",
+          "references_columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "conversation_id",
+            "id"
+          ],
+          "references_table": "ai_chat_turn"
+        }
+      ],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "conversation_id",
+            "turn_id",
+            "direction",
+            "role",
+            "status",
+            "sequence_no",
+            "id"
+          ],
+          "name": "idx_ai_chat_item_turn_direction_status",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "user_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ai_chat_item",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "id"
+          ],
+          "name": "uk_ai_chat_item_scope_id"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "uuid"
+          ],
+          "name": "uk_ai_chat_item_scope_uuid"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "conversation_id",
+            "turn_id",
+            "id"
+          ],
+          "name": "uk_ai_chat_item_scope_turn_id"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "conversation_id",
+            "sequence_no"
+          ],
+          "name": "uk_ai_chat_item_scope_conversation_sequence"
+        }
+      ],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "conversation_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "turn_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "item_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "message_no",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "role",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "message_kind",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "direction",
+          "source": "explicit",
+          "type": "string(16)"
+        },
+        {
+          "name": "status",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "content_text",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "content_json",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "model",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "provider",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "runtime",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "runtime_invocation_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "usage_link_id",
+          "source": "explicit",
+          "type": "string(64)"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ai",
+      "foreign_keys": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "conversation_id",
+            "turn_id",
+            "item_id"
+          ],
+          "name": "fk_ai_chat_message_item",
+          "references_columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "conversation_id",
+            "turn_id",
+            "id"
+          ],
+          "references_table": "ai_chat_item"
+        }
+      ],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "conversation_id",
+            "turn_id",
+            "role",
+            "direction",
+            "status",
+            "message_no",
+            "id"
+          ],
+          "name": "idx_ai_chat_message_turn_status",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "user_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ai_chat_message",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "id"
+          ],
+          "name": "uk_ai_chat_message_scope_id"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "uuid"
+          ],
+          "name": "uk_ai_chat_message_scope_uuid"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "item_id",
+            "id"
+          ],
+          "name": "uk_ai_chat_message_scope_item_id"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "conversation_id",
+            "message_no"
+          ],
+          "name": "uk_ai_chat_message_scope_conversation_no"
+        }
+      ],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "message_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "item_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "part_no",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "part_type",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "text_content",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "json_content",
+          "source": "explicit",
+          "type": "json"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ai",
+      "foreign_keys": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "item_id",
+            "message_id"
+          ],
+          "name": "fk_ai_chat_message_part_message_item",
+          "references_columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "item_id",
+            "id"
+          ],
+          "references_table": "ai_chat_message"
+        }
+      ],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "item_id",
+            "message_id",
+            "part_no",
+            "id"
+          ],
+          "name": "idx_ai_chat_message_part_item",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "user_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ai_chat_message_part",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "id"
+          ],
+          "name": "uk_ai_chat_message_part_scope_id"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "uuid"
+          ],
+          "name": "uk_ai_chat_message_part_scope_uuid"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "message_id",
+            "part_no"
+          ],
+          "name": "uk_ai_chat_message_part_scope_message_no"
+        }
+      ],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "conversation_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "turn_no",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "mode",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "status",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "completed_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "provider",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "model",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "agent_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "agent_session_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "final_output_item_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "input_token_total",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "output_token_total",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "cached_token_total",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "reasoning_token_total",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "cost_amount",
+          "source": "explicit",
+          "type": "decimal"
+        },
+        {
+          "name": "currency",
+          "source": "explicit",
+          "type": "string(10)"
+        },
+        {
+          "name": "response_snapshot",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "usage_snapshot",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "context_snapshot_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "context_snapshot_count",
+          "source": "explicit",
+          "type": "int64"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ai",
+      "foreign_keys": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "conversation_id"
+          ],
+          "name": "fk_ai_chat_turn_conversation",
+          "references_columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "id"
+          ],
+          "references_table": "ai_chat_conversation"
+        }
+      ],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "conversation_id",
+            "created_at",
+            "id"
+          ],
+          "name": "idx_ai_chat_turn_conversation_created",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "conversation_id",
+            "status",
+            "updated_at",
+            "id"
+          ],
+          "name": "idx_ai_chat_turn_conversation_status",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "user_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ai_chat_turn",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "id"
+          ],
+          "name": "uk_ai_chat_turn_scope_id"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "uuid"
+          ],
+          "name": "uk_ai_chat_turn_scope_uuid"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "conversation_id",
+            "id"
+          ],
+          "name": "uk_ai_chat_turn_scope_conversation_id"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "conversation_id",
+            "turn_no"
+          ],
+          "name": "uk_ai_chat_turn_scope_conversation_no"
+        }
+      ],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "app",
         "backend",
         "worker"
       ],
@@ -1493,6 +3162,1198 @@
         }
       ],
       "write_owner": "ai-routing-service"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "event_log",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "request_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "trace_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "payload_hash",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "retention_until",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "legal_hold",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "attempt_no",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "decision_log_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "api_key_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "api_key_name_snapshot",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "account_group_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "account_group_snapshot",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "owner_type",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "owner_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "owner_name_snapshot",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "supplier_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "account_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "account_name_snapshot",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "requested_model",
+          "source": "explicit",
+          "type": "string(256)"
+        },
+        {
+          "name": "requested_model_catalog_key",
+          "source": "explicit",
+          "type": "string(256)"
+        },
+        {
+          "name": "provider_model",
+          "source": "explicit",
+          "type": "string(256)"
+        },
+        {
+          "name": "provider_native_model",
+          "source": "explicit",
+          "type": "string(256)"
+        },
+        {
+          "name": "gateway_instance_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "gateway_instance_code_snapshot",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "gateway_region_code_snapshot",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "gateway_node_name_snapshot",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "region_code",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "endpoint",
+          "source": "explicit",
+          "type": "string(256)"
+        },
+        {
+          "name": "request_path",
+          "source": "explicit",
+          "type": "string(256)"
+        },
+        {
+          "name": "http_method",
+          "source": "explicit",
+          "type": "string(16)"
+        },
+        {
+          "name": "http_status",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "provider_error_code",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "error_type",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "started_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "ended_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "latency_ms",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "ttft_ms",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "streaming",
+          "source": "explicit",
+          "type": "bool"
+        },
+        {
+          "name": "request_bytes",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "response_bytes",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "prompt_tokens",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "completion_tokens",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "cached_tokens",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "total_tokens",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "request_payload_hash",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "response_payload_hash",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "error_message_masked",
+          "source": "explicit",
+          "type": "string(1024)"
+        },
+        {
+          "name": "reasoning_effort",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "client_ip_hash",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "client_ip_masked",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "client_ip_region",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "user_agent_hash",
+          "source": "explicit",
+          "type": "string(128)"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "event_log",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "request_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "trace_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "payload_hash",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "retention_until",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "legal_hold",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "event_log",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ai",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "trace_id"
+          ],
+          "name": "idx_ai_metering_request_trace_tenant_trace",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "api_key_id",
+            "started_at",
+            "id"
+          ],
+          "name": "idx_ai_metering_request_trace_api_key_started",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "requested_model",
+            "started_at",
+            "id"
+          ],
+          "name": "idx_ai_metering_request_trace_model_started",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "status",
+            "started_at",
+            "id"
+          ],
+          "name": "idx_ai_metering_request_trace_tenant_status_started",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "status",
+            "started_at",
+            "id"
+          ],
+          "name": "idx_ai_metering_request_trace_user_status_started",
+          "unique": false
+        },
+        {
+          "columns": [
+            "retention_until",
+            "id"
+          ],
+          "name": "idx_ai_metering_request_trace_retention",
+          "unique": false
+        }
+      ],
+      "lifecycle": {
+        "cleanup": {
+          "archive_before_delete": true,
+          "authorization": {
+            "audit_required": true,
+            "mode": "service_identity",
+            "service": "router-service"
+          },
+          "batch_size": 1000,
+          "candidate_recheck": {
+            "key_columns": [
+              "tenant_id",
+              "organization_id",
+              "id"
+            ],
+            "operations": [
+              "archive",
+              "delete"
+            ],
+            "required": true
+          },
+          "dry_run": {
+            "default": true,
+            "supported": true
+          },
+          "monitoring": {
+            "alerts": [
+              "retention_lag",
+              "retry_exhausted"
+            ],
+            "metrics": [
+              "cleanup_candidates",
+              "cleanup_archived",
+              "cleanup_deleted",
+              "cleanup_skipped_legal_hold",
+              "cleanup_failures"
+            ]
+          },
+          "owner": "router-service",
+          "predicate": "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false",
+          "retry": {
+            "backoff": {
+              "initial": "1s",
+              "maximum": "5m",
+              "strategy": "exponential"
+            },
+            "max_attempts": 5
+          },
+          "scope": "platform_cross_tenant"
+        },
+        "retention": {
+          "archive_retention": "5y",
+          "grace_period": "24h",
+          "online_retention": "12mo"
+        },
+        "storage_strategy": "indexed_append_only"
+      },
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "event_log",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ai_metering_request_trace",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "request_id",
+            "attempt_no"
+          ],
+          "name": "uk_ai_metering_request_trace_request_attempt"
+        }
+      ],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "ledger_source_fact",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "request_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "trace_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "payload_hash",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "idempotency_key",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "retention_until",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "legal_hold",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "decision_log_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "api_key_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "api_key_name_snapshot",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "account_group_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "account_group_snapshot",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "owner_type",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "owner_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "owner_name_snapshot",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "catalog_key",
+          "source": "explicit",
+          "type": "string(256)"
+        },
+        {
+          "name": "requested_model_catalog_key",
+          "source": "explicit",
+          "type": "string(256)"
+        },
+        {
+          "name": "model",
+          "source": "explicit",
+          "type": "string(256)"
+        },
+        {
+          "name": "provider_native_model",
+          "source": "explicit",
+          "type": "string(256)"
+        },
+        {
+          "name": "region_code",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "supplier_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "account_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "modality",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "usage_type",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "billing_type",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "billing_mode",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "billing_meter_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "billing_meter_code",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "billing_tier",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "billable_quantity",
+          "source": "explicit",
+          "type": "decimal"
+        },
+        {
+          "name": "billable_unit",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "prompt_tokens",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "completion_tokens",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "cached_tokens",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "total_tokens",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "request_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "result_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "item_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "character_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "image_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "audio_seconds",
+          "source": "explicit",
+          "type": "decimal"
+        },
+        {
+          "name": "video_seconds",
+          "source": "explicit",
+          "type": "decimal"
+        },
+        {
+          "name": "storage_byte_hours",
+          "source": "explicit",
+          "type": "decimal"
+        },
+        {
+          "name": "bandwidth_bytes",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "base_input_unit_price",
+          "source": "explicit",
+          "type": "decimal"
+        },
+        {
+          "name": "base_output_unit_price",
+          "source": "explicit",
+          "type": "decimal"
+        },
+        {
+          "name": "cache_read_unit_price",
+          "source": "explicit",
+          "type": "decimal"
+        },
+        {
+          "name": "rate_multiplier",
+          "source": "explicit",
+          "type": "decimal"
+        },
+        {
+          "name": "reference_multiplier",
+          "source": "explicit",
+          "type": "decimal"
+        },
+        {
+          "name": "official_reference_amount",
+          "source": "explicit",
+          "type": "decimal"
+        },
+        {
+          "name": "upstream_cost_amount",
+          "source": "explicit",
+          "type": "decimal"
+        },
+        {
+          "name": "customer_charge_amount",
+          "source": "explicit",
+          "type": "decimal"
+        },
+        {
+          "name": "currency",
+          "source": "explicit",
+          "type": "string(10)"
+        },
+        {
+          "name": "pricing_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "pricing_plan_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "pricing_plan_code",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "pricing_rule_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "pricing_tier_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "pricing_snapshot",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "reasoning_effort",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "occurred_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "settlement_status",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "settlement_id",
+          "source": "explicit",
+          "type": "int64"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "ledger_source_fact",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "request_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "trace_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "payload_hash",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "idempotency_key",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "retention_until",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "legal_hold",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "ledger_source_fact",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L3",
+      "domain": "ai",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "owner_type",
+            "owner_id",
+            "occurred_at",
+            "id"
+          ],
+          "name": "idx_ai_metering_usage_tenant_owner_occurred",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "api_key_id",
+            "occurred_at",
+            "id"
+          ],
+          "name": "idx_ai_metering_usage_api_key_occurred",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "catalog_key",
+            "occurred_at",
+            "id"
+          ],
+          "name": "idx_ai_metering_usage_model_occurred",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "pricing_plan_id",
+            "occurred_at",
+            "id"
+          ],
+          "name": "idx_ai_metering_usage_pricing_plan_occurred",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "billing_meter_code",
+            "occurred_at",
+            "id"
+          ],
+          "name": "idx_ai_metering_usage_meter_occurred",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "settlement_status",
+            "occurred_at",
+            "id"
+          ],
+          "name": "idx_ai_metering_usage_settlement_status",
+          "unique": false
+        },
+        {
+          "columns": [
+            "retention_until",
+            "id"
+          ],
+          "name": "idx_ai_metering_usage_retention",
+          "unique": false
+        }
+      ],
+      "lifecycle": {
+        "cleanup": {
+          "archive_before_delete": true,
+          "authorization": {
+            "audit_required": true,
+            "mode": "service_identity",
+            "service": "router-service"
+          },
+          "batch_size": 1000,
+          "candidate_recheck": {
+            "key_columns": [
+              "tenant_id",
+              "organization_id",
+              "id"
+            ],
+            "operations": [
+              "archive",
+              "delete"
+            ],
+            "required": true
+          },
+          "dry_run": {
+            "default": true,
+            "supported": true
+          },
+          "monitoring": {
+            "alerts": [
+              "retention_lag",
+              "retry_exhausted"
+            ],
+            "metrics": [
+              "cleanup_candidates",
+              "cleanup_archived",
+              "cleanup_deleted",
+              "cleanup_skipped_legal_hold",
+              "cleanup_failures"
+            ]
+          },
+          "owner": "router-service",
+          "predicate": "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false",
+          "retry": {
+            "backoff": {
+              "initial": "1s",
+              "maximum": "5m",
+              "strategy": "exponential"
+            },
+            "max_attempts": 5
+          },
+          "scope": "platform_cross_tenant"
+        },
+        "retention": {
+          "archive_retention": "5y",
+          "grace_period": "24h",
+          "online_retention": "12mo"
+        },
+        "storage_strategy": "indexed_append_only"
+      },
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "ledger_source_fact",
+      "projection_policy": null,
+      "security": null,
+      "semantic_contracts": {
+        "ranking_refresh_source_fact": {
+          "aggregation_grain": [
+            "tenant_id",
+            "organization_id",
+            "catalog_key"
+          ],
+          "time_field": "occurred_at",
+          "window_predicate": "half_open_utc"
+        }
+      },
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ai_metering_usage",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "id"
+          ],
+          "name": "uk_ai_metering_usage_scope_id"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "idempotency_key"
+          ],
+          "name": "uk_ai_metering_usage_idempotency"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "request_id",
+            "usage_type"
+          ],
+          "name": "uk_ai_metering_usage_request"
+        }
+      ],
+      "write_owner": "router-service"
     },
     {
       "api_surfaces": [
@@ -5320,12 +8181,17 @@
           "type": "string(64)"
         },
         {
+          "name": "supplier_code",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
           "name": "provider_code",
           "source": "explicit",
           "type": "string(64)"
         },
         {
-          "name": "channel_id",
+          "name": "account_id",
           "source": "explicit",
           "type": "int64"
         },
@@ -5677,15 +8543,15 @@
           "columns": [
             "tenant_id",
             "organization_id",
-            "provider_code",
-            "channel_id",
+            "supplier_code",
+            "account_id",
             "catalog_key",
             "price_side",
             "status",
             "effective_from",
             "id"
           ],
-          "name": "idx_ai_model_pricing_provider_channel",
+          "name": "idx_ai_model_pricing_supplier_account",
           "unique": false
         },
         {
@@ -8723,551 +11589,6 @@
     },
     {
       "api_surfaces": [
-        "app",
-        "backend",
-        "worker"
-      ],
-      "column_types": {},
-      "columns": [
-        {
-          "group": "event_log",
-          "name": "id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "uuid",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "tenant_id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "organization_id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "user_id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "request_id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "trace_id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "payload_hash",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "status",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "created_at",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "retention_until",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "legal_hold",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "metadata",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "name": "attempt_no",
-          "source": "explicit",
-          "type": "int32"
-        },
-        {
-          "name": "decision_log_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "api_key_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "api_key_name_snapshot",
-          "source": "explicit",
-          "type": "string(128)"
-        },
-        {
-          "name": "account_group_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "account_group_snapshot",
-          "source": "explicit",
-          "type": "string(128)"
-        },
-        {
-          "name": "owner_type",
-          "source": "explicit",
-          "type": "int32"
-        },
-        {
-          "name": "owner_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "owner_name_snapshot",
-          "source": "explicit",
-          "type": "string(128)"
-        },
-        {
-          "name": "supplier_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "account_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "account_name_snapshot",
-          "source": "explicit",
-          "type": "string(128)"
-        },
-        {
-          "name": "requested_model",
-          "source": "explicit",
-          "type": "string(256)"
-        },
-        {
-          "name": "requested_model_catalog_key",
-          "source": "explicit",
-          "type": "string(256)"
-        },
-        {
-          "name": "provider_model",
-          "source": "explicit",
-          "type": "string(256)"
-        },
-        {
-          "name": "provider_native_model",
-          "source": "explicit",
-          "type": "string(256)"
-        },
-        {
-          "name": "gateway_instance_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "gateway_instance_code_snapshot",
-          "source": "explicit",
-          "type": "string(128)"
-        },
-        {
-          "name": "gateway_region_code_snapshot",
-          "source": "explicit",
-          "type": "string(64)"
-        },
-        {
-          "name": "gateway_node_name_snapshot",
-          "source": "explicit",
-          "type": "string(128)"
-        },
-        {
-          "name": "region_code",
-          "source": "explicit",
-          "type": "string(64)"
-        },
-        {
-          "name": "endpoint",
-          "source": "explicit",
-          "type": "string(256)"
-        },
-        {
-          "name": "request_path",
-          "source": "explicit",
-          "type": "string(256)"
-        },
-        {
-          "name": "http_method",
-          "source": "explicit",
-          "type": "string(16)"
-        },
-        {
-          "name": "http_status",
-          "source": "explicit",
-          "type": "int32"
-        },
-        {
-          "name": "provider_error_code",
-          "source": "explicit",
-          "type": "string(128)"
-        },
-        {
-          "name": "error_type",
-          "source": "explicit",
-          "type": "string(128)"
-        },
-        {
-          "name": "started_at",
-          "source": "explicit",
-          "type": "instant"
-        },
-        {
-          "name": "ended_at",
-          "source": "explicit",
-          "type": "instant"
-        },
-        {
-          "name": "latency_ms",
-          "source": "explicit",
-          "type": "int32"
-        },
-        {
-          "name": "ttft_ms",
-          "source": "explicit",
-          "type": "int32"
-        },
-        {
-          "name": "streaming",
-          "source": "explicit",
-          "type": "bool"
-        },
-        {
-          "name": "request_bytes",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "response_bytes",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "prompt_tokens",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "completion_tokens",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "cached_tokens",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "total_tokens",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "request_payload_hash",
-          "source": "explicit",
-          "type": "string(128)"
-        },
-        {
-          "name": "response_payload_hash",
-          "source": "explicit",
-          "type": "string(128)"
-        },
-        {
-          "name": "error_message_masked",
-          "source": "explicit",
-          "type": "string(1024)"
-        },
-        {
-          "name": "reasoning_effort",
-          "source": "explicit",
-          "type": "string(64)"
-        },
-        {
-          "name": "client_ip_hash",
-          "source": "explicit",
-          "type": "string(128)"
-        },
-        {
-          "name": "client_ip_masked",
-          "source": "explicit",
-          "type": "string(64)"
-        },
-        {
-          "name": "client_ip_region",
-          "source": "explicit",
-          "type": "string(128)"
-        },
-        {
-          "name": "user_agent_hash",
-          "source": "explicit",
-          "type": "string(128)"
-        }
-      ],
-      "common_columns": [
-        {
-          "group": "event_log",
-          "name": "id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "uuid",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "tenant_id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "organization_id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "user_id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "request_id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "trace_id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "payload_hash",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "status",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "created_at",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "retention_until",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "legal_hold",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "event_log",
-          "name": "metadata",
-          "source": "common",
-          "type": "common"
-        }
-      ],
-      "compliance_level": "L2",
-      "domain": "ai",
-      "foreign_keys": [],
-      "frontend_routes": [],
-      "generated_by_this_project": true,
-      "indexes": [
-        {
-          "columns": [
-            "tenant_id",
-            "organization_id",
-            "trace_id"
-          ],
-          "name": "idx_ai_request_trace_tenant_trace",
-          "unique": false
-        },
-        {
-          "columns": [
-            "tenant_id",
-            "organization_id",
-            "api_key_id",
-            "started_at",
-            "id"
-          ],
-          "name": "idx_ai_request_trace_api_key_started",
-          "unique": false
-        },
-        {
-          "columns": [
-            "tenant_id",
-            "organization_id",
-            "requested_model",
-            "started_at",
-            "id"
-          ],
-          "name": "idx_ai_request_trace_model_started",
-          "unique": false
-        },
-        {
-          "columns": [
-            "tenant_id",
-            "organization_id",
-            "status",
-            "started_at",
-            "id"
-          ],
-          "name": "idx_ai_request_trace_tenant_status_started",
-          "unique": false
-        },
-        {
-          "columns": [
-            "tenant_id",
-            "organization_id",
-            "user_id",
-            "status",
-            "started_at",
-            "id"
-          ],
-          "name": "idx_ai_request_trace_user_status_started",
-          "unique": false
-        },
-        {
-          "columns": [
-            "retention_until",
-            "id"
-          ],
-          "name": "idx_ai_request_trace_retention",
-          "unique": false
-        }
-      ],
-      "lifecycle": {
-        "cleanup": {
-          "archive_before_delete": true,
-          "authorization": {
-            "audit_required": true,
-            "mode": "service_identity",
-            "service": "router-service"
-          },
-          "batch_size": 1000,
-          "candidate_recheck": {
-            "key_columns": [
-              "tenant_id",
-              "organization_id",
-              "id"
-            ],
-            "operations": [
-              "archive",
-              "delete"
-            ],
-            "required": true
-          },
-          "dry_run": {
-            "default": true,
-            "supported": true
-          },
-          "monitoring": {
-            "alerts": [
-              "retention_lag",
-              "retry_exhausted"
-            ],
-            "metrics": [
-              "cleanup_candidates",
-              "cleanup_archived",
-              "cleanup_deleted",
-              "cleanup_skipped_legal_hold",
-              "cleanup_failures"
-            ]
-          },
-          "owner": "router-service",
-          "predicate": "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false",
-          "retry": {
-            "backoff": {
-              "initial": "1s",
-              "maximum": "5m",
-              "strategy": "exponential"
-            },
-            "max_attempts": 5
-          },
-          "scope": "platform_cross_tenant"
-        },
-        "retention": {
-          "archive_retention": "5y",
-          "grace_period": "24h",
-          "online_retention": "12mo"
-        },
-        "storage_strategy": "indexed_append_only"
-      },
-      "not_null_columns": [],
-      "physical_columns": null,
-      "profile": "event_log",
-      "projection_policy": null,
-      "security": null,
-      "source_refs": [],
-      "source_tables": [],
-      "system_of_record": true,
-      "table": "ai_request_trace",
-      "unique_constraints": [
-        {
-          "columns": [
-            "tenant_id",
-            "organization_id",
-            "request_id",
-            "attempt_no"
-          ],
-          "name": "uk_ai_request_trace_request_attempt"
-        }
-      ],
-      "write_owner": "router-service"
-    },
-    {
-      "api_surfaces": [
         "backend",
         "worker"
       ],
@@ -11218,6 +13539,643 @@
     {
       "api_surfaces": [
         "app",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "conversation_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "chat_turn_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "chat_item_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "agent_session_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "agent_run_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "agent_run_step_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "invocation_no",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "invocation_type",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "runtime",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "endpoint",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "attempt_no",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "status",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "request_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "trace_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "provider_response_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "provider_session_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "provider_conversation_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "provider_step_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "model",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "provider",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "tool_name",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "tool_call_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "cwd",
+          "source": "explicit",
+          "type": "string(2048)"
+        },
+        {
+          "name": "sandbox_policy",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "approval_policy",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "permission_mode",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "streaming",
+          "source": "explicit",
+          "type": "bool"
+        },
+        {
+          "name": "started_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "completed_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "latency_ms",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "ttft_ms",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "exit_code",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "finish_reason",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "error_type",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "error_code",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "error_message_masked",
+          "source": "explicit",
+          "type": "string(1024)"
+        },
+        {
+          "name": "request_json",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "response_json",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "usage_json",
+          "source": "explicit",
+          "type": "json"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ai",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "created_at",
+            "id"
+          ],
+          "name": "idx_ai_runtime_invocation_user_created",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "conversation_id",
+            "chat_turn_id",
+            "created_at",
+            "id"
+          ],
+          "name": "idx_ai_runtime_invocation_chat_created",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "runtime",
+            "status",
+            "created_at",
+            "id"
+          ],
+          "name": "idx_ai_runtime_invocation_runtime_status",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "user_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ai_runtime_invocation",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "id"
+          ],
+          "name": "uk_ai_runtime_invocation_scope_id"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "uuid"
+          ],
+          "name": "uk_ai_runtime_invocation_scope_uuid"
+        }
+      ],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "conversation_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "chat_turn_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "message_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "runtime_invocation_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "usage_fact_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "usage_type",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "provider",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "model",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "input_tokens",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "output_tokens",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "cached_tokens",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "reasoning_tokens",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "total_tokens",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "cost_amount",
+          "source": "explicit",
+          "type": "decimal"
+        },
+        {
+          "name": "currency",
+          "source": "explicit",
+          "type": "string(10)"
+        },
+        {
+          "name": "occurred_at",
+          "source": "explicit",
+          "type": "instant"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L3",
+      "domain": "ai",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "message_id",
+            "occurred_at",
+            "id"
+          ],
+          "name": "idx_ai_runtime_usage_link_message",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "runtime_invocation_id",
+            "occurred_at",
+            "id"
+          ],
+          "name": "idx_ai_runtime_usage_link_invocation",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "usage_fact_id",
+            "id"
+          ],
+          "name": "idx_ai_runtime_usage_link_usage_fact",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "user_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ai_runtime_usage_link",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "id"
+          ],
+          "name": "uk_ai_runtime_usage_link_scope_id"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "uuid"
+          ],
+          "name": "uk_ai_runtime_usage_link_scope_uuid"
+        }
+      ],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "app",
         "backend",
         "worker"
       ],
@@ -12090,6 +15048,16 @@
           "name": "allowed_origin",
           "source": "explicit",
           "type": "json"
+        },
+        {
+          "name": "vendor_code",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "modalities",
+          "source": "explicit",
+          "type": "json"
         }
       ],
       "common_columns": [
@@ -12202,6 +15170,17 @@
             "id"
           ],
           "name": "idx_ai_upstream_account_group_pricing",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "vendor_code",
+            "status",
+            "id"
+          ],
+          "name": "idx_ai_upstream_account_group_vendor",
           "unique": false
         }
       ],
@@ -12800,7 +15779,7 @@
         "ai_upstream_account_group",
         "ai_upstream_account_group_member",
         "ai_upstream_account",
-        "ai_usage"
+        "ai_metering_usage"
       ],
       "system_of_record": false,
       "table": "ai_upstream_account_group_metric_snapshot",
@@ -14924,653 +17903,6 @@
     },
     {
       "api_surfaces": [
-        "app",
-        "backend",
-        "worker"
-      ],
-      "column_types": {},
-      "columns": [
-        {
-          "group": "ledger_source_fact",
-          "name": "id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "uuid",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "tenant_id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "organization_id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "user_id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "request_id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "trace_id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "payload_hash",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "idempotency_key",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "status",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "created_at",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "retention_until",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "legal_hold",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "metadata",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "name": "decision_log_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "api_key_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "api_key_name_snapshot",
-          "source": "explicit",
-          "type": "string(128)"
-        },
-        {
-          "name": "account_group_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "account_group_snapshot",
-          "source": "explicit",
-          "type": "string(128)"
-        },
-        {
-          "name": "owner_type",
-          "source": "explicit",
-          "type": "int32"
-        },
-        {
-          "name": "owner_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "owner_name_snapshot",
-          "source": "explicit",
-          "type": "string(128)"
-        },
-        {
-          "name": "catalog_key",
-          "source": "explicit",
-          "type": "string(256)"
-        },
-        {
-          "name": "requested_model_catalog_key",
-          "source": "explicit",
-          "type": "string(256)"
-        },
-        {
-          "name": "model",
-          "source": "explicit",
-          "type": "string(256)"
-        },
-        {
-          "name": "provider_native_model",
-          "source": "explicit",
-          "type": "string(256)"
-        },
-        {
-          "name": "region_code",
-          "source": "explicit",
-          "type": "string(64)"
-        },
-        {
-          "name": "supplier_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "account_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "modality",
-          "source": "explicit",
-          "type": "int32"
-        },
-        {
-          "name": "usage_type",
-          "source": "explicit",
-          "type": "int32"
-        },
-        {
-          "name": "billing_type",
-          "source": "explicit",
-          "type": "int32"
-        },
-        {
-          "name": "billing_mode",
-          "source": "explicit",
-          "type": "int32"
-        },
-        {
-          "name": "billing_meter_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "billing_meter_code",
-          "source": "explicit",
-          "type": "string(64)"
-        },
-        {
-          "name": "billing_tier",
-          "source": "explicit",
-          "type": "string(64)"
-        },
-        {
-          "name": "billable_quantity",
-          "source": "explicit",
-          "type": "decimal"
-        },
-        {
-          "name": "billable_unit",
-          "source": "explicit",
-          "type": "int32"
-        },
-        {
-          "name": "prompt_tokens",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "completion_tokens",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "cached_tokens",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "total_tokens",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "request_count",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "result_count",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "item_count",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "character_count",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "image_count",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "audio_seconds",
-          "source": "explicit",
-          "type": "decimal"
-        },
-        {
-          "name": "video_seconds",
-          "source": "explicit",
-          "type": "decimal"
-        },
-        {
-          "name": "storage_byte_hours",
-          "source": "explicit",
-          "type": "decimal"
-        },
-        {
-          "name": "bandwidth_bytes",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "base_input_unit_price",
-          "source": "explicit",
-          "type": "decimal"
-        },
-        {
-          "name": "base_output_unit_price",
-          "source": "explicit",
-          "type": "decimal"
-        },
-        {
-          "name": "cache_read_unit_price",
-          "source": "explicit",
-          "type": "decimal"
-        },
-        {
-          "name": "rate_multiplier",
-          "source": "explicit",
-          "type": "decimal"
-        },
-        {
-          "name": "reference_multiplier",
-          "source": "explicit",
-          "type": "decimal"
-        },
-        {
-          "name": "official_reference_amount",
-          "source": "explicit",
-          "type": "decimal"
-        },
-        {
-          "name": "upstream_cost_amount",
-          "source": "explicit",
-          "type": "decimal"
-        },
-        {
-          "name": "customer_charge_amount",
-          "source": "explicit",
-          "type": "decimal"
-        },
-        {
-          "name": "currency",
-          "source": "explicit",
-          "type": "string(10)"
-        },
-        {
-          "name": "pricing_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "pricing_plan_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "pricing_plan_code",
-          "source": "explicit",
-          "type": "string(64)"
-        },
-        {
-          "name": "pricing_rule_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "pricing_tier_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "pricing_snapshot",
-          "source": "explicit",
-          "type": "json"
-        },
-        {
-          "name": "reasoning_effort",
-          "source": "explicit",
-          "type": "string(64)"
-        },
-        {
-          "name": "occurred_at",
-          "source": "explicit",
-          "type": "instant"
-        },
-        {
-          "name": "settlement_status",
-          "source": "explicit",
-          "type": "int32"
-        },
-        {
-          "name": "settlement_id",
-          "source": "explicit",
-          "type": "int64"
-        }
-      ],
-      "common_columns": [
-        {
-          "group": "ledger_source_fact",
-          "name": "id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "uuid",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "tenant_id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "organization_id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "user_id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "request_id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "trace_id",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "payload_hash",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "idempotency_key",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "status",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "created_at",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "retention_until",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "legal_hold",
-          "source": "common",
-          "type": "common"
-        },
-        {
-          "group": "ledger_source_fact",
-          "name": "metadata",
-          "source": "common",
-          "type": "common"
-        }
-      ],
-      "compliance_level": "L3",
-      "domain": "ai",
-      "foreign_keys": [],
-      "frontend_routes": [],
-      "generated_by_this_project": true,
-      "indexes": [
-        {
-          "columns": [
-            "tenant_id",
-            "organization_id",
-            "owner_type",
-            "owner_id",
-            "occurred_at",
-            "id"
-          ],
-          "name": "idx_ai_usage_tenant_owner_occurred",
-          "unique": false
-        },
-        {
-          "columns": [
-            "tenant_id",
-            "organization_id",
-            "api_key_id",
-            "occurred_at",
-            "id"
-          ],
-          "name": "idx_ai_usage_api_key_occurred",
-          "unique": false
-        },
-        {
-          "columns": [
-            "tenant_id",
-            "organization_id",
-            "catalog_key",
-            "occurred_at",
-            "id"
-          ],
-          "name": "idx_ai_usage_model_occurred",
-          "unique": false
-        },
-        {
-          "columns": [
-            "tenant_id",
-            "organization_id",
-            "pricing_plan_id",
-            "occurred_at",
-            "id"
-          ],
-          "name": "idx_ai_usage_pricing_plan_occurred",
-          "unique": false
-        },
-        {
-          "columns": [
-            "tenant_id",
-            "organization_id",
-            "billing_meter_code",
-            "occurred_at",
-            "id"
-          ],
-          "name": "idx_ai_usage_meter_occurred",
-          "unique": false
-        },
-        {
-          "columns": [
-            "tenant_id",
-            "organization_id",
-            "settlement_status",
-            "occurred_at",
-            "id"
-          ],
-          "name": "idx_ai_usage_settlement_status",
-          "unique": false
-        },
-        {
-          "columns": [
-            "retention_until",
-            "id"
-          ],
-          "name": "idx_ai_usage_retention",
-          "unique": false
-        }
-      ],
-      "lifecycle": {
-        "cleanup": {
-          "archive_before_delete": true,
-          "authorization": {
-            "audit_required": true,
-            "mode": "service_identity",
-            "service": "router-service"
-          },
-          "batch_size": 1000,
-          "candidate_recheck": {
-            "key_columns": [
-              "tenant_id",
-              "organization_id",
-              "id"
-            ],
-            "operations": [
-              "archive",
-              "delete"
-            ],
-            "required": true
-          },
-          "dry_run": {
-            "default": true,
-            "supported": true
-          },
-          "monitoring": {
-            "alerts": [
-              "retention_lag",
-              "retry_exhausted"
-            ],
-            "metrics": [
-              "cleanup_candidates",
-              "cleanup_archived",
-              "cleanup_deleted",
-              "cleanup_skipped_legal_hold",
-              "cleanup_failures"
-            ]
-          },
-          "owner": "router-service",
-          "predicate": "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false",
-          "retry": {
-            "backoff": {
-              "initial": "1s",
-              "maximum": "5m",
-              "strategy": "exponential"
-            },
-            "max_attempts": 5
-          },
-          "scope": "platform_cross_tenant"
-        },
-        "retention": {
-          "archive_retention": "5y",
-          "grace_period": "24h",
-          "online_retention": "12mo"
-        },
-        "storage_strategy": "indexed_append_only"
-      },
-      "not_null_columns": [],
-      "physical_columns": null,
-      "profile": "ledger_source_fact",
-      "projection_policy": null,
-      "security": null,
-      "semantic_contracts": {
-        "ranking_refresh_source_fact": {
-          "aggregation_grain": [
-            "tenant_id",
-            "organization_id",
-            "catalog_key"
-          ],
-          "time_field": "occurred_at",
-          "window_predicate": "half_open_utc"
-        }
-      },
-      "source_refs": [],
-      "source_tables": [],
-      "system_of_record": true,
-      "table": "ai_usage",
-      "unique_constraints": [
-        {
-          "columns": [
-            "tenant_id",
-            "organization_id",
-            "id"
-          ],
-          "name": "uk_ai_usage_scope_id"
-        },
-        {
-          "columns": [
-            "tenant_id",
-            "organization_id",
-            "idempotency_key"
-          ],
-          "name": "uk_ai_usage_idempotency"
-        },
-        {
-          "columns": [
-            "tenant_id",
-            "organization_id",
-            "request_id",
-            "usage_type"
-          ],
-          "name": "uk_ai_usage_request"
-        }
-      ],
-      "write_owner": "router-service"
-    },
-    {
-      "api_surfaces": [
         "backend",
         "worker"
       ],
@@ -16480,6 +18812,26 @@
           "type": "int64"
         },
         {
+          "name": "key_secret_mode",
+          "source": "explicit",
+          "type": "string(16)"
+        },
+        {
+          "name": "key_secret_plaintext",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "key_secret_ciphertext",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "key_secret_key_id",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
           "name": "idempotency_key",
           "source": "explicit",
           "type": "string(128)"
@@ -16979,6 +19331,233 @@
             "binding_role"
           ],
           "name": "uk_iam_gateway_api_key_account_group_binding"
+        }
+      ],
+      "write_owner": "gateway-iam-service"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "policy_name",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "scope_type",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "scope_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "payload",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "effective_from",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "effective_to",
+          "source": "explicit",
+          "type": "instant"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "iam_gateway",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "scope_type",
+            "scope_id",
+            "status"
+          ],
+          "name": "idx_iam_gateway_chain_policy_scope_status",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "tenant_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "iam_gateway_chain_policy",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "scope_type",
+            "scope_id",
+            "status"
+          ],
+          "name": "uk_iam_gateway_chain_policy_scope"
         }
       ],
       "write_owner": "gateway-iam-service"
@@ -19174,7 +21753,7 @@
               "sourceTables"
             ],
             "source_tables": [
-              "ai_usage",
+              "ai_metering_usage",
               "ai_model",
               "ai_model_rank_snapshot"
             ]
@@ -20219,6 +22798,491 @@
       "source_tables": [],
       "system_of_record": true,
       "table": "ops_notification_recipient",
+      "unique_constraints": [],
+      "write_owner": "cloudrouter-ops-runtime"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "name": "id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "tenant_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "organization_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "user_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "invite_code",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "status",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "created_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "updated_at",
+          "source": "explicit",
+          "type": "instant"
+        }
+      ],
+      "common_columns": [],
+      "compliance_level": "L2",
+      "domain": "ops",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id"
+          ],
+          "name": "uk_ops_referral_invite_code_tenant_user",
+          "unique": true
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "invite_code"
+          ],
+          "name": "uk_ops_referral_invite_code_tenant_code",
+          "unique": true
+        },
+        {
+          "columns": [
+            "invite_code"
+          ],
+          "name": "idx_ops_referral_invite_code_code",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "operational_state",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ops_referral_invite_code",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id"
+          ],
+          "name": "uk_ops_referral_invite_code_tenant_user"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "invite_code"
+          ],
+          "name": "uk_ops_referral_invite_code_tenant_code"
+        }
+      ],
+      "write_owner": "cloudrouter-ops-runtime"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "name": "id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "tenant_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "organization_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "invitee_user_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "inviter_user_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "invite_code",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "source",
+          "source": "explicit",
+          "type": "string(16)"
+        },
+        {
+          "name": "status",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "reward_status",
+          "source": "explicit",
+          "type": "string(16)"
+        },
+        {
+          "name": "claimed_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "created_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "updated_at",
+          "source": "explicit",
+          "type": "instant"
+        }
+      ],
+      "common_columns": [],
+      "compliance_level": "L2",
+      "domain": "ops",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "invitee_user_id"
+          ],
+          "name": "uk_ops_referral_relation_tenant_invitee",
+          "unique": true
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "inviter_user_id",
+            "created_at",
+            "id"
+          ],
+          "name": "idx_ops_referral_relation_inviter",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "invite_code"
+          ],
+          "name": "idx_ops_referral_relation_code",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "status",
+            "created_at",
+            "id"
+          ],
+          "name": "idx_ops_referral_relation_list",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "operational_state",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ops_referral_relation",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "invitee_user_id"
+          ],
+          "name": "uk_ops_referral_relation_tenant_invitee"
+        }
+      ],
+      "write_owner": "cloudrouter-ops-runtime"
+    },
+    {
+      "api_surfaces": [
+        "backend"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "name": "id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "tenant_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "organization_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "inviter_user_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "inviter_name_snapshot",
+          "source": "explicit",
+          "type": "string(256)"
+        },
+        {
+          "name": "inviter_email_snapshot",
+          "source": "explicit",
+          "type": "string(256)"
+        },
+        {
+          "name": "total_invited_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "total_revenue_amount",
+          "source": "explicit",
+          "type": "decimal(18,2)"
+        },
+        {
+          "name": "reward_awarded_amount",
+          "source": "explicit",
+          "type": "decimal(18,2)"
+        },
+        {
+          "name": "invite_link",
+          "source": "explicit",
+          "type": "string(512)"
+        },
+        {
+          "name": "status",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "snapshot_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "created_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "updated_at",
+          "source": "explicit",
+          "type": "instant"
+        }
+      ],
+      "common_columns": [],
+      "compliance_level": "L2",
+      "domain": "ops",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "inviter_user_id",
+            "snapshot_at"
+          ],
+          "name": "uk_ops_referral_stat_snapshot",
+          "unique": true
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "read_model",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": false,
+      "table": "ops_referral_stat_snapshot",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "inviter_user_id",
+            "snapshot_at"
+          ],
+          "name": "uk_ops_referral_stat_snapshot"
+        }
+      ],
+      "write_owner": "cloudrouter-ops-runtime"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "name": "id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "tenant_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "organization_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "name",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "description",
+          "source": "explicit",
+          "type": "string(512)"
+        },
+        {
+          "name": "status",
+          "source": "explicit",
+          "type": "string(16)"
+        },
+        {
+          "name": "reward_type",
+          "source": "explicit",
+          "type": "string(16)"
+        },
+        {
+          "name": "reward_value",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "reward_target",
+          "source": "explicit",
+          "type": "string(16)"
+        },
+        {
+          "name": "trigger_event",
+          "source": "explicit",
+          "type": "string(16)"
+        },
+        {
+          "name": "max_rewards_per_inviter",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "starts_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "ends_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "created_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "updated_at",
+          "source": "explicit",
+          "type": "instant"
+        }
+      ],
+      "common_columns": [],
+      "compliance_level": "L2",
+      "domain": "ops",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "status",
+            "created_at",
+            "id"
+          ],
+          "name": "idx_ops_referral_strategy_tenant_status",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "operational_state",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ops_referral_strategy",
       "unique_constraints": [],
       "write_owner": "cloudrouter-ops-runtime"
     }

@@ -513,7 +513,7 @@ tables:
   - ai_upstream_account_group
   - ai_upstream_account_group_member
   - ai_upstream_account
-  - ai_usage
+  - ai_metering_usage
   unique_constraints:
   - name: uk_ai_upstream_account_group_metric_snapshot_uuid
     columns:

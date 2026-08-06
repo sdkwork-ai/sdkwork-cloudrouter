@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.database.table-registry",
+  "tables": [
+    {
+      "table_name": "ai_metering_usage",
+      "owner": "sdkwork-cloudrouter",
+      "compliance_level": "L3",
+      "lifecycle_status": "active"
+    },
+    {
+      "table_name": "ai_metering_request_trace",
+      "owner": "sdkwork-cloudrouter",
+      "compliance_level": "L3",
+      "lifecycle_status": "active"
+    }
+  ]
+}

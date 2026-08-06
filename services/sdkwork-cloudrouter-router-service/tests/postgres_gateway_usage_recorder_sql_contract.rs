@@ -49,9 +49,9 @@ fn numbered_placeholders(source: &str, marker: char) -> std::collections::BTreeS
 #[test]
 fn gateway_usage_recorder_upserts_trace_and_usage_fact_by_business_unique_keys() {
     for expected in [
-        "INSERT INTO ai_request_trace",
+        "INSERT INTO ai_metering_request_trace",
         "ON CONFLICT (tenant_id, organization_id, request_id, attempt_no) DO UPDATE SET",
-        "INSERT INTO ai_usage",
+        "INSERT INTO ai_metering_usage",
         "ON CONFLICT (tenant_id, organization_id, request_id, usage_type) DO UPDATE SET",
         "to_timestamp($29::double precision / 1000.0)",
         "to_timestamp($30::double precision / 1000.0)",
@@ -161,12 +161,12 @@ fn gateway_usage_recorder_writes_trace_and_usage_in_one_transaction() {
 #[test]
 fn gateway_usage_recorder_preserves_non_pending_usage_facts_on_duplicate_request_id() {
     for expected in [
-        "WHERE NOT EXISTS ( SELECT 1 FROM ai_usage settled_usage",
-        "settled_usage.tenant_id = ai_request_trace.tenant_id",
-        "settled_usage.organization_id = ai_request_trace.organization_id",
-        "settled_usage.request_id = ai_request_trace.request_id",
+        "WHERE NOT EXISTS ( SELECT 1 FROM ai_metering_usage settled_usage",
+        "settled_usage.tenant_id = ai_metering_request_trace.tenant_id",
+        "settled_usage.organization_id = ai_metering_request_trace.organization_id",
+        "settled_usage.request_id = ai_metering_request_trace.request_id",
         "settled_usage.settlement_status IS DISTINCT FROM 0",
-        "WHERE ai_usage.settlement_status = 0",
+        "WHERE ai_metering_usage.settlement_status = 0",
     ] {
         assert_sql_contains(POSTGRES_GATEWAY_USAGE_RECORDER, expected);
     }
@@ -180,7 +180,7 @@ fn gateway_usage_recorder_does_not_reopen_unknown_settlement_status() {
         "Postgres gateway trace upsert must not treat NULL settlement_status as pending"
     );
     assert!(
-        !sql.contains("COALESCE(ai_usage.settlement_status, 0)"),
+        !sql.contains("COALESCE(ai_metering_usage.settlement_status, 0)"),
         "Postgres usage fact upsert must not treat NULL settlement_status as pending"
     );
 }

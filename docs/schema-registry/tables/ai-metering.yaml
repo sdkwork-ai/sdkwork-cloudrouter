@@ -1,5 +1,5 @@
 tables:
-- table: ai_usage
+- table: ai_metering_usage
   domain: ai
   profile: ledger_source_fact
   compliance_level: L3
@@ -79,24 +79,24 @@ tables:
   - occurred_at
   - settlement_status
   unique_constraints:
-  - name: uk_ai_usage_scope_id
+  - name: uk_ai_metering_usage_scope_id
     columns:
     - tenant_id
     - organization_id
     - id
-  - name: uk_ai_usage_idempotency
+  - name: uk_ai_metering_usage_idempotency
     columns:
     - tenant_id
     - organization_id
     - idempotency_key
-  - name: uk_ai_usage_request
+  - name: uk_ai_metering_usage_request
     columns:
     - tenant_id
     - organization_id
     - request_id
     - usage_type
   check_constraints:
-  - name: ck_ai_usage_non_negative_counts
+  - name: ck_ai_metering_usage_non_negative_counts
     expression: (prompt_tokens IS NULL OR prompt_tokens >= 0)
       AND (completion_tokens IS NULL OR completion_tokens >= 0)
       AND (cached_tokens IS NULL OR cached_tokens >= 0)
@@ -106,7 +106,7 @@ tables:
       AND (item_count IS NULL OR item_count >= 0)
       AND (character_count IS NULL OR character_count >= 0)
       AND (image_count IS NULL OR image_count >= 0)
-  - name: ck_ai_usage_non_negative_amounts
+  - name: ck_ai_metering_usage_non_negative_amounts
     expression: billable_quantity >= 0
       AND (audio_seconds IS NULL OR audio_seconds >= 0)
       AND (video_seconds IS NULL OR video_seconds >= 0)
@@ -114,10 +114,10 @@ tables:
       AND (official_reference_amount IS NULL OR official_reference_amount >= 0)
       AND (upstream_cost_amount IS NULL OR upstream_cost_amount >= 0)
       AND (customer_charge_amount IS NULL OR customer_charge_amount >= 0)
-  - name: ck_ai_usage_currency
+  - name: ck_ai_metering_usage_currency
     expression: length(trim(currency)) BETWEEN 3 AND 10
   indexes:
-  - name: idx_ai_usage_tenant_owner_occurred
+  - name: idx_ai_metering_usage_tenant_owner_occurred
     columns:
     - tenant_id
     - organization_id
@@ -125,42 +125,42 @@ tables:
     - owner_id
     - occurred_at
     - id
-  - name: idx_ai_usage_api_key_occurred
+  - name: idx_ai_metering_usage_api_key_occurred
     columns:
     - tenant_id
     - organization_id
     - api_key_id
     - occurred_at
     - id
-  - name: idx_ai_usage_model_occurred
+  - name: idx_ai_metering_usage_model_occurred
     columns:
     - tenant_id
     - organization_id
     - catalog_key
     - occurred_at
     - id
-  - name: idx_ai_usage_pricing_plan_occurred
+  - name: idx_ai_metering_usage_pricing_plan_occurred
     columns:
     - tenant_id
     - organization_id
     - pricing_plan_id
     - occurred_at
     - id
-  - name: idx_ai_usage_meter_occurred
+  - name: idx_ai_metering_usage_meter_occurred
     columns:
     - tenant_id
     - organization_id
     - billing_meter_code
     - occurred_at
     - id
-  - name: idx_ai_usage_settlement_status
+  - name: idx_ai_metering_usage_settlement_status
     columns:
     - tenant_id
     - organization_id
     - settlement_status
     - occurred_at
     - id
-  - name: idx_ai_usage_retention
+  - name: idx_ai_metering_usage_retention
     columns:
     - retention_until
     - id
@@ -216,7 +216,7 @@ tables:
       - tenant_id
       - organization_id
       - catalog_key
-- table: ai_request_trace
+- table: ai_metering_request_trace
   domain: ai
   profile: event_log
   compliance_level: L2
@@ -279,18 +279,18 @@ tables:
   - attempt_no
   - started_at
   unique_constraints:
-  - name: uk_ai_request_trace_request_attempt
+  - name: uk_ai_metering_request_trace_request_attempt
     columns:
     - tenant_id
     - organization_id
     - request_id
     - attempt_no
   check_constraints:
-  - name: ck_ai_request_trace_attempt
+  - name: ck_ai_metering_request_trace_attempt
     expression: attempt_no >= 1
-  - name: ck_ai_request_trace_http_status
+  - name: ck_ai_metering_request_trace_http_status
     expression: http_status IS NULL OR http_status BETWEEN 100 AND 599
-  - name: ck_ai_request_trace_non_negative_metrics
+  - name: ck_ai_metering_request_trace_non_negative_metrics
     expression: (latency_ms IS NULL OR latency_ms >= 0)
       AND (ttft_ms IS NULL OR ttft_ms >= 0)
       AND (prompt_tokens IS NULL OR prompt_tokens >= 0)
@@ -298,33 +298,33 @@ tables:
       AND (cached_tokens IS NULL OR cached_tokens >= 0)
       AND (total_tokens IS NULL OR total_tokens >= 0)
   indexes:
-  - name: idx_ai_request_trace_tenant_trace
+  - name: idx_ai_metering_request_trace_tenant_trace
     columns:
     - tenant_id
     - organization_id
     - trace_id
-  - name: idx_ai_request_trace_api_key_started
+  - name: idx_ai_metering_request_trace_api_key_started
     columns:
     - tenant_id
     - organization_id
     - api_key_id
     - started_at
     - id
-  - name: idx_ai_request_trace_model_started
+  - name: idx_ai_metering_request_trace_model_started
     columns:
     - tenant_id
     - organization_id
     - requested_model
     - started_at
     - id
-  - name: idx_ai_request_trace_tenant_status_started
+  - name: idx_ai_metering_request_trace_tenant_status_started
     columns:
     - tenant_id
     - organization_id
     - status
     - started_at
     - id
-  - name: idx_ai_request_trace_user_status_started
+  - name: idx_ai_metering_request_trace_user_status_started
     columns:
     - tenant_id
     - organization_id
@@ -332,7 +332,7 @@ tables:
     - status
     - started_at
     - id
-  - name: idx_ai_request_trace_retention
+  - name: idx_ai_metering_request_trace_retention
     columns:
     - retention_until
     - id

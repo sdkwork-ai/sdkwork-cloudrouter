@@ -167,7 +167,7 @@ SELECT
     ag.account_groups_json,
     COUNT(*) OVER() AS total
 FROM iam_gateway_api_key k
-LEFT JOIN ai_usage u
+LEFT JOIN ai_metering_usage u
   ON u.tenant_id = k.tenant_id
  AND u.organization_id = k.organization_id
  AND u.user_id = k.user_id
@@ -281,7 +281,7 @@ WITH selected_trace AS (
                 PARTITION BY COALESCE(NULLIF(t.request_id, ''), CAST(t.id AS TEXT))
                 ORDER BY t.started_at DESC NULLS LAST, t.id DESC
             ) AS trace_rank
-        FROM ai_request_trace t
+        FROM ai_metering_request_trace t
         WHERE t.status = 1
           AND t.tenant_id = $1
           AND t.organization_id = $2
@@ -296,7 +296,7 @@ usage_by_request AS (
         request_id,
         MAX(catalog_key) AS catalog_key,
         COALESCE(SUM(COALESCE(total_tokens, 0)), 0) AS total_tokens
-    FROM ai_usage
+    FROM ai_metering_usage
     WHERE status = 1
       AND tenant_id = $1
       AND organization_id = $2
@@ -381,7 +381,7 @@ FROM (
         TO_CHAR(DATE_TRUNC('day', COALESCE(started_at, created_at)), 'YYYY-MM-DD') AS bucket_time,
         COUNT(1) AS request_count,
         CAST(COALESCE(AVG(latency_ms), 0) AS BIGINT) AS avg_latency_ms
-    FROM ai_request_trace
+    FROM ai_metering_request_trace
     WHERE status = 1
       AND tenant_id = $1
       AND organization_id = $2
@@ -408,14 +408,14 @@ WITH trace_by_model AS (
             END
         ) AS success_count,
         CAST(COALESCE(AVG(t.latency_ms), 0) AS BIGINT) AS avg_latency_ms
-    FROM ai_request_trace t
+    FROM ai_metering_request_trace t
     LEFT JOIN (
         SELECT
             tenant_id,
             organization_id,
             request_id,
             MAX(catalog_key) AS catalog_key
-        FROM ai_usage
+        FROM ai_metering_usage
         WHERE status = 1
           AND tenant_id = $1
           AND organization_id = $2
@@ -441,7 +441,7 @@ usage_by_model AS (
     SELECT
         COALESCE(NULLIF(catalog_key, ''), 'unknown') AS model,
         COALESCE(SUM(COALESCE(total_tokens, 0)), 0) AS total_tokens
-    FROM ai_usage
+    FROM ai_metering_usage
     WHERE status = 1
       AND tenant_id = $1
       AND organization_id = $2

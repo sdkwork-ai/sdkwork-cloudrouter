@@ -358,7 +358,7 @@ pub async fn postgres_usage_settlement_schema_ready(pool: &PgPool) -> Result<boo
         SELECT COUNT(1)
         FROM information_schema.tables
         WHERE table_schema = current_schema()
-          AND table_name IN ('ai_usage', 'commerce_settlement')
+          AND table_name = 'ai_metering_usage'
         "#,
     )
     .fetch_one(pool)
@@ -368,13 +368,13 @@ pub async fn postgres_usage_settlement_schema_ready(pool: &PgPool) -> Result<boo
         SELECT COUNT(1)
         FROM information_schema.columns
         WHERE table_schema = current_schema()
-          AND table_name = 'ai_usage'
-          AND column_name IN ('settlement_status', 'settlement_id', 'pricing_snapshot')
+          AND table_name = 'ai_metering_usage'
+          AND column_name IN ('settlement_status', 'settlement_id', 'pricing_snapshot', 'settled_at', 'failure_code')
         "#,
     )
     .fetch_one(pool)
     .await?;
-    Ok(table_count == 2 && usage_column_count == 3)
+    Ok(table_count == 1 && usage_column_count == 5)
 }
 
 pub fn postgres_usage_settlement_readiness_check(

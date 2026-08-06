@@ -120,7 +120,7 @@ async fn postgres_gateway_usage_recorder_preserves_non_pending_usage_fact_on_dup
         .unwrap();
     sqlx::query(
         r#"
-        UPDATE ai_usage
+        UPDATE ai_metering_usage
         SET settlement_status = 3,
             customer_charge_amount = 7.722000,
             upstream_cost_amount = 4.290000,
@@ -146,7 +146,7 @@ async fn postgres_gateway_usage_recorder_preserves_non_pending_usage_fact_on_dup
                customer_charge_amount::text AS customer_charge_amount,
                upstream_cost_amount::text AS upstream_cost_amount,
                settlement_status
-        FROM ai_usage
+        FROM ai_metering_usage
         WHERE request_id = 'pg-usage-settlement-failed'
         "#,
     )
@@ -165,7 +165,7 @@ async fn postgres_gateway_usage_recorder_preserves_non_pending_usage_fact_on_dup
     let trace = sqlx::query(
         r#"
         SELECT total_tokens, http_status
-        FROM ai_request_trace
+        FROM ai_metering_request_trace
         WHERE request_id = 'pg-usage-settlement-failed'
         "#,
     )
@@ -380,7 +380,7 @@ async fn create_schema(pool: &PgPool) {
             updated_at TEXT NOT NULL,
             UNIQUE (tenant_id, provider, out_trade_no)
         )"#,
-        r#"CREATE TABLE ai_request_trace (
+        r#"CREATE TABLE ai_metering_request_trace (
             id BIGSERIAL PRIMARY KEY,
             uuid VARCHAR(64) NOT NULL,
             tenant_id BIGINT,
@@ -440,9 +440,9 @@ async fn create_schema(pool: &PgPool) {
             client_ip_masked VARCHAR(64),
             client_ip_region VARCHAR(128),
             user_agent_hash VARCHAR(128),
-            CONSTRAINT uk_ai_request_trace_request_attempt UNIQUE (tenant_id, organization_id, request_id, attempt_no)
+            CONSTRAINT uk_ai_metering_request_trace_request_attempt UNIQUE (tenant_id, organization_id, request_id, attempt_no)
         )"#,
-        r#"CREATE TABLE ai_usage (
+        r#"CREATE TABLE ai_metering_usage (
             id BIGSERIAL PRIMARY KEY,
             uuid VARCHAR(64) NOT NULL,
             tenant_id BIGINT,
@@ -514,8 +514,8 @@ async fn create_schema(pool: &PgPool) {
             occurred_at TIMESTAMPTZ,
             settlement_status INTEGER,
             settlement_id BIGINT,
-            CONSTRAINT uk_ai_usage_idempotency UNIQUE (tenant_id, organization_id, idempotency_key),
-            CONSTRAINT uk_ai_usage_request_type UNIQUE (tenant_id, organization_id, request_id, usage_type)
+            CONSTRAINT uk_ai_metering_usage_idempotency UNIQUE (tenant_id, organization_id, idempotency_key),
+            CONSTRAINT uk_ai_metering_usage_request_type UNIQUE (tenant_id, organization_id, request_id, usage_type)
         )"#,
     ] {
         sqlx::query(statement).execute(pool).await.unwrap();

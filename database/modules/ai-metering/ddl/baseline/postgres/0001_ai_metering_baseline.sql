@@ -1,0 +1,171 @@
+-- SDKWork cloudrouter ai-metering consolidated initialization baseline (postgres)
+-- Generated from docs/schema-registry (ai-metering domain).
+-- sdkwork:migration
+-- id: 0001_ai_metering_core
+-- engine: postgres
+-- module: ai-metering
+-- purpose: AI usage metering facts and request traces (metering domain, commerce-pool co-located with acct_*).
+
+CREATE TABLE IF NOT EXISTS ai_metering_usage (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    user_id BIGINT,
+    request_id VARCHAR(128) NOT NULL,
+    trace_id VARCHAR(128),
+    payload_hash VARCHAR(128),
+    idempotency_key VARCHAR(128) NOT NULL,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    retention_until TIMESTAMPTZ,
+    legal_hold BOOLEAN NOT NULL DEFAULT FALSE,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    decision_log_id BIGINT,
+    api_key_id BIGINT,
+    api_key_name_snapshot VARCHAR(128),
+    account_group_id BIGINT,
+    account_group_snapshot VARCHAR(128),
+    owner_type INTEGER,
+    owner_id BIGINT,
+    owner_name_snapshot VARCHAR(128),
+    catalog_key VARCHAR(256) NOT NULL,
+    requested_model_catalog_key VARCHAR(256),
+    model VARCHAR(256),
+    provider_native_model VARCHAR(256),
+    region_code VARCHAR(64),
+    supplier_id BIGINT,
+    account_id BIGINT,
+    modality INTEGER,
+    usage_type INTEGER NOT NULL,
+    billing_type INTEGER,
+    billing_mode INTEGER,
+    billing_meter_id BIGINT,
+    billing_meter_code VARCHAR(64) NOT NULL,
+    billing_tier VARCHAR(64),
+    billable_quantity NUMERIC(38, 12) NOT NULL,
+    billable_unit INTEGER,
+    prompt_tokens BIGINT,
+    completion_tokens BIGINT,
+    cached_tokens BIGINT,
+    total_tokens BIGINT,
+    request_count BIGINT,
+    result_count BIGINT,
+    item_count BIGINT,
+    character_count BIGINT,
+    image_count BIGINT,
+    audio_seconds NUMERIC(38, 12),
+    video_seconds NUMERIC(38, 12),
+    storage_byte_hours NUMERIC(38, 12),
+    bandwidth_bytes BIGINT,
+    base_input_unit_price NUMERIC(38, 12),
+    base_output_unit_price NUMERIC(38, 12),
+    cache_read_unit_price NUMERIC(38, 12),
+    rate_multiplier NUMERIC(38, 12),
+    reference_multiplier NUMERIC(38, 12),
+    official_reference_amount NUMERIC(38, 12),
+    upstream_cost_amount NUMERIC(38, 12),
+    customer_charge_amount NUMERIC(38, 12),
+    currency VARCHAR(10) NOT NULL,
+    pricing_id BIGINT,
+    pricing_plan_id BIGINT,
+    pricing_plan_code VARCHAR(64),
+    pricing_rule_id BIGINT,
+    pricing_tier_id BIGINT,
+    pricing_snapshot JSONB,
+    reasoning_effort VARCHAR(64),
+    occurred_at TIMESTAMPTZ NOT NULL,
+    settlement_status INTEGER NOT NULL,
+    settlement_id BIGINT,
+    settled_at TIMESTAMPTZ,
+    failure_code VARCHAR(64),
+    failure_message VARCHAR(500),
+    CONSTRAINT ck_ai_metering_usage_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
+    CONSTRAINT ck_ai_metering_usage_non_negative_counts CHECK ((prompt_tokens IS NULL OR prompt_tokens >= 0) AND (completion_tokens IS NULL OR completion_tokens >= 0) AND (cached_tokens IS NULL OR cached_tokens >= 0) AND (total_tokens IS NULL OR total_tokens >= 0) AND (request_count IS NULL OR request_count >= 0) AND (result_count IS NULL OR result_count >= 0) AND (item_count IS NULL OR item_count >= 0) AND (character_count IS NULL OR character_count >= 0) AND (image_count IS NULL OR image_count >= 0)),
+    CONSTRAINT ck_ai_metering_usage_non_negative_amounts CHECK (billable_quantity >= 0 AND (audio_seconds IS NULL OR audio_seconds >= 0) AND (video_seconds IS NULL OR video_seconds >= 0) AND (storage_byte_hours IS NULL OR storage_byte_hours >= 0) AND (official_reference_amount IS NULL OR official_reference_amount >= 0) AND (upstream_cost_amount IS NULL OR upstream_cost_amount >= 0) AND (customer_charge_amount IS NULL OR customer_charge_amount >= 0)),
+    CONSTRAINT ck_ai_metering_usage_currency CHECK (length(trim(currency)) BETWEEN 3 AND 10)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_metering_usage_scope_id ON ai_metering_usage (tenant_id, organization_id, id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_metering_usage_idempotency ON ai_metering_usage (tenant_id, organization_id, idempotency_key);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_metering_usage_request ON ai_metering_usage (tenant_id, organization_id, request_id, usage_type);
+CREATE INDEX IF NOT EXISTS idx_ai_metering_usage_tenant_owner_occurred ON ai_metering_usage (tenant_id, organization_id, owner_type, owner_id, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_metering_usage_api_key_occurred ON ai_metering_usage (tenant_id, organization_id, api_key_id, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_metering_usage_model_occurred ON ai_metering_usage (tenant_id, organization_id, catalog_key, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_metering_usage_pricing_plan_occurred ON ai_metering_usage (tenant_id, organization_id, pricing_plan_id, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_metering_usage_meter_occurred ON ai_metering_usage (tenant_id, organization_id, billing_meter_code, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_metering_usage_settlement_status ON ai_metering_usage (tenant_id, organization_id, settlement_status, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_metering_usage_retention ON ai_metering_usage (retention_until, id);
+
+CREATE TABLE IF NOT EXISTS ai_metering_request_trace (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    user_id BIGINT,
+    request_id VARCHAR(128) NOT NULL,
+    trace_id VARCHAR(128),
+    payload_hash VARCHAR(128),
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    retention_until TIMESTAMPTZ,
+    legal_hold BOOLEAN NOT NULL DEFAULT FALSE,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    attempt_no INTEGER NOT NULL,
+    decision_log_id BIGINT,
+    api_key_id BIGINT,
+    api_key_name_snapshot VARCHAR(128),
+    account_group_id BIGINT,
+    account_group_snapshot VARCHAR(128),
+    owner_type INTEGER,
+    owner_id BIGINT,
+    owner_name_snapshot VARCHAR(128),
+    supplier_id BIGINT,
+    account_id BIGINT,
+    account_name_snapshot VARCHAR(128),
+    requested_model VARCHAR(256),
+    requested_model_catalog_key VARCHAR(256),
+    provider_model VARCHAR(256),
+    provider_native_model VARCHAR(256),
+    gateway_instance_id BIGINT,
+    gateway_instance_code_snapshot VARCHAR(128),
+    gateway_region_code_snapshot VARCHAR(64),
+    gateway_node_name_snapshot VARCHAR(128),
+    region_code VARCHAR(64),
+    endpoint VARCHAR(256),
+    request_path VARCHAR(256),
+    http_method VARCHAR(16),
+    http_status INTEGER,
+    provider_error_code VARCHAR(128),
+    error_type VARCHAR(128),
+    started_at TIMESTAMPTZ NOT NULL,
+    ended_at TIMESTAMPTZ,
+    latency_ms INTEGER,
+    ttft_ms INTEGER,
+    streaming BOOLEAN,
+    request_bytes BIGINT,
+    response_bytes BIGINT,
+    prompt_tokens BIGINT,
+    completion_tokens BIGINT,
+    cached_tokens BIGINT,
+    total_tokens BIGINT,
+    request_payload_hash VARCHAR(128),
+    response_payload_hash VARCHAR(128),
+    error_message_masked VARCHAR(1024),
+    reasoning_effort VARCHAR(64),
+    client_ip_hash VARCHAR(128),
+    client_ip_masked VARCHAR(64),
+    client_ip_region VARCHAR(128),
+    user_agent_hash VARCHAR(128),
+    CONSTRAINT ck_ai_metering_request_trace_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
+    CONSTRAINT ck_ai_metering_request_trace_attempt CHECK (attempt_no >= 1),
+    CONSTRAINT ck_ai_metering_request_trace_http_status CHECK (http_status IS NULL OR http_status BETWEEN 100 AND 599),
+    CONSTRAINT ck_ai_metering_request_trace_non_negative_metrics CHECK ((latency_ms IS NULL OR latency_ms >= 0) AND (ttft_ms IS NULL OR ttft_ms >= 0) AND (prompt_tokens IS NULL OR prompt_tokens >= 0) AND (completion_tokens IS NULL OR completion_tokens >= 0) AND (cached_tokens IS NULL OR cached_tokens >= 0) AND (total_tokens IS NULL OR total_tokens >= 0))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_metering_request_trace_request_attempt ON ai_metering_request_trace (tenant_id, organization_id, request_id, attempt_no);
+CREATE INDEX IF NOT EXISTS idx_ai_metering_request_trace_tenant_trace ON ai_metering_request_trace (tenant_id, organization_id, trace_id);
+CREATE INDEX IF NOT EXISTS idx_ai_metering_request_trace_api_key_started ON ai_metering_request_trace (tenant_id, organization_id, api_key_id, started_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_metering_request_trace_model_started ON ai_metering_request_trace (tenant_id, organization_id, requested_model, started_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_metering_request_trace_tenant_status_started ON ai_metering_request_trace (tenant_id, organization_id, status, started_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_metering_request_trace_user_status_started ON ai_metering_request_trace (tenant_id, organization_id, user_id, status, started_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_metering_request_trace_retention ON ai_metering_request_trace (retention_until, id);
+

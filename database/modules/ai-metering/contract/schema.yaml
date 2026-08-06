@@ -1,0 +1,161 @@
+schema_version: 1
+kind: sdkwork.database.schema
+database_role: authoritative-server
+module_id: ai-metering
+contract_version: 0.2.0
+owner_team: sdkwork-cloudrouter
+compliance_level: L3
+engines:
+  - postgres
+table_prefix: ai_metering_
+tables:
+  - name: ai_metering_usage
+    lifecycle_status: active
+    owner: sdkwork-cloudrouter
+    domain: ai
+    profile: ledger_source_fact
+    compliance_level: L3
+    system_of_record: true
+    write_owner: router-service
+    columns:
+      id: { type: int64, required: true, postgres_type: BIGINT, constraints: NOT NULL PRIMARY KEY }
+      uuid: { type: string(64), required: true, postgres_type: VARCHAR(64), constraints: NOT NULL }
+      tenant_id: { type: int64, required: true, postgres_type: BIGINT, constraints: NOT NULL DEFAULT 0 }
+      organization_id: { type: int64, required: true, postgres_type: BIGINT, constraints: NOT NULL DEFAULT 0 }
+      user_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      request_id: { type: string(128), required: true, postgres_type: VARCHAR(128), constraints: NOT NULL }
+      trace_id: { type: string(128), required: false, postgres_type: VARCHAR(128), constraints: '' }
+      payload_hash: { type: string(128), required: false, postgres_type: VARCHAR(128), constraints: '' }
+      idempotency_key: { type: string(128), required: true, postgres_type: VARCHAR(128), constraints: NOT NULL }
+      status: { type: int32, required: true, postgres_type: INTEGER, constraints: NOT NULL DEFAULT 1 }
+      created_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP }
+      retention_until: { type: instant, required: false, postgres_type: TIMESTAMPTZ, constraints: '' }
+      legal_hold: { type: bool, required: true, postgres_type: BOOLEAN, constraints: NOT NULL DEFAULT FALSE }
+      metadata: { type: jsonb, required: true, postgres_type: JSONB, constraints: NOT NULL DEFAULT '{}'::jsonb }
+      decision_log_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      api_key_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      api_key_name_snapshot: { type: string(128), required: false, postgres_type: VARCHAR(128), constraints: '' }
+      account_group_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      account_group_snapshot: { type: string(128), required: false, postgres_type: VARCHAR(128), constraints: '' }
+      owner_type: { type: int32, required: false, postgres_type: INTEGER, constraints: '' }
+      owner_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      owner_name_snapshot: { type: string(128), required: false, postgres_type: VARCHAR(128), constraints: '' }
+      catalog_key: { type: string(256), required: true, postgres_type: VARCHAR(256), constraints: NOT NULL }
+      requested_model_catalog_key: { type: string(256), required: false, postgres_type: VARCHAR(256), constraints: '' }
+      model: { type: string(256), required: false, postgres_type: VARCHAR(256), constraints: '' }
+      provider_native_model: { type: string(256), required: false, postgres_type: VARCHAR(256), constraints: '' }
+      region_code: { type: string(64), required: false, postgres_type: VARCHAR(64), constraints: '' }
+      supplier_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      account_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      modality: { type: int32, required: false, postgres_type: INTEGER, constraints: '' }
+      usage_type: { type: int32, required: true, postgres_type: INTEGER, constraints: NOT NULL }
+      billing_type: { type: int32, required: false, postgres_type: INTEGER, constraints: '' }
+      billing_mode: { type: int32, required: false, postgres_type: INTEGER, constraints: '' }
+      billing_meter_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      billing_meter_code: { type: string(64), required: true, postgres_type: VARCHAR(64), constraints: NOT NULL }
+      billing_tier: { type: string(64), required: false, postgres_type: VARCHAR(64), constraints: '' }
+      billable_quantity: { type: decimal, required: true, postgres_type: NUMERIC(38,12), constraints: NOT NULL }
+      billable_unit: { type: int32, required: false, postgres_type: INTEGER, constraints: '' }
+      prompt_tokens: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      completion_tokens: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      cached_tokens: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      total_tokens: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      request_count: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      result_count: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      item_count: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      character_count: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      image_count: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      audio_seconds: { type: decimal, required: false, postgres_type: NUMERIC(38,12), constraints: '' }
+      video_seconds: { type: decimal, required: false, postgres_type: NUMERIC(38,12), constraints: '' }
+      storage_byte_hours: { type: decimal, required: false, postgres_type: NUMERIC(38,12), constraints: '' }
+      bandwidth_bytes: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      base_input_unit_price: { type: decimal, required: false, postgres_type: NUMERIC(38,12), constraints: '' }
+      base_output_unit_price: { type: decimal, required: false, postgres_type: NUMERIC(38,12), constraints: '' }
+      cache_read_unit_price: { type: decimal, required: false, postgres_type: NUMERIC(38,12), constraints: '' }
+      rate_multiplier: { type: decimal, required: false, postgres_type: NUMERIC(38,12), constraints: '' }
+      reference_multiplier: { type: decimal, required: false, postgres_type: NUMERIC(38,12), constraints: '' }
+      official_reference_amount: { type: decimal, required: false, postgres_type: NUMERIC(38,12), constraints: '' }
+      upstream_cost_amount: { type: decimal, required: false, postgres_type: NUMERIC(38,12), constraints: '' }
+      customer_charge_amount: { type: decimal, required: false, postgres_type: NUMERIC(38,12), constraints: '' }
+      currency: { type: string(10), required: true, postgres_type: VARCHAR(10), constraints: NOT NULL }
+      pricing_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      pricing_plan_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      pricing_plan_code: { type: string(64), required: false, postgres_type: VARCHAR(64), constraints: '' }
+      pricing_rule_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      pricing_tier_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      pricing_snapshot: { type: jsonb, required: false, postgres_type: JSONB, constraints: '' }
+      reasoning_effort: { type: string(64), required: false, postgres_type: VARCHAR(64), constraints: '' }
+      occurred_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL }
+      settlement_status: { type: int32, required: true, postgres_type: INTEGER, constraints: NOT NULL }
+      settlement_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      settled_at: { type: instant, required: false, postgres_type: TIMESTAMPTZ, constraints: '' }
+      failure_code: { type: string(64), required: false, postgres_type: VARCHAR(64), constraints: '' }
+      failure_message: { type: string(500), required: false, postgres_type: VARCHAR(500), constraints: '' }
+  - name: ai_metering_request_trace
+    lifecycle_status: active
+    owner: sdkwork-cloudrouter
+    domain: ai
+    profile: audit_event
+    compliance_level: L3
+    system_of_record: true
+    write_owner: router-service
+    columns:
+      id: { type: int64, required: true, postgres_type: BIGINT, constraints: NOT NULL PRIMARY KEY }
+      uuid: { type: string(64), required: true, postgres_type: VARCHAR(64), constraints: NOT NULL }
+      tenant_id: { type: int64, required: true, postgres_type: BIGINT, constraints: NOT NULL DEFAULT 0 }
+      organization_id: { type: int64, required: true, postgres_type: BIGINT, constraints: NOT NULL DEFAULT 0 }
+      user_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      request_id: { type: string(128), required: true, postgres_type: VARCHAR(128), constraints: NOT NULL }
+      trace_id: { type: string(128), required: false, postgres_type: VARCHAR(128), constraints: '' }
+      payload_hash: { type: string(128), required: false, postgres_type: VARCHAR(128), constraints: '' }
+      status: { type: int32, required: true, postgres_type: INTEGER, constraints: NOT NULL DEFAULT 1 }
+      created_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP }
+      retention_until: { type: instant, required: false, postgres_type: TIMESTAMPTZ, constraints: '' }
+      legal_hold: { type: bool, required: true, postgres_type: BOOLEAN, constraints: NOT NULL DEFAULT FALSE }
+      metadata: { type: jsonb, required: true, postgres_type: JSONB, constraints: NOT NULL DEFAULT '{}'::jsonb }
+      attempt_no: { type: int32, required: true, postgres_type: INTEGER, constraints: NOT NULL }
+      decision_log_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      api_key_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      api_key_name_snapshot: { type: string(128), required: false, postgres_type: VARCHAR(128), constraints: '' }
+      account_group_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      account_group_snapshot: { type: string(128), required: false, postgres_type: VARCHAR(128), constraints: '' }
+      owner_type: { type: int32, required: false, postgres_type: INTEGER, constraints: '' }
+      owner_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      owner_name_snapshot: { type: string(128), required: false, postgres_type: VARCHAR(128), constraints: '' }
+      supplier_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      account_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      account_name_snapshot: { type: string(128), required: false, postgres_type: VARCHAR(128), constraints: '' }
+      requested_model: { type: string(256), required: false, postgres_type: VARCHAR(256), constraints: '' }
+      requested_model_catalog_key: { type: string(256), required: false, postgres_type: VARCHAR(256), constraints: '' }
+      provider_model: { type: string(256), required: false, postgres_type: VARCHAR(256), constraints: '' }
+      provider_native_model: { type: string(256), required: false, postgres_type: VARCHAR(256), constraints: '' }
+      gateway_instance_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      gateway_instance_code_snapshot: { type: string(128), required: false, postgres_type: VARCHAR(128), constraints: '' }
+      gateway_region_code_snapshot: { type: string(64), required: false, postgres_type: VARCHAR(64), constraints: '' }
+      gateway_node_name_snapshot: { type: string(128), required: false, postgres_type: VARCHAR(128), constraints: '' }
+      region_code: { type: string(64), required: false, postgres_type: VARCHAR(64), constraints: '' }
+      endpoint: { type: string(256), required: false, postgres_type: VARCHAR(256), constraints: '' }
+      request_path: { type: string(256), required: false, postgres_type: VARCHAR(256), constraints: '' }
+      http_method: { type: string(16), required: false, postgres_type: VARCHAR(16), constraints: '' }
+      http_status: { type: int32, required: false, postgres_type: INTEGER, constraints: '' }
+      provider_error_code: { type: string(128), required: false, postgres_type: VARCHAR(128), constraints: '' }
+      error_type: { type: string(128), required: false, postgres_type: VARCHAR(128), constraints: '' }
+      started_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL }
+      ended_at: { type: instant, required: false, postgres_type: TIMESTAMPTZ, constraints: '' }
+      latency_ms: { type: int32, required: false, postgres_type: INTEGER, constraints: '' }
+      ttft_ms: { type: int32, required: false, postgres_type: INTEGER, constraints: '' }
+      streaming: { type: bool, required: false, postgres_type: BOOLEAN, constraints: '' }
+      request_bytes: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      response_bytes: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      prompt_tokens: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      completion_tokens: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      cached_tokens: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      total_tokens: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      request_payload_hash: { type: string(128), required: false, postgres_type: VARCHAR(128), constraints: '' }
+      response_payload_hash: { type: string(128), required: false, postgres_type: VARCHAR(128), constraints: '' }
+      error_message_masked: { type: string(1024), required: false, postgres_type: VARCHAR(1024), constraints: '' }
+      reasoning_effort: { type: string(64), required: false, postgres_type: VARCHAR(64), constraints: '' }
+      client_ip_hash: { type: string(128), required: false, postgres_type: VARCHAR(128), constraints: '' }
+      client_ip_masked: { type: string(64), required: false, postgres_type: VARCHAR(64), constraints: '' }
+      client_ip_region: { type: string(128), required: false, postgres_type: VARCHAR(128), constraints: '' }
+      user_agent_hash: { type: string(128), required: false, postgres_type: VARCHAR(128), constraints: '' }

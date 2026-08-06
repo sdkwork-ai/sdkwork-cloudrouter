@@ -710,6 +710,14 @@ struct AllInOneRuntimeContext {
     model_ranking_refresh_worker_config:
         sdkwork_cloudrouter_router_service::application::ModelRankingRefreshWorkerConfig,
     usage_settlement_wakeup: Option<Arc<Notify>>,
+    /// Federated commerce shared pool (payment/promotion/order/membership/
+    /// account capability databases). The ai-metering module (`ai_metering_*`
+    /// tables) is co-located with the account `acct_*` tables in this pool so
+    /// usage settlement can settle facts and ledger entries in one transaction.
+    commerce_pool: PgPool,
+    /// Payment service host owning the federated commerce pool. Reused by the
+    /// all-in-one assembly so the commerce database lifecycle bootstraps once.
+    payment_host: std::sync::Arc<sdkwork_payment_service_host::PaymentServiceHost>,
 }
 
 #[derive(Default)]
@@ -1614,21 +1622,13 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
             anyhow::Error::msg("all-in-one runtime requires a PostgreSQL database pool")
         })?;
     // Federated commerce capabilities (promotion/order/membership/payment)
-    // share one commerce database. The promotion admin repository is backed
-    // by that commerce pool, so bootstrap the payment service host here and
-    // hand its pool to the backend shared runtime.
-    let payment_host = std::sync::Arc::new(
-        sdkwork_payment_service_host::PaymentServiceHost::from_env()
-            .await
-            .map_err(anyhow::Error::msg)?,
-    );
-    let commerce_pool = payment_host
-        .database_pool()
-        .as_postgres()
-        .cloned()
-        .ok_or_else(|| {
-            anyhow::Error::msg("all-in-one commerce runtime requires a PostgreSQL database pool")
-        })?;
+    // share one commerce database. The payment service host (and its
+    // commerce pool) is bootstrapped once inside
+    // `all_in_one_runtime_context_from_env` — the ai-metering module and the
+    // account ledger live in this pool — and reused here for the backend and
+    // app shared runtimes.
+    let payment_host = std::sync::Arc::clone(&context.payment_host);
+    let commerce_pool = context.commerce_pool.clone();
     let backend_router =
         sdkwork_routes_cloudrouter_backend_api::router_with_postgres_shared_runtime(
             sdkwork_routes_cloudrouter_backend_api::PostgresSharedRuntime {
@@ -1756,6 +1756,10 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
             model_ranking_refresh_worker_config: context
                 .model_ranking_refresh_worker_config
                 .clone(),
+            // The app ai-metering read stores (usage logs, dashboard overview,
+            // settlements dashboard, app routing, model ranking refresh) read
+            // `ai_metering_*` tables co-located in the commerce pool.
+            commerce_pool: context.commerce_pool.clone(),
         },
     )
     .await
@@ -1944,8 +1948,26 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
             snapshot.managed_provider_secrets(),
         );
         let catalog = Arc::new(RefreshableSqlPricingCatalog::new(snapshot));
+        // The ai-metering module (`ai_metering_usage`/`ai_metering_request_trace`)
+        // is co-located with the account `acct_*` ledger in the federated
+        // commerce pool, so the settlement worker must run on the commerce
+        // pool rather than the gateway pool (S3 settles facts and ledger
+        // entries in one transaction). Bootstrap the payment service host
+        // here once and reuse it from the all-in-one assembly.
+        let payment_host = std::sync::Arc::new(
+            sdkwork_payment_service_host::PaymentServiceHost::from_env()
+                .await
+                .map_err(anyhow::Error::msg)?,
+        );
+        let commerce_pool = payment_host
+            .database_pool()
+            .as_postgres()
+            .cloned()
+            .ok_or_else(|| {
+                anyhow::Error::msg("all-in-one commerce runtime requires a PostgreSQL database pool")
+            })?;
         let usage_settlement_wakeup =
-            maybe_spawn_postgres_usage_settlement_worker(&pool, usage_settlement_worker_config)
+            maybe_spawn_postgres_usage_settlement_worker(&commerce_pool, usage_settlement_worker_config)
                 .await
                 .map_err(anyhow::Error::new)?;
         spawn_postgres_catalog_refresh_worker(
@@ -1979,6 +2001,8 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
             app_runtime_stream_bus,
             model_ranking_refresh_worker_config,
             usage_settlement_wakeup,
+            commerce_pool,
+            payment_host,
         })
     }
 }
@@ -1997,7 +2021,9 @@ async fn build_gateway_router_from_all_in_one_context(
         })?;
     let usage_recorder: UsageRecorder =
         Arc::new(PostgresGatewayUsageRecorder::new_with_attribution(
-            pool.clone(),
+            // Usage facts land in the ai-metering module, which is co-located
+            // with the account ledger in the federated commerce pool.
+            context.commerce_pool.clone(),
             gateway_trace_attribution(),
         ));
     let primary_usage_recorder = wrap_usage_recorder_with_settlement_wakeup(
@@ -2017,7 +2043,7 @@ async fn build_gateway_router_from_all_in_one_context(
         .map_err(anyhow::Error::new)?;
     let settlement_config = resolve_usage_settlement_worker_config(runtime_toml.as_ref());
     let readiness_check = sdkwork_cloudrouter_router_service::infrastructure::sql::pool::postgres_runtime_readiness_check(
-            pool.clone(),
+            context.commerce_pool.clone(),
             runtime_toml.as_ref(),
             settlement_config,
         );
