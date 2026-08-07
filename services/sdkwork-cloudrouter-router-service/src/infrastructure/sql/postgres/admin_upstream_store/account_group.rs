@@ -18,7 +18,7 @@ const GROUP_COLUMNS: &str = r#"
     routing_strategy, fallback_mode, priority,
     cost_multiplier::text AS cost_multiplier,
     sale_multiplier::text AS sale_multiplier,
-    environment, vendor_code, modalities::text AS modalities,
+    environment, vendor_code, modalities::text AS modalities, tags::text AS tags,
     status, version,
     TO_CHAR(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS updated_at
 "#;
@@ -325,14 +325,14 @@ async fn insert(
             group_code, group_name, description, group_type,
             routing_strategy, fallback_mode, priority,
             cost_multiplier, sale_multiplier, environment,
-            vendor_code, modalities
+            vendor_code, modalities, tags
         ) VALUES (
             $1, $2, $3, $4, $5, $6,
             $7::timestamptz, $7::timestamptz, 0, '{}'::jsonb,
             $8, $9, $10, $11,
             $12, $13, $14,
             $15::numeric, $16::numeric, $17,
-            $18, $19::jsonb
+            $18, $19::jsonb, $20::jsonb
         )
         "#,
     )
@@ -355,6 +355,7 @@ async fn insert(
     .bind(command.environment)
     .bind(command.vendor_code.as_deref().map(str::trim))
     .bind(modalities_json(&command.modalities))
+    .bind(tags_json(&command.tags))
     .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to create upstream account group", error))?;
@@ -419,11 +420,12 @@ async fn update(
             environment = $9,
             vendor_code = $10,
             modalities = $11::jsonb,
-            status = $12,
+            tags = $12::jsonb,
+            status = $13,
             version = version + 1,
-            updated_at = $13::timestamptz
-        WHERE tenant_id = $14 AND organization_id = $15
-          AND id = $16 AND version = $17 AND deleted_at IS NULL
+            updated_at = $14::timestamptz
+        WHERE tenant_id = $15 AND organization_id = $16
+          AND id = $17 AND version = $18 AND deleted_at IS NULL
         "#,
     )
     .bind(command.group_name.trim())
@@ -437,6 +439,7 @@ async fn update(
     .bind(command.environment)
     .bind(command.vendor_code.as_deref().map(str::trim))
     .bind(modalities_json(&command.modalities))
+    .bind(tags_json(&command.tags))
     .bind(command.status)
     .bind(&command.requested_at)
     .bind(command.subject.tenant_id)
@@ -482,8 +485,13 @@ fn validate_command(command: &SaveAdminUpstreamAccountGroupCommand) -> DomainRes
     if command.group_code.trim().is_empty() || command.group_name.trim().is_empty() {
         return Err(DomainError::new("groupCode and groupName are required"));
     }
-    if !matches!(command.group_type.as_str(), "shared" | "dedicated") {
-        return Err(DomainError::new("groupType must be shared or dedicated"));
+    if !matches!(
+        command.group_type.as_str(),
+        "mixed" | "llm" | "image" | "video" | "audio" | "music" | "other"
+    ) {
+        return Err(DomainError::new(
+            "groupType must be one of mixed, llm, image, video, audio, music, other",
+        ));
     }
     if !matches!(
         command.routing_strategy.as_str(),
@@ -587,6 +595,11 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamAccountGroupItem> {
             "modalities",
             "failed to map upstream account group modalities",
         )?)?,
+        tags: parse_tags(column(
+            &row,
+            "tags",
+            "failed to map upstream account group tags",
+        )?)?,
         status: column(
             &row,
             "status",
@@ -609,10 +622,20 @@ fn modalities_json(modalities: &[String]) -> String {
     serde_json::to_string(modalities).unwrap_or_else(|_| "[]".to_owned())
 }
 
+fn tags_json(tags: &[String]) -> String {
+    serde_json::to_string(tags).unwrap_or_else(|_| "[]".to_owned())
+}
+
 fn parse_modalities(value: String) -> DomainResult<Vec<String>> {
     serde_json::from_str(&value).map_err(|error| {
         DomainError::new(format!(
             "failed to parse upstream account group modalities: {error}"
         ))
+    })
+}
+
+fn parse_tags(value: String) -> DomainResult<Vec<String>> {
+    serde_json::from_str(&value).map_err(|error| {
+        DomainError::new(format!("failed to parse upstream account group tags: {error}"))
     })
 }

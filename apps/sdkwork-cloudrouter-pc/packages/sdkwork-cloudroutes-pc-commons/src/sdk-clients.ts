@@ -84,6 +84,8 @@ import {
 import { resetCloudRouterIamRuntime } from './iam-runtime.ts';
 import { buildPortalAuthLoginRedirect, isProtectedPortalPath } from './portal-auth.ts';
 import { normalizeGeneratedSdkBaseUrl } from './sdk-base-url.ts';
+
+export { normalizeGeneratedSdkBaseUrl } from './sdk-base-url.ts';
 import {
   attachSdkworkSdkSessionAuthBoundary,
   type SdkworkSdkClientWithHttp,

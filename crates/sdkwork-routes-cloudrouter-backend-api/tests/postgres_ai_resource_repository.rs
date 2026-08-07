@@ -176,6 +176,7 @@ async fn create_admin_ai_resource_tables(pool: &PgPool) {
             resource_code VARCHAR(128) NOT NULL,
             resource_type VARCHAR(64) NOT NULL,
             display_name VARCHAR(256) NOT NULL,
+            description TEXT,
             vendor_code VARCHAR(64),
             modality_code VARCHAR(64),
             api_code VARCHAR(128),

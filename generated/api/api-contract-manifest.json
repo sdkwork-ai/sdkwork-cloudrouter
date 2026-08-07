@@ -2858,6 +2858,12 @@
                     "maxItems": 512,
                     "type": "array"
                   },
+                  "method": {
+                    "maxLength": 8,
+                    "nullable": true,
+                    "pattern": "^[A-Za-z-]+$",
+                    "type": "string"
+                  },
                   "modalityCode": {
                     "maxLength": 64,
                     "nullable": true,
@@ -2866,6 +2872,12 @@
                   },
                   "model": {
                     "maxLength": 128,
+                    "nullable": true,
+                    "pattern": "^[\\x20-\\x7E]*$",
+                    "type": "string"
+                  },
+                  "path": {
+                    "maxLength": 256,
                     "nullable": true,
                     "pattern": "^[\\x20-\\x7E]*$",
                     "type": "string"
@@ -3095,6 +3107,12 @@
                     ],
                     "type": "string"
                   },
+                  "method": {
+                    "maxLength": 8,
+                    "nullable": true,
+                    "pattern": "^[A-Za-z-]+$",
+                    "type": "string"
+                  },
                   "modalityCode": {
                     "maxLength": 64,
                     "nullable": true,
@@ -3103,6 +3121,12 @@
                   },
                   "model": {
                     "maxLength": 128,
+                    "nullable": true,
+                    "pattern": "^[\\x20-\\x7E]*$",
+                    "type": "string"
+                  },
+                  "path": {
+                    "maxLength": 256,
                     "nullable": true,
                     "pattern": "^[\\x20-\\x7E]*$",
                     "type": "string"
@@ -3805,6 +3829,12 @@
               ],
               "type": "string"
             },
+            "method": {
+              "maxLength": 8,
+              "nullable": true,
+              "pattern": "^[A-Za-z-]+$",
+              "type": "string"
+            },
             "modalityCode": {
               "maxLength": 64,
               "nullable": true,
@@ -3813,6 +3843,12 @@
             },
             "model": {
               "maxLength": 128,
+              "nullable": true,
+              "pattern": "^[\\x20-\\x7E]*$",
+              "type": "string"
+            },
+            "path": {
+              "maxLength": 256,
               "nullable": true,
               "pattern": "^[\\x20-\\x7E]*$",
               "type": "string"
@@ -11970,6 +12006,7 @@
           "properties": {
             "accountCode": {
               "maxLength": 128,
+              "nullable": true,
               "type": "string"
             },
             "accountName": {
@@ -11980,6 +12017,13 @@
               "maxLength": 32,
               "nullable": true,
               "type": "string"
+            },
+            "apiKey": {
+              "maxLength": 65536,
+              "minLength": 1,
+              "nullable": true,
+              "type": "string",
+              "writeOnly": true
             },
             "authMethodCode": {
               "maxLength": 128,
@@ -12043,7 +12087,6 @@
           },
           "required": [
             "supplierId",
-            "accountCode",
             "accountName",
             "authMethodCode"
           ],
@@ -12303,6 +12346,15 @@
               "type": "string"
             },
             "groupType": {
+              "enum": [
+                "mixed",
+                "llm",
+                "image",
+                "video",
+                "audio",
+                "music",
+                "other"
+              ],
               "maxLength": 32,
               "nullable": true,
               "type": "string"
@@ -12349,6 +12401,27 @@
               "nullable": true,
               "type": "integer"
             },
+            "tags": {
+              "items": {
+                "enum": [
+                  "stable",
+                  "hot",
+                  "recommended",
+                  "promotion",
+                  "new",
+                  "premium",
+                  "high_value",
+                  "official",
+                  "beta",
+                  "limited"
+                ],
+                "maxLength": 16,
+                "type": "string"
+              },
+              "maxItems": 5,
+              "nullable": true,
+              "type": "array"
+            },
             "vendorCode": {
               "description": "Model vendor code this group is bound to; null means the group is not vendor-bound.",
               "maxLength": 64,
@@ -12357,7 +12430,6 @@
             }
           },
           "required": [
-            "groupCode",
             "groupName"
           ],
           "type": "object"
@@ -12471,6 +12543,7 @@
             },
             "supplierCode": {
               "maxLength": 128,
+              "nullable": true,
               "type": "string"
             },
             "supplierName": {
@@ -12491,7 +12564,6 @@
             }
           },
           "required": [
-            "supplierCode",
             "supplierName",
             "supplierType",
             "adapterCode",
@@ -13287,6 +13359,62 @@
     },
     {
       "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}/secret",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts#getUpstreamAccountCredentialSecret@/admin/upstream",
+      "kind": "read",
+      "module": "pc-admin-upstream",
+      "openapi_exposed": true,
+      "operation": "getUpstreamAccountCredentialSecret",
+      "operation_id": "upstreamAccounts.credentials.secret.retrieve",
+      "path_params": [
+        "accountId",
+        "credentialId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_upstream_account",
+        "ai_upstream_account_credential"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "UpstreamAccountCredentialSecretResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "UpstreamAccountCredentialSecretResponse",
+          "properties": {
+            "credentialId": {
+              "maxLength": 32,
+              "type": "string"
+            },
+            "secret": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "credentialId",
+            "secret"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/upstream",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
       "api_path": "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}",
       "api_surface": "backend",
       "file_targets": [],
@@ -13857,6 +13985,15 @@
                     "type": "string"
                   },
                   "groupType": {
+                    "enum": [
+                      "mixed",
+                      "llm",
+                      "image",
+                      "video",
+                      "audio",
+                      "music",
+                      "other"
+                    ],
                     "maxLength": 32,
                     "type": "string"
                   },
@@ -13901,6 +14038,25 @@
                     "format": "int32",
                     "type": "integer"
                   },
+                  "tags": {
+                    "items": {
+                      "enum": [
+                        "stable",
+                        "hot",
+                        "recommended",
+                        "promotion",
+                        "new",
+                        "premium",
+                        "high_value",
+                        "official",
+                        "beta",
+                        "limited"
+                      ],
+                      "maxLength": 16,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
                   "updatedAt": {
                     "format": "date-time",
                     "type": "string"
@@ -13936,6 +14092,105 @@
                   "status",
                   "version",
                   "updatedAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/upstream",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/upstream_accounts/{accountId}/resources",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts#listUpstreamAccountResources@/admin/upstream",
+      "kind": "read",
+      "module": "pc-admin-upstream",
+      "openapi_exposed": true,
+      "operation": "listUpstreamAccountResources",
+      "operation_id": "upstreamAccounts.resources.list",
+      "path_params": [
+        "accountId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_upstream_account",
+        "ai_upstream_account_resource",
+        "ai_resource",
+        "ai_resource_group"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "UpstreamAccountResourceListResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "UpstreamAccountResourceListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "UpstreamResourceEntitlement",
+                "properties": {
+                  "grantType": {
+                    "enum": [
+                      "allow",
+                      "deny"
+                    ],
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 32,
+                    "type": "string"
+                  },
+                  "priority": {
+                    "format": "int32",
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "resourceCode": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "resourceGroupCode": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "status": {
+                    "format": "int32",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "id",
+                  "resourceCode",
+                  "resourceGroupCode",
+                  "grantType",
+                  "priority",
+                  "status"
                 ],
                 "type": "object"
               },
@@ -14933,6 +15188,15 @@
               "type": "string"
             },
             "groupType": {
+              "enum": [
+                "mixed",
+                "llm",
+                "image",
+                "video",
+                "audio",
+                "music",
+                "other"
+              ],
               "maxLength": 32,
               "nullable": true,
               "type": "string"
@@ -14978,6 +15242,27 @@
               "format": "int32",
               "nullable": true,
               "type": "integer"
+            },
+            "tags": {
+              "items": {
+                "enum": [
+                  "stable",
+                  "hot",
+                  "recommended",
+                  "promotion",
+                  "new",
+                  "premium",
+                  "high_value",
+                  "official",
+                  "beta",
+                  "limited"
+                ],
+                "maxLength": 16,
+                "type": "string"
+              },
+              "maxItems": 5,
+              "nullable": true,
+              "type": "array"
             },
             "vendorCode": {
               "description": "Model vendor code this group is bound to; null means the group is not vendor-bound.",
@@ -15277,6 +15562,137 @@
       "write_tables": [
         "ai_upstream_account_group",
         "ai_upstream_account_group_resource",
+        "ai_resource",
+        "ai_resource_group",
+        "ops_audit_log",
+        "ops_config_snapshot"
+      ]
+    },
+    {
+      "api_method": "PUT",
+      "api_path": "/backend/v3/api/ai/upstream_accounts/{accountId}/resources",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": true,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts#updateUpstreamAccountResources@/admin/upstream",
+      "kind": "update",
+      "module": "pc-admin-upstream",
+      "openapi_exposed": true,
+      "operation": "updateUpstreamAccountResources",
+      "operation_id": "upstreamAccounts.resources.update",
+      "path_params": [
+        "accountId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ai_upstream_account",
+        "ai_upstream_account_resource",
+        "ai_resource",
+        "ai_resource_group"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "ReplaceUpstreamAccountResourcesRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "ReplaceUpstreamAccountResourcesRequest",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "UpstreamResourceEntitlementInput",
+                "properties": {
+                  "grantType": {
+                    "enum": [
+                      "allow",
+                      "deny"
+                    ],
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "priority": {
+                    "format": "int32",
+                    "minimum": 0,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "resourceCode": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "resourceGroupCode": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "status": {
+                    "format": "int32",
+                    "nullable": true,
+                    "type": "integer"
+                  }
+                },
+                "required": [],
+                "type": "object"
+              },
+              "maxItems": 200,
+              "type": "array"
+            }
+          },
+          "required": [
+            "items"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "UpstreamAccountResourceCollectionResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "UpstreamAccountResourceCollectionResponse",
+          "properties": {
+            "item": {
+              "additionalProperties": false,
+              "name": "UpstreamAccountResourceCollection",
+              "properties": {
+                "id": {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                "items": {
+                  "items": {
+                    "$ref": "#/components/schemas/UpstreamResourceEntitlement"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": [
+                "id",
+                "items"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "item"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/upstream",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_upstream_account",
+        "ai_upstream_account_resource",
         "ai_resource",
         "ai_resource_group",
         "ops_audit_log",
@@ -25410,6 +25826,25 @@
                     ],
                     "type": "string"
                   },
+                  "tags": {
+                    "items": {
+                      "enum": [
+                        "stable",
+                        "hot",
+                        "recommended",
+                        "promotion",
+                        "new",
+                        "premium",
+                        "high_value",
+                        "official",
+                        "beta",
+                        "limited"
+                      ],
+                      "maxLength": 16,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
                   "vendorCode": {
                     "description": "Model vendor code this group is bound to; null means the group is not vendor-bound.",
                     "maxLength": 64,
@@ -29133,24 +29568,24 @@
   "summary": {
     "api_method_counts": {
       "DELETE": 20,
-      "GET": 130,
+      "GET": 132,
       "PATCH": 21,
       "POST": 76,
-      "PUT": 10
+      "PUT": 11
     },
     "api_surface_counts": {
       "app": 94,
-      "backend": 163
+      "backend": 166
     },
-    "operation_count": 257,
+    "operation_count": 260,
     "route_scope_counts": {
-      "admin": 163,
+      "admin": 166,
       "console": 30,
       "public": 64
     },
     "sdk_client_counts": {
       "SdkworkAppClient": 94,
-      "SdkworkBackendClient": 163
+      "SdkworkBackendClient": 166
     }
   }
 }

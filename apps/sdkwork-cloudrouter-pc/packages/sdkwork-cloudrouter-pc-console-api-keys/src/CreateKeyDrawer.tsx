@@ -21,7 +21,7 @@ import {
 } from '@sdkwork/cloudroutes-pc-commons/components/GroupPicker';
 import type { AccountGroup, ApiKey } from './apiKeyService';
 import { DEFAULT_ACCOUNT_GROUP, type ApiKeyFormValues as ApiKeyFormValuesContract } from './apiKeyForm';
-import { toGroupPickerOptions } from './accountGroups';
+import { buildTagLabels, toGroupPickerOptions } from './accountGroups';
 import { formatApiKeyCreated, formatApiKeyNumber } from './display';
 
 export type ApiKeyFormValues = ApiKeyFormValuesContract;
@@ -303,6 +303,7 @@ export function CreateKeyDrawer({
                     video: t('common.modality.video'),
                     music: t('common.modality.music'),
                   },
+                  tagLabels: buildTagLabels(t),
                 }}
               />
             </div>

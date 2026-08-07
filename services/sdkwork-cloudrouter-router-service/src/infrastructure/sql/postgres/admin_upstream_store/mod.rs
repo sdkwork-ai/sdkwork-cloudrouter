@@ -2,6 +2,7 @@ mod account;
 mod account_group;
 mod account_group_member;
 mod account_group_resource;
+mod account_resource;
 mod shared;
 mod supplier;
 mod supplier_auth;
@@ -201,7 +202,9 @@ impl AdminUpstreamStore for PostgresAdminUpstreamStore {
         &'a self,
         command: SaveAdminUpstreamAccountCommand,
     ) -> AdminUpstreamFuture<'a, AdminUpstreamAccountItem> {
-        Box::pin(async move { account::save(&self.pool, command).await })
+        Box::pin(async move {
+            account::save(&self.pool, self.secret_codec.as_ref(), command).await
+        })
     }
 
     fn delete_account<'a>(
@@ -254,6 +257,24 @@ impl AdminUpstreamStore for PostgresAdminUpstreamStore {
                 account_id,
                 credential_id,
                 requested_at,
+            )
+            .await
+        })
+    }
+
+    fn reveal_account_credential_secret<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_id: i64,
+        credential_id: i64,
+    ) -> AdminUpstreamFuture<'a, String> {
+        Box::pin(async move {
+            account::reveal_credential_secret(
+                &self.pool,
+                self.secret_codec.as_ref(),
+                subject,
+                account_id,
+                credential_id,
             )
             .await
         })
@@ -354,6 +375,35 @@ impl AdminUpstreamStore for PostgresAdminUpstreamStore {
                 &self.pool,
                 subject,
                 account_group_id,
+                expected_version,
+                items,
+                requested_at,
+            )
+            .await
+        })
+    }
+
+    fn list_account_resources<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_id: i64,
+    ) -> AdminUpstreamFuture<'a, Vec<AdminUpstreamResourceItem>> {
+        Box::pin(async move { account_resource::list(&self.pool, subject, account_id).await })
+    }
+
+    fn replace_account_resources<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_id: i64,
+        expected_version: i64,
+        items: Vec<AdminUpstreamResourceInput>,
+        requested_at: String,
+    ) -> AdminUpstreamFuture<'a, Vec<AdminUpstreamResourceItem>> {
+        Box::pin(async move {
+            account_resource::replace(
+                &self.pool,
+                subject,
+                account_id,
                 expected_version,
                 items,
                 requested_at,

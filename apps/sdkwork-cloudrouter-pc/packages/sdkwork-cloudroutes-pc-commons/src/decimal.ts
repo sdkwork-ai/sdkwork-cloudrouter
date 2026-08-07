@@ -109,6 +109,21 @@ export function formatLocalizedCompactDecimalAmount(value: string, locale: strin
   }).format(integer);
 }
 
+/**
+ * 展示用十进制格式化：去掉多余的尾零（"1.000000000000" → "1"、"1.020000" → "1.02"）。
+ * 空值或非法数值返回 fallback（默认 '-'）；合法输入不做四舍五入。
+ */
+export function formatDecimalDisplay(
+  value: string | number | null | undefined,
+  fallback = '-',
+): string {
+  if (value === null || value === undefined) return fallback;
+  const text = String(value).trim();
+  if (text === '') return fallback;
+  if (!/^-?(0|[1-9][0-9]*)(\.[0-9]+)?$/u.test(text)) return fallback;
+  return text.replace(/\.?0+$/, '') || '0';
+}
+
 function decimalUnits(value: string, digits: number): bigint {
   const normalizedDigits = normalizeDigits(digits);
   const trimmed = value.trim();

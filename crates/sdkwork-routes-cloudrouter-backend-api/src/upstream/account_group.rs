@@ -26,12 +26,15 @@ const MAX_NAME_LENGTH: usize = 200;
 const MAX_DESCRIPTION_LENGTH: usize = 4_000;
 const MAX_VENDOR_CODE_LENGTH: usize = 64;
 const SUPPORTED_MODALITIES: [&str; 5] = ["text", "audio", "image", "video", "music"];
+const SUPPORTED_GROUP_TYPES: [&str; 7] = ["mixed", "llm", "image", "video", "audio", "music", "other"];
+const SUPPORTED_TAGS: [&str; 10] = ["stable", "hot", "recommended", "promotion", "new", "premium", "high_value", "official", "beta", "limited"];
+const MAX_GROUP_TAGS: usize = 5;
 const ACCOUNT_GROUP_CREATE_IDEMPOTENCY_SCOPE: i64 = 1_000_003;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct AccountGroupCreateRequest {
-    group_code: String,
+    group_code: Option<String>,
     group_name: String,
     description: Option<String>,
     group_type: Option<String>,
@@ -43,6 +46,7 @@ struct AccountGroupCreateRequest {
     environment: Option<i32>,
     vendor_code: Option<String>,
     modalities: Option<Vec<String>>,
+    tags: Option<Vec<String>>,
     status: Option<i32>,
 }
 
@@ -60,6 +64,7 @@ struct AccountGroupUpdateRequest {
     environment: Option<i32>,
     vendor_code: Option<String>,
     modalities: Option<Vec<String>>,
+    tags: Option<Vec<String>>,
     status: Option<i32>,
 }
 
@@ -114,6 +119,7 @@ struct AccountGroupResponse {
     environment: Option<i32>,
     vendor_code: Option<String>,
     modalities: Vec<String>,
+    tags: Vec<String>,
     status: i32,
     version: String,
     updated_at: String,
@@ -402,6 +408,19 @@ async fn replace_resources(
     }
 }
 
+/// 自动生成唯一分组代码：group-<16位随机hex>。
+/// 数据库唯一索引（tenant+org+group_code）兜底保证唯一性。
+fn generate_group_code() -> RequestResult<String> {
+    let mut bytes = [0u8; 8];
+    getrandom::fill(&mut bytes).map_err(|error| {
+        problem(
+            SdkWorkResultCode::InternalError,
+            format!("failed to generate group code: {error}"),
+        )
+    })?;
+    Ok(format!("group-{:016x}", u64::from_be_bytes(bytes)))
+}
+
 fn create_command(
     subject: sdkwork_cloudrouter_router_service::ports::AdminUpstreamSubject,
     uuid: String,
@@ -412,10 +431,13 @@ fn create_command(
         account_group_id: None,
         expected_version: None,
         uuid,
-        group_code: required_text(request.group_code, "groupCode", MAX_CODE_LENGTH)?,
+        group_code: match request.group_code {
+            Some(value) => required_text(value, "groupCode", MAX_CODE_LENGTH)?,
+            None => generate_group_code()?,
+        },
         group_name: required_text(request.group_name, "groupName", MAX_NAME_LENGTH)?,
         description: optional_text(request.description, "description", MAX_DESCRIPTION_LENGTH)?,
-        group_type: group_type(request.group_type.unwrap_or_else(|| "shared".to_owned()))?,
+        group_type: group_type(request.group_type.unwrap_or_else(|| "mixed".to_owned()))?,
         routing_strategy: routing_strategy(
             request
                 .routing_strategy
@@ -438,6 +460,7 @@ fn create_command(
         environment: request.environment,
         vendor_code: vendor_code(request.vendor_code)?,
         modalities: modalities(request.modalities)?,
+        tags: tags(request.tags)?,
         status: status(request.status.unwrap_or(1))?,
         requested_at: requested_at(),
     })
@@ -498,6 +521,10 @@ fn update_command(
         modalities: match request.modalities {
             Some(values) => modalities(Some(values))?,
             None => existing.modalities,
+        },
+        tags: match request.tags {
+            Some(values) => tags(Some(values))?,
+            None => existing.tags,
         },
         status: status(request.status.unwrap_or(existing.status))?,
         requested_at: requested_at(),
@@ -569,10 +596,10 @@ fn resource_inputs(
 
 fn group_type(value: String) -> RequestResult<String> {
     let value = required_text(value, "groupType", 32)?;
-    if !matches!(value.as_str(), "shared" | "dedicated") {
+    if !SUPPORTED_GROUP_TYPES.iter().any(|group_type| *group_type == value) {
         return Err(problem(
             SdkWorkResultCode::InvalidParameter,
-            "groupType must be shared or dedicated",
+            format!("groupType must be one of {}", SUPPORTED_GROUP_TYPES.join(", ")),
         ));
     }
     Ok(value)
@@ -639,6 +666,32 @@ fn modalities(values: Option<Vec<String>>) -> RequestResult<Vec<String>> {
     Ok(seen)
 }
 
+fn tags(values: Option<Vec<String>>) -> RequestResult<Vec<String>> {
+    let Some(values) = values else {
+        return Ok(Vec::new());
+    };
+    if values.len() > MAX_GROUP_TAGS {
+        return Err(problem(
+            SdkWorkResultCode::InvalidParameter,
+            format!("tags must contain at most {MAX_GROUP_TAGS} items"),
+        ));
+    }
+    let mut seen: Vec<String> = Vec::new();
+    for value in values {
+        let normalized = value.trim().to_lowercase();
+        if !SUPPORTED_TAGS.iter().any(|tag| *tag == normalized) {
+            return Err(problem(
+                SdkWorkResultCode::InvalidParameter,
+                format!("tags must be a subset of {}", SUPPORTED_TAGS.join(", ")),
+            ));
+        }
+        if !seen.contains(&normalized) {
+            seen.push(normalized);
+        }
+    }
+    Ok(seen)
+}
+
 fn status(value: i32) -> RequestResult<i32> {
     if !matches!(value, 0 | 1) {
         return Err(problem(
@@ -687,6 +740,7 @@ impl From<AdminUpstreamAccountGroupItem> for AccountGroupResponse {
             environment: item.environment,
             vendor_code: item.vendor_code,
             modalities: item.modalities,
+            tags: item.tags,
             status: item.status,
             version: item.version.to_string(),
             updated_at: item.updated_at,

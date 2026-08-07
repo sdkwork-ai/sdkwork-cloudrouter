@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Building2, Check, Edit3, ExternalLink, Plus, RefreshCw, Settings2, Share2, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { Building2, Check, Edit3, ExternalLink, Plus, RefreshCw, Settings2, Share2, Sparkles, Trash2 } from 'lucide-react';
 import { AdminTableShell, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
 import { useTranslation } from 'react-i18next';
 import type {
@@ -11,7 +11,8 @@ import type {
   UpstreamSupplierEndpointInput,
 } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import { upstreamService } from './upstreamService';
-import { emptyResourceSelection, ResourcePicker, type ResourceSelection } from './resourcePicker';
+import { resolveVendorBaseUrl, vendorStandardBaseUrl } from './vendorBaseUrlRules';
+import { emptyResourceSelection, ResourcePicker, toEntitlements, toSelection, type ResourceSelection } from './resourcePicker';
 import {
   dangerButtonClass,
   errorMessage,
@@ -34,7 +35,6 @@ import {
 type SupplierType = 'official' | 'relay';
 
 interface SupplierFormValues {
-  supplierCode: string;
   supplierName: string;
   displayName: string;
   description: string;
@@ -82,20 +82,6 @@ const emptyAuthMethod = (): UpstreamSupplierAuthMethodInput => ({
     defaultHeaders: {},
   },
 });
-
-function toEntitlements(selection: ResourceSelection): UpstreamResourceEntitlementInput[] {
-  return [
-    ...selection.resourceCodes.map((resourceCode) => ({ resourceCode, grantType: 'allow' as const, priority: 100, status: 1 })),
-    ...selection.resourceGroupCodes.map((resourceGroupCode) => ({ resourceGroupCode, grantType: 'allow' as const, priority: 100, status: 1 })),
-  ];
-}
-
-function toSelection(items: UpstreamResourceEntitlementInput[]): ResourceSelection {
-  return {
-    resourceCodes: items.filter((item) => item.resourceCode).map((item) => item.resourceCode as string),
-    resourceGroupCodes: items.filter((item) => item.resourceGroupCode).map((item) => item.resourceGroupCode as string),
-  };
-}
 
 function SupplierTypeBadge({ type }: { type: SupplierType }) {
   const { t } = useTranslation();
@@ -167,7 +153,6 @@ export function SupplierAdminPanel() {
     setError(null);
     try {
       const input: CreateUpstreamSupplierRequest = {
-        supplierCode: values.supplierCode,
         supplierName: values.supplierName,
         displayName: values.displayName || null,
         description: values.description || null,
@@ -239,7 +224,7 @@ export function SupplierAdminPanel() {
     <div className="flex min-h-0 flex-1 flex-col gap-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" data-admin-upstream-toolbar>
         <div className="flex flex-wrap items-center gap-2">
-          <div data-admin-upstream-search><SearchBox value={query} placeholder={t('admin.upstream.supplier.search.placeholder')} onChange={setQuery} onSubmit={() => setAppliedQuery(query.trim())} /></div>
+          <div data-admin-upstream-search><SearchBox value={query} placeholder={t('admin.upstream.supplier.search.placeholder')} onChange={setQuery} onSubmit={setAppliedQuery} /></div>
           <div className="flex rounded-lg border border-slate-200 bg-white p-0.5 dark:border-white/10 dark:bg-[#171717]">
             {typeFilterOptions.map((option) => (
               <button
@@ -369,6 +354,13 @@ function SupplierModal({ supplier, catalog, busy, onSubmit, onClose }: { supplie
     if (adapterCode === 'openai' || adapterCode === '') {
       setAdapterCode(vendorCode);
     }
+    // 官方供应商的资源集由所选 Vendor 决定：自动勾选其全部资源，资源分组清空，无需用户手动选择
+    if (vendorCode) {
+      const vendorResourceCodes = (catalog?.resources ?? [])
+        .filter((resource) => resource.vendorCode === vendorCode)
+        .map((resource) => resource.resourceCode);
+      setSelection({ resourceCodes: vendorResourceCodes, resourceGroupCodes: [] });
+    }
   };
 
   const grantVendor = () => {
@@ -396,89 +388,108 @@ function SupplierModal({ supplier, catalog, busy, onSubmit, onClose }: { supplie
   };
 
   return (
-    <Modal title={supplier ? t('admin.upstream.supplier.form.editTitle') : t('admin.upstream.supplier.form.createTitle')} busy={busy || resourcesLoading} submitLabel={supplier ? t('common.actions.saveChanges') : t('admin.upstream.supplier.form.createAction')} onSubmit={handleSubmit} onClose={onClose}>
-      <div className="grid gap-5">
-        <InlineError message={formError} />
-        <div>
-          <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-200">{t('admin.upstream.supplier.form.supplierType')}<span className="ml-1 text-red-500">*</span></p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => setSupplierType('official')}
-              className={`flex items-start gap-3 rounded-lg border p-3 text-left transition ${supplierType === 'official' ? 'border-indigo-500 bg-indigo-50/70 ring-2 ring-indigo-500/20 dark:border-indigo-500/60 dark:bg-indigo-500/10' : 'border-slate-200 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/[0.03]'}`}
-            >
-              <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${supplierType === 'official' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400'}`}>
-                <Building2 className="h-4 w-4" />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-bold text-slate-900 dark:text-white">{t('admin.upstream.supplier.type.official')}</span>
-                <span className="mt-0.5 block text-xs leading-relaxed text-slate-500 dark:text-slate-400">{t('admin.upstream.supplier.type.official.hint')}</span>
-              </span>
-              {supplierType === 'official' ? <Check className="ml-auto h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-300" /> : null}
-            </button>
-            <button
-              type="button"
-              onClick={() => { setSupplierType('relay'); setDefaultVendorCode(null); }}
-              className={`flex items-start gap-3 rounded-lg border p-3 text-left transition ${supplierType === 'relay' ? 'border-amber-500 bg-amber-50/70 ring-2 ring-amber-500/20 dark:border-amber-500/60 dark:bg-amber-500/10' : 'border-slate-200 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/[0.03]'}`}
-            >
-              <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${supplierType === 'relay' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400'}`}>
-                <Share2 className="h-4 w-4" />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-bold text-slate-900 dark:text-white">{t('admin.upstream.supplier.type.relay')}</span>
-                <span className="mt-0.5 block text-xs leading-relaxed text-slate-500 dark:text-slate-400">{t('admin.upstream.supplier.type.relay.hint')}</span>
-              </span>
-              {supplierType === 'relay' ? <Check className="ml-auto h-4 w-4 shrink-0 text-amber-500" /> : null}
-            </button>
-          </div>
-        </div>
-
-        {supplierType === 'official' ? (
-          <div className="rounded-md border border-slate-200 p-3 dark:border-white/10">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-              <Field label={t('admin.upstream.supplier.form.vendor.label')} required className="flex-1">
-                <select
-                  className={selectClass}
-                  value={defaultVendorCode ?? ''}
-                  onChange={(event) => handleVendorChange(event.currentTarget.value)}
-                  disabled={vendorResources.length === 0}
-                >
-                  <option value="">{t('admin.upstream.supplier.form.vendor.placeholder')}</option>
-                  {vendorResources.map((resource) => (
-                    <option key={resource.resourceCode} value={resource.vendorCode ?? ''}>{resource.displayName} ({resource.vendorCode})</option>
-                  ))}
-                </select>
-              </Field>
-              <button type="button" className={secondaryButtonClass} onClick={grantVendor} disabled={!defaultVendorCode || grantableVendorResources.length === 0}>
-                {vendorGranted ? <Check className="h-4 w-4 text-emerald-500" /> : null}
-                {vendorGranted ? t('admin.upstream.supplier.form.vendor.granted') : t('admin.upstream.supplier.form.vendor.grantAll')}
+    <Modal title={supplier ? t('admin.upstream.supplier.form.editTitle') : t('admin.upstream.supplier.form.createTitle')} busy={busy || resourcesLoading} submitLabel={supplier ? t('common.actions.saveChanges') : t('admin.upstream.supplier.form.createAction')} size="xl" fillHeight onSubmit={handleSubmit} onClose={onClose}>
+      <div className="grid gap-5 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)] lg:grid-rows-[minmax(0,1fr)]">
+        <div className="grid min-w-0 gap-5 lg:min-h-0 lg:overflow-y-auto">
+          <InlineError message={formError} />
+          <div>
+            <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-200">{t('admin.upstream.supplier.form.supplierType')}<span className="ml-1 text-red-500">*</span></p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setSupplierType('official')}
+                className={`flex items-start gap-3 rounded-lg border p-3 text-left transition ${supplierType === 'official' ? 'border-indigo-500 bg-indigo-50/70 ring-2 ring-indigo-500/20 dark:border-indigo-500/60 dark:bg-indigo-500/10' : 'border-slate-200 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/[0.03]'}`}
+              >
+                <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${supplierType === 'official' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400'}`}>
+                  <Building2 className="h-4 w-4" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold text-slate-900 dark:text-white">{t('admin.upstream.supplier.type.official')}</span>
+                  <span className="mt-0.5 block text-xs leading-relaxed text-slate-500 dark:text-slate-400">{t('admin.upstream.supplier.type.official.hint')}</span>
+                </span>
+                {supplierType === 'official' ? <Check className="ml-auto h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-300" /> : null}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setSupplierType('relay'); setDefaultVendorCode(null); }}
+                className={`flex items-start gap-3 rounded-lg border p-3 text-left transition ${supplierType === 'relay' ? 'border-amber-500 bg-amber-50/70 ring-2 ring-amber-500/20 dark:border-amber-500/60 dark:bg-amber-500/10' : 'border-slate-200 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/[0.03]'}`}
+              >
+                <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${supplierType === 'relay' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400'}`}>
+                  <Share2 className="h-4 w-4" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold text-slate-900 dark:text-white">{t('admin.upstream.supplier.type.relay')}</span>
+                  <span className="mt-0.5 block text-xs leading-relaxed text-slate-500 dark:text-slate-400">{t('admin.upstream.supplier.type.relay.hint')}</span>
+                </span>
+                {supplierType === 'relay' ? <Check className="ml-auto h-4 w-4 shrink-0 text-amber-500" /> : null}
               </button>
             </div>
           </div>
-        ) : null}
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={t('admin.upstream.supplier.form.supplierCode')} required><input name="supplierCode" className={inputClass} defaultValue={supplier?.supplierCode} disabled={Boolean(supplier)} required /></Field>
-          <Field label={t('admin.upstream.supplier.form.supplierName')} required><input name="supplierName" className={inputClass} defaultValue={supplier?.supplierName} required /></Field>
-          <Field label={t('admin.upstream.supplier.form.displayName')}><input name="displayName" className={inputClass} defaultValue={supplier?.displayName} /></Field>
-          <Field label={t('admin.upstream.supplier.form.protocolCode')} required><input name="protocolCode" className={inputClass} defaultValue={supplier?.protocolCode ?? 'openai'} required /></Field>
-          <Field label={t('admin.upstream.supplier.form.adapterCode')} required><input name="adapterCode" className={inputClass} value={adapterCode} onChange={(event) => setAdapterCode(event.currentTarget.value)} required /></Field>
-          <Field label={t('admin.upstream.common.fields.regionCode')}><input name="regionCode" className={inputClass} defaultValue={supplier?.regionCode ?? ''} /></Field>
-          <Field label={t('admin.upstream.common.fields.environment')}><select name="environment" className={selectClass} defaultValue={supplier?.environment ?? 1}><option value="1">{t('admin.upstream.common.environment.production')}</option><option value="2">{t('admin.upstream.common.environment.sandbox')}</option></select></Field>
-          <Field label={t('admin.upstream.common.fields.status')}><select name="status" className={selectClass} defaultValue={supplier?.status ?? 1}><option value="1">{t('common.status.active')}</option><option value="0">{t('common.status.disabled')}</option></select></Field>
-          <Field label={t('admin.upstream.supplier.form.websiteUrl')}><input name="websiteUrl" type="url" className={inputClass} defaultValue={supplier?.websiteUrl ?? ''} /></Field>
-          <Field label={t('admin.upstream.supplier.form.documentationUrl')}><input name="docsUrl" type="url" className={inputClass} defaultValue={supplier?.docsUrl ?? ''} /></Field>
-          <Field label={t('admin.upstream.supplier.form.sortOrder')}><input name="sortOrder" type="number" min="0" className={inputClass} defaultValue={supplier?.sortOrder ?? 100} /></Field>
-          <div className="sm:col-span-2"><Field label={t('admin.upstream.common.fields.description')}><textarea name="description" className={textAreaClass} defaultValue={supplier?.description ?? ''} /></Field></div>
+          {supplierType === 'official' ? (
+            <div className="rounded-md border border-slate-200 p-3 dark:border-white/10">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <Field label={t('admin.upstream.supplier.form.vendor.label')} required className="flex-1">
+                  <select
+                    className={selectClass}
+                    value={defaultVendorCode ?? ''}
+                    onChange={(event) => handleVendorChange(event.currentTarget.value)}
+                    disabled={vendorResources.length === 0}
+                  >
+                    <option value="">{t('admin.upstream.supplier.form.vendor.placeholder')}</option>
+                    {vendorResources.map((resource) => (
+                      <option key={resource.resourceCode} value={resource.vendorCode ?? ''}>{resource.displayName} ({resource.vendorCode})</option>
+                    ))}
+                  </select>
+                </Field>
+                <button type="button" className={secondaryButtonClass} onClick={grantVendor} disabled={!defaultVendorCode || grantableVendorResources.length === 0}>
+                  {vendorGranted ? <Check className="h-4 w-4 text-emerald-500" /> : null}
+                  {vendorGranted ? t('admin.upstream.supplier.form.vendor.granted') : t('admin.upstream.supplier.form.vendor.grantAll')}
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+        <FormSection title={t('admin.upstream.supplier.form.section.basic')}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label={t('admin.upstream.supplier.form.supplierName')} required><input name="supplierName" className={inputClass} defaultValue={supplier?.supplierName} required /></Field>
+            <Field label={t('admin.upstream.supplier.form.displayName')} hint={t('admin.upstream.supplier.form.displayNameHint')}><input name="displayName" className={inputClass} defaultValue={supplier?.displayName} /></Field>
+          </div>
+        </FormSection>
+        <FormSection title={t('admin.upstream.supplier.form.section.protocol')}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label={t('admin.upstream.supplier.form.protocolCode')} required><input name="protocolCode" className={inputClass} defaultValue={supplier?.protocolCode ?? 'openai'} required /></Field>
+            <Field label={t('admin.upstream.supplier.form.adapterCode')} required><input name="adapterCode" className={inputClass} value={adapterCode} onChange={(event) => setAdapterCode(event.currentTarget.value)} required /></Field>
+            <Field label={t('admin.upstream.common.fields.environment')}><select name="environment" className={selectClass} defaultValue={supplier?.environment ?? 1}><option value="1">{t('admin.upstream.common.environment.production')}</option><option value="2">{t('admin.upstream.common.environment.sandbox')}</option></select></Field>
+            <Field label={t('admin.upstream.common.fields.status')}><select name="status" className={selectClass} defaultValue={supplier?.status ?? 1}><option value="1">{t('common.status.active')}</option><option value="0">{t('common.status.disabled')}</option></select></Field>
+            <Field label={t('admin.upstream.supplier.form.sortOrder')}><input name="sortOrder" type="number" min="0" className={inputClass} defaultValue={supplier?.sortOrder ?? 100} /></Field>
+            <Field label={t('admin.upstream.common.fields.regionCode')} hint={t('admin.upstream.common.fields.regionCodeHint')}><input name="regionCode" className={inputClass} defaultValue={supplier?.regionCode ?? ''} /></Field>
+          </div>
+        </FormSection>
+        <FormSection title={t('admin.upstream.supplier.form.section.links')}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label={t('admin.upstream.supplier.form.websiteUrl')}><input name="websiteUrl" type="url" className={inputClass} defaultValue={supplier?.websiteUrl ?? ''} /></Field>
+            <Field label={t('admin.upstream.supplier.form.documentationUrl')}><input name="docsUrl" type="url" className={inputClass} defaultValue={supplier?.docsUrl ?? ''} /></Field>
+          </div>
+          <div className="mt-4"><Field label={t('admin.upstream.common.fields.description')}><textarea name="description" className={textAreaClass} defaultValue={supplier?.description ?? ''} /></Field></div>
+        </FormSection>
         </div>
 
-        <div>
-          <div className="mb-2">
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{t('admin.upstream.supplier.form.resources.title')}</p>
-            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{t('admin.upstream.supplier.form.resources.description')}</p>
+        <div className="flex min-w-0 flex-col lg:min-h-0">
+          <div className="mb-3 border-b border-slate-200 pb-3 dark:border-white/10">
+            <p className="text-sm font-bold text-slate-900 dark:text-white">{t('admin.upstream.supplier.form.resources.title')}</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{t('admin.upstream.supplier.form.resources.description')}</p>
           </div>
           {catalog ? (
-            <ResourcePicker resources={catalog.resources} resourceGroups={catalog.resourceGroups} selection={selection} onChange={setSelection} />
+            <ResourcePicker
+              resources={catalog.resources}
+              resourceGroups={catalog.resourceGroups}
+              selection={selection}
+              onChange={setSelection}
+              flat
+              className="flex min-h-0 flex-1 flex-col"
+              listClassName="min-h-0 max-h-72 flex-1 lg:max-h-none"
+            />
           ) : (
             <div className="rounded-md border border-slate-200 p-4 text-center text-sm text-slate-500 dark:border-white/10">{t('admin.upstream.common.errors.operationFailed')}</div>
           )}
@@ -491,11 +502,9 @@ function SupplierModal({ supplier, catalog, busy, onSubmit, onClose }: { supplie
 function valuesFromForm(form: HTMLFormElement, supplierType: SupplierType, defaultVendorCode: string | null, selection: ResourceSelection): SupplierFormValues | null {
   const formData = new FormData(form);
   const read = (key: string) => String(formData.get(key) ?? '').trim();
-  const supplierCode = read('supplierCode');
   const supplierName = read('supplierName');
-  if (!supplierCode || !supplierName) return null;
+  if (!supplierName) return null;
   return {
-    supplierCode,
     supplierName,
     displayName: read('displayName'),
     description: read('description'),
@@ -516,6 +525,15 @@ function valuesFromForm(form: HTMLFormElement, supplierType: SupplierType, defau
 function numericFormValue(form: FormData, key: string, fallback: number): number {
   const value = Number(form.get(key));
   return Number.isFinite(value) ? value : fallback;
+}
+
+function FormSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="min-w-0">
+      <h3 className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-200">{title}</h3>
+      {children}
+    </section>
+  );
 }
 
 function SupplierCapabilities({ supplier, onChanged, onClose }: { supplier: UpstreamSupplier; onChanged: (supplier: UpstreamSupplier) => void; onClose: () => void }) {
@@ -593,6 +611,20 @@ function SupplierCapabilities({ supplier, onChanged, onClose }: { supplier: Upst
     return resource?.displayName ?? group?.groupName ?? code;
   };
 
+  // 当前 Vendor 的标准 Base URL（有规则时展示提示）；无 Vendor 或未收录时为空
+  const vendorStandardUrl = useMemo(() => vendorStandardBaseUrl(supplier.defaultVendorCode), [supplier.defaultVendorCode]);
+  // 运行时默认端点 = active 端点中 priority 最小者（priority ASC → routing_weight DESC → id ASC）
+  const defaultEndpointIndex = useMemo(() => {
+    let bestIndex = -1;
+    endpoints.forEach((endpoint, index) => {
+      if (endpoint.status !== 1) return;
+      if (bestIndex === -1 || (endpoint.priority ?? 100) < (endpoints[bestIndex].priority ?? 100)) {
+        bestIndex = index;
+      }
+    });
+    return bestIndex;
+  }, [endpoints]);
+
   return (
     <SidePanel title={supplier.displayName} subtitle={`${supplier.supplierType} / ${supplier.protocolCode}`} onClose={onClose}>
       <div className="grid gap-6">
@@ -607,9 +639,16 @@ function SupplierCapabilities({ supplier, onChanged, onClose }: { supplier: Upst
           <div className="grid gap-3">
             {endpoints.map((endpoint, index) => (
               <div key={`${endpoint.endpointCode}-${index}`} className="grid gap-2 rounded-md border border-slate-200 p-3 dark:border-white/10 sm:grid-cols-2">
+                {defaultEndpointIndex === index ? <span className="inline-flex w-fit items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300 sm:col-span-2">{t('admin.upstream.supplier.endpoints.default')}</span> : null}
                 <input aria-label={t('admin.upstream.supplier.endpoints.code')} placeholder={t('admin.upstream.supplier.endpoints.code')} className={inputClass} value={endpoint.endpointCode} onChange={(event) => setEndpoints(updateAt(endpoints, index, { endpointCode: event.currentTarget.value }))} />
                 <input aria-label={t('admin.upstream.supplier.endpoints.name')} placeholder={t('admin.upstream.supplier.endpoints.name')} className={inputClass} value={endpoint.endpointName} onChange={(event) => setEndpoints(updateAt(endpoints, index, { endpointName: event.currentTarget.value }))} />
-                <input aria-label={t('admin.upstream.common.fields.baseUrl')} placeholder="https://api.example.com/v1" className={`${inputClass} sm:col-span-2`} value={endpoint.baseUrl} onChange={(event) => setEndpoints(updateAt(endpoints, index, { baseUrl: event.currentTarget.value }))} />
+                <div className="grid gap-1.5 sm:col-span-2">
+                  <div className="flex gap-2">
+                    <input aria-label={t('admin.upstream.common.fields.baseUrl')} placeholder="https://api.example.com/v1" className={inputClass} value={endpoint.baseUrl} onChange={(event) => setEndpoints(updateAt(endpoints, index, { baseUrl: event.currentTarget.value }))} />
+                    <button type="button" title={t('admin.upstream.supplier.endpoints.generate.title')} className={secondaryButtonClass} onClick={() => setEndpoints(updateAt(endpoints, index, { baseUrl: resolveVendorBaseUrl(supplier.defaultVendorCode, endpoint.baseUrl) }))}><Sparkles className="h-4 w-4" /></button>
+                  </div>
+                  {vendorStandardUrl ? <p className="text-xs text-slate-500 dark:text-slate-400">{t('admin.upstream.supplier.endpoints.generate.hint', { standard: vendorStandardUrl })}</p> : null}
+                </div>
                 <input aria-label={t('admin.upstream.common.fields.regionCode')} placeholder={t('admin.upstream.common.fields.regionCode')} className={inputClass} value={endpoint.regionCode ?? ''} onChange={(event) => setEndpoints(updateAt(endpoints, index, { regionCode: emptyToNull(event.currentTarget.value) }))} />
                 <div className="flex gap-2"><input aria-label={t('admin.upstream.common.fields.priority')} title={t('admin.upstream.common.fields.priority')} type="number" min="0" className={inputClass} value={endpoint.priority ?? 100} onChange={(event) => setEndpoints(updateAt(endpoints, index, { priority: Number(event.currentTarget.value) }))} /><input aria-label={t('admin.upstream.common.fields.weight')} title={t('admin.upstream.common.fields.weight')} type="number" min="0" className={inputClass} value={endpoint.routingWeight ?? 100} onChange={(event) => setEndpoints(updateAt(endpoints, index, { routingWeight: Number(event.currentTarget.value) }))} /><button type="button" title={t('common.actions.delete')} className={dangerButtonClass} onClick={() => setEndpoints(removeAt(endpoints, index))}><Trash2 className="h-4 w-4" /></button></div>
               </div>

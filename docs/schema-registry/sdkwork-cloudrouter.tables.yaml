@@ -220,7 +220,7 @@ modules:
     owner: cloud-router-platform
     description: AI routing, upstream supplier, upstream account, account-group, policy, quota, and runtime coordination tables.
     compliance_level: L2
-    tables_count: 23
+    tables_count: 24
     tables:
     - ai_upstream_account
     - ai_upstream_account_health_state
@@ -229,6 +229,7 @@ modules:
     - ai_upstream_account_group_member
     - ai_upstream_account_group_metric_snapshot
     - ai_upstream_account_group_resource
+    - ai_upstream_account_resource
     - ai_upstream_supplier_resource
     - ai_config_version
     - ai_config_change_event
@@ -487,17 +488,17 @@ data_flow:
     - "ops-runtime\u672C\u5730\u8868\u63D0\u4F9B\u53EF\u5206\u9875\u7684\u76D1\u63A7\u3001\u901A\u77E5\u548C\u5BA1\u8BA1\u8BFB\u6A21\u578B"
     - "ops_metric_snapshot\u3001ops_job_execution\u3001ops_audit_log\u5199\u5165\uFF08cloud-router\u672C\u5730\uFF09"
 statistics:
-  cloud_router_local_tables: 52
+  cloud_router_local_tables: 53
   composed_dependency_tables: 19
-  total_tables: 71
+  total_tables: 72
   table_prefix_distribution:
-    ai_: 57
+    ai_: 58
     iam_: 4
     ops_: 10
   module_distribution:
-    cloud-router: 52
+    cloud-router: 53
     sdkwork-models: 19
-    ai-routing: 23
+    ai-routing: 24
     ai-metering: 2
     ai-pricing: 5
     iam-gateway: 5

@@ -118,6 +118,7 @@ export type { RechargeSettingsUpdateRequest } from './recharge-settings-update-r
 
 export type { ReplaceUpstreamAccountGroupMembersRequest } from './replace-upstream-account-group-members-request';
 export type { ReplaceUpstreamAccountGroupResourcesRequest } from './replace-upstream-account-group-resources-request';
+export type { ReplaceUpstreamAccountResourcesRequest } from './replace-upstream-account-resources-request';
 export type { ReplaceUpstreamSupplierAuthMethodsRequest } from './replace-upstream-supplier-auth-methods-request';
 export type { ReplaceUpstreamSupplierEndpointsRequest } from './replace-upstream-supplier-endpoints-request';
 export type { ReplaceUpstreamSupplierResourcesRequest } from './replace-upstream-supplier-resources-request';
@@ -140,6 +141,7 @@ export type { UpstreamAccount } from './upstream-account';
 export type { UpstreamAccountCredential } from './upstream-account-credential';
 export type { UpstreamAccountCredentialItemResponse } from './upstream-account-credential-item-response';
 export type { UpstreamAccountCredentialListResponse } from './upstream-account-credential-list-response';
+export type { UpstreamAccountCredentialSecretResponse } from './upstream-account-credential-secret-response';
 export type { UpstreamAccountGroup } from './upstream-account-group';
 export type { UpstreamAccountGroupItemResponse } from './upstream-account-group-item-response';
 export type { UpstreamAccountGroupListResponse } from './upstream-account-group-list-response';
@@ -156,6 +158,9 @@ export type { UpstreamAccountGroupRouteExplanationResponse } from './upstream-ac
 
 export type { UpstreamAccountItemResponse } from './upstream-account-item-response';
 export type { UpstreamAccountListResponse } from './upstream-account-list-response';
+export type { UpstreamAccountResourceCollection } from './upstream-account-resource-collection';
+export type { UpstreamAccountResourceCollectionResponse } from './upstream-account-resource-collection-response';
+export type { UpstreamAccountResourceListResponse } from './upstream-account-resource-list-response';
 export type { UpstreamAccountVerification } from './upstream-account-verification';
 export type { UpstreamAccountVerificationResponse } from './upstream-account-verification-response';
 

@@ -209,7 +209,7 @@ pub use admin_upstream_account_verifier::{
 };
 pub use admin_upstream_store::*;
 pub use admin_user_store::{
-    AdjustAdminUserBalanceCommand, AdminUserApiKeyItem, AdminUserApiKeyListPage,
+    AdminUserApiKeyItem, AdminUserApiKeyListPage,
     AdminUserCommandFuture, AdminUserItem, AdminUserListPage, AdminUserStore, AdminUserSubject,
     CreateAdminUserApiKeyCommand, CreateAdminUserCommand, DeleteAdminUserApiKeyCommand,
     ListAdminUserApiKeysQuery, ListAdminUsersQuery, UpdateAdminUserCommand,

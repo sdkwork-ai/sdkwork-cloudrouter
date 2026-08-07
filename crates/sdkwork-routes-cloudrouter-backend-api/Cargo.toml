@@ -35,12 +35,10 @@ sdkwork-web-axum.workspace = true
 sdkwork-web-contract.workspace = true
 sdkwork-web-core.workspace = true
 sdkwork-utils-rust.workspace = true
-sdkwork-log-core.workspace = true
-sdkwork-log-store-sqlx = { workspace = true, features = ["postgres"] }
-sdkwork-log-tower-adapter.workspace = true
-sdkwork-routes-log-backend-api.workspace = true
+sdkwork-api-log-assembly.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+getrandom.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
 tracing.workspace = true

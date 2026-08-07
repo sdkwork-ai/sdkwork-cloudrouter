@@ -6,13 +6,15 @@
       "table_name": "ai_metering_usage",
       "owner": "sdkwork-cloudrouter",
       "compliance_level": "L3",
-      "lifecycle_status": "active"
+      "lifecycle_status": "active",
+      "system_of_record": true
     },
     {
       "table_name": "ai_metering_request_trace",
       "owner": "sdkwork-cloudrouter",
       "compliance_level": "L3",
-      "lifecycle_status": "active"
+      "lifecycle_status": "active",
+      "system_of_record": true
     }
   ]
 }

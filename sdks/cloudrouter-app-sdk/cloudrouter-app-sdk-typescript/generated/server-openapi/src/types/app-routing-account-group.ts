@@ -30,6 +30,8 @@ export interface AppRoutingAccountGroup {
   saleMultiplier: string;
   /** Status field on app routing account group. */
   status: 'enabled' | 'disabled';
+  /** Tags field on app routing account group. */
+  tags?: ('stable' | 'hot' | 'recommended' | 'promotion' | 'new' | 'premium' | 'high_value' | 'official' | 'beta' | 'limited')[];
   /** Vendor code field on app routing account group. */
   vendorCode?: string | null;
 }

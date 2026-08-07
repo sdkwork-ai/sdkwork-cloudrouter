@@ -1,6 +1,10 @@
+use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
+use sdkwork_account_service::AppendLedgerEntryCommand;
 use sdkwork_contract_service::{
-    CommerceAccountAssetType, CommerceLedgerDirection, CommercePaymentStatus,
+    CommerceAccountAssetType, CommerceLedgerDirection, CommerceMoney, CommercePaymentStatus,
+    CommerceRequestHash,
 };
+use sdkwork_utils_rust::sha256_hash;
 use serde_json::Value;
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
@@ -12,6 +16,8 @@ use crate::ports::{
 };
 
 const POINTS_CURRENCY_CODE: &str = "POINT";
+/// Account-ledger business type for recharge credits (`acct_ledger_entry`).
+const RECHARGE_BUSINESS_TYPE: &str = "points_recharge";
 const ORDER_STATUS_PAID: &str = "paid";
 const ORDER_STATUS_CANCELLED: &str = "cancelled";
 const ORDER_STATUS_PENDING_PAYMENT: &str = "pending_payment";
@@ -91,7 +97,7 @@ async fn process_payment_callback(
         });
     }
 
-    let result = process_payment_status(&mut tx, &command).await;
+    let result = process_payment_status(pool, &mut tx, &command).await;
     match result {
         Ok(outcome) => {
             finish_webhook_delivery(
@@ -365,6 +371,7 @@ async fn finish_webhook_event(
 }
 
 async fn process_payment_status(
+    pool: &PgPool,
     tx: &mut Transaction<'_, Postgres>,
     command: &PaymentCallbackCommand,
 ) -> Result<PaymentCallbackOutcome, DomainError> {
@@ -380,7 +387,7 @@ async fn process_payment_status(
                 ));
             }
             if payment_status_is_succeeded(&payment.status) {
-                return fulfill_recharge_once(tx, &payment, command).await;
+                return fulfill_recharge_once(pool, &payment, command).await;
             }
             if !payment_status_is_pending(&payment.status) {
                 return Err(DomainError::conflict(
@@ -388,7 +395,7 @@ async fn process_payment_status(
                 ));
             }
             mark_payment_success(tx, &payment, command).await?;
-            fulfill_recharge_once(tx, &payment, command).await
+            fulfill_recharge_once(pool, &payment, command).await
         }
         PaymentCallbackStatus::Failed => {
             mark_payment_failed(
@@ -626,7 +633,7 @@ async fn mark_payment_failed(
 }
 
 async fn fulfill_recharge_once(
-    tx: &mut Transaction<'_, Postgres>,
+    pool: &PgPool,
     payment: &PaymentFact,
     command: &PaymentCallbackCommand,
 ) -> Result<PaymentCallbackOutcome, DomainError> {
@@ -643,32 +650,44 @@ async fn fulfill_recharge_once(
         });
     }
     let credited_points = callback_points(payment)?;
-    let account = ensure_points_account(tx, payment, command).await?;
-    let history_count = existing_account_history_count(tx, &account.id, payment, command).await?;
-    if history_count > 0 {
-        return Ok(PaymentCallbackOutcome {
-            success: true,
-            duplicate: true,
-            out_trade_no: command.out_trade_no.clone(),
-            transaction_id: command.transaction_id.clone(),
-            status: "success".to_owned(),
-            message: "payment callback recharge was already fulfilled".to_owned(),
-            credited_points,
-            balance: account.available_points,
-        });
-    }
-
-    checked_add_points(account.available_points, credited_points)?;
-    let balance_after = update_account_points(tx, &account.id, credited_points).await?;
-    insert_account_history(
-        tx,
-        command,
-        payment,
-        &account.id,
-        balance_after,
-        credited_points,
-    )
-    .await?;
+    // Credit the USER points wallet exclusively through the account-domain
+    // ledger (`acct_*`); the out-trade-no is both the transaction number and
+    // the idempotency key, so webhook redelivery replays instead of
+    // double-crediting. The account store commits its own transaction; a crash
+    // before this callback transaction commits replays safely on redelivery.
+    let account_store = PostgresCommerceAccountStore::new(pool.clone());
+    let append = AppendLedgerEntryCommand {
+        tenant_id: payment.tenant_id.clone(),
+        organization_id: payment.organization_id.clone(),
+        owner_user_id: payment.user_id.clone(),
+        account_id: String::new(),
+        asset_type: CommerceAccountAssetType::Points,
+        currency_code: Some(POINTS_CURRENCY_CODE.to_owned()),
+        direction: CommerceLedgerDirection::Credit,
+        amount: CommerceMoney::new(&credited_points.to_string()).map_err(|error| {
+            DomainError::new(format!("invalid recharge points amount: {error}"))
+        })?,
+        business_type: RECHARGE_BUSINESS_TYPE.to_owned(),
+        transaction_no: command.out_trade_no.clone(),
+        request_no: command.out_trade_no.clone(),
+        idempotency_key: command.out_trade_no.clone(),
+        owner_type: None,
+        account_purpose: None,
+        expires_at: None,
+        reversed_ledger_id: None,
+    };
+    let request_hash = recharge_request_hash(&append);
+    let outcome = account_store
+        .append_ledger_entry(append, request_hash)
+        .await
+        .map_err(|error| {
+            DomainError::new(format!(
+                "payment callback recharge credit failed: {}",
+                error.message()
+            ))
+        })?;
+    let balance = parse_integer_text(outcome.account.available_amount.as_str())
+        .ok_or_else(|| DomainError::new("invalid points balance after recharge"))?;
 
     Ok(PaymentCallbackOutcome {
         success: true,
@@ -678,228 +697,27 @@ async fn fulfill_recharge_once(
         status: "success".to_owned(),
         message: "payment callback fulfilled recharge successfully".to_owned(),
         credited_points,
-        balance: balance_after,
+        balance,
     })
 }
 
-#[derive(Debug, Clone)]
-struct PointsAccount {
-    id: String,
-    available_points: i64,
-}
-
-async fn ensure_points_account(
-    tx: &mut Transaction<'_, Postgres>,
-    payment: &PaymentFact,
-    command: &PaymentCallbackCommand,
-) -> Result<PointsAccount, DomainError> {
-    let existing = sqlx::query(
-        r#"
-        SELECT id,
-               CAST(COALESCE(available_amount::numeric, 0) AS TEXT) AS available_points
-        FROM commerce_account
-        WHERE tenant_id = $1
-          AND (organization_id IS NULL OR organization_id = $2)
-          AND owner_user_id = $3
-          AND asset_type = $4
-          AND currency_code = $5
-          AND status = 'active'
-        ORDER BY id ASC
-        LIMIT 1
-        FOR UPDATE
-        "#,
-    )
-    .bind(&payment.tenant_id)
-    .bind(payment.organization_id.as_deref())
-    .bind(&payment.user_id)
-    .bind(CommerceAccountAssetType::Points.as_str())
-    .bind(POINTS_CURRENCY_CODE)
-    .fetch_optional(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to load callback points account", error))?;
-    if let Some(row) = existing {
-        return Ok(PointsAccount {
-            id: string_cell(&row, "id"),
-            available_points: integer_cell(&row, "available_points"),
-        });
-    }
-
-    let inserted = sqlx::query(
-        r#"
-        INSERT INTO commerce_account
-            (id, tenant_id, organization_id, owner_user_id, asset_type, currency_code, available_amount, frozen_amount, version, status, created_at, updated_at)
-        VALUES
-            ($1, $2, $3, $4, $5, $6, '0', '0', 0, 'active', $7, $7)
-        ON CONFLICT (tenant_id, organization_id, owner_user_id, asset_type, currency_code) DO NOTHING
-        RETURNING id
-        "#,
-    )
-    .bind(&command.account_uuid)
-    .bind(&payment.tenant_id)
-    .bind(payment.organization_id.as_deref())
-    .bind(&payment.user_id)
-    .bind(CommerceAccountAssetType::Points.as_str())
-    .bind(POINTS_CURRENCY_CODE)
-    .bind(&command.received_at)
-    .fetch_optional(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to create callback points account", error))?;
-    if let Some(row) = inserted {
-        return Ok(PointsAccount {
-            id: string_cell(&row, "id"),
-            available_points: 0,
-        });
-    }
-
-    let row = sqlx::query(
-        r#"
-        SELECT id,
-               CAST(COALESCE(available_amount::numeric, 0) AS TEXT) AS available_points
-        FROM commerce_account
-        WHERE tenant_id = $1
-          AND (organization_id IS NULL OR organization_id = $2)
-          AND owner_user_id = $3
-          AND asset_type = $4
-          AND currency_code = $5
-          AND status = 'active'
-        ORDER BY id ASC
-        LIMIT 1
-        FOR UPDATE
-        "#,
-    )
-    .bind(&payment.tenant_id)
-    .bind(payment.organization_id.as_deref())
-    .bind(&payment.user_id)
-    .bind(CommerceAccountAssetType::Points.as_str())
-    .bind(POINTS_CURRENCY_CODE)
-    .fetch_optional(&mut **tx)
-    .await
-    .map_err(|error| {
-        store_error(
-            "failed to load concurrently created callback points account",
-            error,
-        )
-    })?
-    .ok_or_else(|| {
-        DomainError::conflict(
-            "payment callback points account was not available after concurrent creation",
-        )
-    })?;
-
-    Ok(PointsAccount {
-        id: string_cell(&row, "id"),
-        available_points: integer_cell(&row, "available_points"),
-    })
-}
-
-async fn existing_account_history_count(
-    tx: &mut Transaction<'_, Postgres>,
-    account_id: &str,
-    payment: &PaymentFact,
-    command: &PaymentCallbackCommand,
-) -> Result<i64, DomainError> {
-    sqlx::query_scalar(
-        r#"
-        SELECT COUNT(1)
-        FROM commerce_account_ledger_entry
-        WHERE tenant_id = $1
-          AND account_id = $2
-          AND transaction_no = $3
-          AND business_type = 'recharge'
-        "#,
-    )
-    .bind(&payment.tenant_id)
-    .bind(account_id)
-    .bind(&command.out_trade_no)
-    .fetch_one(&mut **tx)
-    .await
-    .map_err(|error| {
-        store_error(
-            "failed to check callback account history idempotency",
-            error,
-        )
-    })
-}
-
-async fn update_account_points(
-    tx: &mut Transaction<'_, Postgres>,
-    account_id: &str,
-    credited_points: i64,
-) -> Result<i64, DomainError> {
-    let max_balance_before = i64::MAX
-        .checked_sub(credited_points)
-        .ok_or_else(|| DomainError::conflict("payment callback account points overflow"))?;
-    let result = sqlx::query(
-        r#"
-        UPDATE commerce_account
-        SET available_amount = (COALESCE(available_amount::numeric, 0) + $1::numeric)::text,
-            version = version + 1,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = $2
-          AND COALESCE(available_amount::numeric, 0) <= $3::numeric
-        "#,
-    )
-    .bind(credited_points.to_string())
-    .bind(account_id)
-    .bind(max_balance_before.to_string())
-    .execute(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to update callback account points", error))?;
-    if result.rows_affected() != 1 {
-        return Err(DomainError::conflict(
-            "payment callback account points update was not applied atomically",
-        ));
-    }
-
-    let balance_after = sqlx::query_scalar::<_, String>(
-        r#"
-        SELECT CAST(COALESCE(available_amount, '0') AS TEXT)
-        FROM commerce_account
-        WHERE id = $1
-        LIMIT 1
-        "#,
-    )
-    .bind(account_id)
-    .fetch_one(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to read callback account points after update", error))?;
-    parse_integer_text(&balance_after)
-        .ok_or_else(|| DomainError::new("invalid callback account points after update"))
-}
-
-async fn insert_account_history(
-    tx: &mut Transaction<'_, Postgres>,
-    command: &PaymentCallbackCommand,
-    payment: &PaymentFact,
-    account_id: &str,
-    balance_after: i64,
-    credited_points: i64,
-) -> Result<(), DomainError> {
-    sqlx::query(
-        r#"
-        INSERT INTO commerce_account_ledger_entry
-            (id, tenant_id, organization_id, account_id, owner_user_id, asset_type, direction, amount, balance_after, business_type, transaction_no, request_no, idempotency_key, source_type, source_id, remark, created_at)
-        VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'recharge', $10, $10, $10, 'commerce_payment_attempt', $11, $12, $13)
-        "#,
-    )
-    .bind(&command.account_history_uuid)
-    .bind(&payment.tenant_id)
-    .bind(payment.organization_id.as_deref())
-    .bind(account_id)
-    .bind(&payment.user_id)
-    .bind(CommerceAccountAssetType::Points.as_str())
-    .bind(CommerceLedgerDirection::Credit.as_str())
-    .bind(credited_points.to_string())
-    .bind(balance_after.to_string())
-    .bind(&command.out_trade_no)
-    .bind(&payment.id)
-    .bind(format!("payment_callback_transaction={}", command.transaction_id))
-    .bind(&command.received_at)
-    .execute(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to insert callback account ledger entry", error))?;
-    Ok(())
+/// Deterministic request hash for the recharge credit so the account-domain
+/// idempotency replay resolves to the same record for the same out-trade-no.
+fn recharge_request_hash(command: &AppendLedgerEntryCommand) -> CommerceRequestHash {
+    let canonical = format!(
+        "{}|{}|{}|{}|{}|{}|{}|{}|{}",
+        command.tenant_id,
+        command.organization_id.as_deref().unwrap_or_default(),
+        command.owner_user_id,
+        command.asset_type.as_str(),
+        command.direction.as_str(),
+        command.amount.as_str(),
+        command.business_type,
+        command.transaction_no,
+        command.idempotency_key,
+    );
+    let digest = sha256_hash(canonical.as_bytes());
+    CommerceRequestHash::new(&digest).expect("recharge request hash is never empty")
 }
 
 fn is_points_recharge(value: &str) -> bool {
@@ -950,12 +768,6 @@ fn callback_points(payment: &PaymentFact) -> Result<i64, DomainError> {
     Ok(points)
 }
 
-fn checked_add_points(current_points: i64, credited_points: i64) -> Result<i64, DomainError> {
-    current_points
-        .checked_add(credited_points)
-        .ok_or_else(|| DomainError::conflict("payment callback account points overflow"))
-}
-
 fn money_matches(expected: &str, actual: &str) -> bool {
     match (DecimalValue::parse(expected), DecimalValue::parse(actual)) {
         (Ok(expected), Ok(actual)) => expected == actual,
@@ -984,17 +796,6 @@ fn required_string_cell(
         .map(|value| value.trim().to_owned())
         .filter(|value| !value.is_empty())
         .ok_or_else(|| missing_status_error(source))
-}
-
-fn integer_cell(row: &sqlx::postgres::PgRow, column: &str) -> i64 {
-    optional_integer_cell(row, column).unwrap_or(0)
-}
-
-fn optional_integer_cell(row: &sqlx::postgres::PgRow, column: &str) -> Option<i64> {
-    row.try_get::<Option<i64>, _>(column)
-        .ok()
-        .flatten()
-        .or_else(|| parse_integer_text(&string_cell(row, column)))
 }
 
 fn parse_integer_text(value: &str) -> Option<i64> {

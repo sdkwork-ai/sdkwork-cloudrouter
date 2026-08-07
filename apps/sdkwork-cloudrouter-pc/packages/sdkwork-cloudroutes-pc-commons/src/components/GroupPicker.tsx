@@ -31,6 +31,8 @@ export interface GroupPickerOption {
   vendorCode?: string | null;
   /** 支持的模态（text/audio/image/video/music）；空数组表示不限制 */
   modalities?: string[];
+  /** 营销/运营标签 code 列表（stable/hot/recommended/...） */
+  tags?: string[];
   icon?: ReactNode;
   disabled?: boolean;
 }
@@ -62,6 +64,8 @@ export interface GroupPickerLabels {
   rate?: string;
   /** 模态标签覆盖，key 为模态 code（text/audio/image/video/music） */
   modalityLabels?: Record<string, string>;
+  /** 标签显示覆盖，key 为标签 code；缺省时显示标签 code 原文 */
+  tagLabels?: Record<string, string>;
 }
 
 export interface GroupPickerHandle {
@@ -123,7 +127,7 @@ function matchesQuery(option: GroupPickerOption, query: string): boolean {
   if (!normalizedQuery) {
     return true;
   }
-  return [option.label, option.description, option.value, option.vendorCode].some((text) =>
+  return [option.label, option.description, option.value, option.vendorCode, ...(option.tags ?? [])].some((text) =>
     (text ?? '').toLowerCase().includes(normalizedQuery),
   );
 }
@@ -582,6 +586,15 @@ function TransferColumn({
                   </span>
                 ) : null}
               </span>
+              {(option.tags ?? []).length > 0 ? (
+                <span className="flex shrink-0 flex-wrap justify-end gap-0.5">
+                  {(option.tags ?? []).map((tag) => (
+                    <span key={tag} className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">
+                      {labels.tagLabels?.[tag] ?? tag}
+                    </span>
+                  ))}
+                </span>
+              ) : null}
               {option.rate ? (
                 <span
                   title={labels.rate}

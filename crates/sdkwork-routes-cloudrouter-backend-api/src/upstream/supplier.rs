@@ -29,7 +29,7 @@ const SUPPLIER_CREATE_IDEMPOTENCY_SCOPE: i64 = 1_000_001;
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct SupplierCreateRequest {
-    supplier_code: String,
+    supplier_code: Option<String>,
     supplier_name: String,
     display_name: Option<String>,
     description: Option<String>,
@@ -510,6 +510,19 @@ async fn replace_resources(
     }
 }
 
+/// 自动生成唯一供应商编码：supplier-<16位随机hex>。
+/// 数据库唯一索引（tenant+org+supplier_code）兜底保证唯一性。
+fn generate_supplier_code() -> RequestResult<String> {
+    let mut bytes = [0u8; 8];
+    getrandom::fill(&mut bytes).map_err(|error| {
+        problem(
+            SdkWorkResultCode::InternalError,
+            format!("failed to generate supplier code: {error}"),
+        )
+    })?;
+    Ok(format!("supplier-{:016x}", u64::from_be_bytes(bytes)))
+}
+
 fn create_command(
     subject: sdkwork_cloudrouter_router_service::ports::AdminUpstreamSubject,
     uuid: String,
@@ -533,7 +546,10 @@ fn create_command(
         supplier_id: None,
         expected_version: None,
         uuid,
-        supplier_code: required_text(request.supplier_code, "supplierCode", MAX_CODE_LENGTH)?,
+        supplier_code: match request.supplier_code {
+            Some(value) => required_text(value, "supplierCode", MAX_CODE_LENGTH)?,
+            None => generate_supplier_code()?,
+        },
         display_name: request
             .display_name
             .map(|value| required_text(value, "displayName", MAX_NAME_LENGTH))

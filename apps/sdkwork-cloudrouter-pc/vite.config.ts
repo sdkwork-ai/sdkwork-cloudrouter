@@ -725,7 +725,12 @@ export default defineConfig(({mode}) => {
               || normalizedId.startsWith(`${normalizedSdkworkCoreRoot}/`)
               || normalizedId.startsWith(`${normalizedSdkworkUiRoot}/`)
             ) {
-              return 'vendor-ui';
+              // vendor-ui and vendor-sdkwork-sdk have static imports in both
+              // directions (UI components consume SDK clients; SDK packages
+              // re-export UI types), which the static-chunk-cycle-guard
+              // rejects as a chunk cycle. Keeping them in one chunk is the
+              // rollup-recommended resolution for manual chunk cycles.
+              return 'vendor-ui-sdk';
             }
             if (normalizedId.startsWith(`${normalizedAppbaseRoot}/packages/pc-react/content/`)) {
               return 'vendor-generation';
@@ -748,7 +753,7 @@ export default defineConfig(({mode}) => {
               || /\/node_modules\/sdkwork-[^/]+-(?:app|backend|open)-sdk-generated-typescript\//u.test(normalizedId)
               || normalizedId.includes('/sdkwork-sdk-commons/')
             ) {
-              return 'vendor-sdkwork-sdk';
+              return 'vendor-ui-sdk';
             }
             if (
               normalizedId.includes('/node_modules/framer-motion/')

@@ -9,7 +9,7 @@ use sdkwork_cloudrouter_router_service::domain::{
     DomainError, DomainResult, GatewayApiKey, UpstreamAccountGroup,
 };
 use sdkwork_cloudrouter_router_service::ports::{
-    AdjustAdminUserBalanceCommand, AdminUserApiKeyItem, AdminUserApiKeyListPage,
+    AdminUserApiKeyItem, AdminUserApiKeyListPage,
     AdminUserCommandFuture, AdminUserItem, AdminUserListPage, AdminUserStore,
     ApiKeyCommandStoreFuture, CreateAdminUserApiKeyCommand, CreateAdminUserCommand,
     CreateGatewayApiKeyCommand, CreatedGatewayApiKey, DeleteAdminUserApiKeyCommand,
@@ -170,7 +170,7 @@ async fn admin_user_route_creates_updates_adjusts_and_deletes() {
         .oneshot(signed_request(
             "POST",
             "/backend/v3/api/user",
-            r#"{"email":"new@example.com","username":"new-user","balance":"$10.00"}"#,
+            r#"{"email":"new@example.com","username":"new-user"}"#,
         ))
         .await
         .unwrap();
@@ -180,7 +180,7 @@ async fn admin_user_route_creates_updates_adjusts_and_deletes() {
         "new@example.com",
         create_user_payload["data"]["item"]["email"]
     );
-    assert_eq!("$10.00", create_user_payload["data"]["item"]["balance"]);
+    assert_eq!("$0.00", create_user_payload["data"]["item"]["balance"]);
 
     let update_user_response = router
         .clone()
@@ -195,19 +195,6 @@ async fn admin_user_route_creates_updates_adjusts_and_deletes() {
     let update_user_payload = json_payload(update_user_response).await;
     assert_eq!("renamed", update_user_payload["data"]["item"]["username"]);
     assert_eq!("vip", update_user_payload["data"]["item"]["group"]);
-
-    let balance_response = router
-        .clone()
-        .oneshot(signed_request(
-            "POST",
-            "/backend/v3/api/billing/users/30/balance_adjustments",
-            r#"{"amount":5,"type":"recharge"}"#,
-        ))
-        .await
-        .unwrap();
-    assert_eq!(StatusCode::OK, balance_response.status());
-    let balance_payload = json_payload(balance_response).await;
-    assert_eq!("$30.50", balance_payload["data"]["item"]["balance"]);
 
     let create_key_response = router
         .clone()
@@ -236,7 +223,6 @@ async fn admin_user_route_creates_updates_adjusts_and_deletes() {
         vec![
             "create_user",
             "update_user",
-            "adjust_balance",
             "create_api_key",
             "delete_api_key"
         ],
@@ -463,7 +449,7 @@ impl AdminUserStore for TestAdminUserStore {
                 mobile: String::new(),
                 role: "user".to_owned(),
                 group: "standard".to_owned(),
-                balance: "$10.00".to_owned(),
+                balance: "$0.00".to_owned(),
                 status: "active".to_owned(),
                 last_active: "-".to_owned(),
                 last_used: "-".to_owned(),
@@ -482,19 +468,6 @@ impl AdminUserStore for TestAdminUserStore {
             let mut user = base_user();
             user.username = command.username.unwrap_or(user.username);
             user.group = command.group.unwrap_or(user.group);
-            Ok(Some(user))
-        })
-    }
-
-    fn adjust_balance<'a>(
-        &'a self,
-        command: AdjustAdminUserBalanceCommand,
-    ) -> AdminUserCommandFuture<'a, Option<AdminUserItem>> {
-        Box::pin(async move {
-            self.commands.lock().unwrap().push("adjust_balance");
-            assert_eq!(30, command.user_id);
-            let mut user = base_user();
-            user.balance = "$30.50".to_owned();
             Ok(Some(user))
         })
     }

@@ -144,6 +144,24 @@ active_routing_resource_binding AS (
       AND (sr.tenant_id > 0 OR sr.organization_id = 0)
       AND (sr.effective_from IS NULL OR sr.effective_from <= CURRENT_TIMESTAMP)
       AND (sr.effective_to IS NULL OR sr.effective_to > CURRENT_TIMESTAMP)
+    UNION ALL
+    SELECT
+        'account' AS binding_kind,
+        ar.id AS binding_id,
+        ar.tenant_id AS scope_tenant_id,
+        ar.organization_id AS scope_organization_id,
+        ar.account_id AS subject_id,
+        ar.grant_type,
+        ar.resource_id,
+        ar.resource_code,
+        ar.resource_group_id,
+        ar.resource_group_code
+    FROM ai_upstream_account_resource ar
+    WHERE ar.deleted_at IS NULL
+      AND ar.status = 1
+      AND (ar.tenant_id > 0 OR ar.organization_id = 0)
+      AND (ar.effective_from IS NULL OR ar.effective_from <= CURRENT_TIMESTAMP)
+      AND (ar.effective_to IS NULL OR ar.effective_to > CURRENT_TIMESTAMP)
 ),
 routing_scope_owner AS (
     SELECT DISTINCT scope_tenant_id AS tenant_id, scope_organization_id AS organization_id
@@ -461,6 +479,129 @@ matched_resource_scope AS (
               AND (gr.resource_type = 'modality' OR sr.resource_type = 'modality')
           )
      )
+),
+account_resource_scope AS (
+    SELECT DISTINCT
+        scope_tenant_id AS tenant_id,
+        scope_organization_id AS organization_id,
+        subject_id AS account_id,
+        resource_code,
+        resource_type,
+        vendor_code,
+        modality_code,
+        api_code,
+        catalog_key,
+        model,
+        provider_native_model
+    FROM resource_candidate
+    WHERE binding_kind = 'account'
+      AND grant_type = 'allow'
+      AND candidate_rank = 1
+      AND NOT EXISTS (
+          SELECT 1
+          FROM resource_candidate denied
+          WHERE denied.binding_kind = resource_candidate.binding_kind
+            AND denied.scope_tenant_id = resource_candidate.scope_tenant_id
+            AND denied.scope_organization_id = resource_candidate.scope_organization_id
+            AND denied.subject_id = resource_candidate.subject_id
+            AND denied.resource_code = resource_candidate.resource_code
+            AND denied.grant_type = 'deny'
+            AND denied.candidate_rank = 1
+      )
+),
+account_has_resource_scope AS (
+    SELECT DISTINCT
+        scope_tenant_id AS tenant_id,
+        scope_organization_id AS organization_id,
+        subject_id AS account_id
+    FROM resource_candidate
+    WHERE binding_kind = 'account'
+      AND candidate_rank = 1
+),
+effective_matched_resource_scope AS (
+    SELECT DISTINCT
+        mrs.tenant_id,
+        mrs.organization_id,
+        mrs.account_group_id,
+        mrs.supplier_id,
+        member.account_id,
+        COALESCE(NULLIF(mrs.resource_code, ''), NULLIF(ars.resource_code, '')) AS resource_code,
+        COALESCE(NULLIF(mrs.resource_type, ''), NULLIF(ars.resource_type, '')) AS resource_type,
+        COALESCE(NULLIF(mrs.vendor_code, ''), NULLIF(ars.vendor_code, '')) AS vendor_code,
+        COALESCE(NULLIF(mrs.modality_code, ''), NULLIF(ars.modality_code, '')) AS modality_code,
+        COALESCE(NULLIF(mrs.api_code, ''), NULLIF(ars.api_code, '')) AS api_code,
+        COALESCE(NULLIF(mrs.catalog_key, ''), NULLIF(ars.catalog_key, '')) AS catalog_key,
+        COALESCE(NULLIF(mrs.model, ''), NULLIF(ars.model, '')) AS model,
+        COALESCE(NULLIF(mrs.provider_native_model, ''), NULLIF(ars.provider_native_model, '')) AS provider_native_model
+    FROM matched_resource_scope mrs
+    JOIN ai_upstream_account_group_member member
+      ON member.tenant_id = mrs.tenant_id
+     AND member.organization_id = mrs.organization_id
+     AND member.account_group_id = mrs.account_group_id
+     AND member.deleted_at IS NULL
+     AND member.status = 1
+     AND COALESCE(member.enabled, true)
+    JOIN account_has_resource_scope has_scope
+      ON has_scope.tenant_id = mrs.tenant_id
+     AND has_scope.organization_id = mrs.organization_id
+     AND has_scope.account_id = member.account_id
+    JOIN account_resource_scope ars
+      ON ars.tenant_id = mrs.tenant_id
+     AND ars.organization_id = mrs.organization_id
+     AND ars.account_id = member.account_id
+     AND (
+          NULLIF(mrs.resource_code, '') = NULLIF(ars.resource_code, '')
+          OR (
+              NULLIF(mrs.catalog_key, '') IS NOT NULL
+              AND mrs.catalog_key = ars.catalog_key
+              AND (NULLIF(mrs.api_code, '') IS NULL OR NULLIF(ars.api_code, '') IS NULL OR mrs.api_code = ars.api_code)
+          )
+          OR (
+              NULLIF(mrs.api_code, '') IS NOT NULL
+              AND mrs.api_code = ars.api_code
+              AND (mrs.resource_type = 'api_endpoint' OR ars.resource_type = 'api_endpoint')
+          )
+          OR (
+              NULLIF(mrs.vendor_code, '') IS NOT NULL
+              AND mrs.vendor_code = ars.vendor_code
+              AND (mrs.resource_type = 'vendor' OR ars.resource_type = 'vendor')
+          )
+          OR (
+              NULLIF(mrs.modality_code, '') IS NOT NULL
+              AND mrs.modality_code = ars.modality_code
+              AND (mrs.resource_type = 'modality' OR ars.resource_type = 'modality')
+          )
+     )
+    UNION ALL
+    SELECT DISTINCT
+        mrs.tenant_id,
+        mrs.organization_id,
+        mrs.account_group_id,
+        mrs.supplier_id,
+        member.account_id,
+        mrs.resource_code,
+        mrs.resource_type,
+        mrs.vendor_code,
+        mrs.modality_code,
+        mrs.api_code,
+        mrs.catalog_key,
+        mrs.model,
+        mrs.provider_native_model
+    FROM matched_resource_scope mrs
+    JOIN ai_upstream_account_group_member member
+      ON member.tenant_id = mrs.tenant_id
+     AND member.organization_id = mrs.organization_id
+     AND member.account_group_id = mrs.account_group_id
+     AND member.deleted_at IS NULL
+     AND member.status = 1
+     AND COALESCE(member.enabled, true)
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM account_has_resource_scope has_scope
+        WHERE has_scope.tenant_id = mrs.tenant_id
+          AND has_scope.organization_id = mrs.organization_id
+          AND has_scope.account_id = member.account_id
+    )
 )
 SELECT
     c.tenant_id,
@@ -518,32 +659,35 @@ SELECT
                 'costMultiplierOverride', b.cost_multiplier_override::text,
                 'apiScope', CASE
                     WHEN NOT EXISTS (
-                        SELECT 1 FROM matched_resource_scope mrs
+                        SELECT 1 FROM effective_matched_resource_scope mrs
                         WHERE mrs.tenant_id = b.tenant_id
                           AND mrs.organization_id = b.organization_id
                           AND mrs.account_group_id = b.account_group_id
                           AND mrs.supplier_id = c.supplier_id
+                          AND mrs.account_id = c.id
                     ) THEN jsonb_build_array('__deny__')
                     ELSE COALESCE((
                         SELECT jsonb_agg(scope.value ORDER BY scope.value)
                         FROM (
                             SELECT DISTINCT NULLIF(mrs.api_code, '') AS value
-                            FROM matched_resource_scope mrs
+                            FROM effective_matched_resource_scope mrs
                             WHERE mrs.tenant_id = b.tenant_id
                               AND mrs.organization_id = b.organization_id
                               AND mrs.account_group_id = b.account_group_id
                               AND mrs.supplier_id = c.supplier_id
+                              AND mrs.account_id = c.id
                               AND NULLIF(mrs.api_code, '') IS NOT NULL
                         ) scope
                     ), '[]'::jsonb)
                 END,
                 'capabilities', CASE
                     WHEN NOT EXISTS (
-                        SELECT 1 FROM matched_resource_scope mrs
+                        SELECT 1 FROM effective_matched_resource_scope mrs
                         WHERE mrs.tenant_id = b.tenant_id
                           AND mrs.organization_id = b.organization_id
                           AND mrs.account_group_id = b.account_group_id
                           AND mrs.supplier_id = c.supplier_id
+                          AND mrs.account_id = c.id
                     ) THEN jsonb_build_array('__deny__')
                     ELSE COALESCE((
                         SELECT jsonb_agg(capability.value ORDER BY capability.sort_order, capability.value)
@@ -557,25 +701,28 @@ SELECT
                                         THEN 'llm'
                                     END AS value,
                                     1 AS sort_order
-                                FROM matched_resource_scope mrs
+                                FROM effective_matched_resource_scope mrs
                                 WHERE mrs.tenant_id = b.tenant_id
                                   AND mrs.organization_id = b.organization_id
                                   AND mrs.account_group_id = b.account_group_id
                                   AND mrs.supplier_id = c.supplier_id
+                                  AND mrs.account_id = c.id
                                 UNION ALL
                                 SELECT NULLIF(mrs.modality_code, '') AS value, 2 AS sort_order
-                                FROM matched_resource_scope mrs
+                                FROM effective_matched_resource_scope mrs
                                 WHERE mrs.tenant_id = b.tenant_id
                                   AND mrs.organization_id = b.organization_id
                                   AND mrs.account_group_id = b.account_group_id
                                   AND mrs.supplier_id = c.supplier_id
+                                  AND mrs.account_id = c.id
                                 UNION ALL
                                 SELECT NULLIF(mrs.api_code, '') AS value, 3 AS sort_order
-                                FROM matched_resource_scope mrs
+                                FROM effective_matched_resource_scope mrs
                                 WHERE mrs.tenant_id = b.tenant_id
                                   AND mrs.organization_id = b.organization_id
                                   AND mrs.account_group_id = b.account_group_id
                                   AND mrs.supplier_id = c.supplier_id
+                                  AND mrs.account_id = c.id
                             ) capability_values
                             WHERE value IS NOT NULL AND value <> ''
                         ) capability
@@ -605,11 +752,12 @@ SELECT
                             mrs.catalog_key,
                             mrs.model,
                             mrs.provider_native_model
-                        FROM matched_resource_scope mrs
+                        FROM effective_matched_resource_scope mrs
                         WHERE mrs.tenant_id = b.tenant_id
                           AND mrs.organization_id = b.organization_id
                           AND mrs.account_group_id = b.account_group_id
                           AND mrs.supplier_id = c.supplier_id
+                          AND mrs.account_id = c.id
                     ) resource
                 ), '[]'::jsonb)
             )

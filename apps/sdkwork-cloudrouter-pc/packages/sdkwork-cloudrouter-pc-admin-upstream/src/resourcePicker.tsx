@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type {
   UpstreamResourceCatalogItem,
   UpstreamResourceGroupCatalogItem,
+  UpstreamResourceEntitlementInput,
 } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import { inputClass } from './components';
 
@@ -14,6 +15,22 @@ export interface ResourceSelection {
 
 export const emptyResourceSelection = (): ResourceSelection => ({ resourceCodes: [], resourceGroupCodes: [] });
 
+/** 把选择集展开为 allow 授权条目（priority 100 / status 1）。 */
+export function toEntitlements(selection: ResourceSelection): UpstreamResourceEntitlementInput[] {
+  return [
+    ...selection.resourceCodes.map((resourceCode) => ({ resourceCode, grantType: 'allow' as const, priority: 100, status: 1 })),
+    ...selection.resourceGroupCodes.map((resourceGroupCode) => ({ resourceGroupCode, grantType: 'allow' as const, priority: 100, status: 1 })),
+  ];
+}
+
+/** 从授权条目恢复选择集（deny 等非 allow 条目被忽略）。 */
+export function toSelection(items: UpstreamResourceEntitlementInput[]): ResourceSelection {
+  return {
+    resourceCodes: items.filter((item) => item.resourceCode).map((item) => item.resourceCode as string),
+    resourceGroupCodes: items.filter((item) => item.resourceGroupCode).map((item) => item.resourceGroupCode as string),
+  };
+}
+
 type ResourceTypeFilter = 'all' | 'api_endpoint' | 'modality' | 'vendor';
 
 const resourceTypes: ResourceTypeFilter[] = ['all', 'api_endpoint', 'modality', 'vendor'];
@@ -23,14 +40,23 @@ export function ResourcePicker({
   resourceGroups = [],
   selection,
   onChange,
+  className,
+  listClassName,
+  flat = false,
 }: {
   resources: UpstreamResourceCatalogItem[];
   resourceGroups: UpstreamResourceGroupCatalogItem[];
   selection: ResourceSelection;
   onChange: (next: ResourceSelection) => void;
+  /** 附加到容器根节点的样式；默认空 */
+  className?: string;
+  /** 覆盖资源列表滚动区的样式（如 max-h、flex 撑满）；默认空 */
+  listClassName?: string;
+  /** 扁平无边框变体，用于嵌入弹窗等平铺场景；默认 false */
+  flat?: boolean;
 }) {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<'resources' | 'groups'>('resources');
+  const [tab, setTab] = useState<'resources' | 'groups'>('groups');
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<ResourceTypeFilter>('all');
 
@@ -112,22 +138,22 @@ export function ResourcePicker({
   };
 
   return (
-    <div className="overflow-hidden rounded-md border border-slate-200 dark:border-white/10">
-      <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-slate-50/60 px-3 py-2 dark:border-white/10 dark:bg-white/[0.03]">
+    <div className={`overflow-hidden ${flat ? '' : 'rounded-md border border-slate-200 dark:border-white/10'} ${className ?? ''}`}>
+      <div className={`flex items-center justify-between gap-2 border-b border-slate-200 px-3 py-2 dark:border-white/10 ${flat ? '' : 'bg-slate-50/60 dark:bg-white/[0.03]'}`}>
         <div className="flex gap-1">
-          <button
-            type="button"
-            onClick={() => setTab('resources')}
-            className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${tab === 'resources' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:bg-white/10'}`}
-          >
-            {t('admin.upstream.supplier.resources.tab.resources')}
-          </button>
           <button
             type="button"
             onClick={() => setTab('groups')}
             className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${tab === 'groups' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:bg-white/10'}`}
           >
             {t('admin.upstream.supplier.resources.tab.groups')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('resources')}
+            className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${tab === 'resources' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:bg-white/10'}`}
+          >
+            {t('admin.upstream.supplier.resources.tab.resources')}
           </button>
         </div>
         {selectedCount + selectedGroupCount > 0 ? (
@@ -157,7 +183,7 @@ export function ResourcePicker({
           </div>
         ) : null}
       </div>
-      <div className="max-h-64 overflow-y-auto">
+      <div className={`max-h-64 overflow-x-hidden overflow-y-auto ${listClassName ?? ''}`}>
         {tab === 'resources' ? (
           vendorGroups.length === 0 ? (
             <p className="py-8 text-center text-sm text-slate-500">{t('admin.upstream.supplier.resources.empty')}</p>
@@ -166,7 +192,7 @@ export function ResourcePicker({
               {vendorGroups.map(([vendorCode, items]) => (
                 <div key={vendorCode} className="min-w-0">
                   <div className="mb-1.5 flex items-center justify-between gap-2">
-                    <span className="truncate text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <span className="min-w-0 truncate text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                       {vendorDisplayName(vendorCode)}
                       {vendorCode ? <span className="ml-1.5 font-mono font-normal normal-case text-slate-400 dark:text-slate-500">{vendorCode}</span> : null}
                     </span>
@@ -208,7 +234,7 @@ export function ResourcePicker({
                   <input type="checkbox" checked={selected} onChange={() => toggleGroup(group.groupCode)} className="h-4 w-4 shrink-0 accent-indigo-600" />
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
-                      <span className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">{group.groupName}</span>
+                      <span className="min-w-0 truncate text-sm font-medium text-slate-800 dark:text-slate-100">{group.groupName}</span>
                       <span className="shrink-0 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-white/10 dark:text-slate-400">{group.resourceCount}</span>
                     </span>
                     <span className="block truncate font-mono text-xs text-slate-500 dark:text-slate-400">{group.groupCode}</span>
@@ -220,7 +246,7 @@ export function ResourcePicker({
           </div>
         )}
       </div>
-      <div className="flex items-center justify-between gap-2 border-t border-slate-200 bg-slate-50/60 px-3 py-2 dark:border-white/10 dark:bg-white/[0.03]">
+      <div className={`flex items-center justify-between gap-2 border-t border-slate-200 px-3 py-2 dark:border-white/10 ${flat ? '' : 'bg-slate-50/60 dark:bg-white/[0.03]'}`}>
         <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
           {t('admin.upstream.supplier.resources.selected', { resources: selectedCount, groups: selectedGroupCount })}
         </span>

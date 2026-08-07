@@ -12,7 +12,7 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::rows::{
 use sdkwork_cloudrouter_router_service::infrastructure::sql::PricingCatalogSql;
 use sdkwork_cloudrouter_router_service::ports::UpstreamAccountRouteCatalog;
 
-const CANONICAL_UPSTREAM_TABLES: [&str; 11] = [
+const CANONICAL_UPSTREAM_TABLES: [&str; 12] = [
     "ai_upstream_supplier",
     "ai_upstream_supplier_endpoint",
     "ai_upstream_supplier_auth_method",
@@ -23,6 +23,7 @@ const CANONICAL_UPSTREAM_TABLES: [&str; 11] = [
     "ai_upstream_account_group",
     "ai_upstream_account_group_member",
     "ai_upstream_account_group_resource",
+    "ai_upstream_account_resource",
     "ai_upstream_supplier_endpoint_health_state",
 ];
 

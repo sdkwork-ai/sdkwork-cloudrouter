@@ -21,7 +21,7 @@ export interface CreateUpstreamSupplierRequest {
   /** Status field on create upstream supplier request. */
   status?: number | null;
   /** Supplier code field on create upstream supplier request. */
-  supplierCode: string;
+  supplierCode?: string | null;
   /** Supplier name field on create upstream supplier request. */
   supplierName: string;
   /** Supplier type field on create upstream supplier request. */

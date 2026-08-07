@@ -1,0 +1,103 @@
+# sdkwork-cloudrouter standalone container composition.
+#
+# runtimeTarget = "container", deploymentProfile = "standalone".
+# Build the image first with `pnpm build:container` (produces cloudrouter:local),
+# then `docker compose up -d`.
+#
+# Port strategy: the container listens on 0.0.0.0:3900 (the application public
+# ingress, per APP_RUNTIME_TOPOLOGY_SPEC the single HTTP bind of the application
+# plane). The host side maps 3903 -> 3900 so the container never collides with
+# `pnpm dev` (3900 gateway, 3901 vite) or the reserved 3902 client-only
+# ingress. PostgreSQL and Redis stay on the compose network and expose no host
+# ports, so the container composition is conflict-free by construction.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${CLOUDROUTER_POSTGRES_DB:-sdkwork_ai_prod}
+      POSTGRES_USER: ${CLOUDROUTER_POSTGRES_USER:-sdkwork_ai_prod}
+      POSTGRES_PASSWORD: ${CLOUDROUTER_POSTGRES_PASSWORD:-sdkwork_ai_prod}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # Creates the same-named workspace schema on first initialization
+      # (the sdkwork-database lifecycle pins search_path to it).
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CLOUDROUTER_POSTGRES_USER:-sdkwork_ai_prod} -d ${CLOUDROUTER_POSTGRES_DB:-sdkwork_ai_prod}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  cloudrouter:
+    image: cloudrouter:local
+    ports:
+      - "3903:3900"
+    environment:
+      # Deployment identity (DEPLOYMENT_SPEC §5.2).
+      SDKWORK_CLOUDROUTER_DEPLOYMENT_PROFILE: standalone
+      SDKWORK_CLOUDROUTER_RUNTIME_TARGET: container
+      # Application public ingress bind: topology-resolved, never hard-coded
+      # in source. Container-internal 3900 is the spec default; the host port
+      # mapping above keeps it off the `pnpm dev` ports.
+      SDKWORK_CLOUDROUTER_APPLICATION_PUBLIC_INGRESS_BIND: 0.0.0.0:3900
+      SDKWORK_CLOUDROUTER_SERVER_BIND: 0.0.0.0:3900
+      # External dependencies are injected at runtime, not baked into the image.
+      # Split database fields (with explicit schema) instead of a raw URL so
+      # the lifecycle schema identity is unambiguous.
+      SDKWORK_DATABASE_ENGINE: postgresql
+      SDKWORK_DATABASE_HOST: postgres
+      SDKWORK_DATABASE_PORT: "5432"
+      SDKWORK_DATABASE_NAME: ${CLOUDROUTER_POSTGRES_DB:-sdkwork_ai_prod}
+      SDKWORK_DATABASE_SCHEMA: ${CLOUDROUTER_POSTGRES_SCHEMA:-sdkwork_ai_prod}
+      SDKWORK_DATABASE_USERNAME: ${CLOUDROUTER_POSTGRES_USER:-sdkwork_ai_prod}
+      SDKWORK_DATABASE_PASSWORD: ${CLOUDROUTER_POSTGRES_PASSWORD:-sdkwork_ai_prod}
+      SDKWORK_DATABASE_SSL_MODE: disable
+      SDKWORK_DATABASE_MAX_CONNECTIONS: "10"
+      SDKWORK_CLOUDROUTER_REDIS_ENABLED: "true"
+      SDKWORK_CLOUDROUTER_REDIS_HOST: redis
+      SDKWORK_CLOUDROUTER_REDIS_PORT: "6379"
+      SDKWORK_CLOUDROUTER_REDIS_DATABASE: "0"
+      SDKWORK_CLOUDROUTER_REDIS_KEY_PREFIX: cloudrouter
+      # API key pepper: injected at runtime, never baked into the image.
+      # Override via .env (CLOUDROUTER_API_KEY_PEPPER); production should use
+      # SDKWORK_CLOUDROUTER_API_KEY_PEPPER_FILE with a mounted secret instead.
+      SDKWORK_CLOUDROUTER_API_KEY_PEPPER: ${CLOUDROUTER_API_KEY_PEPPER:-cloudrouter-local-dev-pepper-change-me}
+      # Upstream credential encryption key ring (camelCase JSON, keys >= 32
+      # bytes) and internal gateway signing secret. Same injection rules as
+      # the pepper above; regenerate the ring for any real deployment.
+      SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING: '{"activeKeyId":"local-dev-key-ring-001","activeKey":"dyfeQDB++uTwSSRGuRju9yHE8iX3wTH+ySmqpjimX6w=","fingerprintKey":"kg/5KOatnHH9XgtbCS16VkjUEQoohdS5miD2U5GhtBc=","decryptionKeys":[]}'
+      SDKWORK_CLOUDROUTER_INTERNAL_GATEWAY_SIGNING_SECRET: ${CLOUDROUTER_INTERNAL_GATEWAY_SIGNING_SECRET:-cloudrouter-local-dev-signing-secret-change-me}
+      # All-in-one runtime secrets (trusted subject, app session, payment
+      # webhook). Local defaults; override via .env for anything real.
+      SDKWORK_CLOUDROUTER_TRUSTED_SUBJECT_SECRET: ${CLOUDROUTER_TRUSTED_SUBJECT_SECRET:-cloudrouter-local-dev-trusted-subject-change-me}
+      SDKWORK_CLOUDROUTER_APP_SESSION_SECRET: ${CLOUDROUTER_APP_SESSION_SECRET:-cloudrouter-local-dev-app-session-change-me}
+      SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET: ${CLOUDROUTER_PAYMENT_WEBHOOK_SECRET:-cloudrouter-local-dev-payment-webhook-change-me}
+      # Payment credential master key: a file on the durable data volume
+      # (auto-created on first start in development-like environments).
+      # Production should pre-provision this file (or install a cipher host).
+      SDKWORK_PAYMENT_CREDENTIAL_MASTER_KEY_FILE: /var/lib/sdkwork/router/secrets/payment-credential-master.key
+    volumes:
+      # Durable data lives on a mounted volume (RUNTIME_DIRECTORY_SPEC §4.5).
+      - router-data:/var/lib/sdkwork/router
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  redis-data:
+  router-data:

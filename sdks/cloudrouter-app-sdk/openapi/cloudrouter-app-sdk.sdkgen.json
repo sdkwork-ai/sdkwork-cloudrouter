@@ -471,6 +471,27 @@
             ],
             "type": "string"
           },
+          "tags": {
+            "description": "Tags field on app routing account group.",
+            "items": {
+              "description": "Tags field on app routing account group.",
+              "enum": [
+                "stable",
+                "hot",
+                "recommended",
+                "promotion",
+                "new",
+                "premium",
+                "high_value",
+                "official",
+                "beta",
+                "limited"
+              ],
+              "maxLength": 16,
+              "type": "string"
+            },
+            "type": "array"
+          },
           "vendorCode": {
             "description": "Vendor code field on app routing account group.",
             "maxLength": 64,

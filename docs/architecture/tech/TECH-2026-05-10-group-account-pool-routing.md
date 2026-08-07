@@ -116,6 +116,12 @@ strategies) bypass the selector and use the sticky route directly.
   (recursive, depth < 8). The snapshot computes the **group ∩ supplier
   intersection** per member binding and materializes `apiScope`,
   `capabilities`, and `resourceEntitlements` (empty intersection ⇒ `__deny__`).
+- Per-account bindings (`ai_upstream_account_resource`, managed via
+  `GET/PUT /backend/v3/api/ai/upstream_accounts/{accountId}/resources`) add an
+  optional third scope layer: when an account has explicit bindings the
+  effective scope is `group ∩ supplier ∩ account`; accounts without bindings
+  keep the group ∩ supplier result unchanged (backward compatible). A
+  deny-only account binding yields `__deny__`.
 - Request-side matching (`resource_entitlement_matches_request`) compares each
   non-empty entitlement field (catalog_key / model / provider_native_model /
   vendor_code / api_code / modality_code); entitlements absent ⇒ unrestricted.

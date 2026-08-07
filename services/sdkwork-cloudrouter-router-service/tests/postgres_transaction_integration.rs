@@ -12,6 +12,9 @@ use sqlx::postgres::PgPoolOptions;
 use sqlx::{PgPool, Row};
 
 const POSTGRES_TEST_DATABASE_URL: &str = "SDKWORK_DATABASE_URL";
+const ACCOUNT_BASELINE: &str = include_str!(
+    "../../../../sdkwork-account/database/ddl/baseline/postgres/0001_account_baseline.sql"
+);
 
 #[tokio::test]
 async fn postgres_payment_callback_concurrent_first_account_creation_credits_one_account() {
@@ -58,7 +61,7 @@ async fn postgres_payment_callback_concurrent_first_account_creation_credits_one
         1,
         scalar_i64(
             &ctx.pool,
-            "SELECT COUNT(1) FROM commerce_account WHERE tenant_id = '100001' AND organization_id = '0' AND owner_user_id = '30' AND asset_type = 'points' AND currency_code = 'POINT'"
+            "SELECT COUNT(1) FROM acct_account WHERE tenant_id = 10 AND organization_id = 20 AND owner_type = 'USER' AND owner_id = 30 AND asset_code = 'points' AND currency_code = 'POINT' AND account_purpose = 'GENERAL'"
         )
         .await
     );
@@ -66,7 +69,7 @@ async fn postgres_payment_callback_concurrent_first_account_creation_credits_one
         300,
         scalar_i64(
             &ctx.pool,
-            "SELECT available_amount::bigint FROM commerce_account WHERE tenant_id = '100001' AND organization_id = '0' AND owner_user_id = '30' AND asset_type = 'points' AND currency_code = 'POINT'"
+            "SELECT available_amount FROM acct_account WHERE tenant_id = 10 AND organization_id = 20 AND owner_type = 'USER' AND owner_id = 30 AND asset_code = 'points' AND currency_code = 'POINT' AND account_purpose = 'GENERAL'"
         )
         .await
     );
@@ -74,7 +77,7 @@ async fn postgres_payment_callback_concurrent_first_account_creation_credits_one
         2,
         scalar_i64(
             &ctx.pool,
-            "SELECT COUNT(1) FROM commerce_account_ledger_entry WHERE business_type = 'recharge' AND direction = 'credit'"
+            "SELECT COUNT(1) FROM acct_ledger_entry WHERE business_type = 'points_recharge' AND direction = 'CREDIT'"
         )
         .await
     );
@@ -154,11 +157,17 @@ async fn postgres_gateway_usage_recorder_preserves_non_pending_usage_fact_on_dup
     .await
     .unwrap();
     assert_eq!(18_i64, usage.get::<i64, _>("total_tokens"));
-    assert_eq!("7.722000", usage.get::<String, _>("customer_charge_amount"));
-    assert_eq!("4.290000", usage.get::<String, _>("upstream_cost_amount"));
     assert_eq!(
-        3_i64,
-        usage.get::<i64, _>("settlement_status"),
+        "7.722000000000",
+        usage.get::<String, _>("customer_charge_amount")
+    );
+    assert_eq!(
+        "4.290000000000",
+        usage.get::<String, _>("upstream_cost_amount")
+    );
+    assert_eq!(
+        3_i32,
+        usage.get::<i32, _>("settlement_status"),
         "Postgres gateway usage recorder must freeze non-pending usage facts"
     );
 
@@ -271,63 +280,59 @@ impl PostgresTestContext {
 }
 
 async fn create_schema(pool: &PgPool) {
+    // Recharge credits write through the account-domain ledger
+    // (`acct_account`/`acct_ledger_entry`); the legacy `commerce_account` and
+    // `commerce_account_ledger_entry` tables are retired (S5).
+    for statement in split_statements(ACCOUNT_BASELINE) {
+        sqlx::query(sqlx::AssertSqlSafe(statement.to_owned()))
+            .execute(pool)
+            .await
+            .unwrap();
+    }
     for statement in [
         r#"CREATE TABLE commerce_payment_webhook_event (
             id TEXT PRIMARY KEY,
             tenant_id TEXT NOT NULL,
             organization_id TEXT,
-            provider TEXT NOT NULL,
+            event_id TEXT NOT NULL,
+            event_type TEXT NOT NULL,
+            provider_code TEXT NOT NULL,
+            payload JSONB NOT NULL,
+            status TEXT NOT NULL,
+            retries INTEGER NOT NULL DEFAULT 0,
+            last_error TEXT,
+            received_at TIMESTAMPTZ NOT NULL,
+            processed_at TIMESTAMPTZ,
+            created_at TIMESTAMPTZ NOT NULL,
+            updated_at TIMESTAMPTZ NOT NULL
+        )"#,
+        r#"CREATE TABLE commerce_payment_webhook_delivery (
+            id TEXT PRIMARY KEY,
+            tenant_id TEXT NOT NULL,
+            organization_id TEXT,
+            delivery_no TEXT NOT NULL,
+            provider_code TEXT NOT NULL,
+            provider_account_id TEXT,
             event_id TEXT NOT NULL,
             nonce TEXT NOT NULL,
-            signature TEXT,
             request_timestamp BIGINT,
-            out_trade_no TEXT NOT NULL,
-            transaction_id TEXT,
+            signature TEXT,
+            signature_algorithm TEXT,
+            headers_json TEXT,
             payload_digest TEXT NOT NULL,
-            status TEXT NOT NULL,
-            message TEXT,
-            request_no TEXT NOT NULL,
-            idempotency_key TEXT NOT NULL,
-            created_at TIMESTAMPTZ NOT NULL,
+            payload_ref TEXT,
+            source_ip TEXT,
+            user_agent TEXT,
+            verification_status TEXT NOT NULL,
+            delivery_status TEXT NOT NULL,
+            failure_code TEXT,
+            failure_message TEXT,
+            received_at TIMESTAMPTZ NOT NULL,
+            verified_at TIMESTAMPTZ,
+            normalized_event_id TEXT,
             processed_at TIMESTAMPTZ,
-            updated_at TIMESTAMPTZ NOT NULL,
-            CONSTRAINT uk_commerce_payment_webhook_provider_event UNIQUE (tenant_id, provider, event_id),
-            CONSTRAINT uk_commerce_payment_webhook_provider_nonce UNIQUE (tenant_id, provider, nonce)
-        )"#,
-        r#"CREATE TABLE commerce_account (
-            id TEXT PRIMARY KEY,
-            tenant_id TEXT NOT NULL,
-            organization_id TEXT,
-            owner_user_id TEXT NOT NULL,
-            asset_type TEXT NOT NULL,
-            currency_code TEXT,
-            available_amount TEXT NOT NULL DEFAULT '0',
-            frozen_amount TEXT NOT NULL DEFAULT '0',
-            version INTEGER NOT NULL DEFAULT 0,
-            status TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
-            UNIQUE (tenant_id, organization_id, owner_user_id, asset_type, currency_code)
-        )"#,
-        r#"CREATE TABLE commerce_account_ledger_entry (
-            id TEXT PRIMARY KEY,
-            tenant_id TEXT NOT NULL,
-            organization_id TEXT,
-            account_id TEXT NOT NULL,
-            owner_user_id TEXT NOT NULL,
-            asset_type TEXT NOT NULL,
-            direction TEXT NOT NULL,
-            amount TEXT NOT NULL,
-            balance_after TEXT NOT NULL,
-            business_type TEXT NOT NULL,
-            transaction_no TEXT NOT NULL,
-            request_no TEXT NOT NULL,
-            idempotency_key TEXT NOT NULL,
-            source_type TEXT,
-            source_id TEXT,
-            remark TEXT,
-            created_at TEXT NOT NULL,
-            UNIQUE (tenant_id, transaction_no)
+            created_at TIMESTAMPTZ NOT NULL,
+            updated_at TIMESTAMPTZ NOT NULL
         )"#,
         r#"CREATE TABLE commerce_order (
             id TEXT PRIMARY KEY,
@@ -369,7 +374,7 @@ async fn create_schema(pool: &PgPool) {
             owner_user_id TEXT NOT NULL,
             payment_intent_id TEXT NOT NULL,
             order_id TEXT NOT NULL,
-            provider TEXT NOT NULL,
+            provider_code TEXT NOT NULL,
             out_trade_no TEXT NOT NULL,
             amount TEXT NOT NULL,
             currency_code TEXT NOT NULL,
@@ -378,7 +383,7 @@ async fn create_schema(pool: &PgPool) {
             created_at TEXT NOT NULL,
             paid_at TEXT,
             updated_at TEXT NOT NULL,
-            UNIQUE (tenant_id, provider, out_trade_no)
+            UNIQUE (tenant_id, provider_code, out_trade_no)
         )"#,
         r#"CREATE TABLE ai_metering_request_trace (
             id BIGSERIAL PRIMARY KEY,
@@ -564,7 +569,7 @@ async fn seed_pending_recharge_payment(
     sqlx::query(
         r#"
         INSERT INTO commerce_payment_attempt
-            (id, tenant_id, organization_id, owner_user_id, payment_intent_id, order_id, provider, out_trade_no, amount, currency_code, status, callback_payload, created_at, paid_at, updated_at)
+            (id, tenant_id, organization_id, owner_user_id, payment_intent_id, order_id, provider_code, out_trade_no, amount, currency_code, status, callback_payload, created_at, paid_at, updated_at)
         VALUES
             ($1, '10', '20', '30', $2, $3, 'stripe', $4, $5, 'CNY', 'pending', $6, '2026-04-29 00:00:00', NULL, '2026-04-29 00:00:00')
         "#,
@@ -683,4 +688,20 @@ fn unique_schema_name(label: &str) -> String {
 
 fn quote_identifier(value: &str) -> String {
     format!("\"{}\"", value.replace('"', "\"\""))
+}
+
+fn split_statements(baseline: &str) -> Vec<String> {
+    // Drop full-line `--` comments first so comment text containing `;` never
+    // splits a real statement.
+    let without_comments = baseline
+        .lines()
+        .filter(|line| !line.trim_start().starts_with("--"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    without_comments
+        .split(';')
+        .map(str::trim)
+        .filter(|statement| !statement.is_empty())
+        .map(str::to_owned)
+        .collect()
 }

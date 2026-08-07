@@ -59,7 +59,9 @@ use sdkwork_cloudrouter_router_service::ports::{
 };
 use sdkwork_commerce_promotion_repository_sqlx::PostgresPromotionAdminRepository;
 use sdkwork_commerce_promotion_service::{PromotionAdminRepositoryPort, PromotionAdminService};
-use sdkwork_commerce_partner_repository_sqlx::PostgresPartnerAdminRepository;
+use sdkwork_commerce_partner_repository_sqlx::{
+    account_adapter::PartnerAccountWalletAdapter, PostgresPartnerAdminRepository,
+};
 use sdkwork_commerce_partner_service::backend_admin::{PartnerAdminRepositoryPort, PartnerAdminService};
 use sdkwork_database_sqlx::DatabasePool;
 use sdkwork_models_catalog_repository_sqlx::{
@@ -699,6 +701,10 @@ pub async fn router_with_postgres_product_catalog(
 pub struct PostgresSharedRuntime {
     pub config: DatabaseConfig,
     pub pool: PgPool,
+    /// Canonical process pool handle (normalized identity + pool context).
+    /// Embedded capability module lifecycles run against this shared handle
+    /// (`DATABASE_SPEC_PROCESS_SHARED_POOL.md` §2/§4).
+    pub database_pool: DatabasePool,
     /// Federated commerce shared pool (payment/promotion/order/membership
     /// capability databases). Promotion admin tables live in the commerce
     /// database, so the promotion repository must use this pool instead of
@@ -716,12 +722,13 @@ pub struct PostgresSharedRuntime {
     pub models_catalog_root: Option<String>,
 }
 
-pub fn router_with_postgres_shared_runtime(
+pub async fn router_with_postgres_shared_runtime(
     runtime: PostgresSharedRuntime,
 ) -> Result<Router, ProductCatalogRouterError> {
     let PostgresSharedRuntime {
         config,
         pool,
+        database_pool,
         commerce_pool,
         catalog,
         api_key_security_config,
@@ -820,9 +827,14 @@ pub fn router_with_postgres_shared_runtime(
 
     // Partner (multi-level agent) admin tables live in the federated commerce
     // database (bootstrapped by the commerce runtime), so the partner
-    // repository uses the commerce pool like the promotion repository.
-    let partner_repository: Arc<dyn PartnerAdminRepositoryPort> =
-        Arc::new(PostgresPartnerAdminRepository::new(commerce_pool.clone()));
+    // repository uses the commerce pool like the promotion repository. Wallet
+    // writes go through the account-domain ledger adapter (S4).
+    let partner_repository: Arc<dyn PartnerAdminRepositoryPort> = Arc::new(
+        PostgresPartnerAdminRepository::new(
+            commerce_pool.clone(),
+            Arc::new(PartnerAccountWalletAdapter::new(commerce_pool.clone())),
+        ),
+    );
     let partner_router = sdkwork_routes_partner_backend_api::build_backend_partner_router(
         Arc::new(PartnerAdminService::new(partner_repository)),
     );
@@ -830,26 +842,19 @@ pub fn router_with_postgres_shared_runtime(
     // SDKWork log foundation: request log query router + full capture layer.
     // One row per request is persisted through the sdkwork-log store (metadata
     // plus redacted request/response bodies); the query API is served under
-    // `/backend/v3/api/log/*`. The tenant resolver reads the web-framework
-    // principal injected by the outer edge-runtime layer, so tenant isolation
-    // matches the admin subject boundary.
-    let log_store: Arc<dyn sdkwork_log_core::RequestLogStore> =
-        Arc::new(sdkwork_log_store_sqlx::SqlxRequestLogStore::new_postgres(
-            pool.clone(),
-        ));
-    let log_query_router =
-        sdkwork_routes_log_backend_api::build_router(Arc::clone(&log_store));
-    let log_capture_layer = sdkwork_log_tower_adapter::RequestLoggingLayer::new(log_store)
-        .with_service("sdkwork-cloudrouter")
-        .with_tenant_resolver(|extensions: &axum::http::Extensions| {
-            let principal = extensions
-                .get::<sdkwork_web_core::WebRequestContext>()
-                .and_then(|context| context.principal());
-            (
-                principal.map(|value| value.tenant_id().to_owned()),
-                principal.map(|value| value.user_id().to_owned()),
-            )
-        });
+    // `/backend/v3/api/log/*`. The log capability owns its router, capture
+    // layer, and `log_request` module lifecycle; the host composes the
+    // dependency surface through the log API assembly entrypoint on the shared
+    // process pool (API_ASSEMBLY_SPEC §3/§6.1, DATABASE_SPEC_PROCESS_SHARED_POOL
+    // §2/§4) instead of importing `sdkwork-routes-*` directly.
+    let log_assembly = sdkwork_api_log_assembly::assemble_backend_business_router_with_pool(
+        &database_pool,
+        "sdkwork-cloudrouter",
+    )
+    .await
+    .map_err(|error| {
+        ProductCatalogRouterError::Config(format!("log backend assembly bootstrap failed: {error}"))
+    })?;
     Ok(router_with_product_catalog_and_runtime(
         catalog,
         AdminRouterRuntime {
@@ -895,8 +900,8 @@ pub fn router_with_postgres_shared_runtime(
     )
     .merge(promotion_router)
     .merge(partner_router)
-    .merge(log_query_router)
-    .layer(log_capture_layer))
+    .merge(log_assembly.router)
+    .layer(log_assembly.capture_layer))
 }
 
 pub async fn router_with_database_config(

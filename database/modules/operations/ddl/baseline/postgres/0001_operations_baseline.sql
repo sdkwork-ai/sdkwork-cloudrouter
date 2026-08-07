@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.4.0.
--- Registry SHA-256: 68adaff94451c089d37f4be3b45c66d13b1d93c1f3aa9d2411c48ec4d3cfa03f.
+-- Registry SHA-256: 80f0c70ae0ba83ce8664fb61d9356b876c6f1b31874535c2dc614d99361a110b.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -232,78 +232,6 @@ CREATE TABLE IF NOT EXISTS ops_metric_snapshot (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_metric_snapshot ON ops_metric_snapshot (tenant_id, organization_id, metric_scope, metric_name, metric_period, period_start, dimension_key, dimension_value);
 
-CREATE TABLE IF NOT EXISTS ops_referral_stat_snapshot (
-    id BIGINT NOT NULL PRIMARY KEY,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    inviter_user_id BIGINT NOT NULL,
-    inviter_name_snapshot VARCHAR(256),
-    inviter_email_snapshot VARCHAR(256),
-    total_invited_count BIGINT NOT NULL DEFAULT 0,
-    total_revenue_amount NUMERIC(18, 2) NOT NULL DEFAULT 0,
-    reward_awarded_amount NUMERIC(18, 2) NOT NULL DEFAULT 0,
-    invite_link VARCHAR(512),
-    status INTEGER NOT NULL DEFAULT 1,
-    snapshot_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_referral_stat_snapshot ON ops_referral_stat_snapshot (tenant_id, organization_id, inviter_user_id, snapshot_at);
-
-CREATE TABLE IF NOT EXISTS ops_referral_invite_code (
-    id BIGINT NOT NULL PRIMARY KEY,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    user_id BIGINT NOT NULL,
-    invite_code VARCHAR(32) NOT NULL,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_referral_invite_code_tenant_user ON ops_referral_invite_code (tenant_id, organization_id, user_id);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_referral_invite_code_tenant_code ON ops_referral_invite_code (tenant_id, organization_id, invite_code);
-
-CREATE TABLE IF NOT EXISTS ops_referral_relation (
-    id BIGINT NOT NULL PRIMARY KEY,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    invitee_user_id BIGINT NOT NULL,
-    inviter_user_id BIGINT NOT NULL,
-    invite_code VARCHAR(32) NOT NULL,
-    source VARCHAR(16) NOT NULL DEFAULT 'register',
-    status INTEGER NOT NULL DEFAULT 1,
-    reward_status VARCHAR(16) NOT NULL DEFAULT 'pending',
-    claimed_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_referral_relation_tenant_invitee ON ops_referral_relation (tenant_id, organization_id, invitee_user_id);
-CREATE INDEX IF NOT EXISTS idx_ops_referral_relation_inviter ON ops_referral_relation (tenant_id, organization_id, inviter_user_id, created_at, id);
-CREATE INDEX IF NOT EXISTS idx_ops_referral_relation_code ON ops_referral_relation (tenant_id, organization_id, invite_code);
-
-CREATE TABLE IF NOT EXISTS ops_referral_strategy (
-    id BIGINT NOT NULL PRIMARY KEY,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    name VARCHAR(128) NOT NULL,
-    description VARCHAR(512) NOT NULL DEFAULT '',
-    status VARCHAR(16) NOT NULL DEFAULT 'disabled',
-    reward_type VARCHAR(16) NOT NULL DEFAULT 'POINTS',
-    reward_value VARCHAR(64) NOT NULL,
-    reward_target VARCHAR(16) NOT NULL DEFAULT 'INVITER',
-    trigger_event VARCHAR(16) NOT NULL DEFAULT 'REGISTER',
-    max_rewards_per_inviter BIGINT NOT NULL DEFAULT 0,
-    starts_at TIMESTAMPTZ,
-    ends_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_ops_referral_strategy_tenant_status ON ops_referral_strategy (tenant_id, organization_id, status, created_at, id);
-
 CREATE TABLE IF NOT EXISTS ops_notification_message (
     id BIGINT NOT NULL PRIMARY KEY,
     uuid VARCHAR(64) NOT NULL,
@@ -396,3 +324,85 @@ CREATE TABLE IF NOT EXISTS ops_notification_recipient (
 CREATE INDEX IF NOT EXISTS idx_ops_notification_recipient_message ON ops_notification_recipient (tenant_id, organization_id, message_id, status, id);
 CREATE INDEX IF NOT EXISTS idx_ops_notification_recipient_user ON ops_notification_recipient (tenant_id, organization_id, recipient_type, recipient_user_id, status, id);
 CREATE INDEX IF NOT EXISTS idx_ops_notification_recipient_role ON ops_notification_recipient (tenant_id, organization_id, recipient_type, recipient_role_code, status, id);
+
+CREATE TABLE IF NOT EXISTS ops_referral_invite_code (
+    id BIGINT NOT NULL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    user_id BIGINT NOT NULL,
+    invite_code VARCHAR(32) NOT NULL,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT ck_ops_referral_invite_code_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_referral_invite_code_tenant_user ON ops_referral_invite_code (tenant_id, organization_id, user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_referral_invite_code_tenant_code ON ops_referral_invite_code (tenant_id, organization_id, invite_code);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_referral_invite_code_tenant_user ON ops_referral_invite_code (tenant_id, organization_id, user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_referral_invite_code_tenant_code ON ops_referral_invite_code (tenant_id, organization_id, invite_code);
+CREATE INDEX IF NOT EXISTS idx_ops_referral_invite_code_code ON ops_referral_invite_code (invite_code);
+
+CREATE TABLE IF NOT EXISTS ops_referral_relation (
+    id BIGINT NOT NULL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    invitee_user_id BIGINT NOT NULL,
+    inviter_user_id BIGINT NOT NULL,
+    invite_code VARCHAR(32) NOT NULL,
+    source VARCHAR(16) NOT NULL DEFAULT 'register',
+    status INTEGER NOT NULL DEFAULT 1,
+    reward_status VARCHAR(16) NOT NULL DEFAULT 'pending',
+    claimed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT ck_ops_referral_relation_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_referral_relation_tenant_invitee ON ops_referral_relation (tenant_id, organization_id, invitee_user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_referral_relation_tenant_invitee ON ops_referral_relation (tenant_id, organization_id, invitee_user_id);
+CREATE INDEX IF NOT EXISTS idx_ops_referral_relation_inviter ON ops_referral_relation (tenant_id, organization_id, inviter_user_id, created_at, id);
+CREATE INDEX IF NOT EXISTS idx_ops_referral_relation_code ON ops_referral_relation (tenant_id, organization_id, invite_code);
+CREATE INDEX IF NOT EXISTS idx_ops_referral_relation_list ON ops_referral_relation (tenant_id, organization_id, status, created_at, id);
+
+CREATE TABLE IF NOT EXISTS ops_referral_stat_snapshot (
+    id BIGINT NOT NULL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    inviter_user_id BIGINT NOT NULL,
+    inviter_name_snapshot VARCHAR(256),
+    inviter_email_snapshot VARCHAR(256),
+    total_invited_count BIGINT NOT NULL DEFAULT 0,
+    total_revenue_amount NUMERIC(18, 2) NOT NULL DEFAULT 0,
+    reward_awarded_amount NUMERIC(18, 2) NOT NULL DEFAULT 0,
+    invite_link VARCHAR(512),
+    status INTEGER NOT NULL DEFAULT 1,
+    snapshot_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT ck_ops_referral_stat_snapshot_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_referral_stat_snapshot ON ops_referral_stat_snapshot (tenant_id, organization_id, inviter_user_id, snapshot_at);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_referral_stat_snapshot ON ops_referral_stat_snapshot (tenant_id, organization_id, inviter_user_id, snapshot_at);
+
+CREATE TABLE IF NOT EXISTS ops_referral_strategy (
+    id BIGINT NOT NULL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    name VARCHAR(128) NOT NULL,
+    description VARCHAR(512) NOT NULL DEFAULT '',
+    status VARCHAR(16) NOT NULL DEFAULT 'disabled',
+    reward_type VARCHAR(16) NOT NULL DEFAULT 'POINTS',
+    reward_value VARCHAR(64) NOT NULL,
+    reward_target VARCHAR(16) NOT NULL DEFAULT 'INVITER',
+    trigger_event VARCHAR(16) NOT NULL DEFAULT 'REGISTER',
+    max_rewards_per_inviter BIGINT NOT NULL DEFAULT 0,
+    starts_at TIMESTAMPTZ,
+    ends_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT ck_ops_referral_strategy_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
+);
+
+CREATE INDEX IF NOT EXISTS idx_ops_referral_strategy_tenant_status ON ops_referral_strategy (tenant_id, organization_id, status, created_at, id);

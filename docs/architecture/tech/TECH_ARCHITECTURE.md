@@ -197,6 +197,7 @@ The canonical aggregate tables are:
 | `ai_upstream_account_group` | Routing, fallback, cost, sale, and capacity policy |
 | `ai_upstream_account_group_member` | Account membership, priority, weight, and cost override |
 | `ai_upstream_account_group_resource` | Group resource/resource-group allowlist |
+| `ai_upstream_account_resource` | Per-account resource/resource-group allowlist |
 
 Operational state is separated from configuration:
 
@@ -207,9 +208,11 @@ Operational state is separated from configuration:
 | `ai_upstream_account_group_metric_snapshot` | Rebuildable group-level operational metrics |
 
 `ai_resource` and `ai_resource_group` remain catalog authorities. A supplier
-declares what it can serve; a group declares what it may route; API-key/tenant
-entitlements declare what the caller may use. Effective resources are the
-intersection of those sets.
+declares what it can serve; a group declares what it may route; an account
+declares which resources it serves (optional); API-key/tenant entitlements
+declare what the caller may use. Effective resources are the intersection of
+those sets: `group ∩ supplier`, further intersected with the account scope when
+the account has explicit bindings (accounts without bindings stay unrestricted).
 
 The retired upstream aggregates are not valid production authorities:
 `ai_provider`, `ai_site*`, `ai_channel*`, `ai_upstream_pool`,

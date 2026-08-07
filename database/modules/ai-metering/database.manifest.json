@@ -43,5 +43,10 @@
   "spi": {
     "provider": "default",
     "hooks": []
-  }
+  },
+  "materializedTables": [
+    "ai_metering_request_trace",
+    "ai_metering_usage"
+  ],
+  "materializedTableCount": 2
 }

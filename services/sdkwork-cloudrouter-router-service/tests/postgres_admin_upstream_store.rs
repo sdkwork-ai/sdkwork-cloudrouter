@@ -136,6 +136,7 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
             rpm_limit: Some(10_000),
             timeout_ms: Some(30_000),
             status: 1,
+            api_key: None,
             requested_at: REQUESTED_AT.to_owned(),
         })
         .await
@@ -216,7 +217,7 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
             group_code: "default".to_owned(),
             group_name: "Default routing group".to_owned(),
             description: Some("Commercial default group".to_owned()),
-            group_type: "shared".to_owned(),
+            group_type: "mixed".to_owned(),
             routing_strategy: "weighted".to_owned(),
             fallback_mode: "cross_supplier".to_owned(),
             priority: 10,
@@ -225,6 +226,7 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
             environment: Some(1),
             vendor_code: None,
             modalities: Vec::new(),
+            tags: Vec::new(),
             status: 1,
             requested_at: REQUESTED_AT.to_owned(),
         })
@@ -385,6 +387,136 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
     context.cleanup().await;
 }
 
+#[tokio::test]
+async fn postgres_upstream_store_creates_initial_credential_atomically_with_account() {
+    let Some(context) = PostgresTestContext::new("admin_upstream_atomic").await else {
+        return;
+    };
+    let codec = Arc::new(
+        RingAeadCredentialSecretCodec::new("0123456789abcdef0123456789abcdef")
+            .expect("credential codec"),
+    );
+    let store = PostgresAdminUpstreamStore::new(context.pool.clone(), codec.clone());
+    let subject = upstream_subject(100002, 200002);
+
+    let supplier = store
+        .save_supplier(SaveAdminUpstreamSupplierCommand {
+            subject: subject.clone(),
+            supplier_id: None,
+            expected_version: None,
+            uuid: "test-upstream-supplier-atomic".to_owned(),
+            supplier_code: "atomic-openai".to_owned(),
+            default_vendor_code: None,
+            supplier_name: "Atomic OpenAI".to_owned(),
+            display_name: "Atomic OpenAI Official".to_owned(),
+            description: None,
+            supplier_type: "official".to_owned(),
+            adapter_code: "openai".to_owned(),
+            protocol_code: "openai".to_owned(),
+            website_url: None,
+            docs_url: None,
+            region_code: None,
+            environment: 1,
+            sort_order: 10,
+            status: 1,
+            requested_at: REQUESTED_AT.to_owned(),
+        })
+        .await
+        .expect("create supplier");
+    store
+        .replace_supplier_auth_methods(
+            subject.clone(),
+            supplier.id,
+            supplier.version,
+            vec![AdminUpstreamSupplierAuthMethodInput {
+                auth_method_code: "api-key".to_owned(),
+                auth_method_name: "API key".to_owned(),
+                auth_type: "api_key".to_owned(),
+                config_schema: serde_json::json!({"type": "string"}),
+                runtime_auth_config: serde_json::json!({
+                    "credentialTransport": "bearer",
+                    "defaultHeaders": {}
+                }),
+                priority: 10,
+                status: 1,
+            }],
+            REQUESTED_AT.to_owned(),
+        )
+        .await
+        .expect("replace auth methods");
+
+    let api_key = "sk-atomic-initial-secret".to_owned();
+    let account = store
+        .save_account(SaveAdminUpstreamAccountCommand {
+            subject: subject.clone(),
+            account_id: None,
+            expected_version: None,
+            uuid: "test-upstream-account-atomic-with-key".to_owned(),
+            supplier_id: supplier.id,
+            preferred_endpoint_id: None,
+            account_code: "atomic-with-key".to_owned(),
+            account_name: "Atomic account with key".to_owned(),
+            account_type: "standard".to_owned(),
+            auth_method_code: "api-key".to_owned(),
+            external_account_id: None,
+            environment: Some(1),
+            region_code: None,
+            quota_limit: None,
+            upstream_balance_currency: None,
+            contract_cost_multiplier: "1.000000000000".to_owned(),
+            rpm_limit: None,
+            timeout_ms: None,
+            status: 1,
+            api_key: Some(api_key.clone()),
+            requested_at: REQUESTED_AT.to_owned(),
+        })
+        .await
+        .expect("create account with initial api key");
+    let credentials = store
+        .list_account_credentials(list_query(subject.clone()), account.id)
+        .await
+        .expect("list credentials");
+    assert_eq!(1, credentials.items.len());
+    assert_eq!(1, credentials.total);
+    assert_eq!("primary", credentials.items[0].credential_name);
+    assert_eq!("api-key", credentials.items[0].auth_method_code);
+    assert_eq!(Some("sk-a****cret".to_owned()), credentials.items[0].masked_label);
+
+    let without_key = store
+        .save_account(SaveAdminUpstreamAccountCommand {
+            subject: subject.clone(),
+            account_id: None,
+            expected_version: None,
+            uuid: "test-upstream-account-atomic-no-key".to_owned(),
+            supplier_id: supplier.id,
+            preferred_endpoint_id: None,
+            account_code: "atomic-no-key".to_owned(),
+            account_name: "Atomic account without key".to_owned(),
+            account_type: "standard".to_owned(),
+            auth_method_code: "api-key".to_owned(),
+            external_account_id: None,
+            environment: Some(1),
+            region_code: None,
+            quota_limit: None,
+            upstream_balance_currency: None,
+            contract_cost_multiplier: "1.000000000000".to_owned(),
+            rpm_limit: None,
+            timeout_ms: None,
+            status: 1,
+            api_key: None,
+            requested_at: REQUESTED_AT.to_owned(),
+        })
+        .await
+        .expect("create account without api key");
+    let empty_credentials = store
+        .list_account_credentials(list_query(subject.clone()), without_key.id)
+        .await
+        .expect("list credentials");
+    assert_eq!(0, empty_credentials.items.len());
+
+    context.cleanup().await;
+}
+
 async fn routing_config_version(pool: &PgPool, tenant_id: i64, organization_id: i64) -> i64 {
     sqlx::query_scalar(
         r#"
@@ -398,6 +530,334 @@ async fn routing_config_version(pool: &PgPool, tenant_id: i64, organization_id: 
     .fetch_one(pool)
     .await
     .expect("load routing config version")
+}
+
+async fn load_account_route_bindings(pool: &PgPool) -> serde_json::Value {
+    let rows = sqlx::query(PricingCatalogSql::load_upstream_account_routes())
+        .bind(30_i64)
+        .fetch_all(pool)
+        .await
+        .expect("load runtime upstream account routes");
+    assert_eq!(1, rows.len());
+    serde_json::from_str(
+        &rows[0]
+            .try_get::<String, _>("account_group_bindings_json")
+            .expect("account group bindings"),
+    )
+    .expect("parse account group bindings")
+}
+
+#[tokio::test]
+async fn postgres_upstream_store_account_resources_scope_runtime_routes() {
+    let Some(context) = PostgresTestContext::new("admin_upstream_scope").await else {
+        return;
+    };
+    let codec = Arc::new(
+        RingAeadCredentialSecretCodec::new("0123456789abcdef0123456789abcdef")
+            .expect("credential codec"),
+    );
+    let store = PostgresAdminUpstreamStore::new(context.pool.clone(), codec.clone());
+    let subject = upstream_subject(100001, 200001);
+
+    sqlx::query(
+        r#"
+        INSERT INTO ai_resource (
+            id, tenant_id, organization_id, resource_code, resource_type,
+            vendor_code, modality_code, api_code, catalog_key, model,
+            provider_native_model, status
+        ) VALUES (
+            9102, 100001, 200001, 'model:gpt-4.1-mini', 'model_api',
+            'openai', 'chat', 'openai.chat_completions', 'openai/gpt-4.1-mini', 'gpt-4.1-mini',
+            'gpt-4.1-mini', 1
+        )
+        "#,
+    )
+    .execute(&context.pool)
+    .await
+    .expect("insert second catalog resource");
+
+    let supplier = store
+        .save_supplier(SaveAdminUpstreamSupplierCommand {
+            subject: subject.clone(),
+            supplier_id: None,
+            expected_version: None,
+            uuid: "test-upstream-supplier-scope".to_owned(),
+            supplier_code: "scope-openai".to_owned(),
+            default_vendor_code: None,
+            supplier_name: "Scope OpenAI".to_owned(),
+            display_name: "Scope OpenAI Official".to_owned(),
+            description: None,
+            supplier_type: "official".to_owned(),
+            adapter_code: "openai".to_owned(),
+            protocol_code: "openai".to_owned(),
+            website_url: None,
+            docs_url: None,
+            region_code: None,
+            environment: 1,
+            sort_order: 10,
+            status: 1,
+            requested_at: REQUESTED_AT.to_owned(),
+        })
+        .await
+        .expect("create supplier");
+    store
+        .replace_supplier_auth_methods(
+            subject.clone(),
+            supplier.id,
+            supplier.version,
+            vec![AdminUpstreamSupplierAuthMethodInput {
+                auth_method_code: "api-key".to_owned(),
+                auth_method_name: "API key".to_owned(),
+                auth_type: "api_key".to_owned(),
+                config_schema: serde_json::json!({"type": "string"}),
+                runtime_auth_config: serde_json::json!({
+                    "credentialTransport": "bearer",
+                    "defaultHeaders": {}
+                }),
+                priority: 10,
+                status: 1,
+            }],
+            REQUESTED_AT.to_owned(),
+        )
+        .await
+        .expect("replace auth methods");
+    store
+        .replace_supplier_endpoints(
+            subject.clone(),
+            supplier.id,
+            1,
+            vec![AdminUpstreamSupplierEndpointInput {
+                endpoint_code: "global".to_owned(),
+                endpoint_name: "Global API".to_owned(),
+                base_url: "https://api.openai.com/v1".to_owned(),
+                protocol_code: Some("openai".to_owned()),
+                region_code: Some("global".to_owned()),
+                environment: 1,
+                priority: 10,
+                routing_weight: 100,
+                timeout_ms: Some(30_000),
+                status: 1,
+            }],
+            REQUESTED_AT.to_owned(),
+        )
+        .await
+        .expect("replace endpoints");
+    store
+        .replace_supplier_resources(
+            subject.clone(),
+            supplier.id,
+            2,
+            vec![resource("model:gpt-4.1")],
+            REQUESTED_AT.to_owned(),
+        )
+        .await
+        .expect("replace supplier resources");
+
+    let account = store
+        .save_account(SaveAdminUpstreamAccountCommand {
+            subject: subject.clone(),
+            account_id: None,
+            expected_version: None,
+            uuid: "test-upstream-account-scope".to_owned(),
+            supplier_id: supplier.id,
+            preferred_endpoint_id: None,
+            account_code: "scope-main".to_owned(),
+            account_name: "Scope main account".to_owned(),
+            account_type: "standard".to_owned(),
+            auth_method_code: "api-key".to_owned(),
+            external_account_id: None,
+            environment: Some(1),
+            region_code: None,
+            quota_limit: None,
+            upstream_balance_currency: None,
+            contract_cost_multiplier: "1.000000000000".to_owned(),
+            rpm_limit: None,
+            timeout_ms: None,
+            status: 1,
+            api_key: Some("sk-scope-initial".to_owned()),
+            requested_at: REQUESTED_AT.to_owned(),
+        })
+        .await
+        .expect("create account");
+    let group = store
+        .save_account_group(SaveAdminUpstreamAccountGroupCommand {
+            subject: subject.clone(),
+            account_group_id: None,
+            expected_version: None,
+            uuid: "test-upstream-account-group-scope".to_owned(),
+            group_code: "scope".to_owned(),
+            group_name: "Scope routing group".to_owned(),
+            description: None,
+            group_type: "mixed".to_owned(),
+            routing_strategy: "weighted".to_owned(),
+            fallback_mode: "cross_supplier".to_owned(),
+            priority: 10,
+            cost_multiplier: "1.000000000000".to_owned(),
+            sale_multiplier: "1.000000000000".to_owned(),
+            environment: Some(1),
+            vendor_code: None,
+            modalities: Vec::new(),
+            tags: Vec::new(),
+            status: 1,
+            requested_at: REQUESTED_AT.to_owned(),
+        })
+        .await
+        .expect("create account group");
+    store
+        .replace_account_group_members(
+            subject.clone(),
+            group.id,
+            group.version,
+            vec![AdminUpstreamAccountGroupMemberInput {
+                account_id: account.id,
+                priority: 10,
+                routing_weight: 100,
+                cost_multiplier_override: None,
+                enabled: true,
+                status: 1,
+            }],
+            REQUESTED_AT.to_owned(),
+        )
+        .await
+        .expect("replace account group members");
+    store
+        .replace_account_group_resources(
+            subject.clone(),
+            group.id,
+            1,
+            vec![resource("model:gpt-4.1")],
+            REQUESTED_AT.to_owned(),
+        )
+        .await
+        .expect("replace account group resources");
+
+    // 场景 1：账号无资源绑定 → 保持分组×供应商范围（向后兼容）
+    let bindings = load_account_route_bindings(&context.pool).await;
+    assert_eq!(
+        Some("model:gpt-4.1"),
+        bindings[0]["resourceEntitlements"][0]["resourceCode"].as_str()
+    );
+    assert_ne!(serde_json::json!(["__deny__"]), bindings[0]["apiScope"]);
+
+    // 场景 2：账号绑定与分组匹配 → 交集生效，版本与配置版本递增
+    let config_before = routing_config_version(&context.pool, subject.tenant_id, subject.organization_id).await;
+    let replaced = store
+        .replace_account_resources(
+            subject.clone(),
+            account.id,
+            account.version,
+            vec![resource("model:gpt-4.1")],
+            REQUESTED_AT.to_owned(),
+        )
+        .await
+        .expect("replace account resources");
+    assert_eq!(1, replaced.len());
+    assert_eq!(
+        config_before + 1,
+        routing_config_version(&context.pool, subject.tenant_id, subject.organization_id).await
+    );
+    let account_after = store
+        .get_account(subject.clone(), account.id)
+        .await
+        .expect("get account")
+        .expect("account exists");
+    assert_eq!(account.version + 1, account_after.version);
+    let bindings = load_account_route_bindings(&context.pool).await;
+    assert_eq!(
+        Some("model:gpt-4.1"),
+        bindings[0]["resourceEntitlements"][0]["resourceCode"].as_str()
+    );
+
+    // 场景 3：账号绑定与分组无交集 → __deny__ 哨兵
+    store
+        .replace_account_resources(
+            subject.clone(),
+            account.id,
+            account_after.version,
+            vec![resource("model:gpt-4.1-mini")],
+            REQUESTED_AT.to_owned(),
+        )
+        .await
+        .expect("replace account resources with non-matching scope");
+    let bindings = load_account_route_bindings(&context.pool).await;
+    assert_eq!(serde_json::json!(["__deny__"]), bindings[0]["apiScope"]);
+    assert_eq!(serde_json::json!([]), bindings[0]["resourceEntitlements"]);
+
+    // list 只返回保留的绑定（mini 保留、4.1 被 retire 软删）
+    let listed = store
+        .list_account_resources(subject.clone(), account.id)
+        .await
+        .expect("list account resources");
+    assert_eq!(1, listed.len());
+    assert_eq!("model:gpt-4.1-mini", listed[0].resource_code);
+
+    // XOR 校验：resourceCode 与 resourceGroupCode 同时提供必须被拒绝
+    let rejected = store
+        .replace_account_resources(
+            subject.clone(),
+            account.id,
+            account_after.version + 1,
+            vec![AdminUpstreamResourceInput {
+                resource_code: "model:gpt-4.1".to_owned(),
+                resource_group_code: "group-a".to_owned(),
+                grant_type: "allow".to_owned(),
+                priority: 10,
+                status: 1,
+            }],
+            REQUESTED_AT.to_owned(),
+        )
+        .await
+        .expect_err("XOR target validation must reject both codes");
+    assert!(!rejected.is_conflict());
+    assert!(!rejected.is_not_found());
+
+    // 账号删除级联软删其资源绑定
+    let group_latest = store
+        .get_account_group(subject.clone(), group.id)
+        .await
+        .expect("get group")
+        .expect("group exists");
+    store
+        .replace_account_group_members(
+            subject.clone(),
+            group.id,
+            group_latest.version,
+            Vec::new(),
+            REQUESTED_AT.to_owned(),
+        )
+        .await
+        .expect("clear account group members");
+    let account_latest = store
+        .get_account(subject.clone(), account.id)
+        .await
+        .expect("get account")
+        .expect("account exists");
+    store
+        .delete_account(
+            subject.clone(),
+            account.id,
+            account_latest.version,
+            REQUESTED_AT.to_owned(),
+        )
+        .await
+        .expect("delete account");
+    let remaining = sqlx::query_scalar::<_, i64>(
+        r#"
+        SELECT COUNT(*)
+        FROM ai_upstream_account_resource
+        WHERE tenant_id = $1 AND organization_id = $2
+          AND account_id = $3 AND deleted_at IS NULL
+        "#,
+    )
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(account.id)
+    .fetch_one(&context.pool)
+    .await
+    .expect("count remaining account resources");
+    assert_eq!(0, remaining);
+
+    context.cleanup().await;
 }
 
 fn upstream_subject(tenant_id: i64, organization_id: i64) -> AdminUpstreamSubject {

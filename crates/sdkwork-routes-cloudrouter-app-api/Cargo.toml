@@ -39,6 +39,7 @@ sdkwork_membership_database_host.workspace = true
 sdkwork_api_order_assembly.workspace = true
 sdkwork_api_agents_assembly.workspace = true
 sdkwork_agents_database_host.workspace = true
+sdkwork_api_community_assembly.workspace = true
 sdkwork-database-lifecycle.workspace = true
 sdkwork-database-spi.workspace = true
 sdkwork-database-sqlx.workspace = true

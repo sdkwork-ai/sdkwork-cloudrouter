@@ -9,11 +9,11 @@ export interface CreateUpstreamAccountGroupRequest {
   /** Fallback mode field on create upstream account group request. */
   fallbackMode?: 'none' | 'sequential' | 'same_supplier' | 'cross_supplier' | null;
   /** Group code field on create upstream account group request. */
-  groupCode: string;
+  groupCode?: string;
   /** Group name field on create upstream account group request. */
   groupName: string;
   /** Group type field on create upstream account group request. */
-  groupType?: string | null;
+  groupType?: 'mixed' | 'llm' | 'image' | 'video' | 'audio' | 'music' | 'other' | null;
   /** Modalities field on create upstream account group request. */
   modalities?: ('text' | 'audio' | 'image' | 'video' | 'music')[] | null;
   /** Priority field on create upstream account group request. */
@@ -24,6 +24,8 @@ export interface CreateUpstreamAccountGroupRequest {
   saleMultiplier?: string | null;
   /** Status field on create upstream account group request. */
   status?: number | null;
+  /** Tags field on create upstream account group request. */
+  tags?: ('stable' | 'hot' | 'recommended' | 'promotion' | 'new' | 'premium' | 'high_value' | 'official' | 'beta' | 'limited')[] | null;
   /** Vendor code field on create upstream account group request. */
   vendorCode?: string | null;
 }

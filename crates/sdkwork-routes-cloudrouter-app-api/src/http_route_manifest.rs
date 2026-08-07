@@ -124,6 +124,30 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "iam",
         "apiKeys.update",
     ),
+    HttpRoute::public(
+        HttpMethod::Get,
+        "/app/v3/api/iam/invite/policy",
+        "iam",
+        "invite.policy.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/iam/invites/claim",
+        "iam",
+        "invites.claim.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/iam/invites/issue",
+        "iam",
+        "invites.create",
+    ),
+    HttpRoute::public(
+        HttpMethod::Post,
+        "/app/v3/api/iam/invites/validate",
+        "iam",
+        "invites.validate.create",
+    ),
     HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/iam/users/settings",
@@ -249,30 +273,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/app/v3/api/system/site/runtime",
         "system",
         "site.runtime.retrieve",
-    ),
-    HttpRoute::public(
-        HttpMethod::Get,
-        "/app/v3/api/iam/invite/policy",
-        "iam",
-        "invite.policy.retrieve",
-    ),
-    HttpRoute::public(
-        HttpMethod::Post,
-        "/app/v3/api/iam/invites/validate",
-        "iam",
-        "invites.verify",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/iam/invites/issue",
-        "iam",
-        "invites.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/iam/invites/claim",
-        "iam",
-        "invites.confirm",
     ),
 ];
 

@@ -71,6 +71,7 @@ pub struct AppRoutingAccountGroupItem {
     pub sale_multiplier: String,
     pub vendor_code: Option<String>,
     pub modalities: Vec<String>,
+    pub tags: Vec<String>,
     pub status: String,
     pub authorized: bool,
     pub member_account_count: i64,

@@ -135,7 +135,7 @@ pub struct ModelUpstreamRouteRow {
     pub secret_ref: Option<String>,
     pub auth_type: Option<String>,
     pub runtime_auth_config_json: String,
-    pub timeout_ms: Option<i64>,
+    pub timeout_ms: Option<i32>,
     pub retry_policy_json: Option<String>,
 }
 
@@ -149,7 +149,7 @@ pub struct UpstreamAccountRouteRow {
     pub credential_priority: i32,
     pub credential_weight: i32,
     pub contract_cost_multiplier: String,
-    pub last_latency_ms: Option<i64>,
+    pub last_latency_ms: Option<i32>,
     pub account_code: Option<String>,
     pub region_code: String,
     pub supplier_id: i64,
@@ -164,7 +164,7 @@ pub struct UpstreamAccountRouteRow {
     pub secret_key_id: Option<String>,
     pub auth_type: Option<String>,
     pub runtime_auth_config_json: String,
-    pub timeout_ms: Option<i64>,
+    pub timeout_ms: Option<i32>,
     pub retry_policy_json: Option<String>,
     pub account_group_bindings_json: String,
     pub account_health_status: i32,
@@ -359,14 +359,12 @@ fn normalized_credential_rotation(value: String) -> String {
     }
 }
 
-fn parse_timeout_ms(timeout_ms: Option<i64>) -> DomainResult<Option<u64>> {
+fn parse_timeout_ms(timeout_ms: Option<i32>) -> DomainResult<Option<u64>> {
     match timeout_ms {
         Some(timeout_ms) if timeout_ms <= 0 => Err(DomainError::new(format!(
             "ai_upstream_account.timeout_ms must be positive when configured: {timeout_ms}"
         ))),
-        Some(timeout_ms) => Ok(Some(u64::try_from(timeout_ms).map_err(|error| {
-            DomainError::new(format!("invalid ai_upstream_account.timeout_ms: {error}"))
-        })?)),
+        Some(timeout_ms) => Ok(Some(timeout_ms as u64)),
         None => Ok(None),
     }
 }

@@ -7,6 +7,10 @@ Choose a language:
 
 Use the release guides for published version packages. Use the source guides for cloning, development, private builds, and source-based deployment.
 
+For running the standalone application as a container image (build, dependency
+inventory, port plan, compose), see
+[docker-deployment.md](./docker-deployment.md).
+
 For `v0.3.0` and later, prefer native installers for quick deployment:
 
 - Linux service/desktop: `.deb`

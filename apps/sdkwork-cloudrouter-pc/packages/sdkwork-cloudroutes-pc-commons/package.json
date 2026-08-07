@@ -176,6 +176,7 @@
     "@sdkwork/models-backend-sdk": "workspace:*",
     "@sdkwork/notification-pc-react": "workspace:*",
     "@sdkwork/order-service": "workspace:*",
+    "@sdkwork/partner-backend-sdk": "workspace:*",
     "@sdkwork/payment-backend-sdk": "workspace:*",
     "@sdkwork/payment-sdk-ports": "workspace:*",
     "@sdkwork/payment-service": "workspace:*",

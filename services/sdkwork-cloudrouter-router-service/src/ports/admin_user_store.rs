@@ -1,8 +1,7 @@
 use std::future::Future;
 use std::pin::Pin;
 
-use crate::domain::{DecimalValue, DomainResult};
-
+use crate::domain::DomainResult;
 pub type AdminUserCommandFuture<'a, T> = Pin<Box<dyn Future<Output = DomainResult<T>> + Send + 'a>>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -49,12 +48,10 @@ pub struct AdminUserApiKeyListPage {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CreateAdminUserCommand {
     pub user_uuid: String,
-    pub account_uuid: String,
     pub audit_log_uuid: String,
     pub subject: AdminUserSubject,
     pub email: String,
     pub username: String,
-    pub initial_balance: DecimalValue,
     pub requested_at: String,
     pub request_id: String,
 }
@@ -67,19 +64,6 @@ pub struct UpdateAdminUserCommand {
     pub username: Option<String>,
     pub group: Option<String>,
     pub status: Option<String>,
-    pub requested_at: String,
-    pub request_id: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct AdjustAdminUserBalanceCommand {
-    pub account_uuid: String,
-    pub account_history_uuid: String,
-    pub audit_log_uuid: String,
-    pub subject: AdminUserSubject,
-    pub user_id: i64,
-    pub amount: DecimalValue,
-    pub adjustment_type: String,
     pub requested_at: String,
     pub request_id: String,
 }
@@ -158,11 +142,6 @@ pub trait AdminUserStore {
     fn update_user<'a>(
         &'a self,
         command: UpdateAdminUserCommand,
-    ) -> AdminUserCommandFuture<'a, Option<AdminUserItem>>;
-
-    fn adjust_balance<'a>(
-        &'a self,
-        command: AdjustAdminUserBalanceCommand,
     ) -> AdminUserCommandFuture<'a, Option<AdminUserItem>>;
 
     fn create_api_key<'a>(

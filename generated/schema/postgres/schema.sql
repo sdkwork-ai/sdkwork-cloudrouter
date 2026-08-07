@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.4.0.
--- Registry SHA-256: 5195180e7d6a1d6729cd381d34b71c616512025d9966600a45453c6e2fb05e6e.
+-- Registry SHA-256: 80f0c70ae0ba83ce8664fb61d9356b876c6f1b31874535c2dc614d99361a110b.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -1074,6 +1074,7 @@ CREATE TABLE IF NOT EXISTS ai_upstream_supplier (
     supplier_code VARCHAR(64) NOT NULL,
     supplier_name VARCHAR(128) NOT NULL,
     display_name VARCHAR(128) NOT NULL,
+    display_name_i18n JSONB,
     description VARCHAR(512),
     icon_drive_uri VARCHAR(512),
     icon_resource_snapshot JSONB,
@@ -1272,8 +1273,9 @@ CREATE TABLE IF NOT EXISTS ai_upstream_account_group (
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     group_code VARCHAR(64) NOT NULL,
     group_name VARCHAR(128) NOT NULL,
+    group_name_i18n JSONB,
     description VARCHAR(512),
-    group_type VARCHAR(32) NOT NULL DEFAULT 'shared',
+    group_type VARCHAR(32) NOT NULL DEFAULT 'mixed',
     routing_strategy VARCHAR(32) NOT NULL DEFAULT 'weighted',
     fallback_mode VARCHAR(32) NOT NULL DEFAULT 'sequential',
     priority INTEGER NOT NULL DEFAULT 100,
@@ -1290,7 +1292,9 @@ CREATE TABLE IF NOT EXISTS ai_upstream_account_group (
     allowed_origin JSONB,
     vendor_code VARCHAR(64),
     modalities JSONB NOT NULL DEFAULT '[]'::jsonb,
+    tags JSONB NOT NULL DEFAULT '[]'::jsonb,
     CONSTRAINT ck_ai_upstream_account_group_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_ai_upstream_account_group_type CHECK (group_type IN ('mixed', 'llm', 'image', 'video', 'audio', 'music', 'other')),
     CONSTRAINT ck_ai_upstream_account_group_routing_strategy CHECK (routing_strategy IN ('weighted', 'round_robin', 'least_latency', 'least_cost', 'failover')),
     CONSTRAINT ck_ai_upstream_account_group_fallback_mode CHECK (fallback_mode IN ('none', 'sequential', 'same_supplier', 'cross_supplier')),
     CONSTRAINT ck_ai_upstream_account_group_financial_values CHECK (cost_multiplier > 0 AND sale_multiplier > 0 AND priority >= 0 AND (capacity_limit IS NULL OR capacity_limit >= 0))
@@ -1298,6 +1302,7 @@ CREATE TABLE IF NOT EXISTS ai_upstream_account_group (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_uuid ON ai_upstream_account_group (uuid);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_tenant_code ON ai_upstream_account_group (tenant_id, organization_id, group_code);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_tags ON ai_upstream_account_group (tags);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_scope_id ON ai_upstream_account_group (tenant_id, organization_id, id);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_tenant_status_updated ON ai_upstream_account_group (tenant_id, organization_id, status, updated_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_pricing ON ai_upstream_account_group (tenant_id, organization_id, pricing_plan_id, status, updated_at, id);
@@ -1425,6 +1430,38 @@ CREATE TABLE IF NOT EXISTS ai_upstream_account_health_state (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_health_state_scope ON ai_upstream_account_health_state (tenant_id, organization_id, account_id);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_health_state_health ON ai_upstream_account_health_state (tenant_id, organization_id, health_status, updated_at, account_id);
+
+CREATE TABLE IF NOT EXISTS ai_upstream_account_resource (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    account_id BIGINT NOT NULL,
+    resource_id BIGINT,
+    resource_code VARCHAR(192) NOT NULL DEFAULT '',
+    resource_group_id BIGINT,
+    resource_group_code VARCHAR(128) NOT NULL DEFAULT '',
+    grant_type VARCHAR(32) NOT NULL DEFAULT 'allow',
+    priority INTEGER NOT NULL DEFAULT 100,
+    effective_from TIMESTAMPTZ,
+    effective_to TIMESTAMPTZ,
+    CONSTRAINT ck_ai_upstream_account_resource_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_ai_upstream_account_resource_account FOREIGN KEY (tenant_id, organization_id, account_id) REFERENCES ai_upstream_account (tenant_id, organization_id, id) ON DELETE RESTRICT,
+    CONSTRAINT ck_ai_upstream_account_resource_target CHECK ((NULLIF(resource_code, '') IS NOT NULL) <> (NULLIF(resource_group_code, '') IS NOT NULL) AND grant_type IN ('allow', 'deny') AND priority >= 0 AND (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_resource_uuid ON ai_upstream_account_resource (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_resource ON ai_upstream_account_resource (tenant_id, organization_id, account_id, resource_code, resource_group_code);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_resource_status ON ai_upstream_account_resource (tenant_id, organization_id, status, account_id, grant_type, priority, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_resource_lookup ON ai_upstream_account_resource (tenant_id, organization_id, account_id, status, grant_type, priority, id);
 
 CREATE TABLE IF NOT EXISTS ai_upstream_object_route (
     id BIGINT NOT NULL PRIMARY KEY,

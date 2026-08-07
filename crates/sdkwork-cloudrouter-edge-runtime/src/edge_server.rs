@@ -710,8 +710,12 @@ fn dependency_api_path(path: &str) -> bool {
 }
 
 fn is_cloudrouter_owned_iam_app_path(path: &str) -> bool {
-    const CLOUDROUTER_OWNED_IAM_APP_PREFIXES: &[&str] =
-        &["/app/v3/api/iam/api_keys", "/app/v3/api/iam/users/settings"];
+    const CLOUDROUTER_OWNED_IAM_APP_PREFIXES: &[&str] = &[
+        "/app/v3/api/iam/api_keys",
+        "/app/v3/api/iam/users/settings",
+        "/app/v3/api/iam/invite",
+        "/app/v3/api/iam/invites",
+    ];
 
     CLOUDROUTER_OWNED_IAM_APP_PREFIXES.iter().any(|prefix| {
         path == prefix.trim_end_matches('/') || path.starts_with(&format!("{prefix}/"))

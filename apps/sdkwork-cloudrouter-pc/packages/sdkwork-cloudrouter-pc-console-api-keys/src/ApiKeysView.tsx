@@ -39,7 +39,7 @@ import { CreateKeyDrawer, type ApiKeyFormValues } from './CreateKeyDrawer';
 import { GroupCellPopover } from './GroupCellPopover';
 import { chainInputFromForm, createApiKeyInputsFromForm } from './apiKeyForm';
 import { ApiKeyService, type AccountGroup, type ApiKey } from './apiKeyService';
-import { toGroupPickerOptions } from './accountGroups';
+import { buildTagLabels, toGroupPickerOptions } from './accountGroups';
 import {
   displayApiKeyGroupName,
   formatApiKeyCreated,
@@ -624,6 +624,7 @@ export function ApiKeysView() {
                             confirm: t('common.actions.confirm'),
                             cancel: t('common.actions.cancel'),
                             rate: t('console.apiKeys.rate', '倍率'),
+                            tagLabels: buildTagLabels(t),
                           }}
                           onOpen={() => {
                             void ensureGroupsLoaded();

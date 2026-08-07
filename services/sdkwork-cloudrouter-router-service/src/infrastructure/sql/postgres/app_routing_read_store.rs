@@ -21,6 +21,7 @@ SELECT
     CAST(g.sale_multiplier AS TEXT) AS sale_multiplier,
     g.vendor_code,
     g.modalities::text AS modalities,
+    g.tags::text AS tags,
     g.status,
     EXISTS (
         SELECT 1
@@ -624,6 +625,7 @@ fn row_to_account_group(row: sqlx::postgres::PgRow) -> DomainResult<AppRoutingAc
         sale_multiplier: string_cell(&row, "sale_multiplier"),
         vendor_code: optional_string_cell(&row, "vendor_code"),
         modalities: parse_string_array(&string_cell(&row, "modalities"))?,
+        tags: parse_string_array(&string_cell(&row, "tags"))?,
         status: account_group_status_label(required_integer_cell(&row, "status")?)?,
         authorized: required_bool_cell(&row, "authorized")?,
         member_account_count: integer_cell(&row, "member_account_count"),

@@ -16,11 +16,38 @@
       "databaseUrlEnv": "SDKWORK_DATABASE_*",
       "schemaEnv": "SDKWORK_DATABASE_SCHEMA",
       "maxConnectionsEnv": "SDKWORK_DATABASE_MAX_CONNECTIONS",
-      "productionSourceRoots": ["services/sdkwork-cloudrouter-standalone-gateway/src"],
+      "productionSourceRoots": [
+        "services/sdkwork-cloudrouter-standalone-gateway/src"
+      ],
       "consumers": [
-        {"module": "cloudrouter app routes", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-cloudrouter-app-api/src/routes.rs"]},
-        {"module": "invoice runtime", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-cloudrouter-app-api/src/invoice_runtime.rs"]},
-        {"module": "commerce runtime", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-cloudrouter-app-api/src/commerce_runtime.rs"]}
+        {
+          "module": "cloudrouter app routes",
+          "poolMode": "installed-process-pool",
+          "evidence": [
+            "crates/sdkwork-routes-cloudrouter-app-api/src/routes.rs"
+          ]
+        },
+        {
+          "module": "invoice runtime",
+          "poolMode": "installed-process-pool",
+          "evidence": [
+            "crates/sdkwork-routes-cloudrouter-app-api/src/invoice_runtime.rs"
+          ]
+        },
+        {
+          "module": "commerce runtime",
+          "poolMode": "installed-process-pool",
+          "evidence": [
+            "crates/sdkwork-routes-cloudrouter-app-api/src/commerce_runtime.rs"
+          ]
+        },
+        {
+          "module": "sdkwork-log module lifecycle + request log store",
+          "poolMode": "installed-process-pool",
+          "evidence": [
+            "crates/sdkwork-routes-cloudrouter-backend-api/src/routes.rs"
+          ]
+        }
       ],
       "temporaryDriverExceptions": []
     },
@@ -33,9 +60,24 @@
       "databaseUrlEnv": "SDKWORK_DATABASE_*",
       "schemaEnv": "SDKWORK_DATABASE_SCHEMA",
       "maxConnectionsEnv": "SDKWORK_DATABASE_MAX_CONNECTIONS",
-      "productionSourceRoots": ["services/sdkwork-cloudrouter-admin-gateway/src"],
+      "productionSourceRoots": [
+        "services/sdkwork-cloudrouter-admin-gateway/src"
+      ],
       "consumers": [
-        {"module": "cloudrouter backend routes", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-cloudrouter-backend-api/src/routes.rs"]}
+        {
+          "module": "cloudrouter backend routes",
+          "poolMode": "installed-process-pool",
+          "evidence": [
+            "crates/sdkwork-routes-cloudrouter-backend-api/src/routes.rs"
+          ]
+        },
+        {
+          "module": "sdkwork-log module lifecycle + request log store",
+          "poolMode": "installed-process-pool",
+          "evidence": [
+            "crates/sdkwork-routes-cloudrouter-backend-api/src/routes.rs"
+          ]
+        }
       ],
       "temporaryDriverExceptions": []
     },
@@ -48,9 +90,24 @@
       "databaseUrlEnv": "SDKWORK_DATABASE_*",
       "schemaEnv": "SDKWORK_DATABASE_SCHEMA",
       "maxConnectionsEnv": "SDKWORK_DATABASE_MAX_CONNECTIONS",
-      "productionSourceRoots": ["crates/sdkwork-cloudrouter-edge-runtime/src"],
+      "productionSourceRoots": [
+        "crates/sdkwork-cloudrouter-edge-runtime/src"
+      ],
       "consumers": [
-        {"module": "cloudrouter router runtime", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-cloudrouter-edge-runtime/src/runtime.rs"]}
+        {
+          "module": "cloudrouter router runtime",
+          "poolMode": "installed-process-pool",
+          "evidence": [
+            "crates/sdkwork-cloudrouter-edge-runtime/src/runtime.rs"
+          ]
+        },
+        {
+          "module": "sdkwork-log module lifecycle + request log store",
+          "poolMode": "installed-process-pool",
+          "evidence": [
+            "crates/sdkwork-routes-cloudrouter-backend-api/src/routes.rs"
+          ]
+        }
       ],
       "temporaryDriverExceptions": []
     },
@@ -63,10 +120,24 @@
       "databaseUrlEnv": "SDKWORK_DATABASE_*",
       "schemaEnv": "SDKWORK_DATABASE_SCHEMA",
       "maxConnectionsEnv": "SDKWORK_DATABASE_MAX_CONNECTIONS",
-      "productionSourceRoots": ["services/sdkwork-cloudrouter-installer/src"],
+      "productionSourceRoots": [
+        "services/sdkwork-cloudrouter-installer/src"
+      ],
       "consumers": [
-        {"module": "cloudrouter installer lifecycle", "poolMode": "injected", "evidence": ["services/sdkwork-cloudrouter-installer/src/main.rs"]},
-        {"module": "models database lifecycle", "poolMode": "injected", "evidence": ["services/sdkwork-cloudrouter-installer/src/main.rs"]}
+        {
+          "module": "cloudrouter installer lifecycle",
+          "poolMode": "injected",
+          "evidence": [
+            "services/sdkwork-cloudrouter-installer/src/main.rs"
+          ]
+        },
+        {
+          "module": "models database lifecycle",
+          "poolMode": "injected",
+          "evidence": [
+            "services/sdkwork-cloudrouter-installer/src/main.rs"
+          ]
+        }
       ],
       "temporaryDriverExceptions": []
     }

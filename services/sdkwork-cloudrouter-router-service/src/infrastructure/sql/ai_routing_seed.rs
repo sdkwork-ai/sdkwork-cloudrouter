@@ -90,6 +90,8 @@ struct ResourceSeed {
     vendor_code: Option<String>,
     modality_code: Option<String>,
     api_code: Option<String>,
+    path_template: Option<String>,
+    method: Option<String>,
     catalog_key: Option<String>,
     model: Option<String>,
     provider_native_model: Option<String>,
@@ -166,6 +168,7 @@ struct DefaultAdminUpstreamAccountGroupSeed {
     resource_group_code: String,
     vendor_code: Option<String>,
     modalities: Vec<String>,
+    tags: Vec<String>,
     priority: i32,
     routing_weight: i32,
 }
@@ -240,16 +243,30 @@ const MODALITY_LOCALIZED_NAMES: [(&str, &str, &str); 5] = [
     ("music", "Music", "音乐"),
 ];
 
+/// Maps a resource modality to the account group type it serves. The `text`
+/// modality routes through LLM groups; the other modalities map 1:1.
+fn modality_group_type(modality: &str) -> &'static str {
+    match modality {
+        "text" => "llm",
+        "audio" => "audio",
+        "image" => "image",
+        "video" => "video",
+        "music" => "music",
+        _ => "other",
+    }
+}
+
 fn standard_admin_upstream_account_group() -> DefaultAdminUpstreamAccountGroupSeed {
     DefaultAdminUpstreamAccountGroupSeed {
         group_code: "standard-group".to_owned(),
         group_name: "标准分组".to_owned(),
         group_name_i18n: "{\"en-US\":\"Standard Group\",\"zh-CN\":\"标准分组\"}".to_owned(),
-        group_type: "shared",
+        group_type: "mixed",
         account_code: Some("openai-default".to_owned()),
         resource_group_code: "official.openai.full".to_owned(),
         vendor_code: None,
         modalities: Vec::new(),
+        tags: vec!["stable".to_owned(), "recommended".to_owned()],
         priority: 100,
         routing_weight: 100,
     }
@@ -268,12 +285,18 @@ impl EndpointSeedDefinition<'_> {
         self.resource.display_name.as_str()
     }
 
-    fn method(&self) -> &str {
-        default_endpoint_method(self.api_code())
+    fn method(&self) -> String {
+        self.resource
+            .method
+            .clone()
+            .unwrap_or_else(|| default_endpoint_method(self.api_code()).to_owned())
     }
 
     fn path_template(&self) -> String {
-        default_path_template(self.api_code())
+        self.resource
+            .path_template
+            .clone()
+            .unwrap_or_else(|| default_path_template(self.api_code()))
     }
 
     fn streaming_supported(&self) -> bool {
@@ -1110,6 +1133,7 @@ async fn import_postgres_default_admin_upstream_topology(
             }),
         );
         let modalities_json = serde_json::json!(&group.modalities).to_string();
+        let tags_json = serde_json::json!(&group.tags).to_string();
 
         sqlx::query(
             r#"
@@ -1118,13 +1142,13 @@ async fn import_postgres_default_admin_upstream_topology(
                 group_code, group_name, group_name_i18n, description, group_type,
                 routing_strategy, fallback_mode, priority, environment,
                 pricing_plan_code, cost_multiplier, sale_multiplier,
-                billing_type, allowed_origin, vendor_code, modalities
+                billing_type, allowed_origin, vendor_code, modalities, tags
             ) VALUES (
                 $1, $2, $3, $4, $5, 1, $6::jsonb,
                 $7, $8, $9::jsonb, $10, $11,
                 'weighted', 'sequential', $12, 1,
                 'standard', 1.000000000000, 1.000000000000,
-                1, '[]'::jsonb, $13, $14::jsonb
+                1, '[]'::jsonb, $13, $14::jsonb, $15::jsonb
             )
             ON CONFLICT (tenant_id, organization_id, group_code) DO UPDATE SET
                 group_name = EXCLUDED.group_name,
@@ -1142,6 +1166,7 @@ async fn import_postgres_default_admin_upstream_topology(
                 allowed_origin = EXCLUDED.allowed_origin,
                 vendor_code = EXCLUDED.vendor_code,
                 modalities = EXCLUDED.modalities,
+                tags = EXCLUDED.tags,
                 status = EXCLUDED.status,
                 metadata = EXCLUDED.metadata,
                 deleted_at = NULL,
@@ -1172,6 +1197,7 @@ async fn import_postgres_default_admin_upstream_topology(
         .bind(group.priority)
         .bind(group.vendor_code.as_deref())
         .bind(modalities_json)
+        .bind(tags_json)
         .execute(&mut **tx)
         .await?;
 
@@ -1419,6 +1445,20 @@ fn validate_catalog(catalog: &AiRoutingSeedCatalog) -> Result<(), AiRoutingSeedL
                     resource.resource_code
                 )));
             }
+            let path_template = resource.path_template.as_deref().unwrap_or_default();
+            if !path_template.starts_with('/') {
+                return Err(AiRoutingSeedLoadError::Validation(format!(
+                    "AI routing API endpoint resource `{}` must define an explicit pathTemplate starting with `/`",
+                    resource.resource_code
+                )));
+            }
+            let method = resource.method.as_deref().unwrap_or_default();
+            if !matches!(method, "GET" | "POST" | "PUT" | "PATCH" | "DELETE") {
+                return Err(AiRoutingSeedLoadError::Validation(format!(
+                    "AI routing API endpoint resource `{}` must define an explicit method in GET, POST, PUT, PATCH, DELETE",
+                    resource.resource_code
+                )));
+            }
         }
     }
     for group in &catalog.resource_groups {
@@ -1579,11 +1619,12 @@ fn derive_vendor_account_group_seeds(
                     &format!("{vendor_en} {modality_en} Group"),
                     &format!("{vendor_zh} {modality_zh}分组"),
                 ),
-                group_type: "shared",
+                group_type: modality_group_type(&modality),
                 account_code: None,
                 resource_group_code: resource_group_code.to_owned(),
                 vendor_code: Some(vendor_code.clone()),
                 modalities: vec![modality],
+                tags: Vec::new(),
                 priority: 100,
                 routing_weight: 100,
             });
@@ -2025,11 +2066,12 @@ mod tests {
             .iter()
             .find(|group| group.group_code == "standard-group")
             .expect("standard-group must be seeded");
-        assert_eq!(standard.group_type, "shared");
+        assert_eq!(standard.group_type, "mixed");
         assert_eq!(standard.account_code.as_deref(), Some("openai-default"));
         assert_eq!(standard.resource_group_code, "official.openai.full");
         assert!(standard.vendor_code.is_none());
         assert!(standard.modalities.is_empty());
+        assert_eq!(standard.tags, vec!["stable".to_owned(), "recommended".to_owned()]);
     }
 
     #[test]
@@ -2177,6 +2219,55 @@ mod tests {
                     .is_some_and(|name| !name.trim().is_empty()),
                 "{code} en-US name"
             );
+        }
+    }
+
+    #[test]
+    fn every_api_endpoint_resource_declares_explicit_path_and_method() {
+        let catalog = test_catalog();
+        for resource in api_endpoint_resources(&catalog) {
+            let item = EndpointSeedDefinition { resource };
+            let path_template = item.path_template();
+            assert!(
+                path_template.starts_with('/'),
+                "{} endpoint path must start with `/`, got {path_template}",
+                resource.resource_code
+            );
+            let method = item.method();
+            assert!(
+                matches!(method.as_str(), "GET" | "POST" | "PUT" | "PATCH" | "DELETE"),
+                "{} endpoint method must be explicit, got {method}",
+                resource.resource_code
+            );
+            assert!(
+                resource.path_template.is_some() && resource.method.is_some(),
+                "{} must carry explicit pathTemplate and method",
+                resource.resource_code
+            );
+        }
+    }
+
+    #[test]
+    fn endpoint_paths_reflect_explicit_seed_values() {
+        let catalog = test_catalog();
+        let by_code: BTreeMap<&str, &ResourceSeed> = catalog
+            .resources
+            .iter()
+            .filter(|resource| resource.resource_type == "api_endpoint")
+            .map(|resource| (resource.api_code.as_deref().unwrap_or_default(), resource))
+            .collect();
+        let expectations: [(&str, &str, &str); 3] = [
+            ("openai.chat_completions", "POST", "/v1/chat/completions"),
+            ("openai.models", "GET", "/v1/models"),
+            ("gemini.generate_content", "POST", "/v1beta/models/{model}:generateContent"),
+        ];
+        for (api_code, method, path_template) in expectations {
+            let resource = by_code
+                .get(api_code)
+                .unwrap_or_else(|| panic!("missing api endpoint {api_code}"));
+            let item = EndpointSeedDefinition { resource };
+            assert_eq!(item.method(), method, "{api_code} method");
+            assert_eq!(item.path_template(), path_template, "{api_code} path");
         }
     }
 

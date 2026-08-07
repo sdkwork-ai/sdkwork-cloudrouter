@@ -196,6 +196,8 @@ pub struct SaveAdminUpstreamAccountCommand {
     pub rpm_limit: Option<i64>,
     pub timeout_ms: Option<i32>,
     pub status: i32,
+    /// 创建时随账号一并保存的初始密钥（如 API Key）；更新时恒为 None。
+    pub api_key: Option<String>,
     pub requested_at: String,
 }
 
@@ -244,6 +246,7 @@ pub struct AdminUpstreamAccountGroupItem {
     pub environment: Option<i32>,
     pub vendor_code: Option<String>,
     pub modalities: Vec<String>,
+    pub tags: Vec<String>,
     pub status: i32,
     pub version: i64,
     pub updated_at: String,
@@ -267,6 +270,7 @@ pub struct SaveAdminUpstreamAccountGroupCommand {
     pub environment: Option<i32>,
     pub vendor_code: Option<String>,
     pub modalities: Vec<String>,
+    pub tags: Vec<String>,
     pub status: i32,
     pub requested_at: String,
 }
@@ -390,6 +394,25 @@ pub trait AdminUpstreamStore: Send + Sync {
         credential_id: i64,
         requested_at: String,
     ) -> AdminUpstreamFuture<'a, bool>;
+    fn reveal_account_credential_secret<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_id: i64,
+        credential_id: i64,
+    ) -> AdminUpstreamFuture<'a, String>;
+    fn list_account_resources<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_id: i64,
+    ) -> AdminUpstreamFuture<'a, Vec<AdminUpstreamResourceItem>>;
+    fn replace_account_resources<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_id: i64,
+        expected_version: i64,
+        items: Vec<AdminUpstreamResourceInput>,
+        requested_at: String,
+    ) -> AdminUpstreamFuture<'a, Vec<AdminUpstreamResourceItem>>;
     fn list_account_groups<'a>(
         &'a self,
         query: AdminUpstreamListQuery,

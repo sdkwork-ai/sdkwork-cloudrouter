@@ -7,18 +7,20 @@ use axum::{Json, Router};
 use sdkwork_cloudrouter_router_service::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use sdkwork_cloudrouter_router_service::ports::{
     AdminUpstreamAccountCredentialItem, AdminUpstreamAccountItem,
-    AdminUpstreamAccountVerificationItem, CreateAdminUpstreamAccountCredentialCommand,
-    SaveAdminUpstreamAccountCommand, VerifyAdminUpstreamAccountCommand,
+    AdminUpstreamAccountVerificationItem, AdminUpstreamResourceInput,
+    CreateAdminUpstreamAccountCredentialCommand, SaveAdminUpstreamAccountCommand,
+    VerifyAdminUpstreamAccountCommand,
 };
 use sdkwork_utils_rust::{parse_datetime, SdkWorkResultCode};
 use serde::{Deserialize, Serialize};
 
 use super::shared::{
-    decode_json, decode_query, domain_error, idempotency_uuid, item_response, list_query,
-    list_response, no_content_response, not_found, optional_text, parse_id, parse_if_match,
-    positive_decimal, problem, requested_at, required_text, subject, verification_error, ListQuery,
-    RequestResult, UpstreamState,
+    bounded_list_response, collection_item_response, decode_json, decode_query, domain_error,
+    idempotency_uuid, item_response, list_query, list_response, no_content_response, not_found,
+    optional_text, parse_id, parse_if_match, positive_decimal, problem, requested_at,
+    required_text, subject, verification_error, ListQuery, RequestResult, UpstreamState,
 };
+use super::supplier::ResourceResponse;
 
 const MAX_CODE_LENGTH: usize = 128;
 const MAX_NAME_LENGTH: usize = 200;
@@ -30,7 +32,7 @@ const ACCOUNT_CREATE_IDEMPOTENCY_SCOPE: i64 = 1_000_002;
 struct AccountCreateRequest {
     supplier_id: String,
     preferred_endpoint_id: Option<String>,
-    account_code: String,
+    account_code: Option<String>,
     account_name: String,
     account_type: Option<String>,
     auth_method_code: String,
@@ -43,6 +45,7 @@ struct AccountCreateRequest {
     rpm_limit: Option<i64>,
     timeout_ms: Option<i32>,
     status: Option<i32>,
+    api_key: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -79,6 +82,22 @@ struct AccountVerifyRequest {
     endpoint_id: Option<String>,
     credential_id: Option<String>,
     timeout_ms: Option<u64>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct AccountResourceReplaceRequest {
+    items: Vec<AccountResourceRequestItem>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct AccountResourceRequestItem {
+    resource_code: Option<String>,
+    resource_group_code: Option<String>,
+    grant_type: Option<String>,
+    priority: Option<i32>,
+    status: Option<i32>,
 }
 
 #[derive(Debug, Serialize)]
@@ -160,6 +179,14 @@ pub(super) fn routes() -> Router<UpstreamState> {
         .route(
             "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}",
             axum::routing::delete(deactivate_credential),
+        )
+        .route(
+            "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}/secret",
+            get(reveal_credential_secret),
+        )
+        .route(
+            "/backend/v3/api/ai/upstream_accounts/{accountId}/resources",
+            get(list_resources).put(replace_resources),
         )
         .route(
             "/backend/v3/api/ai/upstream_accounts/{accountId}/verify",
@@ -384,6 +411,42 @@ async fn deactivate_credential(
     }
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CredentialSecretResponse {
+    credential_id: String,
+    secret: String,
+}
+
+async fn reveal_credential_secret(
+    State(state): State<UpstreamState>,
+    RequiredAdminSqlScopedSubject(scoped): RequiredAdminSqlScopedSubject,
+    Path((account_id, credential_id)): Path<(String, String)>,
+) -> Response {
+    let account_id = match parse_id(account_id, "accountId") {
+        Ok(value) => value,
+        Err(response) => return response.into_response(),
+    };
+    let credential_id = match parse_id(credential_id, "credentialId") {
+        Ok(value) => value,
+        Err(response) => return response.into_response(),
+    };
+    match state
+        .store
+        .reveal_account_credential_secret(subject(scoped), account_id, credential_id)
+        .await
+    {
+        Ok(secret) => item_response(
+            StatusCode::OK,
+            CredentialSecretResponse {
+                credential_id: credential_id.to_string(),
+                secret,
+            },
+        ),
+        Err(error) => domain_error(error),
+    }
+}
+
 async fn verify_account(
     State(state): State<UpstreamState>,
     RequiredAdminSqlScopedSubject(scoped): RequiredAdminSqlScopedSubject,
@@ -428,6 +491,102 @@ async fn verify_account(
     }
 }
 
+async fn list_resources(
+    State(state): State<UpstreamState>,
+    RequiredAdminSqlScopedSubject(scoped): RequiredAdminSqlScopedSubject,
+    Path(account_id): Path<String>,
+) -> Response {
+    let account_id = match parse_id(account_id, "accountId") {
+        Ok(value) => value,
+        Err(response) => return response.into_response(),
+    };
+    match state
+        .store
+        .list_account_resources(subject(scoped), account_id)
+        .await
+    {
+        Ok(items) => bounded_list_response(items.into_iter().map(ResourceResponse::from).collect()),
+        Err(error) => domain_error(error),
+    }
+}
+
+async fn replace_resources(
+    State(state): State<UpstreamState>,
+    RequiredAdminSqlScopedSubject(scoped): RequiredAdminSqlScopedSubject,
+    Path(account_id): Path<String>,
+    headers: HeaderMap,
+    payload: Result<Json<AccountResourceReplaceRequest>, JsonRejection>,
+) -> Response {
+    let account_id = match parse_id(account_id, "accountId") {
+        Ok(value) => value,
+        Err(response) => return response.into_response(),
+    };
+    let expected_version = match parse_if_match(&headers) {
+        Ok(value) => value,
+        Err(response) => return response.into_response(),
+    };
+    let items = match decode_json(payload).and_then(resource_inputs) {
+        Ok(value) => value,
+        Err(response) => return response.into_response(),
+    };
+    match state
+        .store
+        .replace_account_resources(subject(scoped), account_id, expected_version, items, requested_at())
+        .await
+    {
+        Ok(items) => collection_item_response(
+            account_id,
+            items.into_iter().map(ResourceResponse::from).collect(),
+        ),
+        Err(error) => domain_error(error),
+    }
+}
+
+fn resource_inputs(
+    request: AccountResourceReplaceRequest,
+) -> RequestResult<Vec<AdminUpstreamResourceInput>> {
+    if request.items.len() > 200 {
+        return Err(problem(
+            SdkWorkResultCode::InvalidParameter,
+            "at most 200 resources are allowed",
+        ));
+    }
+    request
+        .items
+        .into_iter()
+        .map(|item| {
+            let resource_code = optional_text(item.resource_code, "resourceCode", MAX_CODE_LENGTH)?
+                .unwrap_or_default();
+            let resource_group_code = optional_text(
+                item.resource_group_code,
+                "resourceGroupCode",
+                MAX_CODE_LENGTH,
+            )?
+            .unwrap_or_default();
+            if resource_code.is_empty() == resource_group_code.is_empty() {
+                return Err(problem(
+                    SdkWorkResultCode::InvalidParameter,
+                    "exactly one of resourceCode or resourceGroupCode is required",
+                ));
+            }
+            let grant_type = item.grant_type.unwrap_or_else(|| "allow".to_owned());
+            if !matches!(grant_type.as_str(), "allow" | "deny") {
+                return Err(problem(
+                    SdkWorkResultCode::InvalidParameter,
+                    "grantType must be allow or deny",
+                ));
+            }
+            Ok(AdminUpstreamResourceInput {
+                resource_code,
+                resource_group_code,
+                grant_type,
+                priority: non_negative_i32(item.priority.unwrap_or(0), "priority")?,
+                status: status(item.status.unwrap_or(1))?,
+            })
+        })
+        .collect()
+}
+
 fn verification_timeout_ms(value: Option<u64>) -> RequestResult<u64> {
     let value = value.unwrap_or(10_000);
     if !(100..=30_000).contains(&value) {
@@ -437,6 +596,19 @@ fn verification_timeout_ms(value: Option<u64>) -> RequestResult<u64> {
         ));
     }
     Ok(value)
+}
+
+/// 自动生成唯一账号代码：account-<16位随机hex>。
+/// 数据库唯一索引（tenant+org+account_code）兜底保证唯一性。
+fn generate_account_code() -> RequestResult<String> {
+    let mut bytes = [0u8; 8];
+    getrandom::fill(&mut bytes).map_err(|error| {
+        problem(
+            SdkWorkResultCode::InternalError,
+            format!("failed to generate account code: {error}"),
+        )
+    })?;
+    Ok(format!("account-{:016x}", u64::from_be_bytes(bytes)))
 }
 
 fn create_command(
@@ -454,7 +626,10 @@ fn create_command(
             .preferred_endpoint_id
             .map(|value| parse_id(value, "preferredEndpointId"))
             .transpose()?,
-        account_code: required_text(request.account_code, "accountCode", MAX_CODE_LENGTH)?,
+        account_code: match request.account_code {
+            Some(value) => required_text(value, "accountCode", MAX_CODE_LENGTH)?,
+            None => generate_account_code()?,
+        },
         account_name: required_text(request.account_name, "accountName", MAX_NAME_LENGTH)?,
         account_type: required_text(
             request
@@ -493,6 +668,7 @@ fn create_command(
         rpm_limit: non_negative_i64(request.rpm_limit, "rpmLimit")?,
         timeout_ms: positive_i32(request.timeout_ms, "timeoutMs")?,
         status: status(request.status.unwrap_or(1))?,
+        api_key: optional_text(request.api_key, "apiKey", MAX_SECRET_LENGTH)?,
         requested_at: requested_at(),
     })
 }
@@ -565,6 +741,7 @@ fn update_command(
             None => existing.timeout_ms,
         },
         status: status(request.status.unwrap_or(existing.status))?,
+        api_key: None,
         requested_at: requested_at(),
     })
 }
@@ -726,6 +903,14 @@ impl From<AdminUpstreamAccountVerificationItem> for AccountVerificationResponse 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn generated_account_code_matches_expected_format() {
+        let code = generate_account_code().unwrap();
+        assert!(code.starts_with("account-"));
+        assert_eq!("account-".len() + 16, code.len());
+        assert!(code["account-".len()..].chars().all(|c| c.is_ascii_hexdigit()));
+    }
 
     #[test]
     fn verification_timeout_enforces_public_contract_bounds() {

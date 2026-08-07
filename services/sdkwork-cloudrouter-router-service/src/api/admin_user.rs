@@ -8,7 +8,6 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, post};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
@@ -19,7 +18,7 @@ use crate::api::response::{
 use crate::application::{ApiKeySecretGenerator, ApiKeySecretHasher};
 use crate::domain::{DecimalValue, DomainError, GatewayApiKey};
 use crate::ports::{
-    AccountGroupBindingInput, AdjustAdminUserBalanceCommand, AdminUserApiKeyItem, AdminUserItem,
+    AccountGroupBindingInput, AdminUserApiKeyItem, AdminUserItem,
     AdminUserStore, AdminUserSubject, CreateAdminUserApiKeyCommand, CreateAdminUserCommand,
     CreateGatewayApiKeyCommand, DeleteAdminUserApiKeyCommand,
     DeleteGatewayApiKeyForOrganizationCommand, EnsureDefaultUpstreamAccountGroupCommand,
@@ -56,7 +55,6 @@ struct AdminUserApiKeyCreateResponse {
 struct CreateUserRequest {
     email: Option<String>,
     username: Option<String>,
-    balance: Option<Value>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -66,14 +64,6 @@ struct UpdateUserRequest {
     username: Option<String>,
     group: Option<String>,
     status: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct BalanceAdjustmentRequest {
-    amount: Option<Value>,
-    #[serde(rename = "type")]
-    adjustment_type: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -132,10 +122,6 @@ pub fn admin_user_router_with_store(
         .route(
             "/backend/v3/api/system/users",
             post(create_user).put(update_user),
-        )
-        .route(
-            "/backend/v3/api/billing/users/{user_id}/balance_adjustments",
-            post(adjust_balance),
         )
         .with_state(AdminUserState {
             store,
@@ -250,10 +236,6 @@ async fn create_user(
         Ok(username) => username,
         Err(message) => return bad_request(message),
     };
-    let initial_balance = match normalize_money(request.balance.as_ref(), "balance", true) {
-        Ok(amount) => amount,
-        Err(message) => return bad_request(message),
-    };
     let requested_at = current_timestamp_string();
     let request_id = match server_request_id() {
         Ok(value) => value,
@@ -264,7 +246,6 @@ async fn create_user(
         subject,
         email,
         username,
-        initial_balance,
         requested_at,
         request_id,
     ) {
@@ -344,71 +325,6 @@ async fn update_user_with_request(
         Ok(None) => not_found_response("user was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => admin_user_system_response("admin user command store is unavailable", error),
-    }
-}
-
-async fn adjust_balance(
-    State(state): State<AdminUserState>,
-    Path(user_id): Path<i64>,
-    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
-    _headers: HeaderMap,
-    body: Bytes,
-) -> Response {
-    let subject: AdminUserSubject = scoped.into();
-    let user_id = match positive_path_id(user_id, "userId") {
-        Ok(id) => id,
-        Err(message) => return bad_request(message),
-    };
-    let request = match parse_json_body::<BalanceAdjustmentRequest>(
-        &body,
-        "balance adjustment request body is required",
-    ) {
-        Ok(request) => request,
-        Err(message) => return bad_request(message),
-    };
-    let amount = match normalize_money(request.amount.as_ref(), "amount", false) {
-        Ok(amount) => amount,
-        Err(message) => return bad_request(message),
-    };
-    let adjustment_type = match normalize_adjustment_type(request.adjustment_type.as_deref()) {
-        Ok(value) => value,
-        Err(message) => return bad_request(message),
-    };
-    let requested_at = current_timestamp_string();
-    let request_id = match server_request_id() {
-        Ok(value) => value,
-        Err(error) => return error.into_response(),
-    };
-    let account_uuid = match state.secret_generator.generate_entity_uuid() {
-        Ok(value) => value,
-        Err(error) => return command_build_error_response(error),
-    };
-    let account_history_uuid = match state.secret_generator.generate_entity_uuid() {
-        Ok(value) => value,
-        Err(error) => return command_build_error_response(error),
-    };
-    let audit_log_uuid = match state.secret_generator.generate_entity_uuid() {
-        Ok(value) => value,
-        Err(error) => return command_build_error_response(error),
-    };
-
-    let command = AdjustAdminUserBalanceCommand {
-        account_uuid,
-        account_history_uuid,
-        audit_log_uuid,
-        subject,
-        user_id,
-        amount,
-        adjustment_type,
-        requested_at,
-        request_id,
-    };
-
-    match state.store.adjust_balance(command).await {
-        Ok(Some(item)) => Json(success_envelope(AdminUserItemEnvelope { item })).into_response(),
-        Ok(None) => not_found_response("user was not found"),
-        Err(error) if error.is_conflict() => conflict_response(error),
-        Err(error) => admin_user_system_response("admin user balance store is unavailable", error),
     }
 }
 
@@ -662,18 +578,15 @@ fn build_create_user_command(
     subject: AdminUserSubject,
     email: String,
     username: String,
-    initial_balance: DecimalValue,
     requested_at: String,
     request_id: String,
 ) -> Result<CreateAdminUserCommand, DomainError> {
     Ok(CreateAdminUserCommand {
         user_uuid: state.secret_generator.generate_entity_uuid()?,
-        account_uuid: state.secret_generator.generate_entity_uuid()?,
         audit_log_uuid: state.secret_generator.generate_entity_uuid()?,
         subject,
         email,
         username,
-        initial_balance,
         requested_at,
         request_id,
     })
@@ -851,37 +764,6 @@ fn normalize_optional_status(value: Option<&str>) -> Result<Option<String>, Stri
         "banned" | "inactive" | "disabled" => Ok(Some("banned".to_owned())),
         _ => Err("status must be active or banned".to_owned()),
     }
-}
-
-fn normalize_adjustment_type(value: Option<&str>) -> Result<String, String> {
-    match value.unwrap_or("").trim().to_ascii_lowercase().as_str() {
-        "recharge" => Ok("recharge".to_owned()),
-        "refund" => Ok("refund".to_owned()),
-        _ => Err("type must be recharge or refund".to_owned()),
-    }
-}
-
-fn normalize_money(
-    value: Option<&Value>,
-    field: &str,
-    allow_zero: bool,
-) -> Result<DecimalValue, String> {
-    let raw = match value {
-        Some(Value::String(value)) => value.clone(),
-        Some(Value::Number(value)) => value.to_string(),
-        Some(_) => return Err(format!("{field} must be a decimal number")),
-        None if allow_zero => return Ok(DecimalValue::ZERO),
-        None => return Err(format!("{field} is required")),
-    };
-    let normalized = raw.trim().trim_start_matches('$').replace(',', "");
-    let amount = DecimalValue::parse(&normalized).map_err(|error| error.to_string())?;
-    if amount < DecimalValue::ZERO {
-        return Err(format!("{field} must not be negative"));
-    }
-    if !allow_zero && amount == DecimalValue::ZERO {
-        return Err(format!("{field} must be greater than zero"));
-    }
-    Ok(amount)
 }
 
 fn positive_id(value: Option<i64>, field: &str) -> Result<i64, String> {

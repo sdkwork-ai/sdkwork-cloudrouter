@@ -1,25 +1,41 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { CheckCircle2, Edit3, Plus, RefreshCw, Settings2, Trash2, XCircle } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { CheckCircle2, ChevronRight, Edit3, Eye, EyeOff, Layers3, Plus, Power, PowerOff, RefreshCw, Settings2, Trash2, XCircle } from 'lucide-react';
+import { SdkworkSearchableSelect } from '@sdkwork/appbase-pc-react';
 import { AdminTableShell, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
+import { formatDecimalDisplay } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { useTranslation } from 'react-i18next';
 import type {
   CreateUpstreamAccountRequest,
   UpstreamAccount,
   UpstreamAccountCredential,
+  UpstreamAccountGroup,
   UpstreamAccountVerification,
+  UpstreamResourceCatalogResponse,
+  UpstreamResourceEntitlementInput,
   UpstreamSupplier,
   UpstreamSupplierAuthMethod,
   UpstreamSupplierEndpoint,
+  UpdateUpstreamAccountRequest,
 } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
+import { ResourcePicker, emptyResourceSelection, toEntitlements, toSelection, type ResourceSelection } from './resourcePicker';
 import { upstreamService } from './upstreamService';
 import {
   dangerButtonClass,
+  EMPTY_MULTIPLIER_RANGE,
   errorMessage,
   Field,
+  GroupTypeFilter,
+  type GroupTypeFilterValue,
+  hasMultiplierFilter,
   InlineError,
   inputClass,
+  matchesMultiplierRange,
+  matchesTagFilter,
   Modal,
+  MultiplierRangeFilter,
+  type MultiplierRangeValue,
   primaryButtonClass,
+  resolveGroupDisplayName,
   SearchBox,
   secondaryButtonClass,
   Section,
@@ -27,10 +43,19 @@ import {
   SidePanel,
   StatusBadge,
   TableState,
+  TagBadge,
+  TagFilter,
   UpstreamPageShell,
 } from './components';
 
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
+
+/** 左侧分组列表的「未分组」虚拟条目 key（null 表示「全部账号」） */
+const UNGROUPED_KEY = '__ungrouped__';
+
+function groupEntryClass(selected: boolean): string {
+  return `flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left transition-colors ${selected ? 'bg-indigo-50 dark:bg-indigo-500/10' : 'hover:bg-slate-50 dark:hover:bg-white/5'}`;
+}
 
 export function UpstreamAccountAdmin() {
   return (
@@ -41,8 +66,14 @@ export function UpstreamAccountAdmin() {
 }
 
 export function AccountAdminPanel() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [items, setItems] = useState<UpstreamAccount[]>([]);
+  const [groups, setGroups] = useState<UpstreamAccountGroup[]>([]);
+  const [memberships, setMemberships] = useState<Record<string, string[]>>({});
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState<GroupTypeFilterValue>('all');
+  const [multiplierRange, setMultiplierRange] = useState<MultiplierRangeValue>(EMPTY_MULTIPLIER_RANGE);
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [suppliers, setSuppliers] = useState<UpstreamSupplier[]>([]);
   const [query, setQuery] = useState('');
   const [appliedQuery, setAppliedQuery] = useState('');
@@ -57,12 +88,21 @@ export function AccountAdminPanel() {
     setLoading(true);
     setError(null);
     try {
-      const [accountPage, supplierPage] = await Promise.all([
+      const [accountPage, supplierPage, groupPage] = await Promise.all([
         upstreamService.accounts.list({ page: 1, pageSize: 200, q: appliedQuery || undefined }),
         upstreamService.suppliers.list({ page: 1, pageSize: 200 }),
+        upstreamService.accountGroups.list({ page: 1, pageSize: 200 }),
       ]);
+      const memberPages = await Promise.all(groupPage.items.map((group) => upstreamService.accountGroups.listMembers(group.id)));
+      const nextMemberships: Record<string, string[]> = {};
+      groupPage.items.forEach((group, index) => {
+        nextMemberships[group.id] = memberPages[index].map((member) => member.accountId);
+      });
+      setGroups(groupPage.items);
+      setMemberships(nextMemberships);
       setItems(accountPage.items);
       setSuppliers(supplierPage.items);
+      setSelectedKey((current) => current === null || current === UNGROUPED_KEY || groupPage.items.some((group) => group.id === current) ? current : null);
       setSelected((current) => current ? accountPage.items.find((item) => item.id === current.id) ?? null : null);
     } catch (cause) {
       setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
@@ -73,14 +113,85 @@ export function AccountAdminPanel() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const submitAccount = async (event: FormEvent<HTMLFormElement>) => {
+  const { visibleItems, ungroupedCount } = useMemo(() => {
+    const groupedIds = new Set(Object.values(memberships).flat());
+    const ungroupedCount = items.filter((item) => !groupedIds.has(item.id)).length;
+    let visibleItems: UpstreamAccount[];
+    if (selectedKey === null) {
+      visibleItems = items;
+    } else if (selectedKey === UNGROUPED_KEY) {
+      visibleItems = items.filter((item) => !groupedIds.has(item.id));
+    } else {
+      const memberIds = new Set(memberships[selectedKey] ?? []);
+      visibleItems = items.filter((item) => memberIds.has(item.id));
+    }
+    return { visibleItems, ungroupedCount };
+  }, [items, memberships, selectedKey]);
+
+  const filteredGroups = useMemo(() => {
+    let next = typeFilter === 'all' ? groups : groups.filter((group) => group.groupType === typeFilter);
+    if (hasMultiplierFilter(multiplierRange)) next = next.filter((group) => matchesMultiplierRange(group, multiplierRange));
+    if (tagFilter.length > 0) next = next.filter((group) => matchesTagFilter(group, tagFilter));
+    return next;
+  }, [groups, typeFilter, multiplierRange, tagFilter]);
+
+  const groupListFiltered = typeFilter !== 'all' || hasMultiplierFilter(multiplierRange) || tagFilter.length > 0;
+
+  const changeTypeFilter = (next: GroupTypeFilterValue) => {
+    setTypeFilter(next);
+    // 当前选中分组不属于新类型时回退到「全部账号」
+    if (selectedKey !== null && selectedKey !== UNGROUPED_KEY) {
+      const group = groups.find((item) => item.id === selectedKey);
+      if (group && next !== 'all' && group.groupType !== next) setSelectedKey(null);
+    }
+  };
+
+  const submitAccount = async (event: FormEvent<HTMLFormElement>, selection: ResourceSelection, apiKeyMasked: string, groupId: string) => {
     event.preventDefault();
     setBusy(true);
     setError(null);
     try {
-      const input = accountInput(new FormData(event.currentTarget), t);
-      if (editing) await upstreamService.accounts.update(editing, input);
-      else await upstreamService.accounts.create(input);
+      const form = new FormData(event.currentTarget);
+      const saveResources = async (account: UpstreamAccount) => {
+        // 仅在选择了资源时替换，避免资源目录加载失败时意外清空既有绑定
+        if (selection.resourceCodes.length === 0 && selection.resourceGroupCodes.length === 0) return;
+        await upstreamService.accounts.replaceResources(account, { items: toEntitlements(selection) });
+      };
+      const joinGroup = async (account: UpstreamAccount) => {
+        // 创建模式选中分组时，将新账号加入该分组（全量替换成员列表）
+        const group = groups.find((item) => item.id === groupId);
+        if (!group) return;
+        const members = await upstreamService.accountGroups.listMembers(group.id);
+        const existing = members.map(({ accountId, costMultiplierOverride, enabled, priority, routingWeight, status }) => ({ accountId, costMultiplierOverride, enabled, priority, routingWeight, status }));
+        if (existing.some((member) => member.accountId === account.id)) return;
+        await upstreamService.accountGroups.replaceMembers(group, { items: [...existing, { accountId: account.id, priority: 100, routingWeight: 100, enabled: true, status: 1 }] });
+      };
+      if (editing) {
+        const updated = await upstreamService.accounts.update(editing, updateAccountInput(form, t));
+        // 编辑模式：输入了新密钥（不同于已录入掩码）时为账号创建新凭据
+        const apiKey = String(form.get('apiKey') ?? '').trim();
+        if (apiKey && apiKey !== apiKeyMasked) {
+          await upstreamService.accounts.createCredential(updated.id, {
+            credentialName: 'primary',
+            secret: apiKey,
+            priority: 100,
+          });
+        }
+        await saveResources(updated);
+      } else {
+        const created = await upstreamService.accounts.create(createAccountInput(form, t));
+        try {
+          await joinGroup(created);
+          await saveResources(created);
+        } catch (cause) {
+          // 账号已创建但分组/资源保存失败：打开右侧详情提示重试
+          setEditing(undefined);
+          setSelected(created);
+          setError(t('admin.upstream.account.errors.resourcesNotSaved'));
+          await load();
+          return;
+        }
+      }
       setEditing(undefined);
       await load();
     } catch (cause) {
@@ -106,50 +217,149 @@ export function AccountAdminPanel() {
     }
   };
 
+  const toggleAccountStatus = async (account: UpstreamAccount) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const updated = await upstreamService.accounts.update(account, { status: account.status === 1 ? 0 : 1 });
+      setItems((current) => current.map((item) => item.id === account.id ? updated : item));
+      setSelected((current) => current?.id === account.id ? updated : current);
+    } catch (cause) {
+      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const supplierName = (supplierId: string) => suppliers.find((item) => item.id === supplierId)?.displayName ?? supplierId;
 
+  const selectedGroup = groups.find((group) => group.id === selectedKey) ?? null;
+  const contextName = selectedKey === null
+    ? t('admin.upstream.account.groups.all')
+    : selectedKey === UNGROUPED_KEY
+      ? t('admin.upstream.account.groups.ungrouped')
+      : selectedGroup ? resolveGroupDisplayName(selectedGroup, i18n.language) : '';
+  const emptyText = selectedKey === UNGROUPED_KEY
+    ? t('admin.upstream.account.groups.ungroupedEmpty')
+    : selectedKey !== null
+      ? t('admin.upstream.account.groups.groupEmpty')
+      : t('admin.upstream.account.empty');
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <SearchBox value={query} placeholder={t('admin.upstream.account.search.placeholder')} onChange={setQuery} onSubmit={() => setAppliedQuery(query.trim())} />
-        <div className="flex gap-2">
-          <button type="button" className={secondaryButtonClass} onClick={() => void load()} disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />{t('common.actions.refresh')}</button>
-          <button type="button" className={primaryButtonClass} onClick={() => setEditing(null)} disabled={suppliers.length === 0}><Plus className="h-4 w-4" />{t('admin.upstream.account.actions.new')}</button>
+    <div className="grid min-h-0 flex-1 auto-rows-[minmax(0,1fr)] gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
+      <aside className="flex min-h-0 flex-col rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5">
+        <header className="flex items-center gap-2 border-b border-slate-200 px-4 py-3 dark:border-white/10">
+          <Layers3 className="h-4 w-4 text-slate-400" />
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t('admin.upstream.account.groups.title')}</h3>
+        </header>
+        <div className="border-b border-slate-200 px-4 py-2 dark:border-white/10">
+          <GroupTypeFilter value={typeFilter} onChange={changeTypeFilter} />
+          <TagFilter value={tagFilter} onChange={setTagFilter} className="mt-2" />
+          <MultiplierRangeFilter value={multiplierRange} onChange={setMultiplierRange} className="mt-2" />
         </div>
-      </div>
-      <InlineError message={error} />
-      <AdminTableShell>
-        <table className="w-full min-w-[1040px] text-left text-sm">
-          <thead className="sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-500 dark:bg-[#111] dark:text-slate-400">
-            <tr><th className="px-4 py-3">{t('admin.upstream.account.table.account')}</th><th className="px-4 py-3">{t('admin.upstream.account.table.supplier')}</th><th className="px-4 py-3">{t('admin.upstream.account.table.authentication')}</th><th className="px-4 py-3">{t('admin.upstream.account.table.costMultiplier')}</th><th className="px-4 py-3">{t('admin.upstream.account.table.quota')}</th><th className="px-4 py-3">{t('admin.upstream.account.table.status')}</th><th className="px-4 py-3 text-right">{t('admin.upstream.account.table.actions')}</th></tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-            {items.length === 0 ? <TableState loading={loading} empty={t('admin.upstream.account.empty')} colSpan={7} /> : items.map((account) => (
+        <div className="min-h-0 flex-1 overflow-y-auto p-2">
+          <button type="button" className={groupEntryClass(selectedKey === null)} onClick={() => setSelectedKey(null)}>
+            <span className="min-w-0"><span className="block truncate text-sm font-medium text-slate-800 dark:text-slate-200">{t('admin.upstream.account.groups.all')}</span></span>
+            <span className="shrink-0 text-xs text-slate-400">{t('admin.upstream.account.groups.accountCount', { count: items.length })}</span>
+          </button>
+          <button type="button" className={groupEntryClass(selectedKey === UNGROUPED_KEY)} onClick={() => setSelectedKey(UNGROUPED_KEY)}>
+            <span className="min-w-0"><span className="block truncate text-sm font-medium text-slate-800 dark:text-slate-200">{t('admin.upstream.account.groups.ungrouped')}</span></span>
+            <span className="shrink-0 text-xs text-slate-400">{t('admin.upstream.account.groups.accountCount', { count: ungroupedCount })}</span>
+          </button>
+          <div className="my-2 border-t border-slate-200 dark:border-white/10" />
+          {filteredGroups.length === 0 ? (
+            <p className="px-3 py-6 text-center text-sm text-slate-500 dark:text-slate-400">{t(groupListFiltered ? 'admin.upstream.accountGroup.filter.empty' : 'admin.upstream.account.groups.empty')}</p>
+          ) : filteredGroups.map((group) => (
+            <button key={group.id} type="button" className={groupEntryClass(selectedKey === group.id)} onClick={() => setSelectedKey(group.id)}>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-medium text-slate-800 dark:text-slate-200">{resolveGroupDisplayName(group, i18n.language)}</span>
+                <span className="block truncate font-mono text-xs text-slate-400">{group.groupCode}</span>
+                {group.tags && group.tags.length > 0 ? <span className="mt-0.5 flex flex-wrap gap-1">{group.tags.map((tag) => <TagBadge key={tag} tag={tag} small />)}</span> : null}
+                <span className="block truncate font-mono text-xs text-slate-400">{t('admin.upstream.accountGroup.table.costMultiplier')} ×{formatDecimalDisplay(group.costMultiplier)} · {t('admin.upstream.accountGroup.table.saleMultiplier')} ×{formatDecimalDisplay(group.saleMultiplier)}</span>
+              </span>
+              <span className="shrink-0 text-xs text-slate-400">{t('admin.upstream.account.groups.accountCount', { count: memberships[group.id]?.length ?? 0 })}</span>
+            </button>
+          ))}
+        </div>
+      </aside>
+      <div className="flex min-h-0 flex-col gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <SearchBox value={query} placeholder={t('admin.upstream.account.search.placeholder')} onChange={setQuery} onSubmit={setAppliedQuery} />
+          <div className="flex gap-2">
+            <button type="button" className={secondaryButtonClass} onClick={() => void load()} disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />{t('common.actions.refresh')}</button>
+            <button type="button" className={primaryButtonClass} onClick={() => setEditing(null)} disabled={suppliers.length === 0 || groups.length === 0}><Plus className="h-4 w-4" />{t('admin.upstream.account.actions.new')}</button>
+          </div>
+        </div>
+        <nav className="flex min-w-0 items-center gap-1.5 text-sm" aria-label={t('admin.upstream.account.groups.title')}>
+          <button type="button" className="shrink-0 text-slate-500 transition-colors hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400" onClick={() => setSelectedKey(null)}>{t('admin.upstream.account.groups.title')}</button>
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+          {selectedKey === null ? (
+            <span className="truncate font-medium text-slate-900 dark:text-white">{t('admin.upstream.account.groups.all')}</span>
+          ) : selectedKey === UNGROUPED_KEY ? (
+            <span className="truncate font-medium text-slate-900 dark:text-white">{t('admin.upstream.account.groups.ungrouped')}</span>
+          ) : selectedGroup ? (
+            <>
+              <button type="button" className="shrink-0 text-slate-500 transition-colors hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400" onClick={() => { setTypeFilter(selectedGroup.groupType); setSelectedKey(null); }}>{t(`admin.upstream.accountGroup.groupType.${selectedGroup.groupType}`)}</button>
+              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+              <span className="truncate font-medium text-slate-900 dark:text-white">{contextName}</span>
+            </>
+          ) : null}
+          <span className="ml-1 shrink-0 text-xs text-slate-400">{t('admin.upstream.account.groups.accountCount', { count: visibleItems.length })}</span>
+        </nav>
+        <InlineError message={error} />
+        <AdminTableShell>
+          <table className="w-full min-w-[1040px] text-left text-sm">
+            <thead className="sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-500 dark:bg-[#111] dark:text-slate-400">
+              <tr><th className="px-4 py-3">{t('admin.upstream.account.table.account')}</th><th className="px-4 py-3">{t('admin.upstream.account.table.supplier')}</th><th className="px-4 py-3">{t('admin.upstream.account.table.authentication')}</th><th className="px-4 py-3">{t('admin.upstream.account.table.costMultiplier')}</th><th className="px-4 py-3">{t('admin.upstream.account.table.quota')}</th><th className="px-4 py-3">{t('admin.upstream.account.table.status')}</th><th className="px-4 py-3 text-right">{t('admin.upstream.account.table.actions')}</th></tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+              {visibleItems.length === 0 ? <TableState loading={loading} empty={emptyText} colSpan={7} /> : visibleItems.map((account) => (
               <tr key={account.id} className="text-slate-700 hover:bg-slate-50/80 dark:text-slate-200 dark:hover:bg-white/[0.03]">
                 <td className="px-4 py-3"><button type="button" className="text-left" onClick={() => setSelected(account)}><span className="block font-semibold text-slate-900 dark:text-white">{account.accountName}</span><span className="block font-mono text-xs text-slate-500">{account.accountCode}</span></button></td>
                 <td className="px-4 py-3"><span className="font-medium">{supplierName(account.supplierId)}</span><span className="block text-xs text-slate-500">{account.supplierCode}</span></td>
                 <td className="px-4 py-3"><span className="font-mono text-xs">{account.authMethodCode}</span></td>
-                <td className="px-4 py-3 font-mono">{account.contractCostMultiplier}</td>
-                <td className="px-4 py-3"><span>{account.quotaUsed ?? '0'} / {account.quotaLimit ?? '-'}</span><span className="block text-xs text-slate-500">{t('admin.upstream.account.table.rpm', { value: account.rpmLimit ?? '-' })}</span></td>
+                <td className="px-4 py-3 font-mono">{formatDecimalDisplay(account.contractCostMultiplier)}</td>
+                <td className="px-4 py-3"><span>{formatDecimalDisplay(account.quotaUsed, '0')} / {formatDecimalDisplay(account.quotaLimit)}</span><span className="block text-xs text-slate-500">{t('admin.upstream.account.table.rpm', { value: account.rpmLimit ?? '-' })}</span></td>
                 <td className="px-4 py-3"><StatusBadge status={account.status} healthy={account.healthStatus} /></td>
-                <td className="px-4 py-3"><div className="flex justify-end gap-1"><button type="button" className={secondaryButtonClass} onClick={() => setSelected(account)} title={t('admin.upstream.account.actions.credentials')}><Settings2 className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setEditing(account)} title={t('common.actions.edit')}><Edit3 className="h-4 w-4" /></button><button type="button" className={dangerButtonClass} onClick={() => setDeleteTarget(account)} title={t('common.actions.delete')}><Trash2 className="h-4 w-4" /></button></div></td>
+                <td className="px-4 py-3"><div className="flex justify-end gap-1">{account.status === 1 ? <button type="button" className={dangerButtonClass} onClick={() => void toggleAccountStatus(account)} title={t('admin.upstream.account.actions.disable')}><PowerOff className="h-4 w-4" /></button> : <button type="button" className={secondaryButtonClass} onClick={() => void toggleAccountStatus(account)} title={t('admin.upstream.account.actions.enable')}><Power className="h-4 w-4" /></button>}<button type="button" className={secondaryButtonClass} onClick={() => setSelected(account)} title={t('admin.upstream.account.actions.credentials')}><Settings2 className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setEditing(account)} title={t('common.actions.edit')}><Edit3 className="h-4 w-4" /></button><button type="button" className={dangerButtonClass} onClick={() => setDeleteTarget(account)} title={t('common.actions.delete')}><Trash2 className="h-4 w-4" /></button></div></td>
               </tr>
             ))}
           </tbody>
         </table>
-      </AdminTableShell>
-      {editing !== undefined ? <AccountModal account={editing} suppliers={suppliers} busy={busy} onSubmit={submitAccount} onClose={() => setEditing(undefined)} /> : null}
-      {selected ? <AccountCredentials account={selected} supplier={suppliers.find((item) => item.id === selected.supplierId) ?? null} onClose={() => setSelected(null)} onAccountChanged={(account) => { setSelected(account); setItems((current) => current.map((item) => item.id === account.id ? account : item)); }} /> : null}
-      {deleteTarget ? <ConfirmDialog title={t('admin.upstream.account.delete.title')} description={t('admin.upstream.account.delete.description', { name: deleteTarget.accountName })} confirmLabel={t('common.actions.delete')} tone="danger" isBusy={busy} onCancel={() => setDeleteTarget(null)} onConfirm={() => void deleteAccount()} /> : null}
+        </AdminTableShell>
+        {editing !== undefined ? <AccountModal account={editing} suppliers={suppliers} groups={groups} initialGroupId={selectedKey !== null && selectedKey !== UNGROUPED_KEY ? selectedKey : null} busy={busy} onSubmit={submitAccount} onClose={() => setEditing(undefined)} /> : null}
+        {selected ? <AccountCredentials account={selected} supplier={suppliers.find((item) => item.id === selected.supplierId) ?? null} onClose={() => setSelected(null)} onAccountChanged={(account) => { setSelected(account); setItems((current) => current.map((item) => item.id === account.id ? account : item)); }} /> : null}
+        {deleteTarget ? <ConfirmDialog title={t('admin.upstream.account.delete.title')} description={t('admin.upstream.account.delete.description', { name: deleteTarget.accountName })} confirmLabel={t('common.actions.delete')} tone="danger" isBusy={busy} onCancel={() => setDeleteTarget(null)} onConfirm={() => void deleteAccount()} /> : null}
+      </div>
     </div>
   );
 }
 
-function AccountModal({ account, suppliers, busy, onSubmit, onClose }: { account: UpstreamAccount | null; suppliers: UpstreamSupplier[]; busy: boolean; onSubmit: (event: FormEvent<HTMLFormElement>) => void; onClose: () => void }) {
-  const { t } = useTranslation();
+function RowField({ label, required, children }: { label: string; required?: boolean; children: ReactNode }) {
+  return (
+    <div className="grid grid-cols-[120px_minmax(0,1fr)] items-center gap-3">
+      <span className="text-right text-sm font-medium text-slate-700 dark:text-slate-200">{label}{required ? <span className="ml-1 text-red-500">*</span> : null}</span>
+      {children}
+    </div>
+  );
+}
+
+function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubmit, onClose }: { account: UpstreamAccount | null; suppliers: UpstreamSupplier[]; groups: UpstreamAccountGroup[]; initialGroupId: string | null; busy: boolean; onSubmit: (event: FormEvent<HTMLFormElement>, selection: ResourceSelection, apiKeyMasked: string, groupId: string) => void; onClose: () => void }) {
+  const { t, i18n } = useTranslation();
   const [supplierId, setSupplierId] = useState(account?.supplierId ?? suppliers[0]?.id ?? '');
+  const [groupId, setGroupId] = useState(initialGroupId ?? '');
   const [authMethods, setAuthMethods] = useState<UpstreamSupplierAuthMethod[]>([]);
   const [endpoints, setEndpoints] = useState<UpstreamSupplierEndpoint[]>([]);
+  const [authMethodCode, setAuthMethodCode] = useState(account?.authMethodCode ?? '');
+  const [catalog, setCatalog] = useState<UpstreamResourceCatalogResponse | null>(null);
+  const [selection, setSelection] = useState<ResourceSelection>(emptyResourceSelection());
+  const [apiKeyMasked, setApiKeyMasked] = useState('');
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [apiKeyVisible, setApiKeyVisible] = useState(false);
+  const [activeCredentialId, setActiveCredentialId] = useState('');
+  const [revealError, setRevealError] = useState('');
+  const [resourcesLoading, setResourcesLoading] = useState(true);
+  const [groupMissing, setGroupMissing] = useState(false);
 
   useEffect(() => {
     if (!supplierId) return;
@@ -159,26 +369,128 @@ function AccountModal({ account, suppliers, busy, onSubmit, onClose }: { account
     ]).then(([nextMethods, nextEndpoints]) => {
       setAuthMethods(nextMethods);
       setEndpoints(nextEndpoints);
+      if (!account) {
+        // 创建模式默认选中 APIKEY 认证方式（无则取首个）
+        setAuthMethodCode((current) => current || (nextMethods.find((method) => method.authType === 'api_key')?.authMethodCode ?? nextMethods[0]?.authMethodCode ?? ''));
+      }
     });
-  }, [supplierId]);
+  }, [supplierId, account]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void Promise.all([
+      upstreamService.fetchResourceCatalog(),
+      account ? upstreamService.accounts.listResources(account.id) : Promise.resolve([]),
+      account ? upstreamService.accounts.listCredentials(account.id, { page: 1, pageSize: 200 }) : Promise.resolve([]),
+    ])
+      .then(([nextCatalog, items, credentials]) => {
+        if (cancelled) return;
+        setCatalog(nextCatalog);
+        if (account) {
+          setSelection(toSelection(items.map(({ resourceCode, resourceGroupCode, grantType, priority, status }) => ({ resourceCode, resourceGroupCode, grantType, priority, status }))));
+          const activeCredential = credentials.find((credential) => credential.isActive) ?? credentials[0] ?? null;
+          setApiKeyMasked(activeCredential?.maskedLabel ?? '');
+          setApiKeyInput(activeCredential?.maskedLabel ?? '');
+          setActiveCredentialId(activeCredential?.id ?? '');
+        }
+      })
+      .catch((cause) => {
+        if (!cancelled) setCatalog(null);
+      })
+      .finally(() => {
+        if (!cancelled) setResourcesLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [account]);
+
+  const selectedAuthMethod = authMethods.find((method) => method.authMethodCode === authMethodCode) ?? null;
+  // 认证方式为 APIKEY 时显示 API Key 输入：创建模式必填，编辑模式展示已录入密钥的掩码
+  const showApiKeyInput = selectedAuthMethod?.authType === 'api_key';
+
+  // 编辑模式：解密当前凭据明文并显示；同步 apiKeyMasked 避免未改动提交时误判为换钥
+  const revealApiKey = async () => {
+    if (!account || !activeCredentialId) return;
+    try {
+      const plain = await upstreamService.accounts.getCredentialSecret(account.id, activeCredentialId);
+      setApiKeyMasked(plain);
+      setApiKeyInput(plain);
+      setApiKeyVisible(true);
+      setRevealError('');
+    } catch (cause) {
+      setRevealError(errorMessage(cause, t('admin.upstream.account.errors.secretRevealFailed')));
+    }
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    // 新建账号必须归属某个账号分组
+    if (!account && !groupId) {
+      setGroupMissing(true);
+      return;
+    }
+    onSubmit(event, selection, apiKeyMasked, groupId);
+  };
 
   return (
-    <Modal title={account ? t('admin.upstream.account.form.editTitle') : t('admin.upstream.account.form.createTitle')} busy={busy} submitLabel={account ? t('common.actions.saveChanges') : t('admin.upstream.account.form.createAction')} onSubmit={onSubmit} onClose={onClose}>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={t('admin.upstream.account.form.accountCode')} required><input name="accountCode" className={inputClass} defaultValue={account?.accountCode} disabled={Boolean(account)} required /></Field>
-        <Field label={t('admin.upstream.account.form.accountName')} required><input name="accountName" className={inputClass} defaultValue={account?.accountName} required /></Field>
-        <Field label={t('admin.upstream.account.form.supplier')} required><select name="supplierId" className={selectClass} value={supplierId} onChange={(event) => setSupplierId(event.currentTarget.value)} required>{suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.displayName}</option>)}</select></Field>
-        <Field label={t('admin.upstream.account.form.authMethod')} required><select name="authMethodCode" className={selectClass} defaultValue={account?.authMethodCode} required><option value="">{t('admin.upstream.account.form.selectMethod')}</option>{authMethods.map((method) => <option key={method.id} value={method.authMethodCode}>{method.authMethodName}</option>)}</select></Field>
-        <Field label={t('admin.upstream.account.form.preferredBaseUrl')}><select name="preferredEndpointId" className={selectClass} defaultValue={account?.preferredEndpointId ?? ''}><option value="">{t('admin.upstream.account.form.automatic')}</option>{endpoints.map((endpoint) => <option key={endpoint.id} value={endpoint.id}>{endpoint.endpointName} ({endpoint.baseUrl})</option>)}</select></Field>
-        <Field label={t('admin.upstream.account.form.accountType')}><input name="accountType" className={inputClass} defaultValue={account?.accountType ?? 'standard'} /></Field>
-        <Field label={t('admin.upstream.account.form.externalAccountId')}><input name="externalAccountId" className={inputClass} defaultValue={account?.externalAccountId ?? ''} /></Field>
-        <Field label={t('admin.upstream.common.fields.regionCode')}><input name="regionCode" className={inputClass} defaultValue={account?.regionCode ?? ''} /></Field>
-        <Field label={t('admin.upstream.account.form.contractCostMultiplier')} required><input name="contractCostMultiplier" type="number" min="0" step="0.000001" className={inputClass} defaultValue={account?.contractCostMultiplier ?? '1'} required /></Field>
-        <Field label={t('admin.upstream.account.form.quotaLimit')}><input name="quotaLimit" type="number" min="0" step="0.000001" className={inputClass} defaultValue={account?.quotaLimit ?? ''} /></Field>
-        <Field label={t('admin.upstream.account.form.rpmLimit')}><input name="rpmLimit" type="number" min="0" step="1" className={inputClass} defaultValue={account?.rpmLimit ?? ''} /></Field>
-        <Field label={t('admin.upstream.account.form.timeoutMs')}><input name="timeoutMs" type="number" min="100" max="600000" className={inputClass} defaultValue={account?.timeoutMs ?? 120000} /></Field>
-        <Field label={t('admin.upstream.account.form.balanceCurrency')}><input name="upstreamBalanceCurrency" className={inputClass} defaultValue={account?.upstreamBalanceCurrency ?? 'USD'} maxLength={3} /></Field>
-        <Field label={t('admin.upstream.common.fields.status')}><select name="status" className={selectClass} defaultValue={account?.status ?? 1}><option value="1">{t('common.status.active')}</option><option value="0">{t('common.status.disabled')}</option></select></Field>
+    <Modal title={account ? t('admin.upstream.account.form.editTitle') : t('admin.upstream.account.form.createTitle')} busy={busy} submitLabel={account ? t('common.actions.saveChanges') : t('admin.upstream.account.form.createAction')} size="xl" fillHeight maxHeightClass="max-h-[80vh]" onSubmit={handleSubmit} onClose={onClose}>
+      <div className="grid gap-5 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)] lg:grid-rows-[minmax(0,1fr)]">
+        <div className="grid min-w-0 content-start gap-3 lg:min-h-0 lg:overflow-y-auto">
+          <RowField label={t('admin.upstream.account.form.accountName')} required><input name="accountName" className={inputClass} defaultValue={account?.accountName} required /></RowField>
+          <RowField label={t('admin.upstream.account.form.supplier')} required>
+            <input type="hidden" name="supplierId" value={supplierId} />
+            <SdkworkSearchableSelect
+              value={supplierId}
+              onValueChange={(value) => setSupplierId(value)}
+              options={suppliers.map((supplier) => ({ value: supplier.id, label: supplier.displayName, keywords: [supplier.supplierCode] }))}
+              placeholder={t('admin.upstream.account.form.selectSupplier')}
+              searchPlaceholder={t('admin.upstream.account.form.supplierSearch')}
+              emptyText={t('admin.upstream.account.form.supplierEmpty')}
+            />
+          </RowField>
+          <RowField label={t('admin.upstream.account.form.preferredBaseUrl')}><select name="preferredEndpointId" className={selectClass} defaultValue={account?.preferredEndpointId ?? ''}><option value="">{t('admin.upstream.account.form.automatic')}</option>{endpoints.map((endpoint) => <option key={endpoint.id} value={endpoint.id}>{endpoint.endpointName} ({endpoint.baseUrl})</option>)}</select></RowField>
+          <RowField label={t('admin.upstream.account.form.authMethod')} required><select name="authMethodCode" className={selectClass} value={authMethodCode} onChange={(event) => setAuthMethodCode(event.currentTarget.value)} required><option value="">{t('admin.upstream.account.form.selectMethod')}</option>{authMethods.map((method) => <option key={method.id} value={method.authMethodCode}>{method.authMethodName}</option>)}</select></RowField>
+          {showApiKeyInput ? <RowField label={t('admin.upstream.account.form.apiKey')} required={!account}><div className="flex items-center gap-2"><input name="apiKey" type={apiKeyVisible ? 'text' : 'password'} autoComplete="new-password" className={inputClass} value={apiKeyInput} onChange={(event) => setApiKeyInput(event.currentTarget.value)} placeholder={account ? apiKeyMasked || t('admin.upstream.account.form.apiKeyPlaceholder') : undefined} required={!account} />{account ? <button type="button" className={secondaryButtonClass} title={t(apiKeyVisible ? 'admin.upstream.account.form.apiKeyHide' : 'admin.upstream.account.form.apiKeyReveal')} disabled={busy} onClick={() => { if (apiKeyVisible) { setApiKeyVisible(false); setRevealError(''); } else { void revealApiKey(); } }}>{apiKeyVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button> : null}</div>{revealError ? <p className="mt-1 text-xs text-red-500">{revealError}</p> : null}</RowField> : null}
+          {!account ? <RowField label={t('admin.upstream.account.form.accountGroup')} required>
+            <div className="min-w-0">
+              <SdkworkSearchableSelect
+                value={groupId}
+                onValueChange={(value) => { setGroupId(value); setGroupMissing(false); }}
+                options={groups.map((group) => ({ value: group.id, label: resolveGroupDisplayName(group, i18n.language), keywords: [group.groupCode, ...(group.tags ?? [])] }))}
+                placeholder={t('admin.upstream.account.form.selectGroup')}
+                searchPlaceholder={t('admin.upstream.account.form.groupSearch')}
+                emptyText={t('admin.upstream.account.form.groupEmpty')}
+                clearable={false}
+              />
+              {groupMissing ? <p className="mt-1 text-xs text-red-500">{t('admin.upstream.account.errors.groupRequired')}</p> : null}
+            </div>
+          </RowField> : null}
+          <RowField label={t('admin.upstream.account.form.contractCostMultiplier')} required><input name="contractCostMultiplier" type="number" min="0" step="0.000001" className={inputClass} defaultValue={formatDecimalDisplay(account?.contractCostMultiplier, '1')} required /></RowField>
+          <RowField label={t('admin.upstream.account.form.quotaLimit')}><input name="quotaLimit" type="number" min="0" step="0.000001" className={inputClass} defaultValue={formatDecimalDisplay(account?.quotaLimit, '')} /></RowField>
+          <RowField label={t('admin.upstream.account.form.rpmLimit')}><input name="rpmLimit" type="number" min="0" step="1" className={inputClass} defaultValue={account?.rpmLimit ?? ''} /></RowField>
+          <RowField label={t('admin.upstream.account.form.timeoutMs')}><input name="timeoutMs" type="number" min="100" max="600000" className={inputClass} defaultValue={account?.timeoutMs ?? 120000} /></RowField>
+          <RowField label={t('admin.upstream.common.fields.status')}><select name="status" className={selectClass} defaultValue={account?.status ?? 1}><option value="1">{t('common.status.active')}</option><option value="0">{t('common.status.disabled')}</option></select></RowField>
+        </div>
+        <div className="flex min-h-0 flex-col gap-3 border-t border-slate-200 pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
+          <div className="mb-1">
+            <p className="text-sm font-bold text-slate-900 dark:text-white">{t('admin.upstream.account.form.resources.title')}</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{t('admin.upstream.account.form.resources.description')}</p>
+          </div>
+          {catalog ? (
+            <ResourcePicker
+              resources={catalog.resources}
+              resourceGroups={catalog.resourceGroups}
+              selection={selection}
+              onChange={setSelection}
+              flat
+              className="flex min-h-0 flex-1 flex-col"
+              listClassName="min-h-0 max-h-72 flex-1 lg:max-h-none"
+            />
+          ) : resourcesLoading ? (
+            <p className="rounded-md border border-slate-200 p-4 text-center text-sm text-slate-500 dark:border-white/10">{t('admin.upstream.common.status.loading')}</p>
+          ) : (
+            <p className="rounded-md border border-slate-200 p-4 text-center text-sm text-slate-500 dark:border-white/10">{t('admin.upstream.common.errors.operationFailed')}</p>
+          )}
+        </div>
       </div>
     </Modal>
   );
@@ -188,8 +500,12 @@ function AccountCredentials({ account, supplier, onAccountChanged, onClose }: { 
   const { t } = useTranslation();
   const [credentials, setCredentials] = useState<UpstreamAccountCredential[]>([]);
   const [endpoints, setEndpoints] = useState<UpstreamSupplierEndpoint[]>([]);
+  const [resources, setResources] = useState<UpstreamResourceEntitlementInput[]>([]);
+  const [catalog, setCatalog] = useState<UpstreamResourceCatalogResponse | null>(null);
+  const [resourcePickerOpen, setResourcePickerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [resourcesBusy, setResourcesBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [verification, setVerification] = useState<UpstreamAccountVerification | null>(null);
@@ -200,12 +516,16 @@ function AccountCredentials({ account, supplier, onAccountChanged, onClose }: { 
     setLoading(true);
     setError(null);
     try {
-      const [nextCredentials, nextEndpoints] = await Promise.all([
+      const [nextCredentials, nextEndpoints, nextResources, nextCatalog] = await Promise.all([
         upstreamService.accounts.listCredentials(account.id, { page: 1, pageSize: 200 }),
         upstreamService.suppliers.listEndpoints(account.supplierId),
+        upstreamService.accounts.listResources(account.id),
+        upstreamService.fetchResourceCatalog(),
       ]);
       setCredentials(nextCredentials);
       setEndpoints(nextEndpoints);
+      setResources(nextResources.map(({ resourceCode, resourceGroupCode, grantType, priority, status }) => ({ resourceCode, resourceGroupCode, grantType, priority, status })));
+      setCatalog(nextCatalog);
       setCredentialId((current) => current || nextCredentials[0]?.id || '');
       setEndpointId((current) => current || account.preferredEndpointId || nextEndpoints[0]?.id || '');
     } catch (cause) {
@@ -270,6 +590,36 @@ function AccountCredentials({ account, supplier, onAccountChanged, onClose }: { 
     }
   };
 
+  const resourceSelection: ResourceSelection = toSelection(resources);
+  const setResourceSelection = (next: ResourceSelection) => {
+    setResources(toEntitlements(next));
+  };
+  const removeResource = (index: number) => {
+    setResources((current) => current.filter((_, itemIndex) => itemIndex !== index));
+  };
+  const resourceLabel = (item: UpstreamResourceEntitlementInput) => {
+    const code = item.resourceCode ?? item.resourceGroupCode ?? '';
+    const resource = catalog?.resources.find((entry) => entry.resourceCode === code);
+    const group = catalog?.resourceGroups.find((entry) => entry.groupCode === code);
+    return resource?.displayName ?? group?.groupName ?? code;
+  };
+
+  const saveResources = async () => {
+    setResourcesBusy(true);
+    setError(null);
+    try {
+      const items = toEntitlements(resourceSelection);
+      await upstreamService.accounts.replaceResources(account, { items });
+      setResources(items);
+      setResourcePickerOpen(false);
+      onAccountChanged(await upstreamService.accounts.retrieve(account.id));
+    } catch (cause) {
+      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+    } finally {
+      setResourcesBusy(false);
+    }
+  };
+
   return (
     <SidePanel title={account.accountName} subtitle={`${supplier?.displayName ?? account.supplierCode} / ${account.authMethodCode}`} onClose={onClose}>
       <div className="grid gap-6">
@@ -283,6 +633,26 @@ function AccountCredentials({ account, supplier, onAccountChanged, onClose }: { 
               </div>
             ))}
             {!loading && credentials.length === 0 ? <p className="py-6 text-center text-sm text-slate-500">{t('admin.upstream.account.credentials.empty')}</p> : null}
+          </div>
+        </Section>
+        <Section title={t('admin.upstream.account.resources.title')} action={<button type="button" className={secondaryButtonClass} onClick={() => setResourcePickerOpen((current) => !current)}><Plus className="h-4 w-4" />{t('admin.upstream.account.resources.add')}</button>}>
+          <div className="grid gap-3">
+            {resourcePickerOpen && catalog ? (
+              <ResourcePicker resources={catalog.resources} resourceGroups={catalog.resourceGroups} selection={resourceSelection} onChange={setResourceSelection} />
+            ) : null}
+            {resources.length === 0 && !resourcePickerOpen ? <p className="py-6 text-center text-sm text-slate-500">{t('admin.upstream.account.resources.empty')}</p> : null}
+            <div className="flex flex-wrap gap-2">
+              {resources.map((resource, index) => (
+                <span key={`${resource.resourceCode ?? resource.resourceGroupCode}-${index}`} className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 py-1 pl-2.5 pr-1.5 dark:border-white/10 dark:bg-white/5">
+                  <span className="min-w-0">
+                    <span className="block truncate text-xs font-medium text-slate-700 dark:text-slate-200">{resourceLabel(resource)}</span>
+                    <span className="block truncate font-mono text-[10px] text-slate-400">{resource.resourceCode ?? resource.resourceGroupCode}</span>
+                  </span>
+                  <button type="button" title={t('common.actions.delete')} className="rounded-full p-0.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-300" onClick={() => removeResource(index)}><Trash2 className="h-3 w-3" /></button>
+                </span>
+              ))}
+            </div>
+            <button type="button" className={primaryButtonClass} disabled={resourcesBusy} onClick={() => void saveResources()}>{t('admin.upstream.account.resources.save')}</button>
           </div>
         </Section>
         <Section title={t('admin.upstream.account.verification.title')}>
@@ -299,21 +669,32 @@ function AccountCredentials({ account, supplier, onAccountChanged, onClose }: { 
   );
 }
 
-function accountInput(form: FormData, t: TranslationFunction): CreateUpstreamAccountRequest {
+function createAccountInput(form: FormData, t: TranslationFunction): CreateUpstreamAccountRequest {
+  const apiKey = optional(form, 'apiKey');
   return {
-    accountCode: required(form, 'accountCode', t('admin.upstream.account.form.accountCode'), t),
     accountName: required(form, 'accountName', t('admin.upstream.account.form.accountName'), t),
     supplierId: required(form, 'supplierId', t('admin.upstream.account.form.supplier'), t),
     authMethodCode: required(form, 'authMethodCode', t('admin.upstream.account.form.authMethod'), t),
-    accountType: optional(form, 'accountType'),
-    externalAccountId: optional(form, 'externalAccountId'),
     preferredEndpointId: optional(form, 'preferredEndpointId'),
-    regionCode: optional(form, 'regionCode'),
     contractCostMultiplier: required(form, 'contractCostMultiplier', t('admin.upstream.account.form.contractCostMultiplier'), t),
     quotaLimit: optional(form, 'quotaLimit'),
     rpmLimit: optional(form, 'rpmLimit'),
     timeoutMs: numeric(form, 'timeoutMs', 120000, t('admin.upstream.account.form.timeoutMs'), t),
-    upstreamBalanceCurrency: optional(form, 'upstreamBalanceCurrency'),
+    status: numeric(form, 'status', 1),
+    ...(apiKey ? { apiKey } : {}),
+  };
+}
+
+function updateAccountInput(form: FormData, t: TranslationFunction): UpdateUpstreamAccountRequest {
+  return {
+    accountName: required(form, 'accountName', t('admin.upstream.account.form.accountName'), t),
+    supplierId: required(form, 'supplierId', t('admin.upstream.account.form.supplier'), t),
+    authMethodCode: required(form, 'authMethodCode', t('admin.upstream.account.form.authMethod'), t),
+    preferredEndpointId: optional(form, 'preferredEndpointId'),
+    contractCostMultiplier: required(form, 'contractCostMultiplier', t('admin.upstream.account.form.contractCostMultiplier'), t),
+    quotaLimit: optional(form, 'quotaLimit'),
+    rpmLimit: optional(form, 'rpmLimit'),
+    timeoutMs: numeric(form, 'timeoutMs', 120000, t('admin.upstream.account.form.timeoutMs'), t),
     status: numeric(form, 'status', 1),
   };
 }

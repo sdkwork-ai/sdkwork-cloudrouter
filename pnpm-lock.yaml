@@ -425,6 +425,9 @@ importers:
       '@sdkwork/agents-pc-core':
         specifier: workspace:*
         version: link:../sdkwork-agents-pc-core
+      '@sdkwork/models-pc-picker':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-picker
       '@sdkwork/utils':
         specifier: workspace:*
         version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
@@ -1936,9 +1939,15 @@ importers:
 
   ../sdkwork-log/apps/sdkwork-log-pc/packages/sdkwork-log-pc-request-log:
     dependencies:
+      '@monaco-editor/react':
+        specifier: ^4.7.0
+        version: 4.7.0(monaco-editor@0.55.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@sdkwork/log-backend-sdk':
         specifier: workspace:*
         version: link:../../../../sdks/sdkwork-log-backend-sdk/sdkwork-log-backend-sdk-typescript
+      monaco-editor:
+        specifier: ^0.55.1
+        version: 0.55.1
     devDependencies:
       '@types/react':
         specifier: ^19.0.0
@@ -3149,6 +3158,9 @@ importers:
       '@sdkwork/cloudrouter-pc-admin-monitor':
         specifier: workspace:*
         version: link:packages/sdkwork-cloudrouter-pc-admin-monitor
+      '@sdkwork/cloudrouter-pc-admin-partner':
+        specifier: workspace:*
+        version: link:packages/sdkwork-cloudrouter-pc-admin-partner
       '@sdkwork/cloudrouter-pc-admin-payments':
         specifier: workspace:*
         version: link:packages/sdkwork-cloudrouter-pc-admin-payments
@@ -3874,6 +3886,9 @@ importers:
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream:
     dependencies:
+      '@sdkwork/appbase-pc-react':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-appbase-pc-react
       '@sdkwork/cloudrouter-pc-admin-core':
         specifier: workspace:*
         version: link:../sdkwork-cloudrouter-pc-admin-core
@@ -4224,6 +4239,9 @@ importers:
       '@sdkwork/order-service':
         specifier: workspace:*
         version: link:../../../../../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-service
+      '@sdkwork/partner-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-partner/sdks/sdkwork-partner-backend-sdk/sdkwork-partner-backend-sdk-typescript
       '@sdkwork/payment-backend-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-payment/sdks/sdkwork-payment-backend-sdk/sdkwork-payment-backend-sdk-typescript

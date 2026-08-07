@@ -45,11 +45,12 @@
     "provider": "default",
     "hooks": []
   },
-  "materializedTableCount": 4,
+  "materializedTableCount": 5,
   "materializedTables": [
     "iam_gateway_access_policy",
     "iam_gateway_api_key",
     "iam_gateway_api_key_account_group",
+    "iam_gateway_chain_policy",
     "iam_gateway_risk_rule"
   ]
 }

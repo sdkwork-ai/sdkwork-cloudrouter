@@ -24,6 +24,7 @@ const FEDERATED_CAPABILITY_REPO_DIRS: &[(&str, &str)] = &[
     ("AGENTS", "sdkwork-agents"),
     ("CATALOG", "sdkwork-catalog"),
     ("INVOICE", "sdkwork-invoice"),
+    ("LOG", "sdkwork-log"),
     ("MEMBERSHIP", "sdkwork-membership"),
     ("ORDER", "sdkwork-order"),
     ("PAYMENT", "sdkwork-payment"),

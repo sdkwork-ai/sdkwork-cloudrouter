@@ -8,6 +8,8 @@
       "vendorCode": "openai",
       "modalityCode": "llm",
       "apiCode": "openai.responses",
+      "method": "POST",
+      "pathTemplate": "/v1/responses",
       "capability": "llm",
       "capabilities": ["llm", "chat"],
       "sortOrder": 200
@@ -19,6 +21,8 @@
       "vendorCode": "openai",
       "modalityCode": "llm",
       "apiCode": "openai.chat_completions",
+      "method": "POST",
+      "pathTemplate": "/v1/chat/completions",
       "capability": "llm",
       "capabilities": ["llm", "chat"],
       "sortOrder": 210
@@ -30,6 +34,8 @@
       "vendorCode": "openai",
       "modalityCode": "llm",
       "apiCode": "openai.conversations",
+      "method": "POST",
+      "pathTemplate": "/v1/conversations",
       "capability": "llm",
       "capabilities": ["llm", "chat", "network"],
       "sortOrder": 212
@@ -41,6 +47,8 @@
       "vendorCode": "openai",
       "modalityCode": "llm",
       "apiCode": "openai.completions",
+      "method": "POST",
+      "pathTemplate": "/v1/completions",
       "capability": "llm",
       "capabilities": ["llm", "chat"],
       "sortOrder": 215
@@ -52,6 +60,8 @@
       "vendorCode": "openai",
       "modalityCode": "embedding",
       "apiCode": "openai.embeddings",
+      "method": "POST",
+      "pathTemplate": "/v1/embeddings",
       "capability": "embedding",
       "capabilities": ["embedding", "embeddings", "llm"],
       "sortOrder": 220
@@ -63,6 +73,8 @@
       "vendorCode": "openai",
       "modalityCode": "image",
       "apiCode": "openai.images",
+      "method": "POST",
+      "pathTemplate": "/v1/images/generations",
       "capability": "image",
       "capabilities": ["image"],
       "sortOrder": 225
@@ -74,6 +86,8 @@
       "vendorCode": "openai",
       "modalityCode": "image",
       "apiCode": "openai.images.generations",
+      "method": "POST",
+      "pathTemplate": "/v1/images/generations",
       "capability": "image",
       "capabilities": ["image"],
       "sortOrder": 230
@@ -85,6 +99,8 @@
       "vendorCode": "openai",
       "modalityCode": "image",
       "apiCode": "openai.images.edits",
+      "method": "POST",
+      "pathTemplate": "/v1/images/edits",
       "capability": "image",
       "capabilities": ["image"],
       "sortOrder": 240
@@ -96,6 +112,8 @@
       "vendorCode": "openai",
       "modalityCode": "image",
       "apiCode": "openai.images.variations",
+      "method": "POST",
+      "pathTemplate": "/v1/images/variations",
       "capability": "image",
       "capabilities": ["image"],
       "sortOrder": 242
@@ -107,6 +125,8 @@
       "vendorCode": "openai",
       "modalityCode": "audio",
       "apiCode": "openai.audio",
+      "method": "POST",
+      "pathTemplate": "/v1/audio",
       "capability": "audio",
       "capabilities": ["audio", "speech"],
       "sortOrder": 245
@@ -118,6 +138,8 @@
       "vendorCode": "openai",
       "modalityCode": "audio",
       "apiCode": "openai.audio.transcriptions",
+      "method": "POST",
+      "pathTemplate": "/v1/audio/transcriptions",
       "capability": "audio",
       "capabilities": ["audio", "speech"],
       "sortOrder": 250
@@ -129,6 +151,8 @@
       "vendorCode": "openai",
       "modalityCode": "audio",
       "apiCode": "openai.audio.translations",
+      "method": "POST",
+      "pathTemplate": "/v1/audio/translations",
       "capability": "audio",
       "capabilities": ["audio", "speech"],
       "sortOrder": 255
@@ -140,6 +164,8 @@
       "vendorCode": "openai",
       "modalityCode": "audio",
       "apiCode": "openai.audio.speech",
+      "method": "POST",
+      "pathTemplate": "/v1/audio/speech",
       "capability": "audio",
       "capabilities": ["audio", "speech"],
       "sortOrder": 260
@@ -151,6 +177,8 @@
       "vendorCode": "openai",
       "modalityCode": "network",
       "apiCode": "openai.files",
+      "method": "GET",
+      "pathTemplate": "/v1/files",
       "capability": "network",
       "capabilities": ["network", "http"],
       "sortOrder": 270
@@ -162,6 +190,8 @@
       "vendorCode": "openai",
       "modalityCode": "network",
       "apiCode": "openai.uploads",
+      "method": "POST",
+      "pathTemplate": "/v1/uploads",
       "capability": "network",
       "capabilities": ["network", "http"],
       "sortOrder": 275
@@ -173,6 +203,8 @@
       "vendorCode": "openai",
       "modalityCode": "network",
       "apiCode": "openai.batches",
+      "method": "POST",
+      "pathTemplate": "/v1/batches",
       "capability": "network",
       "capabilities": ["network", "http"],
       "sortOrder": 280
@@ -184,6 +216,8 @@
       "vendorCode": "openai",
       "modalityCode": "audio",
       "apiCode": "openai.realtime",
+      "method": "POST",
+      "pathTemplate": "/v1/realtime",
       "capability": "audio",
       "capabilities": ["audio", "llm"],
       "sortOrder": 300
@@ -195,6 +229,8 @@
       "vendorCode": "openai",
       "modalityCode": "video",
       "apiCode": "openai.video",
+      "method": "POST",
+      "pathTemplate": "/v1/videos",
       "capability": "video",
       "capabilities": ["video"],
       "sortOrder": 305
@@ -206,6 +242,8 @@
       "vendorCode": "openai",
       "modalityCode": "video",
       "apiCode": "openai.videos",
+      "method": "POST",
+      "pathTemplate": "/v1/videos",
       "capability": "video",
       "capabilities": ["video"],
       "sortOrder": 310
@@ -217,6 +255,8 @@
       "vendorCode": "openai",
       "modalityCode": "network",
       "apiCode": "openai.models",
+      "method": "GET",
+      "pathTemplate": "/v1/models",
       "capability": "network",
       "capabilities": ["network", "http"],
       "sortOrder": 312
@@ -228,6 +268,8 @@
       "vendorCode": "openai",
       "modalityCode": "network",
       "apiCode": "openai.moderations",
+      "method": "POST",
+      "pathTemplate": "/v1/moderations",
       "capability": "network",
       "capabilities": ["network", "http"],
       "sortOrder": 314
@@ -239,6 +281,8 @@
       "vendorCode": "openai",
       "modalityCode": "llm",
       "apiCode": "openai.assistants",
+      "method": "POST",
+      "pathTemplate": "/v1/assistants",
       "capability": "llm",
       "capabilities": ["llm", "chat", "network"],
       "sortOrder": 316
@@ -250,6 +294,8 @@
       "vendorCode": "openai",
       "modalityCode": "llm",
       "apiCode": "openai.threads",
+      "method": "POST",
+      "pathTemplate": "/v1/threads",
       "capability": "llm",
       "capabilities": ["llm", "chat", "network"],
       "sortOrder": 318
@@ -261,6 +307,8 @@
       "vendorCode": "openai",
       "modalityCode": "network",
       "apiCode": "openai.vector_stores",
+      "method": "POST",
+      "pathTemplate": "/v1/vector_stores",
       "capability": "network",
       "capabilities": ["network", "http"],
       "sortOrder": 319
@@ -272,6 +320,8 @@
       "vendorCode": "openai",
       "modalityCode": "llm",
       "apiCode": "openai.codex.responses",
+      "method": "POST",
+      "pathTemplate": "/v1/codex/responses",
       "capability": "llm",
       "capabilities": ["llm", "chat", "coding"],
       "sortOrder": 320
@@ -283,6 +333,8 @@
       "vendorCode": "openai",
       "modalityCode": "llm",
       "apiCode": "openai.chatkit.sessions",
+      "method": "POST",
+      "pathTemplate": "/v1/chatkit/sessions",
       "capability": "llm",
       "capabilities": ["llm", "chat", "network"],
       "sortOrder": 340
@@ -294,6 +346,8 @@
       "vendorCode": "openai",
       "modalityCode": "network",
       "apiCode": "openai.containers",
+      "method": "GET",
+      "pathTemplate": "/v1/containers",
       "capability": "network",
       "capabilities": ["network", "http"],
       "sortOrder": 350

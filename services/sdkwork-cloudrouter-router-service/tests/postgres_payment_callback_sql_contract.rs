@@ -47,23 +47,30 @@ fn payment_callback_payment_lookup_uses_appbase_order_payment_attempt_and_intent
 }
 
 #[test]
-fn payment_callback_points_account_creation_uses_appbase_account_unique_key_conflict_guard() {
+fn payment_callback_recharge_credits_through_the_account_domain_ledger() {
+    // S5: recharge credits go through the account-domain port
+    // (`PostgresCommerceAccountStore::append_ledger_entry`) keyed by
+    // out-trade-no; the legacy commerce_account/ledger SQL is gone.
     for expected in [
-        "FROM commerce_account",
-        "owner_user_id = $3",
-        "asset_type = $4",
-        "currency_code = $5",
-        "ON CONFLICT (tenant_id, organization_id, owner_user_id, asset_type, currency_code) DO NOTHING",
-        "RETURNING id",
-        "payment callback points account was not available after concurrent creation",
+        "PostgresCommerceAccountStore::new(pool.clone())",
+        "AppendLedgerEntryCommand",
+        "asset_type: CommerceAccountAssetType::Points",
+        "direction: CommerceLedgerDirection::Credit",
+        "business_type: RECHARGE_BUSINESS_TYPE.to_owned()",
+        "idempotency_key: command.out_trade_no.clone()",
+        "append_ledger_entry(append, request_hash)",
     ] {
         assert_sql_contains(POSTGRES_PAYMENT_CALLBACK_STORE, expected);
     }
 
     for unexpected in [
+        "FROM commerce_account",
+        "INSERT INTO commerce_account",
+        "INSERT INTO commerce_account_ledger_entry",
+        "UPDATE commerce_account SET",
+        "ON CONFLICT (tenant_id, organization_id, owner_user_id, asset_type, currency_code) DO NOTHING",
         "FROM plus_account",
         "INSERT INTO plus_account",
-        "ON CONFLICT (tenant_id, organization_id, user_id, account_type) DO NOTHING",
     ] {
         assert_sql_not_contains(POSTGRES_PAYMENT_CALLBACK_STORE, unexpected);
     }
@@ -115,15 +122,13 @@ fn payment_callback_success_updates_appbase_payment_order_and_ledger_tables() {
         "payment callback cannot transition terminal payment to success",
         "payment callback payment is no longer pending",
         "payment callback payment intent is no longer pending",
-        "UPDATE commerce_account SET available_amount = (COALESCE(available_amount::numeric, 0) + $1::numeric)::text, version = version + 1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND COALESCE(available_amount::numeric, 0) <= $3::numeric",
-        "payment callback account points update was not applied atomically",
-        "INSERT INTO commerce_account_ledger_entry",
-        "'commerce_payment_attempt'",
     ] {
         assert_sql_contains(POSTGRES_PAYMENT_CALLBACK_STORE, expected);
     }
 
     for unexpected in [
+        "UPDATE commerce_account SET",
+        "INSERT INTO commerce_account_ledger_entry",
         "UPDATE plus_payment SET",
         "UPDATE plus_order",
         "UPDATE plus_account",

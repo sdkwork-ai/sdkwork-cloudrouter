@@ -2,15 +2,18 @@
 
 mod agents_runtime;
 mod commerce_runtime;
+mod community_runtime;
 mod http_route_manifest;
 mod invoice_runtime;
 pub mod manifest;
+mod manifest_composition;
 pub mod paths;
 pub mod routes;
 mod web_bootstrap;
 
 pub use http_route_manifest::{cloud_router_app_http_route_manifest, http_route_manifest};
 pub use manifest::{route_manifest, RouterApiRouteManifest};
+pub use manifest_composition::cloud_router_app_composed_route_manifest;
 pub use routes::*;
 pub use web_bootstrap::{
     cloud_router_app_domain_context_injector, finalize_served_router,

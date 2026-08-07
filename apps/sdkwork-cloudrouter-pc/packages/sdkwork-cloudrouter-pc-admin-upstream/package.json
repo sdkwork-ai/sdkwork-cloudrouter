@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@sdkwork/appbase-pc-react": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-core": "workspace:*",
     "@sdkwork/cloudroutes-pc-commons": "workspace:*",
     "react-i18next": "catalog:"

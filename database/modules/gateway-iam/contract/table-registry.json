@@ -27,6 +27,14 @@
       "system_of_record": true
     },
     {
+      "table_name": "iam_gateway_chain_policy",
+      "owner": "gateway-iam-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
       "table_name": "iam_gateway_risk_rule",
       "owner": "gateway-iam-service",
       "compliance_level": "L2",

@@ -39,6 +39,14 @@ export function toGroupPickerOptions(groups: AccountGroup[]): GroupPickerOption[
       rate: group.rate,
       vendorCode: group.vendorCode,
       modalities: group.modalities,
+      tags: group.tags,
     };
   });
+}
+
+const GROUP_TAG_KEYS = ['stable', 'hot', 'recommended', 'promotion', 'new', 'premium', 'high_value', 'official', 'beta', 'limited'] as const;
+
+/** 构建分组标签显示翻译映射（key 为标签 code） */
+export function buildTagLabels(t: (key: string) => string): Record<string, string> {
+  return Object.fromEntries(GROUP_TAG_KEYS.map((tag) => [tag, t(`admin.upstream.accountGroup.tag.${tag}`)]));
 }

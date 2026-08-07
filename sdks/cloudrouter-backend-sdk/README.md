@@ -46,6 +46,7 @@ This SDK family is owner-only. Dependency-owned routes are consumed through decl
 | `sdkwork-membership-backend-sdk` | `membership-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
 | `sdkwork-payment-backend-sdk` | `payment-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
 | `sdkwork-promotion-backend-sdk` | `promotion-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `sdkwork-partner-backend-sdk` | `partner-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
 | `sdkwork-drive-backend-sdk` | `drive-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
 
 Package names:
@@ -72,6 +73,8 @@ Package names:
 - `typescript`: `@sdkwork/payment-backend-sdk`
 - `sdkwork-promotion-backend-sdk`
 - `typescript`: `@sdkwork/promotion-backend-sdk`
+- `sdkwork-partner-backend-sdk`
+- `typescript`: `@sdkwork/partner-backend-sdk`
 - `sdkwork-drive-backend-sdk`
 - `typescript`: `@sdkwork/drive-backend-sdk`
 

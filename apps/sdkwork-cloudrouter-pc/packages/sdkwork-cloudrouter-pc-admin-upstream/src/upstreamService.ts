@@ -12,6 +12,7 @@ import type {
   ExplainUpstreamAccountGroupRouteRequest,
   ReplaceUpstreamAccountGroupMembersRequest,
   ReplaceUpstreamAccountGroupResourcesRequest,
+  ReplaceUpstreamAccountResourcesRequest,
   ReplaceUpstreamSupplierAuthMethodsRequest,
   ReplaceUpstreamSupplierEndpointsRequest,
   ReplaceUpstreamSupplierResourcesRequest,
@@ -172,6 +173,31 @@ export async function deleteUpstreamAccountCredential(accountId: string, credent
   );
 }
 
+/** 解密返回账号凭据明文（仅编辑弹窗「查看明文」使用）。 */
+export async function getUpstreamAccountCredentialSecret(accountId: string, credentialId: string) {
+  const response = await getCloudRouterBackendSdkClient().ai.upstreamAccounts.credentials.secret.retrieve(
+    accountId,
+    credentialId,
+  );
+  return response.secret;
+}
+
+export async function listUpstreamAccountResources(accountId: string) {
+  const response = await getCloudRouterBackendSdkClient().ai.upstreamAccounts.resources.list(accountId);
+  return response.items;
+}
+
+export async function updateUpstreamAccountResources(
+  account: UpstreamAccount,
+  input: ReplaceUpstreamAccountResourcesRequest,
+) {
+  return getCloudRouterBackendSdkClient().ai.upstreamAccounts.resources.update(
+    account.id,
+    input,
+    { ifMatch: account.version },
+  );
+}
+
 export async function verifyUpstreamAccount(
   accountId: string,
   input: VerifyUpstreamAccountRequest,
@@ -275,6 +301,9 @@ export const upstreamService = {
     listCredentials: listUpstreamAccountCredentials,
     createCredential: createUpstreamAccountCredential,
     deleteCredential: deleteUpstreamAccountCredential,
+    getCredentialSecret: getUpstreamAccountCredentialSecret,
+    listResources: listUpstreamAccountResources,
+    replaceResources: updateUpstreamAccountResources,
     verify: verifyUpstreamAccount,
   },
   accountGroups: {

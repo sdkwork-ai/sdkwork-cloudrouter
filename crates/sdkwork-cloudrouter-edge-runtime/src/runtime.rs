@@ -1634,6 +1634,7 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
             sdkwork_routes_cloudrouter_backend_api::PostgresSharedRuntime {
                 config: context.database_config.clone(),
                 pool: pool.clone(),
+                database_pool: context.database_pool.clone(),
                 commerce_pool,
                 catalog: Arc::clone(&context.catalog),
                 api_key_security_config: context.api_key_security_config.clone(),
@@ -1649,6 +1650,7 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
                 models_catalog_root: context.models_catalog_root.clone(),
             },
         )
+        .await
         .map_err(anyhow::Error::new)?;
     // Federated commerce membership backend surface (`/backend/v3/api/memberships/*`)
     // is dependency-owned. It enters through the membership API assembly entrypoint
@@ -1741,6 +1743,7 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
         sdkwork_routes_cloudrouter_app_api::PostgresSharedRuntime {
             config: context.database_config.clone(),
             pool,
+            database_pool: context.database_pool.clone(),
             catalog: Arc::clone(&context.catalog),
             api_key_security_config: context.api_key_security_config.clone(),
             upstream_credential_security_config: context

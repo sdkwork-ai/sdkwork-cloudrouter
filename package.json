@@ -28,6 +28,8 @@
                     "dev:desktop:sqlite": "node scripts/cloud-router-dev.mjs --target desktop --deployment-profile standalone --database sqlite",
                     "test": "pnpm exec sdkwork-app test",
                     "build": "pnpm exec sdkwork-app build",
+                    "build:container": "node scripts/build-cloud-router-container.mjs",
+                    "build:container:check": "node scripts/build-cloud-router-container.mjs --check --dry-run",
                     "start": "node scripts/start-cloud-router-production.mjs",
                     "check": "pnpm exec sdkwork-app check",
                     "clean": "pnpm exec sdkwork-app clean",

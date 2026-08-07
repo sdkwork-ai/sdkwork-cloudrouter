@@ -694,6 +694,144 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+  - name: iam_gateway_chain_policy
+    domain: iam_gateway
+    profile: tenant_entity
+    compliance_level: L2
+    write_owner: gateway-iam-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      policy_name:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      scope_type:
+        type: int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      scope_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      payload:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+      effective_from:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      effective_to:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+    constraints:
+      - name: pk_iam_gateway_chain_policy
+        type: primary_key
+        columns:
+          - id
+      - name: ck_iam_gateway_chain_policy_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_iam_gateway_chain_policy_scope
+        type: unique
+        columns: &id005
+          - tenant_id
+          - organization_id
+          - scope_type
+          - scope_id
+          - status
+        where: null
+    indexes:
+      - name: uk_iam_gateway_chain_policy_scope
+        columns: *id005
+        unique: true
+        where: deleted_at IS NULL
+      - name: idx_iam_gateway_chain_policy_scope_status
+        columns:
+          - tenant_id
+          - organization_id
+          - scope_type
+          - scope_id
+          - status
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
   - name: iam_gateway_risk_rule
     domain: iam_gateway
     profile: tenant_entity
@@ -896,7 +1034,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_iam_gateway_risk_rule_tenant_target
         type: unique
-        columns: &id005
+        columns: &id006
           - tenant_id
           - organization_id
           - rule_type
@@ -905,7 +1043,7 @@ tables:
         where: null
     indexes:
       - name: uk_iam_gateway_risk_rule_tenant_target
-        columns: *id005
+        columns: *id006
         unique: true
         where: deleted_at IS NULL
       - name: idx_iam_gateway_risk_rule_scope_priority

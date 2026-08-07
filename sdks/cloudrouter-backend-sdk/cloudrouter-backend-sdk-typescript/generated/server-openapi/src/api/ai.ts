@@ -1,7 +1,7 @@
 import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
-import type { CreateUpstreamAccountCredentialRequest, CreateUpstreamAccountGroupRequest, CreateUpstreamAccountRequest, CreateUpstreamSupplierRequest, ExplainUpstreamAccountGroupRouteRequest, ReplaceUpstreamAccountGroupMembersRequest, ReplaceUpstreamAccountGroupResourcesRequest, ReplaceUpstreamSupplierAuthMethodsRequest, ReplaceUpstreamSupplierEndpointsRequest, ReplaceUpstreamSupplierResourcesRequest, UpdateUpstreamAccountGroupRequest, UpdateUpstreamAccountRequest, UpdateUpstreamSupplierRequest, UpstreamAccount, UpstreamAccountCredential, UpstreamAccountCredentialListResponse, UpstreamAccountGroup, UpstreamAccountGroupListResponse, UpstreamAccountGroupMemberCollection, UpstreamAccountGroupMemberListResponse, UpstreamAccountGroupResourceCollection, UpstreamAccountGroupResourceListResponse, UpstreamAccountGroupRouteExplanation, UpstreamAccountListResponse, UpstreamAccountVerification, UpstreamResourceCatalogResponse, UpstreamSupplier, UpstreamSupplierAuthMethodCollection, UpstreamSupplierAuthMethodListResponse, UpstreamSupplierEndpointCollection, UpstreamSupplierEndpointListResponse, UpstreamSupplierListResponse, UpstreamSupplierResourceCollection, UpstreamSupplierResourceListResponse, VerifyUpstreamAccountRequest } from '../types';
+import type { CreateUpstreamAccountCredentialRequest, CreateUpstreamAccountGroupRequest, CreateUpstreamAccountRequest, CreateUpstreamSupplierRequest, ExplainUpstreamAccountGroupRouteRequest, ReplaceUpstreamAccountGroupMembersRequest, ReplaceUpstreamAccountGroupResourcesRequest, ReplaceUpstreamAccountResourcesRequest, ReplaceUpstreamSupplierAuthMethodsRequest, ReplaceUpstreamSupplierEndpointsRequest, ReplaceUpstreamSupplierResourcesRequest, UpdateUpstreamAccountGroupRequest, UpdateUpstreamAccountRequest, UpdateUpstreamSupplierRequest, UpstreamAccount, UpstreamAccountCredential, UpstreamAccountCredentialListResponse, UpstreamAccountCredentialSecretResponse, UpstreamAccountGroup, UpstreamAccountGroupListResponse, UpstreamAccountGroupMemberCollection, UpstreamAccountGroupMemberListResponse, UpstreamAccountGroupResourceCollection, UpstreamAccountGroupResourceListResponse, UpstreamAccountGroupRouteExplanation, UpstreamAccountListResponse, UpstreamAccountResourceCollection, UpstreamAccountResourceListResponse, UpstreamAccountVerification, UpstreamResourceCatalogResponse, UpstreamSupplier, UpstreamSupplierAuthMethodCollection, UpstreamSupplierAuthMethodListResponse, UpstreamSupplierEndpointCollection, UpstreamSupplierEndpointListResponse, UpstreamSupplierListResponse, UpstreamSupplierResourceCollection, UpstreamSupplierResourceListResponse, VerifyUpstreamAccountRequest } from '../types';
 
 
 export interface AiUpstreamSuppliersResourcesUpdateParams {
@@ -186,6 +186,49 @@ export class AiUpstreamResourceCatalogApi {
   }
 }
 
+export interface AiUpstreamAccountsResourcesUpdateParams {
+  ifMatch: string;
+}
+
+export class AiUpstreamAccountsResourcesApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List upstream account resources */
+  async list(accountId: string, requestOptions?: ApiRequestOptions): Promise<UpstreamAccountResourceListResponse> {
+    return this.client.request<UpstreamAccountResourceListResponse>(backendApiPath(`/ai/upstream_accounts/${serializePathParameter(accountId, { name: 'accountId', style: 'simple', explode: false })}/resources`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  }
+
+/** Update upstream account resources */
+  async update(accountId: string, body: ReplaceUpstreamAccountResourcesRequest, params: AiUpstreamAccountsResourcesUpdateParams, requestOptions?: ApiRequestOptions): Promise<UpstreamAccountResourceCollection> {
+    const requestHeaders = buildRequestHeaders(
+      {
+        'If-Match': { value: params.ifMatch, style: 'simple', explode: false },
+      },
+      {}
+    );
+    return this.client.request<UpstreamAccountResourceCollection>(backendApiPath(`/ai/upstream_accounts/${serializePathParameter(accountId, { name: 'accountId', style: 'simple', explode: false })}/resources`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
+  }
+}
+
+export class AiUpstreamAccountsCredentialsSecretApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Get upstream account credential secret */
+  async retrieve(accountId: string, credentialId: string, requestOptions?: ApiRequestOptions): Promise<UpstreamAccountCredentialSecretResponse> {
+    return this.client.request<UpstreamAccountCredentialSecretResponse>(backendApiPath(`/ai/upstream_accounts/${serializePathParameter(accountId, { name: 'accountId', style: 'simple', explode: false })}/credentials/${serializePathParameter(credentialId, { name: 'credentialId', style: 'simple', explode: false })}/secret`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+  }
+}
+
 export interface AiUpstreamAccountsCredentialsListParams {
   page?: number;
   pageSize?: number;
@@ -198,9 +241,11 @@ export interface AiUpstreamAccountsCredentialsCreateParams {
 
 export class AiUpstreamAccountsCredentialsApi {
   private client: HttpClient;
+  public readonly secret: AiUpstreamAccountsCredentialsSecretApi;
 
   constructor(client: HttpClient) {
     this.client = client;
+    this.secret = new AiUpstreamAccountsCredentialsSecretApi(client);
   }
 
 
@@ -252,10 +297,12 @@ export interface AiUpstreamAccountsUpdateParams {
 export class AiUpstreamAccountsApi {
   private client: HttpClient;
   public readonly credentials: AiUpstreamAccountsCredentialsApi;
+  public readonly resources: AiUpstreamAccountsResourcesApi;
 
   constructor(client: HttpClient) {
     this.client = client;
     this.credentials = new AiUpstreamAccountsCredentialsApi(client);
+    this.resources = new AiUpstreamAccountsResourcesApi(client);
   }
 
 

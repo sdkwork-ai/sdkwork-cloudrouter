@@ -12,30 +12,30 @@ use crate::ports::{
 const LIST_ADMIN_TRANSACTIONS: &str = r#"
 WITH ledger_entries AS (
     SELECT
-        CAST(l.id AS TEXT) AS id,
-        CAST(l.created_at AS TEXT) AS occurred_at,
-        CAST(l.owner_user_id AS TEXT) AS user_id,
+        CAST(e.id AS TEXT) AS id,
+        CAST(e.created_at AS TEXT) AS occurred_at,
+        CAST(e.owner_id AS TEXT) AS user_id,
         CASE
-            WHEN l.business_type IN ('recharge', 'refund', 'usage', 'consume', 'redeem') THEN l.business_type
-            WHEN l.direction = 'credit' THEN 'recharge'
+            WHEN e.business_type = 'points_recharge' THEN 'recharge'
+            WHEN e.business_type = 'usage_settlement' THEN 'usage'
+            WHEN e.direction = 'CREDIT' THEN 'recharge'
             ELSE 'consume'
         END AS normalized_type,
-        CAST(COALESCE(NULLIF(l.amount, ''), '0') AS TEXT) AS amount,
-        CAST(COALESCE(NULLIF(l.balance_after, ''), '0') AS TEXT) AS balance,
+        -- Points amounts are already the display unit; cash amounts are
+        -- minor units (cents) and render as major units.
+        CASE
+            WHEN e.asset_code = 'points' THEN CAST(e.amount AS TEXT)
+            ELSE round(e.amount::numeric / 100, 2)::text
+        END AS amount,
+        CASE
+            WHEN e.asset_code = 'points' THEN CAST(e.balance_after AS TEXT)
+            ELSE round(e.balance_after::numeric / 100, 2)::text
+        END AS balance,
         COALESCE(
-            NULLIF(l.remark, ''),
-            NULLIF(l.source_type, ''),
-            NULLIF(l.transaction_no, ''),
+            NULLIF(e.remark, ''),
+            NULLIF(e.business_no, ''),
             'Account ledger entry'
         ) AS description,
-        l.source_type AS source_type,
-        l.source_id AS source_id,
-        CASE
-            WHEN l.source_type = 'commerce_payment_attempt' THEN 'payment'
-            WHEN l.source_type = 'commerce_refund' THEN 'refund'
-            WHEN l.source_type = 'commerce_order' THEN 'order'
-            ELSE 'transaction'
-        END AS status_source,
         CASE
             WHEN pa.id IS NULL AND r.id IS NULL AND o.id IS NULL THEN 'success'
         END AS transaction_status,
@@ -66,26 +66,29 @@ WITH ledger_entries AS (
                 END
             WHEN pa.id IS NULL AND r.id IS NULL AND o.id IS NULL THEN 'success'
             ELSE '__unsupported__'
-        END AS normalized_status
-    FROM commerce_account_ledger_entry l
+        END AS normalized_status,
+        CASE
+            WHEN pa.id IS NOT NULL THEN 'payment'
+            WHEN r.id IS NOT NULL THEN 'refund'
+            WHEN o.id IS NOT NULL THEN 'order'
+            ELSE 'transaction'
+        END AS status_source
+    FROM acct_ledger_entry e
     LEFT JOIN commerce_payment_attempt pa
-      ON pa.tenant_id = l.tenant_id
-     AND (pa.organization_id IS NULL OR l.organization_id IS NULL OR pa.organization_id = l.organization_id)
-     AND l.source_type = 'commerce_payment_attempt'
-     AND pa.id = l.source_id
+      ON pa.tenant_id = CAST(e.tenant_id AS TEXT)
+     AND (pa.organization_id IS NULL OR e.organization_id IS NULL OR pa.organization_id = e.organization_id)
+     AND e.business_type = 'points_recharge'
+     AND pa.out_trade_no = e.business_no
     LEFT JOIN commerce_refund r
-      ON r.tenant_id = l.tenant_id
-     AND l.source_type = 'commerce_refund'
-     AND r.id = l.source_id
+      ON r.tenant_id = CAST(e.tenant_id AS TEXT)
+     AND e.business_type = 'refund'
+     AND r.id = e.business_no
     LEFT JOIN commerce_order o
-      ON o.tenant_id = l.tenant_id
-     AND (o.organization_id IS NULL OR l.organization_id IS NULL OR o.organization_id = l.organization_id)
-     AND (
-        (l.source_type = 'commerce_order' AND o.id = l.source_id)
-        OR (pa.id IS NOT NULL AND o.id = pa.order_id)
-     )
-    WHERE l.tenant_id = CAST($1 AS TEXT)
-      AND l.organization_id = CAST($2 AS TEXT)
+      ON o.tenant_id = CAST(e.tenant_id AS TEXT)
+     AND (o.organization_id IS NULL OR e.organization_id IS NULL OR o.organization_id = e.organization_id)
+     AND (pa.id IS NOT NULL AND o.id = pa.order_id)
+    WHERE e.tenant_id = $1
+      AND e.organization_id = $2
 ),
 filtered_entries AS (
     SELECT *
@@ -95,7 +98,7 @@ filtered_entries AS (
       AND ($5::text IS NULL OR occurred_at >= $5)
       AND ($6::text IS NULL OR occurred_at <= $6)
 )
-SELECT id, occurred_at, user_id, normalized_type, amount, balance, description, source_type, source_id, status_source, transaction_status, payment_status, refund_status, order_status, normalized_status, COUNT(*) OVER() AS total
+SELECT id, occurred_at, user_id, normalized_type, amount, balance, description, status_source, transaction_status, payment_status, refund_status, order_status, normalized_status, COUNT(*) OVER() AS total
 FROM filtered_entries
 ORDER BY occurred_at DESC NULLS LAST, id DESC
 LIMIT $7 OFFSET $8

@@ -147,6 +147,7 @@ pub(super) async fn get(
 
 pub(super) async fn save(
     pool: &PgPool,
+    secret_codec: &(dyn UpstreamCredentialSecretCodec + Send + Sync),
     command: SaveAdminUpstreamAccountCommand,
 ) -> DomainResult<AdminUpstreamAccountItem> {
     validate_account_command(&command)?;
@@ -158,6 +159,25 @@ pub(super) async fn save(
         Some(account_id) => update(&mut tx, account_id, &command).await?,
         None => insert(&mut tx, &command).await?,
     };
+    if command.account_id.is_none() {
+        if let Some(secret) = command.api_key.as_deref().filter(|secret| !secret.trim().is_empty()) {
+            create_credential_in_transaction(
+                &mut tx,
+                secret_codec,
+                &CreateAdminUpstreamAccountCredentialCommand {
+                    subject: command.subject.clone(),
+                    account_id,
+                    uuid: command.uuid.clone(),
+                    credential_name: "primary".to_owned(),
+                    secret: secret.to_owned(),
+                    priority: 100,
+                    expires_at: None,
+                    requested_at: command.requested_at.clone(),
+                },
+            )
+            .await?;
+        }
+    }
     let action = if command.account_id.is_some() {
         "update_upstream_account"
     } else {
@@ -232,6 +252,26 @@ pub(super) async fn delete(
     .execute(&mut *tx)
     .await
     .map_err(|error| store_error("failed to deactivate upstream account credentials", error))?;
+    sqlx::query(
+        r#"
+        UPDATE ai_upstream_account_resource
+        SET deleted_at = $1::timestamptz,
+            deleted_by = $2,
+            status = 0,
+            version = version + 1,
+            updated_at = $1::timestamptz
+        WHERE tenant_id = $3 AND organization_id = $4
+          AND account_id = $5 AND deleted_at IS NULL
+        "#,
+    )
+    .bind(&requested_at)
+    .bind(subject.operator_id)
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(account_id)
+    .execute(&mut *tx)
+    .await
+    .map_err(|error| store_error("failed to deactivate upstream account resources", error))?;
     let result = sqlx::query(
         r#"
         UPDATE ai_upstream_account
@@ -343,6 +383,24 @@ pub(super) async fn create_credential(
     secret_codec: &(dyn UpstreamCredentialSecretCodec + Send + Sync),
     command: CreateAdminUpstreamAccountCredentialCommand,
 ) -> DomainResult<AdminUpstreamAccountCredentialItem> {
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|error| store_error("failed to begin credential transaction", error))?;
+    let item = create_credential_in_transaction(&mut tx, secret_codec, &command).await?;
+    tx.commit()
+        .await
+        .map_err(|error| store_error("failed to commit credential transaction", error))?;
+    Ok(item)
+}
+
+/// 在既有事务内创建账号凭据（密钥编码、掩码、版本分配、路由变更记录等）。
+/// 供独立凭据创建与「创建账号 + 初始密钥」原子场景复用。
+async fn create_credential_in_transaction(
+    tx: &mut Transaction<'_, Postgres>,
+    secret_codec: &(dyn UpstreamCredentialSecretCodec + Send + Sync),
+    command: &CreateAdminUpstreamAccountCredentialCommand,
+) -> DomainResult<AdminUpstreamAccountCredentialItem> {
     if command.secret.trim().is_empty() {
         return Err(DomainError::new("secret must not be blank"));
     }
@@ -366,10 +424,6 @@ pub(super) async fn create_credential(
     );
     let encoded_secret = secret_codec.encode_secret(secret_context, &command.secret)?;
     let masked_label = masked_secret(&command.secret);
-    let mut tx = pool
-        .begin()
-        .await
-        .map_err(|error| store_error("failed to begin credential transaction", error))?;
     let account_row = sqlx::query(
         r#"
         SELECT auth_method_code
@@ -382,7 +436,7 @@ pub(super) async fn create_credential(
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .bind(command.account_id)
-    .fetch_optional(&mut *tx)
+    .fetch_optional(&mut **tx)
     .await
     .map_err(|error| store_error("failed to lock upstream account for credential", error))?
     .ok_or_else(|| not_found("upstream account"))?;
@@ -401,7 +455,7 @@ pub(super) async fn create_credential(
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .bind(command.account_id)
-    .fetch_one(&mut *tx)
+    .fetch_one(&mut **tx)
     .await
     .map_err(|error| store_error("failed to allocate credential version", error))?;
     let result = sqlx::query(
@@ -438,7 +492,7 @@ pub(super) async fn create_credential(
     .bind(credential_version)
     .bind(command.priority)
     .bind(command.expires_at.as_deref())
-    .execute(&mut *tx)
+    .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to create upstream account credential", error))?;
 
@@ -458,7 +512,7 @@ pub(super) async fn create_credential(
         .bind(command.subject.tenant_id)
         .bind(command.subject.organization_id)
         .bind(command.account_id)
-        .fetch_optional(&mut *tx)
+        .fetch_optional(&mut **tx)
         .await
         .map_err(|error| store_error("failed to resolve credential idempotency replay", error))?
         .ok_or_else(|| conflict("credential idempotency key is already used in another scope"))?;
@@ -476,20 +530,24 @@ pub(super) async fn create_credential(
             "credential idempotency key was already used with a different secret",
         ));
     }
-    let item =
-        get_credential_in_transaction(&mut tx, &command.subject, command.account_id, resolved_id)
-            .await?
-            .ok_or_else(|| DomainError::new("created credential could not be reloaded"))?;
+    let item = get_credential_in_transaction(
+        &mut *tx,
+        &command.subject,
+        command.account_id,
+        resolved_id,
+    )
+    .await?
+    .ok_or_else(|| DomainError::new("created credential could not be reloaded"))?;
     if created {
         reset_account_health(
-            &mut tx,
+            &mut *tx,
             &command.subject,
             command.account_id,
             &command.requested_at,
         )
         .await?;
         record_routing_change(
-            &mut tx,
+            &mut *tx,
             &command.subject,
             &command.requested_at,
             "upstream_account",
@@ -499,9 +557,6 @@ pub(super) async fn create_credential(
         )
         .await?;
     }
-    tx.commit()
-        .await
-        .map_err(|error| store_error("failed to commit credential transaction", error))?;
     Ok(item)
 }
 
@@ -563,6 +618,49 @@ pub(super) async fn deactivate_credential(
         .await
         .map_err(|error| store_error("failed to commit credential deactivation", error))?;
     Ok(deactivated)
+}
+
+/// 解密返回账号凭据的明文密钥（仅供管理员在编辑弹窗中查看）。
+/// 仅允许读取当前租户/组织内、账号归属且未软删的凭据。
+pub(super) async fn reveal_credential_secret(
+    pool: &PgPool,
+    secret_codec: &(dyn UpstreamCredentialSecretCodec + Send + Sync),
+    subject: AdminUpstreamSubject,
+    account_id: i64,
+    credential_id: i64,
+) -> DomainResult<String> {
+    let row = sqlx::query(
+        r#"
+        SELECT credential.tenant_id, credential.organization_id,
+               credential.secret_ciphertext, credential.secret_key_id
+        FROM ai_upstream_account_credential credential
+        JOIN ai_upstream_account account
+          ON account.tenant_id = credential.tenant_id
+         AND account.organization_id = credential.organization_id
+         AND account.id = credential.account_id
+        WHERE credential.tenant_id = $1
+          AND credential.organization_id = $2
+          AND credential.account_id = $3
+          AND credential.id = $4
+          AND credential.deleted_at IS NULL
+          AND account.deleted_at IS NULL
+        "#,
+    )
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(account_id)
+    .bind(credential_id)
+    .fetch_optional(pool)
+    .await
+    .map_err(|error| store_error("failed to load upstream account credential secret", error))?
+    .ok_or_else(|| not_found("upstream account credential"))?;
+    let tenant_id = column(&row, "tenant_id", "failed to map credential secret tenant")?;
+    let organization_id = column(&row, "organization_id", "failed to map credential secret organization")?;
+    let key_id = column::<String>(&row, "secret_key_id", "failed to map credential secret key id")?;
+    let ciphertext =
+        column::<String>(&row, "secret_ciphertext", "failed to map credential secret ciphertext")?;
+    let context = UpstreamCredentialSecretContext::new(tenant_id, organization_id, account_id, credential_id);
+    secret_codec.decode_secret(context, &key_id, &ciphertext)
 }
 
 async fn insert(
@@ -882,7 +980,7 @@ async fn validate_supplier_bindings(
     Ok(supplier_code)
 }
 
-async fn lock_account_version(
+pub(super) async fn lock_account_version(
     tx: &mut Transaction<'_, Postgres>,
     subject: &AdminUpstreamSubject,
     account_id: i64,
@@ -908,6 +1006,37 @@ async fn lock_account_version(
         return Err(conflict(format!(
             "upstream account version mismatch: expected {expected_version}, current {version}"
         )));
+    }
+    Ok(())
+}
+
+pub(super) async fn bump_account_version(
+    tx: &mut Transaction<'_, Postgres>,
+    subject: &AdminUpstreamSubject,
+    account_id: i64,
+    expected_version: i64,
+    requested_at: &str,
+) -> DomainResult<()> {
+    let result = sqlx::query(
+        r#"
+        UPDATE ai_upstream_account
+        SET version = version + 1, updated_at = $1::timestamptz
+        WHERE tenant_id = $2 AND organization_id = $3
+          AND id = $4 AND version = $5 AND deleted_at IS NULL
+        "#,
+    )
+    .bind(requested_at)
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(account_id)
+    .bind(expected_version)
+    .execute(&mut **tx)
+    .await
+    .map_err(|error| store_error("failed to advance upstream account version", error))?;
+    if result.rows_affected() != 1 {
+        return Err(conflict(
+            "upstream account version changed while replacing nested configuration",
+        ));
     }
     Ok(())
 }

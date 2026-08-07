@@ -10,12 +10,14 @@ import {
 import App from './App.tsx';
 import { PortalQueryProvider, PortalErrorBoundary, cloudRouterDocumentsReferenceRuntime } from '@sdkwork/cloudroutes-pc-commons';
 import { configureCloudRouterDomainServiceProviders } from '@sdkwork/cloudroutes-pc-commons/domain-service-providers';
+import { configureCloudRouterLogBackendSdkClient } from './admin/logSdkHostWiring.ts';
 import { DocumentsReferenceRuntimeProvider } from '@sdkwork/documents-pc-commons';
 import { initializeThemePreferences } from './themePreference.ts';
 import './index.css';
 
 initializeThemePreferences();
 configureCloudRouterDomainServiceProviders();
+configureCloudRouterLogBackendSdkClient();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

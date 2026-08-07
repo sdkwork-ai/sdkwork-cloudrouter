@@ -217,6 +217,7 @@
     "@sdkwork/cloudrouter-pc-admin-monitor": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-marketing": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-memberships": "workspace:*",
+    "@sdkwork/cloudrouter-pc-admin-partner": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-payments": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-ratelimit": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-record": "workspace:*",

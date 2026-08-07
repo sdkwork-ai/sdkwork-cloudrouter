@@ -67,6 +67,22 @@
       "system_of_record": true
     },
     {
+      "table_name": "ai_metering_request_trace",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "event_log",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_metering_usage",
+      "owner": "router-service",
+      "compliance_level": "L3",
+      "lifecycle_status": "active",
+      "profile": "ledger_source_fact",
+      "system_of_record": true
+    },
+    {
       "table_name": "ai_model_mapping_rule",
       "owner": "ai-routing-service",
       "compliance_level": "L2",
@@ -136,14 +152,6 @@
       "compliance_level": "L2",
       "lifecycle_status": "active",
       "profile": "quota_policy",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ai_request_trace",
-      "owner": "router-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "event_log",
       "system_of_record": true
     },
     {
@@ -251,6 +259,14 @@
       "system_of_record": true
     },
     {
+      "table_name": "ai_upstream_account_resource",
+      "owner": "ai-routing-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "relation_entity",
+      "system_of_record": true
+    },
+    {
       "table_name": "ai_upstream_object_route",
       "owner": "ai-routing-service",
       "compliance_level": "L2",
@@ -296,14 +312,6 @@
       "compliance_level": "L2",
       "lifecycle_status": "active",
       "profile": "relation_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ai_usage",
-      "owner": "router-service",
-      "compliance_level": "L3",
-      "lifecycle_status": "active",
-      "profile": "ledger_source_fact",
       "system_of_record": true
     }
   ]

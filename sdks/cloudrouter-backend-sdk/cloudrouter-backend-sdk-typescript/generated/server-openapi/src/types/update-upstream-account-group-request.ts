@@ -11,7 +11,7 @@ export interface UpdateUpstreamAccountGroupRequest {
   /** Group name field on update upstream account group request. */
   groupName?: string;
   /** Group type field on update upstream account group request. */
-  groupType?: string | null;
+  groupType?: 'mixed' | 'llm' | 'image' | 'video' | 'audio' | 'music' | 'other' | null;
   /** Modalities field on update upstream account group request. */
   modalities?: ('text' | 'audio' | 'image' | 'video' | 'music')[] | null;
   /** Priority field on update upstream account group request. */
@@ -22,6 +22,8 @@ export interface UpdateUpstreamAccountGroupRequest {
   saleMultiplier?: string | null;
   /** Status field on update upstream account group request. */
   status?: number | null;
+  /** Tags field on update upstream account group request. */
+  tags?: ('stable' | 'hot' | 'recommended' | 'promotion' | 'new' | 'premium' | 'high_value' | 'official' | 'beta' | 'limited')[] | null;
   /** Vendor code field on update upstream account group request. */
   vendorCode?: string | null;
 }

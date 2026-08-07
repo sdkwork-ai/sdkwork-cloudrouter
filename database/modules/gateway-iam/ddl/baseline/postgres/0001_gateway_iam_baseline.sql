@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.4.0.
--- Registry SHA-256: 68adaff94451c089d37f4be3b45c66d13b1d93c1f3aa9d2411c48ec4d3cfa03f.
+-- Registry SHA-256: 80f0c70ae0ba83ce8664fb61d9356b876c6f1b31874535c2dc614d99361a110b.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -129,6 +129,31 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_account_group_uuid ON i
 CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_account_group_binding ON iam_gateway_api_key_account_group (tenant_id, organization_id, api_key_id, account_group_id, binding_role) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_iam_gateway_api_key_account_group_active ON iam_gateway_api_key_account_group (tenant_id, organization_id, api_key_id, status, priority, weight, id);
 CREATE INDEX IF NOT EXISTS idx_iam_gateway_api_key_account_group_group ON iam_gateway_api_key_account_group (tenant_id, organization_id, account_group_id, status, priority, id);
+
+CREATE TABLE IF NOT EXISTS iam_gateway_chain_policy (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    policy_name VARCHAR(128),
+    scope_type INTEGER,
+    scope_id BIGINT,
+    payload JSONB,
+    effective_from TIMESTAMPTZ,
+    effective_to TIMESTAMPTZ,
+    CONSTRAINT ck_iam_gateway_chain_policy_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_chain_policy_scope ON iam_gateway_chain_policy (tenant_id, organization_id, scope_type, scope_id, status) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_iam_gateway_chain_policy_scope_status ON iam_gateway_chain_policy (tenant_id, organization_id, scope_type, scope_id, status);
 
 CREATE TABLE IF NOT EXISTS iam_gateway_risk_rule (
     id BIGINT NOT NULL PRIMARY KEY,

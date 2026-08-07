@@ -1,4 +1,3 @@
-use sdkwork_contract_service::{CommerceAccountAssetType, CommerceLedgerDirection};
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
 use crate::domain::{DecimalValue, DomainError, DomainResult};
@@ -8,7 +7,7 @@ use crate::infrastructure::sql::sql_admin_product_center::{
 };
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
-    AdjustAdminUserBalanceCommand, AdminUserApiKeyItem, AdminUserApiKeyListPage,
+    AdminUserApiKeyItem, AdminUserApiKeyListPage,
     AdminUserCommandFuture, AdminUserItem, AdminUserListPage, AdminUserStore,
     CreateAdminUserApiKeyCommand, CreateAdminUserCommand, DeleteAdminUserApiKeyCommand,
     ListAdminUserApiKeysQuery, ListAdminUsersQuery, UpdateAdminUserCommand,
@@ -18,11 +17,9 @@ const API_KEY_STATUS_ACTIVE: i32 = 1;
 const API_KEY_STATUS_REVOKED: i32 = 4;
 const TARGET_TYPE_USER: i32 = 61;
 const TARGET_TYPE_API_KEY: i32 = 62;
-const TARGET_TYPE_ACCOUNT: i32 = 63;
 const DEFAULT_ACCOUNT_GROUP_CODE: &str = "default";
 const DEFAULT_ACCOUNT_GROUP_NAME: &str = "Default";
 const DEFAULT_PRICING_PLAN_CODE: &str = "standard";
-const CASH_CURRENCY_CODE: &str = "USD";
 
 struct AdminUserAuditLog<'a> {
     uuid: &'a str,
@@ -80,7 +77,6 @@ impl AdminUserStore for PostgresAdminUserStore {
             )
             .await?;
             let user_id = insert_user(&mut tx, &command).await?;
-            insert_cash_account(&mut tx, &command, user_id).await?;
             insert_audit_log(
                 &mut tx,
                 AdminUserAuditLog {
@@ -97,8 +93,7 @@ impl AdminUserStore for PostgresAdminUserStore {
                     "action": "create_user",
                     "userId": user_id,
                     "email": &command.email,
-                    "username": &command.username,
-                    "initialBalance": command.initial_balance.to_fixed_string(4)
+                    "username": &command.username
                     }),
                 },
             )
@@ -169,85 +164,6 @@ impl AdminUserStore for PostgresAdminUserStore {
             tx.commit()
                 .await
                 .map_err(|error| store_error("failed to commit admin user transaction", error))?;
-            Ok(item)
-        })
-    }
-
-    fn adjust_balance<'a>(
-        &'a self,
-        command: AdjustAdminUserBalanceCommand,
-    ) -> AdminUserCommandFuture<'a, Option<AdminUserItem>> {
-        Box::pin(async move {
-            let mut tx = self.pool.begin().await.map_err(|error| {
-                store_error("failed to begin balance adjustment transaction", error)
-            })?;
-            if !user_exists(
-                &mut tx,
-                command.user_id,
-                command.subject.tenant_id,
-                command.subject.organization_id,
-            )
-            .await?
-            {
-                tx.commit().await.map_err(|error| {
-                    store_error("failed to commit balance adjustment transaction", error)
-                })?;
-                return Ok(None);
-            }
-            let account = ensure_cash_account(&mut tx, &command).await?;
-            let balance_before = DecimalValue::parse(&account.available_amount)?;
-            let balance_after = if command.adjustment_type == "refund" {
-                let next = balance_before.checked_subtract(command.amount)?;
-                if next < DecimalValue::ZERO {
-                    return Err(DomainError::conflict("refund amount exceeds user balance"));
-                }
-                next
-            } else {
-                balance_before.checked_add(command.amount)?
-            };
-            update_account_balance(&mut tx, &account, balance_after, &command.requested_at).await?;
-            insert_account_history(
-                &mut tx,
-                &command,
-                &account.id,
-                balance_before,
-                balance_after,
-            )
-            .await?;
-            insert_audit_log(
-                &mut tx,
-                AdminUserAuditLog {
-                    uuid: &command.audit_log_uuid,
-                    request_id: &command.request_id,
-                    tenant_id: command.subject.tenant_id,
-                    organization_id: command.subject.organization_id,
-                    operator_id: command.subject.operator_id,
-                    operator_type: command.subject.operator_type,
-                    action: "adjust_user_balance",
-                    target_type: TARGET_TYPE_ACCOUNT,
-                    target_id: command.user_id,
-                    change_summary: serde_json::json!({
-                    "action": "adjust_user_balance",
-                    "userId": command.user_id,
-                    "accountId": &account.id,
-                    "type": &command.adjustment_type,
-                    "amount": command.amount.to_fixed_string(4),
-                    "balanceBefore": balance_before.to_fixed_string(4),
-                    "balanceAfter": balance_after.to_fixed_string(4)
-                    }),
-                },
-            )
-            .await?;
-            let item = load_user_by_id(
-                &mut tx,
-                command.user_id,
-                command.subject.tenant_id,
-                command.subject.organization_id,
-            )
-            .await?;
-            tx.commit().await.map_err(|error| {
-                store_error("failed to commit balance adjustment transaction", error)
-            })?;
             Ok(item)
         })
     }
@@ -605,36 +521,6 @@ fn user_default_avatar_resource(username: &str) -> serde_json::Value {
     )
 }
 
-async fn insert_cash_account(
-    tx: &mut Transaction<'_, Postgres>,
-    command: &CreateAdminUserCommand,
-    user_id: i64,
-) -> DomainResult<String> {
-    let account_id = account_id(&command.account_uuid);
-    sqlx::query(
-        r#"
-        INSERT INTO commerce_account
-            (id, tenant_id, organization_id, owner_user_id, asset_type, currency_code, available_amount, frozen_amount, version, status, created_at, updated_at)
-        VALUES
-            ($1, CAST($2 AS TEXT), CAST($3 AS TEXT), CAST($4 AS TEXT), $5, $6, $7, '0', 0, 'active', $8, $8)
-        ON CONFLICT (tenant_id, organization_id, owner_user_id, asset_type, currency_code) DO UPDATE SET
-            updated_at = excluded.updated_at
-        "#,
-    )
-    .bind(&account_id)
-    .bind(command.subject.tenant_id)
-    .bind(command.subject.organization_id)
-    .bind(user_id)
-    .bind(CommerceAccountAssetType::Cash.as_str())
-    .bind(CASH_CURRENCY_CODE)
-    .bind(command.initial_balance.to_fixed_string(4))
-    .bind(&command.requested_at)
-    .execute(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to create user cash account", error))?;
-    Ok(account_id)
-}
-
 async fn update_user_row(
     tx: &mut Transaction<'_, Postgres>,
     command: &UpdateAdminUserCommand,
@@ -722,153 +608,6 @@ async fn upsert_user_membership_role(
     .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to assign IAM user membership role", error))?;
-    Ok(())
-}
-
-async fn ensure_cash_account(
-    tx: &mut Transaction<'_, Postgres>,
-    command: &AdjustAdminUserBalanceCommand,
-) -> DomainResult<CashAccountRow> {
-    if let Some(account) = load_cash_account(tx, command).await? {
-        return Ok(account);
-    }
-    let account_id = account_id(&command.account_uuid);
-    sqlx::query(
-        r#"
-        INSERT INTO commerce_account
-            (id, tenant_id, organization_id, owner_user_id, asset_type, currency_code, available_amount, frozen_amount, version, status, created_at, updated_at)
-        VALUES
-            ($1, CAST($2 AS TEXT), CAST($3 AS TEXT), CAST($4 AS TEXT), $5, $6, '0', '0', 0, 'active', $7, $7)
-        ON CONFLICT (tenant_id, organization_id, owner_user_id, asset_type, currency_code) DO NOTHING
-        "#,
-    )
-    .bind(&account_id)
-    .bind(command.subject.tenant_id)
-    .bind(command.subject.organization_id)
-    .bind(command.user_id)
-    .bind(CommerceAccountAssetType::Cash.as_str())
-    .bind(CASH_CURRENCY_CODE)
-    .bind(&command.requested_at)
-    .execute(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to create user cash account", error))?;
-    load_cash_account(tx, command)
-        .await?
-        .ok_or_else(|| DomainError::new("created cash account could not be reloaded"))
-}
-
-async fn load_cash_account(
-    tx: &mut Transaction<'_, Postgres>,
-    command: &AdjustAdminUserBalanceCommand,
-) -> DomainResult<Option<CashAccountRow>> {
-    let row = sqlx::query(
-        r#"
-        SELECT id,
-               COALESCE(available_amount, '0')::text AS available_amount,
-               COALESCE(version, 0) AS version
-        FROM commerce_account
-        WHERE tenant_id = CAST($1 AS TEXT)
-          AND organization_id = CAST($2 AS TEXT)
-          AND owner_user_id = CAST($3 AS TEXT)
-          AND asset_type = $4
-          AND currency_code = $5
-          AND status = 'active'
-        ORDER BY updated_at DESC NULLS LAST, id DESC
-        LIMIT 1
-        FOR UPDATE
-        "#,
-    )
-    .bind(command.subject.tenant_id)
-    .bind(command.subject.organization_id)
-    .bind(command.user_id)
-    .bind(CommerceAccountAssetType::Cash.as_str())
-    .bind(CASH_CURRENCY_CODE)
-    .fetch_optional(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to load user cash account", error))?;
-    row.map(|row| {
-        Ok(CashAccountRow {
-            id: row.try_get("id").map_err(row_error)?,
-            available_amount: row.try_get("available_amount").map_err(row_error)?,
-            version: integer_cell(&row, "version"),
-        })
-    })
-    .transpose()
-}
-
-async fn update_account_balance(
-    tx: &mut Transaction<'_, Postgres>,
-    account: &CashAccountRow,
-    balance_after: DecimalValue,
-    requested_at: &str,
-) -> DomainResult<()> {
-    let result = sqlx::query(
-        r#"
-        UPDATE commerce_account
-        SET available_amount = $1,
-            updated_at = $2,
-            version = COALESCE(version, 0) + 1
-        WHERE id = $3
-          AND version = $4
-        "#,
-    )
-    .bind(balance_after.to_fixed_string(4))
-    .bind(requested_at)
-    .bind(&account.id)
-    .bind(account.version)
-    .execute(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to update user balance", error))?;
-    if result.rows_affected() != 1 {
-        return Err(DomainError::conflict(
-            "admin user balance update was not applied atomically",
-        ));
-    }
-    Ok(())
-}
-
-async fn insert_account_history(
-    tx: &mut Transaction<'_, Postgres>,
-    command: &AdjustAdminUserBalanceCommand,
-    account_id: &str,
-    balance_before: DecimalValue,
-    balance_after: DecimalValue,
-) -> DomainResult<()> {
-    let direction = if command.adjustment_type == "refund" {
-        CommerceLedgerDirection::Debit
-    } else {
-        CommerceLedgerDirection::Credit
-    };
-    sqlx::query(
-        r#"
-        INSERT INTO commerce_account_ledger_entry
-            (id, tenant_id, organization_id, account_id, owner_user_id, asset_type, direction, amount, balance_after, business_type, transaction_no, request_no, idempotency_key, source_type, source_id, remark, created_at)
-        VALUES
-            ($1, CAST($2 AS TEXT), CAST($3 AS TEXT), $4, CAST($5 AS TEXT), $6, $7, $8, $9, $10, $11, $11, $11, 'admin_user_balance_adjustment', CAST($12 AS TEXT), $13, $14)
-        "#,
-    )
-    .bind(&command.account_history_uuid)
-    .bind(command.subject.tenant_id)
-    .bind(command.subject.organization_id)
-    .bind(account_id)
-    .bind(command.user_id)
-    .bind(CommerceAccountAssetType::Cash.as_str())
-    .bind(direction.as_str())
-    .bind(command.amount.to_fixed_string(4))
-    .bind(balance_after.to_fixed_string(4))
-    .bind(if command.adjustment_type == "refund" {
-        "refund"
-    } else {
-        "recharge"
-    })
-    .bind(&command.request_id)
-    .bind(command.user_id)
-    .bind(format!("admin_{}", command.adjustment_type))
-    .bind(&command.requested_at)
-    .execute(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to insert account ledger entry", error))?;
-    let _ = balance_before;
     Ok(())
 }
 
@@ -1263,24 +1002,6 @@ fn api_key_from_row(row: sqlx::postgres::PgRow) -> DomainResult<AdminUserApiKeyI
         used: "0.000000".to_owned(),
         status: api_key_status_label(required_integer_cell(&row, "status", "api key")?)?,
     })
-}
-
-#[derive(Debug, Clone)]
-struct CashAccountRow {
-    id: String,
-    available_amount: String,
-    version: i64,
-}
-
-fn account_id(uuid: &str) -> String {
-    let value = uuid.trim();
-    if value.is_empty() {
-        "admin-user-cash-account".to_owned()
-    } else if value.starts_with("account-") {
-        value.to_owned()
-    } else {
-        format!("account-{value}")
-    }
 }
 
 fn user_status_code(status: &str) -> &'static str {

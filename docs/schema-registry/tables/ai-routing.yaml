@@ -306,10 +306,11 @@ tables:
     group_name:
       type: string(128)
       constraints: NOT NULL
+    group_name_i18n: json
     description: string(512)
     group_type:
       type: string(32)
-      constraints: NOT NULL DEFAULT 'shared'
+      constraints: NOT NULL DEFAULT 'mixed'
     routing_strategy:
       type: string(32)
       constraints: NOT NULL DEFAULT 'weighted'
@@ -339,6 +340,9 @@ tables:
     modalities:
       type: json
       constraints: NOT NULL DEFAULT '[]'::jsonb
+    tags:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
   unique_constraints:
   - name: uk_ai_upstream_account_group_uuid
     columns:
@@ -349,6 +353,8 @@ tables:
     - organization_id
     - group_code
   check_constraints:
+  - name: ck_ai_upstream_account_group_type
+    expression: group_type IN ('mixed', 'llm', 'image', 'video', 'audio', 'music', 'other')
   - name: ck_ai_upstream_account_group_routing_strategy
     expression: routing_strategy IN ('weighted', 'round_robin', 'least_latency', 'least_cost', 'failover')
   - name: ck_ai_upstream_account_group_fallback_mode
@@ -358,6 +364,10 @@ tables:
       AND priority >= 0
       AND (capacity_limit IS NULL OR capacity_limit >= 0)
   indexes:
+  - name: idx_ai_upstream_account_group_tags
+    columns:
+    - tags
+    using: gin
   - name: uk_ai_upstream_account_group_scope_id
     unique: true
     columns:
@@ -639,6 +649,86 @@ tables:
     - tenant_id
     - organization_id
     - account_group_id
+    - status
+    - grant_type
+    - priority
+    - id
+- table: ai_upstream_account_resource
+  domain: ai
+  profile: relation_entity
+  soft_delete_policy: full_lifecycle_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: relation_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    account_id:
+      type: int64
+      constraints: NOT NULL
+    resource_id: int64
+    resource_code:
+      type: string(192)
+      constraints: NOT NULL DEFAULT ''
+    resource_group_id: int64
+    resource_group_code:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    grant_type:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'allow'
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    effective_from: instant
+    effective_to: instant
+  unique_constraints:
+  - name: uk_ai_upstream_account_resource_uuid
+    columns:
+    - uuid
+  - name: uk_ai_upstream_account_resource
+    columns:
+    - tenant_id
+    - organization_id
+    - account_id
+    - resource_code
+    - resource_group_code
+  foreign_keys:
+  - name: fk_ai_upstream_account_resource_account
+    columns:
+    - tenant_id
+    - organization_id
+    - account_id
+    references_table: ai_upstream_account
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_upstream_account_resource_target
+    expression: (NULLIF(resource_code, '') IS NOT NULL) <> (NULLIF(resource_group_code, '') IS NOT NULL)
+      AND grant_type IN ('allow', 'deny')
+      AND priority >= 0
+      AND (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from)
+  indexes:
+  - name: idx_ai_upstream_account_resource_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - account_id
+    - grant_type
+    - priority
+    - id
+  - name: idx_ai_upstream_account_resource_lookup
+    columns:
+    - tenant_id
+    - organization_id
+    - account_id
     - status
     - grant_type
     - priority
@@ -1087,6 +1177,7 @@ tables:
     display_name:
       type: string(128)
       constraints: NOT NULL
+    display_name_i18n: json
     description: string(512)
     icon_drive_uri: string(512)
     icon_resource_snapshot: json

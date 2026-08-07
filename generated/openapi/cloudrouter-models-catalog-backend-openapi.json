@@ -634,6 +634,13 @@
             ],
             "type": "string"
           },
+          "method": {
+            "description": "Method field on admin ai resource group resource item.",
+            "maxLength": 8,
+            "nullable": true,
+            "pattern": "^[A-Za-z-]+$",
+            "type": "string"
+          },
           "modalityCode": {
             "description": "Modality code field on admin ai resource group resource item.",
             "maxLength": 64,
@@ -644,6 +651,13 @@
           "model": {
             "description": "Model field on admin ai resource group resource item.",
             "maxLength": 128,
+            "nullable": true,
+            "pattern": "^[\\x20-\\x7E]*$",
+            "type": "string"
+          },
+          "path": {
+            "description": "Path field on admin ai resource group resource item.",
+            "maxLength": 256,
             "nullable": true,
             "pattern": "^[\\x20-\\x7E]*$",
             "type": "string"
@@ -851,6 +865,13 @@
             "maxItems": 512,
             "type": "array"
           },
+          "method": {
+            "description": "Method field on admin ai resource item.",
+            "maxLength": 8,
+            "nullable": true,
+            "pattern": "^[A-Za-z-]+$",
+            "type": "string"
+          },
           "modalityCode": {
             "description": "Modality code field on admin ai resource item.",
             "maxLength": 64,
@@ -861,6 +882,13 @@
           "model": {
             "description": "Model field on admin ai resource item.",
             "maxLength": 128,
+            "nullable": true,
+            "pattern": "^[\\x20-\\x7E]*$",
+            "type": "string"
+          },
+          "path": {
+            "description": "Path field on admin ai resource item.",
+            "maxLength": 256,
             "nullable": true,
             "pattern": "^[\\x20-\\x7E]*$",
             "type": "string"

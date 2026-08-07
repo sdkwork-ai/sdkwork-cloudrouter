@@ -152,7 +152,7 @@
     },
     {
       "path": "src/types/app-routing-account-group.ts",
-      "sha256": "d0f1ee2da05706835f2c098c424193c74d919a9b395c01f0692f2acb528b281d"
+      "sha256": "7371491d5aef4d39087d0286736615cad3ac880eb4d5fcc17aec80fb05000908"
     },
     {
       "path": "src/types/app-routing-api-key-account-group.ts",

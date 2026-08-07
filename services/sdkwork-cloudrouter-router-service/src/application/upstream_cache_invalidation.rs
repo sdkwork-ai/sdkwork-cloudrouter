@@ -261,6 +261,16 @@ impl AdminUpstreamStore for AiRoutingCacheInvalidatingAdminUpstreamStore {
         })
     }
 
+    fn reveal_account_credential_secret<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_id: i64,
+        credential_id: i64,
+    ) -> AdminUpstreamFuture<'a, String> {
+        self.inner
+            .reveal_account_credential_secret(subject, account_id, credential_id)
+    }
+
     fn list_account_groups<'a>(
         &'a self,
         query: AdminUpstreamListQuery,
@@ -365,6 +375,31 @@ impl AdminUpstreamStore for AiRoutingCacheInvalidatingAdminUpstreamStore {
                     items,
                     requested_at,
                 )
+                .await?;
+            self.invalidate_after(items).await
+        })
+    }
+
+    fn list_account_resources<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_id: i64,
+    ) -> AdminUpstreamFuture<'a, Vec<AdminUpstreamResourceItem>> {
+        self.inner.list_account_resources(subject, account_id)
+    }
+
+    fn replace_account_resources<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_id: i64,
+        expected_version: i64,
+        items: Vec<AdminUpstreamResourceInput>,
+        requested_at: String,
+    ) -> AdminUpstreamFuture<'a, Vec<AdminUpstreamResourceItem>> {
+        Box::pin(async move {
+            let items = self
+                .inner
+                .replace_account_resources(subject, account_id, expected_version, items, requested_at)
                 .await?;
             self.invalidate_after(items).await
         })

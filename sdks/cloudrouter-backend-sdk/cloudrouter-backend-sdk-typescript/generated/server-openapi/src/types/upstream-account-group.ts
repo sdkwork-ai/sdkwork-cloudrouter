@@ -15,7 +15,7 @@ export interface UpstreamAccountGroup {
   /** Group name i 18 n field on upstream account group. */
   groupNameI18n?: string | null;
   /** Group type field on upstream account group. */
-  groupType: string;
+  groupType: 'mixed' | 'llm' | 'image' | 'video' | 'audio' | 'music' | 'other';
   /** Id field on upstream account group. */
   id: string;
   /** Modalities field on upstream account group. */
@@ -28,6 +28,8 @@ export interface UpstreamAccountGroup {
   saleMultiplier: string;
   /** Status field on upstream account group. */
   status: number;
+  /** Tags field on upstream account group. */
+  tags?: ('stable' | 'hot' | 'recommended' | 'promotion' | 'new' | 'premium' | 'high_value' | 'official' | 'beta' | 'limited')[];
   /** Updated at field on upstream account group. */
   updatedAt: string;
   /** Uuid field on upstream account group. */

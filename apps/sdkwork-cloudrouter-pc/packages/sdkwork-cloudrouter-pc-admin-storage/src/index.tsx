@@ -1026,6 +1026,7 @@ function ProviderFields({ form, patch, set }: { form: StorageFormState; patch: (
   const endpointOptions = preset.endpointOptions.map((option) => ({
     value: option.value,
     label: presetOptionLabel(t, option),
+    ...(option.region ? { region: option.region } : {}),
   }));
   const regionOptions = preset.regionOptions.map((option) => ({
     value: option.value,

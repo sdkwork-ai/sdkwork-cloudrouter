@@ -1,11 +1,13 @@
 /** Create upstream account request schema exposed by Cloud Router. */
 export interface CreateUpstreamAccountRequest {
   /** Account code field on create upstream account request. */
-  accountCode: string;
+  accountCode?: string | null;
   /** Account name field on create upstream account request. */
   accountName: string;
   /** Account type field on create upstream account request. */
   accountType?: string | null;
+  /** Api key field on create upstream account request. */
+  apiKey?: string | null;
   /** Auth method code field on create upstream account request. */
   authMethodCode: string;
   /** Contract cost multiplier field on create upstream account request. */

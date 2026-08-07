@@ -54,6 +54,7 @@ export interface AccountGroup {
   rate: string | null;
   vendorCode: string | null;
   modalities: string[];
+  tags: string[];
 }
 
 export interface CreateApiKeyInput {
@@ -389,6 +390,7 @@ function normalizeAccountGroup(value: unknown): AccountGroup {
     rate: readNullableString(value, 'costMultiplier'),
     vendorCode: readNullableString(value, 'vendorCode'),
     modalities: readStringArray(value, 'modalities'),
+    tags: readStringArray(value, 'tags'),
   };
 }
 

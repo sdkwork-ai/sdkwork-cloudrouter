@@ -22,35 +22,36 @@ async fn dashboard_overview_route_returns_standard_empty_read_model_without_data
         .unwrap();
     let payload: Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("2000", payload["code"]);
-    assert_eq!("SUCCESS", payload["msg"]);
-    assert_eq!(0, payload["data"]["summary"]["requestCount"]);
-    assert_eq!(0, payload["data"]["summary"]["totalRequestCount"]);
-    assert_eq!(0.0, payload["data"]["summary"]["availableCredits"]);
-    assert_eq!(0.0, payload["data"]["summary"]["usedCredits"]);
-    assert_eq!(0.0, payload["data"]["summary"]["totalUsedCredits"]);
-    assert_eq!(0, payload["data"]["summary"]["errorCount"]);
+    assert_eq!(0, payload["code"].as_i64().unwrap());
+    assert_eq!(None, payload.get("msg"));
+    assert_eq!(None, payload.get("message"));
+    assert_eq!(0, payload["data"]["item"]["summary"]["requestCount"]);
+    assert_eq!(0, payload["data"]["item"]["summary"]["totalRequestCount"]);
+    assert_eq!(0.0, payload["data"]["item"]["summary"]["availableCredits"]);
+    assert_eq!(0.0, payload["data"]["item"]["summary"]["usedCredits"]);
+    assert_eq!(0.0, payload["data"]["item"]["summary"]["totalUsedCredits"]);
+    assert_eq!(0, payload["data"]["item"]["summary"]["errorCount"]);
     assert_eq!(
         Some(0),
-        payload["data"]["chartData"].as_array().map(Vec::len)
+        payload["data"]["item"]["chartData"].as_array().map(Vec::len)
     );
     assert_eq!(
         Some(0),
-        payload["data"]["topModels"].as_array().map(Vec::len)
+        payload["data"]["item"]["topModels"].as_array().map(Vec::len)
     );
     assert_eq!(
         Some(0),
-        payload["data"]["announcements"].as_array().map(Vec::len)
+        payload["data"]["item"]["announcements"].as_array().map(Vec::len)
     );
     assert_eq!(
         Some(0),
-        payload["data"]["configurationDomains"]
+        payload["data"]["item"]["configurationDomains"]
             .as_array()
             .map(Vec::len)
     );
     assert_eq!(
         Some(0),
-        payload["data"]["warnings"].as_array().map(Vec::len)
+        payload["data"]["item"]["warnings"].as_array().map(Vec::len)
     );
 }
 
@@ -116,7 +117,7 @@ async fn dashboard_overview_route_rejects_time_range_above_commercial_limit() {
     let response = sdkwork_cloudrouter_standalone_gateway::router()
         .oneshot(
             Request::builder()
-                .uri("/app/v3/api/ai/dashboard/overview?time_range=yearly&start_time=2020-01-01T00:00:00Z&end_time=2026-01-01T00:00:00Z")
+                .uri("/app/v3/api/ai/dashboard/overview?time_range=yearly&start_time=2020-01-01T00:00:00Z&end_time=2031-01-01T00:00:00Z")
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -135,9 +136,10 @@ async fn assert_standard_bad_request(response: axum::response::Response, expecte
     let body_text = String::from_utf8(body.to_vec()).unwrap();
     let payload: Value = serde_json::from_str(&body_text).unwrap();
 
-    assert_eq!("4001", payload["code"]);
-    assert!(payload["msg"].as_str().unwrap().contains(expected_message));
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(payload["detail"].as_str().unwrap().contains(expected_message));
     assert_eq!(None, payload.get("message"));
+    assert_eq!(None, payload.get("msg"));
     assert!(body_text.contains(expected_message));
     assert!(!body_text.contains("timestamptz"));
     assert!(!body_text.contains("sqlx"));

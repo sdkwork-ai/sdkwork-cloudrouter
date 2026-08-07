@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "e227802cfa71beda2dd87b07a89a0f94bf1d9a0b26ed25dc39cc47b70479189f",
+  "changeFingerprint": "8c5ff35f2ca15a50068baa206db5a62384cec154e16859da02ff26d15efa7bc3",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -154,6 +154,7 @@
           "src/types/recharge-settings-update-request.ts",
           "src/types/replace-upstream-account-group-members-request.ts",
           "src/types/replace-upstream-account-group-resources-request.ts",
+          "src/types/replace-upstream-account-resources-request.ts",
           "src/types/replace-upstream-supplier-auth-methods-request.ts",
           "src/types/replace-upstream-supplier-endpoints-request.ts",
           "src/types/replace-upstream-supplier-resources-request.ts",
@@ -172,6 +173,7 @@
           "src/types/update-upstream-supplier-request.ts",
           "src/types/upstream-account-credential-item-response.ts",
           "src/types/upstream-account-credential-list-response.ts",
+          "src/types/upstream-account-credential-secret-response.ts",
           "src/types/upstream-account-credential.ts",
           "src/types/upstream-account-group-item-response.ts",
           "src/types/upstream-account-group-list-response.ts",
@@ -188,6 +190,9 @@
           "src/types/upstream-account-group.ts",
           "src/types/upstream-account-item-response.ts",
           "src/types/upstream-account-list-response.ts",
+          "src/types/upstream-account-resource-collection-response.ts",
+          "src/types/upstream-account-resource-collection.ts",
+          "src/types/upstream-account-resource-list-response.ts",
           "src/types/upstream-account-verification-response.ts",
           "src/types/upstream-account-verification.ts",
           "src/types/upstream-account.ts",
@@ -382,10 +387,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 285,
-    "models": 256,
+    "totalFiles": 293,
+    "models": 264,
     "apis": 6,
-    "types": 258
+    "types": 266
   },
   "warnings": [
     {
@@ -428,12 +433,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 197,
+    "writtenFiles": 202,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "e227802cfa71beda2dd87b07a89a0f94bf1d9a0b26ed25dc39cc47b70479189f",
+    "changeFingerprint": "8c5ff35f2ca15a50068baa206db5a62384cec154e16859da02ff26d15efa7bc3",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -569,6 +574,7 @@
         "src/types/recharge-settings-update-request.ts",
         "src/types/replace-upstream-account-group-members-request.ts",
         "src/types/replace-upstream-account-group-resources-request.ts",
+        "src/types/replace-upstream-account-resources-request.ts",
         "src/types/replace-upstream-supplier-auth-methods-request.ts",
         "src/types/replace-upstream-supplier-endpoints-request.ts",
         "src/types/replace-upstream-supplier-resources-request.ts",
@@ -587,6 +593,7 @@
         "src/types/update-upstream-supplier-request.ts",
         "src/types/upstream-account-credential-item-response.ts",
         "src/types/upstream-account-credential-list-response.ts",
+        "src/types/upstream-account-credential-secret-response.ts",
         "src/types/upstream-account-credential.ts",
         "src/types/upstream-account-group-item-response.ts",
         "src/types/upstream-account-group-list-response.ts",
@@ -603,6 +610,9 @@
         "src/types/upstream-account-group.ts",
         "src/types/upstream-account-item-response.ts",
         "src/types/upstream-account-list-response.ts",
+        "src/types/upstream-account-resource-collection-response.ts",
+        "src/types/upstream-account-resource-collection.ts",
+        "src/types/upstream-account-resource-list-response.ts",
         "src/types/upstream-account-verification-response.ts",
         "src/types/upstream-account-verification.ts",
         "src/types/upstream-account.ts",
@@ -783,6 +793,7 @@
             "src/types/recharge-settings-update-request.ts",
             "src/types/replace-upstream-account-group-members-request.ts",
             "src/types/replace-upstream-account-group-resources-request.ts",
+            "src/types/replace-upstream-account-resources-request.ts",
             "src/types/replace-upstream-supplier-auth-methods-request.ts",
             "src/types/replace-upstream-supplier-endpoints-request.ts",
             "src/types/replace-upstream-supplier-resources-request.ts",
@@ -801,6 +812,7 @@
             "src/types/update-upstream-supplier-request.ts",
             "src/types/upstream-account-credential-item-response.ts",
             "src/types/upstream-account-credential-list-response.ts",
+            "src/types/upstream-account-credential-secret-response.ts",
             "src/types/upstream-account-credential.ts",
             "src/types/upstream-account-group-item-response.ts",
             "src/types/upstream-account-group-list-response.ts",
@@ -817,6 +829,9 @@
             "src/types/upstream-account-group.ts",
             "src/types/upstream-account-item-response.ts",
             "src/types/upstream-account-list-response.ts",
+            "src/types/upstream-account-resource-collection-response.ts",
+            "src/types/upstream-account-resource-collection.ts",
+            "src/types/upstream-account-resource-list-response.ts",
             "src/types/upstream-account-verification-response.ts",
             "src/types/upstream-account-verification.ts",
             "src/types/upstream-account.ts",

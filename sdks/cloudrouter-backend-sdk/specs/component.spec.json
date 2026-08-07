@@ -216,6 +216,17 @@
         }
       },
       {
+        "workspace": "sdkwork-partner-backend-sdk",
+        "role": "partner-backend-management-capability",
+        "required": true,
+        "dependencyMode": "consumer-sdk",
+        "apiPrefix": "/backend/v3/api",
+        "generatedTransportImportPolicy": "forbidden",
+        "packageByLanguage": {
+          "typescript": "@sdkwork/partner-backend-sdk"
+        }
+      },
+      {
         "workspace": "sdkwork-drive-backend-sdk",
         "role": "drive-backend-management-capability",
         "required": true,

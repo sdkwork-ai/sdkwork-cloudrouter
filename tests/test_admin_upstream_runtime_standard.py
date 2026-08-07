@@ -29,17 +29,17 @@ class AdminUpstreamRuntimeStandardTest(unittest.TestCase):
             "createUpstreamSupplier": (
                 "/backend/v3/api/ai/upstream_suppliers",
                 "CreateUpstreamSupplierRequest",
-                {"supplierCode", "supplierName", "supplierType", "adapterCode", "protocolCode"},
+                {"supplierName", "supplierType", "adapterCode", "protocolCode"},
             ),
             "createUpstreamAccount": (
                 "/backend/v3/api/ai/upstream_accounts",
                 "CreateUpstreamAccountRequest",
-                {"supplierId", "accountCode", "accountName", "authMethodCode"},
+                {"supplierId", "accountName", "authMethodCode"},
             ),
             "createUpstreamAccountGroup": (
                 "/backend/v3/api/ai/upstream_account_groups",
                 "CreateUpstreamAccountGroupRequest",
-                {"groupCode", "groupName"},
+                {"groupName"},
             ),
         }
 

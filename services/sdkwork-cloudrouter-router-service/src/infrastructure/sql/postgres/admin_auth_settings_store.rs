@@ -124,7 +124,9 @@ async fn resolve_auth_settings_scope(
         pool,
         tenant_code,
         organization_code,
-        IamScopeResolveOptions::AUTH_SETTINGS,
+        // IAM tenant/organization 表无软删列（deleted_at），启用软删过滤会生成
+        // 不存在的列引用导致 SQL 错误；与 site_settings/runtime_region_settings 一致使用默认选项。
+        IamScopeResolveOptions::default(),
         "failed to load auth settings IAM tenant",
         "failed to load auth settings IAM organization",
     )

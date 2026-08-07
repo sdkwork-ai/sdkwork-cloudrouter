@@ -4446,6 +4446,15 @@
           },
           "groupType": {
             "description": "Group type field on create upstream account group request.",
+            "enum": [
+              "mixed",
+              "llm",
+              "image",
+              "video",
+              "audio",
+              "music",
+              "other"
+            ],
             "maxLength": 32,
             "nullable": true,
             "type": "string"
@@ -4498,6 +4507,29 @@
             "nullable": true,
             "type": "integer"
           },
+          "tags": {
+            "description": "Tags field on create upstream account group request.",
+            "items": {
+              "description": "Tags field on create upstream account group request.",
+              "enum": [
+                "stable",
+                "hot",
+                "recommended",
+                "promotion",
+                "new",
+                "premium",
+                "high_value",
+                "official",
+                "beta",
+                "limited"
+              ],
+              "maxLength": 16,
+              "type": "string"
+            },
+            "maxItems": 5,
+            "nullable": true,
+            "type": "array"
+          },
           "vendorCode": {
             "description": "Vendor code field on create upstream account group request.",
             "maxLength": 64,
@@ -4506,7 +4538,6 @@
           }
         },
         "required": [
-          "groupCode",
           "groupName"
         ],
         "type": "object"
@@ -4519,6 +4550,7 @@
           "accountCode": {
             "description": "Account code field on create upstream account request.",
             "maxLength": 128,
+            "nullable": true,
             "type": "string"
           },
           "accountName": {
@@ -4531,6 +4563,14 @@
             "maxLength": 32,
             "nullable": true,
             "type": "string"
+          },
+          "apiKey": {
+            "description": "Api key field on create upstream account request.",
+            "maxLength": 65536,
+            "minLength": 1,
+            "nullable": true,
+            "type": "string",
+            "writeOnly": true
           },
           "authMethodCode": {
             "description": "Auth method code field on create upstream account request.",
@@ -4606,7 +4646,6 @@
         },
         "required": [
           "supplierId",
-          "accountCode",
           "accountName",
           "authMethodCode"
         ],
@@ -4679,6 +4718,7 @@
           "supplierCode": {
             "description": "Supplier code field on create upstream supplier request.",
             "maxLength": 128,
+            "nullable": true,
             "type": "string"
           },
           "supplierName": {
@@ -4702,7 +4742,6 @@
           }
         },
         "required": [
-          "supplierCode",
           "supplierName",
           "supplierType",
           "adapterCode",
@@ -7232,6 +7271,25 @@
         ],
         "type": "object"
       },
+      "ReplaceUpstreamAccountResourcesRequest": {
+        "additionalProperties": false,
+        "description": "Replace upstream account resources request schema exposed by Cloud Router.",
+        "name": "ReplaceUpstreamAccountResourcesRequest",
+        "properties": {
+          "items": {
+            "description": "Items field on replace upstream account resources request.",
+            "items": {
+              "$ref": "#/components/schemas/UpstreamResourceEntitlementInput"
+            },
+            "maxItems": 200,
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "type": "object"
+      },
       "ReplaceUpstreamSupplierAuthMethodsRequest": {
         "additionalProperties": false,
         "description": "Replace upstream supplier auth methods request schema exposed by Cloud Router.",
@@ -7826,6 +7884,15 @@
           },
           "groupType": {
             "description": "Group type field on update upstream account group request.",
+            "enum": [
+              "mixed",
+              "llm",
+              "image",
+              "video",
+              "audio",
+              "music",
+              "other"
+            ],
             "maxLength": 32,
             "nullable": true,
             "type": "string"
@@ -7877,6 +7944,29 @@
             "format": "int32",
             "nullable": true,
             "type": "integer"
+          },
+          "tags": {
+            "description": "Tags field on update upstream account group request.",
+            "items": {
+              "description": "Tags field on update upstream account group request.",
+              "enum": [
+                "stable",
+                "hot",
+                "recommended",
+                "promotion",
+                "new",
+                "premium",
+                "high_value",
+                "official",
+                "beta",
+                "limited"
+              ],
+              "maxLength": 16,
+              "type": "string"
+            },
+            "maxItems": 5,
+            "nullable": true,
+            "type": "array"
           },
           "vendorCode": {
             "description": "Vendor code field on update upstream account group request.",
@@ -8353,6 +8443,27 @@
         ],
         "type": "object"
       },
+      "UpstreamAccountCredentialSecretResponse": {
+        "additionalProperties": false,
+        "description": "Upstream account credential secret response schema exposed by Cloud Router.",
+        "name": "UpstreamAccountCredentialSecretResponse",
+        "properties": {
+          "credentialId": {
+            "description": "Credential id field on upstream account credential secret response.",
+            "maxLength": 32,
+            "type": "string"
+          },
+          "secret": {
+            "description": "Secret field on upstream account credential secret response.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "credentialId",
+          "secret"
+        ],
+        "type": "object"
+      },
       "UpstreamAccountGroup": {
         "additionalProperties": false,
         "description": "Upstream account group schema exposed by Cloud Router.",
@@ -8402,6 +8513,15 @@
           },
           "groupType": {
             "description": "Group type field on upstream account group.",
+            "enum": [
+              "mixed",
+              "llm",
+              "image",
+              "video",
+              "audio",
+              "music",
+              "other"
+            ],
             "maxLength": 32,
             "type": "string"
           },
@@ -8452,6 +8572,27 @@
             "description": "Status field on upstream account group.",
             "format": "int32",
             "type": "integer"
+          },
+          "tags": {
+            "description": "Tags field on upstream account group.",
+            "items": {
+              "description": "Tags field on upstream account group.",
+              "enum": [
+                "stable",
+                "hot",
+                "recommended",
+                "promotion",
+                "new",
+                "premium",
+                "high_value",
+                "official",
+                "beta",
+                "limited"
+              ],
+              "maxLength": 16,
+              "type": "string"
+            },
+            "type": "array"
           },
           "updatedAt": {
             "description": "Updated at field on upstream account group.",
@@ -9236,6 +9377,75 @@
         ],
         "type": "object"
       },
+      "UpstreamAccountResourceCollection": {
+        "additionalProperties": false,
+        "description": "Upstream account resource collection schema exposed by Cloud Router.",
+        "properties": {
+          "id": {
+            "description": "Id field on upstream account resource collection.",
+            "maxLength": 32,
+            "type": "string"
+          },
+          "items": {
+            "description": "Items field on upstream account resource collection.",
+            "items": {
+              "$ref": "#/components/schemas/UpstreamResourceEntitlement"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "items"
+        ],
+        "type": "object"
+      },
+      "UpstreamAccountResourceCollectionResponse": {
+        "additionalProperties": false,
+        "description": "Upstream account resource collection response schema exposed by Cloud Router.",
+        "name": "UpstreamAccountResourceCollectionResponse",
+        "properties": {
+          "item": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UpstreamAccountResourceCollection"
+              }
+            ],
+            "description": "Item field on upstream account resource collection response."
+          }
+        },
+        "required": [
+          "item"
+        ],
+        "type": "object"
+      },
+      "UpstreamAccountResourceListResponse": {
+        "additionalProperties": false,
+        "description": "Upstream account resource list response schema exposed by Cloud Router.",
+        "name": "UpstreamAccountResourceListResponse",
+        "properties": {
+          "items": {
+            "description": "Items field on upstream account resource list response.",
+            "items": {
+              "$ref": "#/components/schemas/UpstreamResourceEntitlement"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on upstream account resource list response."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
       "UpstreamAccountVerification": {
         "additionalProperties": false,
         "description": "Upstream account verification schema exposed by Cloud Router.",
@@ -9405,6 +9615,33 @@
         "description": "Upstream accounts credentials list result schema exposed by Cloud Router.",
         "x-operation-id": "upstreamAccounts.credentials.list"
       },
+      "UpstreamAccountsCredentialsSecretRetrieveResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by upstream accounts credentials secret retrieve result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/UpstreamAccountCredentialSecretResponse"
+                  }
+                ],
+                "description": "Data field on upstream accounts credentials secret retrieve result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Upstream accounts credentials secret retrieve result schema exposed by Cloud Router.",
+        "x-operation-id": "upstreamAccounts.credentials.secret.retrieve"
+      },
       "UpstreamAccountsListResult": {
         "allOf": [
           {
@@ -9431,6 +9668,60 @@
         ],
         "description": "Upstream accounts list result schema exposed by Cloud Router.",
         "x-operation-id": "upstreamAccounts.list"
+      },
+      "UpstreamAccountsResourcesListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by upstream accounts resources list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/UpstreamAccountResourceListResponse"
+                  }
+                ],
+                "description": "Data field on upstream accounts resources list result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Upstream accounts resources list result schema exposed by Cloud Router.",
+        "x-operation-id": "upstreamAccounts.resources.list"
+      },
+      "UpstreamAccountsResourcesUpdateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by upstream accounts resources update result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/UpstreamAccountResourceCollectionResponse"
+                  }
+                ],
+                "description": "Data field on upstream accounts resources update result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Upstream accounts resources update result schema exposed by Cloud Router.",
+        "x-operation-id": "upstreamAccounts.resources.update"
       },
       "UpstreamAccountsRetrieveResult": {
         "allOf": [
@@ -12912,6 +13203,319 @@
         "x-write-tables": [
           "ai_upstream_account",
           "ai_upstream_account_credential",
+          "ops_audit_log",
+          "ops_config_snapshot"
+        ]
+      }
+    },
+    "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}/secret": {
+      "get": {
+        "description": "Get upstream account credential secret. Reads ai_upstream_account, ai_upstream_account_credential. Writes none. File targets none.",
+        "operationId": "upstreamAccounts.credentials.secret.retrieve",
+        "parameters": [
+          {
+            "description": "Account id path parameter.",
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Credential id path parameter.",
+            "in": "path",
+            "name": "credentialId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpstreamAccountsCredentialsSecretRetrieveResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Get upstream account credential secret",
+        "tags": [
+          "ai"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_upstream_account",
+          "ai_upstream_account_credential"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "intelligence",
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-resource": "upstreamAccounts.credentials.secret",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
+        "x-write-tables": []
+      }
+    },
+    "/backend/v3/api/ai/upstream_accounts/{accountId}/resources": {
+      "get": {
+        "description": "List upstream account resources. Reads ai_upstream_account, ai_upstream_account_resource, ai_resource, ai_resource_group. Writes none. File targets none.",
+        "operationId": "upstreamAccounts.resources.list",
+        "parameters": [
+          {
+            "description": "Account id path parameter.",
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpstreamAccountsResourcesListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List upstream account resources",
+        "tags": [
+          "ai"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_upstream_account",
+          "ai_upstream_account_resource",
+          "ai_resource",
+          "ai_resource_group"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "intelligence",
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-resource": "upstreamAccounts.resources",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
+        "x-write-tables": []
+      },
+      "put": {
+        "description": "Update upstream account resources. Reads ai_upstream_account, ai_upstream_account_resource, ai_resource, ai_resource_group. Writes ai_upstream_account, ai_upstream_account_resource, ai_resource, ai_resource_group, ops_audit_log, ops_config_snapshot. File targets none.",
+        "operationId": "upstreamAccounts.resources.update",
+        "parameters": [
+          {
+            "description": "Account id path parameter.",
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Required entity version precondition for this conditional write.",
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplaceUpstreamAccountResourcesRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for update upstream account resources.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpstreamAccountsResourcesUpdateResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Update upstream account resources",
+        "tags": [
+          "ai"
+        ],
+        "x-contract-kind": "update",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_upstream_account",
+          "ai_upstream_account_resource",
+          "ai_resource",
+          "ai_resource_group"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "intelligence",
+        "x-sdkwork-conditional-write": true,
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-resource": "upstreamAccounts.resources",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
+        "x-write-tables": [
+          "ai_upstream_account",
+          "ai_upstream_account_resource",
+          "ai_resource",
+          "ai_resource_group",
           "ops_audit_log",
           "ops_config_snapshot"
         ]

@@ -32,6 +32,7 @@ export type {
   ExplainUpstreamAccountGroupRouteRequest,
   ReplaceUpstreamAccountGroupMembersRequest,
   ReplaceUpstreamAccountGroupResourcesRequest,
+  ReplaceUpstreamAccountResourcesRequest,
   ReplaceUpstreamSupplierAuthMethodsRequest,
   ReplaceUpstreamSupplierEndpointsRequest,
   ReplaceUpstreamSupplierResourcesRequest,

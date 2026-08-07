@@ -52,7 +52,7 @@
     },
     {
       "path": "src/api/ai.ts",
-      "sha256": "f7489dd6135651a7055b025bc216c562550fa11c3f37841306c67b01259d5b34"
+      "sha256": "04122744e102794302d32e8298180b9a13dea4d1a9a8f9ccf02d99eeeffe24c2"
     },
     {
       "path": "src/api/base.ts",
@@ -412,15 +412,15 @@
     },
     {
       "path": "src/types/create-upstream-account-group-request.ts",
-      "sha256": "7ff5218557e8fefa565eb1766bda17982b4a2e10a25cc6ad2e1b9f1d8bcbf454"
+      "sha256": "d23b1a1c658178988310d158d653090c7ff061006e220da92c6191f94e666c07"
     },
     {
       "path": "src/types/create-upstream-account-request.ts",
-      "sha256": "f6872d1fae9e3ff2de2c459daccc78d439b6c42a8327d4cc45365adf9b69ff1a"
+      "sha256": "bf575e5fce31c0130dfbabd5b6fbe4b8c64010cc59be07cb00881fa2118a83c1"
     },
     {
       "path": "src/types/create-upstream-supplier-request.ts",
-      "sha256": "6d792ceeef2b14be66d39a5a0311adbb617f09af2c5c1bb249eb6271722569bd"
+      "sha256": "1adf9738fe3a2783ee4bef3e4633a49820da104b98d7972b6510fedb3aaa03d1"
     },
     {
       "path": "src/types/explain-upstream-account-group-route-request.ts",
@@ -440,7 +440,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "2580829edb63a501eb1b583fda3e02c8acab737d930ac4a9f9703600d52e1c93"
+      "sha256": "0db53ac6b3a0c0fceb0ece01e7021e265482c3e87f0bca545e16e56a310783a6"
     },
     {
       "path": "src/types/installation-status-response.ts",
@@ -543,6 +543,10 @@
       "sha256": "4b1c10aa45814942b30310cd62e526ea314695c402bb0a48fb4352c180bcb17a"
     },
     {
+      "path": "src/types/replace-upstream-account-resources-request.ts",
+      "sha256": "1241a159ff918f6bf18980788ca578ad8cf94dfa2a4ad94d99082354828a1889"
+    },
+    {
       "path": "src/types/replace-upstream-supplier-auth-methods-request.ts",
       "sha256": "99c01cb83e238829d79f6e720e3f959711ce1d76e4a879fa3d06c5a2bf37b152"
     },
@@ -596,7 +600,7 @@
     },
     {
       "path": "src/types/update-upstream-account-group-request.ts",
-      "sha256": "374e9464f9f1c8f5d2a64de2d42f9fe5eb84f0fe77d9b0fcf3f92684d76245ac"
+      "sha256": "8294d2830c89bc8a8842f462ff0e539695c74a499cd6ca3c2a50153005a5ecd9"
     },
     {
       "path": "src/types/update-upstream-account-request.ts",
@@ -613,6 +617,10 @@
     {
       "path": "src/types/upstream-account-credential-list-response.ts",
       "sha256": "e518b547184381edadd96b008d65dee87360c2b5f7d58f4fae7e938f77960865"
+    },
+    {
+      "path": "src/types/upstream-account-credential-secret-response.ts",
+      "sha256": "07feadd2ad1a9b2cb89ec98fb73d0bd0e538b6fd9d9ebf2d5178ebb0425330cd"
     },
     {
       "path": "src/types/upstream-account-credential.ts",
@@ -668,7 +676,7 @@
     },
     {
       "path": "src/types/upstream-account-group.ts",
-      "sha256": "9239f34b51e563d28e5a070f591fa6652ba1fd54ca8b40abedc193cb6c4e5b15"
+      "sha256": "b74100393d70e7462574d34c82e8cae6a515eac744dfe944b8edeed77984a2bd"
     },
     {
       "path": "src/types/upstream-account-item-response.ts",
@@ -677,6 +685,18 @@
     {
       "path": "src/types/upstream-account-list-response.ts",
       "sha256": "9f23564a6dcdbd2d3789357edf6bdd9bf55c4d7146ed0ac09eea9b0596d92291"
+    },
+    {
+      "path": "src/types/upstream-account-resource-collection-response.ts",
+      "sha256": "c65cad3aafc246cbd0db4fad930949ee13ed5aa4c0659b46118a82c582df3bbf"
+    },
+    {
+      "path": "src/types/upstream-account-resource-collection.ts",
+      "sha256": "eb824dc2d93ee32e9848d9fb0efd0c60b3da900827e77b515855d916760fed58"
+    },
+    {
+      "path": "src/types/upstream-account-resource-list-response.ts",
+      "sha256": "c6d3483ee7c6bff20aa43a2578984212ede133d7186a19db1f8246654f7ba05c"
     },
     {
       "path": "src/types/upstream-account-verification-response.ts",

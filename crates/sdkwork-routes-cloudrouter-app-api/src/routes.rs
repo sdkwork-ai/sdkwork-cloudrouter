@@ -211,8 +211,12 @@ fn product_local_contract_operation(
 }
 
 fn is_cloudrouter_owned_iam_app_path(path: &str) -> bool {
-    const CLOUDROUTER_OWNED_IAM_APP_PREFIXES: &[&str] =
-        &["/app/v3/api/iam/api_keys", "/app/v3/api/iam/users/settings"];
+    const CLOUDROUTER_OWNED_IAM_APP_PREFIXES: &[&str] = &[
+        "/app/v3/api/iam/api_keys",
+        "/app/v3/api/iam/users/settings",
+        "/app/v3/api/iam/invite",
+        "/app/v3/api/iam/invites",
+    ];
 
     CLOUDROUTER_OWNED_IAM_APP_PREFIXES.iter().any(|prefix| {
         path == prefix.trim_end_matches('/') || path.starts_with(&format!("{prefix}/"))
@@ -294,6 +298,7 @@ async fn finalize_product_router_with_federated_capabilities(
     router: Router,
     subject_boundary_config: AppSubjectBoundaryConfig,
     database_config: Option<&DatabaseConfig>,
+    database_pool: Option<&sdkwork_database_sqlx::DatabasePool>,
 ) -> Result<Router, ProductCatalogRouterError> {
     let router = crate::invoice_runtime::merge_federated_invoice_app_router(
         router,
@@ -309,13 +314,31 @@ async fn finalize_product_router_with_federated_capabilities(
         )
         .await
         .map_err(ProductCatalogRouterError::Config)?;
-        crate::agents_runtime::merge_federated_agents_app_router(
+        let router = crate::agents_runtime::merge_federated_agents_app_router(
             router,
             database_config,
-            subject_boundary_config,
+            subject_boundary_config.clone(),
         )
         .await
-        .map_err(ProductCatalogRouterError::Config)
+        .map_err(ProductCatalogRouterError::Config)?;
+        match database_pool {
+            Some(database_pool) => {
+                crate::community_runtime::merge_federated_community_app_router(
+                    router,
+                    database_pool,
+                    subject_boundary_config,
+                )
+                .await
+                .map_err(ProductCatalogRouterError::Config)
+            }
+            None => {
+                tracing::info!(
+                    target: "sdkwork.cloudrouter.community",
+                    "community app-api surface skipped (no shared database pool on this router entry point)",
+                );
+                Ok(router)
+            }
+        }
     } else {
         Ok(router)
     }
@@ -677,6 +700,7 @@ pub async fn router_with_postgres_product_catalog(
         }),
         subject_boundary_config,
         Some(&database_config),
+        None,
     )
     .await
 }
@@ -684,6 +708,9 @@ pub async fn router_with_postgres_product_catalog(
 pub struct PostgresSharedRuntime {
     pub config: DatabaseConfig,
     pub pool: PgPool,
+    /// Process-shared database pool for federated capability lifecycles
+    /// (community baseline/migrate/seed runs on this pool at composition time).
+    pub database_pool: sdkwork_database_sqlx::DatabasePool,
     /// Federated commerce shared pool. The ai-metering module (`ai_metering_*`
     /// tables) is co-located with the account `acct_*` ledger in this pool,
     /// so the ai-metering read stores must use it instead of the gateway pool.
@@ -708,6 +735,7 @@ pub async fn router_with_postgres_shared_runtime(
     let PostgresSharedRuntime {
         config,
         pool,
+        database_pool,
         commerce_pool,
         catalog,
         api_key_security_config,
@@ -806,6 +834,7 @@ pub async fn router_with_postgres_shared_runtime(
         }),
         subject_boundary_config,
         Some(&config),
+        Some(&database_pool),
     )
     .await
 }
@@ -1069,6 +1098,7 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
         }),
         subject_boundary_config,
         Some(&config),
+        None,
     )
     .await
 }
