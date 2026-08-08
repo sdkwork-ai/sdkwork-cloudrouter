@@ -18,6 +18,7 @@ import {
   readAdminResourceRecordList,
   type AdminResourceRecord,
 } from '@sdkwork/cloudroutes-pc-commons';
+import { getCloudRouterPaymentBackendService } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import type {
   CreatePaymentChannelCommand,
   CreatePaymentMethodCommand,
@@ -28,7 +29,6 @@ import type {
 } from '@sdkwork/payment-backend-sdk';
 import {
   backendBaseDataDictionariesList,
-  backendPaymentProviderAccountsList,
   backendPaymentsChannelsList,
   backendPaymentsMethodsList,
 } from '../paymentsService';
@@ -429,7 +429,7 @@ function useProviderAccountOptions() {
   const [options, setOptions] = useState<AdminResourceRecord[]>([]);
   useEffect(() => {
     let active = true;
-    void backendPaymentProviderAccountsList()
+    void getCloudRouterPaymentBackendService().providerAccounts.list()
       .then((result) => {
         if (active) setOptions(readAdminResourceRecordList(result));
       })

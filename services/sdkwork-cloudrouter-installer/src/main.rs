@@ -17,8 +17,11 @@ use serde::Serialize;
 use sqlx::PgPool;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
+
+mod backup;
 
 const SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD_ENV: &str =
     "SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD";
@@ -78,6 +81,7 @@ async fn run_postgres(config: DatabaseConfig, command: InstallerCommand) -> anyh
             .with_admin_model_store(Arc::new(PostgresModelCatalogAdminStore::new(pool)))
             .with_env_options()?,
         command,
+        &config,
     )
     .await
 }
@@ -146,6 +150,7 @@ fn redact_database_url(database_url: &str) -> String {
 async fn run_command(
     installer: DatabaseInstaller,
     command: InstallerCommand,
+    database_config: &DatabaseConfig,
 ) -> anyhow::Result<()> {
     match command {
         InstallerCommand::Status => {
@@ -173,6 +178,14 @@ async fn run_command(
                 .await?;
             print_json(&CatalogRefreshOutput::from_reports(report, status_report))?;
         }
+        InstallerCommand::Backup(options) => {
+            let report = backup::run_backup(database_config, options).await?;
+            print_json(&report)?;
+        }
+        InstallerCommand::Restore(options) => {
+            let report = backup::run_restore(database_config, options).await?;
+            print_json(&report)?;
+        }
         InstallerCommand::ResetAdmin(_) => {
             return Err(InstallerCliError::InvalidState(
                 "reset-admin is handled before DatabaseInstaller dispatch".to_owned(),
@@ -190,6 +203,8 @@ enum InstallerCommand {
     Upgrade,
     Ensure,
     RefreshCatalog(CatalogRefreshOptions),
+    Backup(backup::BackupOptions),
+    Restore(backup::RestoreOptions),
     ResetAdmin(ResetAdminOptions),
 }
 
@@ -224,14 +239,71 @@ where
             InstallerCommand::Ensure
         }
         "refresh-catalog" => InstallerCommand::RefreshCatalog(parse_refresh_options(args)?),
+        "backup" => InstallerCommand::Backup(parse_backup_options(args)?),
+        "restore" => InstallerCommand::Restore(parse_restore_options(args)?),
         "reset-admin" => InstallerCommand::ResetAdmin(parse_reset_admin_options(args)?),
         other => {
             return Err(InstallerCliError::InvalidArgument(format!(
-                "unsupported installer command: {other}. Use status, install, upgrade, ensure, refresh-catalog, or reset-admin"
+                "unsupported installer command: {other}. Use status, install, upgrade, ensure, refresh-catalog, backup, restore, or reset-admin"
             ))
             .into());
         }
     })
+}
+
+fn parse_backup_options<I>(args: I) -> anyhow::Result<backup::BackupOptions>
+where
+    I: IntoIterator<Item = String>,
+{
+    let mut output = None;
+    let mut args = args.into_iter();
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "--output" => {
+                let value = args
+                    .next()
+                    .ok_or_else(|| InstallerCliError::InvalidArgument("backup --output requires a path".to_owned()))?;
+                output = Some(PathBuf::from(value));
+            }
+            other => {
+                return Err(InstallerCliError::InvalidArgument(format!(
+                    "backup does not accept argument: {other}"
+                ))
+                .into());
+            }
+        }
+    }
+    Ok(backup::BackupOptions { output })
+}
+
+fn parse_restore_options<I>(args: I) -> anyhow::Result<backup::RestoreOptions>
+where
+    I: IntoIterator<Item = String>,
+{
+    let mut input = None;
+    let mut database_only = false;
+    let mut args = args.into_iter();
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "--input" => {
+                let value = args
+                    .next()
+                    .ok_or_else(|| InstallerCliError::InvalidArgument("restore --input requires a path".to_owned()))?;
+                input = Some(PathBuf::from(value));
+            }
+            "--database-only" => database_only = true,
+            other => {
+                return Err(InstallerCliError::InvalidArgument(format!(
+                    "restore does not accept argument: {other}"
+                ))
+                .into());
+            }
+        }
+    }
+    let input = input.ok_or_else(|| {
+        InstallerCliError::InvalidArgument("restore requires --input <backup file>".to_owned())
+    })?;
+    Ok(backup::RestoreOptions { input, database_only })
 }
 
 fn reject_extra_args<I>(command: &str, args: I) -> anyhow::Result<()>

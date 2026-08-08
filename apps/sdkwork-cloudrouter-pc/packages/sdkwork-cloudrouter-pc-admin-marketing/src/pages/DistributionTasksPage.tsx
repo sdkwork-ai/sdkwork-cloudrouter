@@ -14,6 +14,7 @@ import {
   createPromotionDistributionTask,
 } from '../marketingService';
 import { usePromotionReferences } from '../usePromotionReferences';
+import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 
 export function DistributionTasksPage() {
   const { t } = useTranslation();
@@ -48,7 +49,7 @@ export function DistributionTasksPage() {
       setIsDrawerOpen(false);
       setRefreshKey((current) => current + 1);
     } catch (createError) {
-      setSaveError(createError instanceof Error ? createError.message : t('admin.marketing.promotions.distribution.createError', 'Failed to send coupons'));
+      setSaveError(resolveProblemMessage(createError, t, t('admin.marketing.promotions.distribution.createError', 'Failed to send coupons')));
     } finally {
       setIsSaving(false);
     }

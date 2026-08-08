@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Globe, Key, Database, X, Lock, Gauge, Trash2, Loader2, AlertTriangle } from 'lucide-react';
-import { AdminTableShell, BottomPagination, BusinessStateTableRow, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
+import { AdminTableShell, BottomPagination, BusinessStateTableRow, ConfirmDialog, getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons';
 import { RateLimitService, FirewallRule, type ChainPolicy } from './ratelimitService';
 import {
   rateLimitQueryKeys,
@@ -169,7 +169,7 @@ export function RateLimitAdmin() {
 function RiskDashboardView() {
   const { t } = useTranslation();
   const { data: snapshot, error, isLoading, refetch, isFetching } = useRateLimitDashboardQuery();
-  const loadError = error ? getLoadErrorMessage(error, t('admin.ratelimit.index.text.dashboardLoadFallback', 'Failed to load risk control dashboard.')) : null;
+  const loadError = error ? getLoadErrorMessage(error, t('admin.ratelimit.index.text.dashboardLoadFallback', 'Failed to load risk control dashboard.'), t) : null;
   const loading = isLoading || isFetching;
 
   if (loading && !snapshot) {
@@ -277,10 +277,6 @@ function RiskDashboardView() {
   );
 }
 
-function getLoadErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
-}
-
 // 2. IP访问限流
 function IpRateLimitView() {
   const { t } = useTranslation();
@@ -293,7 +289,7 @@ function IpRateLimitView() {
   const { data, error, isLoading, refetch, isFetching } = useIpRateLimitsQuery(filters);
   const limits = data?.items ?? [];
   const total = data?.total ?? 0;
-  const loadError = error ? getLoadErrorMessage(error, t('admin.ratelimit.index.text.ipLoadFallback', 'Failed to load IP limit rules.')) : null;
+  const loadError = error ? getLoadErrorMessage(error, t('admin.ratelimit.index.text.ipLoadFallback', 'Failed to load IP limit rules.'), t) : null;
   const loading = isLoading || isFetching;
 
   useEffect(() => {
@@ -452,7 +448,7 @@ function TokenRateLimitView() {
   const { data, error, isLoading, refetch, isFetching } = useTokenRateLimitsQuery(filters);
   const limits = data?.items ?? [];
   const total = data?.total ?? 0;
-  const loadError = error ? getLoadErrorMessage(error, t('admin.ratelimit.index.text.tokenLoadFallback', 'Failed to load token limit rules.')) : null;
+  const loadError = error ? getLoadErrorMessage(error, t('admin.ratelimit.index.text.tokenLoadFallback', 'Failed to load token limit rules.'), t) : null;
   const loading = isLoading || isFetching;
 
   useEffect(() => {
@@ -610,7 +606,7 @@ function ModelRateLimitView() {
   const { data, error, isLoading, refetch, isFetching } = useModelRateLimitsQuery(filters);
   const limits = data?.items ?? [];
   const total = data?.total ?? 0;
-  const loadError = error ? getLoadErrorMessage(error, t('admin.ratelimit.index.text.modelLoadFallback', 'Failed to load model limit rules.')) : null;
+  const loadError = error ? getLoadErrorMessage(error, t('admin.ratelimit.index.text.modelLoadFallback', 'Failed to load model limit rules.'), t) : null;
   const loading = isLoading || isFetching;
 
   useEffect(() => {
@@ -762,7 +758,7 @@ function FirewallView() {
   const { data, error, isLoading, refetch, isFetching } = useFirewallRulesQuery(filters);
   const rules = data?.items ?? [];
   const total = data?.total ?? 0;
-  const loadError = error ? getLoadErrorMessage(error, t('admin.ratelimit.index.text.firewallLoadFallback', 'Failed to load firewall rules.')) : null;
+  const loadError = error ? getLoadErrorMessage(error, t('admin.ratelimit.index.text.firewallLoadFallback', 'Failed to load firewall rules.'), t) : null;
   const loading = isLoading || isFetching;
   const [removeTarget, setRemoveTarget] = useState<FirewallRule | null>(null);
   const [removingFirewallId, setRemovingFirewallId] = useState<string | null>(null);
@@ -969,7 +965,7 @@ function ChainPolicyView() {
     setIpAccessEnabled(!policy.stages?.disabled?.includes('ip_access'));
   }, [policy]);
 
-  const loadError = error ? getLoadErrorMessage(error, t('admin.ratelimit.index.text.chainLoadFallback', 'Failed to load chain policy.')) : null;
+  const loadError = error ? getLoadErrorMessage(error, t('admin.ratelimit.index.text.chainLoadFallback', 'Failed to load chain policy.'), t) : null;
 
   if (isLoading && !policy) {
     return (
@@ -1004,7 +1000,7 @@ function ChainPolicyView() {
       onError: (saveError) => {
         setMessage({
           kind: 'error',
-          text: getLoadErrorMessage(saveError, t('admin.ratelimit.index.text.chainSaveFallback', 'Failed to save chain policy.')),
+          text: getLoadErrorMessage(saveError, t('admin.ratelimit.index.text.chainSaveFallback', 'Failed to save chain policy.'), t),
         });
       },
     });

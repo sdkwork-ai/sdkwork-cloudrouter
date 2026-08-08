@@ -535,7 +535,8 @@
       ],
       "priority": "LOW",
       "migrationOrder": 29,
-      "ownerReviewRequired": true
+      "migration": "database/migrations/postgres/0018_user_settings_console.up.sql",
+      "ownerReviewRequired": false
     }
   ],
   "inventoryStats": {

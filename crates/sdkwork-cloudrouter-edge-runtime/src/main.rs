@@ -18,11 +18,47 @@ async fn main() -> anyhow::Result<()> {
     if sdkwork_cloudrouter_edge_runtime::edge_server_enabled(runtime_toml.as_ref())
         .map_err(anyhow::Error::msg)?
     {
-        let edge_config =
+        let mut edge_config =
             sdkwork_cloudrouter_edge_runtime::edge_server_config_from_env_or_runtime_toml(
                 runtime_toml.as_ref(),
             )
             .map_err(anyhow::Error::msg)?;
+        // Bootstrap Access-Token for the portal login flow: an explicit
+        // SDKWORK_ACCESS_TOKEN wins, otherwise a signed tenant-bound token is
+        // issued (tenant signing key ensured first, then a signed JWT
+        // persisted as an IAM session).
+        match sdkwork_iam_web_adapter::resolve_deployment_bootstrap_access_token(None, None).await
+        {
+            Ok(Some(token)) => {
+                edge_config = edge_config.with_portal_bootstrap_access_token(Some(token));
+            }
+            Ok(None) => {}
+            Err(error) => tracing::warn!(
+                %error,
+                "bootstrap access token issuance failed; portal falls back to a payload-only token",
+            ),
+        }
+        // Commercial license posture (docs/commercial/PRICING.md).
+        use sdkwork_cloudrouter_license::LicenseStatus;
+        let license = sdkwork_cloudrouter_license::resolve_license();
+        match &license {
+            LicenseStatus::Licensed { info } => tracing::info!(
+                tier = %info.tier,
+                customer = %info.customer,
+                expires_at = ?info.expires_at,
+                "cloud router licensed edition",
+            ),
+            LicenseStatus::Unlicensed => tracing::info!(
+                "cloud router community edition (no license key configured; see docs/commercial/LICENSING.md)",
+            ),
+            LicenseStatus::Invalid { reason } => tracing::warn!(
+                %reason,
+                "cloud router license is invalid or expired; running community edition",
+            ),
+        }
+        edge_config = edge_config.with_portal_license_edition(
+            Some(license.edition().as_str().to_owned()),
+        );
         sdkwork_cloudrouter_edge_runtime::serve_edge_server_with_runtime_config(
             config.bind_addr(),
             edge_config,

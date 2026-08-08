@@ -37,12 +37,6 @@ export async function backendPaymentsProvidersList(params?: Parameters<CloudBack
   return getCloudRouterBackendSdkClient().payments.providers.list(params);
 }
 
-export async function backendPaymentProviderAccountsList(
-  params?: Parameters<BackendPaymentsService['providerAccounts']['list']>[0],
-) {
-  return getSdkworkPaymentBackendSdkClient().payments.providerAccounts.list(params);
-}
-
 export async function backendPaymentsMethodsList(params?: Parameters<BackendPaymentsService['methods']['list']>[0]) {
   return getSdkworkPaymentBackendSdkClient().payments.methods.list(params);
 }

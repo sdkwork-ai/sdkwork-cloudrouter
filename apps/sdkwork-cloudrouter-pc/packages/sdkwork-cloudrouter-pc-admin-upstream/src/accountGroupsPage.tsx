@@ -18,6 +18,7 @@ import {
   dangerButtonClass,
   EMPTY_MULTIPLIER_RANGE,
   errorMessage,
+  errorMessageI18n,
   Field,
   GroupTypeFilter,
   type GroupTypeFilterValue,
@@ -87,7 +88,7 @@ export function AccountGroupAdminPanel() {
       setAccounts(accountPage.items);
       setSelected((current) => current ? groupPage.items.find((item) => item.id === current.id) ?? null : null);
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setLoading(false);
     }
@@ -110,7 +111,7 @@ export function AccountGroupAdminPanel() {
       }
       await load();
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setBusy(false);
     }
@@ -126,7 +127,7 @@ export function AccountGroupAdminPanel() {
       setDeleteTarget(null);
       await load();
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setBusy(false);
     }
@@ -231,7 +232,7 @@ function AccountGroupConfiguration({ group, accounts, onChanged, onClose }: { gr
       setResources(nextResources.map(({ resourceCode, resourceGroupCode, grantType, priority, status }) => ({ resourceCode, resourceGroupCode, grantType, priority, status })));
       setCatalog(nextCatalog);
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setLoading(false);
     }
@@ -249,7 +250,7 @@ function AccountGroupConfiguration({ group, accounts, onChanged, onClose }: { gr
       onChanged(refreshed);
       await load();
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setBusySection(null);
     }
@@ -286,7 +287,7 @@ function AccountGroupConfiguration({ group, accounts, onChanged, onClose }: { gr
         apiCode: optional(form, 'apiCode'),
       }));
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setBusySection(null);
     }

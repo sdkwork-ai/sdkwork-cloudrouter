@@ -50,6 +50,14 @@ impl Default for PortalRuntimeEnv {
 pub struct PortalStaticConfig {
     dist_root: PathBuf,
     runtime_env: PortalRuntimeEnv,
+    /// Signed tenant-bound bootstrap Access-Token issued at startup (or
+    /// injected via `SDKWORK_ACCESS_TOKEN`). Injected into the runtime-env
+    /// script so the IAM credential-entry login flow resolves through the
+    /// verified database path.
+    pub bootstrap_access_token: Option<String>,
+    /// Commercial edition (community/pro/enterprise/oem), resolved from the
+    /// license key at startup. Injected into the runtime-env script.
+    pub license_edition: Option<String>,
     content_security_policy: HeaderValue,
     strict_transport_security: Option<HeaderValue>,
     html_cache_control: HeaderValue,
@@ -201,6 +209,8 @@ impl PortalStaticConfig {
         Ok(Self {
             dist_root,
             runtime_env,
+            bootstrap_access_token: None,
+            license_edition: None,
             content_security_policy,
             strict_transport_security: None,
             html_cache_control: HeaderValue::from_static(DEFAULT_HTML_CACHE_CONTROL),
@@ -291,7 +301,12 @@ async fn serve_portal_static(
             method,
             "application/javascript; charset=utf-8",
             config.html_cache_control.clone(),
-            build_portal_runtime_env_script(&config.runtime_env).into_bytes(),
+            build_portal_runtime_env_script(
+                &config.runtime_env,
+                config.bootstrap_access_token.as_deref(),
+                config.license_edition.as_deref(),
+            )
+            .into_bytes(),
             config,
         );
     }
@@ -453,7 +468,11 @@ fn find_module_script_index(html: &str) -> Option<usize> {
     None
 }
 
-fn build_portal_runtime_env_script(runtime_env: &PortalRuntimeEnv) -> String {
+fn build_portal_runtime_env_script(
+    runtime_env: &PortalRuntimeEnv,
+    bootstrap_access_token: Option<&str>,
+    license_edition: Option<&str>,
+) -> String {
     let mut payload = json!({
         "VITE_API_BASE_URL": runtime_env.api_base_url,
         "VITE_CLOUDROUTER_OPEN_API_BASE_URL": runtime_env.open_api_base_url,
@@ -471,7 +490,52 @@ fn build_portal_runtime_env_script(runtime_env: &PortalRuntimeEnv) -> String {
         .replace('&', "\\u0026")
         .replace('\u{2028}', "\\u2028")
         .replace('\u{2029}', "\\u2029");
-    format!("window.__CLOUDROUTER_ENV__ = Object.freeze({serialized});\n")
+    let mut script = format!("window.__CLOUDROUTER_ENV__ = Object.freeze({serialized});\n");
+
+    // Commercial edition (community/pro/enterprise/oem) for the portal UI.
+    if let Some(edition) = license_edition {
+        script.push_str(&format!(
+            "window.__SDKWORK_EDITION__ = {};\n",
+            json!(edition).to_string()
+        ));
+    }
+
+    // IAM credential-entry bootstrap Access-Token. Priority:
+    // 1. an explicitly configured SDKWORK_ACCESS_TOKEN;
+    // 2. the signed tenant-bound token issued at startup
+    //    (bootstrap_credential: tenant signing key ensured first, then a
+    //    signed JWT persisted as an IAM session — verified signature, tenant
+    //    binding and permission scope);
+    // 3. payload-only fallback for deployments without an IAM database
+    //    (development workstations), which requires the IAM development
+    //    authentication fallback to be enabled.
+    let bootstrap_access_token = std::env::var("SDKWORK_ACCESS_TOKEN")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .or_else(|| bootstrap_access_token.map(str::to_owned))
+        .unwrap_or_else(payload_only_bootstrap_access_token);
+    let bootstrap_access_token_json = json!(bootstrap_access_token).to_string();
+    script.push_str(&format!(
+        "window.__SDKWORK_CREDENTIAL_ENTRY_BOOTSTRAP_ACCESS_TOKEN__ = {bootstrap_access_token_json};\n"
+    ));
+    script
+}
+
+/// Builds a payload-only bootstrap Access-Token JWT for the credential-entry
+/// flow, scoped to the tenant runtime app provisioned by the installer
+/// (`iam_tenant_application.app_id`). Matches the IAM bootstrap fixture shape
+/// (`sdkwork-web-core::bootstrap_access_token_jwt`) so the standalone IAM
+/// resolver accepts it through the development authentication fallback.
+fn payload_only_bootstrap_access_token() -> String {
+    let tenant_id = std::env::var("SDKWORK_WEB_FRAMEWORK_JWT_BOOTSTRAP_TENANT_ID")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "100001".to_owned());
+    let app_id = std::env::var("SDKWORK_WEB_FRAMEWORK_JWT_BOOTSTRAP_APP_ID")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "sdkwork-cloudrouter".to_owned());
+    sdkwork_web_bootstrap::bootstrap_access_token_jwt(&tenant_id, &app_id)
 }
 
 fn build_portal_content_security_policy(

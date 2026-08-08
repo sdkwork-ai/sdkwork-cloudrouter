@@ -13,6 +13,7 @@ import { X } from 'lucide-react';
 import type { Refund } from '@sdkwork/payment-backend-sdk';
 import { backendPaymentRefundsRetrieve } from '../paymentsService';
 import { formatRefundAmount, translateEnumValue } from '../forms/RefundDialogs';
+import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 
 interface RefundDetailDrawerProps {
   refundId: string | null;
@@ -58,7 +59,7 @@ export function RefundDetailDrawer({ refundId, onClose }: RefundDetailDrawerProp
       })
       .catch((loadError: unknown) => {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : t('admin.commerce.payments.refunds.detail.loadError', 'Failed to load refund'));
+          setError(resolveProblemMessage(loadError, t, t('admin.commerce.payments.refunds.detail.loadError', 'Failed to load refund')));
         }
       });
     return () => {

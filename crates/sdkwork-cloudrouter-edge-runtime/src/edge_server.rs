@@ -125,6 +125,15 @@ pub struct EdgeServerConfig {
     portal_csp_connect_src_extra_origins: Vec<String>,
     portal_csp_frame_src: Vec<String>,
     portal_cors_allowed_origins: Vec<String>,
+    portal_cors_policy: sdkwork_web_core::CorsPolicy,
+    /// Signed tenant-bound bootstrap Access-Token resolved at startup (or
+    /// injected via `SDKWORK_ACCESS_TOKEN`). Injected into the runtime-env
+    /// script so the IAM credential-entry login flow resolves through the
+    /// verified database path.
+    portal_bootstrap_access_token: Option<String>,
+    /// Commercial edition (community/pro/enterprise/oem) resolved from the
+    /// license key at startup; injected into the runtime-env script.
+    portal_license_edition: Option<String>,
     development_private_network_cors: bool,
     portal_content_security_policy: HeaderValue,
     portal_strict_transport_security: Option<HeaderValue>,
@@ -345,6 +354,9 @@ impl EdgeServerConfig {
             portal_csp_connect_src_extra_origins: Vec::new(),
             portal_csp_frame_src: default_portal_csp_frame_src(),
             portal_cors_allowed_origins: Vec::new(),
+            portal_cors_policy: sdkwork_web_core::CorsPolicy::default(),
+            portal_bootstrap_access_token: None,
+            portal_license_edition: None,
             development_private_network_cors: false,
             portal_content_security_policy: default_portal_content_security_policy(),
             portal_strict_transport_security: None,
@@ -635,6 +647,50 @@ impl EdgeServerConfig {
         self
     }
 
+    pub fn with_portal_bootstrap_access_token(mut self, token: Option<String>) -> Self {
+        self.portal_bootstrap_access_token = token;
+        self
+    }
+
+    pub fn with_portal_license_edition(mut self, edition: Option<String>) -> Self {
+        self.portal_license_edition = edition;
+        self
+    }
+
+    /// Builds the portal CORS policy from the explicit allow-list
+    /// (`[edge].cors_allowed_origins`), the canonical shared environment key
+    /// `SDKWORK_CORS_ALLOWED_ORIGINS`, the portal origin itself, and — in
+    /// development posture — the private-network markers. All CORS response
+    /// handling then flows through the single `sdkwork-web-core::CorsPolicy`
+    /// implementation instead of hand-written header code.
+    pub fn with_portal_cors_policy_from_env(mut self) -> Result<Self, String> {
+        use sdkwork_web_core::CorsPolicy;
+
+        let mut policy = if self.development_private_network_cors {
+            CorsPolicy::development_private_network()
+        } else {
+            CorsPolicy::default()
+        };
+        for origin in std::iter::once(self.portal_base_url.clone())
+            .chain(self.portal_cors_allowed_origins.clone())
+            .chain(sdkwork_web_bootstrap::cors_allowed_origins_from_process_env())
+        {
+            if !policy.allowed_origins.contains(&origin) {
+                policy.allowed_origins.push(origin);
+            }
+        }
+        // Keep the hand-written behavior contract: the SDK clients send these
+        // request headers and read x-request-id from responses.
+        for header in ["x-goog-api-key", "x-request-id"] {
+            if !policy.allowed_headers.iter().any(|value| value == header) {
+                policy.allowed_headers.push(header.to_owned());
+            }
+        }
+        policy.expose_headers = vec!["x-request-id".to_owned()];
+        self.portal_cors_policy = policy;
+        Ok(self)
+    }
+
     fn refresh_portal_content_security_policy(&mut self) -> Result<(), String> {
         self.portal_content_security_policy = build_portal_content_security_policy(self)?;
         Ok(())
@@ -818,7 +874,7 @@ async fn edge_dispatch(State(state): State<Arc<EdgeServerState>>, request: Reque
     } else {
         serve_portal_static(state.as_ref(), request).await
     };
-    with_cors_headers(response, cors_origin)
+    with_cors_headers(state.as_ref(), response, cors_origin)
 }
 
 async fn forward_request(state: &EdgeServerState, request: Request) -> Result<Response, String> {
@@ -919,7 +975,11 @@ async fn serve_portal_static(state: &EdgeServerState, request: Request) -> Respo
             StatusCode::OK,
             "application/javascript; charset=utf-8",
             &state.config.portal_html_cache_control,
-            build_portal_runtime_env_script(&state.config.portal_runtime_env),
+            build_portal_runtime_env_script(
+                &state.config.portal_runtime_env,
+                state.config.portal_bootstrap_access_token.as_deref(),
+                state.config.portal_license_edition.as_deref(),
+            ),
             &state.config,
         );
     }
@@ -2519,7 +2579,11 @@ fn find_module_script_index(html: &str) -> Option<usize> {
     None
 }
 
-fn build_portal_runtime_env_script(runtime_env: &PortalRuntimeEnv) -> String {
+fn build_portal_runtime_env_script(
+    runtime_env: &PortalRuntimeEnv,
+    bootstrap_access_token: Option<&str>,
+    license_edition: Option<&str>,
+) -> String {
     let mut runtime_env_json = json!({
         "VITE_API_BASE_URL": runtime_env.api_base_url,
         "VITE_CLOUDROUTER_OPEN_API_BASE_URL": runtime_env.open_api_base_url,
@@ -2540,7 +2604,45 @@ fn build_portal_runtime_env_script(runtime_env: &PortalRuntimeEnv) -> String {
         .replace('\u{2028}', "\\u2028")
         .replace('\u{2029}', "\\u2029");
 
-    format!("window.__CLOUDROUTER_ENV__ = Object.freeze({serialized});\n")
+    let mut script =
+        format!("window.__CLOUDROUTER_ENV__ = Object.freeze({serialized});\n");
+
+    // IAM credential-entry bootstrap Access-Token. Priority:
+    // 1. an explicitly configured SDKWORK_ACCESS_TOKEN;
+    // 2. the signed tenant-bound token resolved at startup
+    //    (bootstrap_credential: tenant signing key ensured first, then a
+    //    signed JWT persisted as an IAM session — verified signature, tenant
+    //    binding and permission scope);
+    // 3. payload-only fallback for deployments without an IAM database
+    //    (development workstations), which requires the IAM development
+    //    authentication fallback to be enabled.
+    let bootstrap_access_token = std::env::var("SDKWORK_ACCESS_TOKEN")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .or_else(|| bootstrap_access_token.map(str::to_owned))
+        .unwrap_or_else(payload_only_bootstrap_access_token);
+    let bootstrap_access_token_json = json!(bootstrap_access_token).to_string();
+    script.push_str(&format!(
+        "window.__SDKWORK_CREDENTIAL_ENTRY_BOOTSTRAP_ACCESS_TOKEN__ = {bootstrap_access_token_json};\n"
+    ));
+    script
+}
+
+/// Builds a payload-only bootstrap Access-Token JWT for the credential-entry
+/// flow, scoped to the tenant runtime app provisioned by the installer
+/// (`iam_tenant_application.app_id`). Matches the IAM bootstrap fixture shape
+/// (`sdkwork-web-core::bootstrap_access_token_jwt`) so the standalone IAM
+/// resolver accepts it through the development authentication fallback.
+fn payload_only_bootstrap_access_token() -> String {
+    let tenant_id = std::env::var("SDKWORK_WEB_FRAMEWORK_JWT_BOOTSTRAP_TENANT_ID")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "100001".to_owned());
+    let app_id = std::env::var("SDKWORK_WEB_FRAMEWORK_JWT_BOOTSTRAP_APP_ID")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "sdkwork-cloudrouter".to_owned());
+    sdkwork_web_core::bootstrap_access_token_jwt(&tenant_id, &app_id)
 }
 
 fn content_type_for_path(path: &Path) -> &'static str {
@@ -3176,7 +3278,7 @@ fn preflight_response(state: &EdgeServerState, request: &Request) -> Response {
         return StatusCode::FORBIDDEN.into_response();
     }
 
-    with_cors_headers(StatusCode::NO_CONTENT.into_response(), origin)
+    with_cors_headers(state, StatusCode::NO_CONTENT.into_response(), origin)
 }
 
 fn is_cors_preflight(request: &Request) -> bool {
@@ -3187,72 +3289,23 @@ fn is_cors_preflight(request: &Request) -> bool {
             .contains_key(header::ACCESS_CONTROL_REQUEST_METHOD)
 }
 
-fn cors_origin_for_request(state: &EdgeServerState, request: &Request) -> Option<HeaderValue> {
+fn cors_origin_for_request(state: &EdgeServerState, request: &Request) -> Option<String> {
     let origin = request.headers().get(header::ORIGIN)?;
     let origin_text = origin.to_str().ok()?;
-    if origin_text == state.config.portal_base_url {
-        return Some(origin.clone());
-    }
-    if state
-        .config
-        .portal_cors_allowed_origins
-        .iter()
-        .any(|allowed_origin| allowed_origin == origin_text)
-    {
-        return Some(origin.clone());
-    }
-    if state.config.development_private_network_cors
-        && sdkwork_web_core::is_development_private_network_origin(origin_text)
-    {
-        return Some(origin.clone());
+    if state.config.portal_cors_policy.allows_origin_value(origin_text) {
+        return Some(origin_text.to_owned());
     }
     None
 }
 
-fn with_cors_headers(mut response: Response, origin: Option<HeaderValue>) -> Response {
-    let headers = response.headers_mut();
-    if let Some(origin) = origin {
-        headers.insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, origin);
-        headers.insert(
-            header::ACCESS_CONTROL_ALLOW_CREDENTIALS,
-            HeaderValue::from_static("true"),
-        );
-        merge_vary_origin(headers);
-    }
-    headers.insert(
-        header::ACCESS_CONTROL_ALLOW_METHODS,
-        HeaderValue::from_static("GET,POST,PUT,PATCH,DELETE,OPTIONS"),
-    );
-    headers.insert(
-        header::ACCESS_CONTROL_ALLOW_HEADERS,
-        HeaderValue::from_static(
-            "authorization,access-token,content-type,idempotency-key,x-api-key,x-goog-api-key,x-request-id",
-        ),
-    );
-    headers.insert(
-        header::ACCESS_CONTROL_EXPOSE_HEADERS,
-        HeaderValue::from_static("x-request-id"),
-    );
+fn with_cors_headers(
+    state: &EdgeServerState,
+    mut response: Response,
+    origin: Option<String>,
+) -> Response {
+    state
+        .config
+        .portal_cors_policy
+        .apply_headers_from_origin(origin.as_deref(), &mut response);
     response
-}
-
-fn merge_vary_origin(headers: &mut axum::http::HeaderMap) {
-    let Some(existing) = headers.get(header::VARY) else {
-        headers.insert(header::VARY, HeaderValue::from_static("Origin"));
-        return;
-    };
-    let Ok(existing_text) = existing.to_str() else {
-        headers.insert(header::VARY, HeaderValue::from_static("Origin"));
-        return;
-    };
-    if existing_text
-        .split(',')
-        .any(|part| part.trim().eq_ignore_ascii_case("origin"))
-    {
-        return;
-    }
-    let merged = format!("{existing_text}, Origin");
-    if let Ok(value) = HeaderValue::from_str(&merged) {
-        headers.insert(header::VARY, value);
-    }
 }

@@ -5,6 +5,7 @@ members = [
     "crates/sdkwork-cloudrouter-contract",
     "crates/sdkwork-cloudrouter-config",
     "crates/sdkwork-cloudrouter-health",
+    "crates/sdkwork-cloudrouter-license",
     "crates/sdkwork-cloudrouter-provider-adapter-contract",
     "crates/sdkwork-cloudrouter-provider-adapter",
     "crates/sdkwork-cloudrouter-provider-adapter-http",
@@ -91,6 +92,14 @@ debug = 0
 [profile.test]
 debug = 1
 
+# Release binaries ship inside the container image and native installers:
+# strip debug symbols and favor size so image/installer payloads stay small
+# enough for commercial distribution (registry pulls, offline packages).
+[profile.release]
+strip = true
+lto = "thin"
+codegen-units = 1
+
 [workspace.package]
 edition = "2021"
 version = "0.3.0"
@@ -121,7 +130,7 @@ hex = "0.4.3"
 ring = "0.17.14"
 redis = { version = "1.2.1", default-features = false, features = ["tokio-comp", "connection-manager", "script", "streams"] }
 sha2 = "0.10.9"
-sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio", "sqlite", "postgres"] }
+sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio", "postgres"] }
 tokio = { version = "1.51", features = ["macros", "rt-multi-thread", "net", "time", "test-util", "fs", "io-util"] }
 tower = { version = "0.5", features = ["util"] }
 tower-http = { version = "0.6", features = ["cors", "trace"] }
@@ -146,6 +155,7 @@ reqwest = { version = "0.12", default-features = false, features = ["rustls-tls-
 sdkwork-cloudrouter-contract = { path = "crates/sdkwork-cloudrouter-contract" }
 sdkwork-cloudrouter-config = { path = "crates/sdkwork-cloudrouter-config" }
 sdkwork-cloudrouter-health = { path = "crates/sdkwork-cloudrouter-health" }
+sdkwork-cloudrouter-license = { path = "crates/sdkwork-cloudrouter-license" }
 sdkwork-cloudrouter-paas-plugin = { path = "crates/sdkwork-cloudrouter-paas-plugin" }
 sdkwork-cloudrouter-security = { path = "crates/sdkwork-cloudrouter-security" }
 sdkwork-cloudrouter-http = { path = "crates/sdkwork-cloudrouter-http" }

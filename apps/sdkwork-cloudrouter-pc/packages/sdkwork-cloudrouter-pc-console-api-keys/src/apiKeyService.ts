@@ -2,6 +2,7 @@ import { createClientOperationToken } from '@sdkwork/cloudroutes-pc-commons/idem
 import { getCloudRouterAppSdkClient } from '@sdkwork/cloudrouter-pc-console-core/sdk';
 import {
   ensureSdkworkApiSuccess,
+  isBlank,
   isRecord,
   optionalBoundedPositiveInteger as optionalQueryPageSize,
   optionalPositiveInteger as optionalQueryPage,
@@ -101,7 +102,7 @@ export class ApiKeyService {
         total: readApiKeyListPageTotal(data),
       };
     } catch (error) {
-      throw new Error(readSdkErrorMessage(error, 'console.apiKeys.errors.loadFallback'));
+      throw rethrowSdkError(error, 'console.apiKeys.errors.loadFallback');
     }
   }
 
@@ -112,7 +113,7 @@ export class ApiKeyService {
       const items = readRequiredApiItems(result, 'console.apiKeys.errors.loadGroupsFallback');
       return items.map(normalizeAccountGroup);
     } catch (error) {
-      throw new Error(readSdkErrorMessage(error, 'console.apiKeys.errors.loadGroupsFallback'));
+      throw rethrowSdkError(error, 'console.apiKeys.errors.loadGroupsFallback');
     }
   }
 
@@ -132,7 +133,7 @@ export class ApiKeyService {
       const key = normalizeCreatedApiKey(data.item);
       return { key, rawKey };
     } catch (error) {
-      throw new Error(readSdkErrorMessage(error, 'console.apiKeys.errors.createFallback'));
+      throw rethrowSdkError(error, 'console.apiKeys.errors.createFallback');
     }
   }
 
@@ -144,7 +145,7 @@ export class ApiKeyService {
       );
       return normalizeApiKey(result);
     } catch (error) {
-      throw new Error(readSdkErrorMessage(error, 'console.apiKeys.errors.updateFallback'));
+      throw rethrowSdkError(error, 'console.apiKeys.errors.updateFallback');
     }
   }
 
@@ -153,19 +154,27 @@ export class ApiKeyService {
       const result = await getCloudRouterAppSdkClient().iam.apiKeys.delete(requiredText(keyId, 'apiKeyId'));
       ensureSdkworkApiSuccess(result, 'console.apiKeys.errors.deleteFallback');
     } catch (error) {
-      throw new Error(readSdkErrorMessage(error, 'console.apiKeys.errors.deleteFallback'));
+      throw rethrowSdkError(error, 'console.apiKeys.errors.deleteFallback');
     }
   }
 }
 
-function readSdkErrorMessage(error: unknown, fallback: string): string {
+/**
+ * Rethrows the original SDK error — preserving `problem` metadata for i18nKey
+ * translation — or wraps a keyed fallback message so the UI can resolve it
+ * through the catalog (`I18N_SPEC.md` §7).
+ */
+function rethrowSdkError(error: unknown, fallbackKey: string): Error {
   if (error instanceof Error) {
     const message = error.message.trim();
     if (message && message !== 'Unknown error') {
-      return message;
+      return error;
+    }
+    if (isBlank(fallbackKey)) {
+      return error;
     }
   }
-  return fallback;
+  return new Error(fallbackKey);
 }
 
 function toApiKeyListQueryParams(filters: ApiKeyListFilters = {}): {

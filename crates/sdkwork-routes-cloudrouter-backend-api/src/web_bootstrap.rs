@@ -106,12 +106,16 @@ pub async fn maybe_wrap_router_with_web_framework_and_iam_pool(
     database_config: &DatabaseConfig,
     postgres_pool: Option<Arc<PgPool>>,
 ) -> Router {
-    if web_framework_enabled_from_env() {
+    let router = if web_framework_enabled_from_env() {
         let resolver = iam_web_resolver_from_env(Some(database_config), postgres_pool).await;
         wrap_router_with_web_framework(resolver, router)
     } else {
         router
-    }
+    };
+    // Locale negotiation wraps every served backend-api surface (web-framework
+    // and legacy paths alike) so problem responses and DB i18n names resolve
+    // per request language (`I18N_SPEC.md` §2-§4).
+    sdkwork_cloudrouter_http::with_request_locale(router)
 }
 
 pub fn web_framework_enabled_from_env() -> bool {
@@ -125,9 +129,10 @@ pub async fn finalize_served_router(router: Router) -> Router {
 }
 
 pub async fn maybe_wrap_router_with_web_framework(router: Router) -> Router {
-    if web_framework_enabled_from_env() {
+    let router = if web_framework_enabled_from_env() {
         wrap_router_with_web_framework_from_env(router).await
     } else {
         router
-    }
+    };
+    sdkwork_cloudrouter_http::with_request_locale(router)
 }

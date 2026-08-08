@@ -113,6 +113,24 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "upstreamAccounts.credentials.delete",
     ),
     HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}/secret",
+        "ai",
+        "upstreamAccounts.credentials.secret.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/backend/v3/api/ai/upstream_accounts/{accountId}/resources",
+        "ai",
+        "upstreamAccounts.resources.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Put,
+        "/backend/v3/api/ai/upstream_accounts/{accountId}/resources",
+        "ai",
+        "upstreamAccounts.resources.update",
+    ),
+    HttpRoute::dual_token(
         HttpMethod::Post,
         "/backend/v3/api/ai/upstream_accounts/{accountId}/verify",
         "ai",
@@ -201,6 +219,42 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/backend/v3/api/billing/recharges/records/{orderNo}",
         "billing",
         "rechargeRecords.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/backend/v3/api/billing/referral_strategies",
+        "billing",
+        "referralStrategies.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/backend/v3/api/billing/referral_strategies",
+        "billing",
+        "referralStrategies.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Delete,
+        "/backend/v3/api/billing/referral_strategies/{strategyId}",
+        "billing",
+        "referralStrategies.delete",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/backend/v3/api/billing/referral_strategies/{strategyId}",
+        "billing",
+        "referralStrategies.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Patch,
+        "/backend/v3/api/billing/referral_strategies/{strategyId}",
+        "billing",
+        "referralStrategies.update",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/backend/v3/api/billing/referrals/relations",
+        "billing",
+        "referralRelations.list",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -573,42 +627,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/backend/v3/api/system/site/settings",
         "system",
         "site.settings.update",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/backend/v3/api/billing/referrals/relations",
-        "billing",
-        "referralRelations.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/backend/v3/api/billing/referral_strategies",
-        "billing",
-        "referralStrategies.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/backend/v3/api/billing/referral_strategies",
-        "billing",
-        "referralStrategies.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/backend/v3/api/billing/referral_strategies/{strategy_id}",
-        "billing",
-        "referralStrategies.retrieve",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Patch,
-        "/backend/v3/api/billing/referral_strategies/{strategy_id}",
-        "billing",
-        "referralStrategies.update",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Delete,
-        "/backend/v3/api/billing/referral_strategies/{strategy_id}",
-        "billing",
-        "referralStrategies.delete",
     ),
 ];
 

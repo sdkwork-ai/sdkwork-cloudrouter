@@ -4,6 +4,7 @@ use axum::extract::{Extension, Query, State};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::Router;
+use sdkwork_cloudrouter_http::RequestLocale;
 use sdkwork_web_core::WebRequestContext;
 use serde::Deserialize;
 
@@ -124,6 +125,7 @@ async fn fetch_routing_account_groups(
     State(state): State<AppRoutingState>,
     ResolvedAppSqlScopedSubject(subject): ResolvedAppSqlScopedSubject,
     request_context: Option<Extension<WebRequestContext>>,
+    locale_extension: Option<Extension<RequestLocale>>,
     Query(request): Query<AppRoutingListQueryRequest>,
 ) -> Response {
     let subject = match map_optional_app_sql_subject(subject, state.require_subject, |scoped| {
@@ -136,7 +138,7 @@ async fn fetch_routing_account_groups(
         Ok(query) => query,
         Err(message) => return bad_request(message),
     };
-    let locale = request_context.map(|context| context.0.locale).flatten();
+    let locale = resolved_request_locale(request_context, locale_extension);
 
     match state
         .read_store
@@ -156,6 +158,7 @@ async fn fetch_routing_api_keys(
     State(state): State<AppRoutingState>,
     ResolvedAppSqlScopedSubject(subject): ResolvedAppSqlScopedSubject,
     request_context: Option<Extension<WebRequestContext>>,
+    locale_extension: Option<Extension<RequestLocale>>,
     Query(request): Query<AppRoutingListQueryRequest>,
 ) -> Response {
     let subject = match map_optional_app_sql_subject(subject, state.require_subject, |scoped| {
@@ -168,7 +171,7 @@ async fn fetch_routing_api_keys(
         Ok(query) => query,
         Err(message) => return bad_request(message),
     };
-    let locale = request_context.map(|context| context.0.locale).flatten();
+    let locale = resolved_request_locale(request_context, locale_extension);
 
     match state
         .read_store
@@ -188,6 +191,7 @@ async fn fetch_routing_request_traces(
     State(state): State<AppRoutingState>,
     ResolvedAppSqlScopedSubject(subject): ResolvedAppSqlScopedSubject,
     request_context: Option<Extension<WebRequestContext>>,
+    locale_extension: Option<Extension<RequestLocale>>,
     Query(request): Query<AppRoutingListQueryRequest>,
 ) -> Response {
     let subject = match map_optional_app_sql_subject(subject, state.require_subject, |scoped| {
@@ -200,7 +204,7 @@ async fn fetch_routing_request_traces(
         Ok(query) => query,
         Err(message) => return bad_request(message),
     };
-    let locale = request_context.map(|context| context.0.locale).flatten();
+    let locale = resolved_request_locale(request_context, locale_extension);
 
     match state
         .read_store
@@ -231,6 +235,21 @@ async fn fetch_routing_usage(
         Ok(snapshot) => axum::Json(success_envelope(snapshot)).into_response(),
         Err(error) => app_routing_read_model_error(error),
     }
+}
+
+/// Resolves the effective request locale from the web-framework context first,
+/// falling back to the Cloud Router locale boundary extension (`I18N_SPEC.md`
+/// §3). The locale selects DB `*_i18n` jsonb display names (`I18N_SPEC.md` §11).
+fn resolved_request_locale(
+    request_context: Option<Extension<WebRequestContext>>,
+    locale_extension: Option<Extension<RequestLocale>>,
+) -> Option<String> {
+    request_context
+        .map(|context| context.0.locale)
+        .flatten()
+        .or_else(|| {
+            locale_extension.map(|extension| extension.0.effective().to_owned())
+        })
 }
 
 fn build_routing_list_query(

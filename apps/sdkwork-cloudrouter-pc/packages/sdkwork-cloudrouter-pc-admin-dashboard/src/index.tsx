@@ -36,7 +36,10 @@ import {
   YAxis,
 } from 'recharts';
 import { useTranslation } from 'react-i18next';
-import { formatLocalizedDecimalAmount } from '@sdkwork/cloudroutes-pc-commons/runtime';
+import {
+  formatLocalizedDecimalAmount,
+  resolveProblemMessage,
+} from '@sdkwork/cloudroutes-pc-commons/runtime';
 import {
   AdminDashboardService,
   formatChargeAmount,
@@ -143,7 +146,7 @@ export function DashboardAdmin() {
         if (disposed) {
           return;
         }
-        setErrorMessage(error instanceof Error ? error.message : t("admin.dashboard.index.text.1s2i7d1", "加载大盘数据失败"));
+        setErrorMessage(resolveProblemMessage(error, t, t("admin.dashboard.index.text.1s2i7d1", "加载大盘数据失败")));
       })
       .finally(() => {
         if (!disposed) {

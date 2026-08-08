@@ -11,7 +11,7 @@ use sdkwork_models_contract_service::{
 use sdkwork_utils_rust::SdkWorkResultCode;
 use serde::Serialize;
 
-use super::shared::{domain_error, problem, success_response, UpstreamState};
+use super::shared::{domain_error, problem, problem_keyed, success_response, UpstreamState};
 
 const CATALOG_LIMIT: i64 = 200;
 
@@ -64,8 +64,10 @@ async fn resource_catalog(
     let store = match &state.resource_store {
         Some(store) => store.clone(),
         None => {
-            return problem(
+            return problem_keyed(
                 SdkWorkResultCode::UnprocessableEntity,
+                "business.admin.upstream.resourceCatalog.unavailable",
+                serde_json::Value::Null,
                 "resource catalog is not available for this deployment",
             )
             .into_response()

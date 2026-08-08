@@ -5,12 +5,13 @@ import { CheckCircle2, Loader2, QrCode, RotateCcw, X } from 'lucide-react';
 import type { TestPayment } from '@sdkwork/payment-backend-sdk';
 import {
   readAdminResourceRecordList,
+  resolveProblemMessage,
   type AdminResourceRecord,
 } from '@sdkwork/cloudroutes-pc-commons';
+import { getCloudRouterPaymentBackendService } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import {
   backendPaymentDevSandboxTrigger,
   backendPaymentDevTestPayment,
-  backendPaymentProviderAccountsList,
   backendPaymentsAttemptsList,
 } from '../paymentsService';
 
@@ -81,9 +82,7 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
         if (!mounted || createSequenceRef.current !== sequence) {
           return;
         }
-        setError(cause instanceof Error && cause.message
-          ? cause.message
-          : t('admin.commerce.payments.methods.testPayment.error.create'));
+        setError(resolveProblemMessage(cause, t, t('admin.commerce.payments.methods.testPayment.error.create')));
         setPhase('failed');
       });
 
@@ -153,7 +152,7 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
     setSimulateNotice(null);
     setError(null);
     try {
-      const accounts = readAdminResourceRecordList(await backendPaymentProviderAccountsList());
+      const accounts = readAdminResourceRecordList(await getCloudRouterPaymentBackendService().providerAccounts.list());
       const devAccounts = accounts.filter((account) => {
         const environment = String(account.environment ?? '');
         return environment === 'development' || environment === 'sandbox';
@@ -178,9 +177,7 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
       });
       setSimulateNotice(t('admin.commerce.payments.methods.testPayment.simulateDone'));
     } catch (cause) {
-      setError(cause instanceof Error && cause.message
-        ? cause.message
-        : t('admin.commerce.payments.sandboxTrigger.error', 'Sandbox callback could not be enqueued.'));
+      setError(resolveProblemMessage(cause, t, t('admin.commerce.payments.sandboxTrigger.error', 'Sandbox callback could not be enqueued.')));
     } finally {
       setSimulating(false);
     }

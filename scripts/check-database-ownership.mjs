@@ -89,9 +89,12 @@ function loadModuleOwnership(root, relativeRoot, expectedModuleId, failures) {
     .filter((row) => typeof row?.prefix === 'string' && row.prefix.length > 0)
     .slice()
     .sort((left, right) => right.prefix.length - left.prefix.length);
-  if (!prefixOwners.some(({ prefix }) => prefix === manifest.tablePrefix)) {
+  const primaryPrefix = Array.isArray(manifest.tablePrefixes) && manifest.tablePrefixes.length > 0
+    ? manifest.tablePrefixes[0]
+    : (manifest.tablePrefix ?? null);
+  if (!prefixOwners.some(({ prefix }) => prefix === primaryPrefix)) {
     failures.push(
-      `${relativeRoot}: manifest tablePrefix ${manifest.tablePrefix ?? '<missing>'} is not registered`,
+      `${relativeRoot}: manifest primary tablePrefix ${primaryPrefix ?? '<missing>'} is not registered`,
     );
   }
 

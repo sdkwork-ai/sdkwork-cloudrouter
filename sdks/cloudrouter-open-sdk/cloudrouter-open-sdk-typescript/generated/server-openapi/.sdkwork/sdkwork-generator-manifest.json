@@ -204,7 +204,7 @@
     },
     {
       "path": "src/http/client.ts",
-      "sha256": "d94d220804d23b9e064d160f516b1ae620021060d0bc03a8c53c11b0cfa3987b"
+      "sha256": "a42313b6d4be173bda483c0a45375ce046b8e2fe26474c70183923f41b4a1529"
     },
     {
       "path": "src/http/index.ts",

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle2, ChevronRight, ChevronDown, Zap, Search, Cpu, Info, User } from 'lucide-react';
-import { AdminTableShell, BusinessStateTableRow } from '@sdkwork/cloudroutes-pc-commons';
+import { AdminTableShell, BusinessStateTableRow, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import { formatMoney } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 import {
   formatDecimalAmount,
@@ -44,7 +44,7 @@ export function RecordAdmin() {
       setLogs(res.logs);
       setTotal(res.total);
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : 'Failed to load request records');
+      setLoadError(resolveProblemMessage(error, t, t('admin.record.list.loadError', 'Failed to load request records')));
     } finally {
       setLoading(false);
     }

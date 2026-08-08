@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import type { PaymentIntent } from '@sdkwork/payment-backend-sdk';
 import { backendPaymentIntentsRetrieve } from '../paymentsService';
+import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 
 interface IntentDetailDrawerProps {
   intentId: string | null;
@@ -56,7 +57,7 @@ export function IntentDetailDrawer({ intentId, onClose }: IntentDetailDrawerProp
       })
       .catch((loadError: unknown) => {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : t('admin.commerce.payments.intents.detail.loadError', 'Failed to load payment intent'));
+          setError(resolveProblemMessage(loadError, t, t('admin.commerce.payments.intents.detail.loadError', 'Failed to load payment intent')));
         }
       });
     return () => {

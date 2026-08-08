@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlignLeft, Activity, Server, Timer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { BusinessStatePanel } from '@sdkwork/cloudroutes-pc-commons';
+import { BusinessStatePanel, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import type { GatewayTrace, PageInfo } from '@sdkwork/cloudrouter-pc-console-core/sdk';
 import { GatewayService } from './gatewayService';
 
@@ -17,13 +17,7 @@ type GatewaySummary = {
 };
 
 function getLoadErrorMessage(error: unknown, fallback: string, t: TranslationFunction): string {
-  if (error instanceof Error) {
-    const message = error.message.trim();
-    if (message.startsWith('console.')) {
-      return t(message, fallback);
-    }
-  }
-  return fallback;
+  return resolveProblemMessage(error, t, fallback);
 }
 
 function summarizeTraces(traces: GatewayTrace[]): GatewaySummary {

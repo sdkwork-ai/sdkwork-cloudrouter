@@ -5,6 +5,7 @@ import {
   AdminResourceCenter,
   AdminResourceHelpButton,
   readAdminResourceRecordList,
+  resolveProblemMessage,
   type AdminResourceHelpContent,
   type AdminResourceLoadParams,
   type AdminResourceRecord,
@@ -30,7 +31,6 @@ import {
   backendPaymentDevSandboxTrigger,
   backendPaymentMethodsCreate,
   backendPaymentMethodsUpdate,
-  backendPaymentProviderAccountsList,
   backendPaymentReconciliationRunsCreate,
   backendPaymentRefundsCreate,
   backendPaymentRefundsRetry,
@@ -558,14 +558,14 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       setRefreshKey((value) => value + 1);
       setMessage({ kind: 'success', text: successText });
     } catch (error) {
-      setMessage({ kind: 'error', text: error instanceof Error && error.message ? error.message : errorText });
+      setMessage({ kind: 'error', text: resolveProblemMessage(error, t, errorText) });
     } finally {
       setSaving(false);
     }
   }
 
   async function resolveSandboxProviderAccountId(providerCode: string): Promise<string> {
-    const accounts = readAdminResourceRecordList(await backendPaymentProviderAccountsList());
+    const accounts = readAdminResourceRecordList(await getCloudRouterPaymentBackendService().providerAccounts.list());
     const devAccounts = accounts.filter((account) => {
       const environment = String(account.environment ?? '');
       return environment === 'development' || environment === 'sandbox';

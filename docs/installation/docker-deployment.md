@@ -113,6 +113,25 @@ the immutable image evidence in `dist/container-image.json`:
 The `imageId`/`repoDigest` are the immutable image digests; mutable tags are
 convenience labels, not release identity (RELEASE_SPEC §4.1).
 
+### 3.1 Fast rebuilds (input snapshot cache)
+
+Repeat builds are fast: every build input (release binaries, portal dist,
+federated database modules, models catalog, app config) is snapshotted in
+`dist/container-image-staging.snapshot.json`. When nothing changed, the
+packaging pipeline (staging copy, install package archive, unpack) is skipped
+and only `docker build` runs against the cached context:
+
+```bash
+time pnpm build:container        # first build ~3 min, unchanged inputs ~25 s
+pnpm build:container -- --force  # bypass the cache and rebuild everything
+```
+
+After the image exists, everyday deployment is a single command:
+
+```bash
+docker compose up -d             # start/update the stack (seconds)
+```
+
 ## 4. Run
 
 ### 4.1 docker compose (recommended, bundled PostgreSQL + Redis)
@@ -159,6 +178,72 @@ default. In production, inject secrets via `*_FILE` variants (e.g.
 (`/run/secrets/sdkwork/router/*`), and pre-provision the payment master key
 file on the data volume.
 
+## 4.3 Change configuration at deployment time
+
+Three channels, in increasing precedence (ENVIRONMENT_SPEC §11):
+
+1. **Runtime TOML** — `docker/config/cloudrouter.toml` is mounted read-only at
+   `/etc/sdkwork/router/cloudrouter.toml` (mirror of the generated
+   `config/cloudrouter.toml.example`). Edit non-sensitive settings there
+   (observability, server bind, edge/portal behaviour) and apply:
+
+   ```bash
+   docker compose restart cloudrouter   # TOML only
+   docker compose up -d                 # or full re-apply
+   ```
+
+2. **Environment file** — copy `docker/.env.example` to the repository root as
+   `.env` and adjust secrets/connections; docker compose reads it
+   automatically:
+
+   ```bash
+   cp docker/.env.example .env
+   # edit .env: CLOUDROUTER_POSTGRES_*, CLOUDROUTER_*_SECRET, RUST_LOG, ...
+   docker compose up -d
+   ```
+
+   `RUST_LOG` (default `info`) controls process log verbosity; `debug`/`trace`
+   increase it. PostgreSQL/Redis hosts and ports can be pointed at managed
+   services via `CLOUDROUTER_POSTGRES_HOST` / `CLOUDROUTER_REDIS_HOST` instead
+   of the compose services.
+
+3. **Secret files** — production should mount secrets at
+   `/run/secrets/sdkwork/router/*` and reference them with the `*_FILE`
+   environment variants (e.g. `SDKWORK_CLOUDROUTER_API_KEY_PEPPER_FILE`,
+   `SDKWORK_PAYMENT_CREDENTIAL_MASTER_KEY_FILE`). Environment values always
+   override the mounted TOML, and nothing is baked into the image.
+
+## 4.4 Concurrency and performance tuning
+
+Connection pools are sized for high-concurrency workloads out of the box
+(`docker/.env.example` carries every knob):
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `CLOUDROUTER_DATABASE_MAX_CONNECTIONS` | 50 | PostgreSQL app pool ceiling |
+| `CLOUDROUTER_DATABASE_MIN_CONNECTIONS` | 5 | Warm connections kept ready |
+| `CLOUDROUTER_DATABASE_ACQUIRE_TIMEOUT` | 30s | Pool acquisition timeout |
+| `CLOUDROUTER_DATABASE_IDLE_TIMEOUT` | 600s | Idle connection eviction |
+| `CLOUDROUTER_DATABASE_MAX_LIFETIME` | 1800s | Connection recycling |
+| `CLOUDROUTER_REDIS_MAX_CONNECTIONS` | 50 | Redis pool (lightweight connections) |
+| `PG_MAX_CONNECTIONS` | 200 | PostgreSQL server-side ceiling |
+
+Guidance:
+
+- **Pool size is not "bigger is better"**: each PostgreSQL connection costs
+  memory and context-switch overhead; the rule of thumb is ~CPU cores × 4,
+  capped. 50 suits 4–16 core hosts; scale to 100+ on 32+ core instances, and
+  raise `PG_MAX_CONNECTIONS` together so the server ceiling stays comfortably
+  above the pool (keep ~2x headroom for migration/maintenance connections).
+- **Warm pool**: `MIN_CONNECTIONS` keeps connections ready so traffic spikes
+  do not pay cold-start cost; raise it under steady high load.
+- **Timeout hygiene**: `ACQUIRE_TIMEOUT` bounds queueing under saturation;
+  `MAX_LIFETIME`/`IDLE_TIMEOUT` recycle stale connections (e.g. after
+  PostgreSQL restarts or network changes).
+- **Redis** handles very high read concurrency on a small pool; 50 is
+  generous. Only raise it if `redis-cli INFO clients` shows saturation.
+- Everything is applied at `docker compose up -d`; no image rebuild needed.
+
 ## 5. Verify
 
 ```bash
@@ -170,8 +255,150 @@ docker compose ps                            # all services healthy
 ss -tlnp | grep -E '390[0-3]'                # host: only 3903 served by the container
 ```
 
-## 6. Spec compliance notes
+## 5.1 Multiple domain names on port 80 (localhost hosts mapping)
 
+For local testing with friendly domain names on port 80 (no DNS records
+needed), a reverse proxy on port 80 forwards the domains to the container:
+
+1. Map the domains to the host machine in `C:\Windows\System32\drivers\etc\hosts`:
+   ```
+   127.0.0.1 testrouterdocker.sdkwork.com testdocker.dtuplay.com testdocker.birdcoder.com
+   ```
+2. Install an nginx site that proxies the domains to the container gateway
+   (kept in `docker/nginx/testrouterdocker-cloudrouter.conf`):
+   ```nginx
+   server {
+       listen 80;
+       server_name testrouterdocker.sdkwork.com testdocker.dtuplay.com testdocker.birdcoder.com;
+       location / {
+           proxy_pass http://127.0.0.1:3903;
+           proxy_http_version 1.1;
+           proxy_set_header Host localhost:3903;
+           proxy_set_header X-Forwarded-Host $host;
+           proxy_set_header X-Forwarded-Proto $scheme;
+           proxy_buffering off;
+           client_max_body_size 1100m;
+       }
+   }
+   ```
+   The gateway serves the default site for `Host: localhost:3903` and uses
+   `X-Forwarded-Host` for public URL generation, so the real domain is
+   preserved. Then:
+   ```bash
+   sudo cp docker/nginx/testrouterdocker-cloudrouter.conf /etc/nginx/sites-enabled/
+   sudo nginx -t && sudo nginx -s reload
+   ```
+3. Visit `http://testrouterdocker.sdkwork.com` (or either other domain) from the
+   browser. If the machine uses a system HTTP proxy (e.g. Clash), add these
+   domains to the proxy bypass/直连 list or temporarily disable the proxy —
+   otherwise the proxy resolves the domains instead of the local hosts entry.
+
+## 5.2 IAM login Access-Token (auto-generated at deployment)
+
+The credential-entry login flow (`POST /app/v3/api/auth/sessions`) requires a
+bootstrap Access-Token JWT. Standalone containers handle this automatically:
+
+1. **Deployment posture** — `docker-compose.yml` sets `SDKWORK_ENV=development`
+   (explicit IAM development deployment), which enables the IAM resolver's
+   development authentication fallback for the gateway-issued bootstrap token.
+2. **Token injection** — the gateway injects
+   `window.__SDKWORK_CREDENTIAL_ENTRY_BOOTSTRAP_ACCESS_TOKEN__` into the portal
+   runtime-env script. It prefers an explicitly configured
+   `SDKWORK_ACCESS_TOKEN`; when unset it **auto-generates** a payload-only
+   bootstrap JWT bound to the installer-provisioned tenant runtime app
+   (tenant `100001`, app `sdkwork-cloudrouter` — the `iam_tenant_application`
+   row `ensure` creates). No manual token provisioning is required.
+3. **Override at deployment time** — pin or re-scope the token via `.env`
+   (`docker/.env.example`):
+   ```bash
+   SDKWORK_ACCESS_TOKEN=<signed bootstrap JWT>          # explicit token wins
+   SDKWORK_WEB_FRAMEWORK_JWT_BOOTSTRAP_TENANT_ID=100001 # auto-gen tenant scope
+   SDKWORK_WEB_FRAMEWORK_JWT_BOOTSTRAP_APP_ID=sdkwork-cloudrouter # auto-gen app scope
+   ```
+4. **Production hardening** — the development fallback is only legal in
+   explicit development deployments. A production deployment must set
+   `SDKWORK_ENV` to a production value, configure
+   `SDKWORK_IAM_SIGNING_MASTER_SECRET`, and inject a signed
+   `SDKWORK_ACCESS_TOKEN`; otherwise IAM fails closed on login.
+
+Verify the token is served:
+
+```bash
+curl -fsS http://127.0.0.1:3903/runtime-env.js | grep BOOTSTRAP_ACCESS_TOKEN
+```
+
+## 5.3 Multiple custom domains (CORS)
+
+Browser API calls from the portal domains are subject to the gateway CORS
+policy. The gateway runs in production posture by default
+(`SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT` unset = prod), where **every**
+cross-origin browser request is rejected unless its origin is listed in
+`SDKWORK_CORS_ALLOWED_ORIGINS` (comma/space separated). This is the canonical
+shared key used by every SDKWork service (SOURCE_CONFIG_SPEC): both the IAM
+API surfaces (`sdkwork-iam-web-adapter`) and the Cloud Router API surfaces
+(`sdkwork-cloudrouter-http`) resolve the same allow-list from it.
+Symptoms of a missing origin: `40301 CORS origin is not allowed by API
+policy` on login/registration and other app/backend API calls from the
+browser (curl works because it sends no `Origin` header).
+
+`docker-compose.yml` defaults the allow-list to the three test domains plus
+local host ports; extend it via `.env`:
+
+```bash
+SDKWORK_CORS_ALLOWED_ORIGINS=http://testrouterdocker.sdkwork.com,http://testdocker.dtuplay.com,http://testdocker.birdcoder.com,http://my.company.com
+```
+
+then `docker compose up -d cloudrouter`. Every domain listed in
+`docker/nginx/testrouterdocker-cloudrouter.conf` must appear here.
+
+## 5.4 Backup and restore (commercial operations)
+
+`cloudrouterctl backup` creates a single tar.gz with a PostgreSQL
+custom-format dump plus the durable data volume (`/var/lib/sdkwork/router`):
+
+```bash
+# Inside the cloudrouter container (defaults to the data volume backups dir):
+docker compose exec cloudrouter cloudrouterctl backup
+# Custom location / host deployments:
+docker compose exec cloudrouter cloudrouterctl backup --output /var/lib/sdkwork/router/backups/prod-20260807.tar.gz
+```
+
+Restore (database first, then data volume; `--database-only` skips the data
+volume):
+
+```bash
+docker compose exec cloudrouter cloudrouterctl restore \
+  --input /var/lib/sdkwork/router/backups/prod-20260807.tar.gz
+```
+
+Backups are written inside the durable `router-data` volume by default, so
+they survive container recreation. For real commercial operations back up the
+whole `router-data` (and `postgres-data`) volumes off-host, e.g.:
+
+```bash
+docker run --rm -v sdkwork-cloudrouter_router-data:/data \
+  -v "$PWD":/backup alpine tar -czf /backup/router-data.tar.gz -C /data .
+docker compose exec postgres pg_dump -U sdkwork_ai_prod -d sdkwork_ai_prod -Fc \
+  > postgres.dump
+```
+
+Requirements: `pg_dump`/`pg_restore` (postgresql-client — included in the
+image) and `tar`; connection settings come from the same
+`SDKWORK_DATABASE_*` env used by the gateway.
+
+## 5.5 Upgrading (commercial operations)
+
+1. Pull the new image: `docker pull ghcr.io/sdkwork-cloudrouter/cloudrouter:<version>` (or rebuild locally).
+2. Take a backup first (see §5.4).
+3. `docker compose up -d` — the container entrypoint runs
+   `cloudrouterctl ensure` which applies pending database migrations and
+   refreshes the model catalog before starting the gateway.
+4. Verify: `docker compose ps` (all healthy), `curl http://127.0.0.1:3903/readyz`,
+   log in through the portal, spot-check the dashboard.
+5. Rollback: restore the pre-upgrade image tag and `docker compose up -d`
+   (restore the database backup if migrations were applied).
+
+## 6. Spec compliance notes
 - Script naming: `build:container` follows PNPM_SCRIPT_SPEC runtime-target
   naming; `docker:*` public script names are forbidden.
 - Identity: `runtimeTarget = "container"`, `deploymentProfile = "standalone"`;
@@ -185,3 +412,55 @@ ss -tlnp | grep -E '390[0-3]'                # host: only 3903 served by the con
   RUNTIME_DIRECTORY_SPEC §4.5).
 - The build records immutable image evidence (digest, package sha256, build
   date) instead of relying on mutable tags (RELEASE_SPEC §4, §5).
+
+## 7. Packaging standards (all platforms)
+
+The packaging pipeline follows `PACKAGING_SPEC.md` (content minimization,
+format-specific rules, content evidence) and `RELEASE_SPEC.md`. Before any
+package or image is built, the following gates run and must pass:
+
+```bash
+pnpm check:packaging   # full packaging gate:
+  # - check:package-content : PACKAGING_SPEC §6 content standard
+  #   (no node_modules/.git/target/secrets in staging, manifests present,
+  #   binaries stripped)
+  # - check:portal-dist      : dist/index.html asset references resolve
+  #   (a stale dist makes the gateway answer JS with SPA-fallback HTML:
+  #   "Failed to load module script ... MIME type text/html")
+  # - build:container:check  : container image plan validation
+  # - install:packages:check : install package plan validation (all platforms)
+  # - install:native:check   : native installer plan validation (.deb/.msi/.pkg)
+```
+
+`scripts/check-portal-dist-consistency.mjs` is also enforced inside
+`scripts/build-cloud-router-container.mjs` itself: a missing hashed chunk in
+`apps/sdkwork-cloudrouter-pc/dist` aborts the image build with a "rebuild the
+portal" error instead of shipping a broken image.
+
+Platform delivery matrix (all built from the declarative
+`scripts/plan-cloud-router-install-packages.mjs` plan and validated by
+`scripts/validate-cloud-router-install-artifacts.mjs`):
+
+| Platform | Formats | Spec anchors |
+| --- | --- | --- |
+| Ubuntu/Debian (x64/arm64) | `.deb` (service + desktop), self-contained `.tar.gz`, container | PACKAGING_SPEC §5.2: `Depends: libssl3, libc6, libgcc-s1`, stripped binaries, postinst only configures layout/service |
+| Windows (x64/arm64) | `.msi` (service), `.zip` (archive), desktop installer | PACKAGING_SPEC §5.3: declared payload only, no debug/build artifacts |
+| macOS (x64/arm64) | `.pkg` (service), `.tar.gz` (archive), desktop app | PACKAGING_SPEC §5.4: signed bundle + declared resources only |
+| Container | `cloudrouter:local` image (amd64/arm64 multi-arch via GHCR workflow) | PACKAGING_SPEC §5.1/§4: staged context + `.dockerignore`, slim runtime stage |
+
+Every packaged artifact carries a machine-readable install manifest with a
+per-file `sha256` list (PACKAGING_SPEC §6 content evidence), generated by the
+pipeline from the declarative plan. Release gates run the content standard
+checker in CI (`.github/workflows/verify.yml`); container images are signed
+with cosign and carry an SBOM (`.github/workflows/container-image.yml`).
+- Server SQLite is fully removed: the container runs PostgreSQL-only
+  authoritative persistence (DATABASE_SPEC §7.2; server/container processes
+  `MUST NOT` resolve `SDKWORK_DATABASE_SQLITE_URL`). The SQLite-backed Codex
+  agent provider is an optional integration controlled by the
+  `codex-provider` feature of `sdkwork-agent-server` and
+  `sdkwork-agents-runtime-facade`; it is **off by default**, so the image
+  links no `codex-state`/`libsqlite3-sys`. Requesting the codex engine on a
+  build without the feature returns `UnsupportedEngine`; applications that
+  need it enable the feature explicitly. SQLite stays enabled in client-local
+  surfaces (desktop/agent-client), where the Codex client provider keeps its
+  local thread history, logs, goals, and memories.

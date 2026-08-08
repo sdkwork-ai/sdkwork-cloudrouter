@@ -7,7 +7,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   Legend, LineChart, Line
 } from 'recharts';
-import { AdminTableShell, BottomPagination, BusinessStatePanel } from '@sdkwork/cloudroutes-pc-commons';
+import { AdminTableShell, BottomPagination, BusinessStatePanel, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import {
   MONITOR_OVERVIEW_SAMPLE_PAGE_SIZE,
   MonitorService,
@@ -49,7 +49,7 @@ function NodesTab() {
       setNodes(nodesPage.items);
       setTotalNodes(nodesPage.total);
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : t('admin.monitor.nodes.loadFallback', 'Failed to load system metrics'));
+      setLoadError(resolveProblemMessage(error, t, t('admin.monitor.nodes.loadFallback', 'Failed to load system metrics')));
     } finally {
       setLoading(false);
     }
@@ -313,7 +313,7 @@ function AlertsTab() {
       setAlerts(alertsPage.items);
       setTotalAlerts(alertsPage.total);
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : t('admin.monitor.alerts.loadFallback', 'Failed to load alerts'));
+      setLoadError(resolveProblemMessage(error, t, t('admin.monitor.alerts.loadFallback', 'Failed to load alerts')));
     } finally {
       setLoading(false);
     }

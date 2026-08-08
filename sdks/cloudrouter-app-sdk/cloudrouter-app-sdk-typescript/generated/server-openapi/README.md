@@ -27,7 +27,10 @@ client.setAuthToken('your-auth-token');
 client.setAccessToken('your-access-token');
 
 // Use the SDK
-const result = await client.ai.generations.list();
+const body = {
+  inviteCode: 'inviteCode',
+};
+const result = await client.iam.invite.validate.create(body);
 ```
 
 ## Authentication
@@ -85,8 +88,11 @@ const result = await client.chat.conversations.list(params);
 ### iam
 
 ```typescript
-// List settings
-const result = await client.iam.users.settings.retrieve();
+// Validate invite code
+const body = {
+  inviteCode: 'inviteCode',
+};
+const result = await client.iam.invite.validate.create(body);
 ```
 
 ### memory
@@ -142,7 +148,10 @@ const result = await client.system.site.runtime.retrieve(params);
 import { SdkworkAppClient, NetworkError, TimeoutError, AuthenticationError } from '@sdkwork/cloudrouter-app-sdk';
 
 try {
-  const result = await client.ai.generations.list();
+  const body = {
+    inviteCode: 'inviteCode',
+  };
+  const result = await client.iam.invite.validate.create(body);
 } catch (error) {
   if (error instanceof AuthenticationError) {
     console.error('Authentication failed:', error.message);

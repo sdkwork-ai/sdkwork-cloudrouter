@@ -100,6 +100,9 @@ pub fn edge_server_config_from_env_or_runtime_toml(
     if let Some(edge) = edge {
         config = config.with_cors_allowed_origins(&edge.cors_allowed_origins)?;
     }
+    // Merge the canonical shared env key into the portal CORS policy and
+    // route all CORS response handling through `sdkwork-web-core::CorsPolicy`.
+    config = config.with_portal_cors_policy_from_env()?;
 
     Ok(config)
 }

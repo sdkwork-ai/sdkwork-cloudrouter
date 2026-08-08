@@ -1,6 +1,7 @@
 import type { ChangeEvent, FormEvent, ReactNode } from 'react';
 import { AlertCircle, Loader2, Search, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import type { UpstreamAccountGroup } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 
 export const inputClass = 'h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-white/10 dark:bg-[#111] dark:text-white';
@@ -233,6 +234,18 @@ export function Section({ title, action, children }: { title: string; action?: R
 export function errorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message.trim()) return error.message;
   return fallback;
+}
+
+/**
+ * Error text with backend problem translation: `i18nKey` -> `errors.result.<code>`
+ * -> raw backend detail (`I18N_SPEC.md` §7). Requires a translation function.
+ */
+export function errorMessageI18n(
+  error: unknown,
+  fallback: string,
+  t: (key: string, options?: { defaultValue?: string } & Record<string, unknown>) => string,
+): string {
+  return resolveProblemMessage(error, t, fallback);
 }
 
 function groupLanguage(language: string | undefined): string {

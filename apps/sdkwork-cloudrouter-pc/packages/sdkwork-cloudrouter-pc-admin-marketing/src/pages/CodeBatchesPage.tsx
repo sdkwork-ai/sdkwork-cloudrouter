@@ -17,6 +17,7 @@ import {
   type CodeBatchCreateFormValues,
 } from '../marketingService';
 import { usePromotionReferences } from '../usePromotionReferences';
+import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 
 export function CodeBatchesPage() {
   const { t } = useTranslation();
@@ -52,7 +53,7 @@ export function CodeBatchesPage() {
       // 生成完成后直接进入批次券码页
       navigate(`/admin/marketing/codeBatches/${batch.id}`);
     } catch (createError) {
-      setSaveError(createError instanceof Error ? createError.message : t('admin.marketing.promotions.codeBatches.createError', 'Failed to generate code batch'));
+      setSaveError(resolveProblemMessage(createError, t, t('admin.marketing.promotions.codeBatches.createError', 'Failed to generate code batch')));
     } finally {
       setIsSaving(false);
     }

@@ -14,6 +14,11 @@
 services:
   postgres:
     image: postgres:16-alpine
+    # Survive host/WSL restarts together with the gateway (commercial ops).
+    restart: unless-stopped
+    # Server-side connection ceiling: sized for high-concurrency app pools
+    # (tune PG_MAX_CONNECTIONS together with CLOUDROUTER_DATABASE_MAX_CONNECTIONS).
+    command: ["postgres", "-c", "max_connections=${PG_MAX_CONNECTIONS:-200}"]
     environment:
       POSTGRES_DB: ${CLOUDROUTER_POSTGRES_DB:-sdkwork_ai_prod}
       POSTGRES_USER: ${CLOUDROUTER_POSTGRES_USER:-sdkwork_ai_prod}
@@ -31,6 +36,8 @@ services:
 
   redis:
     image: redis:7-alpine
+    # Survive host/WSL restarts together with the gateway (commercial ops).
+    restart: unless-stopped
     volumes:
       - redis-data:/data
     healthcheck:
@@ -47,6 +54,32 @@ services:
       # Deployment identity (DEPLOYMENT_SPEC §5.2).
       SDKWORK_CLOUDROUTER_DEPLOYMENT_PROFILE: standalone
       SDKWORK_CLOUDROUTER_RUNTIME_TARGET: container
+      # IAM deployment posture: the standalone container runs in explicit
+      # development mode so the IAM resolver accepts the gateway-issued
+      # bootstrap Access-Token (credential-entry login flow) through the
+      # development authentication fallback. Production deployments must
+      # instead set SDKWORK_ENV to a production value, provide
+      # SDKWORK_IAM_SIGNING_MASTER_SECRET, and inject a signed token via
+      # SDKWORK_ACCESS_TOKEN.
+      SDKWORK_ENV: development
+      # IAM super-admin bootstrap password: when set, the IAM bootstrap
+      # provisions/updates the password credential for the default admin user
+      # (SDKWORK_IAM_SUPER_ADMIN_PASSWORD). Leave empty for default
+      # deployments; production must set it (or SDKWORK_IAM_BOOTSTRAP_PASSWORD).
+      SDKWORK_IAM_SUPER_ADMIN_PASSWORD: ${SDKWORK_IAM_SUPER_ADMIN_PASSWORD:-}
+      # Browser CORS allow-list for the API plane. The gateway runs in a
+      # production posture (SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT defaults to
+      # prod), where cross-origin browser requests are rejected unless the
+      # origin is listed here. Add every public domain that serves the portal
+      # (see docker/nginx/testrouterdocker-cloudrouter.conf) plus local host ports
+      # used for direct access. Override/extend via .env
+      # (SDKWORK_CORS_ALLOWED_ORIGINS).
+      #
+      # SDKWORK_CORS_ALLOWED_ORIGINS is the canonical shared key for every
+      # SDKWork service (SOURCE_CONFIG_SPEC): both the IAM API surfaces
+      # (sdkwork-iam-web-adapter) and the Cloud Router API surfaces
+      # (sdkwork-cloudrouter-http) resolve the same allow-list from it.
+      SDKWORK_CORS_ALLOWED_ORIGINS: ${SDKWORK_CORS_ALLOWED_ORIGINS:-http://testrouterdocker.sdkwork.com,http://testdocker.dtuplay.com,http://testdocker.birdcoder.com,http://localhost:3903,http://127.0.0.1:3903}
       # Application public ingress bind: topology-resolved, never hard-coded
       # in source. Container-internal 3900 is the spec default; the host port
       # mapping above keeps it off the `pnpm dev` ports.
@@ -54,21 +87,32 @@ services:
       SDKWORK_CLOUDROUTER_SERVER_BIND: 0.0.0.0:3900
       # External dependencies are injected at runtime, not baked into the image.
       # Split database fields (with explicit schema) instead of a raw URL so
-      # the lifecycle schema identity is unambiguous.
+      # the lifecycle schema identity is unambiguous. Hosts/ports default to
+      # the compose services and can be pointed at managed services via .env.
       SDKWORK_DATABASE_ENGINE: postgresql
-      SDKWORK_DATABASE_HOST: postgres
-      SDKWORK_DATABASE_PORT: "5432"
+      SDKWORK_DATABASE_HOST: ${CLOUDROUTER_POSTGRES_HOST:-postgres}
+      SDKWORK_DATABASE_PORT: ${CLOUDROUTER_POSTGRES_PORT:-5432}
       SDKWORK_DATABASE_NAME: ${CLOUDROUTER_POSTGRES_DB:-sdkwork_ai_prod}
       SDKWORK_DATABASE_SCHEMA: ${CLOUDROUTER_POSTGRES_SCHEMA:-sdkwork_ai_prod}
       SDKWORK_DATABASE_USERNAME: ${CLOUDROUTER_POSTGRES_USER:-sdkwork_ai_prod}
       SDKWORK_DATABASE_PASSWORD: ${CLOUDROUTER_POSTGRES_PASSWORD:-sdkwork_ai_prod}
       SDKWORK_DATABASE_SSL_MODE: disable
-      SDKWORK_DATABASE_MAX_CONNECTIONS: "10"
+      # Connection pool sizing for high-concurrency workloads. Rule of thumb:
+      # max_connections ~= CPU cores x 4 (capped), keep PG server
+      # max_connections (PG_MAX_CONNECTIONS) comfortably above it. Tune all of
+      # these via .env (see docker/.env.example).
+      SDKWORK_DATABASE_MAX_CONNECTIONS: ${CLOUDROUTER_DATABASE_MAX_CONNECTIONS:-50}
+      SDKWORK_DATABASE_MIN_CONNECTIONS: ${CLOUDROUTER_DATABASE_MIN_CONNECTIONS:-5}
+      SDKWORK_DATABASE_ACQUIRE_TIMEOUT: ${CLOUDROUTER_DATABASE_ACQUIRE_TIMEOUT:-30}
+      SDKWORK_DATABASE_IDLE_TIMEOUT: ${CLOUDROUTER_DATABASE_IDLE_TIMEOUT:-600}
+      SDKWORK_DATABASE_MAX_LIFETIME: ${CLOUDROUTER_DATABASE_MAX_LIFETIME:-1800}
       SDKWORK_CLOUDROUTER_REDIS_ENABLED: "true"
-      SDKWORK_CLOUDROUTER_REDIS_HOST: redis
-      SDKWORK_CLOUDROUTER_REDIS_PORT: "6379"
+      SDKWORK_CLOUDROUTER_REDIS_HOST: ${CLOUDROUTER_REDIS_HOST:-redis}
+      SDKWORK_CLOUDROUTER_REDIS_PORT: ${CLOUDROUTER_REDIS_PORT:-6379}
       SDKWORK_CLOUDROUTER_REDIS_DATABASE: "0"
       SDKWORK_CLOUDROUTER_REDIS_KEY_PREFIX: cloudrouter
+      # Redis connection pool for high-concurrency workloads (tunable via .env).
+      SDKWORK_CLOUDROUTER_REDIS_MAX_CONNECTIONS: ${CLOUDROUTER_REDIS_MAX_CONNECTIONS:-50}
       # API key pepper: injected at runtime, never baked into the image.
       # Override via .env (CLOUDROUTER_API_KEY_PEPPER); production should use
       # SDKWORK_CLOUDROUTER_API_KEY_PEPPER_FILE with a mounted secret instead.
@@ -83,19 +127,48 @@ services:
       SDKWORK_CLOUDROUTER_TRUSTED_SUBJECT_SECRET: ${CLOUDROUTER_TRUSTED_SUBJECT_SECRET:-cloudrouter-local-dev-trusted-subject-change-me}
       SDKWORK_CLOUDROUTER_APP_SESSION_SECRET: ${CLOUDROUTER_APP_SESSION_SECRET:-cloudrouter-local-dev-app-session-change-me}
       SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET: ${CLOUDROUTER_PAYMENT_WEBHOOK_SECRET:-cloudrouter-local-dev-payment-webhook-change-me}
+      # Payment sandbox: local/development deployments default to the built-in
+      # sandbox provider registry so recharge/checkout flows are exercisable.
+      # Set CLOUDROUTER_PAYMENT_SANDBOX=0 (and configure provider secrets) for
+      # real payment providers.
+      SDKWORK_CLOUDROUTER_PAYMENT_SANDBOX: ${CLOUDROUTER_PAYMENT_SANDBOX:-1}
       # Payment credential master key: a file on the durable data volume
       # (auto-created on first start in development-like environments).
       # Production should pre-provision this file (or install a cipher host).
       SDKWORK_PAYMENT_CREDENTIAL_MASTER_KEY_FILE: /var/lib/sdkwork/router/secrets/payment-credential-master.key
+      # Process log level (tracing reads RUST_LOG directly). Set RUST_LOG=debug
+      # in .env to increase verbosity at deployment time.
+      RUST_LOG: ${RUST_LOG:-info}
     volumes:
       # Durable data lives on a mounted volume (RUNTIME_DIRECTORY_SPEC §4.5).
       - router-data:/var/lib/sdkwork/router
+      # Runtime configuration: edit docker/config/cloudrouter.toml and
+      # `docker compose up -d` to apply. Sensitive values come from env.
+      - ./docker/config/cloudrouter.toml:/etc/sdkwork/router/cloudrouter.toml:ro
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     restart: unless-stopped
+    # Gateway readiness probe: compose can restart/replace the gateway when it
+    # stops answering, and orchestrators can schedule dependents on it.
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:3900/readyz >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    # Commercial deployment guardrails: bound the gateway to predictable CPU
+    # and memory (tune via .env) so noisy neighbors cannot starve the host.
+    deploy:
+      resources:
+        limits:
+          cpus: ${CLOUDROUTER_CPU_LIMIT:-4.0}
+          memory: ${CLOUDROUTER_MEMORY_LIMIT:-4g}
+        reservations:
+          cpus: ${CLOUDROUTER_CPU_RESERVATION:-1.0}
+          memory: ${CLOUDROUTER_MEMORY_RESERVATION:-1g}
 
 volumes:
   postgres-data:

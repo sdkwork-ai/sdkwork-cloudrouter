@@ -68,6 +68,15 @@ jobs:
       - name: API standard extensions
         run: pnpm api:standard-extensions:check
 
+      - name: Packaging content standard (PACKAGING_SPEC §6 gate)
+        run: pnpm check:package-content
+
+      - name: Portal dist consistency (index.html asset references resolve)
+        run: pnpm check:portal-dist
+
+      - name: Packaging plan check (container + install packages)
+        run: pnpm check:packaging --if-present
+
       - name: Install PC workspace dependencies
         working-directory: apps/sdkwork-cloudrouter-pc
         run: pnpm install --frozen-lockfile

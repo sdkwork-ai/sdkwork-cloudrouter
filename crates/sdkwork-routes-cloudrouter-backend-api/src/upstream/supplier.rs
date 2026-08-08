@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use super::shared::{
     bounded_list_response, collection_item_response, decode_json, decode_query, domain_error,
     idempotency_uuid, item_response, list_query, list_response, no_content_response, not_found,
-    optional_text, parse_id, parse_if_match, problem, requested_at, required_text, subject,
+    optional_text, parse_id, parse_if_match, problem, problem_keyed, requested_at, required_text, subject,
     ListQuery, RequestResult, UpstreamState, MAX_NESTED_ITEMS,
 };
 
@@ -536,8 +536,10 @@ fn create_command(
         MAX_CODE_LENGTH,
     )?;
     if supplier_type == "official" && default_vendor_code.is_none() {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.supplier.defaultVendorCode.officialRequired",
+            serde_json::Value::Null,
             "defaultVendorCode is required for official suppliers",
         ));
     }
@@ -587,8 +589,10 @@ fn update_command(
         None => existing.default_vendor_code,
     };
     if supplier_type == "official" && default_vendor_code.is_none() {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.supplier.defaultVendorCode.officialRequired",
+            serde_json::Value::Null,
             "defaultVendorCode is required for official suppliers",
         ));
     }
@@ -679,14 +683,18 @@ fn auth_method_inputs(
         .into_iter()
         .map(|item| {
             if !item.config_schema.is_object() {
-                return Err(problem(
+                return Err(problem_keyed(
                     SdkWorkResultCode::InvalidParameter,
+                    "validation.admin.upstream.authMethod.configSchema.object",
+                    serde_json::Value::Null,
                     "configSchema must be a JSON object",
                 ));
             }
             if !item.runtime_auth_config.is_object() {
-                return Err(problem(
+                return Err(problem_keyed(
                     SdkWorkResultCode::InvalidParameter,
+                    "validation.admin.upstream.authMethod.runtimeAuthConfig.object",
+                    serde_json::Value::Null,
                     "runtimeAuthConfig must be a JSON object",
                 ));
             }
@@ -728,15 +736,19 @@ fn resource_inputs(
             )?
             .unwrap_or_default();
             if resource_code.is_empty() == resource_group_code.is_empty() {
-                return Err(problem(
+                return Err(problem_keyed(
                     SdkWorkResultCode::InvalidParameter,
+                    "validation.admin.upstream.resource.codeGroup.oneOf",
+                    serde_json::Value::Null,
                     "exactly one of resourceCode or resourceGroupCode is required",
                 ));
             }
             let grant_type = item.grant_type.unwrap_or_else(|| "allow".to_owned());
             if !matches!(grant_type.as_str(), "allow" | "deny") {
-                return Err(problem(
+                return Err(problem_keyed(
                     SdkWorkResultCode::InvalidParameter,
+                    "validation.admin.upstream.resource.grantType.enum",
+                    serde_json::json!({ "allowed": ["allow", "deny"] }),
                     "grantType must be allow or deny",
                 ));
             }
@@ -754,8 +766,10 @@ fn resource_inputs(
 fn supplier_type(value: String) -> RequestResult<String> {
     let value = required_text(value, "supplierType", 32)?;
     if !matches!(value.as_str(), "official" | "relay") {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.supplier.supplierType.enum",
+            serde_json::json!({ "allowed": ["official", "relay"] }),
             "supplierType must be official or relay",
         ));
     }
@@ -765,8 +779,10 @@ fn supplier_type(value: String) -> RequestResult<String> {
 fn auth_type(value: String) -> RequestResult<String> {
     let value = required_text(value, "authType", 64)?;
     if !matches!(value.as_str(), "api_key" | "bearer_token" | "custom") {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.supplier.authType.unsupported",
+            serde_json::Value::Null,
             "authType is not supported",
         ));
     }
@@ -775,8 +791,10 @@ fn auth_type(value: String) -> RequestResult<String> {
 
 fn status(value: i32) -> RequestResult<i32> {
     if !matches!(value, 0 | 1) {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.status.enum",
+            serde_json::json!({ "allowed": [0, 1] }),
             "status must be 0 or 1",
         ));
     }
@@ -785,8 +803,10 @@ fn status(value: i32) -> RequestResult<i32> {
 
 fn non_negative(value: i32, field: &str) -> RequestResult<i32> {
     if value < 0 {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.field.nonNegative",
+            serde_json::json!({ "field": field }),
             format!("{field} must be non-negative"),
         ));
     }
@@ -795,8 +815,10 @@ fn non_negative(value: i32, field: &str) -> RequestResult<i32> {
 
 fn positive_optional(value: Option<i32>, field: &str) -> RequestResult<Option<i32>> {
     if value.is_some_and(|value| value <= 0) {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.field.positive",
+            serde_json::json!({ "field": field }),
             format!("{field} must be positive"),
         ));
     }
@@ -805,8 +827,10 @@ fn positive_optional(value: Option<i32>, field: &str) -> RequestResult<Option<i3
 
 fn ensure_count(count: usize, field: &str) -> RequestResult<()> {
     if count > MAX_NESTED_ITEMS {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.field.maxItems",
+            serde_json::json!({ "field": field, "max": MAX_NESTED_ITEMS }),
             format!("{field} must contain at most {MAX_NESTED_ITEMS} items"),
         ));
     }

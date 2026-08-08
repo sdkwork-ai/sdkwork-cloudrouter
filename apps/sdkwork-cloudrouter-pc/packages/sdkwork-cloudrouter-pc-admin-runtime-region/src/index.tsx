@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { Globe2, Loader2, MapPin, RefreshCw, Route, Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { BusinessStatePanel } from '@sdkwork/cloudroutes-pc-commons';
+import { BusinessStatePanel, getLoadErrorMessage} from '@sdkwork/cloudroutes-pc-commons';
 import {
   DEFAULT_RUNTIME_REGION_SETTINGS,
   RuntimeRegionService,
@@ -68,7 +68,7 @@ export function RuntimeRegionAdmin() {
       }
     } catch (error) {
       if (isActive()) {
-        setLoadError(errorMessage(error, t('admin.runtimeRegion.errors.loadFallback')));
+        setLoadError(errorMessage(error, t('admin.runtimeRegion.errors.loadFallback'), t));
       }
     } finally {
       if (isActive()) {
@@ -101,7 +101,7 @@ export function RuntimeRegionAdmin() {
       setForm(saved);
       setSaveSuccess(t('admin.runtimeRegion.messages.saved'));
     } catch (error) {
-      setSaveError(errorMessage(error, t('admin.runtimeRegion.errors.saveFallback')));
+      setSaveError(errorMessage(error, t('admin.runtimeRegion.errors.saveFallback'), t));
     } finally {
       setSaving(false);
     }
@@ -295,6 +295,6 @@ function TextArea({ label, value, onChange, className = '', rows = 4 }: {
   );
 }
 
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
+function errorMessage(error: unknown, fallback: string, t?: (key: string, options?: { defaultValue?: string } & Record<string, unknown>) => string): string {
+  return getLoadErrorMessage(error, fallback, t);
 }

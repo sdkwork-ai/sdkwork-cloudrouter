@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use super::shared::{
     bounded_list_response, collection_item_response, decode_json, decode_query, domain_error,
     idempotency_uuid, item_response, list_query, list_response, no_content_response, not_found,
-    optional_text, parse_id, parse_if_match, positive_decimal, problem, requested_at,
+    optional_text, parse_id, parse_if_match, positive_decimal, problem, problem_keyed, requested_at,
     required_text, subject, verification_error, ListQuery, RequestResult, UpstreamState,
 };
 use super::supplier::ResourceResponse;
@@ -546,8 +546,10 @@ fn resource_inputs(
     request: AccountResourceReplaceRequest,
 ) -> RequestResult<Vec<AdminUpstreamResourceInput>> {
     if request.items.len() > 200 {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.account.resources.maxItems",
+            serde_json::json!({ "max": 200 }),
             "at most 200 resources are allowed",
         ));
     }
@@ -564,15 +566,19 @@ fn resource_inputs(
             )?
             .unwrap_or_default();
             if resource_code.is_empty() == resource_group_code.is_empty() {
-                return Err(problem(
+                return Err(problem_keyed(
                     SdkWorkResultCode::InvalidParameter,
+                    "validation.admin.upstream.resource.codeGroup.oneOf",
+                    serde_json::Value::Null,
                     "exactly one of resourceCode or resourceGroupCode is required",
                 ));
             }
             let grant_type = item.grant_type.unwrap_or_else(|| "allow".to_owned());
             if !matches!(grant_type.as_str(), "allow" | "deny") {
-                return Err(problem(
+                return Err(problem_keyed(
                     SdkWorkResultCode::InvalidParameter,
+                    "validation.admin.upstream.resource.grantType.enum",
+                    serde_json::json!({ "allowed": ["allow", "deny"] }),
                     "grantType must be allow or deny",
                 ));
             }
@@ -590,8 +596,10 @@ fn resource_inputs(
 fn verification_timeout_ms(value: Option<u64>) -> RequestResult<u64> {
     let value = value.unwrap_or(10_000);
     if !(100..=30_000).contains(&value) {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.account.timeoutMs.range",
+            serde_json::json!({ "min": 100, "max": 30_000 }),
             "timeoutMs must be between 100 and 30000",
         ));
     }
@@ -758,8 +766,10 @@ fn credential_command(
         .as_deref()
         .is_some_and(|value| parse_datetime(value, None).is_none())
     {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.credential.expiresAt.timestamp",
+            serde_json::Value::Null,
             "expiresAt must be an RFC 3339 timestamp",
         ));
     }
@@ -779,14 +789,18 @@ fn non_negative_decimal(value: String, field: &str) -> RequestResult<String> {
     let value = required_text(value, field, 64)?;
     let parsed =
         sdkwork_cloudrouter_router_service::domain::DecimalValue::parse(&value).map_err(|_| {
-            problem(
+            problem_keyed(
                 SdkWorkResultCode::InvalidParameter,
+                "validation.admin.upstream.field.nonNegativeDecimal",
+                serde_json::json!({ "field": field }),
                 format!("{field} must be a non-negative decimal"),
             )
         })?;
     if parsed < sdkwork_cloudrouter_router_service::domain::DecimalValue::ZERO {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.field.nonNegative",
+            serde_json::json!({ "field": field }),
             format!("{field} must be non-negative"),
         ));
     }
@@ -795,8 +809,10 @@ fn non_negative_decimal(value: String, field: &str) -> RequestResult<String> {
 
 fn status(value: i32) -> RequestResult<i32> {
     if !matches!(value, 0 | 1) {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.status.enum",
+            serde_json::json!({ "allowed": [0, 1] }),
             "status must be 0 or 1",
         ));
     }
@@ -805,8 +821,10 @@ fn status(value: i32) -> RequestResult<i32> {
 
 fn non_negative_i64(value: Option<i64>, field: &str) -> RequestResult<Option<i64>> {
     if value.is_some_and(|value| value < 0) {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.field.nonNegative",
+            serde_json::json!({ "field": field }),
             format!("{field} must be non-negative"),
         ));
     }
@@ -815,8 +833,10 @@ fn non_negative_i64(value: Option<i64>, field: &str) -> RequestResult<Option<i64
 
 fn non_negative_i32(value: i32, field: &str) -> RequestResult<i32> {
     if value < 0 {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.field.nonNegative",
+            serde_json::json!({ "field": field }),
             format!("{field} must be non-negative"),
         ));
     }
@@ -825,8 +845,10 @@ fn non_negative_i32(value: i32, field: &str) -> RequestResult<i32> {
 
 fn positive_i32(value: Option<i32>, field: &str) -> RequestResult<Option<i32>> {
     if value.is_some_and(|value| value <= 0) {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.field.positive",
+            serde_json::json!({ "field": field }),
             format!("{field} must be positive"),
         ));
     }

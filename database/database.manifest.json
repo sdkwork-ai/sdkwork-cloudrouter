@@ -14,8 +14,7 @@
   "baselineAnchorTable": "ai_upstream_supplier",
   "modules": [
     "gateway-iam",
-    "operations",
-    "ai-metering"
+    "operations"
   ],
   "lifecycle": {
     "autoMigrate": false,
@@ -47,7 +46,7 @@
     "provider": "default",
     "hooks": []
   },
-  "materializedTableCount": 39,
+  "materializedTableCount": 41,
   "materializedTables": [
     "ai_chat_context_snapshot",
     "ai_chat_conversation",
@@ -87,8 +86,14 @@
     "ai_upstream_supplier_auth_method",
     "ai_upstream_supplier_endpoint",
     "ai_upstream_supplier_endpoint_health_state",
-    "ai_upstream_supplier_resource"
+    "ai_upstream_supplier_resource",
+    "iam_user_preference",
+    "integration_webhook_endpoint"
   ],
   "databaseRole": "authoritative-server",
-  "tablePrefix": "ai_"
+  "tablePrefixes": [
+    "ai_",
+    "iam_user_",
+    "integration_"
+  ]
 }

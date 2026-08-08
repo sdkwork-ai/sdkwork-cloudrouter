@@ -23,6 +23,7 @@ sdkwork-models-database-host.workspace = true
 sdkwork_models_catalog_repository_sqlx.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
+url.workspace = true
 
 [dev-dependencies]
 chrono.workspace = true

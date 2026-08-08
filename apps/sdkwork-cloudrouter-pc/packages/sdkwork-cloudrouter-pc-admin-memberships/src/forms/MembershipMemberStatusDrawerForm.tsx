@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import {
   MembershipFormActions,
   MembershipFormFrame,
@@ -36,7 +37,7 @@ export function MembershipMemberStatusDrawerForm({
     try {
       await onSubmit(status);
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('admin.commerce.memberships.members.statusForm.error', 'Membership status could not be updated'));
+      setError(resolveProblemMessage(saveError, t, t('admin.commerce.memberships.members.statusForm.error', 'Membership status could not be updated')));
     } finally {
       setIsSaving(false);
     }

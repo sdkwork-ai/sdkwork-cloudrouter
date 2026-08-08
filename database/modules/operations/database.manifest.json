@@ -10,7 +10,6 @@
     "postgres"
   ],
   "defaultEngine": "postgres",
-  "tablePrefix": "ops_",
   "contractVersion": "0.4.0",
   "baselineStrategy": "baseline-plus-migrations",
   "baselineAnchorTable": "ops_gateway_instance",
@@ -61,5 +60,8 @@
     "ops_referral_relation",
     "ops_referral_stat_snapshot",
     "ops_referral_strategy"
+  ],
+  "tablePrefixes": [
+    "ops_"
   ]
 }

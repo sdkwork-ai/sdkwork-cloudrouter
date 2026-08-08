@@ -1,16 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BusinessStatePanel } from '@sdkwork/cloudroutes-pc-commons';
+import { BusinessStatePanel, getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons';
 import { MessagesService, type MessageItem } from './messagesService';
 
 function markMessageReadFeedback(messages: MessageItem[], messageId: string): MessageItem[] {
   return messages.map((message) => (
     message.id === messageId ? { ...message, read: true } : message
   ));
-}
-
-function getLoadErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
 }
 
 export function MessagesView() {

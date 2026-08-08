@@ -166,7 +166,7 @@ async fn ensure_default_upstream_account_group(
         INSERT INTO ai_upstream_account_group
             (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, group_name, group_code, description, group_type, environment, pricing_plan_id, pricing_plan_code, cost_multiplier, sale_multiplier, billing_type, capacity_limit, allowed_origin, metadata)
         VALUES
-            ($1, $2, $3, $4, 1, 1, $5::timestamptz, $6::timestamptz, 0, $7, $8, '', 'default', 1, $9, $10, $11::numeric, $12::numeric, 1, 0, '{}'::jsonb, '{}'::jsonb)
+            ($1, $2, $3, $4, 1, 1, $5::timestamptz, $6::timestamptz, 0, $7, $8, '', 'mixed', 1, $9, $10, $11::numeric, $12::numeric, 1, 0, '{}'::jsonb, '{}'::jsonb)
         ON CONFLICT (tenant_id, organization_id, group_code)
         DO UPDATE SET
             status = 1,

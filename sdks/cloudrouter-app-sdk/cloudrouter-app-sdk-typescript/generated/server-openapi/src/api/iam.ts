@@ -44,7 +44,7 @@ export class IamInvitesValidateApi {
 
 /** Validate invite code */
   async create(body: AppInviteValidateRequest, requestOptions?: ApiRequestOptions): Promise<AppInviteValidateResponse> {
-    return this.client.request<AppInviteValidateResponse>(appApiPath(`/iam/invites/validate`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<AppInviteValidateResponse>(appApiPath(`/iam/invites/validate`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', skipAuth: true, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -81,7 +81,7 @@ export class IamInvitePolicyApi {
       { name: 'tenant_code', value: params?.tenantCode, style: 'form', explode: true, allowReserved: false },
       { name: 'organization_code', value: params?.organizationCode, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AppInvitePolicyResponse>(appendQueryString(appApiPath(`/iam/invite/policy`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<AppInvitePolicyResponse>(appendQueryString(appApiPath(`/iam/invite/policy`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, skipAuth: true, sdkworkUnwrapKind: 'data' });
   }
 }
 

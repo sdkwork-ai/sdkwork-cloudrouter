@@ -167,7 +167,7 @@ export default function App() {
               <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
             </Route>
 
-            <Route path="*" element={<MainLayout isDark={isDark} toggleTheme={toggleTheme} />} />
+            <Route path="*" element={<RequirePortalSession><MainLayout isDark={isDark} toggleTheme={toggleTheme} /></RequirePortalSession>} />
           </Routes>
         </Suspense>
       </div>

@@ -76,6 +76,183 @@ pub fn problem_from_wire_code(
     ProblemResponse::from_legacy(wire_code.as_ref(), detail.into(), new_trace_id())
 }
 
+/// Keyed variant of [`problem_from_wire_code`] carrying a specific `i18nKey` and
+/// sanitized interpolation params (`I18N_SPEC.md` §5/§9).
+pub fn problem_from_wire_code_keyed(
+    wire_code: impl AsRef<str>,
+    i18n_key: &str,
+    params: serde_json::Value,
+    detail: impl Into<String>,
+) -> ProblemResponse {
+    let mut response = ProblemResponse::from_legacy(
+        wire_code.as_ref(),
+        detail.into(),
+        new_trace_id(),
+    );
+    response.i18n_key = Some(i18n_key.to_owned());
+    response.params = Some(params);
+    response
+}
+
+/// Resolves a stable shared validation template to its semantic `i18nKey` and
+/// interpolation params (`I18N_SPEC.md` §5).
+///
+/// Cross-module validation helpers (pagination, search text, header checks,
+/// entity-not-found) emit frozen English templates. Mapping those stable
+/// templates here — once, at the response boundary — gives every list/retrieve
+/// endpoint translatable metadata without per-site duplication. Non-matching
+/// messages keep the platform `errors.result.<code>` key. The mapping is
+/// presentation-only: machine state remains the numeric result code.
+fn shared_validation_message_key(detail: &str) -> Option<(&'static str, serde_json::Value)> {
+    const EXACT: &[(&str, &str)] = &[
+        // pagination / list
+        ("at least one domain is required", "validation.common.domain.atLeastOne"),
+        ("domain must be a hostname or URL host", "validation.common.domain.hostname"),
+        ("storage query parameters are invalid", "validation.admin.storage.query.invalid"),
+        // service node
+        ("status must be enabled or disabled", "validation.common.status.enabledOrDisabled"),
+        ("status must be changed through status endpoint", "business.admin.serviceNode.statusEndpoint"),
+        ("service node update fields are required", "validation.admin.serviceNode.update.required"),
+        // api keys / auth
+        ("keyPrefix must identify an existing API key prefix", "validation.admin.apiKey.keyPrefix.identifies"),
+        ("appId is invalid", "validation.common.appId.invalid"),
+        ("apiKeyId must be a positive integer", "validation.common.apiKeyId.positiveInteger"),
+        // common
+        ("ip must be a valid IPv4 or IPv6 address", "validation.common.ip.invalid"),
+        ("base URL must be a valid URL", "validation.common.baseUrl.invalid"),
+        ("deployment profile must be standalone or cloud", "validation.common.deploymentProfile.enum"),
+        // app-facing
+        ("notificationId is invalid", "validation.app.notification.notificationId.invalid"),
+        ("invite code is invalid or inactive", "validation.app.invite.code.invalidOrInactive"),
+        ("datasets must not be empty", "validation.app.chat.datasets.notEmpty"),
+        ("a user cannot invite themselves", "business.app.invite.selfInvite.denied"),
+        // upstream
+        ("accountGroup must identify an existing upstream account group", "validation.admin.upstream.accountGroup.identifies"),
+    ];
+    if let Some((_, key)) = EXACT.iter().find(|(template, _)| *template == detail) {
+        return Some((key, serde_json::Value::Null));
+    }
+
+    // Pagination messages carry bounds as interpolation params.
+    if detail == "page must be greater than or equal to 1" {
+        return Some((
+            "validation.common.list.page.min",
+            serde_json::json!({ "min": 1 }),
+        ));
+    }
+    if detail == "page and page_size produce an unsupported offset" {
+        return Some((
+            "validation.common.list.offset.overflow",
+            serde_json::Value::Null,
+        ));
+    }
+
+    if let Some(max) = detail.strip_prefix("page must be between 1 and ") {
+        if !max.is_empty() && max.chars().all(|c| c.is_ascii_digit()) {
+            return Some((
+                "validation.common.list.page.max",
+                serde_json::json!({ "max": max }),
+            ));
+        }
+    }
+    if let Some(max) = detail.strip_prefix("page_size must be between 1 and ") {
+        if !max.is_empty() && max.chars().all(|c| c.is_ascii_digit()) {
+            return Some((
+                "validation.common.list.pageSize.range",
+                serde_json::json!({ "min": 1, "max": max }),
+            ));
+        }
+    }
+    if let Some(rest) = detail.strip_suffix(" characters") {
+        if let Some((field, max)) = rest.rsplit_once(" and at most ") {
+            if !max.is_empty() && max.chars().all(|c| c.is_ascii_digit()) {
+                if let Some(field) = field.strip_suffix(" must be visible text") {
+                    return Some((
+                        "validation.common.field.visibleText",
+                        serde_json::json!({ "field": field.trim(), "maxLength": max }),
+                    ));
+                }
+            }
+        }
+    }
+    if let Some(field) = detail.strip_suffix(" must be a non-negative int64 string") {
+        return Some((
+            "validation.common.field.nonNegativeInt64",
+            serde_json::json!({ "field": field.trim() }),
+        ));
+    }
+    if let Some(field) = detail.strip_suffix(" must be a positive integer or null") {
+        return Some((
+            "validation.common.field.positiveIntegerOrNull",
+            serde_json::json!({ "field": field.trim() }),
+        ));
+    }
+    if let Some(field) = detail.strip_suffix(" must be a positive integer") {
+        return Some((
+            "validation.common.field.positiveInteger",
+            serde_json::json!({ "field": field.trim() }),
+        ));
+    }
+    if let Some(field) = detail.strip_suffix(" must be a MediaResource object") {
+        return Some((
+            "validation.common.field.mediaResource",
+            serde_json::json!({ "field": field.trim() }),
+        ));
+    }
+    if let Some(field) = detail.strip_suffix(" must be a JSON object") {
+        return Some((
+            "validation.common.field.jsonObject",
+            serde_json::json!({ "field": field.trim() }),
+        ));
+    }
+    if let Some(field) = detail.strip_suffix(" must be a JSON array") {
+        return Some((
+            "validation.common.field.jsonArray",
+            serde_json::json!({ "field": field.trim() }),
+        ));
+    }
+    if let Some((field, pattern)) = detail.split_once(" must match ") {
+        return Some((
+            "validation.common.field.pattern",
+            serde_json::json!({ "field": field.trim(), "pattern": pattern.trim() }),
+        ));
+    }
+    if let Some(name) = detail.strip_suffix(" header must be visible ASCII") {
+        return Some((
+            "validation.common.header.visibleAscii",
+            serde_json::json!({ "name": name.trim() }),
+        ));
+    }
+    if let Some(name) = detail.strip_suffix(" header is required") {
+        return Some((
+            "validation.common.header.required",
+            serde_json::json!({ "name": name.trim() }),
+        ));
+    }
+    if let Some(field) = detail.strip_suffix(" is required") {
+        return Some((
+            "validation.common.field.required",
+            serde_json::json!({ "field": field.trim() }),
+        ));
+    }
+    for (prefix, key) in [
+        ("refund cancel request body is invalid: ", "validation.payment.refundCancel.body.invalid"),
+        ("payment refund request body is invalid: ", "validation.payment.refund.body.invalid"),
+        ("payment intent request body is invalid: ", "validation.payment.intent.body.invalid"),
+    ] {
+        if let Some(error) = detail.strip_prefix(prefix) {
+            return Some((key, serde_json::json!({ "error": error.trim() })));
+        }
+    }
+    if let Some(entity) = detail.strip_suffix(" was not found") {
+        return Some((
+            "business.common.notFound",
+            serde_json::json!({ "entity": entity.trim() }),
+        ));
+    }
+    None
+}
+
 pub fn problem_from_wire_code_for_context(
     context: Option<&WebRequestContext>,
     wire_code: impl AsRef<str>,
@@ -126,6 +303,25 @@ pub fn validation_problem(detail: impl Into<String>) -> ProblemResponse {
     platform_problem(SdkWorkResultCode::ValidationError, detail)
 }
 
+/// Keyed validation problem (`validation.<domain>.<resource>.<field>.<rule>`).
+pub fn validation_problem_keyed(
+    i18n_key: &str,
+    params: serde_json::Value,
+    detail: impl Into<String>,
+) -> ProblemResponse {
+    platform_problem_keyed(SdkWorkResultCode::ValidationError, i18n_key, params, detail)
+}
+
+/// Keyed platform problem (`I18N_SPEC.md` §5/§9).
+pub fn platform_problem_keyed(
+    result_code: SdkWorkResultCode,
+    i18n_key: &str,
+    params: serde_json::Value,
+    detail: impl Into<String>,
+) -> ProblemResponse {
+    ProblemResponse::platform_keyed(result_code, i18n_key, params, detail, new_trace_id())
+}
+
 pub fn not_found_problem(detail: impl Into<String>) -> ProblemResponse {
     platform_problem(SdkWorkResultCode::NotFound, detail)
 }
@@ -141,9 +337,25 @@ pub fn service_unavailable_problem(detail: impl Into<String>) -> ProblemResponse
 #[derive(Debug, Clone)]
 pub struct ProblemResponse {
     pub problem: SdkWorkProblemDetail,
+    /// Specific localization key (`I18N_SPEC.md` §5): `validation.<domain>.<resource>.<field>.<rule>`
+    /// or `business.<domain>.<capability>.<state>`. Falls back to the auto
+    /// `errors.result.<code>` key when absent.
+    pub i18n_key: Option<String>,
+    /// Sanitized interpolation parameters for the `i18n_key` template.
+    pub params: Option<serde_json::Value>,
 }
 
 impl ProblemResponse {
+    fn with_shared_validation_key(mut self, detail: &str) -> Self {
+        if self.i18n_key.is_none() {
+            if let Some((key, params)) = shared_validation_message_key(detail) {
+                self.i18n_key = Some(key.to_owned());
+                self.params = Some(params);
+            }
+        }
+        self
+    }
+
     pub fn from_legacy(wire_code: &str, detail: String, trace_id: String) -> Self {
         Self::from_legacy_enriched(
             wire_code,
@@ -163,11 +375,14 @@ impl ProblemResponse {
         Self {
             problem: SdkWorkProblemDetail::platform_enriched(
                 result_code,
-                detail,
+                detail.clone(),
                 trace_id,
                 routing,
             ),
+            i18n_key: None,
+            params: None,
         }
+        .with_shared_validation_key(&detail)
     }
 
     pub fn platform(
@@ -189,13 +404,39 @@ impl ProblemResponse {
         trace_id: impl Into<String>,
         routing: SdkWorkProblemRouting,
     ) -> Self {
+        let detail = detail.into();
+        Self {
+            problem: SdkWorkProblemDetail::platform_enriched(
+                result_code,
+                detail.clone(),
+                trace_id,
+                routing,
+            ),
+            i18n_key: None,
+            params: None,
+        }
+        .with_shared_validation_key(&detail)
+    }
+
+    /// Builds a problem with a specific `i18nKey` and sanitized interpolation
+    /// params (`I18N_SPEC.md` §5/§9). The English `detail` is preserved as the
+    /// safe fallback display text; frontends translate by key.
+    pub fn platform_keyed(
+        result_code: SdkWorkResultCode,
+        i18n_key: &str,
+        params: serde_json::Value,
+        detail: impl Into<String>,
+        trace_id: impl Into<String>,
+    ) -> Self {
         Self {
             problem: SdkWorkProblemDetail::platform_enriched(
                 result_code,
                 detail,
                 trace_id,
-                routing,
+                SdkWorkProblemRouting::default(),
             ),
+            i18n_key: Some(i18n_key.to_owned()),
+            params: Some(params),
         }
     }
 }
@@ -205,10 +446,17 @@ impl IntoResponse for ProblemResponse {
         let trace_id = self.problem.trace_id.clone();
         let status =
             StatusCode::from_u16(self.problem.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let mut payload = serde_json::to_value(self.problem).expect("problem detail is serializable");
+        if let Some(key) = self.i18n_key {
+            payload["i18nKey"] = serde_json::Value::String(key);
+        }
+        if let Some(params) = self.params {
+            payload["params"] = params;
+        }
         let mut response = (
             status,
             [(header::CONTENT_TYPE, "application/problem+json")],
-            Json(self.problem),
+            Json(payload),
         )
             .into_response();
         attach_trace_header(&mut response, &trace_id);
@@ -371,6 +619,93 @@ pub fn json_success_item_response<T: Serialize>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn shared_validation_messages_resolve_to_keys_with_params() {
+        let cases = [
+            ("page must be greater than or equal to 1", "validation.common.list.page.min"),
+            ("page must be between 1 and 2147483647", "validation.common.list.page.max"),
+            ("page_size must be between 1 and 200", "validation.common.list.pageSize.range"),
+            ("q must be visible text and at most 256 characters", "validation.common.field.visibleText"),
+            ("displayName is required", "validation.common.field.required"),
+            ("name header is required", "validation.common.header.required"),
+            ("If-Match header must be visible ASCII", "validation.common.header.visibleAscii"),
+            ("offset must be a non-negative int64 string", "validation.common.field.nonNegativeInt64"),
+            ("limit must be a positive integer or null", "validation.common.field.positiveIntegerOrNull"),
+            ("priority must be a positive integer", "validation.common.field.positiveInteger"),
+            ("config must be a JSON object", "validation.common.field.jsonObject"),
+            ("items must be a JSON array", "validation.common.field.jsonArray"),
+            ("logo must be a MediaResource object", "validation.common.field.mediaResource"),
+            ("code must match ^[a-z]+$", "validation.common.field.pattern"),
+            ("api key was not found", "business.common.notFound"),
+            ("payment intent request body is invalid: bad json", "validation.payment.intent.body.invalid"),
+        ];
+        for (message, expected_key) in cases {
+            let (key, _) = shared_validation_message_key(message)
+                .unwrap_or_else(|| panic!("no key for {message:?}"));
+            assert_eq!(expected_key, key);
+        }
+    }
+
+    #[test]
+    fn shared_validation_params_extract_field_and_max_length() {
+        let (_, params) = shared_validation_message_key(
+            "search must be visible text and at most 256 characters",
+        )
+        .unwrap();
+        assert_eq!("search", params["field"]);
+        assert_eq!("256", params["maxLength"]);
+    }
+
+    #[test]
+    fn shared_validation_key_is_not_applied_to_arbitrary_messages() {
+        assert!(shared_validation_message_key("An internal error occurred").is_none());
+        assert!(shared_validation_message_key("db connection reset").is_none());
+        assert!(shared_validation_message_key("Idempotency-Key is required for this create operation").is_none());
+    }
+
+    #[test]
+    fn keyed_problem_response_carries_i18n_key_and_params() {
+        let response = problem_from_wire_code_keyed(
+            "4001",
+            "validation.app.chat.datasets.notEmpty",
+            serde_json::json!({}),
+            "datasets must not be empty",
+        )
+        .into_response();
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("runtime");
+        let bytes = rt
+            .block_on(async { axum::body::to_bytes(response.into_body(), usize::MAX).await })
+            .expect("body");
+        let payload: serde_json::Value = serde_json::from_slice(&bytes).expect("json");
+        assert_eq!(
+            "validation.app.chat.datasets.notEmpty",
+            payload["i18nKey"].as_str().unwrap()
+        );
+        assert_eq!(40001, payload["code"].as_i64().unwrap());
+    }
+
+    #[test]
+    fn legacy_problem_response_resolves_shared_validation_key() {
+        let response = problem_from_wire_code("4001", "page must be greater than or equal to 1")
+            .into_response();
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("runtime");
+        let bytes = rt
+            .block_on(async { axum::body::to_bytes(response.into_body(), usize::MAX).await })
+            .expect("body");
+        let payload: serde_json::Value = serde_json::from_slice(&bytes).expect("json");
+        assert_eq!(
+            "validation.common.list.page.min",
+            payload["i18nKey"].as_str().unwrap()
+        );
+        assert_eq!(1, payload["params"]["min"].as_i64().unwrap());
+    }
 
     #[test]
     fn success_envelope_uses_sdkwork_v3_shape() {

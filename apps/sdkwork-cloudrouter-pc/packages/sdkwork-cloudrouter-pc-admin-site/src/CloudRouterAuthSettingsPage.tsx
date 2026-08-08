@@ -6,6 +6,7 @@ import type {
   AdminAuthWechatOfficial,
 } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import { useTranslation } from 'react-i18next';
+import { getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons';
 import { BusinessStatePanel } from '@sdkwork/cloudroutes-pc-commons/components/BusinessState';
 import {
   fetchCloudRouterAuthSettings,
@@ -120,7 +121,7 @@ export function CloudRouterAuthSettingsPage() {
       }
     } catch (error) {
       if (isActive()) {
-        setLoadError(errorMessage(error, t('admin.authSettings.errors.loadFallback')));
+        setLoadError(errorMessage(error, t('admin.authSettings.errors.loadFallback'), t));
       }
     } finally {
       if (isActive()) {
@@ -146,7 +147,7 @@ export function CloudRouterAuthSettingsPage() {
       setForm(toAuthSettingsForm(saved));
       setSaveSuccess(t('admin.authSettings.messages.saved'));
     } catch (error) {
-      setSaveError(errorMessage(error, t('admin.authSettings.errors.saveFallback')));
+      setSaveError(errorMessage(error, t('admin.authSettings.errors.saveFallback'), t));
     } finally {
       setSaving(false);
     }
@@ -1242,6 +1243,6 @@ function providerLabel(value: string): string {
   return value;
 }
 
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
+function errorMessage(error: unknown, fallback: string, t?: (key: string, options?: { defaultValue?: string } & Record<string, unknown>) => string): string {
+  return getLoadErrorMessage(error, fallback, t);
 }

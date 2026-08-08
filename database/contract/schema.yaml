@@ -9154,3 +9154,311 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+  - name: iam_user_preference
+    domain: iam_user
+    profile: user_entity
+    compliance_level: L2
+    write_owner: router-service
+    system_of_record: true
+    tenant_scope: tenant_required
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      user_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      owner_type:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      owner_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      language:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL DEFAULT ''
+      timezone:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL DEFAULT ''
+      notification_preferences:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+    constraints:
+      - name: pk_iam_user_preference
+        type: primary_key
+        columns:
+          - id
+      - name: ck_iam_user_preference_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id > 0 AND organization_id >= 0
+      - name: uk_iam_user_preference_scope
+        type: unique
+        columns: &id078
+          - tenant_id
+          - organization_id
+          - user_id
+        where: null
+      - name: ck_iam_user_preference_subject_scope
+        type: check
+        columns: []
+        expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+      - name: ck_iam_user_preference_values
+        type: check
+        columns: []
+        expression: length(language) <= 32 AND length(timezone) <= 64 AND version >= 0
+    indexes:
+      - name: uk_iam_user_preference_scope
+        columns: *id078
+        unique: true
+        where: null
+      - name: idx_iam_user_preference_user_updated
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - updated_at
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+  - name: integration_webhook_endpoint
+    domain: integration
+    profile: user_entity
+    compliance_level: L3
+    write_owner: router-service
+    system_of_record: true
+    tenant_scope: tenant_required
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      user_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      owner_type:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      owner_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      endpoint_code:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      name:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      target_url:
+        type: string(1024)
+        required: true
+        postgres_type: VARCHAR(1024)
+        constraints: NOT NULL DEFAULT ''
+      event_types:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '[]'::jsonb
+      signing_alg:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL DEFAULT 'hmac-sha256'
+      retry_policy:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      failure_count:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+    constraints:
+      - name: pk_integration_webhook_endpoint
+        type: primary_key
+        columns:
+          - id
+      - name: ck_integration_webhook_endpoint_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id > 0 AND organization_id >= 0
+      - name: uk_integration_webhook_endpoint_scope_code
+        type: unique
+        columns: &id079
+          - tenant_id
+          - organization_id
+          - endpoint_code
+        where: null
+      - name: ck_integration_webhook_endpoint_subject_scope
+        type: check
+        columns: []
+        expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+      - name: ck_integration_webhook_endpoint_values
+        type: check
+        columns: []
+        expression: length(endpoint_code) > 0 AND length(name) > 0 AND length(target_url) <= 1024 AND failure_count >= 0 AND
+          version >= 0
+    indexes:
+      - name: uk_integration_webhook_endpoint_scope_code
+        columns: *id079
+        unique: true
+        where: null
+      - name: idx_integration_webhook_endpoint_scope_code
+        columns:
+          - tenant_id
+          - organization_id
+          - endpoint_code
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null

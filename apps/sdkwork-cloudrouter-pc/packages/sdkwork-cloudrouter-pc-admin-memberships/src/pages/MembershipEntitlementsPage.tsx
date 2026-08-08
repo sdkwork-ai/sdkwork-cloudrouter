@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BottomPagination } from '@sdkwork/cloudroutes-pc-commons';
+import { BottomPagination, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
 import { MembershipEmptyState } from '../components/MembershipEmptyState';
 import {
@@ -44,7 +44,7 @@ export function MembershipEntitlementsPage({
       setPageInfo(result.pageInfo);
     } catch (loadError) {
       if (requestId === requestIdRef.current) {
-        setError(loadError instanceof Error ? loadError.message : t('admin.commerce.memberships.entitlements.error', 'Entitlements could not be loaded'));
+        setError(resolveProblemMessage(loadError, t, t('admin.commerce.memberships.entitlements.error', 'Entitlements could not be loaded')));
       }
     } finally {
       if (requestId === requestIdRef.current) {

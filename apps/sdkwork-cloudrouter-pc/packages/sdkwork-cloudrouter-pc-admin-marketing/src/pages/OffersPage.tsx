@@ -26,6 +26,7 @@ import {
   type CouponOfferCreateFormValues,
 } from '../marketingService';
 import { usePromotionReferences } from '../usePromotionReferences';
+import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 
 export function OffersPage() {
   const { t } = useTranslation();
@@ -54,7 +55,7 @@ export function OffersPage() {
       setInitialValue(undefined);
       refresh();
     } catch (createError) {
-      const message = createError instanceof Error ? createError.message : t('admin.marketing.promotions.offers.createError', 'Failed to create coupon');
+      const message = resolveProblemMessage(createError, t, t('admin.marketing.promotions.offers.createError', 'Failed to create coupon'));
       // 优惠券创建接口无幂等键：部分失败后重试可能产生重复记录，提示先确认列表
       setSaveError(`${message} ${t('admin.marketing.coupon.form.retryHint', 'The coupon may have been created; refresh the list to confirm before retrying.')}`);
     } finally {
@@ -68,7 +69,7 @@ export function OffersPage() {
       await updatePromotionOfferStatus(offerId, targetStatus);
       refresh();
     } catch (statusError) {
-      window.alert(statusError instanceof Error ? statusError.message : t('admin.marketing.promotions.offers.statusError', 'Failed to update offer status'));
+      window.alert(resolveProblemMessage(statusError, t, t('admin.marketing.promotions.offers.statusError', 'Failed to update offer status')));
     }
   };
 
@@ -87,7 +88,7 @@ export function OffersPage() {
       await deletePromotionOffer(offerId);
       refresh();
     } catch (deleteError) {
-      window.alert(deleteError instanceof Error ? deleteError.message : t('admin.marketing.promotions.offers.deleteError', 'Failed to delete offer'));
+      window.alert(resolveProblemMessage(deleteError, t, t('admin.marketing.promotions.offers.deleteError', 'Failed to delete offer')));
     }
   };
 

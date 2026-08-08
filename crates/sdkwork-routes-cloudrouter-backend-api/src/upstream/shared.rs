@@ -18,6 +18,7 @@ use sdkwork_utils_rust::{
 use serde::{Deserialize, Serialize};
 
 pub(super) const MAX_NESTED_ITEMS: usize = 200;
+pub(super) const MAX_LIST_PAGE_SIZE: usize = 200;
 const MAX_SEARCH_LENGTH: usize = 256;
 const MAX_IDEMPOTENCY_KEY_LENGTH: usize = 128;
 
@@ -30,17 +31,33 @@ pub(super) type RequestResult<T> = Result<T, RequestProblem>;
 pub(super) struct RequestProblem {
     code: SdkWorkResultCode,
     detail: String,
+    /// Specific localization key (`I18N_SPEC.md` §5): `validation.<domain>.<resource>.<field>.<rule>`
+    /// or `business.<domain>.<capability>.<state>`. Falls back to the auto
+    /// `errors.result.<code>` key when absent.
+    i18n_key: Option<String>,
+    /// Sanitized interpolation parameters for the `i18n_key` template.
+    params: Option<serde_json::Value>,
 }
 
 impl IntoResponse for RequestProblem {
     fn into_response(self) -> Response {
         let trace_id = uuid();
         let body = SdkWorkProblemDetail::platform(self.code, self.detail, trace_id.clone());
-        let status = StatusCode::from_u16(body.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let mut payload = serde_json::to_value(body).expect("problem detail is serializable");
+        if let Some(key) = self.i18n_key {
+            payload["i18nKey"] = serde_json::Value::String(key);
+        }
+        if let Some(params) = self.params {
+            payload["params"] = params;
+        }
+        let status = StatusCode::from_u16(
+            payload["status"].as_u64().unwrap_or(500) as u16,
+        )
+        .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         let mut response = (
             status,
             [(header::CONTENT_TYPE, "application/problem+json")],
-            Json(body),
+            Json(payload),
         )
             .into_response();
         attach_trace_id(&mut response, &trace_id);
@@ -87,20 +104,26 @@ pub(super) fn list_query(
     let page = query.page.unwrap_or(1);
     let page_size = query.page_size.unwrap_or(20);
     if page < 1 {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.list.page.min",
+            serde_json::json!({ "min": 1 }),
             "page must be greater than or equal to 1",
         ));
     }
     if !(1..=200).contains(&page_size) {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
-            "page_size must be between 1 and 200",
+            "validation.admin.upstream.list.pageSize.range",
+            serde_json::json!({ "min": 1, "max": MAX_LIST_PAGE_SIZE }),
+            format!("page_size must be between 1 and {MAX_LIST_PAGE_SIZE}"),
         ));
     }
     let offset = (page - 1).checked_mul(page_size).ok_or_else(|| {
-        problem(
+        problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.list.offset.overflow",
+            serde_json::json!({ "page": page, "pageSize": page_size }),
             "page and page_size produce an unsupported offset",
         )
     })?;
@@ -124,8 +147,10 @@ pub(super) fn parse_id(value: String, field: &str) -> RequestResult<i64> {
         .ok()
         .filter(|value| *value > 0)
         .ok_or_else(|| {
-            problem(
+            problem_keyed(
                 SdkWorkResultCode::InvalidParameter,
+                "validation.admin.upstream.id.positiveInteger",
+                serde_json::json!({ "field": field }),
                 format!("{field} must be a positive integer string"),
             )
         })
@@ -133,14 +158,18 @@ pub(super) fn parse_id(value: String, field: &str) -> RequestResult<i64> {
 
 pub(super) fn parse_if_match(headers: &HeaderMap) -> RequestResult<i64> {
     let value = headers.get(header::IF_MATCH).ok_or_else(|| {
-        problem(
+        problem_keyed(
             SdkWorkResultCode::PreconditionRequired,
+            "validation.admin.upstream.version.header.required",
+            serde_json::Value::Null,
             "If-Match is required for this operation",
         )
     })?;
     let value = value.to_str().map_err(|_| {
-        problem(
+        problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.version.header.format",
+            serde_json::Value::Null,
             "If-Match must contain a valid version",
         )
     })?;
@@ -151,8 +180,10 @@ pub(super) fn parse_if_match(headers: &HeaderMap) -> RequestResult<i64> {
         .ok()
         .filter(|version| *version >= 0)
         .ok_or_else(|| {
-            problem(
+            problem_keyed(
                 SdkWorkResultCode::InvalidParameter,
+                "validation.admin.upstream.version.header.nonNegativeInteger",
+                serde_json::Value::Null,
                 "If-Match must contain a non-negative integer version",
             )
         })
@@ -164,14 +195,18 @@ pub(super) fn idempotency_uuid(
     account_id: i64,
 ) -> RequestResult<String> {
     let key = headers.get("idempotency-key").ok_or_else(|| {
-        problem(
+        problem_keyed(
             SdkWorkResultCode::PreconditionRequired,
+            "validation.admin.upstream.idempotency.header.required",
+            serde_json::Value::Null,
             "Idempotency-Key is required for this create operation",
         )
     })?;
     let key = key.to_str().map_err(|_| {
-        problem(
+        problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.idempotency.header.visibleText",
+            serde_json::Value::Null,
             "Idempotency-Key must be valid visible text",
         )
     })?;
@@ -181,8 +216,10 @@ pub(super) fn idempotency_uuid(
         MAX_IDEMPOTENCY_KEY_LENGTH,
     )?;
     if key.is_empty() {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.idempotency.header.notBlank",
+            serde_json::Value::Null,
             "Idempotency-Key must not be blank",
         ));
     }
@@ -214,8 +251,10 @@ pub(super) fn required_text(
 ) -> RequestResult<String> {
     let value = normalize_visible_text(value, field, max_length)?;
     if value.is_empty() {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::MissingRequiredField,
+            "validation.admin.upstream.field.required",
+            serde_json::json!({ "field": field }),
             format!("{field} is required"),
         ));
     }
@@ -235,8 +274,10 @@ pub(super) fn optional_text(
 
 fn normalize_visible_text(value: String, field: &str, max_length: usize) -> RequestResult<String> {
     if value.chars().any(char::is_control) || value.chars().count() > max_length {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.field.visibleText",
+            serde_json::json!({ "field": field, "maxLength": max_length }),
             format!("{field} must be visible text with at most {max_length} characters"),
         ));
     }
@@ -246,14 +287,18 @@ fn normalize_visible_text(value: String, field: &str, max_length: usize) -> Requ
 pub(super) fn positive_decimal(value: String, field: &str) -> RequestResult<String> {
     let value = required_text(value, field, 64)?;
     let decimal = DecimalValue::parse(&value).map_err(|_| {
-        problem(
+        problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.field.positiveDecimal",
+            serde_json::json!({ "field": field, "maxFractionDigits": 12 }),
             format!("{field} must be a positive decimal with at most 12 fractional digits"),
         )
     })?;
     if decimal <= DecimalValue::ZERO {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.field.greaterThanZero",
+            serde_json::json!({ "field": field }),
             format!("{field} must be greater than zero"),
         ));
     }
@@ -262,8 +307,10 @@ pub(super) fn positive_decimal(value: String, field: &str) -> RequestResult<Stri
 
 pub(super) fn decode_json<T>(payload: Result<Json<T>, JsonRejection>) -> RequestResult<T> {
     payload.map(|Json(value)| value).map_err(|rejection| {
-        problem(
+        problem_keyed(
             SdkWorkResultCode::MalformedRequest,
+            "validation.admin.upstream.body.malformed",
+            serde_json::json!({ "error": rejection.body_text() }),
             format!("request body is invalid: {}", rejection.body_text()),
         )
     })
@@ -275,8 +322,10 @@ pub(super) fn decode_query(
     query
         .map(|axum::extract::Query(value)| value)
         .map_err(|rejection| {
-            problem(
+            problem_keyed(
                 SdkWorkResultCode::InvalidParameter,
+                "validation.admin.upstream.query.invalid",
+                serde_json::json!({ "error": rejection.body_text() }),
                 format!("query parameters are invalid: {}", rejection.body_text()),
             )
         })
@@ -356,8 +405,10 @@ pub(super) fn domain_error(error: DomainError) -> Response {
         };
         return problem(code, detail).into_response();
     }
-    problem(
+    problem_keyed(
         SdkWorkResultCode::InternalError,
+        "business.admin.upstream.operation.failed",
+        serde_json::Value::Null,
         "upstream management operation failed",
     )
     .into_response()
@@ -377,8 +428,10 @@ pub(super) fn verification_error(error: AdminUpstreamAccountVerificationError) -
 }
 
 pub(super) fn not_found(entity: &str) -> Response {
-    problem(
+    problem_keyed(
         SdkWorkResultCode::NotFound,
+        "business.admin.upstream.notFound",
+        serde_json::json!({ "entity": entity }),
         format!("{entity} was not found"),
     )
     .into_response()
@@ -388,6 +441,25 @@ pub(super) fn problem(code: SdkWorkResultCode, detail: impl Into<String>) -> Req
     RequestProblem {
         code,
         detail: detail.into(),
+        i18n_key: None,
+        params: None,
+    }
+}
+
+/// Builds a problem with a specific `i18nKey` and sanitized interpolation params
+/// (`I18N_SPEC.md` §5/§9). The English `detail` is preserved as the safe fallback
+/// display text; frontends translate by key.
+pub(super) fn problem_keyed(
+    code: SdkWorkResultCode,
+    i18n_key: &str,
+    params: serde_json::Value,
+    detail: impl Into<String>,
+) -> RequestProblem {
+    RequestProblem {
+        code,
+        detail: detail.into(),
+        i18n_key: Some(i18n_key.to_owned()),
+        params: Some(params),
     }
 }
 

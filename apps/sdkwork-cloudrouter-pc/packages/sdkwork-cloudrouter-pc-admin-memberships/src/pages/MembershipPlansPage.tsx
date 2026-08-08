@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pencil, Plus } from 'lucide-react';
-import { BottomPagination } from '@sdkwork/cloudroutes-pc-commons';
+import { BottomPagination, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
 import { MembershipDrawer } from '../components/MembershipDrawer';
 import { MembershipEmptyState } from '../components/MembershipEmptyState';
@@ -56,7 +56,7 @@ export function MembershipPlansPage() {
       setPageInfo(result.pageInfo);
     } catch (loadError) {
       if (requestId === requestIdRef.current) {
-        setError(loadError instanceof Error ? loadError.message : t('admin.commerce.memberships.plans.error', 'Membership levels could not be loaded'));
+        setError(resolveProblemMessage(loadError, t, t('admin.commerce.memberships.plans.error', 'Membership levels could not be loaded')));
       }
     } finally {
       if (requestId === requestIdRef.current) {

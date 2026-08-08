@@ -4,6 +4,7 @@ pub mod error;
 pub mod federated_database_env;
 pub mod headers;
 pub mod health;
+pub mod locale;
 pub mod metrics;
 pub mod open_api_capability;
 pub mod outbound_dns;
@@ -46,6 +47,11 @@ pub use federated_database_env::{
     ensure_workspace_database_env_from_config, materialize_federated_database_env_from_config,
 };
 pub use headers::{default_security_headers, redact_http_header};
+pub use locale::{
+    embedded_message_catalog, interpolate_template, localize_problem_payload,
+    normalize_locale_tag, parse_accept_language, with_request_locale, CloudRouterLocalePolicy,
+    LocaleSource, RequestLocale, SDK_LOCALE_HEADER,
+};
 pub use metrics::{
     configure_http_metrics_for_runtime, metrics, metrics_middleware, record_readiness_check,
     shared_http_metrics_registry,

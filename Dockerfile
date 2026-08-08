@@ -23,8 +23,18 @@ ARG VERSION=0.0.0
 # durable data at /var/lib/sdkwork/router, cache at /var/cache/sdkwork/router.
 # libssl3/ca-certificates are runtime dependencies of the gateway binary
 # (PostgreSQL TLS and outbound HTTPS); the slim base image does not carry them.
+# curl is used by the container healthcheck and operational diagnostics.
+# postgresql-client-16 (PGDG) powers `cloudrouterctl backup/restore` and psql
+# troubleshooting on commercial deployments; the Debian stock client (15)
+# cannot dump a PostgreSQL 16 server.
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends libssl3 ca-certificates \
+  && apt-get install -y --no-install-recommends libssl3 ca-certificates curl gnupg \
+  && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+    | gpg --dearmor -o /usr/share/keyrings/pgdg.gpg \
+  && echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" \
+    > /etc/apt/sources.list.d/pgdg.list \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends postgresql-client-16 \
   && rm -rf /var/lib/apt/lists/* \
   && groupadd --system sdkwork \
   && useradd --system --gid sdkwork --home-dir ${INSTALL_ROOT} sdkwork \
@@ -43,6 +53,10 @@ ENV SDKWORK_CLOUDROUTER_CONFIG_FILE=${CONFIG_FILE}
 ENV SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE=server
 ENV SDKWORK_CLOUDROUTER_DEPLOYMENT_PROFILE=standalone
 ENV SDKWORK_CLOUDROUTER_RUNTIME_TARGET=container
+# Operator binaries (cloudrouterctl backup/restore/ensure) must be on PATH so
+# the documented `docker compose exec cloudrouter cloudrouterctl ...` commands
+# work without absolute paths.
+ENV PATH=/opt/sdkwork/router/bin:${PATH}
 # Models database module root: compile-time app roots do not exist inside the
 # image, so each database host resolves its packaged module under
 # <install root>/database-modules/<workspace>/database instead. These defaults

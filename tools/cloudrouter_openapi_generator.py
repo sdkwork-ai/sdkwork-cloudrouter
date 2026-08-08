@@ -90,6 +90,8 @@ class CloudRouterOpenApiGenerator:
         "sessions.create",
         "verificationCodes.create",
         "verificationCodes.verify",
+        "invite.policy.retrieve",
+        "invites.validate.create",
     }
     REFRESH_TOKEN_OPERATION_IDS = {"sessions.refresh"}
     PUBLIC_MODELS_APP_CATALOG_OPERATION_IDS = {
@@ -747,6 +749,25 @@ class CloudRouterOpenApiGenerator:
             refs.update(self._collect_component_schema_refs(item))
         return refs
 
+    def _api_surface_label(self, api_path: str, surface: str | None = None) -> str:
+        """Canonical API surface label for an operation path.
+
+        Mirrors sdkwork-web-contract's `infer_api_surface_from_path`: /v1 is the
+        reserved gateway API prefix; app/backend/internal use their reserved
+        prefixes; any other path under `/` is open-api.
+        """
+        if api_path.startswith("/app/v3/api"):
+            return "app-api"
+        if api_path.startswith("/backend/v3/api"):
+            return "backend-api"
+        if api_path.startswith("/internal/v3/api"):
+            return "internal-api"
+        if api_path.startswith("/v1"):
+            return "gateway-api"
+        if api_path.startswith("/"):
+            return "open-api"
+        return f"{surface}-api" if surface else "open-api"
+
     def _operation_spec(
         self,
         operation: dict[str, Any],
@@ -756,6 +777,7 @@ class CloudRouterOpenApiGenerator:
         surface: str | None = None,
     ) -> dict[str, Any]:
         method = self._string(operation.get("api_method")).upper()
+        api_path = self._string(operation.get("api_path"))
         path_params = self._string_list(operation.get("path_params"))
         parameters = [self._path_parameter(param) for param in path_params]
         if bool(operation.get("idempotency_required")):
@@ -779,9 +801,25 @@ class CloudRouterOpenApiGenerator:
             "x-file-targets": self._string_list(operation.get("file_targets")),
         }
         spec["security"] = self._operation_security(operation_id, surface=surface)
+        # Canonical ownership extensions required by gateway OpenAPI inventory
+        # validation; models-catalog operations override owner/authority with
+        # the sdkwork-models identity.
+        spec["x-sdkwork-owner"] = "sdkwork-cloudrouter"
+        spec["x-sdkwork-api-authority"] = (
+            "sdkwork-cloudrouter-app-api"
+            if surface == "app"
+            else "sdkwork-cloudrouter-backend-api"
+            if surface == "backend"
+            else "sdkwork-cloudrouter-ai"
+        )
         auth_mode = self._operation_auth_mode(operation_id, surface=surface)
         if auth_mode:
             spec["x-sdkwork-auth-mode"] = auth_mode
+        # Canonical surface extension consumed by gateway OpenAPI inventory
+        # validation (every operation must declare its SDKWork API surface).
+        # The label follows web-contract path inference (/v1 is the gateway
+        # API prefix, everything else under / is open-api).
+        spec["x-sdkwork-api-surface"] = self._api_surface_label(api_path, surface)
         if auth_mode == "refresh-token":
             spec["x-sdkwork-forbid-credential-headers"] = True
         if bool(operation.get("idempotency_required")):
@@ -1118,7 +1156,9 @@ class CloudRouterOpenApiGenerator:
             return "anonymous"
         if operation_id in self.REFRESH_TOKEN_OPERATION_IDS:
             return "refresh-token"
-        return ""
+        # Default matches the route manifest: protected operations are
+        # dual-token (see _operation_security).
+        return "dual-token"
 
     def _components(
         self,

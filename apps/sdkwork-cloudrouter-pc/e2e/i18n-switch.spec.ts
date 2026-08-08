@@ -49,4 +49,28 @@ test.describe('i18n switch', () => {
 
     await expect(langToggle.locator('span').first()).toHaveText(/^EN$/i, { timeout: 10_000 });
   });
+
+  test('API requests carry the selected locale after switching to Chinese', async ({ portalPage: page }) => {
+    // Capture the locale headers of SDK API requests (`I18N_SPEC.md` §4/§10).
+    const acceptLanguages: string[] = [];
+    await page.route('**/v3/api/**', (route) => {
+      const header = route.request().headers()['accept-language'];
+      if (header) {
+        acceptLanguages.push(header);
+      }
+      route.continue();
+    });
+
+    const langToggle = page.getByRole('button', { name: /language|语言/i }).first();
+    await langToggle.click();
+    const menu = page.getByRole('menu', { name: /language|语言/i }).first();
+    await menu.getByRole('menuitem').filter({ hasText: /中文/ }).first().click();
+
+    // Navigate to a data-loading page so SDK clients fire requests that must
+    // carry the newly selected locale.
+    await page.goto('/admin/dashboard', { waitUntil: 'domcontentloaded' });
+    await expect
+      .poll(() => acceptLanguages.some((value) => value.toLowerCase().includes('zh')))
+      .toBe(true, { timeout: 15_000 });
+  });
 });

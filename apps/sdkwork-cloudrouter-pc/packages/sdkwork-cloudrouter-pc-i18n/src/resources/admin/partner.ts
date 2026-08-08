@@ -1,6 +1,9 @@
 export const adminPartnerMessages = {
   en: {
     'admin.partner.header': 'Partner Center',
+    'admin.menu.partner.manage': 'Partner Management',
+    'admin.menu.partner.commission': 'Commission Configuration',
+    'admin.menu.partner.finance': 'Partner Finance',
     'admin.partner.menu.partners': 'Partners',
     'admin.partner.menu.tree': 'Partner Tree',
     'admin.partner.menu.levels': 'Levels & Ratios',
@@ -12,6 +15,9 @@ export const adminPartnerMessages = {
   },
   zh: {
     'admin.partner.header': '合作伙伴中心',
+    'admin.menu.partner.manage': '伙伴管理',
+    'admin.menu.partner.commission': '提成配置',
+    'admin.menu.partner.finance': '伙伴财务',
     'admin.partner.menu.partners': '合作伙伴',
     'admin.partner.menu.tree': '代理树',
     'admin.partner.menu.levels': '等级与返佣比例',

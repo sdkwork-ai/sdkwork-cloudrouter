@@ -55,6 +55,20 @@ initialization. SQLite is allowed only for a separately owned client-local
 contract such as device-scoped cache or offline state; none is implemented by
 the router-service SQL infrastructure.
 
+Server-side SQLite is fully removed from the authoritative data layer: the
+workspace `sqlx`/`database-sqlx`/`database-id` definitions, `router-service`
+features, the `models` and `appbase` assemblies, and `rusqlite` are gone from
+server builds. The SQLite-backed Codex agent provider is an optional,
+per-application integration: `sdkwork-agent-server` and
+`sdkwork-agents-runtime-facade` expose a `codex-provider` feature that is
+**off by default**, so a server/container build links no
+`codex-state`/`libsqlite3-sys` unless an application explicitly enables it.
+It owns no tenant, billing, entitlement, audit, or other system-of-record
+data (DATABASE_SPEC §7.2: `authoritative-server` persistence is PostgreSQL
+only). Client-local SQLite (`sdkwork-agent-client` and desktop crates)
+enables the Codex provider explicitly for device-scoped state with its local
+thread history, logs, goals, and memories.
+
 ## 3. System Boundaries And Modules
 
 ### API And Ingress

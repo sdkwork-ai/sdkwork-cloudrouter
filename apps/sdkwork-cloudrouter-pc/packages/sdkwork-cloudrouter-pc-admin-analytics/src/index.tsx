@@ -23,6 +23,7 @@ import {
   formatLocalizedCompactDecimalAmount,
   formatLocalizedDecimalAmount,
   formatLocalizedInteger,
+  resolveProblemMessage,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import {
   AdminAnalyticsService,
@@ -98,7 +99,7 @@ export function AnalyticsAdmin() {
       setOverview(data);
     } catch (error) {
       setOverview(createEmptyAnalyticsOverview(timeRange));
-      setLoadError(error instanceof Error ? error.message : t('admin.analytics.errors.loadFallback', 'Analytics data could not be loaded.'));
+      setLoadError(resolveProblemMessage(error, t, t('admin.analytics.errors.loadFallback', 'Analytics data could not be loaded.')));
     } finally {
       setLoading(false);
     }

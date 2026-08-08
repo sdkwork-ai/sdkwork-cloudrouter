@@ -3,6 +3,7 @@ import { ChevronDown, Database, Eye, HardDrive, Layers, RefreshCw, Search, Trash
 import { useTranslation } from 'react-i18next';
 import { BusinessStatePanel, BusinessStateTableRow } from '@sdkwork/cloudroutes-pc-commons/components/BusinessState';
 import { ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons/components/ConfirmDialog';
+import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import {
   AdminCacheService,
   type CacheInstance,
@@ -44,7 +45,7 @@ export function CacheAdmin() {
       const data = await AdminCacheService.fetchOverview();
       setOverview(data);
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : t('admin.cache.errors.loadFallback', 'Cache data could not be loaded.'));
+      setLoadError(resolveProblemMessage(error, t, t('admin.cache.errors.loadFallback', 'Cache data could not be loaded.')));
     } finally {
       setLoading(false);
     }
@@ -101,7 +102,7 @@ export function CacheAdmin() {
       await loadOverview();
       return true;
     } catch (error) {
-      setOperationError(error instanceof Error ? error.message : t('admin.cache.errors.operationFallback', 'Cache operation failed.'));
+      setOperationError(resolveProblemMessage(error, t, t('admin.cache.errors.operationFallback', 'Cache operation failed.')));
       return false;
     } finally {
       setOperationBusy(null);
@@ -172,7 +173,7 @@ export function CacheAdmin() {
           : data
       ));
     } catch (error) {
-      setKeyListError(error instanceof Error ? error.message : t('admin.cache.errors.keyListFallback', 'Cache keys could not be loaded.'));
+      setKeyListError(resolveProblemMessage(error, t, t('admin.cache.errors.keyListFallback', 'Cache keys could not be loaded.')));
     } finally {
       setOperationBusy(null);
     }

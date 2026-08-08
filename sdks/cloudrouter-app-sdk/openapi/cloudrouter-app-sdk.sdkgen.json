@@ -8219,12 +8219,7 @@
             "description": "Error response."
           }
         },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
+        "security": [],
         "summary": "List invite policy",
         "tags": [
           "iam"
@@ -8240,6 +8235,7 @@
         "x-sdkwork-resource": "invite.policy",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
         "x-write-tables": [],
+        "x-sdkwork-auth-mode": "anonymous",
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }
@@ -8492,12 +8488,7 @@
             "description": "Error response."
           }
         },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
+        "security": [],
         "summary": "Validate invite code",
         "tags": [
           "iam"
@@ -8513,6 +8504,7 @@
         "x-sdkwork-resource": "invites.validate",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
         "x-write-tables": [],
+        "x-sdkwork-auth-mode": "anonymous",
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
       }

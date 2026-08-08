@@ -38,6 +38,7 @@ import {
 } from './dashboardService';
 
 import { useTranslation } from 'react-i18next';
+import { getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons';
 import { formatMoney } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
 
@@ -71,8 +72,8 @@ const TIME_RANGE_WINDOWS: Record<DashboardTimeRange, (t: TranslationFunction) =>
   yearly: (t) => t("console.dashboard.dashboardview.text.ee5di", "10 年"),
 };
 
-function getDashboardLoadErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
+function getDashboardLoadErrorMessage(error: unknown, fallback: string, t?: (key: string, options?: { defaultValue?: string } & Record<string, unknown>) => string): string {
+  return getLoadErrorMessage(error, fallback, t);
 }
 
 type ConfigurationDomainSpeedState = {

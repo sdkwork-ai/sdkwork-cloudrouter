@@ -1717,7 +1717,23 @@ class SdkRuntimeStandardizer:
         dev_dependencies["typescript"] = SDK_TYPESCRIPT_VERSION
         dev_dependencies["rollup"] = SDK_ROLLUP_VERSION
 
-        package["dependencies"] = {"@sdkwork/sdk-common": SDK_COMMON_VERSION}
+        dependencies = dict(package.get("dependencies") or {})
+        if not isinstance(dependencies, dict):
+            dependencies = {}
+        # Merge the generated transport package dependencies (e.g.
+        # @sdkwork/utils for idempotent body fingerprints) so the composed
+        # facade resolves every runtime import it re-exports. Workspace
+        # protocol keeps local resolution working without a registry lookup.
+        transport_package = self._read_json_or_none(
+            base / "generated" / "server-openapi" / "package.json"
+        ) or {}
+        transport_dependencies = transport_package.get("dependencies") or {}
+        if isinstance(transport_dependencies, dict):
+            dependencies.update(transport_dependencies)
+        for transport_dependency in transport_dependencies:
+            dependencies[transport_dependency] = "workspace:*"
+        dependencies["@sdkwork/sdk-common"] = SDK_COMMON_VERSION
+        package["dependencies"] = dependencies
 
         if self._read_json_or_none(package_path) != package:
             self._write_json(package_path, package)

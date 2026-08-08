@@ -4,6 +4,7 @@ export const adminBusinessManagementMessages = {
   en: {
     'admin.header.membershipCenter': 'Plans & Members',
     'admin.header.marketingCenter': 'Marketing',
+    'admin.header.partnerCenter': 'Partner Center',
     'admin.header.paymentCenter': 'Payments',
     'admin.header.storageCenter': 'Storage',
     'admin.menu.memberships.catalog': 'Plan Catalog',
@@ -55,6 +56,7 @@ export const adminBusinessManagementMessages = {
   zh: {
     'admin.header.membershipCenter': '套餐与会员',
     'admin.header.marketingCenter': '营销中心',
+    'admin.header.partnerCenter': '合作伙伴中心',
     'admin.header.paymentCenter': '支付中心',
     'admin.header.storageCenter': '存储中心',
     'admin.menu.memberships.catalog': '套餐设计',

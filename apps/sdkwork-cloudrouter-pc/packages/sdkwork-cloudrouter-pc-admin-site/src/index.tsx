@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useId, useState } from 'react';
 import { Image, Loader2, Palette, RefreshCw, Save, Settings2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { BusinessStatePanel } from '@sdkwork/cloudroutes-pc-commons';
+import { BusinessStatePanel, getLoadErrorMessage} from '@sdkwork/cloudroutes-pc-commons';
 import {
   readMediaResourceUrl,
   toExternalUrlMediaResource,
@@ -48,7 +48,7 @@ export function CloudRouterSiteSettingsPage() {
       }
     } catch (error) {
       if (isActive()) {
-        setLoadError(errorMessage(error, t('admin.siteSettings.errors.loadFallback')));
+        setLoadError(errorMessage(error, t('admin.siteSettings.errors.loadFallback'), t));
       }
     } finally {
       if (isActive()) {
@@ -82,7 +82,7 @@ export function CloudRouterSiteSettingsPage() {
       setForm(saved);
       setSaveSuccess(t('admin.siteSettings.messages.saved'));
     } catch (error) {
-      setSaveError(errorMessage(error, t('admin.siteSettings.errors.saveFallback')));
+      setSaveError(errorMessage(error, t('admin.siteSettings.errors.saveFallback'), t));
     } finally {
       setSaving(false);
     }
@@ -313,6 +313,6 @@ function ColorField({ label, value, onChange }: {
   );
 }
 
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
+function errorMessage(error: unknown, fallback: string, t?: (key: string, options?: { defaultValue?: string } & Record<string, unknown>) => string): string {
+  return getLoadErrorMessage(error, fallback, t);
 }

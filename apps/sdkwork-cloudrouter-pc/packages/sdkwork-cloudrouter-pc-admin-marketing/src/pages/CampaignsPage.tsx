@@ -6,6 +6,7 @@ import { MarketingDrawer } from '../components/MarketingDrawer';
 import { MarketingListView, type MarketingColumn } from '../components/MarketingListView';
 import { MarketingValueBadge, marketingEnumLabel, type MarketingBadgeTone } from '../components/MarketingValueBadge';
 import { MarketingField, MarketingFormSection, marketingInputClassName, marketingSelectClassName } from '../components/MarketingFormControls';
+import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import {
   backendPromotionCampaignsList,
   buildCampaignRequest,
@@ -61,7 +62,7 @@ export function CampaignsPage() {
       setEditingId(null);
       refresh();
     } catch (createError) {
-      setSaveError(createError instanceof Error ? createError.message : t('admin.marketing.campaigns.createError', 'Failed to save campaign'));
+      setSaveError(resolveProblemMessage(createError, t, t('admin.marketing.campaigns.createError', 'Failed to save campaign')));
     } finally {
       setIsSaving(false);
     }
@@ -82,7 +83,7 @@ export function CampaignsPage() {
       await deletePromotionCampaign(campaignId);
       refresh();
     } catch (deleteError) {
-      window.alert(deleteError instanceof Error ? deleteError.message : t('admin.marketing.campaigns.deleteError', 'Failed to delete campaign'));
+      window.alert(resolveProblemMessage(deleteError, t, t('admin.marketing.campaigns.deleteError', 'Failed to delete campaign')));
     }
   };
 

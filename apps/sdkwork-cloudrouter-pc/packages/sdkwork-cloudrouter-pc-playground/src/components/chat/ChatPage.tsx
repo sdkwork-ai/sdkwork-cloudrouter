@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   emptyRuntimeUsageSnapshot,
   mergeRuntimeUsageSnapshots,
+  resolveProblemMessage,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { PlaygroundService } from '../../playgroundService';
 import {
@@ -144,7 +145,7 @@ export function ChatPage() {
       .catch((error) => {
         if (!cancelled) {
           setModelGroups([]);
-          setModelLoadError(error instanceof Error ? error.message : t('playground.chat.input.disabled.modelLoadFailed'));
+          setModelLoadError(resolveProblemMessage(error, t, t('playground.chat.input.disabled.modelLoadFailed')));
         }
       })
       .finally(() => {
@@ -226,7 +227,7 @@ export function ChatPage() {
           messagesBySessionIdRef.current = localConversation.messagesBySessionId;
           setSessions(localConversation.sessions);
           setMessagesBySessionId(localConversation.messagesBySessionId);
-          setSessionError(error instanceof Error ? error.message : t('playground.chat.sessionsLoadFailed'));
+          setSessionError(resolveProblemMessage(error, t, t('playground.chat.sessionsLoadFailed')));
         }
       })
       .finally(() => {
@@ -279,7 +280,7 @@ export function ChatPage() {
           if (storedMessages.length === 0) {
             setMessages([]);
           }
-          setMessageError(error instanceof Error ? error.message : t('playground.chat.messagesLoadFailed'));
+          setMessageError(resolveProblemMessage(error, t, t('playground.chat.messagesLoadFailed')));
         }
       })
       .finally(() => {
@@ -481,7 +482,7 @@ export function ChatPage() {
               runtimeInvocationId: activeStreamRecord.runtimeInvocationId,
               usage: activeStreamRecord.usage,
             }).catch((error) => {
-              const message = error instanceof Error ? error.message : t('playground.chat.errors.runtimeUnavailable');
+              const message = resolveProblemMessage(error, t, t('playground.chat.errors.runtimeUnavailable'));
               setMessageError(message);
             });
           }
@@ -644,7 +645,7 @@ export function ChatPage() {
         usage: stream.usage,
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : t('playground.chat.errors.runtimeUnavailable');
+      const message = resolveProblemMessage(error, t, t('playground.chat.errors.runtimeUnavailable'));
       setMessageError(message);
     }
   }, [t]);

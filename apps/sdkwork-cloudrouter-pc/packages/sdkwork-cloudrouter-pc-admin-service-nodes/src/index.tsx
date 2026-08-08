@@ -5,6 +5,7 @@ import {
   AdminTableShell,
   BusinessStateTableRow,
   ConfirmDialog,
+  resolveProblemMessage,
 } from '@sdkwork/cloudroutes-pc-commons';
 import {
   ServiceNodeService,
@@ -57,7 +58,7 @@ export function ServiceNodesAdmin() {
       const data = await ServiceNodeService.fetchNodes({ search: nextSearch, status: nextStatus });
       setNodes(data);
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : t('admin.serviceNodes.errors.load', 'Failed to load service nodes'));
+      setLoadError(resolveProblemMessage(error, t, t('admin.serviceNodes.errors.load', 'Failed to load service nodes')));
     } finally {
       setLoading(false);
     }
@@ -103,7 +104,7 @@ export function ServiceNodesAdmin() {
       const updated = await ServiceNodeService.updateNodeStatus(node.id, nextStatus);
       setNodes((current) => current.map((item) => (item.id === updated.id ? updated : item)));
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : t('admin.serviceNodes.errors.updateStatus', 'Failed to update service node status'));
+      setLoadError(resolveProblemMessage(error, t, t('admin.serviceNodes.errors.updateStatus', 'Failed to update service node status')));
     } finally {
       setBusyNodeId(null);
     }
@@ -119,7 +120,7 @@ export function ServiceNodesAdmin() {
       setNodes((current) => current.filter((node) => node.id !== deleteTarget.id));
       setDeleteTarget(null);
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : t('admin.serviceNodes.errors.delete', 'Failed to delete service node'));
+      setLoadError(resolveProblemMessage(error, t, t('admin.serviceNodes.errors.delete', 'Failed to delete service node')));
     } finally {
       setBusyNodeId(null);
     }
@@ -477,7 +478,13 @@ function ServiceNodeDialog({
         status: form.status,
       });
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : t('admin.serviceNodes.errors.save', 'Failed to save service node'));
+      // The narrow child `t(key, fallback)` adapts to the problem translation
+      // contract (`I18N_SPEC.md` §7).
+      setError(resolveProblemMessage(
+        submitError,
+        (key, options) => t(key, options?.defaultValue ?? key),
+        t('admin.serviceNodes.errors.save', 'Failed to save service node'),
+      ));
     } finally {
       setSaving(false);
     }

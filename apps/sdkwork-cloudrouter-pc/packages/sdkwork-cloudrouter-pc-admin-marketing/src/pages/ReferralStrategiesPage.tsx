@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { MarketingDrawer, MarketingStatusBadge } from '../components/MarketingDrawer';
 import { MarketingListView, type MarketingColumn } from '../components/MarketingListView';
+import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import {
   MarketingService,
   type ReferralStrategy,
@@ -144,7 +145,7 @@ export function ReferralStrategiesPage() {
       setDrawerOpen(false);
       refresh();
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : t('admin.marketing.referralStrategies.errors.saveFallback', 'Failed to save referral strategy'));
+      setFormError(resolveProblemMessage(error, t, t('admin.marketing.referralStrategies.errors.saveFallback', 'Failed to save referral strategy')));
     } finally {
       setSaving(false);
     }

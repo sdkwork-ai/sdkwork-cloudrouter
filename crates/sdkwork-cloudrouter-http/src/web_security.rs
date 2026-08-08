@@ -24,22 +24,7 @@ fn first_nonempty_env(keys: &[&str]) -> Option<String> {
     })
 }
 
-fn cors_allowed_origins_from_env() -> Vec<String> {
-    first_nonempty_env(&["SDKWORK_CLOUDROUTER_EDGE_CORS_ALLOWED_ORIGINS"])
-        .map(|value| split_env_list(&value))
-        .unwrap_or_default()
-}
-
-fn split_env_list(value: &str) -> Vec<String> {
-    value
-        .split([',', ';', '\n'])
-        .map(str::trim)
-        .filter(|entry| !entry.is_empty())
-        .map(ToOwned::to_owned)
-        .collect()
-}
-
-/// Resolve the canonical SDKWork web environment for Cloud Router HTTP services.
+/// Resolves the canonical Cloud Router web environment.
 pub fn resolve_cloud_web_environment_from_process_env() -> WebEnvironment {
     parse_environment(first_nonempty_env(&[
         StartupInstallMode::ENV_ROUTER_ENVIRONMENT,
@@ -48,6 +33,8 @@ pub fn resolve_cloud_web_environment_from_process_env() -> WebEnvironment {
 
 /// Cloud Router HTTP service security policy aligned with IAM/Drive dev bootstrap behavior.
 pub fn cloud_service_security_policy(environment: &WebEnvironment) -> SecurityPolicy {
+    let configured_origins =
+        sdkwork_web_bootstrap::cors_allowed_origins_from_process_env();
     let mut security_policy = if matches!(environment, WebEnvironment::Dev | WebEnvironment::Test) {
         SecurityPolicy::default()
     } else {
@@ -60,17 +47,14 @@ pub fn cloud_service_security_policy(environment: &WebEnvironment) -> SecurityPo
             .reject_untrusted_state_changing_origins = false;
         security_policy.cross_site.reject_cookie_auth_without_origin = false;
     } else {
-        security_policy.cors.allowed_origins = cors_allowed_origins_from_env();
+        security_policy.cors.allowed_origins = configured_origins;
     }
     security_policy
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        cloud_service_security_policy, resolve_cloud_web_environment_from_process_env,
-        split_env_list,
-    };
+    use super::{cloud_service_security_policy, resolve_cloud_web_environment_from_process_env};
     use sdkwork_web_core::WebEnvironment;
 
     #[test]
@@ -108,16 +92,5 @@ mod tests {
             std::env::remove_var("SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT");
             std::env::remove_var("SDKWORK_CLOUDROUTER_ENVIRONMENT");
         }
-    }
-
-    #[test]
-    fn split_env_list_splits_commas_and_whitespace() {
-        assert_eq!(
-            split_env_list("https://a.example.com, https://b.example.com"),
-            vec![
-                "https://a.example.com".to_owned(),
-                "https://b.example.com".to_owned(),
-            ]
-        );
     }
 }

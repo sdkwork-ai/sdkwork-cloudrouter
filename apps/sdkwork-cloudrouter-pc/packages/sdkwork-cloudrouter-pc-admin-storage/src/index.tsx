@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type InputHTMLAttributes } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
+import { getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons';
 import {
   Activity,
   BarChart3,
@@ -391,7 +392,7 @@ export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
       setRefreshKey((value) => value + 1);
       setMessage({ kind: 'success', text: t('admin.storage.buckets.statusSaved', 'Bucket status updated successfully.') });
     } catch (error) {
-      setMessage({ kind: 'error', text: readError(error, t('admin.storage.buckets.statusError', 'Bucket status could not be updated.')) });
+      setMessage({ kind: 'error', text: readError(error, t('admin.storage.buckets.statusError', 'Bucket status could not be updated.'), t) });
     } finally {
       setSaving(false);
     }
@@ -408,7 +409,7 @@ export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
       setMessage({ kind: 'success', text: t('admin.storage.providers.healthSuccess', 'Provider health check completed.') });
       setRefreshKey((value) => value + 1);
     } catch (error) {
-      setMessage({ kind: 'error', text: readError(error, t('admin.storage.providers.healthError', 'Provider health check failed.')) });
+      setMessage({ kind: 'error', text: readError(error, t('admin.storage.providers.healthError', 'Provider health check failed.'), t) });
     }
   }
 
@@ -423,7 +424,7 @@ export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
       setRefreshKey((value) => value + 1);
       setMessage({ kind: 'success', text: t('admin.storage.saveSuccess', 'Storage configuration saved successfully.') });
     } catch (error) {
-      setMessage({ kind: 'error', text: readError(error, t('admin.storage.saveError', 'Storage configuration could not be saved.')) });
+      setMessage({ kind: 'error', text: readError(error, t('admin.storage.saveError', 'Storage configuration could not be saved.'), t) });
     } finally {
       setSaving(false);
     }
@@ -1516,8 +1517,8 @@ function formatBoolean(t: TFunction, value: unknown): string {
   return value === null || value === undefined || value === '' ? '-' : String(value);
 }
 
-function readError(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
+function readError(error: unknown, fallback: string, t?: (key: string, options?: { defaultValue?: string } & Record<string, unknown>) => string): string {
+  return getLoadErrorMessage(error, fallback, t);
 }
 
 export default StorageAdmin;

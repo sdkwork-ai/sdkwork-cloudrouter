@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react';
-import { BottomPagination } from '@sdkwork/cloudroutes-pc-commons';
+import { BottomPagination, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import { formatMoney } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
 import { MembershipDialog } from '../components/MembershipDialog';
@@ -91,7 +91,7 @@ export function MembershipPackagesPage() {
       });
     } catch (loadError) {
       if (requestId === referenceRequestIdRef.current) {
-        setReferenceError(loadError instanceof Error ? loadError.message : t('admin.commerce.memberships.packages.error', 'Membership packages could not be loaded'));
+        setReferenceError(resolveProblemMessage(loadError, t, t('admin.commerce.memberships.packages.error', 'Membership packages could not be loaded')));
       }
     } finally {
       if (requestId === referenceRequestIdRef.current) {
@@ -127,7 +127,7 @@ export function MembershipPackagesPage() {
       setPackagePageInfo(result.pageInfo);
     } catch (loadError) {
       if (requestId === packageRequestIdRef.current) {
-        setPackageError(loadError instanceof Error ? loadError.message : t('admin.commerce.memberships.packages.error', 'Membership packages could not be loaded'));
+        setPackageError(resolveProblemMessage(loadError, t, t('admin.commerce.memberships.packages.error', 'Membership packages could not be loaded')));
       }
     } finally {
       if (requestId === packageRequestIdRef.current) {

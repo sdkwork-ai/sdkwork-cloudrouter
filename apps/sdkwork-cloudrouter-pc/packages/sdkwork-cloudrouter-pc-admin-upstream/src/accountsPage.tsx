@@ -23,6 +23,7 @@ import {
   dangerButtonClass,
   EMPTY_MULTIPLIER_RANGE,
   errorMessage,
+  errorMessageI18n,
   Field,
   GroupTypeFilter,
   type GroupTypeFilterValue,
@@ -105,7 +106,7 @@ export function AccountAdminPanel() {
       setSelectedKey((current) => current === null || current === UNGROUPED_KEY || groupPage.items.some((group) => group.id === current) ? current : null);
       setSelected((current) => current ? accountPage.items.find((item) => item.id === current.id) ?? null : null);
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setLoading(false);
     }
@@ -195,7 +196,7 @@ export function AccountAdminPanel() {
       setEditing(undefined);
       await load();
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setBusy(false);
     }
@@ -211,7 +212,7 @@ export function AccountAdminPanel() {
       setDeleteTarget(null);
       await load();
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setBusy(false);
     }
@@ -225,7 +226,7 @@ export function AccountAdminPanel() {
       setItems((current) => current.map((item) => item.id === account.id ? updated : item));
       setSelected((current) => current?.id === account.id ? updated : current);
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setBusy(false);
     }
@@ -417,7 +418,7 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
       setApiKeyVisible(true);
       setRevealError('');
     } catch (cause) {
-      setRevealError(errorMessage(cause, t('admin.upstream.account.errors.secretRevealFailed')));
+      setRevealError(errorMessageI18n(cause, t('admin.upstream.account.errors.secretRevealFailed'), t));
     }
   };
 
@@ -529,7 +530,7 @@ function AccountCredentials({ account, supplier, onAccountChanged, onClose }: { 
       setCredentialId((current) => current || nextCredentials[0]?.id || '');
       setEndpointId((current) => current || account.preferredEndpointId || nextEndpoints[0]?.id || '');
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setLoading(false);
     }
@@ -553,7 +554,7 @@ function AccountCredentials({ account, supplier, onAccountChanged, onClose }: { 
       await load();
       onAccountChanged(await upstreamService.accounts.retrieve(account.id));
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setBusy(false);
     }
@@ -566,7 +567,7 @@ function AccountCredentials({ account, supplier, onAccountChanged, onClose }: { 
       await upstreamService.accounts.deleteCredential(account.id, id);
       await load();
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setBusy(false);
     }
@@ -584,7 +585,7 @@ function AccountCredentials({ account, supplier, onAccountChanged, onClose }: { 
       }));
       onAccountChanged(await upstreamService.accounts.retrieve(account.id));
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setBusy(false);
     }
@@ -614,7 +615,7 @@ function AccountCredentials({ account, supplier, onAccountChanged, onClose }: { 
       setResourcePickerOpen(false);
       onAccountChanged(await upstreamService.accounts.retrieve(account.id));
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setResourcesBusy(false);
     }

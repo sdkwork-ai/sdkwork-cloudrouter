@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.4.0.
--- Registry SHA-256: 80f0c70ae0ba83ce8664fb61d9356b876c6f1b31874535c2dc614d99361a110b.
+-- Registry SHA-256: 0eb8464b76cf2bc38c16b8e6058a048680741bc9a7def3d184ecb08472bac988.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -1751,6 +1751,64 @@ CREATE TABLE IF NOT EXISTS iam_gateway_risk_rule (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_risk_rule_tenant_target ON iam_gateway_risk_rule (tenant_id, organization_id, rule_type, target_type, target_value) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_iam_gateway_risk_rule_scope_priority ON iam_gateway_risk_rule (tenant_id, organization_id, rule_category, scope_type, scope_id, priority, status);
 CREATE INDEX IF NOT EXISTS idx_iam_gateway_risk_rule_target_hash ON iam_gateway_risk_rule (tenant_id, organization_id, target_type, target_value_hash, status);
+
+CREATE TABLE IF NOT EXISTS iam_user_preference (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    user_id BIGINT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    owner_type INTEGER NOT NULL DEFAULT 1,
+    owner_id BIGINT NOT NULL,
+    data_scope INTEGER NOT NULL DEFAULT 1,
+    status INTEGER NOT NULL DEFAULT 1,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    language VARCHAR(32) NOT NULL DEFAULT '',
+    timezone VARCHAR(64) NOT NULL DEFAULT '',
+    notification_preferences JSONB NOT NULL DEFAULT '{}'::jsonb,
+    CONSTRAINT ck_iam_user_preference_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
+    CONSTRAINT ck_iam_user_preference_subject_scope CHECK (tenant_id > 0 AND organization_id >= 0 AND user_id > 0),
+    CONSTRAINT ck_iam_user_preference_values CHECK (length(language) <= 32 AND length(timezone) <= 64 AND version >= 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_user_preference_scope ON iam_user_preference (tenant_id, organization_id, user_id);
+CREATE INDEX IF NOT EXISTS idx_iam_user_preference_user_updated ON iam_user_preference (tenant_id, organization_id, user_id, updated_at, id);
+
+CREATE TABLE IF NOT EXISTS integration_webhook_endpoint (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    user_id BIGINT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    owner_type INTEGER NOT NULL DEFAULT 1,
+    owner_id BIGINT NOT NULL,
+    data_scope INTEGER NOT NULL DEFAULT 1,
+    status INTEGER NOT NULL DEFAULT 1,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    endpoint_code VARCHAR(128) NOT NULL,
+    name VARCHAR(128) NOT NULL,
+    target_url VARCHAR(1024) NOT NULL DEFAULT '',
+    event_types JSONB NOT NULL DEFAULT '[]'::jsonb,
+    signing_alg VARCHAR(64) NOT NULL DEFAULT 'hmac-sha256',
+    retry_policy JSONB NOT NULL DEFAULT '{}'::jsonb,
+    failure_count BIGINT NOT NULL DEFAULT 0,
+    CONSTRAINT ck_integration_webhook_endpoint_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
+    CONSTRAINT ck_integration_webhook_endpoint_subject_scope CHECK (tenant_id > 0 AND organization_id >= 0 AND user_id > 0),
+    CONSTRAINT ck_integration_webhook_endpoint_values CHECK (length(endpoint_code) > 0 AND length(name) > 0 AND length(target_url) <= 1024 AND failure_count >= 0 AND version >= 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_integration_webhook_endpoint_scope_code ON integration_webhook_endpoint (tenant_id, organization_id, endpoint_code);
+CREATE INDEX IF NOT EXISTS idx_integration_webhook_endpoint_scope_code ON integration_webhook_endpoint (tenant_id, organization_id, endpoint_code, id);
 
 CREATE TABLE IF NOT EXISTS ops_alert_event (
     id BIGINT NOT NULL PRIMARY KEY,

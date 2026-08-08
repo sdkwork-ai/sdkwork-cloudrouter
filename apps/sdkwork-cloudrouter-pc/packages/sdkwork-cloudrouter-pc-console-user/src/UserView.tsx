@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { BusinessStatePanel, copyTextToClipboard, readMediaResourceUrl } from '@sdkwork/cloudroutes-pc-commons';
+import { BusinessStatePanel, copyTextToClipboard, readMediaResourceUrl, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import {
   ensureSdkworkApiSuccess,
   getCloudRouterAppSdkClient,
@@ -12,10 +12,7 @@ import { useTranslation } from 'react-i18next';
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
 
 function getLoadErrorMessage(error: unknown, fallback: string, t: TranslationFunction): string {
-  if (!(error instanceof Error) || !error.message) {
-    return fallback;
-  }
-  return error.message.startsWith('console.') ? t(error.message, fallback) : error.message;
+  return resolveProblemMessage(error, t, fallback);
 }
 
 function ProfileSection({

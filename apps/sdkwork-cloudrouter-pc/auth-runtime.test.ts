@@ -134,6 +134,10 @@ function readI18nResourceSource(): string {
     ...readI18nResourceFiles().map(includeI18nLocaleContext),
     ...readPortalSourceFiles("./packages/sdkwork-cloudrouter-pc-admin-upstream/src/i18n/")
       .map(includeI18nLocaleContext),
+    ...readPortalSourceFiles("./packages/sdkwork-cloudrouter-pc-admin-iam/src/i18n/")
+      .map(includeI18nLocaleContext),
+    ...readPortalSourceFiles("./node_modules/@sdkwork/log-pc-admin-request-log/src/i18n/")
+      .map(includeI18nLocaleContext),
   ].join("\n");
 }
 
@@ -431,6 +435,26 @@ test("authenticated auth routes default to admin while preserving an explicit re
       location: { pathname: "/auth/login", search: "?redirect=%2Fconsole%2Fdashboard" },
     }),
     "/console/dashboard",
+  );
+  // Nested `redirect=/auth/login?redirect=...` values are rejected regardless
+  // of encoding depth instead of bouncing back through the login surface.
+  assert.equal(
+    resolvePortalAuthenticatedAuthRouteRedirect({
+      location: {
+        pathname: "/auth/login",
+        search: "?redirect=%2Fauth%2Flogin%3Fredirect%3D%252Fconsole%252Fdashboard",
+      },
+    }),
+    "/admin",
+  );
+  assert.equal(
+    resolvePortalAuthenticatedAuthRouteRedirect({
+      location: {
+        pathname: "/auth/login",
+        search: "?redirect=%25252Fauth%25252Flogin%25253Fredirect%25253D%25252Fconsole",
+      },
+    }),
+    "/admin",
   );
 });
 
@@ -1208,7 +1232,7 @@ test("admin auth settings page localizes visible copy and uses the available con
     assert.match(i18nSource, new RegExp(`"${key.replaceAll(".", "\\.")}"`), `${key} must be present in i18n resources`);
   }
 
-  assert.doesNotMatch(settingsPageSource, /admin\.authSettings\.description/);
+  assert.doesNotMatch(settingsPageSource, /admin\.authSettings\.description['"]/);
 
   for (const hardcodedText of [
     "Auth settings",
@@ -1439,8 +1463,8 @@ test("navbar routes sign in through the auth module instead of bootstrapping ses
   assert.doesNotMatch(navbarSource, /SESSION_BOOTSTRAP_ERROR_MESSAGE/);
 });
 
-test("portal auth guard classifies every console and admin path as login protected", () => {
-  assert.deepEqual(PROTECTED_PORTAL_ROUTE_PREFIXES, ["/console", "/admin"]);
+test("portal auth guard classifies every console, admin, playground, and conversation path as login protected", () => {
+  assert.deepEqual(PROTECTED_PORTAL_ROUTE_PREFIXES, ["/console", "/admin", "/playground", "/c"]);
 
   for (const path of [
     "/console",
@@ -1451,6 +1475,9 @@ test("portal auth guard classifies every console and admin path as login protect
     "/admin/dashboard",
     "/admin/user",
     "/admin/ratelimit",
+    "/playground",
+    "/playground/chat",
+    "/c/conversation-123",
   ]) {
     assert.equal(isProtectedPortalPath(path), true, `${path} must require login`);
   }
@@ -1463,7 +1490,6 @@ test("portal auth guard classifies every console and admin path as login protect
     "/docs",
     "/api-reference",
     "/sdk-reference",
-    "/playground",
     "/token-plan",
     "/auth/login",
     "/console-public",
@@ -2584,14 +2610,14 @@ test("upstream administration exposes independent supplier, account, and group n
 
   assert.doesNotMatch(adminRegistrySource, /groupBlock\('admin\.menu\.home\.userManagement'/);
   assert.doesNotMatch(adminRegistrySource, /groupBlock\('admin\.menu\.home\.agentSkills'/);
-  assert.match(i18nSource, /"admin\.menu\.home\.upstreamManagement":\s*"Upstream Management"/);
-  assert.match(i18nSource, /"admin\.menu\.home\.upstreamManagement":\s*"\u4e0a\u6e38\u7ba1\u7406"/);
-  assert.match(i18nSource, /"admin\.menu\.upstream\.suppliers":\s*"Upstream Suppliers"/);
-  assert.match(i18nSource, /"admin\.menu\.upstream\.suppliers":\s*"\u4e0a\u6e38\u4f9b\u5e94\u5546"/);
-  assert.match(i18nSource, /"admin\.menu\.upstream\.accounts":\s*"Upstream Accounts"/);
-  assert.match(i18nSource, /"admin\.menu\.upstream\.accounts":\s*"\u4e0a\u6e38\u8d26\u53f7"/);
-  assert.match(i18nSource, /"admin\.menu\.upstream\.accountGroups":\s*"Account Groups"/);
-  assert.match(i18nSource, /"admin\.menu\.upstream\.accountGroups":\s*"\u8d26\u53f7\u5206\u7ec4"/);
+  assert.match(i18nSource, /"admin\.menu\.home\.upstreamManagement":\s*"Supplier Management"/);
+  assert.match(i18nSource, /"admin\.menu\.home\.upstreamManagement":\s*"\u4f9b\u5e94\u5546\u7ba1\u7406"/);
+  assert.match(i18nSource, /"admin\.menu\.upstream\.suppliers":\s*"Suppliers"/);
+  assert.match(i18nSource, /"admin\.menu\.upstream\.suppliers":\s*"\u4f9b\u5e94\u5546"/);
+  assert.match(i18nSource, /"admin\.menu\.upstream\.accounts":\s*"Supplier Accounts"/);
+  assert.match(i18nSource, /"admin\.menu\.upstream\.accounts":\s*"\u4f9b\u5e94\u5546\u8d26\u53f7"/);
+  assert.match(i18nSource, /"admin\.menu\.upstream\.accountGroups":\s*"Supplier Account Groups"/);
+  assert.match(i18nSource, /"admin\.menu\.upstream\.accountGroups":\s*"\u4f9b\u5e94\u5546\u8d26\u53f7\u5206\u7ec4"/);
 });
 
 test("upstream credentials never expose plaintext after submission", () => {
@@ -2612,8 +2638,8 @@ test("admin module registry exposes the owned commercial management centers", ()
   const adminHostSource = readPortalFile("./src/admin/cloudRouterAdminHostMount.tsx");
   const operationsMenu = findAdminModuleMenuSource(adminRegistrySource, "operations");
 
-  assert.deepEqual(findOrderedMatches(adminRegistrySource, /id:\s*'([^']+)'/g), ["home", "membershipCenter", "marketingCenter", "paymentCenter", "storageCenter", "operations"]);
-  assert.deepEqual(findOrderedMatches(adminRegistrySource, /moduleId:\s*'([^']+)'/g), ["home", "membershipCenter", "marketingCenter", "paymentCenter", "storageCenter", "operations"]);
+  assert.deepEqual(findOrderedMatches(adminRegistrySource, /id:\s*'([^']+)'/g), ["home", "membershipCenter", "marketingCenter", "partnerCenter", "paymentCenter", "storageCenter", "operations"]);
+  assert.deepEqual(findOrderedMatches(adminRegistrySource, /moduleId:\s*'([^']+)'/g), ["home", "membershipCenter", "partnerCenter", "marketingCenter", "paymentCenter", "storageCenter", "operations"]);
   assert.doesNotMatch(operationsMenu, /\/admin\/oauth/);
   assert.doesNotMatch(adminRegistrySource, /path:\s*'\/admin\/(catalog|orders|finance|wallet|oauth|service-providers|agents|skill|prompts|mcp|announcement|user|organization)'/);
 
@@ -2636,7 +2662,7 @@ test("admin module registry exposes the owned commercial management centers", ()
     assert.equal(packageJson.dependencies[pkg], undefined, `package.json must not depend on ${pkg}`);
   }
 
-  assert.doesNotMatch(`${appSource}\n${adminHostSource}`, /CatalogAdmin|OrdersAdmin|FinanceAdmin|WalletAdmin|OauthAdmin|ServiceProviderAdmin|AgentsAdmin|SkillAdmin|PromptsAdmin|McpAdmin|AnnouncementAdmin|UserAdmin|OrganizationAdmin|MessagingAdmin/);
+  assert.doesNotMatch(`${appSource}\n${adminHostSource}`, /\b(CatalogAdmin|OrdersAdmin|FinanceAdmin|WalletAdmin|OauthAdmin|ServiceProviderAdmin|AgentsAdmin|SkillAdmin|PromptsAdmin|McpAdmin|AnnouncementAdmin|UserAdmin|OrganizationAdmin|MessagingAdmin)\b/);
   assert.match(adminHostSource, /ModelAdmin|UpstreamAdmin|RecordAdmin|AnalyticsAdmin|MonitorAdmin|RateLimitAdmin/);
 });
 

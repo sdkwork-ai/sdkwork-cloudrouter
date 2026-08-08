@@ -68,6 +68,11 @@ class DatabaseModuleSpec:
     baseline_anchor_table: str
     baseline_file: str
     relative_root: str
+    table_prefixes: tuple[str, ...] | None = None
+
+    @property
+    def owned_prefixes(self) -> tuple[str, ...]:
+        return self.table_prefixes or (self.table_prefix,)
 
 
 ROOT_MODULE = DatabaseModuleSpec(
@@ -79,6 +84,10 @@ ROOT_MODULE = DatabaseModuleSpec(
     baseline_anchor_table="ai_upstream_supplier",
     baseline_file="0001_cloudrouter_baseline.sql",
     relative_root="database",
+    # The root module additionally owns the console user-settings tables
+    # (`iam_user_preference`, `integration_webhook_endpoint`) that live in its
+    # composite baseline next to the auxiliary module tables.
+    table_prefixes=("ai_", "iam_user_", "integration_"),
 )
 
 AUXILIARY_MODULES = (
@@ -155,7 +164,10 @@ class DatabaseContractMaterializer:
             if isinstance(table, dict)
             and isinstance(table.get("table"), str)
             and table.get("generated_by_this_project") is not False
-            and str(table["table"]).startswith(self.module_spec.table_prefix)
+            and any(
+                str(table["table"]).startswith(prefix)
+                for prefix in self.module_spec.owned_prefixes
+            )
         ]
         tables.sort(key=lambda item: item["name"])
         table_names = [table["name"] for table in tables]
@@ -199,7 +211,7 @@ class DatabaseContractMaterializer:
                     "owner": self.module_spec.owner,
                     "domain": self.module_spec.module_id,
                 }
-                for prefix in (self.module_spec.table_prefix,)
+                for prefix in self.module_spec.owned_prefixes
             ],
         }
 
@@ -214,8 +226,11 @@ class DatabaseContractMaterializer:
         manifest["engines"] = [DATABASE_ENGINE]
         manifest["defaultEngine"] = DATABASE_ENGINE
         manifest["contractVersion"] = contract_version
-        manifest["tablePrefix"] = self.module_spec.table_prefix
-        manifest.pop("tablePrefixes", None)
+        # Canonical prefix declaration (sdkwork-database-spi manifest.rs):
+        # the array form is authoritative; the legacy singular `tablePrefix`
+        # key is removed so manifests stay single-source.
+        manifest.pop("tablePrefix", None)
+        manifest["tablePrefixes"] = list(self.module_spec.owned_prefixes)
         manifest["baselineAnchorTable"] = self.module_spec.baseline_anchor_table
         manifest["modules"] = self._available_auxiliary_module_ids()
         manifest.pop("composeDependencies", None)

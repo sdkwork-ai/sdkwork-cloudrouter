@@ -41,7 +41,7 @@ sdkwork-cloudrouter-security.workspace = true
 sdkwork-cloudrouter-provider-adapter-contract.workspace = true
 sdkwork-cloudrouter-provider-adapter-http.workspace = true
 sdkwork-cloudrouter-provider-adapter-registry.workspace = true
-sdkwork-database-id = { workspace = true, features = ["sqlite"] }
+sdkwork-database-id.workspace = true
 sdkwork_contract_service.workspace = true
 sdkwork_account_service.workspace = true
 sdkwork_account_repository_sqlx.workspace = true
@@ -50,7 +50,7 @@ sdkwork_invoice_database_bootstrap.workspace = true
 sdkwork_payment_service.workspace = true
 sdkwork-sdk-generator-client.workspace = true
 sdkwork-database-config.workspace = true
-sdkwork-database-sqlx = { workspace = true, features = ["sqlite"] }
+sdkwork-database-sqlx.workspace = true
 sdkwork-database-repository.workspace = true
 sdkwork-iam-bootstrap.workspace = true
 sdkwork-iam-web-adapter.workspace = true

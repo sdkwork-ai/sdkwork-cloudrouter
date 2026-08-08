@@ -288,7 +288,7 @@ test('admin host composes owner admin modules through the backend-admin core SDK
 
   assert.match(appSource, /CloudRouterAdminHostRoutes/);
   assert.doesNotMatch(appSource, /const (?:Dashboard|Model|Upstream)Admin = lazyRoute/);
-  assert.equal((hostSource.match(/\broute\('/g) ?? []).length, 21);
+  assert.equal((hostSource.match(/\broute\('/g) ?? []).length, 23);
   assert.match(hostSource, /'sdkwork-models', '@sdkwork\/models-pc-admin-catalog', \['sdkwork-models-backend-sdk'\]/);
   assert.match(hostSource, /'sdkwork-cloudrouter', '@sdkwork\/cloudrouter-pc-admin-upstream', \['cloudrouter-backend-sdk'\]/);
 

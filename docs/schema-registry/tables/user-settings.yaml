@@ -1,0 +1,135 @@
+tables:
+- table: iam_user_preference
+  domain: iam_user
+  profile: user_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: user_runtime_entity
+  api_surfaces:
+  - app
+  columns:
+    owner_type:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    owner_id:
+      type: int64
+      constraints: NOT NULL
+    data_scope:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    status:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    version:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    deleted_at: instant
+    deleted_by: int64
+    language:
+      type: string(32)
+      constraints: NOT NULL DEFAULT ''
+    timezone:
+      type: string(64)
+      constraints: NOT NULL DEFAULT ''
+    notification_preferences:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+  required_columns:
+  - user_id
+  unique_constraints:
+  - name: uk_iam_user_preference_scope
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+  check_constraints:
+  - name: ck_iam_user_preference_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+  - name: ck_iam_user_preference_values
+    expression: length(language) <= 32
+      AND length(timezone) <= 64
+      AND version >= 0
+  indexes:
+  - name: idx_iam_user_preference_user_updated
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - updated_at
+    - id
+
+- table: integration_webhook_endpoint
+  domain: integration
+  profile: user_entity
+  compliance_level: L3
+  system_of_record: true
+  write_owner: router-service
+  common_columns: user_runtime_entity
+  api_surfaces:
+  - app
+  columns:
+    owner_type:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    owner_id:
+      type: int64
+      constraints: NOT NULL
+    data_scope:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    status:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    version:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    deleted_at: instant
+    deleted_by: int64
+    endpoint_code:
+      type: string(128)
+      constraints: NOT NULL
+    name:
+      type: string(128)
+      constraints: NOT NULL
+    target_url:
+      type: string(1024)
+      constraints: NOT NULL DEFAULT ''
+    event_types:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
+    signing_alg:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'hmac-sha256'
+    retry_policy:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    failure_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+  required_columns:
+  - user_id
+  - endpoint_code
+  - name
+  unique_constraints:
+  - name: uk_integration_webhook_endpoint_scope_code
+    columns:
+    - tenant_id
+    - organization_id
+    - endpoint_code
+  check_constraints:
+  - name: ck_integration_webhook_endpoint_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+  - name: ck_integration_webhook_endpoint_values
+    expression: length(endpoint_code) > 0
+      AND length(name) > 0
+      AND length(target_url) <= 1024
+      AND failure_count >= 0
+      AND version >= 0
+  indexes:
+  - name: idx_integration_webhook_endpoint_scope_code
+    columns:
+    - tenant_id
+    - organization_id
+    - endpoint_code
+    - id

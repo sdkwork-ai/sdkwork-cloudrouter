@@ -1,0 +1,9 @@
+
+> sdkwork-cloudrouter-workspace@0.3.0 db:drift:check E:\sdkwork-space\sdkwork-cloudrouter
+> cargo run --manifest-path ../sdkwork-database/Cargo.toml -p sdkwork-database-cli -- --app-root . drift-check
+
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.15s
+     Running `E:\sdkwork-space\sdkwork-database\target\debug\sdkwork-db.exe --app-root . drift-check`
+Error: introspect error: postgres constraints: error communicating with database: expected to read 5 bytes, got 0 bytes at EOF
+error: process didn't exit successfully: `E:\sdkwork-space\sdkwork-database\target\debug\sdkwork-db.exe --app-root . drift-check` (exit code: 1)
+ ELIFECYCLE  Command failed with exit code 1.

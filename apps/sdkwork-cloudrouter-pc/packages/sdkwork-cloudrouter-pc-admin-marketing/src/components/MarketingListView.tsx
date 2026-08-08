@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, RefreshCw, Search } from 'lucide-react';
-import { BottomPagination, BusinessStatePanel } from '@sdkwork/cloudroutes-pc-commons';
+import { BottomPagination, BusinessStatePanel, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import type { ApiRecord } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { hasNextMarketingPage, marketingPageLabel, MarketingTablePanel } from './MarketingPageControls';
 
@@ -107,7 +107,7 @@ export function MarketingListView<T extends object>({
       setPageInfo(result.pageInfo);
     } catch (loadError) {
       if (requestId === requestIdRef.current) {
-        setError(loadError instanceof Error ? loadError.message : t('admin.marketing.promotions.error', 'Promotion data could not be loaded'));
+        setError(resolveProblemMessage(loadError, t, t('admin.marketing.promotions.error', 'Promotion data could not be loaded')));
       }
     } finally {
       if (requestId === requestIdRef.current) {

@@ -32,6 +32,7 @@ import {
   computeGrantAmount,
   listRechargeCurrencyCodes,
   normalizeRechargeSettings,
+  resolveProblemMessage,
 } from '@sdkwork/cloudroutes-pc-commons';
 import { formatMembershipDateTime } from '../membershipFormat';
 
@@ -102,7 +103,7 @@ export function MembershipRechargePackagesPage() {
         currencyToCnyRates: loadedSettings.currencyToCnyRates,
       });
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : t('admin.commerce.memberships.rechargePackages.error', 'Recharge packages could not be loaded'));
+      setError(resolveProblemMessage(loadError, t, t('admin.commerce.memberships.rechargePackages.error', 'Recharge packages could not be loaded')));
     } finally {
       setIsLoading(false);
     }

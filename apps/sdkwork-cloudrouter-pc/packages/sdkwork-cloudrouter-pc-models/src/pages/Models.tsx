@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Search, SlidersHorizontal, Database, Zap, ArrowUpRight, LayoutGrid, List, ChevronDown, Tag, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import { useNavigate } from 'react-router-dom';
 import type { Model, ModelGroupKey } from '../data/models';
 import {
@@ -151,7 +152,7 @@ export function Models() {
       .catch((error: unknown) => {
         if (!cancelled) {
           setProviderLoadError(
-            error instanceof Error ? error.message : modelLoadErrorMessage,
+            resolveProblemMessage(error, t, modelLoadErrorMessage),
           );
         }
       });
@@ -182,7 +183,7 @@ export function Models() {
           setCatalogGroups([]);
           setCatalogTotal(0);
           setCatalogHasMore(false);
-          setCatalogLoadError(error instanceof Error ? error.message : modelLoadErrorMessage);
+          setCatalogLoadError(resolveProblemMessage(error, t, modelLoadErrorMessage));
         }
       })
       .finally(() => {

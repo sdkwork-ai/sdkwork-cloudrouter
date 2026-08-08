@@ -20,13 +20,20 @@
  * naming; `docker:*` public script names are forbidden by the spec).
  */
 
+import { createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+} from 'node:fs';
 import {
   cp,
   mkdir,
   readFile,
+  readdir,
   rm,
+  stat as statFile,
   writeFile,
 } from 'node:fs/promises';
 import path from 'node:path';
@@ -38,6 +45,7 @@ import {
   PACKAGE_NAME,
   createInstallPackagePlan,
 } from './plan-cloud-router-install-packages.mjs';
+import { checkDistConsistency } from './check-portal-dist-consistency.mjs';
 
 const execFileAsync = promisify(execFile);
 
@@ -53,6 +61,13 @@ const STAGING_ROOT = 'dist/install-package-staging';
 const PACKAGE_OUTPUT_DIR = 'dist/install-packages';
 const IMAGE_BUILD_DIR = 'dist/container-image-build';
 const IMAGE_MANIFEST_FILE = 'dist/container-image.json';
+// Snapshot of every build input (binaries, dist, database modules, catalog,
+// app config). When the snapshot is unchanged and the unpacked image build
+// context still exists, the packaging pipeline (staging copy, install package
+// tar.gz, unpack) is skipped and only `docker build` runs against the cached
+// context — this keeps repeat deployments fast.
+const STAGING_SNAPSHOT_FILE = 'dist/container-image-staging.snapshot.json';
+const SNAPSHOT_SCHEMA_VERSION = 1;
 
 function printHelp() {
   console.log(`Usage: node scripts/build-cloud-router-container.mjs [options]
@@ -76,6 +91,7 @@ function parseBuildContainerArgs(argv = process.argv.slice(2)) {
   const settings = {
     check: false,
     dryRun: false,
+    force: false,
     help: false,
     json: false,
     packageId: defaultContainerPackageId(process.platform, process.arch),
@@ -104,6 +120,9 @@ function parseBuildContainerArgs(argv = process.argv.slice(2)) {
       case '--package-id':
         settings.packageId = requireValue(argv, index, arg);
         index += 1;
+        break;
+      case '--force':
+        settings.force = true;
         break;
       case '--version':
         settings.version = requireValue(argv, index, arg);
@@ -236,6 +255,7 @@ function createBuildPlan(settings, root = workspaceRoot) {
     packageOutputDir: path.join(root, PACKAGE_OUTPUT_DIR),
     imageBuildDir: path.join(root, IMAGE_BUILD_DIR),
     manifestPath: path.join(root, IMAGE_MANIFEST_FILE),
+    snapshotPath: path.join(root, STAGING_SNAPSHOT_FILE),
     prerequisites: [
       {
         label: 'standalone gateway release binary',
@@ -322,6 +342,14 @@ function validateBuildPlan(plan) {
     if (!existsSync(prerequisite.path)) {
       issues.push(`missing prerequisite: ${prerequisite.label} (${prerequisite.path})`);
     }
+  }
+  // Portal dist must be self-consistent before packaging: an index.html that
+  // references hashed chunks missing from dist/ makes the gateway answer JS
+  // requests with the SPA fallback HTML (browser: "Failed to load module
+  // script ... MIME type text/html"). Rebuild the portal before packaging.
+  const distCheck = checkDistConsistency();
+  if (!distCheck.ok) {
+    issues.push(...distCheck.issues);
   }
   return issues;
 }
@@ -435,6 +463,63 @@ async function dockerVersion() {
   return stdout.trim();
 }
 
+// Collect {size, mtimeMs} for every input file of the image build so repeat
+// builds can skip the packaging pipeline when nothing changed.
+async function collectSourceSnapshot(plan) {
+  const targets = [
+    ...plan.stagedEntries.map((entry) => entry.sourcePath),
+    ...plan.databaseModules.map((module) => module.sourcePath),
+    ...plan.catalogEntries.map((entry) => entry.sourcePath),
+    ...plan.appConfigEntries.map((entry) => entry.sourcePath),
+  ];
+  const files = [];
+  for (const target of targets) {
+    await collectFileStats(target, path.basename(target), files);
+  }
+  files.sort((left, right) => left.path.localeCompare(right.path));
+  return { schemaVersion: SNAPSHOT_SCHEMA_VERSION, files };
+}
+
+async function collectFileStats(target, relativePath, out) {
+  const stat = await statFile(target);
+  if (stat.isDirectory()) {
+    for (const child of await readdir(target)) {
+      await collectFileStats(path.join(target, child), `${relativePath}/${child}`, out);
+    }
+    return;
+  }
+  out.push({ path: relativePath, size: stat.size, mtimeMs: stat.mtimeMs });
+}
+
+function snapshotMatches(snapshotPath, current) {
+  try {
+    const previous = JSON.parse(readFileSync(snapshotPath, 'utf8'));
+    return previous.schemaVersion === SNAPSHOT_SCHEMA_VERSION
+      && JSON.stringify(previous.files) === JSON.stringify(current.files);
+  } catch {
+    return false;
+  }
+}
+
+function imageBuildContextCached(plan) {
+  if (!existsSync(plan.stagingRoot) || !existsSync(plan.imageBuildDir)) {
+    return false;
+  }
+  return readdirSync(plan.imageBuildDir).length > 0;
+}
+
+async function packageArchiveSha256(plan) {
+  const archiveName = `${PACKAGE_NAME}-${plan.package.id}-${plan.package.version}.tar.gz`;
+  const archivePath = path.join(plan.packageOutputDir, archiveName);
+  if (!existsSync(archivePath)) {
+    throw new Error(`cached image build requires package archive: ${archivePath}`);
+  }
+  const hash = createHash('sha256');
+  const data = await readFile(archivePath);
+  hash.update(data);
+  return hash.digest('hex');
+}
+
 async function buildImage(plan) {
   const args = [
     'build',
@@ -541,10 +626,38 @@ async function main(argv = process.argv.slice(2)) {
   console.log(`[container-image-build] docker server: ${serverVersion}`);
 
   await ensureSdkArchiveArtifacts(plan);
-  await assembleStaging(plan);
-  const archive = await buildInstallPackage(plan);
-  console.log(`[container-image-build] package archive: ${archive.path} (sha256 ${archive.sha256})`);
-  await unpackInstallPackage(plan, archive.path);
+
+  // Fast path: when every build input is unchanged and the unpacked image
+  // build context still exists, skip the packaging pipeline (staging copy,
+  // install package tar.gz, unpack) and only run `docker build` against the
+  // cached context. Layer cache then keeps repeat deployments near-instant.
+  const currentSnapshot = await collectSourceSnapshot(plan);
+  const cached = !settings.force
+    && snapshotMatches(plan.snapshotPath, currentSnapshot)
+    && imageBuildContextCached(plan);
+
+  let archive;
+  if (cached) {
+    console.log('[container-image-build] inputs unchanged; reusing cached image build context');
+    archive = {
+      path: path.join(
+        plan.packageOutputDir,
+        `${PACKAGE_NAME}-${plan.package.id}-${plan.package.version}.tar.gz`,
+      ),
+      sha256: await packageArchiveSha256(plan),
+    };
+  } else {
+    await assembleStaging(plan);
+    archive = await buildInstallPackage(plan);
+    console.log(`[container-image-build] package archive: ${archive.path} (sha256 ${archive.sha256})`);
+    await unpackInstallPackage(plan, archive.path);
+    await writeFile(
+      plan.snapshotPath,
+      `${JSON.stringify(currentSnapshot, null, 2)}\n`,
+      'utf8',
+    );
+  }
+
   await buildImage(plan);
   const manifest = await writeImageManifest(plan, archive);
   if (settings.json) {
@@ -565,7 +678,9 @@ main().catch((error) => {
 
 export {
   CONTAINER_IMAGE_MANIFEST_SCHEMA_VERSION,
+  collectSourceSnapshot,
   createBuildPlan,
   main,
   parseBuildContainerArgs,
+  snapshotMatches,
 };

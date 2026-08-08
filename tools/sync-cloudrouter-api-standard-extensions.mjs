@@ -121,6 +121,19 @@ function inferAuth(operation) {
   return { mode: "dual-token", required: true };
 }
 
+// Canonical API surface label mirroring sdkwork-web-contract's
+// infer_api_surface_from_path: /v1 is the reserved gateway API prefix;
+// app/backend/internal use their reserved prefixes; other paths under `/`
+// are open-api.
+function inferApiSurfaceLabel(routePath) {
+  if (routePath.startsWith("/app/v3/api")) return "app-api";
+  if (routePath.startsWith("/backend/v3/api")) return "backend-api";
+  if (routePath.startsWith("/internal/v3/api")) return "internal-api";
+  if (routePath.startsWith("/v1")) return "gateway-api";
+  if (routePath.startsWith("/")) return "open-api";
+  return "open-api";
+}
+
 function inferSdkworkPermission(operation, routePath) {
   if (operation['x-sdkwork-permission']) {
     return undefined;
@@ -184,11 +197,14 @@ function stampOpenApiExtensions(document, target) {
       const owner = operation["x-sdkwork-owner"] ?? "sdkwork-cloudrouter";
       const apiAuthority = operation["x-sdkwork-api-authority"] ?? target.apiAuthority;
       const sourceRouteCrate = operation["x-sdkwork-source-route-crate"] ?? target.packageName;
+      // Canonical surface follows web-contract path inference: /v1 is the
+      // reserved gateway API prefix, other paths under / are open-api.
+      const inferredSurface = inferApiSurfaceLabel(routePath);
       const extensions = {
         "x-sdkwork-owner": owner,
         "x-sdkwork-api-authority": apiAuthority,
         "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": target.apiSurface,
+        "x-sdkwork-api-surface": inferredSurface,
         "x-sdkwork-source-route-crate": sourceRouteCrate,
       };
       for (const [key, value] of Object.entries(extensions)) {
@@ -202,7 +218,13 @@ function stampOpenApiExtensions(document, target) {
         operation['x-sdkwork-permission'] = inferredPermission;
         changed += 1;
       }
-      if (inferAuth(operation).required && operation['x-sdkwork-required-surface'] !== 'organizationMember') {
+      const inferredAuth = inferAuth(operation);
+      const authMode = inferredAuth.mode === "public" ? "anonymous" : inferredAuth.mode;
+      if (operation['x-sdkwork-auth-mode'] !== authMode) {
+        operation['x-sdkwork-auth-mode'] = authMode;
+        changed += 1;
+      }
+      if (inferredAuth.required && operation['x-sdkwork-required-surface'] !== 'organizationMember') {
         operation['x-sdkwork-required-surface'] = 'organizationMember';
         changed += 1;
       }

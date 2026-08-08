@@ -265,7 +265,11 @@ impl OpenAiInvocationPlugin for OpenAiBillingSubjectGuardPlugin {
             if subject.tenant_id <= 0 {
                 missing.push("tenant");
             }
-            if subject.organization_id <= 0 {
+            // organization_id == 0 is a valid tenant-scoped billing subject
+            // (tenant-level account groups, seed data and settlement workers
+            // all treat 0 as "no organization"); only negative values are
+            // data anomalies.
+            if subject.organization_id < 0 {
                 missing.push("organization");
             }
             if subject.user_id <= 0 {

@@ -1,0 +1,86 @@
+# SdkWork CloudRouter runtime configuration for docker compose (standalone container).
+# Mounted read-only at /etc/sdkwork/router/cloudrouter.toml by docker-compose.yml.
+#
+# How to modify configuration at deployment time:
+#   1. Edit this file for non-sensitive runtime settings (observability,
+#      server bind, edge/portal behaviour, ...).
+#   2. Edit docker/.env (copy docker/.env.example) for secrets and external
+#      service connections: SDKWORK_DATABASE_*, SDKWORK_CLOUDROUTER_REDIS_*,
+#      SDKWORK_CLOUDROUTER_*_SECRET, SDKWORK_PAYMENT_CREDENTIAL_MASTER_KEY_FILE.
+#   3. `docker compose up -d` to apply (or `docker compose restart cloudrouter`
+#      for this file only).
+#
+# Environment variables take precedence over this file (ENVIRONMENT_SPEC §11),
+# so sensitive connection values are always injected through the environment
+# and never stored here.
+
+[database]
+# Connection values are injected through SDKWORK_DATABASE_* environment
+# variables by docker-compose.yml. Keep this section as a template reference.
+engine = "postgresql"
+host = "postgres"
+port = 5432
+database = "sdkwork_ai_prod"
+username = "sdkwork_ai_prod"
+password_file = "/run/secrets/sdkwork/router/postgres-password"
+ssl_mode = "disable"
+max_connections = 10
+
+[redis]
+# Connection values are injected through SDKWORK_CLOUDROUTER_REDIS_*
+# environment variables by docker-compose.yml.
+enabled = true
+host = "redis"
+port = 6379
+database = 0
+key_prefix = "cloudrouter"
+tls = false
+max_connections = 16
+connect_timeout_millis = 2000
+command_timeout_millis = 1000
+pool_idle_timeout_seconds = 60
+
+[observability]
+# Production logging policy. RUST_LOG remains available as a process-level override.
+log_filter = "trace"
+log_format = "compact"
+log_ansi = false
+log_target = true
+log_thread_names = false
+log_thread_ids = false
+
+[services.gateway]
+bind = "127.0.0.1:18080"
+
+[services.admin_api]
+bind = "127.0.0.1:18081"
+
+[services.app_api]
+bind = "127.0.0.1:18082"
+
+[server]
+bind = "0.0.0.0:3900"
+external_scheme = "http"
+trust_forwarded_headers = false
+
+[edge]
+# The packaged binary starts the Rust edge server so portal, gateway, app API,
+# and backend API share one install entrypoint (all-in-one).
+enabled = true
+gateway_base_url = "http://127.0.0.1:18080"
+backend_api_base_url = "http://127.0.0.1:18081"
+app_api_base_url = "http://127.0.0.1:18082"
+portal_base_url = "http://127.0.0.1:3901"
+portal_static_dist = "/opt/sdkwork/router/portal/dist"
+cors_allowed_origins = []
+upstream_request_timeout_millis = 30000
+upstream_ready_timeout_millis = 2000
+
+[portal.public]
+api_base_url = "/v1"
+open_api_base_url = "/v1"
+app_api_base_url = "/app/v3/api"
+backend_api_base_url = "/backend/v3/api"
+tool_api_enabled = false
+
+[portal.static]

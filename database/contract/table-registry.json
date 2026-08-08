@@ -313,6 +313,22 @@
       "lifecycle_status": "active",
       "profile": "relation_entity",
       "system_of_record": true
+    },
+    {
+      "table_name": "iam_user_preference",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "user_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "integration_webhook_endpoint",
+      "owner": "router-service",
+      "compliance_level": "L3",
+      "lifecycle_status": "active",
+      "profile": "user_entity",
+      "system_of_record": true
     }
   ]
 }

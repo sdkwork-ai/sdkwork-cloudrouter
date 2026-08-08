@@ -1,0 +1,154 @@
+name: Publish Container Image
+
+# Builds and publishes the sdkwork-cloudrouter standalone container image to
+# GHCR after a release: downloads the container install packages produced by
+# the packaging workflow (linux-x64/arm64 container archives), builds one
+# image per architecture, signs both with cosign, attaches an SBOM, and
+# merges a multi-arch manifest under the version tag and `latest`.
+#
+# Usage:
+#   docker pull ghcr.io/sdkwork-cloudrouter/cloudrouter:0.3.0
+#   docker pull ghcr.io/sdkwork-cloudrouter/cloudrouter:latest
+
+on:
+  push:
+    tags:
+      - v*
+      - '*.*.*'
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish container images for.
+        required: true
+        default: v0.3.0
+
+env:
+  IMAGE_NAME: ghcr.io/sdkwork-cloudrouter/cloudrouter
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    name: Build and push (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: amd64, package: linux-x64, runner: ubuntu-24.04 }
+          - { arch: arm64, package: linux-arm64, runner: ubuntu-24.04-arm }
+    steps:
+      - name: Resolve release tag
+        id: tag
+        run: |
+          TAG="${{ github.event.inputs.tag || github.event.release.tag_name || github.ref_name }}"
+          VERSION="${TAG#v}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Download container package asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist/install-packages
+          PATTERN="cloudrouter-${{ matrix.package }}-container-${{ steps.tag.outputs.version }}.tar.gz"
+          gh release download "${{ steps.tag.outputs.tag }}" \
+            --pattern "$PATTERN" \
+            --dir dist/install-packages --clobber
+          test -f "dist/install-packages/$PATTERN"
+          echo "artifact=$PATTERN" >> "$GITHUB_ENV"
+
+      - name: Unpack container package
+        run: |
+          mkdir -p dist/container-image-build
+          tar -xzf "dist/install-packages/${{ env.artifact }}" -C dist/container-image-build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image (${{ matrix.arch }})
+        uses: docker/build-push-action@v6
+        with:
+          context: dist/container-image-build
+          file: Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.version }}-${{ matrix.arch }}
+          labels: |
+            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.tag.outputs.version }}
+
+      - name: Generate SBOM
+        run: |
+          syft scan "${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.version }}-${{ matrix.arch }}" \
+            -o spdx-json > "sbom-${{ matrix.arch }}.spdx.json"
+
+      - name: Sign image and SBOM (cosign)
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: |
+          if [ -n "${COSIGN_PRIVATE_KEY}" ]; then
+            cosign sign --yes \
+              "${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.version }}-${{ matrix.arch }}"
+            cosign attach sbom --type spdxjson "sbom-${{ matrix.arch }}.spdx.json" \
+              "${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.version }}-${{ matrix.arch }}"
+          else
+            echo "[sign] cosign skipped (COSIGN_PRIVATE_KEY not configured)"
+          fi
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-sbom-${{ matrix.arch }}
+          path: sbom-${{ matrix.arch }}.spdx.json
+
+  manifest:
+    name: Merge multi-arch manifest
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Resolve release tag
+        id: tag
+        run: |
+          TAG="${{ github.event.inputs.tag || github.event.release.tag_name || github.ref_name }}"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create multi-arch manifest
+        run: |
+          VERSION="${{ steps.tag.outputs.version }}"
+          docker buildx imagetools create \
+            --tag "${{ env.IMAGE_NAME }}:${VERSION}" \
+            "${{ env.IMAGE_NAME }}:${VERSION}-amd64" \
+            "${{ env.IMAGE_NAME }}:${VERSION}-arm64"
+          docker buildx imagetools create \
+            --tag "${{ env.IMAGE_NAME }}:latest" \
+            "${{ env.IMAGE_NAME }}:${VERSION}-amd64" \
+            "${{ env.IMAGE_NAME }}:${VERSION}-arm64"
+
+      - name: Verify published manifest
+        run: |
+          docker buildx imagetools inspect "${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.version }}"

@@ -9,6 +9,7 @@ import {
   retrievePromotionOffer,
 } from '../marketingService';
 import { usePromotionReferences } from '../usePromotionReferences';
+import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 
 interface OfferDetailDrawerProps {
   offerId: string | null;
@@ -55,7 +56,7 @@ export function OfferDetailDrawer({ offerId, onClose }: OfferDetailDrawerProps) 
       })
       .catch((loadError: unknown) => {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : t('admin.marketing.offers.detail.loadError', 'Failed to load offer'));
+          setError(resolveProblemMessage(loadError, t, t('admin.marketing.offers.detail.loadError', 'Failed to load offer')));
         }
       });
     return () => {

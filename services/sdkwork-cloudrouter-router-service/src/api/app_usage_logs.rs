@@ -13,6 +13,7 @@ use axum::extract::{Extension, Query, State};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::Router;
+use sdkwork_cloudrouter_http::RequestLocale;
 use sdkwork_web_core::WebRequestContext;
 use serde::Deserialize;
 
@@ -116,6 +117,7 @@ async fn fetch_usage_logs(
     State(state): State<AppUsageLogsState>,
     ResolvedAppSqlScopedSubject(subject): ResolvedAppSqlScopedSubject,
     request_context: Option<Extension<WebRequestContext>>,
+    locale_extension: Option<Extension<RequestLocale>>,
     Query(query): Query<AppUsageLogsQuery>,
 ) -> Response {
     let ctx = request_context.map(|context| context.0);
@@ -133,12 +135,20 @@ async fn fetch_usage_logs(
         }
     };
 
+    // Effective locale: web-framework context first, then the Cloud Router
+    // locale boundary extension (`I18N_SPEC.md` §3/§11).
+    let locale = ctx
+        .as_ref()
+        .and_then(|context| context.locale.as_deref())
+        .map(str::to_owned)
+        .or_else(|| locale_extension.map(|extension| extension.0.effective().to_owned()));
+
     match state
         .read_store
         .load_usage_logs(
             validated_query.query,
             subject,
-            ctx.as_ref().and_then(|context| context.locale.as_deref()),
+            locale.as_deref(),
         )
         .await
     {

@@ -215,7 +215,17 @@ table_fragments:
 - tables/iam-gateway.yaml
 - tables/ops-runtime.yaml
 - tables/ai-chat-runtime.yaml
+- tables/user-settings.yaml
 modules:
+  user-settings:
+    owner: cloud-router-platform
+    description: Console user settings preferences and console webhook endpoints (iam_user_preference, integration_webhook_endpoint).
+    compliance_level: L2
+    tables_count: 2
+    tables:
+    - iam_user_preference
+    - integration_webhook_endpoint
+    ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
   ai-routing:
     owner: cloud-router-platform
     description: AI routing, upstream supplier, upstream account, account-group, policy, quota, and runtime coordination tables.

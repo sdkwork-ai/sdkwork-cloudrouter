@@ -16,6 +16,7 @@ import { emptyResourceSelection, ResourcePicker, toEntitlements, toSelection, ty
 import {
   dangerButtonClass,
   errorMessage,
+  errorMessageI18n,
   Field,
   InlineError,
   inputClass,
@@ -116,7 +117,7 @@ export function SupplierAdminPanel() {
       setItems(page.items);
       setSelected((current) => current ? page.items.find((item) => item.id === current.id) ?? null : null);
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setLoading(false);
     }
@@ -134,7 +135,7 @@ export function SupplierAdminPanel() {
       }
       setCatalog(value);
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     }
   }, [catalog, t]);
 
@@ -187,7 +188,7 @@ export function SupplierAdminPanel() {
       setEditing(undefined);
       await load();
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setBusy(false);
     }
@@ -203,7 +204,7 @@ export function SupplierAdminPanel() {
       setSelected((current) => current?.id === deleteTarget.id ? null : current);
       await load();
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setBusy(false);
     }
@@ -341,7 +342,7 @@ function SupplierModal({ supplier, catalog, busy, onSubmit, onClose }: { supplie
         if (!cancelled) setSelection(toSelection(items.map(({ resourceCode, resourceGroupCode, grantType, priority, status }) => ({ resourceCode, resourceGroupCode, grantType, priority, status }))));
       })
       .catch((cause) => {
-        if (!cancelled) setFormError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+        if (!cancelled) setFormError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
       })
       .finally(() => {
         if (!cancelled) setResourcesLoading(false);
@@ -560,7 +561,7 @@ function SupplierCapabilities({ supplier, onChanged, onClose }: { supplier: Upst
       setAuthMethods(nextAuthMethods.map(({ authMethodCode, authMethodName, authType, configSchema, runtimeAuthConfig, priority, status }) => ({ authMethodCode, authMethodName, authType, configSchema, runtimeAuthConfig, priority, status })));
       setResources(nextResources.map(({ resourceCode, resourceGroupCode, grantType, priority, status }) => ({ resourceCode, resourceGroupCode, grantType, priority, status })));
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setLoading(false);
     }
@@ -591,7 +592,7 @@ function SupplierCapabilities({ supplier, onChanged, onClose }: { supplier: Upst
       await load();
       setResourcePickerOpen(false);
     } catch (cause) {
-      setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setBusySection(null);
     }

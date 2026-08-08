@@ -704,8 +704,13 @@ export default defineConfig(({mode}) => {
             }
             const normalizedId = id.replaceAll('\\', '/');
             const localRoutePackage = normalizedId.match(LOCAL_ROUTE_PACKAGE_PATTERN)?.[1];
+            // Route packages are lazy-loaded by the router; leave their chunk
+            // assignment to rollup's automatic splitting so the entry never
+            // gains a static dependency on a lazy route chunk (statically
+            // imported i18n/contribution modules inside route packages used to
+            // pull route chunk top-level code ahead of startup configuration).
             if (localRoutePackage) {
-              return `route-${localRoutePackage.replace('sdkwork-cloudrouter-pc-', '')}`;
+              return undefined;
             }
             const normalizedAppbaseRoot = normalizePath(appbaseRoot);
             const normalizedIamRoot = normalizePath(iamRoot);

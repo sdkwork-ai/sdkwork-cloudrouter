@@ -6,6 +6,16 @@
       "prefix": "ai_",
       "owner": "cloud-router-platform",
       "domain": "cloudrouter"
+    },
+    {
+      "prefix": "iam_user_",
+      "owner": "cloud-router-platform",
+      "domain": "cloudrouter"
+    },
+    {
+      "prefix": "integration_",
+      "owner": "cloud-router-platform",
+      "domain": "cloudrouter"
     }
   ]
 }

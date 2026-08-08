@@ -84,6 +84,10 @@ import {
 import { resetCloudRouterIamRuntime } from './iam-runtime.ts';
 import { buildPortalAuthLoginRedirect, isProtectedPortalPath } from './portal-auth.ts';
 import { normalizeGeneratedSdkBaseUrl } from './sdk-base-url.ts';
+import {
+  attachSdkworkSdkLocaleBoundary,
+  type SdkworkSdkLocaleBoundaryClient,
+} from './sdk-locale.ts';
 
 export { normalizeGeneratedSdkBaseUrl } from './sdk-base-url.ts';
 import {
@@ -1239,9 +1243,15 @@ export function handleCloudRouterSdkSessionAuthError(error: unknown): boolean {
 }
 
 function attachCloudRouterSdkSessionAuthBoundary<TClient extends CloudRouterSdkClientWithHttp>(client: TClient): TClient {
-  return attachSdkworkSdkSessionAuthBoundary(
+  const withAuth = attachSdkworkSdkSessionAuthBoundary(
     client as unknown as SdkworkSdkClientWithHttp,
     resolveCloudRouterSessionAuthHandlerOptions(),
+  ) as unknown as TClient;
+  // Locale propagation composes with the auth boundary on the same HTTP
+  // transport so every Cloud Router SDK request carries `Accept-Language`
+  // and `X-SdkWork-Locale` (`I18N_SPEC.md` §4/§10).
+  return attachSdkworkSdkLocaleBoundary(
+    withAuth as unknown as SdkworkSdkLocaleBoundaryClient,
   ) as unknown as TClient;
 }
 
@@ -1383,11 +1393,10 @@ function buildMessagingAppConfig(options: SdkworkMessagingAppSdkClientOptions): 
 }
 
 export function resolveRequiredMessagingAppBaseUrl(options: SdkworkMessagingAppSdkClientOptions): string {
-  return options.appBaseUrl
+  const configured = options.appBaseUrl
     ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_MESSAGING_APP_API_BASE_URL')
-    ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_APP_API_BASE_URL')
-    ?? deriveDependencySurfaceBaseUrl('PORTAL_PUBLIC_SDK_BASE_URL', APP_API_PREFIX)
-    ?? APP_API_PREFIX;
+    ?? deriveDependencySurfaceBaseUrl('PORTAL_PUBLIC_SDK_BASE_URL', APP_API_PREFIX);
+  return configured || APP_API_PREFIX;
 }
 
 function buildAppbaseBackendConfig(options: SdkworkAppbaseBackendSdkClientOptions): SdkworkAppbaseBackendConfig {

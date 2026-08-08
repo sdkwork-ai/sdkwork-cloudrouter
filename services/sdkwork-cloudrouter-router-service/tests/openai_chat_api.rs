@@ -571,8 +571,10 @@ async fn openai_chat_completions_rejects_api_key_without_billing_subject_before_
     assert_eq!("server_error", payload["error"]["type"]);
     let message = payload["error"]["message"].as_str().unwrap();
     assert!(message.contains("tenant"));
-    assert!(message.contains("organization"));
     assert!(message.contains("user"));
+    // organization_id == 0 is a valid tenant-scoped billing subject, so a
+    // missing-subject catalog must not report organization as missing.
+    assert!(!message.contains("organization"));
     assert!(!body.contains("sk-live-secret"));
     assert!(captured.lock().unwrap().is_empty());
 }

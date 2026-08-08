@@ -1098,6 +1098,41 @@ test("portal auth helpers preserve the current route for login-required actions"
   clearStoredAppSessionToken();
 });
 
+test("portal auth login redirect never re-wraps an auth-route URL", () => {
+  assert.equal(
+    buildPortalAuthLoginRedirect({
+      hash: "",
+      pathname: "/auth/login",
+      search: "?redirect=%2Fconsole%2Fdashboard",
+    }),
+    "/auth/login?redirect=%2Fconsole%2Fdashboard",
+  );
+  assert.equal(
+    buildPortalAuthLoginRedirect({
+      hash: "",
+      pathname: "/auth/login",
+      search: "?redirect=%2Fauth%2Flogin%3Fredirect%3D%252Fconsole",
+    }),
+    "/auth/login?redirect=%2Fauth%2Flogin%3Fredirect%3D%252Fconsole",
+  );
+  assert.equal(
+    buildPortalAuthLoginRedirect({
+      hash: "",
+      pathname: "/auth/register",
+      search: "",
+    }),
+    "/auth/login",
+  );
+  assert.equal(
+    buildPortalAuthLoginRedirect({
+      hash: "#comments",
+      pathname: "/models/openai/gpt-4o",
+      search: "?sort=top",
+    }),
+    "/auth/login?redirect=%2Fmodels%2Fopenai%2Fgpt-4o%3Fsort%3Dtop%23comments",
+  );
+});
+
 test("navbar sign-in preserves the current public route while console links use route protection", () => {
   const navbarSource = readFileSync(
     new URL("./packages/sdkwork-cloudroutes-pc-commons/src/components/Navbar.tsx", import.meta.url),

@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use super::shared::{
     bounded_list_response, collection_item_response, decode_json, decode_query, domain_error,
     idempotency_uuid, item_response, list_query, list_response, no_content_response, not_found,
-    optional_text, parse_id, parse_if_match, positive_decimal, problem, requested_at,
+    optional_text, parse_id, parse_if_match, positive_decimal, problem, problem_keyed, requested_at,
     required_text, subject, ListQuery, RequestResult, UpstreamState, MAX_NESTED_ITEMS,
 };
 use super::supplier::ResourceResponse;
@@ -571,15 +571,19 @@ fn resource_inputs(
             )?
             .unwrap_or_default();
             if resource_code.is_empty() == resource_group_code.is_empty() {
-                return Err(problem(
+                return Err(problem_keyed(
                     SdkWorkResultCode::InvalidParameter,
+                    "validation.admin.upstream.resource.codeGroup.oneOf",
+                    serde_json::Value::Null,
                     "exactly one of resourceCode or resourceGroupCode is required",
                 ));
             }
             let grant_type = item.grant_type.unwrap_or_else(|| "allow".to_owned());
             if !matches!(grant_type.as_str(), "allow" | "deny") {
-                return Err(problem(
+                return Err(problem_keyed(
                     SdkWorkResultCode::InvalidParameter,
+                    "validation.admin.upstream.resource.grantType.enum",
+                    serde_json::json!({ "allowed": ["allow", "deny"] }),
                     "grantType must be allow or deny",
                 ));
             }
@@ -597,8 +601,10 @@ fn resource_inputs(
 fn group_type(value: String) -> RequestResult<String> {
     let value = required_text(value, "groupType", 32)?;
     if !SUPPORTED_GROUP_TYPES.iter().any(|group_type| *group_type == value) {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.accountGroup.groupType.enum",
+            serde_json::json!({ "allowed": SUPPORTED_GROUP_TYPES }),
             format!("groupType must be one of {}", SUPPORTED_GROUP_TYPES.join(", ")),
         ));
     }
@@ -611,8 +617,12 @@ fn routing_strategy(value: String) -> RequestResult<String> {
         value.as_str(),
         "weighted" | "round_robin" | "least_latency" | "least_cost" | "failover"
     ) {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.accountGroup.routingStrategy.unsupported",
+            serde_json::json!({
+                "allowed": ["weighted", "round_robin", "least_latency", "least_cost", "failover"]
+            }),
             "routingStrategy is not supported",
         ));
     }
@@ -625,8 +635,12 @@ fn fallback_mode(value: String) -> RequestResult<String> {
         value.as_str(),
         "none" | "sequential" | "same_supplier" | "cross_supplier"
     ) {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.accountGroup.fallbackMode.unsupported",
+            serde_json::json!({
+                "allowed": ["none", "sequential", "same_supplier", "cross_supplier"]
+            }),
             "fallbackMode is not supported",
         ));
     }
@@ -651,8 +665,10 @@ fn modalities(values: Option<Vec<String>>) -> RequestResult<Vec<String>> {
             .iter()
             .any(|modality| *modality == normalized)
         {
-            return Err(problem(
+            return Err(problem_keyed(
                 SdkWorkResultCode::InvalidParameter,
+                "validation.admin.upstream.accountGroup.modalities.subset",
+                serde_json::json!({ "allowed": SUPPORTED_MODALITIES }),
                 format!(
                     "modalities must be a subset of {}",
                     SUPPORTED_MODALITIES.join(", ")
@@ -671,8 +687,10 @@ fn tags(values: Option<Vec<String>>) -> RequestResult<Vec<String>> {
         return Ok(Vec::new());
     };
     if values.len() > MAX_GROUP_TAGS {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.accountGroup.tags.maxItems",
+            serde_json::json!({ "max": MAX_GROUP_TAGS }),
             format!("tags must contain at most {MAX_GROUP_TAGS} items"),
         ));
     }
@@ -680,8 +698,10 @@ fn tags(values: Option<Vec<String>>) -> RequestResult<Vec<String>> {
     for value in values {
         let normalized = value.trim().to_lowercase();
         if !SUPPORTED_TAGS.iter().any(|tag| *tag == normalized) {
-            return Err(problem(
+            return Err(problem_keyed(
                 SdkWorkResultCode::InvalidParameter,
+                "validation.admin.upstream.accountGroup.tags.subset",
+                serde_json::json!({ "allowed": SUPPORTED_TAGS }),
                 format!("tags must be a subset of {}", SUPPORTED_TAGS.join(", ")),
             ));
         }
@@ -694,8 +714,10 @@ fn tags(values: Option<Vec<String>>) -> RequestResult<Vec<String>> {
 
 fn status(value: i32) -> RequestResult<i32> {
     if !matches!(value, 0 | 1) {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.status.enum",
+            serde_json::json!({ "allowed": [0, 1] }),
             "status must be 0 or 1",
         ));
     }
@@ -704,8 +726,10 @@ fn status(value: i32) -> RequestResult<i32> {
 
 fn non_negative(value: i32, field: &str) -> RequestResult<i32> {
     if value < 0 {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.field.nonNegative",
+            serde_json::json!({ "field": field }),
             format!("{field} must be non-negative"),
         ));
     }
@@ -714,8 +738,10 @@ fn non_negative(value: i32, field: &str) -> RequestResult<i32> {
 
 fn ensure_count(count: usize, field: &str) -> RequestResult<()> {
     if count > MAX_NESTED_ITEMS {
-        return Err(problem(
+        return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.field.maxItems",
+            serde_json::json!({ "field": field, "max": MAX_NESTED_ITEMS }),
             format!("{field} must contain at most {MAX_NESTED_ITEMS} items"),
         ));
     }
