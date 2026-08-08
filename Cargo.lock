@@ -4623,6 +4623,8 @@ version = "0.3.0"
 dependencies = [
  "anyhow",
  "axum 0.8.9",
+ "sdkwork-account-repository-sqlx",
+ "sdkwork-account-service-host",
  "sdkwork-cloudrouter-edge-runtime",
  "sdkwork-cloudrouter-http",
  "sdkwork-iam-database-host",
@@ -4647,6 +4649,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "tower 0.5.3",
+ "tracing",
 ]
 
 [[package]]
@@ -5053,13 +5056,20 @@ dependencies = [
  "anyhow",
  "argon2",
  "chrono",
+ "sdkwork-api-order-assembly",
  "sdkwork-cloudrouter-config",
  "sdkwork-cloudrouter-database-host",
  "sdkwork-cloudrouter-router-service",
+ "sdkwork-database-lifecycle",
+ "sdkwork-database-spi",
  "sdkwork-database-sqlx",
  "sdkwork-iam-bootstrap",
+ "sdkwork-membership-database-host",
  "sdkwork-models-catalog-repository-sqlx",
  "sdkwork-models-database-host",
+ "sdkwork-partner-database-host",
+ "sdkwork-payment-database-host",
+ "sdkwork-promotion-database-host",
  "serde",
  "serde_json",
  "sqlx",

@@ -14,6 +14,8 @@ Cloud-router **generated schema** (`generated/schema/postgres/schema.sql`) owns 
 
 The product installer performs explicit lifecycle orchestration. It migrates `sdkwork-models` first and then the Cloud Router database host before application-data bootstrap. IAM and other product domains remain independent service or SDK boundaries.
 
+The installer also bootstraps the **federated commerce modules** (`sdkwork-payment`, `sdkwork-order`, `sdkwork-membership`, `sdkwork-promotion`, `sdkwork-partner`) on the shared pool for every explicit lifecycle command (`pnpm db:init`, `pnpm db:ensure`, `pnpm db:upgrade`, and the container/install-package `cloudrouterctl ensure` entrypoint): baseline + migrations + the `standard` seed profile (default locale `zh-CN`, overridable through `SDKWORK_DATABASE_SEED_LOCALE`). This applies the same commercial reference data that development seeds on gateway boot (`SDKWORK_DATABASE_SEED_ON_BOOT=true` in `.env.postgres`) — subscription plans and plan groups (`membership_plan` / `membership_package_group`), payment method catalogs, and promotion/partner bootstrap rows — so packaged and deployed databases are initialized without boot-time seeding.
+
 | Dependency | Lifecycle owner | Runtime role |
 | --- | --- | --- |
 | `sdkwork-models` | `sdkwork-models` database host | Model catalog tables migrated before Cloud Router bootstrap |

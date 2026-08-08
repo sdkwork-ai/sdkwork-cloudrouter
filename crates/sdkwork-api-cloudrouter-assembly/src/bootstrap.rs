@@ -8,10 +8,11 @@ use anyhow::Context;
 use axum::{
     body::Body,
     extract::State,
-    http::{Request, StatusCode},
+    http::{Method, Request, StatusCode},
     response::{IntoResponse, Response},
     Router,
 };
+use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
 use sdkwork_cloudrouter_http::{open_api_capability_for_request, OpenApiCapability};
 use sdkwork_web_bootstrap::{CompositeReadinessCheck, ReadinessCheck, ReadinessFuture};
 use sdkwork_web_contract::{merge_openapi_documents, route_inventory_from_routes, HttpRoute};
@@ -63,6 +64,11 @@ struct ApplicationRouters {
     backend_manifest: HttpRouteManifest,
     open_manifest: HttpRouteManifest,
     open: OpenApiRouters,
+    /// Account-domain wallet store used to provision the standard owner
+    /// accounts (cash/points/token bank) right after a successful IAM
+    /// registration in the standalone profile. `None` in cloud-gateway mode,
+    /// where IAM is an external dependency.
+    account_provisioner: Option<Arc<PostgresCommerceAccountStore>>,
 }
 
 #[derive(Clone)]
@@ -123,18 +129,43 @@ pub async fn assemble_api_router(
     let upstreams =
         sdkwork_cloudrouter_edge_runtime::runtime::all_in_one_in_process_upstreams_from_env()
             .await?;
-    let upstreams = if context.includes_dependency_apis() {
+    let (upstreams, account_provisioner) = if context.includes_dependency_apis() {
         let iam_router = iam::wire_iam_app_router().await?;
-        upstreams.with_dependency_api_router(iam_router)
+        let provisioner = resolve_account_provisioner().await?;
+        (
+            upstreams.with_dependency_api_router(iam_router),
+            Some(provisioner),
+        )
     } else {
-        upstreams
+        (upstreams, None)
     };
-    assemble_api_router_with_in_process_upstreams(context, upstreams)
+    assemble_api_router_with_in_process_upstreams(context, upstreams, account_provisioner)
+}
+
+/// Bootstraps the account-domain service host and returns its PostgreSQL
+/// store for registration-time wallet provisioning.
+///
+/// The wallet tables (`acct_*`) live in the account domain; bootstrapping the
+/// account host runs that domain's schema lifecycle in the shared workspace
+/// database. The store is idempotent, so reusing it for later provisioning
+/// calls is safe.
+async fn resolve_account_provisioner() -> Result<Arc<PostgresCommerceAccountStore>, ApiAssemblyError> {
+    let pool = sdkwork_account_service_host::AccountServiceHost::from_env()
+        .await
+        .map_err(anyhow::Error::msg)?
+        .database_pool()
+        .as_postgres()
+        .cloned()
+        .ok_or_else(|| {
+            anyhow::Error::msg("standalone API assembly requires a PostgreSQL account pool")
+        })?;
+    Ok(Arc::new(PostgresCommerceAccountStore::new(pool)))
 }
 
 fn assemble_api_router_with_in_process_upstreams(
     context: ApiAssemblyContext,
     upstreams: sdkwork_cloudrouter_edge_runtime::EdgeInProcessUpstreams,
+    account_provisioner: Option<Arc<PostgresCommerceAccountStore>>,
 ) -> Result<ApiAssembly, ApiAssemblyError> {
     let app_manifest = sdkwork_routes_cloudrouter_app_api::http_route_manifest();
     let backend_manifest = sdkwork_routes_cloudrouter_backend_api::http_route_manifest();
@@ -202,6 +233,7 @@ fn assemble_api_router_with_in_process_upstreams(
             payment: sdkwork_routes_payment_open_api::gateway_mount(open_runtime.clone()),
             video: sdkwork_routes_video_open_api::gateway_mount(open_runtime),
         },
+        account_provisioner,
     };
     let router = Router::new()
         .fallback(dispatch_application_request)
@@ -370,30 +402,31 @@ async fn dispatch_application_request(
     State(routers): State<ApplicationRouters>,
     request: Request<Body>,
 ) -> Response {
-    let method = request.method();
-    let path = request.uri().path();
-    let router = if is_backend_path(path) {
+    let method = request.method().clone();
+    let path = request.uri().path().to_owned();
+    let is_registration = method == Method::POST && path == REGISTRATION_APP_PATH;
+    let router = if is_backend_path(&path) {
         (routers.context.includes_dependency_apis()
             || routers
                 .backend_manifest
-                .match_route(method.as_str(), path)
+                .match_route(method.as_str(), path.as_str())
                 .is_some())
         .then(|| routers.upstreams.backend_router())
-    } else if is_app_path(path) {
+    } else if is_app_path(&path) {
         (routers.context.includes_dependency_apis()
             || routers
                 .app_manifest
-                .match_route(method.as_str(), path)
+                .match_route(method.as_str(), path.as_str())
                 .is_some())
-        .then(|| routers.upstreams.router_for_path(path))
+        .then(|| routers.upstreams.router_for_path(path.as_str()))
         .flatten()
     } else if routers.context.includes_dependency_apis()
         || routers
             .open_manifest
-            .match_route(method.as_str(), path)
+            .match_route(method.as_str(), path.as_str())
             .is_some()
     {
-        open_api_capability_for_request(method, path)
+        open_api_capability_for_request(&method, path.as_str())
             .map(|capability| routers.open.for_capability(capability))
     } else {
         None
@@ -403,10 +436,83 @@ async fn dispatch_application_request(
         return StatusCode::NOT_FOUND.into_response();
     };
 
-    match router.oneshot(request).await {
+    let response = match router.oneshot(request).await {
         Ok(response) => response,
         Err(error) => match error {},
+    };
+    if is_registration {
+        provision_accounts_after_registration(&routers, response).await
+    } else {
+        response
     }
+}
+
+/// IAM app registration path (`POST /app/v3/api/auth/registrations`).
+const REGISTRATION_APP_PATH: &str = "/app/v3/api/auth/registrations";
+
+/// Upper bound for the registration response body the provisioner inspects.
+const REGISTRATION_RESPONSE_BODY_LIMIT: usize = 1 << 20;
+
+/// After a successful IAM registration, provision the new owner's standard
+/// wallet accounts (cash, points, token bank) so the wallet exists with zero
+/// initial balances immediately after signup.
+///
+/// Provisioning is best-effort and idempotent: a failure only degrades to the
+/// lazy provision-on-read behaviour of the account read paths and never
+/// alters the registration response.
+async fn provision_accounts_after_registration(
+    routers: &ApplicationRouters,
+    response: Response,
+) -> Response {
+    let Some(store) = routers.account_provisioner.as_ref() else {
+        return response;
+    };
+    if !response.status().is_success() {
+        return response;
+    }
+    let (parts, body) = response.into_parts();
+    let body_bytes = match axum::body::to_bytes(body, REGISTRATION_RESPONSE_BODY_LIMIT).await {
+        Ok(bytes) => bytes,
+        Err(error) => {
+            tracing::warn!(
+                target = "cloudrouter.assembly.registration",
+                error = %error,
+                "registration response body read failed; skipping account provisioning"
+            );
+            return Response::from_parts(parts, Body::empty());
+        }
+    };
+    let Some((tenant_id, user_id)) = registration_user_subject(&body_bytes) else {
+        tracing::warn!(
+            target = "cloudrouter.assembly.registration",
+            "registration response carried no resolvable user subject; skipping account provisioning"
+        );
+        return Response::from_parts(parts, Body::from(body_bytes));
+    };
+    if let Err(error) = store
+        .provision_owner_accounts(&tenant_id, None, &user_id, None)
+        .await
+    {
+        tracing::warn!(
+            target = "cloudrouter.assembly.registration",
+            tenant_id = %tenant_id,
+            owner_user_id = %user_id,
+            error = error.message(),
+            "registration account provisioning failed; wallet will provision on first read"
+        );
+    }
+    Response::from_parts(parts, Body::from(body_bytes))
+}
+
+/// Extracts `(tenantId, userId)` from the IAM registration response envelope
+/// (`data.user.tenantId` / `data.user.id`), which both the session and the
+/// login-context-challenge shapes carry.
+fn registration_user_subject(body: &[u8]) -> Option<(String, String)> {
+    let value: Value = serde_json::from_slice(body).ok()?;
+    let user = value.get("data")?.get("user")?;
+    let tenant_id = user.get("tenantId")?.as_str()?.to_owned();
+    let user_id = user.get("id")?.as_str()?.to_owned();
+    Some((tenant_id, user_id))
 }
 
 impl OpenApiRouters {
@@ -443,9 +549,13 @@ mod tests {
         routing::{get as route_get, post as route_post},
         Router,
     };
+    use serde_json::json;
     use tower::ServiceExt;
 
-    use super::{assemble_api_router_with_in_process_upstreams, ApiAssemblyContext};
+    use super::{
+        assemble_api_router_with_in_process_upstreams, registration_user_subject,
+        ApiAssemblyContext,
+    };
 
     #[tokio::test]
     async fn standalone_assembly_dispatches_selected_dependency_surfaces() {
@@ -571,6 +681,7 @@ mod tests {
                 app_router,
             )
             .with_dependency_api_router(dependency_router),
+            None,
         )
         .expect("valid Cloudrouter assembly")
         .router
@@ -598,5 +709,58 @@ mod tests {
             .uri(path)
             .body(Body::empty())
             .expect("request")
+    }
+
+    #[test]
+    fn registration_user_subject_resolves_session_envelope() {
+        let body = json!({
+            "code": 0,
+            "data": {
+                "accessToken": "session-token",
+                "user": {
+                    "id": "344117034923069440",
+                    "tenantId": "100001",
+                    "username": "new-user"
+                }
+            },
+            "traceId": "trace-1"
+        });
+        assert_eq!(
+            registration_user_subject(&serde_json::to_vec(&body).expect("json")),
+            Some(("100001".to_owned(), "344117034923069440".to_owned()))
+        );
+    }
+
+    #[test]
+    fn registration_user_subject_resolves_challenge_envelope() {
+        let body = json!({
+            "code": 0,
+            "data": {
+                "challengeType": "LOGIN_CONTEXT_SELECTION",
+                "accessToken": null,
+                "user": {
+                    "id": "344117034923069440",
+                    "tenantId": "100001"
+                }
+            },
+            "traceId": "trace-2"
+        });
+        assert_eq!(
+            registration_user_subject(&serde_json::to_vec(&body).expect("json")),
+            Some(("100001".to_owned(), "344117034923069440".to_owned()))
+        );
+    }
+
+    #[test]
+    fn registration_user_subject_rejects_non_success_envelopes() {
+        let body = json!({
+            "code": 1001,
+            "data": null,
+            "message": "conflict",
+            "traceId": "trace-3"
+        });
+        assert_eq!(registration_user_subject(&serde_json::to_vec(&body).expect("json")), None);
+        assert_eq!(registration_user_subject(b"not json"), None);
+        assert_eq!(registration_user_subject(b"{}"), None);
     }
 }

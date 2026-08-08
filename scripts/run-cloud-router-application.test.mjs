@@ -4734,7 +4734,10 @@ test('install package builder emits service and container deployment packages fr
     assert.ok(serviceConfigTemplate.includes('run_on_startup = true'));
     assert.ok(serviceConfigTemplate.includes('[install]'));
     assert.ok(serviceConfigTemplate.includes('environment = "production"'));
-    assert.ok(serviceConfigTemplate.includes('seed_profile = "commercial"'));
+    // cloudrouterctl and the gateway validate seed_profile and accept only the
+    // canonical "standard" profile; the template must not ship an unsupported
+    // value or explicit lifecycle commands fail on install hosts.
+    assert.ok(serviceConfigTemplate.includes('seed_profile = "standard"'));
     assert.ok(serviceConfigTemplate.includes('startup_mode = "ensure"'));
     assert.ok(serviceConfigTemplate.includes('[bootstrap_admin]'));
     assert.ok(serviceConfigTemplate.includes('username = "admin"'));

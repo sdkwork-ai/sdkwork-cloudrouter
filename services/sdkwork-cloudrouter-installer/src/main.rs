@@ -5,8 +5,8 @@ use sdkwork_cloudrouter_config::{
 };
 use sdkwork_cloudrouter_database_host::connect_cloud_router_database;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::installer::{
-    CatalogRefreshOptions, CatalogRefreshReport, DatabaseInstallError, DatabaseInstaller,
-    InstallationReport, InstallationStatus,
+    CatalogRefreshOptions, CatalogRefreshReport, DatabaseInstallError, DatabaseInstallOptions,
+    DatabaseInstaller, InstallationReport, InstallationStatus,
 };
 use sdkwork_iam_bootstrap::{
     DEFAULT_BOOTSTRAP_ADMIN_USERNAME, DEFAULT_BOOTSTRAP_ADMIN_USER_ID, DEFAULT_IAM_TENANT_ID,
@@ -22,6 +22,7 @@ use std::process::ExitCode;
 use std::sync::Arc;
 
 mod backup;
+mod federated;
 
 const SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD_ENV: &str =
     "SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD";
@@ -70,6 +71,25 @@ fn require_postgres_installer_database(config: &DatabaseConfig) -> anyhow::Resul
 async fn run_postgres(config: DatabaseConfig, command: InstallerCommand) -> anyhow::Result<()> {
     let database_pool = connect_installer_database_pool(&config).await?;
     apply_explicit_schema_lifecycle_if_required(&database_pool, &command).await?;
+    // Explicit lifecycle commands must apply the same federated commerce
+    // reference data that development seeds on gateway boot
+    // (SDKWORK_DATABASE_SEED_ON_BOOT=true): subscription plans and plan
+    // groups (membership), payment method catalogs, promotion and partner
+    // bootstrap rows. Production keeps the SDKWORK_DATABASE_* boot switches
+    // off, so cloudrouterctl owns this seeding (see federated.rs).
+    if command.requires_schema_migration() {
+        let install_options = DatabaseInstallOptions::from_env()?;
+        federated::bootstrap_federated_commerce_modules(
+            &database_pool,
+            install_options.seed_locale.as_deref(),
+        )
+        .await
+        .map_err(|error| {
+            InstallerCliError::DatabaseConnection(format!(
+                "federated commerce database bootstrap failed: {error}"
+            ))
+        })?;
+    }
     let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
         InstallerCliError::DatabaseConnection("expected PostgreSQL pool".to_owned())
     })?;
@@ -952,6 +972,28 @@ mod tests {
         assert!(
             !InstallerCommand::RefreshCatalog(CatalogRefreshOptions::default())
                 .requires_schema_migration()
+        );
+    }
+
+    #[test]
+    fn schema_lifecycle_commands_also_bootstrap_federated_commerce_modules() {
+        let source = include_str!("main.rs");
+
+        let federated_call = source
+            .find("federated::bootstrap_federated_commerce_modules(")
+            .expect("installer must bootstrap federated commerce modules");
+        let migration_gate = source
+            .find("command.requires_schema_migration()")
+            .expect("federated bootstrap must follow the explicit migration gate");
+        assert!(
+            federated_call > migration_gate,
+            "federated bootstrap must run only for explicit schema lifecycle commands"
+        );
+        assert!(
+            source.contains(
+                "bootstrap_federated_commerce_modules(\n            &database_pool,\n            install_options.seed_locale.as_deref(),"
+            ),
+            "federated bootstrap must use the canonical seed locale override"
         );
     }
 
