@@ -20,6 +20,16 @@ impl ProviderRequestBuilder {
         account: &InvocationAccount,
         resolved_secret: Option<&ResolvedProviderSecret>,
     ) -> Result<InvocationProviderRequest, InvocationError> {
+        // Reject path segments that could traverse the upstream base URL
+        // (e.g. `/v1/chat/completions/../../x`). Axum keeps the raw path, so a
+        // dot-dot segment would otherwise be forwarded verbatim and could be
+        // normalized by the upstream gateway into a different endpoint.
+        if path_has_parent_segment(&invocation.request.path) {
+            return Err(provider_request_error(format!(
+                "request path must not contain parent directory segments: {}",
+                invocation.request.path
+            )));
+        }
         if invocation.dispatch.mode == DispatchMode::InternalProviderAdapter {
             return build_adapter_provider_request(invocation, account, resolved_secret);
         }
@@ -476,4 +486,10 @@ fn auth_type_code(auth_type: ProviderAuthType) -> &'static str {
 
 fn provider_request_error(message: impl Into<String>) -> InvocationError {
     InvocationError::new(InvocationErrorKind::Dispatch, message)
+}
+
+fn path_has_parent_segment(path: &str) -> bool {
+    path.trim_matches('/')
+        .split('/')
+        .any(|segment| segment == "..")
 }

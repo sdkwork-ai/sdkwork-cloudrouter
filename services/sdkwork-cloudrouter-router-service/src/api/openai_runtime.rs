@@ -12,6 +12,7 @@ use crate::application::{
 use crate::domain::{
     AiModel, BillingMeter, ModelMappingRule, ProviderAuthProfile, ProviderRetryPolicy,
     ResolveModelMappingContext, RoutingCapability,
+    has_text,
 };
 use crate::ports::{PricingCatalog, UpstreamAccountRouteCatalog};
 
@@ -648,9 +649,3 @@ fn upstream_route_selection_error(error: UpstreamRouteSelectionError) -> OpenAiR
     }
 }
 
-fn has_text(value: Option<&str>) -> bool {
-    value
-        .map(str::trim)
-        .map(|value| !value.is_empty())
-        .unwrap_or(false)
-}

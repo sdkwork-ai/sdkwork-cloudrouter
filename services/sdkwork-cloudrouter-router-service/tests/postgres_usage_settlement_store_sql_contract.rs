@@ -20,7 +20,9 @@ fn usage_settlement_locks_pending_usage_facts_in_one_transaction() {
         "FROM ai_metering_usage",
         "($1 <= 0 OR tenant_id = $1)",
         "($2 <= 0 OR organization_id = $2)",
-        "settlement_status IN ($3, $4)",
+        "settlement_status = $3",
+        "settlement_status = $4",
+        "settled_at < now() - interval '5 minutes'",
         "ORDER BY COALESCE(occurred_at, CURRENT_TIMESTAMP), id",
         "FOR UPDATE SKIP LOCKED",
     ] {
@@ -82,11 +84,11 @@ fn usage_settlement_uses_batch_no_as_idempotency_key_and_transaction_no() {
         "request_no: transaction_id.to_owned()",
         "idempotency_key: transaction_id.to_owned()",
         "settlement_request_hash",
-        "CommerceAccountAssetType::Points",
-        "POINTS_CURRENCY_CODE",
+        "CommerceAccountAssetType::TokenBank",
+        "TOKEN_BANK_CURRENCY_CODE",
         "CommerceLedgerDirection::Debit",
         "INSUFFICIENT_BALANCE_MESSAGE",
-        "INSUFFICIENT_POINTS",
+        "INSUFFICIENT_TOKEN_BANK",
     ] {
         assert!(
             POSTGRES_USAGE_SETTLEMENT_STORE.contains(expected),
@@ -96,17 +98,17 @@ fn usage_settlement_uses_batch_no_as_idempotency_key_and_transaction_no() {
 }
 
 #[test]
-fn usage_settlement_rounds_points_after_batch_aggregation_without_float_casts() {
+fn usage_settlement_rounds_tokens_after_batch_aggregation_without_float_casts() {
     for expected in [
-        "fn charge_points_from_scaled",
-        "MIN_BILLABLE_POINT_SCALED",
+        "fn charge_tokens_from_scaled",
+        "MIN_BILLABLE_TOKEN_SCALED",
         "DECIMAL_SCALE - 1",
-        "fn allocate_candidate_points",
+        "fn allocate_candidate_tokens",
         "fn settlement_batch_no",
     ] {
         assert!(
             POSTGRES_USAGE_SETTLEMENT_STORE.contains(expected),
-            "Postgres usage settlement store must keep aggregated point rounding helper `{expected}`"
+            "Postgres usage settlement store must keep aggregated token rounding helper `{expected}`"
         );
     }
     assert!(
@@ -144,7 +146,7 @@ fn usage_settlement_marks_success_and_failure_on_source_fact() {
         "SET settlement_status = $1,",
         "settlement_id = $2",
         "settled_at = $3::timestamp AT TIME ZONE 'UTC'",
-        "INSUFFICIENT_POINTS",
+        "INSUFFICIENT_TOKEN_BANK",
         "failure_code = $3",
         "failure_message = $4",
     ] {

@@ -167,7 +167,8 @@ async fn normalizes_internal_adapter_response_to_provider_body() {
 #[tokio::test]
 async fn normalizes_invocation_error_response() {
     let mut invocation = invocation();
-    let error = InvocationError::new(InvocationErrorKind::Routing, "no route for sk-secret");
+    let error =
+        InvocationError::new(InvocationErrorKind::Routing, "no route for sk-secret12345678");
 
     ResponseNormalizationInterceptor
         .on_error(&mut invocation, &error)
@@ -185,7 +186,7 @@ async fn normalizes_invocation_error_response() {
             .and_then(|value| value.as_str())
     );
     assert_eq!(
-        Some("no route for sk-***secret"),
+        Some("no route for sk-[REDACTED]"),
         response
             .body
             .as_ref()

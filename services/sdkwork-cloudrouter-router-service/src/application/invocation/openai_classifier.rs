@@ -352,16 +352,6 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
             "thread",
         ));
     }
-    if method == Method::POST && path == "/v1/threads/runs" {
-        return Ok(create_composite_api(
-            "openai/management/threads",
-            "openai.threads",
-            ResourceType::Thread,
-            RoutingCapability::Chat,
-            BillingMeter::LlmInputToken,
-            "thread",
-        ));
-    }
     if method == Method::POST && path.starts_with("/v1/threads/") && path.ends_with("/runs") {
         return Ok(parent_composite_api(
             "openai/management/threads",

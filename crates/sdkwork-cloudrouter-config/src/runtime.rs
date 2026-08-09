@@ -29,6 +29,9 @@ pub struct RuntimeTomlConfig {
     pub provider_adapter: ProviderAdapterSectionConfig,
     pub provider_secret_map: ProviderSecretMapSectionConfig,
     pub usage_settlement: UsageSettlementSectionConfig,
+    pub metering_retention: MeteringRetentionSectionConfig,
+    pub payment_reconciliation: PaymentReconciliationSectionConfig,
+    pub credential_rotation: CredentialRotationSectionConfig,
     pub model_ranking: ModelRankingSectionConfig,
     pub install: InstallSectionConfig,
     pub bootstrap_admin: BootstrapAdminSectionConfig,
@@ -322,6 +325,37 @@ pub struct UsageSettlementSectionConfig {
     pub organization_id: Option<i64>,
     pub batch_size: Option<i64>,
     pub interval_millis: Option<u64>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
+#[serde(default)]
+pub struct MeteringRetentionSectionConfig {
+    pub enabled: Option<bool>,
+    pub tenant_id: Option<i64>,
+    pub organization_id: Option<i64>,
+    pub retention_days: Option<i64>,
+    pub interval_millis: Option<u64>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
+#[serde(default)]
+pub struct PaymentReconciliationSectionConfig {
+    pub enabled: Option<bool>,
+    pub tenant_id: Option<i64>,
+    pub organization_id: Option<i64>,
+    pub batch_size: Option<i64>,
+    pub interval_millis: Option<u64>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
+#[serde(default)]
+pub struct CredentialRotationSectionConfig {
+    pub enabled: Option<bool>,
+    pub tenant_id: Option<i64>,
+    pub organization_id: Option<i64>,
+    pub batch_size: Option<i64>,
+    pub interval_millis: Option<u64>,
+    pub default_interval_days: Option<i64>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]

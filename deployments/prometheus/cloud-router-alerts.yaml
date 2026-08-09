@@ -251,6 +251,39 @@ groups:
           description: "A settlement batch persisted one or more failed items. Successful rows remain authoritative, while failed rows require bounded retry or reconciliation."
           runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
+      - alert: CloudRouterPaymentReconciliationFailed
+        expr: sum(increase(cloudrouter_payment_reconciliation_runs_total{outcome="failed"}[10m])) > 0
+        for: 1m
+        labels:
+          severity: critical
+          category: accounting-integrity
+        annotations:
+          summary: "Payment reconciliation run failed"
+          description: "A payment reconciliation run failed before producing an authoritative outcome (for example a run without provider_code). Failed runs stay visible in the payment center with status failed; the next cycle only picks up queued runs."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+
+      - alert: CloudRouterCredentialExpiredDeactivated
+        expr: sum(increase(cloudrouter_upstream_credential_rotation_actions_total{action="expired_deactivated"}[30m])) > 0
+        for: 1m
+        labels:
+          severity: critical
+          category: accounting-integrity
+        annotations:
+          summary: "Upstream credential expired without a replacement"
+          description: "An active upstream account credential reached its expiry and was deactivated, but no pre-provisioned candidate existed. The account may lose upstream access; provision a new credential through the backend credential API immediately."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+
+      - alert: CloudRouterCredentialRotationOverdue
+        expr: sum(increase(cloudrouter_upstream_credential_rotation_actions_total{action="overdue"}[30m])) > 0
+        for: 1m
+        labels:
+          severity: warning
+          category: accounting-integrity
+        annotations:
+          summary: "Upstream credential rotation is overdue"
+          description: "An upstream account is past its scheduled credential rotation and has no candidate credential to promote. Provision a newer credential_version through the backend credential API so the worker can rotate on the next sweep."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+
   - name: cloudrouter-infrastructure
     interval: 30s
     rules:

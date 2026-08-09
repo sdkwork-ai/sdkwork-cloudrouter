@@ -28,6 +28,11 @@ fn base_catalog_with_group_strategy(
         ModelVendor::OpenAi,
         "OpenAI",
     ));
+    catalog.add_vendor(ModelVendorDefinition::new(
+        "kling",
+        ModelVendor::from_code("kling"),
+        "Kling",
+    ));
     catalog.add_model(
         AiModel::new("gpt-4o-mini", "GPT-4o mini", "openai", vec!["chat"])
             .with_catalog_key("openai/gpt-4o-mini"),
@@ -58,6 +63,55 @@ fn base_catalog_with_group_strategy(
         PriceSide::OfficialReference,
         BillingMeter::LlmInputToken,
         Money::usd("0.150000").unwrap(),
+    ));
+    catalog.add_price(ModelPrice::new_for_catalog_key(
+        "openai/gpt-4o-mini",
+        "gpt-4o-mini",
+        PriceSide::OfficialReference,
+        BillingMeter::LlmOutputToken,
+        Money::usd("0.600000").unwrap(),
+    ));
+    catalog.add_price(ModelPrice::new_for_catalog_key(
+        "openai/gpt-4o-mini",
+        "gpt-4o-mini",
+        PriceSide::OfficialReference,
+        BillingMeter::LlmCacheReadToken,
+        Money::usd("0.030000").unwrap(),
+    ));
+    // Model-less route pricing resolves the route key as the catalog key with
+    // the ApiRequest meter; the fixtures need model entries and official
+    // prices for the route keys used by provider-native/management tests.
+    catalog.add_model(
+        AiModel::new(
+            "kling.text_to_video",
+            "Kling text to video",
+            "kling",
+            vec!["video"],
+        )
+        .with_catalog_key("kling.text_to_video"),
+    );
+    catalog.add_model(
+        AiModel::new(
+            "openai/management/files",
+            "Management files",
+            "openai",
+            vec!["management"],
+        )
+        .with_catalog_key("openai/management/files"),
+    );
+    catalog.add_price(ModelPrice::new_for_catalog_key(
+        "kling.text_to_video",
+        "kling.text_to_video",
+        PriceSide::OfficialReference,
+        BillingMeter::ApiRequest,
+        Money::usd("0.100000").unwrap(),
+    ));
+    catalog.add_price(ModelPrice::new_for_catalog_key(
+        "openai/management/files",
+        "openai/management/files",
+        PriceSide::OfficialReference,
+        BillingMeter::ApiRequest,
+        Money::usd("0.010000").unwrap(),
     ));
     catalog
 }
@@ -95,6 +149,26 @@ fn add_model_route(
         )
         .for_upstream_account(supplier_code, account_id),
     );
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "openai/gpt-4o-mini",
+            "gpt-4o-mini",
+            PriceSide::UpstreamCost,
+            BillingMeter::LlmOutputToken,
+            Money::usd(unit_price).unwrap(),
+        )
+        .for_upstream_account(supplier_code, account_id),
+    );
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "openai/gpt-4o-mini",
+            "gpt-4o-mini",
+            PriceSide::UpstreamCost,
+            BillingMeter::LlmCacheReadToken,
+            Money::usd(unit_price).unwrap(),
+        )
+        .for_upstream_account(supplier_code, account_id),
+    );
 }
 
 fn add_account_route(catalog: &mut InMemoryPricingCatalog, account_id: i64, supplier_code: &str) {
@@ -114,6 +188,25 @@ fn add_account_route_with_priority(
                 Some(format!("vault://providers/{supplier_code}/main")),
             )
             .with_account_group_binding(10, priority, 100),
+    );
+}
+
+/// Upstream ApiRequest cost for the model-less route-key pricing path.
+fn add_route_key_upstream_cost(
+    catalog: &mut InMemoryPricingCatalog,
+    route_key: &str,
+    supplier_code: &str,
+    account_id: i64,
+) {
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            route_key,
+            route_key,
+            PriceSide::UpstreamCost,
+            BillingMeter::ApiRequest,
+            Money::usd("0.050000").unwrap(),
+        )
+        .for_upstream_account(supplier_code, account_id),
     );
 }
 
@@ -275,6 +368,7 @@ async fn plans_model_route_and_resolves_account() {
 async fn plans_management_api_account_route() {
     let mut catalog = base_catalog();
     add_account_route(&mut catalog, 3002, "openrouter-files");
+    add_route_key_upstream_cost(&mut catalog, "openai/management/files", "openrouter-files", 3002);
     add_group_policy_rule(
         &mut catalog,
         3,
@@ -307,6 +401,7 @@ async fn plans_management_api_account_route() {
 async fn plans_provider_native_account_route_and_resolves_account() {
     let mut catalog = base_catalog();
     add_account_route(&mut catalog, 4001, "kling");
+    add_route_key_upstream_cost(&mut catalog, "kling.text_to_video", "kling", 4001);
     add_group_policy_rule(
         &mut catalog,
         6,
@@ -349,6 +444,7 @@ async fn plans_provider_native_account_route_and_resolves_account() {
 async fn plans_provider_native_account_route_even_when_request_contains_model_metadata() {
     let mut catalog = base_catalog();
     add_account_route(&mut catalog, 4001, "kling");
+    add_route_key_upstream_cost(&mut catalog, "kling.text_to_video", "kling", 4001);
     add_group_policy_rule(
         &mut catalog,
         6,
@@ -499,6 +595,26 @@ async fn account_resolution_preserves_credential_rotation() {
             PriceSide::UpstreamCost,
             BillingMeter::LlmInputToken,
             Money::usd("0.110000").unwrap(),
+        )
+        .for_upstream_account("credential-provider", 3004),
+    );
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "openai/gpt-4o-mini",
+            "gpt-4o-mini",
+            PriceSide::UpstreamCost,
+            BillingMeter::LlmOutputToken,
+            Money::usd("0.440000").unwrap(),
+        )
+        .for_upstream_account("credential-provider", 3004),
+    );
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "openai/gpt-4o-mini",
+            "gpt-4o-mini",
+            PriceSide::UpstreamCost,
+            BillingMeter::LlmCacheReadToken,
+            Money::usd("0.022000").unwrap(),
         )
         .for_upstream_account("credential-provider", 3004),
     );

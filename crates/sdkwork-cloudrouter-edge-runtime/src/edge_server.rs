@@ -344,7 +344,7 @@ impl EdgeServerConfig {
         app_base_url: impl AsRef<str>,
         portal_base_url: impl AsRef<str>,
     ) -> Result<Self, String> {
-        Ok(Self {
+        let mut config = Self {
             gateway_base_url: normalize_forward_origin(gateway_base_url.as_ref(), "gateway")?,
             backend_base_url: normalize_forward_origin(backend_base_url.as_ref(), "backend")?,
             app_base_url: normalize_forward_origin(app_base_url.as_ref(), "app")?,
@@ -371,7 +371,11 @@ impl EdgeServerConfig {
             portal_tool_api_sdk_archive_root: None,
             portal_tool_api_sdk_generator_base_url: None,
             portal_tool_api_sdk_generator_api_key: None,
-        })
+        };
+        // The portal origin itself is always a permitted CORS origin so the
+        // portal's own fetch calls work out of the box.
+        config.rebuild_portal_cors_policy(false);
+        Ok(config)
     }
 
     pub fn with_external_scheme(mut self, value: impl AsRef<str>) -> Result<Self, String> {
@@ -639,11 +643,16 @@ impl EdgeServerConfig {
             }
         }
         self.portal_cors_allowed_origins = normalized;
+        // The allow-list must take effect immediately — not only after
+        // `with_portal_cors_policy_from_env` runs — so preflight and response
+        // CORS checks honor the explicit origins.
+        self.rebuild_portal_cors_policy(false);
         Ok(self)
     }
 
     pub fn with_development_private_network_cors(mut self, enabled: bool) -> Self {
         self.development_private_network_cors = enabled;
+        self.rebuild_portal_cors_policy(false);
         self
     }
 
@@ -664,6 +673,15 @@ impl EdgeServerConfig {
     /// handling then flows through the single `sdkwork-web-core::CorsPolicy`
     /// implementation instead of hand-written header code.
     pub fn with_portal_cors_policy_from_env(mut self) -> Result<Self, String> {
+        self.rebuild_portal_cors_policy(true);
+        Ok(self)
+    }
+
+    /// Rebuilds `portal_cors_policy` from the current builder state. The
+    /// portal origin and the explicit allow-list always participate; when
+    /// `include_env` is set, the canonical `SDKWORK_CORS_ALLOWED_ORIGINS`
+    /// environment key is merged in as well.
+    fn rebuild_portal_cors_policy(&mut self, include_env: bool) {
         use sdkwork_web_core::CorsPolicy;
 
         let mut policy = if self.development_private_network_cors {
@@ -671,10 +689,13 @@ impl EdgeServerConfig {
         } else {
             CorsPolicy::default()
         };
-        for origin in std::iter::once(self.portal_base_url.clone())
-            .chain(self.portal_cors_allowed_origins.clone())
-            .chain(sdkwork_web_bootstrap::cors_allowed_origins_from_process_env())
-        {
+        let mut origins = Vec::new();
+        origins.push(self.portal_base_url.clone());
+        origins.extend(self.portal_cors_allowed_origins.clone());
+        if include_env {
+            origins.extend(sdkwork_web_bootstrap::cors_allowed_origins_from_process_env());
+        }
+        for origin in origins {
             if !policy.allowed_origins.contains(&origin) {
                 policy.allowed_origins.push(origin);
             }
@@ -688,7 +709,6 @@ impl EdgeServerConfig {
         }
         policy.expose_headers = vec!["x-request-id".to_owned()];
         self.portal_cors_policy = policy;
-        Ok(self)
     }
 
     fn refresh_portal_content_security_policy(&mut self) -> Result<(), String> {

@@ -89,6 +89,35 @@ spec:
                   key: redis-url
             - name: SDKWORK_CLOUDROUTER_USAGE_SETTLEMENT_WORKER_ENABLED
               value: "true"
+            # Commercial operation workers. These are disabled by default and
+            # require an explicit tenant scope; enable them after the platform
+            # tenant/organization ids are fixed (or set the matching
+            # *_PLATFORM_SCOPE=true for a single-tenant operator deployment).
+            #
+            # Metering retention: bounded storage for settled usage facts.
+            #   - name: SDKWORK_CLOUDROUTER_METERING_RETENTION_ENABLED
+            #     value: "true"
+            #   - name: SDKWORK_CLOUDROUTER_METERING_RETENTION_TENANT_ID
+            #     value: "1"
+            #   - name: SDKWORK_CLOUDROUTER_METERING_RETENTION_DAYS
+            #     value: "180"
+            #
+            # Payment reconciliation: consumes queued
+            # commerce_payment_reconciliation_run rows (requires the
+            # sdkwork-payment schema and the statement import pipeline).
+            #   - name: SDKWORK_CLOUDROUTER_PAYMENT_RECONCILIATION_ENABLED
+            #     value: "true"
+            #   - name: SDKWORK_CLOUDROUTER_PAYMENT_RECONCILIATION_TENANT_ID
+            #     value: "1"
+            #
+            # Upstream credential rotation: promotes pre-provisioned candidate
+            # credentials on schedule and deactivates expired ones.
+            #   - name: SDKWORK_CLOUDROUTER_CREDENTIAL_ROTATION_ENABLED
+            #     value: "true"
+            #   - name: SDKWORK_CLOUDROUTER_CREDENTIAL_ROTATION_TENANT_ID
+            #     value: "1"
+            #   - name: SDKWORK_CLOUDROUTER_CREDENTIAL_ROTATION_DEFAULT_INTERVAL_DAYS
+            #     value: "90"
           volumeMounts:
             - name: config
               mountPath: /etc/sdkwork

@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use super::{
-    BillingMode, BillingQuantitySource, DispatchMode, Invocation, InvocationError,
-    InvocationErrorKind, InvocationFuture, InvocationInterceptor, InvocationPricingQuote,
-    InvocationUsageLine,
+    BillingMode, BillingQuantitySource, DispatchMode, Invocation, InvocationAccount,
+    InvocationError, InvocationErrorKind, InvocationFuture, InvocationInterceptor,
+    InvocationPricingQuote, InvocationUsageLine,
 };
 use crate::application::{PricingResolver, ResolveModelPriceQuery, ResolvedModelPrice};
 use crate::domain::{AiRouteModelRequirement, BillingMeter};
@@ -115,6 +115,14 @@ where
                 .lines
                 .iter()
                 .map(|line| {
+                    if let Some(quote) = preflight_quote_for_line(
+                        &invocation.usage.pricing_quotes,
+                        invocation.account.as_ref(),
+                        invocation.resource.requested_model.as_deref(),
+                        line,
+                    ) {
+                        return Ok(Some(quote));
+                    }
                     match resolve_quote(
                         self.catalog.as_ref(),
                         invocation,
@@ -146,6 +154,44 @@ where
             Ok(())
         })
     }
+}
+
+/// Reuses a preflight pricing quote for a usage line when the line carries no
+/// catalog-key override, a quote for the same meter already exists, and the
+/// pricing context is unchanged since preflight.
+///
+/// The finalization resolution for such a line derives the model from the same
+/// invocation context as the preflight step, so it produces the identical
+/// quote; skipping it removes three `PricingResolver` passes from the chat hot
+/// path. The account identity and requested model are compared so a mid-flight
+/// context change (for example a dispatch failover to a different upstream
+/// account with its own procurement cost) still requotes. Lines with an
+/// explicit `requested_model_catalog_key` keep resolving so their
+/// `requested_model` semantics stay exact.
+fn preflight_quote_for_line(
+    pricing_quotes: &[InvocationPricingQuote],
+    account: Option<&InvocationAccount>,
+    requested_model: Option<&str>,
+    line: &InvocationUsageLine,
+) -> Option<InvocationPricingQuote> {
+    if line.requested_model_catalog_key.is_some() {
+        return None;
+    }
+    let account = account?;
+    let expected_model = requested_model
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    pricing_quotes
+        .iter()
+        .find(|quote| {
+            quote.meter == line.meter
+                && quote.supplier_code.as_deref() == Some(account.supplier_code.as_str())
+                && quote.account_id == Some(account.account_id)
+                && quote.region_code == account.region_code
+                && (expected_model.is_none()
+                    || quote.requested_model == expected_model.unwrap_or_default())
+        })
+        .cloned()
 }
 
 /// Returns billing meters that require pricing resolution based on the billing mode.
@@ -386,6 +432,7 @@ fn route_key_catalog_key(invocation: &Invocation) -> Result<String, InvocationEr
 mod tests {
     use super::*;
     use crate::domain::Money;
+    use crate::ports::GatewayUsageQuantity;
 
     fn quote(
         meter: BillingMeter,
@@ -429,5 +476,110 @@ mod tests {
         assert_eq!("first-plan", deduped[0].pricing_plan_code);
         assert_eq!(BillingMeter::LlmOutputToken, deduped[1].meter);
         assert_eq!("output-model", deduped[1].requested_model);
+    }
+
+    #[test]
+    fn preflight_quote_reuse_skips_finalization_resolution_when_keys_match() {
+        use crate::domain::ProviderAuthProfile;
+
+        let account = InvocationAccount {
+            supplier_code: "openrouter".to_owned(),
+            account_id: 3001,
+            account_group_id: None,
+            account_group_code: None,
+            pricing_plan_code: None,
+            region_code: "global".to_owned(),
+            credential_id: None,
+            credential_rotation: None,
+            base_url: None,
+            secret_ref: None,
+            auth_profile: ProviderAuthProfile::default(),
+            timeout_ms: None,
+            retry_policy: None,
+            provider_model: None,
+        };
+
+        let input_quote = quote(BillingMeter::LlmInputToken, "gpt-4o", "standard-plan");
+        let output_quote = quote(BillingMeter::LlmOutputToken, "gpt-4o", "standard-plan");
+        let quotes = vec![input_quote.clone(), output_quote.clone()];
+
+        // A line without a catalog-key override reuses the preflight quote
+        // when the account and requested model are unchanged.
+        let input_line = InvocationUsageLine::new(
+            BillingMeter::LlmInputToken,
+            GatewayUsageQuantity::tokens(100).expect("valid token quantity"),
+        );
+        assert_eq!(
+            Some(input_quote.clone()),
+            preflight_quote_for_line(
+                &quotes,
+                Some(&account),
+                Some("gpt-4o"),
+                &input_line
+            )
+        );
+        let output_line = InvocationUsageLine::new(
+            BillingMeter::LlmOutputToken,
+            GatewayUsageQuantity::tokens(50).expect("valid token quantity"),
+        );
+        assert_eq!(
+            Some(output_quote.clone()),
+            preflight_quote_for_line(
+                &quotes,
+                Some(&account),
+                Some("gpt-4o"),
+                &output_line
+            )
+        );
+
+        // A meter without a preflight quote is not reused.
+        let cache_line = InvocationUsageLine::new(
+            BillingMeter::LlmCacheReadToken,
+            GatewayUsageQuantity::tokens(10).expect("valid token quantity"),
+        );
+        assert_eq!(
+            None,
+            preflight_quote_for_line(&quotes, Some(&account), Some("gpt-4o"), &cache_line)
+        );
+
+        // A line with an explicit catalog-key override keeps resolving.
+        let override_line = InvocationUsageLine {
+            requested_model_catalog_key: Some("openai/gpt-4o".to_owned()),
+            ..InvocationUsageLine::new(
+                BillingMeter::LlmInputToken,
+                GatewayUsageQuantity::tokens(10).expect("valid token quantity"),
+            )
+        };
+        assert_eq!(
+            None,
+            preflight_quote_for_line(
+                &quotes,
+                Some(&account),
+                Some("gpt-4o"),
+                &override_line
+            )
+        );
+
+        // A changed account (dispatch failover) or requested model must
+        // requote instead of reusing the preflight quote.
+        let failover_account = InvocationAccount {
+            supplier_code: "fallback".to_owned(),
+            account_id: 3002,
+            ..account.clone()
+        };
+        assert_eq!(
+            None,
+            preflight_quote_for_line(
+                &quotes,
+                Some(&failover_account),
+                Some("gpt-4o"),
+                &input_line
+            )
+        );
+        assert_eq!(
+            None,
+            preflight_quote_for_line(&quotes, Some(&account), Some("gpt-4o-turbo"), &input_line)
+        );
+        assert_eq!(None, preflight_quote_for_line(&quotes, None, Some("gpt-4o"), &input_line));
     }
 }

@@ -445,3 +445,34 @@ async fn builds_adapter_request_as_standard_json_body() {
             .and_then(|v| v.as_str())
     );
 }
+
+#[tokio::test]
+async fn rejects_parent_directory_segments_in_the_request_path() {
+    let mut invocation = invocation_with_auth(ProviderAuthProfile::bearer());
+    invocation.request.path = "/v1/chat/completions/../../admin".to_owned();
+
+    let error = RequestTransformInterceptor
+        .before(&mut invocation)
+        .await
+        .expect_err("parent directory segments must be rejected");
+
+    assert!(error.message.contains("parent directory segments"));
+    assert!(invocation.dispatch.provider_request.is_none());
+}
+
+#[tokio::test]
+async fn accepts_normal_forward_paths() {
+    let mut invocation = invocation_with_auth(ProviderAuthProfile::bearer());
+    invocation.request.path = "/v1/chat/completions".to_owned();
+
+    RequestTransformInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("transform");
+
+    let request = invocation.dispatch.provider_request.expect("request");
+    assert_eq!(
+        Some("https://provider.example/root/v1/chat/completions"),
+        request.url.as_deref()
+    );
+}

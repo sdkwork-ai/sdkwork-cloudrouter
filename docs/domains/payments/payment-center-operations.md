@@ -12,7 +12,7 @@
    └─> 路由规则 (Route Rule)      ← 按市场/币种/平台/优先级选择通道（可选）
 支付意图 (Intent) ← 用户端发起支付时由订单网关创建，按通道路由
    └─> 支付尝试 (Attempt) → PSP 回调 (Webhook) → 意图成功
-   └─> 对账任务 (Reconciliation Run) ← 创建后入队，由订单网关执行
+   └─> 对账任务 (Reconciliation Run) ← 创建后入队，由 Cloud Router 对账 worker 执行
 ```
 
 关键事实：
@@ -25,7 +25,13 @@
   对 pending/processing 状态的记录提供行操作「模拟成功回调」，向后端 `dev/sandbox_trigger`
   入队一条沙箱回调，由订单网关消费后把该笔支付标记为 succeeded。
 - 意图创建在**用户端**（订单网关），admin 侧只能查看与追踪。
-- 对账任务创建后状态为 `queued`，实际执行在订单网关。
+- 对账任务创建后状态为 `queued`，由 **Cloud Router 对账 worker**
+  （`SDKWORK_CLOUDROUTER_PAYMENT_RECONCILIATION_ENABLED=true` 启用）周期认领执行：
+  对账 worker 只认领账单已导入且 `parse_status='parsed'` 的 run，读取内部
+  `commerce_payment_attempt`/`commerce_refund` 账本生成差异，并把
+  matched/mismatched/unmatched 计数与差异金额写回 run；账单尚未导入的 run
+  保持 `queued` 等待下一周期。执行结果见支付中心 run 状态与
+  `commerce_payment_reconciliation_item` 差异明细。
 
 ## 2. 路线 A：沙箱全链路验证（推荐先做）
 
@@ -109,7 +115,7 @@
 | 意图创建 | 支付意图列表 | 用户端支付后出现记录 |
 | 支付成功 | 意图状态 | succeeded（沙箱需模拟回调） |
 | Webhook 收到 | Webhook 事件 | 有对应事件且 processed |
-| 对账可跑 | 对账任务 | queued（执行在订单网关） |
+| 对账可跑 | 对账任务 | queued → succeeded（由 Cloud Router 对账 worker 消费） |
 
 ## 5. 常见问题
 
@@ -119,4 +125,8 @@
   environment 为 development/sandbox 的账户。
 - **生产账户 Test 失败**：核对凭据类型与字段（Stripe 是 `sk_live_` 密钥；
   支付宝/微信为 PEM 私钥 + 公钥/平台证书，非密钥字符串）。
-- **对账任务一直 queued**：执行方为订单网关，admin 仅负责创建批次与查看结果。
+- **对账任务一直 queued**：对账 worker 只认领账单已导入（`parse_status='parsed'`）
+  的 run。先确认对账 worker 已启用
+  （`SDKWORK_CLOUDROUTER_PAYMENT_RECONCILIATION_ENABLED=true` + 租户范围），
+  再确认该 run 对应周期的机构账单已由账单下载/解析管线导入；账单未就绪时
+  run 保持 queued 属正常等待，无需干预。

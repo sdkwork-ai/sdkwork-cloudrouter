@@ -15,7 +15,7 @@ async fn postgres_loader_can_be_constructed_without_connecting_for_server_deploy
 }
 
 #[tokio::test]
-async fn postgres_loader_reads_summed_routing_config_version_as_bigint() {
+async fn postgres_loader_reads_routing_config_version_fingerprint() {
     let database_url = match std::env::var(POSTGRES_TEST_DATABASE_URL) {
         Ok(value) if !value.trim().is_empty() => value,
         _ => {
@@ -59,7 +59,11 @@ async fn postgres_loader_reads_summed_routing_config_version_as_bigint() {
     .unwrap();
 
     let loader = PostgresPricingCatalogLoader::new(pool.clone());
-    assert_eq!(9, loader.load_routing_config_version().await.unwrap());
+    let version = loader.load_routing_config_version().await.unwrap();
+    // The routing config version is an md5 fingerprint over the catalog
+    // low-frequency tables, not a summed counter; only its shape is asserted.
+    assert_eq!(32, version.len());
+    assert!(version.chars().all(|ch| ch.is_ascii_hexdigit()));
     pool.close().await;
 }
 

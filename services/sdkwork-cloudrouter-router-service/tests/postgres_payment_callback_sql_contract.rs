@@ -51,10 +51,12 @@ fn payment_callback_recharge_credits_through_the_account_domain_ledger() {
     // S5: recharge credits go through the account-domain port
     // (`PostgresCommerceAccountStore::append_ledger_entry`) keyed by
     // out-trade-no; the legacy commerce_account/ledger SQL is gone.
+    // Credits land on the TokenBank asset so usage settlement (which debits
+    // the same asset) can spend recharged funds.
     for expected in [
         "PostgresCommerceAccountStore::new(pool.clone())",
         "AppendLedgerEntryCommand",
-        "asset_type: CommerceAccountAssetType::Points",
+        "asset_type: CommerceAccountAssetType::TokenBank",
         "direction: CommerceLedgerDirection::Credit",
         "business_type: RECHARGE_BUSINESS_TYPE.to_owned()",
         "idempotency_key: command.out_trade_no.clone()",

@@ -126,7 +126,7 @@ impl UsageSettlementWorker {
             return Ok(UsageSettlementOutcome {
                 settled_count: 0,
                 failed_count: 0,
-                debited_points: 0,
+                debited_tokens: 0,
             });
         }
 

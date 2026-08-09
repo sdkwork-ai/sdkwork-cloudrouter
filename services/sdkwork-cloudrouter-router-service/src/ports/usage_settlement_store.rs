@@ -34,7 +34,7 @@ impl UsageSettlementCommand {
 pub struct UsageSettlementOutcome {
     pub settled_count: i64,
     pub failed_count: i64,
-    pub debited_points: i64,
+    pub debited_tokens: i64,
 }
 
 #[cfg(test)]

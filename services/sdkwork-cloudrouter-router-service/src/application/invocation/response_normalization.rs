@@ -167,6 +167,9 @@ fn status_code_for_error(error: &InvocationError) -> u16 {
     }
 }
 
+/// Redacts credential-like material from error messages before they reach
+/// clients, using the shared redaction helper so behavior matches the gateway
+/// HTTP error path.
 fn masked_message(message: &str) -> String {
-    message.trim().replace("sk-", "sk-***")
+    crate::redaction::redact_sensitive_tokens(message)
 }

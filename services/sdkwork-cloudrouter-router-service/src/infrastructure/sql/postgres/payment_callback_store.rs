@@ -15,9 +15,10 @@ use crate::ports::{
     PaymentCallbackStore,
 };
 
-const POINTS_CURRENCY_CODE: &str = "POINT";
+const TOKEN_BANK_CURRENCY_CODE: &str = "TOKEN_BANK";
 /// Account-ledger business type for recharge credits (`acct_ledger_entry`).
-const RECHARGE_BUSINESS_TYPE: &str = "points_recharge";
+/// Matches the contract constant `CommerceLedgerBusinessType::TOKEN_BANK_PURCHASE_CREDIT`.
+const RECHARGE_BUSINESS_TYPE: &str = "token_bank_purchase_credit";
 const ORDER_STATUS_PAID: &str = "paid";
 const ORDER_STATUS_CANCELLED: &str = "cancelled";
 const ORDER_STATUS_PENDING_PAYMENT: &str = "pending_payment";
@@ -649,23 +650,25 @@ async fn fulfill_recharge_once(
             balance: 0,
         });
     }
-    let credited_points = callback_points(payment)?;
-    // Credit the USER points wallet exclusively through the account-domain
-    // ledger (`acct_*`); the out-trade-no is both the transaction number and
-    // the idempotency key, so webhook redelivery replays instead of
-    // double-crediting. The account store commits its own transaction; a crash
-    // before this callback transaction commits replays safely on redelivery.
+    let credited_tokens = callback_points(payment)?;
+    // Credit the USER token bank wallet exclusively through the account-domain
+    // ledger (`acct_*`); usage settlement debits the same TokenBank asset, so
+    // recharged funds are visible to billing and the balance endpoint. The
+    // out-trade-no is both the transaction number and the idempotency key, so
+    // webhook redelivery replays instead of double-crediting. The account
+    // store commits its own transaction; a crash before this callback
+    // transaction commits replays safely on redelivery.
     let account_store = PostgresCommerceAccountStore::new(pool.clone());
     let append = AppendLedgerEntryCommand {
         tenant_id: payment.tenant_id.clone(),
         organization_id: payment.organization_id.clone(),
         owner_user_id: payment.user_id.clone(),
         account_id: String::new(),
-        asset_type: CommerceAccountAssetType::Points,
-        currency_code: Some(POINTS_CURRENCY_CODE.to_owned()),
+        asset_type: CommerceAccountAssetType::TokenBank,
+        currency_code: Some(TOKEN_BANK_CURRENCY_CODE.to_owned()),
         direction: CommerceLedgerDirection::Credit,
-        amount: CommerceMoney::new(&credited_points.to_string()).map_err(|error| {
-            DomainError::new(format!("invalid recharge points amount: {error}"))
+        amount: CommerceMoney::new(&credited_tokens.to_string()).map_err(|error| {
+            DomainError::new(format!("invalid recharge token amount: {error}"))
         })?,
         business_type: RECHARGE_BUSINESS_TYPE.to_owned(),
         transaction_no: command.out_trade_no.clone(),
@@ -687,7 +690,7 @@ async fn fulfill_recharge_once(
             ))
         })?;
     let balance = parse_integer_text(outcome.account.available_amount.as_str())
-        .ok_or_else(|| DomainError::new("invalid points balance after recharge"))?;
+        .ok_or_else(|| DomainError::new("invalid token bank balance after recharge"))?;
 
     Ok(PaymentCallbackOutcome {
         success: true,
@@ -696,7 +699,7 @@ async fn fulfill_recharge_once(
         transaction_id: command.transaction_id.clone(),
         status: "success".to_owned(),
         message: "payment callback fulfilled recharge successfully".to_owned(),
-        credited_points,
+        credited_points: credited_tokens,
         balance,
     })
 }
@@ -723,7 +726,7 @@ fn recharge_request_hash(command: &AppendLedgerEntryCommand) -> CommerceRequestH
 fn is_points_recharge(value: &str) -> bool {
     matches!(
         value.trim().to_ascii_lowercase().as_str(),
-        "points" | "points_recharge"
+        "points" | "points_recharge" | "token_bank_recharge"
     )
 }
 

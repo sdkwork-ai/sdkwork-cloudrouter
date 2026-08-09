@@ -8,6 +8,7 @@ use crate::domain::{
     GatewayRiskRule, ModelMappingRule, ModelPrice, ModelUpstreamRoute, ModelVendorDefinition,
     Money, PriceSide, PricingPlan, QuotaPolicy, ResolveModelMappingContext, RoutingPolicy,
     RoutingRule, UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot, UpstreamAccountRoute,
+    has_text,
 };
 use crate::infrastructure::in_memory_pricing_catalog::resolve_model_mapping_from_rules;
 use crate::infrastructure::sql::rows::{
@@ -870,9 +871,6 @@ fn scope_specificity(
     None
 }
 
-fn has_text(value: Option<&str>) -> bool {
-    value.map(str::trim).is_some_and(|value| !value.is_empty())
-}
 
 fn option_matches(actual: Option<&str>, expected: Option<&str>) -> bool {
     match expected {

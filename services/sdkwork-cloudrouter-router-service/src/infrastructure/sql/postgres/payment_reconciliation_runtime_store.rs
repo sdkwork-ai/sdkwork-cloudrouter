@@ -1,8 +1,11 @@
 use sqlx::{PgPool, Row};
 
 use crate::application::{
-    PaymentReconciliationItemRecord, PaymentReconciliationRuntimeStore,
-    PaymentReconciliationRuntimeStoreFuture, PaymentStatementItemRecord, PaymentStatementRecord,
+    FinishReconciliationRunCommand, LoadReconciliationLedgerCommand,
+    LoadReconciliationStatementCommand, PaymentReconciliationItemRecord,
+    PaymentReconciliationRuntimeStore, PaymentReconciliationRuntimeStoreFuture,
+    PaymentStatementItemRecord, PaymentStatementRecord, ReconciliationRunClaimCommand,
+    ReconciliationRunRecord, RuntimeReconciliationLedgerEntry,
 };
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::store_error::redacted_store_error;
@@ -54,6 +57,38 @@ impl PaymentReconciliationRuntimeStore for PostgresPaymentReconciliationRuntimeS
     ) -> PaymentReconciliationRuntimeStoreFuture<'_, Vec<PaymentReconciliationItemRecord>> {
         let pool = self.pool.clone();
         Box::pin(async move { insert_reconciliation_items(&pool, items).await })
+    }
+
+    fn claim_due_reconciliation_runs(
+        &self,
+        command: ReconciliationRunClaimCommand,
+    ) -> PaymentReconciliationRuntimeStoreFuture<'_, Vec<ReconciliationRunRecord>> {
+        let pool = self.pool.clone();
+        Box::pin(async move { claim_due_reconciliation_runs(&pool, command).await })
+    }
+
+    fn load_statement_for_reconciliation_run(
+        &self,
+        command: LoadReconciliationStatementCommand,
+    ) -> PaymentReconciliationRuntimeStoreFuture<'_, Option<PaymentStatementRecord>> {
+        let pool = self.pool.clone();
+        Box::pin(async move { load_statement_for_reconciliation_run(&pool, command).await })
+    }
+
+    fn load_reconciliation_ledger_entries(
+        &self,
+        command: LoadReconciliationLedgerCommand,
+    ) -> PaymentReconciliationRuntimeStoreFuture<'_, Vec<RuntimeReconciliationLedgerEntry>> {
+        let pool = self.pool.clone();
+        Box::pin(async move { load_reconciliation_ledger_entries(&pool, command).await })
+    }
+
+    fn finish_reconciliation_run(
+        &self,
+        command: FinishReconciliationRunCommand,
+    ) -> PaymentReconciliationRuntimeStoreFuture<'_, ()> {
+        let pool = self.pool.clone();
+        Box::pin(async move { finish_reconciliation_run(&pool, command).await })
     }
 }
 
@@ -325,6 +360,216 @@ fn statement_item_from_row(
         metadata_json,
         created_at: string_cell(row, "created_at"),
     })
+}
+
+async fn claim_due_reconciliation_runs(
+    pool: &PgPool,
+    command: ReconciliationRunClaimCommand,
+) -> DomainResult<Vec<ReconciliationRunRecord>> {
+    let rows = sqlx::query(
+        r#"
+        UPDATE commerce_payment_reconciliation_run AS run
+        SET status = 'running',
+            version = run.version + 1,
+            updated_at = $4::timestamptz
+        WHERE run.id IN (
+            SELECT run.id
+            FROM commerce_payment_reconciliation_run AS run
+            WHERE ($1 = '' OR run.tenant_id = $1)
+              AND run.deleted_at IS NULL
+              AND run.status IN ('queued', 'pending')
+              AND ($2::text IS NULL OR run.organization_id = $2::text)
+            ORDER BY run.created_at, run.id
+            LIMIT $3
+            FOR UPDATE OF run SKIP LOCKED
+        )
+        RETURNING run.id, run.tenant_id, run.organization_id, run.run_no, run.provider_code,
+                  TO_CHAR(run.period_start AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS period_start,
+                  TO_CHAR(run.period_end AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS period_end,
+                  run.status
+        "#,
+    )
+    .bind(&command.tenant_id)
+    .bind(command.organization_id.as_deref())
+    .bind(command.limit)
+    .bind(&command.claimed_at)
+    .fetch_all(pool)
+    .await
+    .map_err(|error| store_error("failed to claim payment reconciliation runs", error))?;
+    rows.iter().map(reconciliation_run_from_row).collect()
+}
+
+async fn load_statement_for_reconciliation_run(
+    pool: &PgPool,
+    command: LoadReconciliationStatementCommand,
+) -> DomainResult<Option<PaymentStatementRecord>> {
+    let row = sqlx::query(
+        r#"
+        SELECT id, tenant_id, organization_id, statement_no, supplier_code, provider_account_id,
+               statement_type, settlement_currency, period_start, period_end, provider_statement_id,
+               file_ref, file_digest, download_status, parse_status, row_count, total_amount,
+               fee_amount, net_amount, downloaded_at, parsed_at, request_no, idempotency_key,
+               created_at, updated_at
+        FROM commerce_payment_statement
+        WHERE ($1 = '' OR tenant_id = $1)
+          AND supplier_code = $2
+          AND period_start::timestamptz = $3::timestamptz
+          AND period_end::timestamptz = $4::timestamptz
+          AND deleted_at IS NULL
+          AND parse_status = 'parsed'
+        ORDER BY created_at, id
+        LIMIT 1
+        "#,
+    )
+    .bind(&command.tenant_id)
+    .bind(&command.provider_code)
+    .bind(&command.period_start)
+    .bind(&command.period_end)
+    .fetch_optional(pool)
+    .await
+    .map_err(|error| {
+        store_error(
+            "failed to load payment statement for reconciliation run",
+            error,
+        )
+    })?;
+    row.map(|row| statement_from_row(&row)).transpose()
+}
+
+async fn load_reconciliation_ledger_entries(
+    pool: &PgPool,
+    command: LoadReconciliationLedgerCommand,
+) -> DomainResult<Vec<RuntimeReconciliationLedgerEntry>> {
+    let rows = sqlx::query(
+        r#"
+        SELECT pa.id AS payment_attempt_id,
+               NULL::text AS refund_id,
+               NULL::text AS refund_attempt_id,
+               pa.provider_code AS supplier_code,
+               COALESCE(NULLIF(pa.out_trade_no, ''), pa.id) AS sdkwork_out_trade_no,
+               NULL::text AS sdkwork_out_refund_no,
+               pa.amount::text AS internal_amount,
+               '0.00' AS provider_amount,
+               '0.00' AS internal_fee_amount,
+               '0.00' AS provider_fee_amount,
+               pa.currency_code AS currency_code,
+               pa.status AS internal_status,
+               NULL::text AS provider_status,
+               TO_CHAR(pa.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS occurred_at
+        FROM commerce_payment_attempt AS pa
+        WHERE ($1 = '' OR pa.tenant_id = $1)
+          AND pa.deleted_at IS NULL
+          AND pa.status IN ('created', 'pending', 'processing', 'succeeded', 'closed')
+          AND ($2::text IS NULL OR pa.organization_id = $2::text)
+          AND ($3::text IS NULL OR pa.provider_code = $3::text)
+          AND pa.created_at >= $4::timestamptz
+          AND pa.created_at <= $5::timestamptz
+
+        UNION ALL
+
+        SELECT NULL::text AS payment_attempt_id,
+               r.id AS refund_id,
+               NULL::text AS refund_attempt_id,
+               pa2.provider_code AS supplier_code,
+               NULL::text AS sdkwork_out_trade_no,
+               COALESCE(NULLIF(r.refund_no, ''), r.id) AS sdkwork_out_refund_no,
+               r.amount::text AS internal_amount,
+               '0.00' AS provider_amount,
+               '0.00' AS internal_fee_amount,
+               '0.00' AS provider_fee_amount,
+               r.currency_code AS currency_code,
+               r.status AS internal_status,
+               NULL::text AS provider_status,
+               TO_CHAR(r.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS occurred_at
+        FROM commerce_refund AS r
+        JOIN commerce_payment_attempt AS pa2
+          ON pa2.id = r.payment_attempt_id AND pa2.deleted_at IS NULL
+        WHERE ($1 = '' OR r.tenant_id = $1)
+          AND r.deleted_at IS NULL
+          AND r.status IN ('processing', 'succeeded')
+          AND ($2::text IS NULL OR r.organization_id = $2::text)
+          AND ($3::text IS NULL OR pa2.provider_code = $3::text)
+          AND r.created_at >= $4::timestamptz
+          AND r.created_at <= $5::timestamptz
+        "#,
+    )
+    .bind(&command.tenant_id)
+    .bind(command.organization_id.as_deref())
+    .bind(command.provider_code.as_deref())
+    .bind(&command.period_start)
+    .bind(&command.period_end)
+    .fetch_all(pool)
+    .await
+    .map_err(|error| store_error("failed to load payment reconciliation ledger", error))?;
+    Ok(rows
+        .iter()
+        .map(ledger_entry_from_row)
+        .collect::<Vec<_>>())
+}
+
+async fn finish_reconciliation_run(
+    pool: &PgPool,
+    command: FinishReconciliationRunCommand,
+) -> DomainResult<()> {
+    sqlx::query(
+        r#"
+        UPDATE commerce_payment_reconciliation_run
+        SET status = $2,
+            matched_count = $3,
+            mismatched_count = $4,
+            unmatched_count = $5,
+            total_difference_amount = $6::numeric,
+            version = version + 1,
+            updated_at = $7::timestamptz
+        WHERE id = $1
+          AND deleted_at IS NULL
+        "#,
+    )
+    .bind(&command.reconciliation_run_id)
+    .bind(&command.status)
+    .bind(command.matched_count)
+    .bind(command.mismatched_count)
+    .bind(command.unmatched_count)
+    .bind(&command.total_difference_amount)
+    .bind(&command.finished_at)
+    .execute(pool)
+    .await
+    .map_err(|error| store_error("failed to finish payment reconciliation run", error))?;
+    Ok(())
+}
+
+fn reconciliation_run_from_row(
+    row: &sqlx::postgres::PgRow,
+) -> DomainResult<ReconciliationRunRecord> {
+    Ok(ReconciliationRunRecord {
+        id: string_cell(row, "id"),
+        tenant_id: string_cell(row, "tenant_id"),
+        organization_id: optional_string_cell(row, "organization_id"),
+        run_no: string_cell(row, "run_no"),
+        provider_code: optional_string_cell(row, "provider_code"),
+        period_start: string_cell(row, "period_start"),
+        period_end: string_cell(row, "period_end"),
+        status: string_cell(row, "status"),
+    })
+}
+
+fn ledger_entry_from_row(row: &sqlx::postgres::PgRow) -> RuntimeReconciliationLedgerEntry {
+    RuntimeReconciliationLedgerEntry {
+        supplier_code: string_cell(row, "supplier_code"),
+        payment_attempt_id: optional_string_cell(row, "payment_attempt_id"),
+        refund_id: optional_string_cell(row, "refund_id"),
+        refund_attempt_id: optional_string_cell(row, "refund_attempt_id"),
+        sdkwork_out_trade_no: optional_string_cell(row, "sdkwork_out_trade_no"),
+        sdkwork_out_refund_no: optional_string_cell(row, "sdkwork_out_refund_no"),
+        internal_amount: string_cell(row, "internal_amount"),
+        provider_amount: string_cell(row, "provider_amount"),
+        internal_fee_amount: string_cell(row, "internal_fee_amount"),
+        provider_fee_amount: string_cell(row, "provider_fee_amount"),
+        currency_code: string_cell(row, "currency_code"),
+        internal_status: string_cell(row, "internal_status"),
+        provider_status: string_cell(row, "provider_status"),
+        occurred_at: string_cell(row, "occurred_at"),
+    }
 }
 
 fn string_cell(row: &sqlx::postgres::PgRow, name: &str) -> String {

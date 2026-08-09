@@ -11,6 +11,7 @@ use crate::domain::{
     DomainResult, GatewayApiKeyAccountGroupBinding, ModelUpstreamRoute, RouteCandidate,
     RoutingCapability, RoutingPolicy, RoutingPolicyScope, RoutingRule, UpstreamAccountGroup,
     UpstreamAccountGroupBinding, UpstreamAccountRoute,
+    has_text,
 };
 use crate::ports::UpstreamAccountRouteCatalog;
 
@@ -1301,9 +1302,6 @@ fn same_tenant(policy: &RoutingPolicy, context: &AuthenticatedApiKeyContext) -> 
     policy.tenant_id == context.tenant_id
 }
 
-fn has_text(value: Option<&str>) -> bool {
-    value.map(str::trim).is_some_and(|value| !value.is_empty())
-}
 
 fn normalized_text_or(value: &str, fallback: &str) -> String {
     let value = value.trim();

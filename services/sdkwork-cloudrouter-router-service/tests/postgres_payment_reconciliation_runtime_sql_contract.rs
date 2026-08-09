@@ -29,3 +29,64 @@ fn payment_reconciliation_runtime_writes_statement_items_and_differences() {
         assert_sql_contains(POSTGRES_PAYMENT_RECONCILIATION_RUNTIME_STORE, expected);
     }
 }
+
+#[test]
+fn reconciliation_worker_claims_runs_with_skip_locked_and_running_transition() {
+    for expected in [
+        "UPDATE commerce_payment_reconciliation_run AS run",
+        "SET status = 'running'",
+        "run.status IN ('queued', 'pending')",
+        "FOR UPDATE OF run SKIP LOCKED",
+        "RETURNING run.id, run.tenant_id, run.organization_id, run.run_no, run.provider_code",
+        "TO_CHAR(run.period_start AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"') AS period_start",
+    ] {
+        assert_sql_contains(POSTGRES_PAYMENT_RECONCILIATION_RUNTIME_STORE, expected);
+    }
+}
+
+#[test]
+fn reconciliation_worker_matches_imported_parsed_statement_by_period() {
+    for expected in [
+        "FROM commerce_payment_statement",
+        "AND supplier_code = $2",
+        "AND period_start::timestamptz = $3::timestamptz",
+        "AND period_end::timestamptz = $4::timestamptz",
+        "AND parse_status = 'parsed'",
+    ] {
+        assert_sql_contains(POSTGRES_PAYMENT_RECONCILIATION_RUNTIME_STORE, expected);
+    }
+}
+
+#[test]
+fn reconciliation_worker_loads_payment_and_refund_ledger_in_period() {
+    for expected in [
+        "FROM commerce_payment_attempt AS pa",
+        "pa.status IN ('created', 'pending', 'processing', 'succeeded', 'closed')",
+        "FROM commerce_refund AS r",
+        "JOIN commerce_payment_attempt AS pa2",
+        "ON pa2.id = r.payment_attempt_id AND pa2.deleted_at IS NULL",
+        "r.status IN ('processing', 'succeeded')",
+        "AND r.created_at >= $4::timestamptz",
+        "AND r.created_at <= $5::timestamptz",
+        "COALESCE(NULLIF(pa.out_trade_no, ''), pa.id) AS sdkwork_out_trade_no",
+        "COALESCE(NULLIF(r.refund_no, ''), r.id) AS sdkwork_out_refund_no",
+    ] {
+        assert_sql_contains(POSTGRES_PAYMENT_RECONCILIATION_RUNTIME_STORE, expected);
+    }
+}
+
+#[test]
+fn reconciliation_worker_finishes_runs_with_counts_and_numeric_total() {
+    for expected in [
+        "UPDATE commerce_payment_reconciliation_run",
+        "SET status = $2",
+        "matched_count = $3",
+        "mismatched_count = $4",
+        "unmatched_count = $5",
+        "total_difference_amount = $6::numeric",
+        "version = version + 1",
+        "WHERE id = $1",
+    ] {
+        assert_sql_contains(POSTGRES_PAYMENT_RECONCILIATION_RUNTIME_STORE, expected);
+    }
+}

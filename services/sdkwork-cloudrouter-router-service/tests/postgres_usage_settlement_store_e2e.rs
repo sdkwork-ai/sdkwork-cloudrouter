@@ -1,6 +1,6 @@
 //! Live-PostgreSQL end-to-end tests for usage settlement (S3).
 //!
-//! Usage settlement now debits the USER points wallet exclusively through the
+//! Usage settlement debits the USER token-bank wallet exclusively through the
 //! account-domain port (`PostgresCommerceAccountStore::append_ledger_entry`)
 //! on the shared commerce pool; the legacy `commerce_account` direct-write SQL
 //! is gone. These tests exercise the happy path, insufficient balance,
@@ -35,14 +35,14 @@ const ORGANIZATION_ID: i64 = 0;
 const USER_ID: i64 = 30;
 
 #[tokio::test]
-async fn settlement_debits_user_points_wallet_and_marks_facts_settled() {
+async fn settlement_debits_user_token_bank_wallet_and_marks_facts_settled() {
     let Some(ctx) = PostgresTestContext::new("usage_settlement_debit").await else {
         return;
     };
     let store = PostgresCommerceAccountStore::new(ctx.pool.clone());
-    credit_points(&ctx.pool, USER_ID, "settle-e2e-credit-1", 1000)
+    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-credit-1", 1000)
         .await
-        .expect("credit points wallet");
+        .expect("credit token bank wallet");
     insert_usage_fact(&ctx.pool, 1, USER_ID, "settle-e2e-fact-1", "10.000000")
         .await
         .expect("insert pending usage fact");
@@ -58,13 +58,13 @@ async fn settlement_debits_user_points_wallet_and_marks_facts_settled() {
 
     assert_eq!(2, outcome.settled_count);
     assert_eq!(0, outcome.failed_count);
-    assert_eq!(600, outcome.debited_points, "60.00 USD at 10 points per major unit");
+    assert_eq!(600, outcome.debited_tokens, "60.00 USD at 10 tokens per major unit");
 
     let (status, settled_at) = usage_fact_settlement(&ctx.pool, 1).await;
     assert_eq!(2, status, "usage fact must be marked settled");
     assert!(settled_at.is_some(), "successful settlement must record settled_at");
 
-    let balance = points_balance(&ctx.pool, USER_ID).await;
+    let balance = token_bank_balance(&ctx.pool, USER_ID).await;
     assert_eq!(400, balance, "wallet must be debited through the account ledger");
 
     let debits = ledger_debit_total(&ctx.pool, USER_ID).await;
@@ -99,7 +99,7 @@ async fn settlement_marks_insufficient_balance_failed() {
 
     assert_eq!(0, outcome.settled_count);
     assert_eq!(1, outcome.failed_count);
-    assert_eq!(0, outcome.debited_points);
+    assert_eq!(0, outcome.debited_tokens);
 
     let row = sqlx::query(
         "SELECT settlement_status, failure_code FROM ai_metering_usage WHERE id = 1",
@@ -108,7 +108,10 @@ async fn settlement_marks_insufficient_balance_failed() {
     .await
     .expect("read usage fact settlement state");
     assert_eq!(3_i32, row.get::<i32, _>("settlement_status"));
-    assert_eq!("INSUFFICIENT_POINTS", row.get::<String, _>("failure_code"));
+    assert_eq!(
+        "INSUFFICIENT_TOKEN_BANK",
+        row.get::<String, _>("failure_code")
+    );
 
     ctx.cleanup().await;
 }
@@ -118,9 +121,9 @@ async fn settlement_replays_idempotently_without_double_debit() {
     let Some(ctx) = PostgresTestContext::new("usage_settlement_replay").await else {
         return;
     };
-    credit_points(&ctx.pool, USER_ID, "settle-e2e-credit-2", 1000)
+    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-credit-2", 1000)
         .await
-        .expect("credit points wallet");
+        .expect("credit token bank wallet");
     insert_usage_fact(&ctx.pool, 1, USER_ID, "settle-e2e-fact-3", "20.000000")
         .await
         .expect("insert pending usage fact");
@@ -134,7 +137,7 @@ async fn settlement_replays_idempotently_without_double_debit() {
         .await
         .expect("first settlement run");
     assert_eq!(1, first.settled_count);
-    assert_eq!(200, first.debited_points, "20.00 USD at 10 points per major unit");
+    assert_eq!(200, first.debited_tokens, "20.00 USD at 10 tokens per major unit");
 
     // Second run must settle nothing and must not debit the wallet again.
     let second = settlement
@@ -142,9 +145,9 @@ async fn settlement_replays_idempotently_without_double_debit() {
         .await
         .expect("second settlement run");
     assert_eq!(0, second.settled_count);
-    assert_eq!(0, second.debited_points);
+    assert_eq!(0, second.debited_tokens);
 
-    let balance = points_balance(&ctx.pool, USER_ID).await;
+    let balance = token_bank_balance(&ctx.pool, USER_ID).await;
     assert_eq!(800, balance, "wallet must be debited exactly once");
     let debits = ledger_debit_total(&ctx.pool, USER_ID).await;
     assert_eq!(200, debits, "only one usage_settlement ledger entry may exist");
@@ -172,7 +175,7 @@ async fn settlement_defers_zero_amount_groups() {
 
     assert_eq!(0, outcome.settled_count);
     assert_eq!(0, outcome.failed_count);
-    assert_eq!(0, outcome.debited_points);
+    assert_eq!(0, outcome.debited_tokens);
 
     let (status, _) = usage_fact_settlement(&ctx.pool, 1).await;
     assert_eq!(
@@ -193,18 +196,23 @@ fn settlement_command(limit: i64) -> UsageSettlementCommand {
     }
 }
 
-async fn credit_points(pool: &PgPool, user_id: i64, idempotency_key: &str, points: i64) -> Result<(), String> {
+async fn credit_token_bank(
+    pool: &PgPool,
+    user_id: i64,
+    idempotency_key: &str,
+    tokens: i64,
+) -> Result<(), String> {
     let store = PostgresCommerceAccountStore::new(pool.clone());
     let append = AppendLedgerEntryCommand {
         tenant_id: TENANT_ID.to_string(),
         organization_id: Some(ORGANIZATION_ID.to_string()),
         owner_user_id: user_id.to_string(),
         account_id: String::new(),
-        asset_type: CommerceAccountAssetType::Points,
-        currency_code: Some("POINT".to_owned()),
+        asset_type: CommerceAccountAssetType::TokenBank,
+        currency_code: Some("TOKEN_BANK".to_owned()),
         direction: CommerceLedgerDirection::Credit,
-        amount: CommerceMoney::new(&points.to_string()).map_err(|error| error.to_string())?,
-        business_type: "points_recharge".to_owned(),
+        amount: CommerceMoney::new(&tokens.to_string()).map_err(|error| error.to_string())?,
+        business_type: "token_bank_recharge".to_owned(),
         transaction_no: idempotency_key.to_owned(),
         request_no: idempotency_key.to_owned(),
         idempotency_key: idempotency_key.to_owned(),
@@ -268,7 +276,7 @@ async fn usage_fact_settlement(pool: &PgPool, id: i64) -> (i32, Option<String>) 
     (row.get::<i32, _>("settlement_status"), settled_at)
 }
 
-async fn points_balance(pool: &PgPool, user_id: i64) -> i64 {
+async fn token_bank_balance(pool: &PgPool, user_id: i64) -> i64 {
     let row = sqlx::query(
         r#"
         SELECT available_amount
@@ -277,7 +285,7 @@ async fn points_balance(pool: &PgPool, user_id: i64) -> i64 {
           AND organization_id = $2
           AND owner_type = 'USER'
           AND owner_id = $3
-          AND asset_code = 'points'
+          AND asset_code = 'token_bank'
           AND account_purpose = 'GENERAL'
           AND status = 1
         "#,
@@ -287,7 +295,7 @@ async fn points_balance(pool: &PgPool, user_id: i64) -> i64 {
     .bind(user_id)
     .fetch_one(pool)
     .await
-    .expect("read points wallet balance");
+    .expect("read token bank wallet balance");
     row.get::<i64, _>("available_amount")
 }
 

@@ -373,6 +373,24 @@ Completed baseline:
 - Difference generation now covers `missing_in_sdkwork`, `missing_in_provider`, `amount_mismatch`, `currency_mismatch`, `status_mismatch`, `duplicate_provider_record`, `fee_mismatch`, `settlement_mismatch`, and `chargeback_mismatch`.
 - Matching rows intentionally do not create reconciliation difference rows.
 
+Execution follow-up (commercial deployment):
+
+- The statement/reconciliation tables (`commerce_payment_statement`,
+  `commerce_payment_statement_item`, `commerce_payment_reconciliation_item`)
+  previously had no DDL anywhere; they now ship in the
+  `database/modules/payment-reconciliation` module (baseline + self-healing
+  `commerce_payment_reconciliation_run` columns).
+- `PaymentReconciliationWorker` consumes queued
+  `commerce_payment_reconciliation_run` rows: claims with `FOR UPDATE SKIP
+  LOCKED`, loads the imported parsed statement and the internal
+  `commerce_payment_attempt`/`commerce_refund` ledger for the run period,
+  generates differences, and writes back matched/mismatched/unmatched counts
+  and absolute difference exposure. Runs whose statement is not imported yet
+  stay `queued` for the next cycle.
+- Enabled via `SDKWORK_CLOUDROUTER_PAYMENT_RECONCILIATION_ENABLED` (+ tenant
+  scope), wired into both gateway and all-in-one runtime paths, with SQL
+  contract and worker tests.
+
 ## Task 8: Mainstream Provider Real Adapters
 
 - [ ] Implement WeChat Pay APIv3 adapter.

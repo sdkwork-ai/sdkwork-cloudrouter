@@ -140,6 +140,9 @@ async fn interceptor_records_selected_route_decision_facts() {
     invocation.account = Some(InvocationAccount {
         supplier_code: "openrouter".to_owned(),
         account_id: 3001,
+        account_group_id: None,
+        account_group_code: None,
+        pricing_plan_code: None,
         region_code: "global".to_owned(),
         credential_id: Some(7001),
         credential_rotation: None,

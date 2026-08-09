@@ -65,23 +65,31 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
         DecimalValue::parse("1.100000").unwrap(),
     ));
     catalog.add_api_key(GatewayApiKey::new(101, 10, "sk-live", &key_hash).with_owner(10, 20, 30));
-    catalog.add_price(ModelPrice::new_for_catalog_key(
-        "openai/gpt-4o-mini",
-        "gpt-4o-mini",
-        PriceSide::OfficialReference,
+    // Composite (chat) billing settles input, output, and cache-read meters,
+    // so the official reference must exist for all three.
+    for meter in [
         BillingMeter::LlmInputToken,
-        Money::usd("0.150000").unwrap(),
-    ));
-    catalog.add_price(
-        ModelPrice::new_for_catalog_key(
+        BillingMeter::LlmOutputToken,
+        BillingMeter::LlmCacheReadToken,
+    ] {
+        catalog.add_price(ModelPrice::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
-            PriceSide::UpstreamCost,
-            BillingMeter::LlmInputToken,
-            Money::usd("0.110000").unwrap(),
-        )
-        .for_upstream_account("openrouter", 3001),
-    );
+            PriceSide::OfficialReference,
+            meter.clone(),
+            Money::usd("0.150000").unwrap(),
+        ));
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                "openai/gpt-4o-mini",
+                "gpt-4o-mini",
+                PriceSide::UpstreamCost,
+                meter,
+                Money::usd("0.110000").unwrap(),
+            )
+            .for_upstream_account("openrouter", 3001),
+        );
+    }
     catalog.add_routing_policy(
         RoutingPolicy::new(
             9001,
@@ -135,10 +143,11 @@ async fn gateway_mounts_openai_chat_completions_boundary_without_fake_success() 
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::NOT_IMPLEMENTED, response.status());
+    let status = response.status();
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .unwrap();
+    assert_eq!(StatusCode::NOT_IMPLEMENTED, status);
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
     assert_eq!("provider_relay_not_configured", payload["error"]["code"]);
@@ -166,10 +175,11 @@ async fn gateway_mounts_stored_chat_completion_passthrough_boundary_without_fake
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::NOT_IMPLEMENTED, response.status());
+    let status = response.status();
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .unwrap();
+    assert_eq!(StatusCode::NOT_IMPLEMENTED, status);
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
     assert_eq!(

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SdkworkSubscriptionPage } from '@sdkwork/membership-pc-subscription';
+import { SubscriptionPurchasePage as SdkworkSubscriptionPage } from '@sdkwork/order-pc-subscription';
 import { SdkworkCouponPage } from '@sdkwork/promotion-pc-coupon';
 import {
   createSdkworkPaymentController,

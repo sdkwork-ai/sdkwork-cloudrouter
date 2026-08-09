@@ -2248,6 +2248,9 @@ async fn invocation_http_dispatcher_forwards_provider_header_auth_after_sanitizi
         timeout_ms: Some(30_000),
         retry_policy: None,
         provider_model: None,
+        account_group_id: None,
+        account_group_code: None,
+        pricing_plan_code: None,
     };
 
     let response = sdkwork_cloudrouter_edge_runtime::InvocationHttpDispatcher::for_development()
@@ -2309,6 +2312,9 @@ async fn invocation_http_dispatcher_enforces_account_timeout() {
         timeout_ms: Some(10),
         retry_policy: None,
         provider_model: None,
+        account_group_id: None,
+        account_group_code: None,
+        pricing_plan_code: None,
     };
 
     let error = sdkwork_cloudrouter_edge_runtime::InvocationHttpDispatcher::for_development()
@@ -2419,4 +2425,122 @@ async fn invocation_router_enforces_api_key_quota_rate_limit() {
 
     let second = router.oneshot(request()).await.unwrap();
     assert_eq!(StatusCode::TOO_MANY_REQUESTS, second.status());
+}
+
+#[tokio::test]
+async fn invocation_router_real_http_chat_records_settled_usage() {
+    let upstream = Arc::new(UpstreamCapture::default());
+    let app = axum::Router::new()
+        .route(
+            "/openrouter/v1/chat/completions",
+            post(
+                |State(upstream): State<Arc<UpstreamCapture>>,
+                 headers: HeaderMap,
+                 Json(body): Json<serde_json::Value>| async move {
+                    upstream
+                        .requests
+                        .lock()
+                        .unwrap()
+                        .push(CapturedUpstreamRequest {
+                            authorization: headers
+                                .get("authorization")
+                                .and_then(|value| value.to_str().ok())
+                                .map(str::to_owned),
+                            x_api_key: None,
+                            api_key: None,
+                            x_client_trace: None,
+                            body,
+                        });
+                    Json(json!({
+                        "id": "chatcmpl-http-settle",
+                        "object": "chat.completion",
+                        "choices": [
+                            {
+                                "index": 0,
+                                "message": {"role": "assistant", "content": "pong"},
+                                "finish_reason": "stop"
+                            }
+                        ],
+                        "usage": {
+                            "prompt_tokens": 4,
+                            "completion_tokens": 3,
+                            "total_tokens": 7
+                        }
+                    }))
+                },
+            ),
+        )
+        .with_state(Arc::clone(&upstream));
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base_url = format!("http://{}", listener.local_addr().unwrap());
+    let server = tokio::spawn(async move {
+        axum::serve(listener, app).await.unwrap();
+    });
+
+    let hasher = hasher();
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let usage_recorder = Arc::new(RecordingUsageRecorder::default());
+    let router = sdkwork_cloudrouter_edge_runtime::invocation_router_with_full_pipeline(
+        Arc::new(catalog_with_hashed_api_key_and_base_url(
+            &key_hash,
+            &format!("{base_url}/openrouter"),
+        )),
+        hasher,
+        Arc::new(sdkwork_cloudrouter_edge_runtime::InvocationHttpDispatcher::for_development()),
+        Some(secret_resolver()),
+        None,
+        Some(usage_recorder.clone()),
+    );
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/chat/completions")
+                .header("authorization", "Bearer sk-live-secret")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"model":"gpt-4o-mini","messages":[{"role":"user","content":"ping"}]}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::OK, response.status());
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!("chatcmpl-http-settle", payload["id"]);
+
+    // The real upstream received exactly one authenticated call.
+    let requests = upstream.requests.lock().unwrap().clone();
+    assert_eq!(1, requests.len());
+    assert_eq!(
+        Some("Bearer sk-provider-secret"),
+        requests[0].authorization.as_deref()
+    );
+    assert_eq!("gpt-4o-mini-provider", requests[0].body["model"]);
+
+    // Billing landed: input/output usage commands plus one trace.
+    let commands = usage_recorder.commands();
+    assert_eq!(2, commands.len());
+    assert_eq!("llm_input_token", commands[0].billing_meter_code);
+    assert_eq!("4", commands[0].billable_quantity);
+    assert_eq!(4, commands[0].prompt_tokens);
+    assert_eq!("llm_output_token", commands[1].billing_meter_code);
+    assert_eq!("3", commands[1].billable_quantity);
+    assert_eq!(3, commands[1].completion_tokens);
+    assert!(commands
+        .iter()
+        .all(|command| command.supplier_code == "openrouter" && command.account_id == 3001));
+    let traces = usage_recorder.traces();
+    assert_eq!(1, traces.len());
+    assert_eq!(Some(200), traces[0].http_status);
+    assert_eq!(4, traces[0].prompt_tokens);
+    assert_eq!(3, traces[0].completion_tokens);
+    assert_eq!(7, traces[0].total_tokens);
+
+    server.abort();
 }

@@ -56,7 +56,9 @@ mod settlements_dashboard_read_store;
 mod site_settings_store;
 mod sticky_route_store;
 mod upstream_account_route_catalog;
+mod upstream_credential_rotation_store;
 mod usage_logs_read_store;
+mod usage_retention_store;
 mod usage_settlement_store;
 
 pub use admin_ai_resource_store::{
@@ -357,11 +359,20 @@ pub use sticky_route_store::{
     StickyRouteStoreFuture,
 };
 pub use upstream_account_route_catalog::UpstreamAccountRouteCatalog;
+pub use upstream_credential_rotation_store::{
+    CredentialRotationAccount, CredentialRotationAction, CredentialRotationSweepCommand,
+    TryRotateCredentialCommand, UpstreamCredentialRotationStore,
+    UpstreamCredentialRotationStoreFuture,
+};
 pub use usage_logs_read_store::{
     UsageLogItem, UsageLogsPage, UsageLogsQuery, UsageLogsReadFuture, UsageLogsReadStore,
     UsageLogsStatus, UsageLogsSubject,
 };
 pub(crate) use usage_settlement_store::MAX_USAGE_SETTLEMENT_BATCH_SIZE;
+pub use usage_retention_store::{
+    DeleteExpiredSettledUsageCommand, UsageRetentionFuture, UsageRetentionOutcome,
+    UsageRetentionStore,
+};
 pub use usage_settlement_store::{
     UsageSettlementCommand, UsageSettlementFuture, UsageSettlementOutcome, UsageSettlementStore,
 };

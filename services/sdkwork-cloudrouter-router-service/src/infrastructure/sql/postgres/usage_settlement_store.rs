@@ -19,22 +19,25 @@ use crate::ports::{
     MAX_PRICING_SNAPSHOT_BYTES,
 };
 
-const POINTS_CURRENCY_CODE: &str = "POINT";
+/// Token Bank currency label (matches the account-platform convention used by
+/// the gateway balance endpoint, which reads the same Token Bank wallet).
+const TOKEN_BANK_CURRENCY_CODE: &str = "TOKEN_BANK";
 const USAGE_SETTLEMENT_BUSINESS_TYPE: &str = "usage_settlement";
 /// Stable account-domain contract message for a debit that the wallet cannot
-/// satisfy (either the points account is missing or its balance is too low).
+/// satisfy (either the token bank account is missing or its balance is too low).
 const INSUFFICIENT_BALANCE_MESSAGE: &str = "insufficient account balance";
 const USAGE_SETTLEMENT_PENDING: i64 = 0;
 const USAGE_SETTLEMENT_SUCCESS: i64 = 2;
-/// Retryable failure (e.g. insufficient points): the fact is re-selected on
-/// later runs after a backoff window so a topped-up wallet can settle it.
+/// Retryable failure (e.g. insufficient token balance): the fact is
+/// re-selected on later runs after a backoff window so a topped-up wallet can
+/// settle it.
 const USAGE_SETTLEMENT_RETRYABLE_FAILED: i64 = 3;
 /// Terminal failure (invalid amount/snapshot): the fact is never retried so
 /// permanently unpayable or malformed facts cannot churn the settlement batch.
 const USAGE_SETTLEMENT_TERMINAL_FAILED: i64 = 4;
 const DECIMAL_SCALE: i128 = 1_000_000_000_000;
-const POINTS_PER_MAJOR_UNIT: i128 = 10;
-const MIN_BILLABLE_POINT_SCALED: i128 = DECIMAL_SCALE;
+const TOKENS_PER_MAJOR_UNIT: i128 = 10;
+const MIN_BILLABLE_TOKEN_SCALED: i128 = DECIMAL_SCALE;
 const MAX_SETTLEMENT_TRANSACTION_ATTEMPTS: usize = 3;
 const SETTLEMENT_RETRY_INITIAL_BACKOFF_MILLIS: u64 = 25;
 const SETTLEMENT_RETRY_MAX_BACKOFF_MILLIS: u64 = 250;
@@ -79,7 +82,7 @@ impl From<DomainError> for SettlementStoreError {
 pub struct PostgresUsageSettlementStore {
     pool: PgPool,
     /// Account-domain wallet store on the shared commerce pool. Usage
-    /// settlement debits the USER points wallet through this port — the
+    /// settlement debits the USER token bank wallet through this port — the
     /// account ledger (`acct_*`) is the only writer of balances.
     account_store: PostgresCommerceAccountStore,
 }
@@ -141,7 +144,7 @@ async fn settle_pending_usage(
         return Ok(UsageSettlementOutcome {
             settled_count: 0,
             failed_count: 0,
-            debited_points: 0,
+            debited_tokens: 0,
         });
     }
 
@@ -180,14 +183,14 @@ async fn settle_pending_usage_once(
     let mut outcome = UsageSettlementOutcome {
         settled_count: 0,
         failed_count: 0,
-        debited_points: 0,
+        debited_tokens: 0,
     };
     let groups = collect_settlement_groups(&mut tx, &command, usage_facts, &mut outcome).await?;
     for group in groups {
         let group_outcome = settle_usage_group(&mut tx, &command, &group, account_store).await?;
         outcome.settled_count += group_outcome.settled_count;
         outcome.failed_count += group_outcome.failed_count;
-        outcome.debited_points += group_outcome.debited_points;
+        outcome.debited_tokens += group_outcome.debited_tokens;
     }
     tx.commit()
         .await
@@ -368,18 +371,18 @@ async fn settle_usage_group(
         return Ok(empty_outcome());
     }
 
-    let points = charge_points_from_scaled(group_total_scaled(group)?)?;
-    if points == 0 {
+    let tokens = charge_tokens_from_scaled(group_total_scaled(group)?)?;
+    if tokens == 0 {
         defer_usage_group(tx, group).await?;
         return Ok(empty_outcome());
     }
 
     // Validate that per-candidate rounding sums to the batch total.
-    let _ = allocate_candidate_points(&group.candidates, points)?;
+    let _ = allocate_candidate_tokens(&group.candidates, tokens)?;
 
     let first_usage_fact = &group.candidates[0].usage_fact;
     let transaction_id = settlement_batch_no(&group.candidates);
-    match debit_user_points(account_store, first_usage_fact, points, &transaction_id).await {
+    match debit_user_token_bank(account_store, first_usage_fact, tokens, &transaction_id).await {
         Ok(_) => {
             for candidate in &group.candidates {
                 mark_settlement_success(
@@ -393,7 +396,7 @@ async fn settle_usage_group(
             Ok(UsageSettlementOutcome {
                 settled_count: group.candidates.len() as i64,
                 failed_count: 0,
-                debited_points: points,
+                debited_tokens: tokens,
             })
         }
         Err(error) if error.message() == INSUFFICIENT_BALANCE_MESSAGE => {
@@ -403,30 +406,34 @@ async fn settle_usage_group(
                     command,
                     &candidate.usage_fact,
                     candidate.usage_fact.id,
-                    "INSUFFICIENT_POINTS",
-                    "usage settlement account has insufficient points",
+                    "INSUFFICIENT_TOKEN_BANK",
+                    "usage settlement account has insufficient token bank balance",
                 )
                 .await?;
             }
             Ok(UsageSettlementOutcome {
                 settled_count: 0,
                 failed_count: group.candidates.len() as i64,
-                debited_points: 0,
+                debited_tokens: 0,
             })
         }
         Err(error) => Err(settlement_account_error(error)),
     }
 }
 
-/// Debits the USER points wallet through the account-domain port on the
-/// shared commerce pool. The batch number is both the transaction number and
-/// the idempotency key, so a crash between the debit commit and the usage-fact
-/// status update replays idempotently on the next settlement run — the account
-/// ledger (`acct_*`) is the only writer of balances.
-async fn debit_user_points(
+/// Debits the USER Token Bank wallet through the account-domain port on the
+/// shared commerce pool. The Token Bank is the wallet the gateway balance
+/// endpoint and the app token wallet surface read, so settlement must draw
+/// from the same asset; debiting the separate Points wallet would leave users
+/// with a visible balance they cannot actually spend. The batch number is
+/// both the transaction number and the idempotency key, so a crash between
+/// the debit commit and the usage-fact status update replays idempotently on
+/// the next settlement run — the account ledger (`acct_*`) is the only writer
+/// of balances.
+async fn debit_user_token_bank(
     account_store: &PostgresCommerceAccountStore,
     usage_fact: &UsageFactForSettlement,
-    points: i64,
+    tokens: i64,
     transaction_id: &str,
 ) -> Result<(), CommerceServiceError> {
     let append = AppendLedgerEntryCommand {
@@ -434,12 +441,12 @@ async fn debit_user_points(
         organization_id: Some(usage_fact.organization_id.to_string()),
         owner_user_id: usage_fact.user_id.to_string(),
         account_id: String::new(),
-        asset_type: CommerceAccountAssetType::Points,
-        currency_code: Some(POINTS_CURRENCY_CODE.to_owned()),
+        asset_type: CommerceAccountAssetType::TokenBank,
+        currency_code: Some(TOKEN_BANK_CURRENCY_CODE.to_owned()),
         direction: CommerceLedgerDirection::Debit,
-        amount: CommerceMoney::new(&points.to_string())
+        amount: CommerceMoney::new(&tokens.to_string())
             .map_err(|error| CommerceServiceError::validation(format!(
-                "invalid usage settlement points amount: {error}"
+                "invalid usage settlement token amount: {error}"
             )))?,
         business_type: USAGE_SETTLEMENT_BUSINESS_TYPE.to_owned(),
         transaction_no: transaction_id.to_owned(),
@@ -578,21 +585,21 @@ fn settlement_no(usage_fact_id: i64) -> String {
     format!("usage-settlement-{usage_fact_id}")
 }
 
-fn charge_points_from_scaled(scaled: i128) -> Result<i64, DomainError> {
+fn charge_tokens_from_scaled(scaled: i128) -> Result<i64, DomainError> {
     if scaled <= 0 {
         return Ok(0);
     }
-    let scaled_points = scaled
-        .checked_mul(POINTS_PER_MAJOR_UNIT)
+    let scaled_tokens = scaled
+        .checked_mul(TOKENS_PER_MAJOR_UNIT)
         .ok_or_else(|| DomainError::new("usage settlement amount is too large"))?;
-    if scaled_points < MIN_BILLABLE_POINT_SCALED {
+    if scaled_tokens < MIN_BILLABLE_TOKEN_SCALED {
         return Ok(0);
     }
-    let points = scaled_points
+    let tokens = scaled_tokens
         .checked_add(DECIMAL_SCALE - 1)
         .ok_or_else(|| DomainError::new("usage settlement amount is too large"))?
         / DECIMAL_SCALE;
-    i64::try_from(points).map_err(|_| DomainError::new("usage settlement points overflow"))
+    i64::try_from(tokens).map_err(|_| DomainError::new("usage settlement tokens overflow"))
 }
 
 fn group_total_scaled(group: &SettlementGroup) -> Result<i128, DomainError> {
@@ -606,27 +613,27 @@ fn group_total_scaled(group: &SettlementGroup) -> Result<i128, DomainError> {
         })
 }
 
-fn allocate_candidate_points(
+fn allocate_candidate_tokens(
     candidates: &[SettlementCandidate],
-    total_points: i64,
+    total_tokens: i64,
 ) -> Result<Vec<i64>, DomainError> {
     let mut allocations = Vec::with_capacity(candidates.len());
     let mut cumulative_amount = 0_i128;
-    let mut allocated_points = 0_i64;
+    let mut allocated_tokens = 0_i64;
     for candidate in candidates {
         cumulative_amount = cumulative_amount
             .checked_add(candidate.scaled_amount)
             .ok_or_else(|| DomainError::new("usage settlement amount is too large"))?;
-        let cumulative_points = charge_points_from_scaled(cumulative_amount)?;
-        let candidate_points = cumulative_points
-            .checked_sub(allocated_points)
-            .ok_or_else(|| DomainError::new("usage settlement point allocation underflow"))?;
-        allocations.push(candidate_points);
-        allocated_points = cumulative_points;
+        let cumulative_tokens = charge_tokens_from_scaled(cumulative_amount)?;
+        let candidate_tokens = cumulative_tokens
+            .checked_sub(allocated_tokens)
+            .ok_or_else(|| DomainError::new("usage settlement token allocation underflow"))?;
+        allocations.push(candidate_tokens);
+        allocated_tokens = cumulative_tokens;
     }
-    if allocated_points != total_points {
+    if allocated_tokens != total_tokens {
         return Err(DomainError::new(
-            "usage settlement point allocation does not match batch total",
+            "usage settlement token allocation does not match batch total",
         ));
     }
     Ok(allocations)
@@ -657,7 +664,7 @@ fn empty_outcome() -> UsageSettlementOutcome {
     UsageSettlementOutcome {
         settled_count: 0,
         failed_count: 0,
-        debited_points: 0,
+        debited_tokens: 0,
     }
 }
 

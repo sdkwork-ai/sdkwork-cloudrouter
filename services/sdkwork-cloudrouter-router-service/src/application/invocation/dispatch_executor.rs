@@ -67,8 +67,7 @@ impl InvocationInterceptor for DispatchExecutor {
                     }
                     return Ok(());
                 }
-                DispatchMode::DirectOpenAiRelay
-                | DispatchMode::DirectHttpPassthrough
+                DispatchMode::DirectHttpPassthrough
                 | DispatchMode::InternalProviderAdapter => {}
             }
 

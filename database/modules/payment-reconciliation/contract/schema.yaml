@@ -1,0 +1,117 @@
+schema_version: 1
+kind: sdkwork.database.schema
+database_role: authoritative-server
+module_id: payment-reconciliation
+contract_version: 0.1.0
+owner_team: sdkwork-cloudrouter
+compliance_level: L3
+engines:
+  - postgres
+table_prefix: commerce_payment_
+tables:
+  - name: commerce_payment_statement
+    lifecycle_status: active
+    owner: sdkwork-cloudrouter
+    domain: payment
+    profile: provider_statement_header
+    compliance_level: L3
+    system_of_record: true
+    write_owner: router-service
+    columns:
+      id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL PRIMARY KEY }
+      tenant_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      organization_id: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      statement_no: { type: string(128), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      supplier_code: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      provider_account_id: { type: string(128), required: false, postgres_type: TEXT, constraints: '' }
+      statement_type: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      settlement_currency: { type: string(10), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      period_start: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL }
+      period_end: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL }
+      provider_statement_id: { type: string(128), required: false, postgres_type: TEXT, constraints: '' }
+      file_ref: { type: string(512), required: false, postgres_type: TEXT, constraints: '' }
+      file_digest: { type: string(128), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      download_status: { type: string(32), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT 'pending' }
+      parse_status: { type: string(32), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT 'pending' }
+      row_count: { type: int64, required: true, postgres_type: BIGINT, constraints: NOT NULL DEFAULT 0 }
+      total_amount: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '0.00' }
+      fee_amount: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '0.00' }
+      net_amount: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '0.00' }
+      downloaded_at: { type: instant, required: false, postgres_type: TIMESTAMPTZ, constraints: '' }
+      parsed_at: { type: instant, required: false, postgres_type: TIMESTAMPTZ, constraints: '' }
+      request_no: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      idempotency_key: { type: string(128), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      created_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL DEFAULT NOW() }
+      updated_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL DEFAULT NOW() }
+      deleted_at: { type: instant, required: false, postgres_type: TIMESTAMPTZ, constraints: '' }
+      version: { type: int64, required: true, postgres_type: BIGINT, constraints: NOT NULL DEFAULT 0 }
+  - name: commerce_payment_statement_item
+    lifecycle_status: active
+    owner: sdkwork-cloudrouter
+    domain: payment
+    profile: provider_statement_row
+    compliance_level: L3
+    system_of_record: true
+    write_owner: router-service
+    columns:
+      id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL PRIMARY KEY }
+      tenant_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      organization_id: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      statement_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      supplier_code: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      provider_account_id: { type: string(128), required: false, postgres_type: TEXT, constraints: '' }
+      row_no: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      native_trade_id: { type: string(128), required: false, postgres_type: TEXT, constraints: '' }
+      native_refund_id: { type: string(128), required: false, postgres_type: TEXT, constraints: '' }
+      native_order_no: { type: string(128), required: false, postgres_type: TEXT, constraints: '' }
+      sdkwork_out_trade_no: { type: string(128), required: false, postgres_type: TEXT, constraints: '' }
+      sdkwork_out_refund_no: { type: string(128), required: false, postgres_type: TEXT, constraints: '' }
+      transaction_type: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      occurred_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL }
+      settled_at: { type: instant, required: false, postgres_type: TIMESTAMPTZ, constraints: '' }
+      gross_amount: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      fee_amount: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      net_amount: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      currency_code: { type: string(10), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      provider_status: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      raw_row_digest: { type: string(128), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      metadata_json: { type: jsonb, required: true, postgres_type: JSONB, constraints: NOT NULL DEFAULT '{}'::jsonb }
+      created_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL DEFAULT NOW() }
+      updated_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL DEFAULT NOW() }
+      deleted_at: { type: instant, required: false, postgres_type: TIMESTAMPTZ, constraints: '' }
+      version: { type: int64, required: true, postgres_type: BIGINT, constraints: NOT NULL DEFAULT 0 }
+  - name: commerce_payment_reconciliation_item
+    lifecycle_status: active
+    owner: sdkwork-cloudrouter
+    domain: payment
+    profile: reconciliation_difference
+    compliance_level: L3
+    system_of_record: true
+    write_owner: router-service
+    columns:
+      id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL PRIMARY KEY }
+      tenant_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      organization_id: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      reconciliation_run_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      statement_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      statement_item_id: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      payment_attempt_id: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      refund_id: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      refund_attempt_id: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      supplier_code: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      difference_type: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      match_status: { type: string(32), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT 'mismatch' }
+      internal_amount: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      provider_amount: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      difference_amount: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      currency_code: { type: string(10), required: false, postgres_type: TEXT, constraints: '' }
+      internal_status: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      provider_status: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      resolution_status: { type: string(32), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT 'unresolved' }
+      resolution_note: { type: string(512), required: false, postgres_type: TEXT, constraints: '' }
+      resolved_by: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      resolved_at: { type: instant, required: false, postgres_type: TIMESTAMPTZ, constraints: '' }
+      created_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL DEFAULT NOW() }
+      updated_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL DEFAULT NOW() }
+      deleted_at: { type: instant, required: false, postgres_type: TIMESTAMPTZ, constraints: '' }
+      version: { type: int64, required: true, postgres_type: BIGINT, constraints: NOT NULL DEFAULT 0 }

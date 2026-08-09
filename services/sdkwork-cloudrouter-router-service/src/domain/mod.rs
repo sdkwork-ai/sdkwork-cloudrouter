@@ -20,3 +20,11 @@ pub use sdkwork_models_contract_service::{DomainError, DomainResult};
 pub use upstream_auth::{
     canonical_upstream_runtime_auth_config, resolve_upstream_runtime_auth_profile,
 };
+
+/// True when the optional text is present and non-blank after trimming.
+///
+/// Shared by routing, pricing, and catalog code; keeps a single definition
+/// instead of per-module copies.
+pub fn has_text(value: Option<&str>) -> bool {
+    value.map(str::trim).is_some_and(|value| !value.is_empty())
+}

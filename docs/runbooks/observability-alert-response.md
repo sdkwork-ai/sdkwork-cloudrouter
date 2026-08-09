@@ -107,6 +107,54 @@ are operational projections and are never billing or audit authorities.
   failure, and pending age/volume is back within the release-candidate
   capacity envelope.
 
+## Payment Reconciliation
+
+- `cloudrouter_payment_reconciliation_runs_total` has the fixed outcomes
+  `success`, `failed`, and `skipped_no_statement`. `skipped_no_statement` is
+  normal while the external bill download/parse pipeline has not yet imported
+  the run's statement — the worker returns the run to `queued` and retries it
+  on the next cycle; investigate only when a run stays queued past the bill
+  window.
+- A `failed` outcome means the run could not be executed (for example a run
+  without `provider_code`) or the ledger/statement load errored. Open the
+  payment center run (status `failed`), read the worker log line for
+  `payment reconciliation run failed`, and fix the run record or the
+  underlying data; the next cycle only picks up `queued`/`pending` runs.
+- The run counters `matched_count` / `mismatched_count` / `unmatched_count`
+  and `total_difference_amount` (sum of absolute difference exposure) are
+  written back on success. Correlate a rising difference count with the
+  `commerce_payment_reconciliation_item` rows for the run and resolve each
+  difference through its `difference_type` (`missing_in_sdkwork`,
+  `missing_in_provider`, `amount_mismatch`, `currency_mismatch`,
+  `status_mismatch`, `fee_mismatch`, `duplicate_provider_record`, ...).
+- Reconciliation requires the payment-reconciliation database module
+  (`commerce_payment_statement`, `_item`, `commerce_payment_reconciliation_item`)
+  and the sdkwork-payment `commerce_payment_reconciliation_run` table. If the
+  worker logs that the Postgres payment reconciliation schema is incomplete,
+  verify the federated database modules are packaged and installed.
+- Resolve only after the failed run is corrected or the statement pipeline
+  caught up, and two consecutive cycles complete without `failed` outcomes.
+
+## Upstream Credential Rotation
+
+- `cloudrouter_upstream_credential_rotation_actions_total` has the fixed
+  actions `rotated`, `expired_deactivated`, `overdue`, and `noop`.
+- `expired_deactivated` is critical: an active credential reached
+  `expires_at` and was deactivated with no candidate to promote. Provision a
+  replacement credential through the backend credential API immediately — the
+  account may lose upstream access.
+- `overdue` means `next_rotate_at` passed without a provisioned candidate.
+  Provision a newer `credential_version` (inactive) so the worker promotes it
+  on the next sweep; rotation interval comes from the account's
+  `credential_rotation_policy.rotation_interval_days` or the worker default.
+- The worker never generates secret material; it only promotes
+  pre-provisioned candidates, deactivates expired credentials, and schedules
+  the next rotation. Any rotation suspicion therefore points at provisioning
+  or verification, not at this worker.
+- Resolve only after every overdue/expired account has an active valid
+  credential and two consecutive sweeps produce no `overdue` or
+  `expired_deactivated` outcomes.
+
 ## Circuit Breaker Coordination
 
 - `cloudrouter_circuit_breaker_degraded_total` reports Redis coordination

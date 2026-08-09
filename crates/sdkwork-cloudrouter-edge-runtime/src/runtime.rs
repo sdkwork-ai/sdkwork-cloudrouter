@@ -24,10 +24,14 @@ use sdkwork_cloudrouter_router_service::api::{
     OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig,
 };
 use sdkwork_cloudrouter_router_service::application::{
-    resolve_usage_settlement_worker_config, ApiKeySecretHasher, GatewayAccountingRetryHealth,
-    GatewayAccountingRetryWorker, GatewayAccountingRetryWorkerConfig, RetryingGatewayUsageRecorder,
-    RuntimeCacheManager, RuntimeStreamBus, TenantInflightConfig, UpstreamCredentialSecretCodec,
-    UsageSettlementWorker, UsageSettlementWorkerConfig,
+    resolve_payment_reconciliation_worker_config, resolve_upstream_credential_rotation_config,
+    resolve_usage_retention_config, resolve_usage_settlement_worker_config, ApiKeySecretHasher,
+    GatewayAccountingRetryHealth, GatewayAccountingRetryWorker, GatewayAccountingRetryWorkerConfig,
+    PaymentReconciliationRuntimeStore, PaymentReconciliationWorker,
+    PaymentReconciliationWorkerConfig, RetryingGatewayUsageRecorder, RuntimeCacheManager,
+    RuntimeStreamBus, TenantInflightConfig, UpstreamCredentialRotationConfig,
+    UpstreamCredentialRotationWorker, UpstreamCredentialSecretCodec, UsageRetentionConfig,
+    UsageRetentionWorker, UsageSettlementWorker, UsageSettlementWorkerConfig,
 };
 use sdkwork_cloudrouter_router_service::domain::{
     ProviderRetryPolicy, DEFAULT_PROVIDER_CIRCUIT_BREAKER_RECOVERY_WINDOW_SECONDS,
@@ -55,11 +59,12 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::installer::{
     DatabaseInstallError, DatabaseInstaller,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
-    PostgresCatalogLoadError, PostgresGatewayUsageRecorder, PostgresPricingCatalogLoader,
-    PostgresRoutingDecisionLogRecorder, PostgresUsageSettlementStore,
+    PostgresCatalogLoadError, PostgresGatewayUsageRecorder, PostgresPaymentReconciliationRuntimeStore,
+    PostgresPricingCatalogLoader, PostgresRoutingDecisionLogRecorder, PostgresUsageRetentionStore,
+    PostgresUsageSettlementStore, PostgresUpstreamCredentialRotationStore,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::{
-    InMemoryGatewayAccountingRetryQueue, RedisGatewayAccountingRetryQueue,
+    InMemoryGatewayAccountingRetryQueue, OsApiKeySecretGenerator, RedisGatewayAccountingRetryQueue,
 };
 use sdkwork_cloudrouter_router_service::ports::RuntimeRegionSettingsStore;
 use sdkwork_cloudrouter_router_service::ports::{
@@ -67,7 +72,8 @@ use sdkwork_cloudrouter_router_service::ports::{
     GatewayAccountingRecordContext, GatewayAccountingRetryQueue, GatewayRequestTraceCommand,
     GatewayTraceAttribution, GatewayUsageRecordCommand, GatewayUsageRecordFuture,
     GatewayUsageRecorder, ProviderSecretResolver, ResponsesRelay, RoutingDecisionLogRecorder,
-    StickyRouteStore, UpstreamAccountRouteCatalog, UsageSettlementStore,
+    StickyRouteStore, UpstreamAccountRouteCatalog, UpstreamCredentialRotationStore,
+    UsageSettlementStore, UsageRetentionStore,
 };
 use sdkwork_cloudrouter_security::{
     redact_error_message, InMemoryInternalGatewayReplayStore, InternalGatewayReplayStore,
@@ -393,6 +399,12 @@ where
             call_chain: call_chain.clone(),
         })?
     } else {
+        tracing::warn!(
+            "running with legacy OpenAI relay fallback routes: no provider secret resolver is configured; \
+             commercial deployments must configure provider secrets \
+             (SDKWORK_CLOUDROUTER_PROVIDER_SECRET_MAP_JSON or managed provider secrets) so traffic \
+             flows through the invocation pipeline"
+        );
         let relays = build_openai_runtime_relays(
             provider_passthrough_config.clone(),
             None,
@@ -1409,6 +1421,16 @@ async fn router_with_database_bootstrap(
         let usage_settlement_wakeup =
             maybe_spawn_postgres_usage_settlement_worker(&pool, usage_settlement_worker_config)
                 .await?;
+        maybe_spawn_postgres_payment_reconciliation_worker(
+            &pool,
+            resolve_payment_reconciliation_worker_config(runtime_toml),
+        )
+        .await?;
+        maybe_spawn_postgres_upstream_credential_rotation_worker(
+            &pool,
+            resolve_upstream_credential_rotation_config(runtime_toml),
+        )
+        .await?;
         let primary_usage_recorder = wrap_usage_recorder_with_settlement_wakeup(
             Arc::new(PostgresGatewayUsageRecorder::new_with_attribution(
                 pool.clone(),
@@ -1973,6 +1995,24 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
             maybe_spawn_postgres_usage_settlement_worker(&commerce_pool, usage_settlement_worker_config)
                 .await
                 .map_err(anyhow::Error::new)?;
+        maybe_spawn_postgres_usage_retention_worker(
+            &commerce_pool,
+            resolve_usage_retention_config(runtime_toml.as_ref()),
+        )
+        .await
+        .map_err(anyhow::Error::new)?;
+        maybe_spawn_postgres_payment_reconciliation_worker(
+            &commerce_pool,
+            resolve_payment_reconciliation_worker_config(runtime_toml.as_ref()),
+        )
+        .await
+        .map_err(anyhow::Error::new)?;
+        maybe_spawn_postgres_upstream_credential_rotation_worker(
+            &pool,
+            resolve_upstream_credential_rotation_config(runtime_toml.as_ref()),
+        )
+        .await
+        .map_err(anyhow::Error::new)?;
         spawn_postgres_catalog_refresh_worker(
             &pool,
             Arc::clone(&catalog),
@@ -2199,6 +2239,106 @@ async fn maybe_spawn_postgres_usage_settlement_worker(
     let usage_settlement_wakeup = Arc::new(Notify::new());
     spawn_usage_settlement_worker(store, config, Some(Arc::clone(&usage_settlement_wakeup)));
     Ok(Some(usage_settlement_wakeup))
+}
+
+async fn maybe_spawn_postgres_usage_retention_worker(
+    pool: &PgPool,
+    config: UsageRetentionConfig,
+) -> Result<(), GatewayRouterError> {
+    let config = config.normalized();
+    if !config.enabled {
+        return Ok(());
+    }
+    let store: Arc<dyn UsageRetentionStore + Send + Sync> =
+        Arc::new(PostgresUsageRetentionStore::new(pool.clone()));
+    let worker = UsageRetentionWorker::new(store, config);
+    let interval = Duration::from_millis(worker.config().interval_millis);
+    let mut shutdown_rx = sdkwork_cloudrouter_http::subscribe_shutdown_signal();
+    tokio::spawn(async move {
+        loop {
+            if let Err(error) = worker.run_once().await {
+                tracing::warn!(error = %error, "usage retention worker run failed");
+            }
+            tokio::select! {
+                _ = shutdown_rx.recv() => break,
+                _ = sleep(interval) => {}
+            }
+        }
+        tracing::info!("usage retention worker stopped");
+    });
+    Ok(())
+}
+
+async fn maybe_spawn_postgres_payment_reconciliation_worker(
+    pool: &PgPool,
+    config: PaymentReconciliationWorkerConfig,
+) -> Result<(), GatewayRouterError> {
+    let config = config.normalized();
+    if !config.enabled {
+        return Ok(());
+    }
+    if !sdkwork_cloudrouter_router_service::infrastructure::sql::pool::postgres_payment_reconciliation_schema_ready(
+        pool,
+    )
+    .await
+    .map_err(|error| GatewayRouterError::Postgres(PostgresCatalogLoadError::Database(error)))?
+    {
+        tracing::warn!(
+            "payment reconciliation worker is enabled but Postgres payment reconciliation schema is incomplete"
+        );
+        return Ok(());
+    }
+    let store: Arc<dyn PaymentReconciliationRuntimeStore + Send + Sync> = Arc::new(
+        PostgresPaymentReconciliationRuntimeStore::new(pool.clone()),
+    );
+    let worker = PaymentReconciliationWorker::new(
+        store,
+        Arc::new(OsApiKeySecretGenerator::default()),
+        config,
+    );
+    let interval = Duration::from_millis(worker.config().interval_millis);
+    let mut shutdown_rx = sdkwork_cloudrouter_http::subscribe_shutdown_signal();
+    tokio::spawn(async move {
+        loop {
+            if let Err(error) = worker.run_once().await {
+                tracing::warn!(error = %error, "payment reconciliation worker run failed");
+            }
+            tokio::select! {
+                _ = shutdown_rx.recv() => break,
+                _ = sleep(interval) => {}
+            }
+        }
+        tracing::info!("payment reconciliation worker stopped");
+    });
+    Ok(())
+}
+
+async fn maybe_spawn_postgres_upstream_credential_rotation_worker(
+    pool: &PgPool,
+    config: UpstreamCredentialRotationConfig,
+) -> Result<(), GatewayRouterError> {
+    let config = config.normalized();
+    if !config.enabled {
+        return Ok(());
+    }
+    let store: Arc<dyn UpstreamCredentialRotationStore + Send + Sync> =
+        Arc::new(PostgresUpstreamCredentialRotationStore::new(pool.clone()));
+    let worker = UpstreamCredentialRotationWorker::new(store, config);
+    let interval = Duration::from_millis(worker.config().interval_millis);
+    let mut shutdown_rx = sdkwork_cloudrouter_http::subscribe_shutdown_signal();
+    tokio::spawn(async move {
+        loop {
+            if let Err(error) = worker.run_once().await {
+                tracing::warn!(error = %error, "upstream credential rotation worker run failed");
+            }
+            tokio::select! {
+                _ = shutdown_rx.recv() => break,
+                _ = sleep(interval) => {}
+            }
+        }
+        tracing::info!("upstream credential rotation worker stopped");
+    });
+    Ok(())
 }
 
 fn wrap_usage_recorder_with_settlement_wakeup(

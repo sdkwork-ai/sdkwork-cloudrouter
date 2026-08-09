@@ -76,24 +76,6 @@ pub fn problem_from_wire_code(
     ProblemResponse::from_legacy(wire_code.as_ref(), detail.into(), new_trace_id())
 }
 
-/// Keyed variant of [`problem_from_wire_code`] carrying a specific `i18nKey` and
-/// sanitized interpolation params (`I18N_SPEC.md` §5/§9).
-pub fn problem_from_wire_code_keyed(
-    wire_code: impl AsRef<str>,
-    i18n_key: &str,
-    params: serde_json::Value,
-    detail: impl Into<String>,
-) -> ProblemResponse {
-    let mut response = ProblemResponse::from_legacy(
-        wire_code.as_ref(),
-        detail.into(),
-        new_trace_id(),
-    );
-    response.i18n_key = Some(i18n_key.to_owned());
-    response.params = Some(params);
-    response
-}
-
 /// Resolves a stable shared validation template to its semantic `i18nKey` and
 /// interpolation params (`I18N_SPEC.md` §5).
 ///
@@ -303,25 +285,6 @@ pub fn validation_problem(detail: impl Into<String>) -> ProblemResponse {
     platform_problem(SdkWorkResultCode::ValidationError, detail)
 }
 
-/// Keyed validation problem (`validation.<domain>.<resource>.<field>.<rule>`).
-pub fn validation_problem_keyed(
-    i18n_key: &str,
-    params: serde_json::Value,
-    detail: impl Into<String>,
-) -> ProblemResponse {
-    platform_problem_keyed(SdkWorkResultCode::ValidationError, i18n_key, params, detail)
-}
-
-/// Keyed platform problem (`I18N_SPEC.md` §5/§9).
-pub fn platform_problem_keyed(
-    result_code: SdkWorkResultCode,
-    i18n_key: &str,
-    params: serde_json::Value,
-    detail: impl Into<String>,
-) -> ProblemResponse {
-    ProblemResponse::platform_keyed(result_code, i18n_key, params, detail, new_trace_id())
-}
-
 pub fn not_found_problem(detail: impl Into<String>) -> ProblemResponse {
     platform_problem(SdkWorkResultCode::NotFound, detail)
 }
@@ -416,28 +379,6 @@ impl ProblemResponse {
             params: None,
         }
         .with_shared_validation_key(&detail)
-    }
-
-    /// Builds a problem with a specific `i18nKey` and sanitized interpolation
-    /// params (`I18N_SPEC.md` §5/§9). The English `detail` is preserved as the
-    /// safe fallback display text; frontends translate by key.
-    pub fn platform_keyed(
-        result_code: SdkWorkResultCode,
-        i18n_key: &str,
-        params: serde_json::Value,
-        detail: impl Into<String>,
-        trace_id: impl Into<String>,
-    ) -> Self {
-        Self {
-            problem: SdkWorkProblemDetail::platform_enriched(
-                result_code,
-                detail,
-                trace_id,
-                SdkWorkProblemRouting::default(),
-            ),
-            i18n_key: Some(i18n_key.to_owned()),
-            params: Some(params),
-        }
     }
 }
 
@@ -662,30 +603,6 @@ mod tests {
         assert!(shared_validation_message_key("An internal error occurred").is_none());
         assert!(shared_validation_message_key("db connection reset").is_none());
         assert!(shared_validation_message_key("Idempotency-Key is required for this create operation").is_none());
-    }
-
-    #[test]
-    fn keyed_problem_response_carries_i18n_key_and_params() {
-        let response = problem_from_wire_code_keyed(
-            "4001",
-            "validation.app.chat.datasets.notEmpty",
-            serde_json::json!({}),
-            "datasets must not be empty",
-        )
-        .into_response();
-        let rt = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .expect("runtime");
-        let bytes = rt
-            .block_on(async { axum::body::to_bytes(response.into_body(), usize::MAX).await })
-            .expect("body");
-        let payload: serde_json::Value = serde_json::from_slice(&bytes).expect("json");
-        assert_eq!(
-            "validation.app.chat.datasets.notEmpty",
-            payload["i18nKey"].as_str().unwrap()
-        );
-        assert_eq!(40001, payload["code"].as_i64().unwrap());
     }
 
     #[test]

@@ -8,6 +8,7 @@
 //! during deep link imports to write complete channel offerings (vendor +
 //! models) without the user picking vendors by hand.
 
+use crate::domain::has_text;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
@@ -141,15 +142,17 @@ where
         .collect::<Vec<_>>();
     let mut by_vendor: BTreeMap<String, (String, Vec<GatewayVendorModel>)> = BTreeMap::new();
     catalog.visit_models(None, &mut |model| {
-        let reachable = catalog
-            .list_model_upstream_routes(&model.model)
-            .iter()
-            .any(|route| {
-                callable_accounts.iter().any(|account| {
-                    account.account_id == route.account_id
-                        && account.supplier_code == route.supplier_code
-                })
-            });
+        // Model routes are keyed by catalog key (`vendor/model`), so the
+        // lookup must try both the model name and the catalog key.
+        let reachable = model_route_targets_callable_account(
+            catalog,
+            &model.model,
+            &callable_accounts,
+        ) || model_route_targets_callable_account(
+            catalog,
+            &model.catalog_key,
+            &callable_accounts,
+        );
         if !reachable {
             return true;
         }
@@ -176,6 +179,27 @@ where
         .collect()
 }
 
+/// True when any model upstream route for `model_key` targets one of the
+/// group's callable accounts.
+fn model_route_targets_callable_account<C>(
+    catalog: &C,
+    model_key: &str,
+    callable_accounts: &[UpstreamAccountRoute],
+) -> bool
+where
+    C: PricingCatalog,
+{
+    catalog
+        .list_model_upstream_routes(model_key)
+        .iter()
+        .any(|route| {
+            callable_accounts.iter().any(|account| {
+                account.account_id == route.account_id
+                    && account.supplier_code == route.supplier_code
+            })
+        })
+}
+
 fn account_route_is_callable_for_group(
     route: &UpstreamAccountRoute,
     account_group_id: i64,
@@ -189,9 +213,6 @@ fn account_route_is_callable_for_group(
         && route.is_account_healthy()
 }
 
-fn has_text(value: Option<&str>) -> bool {
-    matches!(value, Some(text) if !text.trim().is_empty())
-}
 
 fn authenticate<C>(
     state: &OpenAiVendorsState<C>,

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 2,
+  "kind": "sdkwork.database.module",
+  "databaseRole": "authoritative-server",
+  "moduleId": "payment-reconciliation",
+  "serviceCode": "CLOUD_ROUTER_PAYMENT_RECONCILIATION",
+  "displayName": "Cloud Router Payment Reconciliation Database",
+  "owner": "cloud-router-platform",
+  "engines": [
+    "postgres"
+  ],
+  "defaultEngine": "postgres",
+  "tablePrefix": "commerce_payment_",
+  "contractVersion": "0.1.0",
+  "baselineStrategy": "baseline-plus-migrations",
+  "baselineAnchorTable": "commerce_payment_statement",
+  "modules": [],
+  "lifecycle": {
+    "autoMigrate": false,
+    "seedOnBoot": false,
+    "defaultSeedLocale": "zh-CN",
+    "defaultSeedProfile": "standard",
+    "supportedSeedLocales": [
+      "zh-CN",
+      "en-US"
+    ],
+    "activeSeedLocales": [],
+    "driftCheckIntervalSec": 60
+  },
+  "paths": {
+    "contract": "contract/schema.yaml",
+    "migrations": "migrations",
+    "driftPolicy": "drift/policy.yaml"
+  },
+  "spi": {
+    "provider": "default",
+    "hooks": []
+  },
+  "materializedTables": [
+    "commerce_payment_statement",
+    "commerce_payment_statement_item",
+    "commerce_payment_reconciliation_item"
+  ],
+  "materializedTableCount": 3
+}

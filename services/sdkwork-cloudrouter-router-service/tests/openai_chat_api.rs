@@ -219,8 +219,7 @@ fn add_group_routing_policy(
     rule_id: i64,
     rule_code: &str,
     catalog_key: &str,
-) {
-    catalog.add_routing_policy(
+) {    catalog.add_routing_policy(
         RoutingPolicy::new(
             policy_id,
             10,
@@ -262,6 +261,42 @@ fn add_openrouter_fallback_prices(catalog: &mut InMemoryPricingCatalog) {
                 Money::usd(unit_price).unwrap(),
             )
             .for_upstream_account("openrouter-fallback", 3002),
+        );
+    }
+}
+
+/// Official and upstream prices for every composite billing meter so route
+/// planning (which requires input, output, and cache-read prices) succeeds.
+fn add_composite_prices(
+    catalog: &mut InMemoryPricingCatalog,
+    catalog_key: &str,
+    model: &str,
+    supplier: &str,
+    account_id: i64,
+    official_input: &str,
+    upstream_input: &str,
+) {
+    for (meter, official, upstream) in [
+        (BillingMeter::LlmInputToken, official_input, upstream_input),
+        (BillingMeter::LlmOutputToken, "0.600000", "0.440000"),
+        (BillingMeter::LlmCacheReadToken, "0.030000", "0.022000"),
+    ] {
+        catalog.add_price(ModelPrice::new_for_catalog_key(
+            catalog_key,
+            model,
+            PriceSide::OfficialReference,
+            meter,
+            Money::usd(official).unwrap(),
+        ));
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                catalog_key,
+                model,
+                PriceSide::UpstreamCost,
+                meter,
+                Money::usd(upstream).unwrap(),
+            )
+            .for_upstream_account(supplier, account_id),
         );
     }
 }
@@ -443,6 +478,48 @@ fn catalog_with_regional_minimax_pricing_and_routes(key_hash: String) -> InMemor
             "minimax/MiniMax-M2.7",
             "MiniMax-M2.7",
             PriceSide::OfficialReference,
+            BillingMeter::LlmOutputToken,
+            Money::cny("0.016000").unwrap(),
+        )
+        .with_region_code("cn"),
+    );
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "minimax/MiniMax-M2.7",
+            "MiniMax-M2.7",
+            PriceSide::UpstreamCost,
+            BillingMeter::LlmOutputToken,
+            Money::cny("0.016000").unwrap(),
+        )
+        .with_region_code("cn")
+        .for_upstream_account("minimax_direct", 4001),
+    );
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "minimax/MiniMax-M2.7",
+            "MiniMax-M2.7",
+            PriceSide::OfficialReference,
+            BillingMeter::LlmCacheReadToken,
+            Money::cny("0.002000").unwrap(),
+        )
+        .with_region_code("cn"),
+    );
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "minimax/MiniMax-M2.7",
+            "MiniMax-M2.7",
+            PriceSide::UpstreamCost,
+            BillingMeter::LlmCacheReadToken,
+            Money::cny("0.002000").unwrap(),
+        )
+        .with_region_code("cn")
+        .for_upstream_account("minimax_direct", 4001),
+    );
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "minimax/MiniMax-M2.7",
+            "MiniMax-M2.7",
+            PriceSide::OfficialReference,
             BillingMeter::LlmInputToken,
             Money::cny("0.006000").unwrap(),
         )
@@ -455,6 +532,48 @@ fn catalog_with_regional_minimax_pricing_and_routes(key_hash: String) -> InMemor
             PriceSide::UpstreamCost,
             BillingMeter::LlmInputToken,
             Money::cny("0.006000").unwrap(),
+        )
+        .with_region_code("global")
+        .for_upstream_account("minimax_global_direct", 4002),
+    );
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "minimax/MiniMax-M2.7",
+            "MiniMax-M2.7",
+            PriceSide::OfficialReference,
+            BillingMeter::LlmOutputToken,
+            Money::cny("0.024000").unwrap(),
+        )
+        .with_region_code("global"),
+    );
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "minimax/MiniMax-M2.7",
+            "MiniMax-M2.7",
+            PriceSide::UpstreamCost,
+            BillingMeter::LlmOutputToken,
+            Money::cny("0.024000").unwrap(),
+        )
+        .with_region_code("global")
+        .for_upstream_account("minimax_global_direct", 4002),
+    );
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "minimax/MiniMax-M2.7",
+            "MiniMax-M2.7",
+            PriceSide::OfficialReference,
+            BillingMeter::LlmCacheReadToken,
+            Money::cny("0.003000").unwrap(),
+        )
+        .with_region_code("global"),
+    );
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "minimax/MiniMax-M2.7",
+            "MiniMax-M2.7",
+            PriceSide::UpstreamCost,
+            BillingMeter::LlmCacheReadToken,
+            Money::cny("0.003000").unwrap(),
         )
         .with_region_code("global")
         .for_upstream_account("minimax_global_direct", 4002),
@@ -1037,6 +1156,15 @@ async fn openai_chat_completions_routes_catalog_model_through_channel_route_with
         )
         .for_upstream_account("openrouter-gpt55", 3002),
     );
+    add_composite_prices(
+        &mut catalog,
+        "openai/gpt-5.5",
+        "gpt-5.5",
+        "openrouter-gpt55",
+        3002,
+        "1.250000",
+        "0.900000",
+    );
     catalog.add_upstream_account_route(
         UpstreamAccountRoute::new("openrouter-gpt55", 3002)
             .with_upstream_endpoint(
@@ -1138,6 +1266,15 @@ async fn openai_chat_completions_accepts_slash_native_model_and_sends_native_mod
         )
         .for_upstream_account("openrouter", 3003),
     );
+    add_composite_prices(
+        &mut catalog,
+        "openrouter/anthropic/claude-3-opus",
+        "anthropic/claude-3-opus",
+        "openrouter",
+        3003,
+        "1.250000",
+        "0.900000",
+    );
     catalog.add_upstream_account_route(
         UpstreamAccountRoute::new("openrouter", 3003)
             .with_upstream_endpoint(
@@ -1217,22 +1354,14 @@ async fn openai_chat_completions_routes_alibaba_regional_model_through_region_sc
         )
         .with_catalog_key("alibaba/qwen3.6-max-preview"),
     );
-    catalog.add_price(ModelPrice::new_for_catalog_key(
+    add_composite_prices(
+        &mut catalog,
         "alibaba/qwen3.6-max-preview",
         "qwen3.6-max-preview",
-        PriceSide::OfficialReference,
-        BillingMeter::LlmInputToken,
-        Money::usd("1.500000").unwrap(),
-    ));
-    catalog.add_price(
-        ModelPrice::new_for_catalog_key(
-            "alibaba/qwen3.6-max-preview",
-            "qwen3.6-max-preview",
-            PriceSide::UpstreamCost,
-            BillingMeter::LlmInputToken,
-            Money::usd("1.000000").unwrap(),
-        )
-        .for_upstream_account("dashscope", 3101),
+        "dashscope",
+        3101,
+        "1.500000",
+        "1.000000",
     );
     catalog.add_upstream_account_route(
         UpstreamAccountRoute::new("dashscope", 3101)
@@ -1318,22 +1447,14 @@ async fn openai_chat_completions_routes_group_bound_channel_route_without_explic
         )
         .with_catalog_key("alibaba/qwen3.6-max-preview"),
     );
-    catalog.add_price(ModelPrice::new_for_catalog_key(
+    add_composite_prices(
+        &mut catalog,
         "alibaba/qwen3.6-max-preview",
         "qwen3.6-max-preview",
-        PriceSide::OfficialReference,
-        BillingMeter::LlmInputToken,
-        Money::usd("1.500000").unwrap(),
-    ));
-    catalog.add_price(
-        ModelPrice::new_for_catalog_key(
-            "alibaba/qwen3.6-max-preview",
-            "qwen3.6-max-preview",
-            PriceSide::UpstreamCost,
-            BillingMeter::LlmInputToken,
-            Money::usd("1.000000").unwrap(),
-        )
-        .for_upstream_account("dashscope", 3101),
+        "dashscope",
+        3101,
+        "1.500000",
+        "1.000000",
     );
     catalog.add_upstream_account_route(
         UpstreamAccountRoute::new("dashscope", 3101)

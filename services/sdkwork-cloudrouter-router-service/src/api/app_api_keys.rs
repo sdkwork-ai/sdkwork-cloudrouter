@@ -27,8 +27,7 @@ use crate::ports::{
     CreateGatewayApiKeyCommand, DeleteGatewayApiKeyCommand,
     EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore,
     GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery,
-    PricingCatalog, UpdateGatewayApiKeyCommand, UpsertChainPolicyCommand,
-    ADMIN_CHAIN_POLICY_SCOPE_API_KEY,
+    UpdateGatewayApiKeyCommand, UpsertChainPolicyCommand, ADMIN_CHAIN_POLICY_SCOPE_API_KEY,
 };
 
 const DEFAULT_ACCOUNT_GROUP: &str = "default";
@@ -70,13 +69,6 @@ impl Clone for AppApiKeyState {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct AppApiKeyListResponse {
-    items: Vec<AppApiKeyItemResponse>,
-    groups: Vec<AppUpstreamAccountGroupResponse>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
 struct AppApiKeyCreateResponse {
     item: AppApiKeyItemResponse,
     raw_key: String,
@@ -114,15 +106,6 @@ struct AppApiKeyItemResponse {
     expires: String,
     status: &'static str,
     default_for_runtime: bool,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct AppUpstreamAccountGroupResponse {
-    id: String,
-    code: String,
-    name: String,
-    rate: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -661,29 +644,6 @@ async fn delete_key_inner(
     })
 }
 
-fn list_response(snapshot: &GatewayApiKeyManagementSnapshot) -> AppApiKeyListResponse {
-    let items = snapshot
-        .api_keys
-        .clone()
-        .into_iter()
-        .map(|api_key| to_item_response(snapshot, api_key))
-        .collect();
-    let groups = snapshot
-        .upstream_account_groups
-        .clone()
-        .into_iter()
-        .map(to_group_response)
-        .collect();
-
-    AppApiKeyListResponse { items, groups }
-}
-
-fn public_catalog_list_response(
-    snapshot: &GatewayApiKeyManagementSnapshot,
-) -> AppApiKeyListResponse {
-    list_response(snapshot)
-}
-
 fn to_item_response(
     snapshot: &GatewayApiKeyManagementSnapshot,
     api_key: GatewayApiKey,
@@ -734,15 +694,6 @@ fn to_item_response_with_used_quota(
             .unwrap_or_else(|| "never".to_owned()),
         status: api_key.status_label(),
         default_for_runtime: api_key.default_for_runtime,
-    }
-}
-
-fn to_group_response(group: UpstreamAccountGroup) -> AppUpstreamAccountGroupResponse {
-    AppUpstreamAccountGroupResponse {
-        id: group.id.to_string(),
-        name: group.display_name(),
-        code: group.code,
-        rate: Some(format!("{}x", group.sale_multiplier.to_fixed_string(2))),
     }
 }
 

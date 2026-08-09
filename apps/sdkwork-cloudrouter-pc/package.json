@@ -260,7 +260,8 @@
     "vite": "^6.2.0",
     "void-elements": "^3.1.0",
     "tailwindcss": "^4.1.14",
-    "@sdkwork/base-data-backend-sdk": "workspace:*"
+    "@sdkwork/base-data-backend-sdk": "workspace:*",
+    "@sdkwork/order-pc-subscription": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",

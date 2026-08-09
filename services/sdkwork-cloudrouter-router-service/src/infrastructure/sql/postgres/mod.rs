@@ -41,6 +41,8 @@ mod runtime_region_settings_store;
 mod settings_store;
 mod site_settings_store;
 mod usage_logs_read_store;
+mod usage_retention_store;
+mod upstream_credential_rotation_store;
 mod usage_settlement_store;
 
 pub use admin_announcement_store::PostgresAdminAnnouncementStore;
@@ -86,4 +88,6 @@ pub use runtime_region_settings_store::PostgresRuntimeRegionSettingsStore;
 pub use settings_store::PostgresSettingsStore;
 pub use site_settings_store::PostgresSiteSettingsStore;
 pub use usage_logs_read_store::PostgresUsageLogsReadStore;
+pub use usage_retention_store::PostgresUsageRetentionStore;
+pub use upstream_credential_rotation_store::PostgresUpstreamCredentialRotationStore;
 pub use usage_settlement_store::PostgresUsageSettlementStore;

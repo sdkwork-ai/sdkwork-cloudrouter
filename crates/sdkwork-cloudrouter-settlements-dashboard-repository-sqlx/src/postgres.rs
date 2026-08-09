@@ -14,81 +14,59 @@ use crate::types::{
     SettlementsDashboardSubject,
 };
 
+/// Monthly settlement bills aggregated from the metering facts
+/// (`ai_metering_usage`). The legacy statement tables
+/// (`commerce_usage_statement`/`commerce_usage_settlement`/`commerce_billing_export`)
+/// have no writers since the settlement bridge was retired, so the dashboard
+/// derives bills from the same facts the settlement worker settles.
 const LOAD_SETTLEMENT_BILLS: &str = r#"
 SELECT
-    s.id AS statement_id,
-    COALESCE(NULLIF(s.statement_no, ''), CAST(s.id AS TEXT)) AS statement_no,
-    COALESCE(NULLIF(s.period, ''), substr(CAST(s.period_start AS TEXT), 1, 7), '-') AS period,
-    CAST(COALESCE(s.period_start, s.created_at) AS TEXT) AS period_start,
-    CAST(COALESCE(s.period_end, s.updated_at, s.created_at) AS TEXT) AS period_end,
-    CAST(COALESCE(s.total_tokens, 0) AS TEXT) AS total_tokens,
-    CAST(COALESCE(s.total_cost, 0) AS TEXT) AS total_cost,
-    s.statement_status AS statement_status,
-    s.payment_status AS payment_status,
-    CAST(s.due_at AS TEXT) AS due_at,
-    COUNT(DISTINCT us.id) AS settlement_count,
-    COUNT(DISTINCT be.id) AS export_count,
-    COUNT(DISTINCT pi.id) AS invoice_count
-FROM commerce_usage_statement s
-LEFT JOIN commerce_usage_settlement us
-  ON us.status = 1
- AND us.tenant_id = s.tenant_id
- AND us.organization_id = s.organization_id
- AND us.created_at >= s.period_start
- AND us.created_at <= s.period_end
-LEFT JOIN commerce_billing_export be
-  ON be.status = 1
- AND be.tenant_id = s.tenant_id
- AND be.organization_id = s.organization_id
- AND be.id = s.export_id
-LEFT JOIN commerce_invoice pi
-  ON pi.id = CAST(s.invoice_id AS TEXT)
- AND pi.tenant_id = CAST(s.tenant_id AS TEXT)
- AND pi.organization_id = CAST(s.organization_id AS TEXT)
-WHERE s.status = 1
-  AND s.tenant_id = $1
-  AND s.organization_id = $2
-  AND s.owner_id = $3
-  AND ($4::text IS NULL OR substr(CAST(s.period_start AS TEXT), 1, 4) = $4 OR s.period LIKE ($4 || '%'))
-GROUP BY
-    s.id,
-    s.statement_no,
-    s.period,
-    s.period_start,
-    s.period_end,
-    s.created_at,
-    s.updated_at,
-    s.total_tokens,
-    s.total_cost,
-    s.statement_status,
-    s.payment_status,
-    s.due_at
-ORDER BY s.period_end DESC NULLS LAST, s.id DESC
+    CAST(to_char(occurred_at, 'YYYYMM') AS BIGINT) AS statement_id,
+    to_char(occurred_at, 'YYYY-MM') AS statement_no,
+    to_char(occurred_at, 'YYYY-MM') AS period,
+    CAST(date_trunc('month', occurred_at) AS TEXT) AS period_start,
+    CAST((date_trunc('month', occurred_at) + interval '1 month' - interval '1 day') AS TEXT) AS period_end,
+    CAST(COALESCE(SUM(total_tokens), 0) AS TEXT) AS total_tokens,
+    CAST(COALESCE(SUM(customer_charge_amount), 0) AS TEXT) AS total_cost,
+    CASE
+        WHEN bool_and(settlement_status = 2) THEN 2
+        WHEN bool_or(settlement_status IN (3, 4)) THEN 3
+        ELSE 0
+    END AS payment_status,
+    2 AS statement_status
+FROM ai_metering_usage
+WHERE status = 1
+  AND tenant_id = $1
+  AND organization_id = $2
+  AND user_id = $3
+  AND occurred_at IS NOT NULL
+  AND ($4::text IS NULL OR substr(CAST(occurred_at AS TEXT), 1, 4) = $4)
+GROUP BY to_char(occurred_at, 'YYYYMM'), date_trunc('month', occurred_at)
+ORDER BY period_end DESC
 LIMIT 24
 "#;
 
 const LOAD_SETTLEMENT_ITEMS: &str = r#"
 SELECT
-    i.statement_id,
-    i.modality,
-    COALESCE(NULLIF(i.model, ''), '-') AS model,
-    CAST(i.model_list AS TEXT) AS model_list,
-    COALESCE(NULLIF(i.usage_text, ''), '') AS usage_text,
-    CAST(COALESCE(i.request_count, 0) AS TEXT) AS request_count,
-    CAST(COALESCE(i.token_count, 0) AS TEXT) AS token_count,
-    CAST(COALESCE(i.asset_count, 0) AS TEXT) AS asset_count,
-    CAST(COALESCE(i.duration_seconds, 0) AS TEXT) AS duration_seconds,
-    CAST(COALESCE(i.cost_amount, 0) AS TEXT) AS cost_amount
-FROM commerce_usage_statement_item i
-JOIN commerce_usage_statement s
-  ON s.id = i.statement_id
-WHERE i.status = 1
-  AND s.status = 1
-  AND s.tenant_id = $1
-  AND s.organization_id = $2
-  AND s.owner_id = $3
-  AND ($4::text IS NULL OR substr(CAST(s.period_start AS TEXT), 1, 4) = $4 OR s.period LIKE ($4 || '%'))
-ORDER BY s.period_end DESC NULLS LAST, i.statement_id DESC, i.item_type ASC, i.model ASC
+    CAST(to_char(occurred_at, 'YYYYMM') AS BIGINT) AS statement_id,
+    modality,
+    COALESCE(NULLIF(requested_model, ''), '-') AS model,
+    '[]' AS model_list,
+    '' AS usage_text,
+    CAST(COALESCE(SUM(request_count), 0) AS TEXT) AS request_count,
+    CAST(COALESCE(SUM(total_tokens), 0) AS TEXT) AS token_count,
+    '0' AS asset_count,
+    '0' AS duration_seconds,
+    CAST(COALESCE(SUM(customer_charge_amount), 0) AS TEXT) AS cost_amount
+FROM ai_metering_usage
+WHERE status = 1
+  AND tenant_id = $1
+  AND organization_id = $2
+  AND user_id = $3
+  AND occurred_at IS NOT NULL
+  AND ($4::text IS NULL OR substr(CAST(occurred_at AS TEXT), 1, 4) = $4)
+GROUP BY to_char(occurred_at, 'YYYYMM'), modality, requested_model
+ORDER BY to_char(occurred_at, 'YYYYMM') DESC, modality ASC, model ASC
 "#;
 
 const LOAD_SETTLEMENT_CHART: &str = r#"

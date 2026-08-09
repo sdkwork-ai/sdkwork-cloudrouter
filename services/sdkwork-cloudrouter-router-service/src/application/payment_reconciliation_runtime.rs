@@ -197,6 +197,63 @@ pub struct PaymentReconciliationItemRecord {
     pub updated_at: String,
 }
 
+/// A reconciliation run claimed by the reconciliation worker for execution.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReconciliationRunRecord {
+    pub id: String,
+    pub tenant_id: String,
+    pub organization_id: Option<String>,
+    pub run_no: String,
+    pub provider_code: Option<String>,
+    pub period_start: String,
+    pub period_end: String,
+    pub status: String,
+}
+
+/// Claims queued/pending runs (status transitions to `running`), up to `limit`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReconciliationRunClaimCommand {
+    pub tenant_id: String,
+    pub organization_id: Option<String>,
+    pub limit: i64,
+    pub claimed_at: String,
+}
+
+/// Locates the imported provider statement matching a reconciliation run.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LoadReconciliationStatementCommand {
+    pub tenant_id: String,
+    pub organization_id: Option<String>,
+    pub provider_code: String,
+    pub period_start: String,
+    pub period_end: String,
+}
+
+/// Loads the internal SDKWORK payment/refund ledger within a run's period.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LoadReconciliationLedgerCommand {
+    pub tenant_id: String,
+    pub organization_id: Option<String>,
+    pub provider_code: Option<String>,
+    pub period_start: String,
+    pub period_end: String,
+}
+
+/// Persists the outcome of a reconciliation run on `commerce_payment_reconciliation_run`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FinishReconciliationRunCommand {
+    pub tenant_id: String,
+    pub reconciliation_run_id: String,
+    /// `succeeded` or `failed`.
+    pub status: String,
+    pub matched_count: i64,
+    pub mismatched_count: i64,
+    pub unmatched_count: i64,
+    /// Sum of absolute difference amounts, decimal string.
+    pub total_difference_amount: String,
+    pub finished_at: String,
+}
+
 pub type PaymentReconciliationRuntimeStoreFuture<'a, T> =
     Pin<Box<dyn Future<Output = DomainResult<T>> + Send + 'a>>;
 
@@ -223,6 +280,26 @@ pub trait PaymentReconciliationRuntimeStore: Send + Sync {
         &self,
         items: Vec<PaymentReconciliationItemRecord>,
     ) -> PaymentReconciliationRuntimeStoreFuture<'_, Vec<PaymentReconciliationItemRecord>>;
+
+    fn claim_due_reconciliation_runs(
+        &self,
+        command: ReconciliationRunClaimCommand,
+    ) -> PaymentReconciliationRuntimeStoreFuture<'_, Vec<ReconciliationRunRecord>>;
+
+    fn load_statement_for_reconciliation_run(
+        &self,
+        command: LoadReconciliationStatementCommand,
+    ) -> PaymentReconciliationRuntimeStoreFuture<'_, Option<PaymentStatementRecord>>;
+
+    fn load_reconciliation_ledger_entries(
+        &self,
+        command: LoadReconciliationLedgerCommand,
+    ) -> PaymentReconciliationRuntimeStoreFuture<'_, Vec<RuntimeReconciliationLedgerEntry>>;
+
+    fn finish_reconciliation_run(
+        &self,
+        command: FinishReconciliationRunCommand,
+    ) -> PaymentReconciliationRuntimeStoreFuture<'_, ()>;
 }
 
 pub struct PaymentReconciliationRuntimeService<'a, S>
@@ -544,6 +621,8 @@ struct InMemoryPaymentReconciliationRuntimeState {
     statements: Vec<PaymentStatementRecord>,
     statement_items: Vec<PaymentStatementItemRecord>,
     reconciliation_items: Vec<PaymentReconciliationItemRecord>,
+    runs: Vec<ReconciliationRunRecord>,
+    ledger_entries: Vec<RuntimeReconciliationLedgerEntry>,
 }
 
 impl InMemoryPaymentReconciliationRuntimeStore {
@@ -557,6 +636,39 @@ impl InMemoryPaymentReconciliationRuntimeStore {
 
     pub fn reconciliation_items(&self) -> Vec<PaymentReconciliationItemRecord> {
         self.state.lock().unwrap().reconciliation_items.clone()
+    }
+
+    pub fn runs(&self) -> Vec<ReconciliationRunRecord> {
+        self.state.lock().unwrap().runs.clone()
+    }
+
+    pub fn with_runs(self, runs: Vec<ReconciliationRunRecord>) -> Self {
+        {
+            let mut state = self.state.lock().unwrap();
+            state.runs.extend(runs);
+        }
+        self
+    }
+
+    pub fn with_ledger_entries(self, entries: Vec<RuntimeReconciliationLedgerEntry>) -> Self {
+        {
+            let mut state = self.state.lock().unwrap();
+            state.ledger_entries.extend(entries);
+        }
+        self
+    }
+
+    pub fn with_statement(
+        self,
+        statement: PaymentStatementRecord,
+        items: Vec<PaymentStatementItemRecord>,
+    ) -> Self {
+        {
+            let mut state = self.state.lock().unwrap();
+            state.statements.push(statement);
+            state.statement_items.extend(items);
+        }
+        self
     }
 }
 
@@ -624,6 +736,101 @@ impl PaymentReconciliationRuntimeStore for InMemoryPaymentReconciliationRuntimeS
                 .reconciliation_items
                 .extend(items.clone());
             Ok(items)
+        })
+    }
+
+    fn claim_due_reconciliation_runs(
+        &self,
+        command: ReconciliationRunClaimCommand,
+    ) -> PaymentReconciliationRuntimeStoreFuture<'_, Vec<ReconciliationRunRecord>> {
+        let state = self.state.clone();
+        Box::pin(async move {
+            let mut state = state.lock().unwrap();
+            let mut claimed = Vec::new();
+            for run in &mut state.runs {
+                if claimed.len() as i64 >= command.limit {
+                    break;
+                }
+                if run.tenant_id != command.tenant_id {
+                    continue;
+                }
+                if let Some(organization_id) = command.organization_id.as_deref() {
+                    if run.organization_id.as_deref() != Some(organization_id) {
+                        continue;
+                    }
+                }
+                if run.status != "queued" && run.status != "pending" {
+                    continue;
+                }
+                run.status = "running".to_owned();
+                claimed.push(run.clone());
+            }
+            Ok(claimed)
+        })
+    }
+
+    fn load_statement_for_reconciliation_run(
+        &self,
+        command: LoadReconciliationStatementCommand,
+    ) -> PaymentReconciliationRuntimeStoreFuture<'_, Option<PaymentStatementRecord>> {
+        let state = self.state.clone();
+        Box::pin(async move {
+            Ok(state
+                .lock()
+                .unwrap()
+                .statements
+                .iter()
+                .find(|statement| {
+                    statement.tenant_id == command.tenant_id
+                        && statement.supplier_code == command.provider_code
+                        && statement.period_start == command.period_start
+                        && statement.period_end == command.period_end
+                        && statement.parse_status == "parsed"
+                })
+                .cloned())
+        })
+    }
+
+    fn load_reconciliation_ledger_entries(
+        &self,
+        command: LoadReconciliationLedgerCommand,
+    ) -> PaymentReconciliationRuntimeStoreFuture<'_, Vec<RuntimeReconciliationLedgerEntry>> {
+        let state = self.state.clone();
+        Box::pin(async move {
+            Ok(state
+                .lock()
+                .unwrap()
+                .ledger_entries
+                .iter()
+                .filter(|entry| {
+                    entry.supplier_code == command.provider_code.as_deref().unwrap_or("")
+                        && entry.occurred_at >= command.period_start
+                        && entry.occurred_at <= command.period_end
+                })
+                .cloned()
+                .collect())
+        })
+    }
+
+    fn finish_reconciliation_run(
+        &self,
+        command: FinishReconciliationRunCommand,
+    ) -> PaymentReconciliationRuntimeStoreFuture<'_, ()> {
+        let state = self.state.clone();
+        Box::pin(async move {
+            let mut state = state.lock().unwrap();
+            let Some(run) = state
+                .runs
+                .iter_mut()
+                .find(|run| run.id == command.reconciliation_run_id)
+            else {
+                return Err(DomainError::new(format!(
+                    "reconciliation run {} not found",
+                    command.reconciliation_run_id
+                )));
+            };
+            run.status = command.status;
+            Ok(())
         })
     }
 }

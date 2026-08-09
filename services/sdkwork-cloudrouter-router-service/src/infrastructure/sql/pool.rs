@@ -377,6 +377,40 @@ pub async fn postgres_usage_settlement_schema_ready(pool: &PgPool) -> Result<boo
     Ok(table_count == 1 && usage_column_count == 5)
 }
 
+/// Checks that the payment reconciliation tables the worker writes are present
+/// and that the run table carries the worker-relevant columns.
+pub async fn postgres_payment_reconciliation_schema_ready(
+    pool: &PgPool,
+) -> Result<bool, sqlx::Error> {
+    let table_count: i64 = sqlx::query_scalar(
+        r#"
+        SELECT COUNT(1)
+        FROM information_schema.tables
+        WHERE table_schema = current_schema()
+          AND table_name IN (
+              'commerce_payment_reconciliation_run',
+              'commerce_payment_statement',
+              'commerce_payment_statement_item',
+              'commerce_payment_reconciliation_item'
+          )
+        "#,
+    )
+    .fetch_one(pool)
+    .await?;
+    let run_column_count: i64 = sqlx::query_scalar(
+        r#"
+        SELECT COUNT(1)
+        FROM information_schema.columns
+        WHERE table_schema = current_schema()
+          AND table_name = 'commerce_payment_reconciliation_run'
+          AND column_name IN ('status', 'matched_count', 'mismatched_count', 'unmatched_count', 'total_difference_amount')
+        "#,
+    )
+    .fetch_one(pool)
+    .await?;
+    Ok(table_count == 4 && run_column_count == 5)
+}
+
 pub fn postgres_usage_settlement_readiness_check(
     pool: PgPool,
     required: bool,

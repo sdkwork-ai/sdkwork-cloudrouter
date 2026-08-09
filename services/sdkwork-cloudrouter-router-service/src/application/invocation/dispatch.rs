@@ -41,7 +41,6 @@ impl Debug for InvocationAdapterTarget {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DispatchMode {
-    DirectOpenAiRelay,
     DirectHttpPassthrough,
     InternalProviderAdapter,
     SyntheticLocalResponse,

@@ -12,6 +12,7 @@ use crate::application::{
 use crate::domain::{
     provider_native_model_id, AiModel, BillingMeter, ModelUpstreamRoute,
     ResolveModelMappingContext, UpstreamAccountRoute,
+    has_text,
 };
 use crate::ports::UpstreamAccountRouteCatalog;
 
@@ -535,9 +536,6 @@ where
     None
 }
 
-fn has_text(value: Option<&str>) -> bool {
-    value.map(str::trim).is_some_and(|value| !value.is_empty())
-}
 
 fn same_region(left: &str, right: &str) -> bool {
     normalize_region(left).eq_ignore_ascii_case(&normalize_region(right))

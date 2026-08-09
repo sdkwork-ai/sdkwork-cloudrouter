@@ -115,6 +115,7 @@ packages:
   - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-core"
   - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-order"
   - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-recharge"
+  - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-subscription"
   - "../sdkwork-payment/sdks/sdkwork-payment-app-sdk/sdkwork-payment-app-sdk-typescript"
   - "../sdkwork-payment/sdks/sdkwork-payment-backend-sdk/sdkwork-payment-backend-sdk-typescript"
   - "../sdkwork-appbase/sdks/sdkwork-base-data-backend-sdk/sdkwork-base-data-backend-sdk-typescript"

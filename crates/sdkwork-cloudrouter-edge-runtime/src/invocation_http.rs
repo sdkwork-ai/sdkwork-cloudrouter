@@ -14,9 +14,7 @@ use sdkwork_cloudrouter_router_service::application::{
     ProviderNativeResourceClassifier, ResourceType,
 };
 use sdkwork_cloudrouter_router_service::ports::{PricingCatalog, UpstreamAccountRouteCatalog};
-use sdkwork_cloudrouter_security::{
-    INTERNAL_GATEWAY_AUTH_HEADERS, INTERNAL_GATEWAY_ROUTE_PREFIX, REDACTED,
-};
+use sdkwork_cloudrouter_security::{INTERNAL_GATEWAY_AUTH_HEADERS, INTERNAL_GATEWAY_ROUTE_PREFIX};
 use serde_json::{json, Value};
 
 use crate::gateway_api_key_auth::{
@@ -416,15 +414,17 @@ fn apply_gateway_dispatch_defaults<C>(
             .filter(|route| group_account_route_is_callable(route, account_group_id))
             .collect::<Vec<_>>();
         catalog.visit_models(None, &mut |model| {
-            let reachable = catalog
-                .list_model_upstream_routes(&model.model)
-                .iter()
-                .any(|route| {
-                    callable_accounts.iter().any(|account| {
-                        account.account_id == route.account_id
-                            && account.supplier_code == route.supplier_code
-                    })
-                });
+            // Model routes are keyed by catalog key (`vendor/model`), so the
+            // lookup must try both the model name and the catalog key.
+            let reachable = model_upstream_route_matches_account(
+                catalog,
+                &model.model,
+                &callable_accounts,
+            ) || model_upstream_route_matches_account(
+                catalog,
+                &model.catalog_key,
+                &callable_accounts,
+            );
             if !reachable {
                 return true;
             }
@@ -587,76 +587,10 @@ fn extract_client_ip_from_headers(
 }
 
 /// Redact sensitive credential tokens from error messages before they are
-/// returned to API clients.
-///
-/// Scans for common credential patterns — `sk-` prefixed API keys and
-/// `Bearer` authorization tokens — and replaces the secret portion with
-/// the `sdkwork_cloudrouter_security::REDACTED` sentinel so that no raw credential
-/// material leaks through error responses.
+/// returned to API clients, using the shared redaction helper so the gateway
+/// HTTP error path matches the invocation pipeline's error body redaction.
 fn redact_sensitive_tokens(message: &str) -> String {
-    let result = redact_sk_prefix_tokens(message);
-    redact_bearer_tokens(&result)
-}
-
-/// Replace `sk-<token>` patterns (case-insensitive, 8+ alphanumeric chars)
-/// with `sk-[REDACTED]`.
-fn redact_sk_prefix_tokens(input: &str) -> String {
-    let mut result = String::with_capacity(input.len());
-    let bytes = input.as_bytes();
-    let mut i = 0;
-    while i < bytes.len() {
-        // Check for "sk-" (case-insensitive) at current position
-        if i + 2 < bytes.len()
-            && bytes[i].eq_ignore_ascii_case(&b's')
-            && bytes[i + 1].eq_ignore_ascii_case(&b'k')
-            && bytes[i + 2] == b'-'
-        {
-            // Count alphanumeric chars after "sk-"
-            let token_start = i + 3;
-            let mut token_end = token_start;
-            while token_end < bytes.len() && bytes[token_end].is_ascii_alphanumeric() {
-                token_end += 1;
-            }
-            if token_end - token_start >= 8 {
-                result.push_str("sk-");
-                result.push_str(REDACTED);
-                i = token_end;
-                continue;
-            }
-        }
-        result.push(bytes[i] as char);
-        i += 1;
-    }
-    result
-}
-
-/// Replace `Bearer <token>` patterns (case-insensitive, 8+ token chars)
-/// with `Bearer [REDACTED]`.
-fn redact_bearer_tokens(input: &str) -> String {
-    let lower = input.to_ascii_lowercase();
-    let mut result = String::with_capacity(input.len());
-    let bearer = "bearer ";
-    let mut last_end = 0;
-    let mut search = 0;
-    while let Some(pos) = lower[search..].find(bearer) {
-        let abs = search + pos;
-        result.push_str(&input[last_end..abs]);
-        let token_start = abs + bearer.len();
-        let token_end = input[token_start..]
-            .find(|c: char| !c.is_ascii_alphanumeric() && c != '.' && c != '-' && c != '_')
-            .map(|rel| token_start + rel)
-            .unwrap_or(input.len());
-        if token_end - token_start >= 8 {
-            result.push_str("Bearer ");
-            result.push_str(REDACTED);
-        } else {
-            result.push_str(&input[abs..token_end]);
-        }
-        last_end = token_end;
-        search = token_end;
-    }
-    result.push_str(&input[last_end..]);
-    result
+    sdkwork_cloudrouter_router_service::redaction::redact_sensitive_tokens(message)
 }
 
 pub(crate) fn response_from_policy_violation(
@@ -784,6 +718,27 @@ fn content_length_from_headers(headers: &HeaderMap) -> Option<usize> {
 
 fn invalid_request(message: impl Into<String>) -> InvocationError {
     InvocationError::new(InvocationErrorKind::InvalidRequest, message)
+}
+
+/// True when any model upstream route for `model_key` targets one of the
+/// group's callable accounts.
+fn model_upstream_route_matches_account<C>(
+    catalog: &C,
+    model_key: &str,
+    callable_accounts: &[sdkwork_cloudrouter_router_service::domain::UpstreamAccountRoute],
+) -> bool
+where
+    C: sdkwork_cloudrouter_router_service::ports::PricingCatalog,
+{
+    catalog
+        .list_model_upstream_routes(model_key)
+        .iter()
+        .any(|route| {
+            callable_accounts.iter().any(|account| {
+                account.account_id == route.account_id
+                    && account.supplier_code == route.supplier_code
+            })
+        })
 }
 
 /// An upstream account route is callable for the group when it is bound to

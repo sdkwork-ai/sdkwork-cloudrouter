@@ -4177,8 +4177,12 @@ impl sdkwork_cloudrouter_router_service::ports::PricingCatalog for TestRuntimeCa
         billing_meter: sdkwork_cloudrouter_router_service::domain::BillingMeter,
     ) -> Vec<sdkwork_cloudrouter_router_service::domain::ModelPrice> {
         if model != self.catalog_key
-            || billing_meter
-                != sdkwork_cloudrouter_router_service::domain::BillingMeter::LlmInputToken
+            || !matches!(
+                billing_meter,
+                sdkwork_cloudrouter_router_service::domain::BillingMeter::LlmInputToken
+                    | sdkwork_cloudrouter_router_service::domain::BillingMeter::LlmOutputToken
+                    | sdkwork_cloudrouter_router_service::domain::BillingMeter::LlmCacheReadToken
+            )
         {
             return Vec::new();
         }
@@ -4188,7 +4192,7 @@ impl sdkwork_cloudrouter_router_service::ports::PricingCatalog for TestRuntimeCa
                     &self.catalog_key,
                     &self.model,
                     sdkwork_cloudrouter_router_service::domain::PriceSide::OfficialReference,
-                    sdkwork_cloudrouter_router_service::domain::BillingMeter::LlmInputToken,
+                    billing_meter,
                     sdkwork_cloudrouter_router_service::domain::Money::usd("0.150000").unwrap(),
                 ),
             ],
@@ -4197,7 +4201,7 @@ impl sdkwork_cloudrouter_router_service::ports::PricingCatalog for TestRuntimeCa
                     &self.catalog_key,
                     &self.model,
                     sdkwork_cloudrouter_router_service::domain::PriceSide::UpstreamCost,
-                    sdkwork_cloudrouter_router_service::domain::BillingMeter::LlmInputToken,
+                    billing_meter,
                     sdkwork_cloudrouter_router_service::domain::Money::usd("0.100000").unwrap(),
                 )
                 .for_upstream_account("openai", 3001),
@@ -4340,8 +4344,12 @@ impl sdkwork_cloudrouter_router_service::ports::PricingCatalog for TestRuntimeCa
         if model != self.catalog_key
             || price_side
                 != sdkwork_cloudrouter_router_service::domain::PriceSide::OfficialReference
-            || billing_meter
-                != sdkwork_cloudrouter_router_service::domain::BillingMeter::LlmInputToken
+            || !matches!(
+                billing_meter,
+                sdkwork_cloudrouter_router_service::domain::BillingMeter::LlmInputToken
+                    | sdkwork_cloudrouter_router_service::domain::BillingMeter::LlmOutputToken
+                    | sdkwork_cloudrouter_router_service::domain::BillingMeter::LlmCacheReadToken
+            )
             || supplier_code.is_some()
             || pricing_plan_code.is_some()
         {
@@ -4352,7 +4360,7 @@ impl sdkwork_cloudrouter_router_service::ports::PricingCatalog for TestRuntimeCa
                 &self.catalog_key,
                 &self.model,
                 sdkwork_cloudrouter_router_service::domain::PriceSide::OfficialReference,
-                sdkwork_cloudrouter_router_service::domain::BillingMeter::LlmInputToken,
+                billing_meter,
                 sdkwork_cloudrouter_router_service::domain::Money::usd("0.150000").unwrap(),
             ),
         )

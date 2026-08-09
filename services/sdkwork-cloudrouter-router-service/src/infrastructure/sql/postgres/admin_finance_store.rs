@@ -17,18 +17,21 @@ WITH ledger_entries AS (
         CAST(e.owner_id AS TEXT) AS user_id,
         CASE
             WHEN e.business_type = 'points_recharge' THEN 'recharge'
+            WHEN e.business_type = 'token_bank_purchase_credit' THEN 'recharge'
             WHEN e.business_type = 'usage_settlement' THEN 'usage'
             WHEN e.direction = 'CREDIT' THEN 'recharge'
             ELSE 'consume'
         END AS normalized_type,
-        -- Points amounts are already the display unit; cash amounts are
-        -- minor units (cents) and render as major units.
+        -- Points and token-bank amounts are already the display unit; cash
+        -- amounts are minor units (cents) and render as major units.
         CASE
             WHEN e.asset_code = 'points' THEN CAST(e.amount AS TEXT)
+            WHEN e.asset_code = 'token_bank' THEN CAST(e.amount AS TEXT)
             ELSE round(e.amount::numeric / 100, 2)::text
         END AS amount,
         CASE
             WHEN e.asset_code = 'points' THEN CAST(e.balance_after AS TEXT)
+            WHEN e.asset_code = 'token_bank' THEN CAST(e.balance_after AS TEXT)
             ELSE round(e.balance_after::numeric / 100, 2)::text
         END AS balance,
         COALESCE(
@@ -77,7 +80,7 @@ WITH ledger_entries AS (
     LEFT JOIN commerce_payment_attempt pa
       ON pa.tenant_id = CAST(e.tenant_id AS TEXT)
      AND (pa.organization_id IS NULL OR e.organization_id IS NULL OR pa.organization_id = e.organization_id)
-     AND e.business_type = 'points_recharge'
+     AND (e.business_type = 'points_recharge' OR e.business_type = 'token_bank_purchase_credit')
      AND pa.out_trade_no = e.business_no
     LEFT JOIN commerce_refund r
       ON r.tenant_id = CAST(e.tenant_id AS TEXT)
