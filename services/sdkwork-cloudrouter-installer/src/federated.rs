@@ -47,6 +47,14 @@ pub async fn bootstrap_federated_commerce_modules(
         .map_err(|error| format!("load promotion database module failed: {error}"))?;
     let partner_module = sdkwork_partner_database_host::database_module()
         .map_err(|error| format!("load partner database module failed: {error}"))?;
+    let merchandise_module = sdkwork_merchandise_database_host::database_module()
+        .map_err(|error| format!("load merchandise database module failed: {error}"))?;
+    let shop_module = sdkwork_shop_database_host::database_module()
+        .map_err(|error| format!("load shop database module failed: {error}"))?;
+    let catalog_module = sdkwork_catalog_database_host::database_module()
+        .map_err(|error| format!("load catalog database module failed: {error}"))?;
+    let inventory_module = sdkwork_inventory_database_host::database_module()
+        .map_err(|error| format!("load inventory database module failed: {error}"))?;
     let registry = DatabaseModuleRegistry::builder()
         .register(payment_module)
         .map_err(|error| format!("register payment database module failed: {error}"))?
@@ -58,6 +66,14 @@ pub async fn bootstrap_federated_commerce_modules(
         .map_err(|error| format!("register promotion database module failed: {error}"))?
         .register(partner_module)
         .map_err(|error| format!("register partner database module failed: {error}"))?
+        .register(merchandise_module)
+        .map_err(|error| format!("register merchandise database module failed: {error}"))?
+        .register(shop_module)
+        .map_err(|error| format!("register shop database module failed: {error}"))?
+        .register(catalog_module)
+        .map_err(|error| format!("register catalog database module failed: {error}"))?
+        .register(inventory_module)
+        .map_err(|error| format!("register inventory database module failed: {error}"))?
         .build();
     let locale = match seed_locale {
         Some(locale) => LocaleTag(locale.to_owned()),
@@ -104,6 +120,18 @@ mod tests {
         let partner = source
             .find("sdkwork_partner_database_host::database_module()")
             .expect("partner database module registration");
+        let merchandise = source
+            .find("sdkwork_merchandise_database_host::database_module()")
+            .expect("merchandise database module registration");
+        let shop = source
+            .find("sdkwork_shop_database_host::database_module()")
+            .expect("shop database module registration");
+        let catalog = source
+            .find("sdkwork_catalog_database_host::database_module()")
+            .expect("catalog database module registration");
+        let inventory = source
+            .find("sdkwork_inventory_database_host::database_module()")
+            .expect("inventory database module registration");
         assert!(
             payment < order,
             "payment database must bootstrap before order"
@@ -120,11 +148,31 @@ mod tests {
             promotion < partner,
             "promotion database must bootstrap before partner"
         );
+        assert!(
+            partner < merchandise,
+            "partner database must bootstrap before merchandise"
+        );
+        assert!(
+            merchandise < shop,
+            "merchandise database must bootstrap before shop"
+        );
+        assert!(
+            shop < catalog,
+            "shop database must bootstrap before catalog"
+        );
+        assert!(
+            catalog < inventory,
+            "catalog database must bootstrap before inventory"
+        );
         assert!(source.contains(".register(payment_module)"));
         assert!(source.contains(".register(order_module)"));
         assert!(source.contains(".register(membership_module)"));
         assert!(source.contains(".register(promotion_module)"));
         assert!(source.contains(".register(partner_module)"));
+        assert!(source.contains(".register(merchandise_module)"));
+        assert!(source.contains(".register(shop_module)"));
+        assert!(source.contains(".register(catalog_module)"));
+        assert!(source.contains(".register(inventory_module)"));
         assert!(
             source
                 .contains("bootstrap_all(&locale, &SeedProfile(DEFAULT_SEED_PROFILE.to_owned()))"),

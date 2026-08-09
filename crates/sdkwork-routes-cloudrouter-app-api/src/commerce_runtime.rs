@@ -66,6 +66,14 @@ async fn bootstrap_federated_databases(pool: &DatabasePool) -> Result<(), String
         .map_err(|e| format!("load promotion database module failed: {e}"))?;
     let partner_module = sdkwork_partner_database_host::database_module()
         .map_err(|e| format!("load partner database module failed: {e}"))?;
+    let merchandise_module = sdkwork_merchandise_database_host::database_module()
+        .map_err(|e| format!("load merchandise database module failed: {e}"))?;
+    let shop_module = sdkwork_shop_database_host::database_module()
+        .map_err(|e| format!("load shop database module failed: {e}"))?;
+    let catalog_module = sdkwork_catalog_database_host::database_module()
+        .map_err(|e| format!("load catalog database module failed: {e}"))?;
+    let inventory_module = sdkwork_inventory_database_host::database_module()
+        .map_err(|e| format!("load inventory database module failed: {e}"))?;
     let registry = DatabaseModuleRegistry::builder()
         .register(payment_module)
         .map_err(|e| format!("register payment database module failed: {e}"))?
@@ -77,6 +85,14 @@ async fn bootstrap_federated_databases(pool: &DatabasePool) -> Result<(), String
         .map_err(|e| format!("register promotion database module failed: {e}"))?
         .register(partner_module)
         .map_err(|e| format!("register partner database module failed: {e}"))?
+        .register(merchandise_module)
+        .map_err(|e| format!("register merchandise database module failed: {e}"))?
+        .register(shop_module)
+        .map_err(|e| format!("register shop database module failed: {e}"))?
+        .register(catalog_module)
+        .map_err(|e| format!("register catalog database module failed: {e}"))?
+        .register(inventory_module)
+        .map_err(|e| format!("register inventory database module failed: {e}"))?
         .build();
     let orchestrator = RegistryLifecycleOrchestrator::new(pool.clone(), registry)
         .with_applied_by("sdkwork-cloudrouter-commerce");
@@ -151,6 +167,24 @@ mod tests {
         let membership = source
             .find("sdkwork_membership_database_host::database_module()")
             .expect("membership database module registration");
+        let promotion = source
+            .find("sdkwork_promotion_database_host::database_module()")
+            .expect("promotion database module registration");
+        let partner = source
+            .find("sdkwork_partner_database_host::database_module()")
+            .expect("partner database module registration");
+        let merchandise = source
+            .find("sdkwork_merchandise_database_host::database_module()")
+            .expect("merchandise database module registration");
+        let shop = source
+            .find("sdkwork_shop_database_host::database_module()")
+            .expect("shop database module registration");
+        let catalog = source
+            .find("sdkwork_catalog_database_host::database_module()")
+            .expect("catalog database module registration");
+        let inventory = source
+            .find("sdkwork_inventory_database_host::database_module()")
+            .expect("inventory database module registration");
         assert!(
             payment < order,
             "payment database must bootstrap before order"
@@ -159,9 +193,37 @@ mod tests {
             order < membership,
             "order database must bootstrap before membership"
         );
+        assert!(
+            membership < promotion,
+            "membership database must bootstrap before promotion"
+        );
+        assert!(
+            promotion < partner,
+            "promotion database must bootstrap before partner"
+        );
+        assert!(
+            partner < merchandise,
+            "partner database must bootstrap before merchandise"
+        );
+        assert!(
+            merchandise < shop,
+            "merchandise database must bootstrap before shop"
+        );
+        assert!(
+            shop < catalog,
+            "shop database must bootstrap before catalog"
+        );
+        assert!(
+            catalog < inventory,
+            "catalog database must bootstrap before inventory"
+        );
         assert!(source.contains(".register(payment_module)"));
         assert!(source.contains(".register(order_module)"));
         assert!(source.contains(".register(membership_module)"));
+        assert!(source.contains(".register(merchandise_module)"));
+        assert!(source.contains(".register(shop_module)"));
+        assert!(source.contains(".register(catalog_module)"));
+        assert!(source.contains(".register(inventory_module)"));
         assert!(
             source.contains("sdkwork_api_order_assembly::assemble_app_api_contribution_with_pool(")
         );

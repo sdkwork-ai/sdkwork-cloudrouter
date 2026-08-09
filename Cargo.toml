@@ -227,9 +227,11 @@ sdkwork_account_service = { package = "sdkwork-account-service", path = "../sdkw
 sdkwork_account_repository_sqlx = { package = "sdkwork-account-repository-sqlx", path = "../sdkwork-account/crates/sdkwork-account-repository-sqlx" }
 sdkwork_merchandise_service = { package = "sdkwork-merchandise-service", path = "../sdkwork-merchandise/crates/sdkwork-merchandise-service" }
 sdkwork_merchandise_repository_sqlx = { package = "sdkwork-merchandise-repository-sqlx", path = "../sdkwork-merchandise/crates/sdkwork-merchandise-repository-sqlx" }
+sdkwork_merchandise_database_host = { package = "sdkwork-merchandise-database-host", path = "../sdkwork-merchandise/crates/sdkwork-merchandise-database-host" }
 sdkwork_catalog_repository_sqlx = { package = "sdkwork-catalog-repository-sqlx", path = "../sdkwork-catalog/crates/sdkwork-catalog-repository-sqlx" }
 sdkwork_inventory_service = { package = "sdkwork-inventory-service", path = "../sdkwork-inventory/crates/sdkwork-inventory-service" }
 sdkwork_inventory_repository_sqlx = { package = "sdkwork-inventory-repository-sqlx", path = "../sdkwork-inventory/crates/sdkwork-inventory-repository-sqlx" }
+sdkwork_inventory_database_host = { package = "sdkwork-inventory-database-host", path = "../sdkwork-inventory/crates/sdkwork-inventory-database-host" }
 sdkwork_api_inventory_assembly = { package = "sdkwork-api-inventory-assembly", path = "../sdkwork-inventory/crates/sdkwork-api-inventory-assembly" }
 sdkwork_order_service = { package = "sdkwork-order-service", path = "../sdkwork-order/crates/sdkwork-order-service" }
 sdkwork_order_repository_sqlx = { package = "sdkwork-order-repository-sqlx", path = "../sdkwork-order/crates/sdkwork-order-repository-sqlx" }
