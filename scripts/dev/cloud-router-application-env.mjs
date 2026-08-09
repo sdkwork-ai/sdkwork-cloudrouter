@@ -43,7 +43,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DEFAULT_REPOSITORY_ROOT = path.resolve(__dirname, '..', '..');
 const DEFAULT_PORTAL_RELATIVE_DIR = path.join('apps', 'sdkwork-cloudrouter-pc');
-const DEFAULT_DEV_PROXY_GATEWAY_TARGET = 'http://127.0.0.1:3900';
+const DEFAULT_DEV_PROXY_GATEWAY_TARGET = 'http://127.0.0.1:3905';
 
 export { CLOUD_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_ORDER };
 
