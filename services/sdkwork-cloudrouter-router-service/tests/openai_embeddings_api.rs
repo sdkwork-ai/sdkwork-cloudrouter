@@ -266,7 +266,9 @@ async fn openai_embeddings_rejects_api_key_without_billing_subject_before_relay(
     assert_eq!("server_error", payload["error"]["type"]);
     let message = payload["error"]["message"].as_str().unwrap();
     assert!(message.contains("tenant"));
-    assert!(message.contains("organization"));
+    // organization_id == 0 is a valid tenant-scoped billing subject; only
+    // negative values are data anomalies, so it must not be reported missing.
+    assert!(!message.contains("organization"));
     assert!(message.contains("user"));
     assert!(!body.contains("sk-live-secret"));
     assert!(captured.lock().unwrap().is_empty());
