@@ -327,6 +327,40 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
         )
         .for_upstream_account("openrouter", 3001),
     );
+    catalog.add_price(ModelPrice::new_for_catalog_key(
+        "openai/gpt-4.1-mini",
+        "gpt-4.1-mini",
+        PriceSide::OfficialReference,
+        BillingMeter::LlmOutputToken,
+        Money::usd("0.600000").unwrap(),
+    ));
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "openai/gpt-4.1-mini",
+            "gpt-4.1-mini",
+            PriceSide::UpstreamCost,
+            BillingMeter::LlmOutputToken,
+            Money::usd("0.440000").unwrap(),
+        )
+        .for_upstream_account("openrouter", 3001),
+    );
+    catalog.add_price(ModelPrice::new_for_catalog_key(
+        "openai/gpt-4.1-mini",
+        "gpt-4.1-mini",
+        PriceSide::OfficialReference,
+        BillingMeter::LlmCacheReadToken,
+        Money::usd("0.030000").unwrap(),
+    ));
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "openai/gpt-4.1-mini",
+            "gpt-4.1-mini",
+            PriceSide::UpstreamCost,
+            BillingMeter::LlmCacheReadToken,
+            Money::usd("0.022000").unwrap(),
+        )
+        .for_upstream_account("openrouter", 3001),
+    );
     catalog.add_routing_policy(
         RoutingPolicy::new(
             9001,
