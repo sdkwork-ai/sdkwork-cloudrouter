@@ -405,8 +405,29 @@ fn apply_gateway_dispatch_defaults<C>(
         && invocation.request.method == axum::http::Method::GET
         && invocation.request.path == "/v1/models"
     {
+        // Only expose models the authenticated key's account group can
+        // actually route to, mirroring the group-scoped `/v1/vendors` view.
+        // An unscoped list would leak models of other groups/tenants and
+        // advertise models the caller cannot use.
         let mut models = Vec::new();
+        let callable_accounts = catalog
+            .list_upstream_account_routes()
+            .into_iter()
+            .filter(|route| group_account_route_is_callable(route, account_group_id))
+            .collect::<Vec<_>>();
         catalog.visit_models(None, &mut |model| {
+            let reachable = catalog
+                .list_model_upstream_routes(&model.model)
+                .iter()
+                .any(|route| {
+                    callable_accounts.iter().any(|account| {
+                        account.account_id == route.account_id
+                            && account.supplier_code == route.supplier_code
+                    })
+                });
+            if !reachable {
+                return true;
+            }
             let owned_by = catalog
                 .find_vendor(&model.vendor_code)
                 .map(|vendor| vendor.vendor.code().to_owned())
@@ -765,6 +786,29 @@ fn invalid_request(message: impl Into<String>) -> InvocationError {
     InvocationError::new(InvocationErrorKind::InvalidRequest, message)
 }
 
+/// An upstream account route is callable for the group when it is bound to
+/// the group and carries a base URL plus a credential (or default headers).
+fn group_account_route_is_callable(
+    route: &sdkwork_cloudrouter_router_service::domain::UpstreamAccountRoute,
+    account_group_id: i64,
+) -> bool {
+    route
+        .account_group_bindings
+        .iter()
+        .any(|binding| binding.account_group_id == account_group_id)
+        && route
+            .base_url
+            .as_deref()
+            .map(str::trim)
+            .is_some_and(|value| !value.is_empty())
+        && (route
+            .secret_ref
+            .as_deref()
+            .map(str::trim)
+            .is_some_and(|value| !value.is_empty())
+            || !route.auth_profile.default_headers.is_empty())
+}
+
 #[cfg(test)]
 mod gateway_dispatch_defaults_tests {
     use super::apply_gateway_dispatch_defaults;
@@ -815,6 +859,14 @@ mod gateway_dispatch_defaults_tests {
         catalog.add_model(AiModel::new(
             "gpt-4o-mini",
             "GPT-4o mini",
+            "openai",
+            vec!["chat", "tools"],
+        ));
+        // A model the group cannot route to: no upstream model route exists,
+        // so group-scoped model listings must exclude it.
+        catalog.add_model(AiModel::new(
+            "gpt-4o",
+            "GPT-4o",
             "openai",
             vec!["chat", "tools"],
         ));
@@ -888,5 +940,47 @@ mod gateway_dispatch_defaults_tests {
         apply_gateway_dispatch_defaults(&mut invocation, &catalog(), 10);
         assert_eq!(invocation.dispatch.mode, DispatchMode::NoopFree);
         assert!(invocation.dispatch.response.is_none());
+    }
+
+    fn models_invocation() -> Invocation {
+        Invocation::new(
+            InvocationRequest::new(Method::GET, "/v1/models"),
+            subject(),
+            InvocationResource::free_endpoint(
+                "openai/management/models",
+                "openai.models",
+                RoutingCapability::Network,
+            ),
+            InvocationBilling::free(),
+        )
+    }
+
+    #[test]
+    fn models_request_is_scoped_to_models_reachable_by_the_account_group() {
+        let mut invocation = models_invocation();
+        apply_gateway_dispatch_defaults(&mut invocation, &catalog(), 10);
+
+        assert_eq!(
+            invocation.dispatch.mode,
+            DispatchMode::SyntheticLocalResponse
+        );
+        let response = invocation.dispatch.response.expect("synthetic response");
+        let body = response.body.expect("json body");
+        let models = body["data"].as_array().expect("models array");
+        let ids = models
+            .iter()
+            .map(|model| model["id"].as_str().unwrap_or_default())
+            .collect::<Vec<_>>();
+        assert_eq!(vec!["gpt-4o-mini"], ids, "unreachable model must be filtered");
+    }
+
+    #[test]
+    fn models_request_is_empty_for_groups_without_callable_accounts() {
+        let mut invocation = models_invocation();
+        apply_gateway_dispatch_defaults(&mut invocation, &catalog(), 99);
+
+        let response = invocation.dispatch.response.expect("synthetic response");
+        let body = response.body.expect("json body");
+        assert_eq!(0, body["data"].as_array().expect("models array").len());
     }
 }

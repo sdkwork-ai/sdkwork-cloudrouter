@@ -945,6 +945,13 @@ fn parse_resource_entitlements(
     else {
         return Ok(None);
     };
+    // JSON null means the account has no explicit resource bindings (the
+    // snapshot emits null instead of an empty array so accounts without
+    // bindings stay unrestricted, matching "accounts without bindings stay
+    // unrestricted" in the 0015 migration).
+    if value.is_null() {
+        return Ok(None);
+    }
     let serde_json::Value::Array(items) = value else {
         return Err(DomainError::new(format!(
             "route candidate group bindings[{binding_index}].resourceEntitlements must be a json array"

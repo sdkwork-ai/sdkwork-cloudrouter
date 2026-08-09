@@ -52,9 +52,22 @@ where
             }
 
             if let Some(sticky_route) = invocation.routing.sticky_route.clone() {
-                let candidate = sticky_candidate(self.catalog.as_ref(), invocation, sticky_route);
-                invocation.routing.route_plan = Some(InvocationRoutePlan::new(vec![candidate]));
-                return Ok(());
+                if let Some(reason) = sticky_route_invalid_reason(self.catalog.as_ref(), invocation, &sticky_route) {
+                    tracing::warn!(
+                        tenant_id = invocation.subject.tenant_id,
+                        organization_id = invocation.subject.organization_id,
+                        api_key_id = invocation.subject.api_key_id.unwrap_or_default(),
+                        supplier_code = %sticky_route.supplier_code,
+                        account_id = sticky_route.account_id,
+                        reason = %reason,
+                        "sticky route target is no longer callable; falling back to regular route planning"
+                    );
+                    invocation.routing.sticky_route = None;
+                } else {
+                    let candidate = sticky_candidate(self.catalog.as_ref(), invocation, sticky_route);
+                    invocation.routing.route_plan = Some(InvocationRoutePlan::new(vec![candidate]));
+                    return Ok(());
+                }
             }
 
             let context = authenticated_context(invocation)?;
@@ -480,6 +493,50 @@ where
                     .unwrap_or(true)
         })
         .cloned()
+}
+
+/// Validates a resolved sticky constraint before pinning the route plan.
+///
+/// A sticky binding may outlive its upstream account route: the admin can
+/// remove the account from the bound group, disable it, or mark it unhealthy.
+/// Pinning blindly would keep billing traffic on an account the group no
+/// longer covers, so the sticky target is re-validated against the live
+/// catalog and the caller falls back to regular route planning when invalid.
+fn sticky_route_invalid_reason<C>(
+    catalog: &C,
+    invocation: &Invocation,
+    sticky_route: &StickyRouteConstraint,
+) -> Option<String>
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    let account_route = matching_upstream_account_route(catalog, sticky_route)?;
+    if !account_route.is_account_healthy() {
+        return Some("sticky upstream account is not healthy".to_owned());
+    }
+    if !has_text(account_route.base_url.as_deref())
+        || (!has_text(account_route.secret_ref.as_deref())
+            && account_route.auth_profile.default_headers.is_empty())
+    {
+        return Some("sticky upstream account is not callable".to_owned());
+    }
+    if let Some(group_id) = sticky_route
+        .account_group_id
+        .or(invocation.subject.account_group_id)
+    {
+        let bound_to_group = account_route
+            .account_group_bindings
+            .iter()
+            .any(|binding| binding.account_group_id == group_id);
+        if !bound_to_group {
+            return Some("sticky upstream account is no longer bound to the account group".to_owned());
+        }
+    }
+    None
+}
+
+fn has_text(value: Option<&str>) -> bool {
+    value.map(str::trim).is_some_and(|value| !value.is_empty())
 }
 
 fn same_region(left: &str, right: &str) -> bool {

@@ -242,7 +242,9 @@ where
     let resolved = PricingResolver::new(catalog)
         .resolve(ResolveModelPriceQuery {
             api_key_id,
-            account_group_id: invocation.subject.account_group_id,
+            account_group_id: account
+                .account_group_id
+                .or(invocation.subject.account_group_id),
             model,
             billing_meter: meter,
             supplier_code: Some(account.supplier_code.clone()),

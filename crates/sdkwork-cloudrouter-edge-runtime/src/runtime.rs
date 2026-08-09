@@ -2383,7 +2383,7 @@ fn spawn_postgres_catalog_refresh_worker(
                     None
                 }
             };
-            if !catalog_refresh_snapshot_due(refresh_state, observed_version) {
+            if !catalog_refresh_snapshot_due(&refresh_state, observed_version.as_deref()) {
                 refresh_state = refresh_state.after_catalog_refresh_skip(observed_version);
                 continue;
             }
@@ -2416,21 +2416,21 @@ fn spawn_postgres_catalog_refresh_worker(
     })
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 struct CatalogRefreshDecisionState {
-    last_seen_version: Option<i64>,
+    last_seen_version: Option<String>,
     ticks_since_full_refresh: u64,
 }
 
 impl CatalogRefreshDecisionState {
-    fn after_catalog_refresh_success(self, observed_version: Option<i64>) -> Self {
+    fn after_catalog_refresh_success(self, observed_version: Option<String>) -> Self {
         Self {
             last_seen_version: observed_version.or(self.last_seen_version),
             ticks_since_full_refresh: 0,
         }
     }
 
-    fn after_catalog_refresh_skip(self, observed_version: Option<i64>) -> Self {
+    fn after_catalog_refresh_skip(self, observed_version: Option<String>) -> Self {
         Self {
             last_seen_version: observed_version.or(self.last_seen_version),
             ticks_since_full_refresh: self.ticks_since_full_refresh.saturating_add(1),
@@ -2439,12 +2439,12 @@ impl CatalogRefreshDecisionState {
 }
 
 fn catalog_refresh_snapshot_due(
-    state: CatalogRefreshDecisionState,
-    observed_version: Option<i64>,
+    state: &CatalogRefreshDecisionState,
+    observed_version: Option<&str>,
 ) -> bool {
     match observed_version {
         None => true,
-        Some(version) if state.last_seen_version != Some(version) => true,
+        Some(version) if state.last_seen_version.as_deref() != Some(version) => true,
         Some(_) => {
             state.ticks_since_full_refresh.saturating_add(1) >= CATALOG_REFRESH_FALLBACK_TICKS
         }
@@ -3457,66 +3457,66 @@ gateway_invocation_body_max_bytes = 37
     #[test]
     fn runtime_catalog_refresh_decision_refreshes_first_observed_version() {
         assert!(catalog_refresh_snapshot_due(
-            CatalogRefreshDecisionState::default(),
-            Some(7)
+            &CatalogRefreshDecisionState::default(),
+            Some("fingerprint-7")
         ));
     }
 
     #[test]
     fn runtime_catalog_refresh_decision_skips_unchanged_version_before_fallback() {
         let state = CatalogRefreshDecisionState {
-            last_seen_version: Some(7),
+            last_seen_version: Some("fingerprint-7".to_owned()),
             ticks_since_full_refresh: 0,
         };
 
-        assert!(!catalog_refresh_snapshot_due(state, Some(7)));
+        assert!(!catalog_refresh_snapshot_due(&state, Some("fingerprint-7")));
         assert_eq!(
             CatalogRefreshDecisionState {
-                last_seen_version: Some(7),
+                last_seen_version: Some("fingerprint-7".to_owned()),
                 ticks_since_full_refresh: 1,
             },
-            state.after_catalog_refresh_skip(Some(7))
+            state.after_catalog_refresh_skip(Some("fingerprint-7".to_owned()))
         );
     }
 
     #[test]
     fn runtime_catalog_refresh_decision_refreshes_changed_version() {
         let state = CatalogRefreshDecisionState {
-            last_seen_version: Some(7),
+            last_seen_version: Some("fingerprint-7".to_owned()),
             ticks_since_full_refresh: 3,
         };
 
-        assert!(catalog_refresh_snapshot_due(state, Some(8)));
+        assert!(catalog_refresh_snapshot_due(&state, Some("fingerprint-8")));
         assert_eq!(
             CatalogRefreshDecisionState {
-                last_seen_version: Some(8),
+                last_seen_version: Some("fingerprint-8".to_owned()),
                 ticks_since_full_refresh: 0,
             },
-            state.after_catalog_refresh_success(Some(8))
+            state.after_catalog_refresh_success(Some("fingerprint-8".to_owned()))
         );
     }
 
     #[test]
     fn runtime_catalog_refresh_decision_refreshes_unchanged_version_on_fallback_tick() {
         let state = CatalogRefreshDecisionState {
-            last_seen_version: Some(7),
+            last_seen_version: Some("fingerprint-7".to_owned()),
             ticks_since_full_refresh: CATALOG_REFRESH_FALLBACK_TICKS - 1,
         };
 
-        assert!(catalog_refresh_snapshot_due(state, Some(7)));
+        assert!(catalog_refresh_snapshot_due(&state, Some("fingerprint-7")));
     }
 
     #[test]
     fn runtime_catalog_refresh_decision_refreshes_when_version_probe_fails() {
         let state = CatalogRefreshDecisionState {
-            last_seen_version: Some(7),
+            last_seen_version: Some("fingerprint-7".to_owned()),
             ticks_since_full_refresh: 0,
         };
 
-        assert!(catalog_refresh_snapshot_due(state, None));
+        assert!(catalog_refresh_snapshot_due(&state, None));
         assert_eq!(
             CatalogRefreshDecisionState {
-                last_seen_version: Some(7),
+                last_seen_version: Some("fingerprint-7".to_owned()),
                 ticks_since_full_refresh: 0,
             },
             state.after_catalog_refresh_success(None)

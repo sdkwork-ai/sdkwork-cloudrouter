@@ -114,6 +114,25 @@ fn upstream_account_route_query_projects_the_complete_callable_route() {
     assert!(sql.contains("NULLIF(e.base_url, '') IS NOT NULL"));
     assert!(sql.contains("member.account_id = c.id"));
     assert!(sql.contains("COALESCE(member.enabled, true)"));
+    // Accounts without explicit resource bindings must stay unrestricted:
+    // the deny sentinel only applies when the account itself has bindings
+    // that intersect to nothing (see 0015_upstream_account_resource.up.sql).
+    assert!(
+        sql.matches("THEN jsonb_build_array('__deny__')").count() >= 2,
+        "apiScope and capabilities deny branches must remain"
+    );
+    assert!(
+        sql.contains("AND EXISTS (")
+            && sql.contains("SELECT 1 FROM account_has_resource_scope has")
+            && sql.contains("has.account_id = c.id"),
+        "deny sentinel must require the account to have explicit resource bindings"
+    );
+    assert!(
+        sql.contains("'resourceEntitlements', CASE")
+            && sql.contains("THEN NULL")
+            && sql.contains("SELECT 1 FROM account_has_resource_scope has"),
+        "resourceEntitlements must be null (unrestricted) for accounts without bindings"
+    );
 }
 
 #[test]
@@ -294,6 +313,32 @@ fn upstream_account_route_rows_preserve_endpoint_credential_and_group_identity()
     assert_eq!(
         Some(DecimalValue::parse("1.020000").unwrap()),
         route.account_group_bindings[0].cost_multiplier_override
+    );
+}
+
+#[test]
+fn upstream_account_route_row_null_resource_entitlements_stay_unrestricted() {
+    let mut row = upstream_account_route_row(3001);
+    row.account_group_bindings_json = r#"[
+        {
+            "accountGroupId": 10,
+            "priority": 10,
+            "weight": 100,
+            "costMultiplierOverride": "1.020000",
+            "apiScope": [],
+            "capabilities": [],
+            "resourceEntitlements": null
+        }
+    ]"#
+    .to_owned();
+
+    let route = row.try_into_domain().unwrap();
+    let binding = &route.account_group_bindings[0];
+    assert!(binding.api_scope.is_empty());
+    assert!(binding.capabilities.is_empty());
+    assert!(
+        binding.resource_entitlements.is_none(),
+        "null resourceEntitlements must parse as unrestricted (None)"
     );
 }
 

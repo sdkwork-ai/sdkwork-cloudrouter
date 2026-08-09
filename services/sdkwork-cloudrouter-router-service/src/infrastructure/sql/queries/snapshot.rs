@@ -665,7 +665,14 @@ SELECT
                           AND mrs.account_group_id = b.account_group_id
                           AND mrs.supplier_id = c.supplier_id
                           AND mrs.account_id = c.id
-                    ) THEN jsonb_build_array('__deny__')
+                    )
+                         AND EXISTS (
+                             SELECT 1 FROM account_has_resource_scope has
+                             WHERE has.tenant_id = c.tenant_id
+                               AND has.organization_id = c.organization_id
+                               AND has.account_id = c.id
+                         )
+                    THEN jsonb_build_array('__deny__')
                     ELSE COALESCE((
                         SELECT jsonb_agg(scope.value ORDER BY scope.value)
                         FROM (
@@ -688,7 +695,14 @@ SELECT
                           AND mrs.account_group_id = b.account_group_id
                           AND mrs.supplier_id = c.supplier_id
                           AND mrs.account_id = c.id
-                    ) THEN jsonb_build_array('__deny__')
+                    )
+                         AND EXISTS (
+                             SELECT 1 FROM account_has_resource_scope has
+                             WHERE has.tenant_id = c.tenant_id
+                               AND has.organization_id = c.organization_id
+                               AND has.account_id = c.id
+                         )
+                    THEN jsonb_build_array('__deny__')
                     ELSE COALESCE((
                         SELECT jsonb_agg(capability.value ORDER BY capability.sort_order, capability.value)
                         FROM (
@@ -728,38 +742,46 @@ SELECT
                         ) capability
                     ), '[]'::jsonb)
                 END,
-                'resourceEntitlements', COALESCE((
-                    SELECT jsonb_agg(
-                        jsonb_build_object(
-                            'resourceCode', resource.resource_code,
-                            'resourceType', resource.resource_type,
-                            'vendorCode', resource.vendor_code,
-                            'modalityCode', resource.modality_code,
-                            'apiCode', resource.api_code,
-                            'catalogKey', resource.catalog_key,
-                            'model', resource.model,
-                            'providerNativeModel', resource.provider_native_model
+                'resourceEntitlements', CASE
+                    WHEN NOT EXISTS (
+                        SELECT 1 FROM account_has_resource_scope has
+                        WHERE has.tenant_id = c.tenant_id
+                          AND has.organization_id = c.organization_id
+                          AND has.account_id = c.id
+                    ) THEN NULL
+                    ELSE COALESCE((
+                        SELECT jsonb_agg(
+                            jsonb_build_object(
+                                'resourceCode', resource.resource_code,
+                                'resourceType', resource.resource_type,
+                                'vendorCode', resource.vendor_code,
+                                'modalityCode', resource.modality_code,
+                                'apiCode', resource.api_code,
+                                'catalogKey', resource.catalog_key,
+                                'model', resource.model,
+                                'providerNativeModel', resource.provider_native_model
+                            )
+                            ORDER BY resource.resource_code
                         )
-                        ORDER BY resource.resource_code
-                    )
-                    FROM (
-                        SELECT DISTINCT
-                            mrs.resource_code,
-                            mrs.resource_type,
-                            mrs.vendor_code,
-                            mrs.modality_code,
-                            mrs.api_code,
-                            mrs.catalog_key,
-                            mrs.model,
-                            mrs.provider_native_model
-                        FROM effective_matched_resource_scope mrs
-                        WHERE mrs.tenant_id = b.tenant_id
-                          AND mrs.organization_id = b.organization_id
-                          AND mrs.account_group_id = b.account_group_id
-                          AND mrs.supplier_id = c.supplier_id
-                          AND mrs.account_id = c.id
-                    ) resource
-                ), '[]'::jsonb)
+                        FROM (
+                            SELECT DISTINCT
+                                mrs.resource_code,
+                                mrs.resource_type,
+                                mrs.vendor_code,
+                                mrs.modality_code,
+                                mrs.api_code,
+                                mrs.catalog_key,
+                                mrs.model,
+                                mrs.provider_native_model
+                            FROM effective_matched_resource_scope mrs
+                            WHERE mrs.tenant_id = b.tenant_id
+                              AND mrs.organization_id = b.organization_id
+                              AND mrs.account_group_id = b.account_group_id
+                              AND mrs.supplier_id = c.supplier_id
+                              AND mrs.account_id = c.id
+                        ) resource
+                    ), '[]'::jsonb)
+                END
             )
             ORDER BY COALESCE(b.priority, 100) ASC, COALESCE(b.routing_weight, 100) DESC, b.account_group_id ASC, b.id ASC
         )

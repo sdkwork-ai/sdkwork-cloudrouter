@@ -20,6 +20,10 @@ const API_KEY_ID: i64 = 100;
 const MODEL_CATALOG_KEY: &str = "openai/gpt-4o-mini";
 const MODEL_ID: &str = "gpt-4o-mini";
 const API_CODE: &str = "openai.chat_completions";
+/// Model-less (api-request-metered) surface, e.g. the files API. The catalog
+/// carries a resource model under this catalog key so pricing can resolve.
+const RESOURCE_ROUTE_KEY: &str = "openai/management/files";
+const RESOURCE_API_CODE: &str = "openai.files";
 
 fn decimal(value: &str) -> DecimalValue {
     DecimalValue::parse(value).unwrap()
@@ -55,19 +59,46 @@ fn catalog_for_group(group: UpstreamAccountGroup) -> InMemoryPricingCatalog {
         AiModel::new(MODEL_ID, "GPT-4o mini", "openai", vec!["chat", "tools"])
             .with_catalog_key(MODEL_CATALOG_KEY),
     );
+    // Resource model for model-less (api-request-metered) surfaces such as
+    // the files API; its ApiRequest price is added per account by
+    // `add_route_and_price`.
+    catalog.add_model(
+        AiModel::new(
+            "management/files",
+            "OpenAI Files API",
+            "openai",
+            vec!["network"],
+        )
+        .with_catalog_key(RESOURCE_ROUTE_KEY),
+    );
+    catalog.add_price(ModelPrice::new_for_catalog_key(
+        RESOURCE_ROUTE_KEY,
+        "management/files",
+        PriceSide::OfficialReference,
+        BillingMeter::ApiRequest,
+        Money::usd("0.010000").unwrap(),
+    ));
     catalog.add_plan(PricingPlan::new(
         "standard",
         PriceSide::OfficialReference,
         DecimalValue::ONE,
         Money::usd("0.000000").unwrap(),
     ));
-    catalog.add_price(ModelPrice::new_for_catalog_key(
-        MODEL_CATALOG_KEY,
-        MODEL_ID,
-        PriceSide::OfficialReference,
+    // Composite (chat) billing settles input, output, and cache-read meters,
+    // so the official reference must exist for all three.
+    for meter in [
         BillingMeter::LlmInputToken,
-        Money::usd("0.150000").unwrap(),
-    ));
+        BillingMeter::LlmOutputToken,
+        BillingMeter::LlmCacheReadToken,
+    ] {
+        catalog.add_price(ModelPrice::new_for_catalog_key(
+            MODEL_CATALOG_KEY,
+            MODEL_ID,
+            PriceSide::OfficialReference,
+            meter,
+            Money::usd("0.150000").unwrap(),
+        ));
+    }
     catalog.add_upstream_account_group(group);
     catalog.add_api_key(
         GatewayApiKey::new(API_KEY_ID, group_id, "sk-test", "hash:sk-test").with_owner(
@@ -130,13 +161,33 @@ fn add_route_and_price(catalog: &mut InMemoryPricingCatalog, route: UpstreamAcco
     let account_id = route.account_id;
     let region_code = route.region_code.clone();
     catalog.add_upstream_account_route(route);
+    // Composite (chat) billing settles input, output, and cache-read meters,
+    // so the upstream cost must exist for all three.
+    for meter in [
+        BillingMeter::LlmInputToken,
+        BillingMeter::LlmOutputToken,
+        BillingMeter::LlmCacheReadToken,
+    ] {
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                MODEL_CATALOG_KEY,
+                MODEL_ID,
+                PriceSide::UpstreamCost,
+                meter,
+                Money::usd("0.100000").unwrap(),
+            )
+            .with_region_code(&region_code)
+            .for_upstream_account(&supplier_code, account_id),
+        );
+    }
+    // Api-request upstream cost for model-less surfaces (files etc.).
     catalog.add_price(
         ModelPrice::new_for_catalog_key(
-            MODEL_CATALOG_KEY,
-            MODEL_ID,
+            RESOURCE_ROUTE_KEY,
+            "management/files",
             PriceSide::UpstreamCost,
-            BillingMeter::LlmInputToken,
-            Money::usd("0.100000").unwrap(),
+            BillingMeter::ApiRequest,
+            Money::usd("0.005000").unwrap(),
         )
         .with_region_code(&region_code)
         .for_upstream_account(&supplier_code, account_id),
@@ -794,16 +845,22 @@ fn region_scoped_group_candidate_selects_the_matching_deployment() {
         &mut catalog,
         account_route(group_id, 3001, "supplier-a", 1, 100).with_region_code("cn"),
     );
-    catalog.add_price(
-        ModelPrice::new_for_catalog_key(
-            MODEL_CATALOG_KEY,
-            MODEL_ID,
-            PriceSide::OfficialReference,
-            BillingMeter::LlmInputToken,
-            Money::usd("0.150000").unwrap(),
-        )
-        .with_region_code("cn"),
-    );
+    for meter in [
+        BillingMeter::LlmInputToken,
+        BillingMeter::LlmOutputToken,
+        BillingMeter::LlmCacheReadToken,
+    ] {
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                MODEL_CATALOG_KEY,
+                MODEL_ID,
+                PriceSide::OfficialReference,
+                meter,
+                Money::usd("0.150000").unwrap(),
+            )
+            .with_region_code("cn"),
+        );
+    }
     add_model_policy(
         &mut catalog,
         group_id,
@@ -932,7 +989,7 @@ fn route_key_requests_use_the_same_group_strategy() {
     let selected = UpstreamRouteSelector::new(&catalog)
         .select_account_route(SelectUpstreamAccountRouteQuery {
             context: context(group_id),
-            route_key: "openai.files".to_owned(),
+            route_key: RESOURCE_ROUTE_KEY.to_owned(),
             api_code: "openai.files".to_owned(),
             capability: RoutingCapability::Network,
         })
@@ -963,4 +1020,267 @@ fn non_positive_cost_multiplier_is_rejected_as_invalid_routing_configuration() {
     assert!(error
         .to_string()
         .contains("cost multiplier must be positive"));
+}
+
+#[test]
+fn model_route_fails_fast_with_clear_error_when_group_has_no_supporting_account() {
+    let group_id = 50;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::None,
+    ));
+    // An account exists in the group, but its resource entitlements only
+    // authorize the embeddings api, not the requested chat completion.
+    let mut entitlement = UpstreamResourceEntitlement::new("api:embeddings", "api");
+    entitlement.api_code = Some("openai.embeddings".to_owned());
+    let binding = UpstreamAccountGroupBinding::new(group_id, 1, 100)
+        .with_resource_entitlements(vec![entitlement]);
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 3001, "supplier-a", 1, 100)
+            .with_account_group_bindings(vec![binding]),
+    );
+
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
+        .unwrap_err();
+
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
+        error.kind()
+    );
+    assert!(
+        error.to_string().contains("no upstream account in account group group-50")
+    );
+}
+
+#[test]
+fn account_route_api_resource_entitlement_must_match_the_request() {
+    let group_id = 51;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::None,
+    ));
+    let mut entitlement = UpstreamResourceEntitlement::new("api:files", "api");
+    entitlement.api_code = Some("openai.files".to_owned());
+    entitlement.modality_code = Some("network".to_owned());
+    let binding = UpstreamAccountGroupBinding::new(group_id, 1, 100)
+        .with_resource_entitlements(vec![entitlement]);
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 3001, "supplier-a", 1, 100)
+            .with_account_group_bindings(vec![binding]),
+    );
+
+    let query = SelectUpstreamAccountRouteQuery {
+        context: context(group_id),
+        route_key: RESOURCE_ROUTE_KEY.to_owned(),
+        api_code: "openai.files".to_owned(),
+        capability: RoutingCapability::Network,
+    };
+    let selected = UpstreamRouteSelector::new(&catalog)
+        .select_account_route(query)
+        .unwrap();
+
+    assert_eq!(3001, selected.route.account_id);
+}
+
+#[test]
+fn account_route_denies_api_resource_not_covered_by_entitlements() {
+    let group_id = 52;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::None,
+    ));
+    let mut entitlement = UpstreamResourceEntitlement::new("api:embeddings", "api");
+    entitlement.api_code = Some("openai.embeddings".to_owned());
+    let binding = UpstreamAccountGroupBinding::new(group_id, 1, 100)
+        .with_resource_entitlements(vec![entitlement]);
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 3001, "supplier-a", 1, 100)
+            .with_account_group_bindings(vec![binding]),
+    );
+
+    let query = SelectUpstreamAccountRouteQuery {
+        context: context(group_id),
+        route_key: RESOURCE_ROUTE_KEY.to_owned(),
+        api_code: "openai.files".to_owned(),
+        capability: RoutingCapability::Network,
+    };
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_account_route(query)
+        .unwrap_err();
+
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
+        error.kind()
+    );
+    assert!(
+        error
+            .to_string()
+            .contains("no upstream account in account group group-52")
+    );
+}
+
+#[test]
+fn account_route_model_scoped_entitlement_fails_closed_on_model_less_request() {
+    let group_id = 53;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::None,
+    ));
+    let mut entitlement = UpstreamResourceEntitlement::new("model:gpt-4o-mini", "model");
+    entitlement.catalog_key = Some(MODEL_CATALOG_KEY.to_owned());
+    let binding = UpstreamAccountGroupBinding::new(group_id, 1, 100)
+        .with_resource_entitlements(vec![entitlement]);
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 3001, "supplier-a", 1, 100)
+            .with_account_group_bindings(vec![binding]),
+    );
+
+    let query = SelectUpstreamAccountRouteQuery {
+        context: context(group_id),
+        route_key: RESOURCE_ROUTE_KEY.to_owned(),
+        api_code: "openai.files".to_owned(),
+        capability: RoutingCapability::Network,
+    };
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_account_route(query)
+        .unwrap_err();
+
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
+        error.kind()
+    );
+}
+
+fn add_route_with_input_cost_only(
+    catalog: &mut InMemoryPricingCatalog,
+    route: UpstreamAccountRoute,
+) {
+    let supplier_code = route.supplier_code.clone();
+    let account_id = route.account_id;
+    let region_code = route.region_code.clone();
+    catalog.add_upstream_account_route(route);
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            MODEL_CATALOG_KEY,
+            MODEL_ID,
+            PriceSide::UpstreamCost,
+            BillingMeter::LlmInputToken,
+            Money::usd("0.100000").unwrap(),
+        )
+        .with_region_code(&region_code)
+        .for_upstream_account(&supplier_code, account_id),
+    );
+}
+
+#[test]
+fn pricing_gap_in_one_bound_group_falls_back_to_another_group() {
+    let standard_group_id = 40;
+    let priced_group_id = 41;
+    let mut catalog = catalog_for_group(account_group(
+        standard_group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::None,
+    ));
+    catalog.add_upstream_account_group(account_group(
+        priced_group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::None,
+    ));
+    catalog.add_api_key(
+        GatewayApiKey::new(API_KEY_ID, standard_group_id, "sk-test", "hash:sk-test")
+            .with_owner(TENANT_ID, ORGANIZATION_ID, USER_ID)
+            .with_account_group_bindings(vec![
+                GatewayApiKeyAccountGroupBinding::new(
+                    standard_group_id,
+                    "standard",
+                    "standard",
+                    100,
+                    100,
+                ),
+                GatewayApiKeyAccountGroupBinding::new(
+                    priced_group_id,
+                    "priced",
+                    "standard",
+                    1,
+                    100,
+                ),
+            ]),
+    );
+    // The higher-priority group only has an input price; the lower-priority
+    // group is fully priced. A pricing gap in one bound group must not fail
+    // the whole request.
+    add_route_with_input_cost_only(
+        &mut catalog,
+        account_route(standard_group_id, 3001, "supplier-a", 1, 100),
+    );
+    add_route_and_price(
+        &mut catalog,
+        account_route(priced_group_id, 4001, "supplier-b", 1, 100),
+    );
+
+    let selected = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(standard_group_id))
+        .unwrap();
+
+    assert_eq!(priced_group_id, selected.group_id);
+    assert_eq!(4001, selected.route.account_id);
+}
+
+#[test]
+fn candidate_with_missing_output_price_yields_to_priced_candidate() {
+    let group_id = 42;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    add_route_with_input_cost_only(
+        &mut catalog,
+        account_route(group_id, 3001, "supplier-a", 1, 100),
+    );
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 3002, "supplier-b", 2, 100),
+    );
+
+    let selected = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
+        .unwrap();
+
+    assert_eq!(3002, selected.route.account_id);
+}
+
+#[test]
+fn account_route_without_api_request_price_reports_pricing_unavailable() {
+    let group_id = 43;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::None,
+    ));
+    catalog.add_upstream_account_route(account_route(group_id, 3001, "supplier-a", 1, 100));
+
+    let query = SelectUpstreamAccountRouteQuery {
+        context: context(group_id),
+        route_key: RESOURCE_ROUTE_KEY.to_owned(),
+        api_code: RESOURCE_API_CODE.to_owned(),
+        capability: RoutingCapability::Network,
+    };
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_account_route(query)
+        .unwrap_err();
+
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::PricingUnavailable,
+        error.kind()
+    );
 }

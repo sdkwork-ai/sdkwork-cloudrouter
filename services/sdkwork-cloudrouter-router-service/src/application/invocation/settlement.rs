@@ -162,11 +162,16 @@ fn command_for_line(
             .api_key_name_snapshot
             .clone()
             .unwrap_or_default(),
-        account_group_id: invocation.subject.account_group_id.unwrap_or_default(),
-        upstream_account_group_snapshot: invocation
-            .subject
+        // Attribute to the account group that actually routed the request
+        // (multi-group api keys may route through a non-default group).
+        account_group_id: account
+            .account_group_id
+            .or(invocation.subject.account_group_id)
+            .unwrap_or_default(),
+        upstream_account_group_snapshot: account
             .account_group_code
             .clone()
+            .or_else(|| invocation.subject.account_group_code.clone())
             .unwrap_or_else(|| quote.group_code.clone()),
         catalog_key: quote.catalog_key.clone(),
         requested_model: quote.requested_model.clone(),

@@ -128,6 +128,9 @@ fn routed_account() -> InvocationAccount {
         timeout_ms: Some(30_000),
         retry_policy: None,
         provider_model: Some("gpt-4o-mini".to_owned()),
+        account_group_id: None,
+        account_group_code: None,
+        pricing_plan_code: None,
     }
 }
 

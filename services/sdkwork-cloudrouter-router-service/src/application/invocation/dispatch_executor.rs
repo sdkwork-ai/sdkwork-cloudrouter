@@ -376,6 +376,9 @@ fn account_from_candidate(
         timeout_ms: candidate.timeout_ms,
         retry_policy: candidate.retry_policy.clone(),
         provider_model: candidate.provider_model.clone(),
+        account_group_id: candidate.account_group_id,
+        account_group_code: candidate.account_group_code.clone(),
+        pricing_plan_code: candidate.pricing_plan_code.clone(),
     })
 }
 

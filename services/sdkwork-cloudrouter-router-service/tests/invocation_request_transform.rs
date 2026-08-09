@@ -74,6 +74,9 @@ fn invocation_with_auth(auth_profile: ProviderAuthProfile) -> Invocation {
         timeout_ms: Some(30_000),
         retry_policy: None,
         provider_model: Some("gpt-4o-mini-provider".to_owned()),
+        account_group_id: None,
+        account_group_code: None,
+        pricing_plan_code: None,
     });
     invocation
 }

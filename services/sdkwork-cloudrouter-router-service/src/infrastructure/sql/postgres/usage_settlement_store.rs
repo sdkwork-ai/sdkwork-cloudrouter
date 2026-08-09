@@ -26,7 +26,12 @@ const USAGE_SETTLEMENT_BUSINESS_TYPE: &str = "usage_settlement";
 const INSUFFICIENT_BALANCE_MESSAGE: &str = "insufficient account balance";
 const USAGE_SETTLEMENT_PENDING: i64 = 0;
 const USAGE_SETTLEMENT_SUCCESS: i64 = 2;
-const USAGE_SETTLEMENT_FAILED: i64 = 3;
+/// Retryable failure (e.g. insufficient points): the fact is re-selected on
+/// later runs after a backoff window so a topped-up wallet can settle it.
+const USAGE_SETTLEMENT_RETRYABLE_FAILED: i64 = 3;
+/// Terminal failure (invalid amount/snapshot): the fact is never retried so
+/// permanently unpayable or malformed facts cannot churn the settlement batch.
+const USAGE_SETTLEMENT_TERMINAL_FAILED: i64 = 4;
 const DECIMAL_SCALE: i128 = 1_000_000_000_000;
 const POINTS_PER_MAJOR_UNIT: i128 = 10;
 const MIN_BILLABLE_POINT_SCALED: i128 = DECIMAL_SCALE;
@@ -207,7 +212,13 @@ async fn load_settleable_usage_facts(
         FROM ai_metering_usage
         WHERE ($1 <= 0 OR tenant_id = $1)
           AND ($2 <= 0 OR organization_id = $2)
-          AND settlement_status IN ($3, $4)
+          AND (
+              settlement_status = $3
+              OR (
+                  settlement_status = $4
+                  AND (settled_at IS NULL OR settled_at < now() - interval '5 minutes')
+              )
+          )
         ORDER BY COALESCE(occurred_at, CURRENT_TIMESTAMP), id
         LIMIT $5
         FOR UPDATE SKIP LOCKED
@@ -216,7 +227,7 @@ async fn load_settleable_usage_facts(
     .bind(command.tenant_id)
     .bind(command.organization_id)
     .bind(USAGE_SETTLEMENT_PENDING)
-    .bind(USAGE_SETTLEMENT_FAILED)
+    .bind(USAGE_SETTLEMENT_RETRYABLE_FAILED)
     .bind(command.limit)
     .fetch_all(&mut **tx)
     .await
@@ -301,7 +312,7 @@ async fn mark_invalid_usage_fact_failed(
     failure_code: &str,
     failure_message: &str,
 ) -> SettlementResult<()> {
-    mark_settlement_failed(
+    mark_settlement_terminal_failed(
         tx,
         usage_fact,
         usage_fact.id,
@@ -389,6 +400,7 @@ async fn settle_usage_group(
             for candidate in &group.candidates {
                 mark_settlement_failed(
                     tx,
+                    command,
                     &candidate.usage_fact,
                     candidate.usage_fact.id,
                     "INSUFFICIENT_POINTS",
@@ -498,6 +510,43 @@ async fn mark_settlement_success(
 
 async fn mark_settlement_failed(
     tx: &mut Transaction<'_, Postgres>,
+    command: &UsageSettlementCommand,
+    usage_fact: &UsageFactForSettlement,
+    settlement_id: i64,
+    failure_code: &str,
+    failure_message: &str,
+) -> SettlementResult<()> {
+    // `settled_at` doubles as the last-attempt timestamp for retryable
+    // failures so the loader can back off re-selection (see
+    // `FAILED_SETTLEMENT_RETRY_BACKOFF_SQL`).
+    sqlx::query(
+        r#"
+        UPDATE ai_metering_usage
+        SET settlement_status = $1,
+            settlement_id = $2,
+            settled_at = $3::timestamp AT TIME ZONE 'UTC',
+            failure_code = $4,
+            failure_message = $5
+        WHERE id = $6
+        "#,
+    )
+    .bind(USAGE_SETTLEMENT_RETRYABLE_FAILED)
+    .bind(settlement_id)
+    .bind(&command.requested_at)
+    .bind(failure_code)
+    .bind(truncate_message(failure_message))
+    .bind(usage_fact.id)
+    .execute(&mut **tx)
+    .await
+    .map_err(|error| store_error("failed to mark usage fact settlement failed", error))?;
+    Ok(())
+}
+
+/// Terminal failure marker for facts that can never be settled (invalid
+/// amount, oversized pricing snapshot). They leave the settlement queue
+/// permanently instead of churning the batch on every run.
+async fn mark_settlement_terminal_failed(
+    tx: &mut Transaction<'_, Postgres>,
     usage_fact: &UsageFactForSettlement,
     settlement_id: i64,
     failure_code: &str,
@@ -514,14 +563,14 @@ async fn mark_settlement_failed(
         WHERE id = $5
         "#,
     )
-    .bind(USAGE_SETTLEMENT_FAILED)
+    .bind(USAGE_SETTLEMENT_TERMINAL_FAILED)
     .bind(settlement_id)
     .bind(failure_code)
     .bind(truncate_message(failure_message))
     .bind(usage_fact.id)
     .execute(&mut **tx)
     .await
-    .map_err(|error| store_error("failed to mark usage fact settlement failed", error))?;
+    .map_err(|error| store_error("failed to mark usage fact settlement terminally failed", error))?;
     Ok(())
 }
 

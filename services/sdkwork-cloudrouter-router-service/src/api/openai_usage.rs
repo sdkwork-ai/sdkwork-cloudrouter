@@ -524,8 +524,15 @@ pub(crate) fn build_request_trace_command(
         user_id: context.user_id,
         api_key_id: context.api_key_id,
         api_key_name_snapshot: context.api_key_name_snapshot.clone(),
-        account_group_id: context.group_id,
-        upstream_account_group_snapshot: context.group_code.clone(),
+        // Attribute the trace to the account group that actually routed the
+        // request, matching the usage fact attribution (`route.group_id`).
+        // This keeps error traces and bills aligned for multi-group keys.
+        account_group_id: route
+            .map(|route| route.group_id)
+            .unwrap_or(context.group_id),
+        upstream_account_group_snapshot: route
+            .map(|route| route.group_code.clone())
+            .unwrap_or_else(|| context.group_code.clone()),
         catalog_key: requested_model_catalog_key.clone(),
         requested_model: invocation_context.requested_model.clone(),
         requested_model_catalog_key,

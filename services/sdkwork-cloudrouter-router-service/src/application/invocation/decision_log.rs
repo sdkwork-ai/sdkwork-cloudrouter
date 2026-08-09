@@ -167,8 +167,12 @@ where
         organization_id: invocation.subject.organization_id,
         user_id: positive_id(invocation.subject.user_id),
         api_key_id: invocation.subject.api_key_id,
-        account_group_id: invocation.subject.account_group_id,
-        account_group_code: invocation.subject.account_group_code.clone(),
+        account_group_id: account
+            .and_then(|account| account.account_group_id)
+            .or(invocation.subject.account_group_id),
+        account_group_code: account
+            .and_then(|account| account.account_group_code.clone())
+            .or_else(|| invocation.subject.account_group_code.clone()),
         policy_id: invocation.routing.policy_id,
         profile_id: None,
         rule_id: invocation.routing.rule_id,

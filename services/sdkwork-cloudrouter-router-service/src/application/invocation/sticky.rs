@@ -146,7 +146,9 @@ impl InvocationInterceptor for StickyCommitInterceptor {
                 tenant_id: invocation.subject.tenant_id,
                 organization_id: invocation.subject.organization_id,
                 api_key_id: invocation.subject.api_key_id,
-                account_group_id: invocation.subject.account_group_id,
+                account_group_id: account
+                    .account_group_id
+                    .or(invocation.subject.account_group_id),
                 object_type: sticky.object_type.clone(),
                 object_id,
                 parent_object_type: sticky.parent_object_type.clone(),

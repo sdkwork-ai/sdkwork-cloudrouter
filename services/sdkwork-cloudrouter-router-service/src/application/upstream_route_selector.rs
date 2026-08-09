@@ -170,6 +170,7 @@ enum CandidateUpstreamModelRouteEvaluation {
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum CandidateUpstreamAccountRouteEvaluation {
     Selected(Box<UpstreamAccountRoute>),
+    PricingUnavailable(DomainError),
     RoutingInvalid(DomainError),
     NoCallableCandidate,
 }
@@ -197,6 +198,7 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         query: SelectUpstreamModelRouteQuery,
     ) -> Result<SelectedUpstreamModelRoutePlan, UpstreamRouteSelectionError> {
         let mut last_unavailable = None;
+        let mut last_pricing_unavailable = None;
         for context in self.route_contexts(&query.context)? {
             let scoped_query = SelectUpstreamModelRouteQuery {
                 context,
@@ -207,7 +209,11 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                 Err(error)
                     if error.kind() == UpstreamRouteSelectionErrorKind::PricingUnavailable =>
                 {
-                    return Err(error);
+                    // A pricing gap in one bound group must not fail the whole
+                    // request: another bound group may have a priced account
+                    // for the same model. Prefer the pricing error if every
+                    // group fails, because it is the most actionable signal.
+                    last_pricing_unavailable = Some(error);
                 }
                 Err(error) => {
                     last_unavailable = Some(error);
@@ -215,7 +221,7 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             }
         }
 
-        Err(last_unavailable.unwrap_or_else(|| {
+        Err(last_pricing_unavailable.or(last_unavailable).unwrap_or_else(|| {
             UpstreamRouteSelectionError::upstream_route_unavailable(format!(
                 "upstream route is not available for model: {}",
                 query.catalog_key
@@ -254,6 +260,31 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             return Err(UpstreamRouteSelectionError::upstream_route_unavailable(
                 unavailable_model_route_message(&query, model_routes_loaded, account_routes_loaded),
             ));
+        }
+
+        // Account-resource gate: the selected account group must contain at
+        // least one callable account whose resource bindings (resource
+        // entitlements) cover the requested model/api. When the group has no
+        // supporting account, fail fast with a clear error instead of falling
+        // through the policy scopes and reporting a misleading
+        // "routing policy scope is required" error.
+        let supporting_account_routes = account_routes
+            .iter()
+            .filter(|route| {
+                self.account_route_is_callable(route)
+                    && account_route_allows_model_request(
+                        route,
+                        &RouteCandidate::new(query.context.group_id, 1),
+                        &query,
+                    )
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+        if supporting_account_routes.is_empty() {
+            return Err(UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                "no upstream account in account group {} supports model {} for api {}",
+                query.context.group_code, query.catalog_key, query.api_code
+            )));
         }
 
         let policy_scopes = self.select_policy_scopes(&query.context);
@@ -298,6 +329,7 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         query: SelectUpstreamAccountRouteQuery,
     ) -> Result<SelectedUpstreamAccountRoute, UpstreamRouteSelectionError> {
         let mut last_unavailable = None;
+        let mut last_pricing_unavailable = None;
         for context in self.route_contexts(&query.context)? {
             let scoped_query = SelectUpstreamAccountRouteQuery {
                 context,
@@ -308,7 +340,9 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                 Err(error)
                     if error.kind() == UpstreamRouteSelectionErrorKind::PricingUnavailable =>
                 {
-                    return Err(error);
+                    // See `select_model_route_plan`: a pricing gap in one
+                    // bound group must not fail the whole request.
+                    last_pricing_unavailable = Some(error);
                 }
                 Err(error) => {
                     last_unavailable = Some(error);
@@ -316,7 +350,7 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             }
         }
 
-        Err(last_unavailable.unwrap_or_else(|| {
+        Err(last_pricing_unavailable.or(last_unavailable).unwrap_or_else(|| {
             UpstreamRouteSelectionError::upstream_route_unavailable(format!(
                 "upstream route is not available for configured upstream account route: routing policy scope is required for route {}",
                 query.route_key
@@ -343,6 +377,26 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             ));
         }
 
+        // Account-resource gate: the selected account group must contain at
+        // least one callable account whose resource bindings cover the
+        // requested api resource. When the group has no supporting account,
+        // fail fast with a clear error instead of reporting a misleading
+        // "routing policy scope is required" error.
+        let supporting_account_routes = routes
+            .iter()
+            .filter(|route| {
+                self.account_route_is_callable(route)
+                    && account_route_allows_api_resource(route, &query)
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+        if supporting_account_routes.is_empty() {
+            return Err(UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                "no upstream account in account group {} supports api resource {}",
+                query.context.group_code, query.api_code
+            )));
+        }
+
         let policy_scopes = self.select_policy_scopes(&query.context);
         let mut last_unavailable = None;
         for policy_scope in policy_scopes {
@@ -365,7 +419,7 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             return Err(error);
         }
         if let Some(selection) =
-            self.select_group_bound_account_route(&routes, &account_group_bindings, &query.context)?
+            self.select_group_bound_account_route(&routes, &account_group_bindings, &query)?
         {
             return Ok(selection);
         }
@@ -614,7 +668,7 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             let candidate_chain = scoped_candidate_chain(&rule, &policy, account_group_bindings);
             let used_rule_fallback_chain =
                 candidate_chain_uses_rule_fallback(&rule, &candidate_chain);
-            match self.evaluate_candidate_account_routes(routes, candidate_chain) {
+            match self.evaluate_candidate_account_routes(routes, candidate_chain, query) {
                 CandidateUpstreamAccountRouteEvaluation::Selected(route) => {
                     return PolicyScopeUpstreamAccountRouteSelection::Selected(Box::new(
                         selected_upstream_account_route(
@@ -624,6 +678,14 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                             Some(rule.id),
                         ),
                     ));
+                }
+                CandidateUpstreamAccountRouteEvaluation::PricingUnavailable(error) => {
+                    return PolicyScopeUpstreamAccountRouteSelection::HardError(
+                        UpstreamRouteSelectionError::pricing_unavailable(format!(
+                            "pricing is not available for configured upstream account route: policy {} rule {} candidate price is unavailable for route {}: {}",
+                            policy.policy_code, rule.rule_code, query.route_key, error
+                        )),
+                    );
                 }
                 CandidateUpstreamAccountRouteEvaluation::RoutingInvalid(error) => {
                     return PolicyScopeUpstreamAccountRouteSelection::HardError(
@@ -874,12 +936,14 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         &self,
         routes: &[UpstreamAccountRoute],
         candidates: Vec<RouteCandidate>,
+        query: &SelectUpstreamAccountRouteQuery,
     ) -> CandidateUpstreamAccountRouteEvaluation {
         for candidate in candidates {
             let candidate_routes = routes
                 .iter()
                 .filter(|route| {
                     account_route_matches_candidate_group(route, &candidate)
+                        && account_route_allows_api_resource(route, query)
                         && candidate_region_matches(
                             &route.region_code,
                             candidate.region_code.as_deref(),
@@ -905,22 +969,62 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             let Some(route) = routes.into_iter().next() else {
                 continue;
             };
+            // Model-less requests are api-request-metered; verify the
+            // candidate has an api-request price so pricing preflight cannot
+            // fail after the account was selected.
+            if let Err(error) = self.ensure_account_route_is_priced(query, &route) {
+                return CandidateUpstreamAccountRouteEvaluation::PricingUnavailable(error);
+            }
             return CandidateUpstreamAccountRouteEvaluation::Selected(Box::new(route));
         }
         CandidateUpstreamAccountRouteEvaluation::NoCallableCandidate
+    }
+
+    /// Verifies the api-request price exists for the account route on the
+    /// model-less (api-request-metered) path.
+    fn ensure_account_route_is_priced(
+        &self,
+        query: &SelectUpstreamAccountRouteQuery,
+        route: &UpstreamAccountRoute,
+    ) -> DomainResult<()> {
+        let resolved = PricingResolver::new(self.catalog).resolve(ResolveModelPriceQuery {
+            api_key_id: query.context.api_key_id,
+            account_group_id: Some(query.context.group_id),
+            model: query.route_key.clone(),
+            billing_meter: BillingMeter::ApiRequest,
+            supplier_code: Some(route.supplier_code.clone()),
+            account_id: Some(route.account_id),
+            region_code: Some(route.region_code.clone()),
+        })?;
+        if resolved.procurement_cost.is_none() {
+            return Err(DomainError::new(format!(
+                "upstream cost price not found for route {}, supplier {}, account {}, and region {}",
+                query.route_key, route.supplier_code, route.account_id, route.region_code
+            )));
+        }
+        Ok(())
     }
 
     fn select_group_bound_account_route(
         &self,
         routes: &[UpstreamAccountRoute],
         account_group_bindings: &UpstreamAccountGroupBindings,
-        context: &AuthenticatedApiKeyContext,
+        query: &SelectUpstreamAccountRouteQuery,
     ) -> Result<Option<SelectedUpstreamAccountRoute>, UpstreamRouteSelectionError> {
         let candidates = group_bound_account_route_candidates(routes, account_group_bindings);
-        match self.evaluate_candidate_account_routes(routes, candidates) {
+        match self.evaluate_candidate_account_routes(routes, candidates, query) {
             CandidateUpstreamAccountRouteEvaluation::Selected(route) => {
                 Ok(Some(selected_upstream_account_route(
-                    *route, context, None, None,
+                    *route,
+                    &query.context,
+                    None,
+                    None,
+                )))
+            }
+            CandidateUpstreamAccountRouteEvaluation::PricingUnavailable(error) => {
+                Err(UpstreamRouteSelectionError::pricing_unavailable(format!(
+                    "pricing is not available for group-bound upstream account route for route {}: {}",
+                    query.route_key, error
                 )))
             }
             CandidateUpstreamAccountRouteEvaluation::RoutingInvalid(error) => Err(
@@ -980,27 +1084,61 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             })
     }
 
+    /// Verifies the candidate can be priced for every meter the invocation
+    /// will settle, not just the input meter.
+    ///
+    /// Chat (composite) billing resolves input, output, and cache-read prices;
+    /// checking only the input meter here would let a candidate reach
+    /// pricing preflight with a missing output price, failing the whole
+    /// request instead of letting another priced candidate win. Cache-read is
+    /// optional: a missing cache price only disables cache-meter billing.
     fn ensure_route_is_priced(
         &self,
         query: &SelectUpstreamModelRouteQuery,
         route: &ModelUpstreamRoute,
     ) -> DomainResult<()> {
-        let resolved = PricingResolver::new(self.catalog).resolve(ResolveModelPriceQuery {
-            api_key_id: query.context.api_key_id,
-            account_group_id: Some(query.context.group_id),
-            model: route.catalog_key.clone(),
-            billing_meter: query.billing_meter.clone(),
-            supplier_code: Some(route.supplier_code.clone()),
-            account_id: Some(route.account_id),
-            region_code: Some(route.region_code.clone()),
-        })?;
-        if resolved.procurement_cost.is_none() {
-            return Err(DomainError::new(format!(
-                "upstream cost price not found for model {}, supplier {}, account {}, and region {}",
-                route.catalog_key, route.supplier_code, route.account_id, route.region_code
-            )));
+        let meters = composite_pricing_meters(&query.billing_meter);
+        for meter in meters {
+            let resolved = PricingResolver::new(self.catalog).resolve(ResolveModelPriceQuery {
+                api_key_id: query.context.api_key_id,
+                account_group_id: Some(query.context.group_id),
+                model: route.catalog_key.clone(),
+                billing_meter: meter.clone(),
+                supplier_code: Some(route.supplier_code.clone()),
+                account_id: Some(route.account_id),
+                region_code: Some(route.region_code.clone()),
+            });
+            match resolved {
+                Ok(resolved) if resolved.procurement_cost.is_some() => {}
+                Ok(_) if meter == BillingMeter::LlmCacheReadToken => {}
+                Ok(_) => {
+                    return Err(DomainError::new(format!(
+                        "upstream cost price not found for model {}, supplier {}, account {}, and region {}",
+                        route.catalog_key, route.supplier_code, route.account_id, route.region_code
+                    )));
+                }
+                Err(_) if meter == BillingMeter::LlmCacheReadToken => {}
+                Err(error) => return Err(error),
+            }
         }
         Ok(())
+    }
+}
+
+/// Meters that must be priced for a route candidate before dispatch.
+///
+/// Mirrors the invocation-layer composite billing profile: chat calls settle
+/// input/output/cache-read meters while single-meter surfaces (embeddings,
+/// images, audio, video) settle only their own meter.
+fn composite_pricing_meters(meter: &BillingMeter) -> Vec<BillingMeter> {
+    if *meter == BillingMeter::LlmInputToken {
+        vec![
+            BillingMeter::LlmInputToken,
+            BillingMeter::LlmOutputToken,
+            BillingMeter::LlmCacheReadToken,
+        ]
+    } else {
+        vec![meter.clone()]
     }
 }
 
@@ -1442,6 +1580,86 @@ fn account_route_allows_model_request(
             .iter()
             .any(|entitlement| resource_entitlement_matches_request(entitlement, query)),
     }
+}
+
+/// Model-less request path: the account's resource bindings must cover the
+/// requested api resource. Model-scoped entitlements cannot be verified
+/// without a model, so an account whose entitlements only name models is
+/// never selected for an api-request-metered call (fail closed).
+fn account_route_allows_api_resource(
+    route: &UpstreamAccountRoute,
+    query: &SelectUpstreamAccountRouteQuery,
+) -> bool {
+    let Some(binding) = route
+        .account_group_bindings
+        .iter()
+        .find(|binding| binding.account_group_id == query.context.group_id)
+    else {
+        return false;
+    };
+    match binding.resource_entitlements.as_deref() {
+        None => true,
+        Some(resource_entitlements) => resource_entitlements
+            .iter()
+            .any(|entitlement| resource_entitlement_matches_api_request(entitlement, query)),
+    }
+}
+
+fn resource_entitlement_matches_api_request(
+    entitlement: &crate::domain::UpstreamResourceEntitlement,
+    query: &SelectUpstreamAccountRouteQuery,
+) -> bool {
+    // Model-scoped constraints cannot be verified on a model-less request:
+    // fail closed so an account whose entitlements only name models is never
+    // picked for an api-request-metered call.
+    if non_blank(entitlement.catalog_key.as_deref())
+        || non_blank(entitlement.model.as_deref())
+        || non_blank(entitlement.provider_native_model.as_deref())
+    {
+        return false;
+    }
+    let mut constrained = false;
+    if let Some(vendor_code) = entitlement
+        .vendor_code
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+    {
+        constrained = true;
+        let matches = parse_model_catalog_identity(&query.route_key)
+            .map(|identity| identity.vendor_code.eq_ignore_ascii_case(vendor_code.trim()))
+            .unwrap_or(false);
+        if !matches {
+            return false;
+        }
+    }
+    if let Some(api_code) = entitlement
+        .api_code
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+    {
+        constrained = true;
+        if normalize_api_scope_value(api_code) != normalize_api_scope_value(&query.api_code) {
+            return false;
+        }
+    }
+    if let Some(modality) = entitlement
+        .modality_code
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+    {
+        constrained = true;
+        if !capability_binding_codes(query.capability)
+            .iter()
+            .any(|expected| modality.trim().eq_ignore_ascii_case(expected))
+        {
+            return false;
+        }
+    }
+    constrained
+}
+
+fn non_blank(value: Option<&str>) -> bool {
+    value.map(str::trim).is_some_and(|value| !value.is_empty())
 }
 
 fn matching_resource_entitlement<'a>(

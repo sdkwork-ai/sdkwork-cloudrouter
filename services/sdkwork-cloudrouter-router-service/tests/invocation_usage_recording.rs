@@ -174,6 +174,9 @@ fn account() -> InvocationAccount {
         timeout_ms: None,
         retry_policy: None,
         provider_model: Some("gpt-4o-mini-upstream".to_owned()),
+        account_group_id: None,
+        account_group_code: None,
+        pricing_plan_code: None,
     }
 }
 

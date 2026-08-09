@@ -570,6 +570,9 @@ mod tests {
             timeout_ms: Some(DEFAULT_DISPATCH_TIMEOUT_MS),
             retry_policy: None,
             provider_model: None,
+            account_group_id: None,
+            account_group_code: None,
+            pricing_plan_code: None,
         }
     }
 

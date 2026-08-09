@@ -184,11 +184,13 @@ fn trace_command_from_invocation(
             .api_key_name_snapshot
             .clone()
             .unwrap_or_default(),
-        account_group_id: invocation.subject.account_group_id.unwrap_or_default(),
-        upstream_account_group_snapshot: invocation
-            .subject
-            .account_group_code
-            .clone()
+        account_group_id: account
+            .and_then(|account| account.account_group_id)
+            .or(invocation.subject.account_group_id)
+            .unwrap_or_default(),
+        upstream_account_group_snapshot: account
+            .and_then(|account| account.account_group_code.clone())
+            .or_else(|| invocation.subject.account_group_code.clone())
             .or_else(|| {
                 invocation
                     .routing

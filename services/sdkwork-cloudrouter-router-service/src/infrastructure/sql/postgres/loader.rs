@@ -182,11 +182,25 @@ impl PostgresPricingCatalogLoader {
         )
     }
 
-    pub async fn load_routing_config_version(&self) -> Result<i64, PostgresCatalogLoadError> {
+    /// Returns a routing-config change fingerprint.
+    ///
+    /// The fingerprint combines the explicit `ai_config_version` counters
+    /// (bumped transactionally by upstream account/group/resource admin
+    /// writes) with the max `updated_at` of every other low-frequency catalog
+    /// source: gateway api keys and their group bindings, the model catalog
+    /// (models/vendors/mappings/prices), and the routing resource directory.
+    /// Any admin change to those sources therefore triggers a catalog refresh
+    /// within one probe interval instead of waiting for the fallback tick.
+    ///
+    /// High-frequency tables (health state, metric snapshots, sticky object
+    /// routes, metering) are deliberately excluded so routine request traffic
+    /// never forces a full reload.
+    pub async fn load_routing_config_version(&self) -> Result<String, PostgresCatalogLoadError> {
         sqlx::query_scalar(
             r#"
-            SELECT CAST(COALESCE(
-                (
+            SELECT md5(string_agg(fingerprint_part, '|' ORDER BY fingerprint_part))
+            FROM (
+                SELECT 'cv-global:' || COALESCE((
                     SELECT config_version
                     FROM ai_config_version
                     WHERE tenant_id = 0
@@ -195,17 +209,55 @@ impl PostgresPricingCatalogLoader {
                       AND status = 1
                       AND deleted_at IS NULL
                     LIMIT 1
-                ),
-                (
-                    SELECT COALESCE(SUM(config_version), 0)
-                    FROM ai_config_version
-                    WHERE config_scope = $2
-                      AND status = 1
-                      AND deleted_at IS NULL
-                      AND NOT (tenant_id = 0 AND organization_id = 0)
-                ),
-                0
-            ) AS BIGINT)
+                ), 0)::text AS fingerprint_part
+                UNION ALL
+                SELECT 'cv-tenant:' || COALESCE(SUM(config_version), 0)::text
+                FROM ai_config_version
+                WHERE config_scope = $2
+                  AND status = 1
+                  AND deleted_at IS NULL
+                  AND NOT (tenant_id = 0 AND organization_id = 0)
+                UNION ALL
+                SELECT 'api-key:' || COALESCE(MAX(updated_at)::text, '')
+                FROM iam_gateway_api_key
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'api-key-group:' || COALESCE(MAX(updated_at)::text, '')
+                FROM iam_gateway_api_key_account_group
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'model-vendor:' || COALESCE(MAX(updated_at)::text, '')
+                FROM ai_model_vendor
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'model:' || COALESCE(MAX(updated_at)::text, '')
+                FROM ai_model
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'mapping-rule:' || COALESCE(MAX(updated_at)::text, '')
+                FROM ai_model_mapping_rule
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'mapping-binding:' || COALESCE(MAX(updated_at)::text, '')
+                FROM ai_model_mapping_rule_binding
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'pricing:' || COALESCE(MAX(updated_at)::text, '')
+                FROM ai_model_pricing
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'resource:' || COALESCE(MAX(updated_at)::text, '')
+                FROM ai_resource
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'resource-group:' || COALESCE(MAX(updated_at)::text, '')
+                FROM ai_resource_group
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'resource-group-item:' || COALESCE(MAX(updated_at)::text, '')
+                FROM ai_resource_group_item
+                WHERE deleted_at IS NULL
+            ) fingerprint_parts
             "#,
         )
         .bind(AI_ROUTING_CONFIG_SCOPE)
