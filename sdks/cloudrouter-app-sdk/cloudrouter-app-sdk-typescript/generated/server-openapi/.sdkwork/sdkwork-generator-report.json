@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "5598cb55b59c55011355da9f9c2a2a7e2be81382d7c3ce45ccd78984d83c9362",
+  "changeFingerprint": "37c0462766fb4e1f8c9d8fbab21fe11fdf6fb2a62ffa8d6c5ee9e78880d93980",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -34,7 +34,6 @@
           "src/api/chat.ts",
           "src/api/iam.ts",
           "src/api/index.ts",
-          "src/api/memory.ts",
           "src/api/notification.ts",
           "src/api/paths.ts",
           "src/api/runtime.ts",
@@ -302,10 +301,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 162,
-    "models": 132,
-    "apis": 7,
-    "types": 134
+    "totalFiles": 152,
+    "models": 123,
+    "apis": 6,
+    "types": 125
   },
   "warnings": [
     {
@@ -315,14 +314,6 @@
     {
       "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied CloudRouter strict TypeScript contract normalization to src/types/index.ts"
-    },
-    {
-      "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied CloudRouter strict TypeScript contract normalization to src/api/ai.ts"
-    },
-    {
-      "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied CloudRouter strict TypeScript contract normalization to src/api/memory.ts"
     },
     {
       "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -352,12 +343,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 117,
+    "writtenFiles": 116,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "5598cb55b59c55011355da9f9c2a2a7e2be81382d7c3ce45ccd78984d83c9362",
+    "changeFingerprint": "37c0462766fb4e1f8c9d8fbab21fe11fdf6fb2a62ffa8d6c5ee9e78880d93980",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -375,7 +366,6 @@
         "src/api/chat.ts",
         "src/api/iam.ts",
         "src/api/index.ts",
-        "src/api/memory.ts",
         "src/api/notification.ts",
         "src/api/paths.ts",
         "src/api/runtime.ts",
@@ -507,7 +497,6 @@
             "src/api/chat.ts",
             "src/api/iam.ts",
             "src/api/index.ts",
-            "src/api/memory.ts",
             "src/api/notification.ts",
             "src/api/paths.ts",
             "src/api/runtime.ts",

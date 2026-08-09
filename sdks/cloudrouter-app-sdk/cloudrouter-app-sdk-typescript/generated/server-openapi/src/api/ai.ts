@@ -1,6 +1,9 @@
 import { appApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
+
 import type { AppRoutingAccountGroupListResponse, AppRoutingApiKeyListResponse, AppRoutingRequestTraceListResponse, AppRoutingUsageSnapshot, DashboardOverviewResponse, GatewayTracesPage, UsageLogsResponse } from '../types';
+
+
 export interface AiUsageLogsListParams {
   page?: number;
   pageSize?: number;
@@ -149,63 +152,6 @@ export class AiRoutingApi {
 
 }
 
-export class AiGenerationsWorkspaceApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** List playground generation history from service */
-  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/ai/generations/workspace`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
-  }
-}
-
-export class AiGenerationsImagesTextToImageApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Run playground asset generation */
-  async create(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/ai/generations/images/text_to_image`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, sdkworkUnwrapKind: 'data' });
-  }
-}
-
-export class AiGenerationsImagesApi {
-  private client: HttpClient;
-  public readonly textToImage: AiGenerationsImagesTextToImageApi;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-    this.textToImage = new AiGenerationsImagesTextToImageApi(client);
-  }
-
-}
-
-export class AiGenerationsApi {
-  private client: HttpClient;
-  public readonly images: AiGenerationsImagesApi;
-  public readonly workspace: AiGenerationsWorkspaceApi;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-    this.images = new AiGenerationsImagesApi(client);
-    this.workspace = new AiGenerationsWorkspaceApi(client);
-  }
-
-
-/** List generation history */
-  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/ai/generations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
-  }
-}
-
 export interface AiGatewayTracesListParams {
   cursor?: string;
   pageSize?: number;
@@ -282,7 +228,6 @@ export class AiApi {
   private client: HttpClient;
   public readonly dashboard: AiDashboardApi;
   public readonly gateway: AiGatewayApi;
-  public readonly generations: AiGenerationsApi;
   public readonly routing: AiRoutingApi;
   public readonly usage: AiUsageApi;
 
@@ -290,7 +235,6 @@ export class AiApi {
     this.client = client;
     this.dashboard = new AiDashboardApi(client);
     this.gateway = new AiGatewayApi(client);
-    this.generations = new AiGenerationsApi(client);
     this.routing = new AiRoutingApi(client);
     this.usage = new AiUsageApi(client);
   }

@@ -60,7 +60,6 @@ const client = new SdkworkAppClient({
 - `client.ai` - ai API
 - `client.chat` - chat API
 - `client.iam` - iam API
-- `client.memory` - memory API
 - `client.notification` - notification API
 - `client.runtime` - runtime API
 - `client.system` - system API
@@ -70,8 +69,8 @@ const client = new SdkworkAppClient({
 ### ai
 
 ```typescript
-// List generation history
-const result = await client.ai.generations.list();
+// List routing usage
+const result = await client.ai.routing.usage.retrieve();
 ```
 
 ### chat
@@ -93,13 +92,6 @@ const body = {
   inviteCode: 'inviteCode',
 };
 const result = await client.iam.invite.validate.create(body);
-```
-
-### memory
-
-```typescript
-// List memory spaces
-const result = await client.memory.spaces.list();
 ```
 
 ### notification

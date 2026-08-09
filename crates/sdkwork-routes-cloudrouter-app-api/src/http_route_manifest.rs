@@ -18,24 +18,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
-        "/app/v3/api/ai/generations",
-        "ai",
-        "generations.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/ai/generations/images/text_to_image",
-        "ai",
-        "generations.images.textToImage.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/ai/generations/workspace",
-        "ai",
-        "generations.workspace.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
         "/app/v3/api/ai/routing/account_groups",
         "ai",
         "routing.accountGroups.list",
@@ -159,42 +141,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/app/v3/api/iam/users/settings",
         "iam",
         "users.settings.update",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/memory/entries/{entryId}",
-        "memory",
-        "entries.retrieve",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/memory/spaces",
-        "memory",
-        "spaces.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/memory/spaces",
-        "memory",
-        "spaces.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/memory/spaces/{spaceId}",
-        "memory",
-        "spaces.retrieve",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/memory/spaces/{spaceId}/entries",
-        "memory",
-        "spaces.entries.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/memory/spaces/{spaceId}/entries",
-        "memory",
-        "spaces.entries.create",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,

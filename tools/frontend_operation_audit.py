@@ -130,6 +130,7 @@ class FrontendOperationAudit:
         r"\bSdkworkGenerationService\b[\s\S]*\bservice\s*\.\s*createGenerationCommand\s*\("
     )
     GENERATIONS_WORKSPACE_PATTERN = re.compile(r"\bservice\s*\.\s*getWorkspace\s*\(")
+    GENERATIONS_SERVICE_TYPE_PATTERN = re.compile(r"\bSdkworkGenerationService\b")
     GENERATIONS_API_PATH_PREFIXES = (
         "/app/v3/api/generations",
     )
@@ -543,6 +544,20 @@ class FrontendOperationAudit:
                 and operation in self.AUTH_OPERATION_VARIANTS
                 and f"{source}#signIn" in expected
             ):
+                continue
+            source_text = self._source_text(source, source_text_cache)
+            if (
+                source_text is not None
+                and (
+                    self.GENERATIONS_APP_SDK_PATTERN.search(source_text) is not None
+                    or self.GENERATIONS_SERVICE_PATTERN.search(source_text) is not None
+                    or self.GENERATIONS_SERVICE_TYPE_PATTERN.search(source_text) is not None
+                    or self.MEMORY_APP_SDK_PATTERN.search(source_text) is not None
+                )
+            ):
+                # Operations dispatched through external capability SDKs
+                # (sdkwork-generations-app-sdk / sdkwork-memory-app-sdk) are owned
+                # by their capability contracts, not the Cloud Router app contract.
                 continue
             messages.append(f"frontend operation missing from contract: {key}")
         for key in sorted(expected):

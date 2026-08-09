@@ -45,7 +45,6 @@ export type { DashboardOverviewResponse } from './dashboard-overview-response';
 export type { DashboardOverviewSummary } from './dashboard-overview-summary';
 export type { DashboardSparklinePoint } from './dashboard-sparkline-point';
 export type { DashboardTopModel } from './dashboard-top-model';
-
 export type { FieldError } from './field-error';
 export type { GatewayTrace } from './gateway-trace';
 
@@ -88,7 +87,6 @@ export type { SettingsDataResponse } from './settings-data-response';
 export type { SettingsNotifications } from './settings-notifications';
 
 export type { SiteRuntimeSettingsResponse } from './site-runtime-settings-response';
-
 export type { UpdateApiKeyRequest } from './update-api-key-request';
 export type { UpdateApiKeyResponse } from './update-api-key-response';
 export type { UpdateSettingsNotificationsRequest } from './update-settings-notifications-request';

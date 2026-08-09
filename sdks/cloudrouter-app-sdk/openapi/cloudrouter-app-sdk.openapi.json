@@ -2829,33 +2829,6 @@
         ],
         "type": "object"
       },
-      "EntriesRetrieveResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by entries retrieve result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Entries retrieve result schema exposed by Cloud Router.",
-        "x-operation-id": "entries.retrieve"
-      },
       "FieldError": {
         "additionalProperties": false,
         "properties": {
@@ -3016,87 +2989,6 @@
           "pageInfo"
         ],
         "type": "object"
-      },
-      "GenerationsImagesTextToImageCreateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by generations images text to image create result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Generations images text to image create result schema exposed by Cloud Router.",
-        "x-operation-id": "generations.images.textToImage.create"
-      },
-      "GenerationsListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by generations list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Generations list result schema exposed by Cloud Router.",
-        "x-operation-id": "generations.list"
-      },
-      "GenerationsWorkspaceListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by generations workspace list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Generations workspace list result schema exposed by Cloud Router.",
-        "x-operation-id": "generations.workspace.list"
       },
       "InvitePolicyRetrieveResult": {
         "allOf": [
@@ -5237,141 +5129,6 @@
         ],
         "type": "object"
       },
-      "SpacesCreateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by spaces create result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Spaces create result schema exposed by Cloud Router.",
-        "x-operation-id": "spaces.create"
-      },
-      "SpacesEntriesCreateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by spaces entries create result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Spaces entries create result schema exposed by Cloud Router.",
-        "x-operation-id": "spaces.entries.create"
-      },
-      "SpacesEntriesListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by spaces entries list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Spaces entries list result schema exposed by Cloud Router.",
-        "x-operation-id": "spaces.entries.list"
-      },
-      "SpacesListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by spaces list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Spaces list result schema exposed by Cloud Router.",
-        "x-operation-id": "spaces.list"
-      },
-      "SpacesRetrieveResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by spaces retrieve result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Spaces retrieve result schema exposed by Cloud Router.",
-        "x-operation-id": "spaces.retrieve"
-      },
       "UpdateApiKeyRequest": {
         "additionalProperties": false,
         "description": "Update api key request schema exposed by Cloud Router.",
@@ -6092,12 +5849,14 @@
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "dashboard.overview",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/dashboardService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/gateway/traces": {
@@ -6207,260 +5966,14 @@
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "gateway.traces",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/gatewayService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
-      }
-    },
-    "/app/v3/api/ai/generations": {
-      "get": {
-        "description": "List generation history. Reads ai_agent. Writes none. File targets none.",
-        "operationId": "generations.list",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GenerationsListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "List generation history",
-        "tags": [
-          "ai"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "ai_agent"
-        ],
-        "x-route-scope": "public",
-        "x-sdk-domain": "intelligence",
-        "x-sdkwork-domain": "intelligence",
-        "x-sdkwork-resource": "generations",
-        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
-      }
-    },
-    "/app/v3/api/ai/generations/images/text_to_image": {
-      "post": {
-        "description": "Run playground asset generation. Reads ai_agent. Writes ai_usage. File targets none.",
-        "operationId": "generations.images.textToImage.create",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GenerationsImagesTextToImageCreateResult"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Run playground asset generation",
-        "tags": [
-          "ai"
-        ],
-        "x-contract-kind": "create",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "ai_agent"
-        ],
-        "x-route-scope": "public",
-        "x-sdk-domain": "intelligence",
-        "x-sdkwork-domain": "intelligence",
-        "x-sdkwork-resource": "generations.images.textToImage",
-        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundGenerationsService.ts",
-        "x-write-tables": [
-          "ai_usage"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
-      }
-    },
-    "/app/v3/api/ai/generations/workspace": {
-      "get": {
-        "description": "List playground generation history from service. Reads ai_agent. Writes none. File targets none.",
-        "operationId": "generations.workspace.list",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GenerationsWorkspaceListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "List playground generation history from service",
-        "tags": [
-          "ai"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "ai_agent"
-        ],
-        "x-route-scope": "public",
-        "x-sdk-domain": "intelligence",
-        "x-sdkwork-domain": "intelligence",
-        "x-sdkwork-resource": "generations.workspace",
-        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundGenerationsService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/routing/account_groups": {
@@ -6577,12 +6090,14 @@
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "routing.accountGroups",
         "x-source-file": "crates/sdkwork-routes-cloudrouter-app-api/src/http_route_manifest.rs",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/routing/api_keys": {
@@ -6698,12 +6213,14 @@
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "routing.apiKeys",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/routingApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/routing/request_traces": {
@@ -6819,12 +6336,14 @@
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "routing.requestTraces",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/routingApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/routing/usage": {
@@ -6903,12 +6422,14 @@
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "routing.usage",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/routingApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/usage/logs": {
@@ -7058,12 +6579,14 @@
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "usage.logs",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-usage/src/usageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/chat/conversations": {
@@ -7166,12 +6689,14 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "chat",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "chat",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "conversations",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create chat conversation. Reads ai_chat_conversation. Writes ai_chat_conversation. File targets none.",
@@ -7257,14 +6782,16 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "chat",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "chat",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "conversations",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [
           "ai_chat_conversation"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        ]
       }
     },
     "/app/v3/api/chat/conversations/{conversationId}": {
@@ -7351,12 +6878,14 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "chat",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "chat",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "conversations",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/chat/conversations/{conversationId}/messages": {
@@ -7469,12 +6998,14 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "chat",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "chat",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "conversations.messages",
         "x-source-file": "crates/sdkwork-routes-cloudrouter-app-api/src/http_route_manifest.rs",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/chat/conversations/{conversationId}/turns": {
@@ -7572,7 +7103,11 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "chat",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "chat",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "conversations.turns",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [
@@ -7580,9 +7115,7 @@
           "ai_chat_item",
           "ai_chat_message",
           "ai_chat_message_part"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        ]
       }
     },
     "/app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response": {
@@ -7695,7 +7228,11 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "chat",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "chat",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "conversations.turns.response",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [
@@ -7705,9 +7242,7 @@
           "ai_chat_message_part",
           "ai_chat_context_snapshot",
           "ai_runtime_usage_link"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        ]
       }
     },
     "/app/v3/api/iam/api_keys": {
@@ -7826,12 +7361,14 @@
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "iam",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "iam",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "apiKeys",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create key. Reads ai_upstream_account_group. Writes ai_upstream_account_group, iam_gateway_api_key, iam_gateway_access_policy, ai_quota_policy, ops_audit_log. File targets none.",
@@ -7929,8 +7466,12 @@
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "iam",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "iam",
         "x-sdkwork-idempotent": true,
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "apiKeys",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts",
         "x-write-tables": [
@@ -7939,9 +7480,7 @@
           "iam_gateway_access_policy",
           "ai_quota_policy",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        ]
       }
     },
     "/app/v3/api/iam/api_keys/{apiKeyId}": {
@@ -8021,15 +7560,17 @@
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "iam",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "iam",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "apiKeys",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts",
         "x-write-tables": [
           "iam_gateway_api_key",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        ]
       },
       "patch": {
         "description": "Update key. Reads iam_gateway_api_key, ai_upstream_account_group, iam_gateway_access_policy, ai_quota_policy. Writes iam_gateway_api_key, iam_gateway_access_policy, ai_quota_policy, ops_audit_log. File targets none.",
@@ -8128,7 +7669,11 @@
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "iam",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "iam",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "apiKeys",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts",
         "x-write-tables": [
@@ -8136,9 +7681,7 @@
           "iam_gateway_access_policy",
           "ai_quota_policy",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        ]
       }
     },
     "/app/v3/api/iam/invite/policy": {
@@ -8231,13 +7774,14 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "iam",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "anonymous",
         "x-sdkwork-domain": "iam",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "invite.policy",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
-        "x-write-tables": [],
-        "x-sdkwork-auth-mode": "anonymous",
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/iam/invites/claim": {
@@ -8326,14 +7870,16 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "iam",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "iam",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "invites.claim",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
         "x-write-tables": [
           "ops_referral_relation"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        ]
       }
     },
     "/app/v3/api/iam/invites/issue": {
@@ -8410,14 +7956,16 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "iam",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "iam",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "invites",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
         "x-write-tables": [
           "ops_referral_invite_code"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        ]
       }
     },
     "/app/v3/api/iam/invites/validate": {
@@ -8500,13 +8048,14 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "iam",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "anonymous",
         "x-sdkwork-domain": "iam",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "invites.validate",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
-        "x-write-tables": [],
-        "x-sdkwork-auth-mode": "anonymous",
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/iam/users/settings": {
@@ -8585,12 +8134,14 @@
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "iam",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "iam",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "users.settings",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-settings/src/settingsService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update settings. Reads iam_user_preference, integration_webhook_endpoint. Writes iam_user_preference, integration_webhook_endpoint. File targets none.",
@@ -8677,547 +8228,17 @@
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "iam",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "iam",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "users.settings",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-settings/src/settingsService.ts",
         "x-write-tables": [
           "iam_user_preference",
           "integration_webhook_endpoint"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
-      }
-    },
-    "/app/v3/api/memory/entries/{entryId}": {
-      "get": {
-        "description": "Retrieve memory entry. Reads ai_agent. Writes none. File targets none.",
-        "operationId": "entries.retrieve",
-        "parameters": [
-          {
-            "description": "Entry id path parameter.",
-            "in": "path",
-            "name": "entryId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EntriesRetrieveResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Retrieve memory entry",
-        "tags": [
-          "memory"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "ai_agent"
-        ],
-        "x-route-scope": "public",
-        "x-sdk-domain": "memory",
-        "x-sdkwork-domain": "memory",
-        "x-sdkwork-resource": "entries",
-        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
-      }
-    },
-    "/app/v3/api/memory/spaces": {
-      "get": {
-        "description": "List memory spaces. Reads ai_agent. Writes none. File targets none.",
-        "operationId": "spaces.list",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SpacesListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "List memory spaces",
-        "tags": [
-          "memory"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "ai_agent"
-        ],
-        "x-route-scope": "public",
-        "x-sdk-domain": "memory",
-        "x-sdkwork-domain": "memory",
-        "x-sdkwork-resource": "spaces",
-        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
-      },
-      "post": {
-        "description": "Create memory space. Reads ai_agent. Writes ai_agent. File targets none.",
-        "operationId": "spaces.create",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SpacesCreateResult"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Create memory space",
-        "tags": [
-          "memory"
-        ],
-        "x-contract-kind": "create",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "ai_agent"
-        ],
-        "x-route-scope": "public",
-        "x-sdk-domain": "memory",
-        "x-sdkwork-domain": "memory",
-        "x-sdkwork-resource": "spaces",
-        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [
-          "ai_agent"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
-      }
-    },
-    "/app/v3/api/memory/spaces/{spaceId}": {
-      "get": {
-        "description": "Retrieve memory space. Reads ai_agent. Writes none. File targets none.",
-        "operationId": "spaces.retrieve",
-        "parameters": [
-          {
-            "description": "Space id path parameter.",
-            "in": "path",
-            "name": "spaceId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SpacesRetrieveResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Retrieve memory space",
-        "tags": [
-          "memory"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "ai_agent"
-        ],
-        "x-route-scope": "public",
-        "x-sdk-domain": "memory",
-        "x-sdkwork-domain": "memory",
-        "x-sdkwork-resource": "spaces",
-        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
-      }
-    },
-    "/app/v3/api/memory/spaces/{spaceId}/entries": {
-      "get": {
-        "description": "List memory entries. Reads ai_agent. Writes none. File targets none.",
-        "operationId": "spaces.entries.list",
-        "parameters": [
-          {
-            "description": "Space id path parameter.",
-            "in": "path",
-            "name": "spaceId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SpacesEntriesListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "List memory entries",
-        "tags": [
-          "memory"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "ai_agent"
-        ],
-        "x-route-scope": "public",
-        "x-sdk-domain": "memory",
-        "x-sdkwork-domain": "memory",
-        "x-sdkwork-resource": "spaces.entries",
-        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
-      },
-      "post": {
-        "description": "Create memory entry. Reads ai_agent. Writes ai_agent. File targets none.",
-        "operationId": "spaces.entries.create",
-        "parameters": [
-          {
-            "description": "Space id path parameter.",
-            "in": "path",
-            "name": "spaceId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SpacesEntriesCreateResult"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Create memory entry",
-        "tags": [
-          "memory"
-        ],
-        "x-contract-kind": "create",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "ai_agent"
-        ],
-        "x-route-scope": "public",
-        "x-sdk-domain": "memory",
-        "x-sdkwork-domain": "memory",
-        "x-sdkwork-resource": "spaces.entries",
-        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [
-          "ai_agent"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        ]
       }
     },
     "/app/v3/api/notification/notifications": {
@@ -9341,12 +8362,14 @@
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "notification",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "notification",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "notifications",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/notificationService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/notification/notifications/{notificationId}/acknowledge": {
@@ -9444,14 +8467,16 @@
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "notification",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "notification",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "notifications.acknowledge",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/notificationService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        ]
       }
     },
     "/app/v3/api/notification/notifications/{notificationId}/popup_seen": {
@@ -9549,14 +8574,16 @@
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "notification",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "notification",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "notifications.popupSeen",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/notificationService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        ]
       }
     },
     "/app/v3/api/runtime/invocations": {
@@ -9719,12 +8746,14 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "runtime",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "runtime",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "invocations",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create runtime invocation. Reads ai_chat_conversation, ai_chat_turn, ai_agent_session. Writes ai_runtime_invocation. File targets none.",
@@ -9812,14 +8841,16 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "runtime",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "runtime",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "invocations",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [
           "ai_runtime_invocation"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        ]
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}": {
@@ -9906,12 +8937,14 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "runtime",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "runtime",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "invocations",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}/artifacts": {
@@ -10024,12 +9057,14 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "runtime",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "runtime",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "invocations.artifacts",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create runtime artifact. Reads ai_runtime_invocation. Writes ai_runtime_artifact. File targets none.",
@@ -10125,14 +9160,16 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "runtime",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "runtime",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "invocations.artifacts",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [
           "ai_runtime_artifact"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        ]
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}/completions": {
@@ -10230,14 +9267,16 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "runtime",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "runtime",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "invocations.completions",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [
           "ai_runtime_invocation"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        ]
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}/events": {
@@ -10350,12 +9389,14 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "runtime",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "runtime",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "invocations.events",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create runtime event. Reads ai_runtime_invocation. Writes ai_runtime_invocation_event. File targets none.",
@@ -10451,14 +9492,16 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "runtime",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "runtime",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "invocations.events",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [
           "ai_runtime_invocation_event"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        ]
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}/events/stream": {
@@ -10560,12 +9603,14 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "runtime",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "runtime",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "invocations.events.stream",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/system/site/runtime": {
@@ -10658,13 +9703,14 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
         "x-sdkwork-auth-mode": "anonymous",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "site.runtime",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/siteBranding.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app"
+        "x-write-tables": []
       }
     }
   },
@@ -10692,10 +9738,6 @@
     {
       "description": "iam operations exposed by Cloud Router.",
       "name": "iam"
-    },
-    {
-      "description": "memory operations exposed by Cloud Router.",
-      "name": "memory"
     },
     {
       "description": "messaging operations exposed by Cloud Router.",

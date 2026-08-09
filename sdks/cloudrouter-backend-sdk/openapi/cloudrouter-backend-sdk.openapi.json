@@ -11390,12 +11390,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccountGroups",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create upstream account group. Reads ai_upstream_account_group. Writes ai_upstream_account_group, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -11493,17 +11495,19 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-idempotent": true,
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccountGroups",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_account_group",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}": {
@@ -11593,17 +11597,19 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccountGroups",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_account_group",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       },
       "get": {
         "description": "Get upstream account group. Reads ai_upstream_account_group. Writes none. File targets none.",
@@ -11688,12 +11694,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccountGroups",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update upstream account group. Reads ai_upstream_account_group. Writes ai_upstream_account_group, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -11799,17 +11807,19 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccountGroups",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_account_group",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/members": {
@@ -11898,12 +11908,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccountGroups.members",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update upstream account group members. Reads ai_upstream_account_group, ai_upstream_account_group_member, ai_upstream_account. Writes ai_upstream_account_group, ai_upstream_account_group_member, ai_upstream_account, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -12011,8 +12023,12 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccountGroups.members",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
@@ -12021,9 +12037,7 @@
           "ai_upstream_account",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/resources": {
@@ -12113,12 +12127,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccountGroups.resources",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update upstream account group resources. Reads ai_upstream_account_group, ai_upstream_account_group_resource, ai_resource, ai_resource_group. Writes ai_upstream_account_group, ai_upstream_account_group_resource, ai_resource, ai_resource_group, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -12227,8 +12243,12 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccountGroups.resources",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
@@ -12238,9 +12258,7 @@
           "ai_resource_group",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/route_explain": {
@@ -12347,12 +12365,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccountGroups",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/ai/upstream_accounts": {
@@ -12466,12 +12486,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccounts",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create upstream account. Reads ai_upstream_supplier, ai_upstream_account. Writes ai_upstream_supplier, ai_upstream_account, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -12570,8 +12592,12 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-idempotent": true,
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccounts",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
@@ -12579,9 +12605,7 @@
           "ai_upstream_account",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_accounts/{accountId}": {
@@ -12672,8 +12696,12 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccounts",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
@@ -12683,9 +12711,7 @@
           "ai_upstream_account_credential",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       },
       "get": {
         "description": "Get upstream account. Reads ai_upstream_supplier, ai_upstream_account. Writes none. File targets none.",
@@ -12771,12 +12797,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccounts",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update upstream account. Reads ai_upstream_supplier, ai_upstream_account. Writes ai_upstream_supplier, ai_upstream_account, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -12883,8 +12911,12 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccounts",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
@@ -12892,9 +12924,7 @@
           "ai_upstream_account",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials": {
@@ -13017,12 +13047,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccounts.credentials",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create upstream account credential. Reads ai_upstream_account, ai_upstream_account_credential. Writes ai_upstream_account, ai_upstream_account_credential, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -13130,8 +13162,12 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-idempotent": true,
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccounts.credentials",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
@@ -13139,9 +13175,7 @@
           "ai_upstream_account_credential",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}": {
@@ -13231,7 +13265,11 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccounts.credentials",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
@@ -13239,9 +13277,7 @@
           "ai_upstream_account_credential",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}/secret": {
@@ -13338,12 +13374,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccounts.credentials.secret",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/ai/upstream_accounts/{accountId}/resources": {
@@ -13433,12 +13471,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccounts.resources",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update upstream account resources. Reads ai_upstream_account, ai_upstream_account_resource, ai_resource, ai_resource_group. Writes ai_upstream_account, ai_upstream_account_resource, ai_resource, ai_resource_group, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -13547,8 +13587,12 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccounts.resources",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
@@ -13558,9 +13602,7 @@
           "ai_resource_group",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_accounts/{accountId}/verify": {
@@ -13662,7 +13704,11 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccounts",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
@@ -13670,9 +13716,7 @@
           "ai_upstream_supplier_endpoint",
           "ai_upstream_account_credential",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_resource_catalog": {
@@ -13750,12 +13794,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamResourceCatalog",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/ai/upstream_suppliers": {
@@ -13868,12 +13914,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamSuppliers",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create upstream supplier. Reads ai_upstream_supplier. Writes ai_upstream_supplier, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -13971,17 +14019,19 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-idempotent": true,
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamSuppliers",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_supplier",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_suppliers/{supplierId}": {
@@ -14071,17 +14121,19 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamSuppliers",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_supplier",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       },
       "get": {
         "description": "Get upstream supplier. Reads ai_upstream_supplier. Writes none. File targets none.",
@@ -14166,12 +14218,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamSuppliers",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update upstream supplier. Reads ai_upstream_supplier. Writes ai_upstream_supplier, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -14277,17 +14331,19 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamSuppliers",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_supplier",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_suppliers/{supplierId}/auth_methods": {
@@ -14375,12 +14431,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamSuppliers.authMethods",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update upstream supplier auth methods. Reads ai_upstream_supplier, ai_upstream_supplier_auth_method. Writes ai_upstream_supplier, ai_upstream_supplier_auth_method, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -14487,8 +14545,12 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamSuppliers.authMethods",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
@@ -14496,9 +14558,7 @@
           "ai_upstream_supplier_auth_method",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_suppliers/{supplierId}/endpoints": {
@@ -14586,12 +14646,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamSuppliers.endpoints",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update upstream supplier endpoints. Reads ai_upstream_supplier, ai_upstream_supplier_endpoint. Writes ai_upstream_supplier, ai_upstream_supplier_endpoint, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -14698,8 +14760,12 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamSuppliers.endpoints",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
@@ -14707,9 +14773,7 @@
           "ai_upstream_supplier_endpoint",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_suppliers/{supplierId}/resources": {
@@ -14799,12 +14863,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamSuppliers.resources",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update upstream supplier resources. Reads ai_upstream_supplier, ai_upstream_supplier_resource, ai_resource, ai_resource_group. Writes ai_upstream_supplier, ai_upstream_supplier_resource, ai_resource, ai_resource_group, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -14913,8 +14979,12 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamSuppliers.resources",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
@@ -14924,9 +14994,7 @@
           "ai_resource_group",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/billing/recharges/records": {
@@ -15003,12 +15071,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "commerce",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "rechargeRecords",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/billing/recharges/records/{orderNo}": {
@@ -15095,12 +15165,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "commerce",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "rechargeRecords",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/billing/referral_strategies": {
@@ -15222,12 +15294,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "commerce",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "referralStrategies",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create referral strategy. Reads ops_referral_strategy. Writes ops_referral_strategy, ops_audit_log. File targets none.",
@@ -15313,15 +15387,17 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "commerce",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "referralStrategies",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
         "x-write-tables": [
           "ops_referral_strategy",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/billing/referral_strategies/{strategyId}": {
@@ -15401,15 +15477,17 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "commerce",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "referralStrategies",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
         "x-write-tables": [
           "ops_referral_strategy",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       },
       "get": {
         "description": "Retrieve referral strategy. Reads ops_referral_strategy. Writes none. File targets none.",
@@ -15494,12 +15572,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "commerce",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "referralStrategies",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update referral strategy. Reads ops_referral_strategy. Writes ops_referral_strategy, ops_audit_log. File targets none.",
@@ -15595,15 +15675,17 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "commerce",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "referralStrategies",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
         "x-write-tables": [
           "ops_referral_strategy",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/billing/referrals/relations": {
@@ -15712,12 +15794,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "commerce",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "referralRelations",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/billing/referrals/stats": {
@@ -15816,12 +15900,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "commerce",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "referralStats",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/payments/providers": {
@@ -16072,12 +16158,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "commerce",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "providers",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/recharges/packages": {
@@ -16185,12 +16273,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "commerce",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "packages",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create. Reads recharges. Writes ops_audit_log. File targets none.",
@@ -16276,14 +16366,16 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "commerce",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "packages",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/recharges/packages/{packageId}": {
@@ -16363,14 +16455,16 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "commerce",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "packages",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       },
       "patch": {
         "description": "Update. Reads recharges. Writes ops_audit_log. File targets none.",
@@ -16466,14 +16560,16 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "commerce",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "packages",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/recharges/settings": {
@@ -16550,12 +16646,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "commerce",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "settings",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update. Reads recharges. Writes ops_audit_log. File targets none.",
@@ -16641,14 +16739,16 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "commerce",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "settings",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/storage/buckets": {
@@ -16791,12 +16891,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "storage",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "storage",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "oss.buckets",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "post": {
         "description": "Backend storage bucket create. Reads storage. Writes ops_audit_log. File targets none.",
@@ -16894,15 +16996,17 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "storage",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "storage",
         "x-sdkwork-idempotent": true,
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "oss.buckets",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/storage/buckets/{bucketId}": {
@@ -17000,14 +17104,16 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "storage",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "storage",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "oss.buckets",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/storage/default_buckets": {
@@ -17150,12 +17256,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "storage",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "storage",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "defaultBuckets",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/storage/default_buckets/{logicalScope}": {
@@ -17253,14 +17361,16 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "storage",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "storage",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "defaultBuckets",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/storage/gc_jobs": {
@@ -17403,12 +17513,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "storage",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "storage",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "gcJobs",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "post": {
         "description": "Backend storage garbage collection job create. Reads storage. Writes ops_audit_log. File targets none.",
@@ -17506,15 +17618,17 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "storage",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "storage",
         "x-sdkwork-idempotent": true,
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "gcJobs",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/storage/providers": {
@@ -17657,12 +17771,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "storage",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "storage",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "oss.providers",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "post": {
         "description": "Backend storage provider create. Reads storage. Writes ops_audit_log. File targets none.",
@@ -17760,15 +17876,17 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "storage",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "storage",
         "x-sdkwork-idempotent": true,
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "oss.providers",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/storage/providers/{providerId}": {
@@ -17866,14 +17984,16 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "storage",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "storage",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "oss.providers",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/storage/providers/{providerId}/health_check": {
@@ -17960,14 +18080,16 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "storage",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "storage",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "providers",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/storage/quotas": {
@@ -18110,12 +18232,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "storage",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "storage",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "oss.quotas",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "post": {
         "description": "Backend storage quota create. Reads storage. Writes ops_audit_log. File targets none.",
@@ -18213,15 +18337,17 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "storage",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "storage",
         "x-sdkwork-idempotent": true,
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "oss.quotas",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/storage/reconciliation_runs": {
@@ -18364,12 +18490,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "storage",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "storage",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "oss.storageReconciliationRuns",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "post": {
         "description": "Backend storage reconciliation run create. Reads storage. Writes ops_audit_log. File targets none.",
@@ -18467,15 +18595,17 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "storage",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "storage",
         "x-sdkwork-idempotent": true,
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "oss.storageReconciliationRuns",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/storage/usage": {
@@ -18618,12 +18748,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "storage",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "storage",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "oss.usage",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/analytics/admin/overview": {
@@ -18754,12 +18886,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "analytics.admin.overview",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-analytics/src/analyticsService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/auth/settings": {
@@ -18836,12 +18970,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "auth.settings",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site/src/AuthSettingsService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update cloud router auth settings. Reads ops_config_snapshot. Writes ops_config_snapshot, ops_audit_log. File targets none.",
@@ -18926,15 +19062,17 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "auth.settings",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site/src/AuthSettingsService.ts",
         "x-write-tables": [
           "ops_config_snapshot",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/system/cache/instances/{instanceName}": {
@@ -19015,14 +19153,16 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "cache.instances",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/system/cache/instances/{instanceName}/refresh": {
@@ -19110,14 +19250,16 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "cache.instances",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/system/cache/namespaces/{namespace}": {
@@ -19198,14 +19340,16 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "cache.namespaces",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/system/cache/namespaces/{namespace}/keys": {
@@ -19316,12 +19460,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "cache.namespaces.keys",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/cache/namespaces/{namespace}/keys/{key}": {
@@ -19411,14 +19557,16 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "cache.namespaces.keys",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/system/cache/namespaces/{namespace}/refresh": {
@@ -19506,14 +19654,16 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "cache.namespaces",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/system/cache/overview": {
@@ -19591,12 +19741,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "cache.overview",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/cache/refresh": {
@@ -19674,14 +19826,16 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "cache",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/system/chains/policy": {
@@ -19758,12 +19912,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "chains.policy",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update chain policy. Reads iam_gateway_chain_policy. Writes iam_gateway_chain_policy, ops_audit_log. File targets none.",
@@ -19849,15 +20005,17 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "chains.policy",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
         "x-write-tables": [
           "iam_gateway_chain_policy",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/system/chains/policy/keys/{apiKeyId}": {
@@ -19944,12 +20102,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "chains.policy.apiKey",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/dashboard/admin/overview": {
@@ -20030,12 +20190,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "dashboard.admin.overview",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/dashboardService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/firewalls/rules": {
@@ -20148,12 +20310,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "firewalls.rules",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create firewall. Reads iam_gateway_risk_rule. Writes iam_gateway_risk_rule, ops_audit_log. File targets none.",
@@ -20238,15 +20402,17 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "firewalls.rules",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
         "x-write-tables": [
           "iam_gateway_risk_rule",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/system/firewalls/rules/{ruleId}": {
@@ -20326,15 +20492,17 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "firewalls.rules",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
         "x-write-tables": [
           "iam_gateway_risk_rule",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/system/installation/status": {
@@ -20413,12 +20581,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "installation.status",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/dashboardService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/monitor/alerts": {
@@ -20531,12 +20701,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "monitor.alerts",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor/src/monitorService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/monitor/nodes": {
@@ -20650,12 +20822,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "monitor.nodes",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor/src/monitorService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/monitor/performance": {
@@ -20768,12 +20942,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "monitor.performance",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor/src/monitorService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/rate_limits/api_keys": {
@@ -20887,12 +21063,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "rateLimits.apiKeys",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create token limit. Reads ai_quota_policy, iam_gateway_api_key. Writes ai_quota_policy, ops_audit_log. File targets none.",
@@ -20978,15 +21156,17 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "rateLimits.apiKeys",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
         "x-write-tables": [
           "ai_quota_policy",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/system/rate_limits/ip": {
@@ -21099,12 +21279,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "rateLimits.ip",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create IP limit. Reads iam_gateway_risk_rule. Writes iam_gateway_risk_rule, ops_audit_log. File targets none.",
@@ -21189,15 +21371,17 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "rateLimits.ip",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
         "x-write-tables": [
           "iam_gateway_risk_rule",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/system/rate_limits/models": {
@@ -21311,12 +21495,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "rateLimits.models",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create model limit. Reads ai_quota_policy, ai_upstream_account_group. Writes ai_quota_policy, ops_audit_log. File targets none.",
@@ -21402,15 +21588,17 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "rateLimits.models",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
         "x-write-tables": [
           "ai_quota_policy",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/system/records": {
@@ -21545,12 +21733,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "records",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-record/src/recordService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/runtime_region/settings": {
@@ -21627,12 +21817,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "runtimeRegion.settings",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-runtime-region/src/runtimeRegionService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update settings. Reads ops_config_snapshot. Writes ops_config_snapshot, ops_audit_log. File targets none.",
@@ -21717,15 +21909,17 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "runtimeRegion.settings",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-runtime-region/src/runtimeRegionService.ts",
         "x-write-tables": [
           "ops_config_snapshot",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/system/service_nodes": {
@@ -21849,12 +22043,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "serviceNodes",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create node. Reads ops_gateway_instance. Writes ops_gateway_instance. File targets none.",
@@ -21939,14 +22135,16 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "serviceNodes",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
         "x-write-tables": [
           "ops_gateway_instance"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/system/service_nodes/{nodeId}": {
@@ -22026,14 +22224,16 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "serviceNodes",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
         "x-write-tables": [
           "ops_gateway_instance"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       },
       "put": {
         "description": "Update node. Reads ops_gateway_instance. Writes ops_gateway_instance. File targets none.",
@@ -22128,14 +22328,16 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "serviceNodes",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
         "x-write-tables": [
           "ops_gateway_instance"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/system/service_nodes/{nodeId}/status": {
@@ -22232,14 +22434,16 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "serviceNodes.status",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
         "x-write-tables": [
           "ops_gateway_instance"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     },
     "/backend/v3/api/system/site/settings": {
@@ -22316,12 +22520,14 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "site.settings",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site/src/SiteSettingsService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update settings. Reads ops_config_snapshot. Writes ops_config_snapshot, ops_audit_log. File targets none.",
@@ -22406,15 +22612,17 @@
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "system",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "site.settings",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site/src/SiteSettingsService.ts",
         "x-write-tables": [
           "ops_config_snapshot",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend"
+        ]
       }
     }
   },
