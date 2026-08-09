@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                 .as_ref()
                 .and_then(|config| config.server.bind.clone())
         })
-        .unwrap_or_else(|| "127.0.0.1:3900".to_owned());
+        .unwrap_or_else(|| "127.0.0.1:3905".to_owned());
     let assembly =
         api_assembly::assemble_api_router(api_assembly::ApiAssemblyContext::default()).await?;
     let mut portal = PortalStaticConfig::from_env_and_runtime(runtime_toml.as_ref())

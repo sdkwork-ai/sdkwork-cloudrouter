@@ -1502,7 +1502,7 @@ test('application scripts keep commercial default ports and reject obsolete alia
     portalViteConfig,
   ].join('\n');
 
-  assert.ok(workspaceStarter.includes("const DEFAULT_SERVER_BIND = '0.0.0.0:3900';"));
+assert.ok(workspaceStarter.includes("const DEFAULT_SERVER_BIND = '0.0.0.0:3905';"));
   assert.ok(workspaceStarter.includes("const DEFAULT_PORTAL_BIND = '127.0.0.1:3901';"));
   assert.ok(productionStarter.includes("'0.0.0.0:3900'"));
   assert.match(portalViteConfig, /DEFAULT_PORTAL_DEV_PORT\s*=\s*3901/u);
@@ -2232,7 +2232,7 @@ test('cloud router workspace launch plan defaults to all-in-one Rust edge runtim
     const portalStep = plan.steps.find((step) => step.name === 'portal');
     const serverStep = plan.steps.find((step) => step.name === 'server');
 
-    assert.equal(settings.serverBind, '0.0.0.0:3900');
+    assert.equal(settings.serverBind, '0.0.0.0:3905');
     assert.equal(settings.portalBind, '127.0.0.1:3901');
     assert.equal(settings.remoteApiIngressOrigin, 'http://127.0.0.1:3902');
     assert.equal(settings.portalDevBind, undefined);
@@ -2302,7 +2302,7 @@ test('cloud router workspace launch plan defaults to all-in-one Rust edge runtim
     ]);
     assert.equal(portalStep.env.PORT, '3901');
     assert.equal(portalStep.env.SDKWORK_CLOUDROUTER_PORTAL_BIND, '127.0.0.1:3901');
-    assert.equal(portalStep.env.OPENAPI_DEV_URL, 'http://127.0.0.1:3900/openapi.json');
+    assert.equal(portalStep.env.OPENAPI_DEV_URL, 'http://127.0.0.1:3905/openapi.json');
     assert.equal(portalStep.env.PORTAL_FORWARDING_ENABLED, undefined);
     assert.equal(portalStep.env.PORTAL_FORWARD_GATEWAY_BASE_URL, undefined);
     assert.equal(portalStep.env.PORTAL_FORWARD_BACKEND_API_BASE_URL, undefined);
@@ -2312,9 +2312,9 @@ test('cloud router workspace launch plan defaults to all-in-one Rust edge runtim
     assert.equal(portalStep.env.PORTAL_PUBLIC_OPEN_API_BASE_URL, undefined);
     assert.equal(portalStep.env.PORTAL_PUBLIC_BACKEND_API_BASE_URL, undefined);
     assert.equal(portalStep.env.PORTAL_PUBLIC_APP_API_BASE_URL, undefined);
-    assert.equal(portalStep.env.SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_OPEN_API_ORIGIN, 'http://127.0.0.1:3900');
-    assert.equal(portalStep.env.SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_BACKEND_API_ORIGIN, 'http://127.0.0.1:3900');
-    assert.equal(portalStep.env.SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_APP_API_ORIGIN, 'http://127.0.0.1:3900');
+    assert.equal(portalStep.env.SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_OPEN_API_ORIGIN, 'http://127.0.0.1:3905');
+    assert.equal(portalStep.env.SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_BACKEND_API_ORIGIN, 'http://127.0.0.1:3905');
+    assert.equal(portalStep.env.SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_APP_API_ORIGIN, 'http://127.0.0.1:3905');
     assert.equal(portalStep.env.VITE_CLOUDROUTER_APP_API_BASE_URL, '/app/v3/api');
     assert.equal(portalStep.env.VITE_SDKWORK_APPBASE_APP_API_BASE_URL, undefined);
     assert.equal(portalStep.env.VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL, 'http://127.0.0.1:3902/backend/v3/api');
@@ -2330,15 +2330,15 @@ test('cloud router workspace launch plan defaults to all-in-one Rust edge runtim
     );
     assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_EDGE_SERVER, '1');
     assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_ALL_IN_ONE_RUNTIME, '1');
-    assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_SERVER_BIND, '0.0.0.0:3900');
+    assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_SERVER_BIND, '0.0.0.0:3905');
     assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_STARTUP_INSTALL_MODE, 'skip');
     assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_SNOWFLAKE_NODE_ID, undefined);
     assert.equal(serverStep.env.PORTAL_PUBLIC_SDK_BASE_URL, 'http://127.0.0.1:3902');
-    assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_EDGE_GATEWAY_BASE_URL, 'http://127.0.0.1:3900');
-    assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_EDGE_BACKEND_API_BASE_URL, 'http://127.0.0.1:3900');
-    assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_EDGE_APP_API_BASE_URL, 'http://127.0.0.1:3900');
+    assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_EDGE_GATEWAY_BASE_URL, 'http://127.0.0.1:3905');
+    assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_EDGE_BACKEND_API_BASE_URL, 'http://127.0.0.1:3905');
+    assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_EDGE_APP_API_BASE_URL, 'http://127.0.0.1:3905');
     assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_EDGE_PORTAL_BASE_URL, 'http://127.0.0.1:3901');
-    assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_APP_RUNTIME_GATEWAY_BASE_URL, 'http://127.0.0.1:3900');
+    assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_APP_RUNTIME_GATEWAY_BASE_URL, 'http://127.0.0.1:3905');
     assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_TOOL_API_RATE_LIMIT_REQUESTS, '120');
     assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_TOOL_API_RATE_LIMIT_WINDOW_SECONDS, '60');
     assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_TOOL_API_SDK_ARCHIVE_ROOT, '');
@@ -2352,7 +2352,7 @@ test('cloud router workspace launch plan defaults to all-in-one Rust edge runtim
     assert.deepEqual(
       module.workspaceBindTargets(settings).map((target) => `${target.name} ${target.bind}`),
       [
-        'server 0.0.0.0:3900',
+        'server 0.0.0.0:3905',
         'portal 127.0.0.1:3901',
       ],
     );
@@ -2516,20 +2516,20 @@ test('cloud router workspace reports occupied service ports before startup', asy
 
   const settings = module.parseWorkspaceArgs([]);
   const unavailable = await module.findUnavailableWorkspaceBinds(settings, async (target) =>
-    !['18082', '3900', '3902'].includes(target.port),
+    !['18082', '3905', '3902'].includes(target.port),
   );
 
   assert.deepEqual(
     unavailable.map((target) => `${target.name} ${target.bind}`),
     [
-      'server 0.0.0.0:3900',
+      'server 0.0.0.0:3905',
     ],
   );
   await assert.rejects(
     () => module.assertWorkspaceBindsAvailable(settings, async (target) =>
-      !['18082', '3900', '3902'].includes(target.port),
+      !['18082', '3905', '3902'].includes(target.port),
     ),
-    /workspace ports are already in use: server 0\.0\.0\.0:3900/u,
+    /workspace ports are already in use: server 0\.0\.0\.0:3905/u,
   );
 });
 
@@ -3386,22 +3386,22 @@ test('workspace access output distinguishes the API ingress from the portal rend
   const settings = module.parseWorkspaceArgs([]);
   const lines = module.workspaceAccessLines(settings);
 
-  assert.equal(settings.serverBind, '0.0.0.0:3900');
+  assert.equal(settings.serverBind, '0.0.0.0:3905');
   assert.equal(settings.portalBind, '127.0.0.1:3901');
   assert.equal(lines[1], '[start-workspace] Access Endpoints');
   assert.equal(lines[2], '[start-workspace]   Application: http://127.0.0.1:3901/');
-  assert.equal(lines[3], '[start-workspace]   API Reference: http://127.0.0.1:3900/openapi.json');
+  assert.equal(lines[3], '[start-workspace]   API Reference: http://127.0.0.1:3905/openapi.json');
   assert.equal(lines[4], '[start-workspace] Application API Access');
-  assert.equal(lines[5], '[start-workspace]   Gateway API: http://127.0.0.1:3900/v1');
-  assert.equal(lines[8], '[start-workspace]   Gateway OpenAPI: http://127.0.0.1:3900/openapi.json');
-  assert.equal(lines[9], '[start-workspace]   Admin API OpenAPI: http://127.0.0.1:3900/backend/v3/api/openapi.json');
-  assert.equal(lines[10], '[start-workspace]   App API OpenAPI: http://127.0.0.1:3900/app/v3/api/openapi.json');
+  assert.equal(lines[5], '[start-workspace]   Gateway API: http://127.0.0.1:3905/v1');
+  assert.equal(lines[8], '[start-workspace]   Gateway OpenAPI: http://127.0.0.1:3905/openapi.json');
+  assert.equal(lines[9], '[start-workspace]   Admin API OpenAPI: http://127.0.0.1:3905/backend/v3/api/openapi.json');
+  assert.equal(lines[10], '[start-workspace]   App API OpenAPI: http://127.0.0.1:3905/app/v3/api/openapi.json');
   assert.ok(lines.includes('[start-workspace]   Direct Portal Dev: http://127.0.0.1:3901/'));
   assert.ok(lines.includes('[start-workspace]   Direct Portal Gateway API Proxy: http://127.0.0.1:3901/v1'));
   assert.ok(lines.includes('[start-workspace]   Direct Portal App API Proxy: http://127.0.0.1:3901/app/v3/api'));
   assert.ok(lines.includes('[start-workspace]   Direct Portal App API OpenAPI Proxy: http://127.0.0.1:3901/app/v3/api/openapi.json'));
-  assert.ok(lines.includes('[start-workspace]   Application API Health: http://127.0.0.1:3900/healthz'));
-  assert.ok(lines.includes('[start-workspace]   Application API Ready: http://127.0.0.1:3900/readyz'));
+  assert.ok(lines.includes('[start-workspace]   Application API Health: http://127.0.0.1:3905/healthz'));
+  assert.ok(lines.includes('[start-workspace]   Application API Ready: http://127.0.0.1:3905/readyz'));
   assert.equal(lines.some((line) => line.includes('Gateway Health: http://127.0.0.1:18080')), false);
 });
 
@@ -3430,16 +3430,16 @@ test('workspace startup output includes every non-internal IPv4 OpenAPI link for
   });
 
   assert.ok(lines.includes('[start-workspace] Application API LAN OpenAPI (same Wi-Fi/LAN)'));
-  assert.ok(lines.includes('[start-workspace]   Network: http://10.0.0.7:3900/openapi.json'));
-  assert.ok(lines.includes('[start-workspace]   Network: http://169.254.23.73:3900/openapi.json'));
-  assert.ok(lines.includes('[start-workspace]   Network: http://169.254.30.58:3900/openapi.json'));
-  assert.ok(lines.includes('[start-workspace]   Network: http://172.23.0.1:3900/openapi.json'));
-  assert.ok(lines.includes('[start-workspace]   Network: http://192.168.50.12:3900/openapi.json'));
-  assert.ok(lines.includes('[start-workspace]   Network: http://198.18.0.1:3900/openapi.json'));
-  assert.equal(lines.includes('[start-workspace]   Network: http://127.0.0.1:3900/openapi.json'), false);
+  assert.ok(lines.includes('[start-workspace]   Network: http://10.0.0.7:3905/openapi.json'));
+  assert.ok(lines.includes('[start-workspace]   Network: http://169.254.23.73:3905/openapi.json'));
+  assert.ok(lines.includes('[start-workspace]   Network: http://169.254.30.58:3905/openapi.json'));
+  assert.ok(lines.includes('[start-workspace]   Network: http://172.23.0.1:3905/openapi.json'));
+  assert.ok(lines.includes('[start-workspace]   Network: http://192.168.50.12:3905/openapi.json'));
+  assert.ok(lines.includes('[start-workspace]   Network: http://198.18.0.1:3905/openapi.json'));
+  assert.equal(lines.includes('[start-workspace]   Network: http://127.0.0.1:3905/openapi.json'), false);
   assert.equal(lines.some((line) => line.includes('fe80::1')), false);
   assert.equal(
-    lines.filter((line) => line === '[start-workspace]   Network: http://198.18.0.1:3900/openapi.json').length,
+    lines.filter((line) => line === '[start-workspace]   Network: http://198.18.0.1:3905/openapi.json').length,
     1,
   );
 
