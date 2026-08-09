@@ -14,8 +14,8 @@ pub struct RouterApiRouteManifest {
 pub const PACKAGE_NAME: &str = "sdkwork-routes-agent-open-api";
 pub const CAPABILITY: &str = "agent";
 pub const SURFACE: &str = "open-api";
-pub const API_AUTHORITY: &str = "sdkwork-agent-open-api";
-pub const SDK_FAMILY: &str = "sdkwork-agent-sdk";
+pub const API_AUTHORITY: &str = "sdkwork-cloudrouter.agent-open-api";
+pub const SDK_FAMILY: &str = "cloudrouter-open-sdk";
 
 pub fn route_manifest() -> RouterApiRouteManifest {
     RouterApiRouteManifest {

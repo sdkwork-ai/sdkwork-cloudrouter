@@ -83,7 +83,6 @@ pub use admin_storage::admin_storage_router_with_store;
 pub use admin_system::admin_system_router_with_installer;
 pub use admin_transaction_center::admin_transaction_center_router_with_store;
 pub use admin_user::{admin_user_api_key_command_router_with_store, admin_user_router_with_store};
-pub use app_api_keys::app_api_key_router;
 pub use app_api_keys::app_api_key_router_with_read_store_and_command_store;
 pub use app_chat::app_chat_router;
 pub use app_chat::app_chat_router_with_store;

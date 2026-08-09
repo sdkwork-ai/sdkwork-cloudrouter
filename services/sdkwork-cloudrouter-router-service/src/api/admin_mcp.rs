@@ -175,10 +175,6 @@ pub fn admin_mcp_router_with_store(store: Arc<dyn AdminMcpStore + Send + Sync>) 
             post(check_health),
         )
         .route(
-            "/backend/v3/api/mcp/servers/{server_id}/health-check",
-            post(check_health),
-        )
-        .route(
             "/backend/v3/api/mcp/servers/{server_id}/tools",
             get(list_tools),
         )

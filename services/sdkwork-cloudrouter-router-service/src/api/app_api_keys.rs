@@ -46,18 +46,6 @@ const HASH_ALG_HMAC_SHA256: &str = "HMAC_SHA256";
 const SECRET_VERSION: i64 = 1;
 const IDEMPOTENCY_KEY_HEADER: &str = "Idempotency-Key";
 
-struct ReadOnlyAppApiKeyState<C> {
-    catalog: Arc<C>,
-}
-
-impl<C> Clone for ReadOnlyAppApiKeyState<C> {
-    fn clone(&self) -> Self {
-        Self {
-            catalog: Arc::clone(&self.catalog),
-        }
-    }
-}
-
 struct AppApiKeyState {
     read_store: Arc<dyn GatewayApiKeyManagementReadStore + Send + Sync>,
     command_store: Arc<dyn GatewayApiKeyCommandStore + Send + Sync>,
@@ -181,15 +169,6 @@ struct AppApiKeyUpdateRequest {
     chain: Option<ChainPolicy>,
 }
 
-pub fn app_api_key_router<C>(catalog: Arc<C>) -> Router
-where
-    C: PricingCatalog + Send + Sync + 'static,
-{
-    Router::new()
-        .route("/app/v3/api/iam/api_keys", get(fetch_catalog_keys::<C>))
-        .with_state(ReadOnlyAppApiKeyState { catalog })
-}
-
 pub fn app_api_key_router_with_read_store_and_command_store(
     read_store: Arc<dyn GatewayApiKeyManagementReadStore + Send + Sync>,
     command_store: Arc<dyn GatewayApiKeyCommandStore + Send + Sync>,
@@ -210,14 +189,6 @@ pub fn app_api_key_router_with_read_store_and_command_store(
             secret_generator,
             chain_policy_store,
         })
-}
-
-async fn fetch_catalog_keys<C>(State(state): State<ReadOnlyAppApiKeyState<C>>) -> impl IntoResponse
-where
-    C: PricingCatalog + Send + Sync + 'static,
-{
-    let snapshot = GatewayApiKeyManagementSnapshot::from_pricing_catalog(state.catalog.as_ref());
-    Json(success_envelope(public_catalog_list_response(&snapshot)))
 }
 
 async fn fetch_keys(
