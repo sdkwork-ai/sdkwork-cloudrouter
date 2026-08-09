@@ -924,7 +924,7 @@ async fn load_recharge_sku_product_id(
           AND tenant_id = $2::text
           AND (
                 organization_id = $3::text
-                OR organization_id IS NULL
+                OR organization_id = '0'
               )
         LIMIT 1
         "#,
@@ -1458,7 +1458,7 @@ async fn update_recharge_sku_row_by_id(
           AND tenant_id = $9::text
           AND (
                 organization_id = $10::text
-                OR organization_id IS NULL
+                OR organization_id = '0'
               )
         "#,
     )
@@ -1501,7 +1501,7 @@ async fn update_recharge_sku_status_by_id(
           AND tenant_id = $4::text
           AND (
                 organization_id = $5::text
-                OR organization_id IS NULL
+                OR organization_id = '0'
               )
         "#,
     )

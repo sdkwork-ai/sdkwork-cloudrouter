@@ -31,7 +31,7 @@ LEFT JOIN (
     FROM ai_metering_request_trace
     WHERE status = 1
       AND tenant_id = $1
-      AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
+      AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
       AND NULLIF(request_id, '') IS NOT NULL
       AND started_at IS NOT NULL
        AND started_at >= $3::timestamptz
@@ -45,7 +45,7 @@ LEFT JOIN (
  AND failed_request.request_id = usage.request_id
 WHERE usage.status = 1
   AND usage.tenant_id = $1
-  AND (usage.organization_id = $2 OR usage.organization_id = 0 OR usage.organization_id IS NULL)
+  AND (usage.organization_id = $2 OR usage.organization_id = 0 OR usage.organization_id = '0')
   AND usage.occurred_at >= $3::timestamptz
   AND usage.occurred_at <= $4::timestamptz
 "#;
@@ -71,7 +71,7 @@ WITH agg AS (
     FROM ai_metering_usage
     WHERE status = 1
       AND tenant_id = $1
-      AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
+      AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
       AND occurred_at >= $3::timestamptz
       AND occurred_at <= $4::timestamptz
       AND COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown') = ANY($5::text[])
@@ -125,7 +125,7 @@ WITH agg AS (
     FROM ai_metering_usage
     WHERE status = 1
       AND tenant_id = $1
-      AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
+      AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
       AND occurred_at >= $3::timestamptz
       AND occurred_at <= $4::timestamptz
     GROUP BY COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), 'unknown')
@@ -174,7 +174,7 @@ WITH agg AS (
     FROM ai_metering_usage
     WHERE status = 1
       AND tenant_id = $1
-      AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
+      AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
       AND occurred_at >= $3::timestamptz
       AND occurred_at <= $4::timestamptz
     GROUP BY COALESCE(modality, 0)
@@ -447,7 +447,7 @@ async fn load_trend(
             FROM ai_metering_usage
             WHERE status = 1
               AND tenant_id = $1
-              AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
+              AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
               AND occurred_at IS NOT NULL
               AND occurred_at >= $3::timestamptz
               AND occurred_at <= $4::timestamptz
@@ -518,7 +518,7 @@ async fn load_user_rankings(
         FROM ai_metering_usage
         WHERE status = 1
           AND tenant_id = $1
-          AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
+          AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
           AND occurred_at >= $3::timestamptz
           AND occurred_at <= $4::timestamptz
         GROUP BY COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown'), COALESCE(NULLIF(owner_name_snapshot, ''), CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), 'unknown')
@@ -579,7 +579,7 @@ async fn load_model_rankings(
             FROM ai_metering_request_trace
             WHERE status = 1
               AND tenant_id = $1
-              AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
+              AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
               AND NULLIF(request_id, '') IS NOT NULL
               AND started_at IS NOT NULL
               AND started_at >= $3::timestamptz
@@ -593,7 +593,7 @@ async fn load_model_rankings(
          AND failed_request.request_id = usage.request_id
         WHERE usage.status = 1
           AND usage.tenant_id = $1
-          AND (usage.organization_id = $2 OR usage.organization_id = 0 OR usage.organization_id IS NULL)
+          AND (usage.organization_id = $2 OR usage.organization_id = 0 OR usage.organization_id = '0')
           AND usage.occurred_at >= $3::timestamptz
           AND usage.occurred_at <= $4::timestamptz
         GROUP BY

@@ -1428,8 +1428,8 @@ function enumCheck(column: string, values: readonly string[], name: string): Fil
 function usageScopeIdentityCheck(tableName: string): FileSchemaCheck {
   return {
     expression: [
-      "((scope_type = 'tenant' AND scope_id = tenant_id AND organization_id IS NULL AND user_id IS NULL AND space_id IS NULL AND app_id IS NULL AND business_domain IS NULL)",
-      "OR (scope_type = 'organization' AND scope_id = organization_id AND organization_id IS NOT NULL AND user_id IS NULL AND space_id IS NULL AND app_id IS NULL AND business_domain IS NULL)",
+      "((scope_type = 'tenant' AND scope_id = tenant_id AND organization_id = '0' AND user_id IS NULL AND space_id IS NULL AND app_id IS NULL AND business_domain IS NULL)",
+      "OR (scope_type = 'organization' AND scope_id = organization_id AND organization_id <> '0' AND user_id IS NULL AND space_id IS NULL AND app_id IS NULL AND business_domain IS NULL)",
       "OR (scope_type = 'user' AND scope_id = user_id AND user_id IS NOT NULL AND space_id IS NULL AND app_id IS NULL AND business_domain IS NULL)",
       "OR (scope_type = 'space' AND scope_id = space_id AND space_id IS NOT NULL AND user_id IS NULL AND app_id IS NULL AND business_domain IS NULL)",
       "OR (scope_type = 'app' AND scope_id = app_id AND app_id IS NOT NULL AND user_id IS NULL AND space_id IS NULL AND business_domain IS NULL)",

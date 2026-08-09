@@ -82,7 +82,7 @@ async fn list_service_nodes(
             COUNT(*) OVER() AS total
         FROM ops_gateway_instance
         WHERE (tenant_id = $1 OR tenant_id = 0 OR tenant_id IS NULL)
-          AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
+          AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
           AND deleted_at IS NULL
           AND ($3::text IS NULL
                OR LOWER(COALESCE(instance_code, '')) LIKE '%' || LOWER($3::text) || '%'
@@ -199,7 +199,7 @@ async fn update_service_node(
             updated_at = CURRENT_TIMESTAMP,
             version = COALESCE(version, 0) + 1
         WHERE (tenant_id = $4 OR tenant_id = 0 OR tenant_id IS NULL)
-          AND (organization_id = $5 OR organization_id = 0 OR organization_id IS NULL)
+          AND (organization_id = $5 OR organization_id = 0 OR organization_id = '0')
           AND deleted_at IS NULL
           AND (instance_code = $6 OR id::text = $6)
         "#,
@@ -237,7 +237,7 @@ async fn update_service_node_status(
             updated_at = CURRENT_TIMESTAMP,
             version = COALESCE(version, 0) + 1
         WHERE (tenant_id = $2 OR tenant_id = 0 OR tenant_id IS NULL)
-          AND (organization_id = $3 OR organization_id = 0 OR organization_id IS NULL)
+          AND (organization_id = $3 OR organization_id = 0 OR organization_id = '0')
           AND deleted_at IS NULL
           AND (instance_code = $4 OR id::text = $4)
         "#,
@@ -273,7 +273,7 @@ async fn delete_service_node(
             updated_at = CURRENT_TIMESTAMP,
             version = COALESCE(version, 0) + 1
         WHERE (tenant_id = $2 OR tenant_id = 0 OR tenant_id IS NULL)
-          AND (organization_id = $3 OR organization_id = 0 OR organization_id IS NULL)
+          AND (organization_id = $3 OR organization_id = 0 OR organization_id = '0')
           AND deleted_at IS NULL
           AND (instance_code = $4 OR id::text = $4)
         "#,
@@ -308,7 +308,7 @@ async fn load_service_node(
             COALESCE(updated_at::text, created_at::text, '') AS updated_at
         FROM ops_gateway_instance
         WHERE (tenant_id = $1 OR tenant_id = 0 OR tenant_id IS NULL)
-          AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
+          AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
           AND deleted_at IS NULL
           AND (instance_code = $3 OR id::text = $3)
         LIMIT 1
@@ -336,7 +336,7 @@ async fn load_metadata(
         SELECT COALESCE(metadata::text, '{}') AS metadata
         FROM ops_gateway_instance
         WHERE (tenant_id = $1 OR tenant_id = 0 OR tenant_id IS NULL)
-          AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
+          AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
           AND deleted_at IS NULL
           AND (instance_code = $3 OR id::text = $3)
         LIMIT 1

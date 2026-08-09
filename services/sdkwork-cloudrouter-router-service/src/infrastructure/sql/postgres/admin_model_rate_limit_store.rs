@@ -181,7 +181,7 @@ async fn find_upstream_account_group(
         SELECT id, COALESCE(group_code, '') AS code, COALESCE(group_name, '') AS name
         FROM ai_upstream_account_group
         WHERE (tenant_id = $1 OR tenant_id = 0 OR tenant_id IS NULL)
-          AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
+          AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
           AND (group_code = $3 OR group_name = $4)
           AND status = 1
           AND deleted_at IS NULL

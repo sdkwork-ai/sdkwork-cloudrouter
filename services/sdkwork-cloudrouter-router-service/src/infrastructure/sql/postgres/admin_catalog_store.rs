@@ -199,7 +199,7 @@ async fn list_categories(
             COUNT(*) OVER() AS total
         FROM commerce_product_category
         WHERE tenant_id = $1::text
-          AND (organization_id = $2::text OR organization_id IS NULL)
+          AND (organization_id = $2::text OR organization_id = '0')
           AND ($3 IS NULL OR parent_category_id = $3)
           AND ($4 IS NULL OR status = $4)
           AND (
@@ -300,7 +300,7 @@ async fn fetch_category_ancestor_rows(
                 updated_at
             FROM commerce_product_category
             WHERE tenant_id = $1::text
-              AND (organization_id = $2::text OR organization_id IS NULL)
+              AND (organization_id = $2::text OR organization_id = '0')
               AND id = ANY($3::text[])
             UNION
             SELECT
@@ -315,7 +315,7 @@ async fn fetch_category_ancestor_rows(
             FROM commerce_product_category c
             INNER JOIN ancestors a ON c.id = a.parent_category_id
             WHERE c.tenant_id = $1::text
-              AND (c.organization_id = $2::text OR c.organization_id IS NULL)
+              AND (c.organization_id = $2::text OR c.organization_id = '0')
         )
         SELECT DISTINCT
             id,
@@ -356,7 +356,7 @@ async fn fetch_category_rows(
             updated_at
         FROM commerce_product_category
         WHERE tenant_id = $1::text
-          AND (organization_id = $2::text OR organization_id IS NULL)
+          AND (organization_id = $2::text OR organization_id = '0')
         "#,
     )
     .bind(subject.tenant_id)
@@ -446,7 +446,7 @@ async fn upsert_category(
                 updated_at = $6
             WHERE id = $7
               AND tenant_id = $8::text
-              AND (organization_id = $9::text OR organization_id IS NULL)
+              AND (organization_id = $9::text OR organization_id = '0')
             "#,
         )
         .bind(&command.category_no)
@@ -539,7 +539,7 @@ async fn delete_category(pool: &PgPool, command: DeleteAdminCategoryCommand) -> 
         SELECT COUNT(1)
         FROM commerce_product_category
         WHERE tenant_id = $1::text
-          AND (organization_id = $2::text OR organization_id IS NULL)
+          AND (organization_id = $2::text OR organization_id = '0')
           AND parent_category_id = $3
           AND status <> 'archived'
         "#,
@@ -563,7 +563,7 @@ async fn delete_category(pool: &PgPool, command: DeleteAdminCategoryCommand) -> 
           ON p.tenant_id = pc.tenant_id
          AND p.id = pc.spu_id
         WHERE pc.tenant_id = $1::text
-          AND (pc.organization_id = $2::text OR pc.organization_id IS NULL)
+          AND (pc.organization_id = $2::text OR pc.organization_id = '0')
           AND pc.category_id = $3
           AND pc.status = 'active'
           AND p.status <> 'archived'
@@ -587,7 +587,7 @@ async fn delete_category(pool: &PgPool, command: DeleteAdminCategoryCommand) -> 
             updated_at = $1
         WHERE id = $2
           AND tenant_id = $3::text
-          AND (organization_id = $4::text OR organization_id IS NULL)
+          AND (organization_id = $4::text OR organization_id = '0')
         "#,
     )
     .bind(&command.requested_at)
@@ -868,7 +868,7 @@ async fn list_products(
                 FROM commerce_product_spu_category pc
                 WHERE pc.tenant_id = p.tenant_id
                   AND pc.spu_id = p.id
-                  AND (pc.organization_id = p.organization_id OR pc.organization_id IS NULL OR p.organization_id IS NULL)
+                  AND (pc.organization_id = p.organization_id OR pc.organization_id = '0' OR p.organization_id = '0')
                   AND pc.status = 'active'
             ) AS category_ids,
             p.status,
@@ -880,14 +880,14 @@ async fn list_products(
             COUNT(*) OVER() AS total
         FROM commerce_product_spu p
         WHERE p.tenant_id = $1::text
-          AND (p.organization_id = $2::text OR p.organization_id IS NULL)
+          AND (p.organization_id = $2::text OR p.organization_id = '0')
           AND ($3 IS NULL OR p.status = $3)
           AND ($4 IS NULL OR EXISTS (
               SELECT 1
               FROM commerce_product_spu_category pc
               WHERE pc.tenant_id = p.tenant_id
                 AND pc.spu_id = p.id
-                AND (pc.organization_id = p.organization_id OR pc.organization_id IS NULL OR p.organization_id IS NULL)
+                AND (pc.organization_id = p.organization_id OR pc.organization_id = '0' OR p.organization_id = '0')
                 AND pc.category_id = $4
                 AND pc.status = 'active'
           ))
@@ -949,7 +949,7 @@ async fn upsert_product(
                 updated_at = $7
             WHERE id = $8
               AND tenant_id = $9::text
-              AND (organization_id = $10::text OR organization_id IS NULL)
+              AND (organization_id = $10::text OR organization_id = '0')
             "#,
         )
         .bind(&command.spu_no)
@@ -1068,7 +1068,7 @@ async fn delete_product(pool: &PgPool, command: DeleteAdminProductCommand) -> Do
             updated_at = $1
         WHERE id = $2
           AND tenant_id = $3::text
-          AND (organization_id = $4::text OR organization_id IS NULL)
+          AND (organization_id = $4::text OR organization_id = '0')
         "#,
     )
     .bind(&command.requested_at)
@@ -1088,7 +1088,7 @@ async fn delete_product(pool: &PgPool, command: DeleteAdminProductCommand) -> Do
             updated_at = $1
         WHERE spu_id = $2
           AND tenant_id = $3::text
-          AND (organization_id = $4::text OR organization_id IS NULL)
+          AND (organization_id = $4::text OR organization_id = '0')
         "#,
     )
     .bind(&command.requested_at)
@@ -1126,7 +1126,7 @@ async fn list_skus(
           ON p.tenant_id = s.tenant_id
          AND p.id = s.spu_id
         WHERE s.tenant_id = $1::text
-          AND (s.organization_id = $2::text OR s.organization_id IS NULL)
+          AND (s.organization_id = $2::text OR s.organization_id = '0')
           AND ($3 IS NULL OR s.spu_id = $3)
           AND ($4 IS NULL OR s.fulfillment_type = $4)
           AND ($5 IS NULL OR s.status = $5)
@@ -1197,7 +1197,7 @@ async fn upsert_sku(
                 updated_at = $10
             WHERE id = $11
               AND tenant_id = $12::text
-              AND (organization_id = $13::text OR organization_id IS NULL)
+              AND (organization_id = $13::text OR organization_id = '0')
             "#,
         )
         .bind(&command.sku_no)
@@ -1270,7 +1270,7 @@ async fn delete_sku(pool: &PgPool, command: DeleteAdminSkuCommand) -> DomainResu
             updated_at = $1
         WHERE id = $2
           AND tenant_id = $3::text
-          AND (organization_id = $4::text OR organization_id IS NULL)
+          AND (organization_id = $4::text OR organization_id = '0')
         "#,
     )
     .bind(&command.requested_at)
@@ -1426,7 +1426,7 @@ async fn list_attributes(
             COUNT(*) OVER() AS total
         FROM commerce_product_attribute
         WHERE tenant_id = $1::text
-          AND (organization_id = $2::text OR organization_id IS NULL)
+          AND (organization_id = $2::text OR organization_id = '0')
           AND ($3 IS NULL OR status = $3)
         ORDER BY sort_weight ASC, attribute_no ASC
         LIMIT $4 OFFSET $5
@@ -1538,7 +1538,7 @@ async fn list_category_attributes(
           ON a.tenant_id = ca.tenant_id
          AND a.id = ca.attribute_id
         WHERE ca.tenant_id = $1::text
-          AND (ca.organization_id = $2::text OR ca.organization_id IS NULL)
+          AND (ca.organization_id = $2::text OR ca.organization_id = '0')
           AND ($3 IS NULL OR ca.category_id = $3)
           AND ($4 IS NULL OR ca.attribute_id = $4)
           AND ($5 IS NULL OR ca.status = $5)
@@ -1599,7 +1599,7 @@ async fn upsert_category_attribute(
                 updated_at = $8
             WHERE id = $9
               AND tenant_id = $10::text
-              AND (organization_id = $11::text OR organization_id IS NULL)
+              AND (organization_id = $11::text OR organization_id = '0')
             "#,
         )
         .bind(&command.category_id)
@@ -1666,7 +1666,7 @@ async fn ensure_category_attribute_refs(
         SELECT COUNT(1)
         FROM commerce_product_category
         WHERE tenant_id = $1::text
-          AND (organization_id = $2::text OR organization_id IS NULL)
+          AND (organization_id = $2::text OR organization_id = '0')
           AND id = $3
           AND status <> 'archived'
         "#,
@@ -1685,7 +1685,7 @@ async fn ensure_category_attribute_refs(
         SELECT COUNT(1)
         FROM commerce_product_attribute
         WHERE tenant_id = $1::text
-          AND (organization_id = $2::text OR organization_id IS NULL)
+          AND (organization_id = $2::text OR organization_id = '0')
           AND id = $3
           AND status <> 'archived'
         "#,
@@ -1713,7 +1713,7 @@ async fn delete_category_attribute(
             updated_at = $1
         WHERE id = $2
           AND tenant_id = $3::text
-          AND (organization_id = $4::text OR organization_id IS NULL)
+          AND (organization_id = $4::text OR organization_id = '0')
         "#,
     )
     .bind(&command.requested_at)
@@ -1751,7 +1751,7 @@ async fn list_price_lists(
             COUNT(*) OVER() AS total
         FROM commerce_price_list
         WHERE tenant_id = $1::text
-          AND (organization_id = $2::text OR organization_id IS NULL)
+          AND (organization_id = $2::text OR organization_id = '0')
           AND ($3 IS NULL OR currency_code = $3)
           AND ($4 IS NULL OR market_code = $4)
           AND ($5 IS NULL OR status = $5)
@@ -1859,7 +1859,7 @@ async fn load_product(
                 FROM commerce_product_spu_category pc
                 WHERE pc.tenant_id = p.tenant_id
                   AND pc.spu_id = p.id
-                  AND (pc.organization_id = p.organization_id OR pc.organization_id IS NULL OR p.organization_id IS NULL)
+                  AND (pc.organization_id = p.organization_id OR pc.organization_id = '0' OR p.organization_id = '0')
                   AND pc.status = 'active'
             ) AS category_ids,
             p.status,
@@ -1871,7 +1871,7 @@ async fn load_product(
         FROM commerce_product_spu p
         WHERE p.id = $1
           AND p.tenant_id = $2::text
-          AND (p.organization_id = $3::text OR p.organization_id IS NULL)
+          AND (p.organization_id = $3::text OR p.organization_id = '0')
         "#,
     )
     .bind(product_id)
@@ -1896,7 +1896,7 @@ async fn load_sku(
         FROM commerce_product_sku
         WHERE id = $1
           AND tenant_id = $2::text
-          AND (organization_id = $3::text OR organization_id IS NULL)
+          AND (organization_id = $3::text OR organization_id = '0')
         "#,
     )
     .bind(sku_id)
@@ -1922,7 +1922,7 @@ async fn load_attribute(
         FROM commerce_product_attribute
         WHERE id = $1
           AND tenant_id = $2::text
-          AND (organization_id = $3::text OR organization_id IS NULL)
+          AND (organization_id = $3::text OR organization_id = '0')
         "#,
     )
     .bind(attribute_id)
@@ -1979,7 +1979,7 @@ async fn load_category_attribute(
          AND a.id = ca.attribute_id
         WHERE ca.id = $1
           AND ca.tenant_id = $2::text
-          AND (ca.organization_id = $3::text OR ca.organization_id IS NULL)
+          AND (ca.organization_id = $3::text OR ca.organization_id = '0')
         "#,
     )
     .bind(binding_id)
@@ -2004,7 +2004,7 @@ async fn load_price_list(
         FROM commerce_price_list
         WHERE id = $1
           AND tenant_id = $2::text
-          AND (organization_id = $3::text OR organization_id IS NULL)
+          AND (organization_id = $3::text OR organization_id = '0')
         "#,
     )
     .bind(price_list_id)
@@ -2201,7 +2201,7 @@ async fn sku_image_resource(
         SELECT resource_snapshot
         FROM commerce_product_media
         WHERE tenant_id = $1::text
-          AND (organization_id = $2::text OR organization_id IS NULL)
+          AND (organization_id = $2::text OR organization_id = '0')
           AND owner_type = 'sku'
           AND owner_id = $3
           AND media_role = 'sku_image'

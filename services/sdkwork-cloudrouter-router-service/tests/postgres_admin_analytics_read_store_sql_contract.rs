@@ -130,9 +130,9 @@ fn postgres_admin_analytics_read_store_keeps_sqlite_aligned_usage_fact_fallbacks
 fn postgres_admin_analytics_read_store_includes_default_scope_usage_rows() {
     for expected in [
         "usage.tenant_id = $1",
-        "(usage.organization_id = $2 OR usage.organization_id = 0 OR usage.organization_id IS NULL)",
+        "(usage.organization_id = $2 OR usage.organization_id = 0 OR usage.organization_id = '0')",
         "AND tenant_id = $1",
-        "(organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)",
+        "(organization_id = $2 OR organization_id = 0 OR organization_id = '0')",
     ] {
         assert_sql_contains(POSTGRES_ADMIN_ANALYTICS_READ_STORE, expected);
     }

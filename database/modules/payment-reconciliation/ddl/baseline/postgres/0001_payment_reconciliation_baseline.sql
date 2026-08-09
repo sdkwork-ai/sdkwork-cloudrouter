@@ -15,7 +15,7 @@
 CREATE TABLE IF NOT EXISTS commerce_payment_statement (
     id                      TEXT PRIMARY KEY,
     tenant_id               TEXT NOT NULL,
-    organization_id         TEXT,
+    organization_id         TEXT NOT NULL DEFAULT '0',
     statement_no            TEXT NOT NULL,
     supplier_code           TEXT NOT NULL,
     provider_account_id     TEXT,
@@ -53,7 +53,7 @@ CREATE INDEX IF NOT EXISTS idx_commerce_payment_statement_run_match
 CREATE TABLE IF NOT EXISTS commerce_payment_statement_item (
     id                      TEXT PRIMARY KEY,
     tenant_id               TEXT NOT NULL,
-    organization_id         TEXT,
+    organization_id         TEXT NOT NULL DEFAULT '0',
     statement_id            TEXT NOT NULL,
     supplier_code           TEXT NOT NULL,
     provider_account_id     TEXT,
@@ -98,7 +98,7 @@ CREATE INDEX IF NOT EXISTS idx_commerce_payment_statement_item_refund_no
 CREATE TABLE IF NOT EXISTS commerce_payment_reconciliation_item (
     id                      TEXT PRIMARY KEY,
     tenant_id               TEXT NOT NULL,
-    organization_id         TEXT,
+    organization_id         TEXT NOT NULL DEFAULT '0',
     reconciliation_run_id   TEXT NOT NULL,
     statement_id            TEXT NOT NULL,
     statement_item_id       TEXT,
@@ -138,7 +138,7 @@ CREATE INDEX IF NOT EXISTS idx_commerce_payment_reconciliation_item_unresolved
 CREATE TABLE IF NOT EXISTS commerce_payment_reconciliation_run (
     id                      TEXT PRIMARY KEY,
     tenant_id               TEXT NOT NULL,
-    organization_id         TEXT,
+    organization_id         TEXT NOT NULL DEFAULT '0',
     run_no                  TEXT NOT NULL,
     provider_code           TEXT,
     provider_account_id     TEXT,

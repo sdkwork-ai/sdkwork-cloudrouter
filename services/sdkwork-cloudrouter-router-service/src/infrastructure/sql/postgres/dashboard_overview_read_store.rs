@@ -104,7 +104,7 @@ JOIN ai_model m
  )
 WHERE r.status = 1
   AND (r.tenant_id = $1 OR r.tenant_id = 0 OR r.tenant_id IS NULL)
-  AND (r.organization_id = $2 OR r.organization_id = 0 OR r.organization_id IS NULL)
+  AND (r.organization_id = $2 OR r.organization_id = 0 OR r.organization_id = '0')
   AND NULLIF(r.catalog_key, '') IS NOT NULL
 ORDER BY
     CASE
@@ -153,7 +153,7 @@ SELECT CAST(COALESCE(metric_value, 0) AS TEXT) AS metric_value
 FROM ops_metric_snapshot
 WHERE status = 1
   AND (tenant_id = $1 OR tenant_id = 0 OR tenant_id IS NULL)
-  AND (organization_id = $2 OR organization_id = 0 OR organization_id IS NULL)
+  AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
   AND lower(COALESCE(metric_name, '')) IN ('latency_p50_ms', 'latency_p95_ms', 'gateway_latency_ms')
 ORDER BY period_start DESC NULLS LAST, id DESC
 LIMIT 10
@@ -171,7 +171,7 @@ SELECT
     i.health_status AS health_status
 FROM ops_gateway_instance i
 WHERE (i.tenant_id = $1 OR i.tenant_id = 0 OR i.tenant_id IS NULL)
-  AND (i.organization_id = $2 OR i.organization_id = 0 OR i.organization_id IS NULL)
+  AND (i.organization_id = $2 OR i.organization_id = 0 OR i.organization_id = '0')
   AND i.status = 1
   AND i.deleted_at IS NULL
 ORDER BY i.last_heartbeat_at DESC NULLS LAST, i.updated_at DESC NULLS LAST, i.id DESC
