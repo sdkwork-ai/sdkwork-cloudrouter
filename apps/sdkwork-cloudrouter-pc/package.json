@@ -249,7 +249,6 @@
     "@sdkwork/cloudrouter-pc-rankings": "workspace:*",
     "@sdkwork/cloudrouter-pc-shell": "workspace:*",
     "@sdkwork/documents-pc-sdk-reference": "workspace:*",
-    "@sdkwork/cloudrouter-pc-types": "workspace:*",
     "@sdkwork/generations-app-sdk": "workspace:*",
     "@sdkwork/memory-app-sdk": "workspace:*",
     "@sdkwork/agents-app-sdk": "workspace:*",

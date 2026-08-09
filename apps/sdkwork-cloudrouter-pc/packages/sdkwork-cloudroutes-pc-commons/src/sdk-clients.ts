@@ -5,7 +5,8 @@ import {
 import { createTokenManager, type AuthTokenManager, type AuthTokens } from '@sdkwork/sdk-common';
 import { SdkworkAppClient, type SdkworkAppConfig } from '@sdkwork/cloudrouter-app-sdk';
 import { SdkworkBackendClient, type SdkworkBackendConfig } from '@sdkwork/cloudrouter-backend-sdk';
-import { SdkworkDriveBackendClient as DriveBackendClient } from '@sdkwork/cloudrouter-pc-core/sdk';
+import { SdkworkBackendClient as SdkworkDriveBackendClient } from '@sdkwork/drive-backend-sdk';
+import { SdkworkBackendClient as DriveBackendClient } from '@sdkwork/drive-backend-sdk';
 import { SdkworkBackendClient as ModelsBackendClient } from '@sdkwork/models-backend-sdk';
 import { SdkworkAppClient as ModelsAppClient } from '@sdkwork/models-app-sdk';
 import { SdkworkBackendClient as MembershipBackendClient } from '@sdkwork/membership-backend-sdk';
@@ -15,9 +16,9 @@ import { SdkworkBackendClient as PromotionBackendClient } from '@sdkwork/promoti
 import { SdkworkBackendClient as PartnerBackendClient } from '@sdkwork/partner-backend-sdk';
 import { SdkworkAiClient, type SdkworkAiConfig } from '@sdkwork/cloudrouter-open-sdk';
 import {
-  SdkworkGenerationsAppSdkClient as SdkworkGenerationsAppClient,
-  type SdkworkGenerationsAppSdkConfig as SdkworkGenerationsAppConfig,
-} from '@sdkwork/cloudrouter-pc-core/sdk';
+  SdkworkAppClient as SdkworkGenerationsAppClient,
+  type SdkworkAppConfig as SdkworkGenerationsAppConfig,
+} from '@sdkwork/generations-app-sdk';
 import {
   SdkworkAppClient as SdkworkMemoryAppClient,
   type SdkworkAppConfig as SdkworkMemoryAppConfig,
@@ -63,19 +64,29 @@ import {
   type SdkworkDriveAppClient,
 } from '@sdkwork/drive-app-sdk';
 import {
-  SdkworkAccountAppSdkClient as AccountAppClient,
-  type SdkworkAccountAppSdkConfig as AccountAppConfig,
-  SdkworkCatalogAppSdkClient as CatalogAppClient,
-  type SdkworkCatalogAppSdkConfig as CatalogAppConfig,
-  SdkworkMembershipAppSdkClient as MembershipAppClient,
-  type SdkworkMembershipAppSdkConfig as MembershipAppConfig,
-  SdkworkOrderAppSdkClient as OrderAppClient,
-  type SdkworkOrderAppSdkConfig as OrderAppConfig,
-  SdkworkPaymentAppSdkClient as PaymentAppClient,
-  type SdkworkPaymentAppSdkConfig as PaymentAppConfig,
-  SdkworkPromotionAppSdkClient as PromotionAppClient,
-  type SdkworkPromotionAppSdkConfig as PromotionAppConfig,
-} from '@sdkwork/cloudrouter-pc-core/sdk';
+  SdkworkAppClient as AccountAppClient,
+  type SdkworkAppConfig as AccountAppConfig,
+} from '@sdkwork/account-app-sdk';
+import {
+  SdkworkAppClient as CatalogAppClient,
+  type SdkworkAppConfig as CatalogAppConfig,
+} from '@sdkwork/catalog-app-sdk';
+import {
+  SdkworkAppClient as MembershipAppClient,
+  type SdkworkAppConfig as MembershipAppConfig,
+} from '@sdkwork/membership-app-sdk';
+import {
+  SdkworkAppClient as OrderAppClient,
+  type SdkworkAppConfig as OrderAppConfig,
+} from '@sdkwork/order-app-sdk';
+import {
+  SdkworkAppClient as PaymentAppClient,
+  type SdkworkAppConfig as PaymentAppConfig,
+} from '@sdkwork/payment-app-sdk';
+import {
+  SdkworkAppClient as PromotionAppClient,
+  type SdkworkAppConfig as PromotionAppConfig,
+} from '@sdkwork/promotion-app-sdk';
 import {
   clearStoredAppSessionToken,
   loadStoredAppSessionToken,

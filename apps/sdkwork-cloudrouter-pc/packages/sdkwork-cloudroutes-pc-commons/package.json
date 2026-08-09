@@ -156,7 +156,6 @@
     "@sdkwork/cloudrouter-app-sdk": "workspace:*",
     "@sdkwork/cloudrouter-backend-sdk": "workspace:*",
     "@sdkwork/cloudrouter-open-sdk": "workspace:*",
-    "@sdkwork/cloudrouter-pc-core": "workspace:*",
     "@sdkwork/community-app-sdk": "workspace:*",
     "@sdkwork/documents-app-sdk": "workspace:*",
     "@sdkwork/documents-pc-commons": "workspace:*",
@@ -187,7 +186,15 @@
     "@sdkwork/prompts-backend-sdk": "workspace:*",
     "@sdkwork/sdk-common": "workspace:*",
     "@sdkwork/utils": "workspace:*",
-    "@tanstack/react-query": "^5.90.12"
+    "@tanstack/react-query": "^5.90.12",
+    "@sdkwork/drive-backend-sdk": "workspace:*",
+    "@sdkwork/generations-app-sdk": "workspace:*",
+    "@sdkwork/membership-app-sdk": "workspace:*",
+    "@sdkwork/order-app-sdk": "workspace:*",
+    "@sdkwork/payment-app-sdk": "workspace:*",
+    "@sdkwork/promotion-app-sdk": "workspace:*",
+    "@sdkwork/account-app-sdk": "workspace:*",
+    "@sdkwork/catalog-app-sdk": "workspace:*"
   },
   "devDependencies": {
     "typescript": "~5.8.2",
