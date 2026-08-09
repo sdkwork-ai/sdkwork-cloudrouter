@@ -5,7 +5,7 @@
   "defaultProfile": "standalone.development",
   "environments": {
     "development": {
-      "applicationOrigin": "http://cloudrouter-dev.sdkwork.com:3900/",
+      "applicationOrigin": "http://cloudrouter-dev.sdkwork.com:3905/",
       "cloudApiBaseUrl": "https://api-dev.sdkwork.com/"
     },
     "test": {
