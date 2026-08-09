@@ -285,7 +285,7 @@ fn add_composite_prices(
             catalog_key,
             model,
             PriceSide::OfficialReference,
-            meter,
+            meter.clone(),
             Money::usd(official).unwrap(),
         ));
         catalog.add_price(
