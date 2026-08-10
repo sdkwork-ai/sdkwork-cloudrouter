@@ -293,7 +293,7 @@ async fn create_schema(pool: &PgPool) {
         r#"CREATE TABLE commerce_payment_webhook_event (
             id TEXT PRIMARY KEY,
             tenant_id TEXT NOT NULL,
-            organization_id TEXT,
+            organization_id TEXT NOT NULL DEFAULT '0',
             event_id TEXT NOT NULL,
             event_type TEXT NOT NULL,
             provider_code TEXT NOT NULL,
@@ -309,7 +309,7 @@ async fn create_schema(pool: &PgPool) {
         r#"CREATE TABLE commerce_payment_webhook_delivery (
             id TEXT PRIMARY KEY,
             tenant_id TEXT NOT NULL,
-            organization_id TEXT,
+            organization_id TEXT NOT NULL DEFAULT '0',
             delivery_no TEXT NOT NULL,
             provider_code TEXT NOT NULL,
             provider_account_id TEXT,
@@ -337,7 +337,7 @@ async fn create_schema(pool: &PgPool) {
         r#"CREATE TABLE commerce_order (
             id TEXT PRIMARY KEY,
             tenant_id TEXT NOT NULL,
-            organization_id TEXT,
+            organization_id TEXT NOT NULL DEFAULT '0',
             owner_user_id TEXT NOT NULL,
             order_no TEXT NOT NULL,
             status TEXT NOT NULL,
@@ -355,7 +355,7 @@ async fn create_schema(pool: &PgPool) {
         r#"CREATE TABLE commerce_payment_intent (
             id TEXT PRIMARY KEY,
             tenant_id TEXT NOT NULL,
-            organization_id TEXT,
+            organization_id TEXT NOT NULL DEFAULT '0',
             owner_user_id TEXT NOT NULL,
             order_id TEXT NOT NULL,
             provider TEXT NOT NULL,
@@ -370,7 +370,7 @@ async fn create_schema(pool: &PgPool) {
         r#"CREATE TABLE commerce_payment_attempt (
             id TEXT PRIMARY KEY,
             tenant_id TEXT NOT NULL,
-            organization_id TEXT,
+            organization_id TEXT NOT NULL DEFAULT '0',
             owner_user_id TEXT NOT NULL,
             payment_intent_id TEXT NOT NULL,
             order_id TEXT NOT NULL,
@@ -389,7 +389,7 @@ async fn create_schema(pool: &PgPool) {
             id BIGSERIAL PRIMARY KEY,
             uuid VARCHAR(64) NOT NULL,
             tenant_id BIGINT,
-            organization_id BIGINT,
+            organization_id BIGINT NOT NULL DEFAULT 0,
             user_id BIGINT,
             request_id VARCHAR(128),
             trace_id VARCHAR(128),
@@ -451,7 +451,7 @@ async fn create_schema(pool: &PgPool) {
             id BIGSERIAL PRIMARY KEY,
             uuid VARCHAR(64) NOT NULL,
             tenant_id BIGINT,
-            organization_id BIGINT,
+            organization_id BIGINT NOT NULL DEFAULT 0,
             user_id BIGINT,
             request_id VARCHAR(128),
             trace_id VARCHAR(128),

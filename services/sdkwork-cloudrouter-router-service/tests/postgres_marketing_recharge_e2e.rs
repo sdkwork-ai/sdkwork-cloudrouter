@@ -391,7 +391,7 @@ CREATE TABLE IF NOT EXISTS ops_audit_log (
 CREATE TABLE IF NOT EXISTS commerce_exchange_rule (
     id TEXT NOT NULL PRIMARY KEY,
     tenant_id TEXT NOT NULL,
-    organization_id TEXT,
+    organization_id TEXT NOT NULL DEFAULT '0',
     rule_no TEXT NOT NULL,
     source_asset_type TEXT NOT NULL,
     target_asset_type TEXT NOT NULL,
@@ -415,7 +415,7 @@ DROP TABLE IF EXISTS commerce_product_spu;
 CREATE TABLE commerce_product_spu (
     id TEXT NOT NULL PRIMARY KEY,
     tenant_id TEXT NOT NULL,
-    organization_id TEXT,
+    organization_id TEXT NOT NULL DEFAULT '0',
     spu_no TEXT NOT NULL,
     title TEXT,
     subtitle TEXT,
@@ -431,7 +431,7 @@ CREATE TABLE commerce_product_spu (
 CREATE TABLE commerce_product_sku (
     id TEXT NOT NULL PRIMARY KEY,
     tenant_id TEXT NOT NULL,
-    organization_id TEXT,
+    organization_id TEXT NOT NULL DEFAULT '0',
     spu_id TEXT NOT NULL,
     sku_no TEXT NOT NULL,
     name TEXT,
@@ -451,7 +451,7 @@ CREATE TABLE commerce_product_sku (
 CREATE TABLE commerce_product_spu_category (
     id TEXT NOT NULL PRIMARY KEY,
     tenant_id TEXT NOT NULL,
-    organization_id TEXT,
+    organization_id TEXT NOT NULL DEFAULT '0',
     spu_id TEXT NOT NULL,
     category_id TEXT NOT NULL,
     primary_flag BOOLEAN NOT NULL DEFAULT false,
