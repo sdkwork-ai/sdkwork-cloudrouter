@@ -24,6 +24,7 @@ Render or deploy an SDKWork Cloud Router nginx reverse-proxy config.
 
 Options:
   --domain <fqdn>             Full public hostname (default ${DEFAULT_DOMAIN}).
+  --aliases <fqdns>           Comma-separated additional server_name hosts (multi-domain sites).
   --site-family <name>        sites-enabled child directory (default ${DEFAULT_SITE_FAMILY}).
   --site-type <api|web>       Comment and profile label (default ${DEFAULT_SITE_TYPE}).
   --upstream <origin>         Cloud Router edge origin (default ${DEFAULT_UPSTREAM}).
@@ -98,6 +99,13 @@ function parseNginxConfigureArgs(argv = process.argv.slice(2)) {
         break;
       case '--domain':
         settings.domain = requireValue(argv, index, arg);
+        index += 1;
+        break;
+      case '--aliases':
+        settings.aliases = String(requireValue(argv, index, arg))
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean);
         index += 1;
         break;
       case '--site-family':
@@ -269,6 +277,9 @@ function createNginxDeploymentPlan(
 ) {
   const normalizedPlatform = normalizePlatform(settings.platform ?? platform);
   const domain = normalizeDomain(settings.domain ?? DEFAULT_DOMAIN);
+  const aliases = (settings.aliases ?? [])
+    .map((alias) => normalizeDomain(alias))
+    .filter((alias) => alias && alias !== domain);
   const siteFamily = normalizeSiteFamily(settings.siteFamily ?? DEFAULT_SITE_FAMILY);
   const siteType = normalizeSiteType(settings.siteType ?? DEFAULT_SITE_TYPE);
   const upstream = normalizeOrigin(settings.upstream ?? DEFAULT_UPSTREAM);
@@ -295,6 +306,7 @@ function createNginxDeploymentPlan(
   return {
     platform: normalizedPlatform,
     domain,
+    aliases,
     siteFamily,
     siteType,
     fileName,
@@ -368,7 +380,7 @@ function renderNginxConfig(plan) {
 server {
     listen 80;
     listen [::]:80;
-    server_name ${plan.domain};
+    server_name ${[plan.domain, ...(plan.aliases ?? [])].join(' ')};
     access_log /var/log/nginx/${plan.domain}.access.log;
     error_log /var/log/nginx/${plan.domain}.error.log;
     client_max_body_size ${plan.clientMaxBodySize};
@@ -382,7 +394,7 @@ server {
     listen 443 ssl;
     listen [::]:443 ssl;
     http2 on;
-    server_name ${plan.domain};
+    server_name ${[plan.domain, ...(plan.aliases ?? [])].join(' ')};
     access_log /var/log/nginx/${plan.domain}.access.log;
     error_log /var/log/nginx/${plan.domain}.error.log;
 

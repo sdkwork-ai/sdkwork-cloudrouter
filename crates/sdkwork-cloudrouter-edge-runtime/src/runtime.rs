@@ -1796,6 +1796,28 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
         app_router,
     )
     .await;
+    // Open-api surface request logging: every request that reaches the gateway
+    // upstream has passed an open capability router (path matched against the
+    // capability's OpenAPI authority), so all open-api calls are recorded with
+    // `Permanent` retention — external consumers' paid traffic is accounting
+    // evidence and must never be purged. The capture layer mounts on the
+    // single shared upstream (`EdgeInProcessUpstreams.gateway_router`), which
+    // the 11 capability routers all forward to, so no request is captured
+    // twice.
+    let mut open_retention_policy = sdkwork_api_log_assembly::LogRetentionPolicy::default_month();
+    open_retention_policy.default_retention = sdkwork_api_log_assembly::LogRetention::Permanent;
+    let open_surface_resolver: std::sync::Arc<
+        sdkwork_api_log_assembly::ApiSurfaceResolver,
+    > = std::sync::Arc::new(|_path| sdkwork_api_log_assembly::LogApiSurface::OpenApi);
+    let open_log_assembly = sdkwork_api_log_assembly::assemble_backend_business_router_with_pool(
+        &context.database_pool,
+        "sdkwork-cloudrouter-open",
+        Some(open_retention_policy),
+        Some(open_surface_resolver),
+    )
+    .await
+    .map_err(anyhow::Error::msg)?;
+    let gateway_router = gateway_router.layer(open_log_assembly.capture_layer);
     Ok(EdgeInProcessUpstreams::new(
         gateway_router,
         backend_router,

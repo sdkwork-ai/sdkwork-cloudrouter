@@ -4,8 +4,6 @@ export interface AppRoutingAccountGroup {
   authorized: boolean;
   /** Available account count field on app routing account group. */
   availableAccountCount: string;
-  /** Cost multiplier field on app routing account group. */
-  costMultiplier: string;
   /** Description field on app routing account group. */
   description: string;
   /** Fallback mode field on app routing account group. */

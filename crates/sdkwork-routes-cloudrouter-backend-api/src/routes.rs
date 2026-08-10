@@ -722,10 +722,36 @@ pub struct PostgresSharedRuntime {
     pub models_catalog_root: Option<String>,
 }
 
+/// Route tags whose request logs are kept forever (billing/paying surfaces:
+/// recharge records, recharge packages, and payment intents are accounting
+/// evidence and must survive the default 1-month retention).
+const PERMANENT_RETENTION_TAGS: &[&str] = &["billing", "recharges", "payments"];
+
+/// Builds the backend request-log retention policy from the route manifest:
+/// billing/paying tags and any `HttpRoute::log_retention` annotation resolve
+/// to the declared retention; every other path keeps the default 1 month.
+fn build_backend_log_retention_policy() -> sdkwork_api_log_assembly::LogRetentionPolicy {
+    use sdkwork_api_log_assembly::{LogRetention, LogRetentionPolicy, LogRetentionRule};
+    let mut policy = LogRetentionPolicy::default_month();
+    for route in crate::http_route_manifest().routes() {
+        let retention = match route.log_retention {
+            Some(annotation) => LogRetention::parse(annotation),
+            None if PERMANENT_RETENTION_TAGS.contains(&route.tag) => Some(LogRetention::Permanent),
+            None => None,
+        };
+        if let Some(retention) = retention {
+            policy.rules.push(LogRetentionRule {
+                path_prefix: route.path.to_owned(),
+                retention,
+            });
+        }
+    }
+    policy
+}
+
 pub async fn router_with_postgres_shared_runtime(
     runtime: PostgresSharedRuntime,
-) -> Result<Router, ProductCatalogRouterError> {
-    let PostgresSharedRuntime {
+) -> Result<Router, ProductCatalogRouterError> {    let PostgresSharedRuntime {
         config,
         pool,
         database_pool,
@@ -850,6 +876,8 @@ pub async fn router_with_postgres_shared_runtime(
     let log_assembly = sdkwork_api_log_assembly::assemble_backend_business_router_with_pool(
         &database_pool,
         "sdkwork-cloudrouter",
+        Some(build_backend_log_retention_policy()),
+        None,
     )
     .await
     .map_err(|error| {

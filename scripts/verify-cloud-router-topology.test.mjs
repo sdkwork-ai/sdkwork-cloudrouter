@@ -26,6 +26,29 @@ async function readJson(relativePath) {
   return JSON.parse(await read(relativePath));
 }
 
+function envValue(envFile, key) {
+  const line = envFile.split(/\r?\n/u).find((entry) => entry.startsWith(`${key}=`));
+  assert.ok(line, `${key} should be declared`);
+  return line.slice(key.length + 1);
+}
+
+test('standalone.development profile env declares the workspace default binds', async () => {
+  const { workspaceStopTargets } = await import('./stop-cloud-router-application.mjs');
+  const targets = new Map(workspaceStopTargets([]).map((target) => [target.name, target.bind]));
+  const profileEnv = await read('etc/topology/standalone.development.env');
+
+  // `sdkwork-app stop` sweeps the ports declared as bindEnv in the profile env;
+  // they must match the binds the dev workspace actually binds, or stop misses them.
+  assert.equal(
+    envValue(profileEnv, 'SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_INGRESS_BIND'),
+    targets.get('server'),
+  );
+  assert.equal(
+    envValue(profileEnv, 'SDKWORK_CLOUDROUTER_ROUTER_INTERNAL_PORTAL_RENDERER_BIND'),
+    targets.get('portal'),
+  );
+});
+
 test('declares v5 topology spec and profile env files for sdkwork-cloudrouter', async () => {
   assert.equal(await exists('specs/topology.spec.json'), true);
   assert.equal(await exists('scripts/lib/cloud-router-topology.mjs'), true);
@@ -167,6 +190,47 @@ test('workspace topology reads only the application-scoped deployment profile ke
   assert.equal(retiredOnlySettings.deploymentProfile, undefined);
 });
 
+test('cloud client development resolves the remote platform gateway origin', async () => {
+  const { applyTopologyProfileToWorkspaceSettings } = await import('./lib/cloud-router-topology.mjs');
+
+  const cloudSettings = applyTopologyProfileToWorkspaceSettings({
+    runtimeMode: 'client',
+    remoteApiIngressOrigin: 'http://127.0.0.1:3902',
+  }, {
+    SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE: 'cloud',
+    SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL: 'https://api-dev.sdkwork.com',
+  });
+  assert.equal(cloudSettings.remoteApiIngressOrigin, 'https://api-dev.sdkwork.com');
+
+  const explicitSettings = applyTopologyProfileToWorkspaceSettings({
+    runtimeMode: 'client',
+    remoteApiIngressOrigin: 'https://gateway.example.com',
+    remoteApiIngressOriginExplicit: true,
+  }, {
+    SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE: 'cloud',
+    SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL: 'https://api-dev.sdkwork.com',
+  });
+  assert.equal(explicitSettings.remoteApiIngressOrigin, 'https://gateway.example.com');
+
+  const standaloneSettings = applyTopologyProfileToWorkspaceSettings({
+    runtimeMode: 'client',
+    remoteApiIngressOrigin: 'http://127.0.0.1:3902',
+  }, {
+    SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE: 'standalone',
+  });
+  assert.equal(standaloneSettings.remoteApiIngressOrigin, 'http://127.0.0.1:3902');
+
+  assert.throws(
+    () => applyTopologyProfileToWorkspaceSettings({
+      runtimeMode: 'client',
+      remoteApiIngressOrigin: 'http://127.0.0.1:3902',
+    }, {
+      SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE: 'cloud',
+    }),
+    /dev:cloud must not fall back to loopback API defaults/u,
+  );
+});
+
 test('workspace health gate resolves URLs from topology runtime mode', async () => {
   const {
     loopbackHealthUrlFromBind,
@@ -217,7 +281,7 @@ test('bridgeTopologyBindEnvToLegacyRustEnv maps topology binds to Rust service e
 test('cloud-router dev dry-run omits cloud-only surfaces from standalone env', async () => {
   const { loadTopologyProfileForWorkspace, resolveSurfaceHttpUrl, REPO_ROOT } = await import('./lib/cloud-router-topology.mjs');
   const { env } = loadTopologyProfileForWorkspace();
-  assert.equal(resolveSurfaceHttpUrl(env, 'application.public-ingress'), 'http://127.0.0.1:3900');
+  assert.equal(resolveSurfaceHttpUrl(env, 'application.public-ingress'), 'http://127.0.0.1:3905');
   assert.equal(resolveSurfaceHttpUrl(env, 'platform.api-gateway'), undefined);
   assert.equal(env.SDKWORK_APP_ROOT, REPO_ROOT);
   assert.equal(env.SDKWORK_CLOUDROUTER_ROUTER_APP_ROOT, REPO_ROOT);

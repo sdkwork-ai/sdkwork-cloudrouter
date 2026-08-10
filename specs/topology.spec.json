@@ -362,11 +362,15 @@
         "runtimeTarget": "browser",
         "database": "postgres"
       },
+      "dev:cloud": {
+        "script": "dev:cloud",
+        "deploymentProfile": "cloud",
+        "runtimeTarget": "browser"
+      },
       "dev:browser:cloud": {
         "script": "dev:browser:cloud",
         "deploymentProfile": "cloud",
-        "runtimeTarget": "browser",
-        "database": "postgres"
+        "runtimeTarget": "browser"
       },
       "dev:desktop": {
         "script": "dev:desktop",
@@ -416,10 +420,48 @@
   },
   "cloudPublicHosts": {
     "application.public-ingress": {
-      "httpHost": "cloudrouter.sdkwork.com"
+      "httpHost": "router.sdkwork.com",
+      "httpHosts": [
+        "router.sdkwork.com",
+        "router.birdcoder.com",
+        "router.dtupay.com",
+        "cloudrouter.sdkwork.com"
+      ],
+      "note": "multi-base-domain binding per APP_RUNTIME_TOPOLOGY_NAMING.md section 9; cloudrouter.sdkwork.com is a transition alias",
+      "environments": {
+        "development": {
+          "httpHosts": [
+            "router-dev.sdkwork.com",
+            "router-dev.birdcoder.com",
+            "router-dev.dtupay.com",
+            "cloudrouter-dev.sdkwork.com"
+          ]
+        },
+        "test": {
+          "httpHosts": [
+            "router-test.sdkwork.com",
+            "router-test.birdcoder.com",
+            "router-test.dtupay.com",
+            "cloudrouter-test.sdkwork.com"
+          ]
+        },
+        "staging": {
+          "httpHosts": [
+            "router-staging.sdkwork.com",
+            "router-staging.birdcoder.com",
+            "router-staging.dtupay.com",
+            "cloudrouter-staging.sdkwork.com"
+          ]
+        }
+      }
     },
     "platform.api-gateway": {
-      "httpHost": "api.sdkwork.com"
+      "httpHost": "api.sdkwork.com",
+      "environments": {
+        "development": { "httpHost": "api-dev.sdkwork.com" },
+        "test": { "httpHost": "api-test.sdkwork.com" },
+        "staging": { "httpHost": "api-staging.sdkwork.com" }
+      }
     }
   }
 }

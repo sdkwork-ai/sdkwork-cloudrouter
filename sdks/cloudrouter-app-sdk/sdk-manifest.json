@@ -144,28 +144,6 @@
       "packageByLanguage": {
         "typescript": "@sdkwork/drive-app-sdk"
       }
-    },
-    {
-      "workspace": "sdkwork-generations-app-sdk",
-      "role": "consumer-sdk",
-      "required": true,
-      "dependencyMode": "consumer-sdk",
-      "apiPrefix": "/app/v3/api",
-      "generatedTransportImportPolicy": "forbidden",
-      "packageByLanguage": {
-        "typescript": "@sdkwork/generations-app-sdk"
-      }
-    },
-    {
-      "workspace": "sdkwork-memory-app-sdk",
-      "role": "consumer-sdk",
-      "required": true,
-      "dependencyMode": "consumer-sdk",
-      "apiPrefix": "/app/v3/api",
-      "generatedTransportImportPolicy": "forbidden",
-      "packageByLanguage": {
-        "typescript": "@sdkwork/memory-app-sdk"
-      }
     }
   ],
   "dependencyApiExports": [],

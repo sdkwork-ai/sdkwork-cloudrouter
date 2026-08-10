@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "0388ce757c28a8d92e82d393191d55666c10b88c3b9a678ffecd3c4821d30c1f",
+  "changeFingerprint": "bb03f69da6dfa54a417ed03c52a389594f63b9c76c2f13d224a54e7ec036dd49",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -62,6 +62,8 @@
           "src/types/admin-dashboard-pie-chart-item.ts",
           "src/types/admin-dashboard-recent-usage-item.ts",
           "src/types/admin-dashboard-traffic-item.ts",
+          "src/types/admin-exchange-rule-list-response.ts",
+          "src/types/admin-exchange-rule.ts",
           "src/types/admin-firewall-rule-create-request.ts",
           "src/types/admin-ip-limit-create-request.ts",
           "src/types/admin-model-limit-create-request.ts",
@@ -124,6 +126,7 @@
           "src/types/create-upstream-account-group-request.ts",
           "src/types/create-upstream-account-request.ts",
           "src/types/create-upstream-supplier-request.ts",
+          "src/types/exchange-rule-mutation-request.ts",
           "src/types/explain-upstream-account-group-route-request.ts",
           "src/types/field-error.ts",
           "src/types/firewall-rule-item.ts",
@@ -387,10 +390,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 293,
-    "models": 264,
+    "totalFiles": 298,
+    "models": 269,
     "apis": 6,
-    "types": 266
+    "types": 271
   },
   "warnings": [
     {
@@ -433,12 +436,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 202,
+    "writtenFiles": 205,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "0388ce757c28a8d92e82d393191d55666c10b88c3b9a678ffecd3c4821d30c1f",
+    "changeFingerprint": "bb03f69da6dfa54a417ed03c52a389594f63b9c76c2f13d224a54e7ec036dd49",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -482,6 +485,8 @@
         "src/types/admin-dashboard-pie-chart-item.ts",
         "src/types/admin-dashboard-recent-usage-item.ts",
         "src/types/admin-dashboard-traffic-item.ts",
+        "src/types/admin-exchange-rule-list-response.ts",
+        "src/types/admin-exchange-rule.ts",
         "src/types/admin-firewall-rule-create-request.ts",
         "src/types/admin-ip-limit-create-request.ts",
         "src/types/admin-model-limit-create-request.ts",
@@ -544,6 +549,7 @@
         "src/types/create-upstream-account-group-request.ts",
         "src/types/create-upstream-account-request.ts",
         "src/types/create-upstream-supplier-request.ts",
+        "src/types/exchange-rule-mutation-request.ts",
         "src/types/explain-upstream-account-group-route-request.ts",
         "src/types/field-error.ts",
         "src/types/firewall-rule-item.ts",
@@ -701,6 +707,8 @@
             "src/types/admin-dashboard-pie-chart-item.ts",
             "src/types/admin-dashboard-recent-usage-item.ts",
             "src/types/admin-dashboard-traffic-item.ts",
+            "src/types/admin-exchange-rule-list-response.ts",
+            "src/types/admin-exchange-rule.ts",
             "src/types/admin-firewall-rule-create-request.ts",
             "src/types/admin-ip-limit-create-request.ts",
             "src/types/admin-model-limit-create-request.ts",
@@ -763,6 +771,7 @@
             "src/types/create-upstream-account-group-request.ts",
             "src/types/create-upstream-account-request.ts",
             "src/types/create-upstream-supplier-request.ts",
+            "src/types/exchange-rule-mutation-request.ts",
             "src/types/explain-upstream-account-group-route-request.ts",
             "src/types/field-error.ts",
             "src/types/firewall-rule-item.ts",

@@ -15,10 +15,43 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - api.sdkwork.com
+        - router.sdkwork.com
+        - router.birdcoder.com
+        - router.dtupay.com
+        - cloudrouter.sdkwork.com
       secretName: sdkwork-cloudrouter-edge-tls
   rules:
-    - host: api.sdkwork.com
+    - host: router.sdkwork.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sdkwork-cloudrouter-edge
+                port:
+                  number: 3900
+    - host: router.birdcoder.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sdkwork-cloudrouter-edge
+                port:
+                  number: 3900
+    - host: router.dtupay.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sdkwork-cloudrouter-edge
+                port:
+                  number: 3900
+    - host: cloudrouter.sdkwork.com
       http:
         paths:
           - path: /

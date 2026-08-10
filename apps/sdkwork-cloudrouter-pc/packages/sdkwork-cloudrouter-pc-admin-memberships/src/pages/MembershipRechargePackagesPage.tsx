@@ -1,19 +1,18 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pencil, Plus, Save, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { formatMoney, formatMoneyDigits } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
-import { SdkworkSearchableSelect } from '@sdkwork/appbase-pc-react';
+import { BottomPagination, defaultRechargeSettings, listRechargeCurrencyCodes, resolveProblemMessage, type RechargeSettingsSnapshot } from '@sdkwork/cloudroutes-pc-commons';
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
 import { MembershipDrawer } from '../components/MembershipDrawer';
-import {
-  MembershipFormError,
-  MembershipTextField,
-} from '../components/MembershipFormControls';
+import { MembershipEmptyState } from '../components/MembershipEmptyState';
 import {
   MembershipIconActionButton,
   MembershipTableActions,
   MembershipTablePanel,
   confirmMembershipAction,
+  hasNextMembershipPage,
+  membershipPageLabel,
 } from '../components/MembershipPageControls';
 import { MembershipStatusBadge } from '../components/MembershipStatusBadge';
 import { MembershipRechargePackageDrawerForm } from '../forms/MembershipRechargePackageDrawerForm';
@@ -23,95 +22,74 @@ import {
   fetchMembershipAdminRechargePackages,
   fetchMembershipAdminRechargeSettings,
   updateMembershipAdminRechargePackage,
-  updateMembershipAdminRechargeSettings,
+  type MembershipsAdminPageInfo,
   type MembershipsAdminRechargePackageItem,
   type MembershipsAdminRechargePackageMutationInput,
-  type MembershipsAdminRechargeSettingsItem,
 } from '../membershipsService';
-import {
-  computeGrantAmount,
-  listRechargeCurrencyCodes,
-  normalizeRechargeSettings,
-  resolveProblemMessage,
-} from '@sdkwork/cloudroutes-pc-commons';
 import { formatMembershipDateTime } from '../membershipFormat';
-
-type RechargeSettingsDraft = {
-  baseCurrencyCode: string;
-  basePointsPerCny: string;
-  currencyToCnyRates: Record<string, string>;
-};
 
 export function MembershipRechargePackagesPage() {
   const { t, i18n } = useTranslation();
   const displayLocale = i18n.resolvedLanguage ?? i18n.language ?? 'en-US';
   const [packages, setPackages] = useState<MembershipsAdminRechargePackageItem[]>([]);
-  const [settings, setSettings] = useState<MembershipsAdminRechargeSettingsItem | null>(null);
   const [editingPackage, setEditingPackage] = useState<MembershipsAdminRechargePackageItem | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [settingsDraft, setSettingsDraft] = useState<RechargeSettingsDraft>({
-    baseCurrencyCode: 'CNY',
-    basePointsPerCny: '10',
-    currencyToCnyRates: {
-      CNY: '1',
-      USD: '7',
-    },
-  });
-  const [settingsError, setSettingsError] = useState<string | null>(null);
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
-  const [newCurrencyCode, setNewCurrencyCode] = useState('');
-
-  const normalizedSettings = useMemo(
-    () => normalizeRechargeSettings({
-      baseCurrencyCode: settingsDraft.baseCurrencyCode,
-      basePointsPerCny: settingsDraft.basePointsPerCny,
-      currencyToCnyRates: settingsDraft.currencyToCnyRates,
-    }),
-    [settingsDraft],
-  );
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [pageInfo, setPageInfo] = useState<MembershipsAdminPageInfo | null>(null);
+  const [settings, setSettings] = useState<RechargeSettingsSnapshot>(() => defaultRechargeSettings());
+  const requestIdRef = useRef(0);
 
   const supportedCurrencyCodes = useMemo(
-    () => listRechargeCurrencyCodes(normalizedSettings),
-    [normalizedSettings],
+    () => listRechargeCurrencyCodes(settings),
+    [settings],
   );
 
-  const previewExamples = useMemo(() => ([
-    ...supportedCurrencyCodes.slice(0, 3).map((currencyCode) => ({
-      amount: currencyCode === 'USD' ? '20' : '5',
-      currencyCode,
-    })),
-  ].map((item) => ({
-    ...item,
-    grantAmount: computeGrantAmount(item.amount, item.currencyCode, 0, normalizedSettings),
-  }))), [normalizedSettings, supportedCurrencyCodes]);
-
-  const loadRechargeConfiguration = useCallback(async () => {
+  const loadRechargePackages = useCallback(async (requestedPage: number, requestedPageSize: number) => {
+    const requestId = ++requestIdRef.current;
     setIsLoading(true);
     setError(null);
     try {
-      const [loadedPackages, loadedSettings] = await Promise.all([
-        fetchMembershipAdminRechargePackages(),
-        fetchMembershipAdminRechargeSettings(),
-      ]);
-      setPackages(loadedPackages);
-      setSettings(loadedSettings);
-      setSettingsDraft({
-        baseCurrencyCode: loadedSettings.baseCurrencyCode,
-        basePointsPerCny: loadedSettings.basePointsPerCny,
-        currencyToCnyRates: loadedSettings.currencyToCnyRates,
+      const result = await fetchMembershipAdminRechargePackages({
+        page: requestedPage,
+        pageSize: requestedPageSize,
       });
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
+      setPackages(result.items);
+      setPageInfo(result.pageInfo);
     } catch (loadError) {
-      setError(resolveProblemMessage(loadError, t, t('admin.commerce.memberships.rechargePackages.error', 'Recharge packages could not be loaded')));
+      if (requestId === requestIdRef.current) {
+        setError(resolveProblemMessage(loadError, t, t('admin.commerce.memberships.rechargePackages.error', 'Recharge packages could not be loaded')));
+      }
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [t]);
 
+  // The package list only depends on `recharges.packages`; the settings feed
+  // the drawer's live grant preview and are refreshed in the background with
+  // a default fallback so a settings failure never blocks the catalog.
+  const loadDrawerSettings = useCallback(async () => {
+    try {
+      setSettings(await fetchMembershipAdminRechargeSettings());
+    } catch {
+      // fall back to defaultRechargeSettings for the preview
+    }
+  }, []);
+
   useEffect(() => {
-    void loadRechargeConfiguration();
-  }, [loadRechargeConfiguration]);
+    void loadRechargePackages(page, pageSize);
+    void loadDrawerSettings();
+    return () => {
+      requestIdRef.current += 1;
+    };
+  }, [loadRechargePackages, loadDrawerSettings, page, pageSize]);
 
   const openCreateDrawer = () => {
     setEditingPackage(null);
@@ -131,7 +109,7 @@ export function MembershipRechargePackagesPage() {
     }
     setIsDrawerOpen(false);
     setEditingPackage(null);
-    await loadRechargeConfiguration();
+    await loadRechargePackages(page, pageSize);
   };
 
   const handleDeletePackage = async (item: MembershipsAdminRechargePackageItem) => {
@@ -139,65 +117,15 @@ export function MembershipRechargePackagesPage() {
       return;
     }
     await deleteMembershipAdminRechargePackage(item.id);
-    await loadRechargeConfiguration();
+    await loadRechargePackages(page, pageSize);
   };
-
-  const handleSaveSettings = async () => {
-    setIsSavingSettings(true);
-    setSettingsError(null);
-    try {
-      const updated = await updateMembershipAdminRechargeSettings({
-        baseCurrencyCode: settingsDraft.baseCurrencyCode,
-        basePointsPerCny: settingsDraft.basePointsPerCny,
-        currencyToCnyRates: settingsDraft.currencyToCnyRates,
-      });
-      setSettings(updated);
-      setSettingsDraft({
-        baseCurrencyCode: updated.baseCurrencyCode,
-        basePointsPerCny: updated.basePointsPerCny,
-        currencyToCnyRates: updated.currencyToCnyRates,
-      });
-      await loadRechargeConfiguration();
-    } catch (saveError) {
-      setSettingsError(saveError instanceof Error
-        ? saveError.message
-        : t('admin.commerce.memberships.rechargeSettings.error', 'Recharge settings could not be saved'));
-    } finally {
-      setIsSavingSettings(false);
-    }
-  };
-
-  const handleCurrencyRateChange = useCallback((currencyCode: string, value: string) => {
-    setSettingsDraft((current) => ({
-      ...current,
-      currencyToCnyRates: {
-        ...current.currencyToCnyRates,
-        [currencyCode]: value,
-      },
-    }));
-  }, []);
-
-  const handleAddCurrency = useCallback(() => {
-    const normalizedCode = newCurrencyCode.trim().toUpperCase();
-    if (!normalizedCode) {
-      return;
-    }
-    setSettingsDraft((current) => ({
-      ...current,
-      currencyToCnyRates: {
-        ...current.currencyToCnyRates,
-        [normalizedCode]: current.currencyToCnyRates[normalizedCode] || '1',
-      },
-    }));
-    setNewCurrencyCode('');
-  }, [newCurrencyCode]);
 
   return (
     <>
       <MembershipAdminPageShell
         isLoading={isLoading}
         error={error}
-        onRefresh={loadRechargeConfiguration}
+        onRefresh={() => loadRechargePackages(page, pageSize)}
         actions={(
           <button type="button" onClick={openCreateDrawer} className="inline-flex items-center gap-1 rounded-md bg-lobster-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-lobster-700">
             <Plus className="h-3.5 w-3.5" />
@@ -205,8 +133,8 @@ export function MembershipRechargePackagesPage() {
           </button>
         )}
       >
-        <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto lg:grid-cols-[360px_minmax(0,1fr)]">
-          <div className="lg:col-span-2">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
+          <div>
             <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
               {t('admin.commerce.memberships.rechargePackages.title', 'Recharge Packages')}
             </h1>
@@ -215,169 +143,88 @@ export function MembershipRechargePackagesPage() {
             </p>
           </div>
 
-          <MembershipTablePanel className="overflow-visible p-5">
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-base font-semibold text-slate-900 dark:text-white">
-                  {t('admin.commerce.memberships.rechargeSettings.title', 'Recharge Settings')}
-                </h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  {t('admin.commerce.memberships.rechargeSettings.desc', 'Maintain the base points ratio and cross-currency conversion used by recharge packages and custom amounts.')}
-                </p>
-              </div>
-
-              {settingsError ? <MembershipFormError message={settingsError} /> : null}
-
-              <label className="block">
-                <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  {t('admin.commerce.memberships.rechargeSettings.baseCurrencyCode', 'Base currency')}
-                </span>
-                <SdkworkSearchableSelect
-                  emptyText={t('admin.commerce.memberships.rechargeSettings.currencyEmpty', 'No matching currency')}
-                  options={supportedCurrencyCodes.map((value) => ({ value, label: value }))}
-                  searchPlaceholder={t('admin.commerce.memberships.rechargeSettings.currencySearch', 'Search currency by code')}
-                  value={settingsDraft.baseCurrencyCode}
-                  onValueChange={(value) => setSettingsDraft((current) => ({ ...current, baseCurrencyCode: value || 'CNY' }))}
-                />
-              </label>
-              <MembershipTextField
-                label={t('admin.commerce.memberships.rechargeSettings.basePointsPerCny', 'Base points per CNY')}
-                value={settingsDraft.basePointsPerCny}
-                onChange={(value) => setSettingsDraft((current) => ({ ...current, basePointsPerCny: value }))}
-                placeholder="10"
+          <MembershipTablePanel
+            footer={(
+              <BottomPagination
+                disabled={isLoading}
+                hasNextPage={hasNextMembershipPage(pageInfo, page, packages.length, pageSize)}
+                itemCount={packages.length}
+                nextLabel={t('common.pagination.next', 'Next page')}
+                onNextPage={() => setPage((current) => current + 1)}
+                onPageSizeChange={(nextPageSize) => {
+                  setPage(1);
+                  setPageSize(nextPageSize);
+                }}
+                onPreviousPage={() => setPage((current) => Math.max(1, current - 1))}
+                page={page}
+                pageLabel={membershipPageLabel(t, page, pageInfo)}
+                pageSize={pageSize}
+                pageSizeLabel={t('common.pagination.rows', 'Rows')}
+                pageSizeOptions={[20, 50, 100]}
+                previousLabel={t('common.pagination.previous', 'Previous page')}
+                showingLabel={t('common.pagination.showing', 'Showing')}
               />
-
-              <div className="space-y-3">
-                <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  {t('admin.commerce.memberships.rechargeSettings.currencyRates', 'Currency to CNY rates')}
-                </div>
-                <div className="grid gap-3">
-                  {Object.entries(settingsDraft.currencyToCnyRates).map(([currencyCode, rate]) => (
-                    <MembershipTextField
-                      key={currencyCode}
-                      label={t(
-                        'admin.commerce.memberships.rechargeSettings.currencyRateLabel',
-                        '{{currencyCode}} to CNY',
-                        { currencyCode },
-                      )}
-                      value={rate}
-                      onChange={(value) => handleCurrencyRateChange(currencyCode, value)}
-                      placeholder={currencyCode === 'CNY' ? '1' : '7'}
-                    />
-                  ))}
-                </div>
-                <div className="flex items-end gap-3">
-                  <div className="min-w-0 flex-1">
-                    <MembershipTextField
-                      label={t('admin.commerce.memberships.rechargeSettings.addCurrency', 'Add currency')}
-                      value={newCurrencyCode}
-                      onChange={setNewCurrencyCode}
-                      placeholder="EUR"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleAddCurrency}
-                    className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg border border-slate-300 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-white/20 dark:text-slate-200 dark:hover:bg-white/5"
-                  >
-                    <Plus className="h-4 w-4" />
-                    {t('admin.commerce.memberships.rechargeSettings.addCurrency', 'Add currency')}
-                  </button>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/5">
-                <div className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-200">
-                  {t('admin.commerce.memberships.rechargeSettings.preview', 'Preview')}
-                </div>
-                <div className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                  {previewExamples.map((item) => (
-                    <div key={`${item.currencyCode}-${item.amount}`} className="flex items-center justify-between gap-4">
-                      <span>
-                        {formatMoney(item.amount, { currency: item.currencyCode, locale: displayLocale, mode: 'symbol' }) ?? `${item.currencyCode} ${item.amount}`}
-                      </span>
-                      <span className="font-semibold text-lobster-600 dark:text-lobster-300">
+            )}
+          >
+            {packages.length === 0 ? (
+              <MembershipEmptyState title={t('admin.commerce.memberships.rechargePackages.empty', 'No recharge packages')} />
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100 dark:border-white/5">
+                    <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.rechargePackages.table.package', 'Package')}</th>
+                    <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.rechargePackages.table.price', 'Price')}</th>
+                    <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.rechargePackages.table.bonus', 'Bonus')}</th>
+                    <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.rechargeSettings.preview', 'Preview')}</th>
+                    <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.rechargePackages.table.status', 'Status')}</th>
+                    <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.rechargePackages.table.updated', 'Updated')}</th>
+                    <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('common.actions.actions', 'Actions')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {packages.map((item) => (
+                    <tr key={item.id} className="border-b border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5">
+                      <td className="px-4 py-2.5">
+                        <div className="font-medium text-slate-900 dark:text-white">{item.name || item.packageNo}</div>
+                        <div className="text-xs text-slate-400">{item.packageNo}</div>
+                      </td>
+                      <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">
+                        {formatMoney(item.priceAmount, { currency: item.currencyCode, locale: displayLocale, mode: 'symbol' }) ?? `${item.priceAmount} ${item.currencyCode}`}
+                      </td>
+                      <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">
+                        {t('admin.commerce.memberships.pointsCount', '{{points}} pts', { points: item.bonusPoints })}
+                      </td>
+                      <td className="px-4 py-2.5 text-right font-semibold text-lobster-600 dark:text-lobster-300">
                         {t('admin.commerce.memberships.pointsCount', '{{points}} pts', { points: formatMoneyDigits(item.grantAmount, 'USD', displayLocale, 'decimal', 0, 0) ?? '0' })}
-                      </span>
-                    </div>
+                      </td>
+                      <td className="px-4 py-2.5"><MembershipStatusBadge status={item.status} /></td>
+                      <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{formatMembershipDateTime(item.updatedAt, displayLocale)}</td>
+                      <td className="px-4 py-2.5">
+                        <MembershipTableActions>
+                          <MembershipIconActionButton label={t('admin.commerce.memberships.rechargePackages.edit', 'Edit')} icon={<Pencil className="h-4 w-4" />} onClick={() => openEditDrawer(item)} />
+                          <MembershipIconActionButton label={t('admin.commerce.memberships.rechargePackages.delete', 'Delete')} icon={<Trash2 className="h-4 w-4" />} tone="danger" onClick={() => void handleDeletePackage(item)} />
+                        </MembershipTableActions>
+                      </td>
+                    </tr>
                   ))}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                disabled={isSavingSettings}
-                onClick={() => void handleSaveSettings()}
-                className="inline-flex items-center gap-2 rounded-lg bg-lobster-600 px-4 py-2 text-sm font-medium text-white hover:bg-lobster-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <Save className="h-4 w-4" />
-                {t('admin.commerce.memberships.rechargeSettings.submit', 'Save Settings')}
-              </button>
-            </div>
-          </MembershipTablePanel>
-
-          <MembershipTablePanel>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 dark:border-white/5">
-                  <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.rechargePackages.table.package', 'Package')}</th>
-                  <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.rechargePackages.table.price', 'Price')}</th>
-                  <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.rechargePackages.table.bonus', 'Bonus')}</th>
-                  <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.rechargeSettings.preview', 'Preview')}</th>
-                  <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.rechargePackages.table.status', 'Status')}</th>
-                  <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.rechargePackages.table.updated', 'Updated')}</th>
-                  <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('common.actions.actions', 'Actions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {packages.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-500 dark:text-slate-400">
-                      {t('admin.commerce.memberships.rechargePackages.empty', 'No recharge packages')}
-                    </td>
-                  </tr>
-                ) : packages.map((item) => (
-                  <tr key={item.id} className="border-b border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5">
-                    <td className="px-4 py-2.5">
-                      <div className="font-medium text-slate-900 dark:text-white">{item.name || item.packageNo}</div>
-                      <div className="text-xs text-slate-400">{item.packageNo}</div>
-                    </td>
-                    <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">
-                      {formatMoney(item.priceAmount, { currency: item.currencyCode, locale: displayLocale, mode: 'symbol' }) ?? `${item.priceAmount} ${item.currencyCode}`}
-                    </td>
-                    <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">
-                      {t('admin.commerce.memberships.pointsCount', '{{points}} pts', { points: item.bonusPoints })}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-semibold text-lobster-600 dark:text-lobster-300">
-                      {t('admin.commerce.memberships.pointsCount', '{{points}} pts', { points: formatMoneyDigits(item.grantAmount, 'USD', displayLocale, 'decimal', 0, 0) ?? '0' })}
-                    </td>
-                    <td className="px-4 py-2.5"><MembershipStatusBadge status={item.status} /></td>
-                    <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{formatMembershipDateTime(item.updatedAt, displayLocale)}</td>
-                    <td className="px-4 py-2.5">
-                      <MembershipTableActions>
-                        <MembershipIconActionButton label={t('admin.commerce.memberships.rechargePackages.edit', 'Edit')} icon={<Pencil className="h-4 w-4" />} onClick={() => openEditDrawer(item)} />
-                        <MembershipIconActionButton label={t('admin.commerce.memberships.rechargePackages.delete', 'Delete')} icon={<Trash2 className="h-4 w-4" />} tone="danger" onClick={() => void handleDeletePackage(item)} />
-                      </MembershipTableActions>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            )}
           </MembershipTablePanel>
         </div>
       </MembershipAdminPageShell>
 
-        <MembershipDrawer
-          title={editingPackage
-            ? t('admin.commerce.memberships.rechargePackages.editTitle', 'Edit Recharge Package')
-            : t('admin.commerce.memberships.rechargePackages.addTitle', 'Add Recharge Package')}
-          isOpen={isDrawerOpen}
+      <MembershipDrawer
+        title={editingPackage
+          ? t('admin.commerce.memberships.rechargePackages.editTitle', 'Edit Recharge Package')
+          : t('admin.commerce.memberships.rechargePackages.addTitle', 'Add Recharge Package')}
+        isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
       >
         <MembershipRechargePackageDrawerForm
           mode={editingPackage ? 'edit' : 'create'}
           initialValue={editingPackage}
-          settings={settings ?? normalizedSettings}
+          settings={settings}
           supportedCurrencyCodes={supportedCurrencyCodes}
           onCancel={() => setIsDrawerOpen(false)}
           onSubmit={handleSavePackage}

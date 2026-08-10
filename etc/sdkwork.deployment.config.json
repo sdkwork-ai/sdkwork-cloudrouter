@@ -5,19 +5,19 @@
   "defaultProfile": "standalone.development",
   "environments": {
     "development": {
-      "applicationOrigin": "http://cloudrouter-dev.sdkwork.com:3905/",
+      "applicationOrigin": "http://router-dev.sdkwork.com:3905/",
       "cloudApiBaseUrl": "https://api-dev.sdkwork.com/"
     },
     "test": {
-      "applicationOrigin": "https://cloudrouter-test.sdkwork.com/",
+      "applicationOrigin": "https://router-test.sdkwork.com/",
       "cloudApiBaseUrl": "https://api-test.sdkwork.com/"
     },
     "staging": {
-      "applicationOrigin": "https://cloudrouter-staging.sdkwork.com/",
+      "applicationOrigin": "https://router-staging.sdkwork.com/",
       "cloudApiBaseUrl": "https://api-staging.sdkwork.com/"
     },
     "production": {
-      "applicationOrigin": "https://cloudrouter.sdkwork.com/",
+      "applicationOrigin": "https://router.sdkwork.com/",
       "cloudApiBaseUrl": "https://api.sdkwork.com/"
     }
   },

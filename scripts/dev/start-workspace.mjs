@@ -507,6 +507,9 @@ export function parseWorkspaceArgs(argv = [], {
     serverBind: DEFAULT_SERVER_BIND,
     portalBind: DEFAULT_PORTAL_BIND,
     remoteApiIngressOrigin: DEFAULT_REMOTE_API_INGRESS_ORIGIN,
+    remoteApiIngressOriginExplicit: false,
+    environment: undefined,
+    runtimeTarget: undefined,
     externalScheme: DEFAULT_EXTERNAL_SCHEME,
     trustForwardedHeaders: false,
     gatewayForwardUrl: null,
@@ -563,8 +566,33 @@ export function parseWorkspaceArgs(argv = [], {
         break;
       case '--remote-api-ingress-url':
         settings.remoteApiIngressOrigin = forwardingOrigin(requireValue(argv, index, arg), arg);
+        settings.remoteApiIngressOriginExplicit = true;
         index += 1;
         break;
+      case '--environment':
+        {
+          const value = requireValue(argv, index, arg);
+          if (value !== 'development') {
+            throw new Error(
+              `start-workspace supports only --environment development; got ${value}`,
+            );
+          }
+          settings.environment = value;
+          index += 1;
+          break;
+        }
+      case '--runtime-target':
+        {
+          const value = requireValue(argv, index, arg);
+          if (!['browser', 'desktop', 'server'].includes(value)) {
+            throw new Error(
+              `--runtime-target must be browser, desktop, or server; got ${value}`,
+            );
+          }
+          settings.runtimeTarget = value;
+          index += 1;
+          break;
+        }
       case '--external-scheme':
         settings.externalScheme = normalizeExternalScheme(requireValue(argv, index, arg), arg);
         index += 1;
@@ -849,6 +877,7 @@ export function buildWorkspaceCommandPlan(settings, {
     workspaceRoot,
     portalRuntimeEnv: portalEnv(settings),
     env: process.env,
+    deploymentProfile: settings.deploymentProfile,
     dryRun: settings.dryRun === true,
   });
   const portalLaunchEnv = (runtimeSettings) => portalEnv(runtimeSettings, portalBootstrap.mergedEnv);
@@ -1183,6 +1212,9 @@ Options:
   --portal-bind <bind>    Direct portal dev HOST:PORT override (default ${DEFAULT_PORTAL_BIND})
   --remote-api-ingress-url <url>
                          Remote application API origin for client-only mode (default ${DEFAULT_REMOTE_API_INGRESS_ORIGIN})
+  --environment <development>  Lifecycle environment consumed from the sdkwork-app facade
+  --runtime-target <browser|desktop|server>
+                         Lifecycle runtime target consumed from the sdkwork-app facade
   --gateway-forward-url <url>
                          Rust edge server target for /v1 and /openapi.json
   --backend-api-forward-url <url>

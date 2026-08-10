@@ -67,7 +67,6 @@ pub struct AppRoutingAccountGroupItem {
     pub description: String,
     pub routing_strategy: String,
     pub fallback_mode: String,
-    pub cost_multiplier: String,
     pub sale_multiplier: String,
     pub vendor_code: Option<String>,
     pub modalities: Vec<String>,

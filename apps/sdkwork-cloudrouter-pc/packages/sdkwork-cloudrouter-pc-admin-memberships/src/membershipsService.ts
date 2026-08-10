@@ -18,6 +18,7 @@ import {
 
 type BackendMembershipsService = ReturnType<typeof getSdkworkMembershipBackendSdkClient>['memberships'];
 type BackendRechargesService = ReturnType<typeof getCloudRouterBackendSdkClient>['recharges'];
+type BackendBillingService = ReturnType<typeof getCloudRouterBackendSdkClient>['billing'];
 type RechargeSettingsUpdateInput = Parameters<BackendRechargesService['settings']['update']>[0];
 
 export type MembershipsAdminRecord = ApiRecord;
@@ -92,6 +93,20 @@ export interface MembershipsAdminRechargeSettingsUpdateInput {
   baseCurrencyCode: string;
   basePointsPerCny: string;
   currencyToCnyRates: Record<string, string>;
+}
+
+export interface TokenBankAdminExchangeRuleItem {
+  id: string;
+  sourceAssetType: 'POINTS' | 'CASH';
+  targetAssetType: 'POINTS' | 'CASH';
+  rate: string;
+  status: string;
+}
+
+export interface TokenBankAdminExchangeRuleUpdateInput {
+  sourceAssetType: 'POINTS' | 'CASH';
+  targetAssetType: 'POINTS' | 'CASH';
+  rate: string;
 }
 
 export interface MembershipsAdminPlanBenefitInput {
@@ -177,6 +192,11 @@ export interface MembershipsAdminPlansListParams {
   page?: number;
   pageSize?: number;
   status?: string;
+}
+
+export interface MembershipsAdminRechargePackagesListParams {
+  page?: number;
+  pageSize?: number;
 }
 
 export type MembershipsAdminMemberStatus = 'active' | 'inactive' | 'expired' | 'suspended' | 'cancelled';
@@ -330,6 +350,16 @@ async function backendMembershipsRechargeSettingsUpdate(
   body: Parameters<BackendRechargesService['settings']['update']>[0],
 ) {
   return getCloudRouterBackendSdkClient().recharges.settings.update(body);
+}
+
+async function backendMembershipsExchangeRulesList(params?: Parameters<BackendBillingService['exchangeRules']['list']>[0]) {
+  return getCloudRouterBackendSdkClient().billing.exchangeRules.list(params);
+}
+
+async function backendMembershipsExchangeRulesUpdate(
+  body: Parameters<BackendBillingService['exchangeRules']['update']>[0],
+) {
+  return getCloudRouterBackendSdkClient().billing.exchangeRules.update(body);
 }
 
 export async function fetchMembershipAdminPackageGroups(
@@ -490,9 +520,17 @@ export async function fetchMembershipAdminEntitlements(
   };
 }
 
-export async function fetchMembershipAdminRechargePackages(): Promise<MembershipsAdminRechargePackageItem[]> {
-  const result = await backendMembershipsRechargePackagesList();
-  return readRequiredApiItems(result, 'Recharge packages could not be loaded').map(normalizeAdminRechargePackage);
+export async function fetchMembershipAdminRechargePackages(
+  params: MembershipsAdminRechargePackagesListParams = {},
+): Promise<MembershipsAdminPage<MembershipsAdminRechargePackageItem>> {
+  const result = await backendMembershipsRechargePackagesList({
+    page: requiredListPage(params.page),
+    pageSize: requiredListPageSize(params.pageSize),
+  });
+  return {
+    items: readRequiredApiItems(result, 'Recharge packages could not be loaded').map(normalizeAdminRechargePackage),
+    pageInfo: result.pageInfo,
+  };
 }
 
 export async function createMembershipAdminRechargePackage(
@@ -533,6 +571,29 @@ export async function updateMembershipAdminRechargeSettings(
     buildRechargeSettingsUpdateRequest(input),
   );
   return normalizeAdminRechargeSettings(readRequiredApiItem(result, 'Recharge settings could not be updated'));
+}
+
+export async function fetchMembershipAdminExchangeRules(
+  params: { sourceAssetType?: string; targetAssetType?: string } = {},
+): Promise<TokenBankAdminExchangeRuleItem[]> {
+  const result = await backendMembershipsExchangeRulesList({
+    page: requiredListPage(1),
+    pageSize: requiredListPageSize(200),
+    sourceAssetType: params.sourceAssetType,
+    targetAssetType: params.targetAssetType,
+  });
+  return readRequiredApiItems(result, 'Exchange rules could not be loaded').map(normalizeAdminExchangeRule);
+}
+
+export async function updateMembershipAdminExchangeRule(
+  input: TokenBankAdminExchangeRuleUpdateInput,
+): Promise<TokenBankAdminExchangeRuleItem> {
+  const result = await backendMembershipsExchangeRulesUpdate({
+    sourceAssetType: input.sourceAssetType,
+    targetAssetType: input.targetAssetType,
+    rate: normalizeExchangeRateText(input.rate),
+  });
+  return normalizeAdminExchangeRule(readRequiredApiItem(result, 'Exchange rule could not be updated'));
 }
 
 function normalizeAdminPackage(value: unknown): MembershipsAdminPackageItem {
@@ -611,6 +672,35 @@ function normalizeAdminRechargeSettings(value: unknown): MembershipsAdminRecharg
       Object.entries(currencyToCnyRates).map(([currencyCode, rate]) => [currencyCode, String(rate ?? '')]),
     ),
   });
+}
+
+function normalizeAdminExchangeRule(value: unknown): TokenBankAdminExchangeRuleItem {
+  const item = isRecord(value) ? value as ApiRecord : {} as ApiRecord;
+  const readAssetType = (key: string): 'POINTS' | 'CASH' => (
+    readString(item, key).trim().toUpperCase() === 'CASH' ? 'CASH' : 'POINTS'
+  );
+  return {
+    id: requireRecordString(item, 'id', 'Exchange rule id is required'),
+    sourceAssetType: readAssetType('sourceAssetType'),
+    targetAssetType: readAssetType('targetAssetType'),
+    rate: readString(item, 'rate').trim(),
+    status: readString(item, 'status').trim() || 'active',
+  };
+}
+
+function normalizeExchangeRateText(value: string | undefined): string {
+  const normalized = requiredMembershipText(value, 'rate');
+  if (!/^[0-9]+(?:\.[0-9]{1,6})?$/.test(normalized)) {
+    throw new Error('rate must be a positive decimal with at most 6 decimal places');
+  }
+  const wholePart = normalized.split('.')[0] ?? '';
+  if (Number(wholePart) < 1) {
+    throw new Error('rate must be at least 1');
+  }
+  if (!normalized.includes('.')) {
+    return normalized;
+  }
+  return normalized.replace(/0+$/, '').replace(/\.$/, '');
 }
 
 function normalizeAdminPlan(value: unknown): MembershipsAdminPlanItem {

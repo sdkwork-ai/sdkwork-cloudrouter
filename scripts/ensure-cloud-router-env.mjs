@@ -24,7 +24,7 @@ Lifecycles:
 Options:
   --lifecycle <dev|build|start|all>   Default: dev
   --workspace-root <path>             Repository root
-  --deployment-profile <profile>      Default: standalone
+  --deployment-profile <profile>      Default: $env:SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE or standalone
   --dry-run                           Resolve merged env without writing files
   --help, -h                          Show this help
 `);
@@ -34,7 +34,9 @@ function parseArgs(argv = []) {
   const options = {
     lifecycle: 'dev',
     workspaceRoot: DEFAULT_WORKSPACE_ROOT,
-    deploymentProfile: 'standalone',
+    deploymentProfile: String(
+      process.env.SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE ?? 'standalone',
+    ).trim() || 'standalone',
     dryRun: false,
     help: false,
   };

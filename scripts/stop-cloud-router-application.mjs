@@ -10,6 +10,15 @@ import { parseWorkspaceArgs, workspaceBindTargets } from './dev/start-workspace.
 const __filename = fileURLToPath(import.meta.url);
 const execFileAsync = promisify(execFile);
 
+const STOP_VERIFY_ATTEMPTS = 8;
+const STOP_VERIFY_WAIT_MS = 250;
+
+function waitForRetry(milliseconds) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+}
+
 function printHelp() {
   console.log(`Usage: pnpm stop [--] [workspace options]
 
@@ -103,9 +112,19 @@ async function listUnixListeningProcesses(ports) {
 
 async function stopProcessTree(processId, { platform }) {
   if (platform === 'win32') {
-    await execFileAsync('taskkill', ['/PID', String(processId), '/T', '/F'], {
-      windowsHide: true,
-    });
+    try {
+      await execFileAsync('taskkill', ['/PID', String(processId), '/T', '/F'], {
+        windowsHide: true,
+      });
+    } catch (error) {
+      // A non-zero exit usually means the process already exited (for example
+      // when the workspace cascade stops a sibling tree); the post-stop
+      // verification decides whether the workspace ports are actually free.
+      if (Number.isInteger(error?.code)) {
+        return;
+      }
+      throw error;
+    }
     return;
   }
   process.kill(processId, 'SIGTERM');
@@ -119,6 +138,8 @@ export async function stopWorkspaceProcesses({
     ? listWindowsListeningProcesses
     : listUnixListeningProcesses,
   stopProcess = (processId) => stopProcessTree(processId, { platform }),
+  maxVerifyAttempts = STOP_VERIFY_ATTEMPTS,
+  verifyWaitMs = STOP_VERIFY_WAIT_MS,
 } = {}) {
   const targets = workspaceStopTargets(workspaceArgs);
   const ports = [...new Set(targets.map((target) => target.port))]
@@ -138,6 +159,17 @@ export async function stopWorkspaceProcesses({
     }
     console.error(`[stop-cloud-router-application] stop PID ${processId} for ${targetSummary}`);
     await stopProcess(processId);
+  }
+
+  if (!dryRun) {
+    let remaining = await listListeningProcesses(ports);
+    for (let attempt = 0; remaining.length > 0 && attempt < maxVerifyAttempts; attempt += 1) {
+      await waitForRetry(verifyWaitMs);
+      remaining = await listListeningProcesses(ports);
+    }
+    if (remaining.length > 0) {
+      throw new Error(`workspace ports still occupied by PID(s): ${remaining.join(', ')}`);
+    }
   }
 
   return { targets, processIds };

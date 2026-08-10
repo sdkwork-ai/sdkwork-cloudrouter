@@ -76,6 +76,8 @@ export type ModelCatalogGroupOption = {
   key: ModelGroupKey;
   label: string;
   modelCount?: number;
+  /** 销售倍率（如 "1.5"），有值时在分组名称旁显示 ×倍率徽章 */
+  saleMultiplier?: string;
 };
 
 export type ModelCatalogCardView = {
@@ -245,6 +247,10 @@ function normalizeConfiguredModelCatalogGroupOptions(
     const option: ModelCatalogGroupOption = { key, label };
     if (group.modelCount !== undefined && Number.isFinite(group.modelCount)) {
       option.modelCount = Math.max(0, Math.trunc(group.modelCount));
+    }
+    const saleMultiplier = group.saleMultiplier?.trim();
+    if (saleMultiplier && saleMultiplier.length > 0) {
+      option.saleMultiplier = saleMultiplier;
     }
     normalizedGroups.set(key, option);
   }

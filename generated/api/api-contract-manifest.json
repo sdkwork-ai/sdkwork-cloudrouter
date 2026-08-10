@@ -18626,6 +18626,50 @@
     },
     {
       "api_method": "GET",
+      "api_path": "/app/v3/api/ai/routing/account_groups",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts#fetchAccountGroupSaleMultipliers@/models",
+      "kind": "read",
+      "module": "pc-models",
+      "openapi_exposed": false,
+      "operation": "fetchAccountGroupSaleMultipliers",
+      "operation_id": "routing.accountGroups.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_upstream_account_group",
+        "ai_upstream_account_group_member",
+        "ai_upstream_account_group_resource",
+        "ai_upstream_account",
+        "ai_upstream_supplier"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/models",
+      "route_scope": "public",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-app-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
       "api_path": "/app/v3/api/ai/models",
       "api_surface": "app",
       "file_targets": [],
@@ -20250,92 +20294,6 @@
     },
     {
       "api_method": "POST",
-      "api_path": "/app/v3/api/memory/spaces/{spaceId}/entries",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts#createMemoryEntry@/playground",
-      "kind": "create",
-      "module": "pc-playground",
-      "openapi_exposed": true,
-      "operation": "createMemoryEntry",
-      "operation_id": "spaces.entries.create",
-      "path_params": [
-        "spaceId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "ai_agent"
-      ],
-      "request_body_required": false,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "memory",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "tag": "memory",
-      "write_tables": [
-        "ai_agent"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/memory/spaces",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts#createMemorySpace@/playground",
-      "kind": "create",
-      "module": "pc-playground",
-      "openapi_exposed": true,
-      "operation": "createMemorySpace",
-      "operation_id": "spaces.create",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "ai_agent"
-      ],
-      "request_body_required": false,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "memory",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "tag": "memory",
-      "write_tables": [
-        "ai_agent"
-      ]
-    },
-    {
-      "api_method": "POST",
       "api_path": "/app/v3/api/runtime/invocations/{invocationId}/artifacts",
       "api_surface": "app",
       "file_targets": [],
@@ -20899,88 +20857,6 @@
       "sdk_family": "cloudrouter-app-sdk",
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "tag": "chat",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/memory/spaces/{spaceId}/entries",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts#listMemoryEntries@/playground",
-      "kind": "read",
-      "module": "pc-playground",
-      "openapi_exposed": true,
-      "operation": "listMemoryEntries",
-      "operation_id": "spaces.entries.list",
-      "path_params": [
-        "spaceId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "ai_agent"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "memory",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "tag": "memory",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/memory/spaces",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts#listMemorySpaces@/playground",
-      "kind": "read",
-      "module": "pc-playground",
-      "openapi_exposed": true,
-      "operation": "listMemorySpaces",
-      "operation_id": "spaces.list",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "ai_agent"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "memory",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "tag": "memory",
       "write_tables": []
     },
     {
@@ -21730,90 +21606,6 @@
     },
     {
       "api_method": "GET",
-      "api_path": "/app/v3/api/memory/entries/{entryId}",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts#retrieveMemoryEntry@/playground",
-      "kind": "read",
-      "module": "pc-playground",
-      "openapi_exposed": true,
-      "operation": "retrieveMemoryEntry",
-      "operation_id": "entries.retrieve",
-      "path_params": [
-        "entryId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "ai_agent"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "memory",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "tag": "memory",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/memory/spaces/{spaceId}",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts#retrieveMemorySpace@/playground",
-      "kind": "read",
-      "module": "pc-playground",
-      "openapi_exposed": true,
-      "operation": "retrieveMemorySpace",
-      "operation_id": "spaces.retrieve",
-      "path_params": [
-        "spaceId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "ai_agent"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "memory",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "tag": "memory",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
       "api_path": "/app/v3/api/runtime/invocations/{invocationId}",
       "api_surface": "app",
       "file_targets": [],
@@ -22177,128 +21969,6 @@
     },
     {
       "api_method": "GET",
-      "api_path": "/app/v3/api/ai/generations/workspace",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundGenerationsService.ts#fetchPlaygroundGenerationHistoryFromService@/playground",
-      "kind": "read",
-      "module": "pc-playground",
-      "openapi_exposed": true,
-      "operation": "fetchPlaygroundGenerationHistoryFromService",
-      "operation_id": "generations.workspace.list",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "ai_agent"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "intelligence",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundGenerationsService.ts",
-      "tag": "ai",
-      "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/ai/generations/images/text_to_image",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundGenerationsService.ts#runPlaygroundAssetGeneration@/playground",
-      "kind": "create",
-      "module": "pc-playground",
-      "openapi_exposed": true,
-      "operation": "runPlaygroundAssetGeneration",
-      "operation_id": "generations.images.textToImage.create",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "ai_agent"
-      ],
-      "request_body_required": false,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "intelligence",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundGenerationsService.ts",
-      "tag": "ai",
-      "write_tables": [
-        "ai_usage"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/ai/generations",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundService.ts#fetchGenerationHistory@/playground",
-      "kind": "read",
-      "module": "pc-playground",
-      "openapi_exposed": true,
-      "operation": "fetchGenerationHistory",
-      "operation_id": "generations.list",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "ai_agent"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "intelligence",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundService.ts",
-      "tag": "ai",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
       "api_path": "/app/v3/api/ai/models",
       "api_surface": "app",
       "file_targets": [],
@@ -22375,48 +22045,6 @@
       "sdk_family": "cloudrouter-app-sdk",
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundService.ts",
       "tag": "runtime",
-      "write_tables": [
-        "ai_usage"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/ai/generations/images/text_to_image",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundService.ts#runGeneration@/playground",
-      "kind": "create",
-      "module": "pc-playground",
-      "openapi_exposed": false,
-      "operation": "runGeneration",
-      "operation_id": "generations.images.textToImage.create",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "ai_agent"
-      ],
-      "request_body_required": false,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "intelligence",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundService.ts",
-      "tag": "ai",
       "write_tables": [
         "ai_usage"
       ]
@@ -25752,10 +25380,6 @@
                     "x-sdkwork-int64-string": true,
                     "x-sdkwork-rust-type": "i64"
                   },
-                  "costMultiplier": {
-                    "maxLength": 64,
-                    "type": "string"
-                  },
                   "description": {
                     "maxLength": 1000,
                     "type": "string"
@@ -25859,7 +25483,6 @@
                   "description",
                   "routingStrategy",
                   "fallbackMode",
-                  "costMultiplier",
                   "saleMultiplier",
                   "status",
                   "authorized",
@@ -28691,6 +28314,143 @@
     },
     {
       "api_method": "GET",
+      "api_path": "/backend/v3/api/billing/exchange_rules",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/recharges/exchangeRules",
+      "kind": "read",
+      "module": "exchangeRules",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "exchangeRules.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "source_asset_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "target_asset_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "commerce_exchange_rule"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AdminExchangeRuleListResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminExchangeRuleListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminExchangeRule",
+                "properties": {
+                  "id": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "rate": {
+                    "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+                    "type": "string"
+                  },
+                  "sourceAssetType": {
+                    "enum": [
+                      "POINTS",
+                      "CASH"
+                    ],
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "active"
+                    ],
+                    "type": "string"
+                  },
+                  "targetAssetType": {
+                    "enum": [
+                      "POINTS",
+                      "CASH"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "sourceAssetType",
+                  "targetAssetType",
+                  "rate",
+                  "status"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/recharges/exchangeRules",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "billing",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
       "api_path": "/backend/v3/api/recharges/packages",
       "api_surface": "backend",
       "file_targets": [],
@@ -29239,6 +28999,123 @@
       ]
     },
     {
+      "api_method": "PUT",
+      "api_path": "/backend/v3/api/billing/exchange_rules",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/recharges/exchangeRules",
+      "kind": "update",
+      "module": "exchangeRules",
+      "openapi_exposed": true,
+      "operation": "update",
+      "operation_id": "exchangeRules.update",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "commerce_exchange_rule"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "ExchangeRuleMutationRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "ExchangeRuleMutationRequest",
+          "properties": {
+            "rate": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "type": "string"
+            },
+            "sourceAssetType": {
+              "enum": [
+                "POINTS",
+                "CASH"
+              ],
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active"
+              ],
+              "type": "string"
+            },
+            "targetAssetType": {
+              "enum": [
+                "POINTS",
+                "CASH"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "sourceAssetType",
+            "targetAssetType",
+            "rate"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminExchangeRule",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminExchangeRule",
+          "properties": {
+            "id": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "rate": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "type": "string"
+            },
+            "sourceAssetType": {
+              "enum": [
+                "POINTS",
+                "CASH"
+              ],
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active"
+              ],
+              "type": "string"
+            },
+            "targetAssetType": {
+              "enum": [
+                "POINTS",
+                "CASH"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "sourceAssetType",
+            "targetAssetType",
+            "rate",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/recharges/exchangeRules",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "billing",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
       "api_method": "PATCH",
       "api_path": "/backend/v3/api/recharges/packages/{packageId}",
       "api_surface": "backend",
@@ -29568,24 +29445,24 @@
   "summary": {
     "api_method_counts": {
       "DELETE": 20,
-      "GET": 132,
+      "GET": 128,
       "PATCH": 21,
-      "POST": 76,
-      "PUT": 11
+      "POST": 72,
+      "PUT": 12
     },
     "api_surface_counts": {
-      "app": 94,
-      "backend": 166
+      "app": 85,
+      "backend": 168
     },
-    "operation_count": 260,
+    "operation_count": 253,
     "route_scope_counts": {
-      "admin": 166,
+      "admin": 168,
       "console": 30,
-      "public": 64
+      "public": 55
     },
     "sdk_client_counts": {
-      "SdkworkAppClient": 94,
-      "SdkworkBackendClient": 166
+      "SdkworkAppClient": 85,
+      "SdkworkBackendClient": 168
     }
   }
 }

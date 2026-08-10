@@ -95,15 +95,19 @@ curl http://127.0.0.1:3900/readyz
 Quick nginx reverse proxy deployment after the local service is healthy:
 
 ```bash
-pnpm nginx:plan -- --domain api.sdkwork.com
-sudo pnpm nginx:deploy -- --domain api.sdkwork.com --cert-name sdkwork.com
+pnpm nginx:plan -- --domain router.sdkwork.com
+sudo pnpm nginx:deploy -- --domain router.sdkwork.com --cert-name sdkwork.com
 sudo nginx -t
 sudo systemctl reload nginx
 ```
 
 Generated nginx configs proxy to `http://127.0.0.1:3900` and deploy to
-`/etc/nginx/sites-enabled/sdkwork/api.sdkwork.com.conf` for the
-`api.sdkwork.com` domain. Use
+`/etc/nginx/sites-enabled/sdkwork/router.sdkwork.com.conf` for the
+`router.sdkwork.com` domain. The production site binds every registered host
+(`router.sdkwork.com`, `router.birdcoder.com`, `router.dtupay.com`, plus the
+transition alias `cloudrouter.sdkwork.com`) through `server_name` aliases per
+`APP_RUNTIME_TOPOLOGY_NAMING.md` section 9 and `deployments/deploy.yaml`;
+certificates must cover every bound host. Use
 [`etc/nginx/NGINX_SAMPLE.conf`](./etc/nginx/NGINX_SAMPLE.conf) as the canonical
 template and [`etc/nginx/sdkwork`](./etc/nginx/sdkwork/) for full-domain
 examples. See the release install guide for certificate path conventions under
@@ -367,6 +371,19 @@ Command intent:
   integrated product server workspace (`standalone.development`).
   See `docs/topology-standard.md` for the full command matrix and env keys.
 - `pnpm dev:browser:postgres:standalone:debug` starts distributed internal validation layout.
+- `pnpm dev:cloud` starts only the local Vite client against the deployed
+  cloud API surfaces (platform `sdkwork-api-cloud-gateway` at
+  `api-dev/api-test/api-staging.sdkwork.com` for development/test/staging and `api.sdkwork.com`
+  for production) without starting any local API, gateway, or database
+  process. `pnpm dev:browser:cloud` is the browser-target variant.
+- `pnpm build:browser:cloud` builds the environment-neutral cloud web bundle
+  under `dist/cloud-web/<environment>`; pass `--environment test|production`
+  to select the lifecycle environment (default production).
+- `pnpm deploy:plan:cloud` / `pnpm deploy:validate:cloud` plan and validate
+  the cloud deployment descriptor (`deployments/deploy.yaml`, including the
+  `cloud.test` profile); `deploy:plan:standalone` / `deploy:validate:standalone`
+  are the standalone twins. Side-effecting cloud apply/rollback runs through
+  the GitHub packaging workflow deployment channel.
 - `pnpm dev:desktop` starts the standalone gateway-backed desktop client workspace.
 - `pnpm test` runs the launcher/tooling contract tests.
 - `pnpm build` builds production portal assets, builds the generated app

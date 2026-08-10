@@ -2,6 +2,68 @@ version: 2
 defaultProfile: cloud.production
 
 profiles:
+  cloud.test:
+    deployment:
+      deploymentProfile: cloud
+      environment: test
+      deliveryKind: container-image
+      deploymentDriver: kubernetes
+      managementModel: sdkwork-managed
+      tenancyModel: multi-tenant
+      isolationModel: shared
+      networkExposure: public
+      rolloutStrategy: rolling
+      availabilityMode: high-availability
+    install:
+      layout: binary-package
+    expose:
+      - domain: router-test.sdkwork.com
+        tls: sdkwork.com
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-test.birdcoder.com
+          - router-test.dtupay.com
+          - cloudrouter-test.sdkwork.com
+    packages: []
+    overrides:
+      topology:
+        spec: specs/topology.spec.json
+        profile: cloud.test
+        env: etc/topology/cloud.test.env
+
+  cloud.staging:
+    deployment:
+      deploymentProfile: cloud
+      environment: staging
+      deliveryKind: container-image
+      deploymentDriver: kubernetes
+      managementModel: sdkwork-managed
+      tenancyModel: multi-tenant
+      isolationModel: shared
+      networkExposure: public
+      rolloutStrategy: rolling
+      availabilityMode: high-availability
+    install:
+      layout: binary-package
+    expose:
+      - domain: router-staging.sdkwork.com
+        tls: sdkwork.com
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-staging.birdcoder.com
+          - router-staging.dtupay.com
+          - cloudrouter-staging.sdkwork.com
+    packages: []
+    overrides:
+      topology:
+        spec: specs/topology.spec.json
+        profile: cloud.staging
+        env: etc/topology/cloud.staging.env
+      kubernetes:
+        reference: deployments/kubernetes/
+
   cloud.production:
     deployment:
       deploymentProfile: cloud
@@ -17,10 +79,14 @@ profiles:
     install:
       layout: binary-package
     expose:
-      - domain: cloudrouter.sdkwork.com
+      - domain: router.sdkwork.com
         tls: sdkwork.com
         mode: web+api
         web: adaptive
+        aliases:
+          - router.birdcoder.com
+          - router.dtupay.com
+          - cloudrouter.sdkwork.com
     packages: []
     overrides:
       topology:
@@ -45,7 +111,7 @@ profiles:
     install:
       layout: binary-package
     expose:
-      - domain: cloudrouter.internal.example
+      - domain: router.internal.example
         tls: managed
         mode: web+api
         web: adaptive

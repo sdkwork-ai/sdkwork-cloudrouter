@@ -11,6 +11,7 @@ const DEFAULT_SAFE_CLEAN_PATHS = [
   '.ruff_cache',
   path.join('apps', 'sdkwork-cloudrouter-pc', '.turbo'),
   path.join('apps', 'sdkwork-cloudrouter-pc', 'dist'),
+  path.join('dist', 'cloud-web'),
 ];
 
 const DEFAULT_PYTHON_CACHE_ROOTS = [

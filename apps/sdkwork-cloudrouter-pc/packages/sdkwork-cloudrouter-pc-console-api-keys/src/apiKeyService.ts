@@ -52,6 +52,7 @@ export interface AccountGroup {
   code: string;
   name: string;
   description: string | null;
+  /** 销售倍率（app 面不暴露成本倍率） */
   rate: string | null;
   vendorCode: string | null;
   modalities: string[];
@@ -396,7 +397,7 @@ function normalizeAccountGroup(value: unknown): AccountGroup {
     code: readRequiredString(value, 'groupCode', 'Account group code is required'),
     name: readRequiredString(value, 'groupName', 'Account group name is required'),
     description: readNullableString(value, 'description'),
-    rate: readNullableString(value, 'costMultiplier'),
+    rate: readNullableString(value, 'saleMultiplier'),
     vendorCode: readNullableString(value, 'vendorCode'),
     modalities: readStringArray(value, 'modalities'),
     tags: readStringArray(value, 'tags'),

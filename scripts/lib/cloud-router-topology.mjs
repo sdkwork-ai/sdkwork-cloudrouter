@@ -149,6 +149,9 @@ export function applyTopologyProfileToWorkspaceSettings(settings, profileEnv = {
   const appApiBind = readTrimmedValue(profileEnv.SDKWORK_CLOUDROUTER_ROUTER_INTERNAL_APP_API_BIND);
   const portalBind = readTrimmedValue(profileEnv.SDKWORK_CLOUDROUTER_ROUTER_INTERNAL_PORTAL_RENDERER_BIND);
   const platformBind = readTrimmedValue(profileEnv.SDKWORK_API_CLOUD_GATEWAY_BIND);
+  const platformGatewayHttpUrl = readTrimmedValue(
+    profileEnv.SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL,
+  );
 
   if (openBind && !settings.gatewayBindExplicit) {
     settings.gatewayBind = openBind;
@@ -168,11 +171,28 @@ export function applyTopologyProfileToWorkspaceSettings(settings, profileEnv = {
   if (platformBind && !settings.sdkworkApiGatewayBindExplicit) {
     settings.sdkworkApiGatewayBind = platformBind;
   }
+  if (platformGatewayHttpUrl && !settings.remoteApiIngressOriginExplicit) {
+    // Cloud client development consumes the deployed platform cloud gateway
+    // (sdkwork-api-cloud-gateway) as the remote API ingress for every surface.
+    settings.remoteApiIngressOrigin = platformGatewayHttpUrl;
+  }
 
   settings.profileId = readTrimmedValue(profileEnv.SDKWORK_CLOUDROUTER_ROUTER_PROFILE_ID);
   settings.deploymentProfile = readTrimmedValue(
     profileEnv.SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE,
   );
+
+  if (
+    settings.deploymentProfile === 'cloud'
+    && settings.runtimeMode === 'client'
+    && !settings.remoteApiIngressOriginExplicit
+    && !platformGatewayHttpUrl
+  ) {
+    throw new Error(
+      'cloud client development requires SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL '
+      + 'in the cloud topology profile; dev:cloud must not fall back to loopback API defaults',
+    );
+  }
   return settings;
 }
 

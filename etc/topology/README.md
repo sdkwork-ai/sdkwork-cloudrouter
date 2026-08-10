@@ -17,5 +17,14 @@ Canonical dev commands (see `docs/topology-standard.md` and `specs/topology.spec
 ```bash
 pnpm dev
 pnpm dev:browser:postgres:standalone:debug
+pnpm dev:cloud
 pnpm dev:browser:cloud
 ```
+
+`pnpm dev:cloud` / `pnpm dev:browser:cloud` start only the local Vite client
+against the deployed cloud API surfaces (`cloud.development` profile); they
+never start a local API, gateway, or database process. The remote platform
+cloud gateway origin is declared per environment in these profile files
+(`SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL`:
+`api-dev/api-test/api-staging.sdkwork.com` for development/test/staging, `api.sdkwork.com` for
+production).

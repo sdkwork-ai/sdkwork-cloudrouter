@@ -5,6 +5,7 @@ import { MembershipPackagesPage } from './pages/MembershipPackagesPage';
 import { MembershipPlansPage } from './pages/MembershipPlansPage';
 import { MembershipRechargePackagesPage } from './pages/MembershipRechargePackagesPage';
 import { MembershipVipPackagesPage } from './pages/MembershipVipPackagesPage';
+import { TokenBankRatesPage } from './pages/TokenBankRatesPage';
 import { fetchMembershipAdminEntitlements } from './membershipsService';
 
 export type MembershipsAdminSectionId =
@@ -54,6 +55,33 @@ export function MembershipsAdmin({ sectionId }: MembershipsAdminProps = {}) {
         <EntitlementsTab loadEntitlements={fetchMembershipAdminEntitlements} />
       ) : (
         <MembershipRechargePackagesPage />
+      )}
+    </div>
+  );
+}
+
+export type RechargeAdminSectionId = 'packages' | 'tokenBankRates';
+
+type RechargeAdminProps = {
+  sectionId?: string;
+};
+
+function resolveRechargeSectionId(sectionId?: string): RechargeAdminSectionId {
+  if (sectionId === 'packages' || sectionId === 'tokenBankRates') {
+    return sectionId;
+  }
+  return 'packages';
+}
+
+export function RechargeAdmin({ sectionId }: RechargeAdminProps = {}) {
+  const activeSection = resolveRechargeSectionId(sectionId);
+
+  return (
+    <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
+      {activeSection === 'packages' ? (
+        <MembershipRechargePackagesPage />
+      ) : (
+        <TokenBankRatesPage />
       )}
     </div>
   );

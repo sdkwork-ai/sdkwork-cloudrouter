@@ -223,6 +223,7 @@ test('root package exposes pnpm application entrypoints', () => {
   const canonicalServer = 'pnpm exec sdkwork-app dev --runtime-target server --deployment-profile standalone';
   const canonicalDesktopSqlite = 'node scripts/cloud-router-dev.mjs --target desktop --deployment-profile standalone --database sqlite';
   const canonicalPlanPostgres = 'node scripts/cloud-router-dev.mjs --target plan --deployment-profile standalone --database postgres --dev-env-file .env.postgres';
+  const canonicalCloudDevHook = 'node scripts/cloud-router-dev.mjs --deployment-profile cloud';
 
   assert.equal(rootPackage.private, true);
   assert.equal(rootPackage.packageManager, 'pnpm@10.33.0');
@@ -236,7 +237,7 @@ test('root package exposes pnpm application entrypoints', () => {
     'pnpm exec sdkwork-app dev --deployment-profile cloud',
   );
   assert.equal(rootPackage.scripts['dev:browser'], 'pnpm dev:browser:postgres:standalone');
-  assert.equal(rootPackage.scripts['dev:browser:postgres'], canonicalBrowser);
+  assert.equal(rootPackage.scripts['dev:browser:postgres'], undefined);
   assert.equal(rootPackage.scripts['dev:browser:sqlite'], undefined);
   assert.equal(rootPackage.scripts['dev:browser:postgres:standalone'], canonicalBrowser);
   assert.equal(rootPackage.scripts.test, 'pnpm exec sdkwork-app test');
@@ -248,7 +249,25 @@ test('root package exposes pnpm application entrypoints', () => {
   assert.match(rootPackage.scripts['test:topology'], /verify-cloud-router-topology\.test\.mjs/u);
   assert.match(rootPackage.scripts['dev:browser:postgres:standalone'], /sdkwork-app dev/u);
   assert.match(rootPackage.scripts['dev:browser:cloud'], /--deployment-profile cloud/u);
+  assert.equal(rootPackage.scripts['_sdkwork:dev:cloud'], canonicalCloudDevHook);
+  assert.equal(rootPackage.scripts['dev:browser:cloud:debug'], undefined);
   assert.match(rootPackage.scripts['gateway:matrix'], /sdkwork-topology\.mjs print-matrix/u);
+  assert.equal(
+    rootPackage.scripts['build:browser:cloud'],
+    'node scripts/build-cloud-router-web.mjs',
+  );
+  assert.equal(
+    rootPackage.scripts['deploy:plan:cloud'],
+    'pnpm exec sdkwork-app deploy:plan --profile cloud.production',
+  );
+  assert.equal(
+    rootPackage.scripts['deploy:validate:cloud'],
+    'pnpm exec sdkwork-app deploy:validate --profile cloud.production',
+  );
+  assert.equal(
+    rootPackage.scripts['deploy:plan:standalone'],
+    'pnpm exec sdkwork-app deploy:plan --profile standalone.production',
+  );
   assert.equal(
     rootPackage.scripts.build,
     'pnpm exec sdkwork-app build',
@@ -314,13 +333,13 @@ test('root package exposes pnpm application entrypoints', () => {
     'node scripts/manage-cloud-router-database.mjs refresh-catalog',
   );
   assert.equal(rootPackage.scripts['dev:desktop'], 'pnpm dev:desktop:postgres:standalone');
-  assert.equal(rootPackage.scripts['dev:desktop:postgres'], canonicalDesktop);
+  assert.equal(rootPackage.scripts['dev:desktop:postgres'], undefined);
   assert.equal(rootPackage.scripts['dev:desktop:postgres:standalone'], canonicalDesktop);
   assert.equal(rootPackage.scripts['dev:desktop:sqlite'], canonicalDesktopSqlite);
   assert.equal(rootPackage.scripts['dev:service'], undefined);
   assert.equal(rootPackage.scripts['dev:service:sqlite'], undefined);
   assert.equal(rootPackage.scripts['dev:portal'], undefined);
-  assert.equal(rootPackage.scripts['dev:server'], canonicalServer);
+  assert.equal(rootPackage.scripts['dev:server'], 'pnpm dev:server:postgres');
   assert.equal(rootPackage.scripts['dev:server:sqlite'], undefined);
   assert.equal(rootPackage.scripts['dev:server:postgres'], canonicalServer);
   assert.equal(rootPackage.scripts['topology:plan:server:sqlite'], undefined);

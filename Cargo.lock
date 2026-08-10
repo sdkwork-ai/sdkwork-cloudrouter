@@ -4977,6 +4977,7 @@ dependencies = [
  "sdkwork-account-service-host",
  "sdkwork-api-iam-assembly",
  "sdkwork-api-inventory-assembly",
+ "sdkwork-api-log-assembly",
  "sdkwork-api-membership-assembly",
  "sdkwork-api-order-assembly",
  "sdkwork-api-payment-assembly",

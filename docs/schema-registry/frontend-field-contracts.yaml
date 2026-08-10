@@ -1453,9 +1453,6 @@ frontend_operations:
                 type: string
                 x-sdkwork-int64-string: true
                 x-sdkwork-rust-type: i64
-              costMultiplier:
-                maxLength: 64
-                type: string
               description:
                 maxLength: 1000
                 type: string
@@ -1538,7 +1535,6 @@ frontend_operations:
             - description
             - routingStrategy
             - fallbackMode
-            - costMultiplier
             - saleMultiplier
             - status
             - authorized
@@ -1575,6 +1571,31 @@ frontend_operations:
 - route: /console/api-keys
   source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts
   operation: fetchGroups
+  operation_id: routing.accountGroups.list
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/ai/routing/account_groups
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_account_group
+  - ai_upstream_account_group_member
+  - ai_upstream_account_group_resource
+  - ai_upstream_account
+  - ai_upstream_supplier
+  response_schema:
+    name: NoData
+    schema:
+      additionalProperties: false
+      name: NoData
+      properties: {}
+      type: object
+  query_parameters: []
+  operation_scope: app_shell
+  openapi_exposed: false
+- route: /models
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts
+  operation: fetchAccountGroupSaleMultipliers
   operation_id: routing.accountGroups.list
   kind: read
   api_surface: app
@@ -3951,6 +3972,32 @@ frontend_operations:
       - inviteCode
       type: object
   request_body_required: true
+- route: /auth/register
+  source: apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts
+  operation: issueInviteCode
+  operation_id: invites.create
+  kind: create
+  api_surface: app
+  api_method: POST
+  api_path: /app/v3/api/iam/invites/issue
+  sdk_domain: iam
+  read_sources:
+  - ops_referral_invite_code
+  write_tables:
+  - ops_referral_invite_code
+  request_body_required: false
+  response_schema:
+    name: AppInviteCodeResponse
+    schema:
+      additionalProperties: false
+      name: AppInviteCodeResponse
+      properties:
+        inviteCode:
+          maxLength: 32
+          type: string
+      required:
+      - inviteCode
+      type: object
 - route: /console/user
   source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/iamDirectoryApiOperations.ts
   operation: fetchIamOrganizationMemberships
@@ -13782,6 +13829,157 @@ frontend_operations:
   request_body_required: true
   write_tables:
   - ops_audit_log
+- route: /admin/recharges/exchangeRules
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: exchangeRules.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/billing/exchange_rules
+  read_sources:
+  - commerce_exchange_rule
+  response_schema:
+    name: AdminExchangeRuleListResponse
+    schema:
+      additionalProperties: false
+      name: AdminExchangeRuleListResponse
+      properties:
+        items:
+          items:
+            additionalProperties: false
+            name: AdminExchangeRule
+            properties:
+              id:
+                maxLength: 128
+                type: string
+              rate:
+                pattern: ^[0-9]+(\.[0-9]{1,6})?$
+                type: string
+              sourceAssetType:
+                enum:
+                - POINTS
+                - CASH
+                type: string
+              status:
+                enum:
+                - active
+                type: string
+              targetAssetType:
+                enum:
+                - POINTS
+                - CASH
+                type: string
+            required:
+            - id
+            - sourceAssetType
+            - targetAssetType
+            - rate
+            - status
+            type: object
+          type: array
+        pageInfo:
+          $ref: '#/components/schemas/PageInfo'
+      required:
+      - items
+      - pageInfo
+      type: object
+  query_parameters:
+  - name: source_asset_type
+    type: string
+    required: false
+    maxLength: 32
+  - name: target_asset_type
+    type: string
+    required: false
+    maxLength: 32
+  - name: status
+    type: string
+    required: false
+    maxLength: 32
+  - name: page
+    schema:
+      type: integer
+      minimum: 1
+  - name: page_size
+    schema:
+      type: integer
+      minimum: 1
+      maximum: 200
+- route: /admin/recharges/exchangeRules
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: update
+  operation_id: exchangeRules.update
+  kind: update
+  api_surface: backend
+  api_method: PUT
+  api_path: /backend/v3/api/billing/exchange_rules
+  read_sources:
+  - commerce_exchange_rule
+  response_schema:
+    name: AdminExchangeRule
+    schema:
+      additionalProperties: false
+      name: AdminExchangeRule
+      properties:
+        id:
+          maxLength: 128
+          type: string
+        rate:
+          pattern: ^[0-9]+(\.[0-9]{1,6})?$
+          type: string
+        sourceAssetType:
+          enum:
+          - POINTS
+          - CASH
+          type: string
+        status:
+          enum:
+          - active
+          type: string
+        targetAssetType:
+          enum:
+          - POINTS
+          - CASH
+          type: string
+      required:
+      - id
+      - sourceAssetType
+      - targetAssetType
+      - rate
+      - status
+      type: object
+  request_schema:
+    name: ExchangeRuleMutationRequest
+    schema:
+      additionalProperties: false
+      name: ExchangeRuleMutationRequest
+      properties:
+        rate:
+          pattern: ^[0-9]+(\.[0-9]{1,6})?$
+          type: string
+        sourceAssetType:
+          enum:
+          - POINTS
+          - CASH
+          type: string
+        status:
+          enum:
+          - active
+          type: string
+        targetAssetType:
+          enum:
+          - POINTS
+          - CASH
+          type: string
+      required:
+      - sourceAssetType
+      - targetAssetType
+      - rate
+      type: object
+  request_body_required: true
+  write_tables:
+  - ops_audit_log
 - route: /admin/monitor
   source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor/src/monitorService.ts
   operation: fetchAlerts
@@ -19713,6 +19911,7 @@ frontend_models:
   - key
   - label
   - modelCount
+  - saleMultiplier
   data_sources:
   - ai_upstream_account_group
 - route: /models
@@ -19724,6 +19923,7 @@ frontend_models:
   - groups.key
   - groups.label
   - groups.modelCount
+  - groups.saleMultiplier
   - pageInfo
   - pageInfo.total
   - pageInfo.page

@@ -197,6 +197,27 @@
           "clientArchitecture": "pc-web"
         },
         {
+          "id": "web-universal-cloud-browser-test-zip",
+          "name": "SDKWork Cloud Router Test Web Bundle",
+          "sourceType": "WEB_URL",
+          "packageFormat": "ZIP",
+          "platform": "WEB",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/TEST/0.3.0/web.zip",
+          "enabled": false,
+          "metadata": {
+            "checksumPendingBuild": true,
+            "releaseBuildDeferred": true
+          },
+          "checksumAlgorithm": "SHA-256",
+          "checksum": "",
+          "architecture": "universal",
+          "profileBinding": "fixed",
+          "deploymentProfile": "cloud",
+          "runtimeTarget": "browser",
+          "targetPlatform": "web",
+          "clientArchitecture": "pc-web"
+        },
+        {
           "id": "web-universal-standalone-browser-zip",
           "name": "SDKWork Cloud Router Standalone Web Bundle",
           "sourceType": "WEB_URL",

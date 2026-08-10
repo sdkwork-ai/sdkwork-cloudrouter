@@ -73,10 +73,22 @@ function resolveProductLaunchEnv({
   workspaceRoot,
   baseLaunchEnv,
 }) {
+  // Client and desktop modes delegate the .env.development write to
+  // start-workspace.mjs, which resolves the proxy origins from the resolved
+  // workspace settings (remote cloud gateway in cloud profile). A pre-ensure
+  // here would race that write with loopback fallback values.
+  if (mode === 'client' || mode === 'desktop') {
+    return baseLaunchEnv;
+  }
+
+  const resolvedDeploymentProfile = String(
+    baseLaunchEnv.SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE ?? 'standalone',
+  ).trim() || 'standalone';
   if (mode === 'check') {
     ensureCloudRouterBrowserProductionEnv({
       workspaceRoot,
       env: baseLaunchEnv,
+      deploymentProfile: resolvedDeploymentProfile,
     });
     return baseLaunchEnv;
   }
@@ -86,6 +98,7 @@ function resolveProductLaunchEnv({
     ...ensureCloudRouterBrowserDevelopmentEnv({
       workspaceRoot,
       env: baseLaunchEnv,
+      deploymentProfile: resolvedDeploymentProfile,
     }).mergedEnv,
   };
 }

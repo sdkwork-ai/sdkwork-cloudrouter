@@ -56,7 +56,7 @@ function escapeRustString(value) {
   return value.replaceAll("\\", "\\\\").replaceAll("\"", "\\\"");
 }
 
-function routeEntry(route) {
+function routeEntry(route, authorities) {
   const method = METHOD_MAP[route.method];
   if (!method) {
     throw new Error(`unsupported HTTP method ${route.method} for ${route.path}`);
@@ -70,26 +70,57 @@ function routeEntry(route) {
   const operationId =
     route.operationId ??
     `${route.method.toLowerCase()}.${route.path.replace(/[{}]/g, "").replaceAll("/", ".")}`;
+  const suffix = logRetentionSuffix(route, authorities);
   const args = [
     `HttpMethod::${method}`,
     `"${escapeRustString(route.path)}"`,
     `"${escapeRustString(tag)}"`,
     `"${escapeRustString(operationId)}"`,
   ].join(", ");
-  const entry = `    HttpRoute::${builder}(${args}),`;
   if (args.length <= RUSTFMT_FN_CALL_WIDTH) {
-    return entry;
+    return `    HttpRoute::${builder}(${args})${suffix},`;
   }
   return `    HttpRoute::${builder}(
         HttpMethod::${method},
         "${escapeRustString(route.path)}",
         "${escapeRustString(tag)}",
         "${escapeRustString(operationId)}",
-    ),`;
+    )${suffix},`;
 }
 
-function renderManifest(routes, target) {
-  const routeBlock = routes.map(routeEntry).join("\n");
+/// Emits `.with_log_retention("...")` when the route's OpenAPI authority
+/// declares `x-sdkwork-log-retention` (values: `"permanent"` or `"<n>d"`),
+/// so per-route retention declarations survive the generated-manifest
+/// round trip. Routes without the extension stay on the default retention.
+function logRetentionSuffix(route, authorities) {
+  const file = route.source?.openApiAuthority;
+  const operation = authorities
+    .get(file)
+    ?.paths?.[route.path]?.[route.method.toLowerCase()];
+  const retention = operation?.["x-sdkwork-log-retention"];
+  if (typeof retention !== "string" || !retention.trim()) {
+    return "";
+  }
+  return `.with_log_retention("${escapeRustString(retention)}")`;
+}
+
+/// Loads the OpenAPI authority documents referenced by the routes
+/// (`route.source.openApiAuthority`) for `x-sdkwork-log-retention` lookups.
+async function loadOpenApiAuthorities(routes) {
+  const authorities = new Map();
+  for (const route of routes) {
+    const file = route.source?.openApiAuthority;
+    if (!file || authorities.has(file)) {
+      continue;
+    }
+    const raw = await readFile(path.join(workspaceRoot, file), "utf8");
+    authorities.set(file, JSON.parse(raw));
+  }
+  return authorities;
+}
+
+function renderManifest(routes, target, authorities) {
+  const routeBlock = routes.map((route) => routeEntry(route, authorities)).join("\n");
   const appManifestAlias = target.surface === "app-api"
     ? `
 /// Cloudrouter-owned app-api route manifest.
@@ -183,7 +214,8 @@ async function processTarget(target, mode) {
   const manifest = JSON.parse(
     await readFile(path.join(workspaceRoot, target.manifestPath), "utf8"),
   );
-  const content = renderManifest(manifest.routes, target);
+  const authorities = await loadOpenApiAuthorities(manifest.routes);
+  const content = renderManifest(manifest.routes, target, authorities);
   const outputPath = path.join(workspaceRoot, target.outputPath);
   let existing = null;
   try {

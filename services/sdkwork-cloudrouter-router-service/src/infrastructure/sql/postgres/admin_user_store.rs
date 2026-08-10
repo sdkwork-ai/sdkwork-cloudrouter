@@ -650,7 +650,7 @@ async fn find_default_upstream_account_group(
         SELECT id
         FROM ai_upstream_account_group
         WHERE (tenant_id IS NULL OR tenant_id = $1)
-          AND (organization_id IS NULL OR organization_id = $2)
+          AND (organization_id IS NULL OR organization_id = 0 OR organization_id = $2)
           AND group_code = $3
           AND status = 1
           AND deleted_at IS NULL

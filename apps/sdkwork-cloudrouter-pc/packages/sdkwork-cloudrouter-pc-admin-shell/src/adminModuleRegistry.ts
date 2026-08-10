@@ -44,6 +44,7 @@ export type AdminModuleId =
   | 'home'
   | 'iam'
   | 'membershipCenter'
+  | 'rechargeCenter'
   | 'marketingCenter'
   | 'partnerCenter'
   | 'paymentCenter'
@@ -109,7 +110,14 @@ export const ADMIN_MODULES: AdminModuleDef[] = [
     nameKey: 'admin.header.membershipCenter',
     icon: Crown,
     defaultPath: '/admin/memberships/plans',
-    pathPrefixes: ['/admin/memberships', '/admin/recharges'],
+    pathPrefixes: ['/admin/memberships'],
+  }),
+  moduleBlock({
+    id: 'rechargeCenter',
+    nameKey: 'admin.header.rechargeCenter',
+    icon: WalletCards,
+    defaultPath: '/admin/recharges/packages',
+    pathPrefixes: ['/admin/recharges'],
   }),
   moduleBlock({
     id: 'marketingCenter',
@@ -194,8 +202,14 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
         itemBlock({ path: '/admin/memberships/members', labelKey: 'admin.menu.memberships.members', icon: Users }),
         itemBlock({ path: '/admin/memberships/entitlements', labelKey: 'admin.menu.memberships.entitlements', icon: ShieldCheck }),
       ]),
-      groupBlock('admin.menu.memberships.recharge', [
-        itemBlock({ path: '/admin/memberships/rechargePackages', labelKey: 'admin.menu.memberships.rechargePackages', icon: WalletCards }),
+    ],
+  },
+  {
+    moduleId: 'rechargeCenter',
+    groups: [
+      groupBlock('admin.menu.recharges.business', [
+        itemBlock({ path: '/admin/recharges/packages', labelKey: 'admin.menu.recharges.packages', icon: Package }),
+        itemBlock({ path: '/admin/recharges/tokenBankRates', labelKey: 'admin.menu.recharges.tokenBankRates', icon: ArrowRightLeft }),
       ]),
     ],
   },

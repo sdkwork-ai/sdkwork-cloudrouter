@@ -592,7 +592,7 @@ test("console api key service fetches selectable account groups through the gene
           code: "2000",
           msg: "success",
           data: {
-            items: [{ id: "group-1", groupCode: "default", groupName: "Default group", costMultiplier: null }],
+            items: [{ id: "group-1", groupCode: "default", groupName: "Default group", saleMultiplier: null }],
           },
         };
       }

@@ -39,6 +39,7 @@ const RuntimeRegionAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-
 const CloudRouterAuthSettingsPage = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-site'), 'CloudRouterAuthSettingsPage');
 const CloudRouterSiteSettingsPage = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-site'), 'CloudRouterSiteSettingsPage');
 const MembershipsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-memberships'), 'MembershipsAdmin');
+const RechargeAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-memberships'), 'RechargeAdmin');
 const MarketingAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-marketing'), 'MarketingAdmin');
 const PartnerAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-partner'), 'CloudRouterPartnerAdmin');
 const PaymentsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-payments'), 'PaymentsAdmin');
@@ -102,6 +103,7 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   route('runtime-region', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-runtime-region', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <RuntimeRegionAdmin />),
   route('site', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-site', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <CloudRouterSiteSettingsPage />),
   route('memberships/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-memberships', ['sdkwork-membership-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={MembershipsAdmin} />),
+  route('recharges/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-memberships', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={RechargeAdmin} />),
   route('marketing/:sectionId?/:batchId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-marketing', ['sdkwork-promotion-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminMarketingRoute component={MarketingAdmin} />),
   route('partner/:sectionId?', 'sdkwork-partner', '@sdkwork/cloudrouter-pc-admin-partner', ['sdkwork-partner-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={PartnerAdmin} />),
   route('payments/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-payments', ['sdkwork-payment-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={PaymentsAdmin} />),

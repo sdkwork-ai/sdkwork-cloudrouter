@@ -16,6 +16,8 @@ export type { AdminDashboardOverview } from './admin-dashboard-overview';
 export type { AdminDashboardPieChartItem } from './admin-dashboard-pie-chart-item';
 export type { AdminDashboardRecentUsageItem } from './admin-dashboard-recent-usage-item';
 export type { AdminDashboardTrafficItem } from './admin-dashboard-traffic-item';
+export type { AdminExchangeRule } from './admin-exchange-rule';
+export type { AdminExchangeRuleListResponse } from './admin-exchange-rule-list-response';
 export type { AdminFirewallRuleCreateRequest } from './admin-firewall-rule-create-request';
 export type { AdminIpLimitCreateRequest } from './admin-ip-limit-create-request';
 export type { AdminModelLimitCreateRequest } from './admin-model-limit-create-request';
@@ -80,6 +82,8 @@ export type { CreateUpstreamAccountCredentialRequest } from './create-upstream-a
 export type { CreateUpstreamAccountGroupRequest } from './create-upstream-account-group-request';
 export type { CreateUpstreamAccountRequest } from './create-upstream-account-request';
 export type { CreateUpstreamSupplierRequest } from './create-upstream-supplier-request';
+
+export type { ExchangeRuleMutationRequest } from './exchange-rule-mutation-request';
 
 export type { ExplainUpstreamAccountGroupRouteRequest } from './explain-upstream-account-group-route-request';
 export type { FieldError } from './field-error';

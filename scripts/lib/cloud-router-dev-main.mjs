@@ -20,15 +20,18 @@ const __dirname = path.dirname(__filename);
 const LEGACY_MODES = new Set(['server', 'desktop', 'browser', 'plan', 'service']);
 const DEFAULT_SQLITE_DATABASE_URL = 'sqlite://target/dev/cloudrouter.sqlite';
 
-function mapTargetToProductMode(target, legacyMode) {
+function mapTargetToProductMode(target, legacyMode, deploymentProfile = 'standalone') {
   if (target === 'desktop') {
     return 'desktop';
   }
   if (target === 'browser-only') {
-    return 'browser';
+    return deploymentProfile === 'cloud' ? 'client' : 'browser';
   }
   if (target === 'browser') {
-    return 'server';
+    // Cloud development consumes already deployed cloud.development API
+    // surfaces: start only the local developer-facing client (Vite) against
+    // the remote cloud gateway, never a local API/gateway/database process.
+    return deploymentProfile === 'cloud' ? 'client' : 'server';
   }
   if (target === 'plan') {
     return 'plan';
@@ -162,7 +165,11 @@ function parseArgs(argv) {
     throw new Error('cloud-router-dev supports only --environment development');
   }
   applyDatabaseSettings(settings);
-  settings.mode = mapTargetToProductMode(settings.target, settings.legacyMode);
+  settings.mode = mapTargetToProductMode(
+    settings.target,
+    settings.legacyMode,
+    settings.deploymentProfile,
+  );
   return settings;
 }
 
@@ -187,7 +194,9 @@ Options:
 Note: --topology and --service-layout are retired. Deployment profiles do not encode process decomposition.
 
 Examples:
+  pnpm dev
   pnpm dev:browser
+  pnpm dev:cloud
   pnpm dev:browser:cloud
   pnpm dev:desktop
   pnpm dev:desktop:sqlite

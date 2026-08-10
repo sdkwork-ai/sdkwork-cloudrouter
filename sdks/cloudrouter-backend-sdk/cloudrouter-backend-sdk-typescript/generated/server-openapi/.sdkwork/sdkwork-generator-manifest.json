@@ -60,7 +60,7 @@
     },
     {
       "path": "src/api/billing.ts",
-      "sha256": "f2081e6a4b80dc8bc956467c666190d2b39c12b103b523c52302ca5b6ad36a5b"
+      "sha256": "3a32beb1fd0272af7aaa5493034d45a389049419dfecc5037e52b5b52a3bf8b7"
     },
     {
       "path": "src/api/index.ts",
@@ -173,6 +173,14 @@
     {
       "path": "src/types/admin-dashboard-traffic-item.ts",
       "sha256": "6da62a05aa083fb3f1e8f8ab5c6d6779972a3d4f933fc5cff3689fb9e5b26fbe"
+    },
+    {
+      "path": "src/types/admin-exchange-rule-list-response.ts",
+      "sha256": "76290c9123bb171be5481675a91d148edb70ed1d76c9f16801ae55ecccb95990"
+    },
+    {
+      "path": "src/types/admin-exchange-rule.ts",
+      "sha256": "2eeb048a16d6e6a644b9c061d176407f587a83a2002ead0b361d4103b8505caf"
     },
     {
       "path": "src/types/admin-firewall-rule-create-request.ts",
@@ -423,6 +431,10 @@
       "sha256": "1adf9738fe3a2783ee4bef3e4633a49820da104b98d7972b6510fedb3aaa03d1"
     },
     {
+      "path": "src/types/exchange-rule-mutation-request.ts",
+      "sha256": "dbf96104007c8ddd09815122957e44bbd492086430813a6ccd811534e249dc76"
+    },
+    {
       "path": "src/types/explain-upstream-account-group-route-request.ts",
       "sha256": "f8d3cfd6a0647135a7329f61f49ca1400a8ae5ca44e62e2dad74cf8e5fd77e91"
     },
@@ -440,7 +452,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "0db53ac6b3a0c0fceb0ece01e7021e265482c3e87f0bca545e16e56a310783a6"
+      "sha256": "bd66054d150670ad64e88bcf6ccfa0edd2c151179f45770a886cd69adc5e04bf"
     },
     {
       "path": "src/types/installation-status-response.ts",

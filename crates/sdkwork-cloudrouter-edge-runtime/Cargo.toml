@@ -38,6 +38,7 @@ sdkwork-database-sqlx.workspace = true
 sdkwork-routes-cloudrouter-app-api.workspace = true
 sdkwork-routes-cloudrouter-backend-api.workspace = true
 sdkwork_api_iam_assembly.workspace = true
+sdkwork-api-log-assembly.workspace = true
 sdkwork_api_membership_assembly.workspace = true
 sdkwork_api_payment_assembly.workspace = true
 sdkwork_api_order_assembly.workspace = true

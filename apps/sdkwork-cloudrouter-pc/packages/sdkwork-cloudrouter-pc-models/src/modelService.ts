@@ -1,7 +1,9 @@
 import {
+  getCloudRouterAppSdkClient,
   getModelsAppSdkClient,
   isRecord,
   readApiRecord,
+  readNullableString,
   readNumber,
   readRecordArray,
   readRequiredApiItems,
@@ -38,6 +40,8 @@ export interface ModelCatalogGroup {
   key: ModelGroupKey;
   label: string;
   modelCount: number;
+  /** 销售倍率（按分组 code 从路由账户分组关联，app 面不暴露成本倍率） */
+  saleMultiplier?: string;
 }
 
 export interface ModelCatalogProvider {
@@ -73,6 +77,27 @@ export class ModelService {
     return resolveRuntimeModelCatalogProviders(
       readRequiredApiItems(result, 'Failed to fetch model providers'),
     );
+  }
+
+  /**
+   * 拉取路由账户分组的销售倍率映射（groupCode → saleMultiplier）。
+   * 模型库分组 key 与上游账户分组 code 对应；匹配不到的分组不显示倍率。
+   */
+  static async fetchAccountGroupSaleMultipliers(): Promise<Map<string, string>> {
+    const result = await getCloudRouterAppSdkClient().ai.routing.accountGroups.list();
+    const data = readApiRecord(result);
+    const multipliers = new Map<string, string>();
+    for (const record of readRecordArray(data, 'items')) {
+      const groupCode = readString(record, 'groupCode').trim();
+      if (groupCode.length === 0) {
+        continue;
+      }
+      const saleMultiplier = readNullableString(record, 'saleMultiplier')?.trim();
+      if (saleMultiplier && saleMultiplier.length > 0) {
+        multipliers.set(groupCode, saleMultiplier);
+      }
+    }
+    return multipliers;
   }
 
   static async fetchModelByCatalogRouteId(routeId: string): Promise<Model | null> {

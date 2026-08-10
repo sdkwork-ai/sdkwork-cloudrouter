@@ -58,4 +58,6 @@ platform releases to Cloud Router provider behavior.
 
 ## Supersedes / Superseded By
 
-None.
+Host selection is updated by
+`ADR-20260810-multi-base-domain-production-binding.md` (multi-base-domain
+`router.*` hosts); this ADR's ingress ownership boundary remains in effect.

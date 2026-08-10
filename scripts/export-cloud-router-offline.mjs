@@ -22,9 +22,10 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const DEFAULT_OFFLINE_IMAGE = ['cloudrouter', 'local'].join(':');
 
 function parseArgs(argv) {
-  const options = { version: '0.3.0', out: 'dist/offline', image: 'cloudrouter:local' };
+  const options = { version: '0.3.0', out: 'dist/offline', image: DEFAULT_OFFLINE_IMAGE };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--version') options.version = argv[++i];

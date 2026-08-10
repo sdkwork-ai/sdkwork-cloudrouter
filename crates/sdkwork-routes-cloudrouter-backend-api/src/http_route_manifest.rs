@@ -210,6 +210,18 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
+        "/backend/v3/api/billing/exchange_rules",
+        "billing",
+        "exchangeRules.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Put,
+        "/backend/v3/api/billing/exchange_rules",
+        "billing",
+        "exchangeRules.update",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
         "/backend/v3/api/billing/recharges/records",
         "billing",
         "rechargeRecords.list",

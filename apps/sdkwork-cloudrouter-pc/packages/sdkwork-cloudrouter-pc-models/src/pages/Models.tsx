@@ -29,6 +29,7 @@ import {
 import { FilterSidebar, CollapsibleSection, FilterCheckbox, BottomPagination } from '@sdkwork/cloudroutes-pc-commons';
 
 import { ModalityIcon } from '../components/ModalityIcon';
+import { GroupSaleMultiplierBadge } from '../components/GroupSaleMultiplierBadge';
 
 const MODEL_CATALOG_PAGE_SIZE_OPTIONS = [20, 50, 100, 200];
 const DEFAULT_MODEL_CATALOG_UI_PAGE_SIZE = 20;
@@ -43,6 +44,7 @@ export function Models() {
   const [showAllProviders, setShowAllProviders] = useState(false);
   const [catalogModels, setCatalogModels] = useState<Model[]>([]);
   const [catalogGroups, setCatalogGroups] = useState<ModelCatalogGroup[]>([]);
+  const [groupSaleMultipliers, setGroupSaleMultipliers] = useState<Map<string, string>>(new Map());
   const [catalogProviders, setCatalogProviders] = useState<ModelCatalogProvider[]>([]);
   const [catalogLoadError, setCatalogLoadError] = useState<string | null>(null);
   const [providerLoadError, setProviderLoadError] = useState<string | null>(null);
@@ -91,10 +93,15 @@ export function Models() {
   const filterOptions = useMemo(() => {
     return deriveModelCatalogFilterOptions(
       catalogModels,
-      catalogGroups,
+      catalogGroups.map((group) => ({
+        ...group,
+        ...(groupSaleMultipliers.has(group.key)
+          ? { saleMultiplier: groupSaleMultipliers.get(group.key) }
+          : {}),
+      })),
       catalogProviders.map((provider) => provider.label),
     );
-  }, [catalogGroups, catalogModels, catalogProviders]);
+  }, [catalogGroups, catalogModels, catalogProviders, groupSaleMultipliers]);
 
   const filteredProviders = useMemo(() => {
     return filterProvidersForCatalog(filterOptions.providers, filters.providerSearchQuery);
@@ -164,6 +171,27 @@ export function Models() {
 
   useEffect(() => {
     let cancelled = false;
+
+    // 分组销售倍率仅用于展示，加载失败时静默降级（不显示倍率徽章），不影响模型目录。
+    ModelService.fetchAccountGroupSaleMultipliers()
+      .then((multipliers) => {
+        if (!cancelled) {
+          setGroupSaleMultipliers(multipliers);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setGroupSaleMultipliers(new Map());
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
     setCatalogLoadError(null);
     setCatalogLoading(true);
 
@@ -226,7 +254,17 @@ export function Models() {
               <FilterCheckbox
                 key={group.key}
                 checked={filters.selectedGroups.includes(group.key)}
-                label={t(modelCatalogGroupLabelKey(group.key), group.label)}
+                label={
+                  <span className="flex items-center gap-1.5 min-w-0">
+                    <span className="truncate">{t(modelCatalogGroupLabelKey(group.key), group.label)}</span>
+                    {group.saleMultiplier ? (
+                      <GroupSaleMultiplierBadge
+                        multiplier={group.saleMultiplier}
+                        title={t('models.group.saleMultiplier', 'Sale multiplier')}
+                      />
+                    ) : null}
+                  </span>
+                }
                 onClick={() => toggleGroupFilter(group.key)}
                 activeColorClass="bg-purple-500 border-purple-500"
               />

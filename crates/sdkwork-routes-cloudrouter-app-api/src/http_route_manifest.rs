@@ -220,42 +220,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "system",
         "site.runtime.retrieve",
     ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/ai/generations",
-        "api",
-        "generations.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/ai/generations/workspace",
-        "api",
-        "generations.workspace.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/ai/generations/images/text_to_image",
-        "api",
-        "generations.images.textToImage.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/memory/entries/{entryId}",
-        "api",
-        "entries.retrieve",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/memory/spaces/{spaceId}/entries",
-        "api",
-        "spaces.entries.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/memory/spaces/{spaceId}/entries",
-        "api",
-        "spaces.entries.create",
-    ),
 ];
 
 pub fn http_route_manifest() -> HttpRouteManifest {
