@@ -5,9 +5,10 @@ use std::sync::{Arc, Mutex};
 use crate::application::{
     EntityUuidGenerator, PaymentAdapterOperation, PaymentCancelPaymentIntentRequest,
     PaymentCapturePaymentIntentRequest, PaymentConfirmPaymentIntentRequest,
-    PaymentProviderRegistry, PaymentProviderRegistryError, PaymentRefundAttemptRecord,
-    PaymentRefundEventRecord, PaymentRefundItemRecord, PaymentRefundRuntimeRecord,
-    PaymentRefundRuntimeStore, PaymentRefundRuntimeStoreFuture, PaymentRefundStatus,
+    PaymentCreateIntentRequest, PaymentProviderOperationOutcome, PaymentProviderRegistry,
+    PaymentProviderRegistryError, PaymentRefundAttemptRecord, PaymentRefundEventRecord,
+    PaymentRefundItemRecord, PaymentRefundRuntimeRecord, PaymentRefundRuntimeStore,
+    PaymentRefundRuntimeStoreFuture, PaymentRefundStatus,
 };
 use crate::domain::{DomainError, DomainResult};
 
@@ -94,6 +95,15 @@ pub struct PaymentIntentRuntimeRecord {
     pub idempotency_key: String,
     pub created_at: String,
     pub updated_at: String,
+}
+
+/// Creation outcome that carries the provider order response so the API layer
+/// can render the normalized next action (e.g. WeChat native or Alipay
+/// precreate scan-to-pay QR code) without re-querying the provider.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PaymentIntentCreationResult {
+    pub intent: PaymentIntentRuntimeRecord,
+    pub provider_outcome: Option<PaymentProviderOperationOutcome>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -200,7 +210,7 @@ where
     pub async fn create_payment_intent(
         &self,
         command: RuntimeCreatePaymentIntentCommand,
-    ) -> DomainResult<PaymentIntentRuntimeRecord> {
+    ) -> DomainResult<PaymentIntentCreationResult> {
         validate_create_command(&command)?;
         let adapter = self
             .provider_registry
@@ -213,7 +223,10 @@ where
             .load_by_idempotency(command.tenant_id.clone(), command.idempotency_key.clone())
             .await?
         {
-            return Ok(existing);
+            return Ok(PaymentIntentCreationResult {
+                intent: existing,
+                provider_outcome: None,
+            });
         }
 
         let intent_id = self.entity_uuid_generator.generate_entity_uuid()?;
@@ -243,23 +256,91 @@ where
         };
         let route_decision = PaymentRouteDecisionRecord {
             id: route_decision_id,
-            tenant_id: command.tenant_id,
+            tenant_id: command.tenant_id.clone(),
             organization_id: command.organization_id,
             payment_intent_id: intent_id,
             payment_attempt_id,
             account_id: format!("{supplier_code}:{payment_method}:{scene}"),
             supplier_code,
             provider_account_id: None,
-            method_code: payment_method,
-            scene_code: scene,
-            currency_code: command.currency_code,
-            amount: command.amount,
+            method_code: payment_method.clone(),
+            scene_code: scene.clone(),
+            currency_code: command.currency_code.clone(),
+            amount: command.amount.clone(),
             decision_reason: "standard_provider_requested".to_owned(),
-            created_at: command.requested_at,
+            created_at: command.requested_at.clone(),
         };
-        self.store
+
+        // Real provider adapters (sandbox_only = false) place the order at
+        // creation time so the response carries the normalized next action
+        // (WeChat native code_url, Alipay precreate qr_code) for scan-to-pay.
+        // Sandbox registry entries never place a provider order.
+        let provider_outcome = if adapter.capabilities().sandbox_only {
+            None
+        } else {
+            let attempt = self
+                .store
+                .insert_operation_attempt(self.operation_attempt(
+                    &intent,
+                    PaymentAdapterOperation::CreatePaymentIntent,
+                    &command.idempotency_key,
+                    &command.requested_at,
+                )?)
+                .await?;
+            match adapter
+                .create_payment_intent(PaymentCreateIntentRequest {
+                    tenant_id: command.tenant_id.parse::<i64>().ok(),
+                    merchant_order_no: Some(command.merchant_order_no.clone()),
+                    amount_minor: decimal_amount_to_minor(&command.amount),
+                    currency: Some(command.currency_code.clone()),
+                    metadata: serde_json::json!({
+                        "description": command.subject.clone(),
+                        "subject": command.subject.clone(),
+                        "payment_method": payment_method.clone(),
+                        "scene": scene.clone(),
+                    }),
+                })
+                .await
+            {
+                Ok(outcome) => {
+                    let _ = self
+                        .store
+                        .finish_operation_attempt(
+                            attempt.id.clone(),
+                            "SUCCESS".to_owned(),
+                            Some(format!("{outcome:?}")),
+                            None,
+                            None,
+                            command.requested_at.clone(),
+                        )
+                        .await?;
+                    Some(outcome)
+                }
+                Err(error) => {
+                    let _ = self
+                        .store
+                        .finish_operation_attempt(
+                            attempt.id.clone(),
+                            "FAILED".to_owned(),
+                            None,
+                            Some("provider_request_failed".to_owned()),
+                            Some(error.to_string()),
+                            command.requested_at.clone(),
+                        )
+                        .await?;
+                    return Err(registry_error(error));
+                }
+            }
+        };
+
+        let intent = self
+            .store
             .insert_payment_intent(intent, route_decision)
-            .await
+            .await?;
+        Ok(PaymentIntentCreationResult {
+            intent,
+            provider_outcome,
+        })
     }
 
     pub async fn confirm_payment_intent(

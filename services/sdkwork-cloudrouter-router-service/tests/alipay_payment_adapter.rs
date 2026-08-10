@@ -125,6 +125,50 @@ async fn alipay_page_pay_maps_standard_payment_intent_to_trade_page_pay() {
 }
 
 #[tokio::test]
+async fn alipay_qr_precreate_maps_standard_payment_intent_to_scan_to_pay_qr_code() {
+    let client = RecordingAlipayClient::new(json!({
+        "out_trade_no": "order-1",
+        "trade_no": "20260530220000000002",
+        "status": "WAIT_BUYER_PAY",
+        "qr_code": "https://qr.alipay.com/scan-to-pay-1"
+    }));
+    let adapter = alipay_adapter(client.clone(), true);
+
+    let outcome = adapter
+        .create_payment_intent(PaymentCreateIntentRequest {
+            tenant_id: Some(42),
+            merchant_order_no: Some("order-1".to_owned()),
+            amount_minor: Some(1234),
+            currency: Some("CNY".to_owned()),
+            metadata: json!({
+                "subject": "SDKWORK order",
+                "payment_method": "alipay_qr",
+            }),
+        })
+        .await
+        .unwrap();
+
+    assert_eq!("alipay", outcome.supplier_code);
+    assert_eq!(Some("20260530220000000002".to_owned()), outcome.native_id);
+    assert_eq!(Some("WAIT_BUYER_PAY".to_owned()), outcome.raw_status);
+    assert_eq!(
+        "https://qr.alipay.com/scan-to-pay-1",
+        outcome.payload["qr_code"]
+    );
+
+    let requests = client.recorded_requests();
+    assert_eq!(1, requests.len());
+    assert_eq!("alipay.trade.precreate", requests[0].method);
+    assert_eq!("order-1", requests[0].biz_content["out_trade_no"]);
+    assert_eq!("12.34", requests[0].biz_content["total_amount"]);
+    assert_eq!("SDKWORK order", requests[0].biz_content["subject"]);
+    assert!(
+        requests[0].biz_content.get("product_code").is_none(),
+        "precreate must not send the page-pay product code"
+    );
+}
+
+#[tokio::test]
 async fn alipay_cancel_payment_intent_maps_to_trade_close() {
     let client = RecordingAlipayClient::new(json!({
         "out_trade_no": "order-1",

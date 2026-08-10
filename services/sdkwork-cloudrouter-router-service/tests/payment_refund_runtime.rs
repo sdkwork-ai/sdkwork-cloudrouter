@@ -30,7 +30,8 @@ async fn create_refund_records_failed_provider_attempt_for_mainstream_sandbox_ad
     let intent = intent_service
         .create_payment_intent(create_intent_command())
         .await
-        .unwrap();
+        .unwrap()
+        .intent;
 
     let error = refund_service
         .create_refund(RuntimeCreateRefundCommand {
@@ -77,7 +78,8 @@ async fn create_refund_records_item_level_allocations() {
     let intent = intent_service
         .create_payment_intent(create_intent_command())
         .await
-        .unwrap();
+        .unwrap()
+        .intent;
 
     let _ = refund_service
         .create_refund(RuntimeCreateRefundCommand {
@@ -133,7 +135,8 @@ async fn create_refund_rejects_item_allocation_total_mismatch_before_persistence
     let intent = intent_service
         .create_payment_intent(create_intent_command())
         .await
-        .unwrap();
+        .unwrap()
+        .intent;
 
     let error = refund_service
         .create_refund(RuntimeCreateRefundCommand {
@@ -173,7 +176,8 @@ async fn create_refund_is_idempotent_by_tenant_and_idempotency_key() {
     let intent = intent_service
         .create_payment_intent(create_intent_command())
         .await
-        .unwrap();
+        .unwrap()
+        .intent;
     let command = RuntimeCreateRefundCommand {
         tenant_id: "100001".to_owned(),
         payment_intent_id: intent.id,
@@ -210,7 +214,8 @@ async fn create_refund_rejects_amount_currency_mismatch_before_persistence() {
     let intent = intent_service
         .create_payment_intent(create_intent_command())
         .await
-        .unwrap();
+        .unwrap()
+        .intent;
 
     let error = refund_service
         .create_refund(RuntimeCreateRefundCommand {
@@ -244,7 +249,8 @@ async fn cancel_refund_rejects_terminal_failed_refund_without_provider_attempt()
     let intent = intent_service
         .create_payment_intent(create_intent_command())
         .await
-        .unwrap();
+        .unwrap()
+        .intent;
     let _ = refund_service
         .create_refund(RuntimeCreateRefundCommand {
             tenant_id: "100001".to_owned(),

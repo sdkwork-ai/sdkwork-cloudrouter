@@ -141,12 +141,21 @@ impl PaymentProviderAdapter for AlipayPaymentProviderAdapter {
             let subject = metadata_string(&request.metadata, "subject")
                 .map(str::to_owned)
                 .unwrap_or_else(|| out_trade_no.clone());
+            // `alipay_qr` maps to the scan-to-pay precreate API whose response
+            // carries the `qr_code` payload rendered as a scan-to-pay QR code.
+            // Any other method falls back to the page-pay cashier URL.
+            let qr_scan_payment = matches!(
+                metadata_string(&request.metadata, "payment_method"),
+                Some(method) if method.eq_ignore_ascii_case("alipay_qr")
+            );
             let mut biz_content = json!({
                 "out_trade_no": out_trade_no,
                 "total_amount": minor_to_decimal_string(amount_minor),
                 "subject": subject,
-                "product_code": "FAST_INSTANT_TRADE_PAY",
             });
+            if !qr_scan_payment {
+                biz_content["product_code"] = json!("FAST_INSTANT_TRADE_PAY");
+            }
             if let Some(tenant_id) = request.tenant_id {
                 biz_content["passback_params"] = json!(format!("tenant_id={tenant_id}"));
             }
@@ -156,10 +165,12 @@ impl PaymentProviderAdapter for AlipayPaymentProviderAdapter {
             if let Some(return_url) = normalized_optional(self.config.return_url.clone()) {
                 biz_content["return_url"] = json!(return_url);
             }
-            let response = self
-                .client
-                .execute("alipay.trade.page.pay", biz_content)
-                .await?;
+            let method = if qr_scan_payment {
+                "alipay.trade.precreate"
+            } else {
+                "alipay.trade.page.pay"
+            };
+            let response = self.client.execute(method, biz_content).await?;
             alipay_operation_outcome(PaymentAdapterOperation::CreatePaymentIntent, response)
         })
     }

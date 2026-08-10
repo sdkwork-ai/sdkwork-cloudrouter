@@ -298,7 +298,17 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
                     </div>
                   ) : null}
                   {error ? (
-                    <div className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</div>
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</div>
+                      <button
+                        className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5"
+                        onClick={() => setCreateAttempt((value) => value + 1)}
+                        type="button"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        {t('admin.commerce.payments.methods.testPayment.retry', 'Create again')}
+                      </button>
+                    </div>
                   ) : null}
                 </div>
               )}

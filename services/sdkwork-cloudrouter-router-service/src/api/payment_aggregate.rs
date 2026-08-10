@@ -8,15 +8,17 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::post;
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::api::response::{json_created_response, problem_from_wire_code, success_envelope};
 use crate::application::{
     resolve_payment_provider_registry_for_deployment, EntityUuidGenerator,
     InMemoryPaymentIntentRuntimeStore, PaymentAggregateRuntimeStore, PaymentIntentRuntimeRecord,
-    PaymentIntentRuntimeService, PaymentProviderRegistry, PaymentRefundRuntimeRecord,
-    PaymentRefundRuntimeService, RuntimeCancelPaymentIntentCommand, RuntimeCancelRefundCommand,
-    RuntimeCapturePaymentIntentCommand, RuntimeConfirmPaymentIntentCommand,
-    RuntimeCreatePaymentIntentCommand, RuntimeCreateRefundCommand, RuntimeCreateRefundItemCommand,
+    PaymentIntentRuntimeService, PaymentProviderOperationOutcome, PaymentProviderRegistry,
+    PaymentRefundRuntimeRecord, PaymentRefundRuntimeService, RuntimeCancelPaymentIntentCommand,
+    RuntimeCancelRefundCommand, RuntimeCapturePaymentIntentCommand,
+    RuntimeConfirmPaymentIntentCommand, RuntimeCreatePaymentIntentCommand,
+    RuntimeCreateRefundCommand, RuntimeCreateRefundItemCommand,
 };
 use crate::infrastructure::OsApiKeySecretGenerator;
 
@@ -108,8 +110,48 @@ struct PaymentIntentResponse {
     supplier_code: String,
     payment_method: String,
     status: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    next_action: Option<PaymentNextActionResponse>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    provider_native: Option<ProviderNativeReferenceResponse>,
     created_at: String,
     updated_at: String,
+}
+
+/// Normalized next action aligned with the payment-aggregate OpenAPI contract
+/// `PaymentNextAction` schema.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct PaymentNextActionResponse {
+    r#type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    redirect_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    qr_code: Option<MediaResourceResponse>,
+}
+
+/// SDKWORK standard media resource aligned with the contract `MediaResource`
+/// schema. Clients render the QR code only from `uri` at the rendering boundary.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct MediaResourceResponse {
+    kind: String,
+    source: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    uri: Option<String>,
+}
+
+/// Provider-native reference aligned with the contract `ProviderNativeReference`
+/// schema.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ProviderNativeReferenceResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    provider_payment_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    trade_no: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    raw: Option<Value>,
 }
 
 #[derive(Debug, Serialize)]
@@ -326,7 +368,9 @@ async fn create_payment_intent(
         })
         .await
     {
-        Ok(intent) => json_created_response(None, intent_response_data(intent)),
+        Ok(creation) => {
+            json_created_response(None, intent_response_data(creation.intent, creation.provider_outcome))
+        }
         Err(error) if error.is_conflict() => conflict(error.to_string()),
         Err(error) => unprocessable(error.to_string()),
     }
@@ -364,7 +408,7 @@ async fn confirm_payment_intent(
         })
         .await
     {
-        Ok(intent) => Json(success_envelope(intent_response_data(intent))).into_response(),
+        Ok(intent) => Json(success_envelope(intent_response_data(intent, None))).into_response(),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) => unprocessable(error.to_string()),
     }
@@ -407,7 +451,7 @@ async fn capture_payment_intent(
         })
         .await
     {
-        Ok(intent) => Json(success_envelope(intent_response_data(intent))).into_response(),
+        Ok(intent) => Json(success_envelope(intent_response_data(intent, None))).into_response(),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) => unprocessable(error.to_string()),
     }
@@ -449,13 +493,16 @@ async fn cancel_payment_intent(
         })
         .await
     {
-        Ok(intent) => Json(success_envelope(intent_response_data(intent))).into_response(),
+        Ok(intent) => Json(success_envelope(intent_response_data(intent, None))).into_response(),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) => unprocessable(error.to_string()),
     }
 }
 
-fn intent_response_data(intent: PaymentIntentRuntimeRecord) -> PaymentIntentResultData {
+fn intent_response_data(
+    intent: PaymentIntentRuntimeRecord,
+    provider_outcome: Option<PaymentProviderOperationOutcome>,
+) -> PaymentIntentResultData {
     PaymentIntentResultData {
         item: PaymentIntentResponse {
             id: intent.id,
@@ -468,10 +515,91 @@ fn intent_response_data(intent: PaymentIntentRuntimeRecord) -> PaymentIntentResu
             supplier_code: intent.supplier_code,
             payment_method: intent.payment_method,
             status: intent.status.as_str().to_owned(),
+            next_action: next_action_from_outcome(provider_outcome.as_ref()),
+            provider_native: provider_native_from_outcome(provider_outcome.as_ref()),
             created_at: intent.created_at,
             updated_at: intent.updated_at,
         },
     }
+}
+
+fn next_action_from_outcome(
+    outcome: Option<&PaymentProviderOperationOutcome>,
+) -> Option<PaymentNextActionResponse> {
+    let outcome = outcome?;
+    match outcome.supplier_code.as_str() {
+        // WeChat Pay Native returns the scan-to-pay `code_url`.
+        "wechat_pay" => {
+            let code_url = outcome.payload.get("code_url").and_then(Value::as_str)?;
+            Some(PaymentNextActionResponse {
+                r#type: "qr_code".to_owned(),
+                redirect_url: None,
+                qr_code: Some(qr_code_media_resource(code_url)),
+            })
+        }
+        // Alipay Precreate returns the scan-to-pay `qr_code`; page pay returns
+        // the cashier `page_pay_url` used as a browser redirect.
+        "alipay" => {
+            if let Some(qr_code) = outcome.payload.get("qr_code").and_then(Value::as_str) {
+                Some(PaymentNextActionResponse {
+                    r#type: "qr_code".to_owned(),
+                    redirect_url: None,
+                    qr_code: Some(qr_code_media_resource(qr_code)),
+                })
+            } else if let Some(page_pay_url) = outcome
+                .payload
+                .get("page_pay_url")
+                .and_then(Value::as_str)
+            {
+                Some(PaymentNextActionResponse {
+                    r#type: "redirect".to_owned(),
+                    redirect_url: Some(page_pay_url.to_owned()),
+                    qr_code: None,
+                })
+            } else {
+                None
+            }
+        }
+        _ => None,
+    }
+}
+
+fn qr_code_media_resource(uri: &str) -> MediaResourceResponse {
+    MediaResourceResponse {
+        kind: "image".to_owned(),
+        source: "provider_asset".to_owned(),
+        uri: Some(uri.to_owned()),
+    }
+}
+
+fn provider_native_from_outcome(
+    outcome: Option<&PaymentProviderOperationOutcome>,
+) -> Option<ProviderNativeReferenceResponse> {
+    let outcome = outcome?;
+    let mut reference = ProviderNativeReferenceResponse {
+        provider_payment_id: None,
+        trade_no: None,
+        raw: None,
+    };
+    match outcome.supplier_code.as_str() {
+        "wechat_pay" => {
+            reference.provider_payment_id = outcome.native_id.clone();
+            reference.raw = Some(outcome.payload.clone());
+        }
+        "alipay" => {
+            reference.trade_no = outcome
+                .payload
+                .get("trade_no")
+                .and_then(Value::as_str)
+                .map(str::to_owned);
+            reference.raw = Some(outcome.payload.clone());
+        }
+        _ => {}
+    }
+    if reference.provider_payment_id.is_none() && reference.trade_no.is_none() {
+        return None;
+    }
+    Some(reference)
 }
 
 fn refund_response_data(refund: PaymentRefundRuntimeRecord) -> PaymentRefundResultData {

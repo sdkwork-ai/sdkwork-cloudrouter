@@ -120,11 +120,11 @@ pub use payment_adapter::{
     PaymentVerifyWebhookRequest, PaymentWebhookVerificationOutcome,
 };
 pub use payment_intent_runtime::{
-    InMemoryPaymentIntentRuntimeStore, PaymentIntentRuntimeRecord, PaymentIntentRuntimeService,
-    PaymentIntentRuntimeStore, PaymentIntentRuntimeStoreFuture, PaymentIntentStatus,
-    PaymentOperationAttemptRecord, PaymentRouteDecisionRecord, RuntimeCancelPaymentIntentCommand,
-    RuntimeCapturePaymentIntentCommand, RuntimeConfirmPaymentIntentCommand,
-    RuntimeCreatePaymentIntentCommand,
+    InMemoryPaymentIntentRuntimeStore, PaymentIntentCreationResult, PaymentIntentRuntimeRecord,
+    PaymentIntentRuntimeService, PaymentIntentRuntimeStore, PaymentIntentRuntimeStoreFuture,
+    PaymentIntentStatus, PaymentOperationAttemptRecord, PaymentRouteDecisionRecord,
+    RuntimeCancelPaymentIntentCommand, RuntimeCapturePaymentIntentCommand,
+    RuntimeConfirmPaymentIntentCommand, RuntimeCreatePaymentIntentCommand,
 };
 pub use payment_provider_account_resolver::{
     validate_payment_secret_ref, PaymentProviderAccountCredentialRefs,
