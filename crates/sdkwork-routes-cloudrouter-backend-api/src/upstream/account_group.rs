@@ -65,6 +65,7 @@ struct AccountGroupUpdateRequest {
     vendor_code: Option<String>,
     modalities: Option<Vec<String>>,
     tags: Option<Vec<String>>,
+    is_default: Option<bool>,
     status: Option<i32>,
 }
 
@@ -120,6 +121,7 @@ struct AccountGroupResponse {
     vendor_code: Option<String>,
     modalities: Vec<String>,
     tags: Vec<String>,
+    is_default: bool,
     status: i32,
     version: String,
     updated_at: String,
@@ -461,6 +463,7 @@ fn create_command(
         vendor_code: vendor_code(request.vendor_code)?,
         modalities: modalities(request.modalities)?,
         tags: tags(request.tags)?,
+        is_default: false,
         status: status(request.status.unwrap_or(1))?,
         requested_at: requested_at(),
     })
@@ -525,6 +528,18 @@ fn update_command(
         tags: match request.tags {
             Some(values) => tags(Some(values))?,
             None => existing.tags,
+        },
+        is_default: match request.is_default {
+            Some(true) => true,
+            Some(false) => {
+                return Err(problem_keyed(
+                    SdkWorkResultCode::InvalidParameter,
+                    "validation.admin.upstream.accountGroup.default.cannotUnset",
+                    serde_json::Value::Null,
+                    "isDefault cannot be set to false; set another group as default instead",
+                ));
+            }
+            None => existing.is_default,
         },
         status: status(request.status.unwrap_or(existing.status))?,
         requested_at: requested_at(),
@@ -767,6 +782,7 @@ impl From<AdminUpstreamAccountGroupItem> for AccountGroupResponse {
             vendor_code: item.vendor_code,
             modalities: item.modalities,
             tags: item.tags,
+            is_default: item.is_default,
             status: item.status,
             version: item.version.to_string(),
             updated_at: item.updated_at,

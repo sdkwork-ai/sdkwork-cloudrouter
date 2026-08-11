@@ -4,6 +4,8 @@ export interface AdminRechargePackage {
   bonusPoints: string;
   /** Currency code field on admin recharge package. */
   currencyCode: string;
+  /** Discount rate percentage: 100 means no discount, 90 means pay 90 percent of the price. */
+  discount: number;
   /** Grant amount field on admin recharge package. */
   grantAmount: string;
   /** Id field on admin recharge package. */

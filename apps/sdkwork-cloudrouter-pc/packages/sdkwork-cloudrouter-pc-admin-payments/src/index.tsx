@@ -191,10 +191,15 @@ type PaymentDialogState =
 const PENDING_PAYMENT_STATUSES = new Set(['created', 'pending', 'processing']);
 
 /**
- * Provider codes whose checkout returns a scan-to-pay QR code; the one-cent
- * test action is offered only for these payment methods.
+ * Payment method keys that can drive the one-cent test payment, in two
+ * classes: scan-to-pay QR methods (`wechat_native` → WeChat Native
+ * `code_url`, `alipay_qr` → Alipay precreate `qr_code`) and web cashier
+ * methods (`alipay_wap`/`alipay_pc` → Alipay H5/PC cashier redirect or
+ * form). Other products return SDK invocation payloads, require payer
+ * identifiers (openid/buyer_id), or have no checkout at all (sandbox), so
+ * they must not show the one-cent test action.
  */
-const QR_TEST_PROVIDER_CODES = new Set(['wechat_pay', 'alipay', 'sandbox']);
+const QR_TEST_METHOD_KEYS = new Set(['wechat_native', 'alipay_qr', 'alipay_wap', 'alipay_pc']);
 
 function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentResourceTab }) {
   const { t, i18n } = useTranslation();
@@ -261,7 +266,7 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       }, {
         label: t('admin.commerce.payments.methods.testPayment.action', 'One-cent test'),
         icon: <QrCode className="h-3.5 w-3.5" />,
-        isVisible: (record) => QR_TEST_PROVIDER_CODES.has(String(record.providerCode ?? ''))
+        isVisible: (record) => QR_TEST_METHOD_KEYS.has(String(record.methodKey ?? ''))
           && String(record.status ?? '') === 'active',
         onClick: (record) => setDialog({ kind: 'method-test-payment', record }),
       }],

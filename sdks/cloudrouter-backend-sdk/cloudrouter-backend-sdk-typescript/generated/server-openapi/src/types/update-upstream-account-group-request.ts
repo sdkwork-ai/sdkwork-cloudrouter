@@ -12,6 +12,8 @@ export interface UpdateUpstreamAccountGroupRequest {
   groupName?: string;
   /** Group type field on update upstream account group request. */
   groupType?: 'mixed' | 'llm' | 'image' | 'video' | 'audio' | 'music' | 'other' | null;
+  /** Set true to promote this group to the single default group of the tenant and organization scope; the previous default is cleared. Setting false is rejected because exactly one default must exist. */
+  isDefault?: boolean;
   /** Modalities field on update upstream account group request. */
   modalities?: ('text' | 'audio' | 'image' | 'video' | 'music')[] | null;
   /** Priority field on update upstream account group request. */

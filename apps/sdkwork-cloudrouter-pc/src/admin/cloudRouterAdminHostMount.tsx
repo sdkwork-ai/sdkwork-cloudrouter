@@ -46,6 +46,7 @@ const PaymentsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin
 const StorageAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-storage'), 'StorageAdmin');
 const IamUsersAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamUsersAdmin');
 const IamTenantsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamTenantsAdmin');
+const IamApplicationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamApplicationsAdmin');
 const IamOrganizationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOrganizationsAdmin');
 const IamOrganizationStructureAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOrganizationStructureAdmin');
 const IamRolesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamRolesAdmin');
@@ -56,6 +57,7 @@ const IamOauthAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin
 const IamOauthProviderConnectionsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthProviderConnectionsAdmin');
 const IamOauthMiniProgramsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthMiniProgramsAdmin');
 const IamOauthOfficialAccountsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthOfficialAccountsAdmin');
+const IamOauthOfficialAccountCustomMenuAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthOfficialAccountCustomMenuAdmin');
 const IamOauthScanLoginAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthScanLoginAdmin');
 const IamAccountBindingAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamAccountBindingAdmin');
 const IamAuditAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamAuditAdmin');
@@ -68,6 +70,7 @@ const IamAuditAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin
 const IAM_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>> = {
   'iam/users': <IamUsersAdmin />,
   'iam/tenants': <IamTenantsAdmin />,
+  'iam/applications': <IamApplicationsAdmin />,
   'iam/organizations': <IamOrganizationsAdmin />,
   'iam/organizations/:organizationId/structure': <IamOrganizationStructureAdmin />,
   'iam/roles': <IamRolesAdmin />,
@@ -78,6 +81,7 @@ const IAM_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>> = {
   'iam/oauth/providers': <IamOauthProviderConnectionsAdmin />,
   'iam/oauth/mini-programs': <IamOauthMiniProgramsAdmin />,
   'iam/oauth/official-accounts': <IamOauthOfficialAccountsAdmin />,
+  'iam/oauth/official-accounts/:resourceAccountId/custom-menus': <IamOauthOfficialAccountCustomMenuAdmin />,
   'iam/oauth/scan-login': <IamOauthScanLoginAdmin />,
   'iam/account-binding': <IamAccountBindingAdmin />,
   'iam/audit': <IamAuditAdmin />,

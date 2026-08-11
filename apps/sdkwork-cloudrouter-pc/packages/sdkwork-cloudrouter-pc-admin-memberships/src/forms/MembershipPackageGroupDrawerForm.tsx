@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  MembershipFormActions,
   MembershipFormFrame,
   MembershipSelectField,
   MembershipTextField,
@@ -33,14 +32,12 @@ const baseDurationDayValues = ['1', '7', '30', '90', '365'];
 interface MembershipPackageGroupDrawerFormProps {
   mode: 'create' | 'edit';
   initialValue?: MembershipsAdminPackageGroup | null;
-  onCancel: () => void;
   onSubmit: (input: MembershipsAdminPackageGroupMutationInput) => Promise<void>;
 }
 
 export function MembershipPackageGroupDrawerForm({
   mode,
   initialValue,
-  onCancel,
   onSubmit,
 }: MembershipPackageGroupDrawerFormProps) {
   const { t } = useTranslation();
@@ -56,7 +53,6 @@ export function MembershipPackageGroupDrawerForm({
       ? initialValue.status
       : 'active',
   );
-  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const billingCycleOptions = [
     { value: 'one_time', label: t('admin.commerce.memberships.groups.form.billingCycle.oneTime', 'One-time') },
@@ -72,8 +68,8 @@ export function MembershipPackageGroupDrawerForm({
     t('admin.commerce.memberships.groups.form.durationOptionDays', '{{days}} days', { days: durationDays }),
   );
 
-  const handleSubmit = async () => {
-    setIsSaving(true);
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError(null);
     try {
       await onSubmit({
@@ -91,13 +87,15 @@ export function MembershipPackageGroupDrawerForm({
         t,
         t('admin.commerce.memberships.groups.form.error', 'Package group could not be saved'),
       ));
-    } finally {
-      setIsSaving(false);
     }
   };
 
   return (
-    <MembershipFormFrame error={error}>
+    <MembershipFormFrame
+      error={error}
+      formId="membership-package-group-form"
+      onSubmit={handleSubmit}
+    >
       <MembershipTextField label={t('admin.commerce.memberships.groups.form.name', 'Group Name')} value={name} onChange={setName} placeholder={t('admin.commerce.memberships.groups.form.namePlaceholder', 'Monthly packages')} />
       <MembershipTextField label={t('admin.commerce.memberships.groups.form.description', 'Description')} value={description} onChange={setDescription} />
       <div className="grid grid-cols-2 gap-4">
@@ -127,14 +125,6 @@ export function MembershipPackageGroupDrawerForm({
           onChange={(value) => setStatus(value as 'active' | 'inactive' | 'disabled')}
         />
       </div>
-      <MembershipFormActions
-        submitLabel={mode === 'edit'
-          ? t('admin.commerce.memberships.groups.form.updateSubmit', 'Update Group')
-          : t('admin.commerce.memberships.groups.form.submit', 'Create Group')}
-        isSaving={isSaving}
-        onCancel={onCancel}
-        onSubmit={handleSubmit}
-      />
     </MembershipFormFrame>
   );
 

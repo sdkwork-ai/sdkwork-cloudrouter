@@ -18,6 +18,8 @@ export interface UpstreamAccountGroup {
   groupType: 'mixed' | 'llm' | 'image' | 'video' | 'audio' | 'music' | 'other';
   /** Id field on upstream account group. */
   id: string;
+  /** Whether this group is the single default group of the tenant and organization scope. */
+  isDefault: boolean;
   /** Modalities field on upstream account group. */
   modalities?: ('text' | 'audio' | 'image' | 'video' | 'music')[];
   /** Priority field on upstream account group. */

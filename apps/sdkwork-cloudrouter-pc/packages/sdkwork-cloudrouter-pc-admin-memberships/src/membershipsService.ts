@@ -47,6 +47,7 @@ export interface MembershipsAdminPackageItem {
   currencyCode: string;
   durationDays: number;
   recurrenceCycle: string;
+  discount: number;
   status: string;
 }
 
@@ -70,6 +71,7 @@ export interface MembershipsAdminRechargePackageItem {
   priceAmount: string;
   currencyCode: string;
   bonusPoints: string;
+  discount: number;
   grantAmount: string;
   points: string;
   status: string;
@@ -80,6 +82,7 @@ export interface MembershipsAdminRechargePackageMutationInput {
   priceAmount: string;
   currencyCode: string;
   bonusPoints: number;
+  discount: number;
   status?: 'active' | 'inactive';
 }
 
@@ -155,6 +158,7 @@ export interface MembershipsAdminPackageMutationInput {
   priceAmount: string;
   currencyCode?: string;
   durationDays: number;
+  discount: number;
   status?: 'active' | 'inactive' | 'disabled';
 }
 
@@ -611,6 +615,7 @@ function normalizeAdminPackage(value: unknown): MembershipsAdminPackageItem {
     currencyCode: readString(item, 'currencyCode').trim() || 'CNY',
     durationDays,
     recurrenceCycle: readString(item, 'recurrenceCycle').trim() || inferAdminBillingCycle(durationDays),
+    discount: readNumber(item, 'discount', 100),
     status: readString(item, 'status') || 'active',
   };
 }
@@ -655,6 +660,7 @@ function normalizeAdminRechargePackage(value: unknown): MembershipsAdminRecharge
     priceAmount: readString(item, 'priceAmount').trim() || '0',
     currencyCode: readString(item, 'currencyCode').trim() || 'CNY',
     bonusPoints,
+    discount: readNumber(item, 'discount', 100),
     grantAmount,
     points: readRequiredNonNegativeInt64String(item, 'points', 'Recharge package points are required'),
     status: readString(item, 'status').trim() || 'active',
@@ -787,6 +793,14 @@ function requiredMoneyAmount(value: string | undefined, fieldName: string): stri
   return normalized;
 }
 
+function requiredDiscountRange(value: number | undefined, fieldName: string): number {
+  const discount = requiredNonNegativeInteger(value, fieldName);
+  if (discount < 1 || discount > 100) {
+    throw new Error(`${fieldName} must be between 1 and 100`);
+  }
+  return discount;
+}
+
 function requiredResourceStatus(value: string | undefined, fieldName: string): 'active' | 'inactive' | 'disabled' {
   const status = (value ?? 'active').trim().toLowerCase();
   if (status === 'active' || status === 'inactive' || status === 'disabled') {
@@ -884,6 +898,7 @@ function buildPackageMutationRequest(input: MembershipsAdminPackageMutationInput
     priceAmount: requiredMoneyAmount(input.priceAmount, 'priceAmount'),
     currencyCode: normalizeCurrencyCode(input.currencyCode),
     durationDays: requiredPositiveInt64String(input.durationDays, 'durationDays'),
+    discount: requiredDiscountRange(input.discount, 'discount'),
     status: requiredResourceStatus(input.status, 'status'),
   };
 }
@@ -895,6 +910,7 @@ function buildRechargePackageMutationRequest(
     priceAmount: requiredMoneyAmount(input.priceAmount, 'priceAmount'),
     currencyCode: normalizeCurrencyCode(input.currencyCode),
     bonusPoints: requiredNonNegativeInt64String(input.bonusPoints, 'bonusPoints'),
+    discount: requiredDiscountRange(input.discount, 'discount'),
     status: input.status ?? 'active',
   };
 }

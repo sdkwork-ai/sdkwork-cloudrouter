@@ -96,16 +96,76 @@
 ### 支付宝
 - 主凭据：商户应用私钥（PEM）；证书：支付宝公钥（PEM）
 - App ID（元数据）；签名类型 RSA2；回调地址（notify URL）
-- 通道方式：`alipay_qr`（当面付）/`alipay_wap`/`alipay_app` 等，场景对应
+- 通道方式：`alipay_qr`（当面付，扫码）/`alipay_wap`（H5 跳转）/`alipay_pc`
+  （PC 表单）/`alipay_app`（App SDK，返回 `orderStr`）/`alipay_jsapi`
+  （需 buyer_id）等，场景对应
 - 支付宝开放平台配置回调
 
 ### 微信支付
 - 主凭据：商户 API 私钥（PEM）；Webhook 密钥：API v3 Key；
   证书：平台证书（PEM）；商户证书序列号（元数据）
-- 通道方式：`wechat_native`（扫码）/`wechat_jsapi`（公众号，需 openid）等
+- 通道方式：`wechat_native`（扫码）/`wechat_jsapi`（公众号/小程序，需 openid）/
+  `wechat_h5`（移动浏览器，需 client_ip 且商户号需配置 H5 域名白名单）/
+  `wechat_app`（App SDK，返回 PayReq 参数）等
 - 微信商户平台配置支付回调
 
-## 4. 操作自检清单
+### 各通道参数产出（与官方产品对齐）
+| 通道 | 上游接口 | 收银参数 |
+|---|---|---|
+| `wechat_native` | `/v3/pay/transactions/native` | `qrCodeUrl`（code_url，扫码） |
+| `wechat_jsapi` | `/v3/pay/transactions/jsapi` | `jsapiPayload`（wx.requestPayment 键集，需 openid） |
+| `wechat_h5` | `/v3/pay/transactions/h5` | `payUrl`（h5_url，需 client_ip + 域名白名单） |
+| `wechat_app` | `/v3/pay/transactions/app` | `appPayload`（PayReq 键集：appid/partnerid/prepayid/package=Sign=WXPay） |
+| `alipay_qr` | `alipay.trade.precreate` | `qrCodeUrl`（qr_code，扫码优先） |
+| `alipay_wap` | `alipay.trade.wap.pay` | `payUrl`/`payForm`（H5 收银台） |
+| `alipay_pc` | `alipay.trade.page.pay` | `payUrl`/`payForm`（PC 收银台表单） |
+| `alipay_app` | `alipay.trade.app.pay` | `orderStr`（App SDK 调起串） |
+| `stripe_*` | PaymentIntent | `clientSecret` + `nextAction=stripe_confirm`（前端 Stripe.js 集成另行支持） |
+
+## 4. 一分钱测试（扫码 / 跳转支付自检）
+
+**支付方式** 页对支持扫码支付或网页跳转支付的方式提供行操作「一分钱测试」：创建
+一笔 0.01 元的测试支付，通过**手机扫码**或**点击跳转到支付渠道收银台**完成支付，
+验证完整支付链路（创建 → 支付 → 状态轮询 → 成功）。按钮仅在方式为**启用**状态
+且满足以下能力时显示。
+
+支持方式（与支付产品能力对齐）：
+
+| 方式键 | 产品能力 | 支付形态 |
+|---|---|---|
+| `wechat_native` | 微信 Native 扫码 | 二维码扫码（`/v3/pay/transactions/native` → `code_url`） |
+| `alipay_qr` | 支付宝当面付 | 二维码扫码（`alipay.trade.precreate` → `qr_code`） |
+| `alipay_wap` | 支付宝手机网站支付 | 点击跳转 H5 收银台（`alipay.trade.wap.pay` → 跳转链接/表单） |
+| `alipay_pc` | 支付宝 PC 网站支付 | 点击打开 PC 收银台表单自动提交（`alipay.trade.page.pay` → 表单） |
+
+对话框按支付形态自动展示：二维码方式显示扫码区；跳转方式显示「打开支付页面」
+按钮（新窗口打开支付渠道收银台）；扫码+跳转并存时同时展示。
+
+其他方式**不显示**「一分钱测试」按钮：
+
+- `stripe_*`、`wechat_jsapi/h5/app`、`alipay_app/jsapi`：返回跳转链接/JSAPI/SDK
+  调用参数或需要 payer 标识（openid/buyer_id），无法直接扫码或跳转测试
+  （`wechat_h5` 另受域名白名单限制，暂不支持测试）；
+- `sandbox_test`：沙箱提供商没有真实支付创建能力，支付成功通过「模拟成功回调」
+  驱动（见路线 A 第 6 步），不提供扫码或跳转支付。
+
+测试支付要求该方式的机构账户已配置真实或 PSP 沙箱凭据，且已为该方式创建启用
+状态的支付通道（测试支付走与真实支付相同的通道路由）；否则创建会失败。
+
+测试订单的有效期为 15 分钟（与提供商收银窗口 900 秒一致），二维码在对话框内
+显示剩余支付时间，过期后需重新创建。
+
+**支付成功回调必须可达**（否则扫码支付成功但状态不会更新）：
+
+- 平台侧：机构账户 metadata 配置 `notifyUrl`，或部署环境配置
+  `ORDER_PAYMENT_WEBHOOK_BASE_URL`（指向订单网关
+  `POST /app/v3/api/orders/payments/webhooks/{providerCode}`）。
+- PSP 侧：在微信商户平台/支付宝开放平台把该回调地址配置到对应商户号/应用。
+- 未配置时：微信 Native 创建会直接报「notify_url is required」；
+  支付宝当面付可以创建并支付成功，但因没有异步通知，状态会停留在
+  pending 直到二维码过期——两种情况都应先补齐回调配置再测试。
+
+## 5. 操作自检清单
 
 | 检查项 | 位置 | 期望 |
 |---|---|---|
@@ -117,7 +177,7 @@
 | Webhook 收到 | Webhook 事件 | 有对应事件且 processed |
 | 对账可跑 | 对账任务 | queued → succeeded（由 Cloud Router 对账 worker 消费） |
 
-## 5. 常见问题
+## 6. 常见问题
 
 - **「模拟成功回调」按钮不显示**：仅对 `created/pending/processing` 状态的记录显示；
   意图/尝试需处于未完成状态。

@@ -4,15 +4,16 @@ use std::sync::Arc;
 use sdkwork_cloudrouter_router_service::application::{
     UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext,
 };
+use sdkwork_cloudrouter_router_service::domain::DomainResult;
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::RingAeadCredentialSecretCodec;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::PostgresAdminUpstreamStore;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::PricingCatalogSql;
 use sdkwork_cloudrouter_router_service::ports::{
-    AdminUpstreamAccountGroupMemberInput, AdminUpstreamListQuery, AdminUpstreamResourceInput,
-    AdminUpstreamStore, AdminUpstreamSubject, AdminUpstreamSupplierAuthMethodInput,
-    AdminUpstreamSupplierEndpointInput, CreateAdminUpstreamAccountCredentialCommand,
-    SaveAdminUpstreamAccountCommand, SaveAdminUpstreamAccountGroupCommand,
-    SaveAdminUpstreamSupplierCommand,
+    AdminUpstreamAccountGroupItem, AdminUpstreamAccountGroupMemberInput, AdminUpstreamListQuery,
+    AdminUpstreamResourceInput, AdminUpstreamStore, AdminUpstreamSubject,
+    AdminUpstreamSupplierAuthMethodInput, AdminUpstreamSupplierEndpointInput,
+    CreateAdminUpstreamAccountCredentialCommand, SaveAdminUpstreamAccountCommand,
+    SaveAdminUpstreamAccountGroupCommand, SaveAdminUpstreamSupplierCommand,
 };
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{PgPool, Row};
@@ -227,6 +228,7 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
             vendor_code: None,
             modalities: Vec::new(),
             tags: Vec::new(),
+            is_default: false,
             status: 1,
             requested_at: REQUESTED_AT.to_owned(),
         })
@@ -698,6 +700,7 @@ async fn postgres_upstream_store_account_resources_scope_runtime_routes() {
             vendor_code: None,
             modalities: Vec::new(),
             tags: Vec::new(),
+            is_default: false,
             status: 1,
             requested_at: REQUESTED_AT.to_owned(),
         })
@@ -860,6 +863,147 @@ async fn postgres_upstream_store_account_resources_scope_runtime_routes() {
     context.cleanup().await;
 }
 
+#[tokio::test]
+async fn postgres_upstream_store_enforces_single_default_account_group() {
+    let Some(context) = PostgresTestContext::new("admin_upstream_default").await else {
+        return;
+    };
+    let codec = Arc::new(
+        RingAeadCredentialSecretCodec::new("0123456789abcdef0123456789abcdef")
+            .expect("credential codec"),
+    );
+    let store = PostgresAdminUpstreamStore::new(context.pool.clone(), codec.clone());
+    let subject = upstream_subject(100001, 200001);
+
+    let first = store
+        .save_account_group(SaveAdminUpstreamAccountGroupCommand {
+            subject: subject.clone(),
+            account_group_id: None,
+            expected_version: None,
+            uuid: "test-upstream-account-group-first".to_owned(),
+            group_code: "first-default".to_owned(),
+            group_name: "First routing group".to_owned(),
+            description: None,
+            group_type: "mixed".to_owned(),
+            routing_strategy: "weighted".to_owned(),
+            fallback_mode: "cross_supplier".to_owned(),
+            priority: 10,
+            cost_multiplier: "1.000000000000".to_owned(),
+            sale_multiplier: "1.000000000000".to_owned(),
+            environment: Some(1),
+            vendor_code: None,
+            modalities: Vec::new(),
+            tags: Vec::new(),
+            is_default: false,
+            status: 1,
+            requested_at: REQUESTED_AT.to_owned(),
+        })
+        .await
+        .expect("create first group");
+    assert!(!first.is_default, "new groups must not default");
+
+    let first_promoted = promote_default(&store, &subject, &first, true)
+        .await
+        .expect("promote first group to default");
+    assert!(first_promoted.is_default);
+
+    let second = store
+        .save_account_group(SaveAdminUpstreamAccountGroupCommand {
+            subject: subject.clone(),
+            account_group_id: None,
+            expected_version: None,
+            uuid: "test-upstream-account-group-second".to_owned(),
+            group_code: "second-default".to_owned(),
+            group_name: "Second routing group".to_owned(),
+            description: None,
+            group_type: "mixed".to_owned(),
+            routing_strategy: "weighted".to_owned(),
+            fallback_mode: "cross_supplier".to_owned(),
+            priority: 10,
+            cost_multiplier: "1.000000000000".to_owned(),
+            sale_multiplier: "1.000000000000".to_owned(),
+            environment: Some(1),
+            vendor_code: None,
+            modalities: Vec::new(),
+            tags: Vec::new(),
+            is_default: false,
+            status: 1,
+            requested_at: REQUESTED_AT.to_owned(),
+        })
+        .await
+        .expect("create second group");
+
+    let second_promoted = promote_default(&store, &subject, &second, true)
+        .await
+        .expect("promote second group to default");
+    assert!(second_promoted.is_default);
+    let first_after = store
+        .get_account_group(subject.clone(), first.id)
+        .await
+        .expect("get first group")
+        .expect("first group exists");
+    assert!(!first_after.is_default, "previous default must be cleared");
+    assert!(
+        first_after.version > first_promoted.version,
+        "clearing the default must advance the previous default version"
+    );
+
+    let delete_result = store
+        .delete_account_group(
+            subject.clone(),
+            second.id,
+            second_promoted.version,
+            REQUESTED_AT.to_owned(),
+        )
+        .await;
+    let delete_error = delete_result.expect_err("deleting the default group must fail");
+    assert!(delete_error.is_conflict(), "default group deletion must conflict");
+
+    store
+        .delete_account_group(
+            subject.clone(),
+            first.id,
+            first_after.version,
+            REQUESTED_AT.to_owned(),
+        )
+        .await
+        .expect("delete non-default group");
+
+    context.cleanup().await;
+}
+
+async fn promote_default(
+    store: &PostgresAdminUpstreamStore,
+    subject: &AdminUpstreamSubject,
+    item: &AdminUpstreamAccountGroupItem,
+    is_default: bool,
+) -> DomainResult<AdminUpstreamAccountGroupItem> {
+    store
+        .save_account_group(SaveAdminUpstreamAccountGroupCommand {
+            subject: subject.clone(),
+            account_group_id: Some(item.id),
+            expected_version: Some(item.version),
+            uuid: item.uuid.clone(),
+            group_code: item.group_code.clone(),
+            group_name: item.group_name.clone(),
+            description: item.description.clone(),
+            group_type: item.group_type.clone(),
+            routing_strategy: item.routing_strategy.clone(),
+            fallback_mode: item.fallback_mode.clone(),
+            priority: item.priority,
+            cost_multiplier: item.cost_multiplier.clone(),
+            sale_multiplier: item.sale_multiplier.clone(),
+            environment: item.environment,
+            vendor_code: item.vendor_code.clone(),
+            modalities: item.modalities.clone(),
+            tags: item.tags.clone(),
+            is_default,
+            status: item.status,
+            requested_at: REQUESTED_AT.to_owned(),
+        })
+        .await
+}
+
 fn upstream_subject(tenant_id: i64, organization_id: i64) -> AdminUpstreamSubject {
     AdminUpstreamSubject {
         tenant_id,
@@ -956,6 +1100,12 @@ impl PostgresTestContext {
         .execute(&pool)
         .await
         .expect("create Gateway IAM schema");
+        sqlx::raw_sql(include_str!(
+            "../../../database/migrations/postgres/0020_upstream_account_group_default_flag.up.sql"
+        ))
+        .execute(&pool)
+        .await
+        .expect("apply upstream account group default flag migration");
         create_resource_catalog(&pool).await;
         Some(Self {
             pool,

@@ -8513,6 +8513,10 @@ frontend_operations:
               id:
                 maxLength: 32
                 type: string
+              isDefault:
+                description: Whether this group is the single default group of
+                  the tenant and organization scope.
+                type: boolean
               modalities:
                 items:
                   enum:
@@ -8586,6 +8590,7 @@ frontend_operations:
             - costMultiplier
             - saleMultiplier
             - environment
+            - isDefault
             - status
             - version
             - updatedAt
@@ -8857,6 +8862,11 @@ frontend_operations:
           maxLength: 32
           nullable: true
           type: string
+        isDefault:
+          description: Set true to promote this group to the single default group
+            of the tenant and organization scope; the previous default is cleared.
+            Setting false is rejected because exactly one default must exist.
+          type: boolean
         modalities:
           items:
             enum:
@@ -13570,6 +13580,12 @@ frontend_operations:
                 maxLength: 16
                 minLength: 3
                 type: string
+              discount:
+                description: "Discount rate percentage: 100 means no discount, 90 means pay 90 percent of the price."
+                format: int32
+                maximum: 100
+                minimum: 1
+                type: integer
               grantAmount:
                 format: int64
                 pattern: ^[0-9]+$
@@ -13613,6 +13629,7 @@ frontend_operations:
             - priceAmount
             - currencyCode
             - bonusPoints
+            - discount
             - grantAmount
             - points
             - status
@@ -13685,6 +13702,12 @@ frontend_operations:
           maxLength: 16
           minLength: 3
           type: string
+        discount:
+          description: "Discount rate percentage: 100 means no discount, 90 means pay 90 percent of the price."
+          format: int32
+          maximum: 100
+          minimum: 1
+          type: integer
         priceAmount:
           pattern: ^[0-9]+(\\.[0-9]{1,8})?$
           type: string
@@ -13697,6 +13720,7 @@ frontend_operations:
       - priceAmount
       - currencyCode
       - bonusPoints
+      - discount
       - status
       type: object
   request_body_required: true
@@ -13751,6 +13775,12 @@ frontend_operations:
           maxLength: 16
           minLength: 3
           type: string
+        discount:
+          description: "Discount rate percentage: 100 means no discount, 90 means pay 90 percent of the price."
+          format: int32
+          maximum: 100
+          minimum: 1
+          type: integer
         priceAmount:
           pattern: ^[0-9]+(\\.[0-9]{1,8})?$
           type: string
@@ -13763,6 +13793,7 @@ frontend_operations:
       - priceAmount
       - currencyCode
       - bonusPoints
+      - discount
       - status
       type: object
   request_body_required: true
@@ -20233,6 +20264,7 @@ frontend_models:
   - currencyCode
   - durationDays
   - recurrenceCycle
+  - discount
   - status
   data_sources:
   - memberships
@@ -20247,6 +20279,7 @@ frontend_models:
   - priceAmount
   - currencyCode
   - durationDays
+  - discount
   - status
   data_sources:
   - memberships
@@ -20373,6 +20406,7 @@ frontend_models:
   - priceAmount
   - currencyCode
   - bonusPoints
+  - discount
   - grantAmount
   - points
   - status
@@ -20386,6 +20420,7 @@ frontend_models:
   - priceAmount
   - currencyCode
   - bonusPoints
+  - discount
   - status
   data_sources:
   - recharges

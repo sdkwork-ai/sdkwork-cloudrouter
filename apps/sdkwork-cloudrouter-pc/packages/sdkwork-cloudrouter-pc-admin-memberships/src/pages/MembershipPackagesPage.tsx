@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react';
-import { BottomPagination, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
+import { BottomPagination, computeDiscountedAmount, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import { formatMoney } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
 import { MembershipDialog } from '../components/MembershipDialog';
 import { MembershipDrawer } from '../components/MembershipDrawer';
 import { MembershipEmptyState } from '../components/MembershipEmptyState';
+import { MembershipFormActions } from '../components/MembershipFormControls';
 import {
   MembershipIconActionButton,
   MembershipTableActions,
@@ -47,6 +48,7 @@ export function MembershipPackagesPage() {
   const [editingGroup, setEditingGroup] = useState<MembershipsAdminPackageGroup | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [isReferenceLoading, setIsReferenceLoading] = useState(true);
   const [isPackageLoading, setIsPackageLoading] = useState(false);
   const [referenceError, setReferenceError] = useState<string | null>(null);
@@ -183,29 +185,39 @@ export function MembershipPackagesPage() {
   };
 
   const handleSavePackage = async (input: MembershipsAdminPackageMutationInput) => {
-    if (editingPackage) {
-      await updateMembershipAdminPackage(editingPackage.id, input);
-    } else {
-      await createMembershipAdminPackage(input);
+    setIsSaving(true);
+    try {
+      if (editingPackage) {
+        await updateMembershipAdminPackage(editingPackage.id, input);
+      } else {
+        await createMembershipAdminPackage(input);
+      }
+      setIsDrawerOpen(false);
+      setEditingPackage(null);
+      await loadPackages(packagePage, selectedGroupId);
+    } finally {
+      setIsSaving(false);
     }
-    setIsDrawerOpen(false);
-    setEditingPackage(null);
-    await loadPackages(packagePage, selectedGroupId);
   };
 
   const handleSaveGroup = async (input: MembershipsAdminPackageGroupMutationInput) => {
-    const savedGroup = editingGroup
-      ? await updateMembershipAdminPackageGroup(editingGroup.id, input)
-      : await createMembershipAdminPackageGroup(input);
-    setIsGroupDialogOpen(false);
-    setEditingGroup(null);
-    setSelectedGroupId(savedGroup.id);
-    const targetGroupPage = editingGroup ? groupPage : 1;
-    if (targetGroupPage !== groupPage) {
-      setGroupPage(targetGroupPage);
-      return;
+    setIsSaving(true);
+    try {
+      const savedGroup = editingGroup
+        ? await updateMembershipAdminPackageGroup(editingGroup.id, input)
+        : await createMembershipAdminPackageGroup(input);
+      setIsGroupDialogOpen(false);
+      setEditingGroup(null);
+      setSelectedGroupId(savedGroup.id);
+      const targetGroupPage = editingGroup ? groupPage : 1;
+      if (targetGroupPage !== groupPage) {
+        setGroupPage(targetGroupPage);
+        return;
+      }
+      await loadReferenceData(targetGroupPage, planPage, savedGroup.id);
+    } finally {
+      setIsSaving(false);
     }
-    await loadReferenceData(targetGroupPage, planPage, savedGroup.id);
   };
 
   const handleDeletePackage = async (item: MembershipsAdminPackageItem) => {
@@ -370,6 +382,8 @@ export function MembershipPackagesPage() {
                     <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.packages.table.package', 'Package')}</th>
                     <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.packages.table.plan', 'Plan')}</th>
                     <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.packages.table.price', 'Price')}</th>
+                    <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.packages.table.discount', 'Discount')}</th>
+                    <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.packages.table.discountedPrice', 'Discounted Price')}</th>
                     <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.packages.table.duration', 'Duration')}</th>
                     <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.packages.table.status', 'Status')}</th>
                     <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('common.actions.actions', 'Actions')}</th>
@@ -387,6 +401,12 @@ export function MembershipPackagesPage() {
                       </td>
                       <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">
                         {formatMoney(item.priceAmount, { currency: item.currencyCode, locale: displayLocale, mode: 'symbol' }) ?? `${item.priceAmount} ${item.currencyCode}`}
+                      </td>
+                      <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">
+                        {t('admin.commerce.memberships.discountPercent', '{{discount}}%', { discount: item.discount })}
+                      </td>
+                      <td className="px-4 py-2.5 text-right font-semibold text-slate-900 dark:text-white">
+                        {formatMoney(computeDiscountedAmount(item.priceAmount, item.discount), { currency: item.currencyCode, locale: displayLocale, mode: 'symbol' }) ?? `${computeDiscountedAmount(item.priceAmount, item.discount)} ${item.currencyCode}`}
                       </td>
                       <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{t('admin.commerce.memberships.packages.form.durationOptionDays', '{{days}} days', { days: item.durationDays })}</td>
                       <td className="px-4 py-2.5"><MembershipStatusBadge status={item.status} /></td>
@@ -411,6 +431,16 @@ export function MembershipPackagesPage() {
           : t('admin.commerce.memberships.packages.addTitle', 'Add Membership Package')}
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
+        footer={(
+          <MembershipFormActions
+            submitLabel={editingPackage
+              ? t('admin.commerce.memberships.packages.form.updateSubmit', 'Update Package')
+              : t('admin.commerce.memberships.packages.form.submit', 'Create Package')}
+            isSaving={isSaving}
+            submitFormId="membership-package-form"
+            onCancel={() => setIsDrawerOpen(false)}
+          />
+        )}
       >
         <MembershipPackageDrawerForm
           mode={editingPackage ? 'edit' : 'create'}
@@ -432,7 +462,6 @@ export function MembershipPackagesPage() {
             onNextPage: () => setPlanPage((current) => current + 1),
             onPreviousPage: () => setPlanPage((current) => Math.max(1, current - 1)),
           }}
-          onCancel={() => setIsDrawerOpen(false)}
           onSubmit={handleSavePackage}
         />
       </MembershipDrawer>
@@ -443,11 +472,20 @@ export function MembershipPackagesPage() {
           : t('admin.commerce.memberships.groups.addTitle', 'Add Package Group')}
         isOpen={isGroupDialogOpen}
         onClose={() => setIsGroupDialogOpen(false)}
+        footer={(
+          <MembershipFormActions
+            submitLabel={editingGroup
+              ? t('admin.commerce.memberships.groups.form.updateSubmit', 'Update Group')
+              : t('admin.commerce.memberships.groups.form.submit', 'Create Group')}
+            isSaving={isSaving}
+            submitFormId="membership-package-group-form"
+            onCancel={() => setIsGroupDialogOpen(false)}
+          />
+        )}
       >
         <MembershipPackageGroupDrawerForm
           mode={editingGroup ? 'edit' : 'create'}
           initialValue={editingGroup}
-          onCancel={() => setIsGroupDialogOpen(false)}
           onSubmit={handleSaveGroup}
         />
       </MembershipDialog>

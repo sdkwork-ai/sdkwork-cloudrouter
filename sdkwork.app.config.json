@@ -37,7 +37,8 @@
       "iam.organizations.read",
       "iam.roles.read",
       "iam.permissions.read",
-      "iam.oauth.read"
+      "iam.oauth.read",
+      "iam.oauth.manage"
     ]
   },
   "runtime": {

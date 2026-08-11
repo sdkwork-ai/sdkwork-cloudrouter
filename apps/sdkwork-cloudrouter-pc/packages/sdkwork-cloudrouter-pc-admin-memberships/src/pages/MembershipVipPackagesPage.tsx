@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
-import { BottomPagination } from '@sdkwork/cloudroutes-pc-commons';
+import { BottomPagination, computeDiscountedAmount } from '@sdkwork/cloudroutes-pc-commons';
 import { formatMoney } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
 import { MembershipDrawer } from '../components/MembershipDrawer';
 import { MembershipEmptyState } from '../components/MembershipEmptyState';
+import { MembershipFormActions } from '../components/MembershipFormControls';
 import {
   MembershipIconActionButton,
   MembershipTableActions,
@@ -38,6 +39,7 @@ export function MembershipVipPackagesPage() {
   const [plans, setPlans] = useState<MembershipsAdminPlanItem[]>([]);
   const [editingPackage, setEditingPackage] = useState<MembershipsAdminPackageItem | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [isReferenceLoading, setIsReferenceLoading] = useState(true);
   const [isPackageLoading, setIsPackageLoading] = useState(true);
   const [referenceError, setReferenceError] = useState<string | null>(null);
@@ -147,14 +149,19 @@ export function MembershipVipPackagesPage() {
   };
 
   const handleSavePackage = async (input: MembershipsAdminPackageMutationInput) => {
-    if (editingPackage) {
-      await updateMembershipAdminPackage(editingPackage.id, input);
-    } else {
-      await createMembershipAdminPackage(input);
+    setIsSaving(true);
+    try {
+      if (editingPackage) {
+        await updateMembershipAdminPackage(editingPackage.id, input);
+      } else {
+        await createMembershipAdminPackage(input);
+      }
+      setIsDrawerOpen(false);
+      setEditingPackage(null);
+      await loadPackages(packagePage);
+    } finally {
+      setIsSaving(false);
     }
-    setIsDrawerOpen(false);
-    setEditingPackage(null);
-    await loadPackages(packagePage);
   };
 
   const handleDeletePackage = async (item: MembershipsAdminPackageItem) => {
@@ -231,6 +238,8 @@ export function MembershipVipPackagesPage() {
                     <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.vipPackages.table.group', 'Group')}</th>
                     <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.vipPackages.table.plan', 'Plan')}</th>
                     <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.vipPackages.table.price', 'Price')}</th>
+                    <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.vipPackages.table.discount', 'Discount')}</th>
+                    <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.vipPackages.table.discountedPrice', 'Discounted Price')}</th>
                     <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.vipPackages.table.duration', 'Duration')}</th>
                     <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.vipPackages.table.status', 'Status')}</th>
                     <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('common.actions.actions', 'Actions')}</th>
@@ -251,6 +260,12 @@ export function MembershipVipPackagesPage() {
                       </td>
                       <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">
                         {formatMoney(item.priceAmount, { currency: item.currencyCode, locale: displayLocale, mode: 'symbol' }) ?? `${item.priceAmount} ${item.currencyCode}`}
+                      </td>
+                      <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">
+                        {t('admin.commerce.memberships.discountPercent', '{{discount}}%', { discount: item.discount })}
+                      </td>
+                      <td className="px-4 py-2.5 text-right font-semibold text-slate-900 dark:text-white">
+                        {formatMoney(computeDiscountedAmount(item.priceAmount, item.discount), { currency: item.currencyCode, locale: displayLocale, mode: 'symbol' }) ?? `${computeDiscountedAmount(item.priceAmount, item.discount)} ${item.currencyCode}`}
                       </td>
                       <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{t('admin.commerce.memberships.vipPackages.form.durationOptionDays', '{{days}} days', { days: item.durationDays })}</td>
                       <td className="px-4 py-2.5"><MembershipStatusBadge status={item.status} /></td>
@@ -279,6 +294,16 @@ export function MembershipVipPackagesPage() {
           : t('admin.commerce.memberships.vipPackages.addTitle', 'Add VIP Package')}
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
+        footer={(
+          <MembershipFormActions
+            submitLabel={editingPackage
+              ? t('admin.commerce.memberships.vipPackages.form.updateSubmit', 'Update Package')
+              : t('admin.commerce.memberships.vipPackages.form.submit', 'Create Package')}
+            isSaving={isSaving}
+            submitFormId="membership-package-form"
+            onCancel={() => setIsDrawerOpen(false)}
+          />
+        )}
       >
         <MembershipPackageDrawerForm
           mode={editingPackage ? 'edit' : 'create'}
@@ -301,7 +326,6 @@ export function MembershipVipPackagesPage() {
             onPreviousPage: () => setPlanPage((current) => Math.max(1, current - 1)),
           }}
           translationKeyPrefix="admin.commerce.memberships.vipPackages"
-          onCancel={() => setIsDrawerOpen(false)}
           onSubmit={handleSavePackage}
         />
       </MembershipDrawer>

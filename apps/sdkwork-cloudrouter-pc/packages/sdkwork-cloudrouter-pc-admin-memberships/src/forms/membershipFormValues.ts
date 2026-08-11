@@ -2,6 +2,7 @@ export type MembershipFormValidationRule =
   | 'moneyAmount'
   | 'nonNegativeInteger'
   | 'positiveInteger'
+  | 'discountRange'
   | 'required';
 
 export class MembershipFormValidationError extends Error {
@@ -55,6 +56,15 @@ export function parseRequiredMoneyAmountField(value: string, fieldLabel: string)
   return normalized;
 }
 
+export function parseRequiredDiscountField(value: string, fieldLabel: string): number {
+  const normalized = requireMembershipFormText(value, fieldLabel);
+  const parsed = parseIntegerText(normalized);
+  if (parsed === null || parsed < 1 || parsed > 100) {
+    throw new MembershipFormValidationError(fieldLabel, 'discountRange');
+  }
+  return parsed;
+}
+
 export function formatMembershipFormValidationError(
   error: unknown,
   t: MembershipFormTranslate,
@@ -106,6 +116,9 @@ function defaultMembershipFormValidationMessage(
   }
   if (rule === 'nonNegativeInteger') {
     return `${fieldLabel} must be a non-negative integer`;
+  }
+  if (rule === 'discountRange') {
+    return `${fieldLabel} must be an integer between 1 and 100`;
   }
   return `${fieldLabel} must be a valid amount`;
 }

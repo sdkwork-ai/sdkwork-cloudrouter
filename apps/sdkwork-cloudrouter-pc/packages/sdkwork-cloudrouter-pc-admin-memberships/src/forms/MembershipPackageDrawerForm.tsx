@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { SdkworkBaseDataCurrencySelect } from '@sdkwork/appbase-pc-react';
 import {
-  MembershipFormActions,
   MembershipFormFrame,
   MembershipSelectField,
   MembershipTextField,
@@ -11,6 +10,7 @@ import {
 import { membershipStatusLabel } from '../components/MembershipStatusBadge';
 import {
   formatMembershipFormValidationError,
+  parseRequiredDiscountField,
   parseRequiredMoneyAmountField,
   parseRequiredPositiveIntegerField,
 } from './membershipFormValues';
@@ -39,7 +39,6 @@ interface MembershipPackageDrawerFormProps {
   groupPagination?: MembershipReferencePagination;
   planPagination?: MembershipReferencePagination;
   translationKeyPrefix?: string;
-  onCancel: () => void;
   onSubmit: (input: MembershipsAdminPackageMutationInput) => Promise<void>;
 }
 
@@ -60,7 +59,6 @@ export function MembershipPackageDrawerForm({
   groupPagination,
   planPagination,
   translationKeyPrefix = 'admin.commerce.memberships.packages',
-  onCancel,
   onSubmit,
 }: MembershipPackageDrawerFormProps) {
   const { t } = useTranslation();
@@ -70,12 +68,12 @@ export function MembershipPackageDrawerForm({
   const [priceAmount, setPriceAmount] = useState(initialValue?.priceAmount ?? '');
   const [currencyCode, setCurrencyCode] = useState(normalizeCurrencyCodeValue(initialValue?.currencyCode));
   const [durationDays, setDurationDays] = useState(String(initialValue?.durationDays ?? 30));
+  const [discount, setDiscount] = useState(String(initialValue?.discount ?? 100));
   const [status, setStatus] = useState<'active' | 'inactive' | 'disabled'>(
     initialValue?.status === 'inactive' || initialValue?.status === 'disabled'
       ? initialValue.status
       : 'active',
   );
-  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const durationDayOptions = includeCurrentOption(
     membershipDurationDayOptions(t, translationKeyPrefix),
@@ -91,8 +89,8 @@ export function MembershipPackageDrawerForm({
     planId,
   );
 
-  const handleSubmit = async () => {
-    setIsSaving(true);
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError(null);
     try {
       await onSubmit({
@@ -103,6 +101,7 @@ export function MembershipPackageDrawerForm({
         priceAmount: parseRequiredMoneyAmountField(priceAmount, t(`${translationKeyPrefix}.form.price`, 'Price')),
         currencyCode,
         durationDays: parseRequiredPositiveIntegerField(durationDays, t(`${translationKeyPrefix}.form.duration`, 'Duration days')),
+        discount: parseRequiredDiscountField(discount, t(`${translationKeyPrefix}.form.discount`, 'Discount')),
         status,
       });
     } catch (saveError) {
@@ -111,13 +110,15 @@ export function MembershipPackageDrawerForm({
         t,
         t(`${translationKeyPrefix}.form.error`, 'Membership package could not be saved'),
       ));
-    } finally {
-      setIsSaving(false);
     }
   };
 
   return (
-    <MembershipFormFrame error={error}>
+    <MembershipFormFrame
+      error={error}
+      formId="membership-package-form"
+      onSubmit={handleSubmit}
+    >
       <MembershipTextField label={t(`${translationKeyPrefix}.form.name`, 'Package Name')} value={name} onChange={setName} placeholder={t(`${translationKeyPrefix}.form.namePlaceholder`, 'Monthly Pro')} />
       <MembershipSelectField
         label={t(`${translationKeyPrefix}.form.group`, 'Package Group')}
@@ -164,6 +165,14 @@ export function MembershipPackageDrawerForm({
           />
         </label>
       </div>
+      <MembershipTextField
+        label={t(`${translationKeyPrefix}.form.discount`, 'Discount')}
+        hint={t(`${translationKeyPrefix}.form.discountHint`, 'Discount rate percentage: 100 means no discount, 90 means pay 90% of the price.')}
+        value={discount}
+        onChange={setDiscount}
+        placeholder="100"
+        type="number"
+      />
       <div className="grid grid-cols-2 gap-4">
         <MembershipSelectField
           label={t(`${translationKeyPrefix}.form.duration`, 'Duration days')}
@@ -182,14 +191,6 @@ export function MembershipPackageDrawerForm({
           onChange={(value) => setStatus(value as 'active' | 'inactive' | 'disabled')}
         />
       </div>
-      <MembershipFormActions
-        submitLabel={mode === 'edit'
-          ? t(`${translationKeyPrefix}.form.updateSubmit`, 'Update Package')
-          : t(`${translationKeyPrefix}.form.submit`, 'Create Package')}
-        isSaving={isSaving}
-        onCancel={onCancel}
-        onSubmit={handleSubmit}
-      />
     </MembershipFormFrame>
   );
 }

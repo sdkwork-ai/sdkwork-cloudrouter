@@ -171,6 +171,7 @@ struct DefaultAdminUpstreamAccountGroupSeed {
     tags: Vec<String>,
     priority: i32,
     routing_weight: i32,
+    is_default: bool,
 }
 
 static DEFAULT_ADMIN_UPSTREAM_ACCOUNTS: [DefaultAdminUpstreamAccountSeed; 1] =
@@ -259,8 +260,8 @@ fn modality_group_type(modality: &str) -> &'static str {
 fn standard_admin_upstream_account_group() -> DefaultAdminUpstreamAccountGroupSeed {
     DefaultAdminUpstreamAccountGroupSeed {
         group_code: "standard-group".to_owned(),
-        group_name: "标准分组".to_owned(),
-        group_name_i18n: "{\"en-US\":\"Standard Group\",\"zh-CN\":\"标准分组\"}".to_owned(),
+        group_name: "账号默认分组".to_owned(),
+        group_name_i18n: "{\"en-US\":\"账号默认分组\",\"zh-CN\":\"账号默认分组\"}".to_owned(),
         group_type: "mixed",
         account_code: Some("openai-default".to_owned()),
         resource_group_code: "official.openai.full".to_owned(),
@@ -269,6 +270,7 @@ fn standard_admin_upstream_account_group() -> DefaultAdminUpstreamAccountGroupSe
         tags: vec!["stable".to_owned(), "recommended".to_owned()],
         priority: 100,
         routing_weight: 100,
+        is_default: true,
     }
 }
 
@@ -1135,6 +1137,30 @@ async fn import_postgres_default_admin_upstream_topology(
         let modalities_json = serde_json::json!(&group.modalities).to_string();
         let tags_json = serde_json::json!(&group.tags).to_string();
 
+        if group.is_default {
+            // Clear the default flag on every other group in the same tenant and
+            // organization scope so the partial unique index keeps exactly one
+            // default group. Versions advance so concurrent optimistic-lock
+            // editors observe the change instead of silently reverting it.
+            sqlx::query(
+                r#"
+                UPDATE ai_upstream_account_group
+                SET is_default = FALSE,
+                    version = version + 1,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE tenant_id = $1 AND organization_id = $2
+                  AND is_default
+                  AND group_code <> $3
+                  AND deleted_at IS NULL
+                "#,
+            )
+            .bind(DEFAULT_IAM_TENANT_ID)
+            .bind(DEFAULT_IAM_ORGANIZATION_ID)
+            .bind(group.group_code.as_str())
+            .execute(&mut **tx)
+            .await?;
+        }
+
         sqlx::query(
             r#"
             INSERT INTO ai_upstream_account_group (
@@ -1142,13 +1168,15 @@ async fn import_postgres_default_admin_upstream_topology(
                 group_code, group_name, group_name_i18n, description, group_type,
                 routing_strategy, fallback_mode, priority, environment,
                 pricing_plan_code, cost_multiplier, sale_multiplier,
-                billing_type, allowed_origin, vendor_code, modalities, tags
+                billing_type, allowed_origin, vendor_code, modalities, tags,
+                is_default
             ) VALUES (
                 $1, $2, $3, $4, $5, 1, $6::jsonb,
                 $7, $8, $9::jsonb, $10, $11,
                 'weighted', 'sequential', $12, 1,
                 'standard', 1.000000000000, 1.000000000000,
-                1, '[]'::jsonb, $13, $14::jsonb, $15::jsonb
+                1, '[]'::jsonb, $13, $14::jsonb, $15::jsonb,
+                $16
             )
             ON CONFLICT (tenant_id, organization_id, group_code) DO UPDATE SET
                 group_name = EXCLUDED.group_name,
@@ -1168,6 +1196,7 @@ async fn import_postgres_default_admin_upstream_topology(
                 modalities = EXCLUDED.modalities,
                 tags = EXCLUDED.tags,
                 status = EXCLUDED.status,
+                is_default = EXCLUDED.is_default,
                 metadata = EXCLUDED.metadata,
                 deleted_at = NULL,
                 deleted_by = NULL
@@ -1198,6 +1227,7 @@ async fn import_postgres_default_admin_upstream_topology(
         .bind(group.vendor_code.as_deref())
         .bind(modalities_json)
         .bind(tags_json)
+        .bind(group.is_default)
         .execute(&mut **tx)
         .await?;
 
@@ -1627,6 +1657,7 @@ fn derive_vendor_account_group_seeds(
                 tags: Vec::new(),
                 priority: 100,
                 routing_weight: 100,
+                is_default: false,
             });
         }
     }
@@ -2072,6 +2103,43 @@ mod tests {
         assert!(standard.vendor_code.is_none());
         assert!(standard.modalities.is_empty());
         assert_eq!(standard.tags, vec!["stable".to_owned(), "recommended".to_owned()]);
+        assert!(standard.is_default);
+    }
+
+    #[test]
+    fn standard_group_names_are_default_account_group() {
+        let groups = test_groups();
+        let standard = groups
+            .iter()
+            .find(|group| group.group_code == "standard-group")
+            .expect("standard-group must be seeded");
+        assert_eq!(standard.group_name, "账号默认分组");
+        let i18n: serde_json::Value = serde_json::from_str(&standard.group_name_i18n)
+            .expect("standard-group i18n must be valid JSON");
+        assert_eq!(
+            i18n.get("en-US").and_then(serde_json::Value::as_str),
+            Some("账号默认分组"),
+            "standard-group en-US name must match the default account group"
+        );
+        assert_eq!(
+            i18n.get("zh-CN").and_then(serde_json::Value::as_str),
+            Some("账号默认分组"),
+            "standard-group zh-CN name must match the default account group"
+        );
+    }
+
+    #[test]
+    fn exactly_one_seed_group_is_default() {
+        let groups = test_groups();
+        let default_count = groups.iter().filter(|group| group.is_default).count();
+        assert_eq!(
+            default_count, 1,
+            "exactly one seed account group must be the default"
+        );
+        assert!(
+            groups.iter().any(|group| group.is_default && group.group_code == "standard-group"),
+            "the default seed group must be standard-group"
+        );
     }
 
     #[test]

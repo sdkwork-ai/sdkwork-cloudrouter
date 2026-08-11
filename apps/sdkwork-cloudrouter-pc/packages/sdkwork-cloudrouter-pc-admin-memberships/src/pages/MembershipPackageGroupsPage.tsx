@@ -4,6 +4,7 @@ import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { BottomPagination, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
 import { MembershipDrawer } from '../components/MembershipDrawer';
+import { MembershipFormActions } from '../components/MembershipFormControls';
 import { MembershipEmptyState } from '../components/MembershipEmptyState';
 import {
   MembershipIconActionButton,
@@ -31,6 +32,7 @@ export function MembershipPackageGroupsPage() {
   const [groups, setGroups] = useState<MembershipsAdminPackageGroup[]>([]);
   const [editingGroup, setEditingGroup] = useState<MembershipsAdminPackageGroup | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -84,14 +86,19 @@ export function MembershipPackageGroupsPage() {
   };
 
   const handleSaveGroup = async (input: MembershipsAdminPackageGroupMutationInput) => {
-    if (editingGroup) {
-      await updateMembershipAdminPackageGroup(editingGroup.id, input);
-    } else {
-      await createMembershipAdminPackageGroup(input);
+    setIsSaving(true);
+    try {
+      if (editingGroup) {
+        await updateMembershipAdminPackageGroup(editingGroup.id, input);
+      } else {
+        await createMembershipAdminPackageGroup(input);
+      }
+      setIsDrawerOpen(false);
+      setEditingGroup(null);
+      await loadGroups(page, pageSize);
+    } finally {
+      setIsSaving(false);
     }
-    setIsDrawerOpen(false);
-    setEditingGroup(null);
-    await loadGroups(page, pageSize);
   };
 
   const handleDeleteGroup = async (group: MembershipsAdminPackageGroup) => {
@@ -188,11 +195,20 @@ export function MembershipPackageGroupsPage() {
           : t('admin.commerce.memberships.groups.addTitle', 'Add Package Group')}
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
+        footer={(
+          <MembershipFormActions
+            submitLabel={editingGroup
+              ? t('admin.commerce.memberships.groups.form.updateSubmit', 'Update Group')
+              : t('admin.commerce.memberships.groups.form.submit', 'Create Group')}
+            isSaving={isSaving}
+            submitFormId="membership-package-group-form"
+            onCancel={() => setIsDrawerOpen(false)}
+          />
+        )}
       >
         <MembershipPackageGroupDrawerForm
           mode={editingGroup ? 'edit' : 'create'}
           initialValue={editingGroup}
-          onCancel={() => setIsDrawerOpen(false)}
           onSubmit={handleSaveGroup}
         />
       </MembershipDrawer>

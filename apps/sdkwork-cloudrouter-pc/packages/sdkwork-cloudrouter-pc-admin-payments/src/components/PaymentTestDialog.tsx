@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toDataURL } from 'qrcode';
-import { CheckCircle2, Loader2, QrCode, RotateCcw, X } from 'lucide-react';
+import { CheckCircle2, ExternalLink, Loader2, QrCode, RotateCcw, X } from 'lucide-react';
 import type { TestPayment } from '@sdkwork/payment-backend-sdk';
 import {
   readAdminResourceRecordList,
@@ -74,8 +74,8 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
                 setError(t('admin.commerce.payments.methods.testPayment.error.noQrCode'));
               }
             });
-        } else {
-          setError(t('admin.commerce.payments.methods.testPayment.error.noQrCode'));
+        } else if (!payment.payUrl && !payment.payForm) {
+          setError(t('admin.commerce.payments.methods.testPayment.error.noSurface'));
         }
       })
       .catch((cause: unknown) => {
@@ -189,7 +189,26 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
 
+  function openPayUrl(url: string) {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  /** Renders the Alipay cashier form in a new window and auto-submits it. */
+  function submitPayForm(form: string) {
+    const opened = window.open('', '_blank', 'noopener,noreferrer');
+    if (!opened) {
+      setError(t('admin.commerce.payments.methods.testPayment.error.popupBlocked'));
+      return;
+    }
+    opened.document.open();
+    opened.document.write(form);
+    opened.document.close();
+    opened.document.forms[0]?.submit();
+  }
+
   const isExpired = phase === 'ready' && remainingSeconds !== null && remainingSeconds === 0;
+  const hasQrSurface = Boolean(qrImageUrl);
+  const hasJumpSurface = Boolean(testPayment?.payUrl || testPayment?.payForm);
 
   return (
     <div
@@ -213,7 +232,7 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
               {t('admin.commerce.payments.methods.testPayment.title', 'One-cent test payment')}
             </h2>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {t('admin.commerce.payments.methods.testPayment.desc', 'Create a 0.01 test payment for {{methodKey}} and scan the QR code with a mobile payment app to verify the full payment flow end to end.', { methodKey })}
+              {t('admin.commerce.payments.methods.testPayment.desc', 'Create a 0.01 test payment for {{methodKey}} and scan the QR code or open the provider cashier page to verify the full payment flow end to end.', { methodKey })}
             </p>
           </div>
           <button
@@ -285,18 +304,54 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
                     </div>
                   ) : null}
                 </div>
-              ) : (
+              ) : null}
+
+              {hasJumpSurface && !isExpired ? (
+                <div className="flex w-full flex-col items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 dark:border-white/10 dark:bg-white/5">
+                  <div className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                    {t('admin.commerce.payments.methods.testPayment.jumpTitle', 'Pay on the web cashier')}
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    {t('admin.commerce.payments.methods.testPayment.jumpDesc', 'Open the provider payment page in a new window and pay {{amount}} {{currencyCode}} to verify the flow.', {
+                      amount: testPayment?.amount ?? '0.01',
+                      currencyCode: testPayment?.currencyCode ?? currencyCode,
+                    })}
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    {testPayment?.payUrl ? (
+                      <button
+                        className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                        onClick={() => openPayUrl(String(testPayment.payUrl))}
+                        type="button"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        {t('admin.commerce.payments.methods.testPayment.jumpOpen', 'Open payment page')}
+                      </button>
+                    ) : null}
+                    {testPayment?.payForm ? (
+                      <button
+                        className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                        onClick={() => submitPayForm(String(testPayment.payForm))}
+                        type="button"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        {t('admin.commerce.payments.methods.testPayment.jumpSubmitForm', 'Open payment page')}
+                      </button>
+                    ) : null}
+                  </div>
+                  {remainingSeconds !== null ? (
+                    <div className="text-xs text-slate-500 dark:text-slate-400" role="timer">
+                      {t('admin.commerce.payments.methods.testPayment.expiresIn', 'Order remaining time')}: {formatRemainingTime(remainingSeconds)}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {!hasQrSurface && !hasJumpSurface ? (
                 <div className="flex flex-col items-center gap-3">
                   <div className="grid h-64 w-64 place-items-center rounded-lg border border-dashed border-slate-300 dark:border-white/15">
                     <QrCode className="h-8 w-8 text-slate-400" />
                   </div>
-                  {isExpired ? (
-                    <div className="text-sm text-red-600 dark:text-red-400">
-                      {t('admin.commerce.payments.methods.testPayment.expired', 'QR code expired')}
-                      {' · '}
-                      {t('admin.commerce.payments.methods.testPayment.expiredDesc', 'The test payment has expired. Create a new one to continue.')}
-                    </div>
-                  ) : null}
                   {error ? (
                     <div className="flex flex-col items-center gap-3">
                       <div className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</div>
@@ -311,7 +366,25 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
                     </div>
                   ) : null}
                 </div>
-              )}
+              ) : null}
+
+              {isExpired ? (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="text-sm text-red-600 dark:text-red-400">
+                    {t('admin.commerce.payments.methods.testPayment.expired', 'QR code expired')}
+                    {' · '}
+                    {t('admin.commerce.payments.methods.testPayment.expiredDesc', 'The test payment has expired. Create a new one to continue.')}
+                  </div>
+                  <button
+                    className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5"
+                    onClick={() => setCreateAttempt((value) => value + 1)}
+                    type="button"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    {t('admin.commerce.payments.methods.testPayment.retry', 'Create again')}
+                  </button>
+                </div>
+              ) : null}
 
               {simulateNotice ? (
                 <div className="text-sm text-emerald-600 dark:text-emerald-400" role="status">{simulateNotice}</div>

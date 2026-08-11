@@ -8,6 +8,8 @@ interface MembershipDialogProps {
   isOpen: boolean;
   onClose: () => void;
   children: ReactNode;
+  /** 底部固定操作栏（取消/确认等），内容区独立滚动 */
+  footer?: ReactNode;
   /** 点击遮罩（弹窗外）时是否关闭；默认 true */
   closeOnClickOutside?: boolean;
 }
@@ -18,6 +20,7 @@ export function MembershipDialog({
   isOpen,
   onClose,
   children,
+  footer,
   closeOnClickOutside = true,
 }: MembershipDialogProps) {
   const { t } = useTranslation();
@@ -59,6 +62,9 @@ export function MembershipDialog({
           </button>
         </div>
         <div className="min-h-0 overflow-y-auto px-6 py-5">{children}</div>
+        {footer ? (
+          <div className="shrink-0 border-t border-slate-200 px-6 py-4 dark:border-white/10">{footer}</div>
+        ) : null}
       </section>
     </div>
   );

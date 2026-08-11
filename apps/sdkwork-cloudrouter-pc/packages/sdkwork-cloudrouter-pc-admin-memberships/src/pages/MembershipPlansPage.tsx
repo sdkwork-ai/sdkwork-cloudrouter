@@ -4,6 +4,7 @@ import { Pencil, Plus } from 'lucide-react';
 import { BottomPagination, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
 import { MembershipDrawer } from '../components/MembershipDrawer';
+import { MembershipFormActions } from '../components/MembershipFormControls';
 import { MembershipEmptyState } from '../components/MembershipEmptyState';
 import {
   MembershipIconActionButton,
@@ -30,6 +31,7 @@ export function MembershipPlansPage() {
   const [plans, setPlans] = useState<MembershipsAdminPlanItem[]>([]);
   const [editingPlan, setEditingPlan] = useState<MembershipsAdminPlanItem | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -83,14 +85,19 @@ export function MembershipPlansPage() {
   };
 
   const handleSavePlan = async (input: MembershipsAdminPlanMutationInput) => {
-    if (editingPlan) {
-      await updateMembershipAdminPlan(editingPlan.id, input);
-    } else {
-      await createMembershipAdminPlan(input);
+    setIsSaving(true);
+    try {
+      if (editingPlan) {
+        await updateMembershipAdminPlan(editingPlan.id, input);
+      } else {
+        await createMembershipAdminPlan(input);
+      }
+      setIsDrawerOpen(false);
+      setEditingPlan(null);
+      await loadPlans(page, pageSize);
+    } finally {
+      setIsSaving(false);
     }
-    setIsDrawerOpen(false);
-    setEditingPlan(null);
-    await loadPlans(page, pageSize);
   };
 
   return (
@@ -172,11 +179,20 @@ export function MembershipPlansPage() {
           : t('admin.commerce.memberships.plans.addTitle', 'Add Membership Level')}
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
+        footer={(
+          <MembershipFormActions
+            submitLabel={editingPlan
+              ? t('admin.commerce.memberships.plans.form.updateSubmit', 'Update Level')
+              : t('admin.commerce.memberships.plans.form.submit', 'Create Level')}
+            isSaving={isSaving}
+            submitFormId="membership-plan-form"
+            onCancel={() => setIsDrawerOpen(false)}
+          />
+        )}
       >
         <MembershipPlanDrawerForm
           mode={editingPlan ? 'edit' : 'create'}
           initialValue={editingPlan}
-          onCancel={() => setIsDrawerOpen(false)}
           onSubmit={handleSavePlan}
         />
       </MembershipDrawer>

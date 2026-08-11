@@ -20,32 +20,39 @@ function pickMostSpecificMatch(pathname: string, items: readonly AdminMenuItem[]
   return bestMatch;
 }
 
+function collectMenuItems(menu: AdminModuleMenu): AdminMenuItem[] {
+  return [...(menu.items ?? []), ...menu.groups.flatMap((group) => group.items)];
+}
+
+/**
+ * The single menu entry whose path most specifically matches the current
+ * location, searched across top-level items and every group of the module
+ * menu. A module-wide winner guarantees that a prefix entry (for example the
+ * partner workbench at `/admin/partner` versus `/admin/partner/stats`) never
+ * highlights together with a nested sibling in another group.
+ */
+function pickMostSpecificMenuMatch(pathname: string, menu: AdminModuleMenu): AdminMenuItem | null {
+  return pickMostSpecificMatch(pathname, collectMenuItems(menu));
+}
+
 export function isSidebarItemActive(
   pathname: string,
   item: AdminMenuItem,
-  siblingItems: readonly AdminMenuItem[],
+  menu: AdminModuleMenu,
 ): boolean {
-  return pickMostSpecificMatch(pathname, siblingItems)?.path === item.path;
+  return pickMostSpecificMenuMatch(pathname, menu)?.path === item.path;
 }
 
-export function hasActiveSidebarGroupItem(pathname: string, group: AdminMenuGroup): boolean {
-  return pickMostSpecificMatch(pathname, group.items) !== null;
+export function hasActiveSidebarGroupItem(
+  pathname: string,
+  group: AdminMenuGroup,
+  menu: AdminModuleMenu,
+): boolean {
+  const match = pickMostSpecificMenuMatch(pathname, menu);
+  return match !== null && group.items.some((item) => item.path === match.path);
 }
 
 export function getActiveSidebarItemPaths(pathname: string, menu: AdminModuleMenu): string[] {
-  const activePaths: string[] = [];
-  const topLevelMatch = menu.items ? pickMostSpecificMatch(pathname, menu.items) : null;
-
-  if (topLevelMatch) {
-    activePaths.push(topLevelMatch.path);
-  }
-
-  for (const group of menu.groups) {
-    const match = pickMostSpecificMatch(pathname, group.items);
-    if (match) {
-      activePaths.push(match.path);
-    }
-  }
-
-  return activePaths;
+  const match = pickMostSpecificMenuMatch(pathname, menu);
+  return match ? [match.path] : [];
 }

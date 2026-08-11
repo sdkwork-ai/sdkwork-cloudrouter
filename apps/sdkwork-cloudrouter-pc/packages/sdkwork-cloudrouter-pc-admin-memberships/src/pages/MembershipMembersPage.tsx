@@ -5,6 +5,7 @@ import { BottomPagination, resolveProblemMessage } from '@sdkwork/cloudroutes-pc
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
 import { MembershipDrawer } from '../components/MembershipDrawer';
 import { MembershipEmptyState } from '../components/MembershipEmptyState';
+import { MembershipFormActions } from '../components/MembershipFormControls';
 import {
   MembershipIconActionButton,
   MembershipTableActions,
@@ -28,6 +29,7 @@ export function MembershipMembersPage() {
   const displayLocale = i18n.resolvedLanguage ?? i18n.language ?? 'en-US';
   const [members, setMembers] = useState<MembershipsAdminRecord[]>([]);
   const [editingMember, setEditingMember] = useState<MembershipsAdminRecord | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -68,9 +70,14 @@ export function MembershipMembersPage() {
     if (!editingMember) {
       return;
     }
-    await updateMembershipAdminMemberStatus(recordText(editingMember, ['id', 'membership_id', 'membership_no']), { status });
-    setEditingMember(null);
-    await loadMembers();
+    setIsSaving(true);
+    try {
+      await updateMembershipAdminMemberStatus(recordText(editingMember, ['id', 'membership_id', 'membership_no']), { status });
+      setEditingMember(null);
+      await loadMembers();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -142,11 +149,18 @@ export function MembershipMembersPage() {
         title={t('admin.commerce.memberships.members.statusForm.title', 'Update Member Status')}
         isOpen={editingMember !== null}
         onClose={() => setEditingMember(null)}
+        footer={(
+          <MembershipFormActions
+            submitLabel={t('admin.commerce.memberships.members.statusForm.submit', 'Update Status')}
+            isSaving={isSaving}
+            submitFormId="membership-member-status-form"
+            onCancel={() => setEditingMember(null)}
+          />
+        )}
       >
         {editingMember ? (
           <MembershipMemberStatusDrawerForm
             initialValue={editingMember}
-            onCancel={() => setEditingMember(null)}
             onSubmit={handleUpdateStatus}
           />
         ) : null}

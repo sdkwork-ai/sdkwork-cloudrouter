@@ -219,6 +219,7 @@ impl AdminMarketingStore for PostgresAdminMarketingStore {
                     "priceAmount": &command.price_amount,
                     "currencyCode": &command.currency_code,
                     "bonusPoints": command.bonus_points,
+                    "discount": command.discount,
                     "status": recharge_package_status_label(command.status)
                 }),
             )
@@ -270,6 +271,7 @@ impl AdminMarketingStore for PostgresAdminMarketingStore {
                     "priceAmount": &command.price_amount,
                     "currencyCode": &command.currency_code,
                     "bonusPoints": command.bonus_points,
+                    "discount": command.discount,
                     "status": recharge_package_status_label(command.status)
                 }),
             )
@@ -555,6 +557,7 @@ async fn list_recharge_packages(
             price_amount::text AS price_amount,
             COALESCE(NULLIF(currency_code, ''), 'CNY') AS currency_code,
             COALESCE(bonus_points, 0)::bigint AS bonus_points,
+            COALESCE(discount, 100)::bigint AS discount,
             COALESCE(status, '') AS status,
             COALESCE(updated_at::text, '') AS updated_at,
             COUNT(*) OVER() AS total
@@ -760,9 +763,9 @@ async fn insert_recharge_package(
     sqlx::query(
         r#"
         INSERT INTO commerce_recharge_package
-            (id, tenant_id, organization_id, external_id, package_no, sku_id, name, price_amount, currency_code, bonus_points, status, valid_from, valid_to, sort_weight, request_no, idempotency_key, created_at, updated_at)
+            (id, tenant_id, organization_id, external_id, package_no, sku_id, name, price_amount, currency_code, bonus_points, discount, status, valid_from, valid_to, sort_weight, request_no, idempotency_key, created_at, updated_at)
         VALUES
-            ($1, $2::text, $3::text, $4, $5, $6, $7, $8, $9, $10, $11, NULL, NULL, $12, $13, $14, $15, $16)
+            ($1, $2::text, $3::text, $4, $5, $6, $7, $8, $9, $10, $11, $12, NULL, NULL, $13, $14, $15, $16, $17)
         "#,
     )
     .bind(&package_id)
@@ -775,6 +778,7 @@ async fn insert_recharge_package(
     .bind(&command.price_amount)
     .bind(&command.currency_code)
     .bind(command.bonus_points)
+    .bind(command.discount)
     .bind(recharge_package_status_label(command.status))
     .bind(sequence)
     .bind(&command.request_id)
@@ -820,13 +824,14 @@ async fn update_recharge_package_row(
             price_amount = $2,
             currency_code = $3,
             bonus_points = $4,
-            status = $5,
-            request_no = $6,
-            idempotency_key = $7,
-            updated_at = $8
-        WHERE id = $9
-          AND tenant_id = $10::text
-          AND organization_id = $11::text
+            discount = $5,
+            status = $6,
+            request_no = $7,
+            idempotency_key = $8,
+            updated_at = $9
+        WHERE id = $10
+          AND tenant_id = $11::text
+          AND organization_id = $12::text
           AND status <> 'deleted'
         "#,
     )
@@ -837,6 +842,7 @@ async fn update_recharge_package_row(
     .bind(&command.price_amount)
     .bind(&command.currency_code)
     .bind(command.bonus_points)
+    .bind(command.discount)
     .bind(recharge_package_status_label(command.status))
     .bind(&command.request_id)
     .bind(&command.request_id)
@@ -955,6 +961,7 @@ async fn load_recharge_package_by_id(
             price_amount::text AS price_amount,
             COALESCE(NULLIF(currency_code, ''), 'CNY') AS currency_code,
             COALESCE(bonus_points, 0)::bigint AS bonus_points,
+            COALESCE(discount, 100)::bigint AS discount,
             COALESCE(status, '') AS status,
             COALESCE(updated_at::text, '') AS updated_at
         FROM commerce_recharge_package
@@ -1813,6 +1820,15 @@ fn recharge_package_from_row(
         .trim()
         .to_ascii_uppercase();
     let bonus_points = integer_cell(row, "bonus_points").max(0);
+    // Reads fall back to no discount (100) whenever the column is missing or
+    // carries an out-of-range value; clamping to the range would silently
+    // turn bad data into a 1% price.
+    let discount = integer_cell(row, "discount");
+    let discount = if (1..=100).contains(&discount) {
+        discount
+    } else {
+        100
+    };
     build_recharge_package_item(
         RechargePackageRecord {
             id: string_cell(row, "id"),
@@ -1826,6 +1842,7 @@ fn recharge_package_from_row(
                 currency_code
             },
             bonus_points,
+            discount,
             status: string_cell(row, "status"),
             updated_at: string_cell(row, "updated_at"),
         },

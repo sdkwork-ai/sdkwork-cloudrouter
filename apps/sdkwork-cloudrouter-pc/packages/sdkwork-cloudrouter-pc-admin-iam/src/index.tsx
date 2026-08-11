@@ -124,6 +124,21 @@ const LazyIamTenantsAdmin = lazy(async () => {
   };
 });
 
+const LazyIamApplicationsAdmin = lazy(async () => {
+  const { createSdkworkIamTenantController, SdkworkIamTenantApplicationsAdminWorkspace } = await import('@sdkwork/iam-pc-admin-tenant');
+  return {
+    default: function CloudRouterIamApplicationsAdminContent() {
+      const service = useIamAdminService();
+      const permissionScope = useIamAdminPermissionScope();
+      const controller = useMemo(
+        () => createSdkworkIamTenantController({ permissionScope, service }),
+        [permissionScope, service],
+      );
+      return <SdkworkIamTenantApplicationsAdminWorkspace controller={controller} />;
+    },
+  };
+});
+
 const LazyIamOrganizationsAdmin = lazy(async () => {
   const { createSdkworkIamOrganizationController, SdkworkIamOrganizationAdminWorkspace } = await import('@sdkwork/iam-pc-admin-organization');
   return {
@@ -360,8 +375,38 @@ const LazyIamOauthOfficialAccountsAdmin = lazy(async () => {
   return {
     default: function CloudRouterIamOauthOfficialAccountsAdminContent() {
       const service = useIamAdminService();
+      const navigate = useNavigate();
       const controller = useMemo(() => createSdkworkIamOauthAdminController(service), [service]);
-      return <SdkworkIamOauthOfficialAccountsPage controller={controller} />;
+      return (
+        <SdkworkIamOauthOfficialAccountsPage
+          controller={controller}
+          onOpenCustomMenu={(resourceAccountId) => {
+            navigate(`/admin/iam/oauth/official-accounts/${encodeURIComponent(resourceAccountId)}/custom-menus`);
+          }}
+        />
+      );
+    },
+  };
+});
+
+const LazyIamOauthOfficialAccountCustomMenuAdmin = lazy(async () => {
+  const { createSdkworkIamOauthAdminController, SdkworkIamOauthOfficialAccountCustomMenuPage } = await import('@sdkwork/iam-pc-admin-oauth');
+  return {
+    default: function CloudRouterIamOauthOfficialAccountCustomMenuAdminContent() {
+      const service = useIamAdminService();
+      const navigate = useNavigate();
+      const { resourceAccountId } = useParams<{ resourceAccountId: string }>();
+      const controller = useMemo(() => createSdkworkIamOauthAdminController(service), [service]);
+      if (!resourceAccountId) {
+        return null;
+      }
+      return (
+        <SdkworkIamOauthOfficialAccountCustomMenuPage
+          controller={controller}
+          onBack={() => navigate('/admin/iam/oauth/official-accounts')}
+          resourceAccountId={resourceAccountId}
+        />
+      );
     },
   };
 });
@@ -401,6 +446,7 @@ const LazyIamAuditAdmin = lazy(async () => {
 
 export const CloudRouterIamUsersAdmin: ComponentType = createIamAdminRoute(LazyIamUsersAdmin);
 export const CloudRouterIamTenantsAdmin: ComponentType = createIamAdminRoute(LazyIamTenantsAdmin);
+export const CloudRouterIamApplicationsAdmin: ComponentType = createIamAdminRoute(LazyIamApplicationsAdmin);
 export const CloudRouterIamOrganizationsAdmin: ComponentType = createIamAdminRoute(LazyIamOrganizationsAdmin);
 export const CloudRouterIamOrganizationStructureAdmin: ComponentType = createIamAdminRoute(LazyIamOrganizationStructureAdmin);
 export const CloudRouterIamRolesAdmin: ComponentType = createIamAdminRoute(LazyIamRolesAdmin);
@@ -411,6 +457,7 @@ export const CloudRouterIamOauthAdmin: ComponentType = createIamAdminRoute(LazyI
 export const CloudRouterIamOauthProviderConnectionsAdmin: ComponentType = createIamAdminRoute(LazyIamOauthProviderConnectionsAdmin);
 export const CloudRouterIamOauthMiniProgramsAdmin: ComponentType = createIamAdminRoute(LazyIamOauthMiniProgramsAdmin);
 export const CloudRouterIamOauthOfficialAccountsAdmin: ComponentType = createIamAdminRoute(LazyIamOauthOfficialAccountsAdmin);
+export const CloudRouterIamOauthOfficialAccountCustomMenuAdmin: ComponentType = createIamAdminRoute(LazyIamOauthOfficialAccountCustomMenuAdmin);
 export const CloudRouterIamOauthScanLoginAdmin: ComponentType = createIamAdminRoute(LazyIamOauthScanLoginAdmin);
 export const CloudRouterIamAccountBindingAdmin: ComponentType = createIamAdminRoute(LazyIamAccountBindingAdmin);
 export const CloudRouterIamAuditAdmin: ComponentType = createIamAdminRoute(LazyIamAuditAdmin);

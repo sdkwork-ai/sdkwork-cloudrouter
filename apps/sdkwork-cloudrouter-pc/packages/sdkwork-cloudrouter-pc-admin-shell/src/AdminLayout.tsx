@@ -31,10 +31,12 @@ function sidebarItemClassName(): string {
 
 function SidebarGroup({
   group,
+  menu,
   defaultOpen,
   onNavigate,
 }: {
   group: AdminMenuGroup;
+  menu: AdminModuleMenu;
   defaultOpen: boolean;
   onNavigate?: () => void;
 }) {
@@ -42,7 +44,7 @@ function SidebarGroup({
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const groupItemsId = useId();
-  const hasActiveChild = hasActiveSidebarGroupItem(location.pathname, group);
+  const hasActiveChild = hasActiveSidebarGroupItem(location.pathname, group, menu);
 
   return (
     <div className="mb-1">
@@ -64,7 +66,7 @@ function SidebarGroup({
       {isOpen ? (
         <div id={groupItemsId} className="flex flex-col gap-0.5">
           {group.items.map((item) => {
-            const isActive = isSidebarItemActive(location.pathname, item, group.items);
+            const isActive = isSidebarItemActive(location.pathname, item, menu);
 
             return (
               <Link
@@ -88,16 +90,16 @@ function SidebarGroup({
 
 function SidebarItem({
   item,
-  siblingItems,
+  menu,
   onNavigate,
 }: {
   item: AdminMenuItem;
-  siblingItems: readonly AdminMenuItem[];
+  menu: AdminModuleMenu;
   onNavigate?: () => void;
 }) {
   const { t } = useTranslation();
   const location = useLocation();
-  const isActive = isSidebarItemActive(location.pathname, item, siblingItems);
+  const isActive = isSidebarItemActive(location.pathname, item, menu);
 
   return (
     <Link
@@ -137,7 +139,7 @@ function AdminSidebarPanel({
           <SidebarItem
             key={item.path}
             item={item}
-            siblingItems={currentModuleMenu.items ?? []}
+            menu={currentModuleMenu}
             onNavigate={onNavigate}
           />
         ))}
@@ -145,6 +147,7 @@ function AdminSidebarPanel({
           <SidebarGroup
             key={group.groupKey}
             group={group}
+            menu={currentModuleMenu}
             defaultOpen={ADMIN_SIDEBAR_GROUPS_DEFAULT_OPEN}
             onNavigate={onNavigate}
           />

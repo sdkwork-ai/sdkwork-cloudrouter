@@ -65,6 +65,12 @@ async fn admin_recharge_catalog_falls_back_to_platform_scope_when_tenant_catalog
         page.items.iter().any(|item| item.price_amount == "10.00"),
         "platform package must be visible through the fallback"
     );
+    assert!(
+        page.items
+            .iter()
+            .all(|item| item.discount == 100),
+        "platform packages without a discount column value must read back as no discount (100)"
+    );
 
     let settings = store
         .load_recharge_settings(subject)
@@ -98,6 +104,7 @@ async fn admin_recharge_package_crud_writes_scoped_catalog_and_shadows_platform(
                 price_amount: "25.00".to_owned(),
                 currency_code: "CNY".to_owned(),
                 bonus_points: 50,
+                discount: 90,
                 status: AdminRechargePackageStatus::Active,
                 request_id: "request-1".to_owned(),
                 requested_at: "2026-08-06 00:00:00".to_owned(),
@@ -107,6 +114,7 @@ async fn admin_recharge_package_crud_writes_scoped_catalog_and_shadows_platform(
         .expect("create recharge package");
     assert_eq!("25.00", created.price_amount);
     assert_eq!(50, created.bonus_points);
+    assert_eq!(90, created.discount);
 
     let page = store
         .list_recharge_packages(
@@ -137,6 +145,7 @@ async fn admin_recharge_package_crud_writes_scoped_catalog_and_shadows_platform(
                 price_amount: "30.00".to_owned(),
                 currency_code: "CNY".to_owned(),
                 bonus_points: 60,
+                discount: 85,
                 status: AdminRechargePackageStatus::Active,
                 request_id: "request-2".to_owned(),
                 requested_at: "2026-08-06 00:01:00".to_owned(),
@@ -146,6 +155,7 @@ async fn admin_recharge_package_crud_writes_scoped_catalog_and_shadows_platform(
         .expect("update recharge package");
     assert_eq!("30.00", updated.price_amount);
     assert_eq!(60, updated.bonus_points);
+    assert_eq!(85, updated.discount);
 
     let deleted = store
         .delete_recharge_package(

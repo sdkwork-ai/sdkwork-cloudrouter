@@ -29,6 +29,7 @@
 @source "../../../../sdkwork-models/apps/sdkwork-models-pc/packages/*/src";
 @source "../../../../sdkwork-agents/apps/sdkwork-agents-pc/packages";
 @source "../../../../sdkwork-agents/apps/sdkwork-agents-pc/src";
+@source "../../../../sdkwork-partner/apps/sdkwork-partner-pc/packages/*/src";
 
 @custom-variant dark (&:is(.dark *));
 

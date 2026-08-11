@@ -66,6 +66,7 @@ struct RechargePackageMutationRequest {
     price_amount: Option<Value>,
     currency_code: Option<String>,
     bonus_points: Option<Value>,
+    discount: Option<Value>,
     status: Option<String>,
 }
 
@@ -101,6 +102,7 @@ struct NormalizedRechargePackageMutation {
     price_amount: String,
     currency_code: String,
     bonus_points: i64,
+    discount: i64,
     status: AdminRechargePackageStatus,
 }
 
@@ -552,6 +554,7 @@ fn build_create_recharge_package_command(
         price_amount: mutation.price_amount,
         currency_code: mutation.currency_code,
         bonus_points: mutation.bonus_points,
+        discount: mutation.discount,
         status: mutation.status,
         request_id: generate_server_request_id().map_err(request_id_error)?,
         requested_at: current_timestamp_string(),
@@ -575,6 +578,7 @@ fn build_update_recharge_package_command(
         price_amount: mutation.price_amount,
         currency_code: mutation.currency_code,
         bonus_points: mutation.bonus_points,
+        discount: mutation.discount,
         status: mutation.status,
         request_id: generate_server_request_id().map_err(request_id_error)?,
         requested_at: current_timestamp_string(),
@@ -646,6 +650,7 @@ fn normalize_recharge_package_mutation(
             "recharge package currencyCode",
         )?,
         bonus_points: normalize_recharge_package_bonus_points(request.bonus_points.as_ref())?,
+        discount: normalize_recharge_package_discount(request.discount.as_ref())?,
         status: normalize_recharge_package_status(request.status.as_deref())?,
     })
 }
@@ -695,6 +700,32 @@ fn normalize_recharge_package_bonus_points(
         ));
     }
     Ok(bonus)
+}
+
+fn normalize_recharge_package_discount(
+    value: Option<&Value>,
+) -> Result<i64, AdminMarketingCommandBuildError> {
+    let discount = match value {
+        Some(Value::Number(value)) => value.as_i64(),
+        Some(Value::String(value)) => value.trim().parse::<i64>().ok(),
+        Some(_) => None,
+        None => {
+            return Err(AdminMarketingCommandBuildError::BadRequest(
+                "recharge package discount is required".to_owned(),
+            ));
+        }
+    }
+    .ok_or_else(|| {
+        AdminMarketingCommandBuildError::BadRequest(
+            "recharge package discount must be an integer between 1 and 100".to_owned(),
+        )
+    })?;
+    if !(1..=100).contains(&discount) {
+        return Err(AdminMarketingCommandBuildError::BadRequest(
+            "recharge package discount must be an integer between 1 and 100".to_owned(),
+        ));
+    }
+    Ok(discount)
 }
 
 fn normalize_recharge_settings_mutation(

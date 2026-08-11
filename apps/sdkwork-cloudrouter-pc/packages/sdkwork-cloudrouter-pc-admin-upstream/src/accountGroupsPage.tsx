@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Copy, Edit3, Plus, RefreshCw, Route, Settings2, Trash2 } from 'lucide-react';
+import { Copy, Edit3, Plus, RefreshCw, Route, Settings2, Star, Trash2 } from 'lucide-react';
 import { AdminTableShell, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
 import { formatDecimalDisplay } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { useTranslation } from 'react-i18next';
@@ -75,6 +75,7 @@ export function AccountGroupAdminPanel() {
   const [copying, setCopying] = useState<UpstreamAccountGroup | null>(null);
   const [selected, setSelected] = useState<UpstreamAccountGroup | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UpstreamAccountGroup | null>(null);
+  const [defaultTarget, setDefaultTarget] = useState<UpstreamAccountGroup | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -133,6 +134,21 @@ export function AccountGroupAdminPanel() {
     }
   };
 
+  const setDefaultGroup = async () => {
+    if (!defaultTarget) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await upstreamService.accountGroups.update(defaultTarget, { isDefault: true });
+      setDefaultTarget(null);
+      await load();
+    } catch (cause) {
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const visibleItems = useMemo(() => {
     let next = typeFilter === 'all' ? items : items.filter((group) => group.groupType === typeFilter);
     if (hasMultiplierFilter(multiplierRange)) next = next.filter((group) => matchesMultiplierRange(group, multiplierRange));
@@ -158,10 +174,10 @@ export function AccountGroupAdminPanel() {
           <tbody className="divide-y divide-slate-100 dark:divide-white/5">
             {visibleItems.length === 0 ? <TableState loading={loading} empty={t(listFiltered ? 'admin.upstream.accountGroup.filter.empty' : 'admin.upstream.accountGroup.empty')} colSpan={8} /> : visibleItems.map((group) => (
               <tr key={group.id} className="text-slate-700 hover:bg-slate-50/80 dark:text-slate-200 dark:hover:bg-white/[0.03]">
-                <td className="px-4 py-3"><button type="button" className="text-left" onClick={() => setSelected(group)}><span className="block font-semibold text-slate-900 dark:text-white">{resolveGroupDisplayName(group, i18n.language)}</span><span className="block font-mono text-xs text-slate-500">{group.groupCode}</span></button></td>
+                <td className="px-4 py-3"><button type="button" className="text-left" onClick={() => setSelected(group)}><span className="flex items-center gap-2"><span className="block font-semibold text-slate-900 dark:text-white">{resolveGroupDisplayName(group, i18n.language)}</span>{group.isDefault ? <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300">{t('admin.upstream.accountGroup.table.default')}</span> : null}</span><span className="block font-mono text-xs text-slate-500">{group.groupCode}</span></button></td>
                 <td className="px-4 py-3"><div className="flex max-w-44 flex-wrap gap-1">{group.tags?.map((tag) => <TagBadge key={tag} tag={tag} small />)}</div></td>
                 <td className="px-4 py-3">{labelStrategy(group.routingStrategy, t)}</td><td className="px-4 py-3">{labelFallback(group.fallbackMode, t)}</td><td className="px-4 py-3 font-mono">{formatDecimalDisplay(group.costMultiplier)}</td><td className="px-4 py-3 font-mono">{formatDecimalDisplay(group.saleMultiplier)}</td><td className="px-4 py-3"><StatusBadge status={group.status} /></td>
-                <td className="px-4 py-3"><div className="flex justify-end gap-1"><button type="button" className={secondaryButtonClass} onClick={() => setSelected(group)} title={t('admin.upstream.common.actions.configure')}><Settings2 className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setCopying(group)} title={t('admin.upstream.accountGroup.actions.copy')}><Copy className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setEditing(group)} title={t('common.actions.edit')}><Edit3 className="h-4 w-4" /></button><button type="button" className={dangerButtonClass} onClick={() => setDeleteTarget(group)} title={t('common.actions.delete')}><Trash2 className="h-4 w-4" /></button></div></td>
+                <td className="px-4 py-3"><div className="flex justify-end gap-1">{!group.isDefault ? <button type="button" className={secondaryButtonClass} onClick={() => setDefaultTarget(group)} title={t('admin.upstream.accountGroup.actions.setDefault')}><Star className="h-4 w-4" /></button> : null}<button type="button" className={secondaryButtonClass} onClick={() => setSelected(group)} title={t('admin.upstream.common.actions.configure')}><Settings2 className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setCopying(group)} title={t('admin.upstream.accountGroup.actions.copy')}><Copy className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setEditing(group)} title={t('common.actions.edit')}><Edit3 className="h-4 w-4" /></button><button type="button" className={dangerButtonClass} onClick={() => setDeleteTarget(group)} title={t('common.actions.delete')}><Trash2 className="h-4 w-4" /></button></div></td>
               </tr>
             ))}
           </tbody>
@@ -171,6 +187,7 @@ export function AccountGroupAdminPanel() {
       {copying ? <AccountGroupModal group={copying} copying busy={busy} onSubmit={submitGroup} onClose={() => setCopying(null)} /> : null}
       {selected ? <AccountGroupConfiguration group={selected} accounts={accounts} onChanged={(group) => { setSelected(group); setItems((current) => current.map((item) => item.id === group.id ? group : item)); }} onClose={() => setSelected(null)} /> : null}
       {deleteTarget ? <ConfirmDialog title={t('admin.upstream.accountGroup.delete.title')} description={t('admin.upstream.accountGroup.delete.description', { name: resolveGroupDisplayName(deleteTarget, i18n.language) })} confirmLabel={t('common.actions.delete')} tone="danger" isBusy={busy} onCancel={() => setDeleteTarget(null)} onConfirm={() => void deleteGroup()} /> : null}
+      {defaultTarget ? <ConfirmDialog title={t('admin.upstream.accountGroup.setDefault.title')} description={t('admin.upstream.accountGroup.setDefault.description', { name: resolveGroupDisplayName(defaultTarget, i18n.language) })} confirmLabel={t('admin.upstream.accountGroup.actions.setDefault')} isBusy={busy} onCancel={() => setDefaultTarget(null)} onConfirm={() => void setDefaultGroup()} /> : null}
     </div>
   );
 }

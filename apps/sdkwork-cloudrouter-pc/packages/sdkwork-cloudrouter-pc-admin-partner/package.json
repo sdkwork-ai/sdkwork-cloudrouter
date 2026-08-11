@@ -25,7 +25,8 @@
     "@sdkwork/partner-pc-admin-withdrawal": "workspace:*",
     "@sdkwork/partner-pc-admin-stats": "workspace:*",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "@sdkwork/cloudroutes-pc-commons": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "catalog:",

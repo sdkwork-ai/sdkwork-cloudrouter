@@ -3,6 +3,31 @@ import { readString, type ApiRecord } from './api-result.ts';
 
 const DEFAULT_DECIMAL_DIGITS = 6;
 
+/**
+ * Discounted price for an admin package: `value * discountPercent / 100`,
+ * computed with integer units so no floating-point rounding leaks into the
+ * displayed price. An out-of-range discount falls back to no discount (100),
+ * matching the read semantics of the backend discount columns. The default
+ * scale matches the 8-decimal price ceiling of the admin package contracts.
+ */
+export function computeDiscountedAmount(
+  value: string,
+  discountPercent: number,
+  digits = 8,
+): string {
+  const discount = Number.isInteger(discountPercent) && discountPercent >= 1 && discountPercent <= 100
+    ? BigInt(discountPercent)
+    : 100n;
+  const units = decimalUnits(value, digits);
+  if (units === 0n) {
+    return formatDecimalUnits(0n, digits);
+  }
+  const scaled = units * discount;
+  const remainder = scaled % 100n;
+  const discounted = scaled / 100n + (remainder * 2n >= 100n ? 1n : 0n);
+  return formatDecimalUnits(discounted, digits);
+}
+
 export function readDecimalString(
   record: ApiRecord,
   key: string,

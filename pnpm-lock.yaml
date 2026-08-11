@@ -2529,12 +2529,18 @@ importers:
       '@sdkwork/partner-pc-admin-core':
         specifier: workspace:*
         version: link:../sdkwork-partner-pc-admin-core
+      lucide-react:
+        specifier: 'catalog:'
+        version: 0.546.0(react@19.2.4)
       react:
         specifier: 'catalog:'
         version: 19.2.4
       react-dom:
         specifier: 'catalog:'
         version: 19.2.4(react@19.2.4)
+      react-i18next:
+        specifier: 'catalog:'
+        version: 17.0.8(i18next@26.3.6(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3)
     devDependencies:
       '@types/react':
         specifier: ^19.0.0
@@ -2551,12 +2557,18 @@ importers:
       '@sdkwork/partner-backend-sdk':
         specifier: workspace:*
         version: link:../../../../sdks/sdkwork-partner-backend-sdk/sdkwork-partner-backend-sdk-typescript
+      lucide-react:
+        specifier: 'catalog:'
+        version: 0.546.0(react@19.2.4)
       react:
         specifier: 'catalog:'
         version: 19.2.4
       react-dom:
         specifier: 'catalog:'
         version: 19.2.4(react@19.2.4)
+      react-i18next:
+        specifier: 'catalog:'
+        version: 17.0.8(i18next@26.3.6(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3)
     devDependencies:
       '@types/react':
         specifier: ^19.0.0
@@ -2576,12 +2588,18 @@ importers:
       '@sdkwork/partner-pc-admin-core':
         specifier: workspace:*
         version: link:../sdkwork-partner-pc-admin-core
+      lucide-react:
+        specifier: 'catalog:'
+        version: 0.546.0(react@19.2.4)
       react:
         specifier: 'catalog:'
         version: 19.2.4
       react-dom:
         specifier: 'catalog:'
         version: 19.2.4(react@19.2.4)
+      react-i18next:
+        specifier: 'catalog:'
+        version: 17.0.8(i18next@26.3.6(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3)
     devDependencies:
       '@types/react':
         specifier: ^19.0.0
@@ -2601,12 +2619,18 @@ importers:
       '@sdkwork/partner-pc-admin-core':
         specifier: workspace:*
         version: link:../sdkwork-partner-pc-admin-core
+      lucide-react:
+        specifier: 'catalog:'
+        version: 0.546.0(react@19.2.4)
       react:
         specifier: 'catalog:'
         version: 19.2.4
       react-dom:
         specifier: 'catalog:'
         version: 19.2.4(react@19.2.4)
+      react-i18next:
+        specifier: 'catalog:'
+        version: 17.0.8(i18next@26.3.6(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3)
     devDependencies:
       '@types/react':
         specifier: ^19.0.0
@@ -2626,12 +2650,18 @@ importers:
       '@sdkwork/partner-pc-admin-core':
         specifier: workspace:*
         version: link:../sdkwork-partner-pc-admin-core
+      lucide-react:
+        specifier: 'catalog:'
+        version: 0.546.0(react@19.2.4)
       react:
         specifier: 'catalog:'
         version: 19.2.4
       react-dom:
         specifier: 'catalog:'
         version: 19.2.4(react@19.2.4)
+      react-i18next:
+        specifier: 'catalog:'
+        version: 17.0.8(i18next@26.3.6(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3)
     devDependencies:
       '@types/react':
         specifier: ^19.0.0
@@ -3396,6 +3426,9 @@ importers:
       '@sdkwork/iam-credential-entry':
         specifier: workspace:*
         version: link:../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-credential-entry
+      '@sdkwork/iam-pc-admin-oauth':
+        specifier: workspace:*
+        version: link:../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-oauth
       '@sdkwork/iam-react':
         specifier: workspace:*
         version: link:../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-react
@@ -3456,6 +3489,9 @@ importers:
       '@sdkwork/order-pc-subscription':
         specifier: workspace:*
         version: link:../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-subscription
+      '@sdkwork/partner-pc-admin-core':
+        specifier: workspace:*
+        version: link:../../../sdkwork-partner/apps/sdkwork-partner-pc/packages/sdkwork-partner-pc-admin-core
       '@sdkwork/payment-backend-sdk':
         specifier: workspace:*
         version: link:../../../sdkwork-payment/sdks/sdkwork-payment-backend-sdk/sdkwork-payment-backend-sdk-typescript
@@ -3813,6 +3849,9 @@ importers:
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-partner:
     dependencies:
+      '@sdkwork/cloudroutes-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-cloudroutes-pc-commons
       '@sdkwork/partner-backend-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-partner/sdks/sdkwork-partner-backend-sdk/sdkwork-partner-backend-sdk-typescript
@@ -4170,6 +4209,18 @@ importers:
       '@sdkwork/i18n-pc-react':
         specifier: workspace:*
         version: link:../../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-i18n-pc-react
+      '@sdkwork/partner-pc-admin-commission':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-partner/apps/sdkwork-partner-pc/packages/sdkwork-partner-pc-admin-commission
+      '@sdkwork/partner-pc-admin-partner':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-partner/apps/sdkwork-partner-pc/packages/sdkwork-partner-pc-admin-partner
+      '@sdkwork/partner-pc-admin-stats':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-partner/apps/sdkwork-partner-pc/packages/sdkwork-partner-pc-admin-stats
+      '@sdkwork/partner-pc-admin-withdrawal':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-partner/apps/sdkwork-partner-pc/packages/sdkwork-partner-pc-admin-withdrawal
     devDependencies:
       '@sdkwork/documents-pc-i18n':
         specifier: workspace:*

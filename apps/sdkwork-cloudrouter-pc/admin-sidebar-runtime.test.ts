@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getAdminModuleMenu } from "./src/adminModuleRegistry.ts";
-import { getActiveSidebarItemPaths, isSidebarItemActive } from "./src/adminSidebarActive.ts";
+import {
+  getActiveSidebarItemPaths,
+  getAdminModuleMenu,
+  isSidebarItemActive,
+} from "@sdkwork/cloudrouter-pc-admin-shell";
 
 test("admin sidebar exposes independent upstream supplier, account, and group entries", () => {
   const homeMenu = getAdminModuleMenu("home");
@@ -24,15 +27,38 @@ test("admin sidebar exposes independent upstream supplier, account, and group en
   assert.ok(accountGroupsItem, "upstream account groups menu item must exist");
 
   assert.deepEqual(getActiveSidebarItemPaths("/admin/upstream/suppliers", homeMenu), ["/admin/upstream/suppliers"]);
-  assert.equal(isSidebarItemActive("/admin/upstream/suppliers", suppliersItem, upstreamGroup.items), true);
-  assert.equal(isSidebarItemActive("/admin/upstream/suppliers", accountsItem, upstreamGroup.items), false);
+  assert.equal(isSidebarItemActive("/admin/upstream/suppliers", suppliersItem, homeMenu), true);
+  assert.equal(isSidebarItemActive("/admin/upstream/suppliers", accountsItem, homeMenu), false);
 
   assert.deepEqual(getActiveSidebarItemPaths("/admin/upstream/accounts", homeMenu), ["/admin/upstream/accounts"]);
-  assert.equal(isSidebarItemActive("/admin/upstream/accounts", accountsItem, upstreamGroup.items), true);
+  assert.equal(isSidebarItemActive("/admin/upstream/accounts", accountsItem, homeMenu), true);
 
   assert.deepEqual(getActiveSidebarItemPaths("/admin/upstream/account-groups", homeMenu), ["/admin/upstream/account-groups"]);
-  assert.equal(isSidebarItemActive("/admin/upstream/account-groups", accountGroupsItem, upstreamGroup.items), true);
+  assert.equal(isSidebarItemActive("/admin/upstream/account-groups", accountGroupsItem, homeMenu), true);
 
   assert.deepEqual(getActiveSidebarItemPaths("/admin/upstream/accounts/details", homeMenu), ["/admin/upstream/accounts"]);
-  assert.equal(isSidebarItemActive("/admin/upstream/accounts/details", accountsItem, upstreamGroup.items), true);
+  assert.equal(isSidebarItemActive("/admin/upstream/accounts/details", accountsItem, homeMenu), true);
+});
+
+test("selecting partner stats highlights only stats, not the partner workbench", () => {
+  const partnerMenu = getAdminModuleMenu("partnerCenter");
+  const manageGroup = partnerMenu.groups.find((group) => group.groupKey === "admin.menu.partner.manage");
+  const financeGroup = partnerMenu.groups.find((group) => group.groupKey === "admin.menu.partner.finance");
+
+  assert.ok(manageGroup, "partner manage group must exist");
+  assert.ok(financeGroup, "partner finance group must exist");
+
+  const workbenchItem = manageGroup.items.find((item) => item.path === "/admin/partner");
+  const statsItem = financeGroup.items.find((item) => item.path === "/admin/partner/stats");
+
+  assert.ok(workbenchItem, "partner workbench menu item must exist");
+  assert.ok(statsItem, "partner stats menu item must exist");
+
+  assert.equal(isSidebarItemActive("/admin/partner/stats", statsItem, partnerMenu), true);
+  assert.equal(isSidebarItemActive("/admin/partner/stats", workbenchItem, partnerMenu), false);
+  assert.deepEqual(getActiveSidebarItemPaths("/admin/partner/stats", partnerMenu), ["/admin/partner/stats"]);
+
+  assert.equal(isSidebarItemActive("/admin/partner", workbenchItem, partnerMenu), true);
+  assert.equal(isSidebarItemActive("/admin/partner", statsItem, partnerMenu), false);
+  assert.deepEqual(getActiveSidebarItemPaths("/admin/partner", partnerMenu), ["/admin/partner"]);
 });

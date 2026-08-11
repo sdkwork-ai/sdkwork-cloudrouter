@@ -19,7 +19,7 @@ const GROUP_COLUMNS: &str = r#"
     cost_multiplier::text AS cost_multiplier,
     sale_multiplier::text AS sale_multiplier,
     environment, vendor_code, modalities::text AS modalities, tags::text AS tags,
-    status, version,
+    status, is_default, version,
     TO_CHAR(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS updated_at
 "#;
 
@@ -116,6 +116,14 @@ pub(super) async fn save(
         .begin()
         .await
         .map_err(|error| store_error("failed to begin account group transaction", error))?;
+    if command.is_default {
+        // Promote this group to the single default: clear the flag on every
+        // other group in the scope before the insert/update so the partial
+        // unique index keeps exactly one default. Versions advance so
+        // concurrent optimistic-lock editors observe the change.
+        clear_default_flag(&mut tx, &command.subject, command.group_code.trim(), &command.requested_at)
+            .await?;
+    }
     let account_group_id = match command.account_group_id {
         Some(account_group_id) => update(&mut tx, account_group_id, &command).await?,
         None => insert(&mut tx, &command).await?,
@@ -156,6 +164,25 @@ pub(super) async fn delete(
         .await
         .map_err(|error| store_error("failed to begin account group delete", error))?;
     lock_for_nested(&mut tx, &subject, account_group_id, expected_version).await?;
+    let default_flag = sqlx::query_scalar::<_, bool>(
+        r#"
+        SELECT is_default
+        FROM ai_upstream_account_group
+        WHERE tenant_id = $1 AND organization_id = $2
+          AND id = $3 AND deleted_at IS NULL
+        "#,
+    )
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(account_group_id)
+    .fetch_one(&mut *tx)
+    .await
+    .map_err(|error| store_error("failed to inspect upstream account group default flag", error))?;
+    if default_flag {
+        return Err(conflict(
+            "default account group cannot be deleted; set another group as default first",
+        ));
+    }
     let entitlement_count = sqlx::query_scalar::<_, i64>(
         r#"
         SELECT
@@ -325,14 +352,14 @@ async fn insert(
             group_code, group_name, description, group_type,
             routing_strategy, fallback_mode, priority,
             cost_multiplier, sale_multiplier, environment,
-            vendor_code, modalities, tags
+            vendor_code, modalities, tags, is_default
         ) VALUES (
             $1, $2, $3, $4, $5, $6,
             $7::timestamptz, $7::timestamptz, 0, '{}'::jsonb,
             $8, $9, $10, $11,
             $12, $13, $14,
             $15::numeric, $16::numeric, $17,
-            $18, $19::jsonb, $20::jsonb
+            $18, $19::jsonb, $20::jsonb, $21
         )
         "#,
     )
@@ -356,6 +383,7 @@ async fn insert(
     .bind(command.vendor_code.as_deref().map(str::trim))
     .bind(modalities_json(&command.modalities))
     .bind(tags_json(&command.tags))
+    .bind(command.is_default)
     .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to create upstream account group", error))?;
@@ -422,10 +450,11 @@ async fn update(
             modalities = $11::jsonb,
             tags = $12::jsonb,
             status = $13,
+            is_default = $14,
             version = version + 1,
-            updated_at = $14::timestamptz
-        WHERE tenant_id = $15 AND organization_id = $16
-          AND id = $17 AND version = $18 AND deleted_at IS NULL
+            updated_at = $15::timestamptz
+        WHERE tenant_id = $16 AND organization_id = $17
+          AND id = $18 AND version = $19 AND deleted_at IS NULL
         "#,
     )
     .bind(command.group_name.trim())
@@ -441,6 +470,7 @@ async fn update(
     .bind(modalities_json(&command.modalities))
     .bind(tags_json(&command.tags))
     .bind(command.status)
+    .bind(command.is_default)
     .bind(&command.requested_at)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
@@ -455,6 +485,38 @@ async fn update(
         ));
     }
     Ok(account_group_id)
+}
+
+/// Clears the default flag on every account group in the scope except the one
+/// being promoted, so exactly one default group remains per tenant and
+/// organization. Versions advance on affected rows so stale If-Match editors
+/// observe the change through the optimistic lock instead of reverting it.
+async fn clear_default_flag(
+    tx: &mut Transaction<'_, Postgres>,
+    subject: &AdminUpstreamSubject,
+    exclude_group_code: &str,
+    requested_at: &str,
+) -> DomainResult<()> {
+    sqlx::query(
+        r#"
+        UPDATE ai_upstream_account_group
+        SET is_default = FALSE,
+            version = version + 1,
+            updated_at = $1::timestamptz
+        WHERE tenant_id = $2 AND organization_id = $3
+          AND is_default
+          AND group_code <> $4
+          AND deleted_at IS NULL
+        "#,
+    )
+    .bind(requested_at)
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(exclude_group_code)
+    .execute(&mut **tx)
+    .await
+    .map_err(|error| store_error("failed to clear previous default account group", error))?;
+    Ok(())
 }
 
 async fn get_in_transaction(
@@ -604,6 +666,11 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamAccountGroupItem> {
             &row,
             "status",
             "failed to map upstream account group status",
+        )?,
+        is_default: column(
+            &row,
+            "is_default",
+            "failed to map upstream account group default flag",
         )?,
         version: column(
             &row,

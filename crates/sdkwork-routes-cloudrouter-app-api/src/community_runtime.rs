@@ -22,7 +22,7 @@ use sdkwork_database_sqlx::DatabasePool;
 /// database pool (applying the Community database baseline, migrations, and
 /// seed-on-boot reference data) and returns the unwrapped App surface router.
 async fn wire_community_app_router(database_pool: DatabasePool) -> Result<Router, String> {
-    let contribution = sdkwork_api_community_assembly::assemble_app_api_contribution(database_pool)
+    let contribution = sdkwork_api_community_assembly::assemble_app_api_contribution_with_pool(database_pool)
         .await
         .map_err(|error| format!("compose sdkwork-community app-api contribution failed: {error}"))?;
     Ok(contribution.router)

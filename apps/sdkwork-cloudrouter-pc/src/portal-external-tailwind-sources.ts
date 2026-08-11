@@ -32,4 +32,5 @@ export const PORTAL_EXTERNAL_TAILWIND_SOURCES = [
   '../../../../sdkwork-models/apps/sdkwork-models-pc/packages/*/src',
   '../../../../sdkwork-agents/apps/sdkwork-agents-pc/packages',
   '../../../../sdkwork-agents/apps/sdkwork-agents-pc/src',
+  '../../../../sdkwork-partner/apps/sdkwork-partner-pc/packages/*/src',
 ] as const;

@@ -6795,6 +6795,11 @@ tables:
         required: true
         postgres_type: INTEGER
         constraints: NOT NULL DEFAULT 1
+      is_default:
+        type: bool
+        required: true
+        postgres_type: BOOLEAN
+        constraints: NOT NULL DEFAULT FALSE
       created_at:
         type: instant
         required: true
@@ -6984,6 +6989,12 @@ tables:
         columns: *id057
         unique: true
         where: null
+      - name: uk_ai_upstream_account_group_default_per_tenant
+        columns:
+          - tenant_id
+          - organization_id
+        unique: true
+        where: is_default AND deleted_at IS NULL
       - name: idx_ai_upstream_account_group_tags
         columns:
           - tags

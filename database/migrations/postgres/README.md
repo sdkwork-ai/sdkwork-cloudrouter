@@ -40,6 +40,11 @@ Current migrations:
   and `ops_referral_strategy` (marketing-center referral reward strategy
   configuration). Reward granting is a follow-up phase; relations carry a
   `reward_status` marker only.
+- `0020_upstream_account_group_default_flag.up.sql` adds the `is_default`
+  flag to `ai_upstream_account_group` with a partial unique index enforcing at
+  most one default group per tenant and organization, and promotes the seeded
+  `standard-group` to the default group. The API transaction clears the previous
+  default when a new one is set.
 
 ## Naming
 

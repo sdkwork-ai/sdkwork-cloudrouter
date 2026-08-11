@@ -5361,6 +5361,7 @@ dependencies = [
  "async-trait",
  "chrono",
  "sdkwork-contract-service",
+ "sdkwork-utils-rust",
  "serde",
  "serde_json",
  "thiserror 1.0.69",
@@ -5408,10 +5409,13 @@ name = "sdkwork-community-service"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "reqwest 0.12.28",
  "sdkwork-community-core-rust",
  "sdkwork-community-storage-sqlx-rust",
+ "sdkwork-id-core",
  "sdkwork-utils-rust",
  "serde",
+ "serde_json",
  "thiserror 1.0.69",
 ]
 
@@ -5423,6 +5427,7 @@ dependencies = [
  "sdkwork-community-database-host",
  "sdkwork-community-service",
  "sdkwork-community-storage-sqlx-rust",
+ "sdkwork-database-id",
  "sdkwork-database-sqlx",
 ]
 
@@ -5435,6 +5440,8 @@ dependencies = [
  "sdkwork-database-config",
  "sdkwork-database-sqlx",
  "sdkwork-utils-rust",
+ "serde",
+ "serde_json",
  "sqlx",
 ]
 
@@ -6343,6 +6350,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-order-integration-partner"
+version = "0.1.0"
+dependencies = [
+ "sdkwork-commerce-partner-repository-sqlx",
+ "sdkwork-commerce-partner-service",
+ "sdkwork-contract-service",
+ "sdkwork-database-sqlx",
+ "sdkwork-order-service",
+ "sqlx",
+ "tracing",
+]
+
+[[package]]
 name = "sdkwork-order-integration-payment"
 version = "0.1.0"
 dependencies = [
@@ -6374,6 +6394,7 @@ dependencies = [
  "sdkwork-shop-service",
  "serde_json",
  "sqlx",
+ "tracing",
 ]
 
 [[package]]
@@ -6399,6 +6420,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlx",
+ "tracing",
  "uuid",
 ]
 
@@ -6424,11 +6446,17 @@ dependencies = [
  "sdkwork-order-database-host",
  "sdkwork-order-integration-account",
  "sdkwork-order-integration-membership",
+ "sdkwork-order-integration-partner",
  "sdkwork-order-integration-payment",
  "sdkwork-order-integration-physical-commerce",
  "sdkwork-order-integration-promotion",
+ "sdkwork-order-repository-sqlx",
  "sdkwork-order-service",
+ "sdkwork-payment-providers",
+ "sdkwork-payment-repository-sqlx",
  "sqlx",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]

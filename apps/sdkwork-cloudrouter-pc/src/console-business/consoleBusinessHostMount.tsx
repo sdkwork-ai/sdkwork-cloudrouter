@@ -9,10 +9,7 @@ import {
 } from '@sdkwork/payment-pc-payment';
 import { Route, useSearchParams } from 'react-router-dom';
 
-import {
-  resolveConsoleCouponLocale,
-  resolveConsoleSubscriptionLocale,
-} from './consoleCommerceLocale.ts';
+import { resolveConsoleCouponLocale } from './consoleCommerceLocale.ts';
 import type { CloudRouterConsoleBusinessHostConfig } from './consoleBusinessConfig.ts';
 import { CloudRouterWalletPage } from './CloudRouterWalletPage.tsx';
 import { CloudRouterMembershipPage } from './CloudRouterMembershipPage.tsx';
@@ -70,12 +67,9 @@ function ConsoleBusinessMembershipPage() {
 }
 
 function ConsoleBusinessCheckoutPage() {
-  const { i18n } = useTranslation();
-  const locale = resolveConsoleSubscriptionLocale(i18n.resolvedLanguage ?? i18n.language);
-
   return (
     <ConsoleBusinessPageFrame surface="checkout">
-      <SdkworkSubscriptionPage locale={locale} />
+      <SdkworkSubscriptionPage />
     </ConsoleBusinessPageFrame>
   );
 }

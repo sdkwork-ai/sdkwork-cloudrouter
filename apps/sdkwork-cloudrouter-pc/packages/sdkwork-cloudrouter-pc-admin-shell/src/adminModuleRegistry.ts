@@ -130,7 +130,7 @@ export const ADMIN_MODULES: AdminModuleDef[] = [
     id: 'partnerCenter',
     nameKey: 'admin.header.partnerCenter',
     icon: Network,
-    defaultPath: '/admin/partner/partners',
+    defaultPath: '/admin/partner',
     pathPrefixes: ['/admin/partner'],
   }),
   moduleBlock({
@@ -217,7 +217,9 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
     moduleId: 'partnerCenter',
     groups: [
       groupBlock('admin.menu.partner.manage', [
+        itemBlock({ path: '/admin/partner', labelKey: 'admin.partner.menu.home', icon: LayoutDashboard }),
         itemBlock({ path: '/admin/partner/partners', labelKey: 'admin.partner.menu.partners', icon: UsersRound }),
+        itemBlock({ path: '/admin/partner/customers', labelKey: 'admin.partner.menu.customers', icon: Users }),
         itemBlock({ path: '/admin/partner/tree', labelKey: 'admin.partner.menu.tree', icon: Network }),
       ]),
       groupBlock('admin.menu.partner.commission', [
@@ -227,8 +229,12 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
         itemBlock({ path: '/admin/partner/ledger', labelKey: 'admin.partner.menu.ledger', icon: ReceiptText }),
       ]),
       groupBlock('admin.menu.partner.finance', [
+        itemBlock({ path: '/admin/partner/join-fees', labelKey: 'admin.partner.menu.joinFees', icon: WalletCards }),
         itemBlock({ path: '/admin/partner/withdrawals', labelKey: 'admin.partner.menu.withdrawals', icon: WalletCards }),
         itemBlock({ path: '/admin/partner/stats', labelKey: 'admin.partner.menu.stats', icon: BarChart3 }),
+      ]),
+      groupBlock('admin.menu.partner.governance', [
+        itemBlock({ path: '/admin/partner/audit-logs', labelKey: 'admin.partner.menu.auditLogs', icon: ScrollText }),
       ]),
     ],
   },

@@ -65,6 +65,7 @@ async fn admin_marketing_route_lists_owned_marketing_read_models() {
     );
     assert_eq!("CNY", recharge_packages["data"]["items"][0]["currencyCode"]);
     assert_eq!("25", recharge_packages["data"]["items"][0]["bonusPoints"]);
+    assert_eq!(90, recharge_packages["data"]["items"][0]["discount"]);
     assert_eq!("125", recharge_packages["data"]["items"][0]["grantAmount"]);
     assert_eq!("125", recharge_packages["data"]["items"][0]["points"]);
 
@@ -130,7 +131,7 @@ async fn admin_marketing_route_mutates_owned_marketing_resources() {
         signed_request(
             "POST",
             "/backend/v3/api/recharges/packages",
-            r#"{"priceAmount":"12.00","currencyCode":"CNY","bonusPoints":30,"status":"active"}"#,
+            r#"{"priceAmount":"12.00","currencyCode":"CNY","bonusPoints":30,"discount":90,"status":"active"}"#,
         ),
         StatusCode::CREATED,
     )
@@ -142,6 +143,7 @@ async fn admin_marketing_route_mutates_owned_marketing_resources() {
     assert_eq!("12.00", create_package["data"]["item"]["priceAmount"]);
     assert_eq!("CNY", create_package["data"]["item"]["currencyCode"]);
     assert_eq!("30", create_package["data"]["item"]["bonusPoints"]);
+    assert_eq!(90, create_package["data"]["item"]["discount"]);
     assert_eq!("150", create_package["data"]["item"]["grantAmount"]);
     assert_eq!("150", create_package["data"]["item"]["points"]);
 
@@ -165,7 +167,7 @@ async fn admin_marketing_route_mutates_owned_marketing_resources() {
         signed_request(
             "PATCH",
             "/backend/v3/api/recharges/packages/recharge-package-10-20-901",
-            r#"{"priceAmount":"20.00","currencyCode":"USD","bonusPoints":50,"status":"inactive"}"#,
+            r#"{"priceAmount":"20.00","currencyCode":"USD","bonusPoints":50,"discount":85,"status":"inactive"}"#,
         ),
     )
     .await;
@@ -176,6 +178,7 @@ async fn admin_marketing_route_mutates_owned_marketing_resources() {
     assert_eq!("20.00", update_package["data"]["item"]["priceAmount"]);
     assert_eq!("USD", update_package["data"]["item"]["currencyCode"]);
     assert_eq!("50", update_package["data"]["item"]["bonusPoints"]);
+    assert_eq!(85, update_package["data"]["item"]["discount"]);
     assert_eq!("1550", update_package["data"]["item"]["grantAmount"]);
     assert_eq!("1550", update_package["data"]["item"]["points"]);
 
@@ -413,6 +416,7 @@ impl AdminMarketingStore for TestAdminMarketingStore {
                     price_amount: "10.00".to_owned(),
                     currency_code: "CNY".to_owned(),
                     bonus_points: 25,
+                    discount: 90,
                     grant_amount: 125,
                     points: 125,
                     status: "active".to_owned(),
@@ -467,6 +471,7 @@ impl AdminMarketingStore for TestAdminMarketingStore {
             assert_eq!("12.00", command.price_amount);
             assert_eq!("CNY", command.currency_code);
             assert_eq!(30, command.bonus_points);
+            assert_eq!(90, command.discount);
             Ok(AdminRechargePackageItem {
                 id: "recharge-package-10-20-901".to_owned(),
                 package_no: "RECHARGE-PACKAGE-901".to_owned(),
@@ -475,6 +480,7 @@ impl AdminMarketingStore for TestAdminMarketingStore {
                 price_amount: command.price_amount,
                 currency_code: command.currency_code,
                 bonus_points: command.bonus_points,
+                discount: command.discount,
                 grant_amount: 150,
                 points: 150,
                 status: "active".to_owned(),
@@ -496,6 +502,7 @@ impl AdminMarketingStore for TestAdminMarketingStore {
             assert_eq!("20.00", command.price_amount);
             assert_eq!("USD", command.currency_code);
             assert_eq!(50, command.bonus_points);
+            assert_eq!(85, command.discount);
             Ok(AdminRechargePackageItem {
                 id: command.package_id,
                 package_no: "RECHARGE-PACKAGE-901".to_owned(),
@@ -504,6 +511,7 @@ impl AdminMarketingStore for TestAdminMarketingStore {
                 price_amount: command.price_amount,
                 currency_code: command.currency_code,
                 bonus_points: command.bonus_points,
+                discount: command.discount,
                 grant_amount: 1550,
                 points: 1550,
                 status: "inactive".to_owned(),

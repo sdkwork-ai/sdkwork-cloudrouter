@@ -20,7 +20,11 @@
   "dependencies": {
     "@sdkwork/cloudrouter-pc-admin-iam": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-upstream": "workspace:*",
-    "@sdkwork/i18n-pc-react": "workspace:*"
+    "@sdkwork/i18n-pc-react": "workspace:*",
+    "@sdkwork/partner-pc-admin-partner": "workspace:*",
+    "@sdkwork/partner-pc-admin-commission": "workspace:*",
+    "@sdkwork/partner-pc-admin-withdrawal": "workspace:*",
+    "@sdkwork/partner-pc-admin-stats": "workspace:*"
   },
   "devDependencies": {
     "@sdkwork/documents-pc-i18n": "workspace:*",

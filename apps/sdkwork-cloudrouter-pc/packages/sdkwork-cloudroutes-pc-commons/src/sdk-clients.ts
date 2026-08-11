@@ -1569,18 +1569,30 @@ function buildDependencyBackendConfig(
   baseUrlEnvName: string,
 ): SdkworkBackendConfig {
   return {
-    baseUrl: normalizeGeneratedSdkBaseUrl(
-      options.backendBaseUrl
-        ?? readCloudRouterRuntimeEnv(baseUrlEnvName)
-        ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_BACKEND_API_BASE_URL')
-        ?? deriveDependencySurfaceBaseUrl('PORTAL_PUBLIC_SDK_BASE_URL', BACKEND_API_PREFIX)
-        ?? BACKEND_API_PREFIX,
-      BACKEND_API_PREFIX,
-    ),
+    baseUrl: resolveCloudRouterDependencyBackendBaseUrl(baseUrlEnvName, options.backendBaseUrl),
     platform: options.platform ?? 'web-admin',
     tokenManager: resolveCloudRouterSdkTokenManager(options.tokenManager),
     timeout: options.timeout,
   };
+}
+
+/**
+ * Resolves the backend base URL for a dependency SDK family: explicit value,
+ * then the family env var, then the portal backend env var, then
+ * `PORTAL_PUBLIC_SDK_BASE_URL` + prefix, then the same-origin prefix.
+ */
+export function resolveCloudRouterDependencyBackendBaseUrl(
+  baseUrlEnvName: string,
+  explicitBaseUrl?: string,
+): string {
+  return normalizeGeneratedSdkBaseUrl(
+    explicitBaseUrl
+      ?? readCloudRouterRuntimeEnv(baseUrlEnvName)
+      ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_BACKEND_API_BASE_URL')
+      ?? deriveDependencySurfaceBaseUrl('PORTAL_PUBLIC_SDK_BASE_URL', BACKEND_API_PREFIX)
+      ?? BACKEND_API_PREFIX,
+    BACKEND_API_PREFIX,
+  );
 }
 
 function buildAccountAppConfig(options: SdkworkAccountAppSdkClientOptions): AccountAppConfig {

@@ -20,6 +20,7 @@ import { RequireAdminSession, RequirePortalSession, PortalAuthenticatedAuthRoute
 import { SdkworkSessionAuthBrowserRoot } from '@sdkwork/auth-pc-react';
 import { PortalErrorBoundary } from '@sdkwork/cloudroutes-pc-commons';
 import { CloudRouterConsoleBusinessHostRoutes } from './console-business/consoleBusinessHostMount';
+import { CloudRouterConsoleIamOauthMenuRoute } from './console-business/consoleIamOauthMenuHost';
 import { CloudRouterConsoleBusinessNavbarActions } from './console-business/consoleBusinessNavbar';
 import { applySdkCommerceThemeVariables } from './console-business/consoleCommerceTheme';
 import { CloudRouterAdminHostRoutes } from './admin/cloudRouterAdminHostMount';
@@ -151,6 +152,7 @@ export default function App() {
               <Route path="usage" element={<UsageView />} />
               <Route path="gateway" element={<GatewayView />} />
               <Route path="api-keys" element={<ApiKeysView />} />
+              <Route path="iam/oauth/official-accounts/:resourceAccountId/custom-menus" element={<CloudRouterConsoleIamOauthMenuRoute />} />
               <Route path="account" element={<AccountView />} />
               {CloudRouterConsoleBusinessHostRoutes()}
               <Route path="settlements" element={<SettlementsView />} />

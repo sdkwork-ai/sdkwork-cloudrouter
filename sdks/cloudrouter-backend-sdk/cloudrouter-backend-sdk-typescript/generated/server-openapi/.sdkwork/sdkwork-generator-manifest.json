@@ -200,7 +200,7 @@
     },
     {
       "path": "src/types/admin-recharge-package.ts",
-      "sha256": "a2429f4db5dfc3457663eeb35933329dfd08b97a63050c0bc65e1fe8c8b3e074"
+      "sha256": "6fbb353db3c27c8b4761fb5269c80a0d5387a4b9fc1ddc2fa2dcfe15776e6b56"
     },
     {
       "path": "src/types/admin-recharge-record-list-response.ts",
@@ -540,7 +540,7 @@
     },
     {
       "path": "src/types/recharge-package-mutation-request.ts",
-      "sha256": "9a24cd3163a99ec7187fba87420c1f2ac2ac5ae49e8a12ad7008deae710234bd"
+      "sha256": "8fe4a08f56994d346d118aa5a1163c2317fea89a93aa7515ed3787bf57a8b26b"
     },
     {
       "path": "src/types/recharge-settings-update-request.ts",
@@ -612,7 +612,7 @@
     },
     {
       "path": "src/types/update-upstream-account-group-request.ts",
-      "sha256": "8294d2830c89bc8a8842f462ff0e539695c74a499cd6ca3c2a50153005a5ecd9"
+      "sha256": "c876675633e19462544505aedf58c776e72d64a1f51e82c10e00210786eee76c"
     },
     {
       "path": "src/types/update-upstream-account-request.ts",
@@ -688,7 +688,7 @@
     },
     {
       "path": "src/types/upstream-account-group.ts",
-      "sha256": "b74100393d70e7462574d34c82e8cae6a515eac744dfe944b8edeed77984a2bd"
+      "sha256": "d10a3c3d94a49eea4eddfb9077eeeea352a2867b514b80db2f77eb59922b81f2"
     },
     {
       "path": "src/types/upstream-account-item-response.ts",

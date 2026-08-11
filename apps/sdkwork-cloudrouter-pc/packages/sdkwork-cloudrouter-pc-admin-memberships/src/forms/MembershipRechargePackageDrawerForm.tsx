@@ -4,7 +4,6 @@ import { computeGrantAmount, type RechargeSettingsSnapshot } from '@sdkwork/clou
 import { formatMoneyDigits } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 import { SdkworkSearchableSelect } from '@sdkwork/appbase-pc-react';
 import {
-  MembershipFormActions,
   MembershipFormFrame,
   MembershipSelectField,
   MembershipTextField,
@@ -12,6 +11,7 @@ import {
 import { membershipStatusLabel } from '../components/MembershipStatusBadge';
 import {
   formatMembershipFormValidationError,
+  parseRequiredDiscountField,
   parseRequiredMoneyAmountField,
   parseRequiredNonNegativeIntegerField,
 } from './membershipFormValues';
@@ -21,20 +21,16 @@ import type {
 } from '../membershipsService';
 
 interface MembershipRechargePackageDrawerFormProps {
-  mode: 'create' | 'edit';
   initialValue?: MembershipsAdminRechargePackageItem | null;
   settings: RechargeSettingsSnapshot;
   supportedCurrencyCodes: string[];
-  onCancel: () => void;
   onSubmit: (input: MembershipsAdminRechargePackageMutationInput) => Promise<void>;
 }
 
 export function MembershipRechargePackageDrawerForm({
-  mode,
   initialValue,
   settings,
   supportedCurrencyCodes,
-  onCancel,
   onSubmit,
 }: MembershipRechargePackageDrawerFormProps) {
   const { t, i18n } = useTranslation();
@@ -42,8 +38,8 @@ export function MembershipRechargePackageDrawerForm({
   const [priceAmount, setPriceAmount] = useState(initialValue?.priceAmount ?? '');
   const [currencyCode, setCurrencyCode] = useState(initialValue?.currencyCode ?? settings.baseCurrencyCode);
   const [bonusPoints, setBonusPoints] = useState(String(initialValue?.bonusPoints ?? 0));
+  const [discount, setDiscount] = useState(String(initialValue?.discount ?? 100));
   const [status, setStatus] = useState<'active' | 'inactive'>(initialValue?.status === 'inactive' ? 'inactive' : 'active');
-  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const previewGrantAmount = useMemo(() => {
@@ -67,14 +63,15 @@ export function MembershipRechargePackageDrawerForm({
     }
   }, [bonusPoints, currencyCode, priceAmount, settings, t]);
 
-  const handleSubmit = async () => {
-    setIsSaving(true);
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError(null);
     try {
       await onSubmit({
         priceAmount: parseRequiredMoneyAmountField(priceAmount, t('admin.commerce.memberships.rechargePackages.form.priceAmount', 'Price amount')),
         currencyCode,
         bonusPoints: parseRequiredNonNegativeIntegerField(bonusPoints, t('admin.commerce.memberships.rechargePackages.form.bonusPoints', 'Bonus points')),
+        discount: parseRequiredDiscountField(discount, t('admin.commerce.memberships.rechargePackages.form.discount', 'Discount')),
         status,
       });
     } catch (saveError) {
@@ -83,13 +80,15 @@ export function MembershipRechargePackageDrawerForm({
         t,
         t('admin.commerce.memberships.rechargePackages.form.error', 'Recharge package could not be saved'),
       ));
-    } finally {
-      setIsSaving(false);
     }
   };
 
   return (
-    <MembershipFormFrame error={error}>
+    <MembershipFormFrame
+      error={error}
+      formId="membership-recharge-package-form"
+      onSubmit={handleSubmit}
+    >
       <MembershipTextField
         label={t('admin.commerce.memberships.rechargePackages.form.priceAmount', 'Price amount')}
         value={priceAmount}
@@ -115,6 +114,14 @@ export function MembershipRechargePackageDrawerForm({
         placeholder="0"
         type="number"
       />
+      <MembershipTextField
+        label={t('admin.commerce.memberships.rechargePackages.form.discount', 'Discount')}
+        hint={t('admin.commerce.memberships.rechargePackages.form.discountHint', 'Discount rate percentage: 100 means no discount, 90 means pay 90% of the price.')}
+        value={discount}
+        onChange={setDiscount}
+        placeholder="100"
+        type="number"
+      />
       <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
         <div className="flex items-center justify-between gap-3">
           <span>{t('admin.commerce.memberships.rechargeSettings.preview', 'Preview')}</span>
@@ -131,14 +138,6 @@ export function MembershipRechargePackageDrawerForm({
           { value: 'inactive', label: membershipStatusLabel('inactive', t) },
         ]}
         onChange={(value) => setStatus(value as 'active' | 'inactive')}
-      />
-      <MembershipFormActions
-        submitLabel={mode === 'edit'
-          ? t('admin.commerce.memberships.rechargePackages.form.updateSubmit', 'Update Package')
-          : t('admin.commerce.memberships.rechargePackages.form.submit', 'Create Package')}
-        isSaving={isSaving}
-        onCancel={onCancel}
-        onSubmit={handleSubmit}
       />
     </MembershipFormFrame>
   );

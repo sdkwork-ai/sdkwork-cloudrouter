@@ -194,7 +194,7 @@ export function TokenBankRatesPage() {
       error={error}
       onRefresh={loadConfiguration}
     >
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
+      <div className="flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto">
         <div>
           <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
             {t('admin.commerce.memberships.tokenBankRates.title', 'Token Bank Points & Rates')}
@@ -206,7 +206,7 @@ export function TokenBankRatesPage() {
 
         <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="flex min-h-0 flex-col gap-4">
-            <MembershipTablePanel className="p-5">
+            <div className="shrink-0 rounded-xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-white/5">
               <div className="space-y-4">
                 <div>
                   <h2 className="text-base font-semibold text-slate-900 dark:text-white">
@@ -240,10 +240,10 @@ export function TokenBankRatesPage() {
                   />
                 </div>
               </div>
-            </MembershipTablePanel>
+            </div>
 
-            <MembershipTablePanel className="p-5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5">
+              <div className="flex shrink-0 flex-col gap-3 p-5 pb-0 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="text-base font-semibold text-slate-900 dark:text-white">
                     {t('admin.commerce.memberships.tokenBankRates.rates.title', 'Per-Currency Exchange Rates')}
@@ -263,10 +263,10 @@ export function TokenBankRatesPage() {
                 </label>
               </div>
 
-              <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
+              <div className="mt-4 min-h-40 flex-1 overflow-auto rounded-xl border border-slate-200 dark:border-white/10">
                 <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-100 bg-slate-50 dark:border-white/5 dark:bg-white/[0.03]">
+                  <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-[#111]">
+                    <tr className="border-b border-slate-100 dark:border-white/5">
                       <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.tokenBankRates.rates.currency', 'Currency')}</th>
                       <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.tokenBankRates.rates.rateToBase', 'Rate to {{baseCurrencyCode}}', { baseCurrencyCode: normalizedDraft.baseCurrencyCode })}</th>
                       <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.tokenBankRates.rates.pointsPerUnit', 'Points per unit')}</th>
@@ -324,7 +324,7 @@ export function TokenBankRatesPage() {
                 </table>
               </div>
 
-              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="mt-4 flex shrink-0 flex-col gap-3 px-5 pb-5 sm:flex-row sm:items-end">
                 <div className="min-w-0 flex-1">
                   {addCurrencyError ? (
                     <div className="mb-2 text-xs text-red-600 dark:text-red-400">{addCurrencyError}</div>
@@ -346,7 +346,7 @@ export function TokenBankRatesPage() {
                 </button>
               </div>
 
-              <div className="mt-5 flex justify-end border-t border-slate-200 pt-4 dark:border-white/10">
+              <div className="mt-4 flex shrink-0 justify-end border-t border-slate-200 px-5 pb-5 pt-4 dark:border-white/10">
                 <button
                   type="button"
                   disabled={isSavingSettings}
@@ -357,7 +357,7 @@ export function TokenBankRatesPage() {
                   {t('admin.commerce.memberships.tokenBankRates.save', 'Save Changes')}
                 </button>
               </div>
-            </MembershipTablePanel>
+            </div>
           </div>
 
           <div className="flex min-h-0 flex-col gap-4">

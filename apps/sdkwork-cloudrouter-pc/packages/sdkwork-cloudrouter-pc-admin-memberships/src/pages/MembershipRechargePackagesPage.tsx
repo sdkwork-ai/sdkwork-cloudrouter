@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { formatMoney, formatMoneyDigits } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
-import { BottomPagination, defaultRechargeSettings, listRechargeCurrencyCodes, resolveProblemMessage, type RechargeSettingsSnapshot } from '@sdkwork/cloudroutes-pc-commons';
+import { BottomPagination, computeDiscountedAmount, defaultRechargeSettings, listRechargeCurrencyCodes, resolveProblemMessage, type RechargeSettingsSnapshot } from '@sdkwork/cloudroutes-pc-commons';
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
 import { MembershipDrawer } from '../components/MembershipDrawer';
 import { MembershipEmptyState } from '../components/MembershipEmptyState';
+import { MembershipFormActions } from '../components/MembershipFormControls';
 import {
   MembershipIconActionButton,
   MembershipTableActions,
@@ -34,6 +35,7 @@ export function MembershipRechargePackagesPage() {
   const [packages, setPackages] = useState<MembershipsAdminRechargePackageItem[]>([]);
   const [editingPackage, setEditingPackage] = useState<MembershipsAdminRechargePackageItem | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -102,14 +104,19 @@ export function MembershipRechargePackagesPage() {
   };
 
   const handleSavePackage = async (input: MembershipsAdminRechargePackageMutationInput) => {
-    if (editingPackage) {
-      await updateMembershipAdminRechargePackage(editingPackage.id, input);
-    } else {
-      await createMembershipAdminRechargePackage(input);
+    setIsSaving(true);
+    try {
+      if (editingPackage) {
+        await updateMembershipAdminRechargePackage(editingPackage.id, input);
+      } else {
+        await createMembershipAdminRechargePackage(input);
+      }
+      setIsDrawerOpen(false);
+      setEditingPackage(null);
+      await loadRechargePackages(page, pageSize);
+    } finally {
+      setIsSaving(false);
     }
-    setIsDrawerOpen(false);
-    setEditingPackage(null);
-    await loadRechargePackages(page, pageSize);
   };
 
   const handleDeletePackage = async (item: MembershipsAdminRechargePackageItem) => {
@@ -174,6 +181,8 @@ export function MembershipRechargePackagesPage() {
                   <tr className="border-b border-slate-100 dark:border-white/5">
                     <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.rechargePackages.table.package', 'Package')}</th>
                     <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.rechargePackages.table.price', 'Price')}</th>
+                    <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.rechargePackages.table.discount', 'Discount')}</th>
+                    <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.rechargePackages.table.discountedPrice', 'Discounted Price')}</th>
                     <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.rechargePackages.table.bonus', 'Bonus')}</th>
                     <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.rechargeSettings.preview', 'Preview')}</th>
                     <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.rechargePackages.table.status', 'Status')}</th>
@@ -190,6 +199,12 @@ export function MembershipRechargePackagesPage() {
                       </td>
                       <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">
                         {formatMoney(item.priceAmount, { currency: item.currencyCode, locale: displayLocale, mode: 'symbol' }) ?? `${item.priceAmount} ${item.currencyCode}`}
+                      </td>
+                      <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">
+                        {t('admin.commerce.memberships.discountPercent', '{{discount}}%', { discount: item.discount })}
+                      </td>
+                      <td className="px-4 py-2.5 text-right font-semibold text-slate-900 dark:text-white">
+                        {formatMoney(computeDiscountedAmount(item.priceAmount, item.discount), { currency: item.currencyCode, locale: displayLocale, mode: 'symbol' }) ?? `${computeDiscountedAmount(item.priceAmount, item.discount)} ${item.currencyCode}`}
                       </td>
                       <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">
                         {t('admin.commerce.memberships.pointsCount', '{{points}} pts', { points: item.bonusPoints })}
@@ -220,13 +235,21 @@ export function MembershipRechargePackagesPage() {
           : t('admin.commerce.memberships.rechargePackages.addTitle', 'Add Recharge Package')}
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
+        footer={(
+          <MembershipFormActions
+            submitLabel={editingPackage
+              ? t('admin.commerce.memberships.rechargePackages.form.updateSubmit', 'Update Package')
+              : t('admin.commerce.memberships.rechargePackages.form.submit', 'Create Package')}
+            isSaving={isSaving}
+            submitFormId="membership-recharge-package-form"
+            onCancel={() => setIsDrawerOpen(false)}
+          />
+        )}
       >
         <MembershipRechargePackageDrawerForm
-          mode={editingPackage ? 'edit' : 'create'}
           initialValue={editingPackage}
           settings={settings}
           supportedCurrencyCodes={supportedCurrencyCodes}
-          onCancel={() => setIsDrawerOpen(false)}
           onSubmit={handleSavePackage}
         />
       </MembershipDrawer>

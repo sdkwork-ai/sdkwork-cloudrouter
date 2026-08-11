@@ -114,6 +114,7 @@ pub struct CreateAdminRechargePackageCommand {
     pub price_amount: String,
     pub currency_code: String,
     pub bonus_points: i64,
+    pub discount: i64,
     pub status: AdminRechargePackageStatus,
     pub request_id: String,
     pub requested_at: String,
@@ -129,6 +130,7 @@ pub struct UpdateAdminRechargePackageCommand {
     pub price_amount: String,
     pub currency_code: String,
     pub bonus_points: i64,
+    pub discount: i64,
     pub status: AdminRechargePackageStatus,
     pub request_id: String,
     pub requested_at: String,
@@ -168,6 +170,7 @@ pub struct AdminRechargePackageItem {
     pub currency_code: String,
     #[serde(serialize_with = "serialize_i64_as_string")]
     pub bonus_points: i64,
+    pub discount: i64,
     #[serde(serialize_with = "serialize_i64_as_string")]
     pub grant_amount: i64,
     #[serde(serialize_with = "serialize_i64_as_string")]

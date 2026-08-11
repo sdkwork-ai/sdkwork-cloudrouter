@@ -247,6 +247,7 @@ pub struct AdminUpstreamAccountGroupItem {
     pub vendor_code: Option<String>,
     pub modalities: Vec<String>,
     pub tags: Vec<String>,
+    pub is_default: bool,
     pub status: i32,
     pub version: i64,
     pub updated_at: String,
@@ -271,6 +272,7 @@ pub struct SaveAdminUpstreamAccountGroupCommand {
     pub vendor_code: Option<String>,
     pub modalities: Vec<String>,
     pub tags: Vec<String>,
+    pub is_default: bool,
     pub status: i32,
     pub requested_at: String,
 }

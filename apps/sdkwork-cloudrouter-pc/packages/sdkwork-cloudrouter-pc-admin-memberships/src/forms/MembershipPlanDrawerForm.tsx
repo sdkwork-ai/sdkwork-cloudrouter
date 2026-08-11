@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2 } from 'lucide-react';
 import {
-  MembershipFormActions,
   MembershipFormFrame,
   MembershipSelectField,
   MembershipTextField,
@@ -21,7 +20,6 @@ import type {
 interface MembershipPlanDrawerFormProps {
   mode: 'create' | 'edit';
   initialValue?: MembershipsAdminPlanItem | null;
-  onCancel: () => void;
   onSubmit: (input: MembershipsAdminPlanMutationInput) => Promise<void>;
 }
 
@@ -36,7 +34,6 @@ const baseBenefitTypeValues: MembershipBenefitType[] = ['quota', 'feature', 'dis
 export function MembershipPlanDrawerForm({
   mode,
   initialValue,
-  onCancel,
   onSubmit,
 }: MembershipPlanDrawerFormProps) {
   const { t } = useTranslation();
@@ -52,11 +49,10 @@ export function MembershipPlanDrawerForm({
       ? initialValue.benefits.map(toMembershipPlanBenefitFormValue)
       : [],
   );
-  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async () => {
-    setIsSaving(true);
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError(null);
     try {
       await onSubmit({
@@ -76,13 +72,15 @@ export function MembershipPlanDrawerForm({
         t,
         t('admin.commerce.memberships.plans.form.error', 'Membership plan could not be saved'),
       ));
-    } finally {
-      setIsSaving(false);
     }
   };
 
   return (
-    <MembershipFormFrame error={error}>
+    <MembershipFormFrame
+      error={error}
+      formId="membership-plan-form"
+      onSubmit={handleSubmit}
+    >
       <MembershipTextField label={t('admin.commerce.memberships.plans.form.name', 'Name')} value={name} onChange={setName} placeholder={t('admin.commerce.memberships.plans.form.namePlaceholder', 'Gold Member')} />
       <div className="grid grid-cols-2 gap-4">
         <MembershipTextField label={t('admin.commerce.memberships.plans.form.rank', 'Rank')} value={rank} onChange={setRank} placeholder="0" />
@@ -139,14 +137,6 @@ export function MembershipPlanDrawerForm({
           ))}
         </div>
       </div>
-      <MembershipFormActions
-        submitLabel={mode === 'edit'
-          ? t('admin.commerce.memberships.plans.form.updateSubmit', 'Update Level')
-          : t('admin.commerce.memberships.plans.form.submit', 'Create Level')}
-        isSaving={isSaving}
-        onCancel={onCancel}
-        onSubmit={handleSubmit}
-      />
     </MembershipFormFrame>
   );
 

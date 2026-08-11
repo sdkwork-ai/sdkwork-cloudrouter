@@ -147,6 +147,7 @@ pub(crate) struct RechargePackageRecord {
     pub price_amount: String,
     pub currency_code: String,
     pub bonus_points: i64,
+    pub discount: i64,
     pub status: String,
     pub updated_at: String,
 }
@@ -163,6 +164,7 @@ pub(crate) fn recharge_package_item(
         price_amount,
         currency_code,
         bonus_points,
+        discount,
         status,
         updated_at,
     } = record;
@@ -175,6 +177,7 @@ pub(crate) fn recharge_package_item(
         price_amount,
         currency_code,
         bonus_points,
+        discount,
         grant_amount,
         points: grant_amount,
         status,

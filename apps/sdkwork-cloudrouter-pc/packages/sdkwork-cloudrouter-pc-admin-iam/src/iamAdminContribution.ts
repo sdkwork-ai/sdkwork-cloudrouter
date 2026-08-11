@@ -1,4 +1,4 @@
-import { Building2, KeyRound, KeySquare, Link2, MessageCircle, Network, QrCode, ScrollText, ShieldAlert, ShieldCheck, Smartphone, UserCog, Users, type LucideIcon } from 'lucide-react';
+import { AppWindow, Building2, KeyRound, KeySquare, Link2, MessageCircle, Network, QrCode, ScrollText, ShieldAlert, ShieldCheck, Smartphone, UserCog, Users, type LucideIcon } from 'lucide-react';
 
 /**
  * Cloud Router IAM admin contribution metadata.
@@ -53,6 +53,7 @@ export const IAM_ADMIN_MENU: CloudRouterIamAdminMenu = {
         { path: '/admin/iam/users', labelKey: 'admin.menu.iam.users', icon: Users },
         { path: '/admin/iam/organizations', labelKey: 'admin.menu.iam.organizations', icon: Building2 },
         { path: '/admin/iam/tenants', labelKey: 'admin.menu.iam.tenants', icon: Network },
+        { path: '/admin/iam/applications', labelKey: 'admin.menu.iam.applications', icon: AppWindow },
       ],
     },
     {
@@ -97,6 +98,7 @@ export interface CloudRouterIamAdminRouteRecord {
 export const IAM_ADMIN_ROUTE_RECORDS: readonly CloudRouterIamAdminRouteRecord[] = [
   { path: 'iam', requiredPermission: 'iam.users.read', redirectTo: '/admin/iam/users' },
   { path: 'iam/users', requiredPermission: 'iam.users.read' },
+  { path: 'iam/applications', requiredPermission: 'iam.tenant_applications.update' },
   { path: 'iam/tenants', requiredPermission: 'iam.tenants.read' },
   { path: 'iam/organizations', requiredPermission: 'iam.organizations.read' },
   { path: 'iam/organizations/:organizationId/structure', requiredPermission: 'iam.organizations.read' },
@@ -108,6 +110,7 @@ export const IAM_ADMIN_ROUTE_RECORDS: readonly CloudRouterIamAdminRouteRecord[] 
   { path: 'iam/oauth/providers', requiredPermission: 'iam.oauth.read' },
   { path: 'iam/oauth/mini-programs', requiredPermission: 'iam.oauth.read' },
   { path: 'iam/oauth/official-accounts', requiredPermission: 'iam.oauth.read' },
+  { path: 'iam/oauth/official-accounts/:resourceAccountId/custom-menus', requiredPermission: 'iam.oauth.read' },
   { path: 'iam/oauth/scan-login', requiredPermission: 'iam.oauth.read' },
   { path: 'iam/account-binding', requiredPermission: 'iam.account_binding_policy.read' },
   { path: 'iam/audit', requiredPermission: 'iam.audit_events.read' },
@@ -121,6 +124,7 @@ export interface CloudRouterIamAdminPermissionHint {
 export const IAM_ADMIN_PERMISSION_HINTS: readonly CloudRouterIamAdminPermissionHint[] = [
   { pathPrefix: '/admin/iam', requiredPermission: 'iam.users.read' },
   { pathPrefix: '/admin/iam/users', requiredPermission: 'iam.users.read' },
+  { pathPrefix: '/admin/iam/applications', requiredPermission: 'iam.tenant_applications.update' },
   { pathPrefix: '/admin/iam/tenants', requiredPermission: 'iam.tenants.read' },
   { pathPrefix: '/admin/iam/organizations', requiredPermission: 'iam.organizations.read' },
   { pathPrefix: '/admin/iam/roles', requiredPermission: 'iam.roles.read' },
