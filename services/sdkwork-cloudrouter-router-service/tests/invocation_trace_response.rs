@@ -78,7 +78,7 @@ async fn trace_masks_error_messages() {
         invocation.telemetry.error_type.as_deref()
     );
     assert_eq!(
-        Some("provider rejected key sk-***provider-secret"),
+        Some("provider rejected key sk-[REDACTED]-secret"),
         invocation.telemetry.error_message_masked.as_deref()
     );
 }

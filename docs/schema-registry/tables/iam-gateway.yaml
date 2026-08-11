@@ -10,6 +10,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /console/api-keys
   columns:
     name: string(128)
     policy_type: int32
@@ -56,6 +58,10 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/ratelimit
+  - /admin/upstream
+  - /console/api-keys
   columns:
     user_id:
       type: int64
@@ -147,6 +153,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /console/api-keys
   columns:
     user_id:
       type: int64
@@ -240,6 +248,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/ratelimit
   columns:
     rule_name: string(128)
     rule_category: int32
@@ -301,6 +311,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/ratelimit
   columns:
     policy_name: string(128)
     scope_type: int32

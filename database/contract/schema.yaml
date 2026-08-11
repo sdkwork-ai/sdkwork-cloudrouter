@@ -260,6 +260,7 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes: []
   - name: ai_chat_conversation
     domain: ai
     profile: user_entity
@@ -518,6 +519,8 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /playground
   - name: ai_chat_item
     domain: ai
     profile: user_entity
@@ -744,6 +747,7 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes: []
   - name: ai_chat_message
     domain: ai
     profile: user_entity
@@ -981,6 +985,7 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes: []
   - name: ai_chat_message_part
     domain: ai
     profile: user_entity
@@ -1149,6 +1154,7 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes: []
   - name: ai_chat_turn
     domain: ai
     profile: user_entity
@@ -1418,6 +1424,8 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /playground
   - name: ai_config_change_event
     domain: ai
     profile: runtime_coordination_event
@@ -1630,6 +1638,7 @@ tables:
           supported: true
           default: true
     semantic_contracts: null
+    frontend_routes: []
   - name: ai_config_version
     domain: ai
     profile: runtime_coordination
@@ -1778,6 +1787,7 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes: []
   - name: ai_metering_request_trace
     domain: ai
     profile: event_log
@@ -2218,6 +2228,13 @@ tables:
           supported: true
           default: true
     semantic_contracts: null
+    frontend_routes:
+      - /admin/analytics
+      - /admin/dashboard
+      - /admin/record
+      - /console/dashboard
+      - /console/gateway
+      - /console/usage
   - name: ai_metering_usage
     domain: ai
     profile: ledger_source_fact
@@ -2757,6 +2774,15 @@ tables:
           - tenant_id
           - organization_id
           - catalog_key
+    frontend_routes:
+      - /admin/analytics
+      - /admin/dashboard
+      - /admin/model
+      - /admin/record
+      - /console/api-keys
+      - /console/dashboard
+      - /console/usage
+      - /playground
   - name: ai_model_mapping_rule
     domain: ai
     profile: tenant_entity
@@ -2916,6 +2942,8 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /admin/model/mappings
   - name: ai_model_mapping_rule_binding
     domain: ai
     profile: relation_entity
@@ -3120,6 +3148,8 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /admin/model/mappings
   - name: ai_model_mapping_rule_item
     domain: ai
     profile: relation_entity
@@ -3296,6 +3326,8 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /admin/model/mappings
   - name: ai_pricing_import_snapshot
     domain: ai
     profile: event_log
@@ -3552,6 +3584,8 @@ tables:
           supported: true
           default: true
     semantic_contracts: null
+    frontend_routes:
+      - /admin/model
   - name: ai_pricing_plan
     domain: ai
     profile: pricing
@@ -3784,6 +3818,8 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /console/api-keys
   - name: ai_pricing_plan_binding
     domain: ai
     profile: relation_entity
@@ -3988,6 +4024,7 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes: []
   - name: ai_pricing_rule
     domain: ai
     profile: pricing
@@ -4394,6 +4431,7 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes: []
   - name: ai_pricing_tier
     domain: ai
     profile: pricing
@@ -4698,6 +4736,7 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes: []
   - name: ai_quota_policy
     domain: ai
     profile: quota_policy
@@ -4931,6 +4970,9 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /admin/ratelimit
+      - /console/api-keys
   - name: ai_routing_decision_log
     domain: ai
     profile: event_log
@@ -5166,6 +5208,10 @@ tables:
           supported: true
           default: true
     semantic_contracts: null
+    frontend_routes:
+      - /admin/record
+      - /console/gateway
+      - /console/usage
   - name: ai_routing_policy
     domain: ai
     profile: tenant_entity
@@ -5329,6 +5375,8 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /admin/upstream
   - name: ai_routing_profile
     domain: ai
     profile: tenant_entity
@@ -5493,6 +5541,7 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes: []
   - name: ai_routing_rule
     domain: ai
     profile: tenant_entity
@@ -5673,6 +5722,207 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /admin/upstream
+  - name: ai_runtime_artifact
+    domain: ai
+    profile: user_entity
+    compliance_level: L2
+    write_owner: router-service
+    system_of_record: true
+    tenant_scope: tenant_required
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      user_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      conversation_id:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL DEFAULT ''
+      chat_turn_id:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL DEFAULT ''
+      chat_item_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      agent_session_id:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL DEFAULT ''
+      agent_run_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      agent_run_step_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      runtime_invocation_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      artifact_type:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      name:
+        type: string(512)
+        required: false
+        postgres_type: VARCHAR(512)
+        constraints: ''
+      mime_type:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      content_text:
+        type: string(262144)
+        required: false
+        postgres_type: VARCHAR(262144)
+        constraints: ''
+      content_json:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+      drive_uri:
+        type: string(1024)
+        required: false
+        postgres_type: VARCHAR(1024)
+        constraints: ''
+      resource_snapshot:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+      sha256:
+        type: string(64)
+        required: false
+        postgres_type: VARCHAR(64)
+        constraints: ''
+      size_bytes:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+    constraints:
+      - name: pk_ai_runtime_artifact
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ai_runtime_artifact_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id > 0 AND organization_id >= 0
+      - name: uk_ai_runtime_artifact_scope_id
+        type: unique
+        columns: &id048
+          - tenant_id
+          - organization_id
+          - user_id
+          - id
+        where: null
+      - name: uk_ai_runtime_artifact_scope_uuid
+        type: unique
+        columns: &id049
+          - tenant_id
+          - organization_id
+          - user_id
+          - uuid
+        where: null
+      - name: ck_ai_runtime_artifact_subject_scope
+        type: check
+        columns: []
+        expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+      - name: ck_ai_runtime_artifact_type
+        type: check
+        columns: []
+        expression: length(trim(artifact_type)) > 0
+    indexes:
+      - name: uk_ai_runtime_artifact_scope_id
+        columns: *id048
+        unique: true
+        where: null
+      - name: uk_ai_runtime_artifact_scope_uuid
+        columns: *id049
+        unique: true
+        where: null
+      - name: idx_ai_runtime_artifact_invocation_created
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - runtime_invocation_id
+          - created_at
+          - id
+        unique: false
+        where: null
+      - name: idx_ai_runtime_artifact_user_created
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - created_at
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes:
+      - /playground
   - name: ai_runtime_invocation
     domain: ai
     profile: user_entity
@@ -5724,14 +5974,14 @@ tables:
         constraints: NOT NULL DEFAULT '{}'::jsonb
       conversation_id:
         type: string(128)
-        required: false
+        required: true
         postgres_type: VARCHAR(128)
-        constraints: ''
+        constraints: NOT NULL DEFAULT ''
       chat_turn_id:
         type: string(128)
-        required: false
+        required: true
         postgres_type: VARCHAR(128)
-        constraints: ''
+        constraints: NOT NULL DEFAULT ''
       chat_item_id:
         type: string(128)
         required: false
@@ -5739,9 +5989,9 @@ tables:
         constraints: ''
       agent_session_id:
         type: string(128)
-        required: false
+        required: true
         postgres_type: VARCHAR(128)
-        constraints: ''
+        constraints: NOT NULL DEFAULT ''
       agent_run_id:
         type: string(128)
         required: false
@@ -5930,7 +6180,7 @@ tables:
         expression: tenant_id > 0 AND organization_id >= 0
       - name: uk_ai_runtime_invocation_scope_id
         type: unique
-        columns: &id048
+        columns: &id050
           - tenant_id
           - organization_id
           - user_id
@@ -5938,11 +6188,22 @@ tables:
         where: null
       - name: uk_ai_runtime_invocation_scope_uuid
         type: unique
-        columns: &id049
+        columns: &id051
           - tenant_id
           - organization_id
           - user_id
           - uuid
+        where: null
+      - name: uk_ai_runtime_invocation_scope_sequence
+        type: unique
+        columns: &id052
+          - tenant_id
+          - organization_id
+          - user_id
+          - conversation_id
+          - chat_turn_id
+          - agent_session_id
+          - invocation_no
         where: null
       - name: ck_ai_runtime_invocation_subject_scope
         type: check
@@ -5966,11 +6227,15 @@ tables:
         expression: (latency_ms IS NULL OR latency_ms >= 0) AND (ttft_ms IS NULL OR ttft_ms >= 0)
     indexes:
       - name: uk_ai_runtime_invocation_scope_id
-        columns: *id048
+        columns: *id050
         unique: true
         where: null
       - name: uk_ai_runtime_invocation_scope_uuid
-        columns: *id049
+        columns: *id051
+        unique: true
+        where: null
+      - name: uk_ai_runtime_invocation_scope_sequence
+        columns: *id052
         unique: true
         where: null
       - name: idx_ai_runtime_invocation_user_created
@@ -6009,6 +6274,190 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /playground
+  - name: ai_runtime_invocation_event
+    domain: ai
+    profile: user_entity
+    compliance_level: L2
+    write_owner: router-service
+    system_of_record: true
+    tenant_scope: tenant_required
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      user_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      invocation_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      conversation_id:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL DEFAULT ''
+      chat_turn_id:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL DEFAULT ''
+      agent_session_id:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL DEFAULT ''
+      agent_run_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      agent_run_step_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      event_no:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      event_type:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      event_source:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      payload_json:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      text_delta:
+        type: string(16384)
+        required: false
+        postgres_type: VARCHAR(16384)
+        constraints: ''
+    constraints:
+      - name: pk_ai_runtime_invocation_event
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ai_runtime_invocation_event_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id > 0 AND organization_id >= 0
+      - name: uk_ai_runtime_invocation_event_scope_id
+        type: unique
+        columns: &id053
+          - tenant_id
+          - organization_id
+          - user_id
+          - id
+        where: null
+      - name: uk_ai_runtime_invocation_event_scope_uuid
+        type: unique
+        columns: &id054
+          - tenant_id
+          - organization_id
+          - user_id
+          - uuid
+        where: null
+      - name: uk_ai_runtime_invocation_event_sequence
+        type: unique
+        columns: &id055
+          - tenant_id
+          - organization_id
+          - user_id
+          - invocation_id
+          - event_no
+        where: null
+      - name: ck_ai_runtime_invocation_event_subject_scope
+        type: check
+        columns: []
+        expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+      - name: ck_ai_runtime_invocation_event_sequence
+        type: check
+        columns: []
+        expression: event_no > 0
+      - name: ck_ai_runtime_invocation_event_type
+        type: check
+        columns: []
+        expression: length(trim(event_type)) > 0 AND length(trim(event_source)) > 0
+    indexes:
+      - name: uk_ai_runtime_invocation_event_scope_id
+        columns: *id053
+        unique: true
+        where: null
+      - name: uk_ai_runtime_invocation_event_scope_uuid
+        columns: *id054
+        unique: true
+        where: null
+      - name: uk_ai_runtime_invocation_event_sequence
+        columns: *id055
+        unique: true
+        where: null
+      - name: idx_ai_runtime_invocation_event_invocation_created
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - invocation_id
+          - created_at
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes:
+      - /playground
   - name: ai_runtime_usage_link
     domain: ai
     profile: user_entity
@@ -6151,7 +6600,7 @@ tables:
         expression: tenant_id > 0 AND organization_id >= 0
       - name: uk_ai_runtime_usage_link_scope_id
         type: unique
-        columns: &id050
+        columns: &id056
           - tenant_id
           - organization_id
           - user_id
@@ -6159,7 +6608,7 @@ tables:
         where: null
       - name: uk_ai_runtime_usage_link_scope_uuid
         type: unique
-        columns: &id051
+        columns: &id057
           - tenant_id
           - organization_id
           - user_id
@@ -6184,11 +6633,11 @@ tables:
         expression: currency IS NULL OR length(trim(currency)) BETWEEN 3 AND 10
     indexes:
       - name: uk_ai_runtime_usage_link_scope_id
-        columns: *id050
+        columns: *id056
         unique: true
         where: null
       - name: uk_ai_runtime_usage_link_scope_uuid
-        columns: *id051
+        columns: *id057
         unique: true
         where: null
       - name: idx_ai_runtime_usage_link_message
@@ -6225,6 +6674,7 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes: []
   - name: ai_upstream_account
     domain: ai
     profile: tenant_entity
@@ -6442,12 +6892,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_account_uuid
         type: unique
-        columns: &id052
+        columns: &id058
           - uuid
         where: null
       - name: uk_ai_upstream_account_tenant_code
         type: unique
-        columns: &id053
+        columns: &id059
           - tenant_id
           - organization_id
           - account_code
@@ -6505,11 +6955,11 @@ tables:
         expression: timeout_ms IS NULL OR timeout_ms > 0
     indexes:
       - name: uk_ai_upstream_account_uuid
-        columns: *id052
+        columns: *id058
         unique: true
         where: null
       - name: uk_ai_upstream_account_tenant_code
-        columns: *id053
+        columns: *id059
         unique: true
         where: null
       - name: uk_ai_upstream_account_scope_id
@@ -6550,6 +7000,11 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /admin/upstream
+      - /console/api-keys
+      - /console/gateway
+      - /models
   - name: ai_upstream_account_credential
     domain: ai
     profile: secret_entity
@@ -6702,12 +7157,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_account_credential_uuid
         type: unique
-        columns: &id054
+        columns: &id060
           - uuid
         where: null
       - name: uk_ai_upstream_account_credential_version
         type: unique
-        columns: &id055
+        columns: &id061
           - tenant_id
           - organization_id
           - account_id
@@ -6733,11 +7188,11 @@ tables:
         expression: credential_version > 0 AND priority >= 0
     indexes:
       - name: uk_ai_upstream_account_credential_uuid
-        columns: *id054
+        columns: *id060
         unique: true
         where: null
       - name: uk_ai_upstream_account_credential_version
-        columns: *id055
+        columns: *id061
         unique: true
         where: null
       - name: idx_ai_upstream_account_credential_account
@@ -6756,6 +7211,8 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /admin/upstream
   - name: ai_upstream_account_group
     domain: ai
     profile: tenant_entity
@@ -6795,11 +7252,6 @@ tables:
         required: true
         postgres_type: INTEGER
         constraints: NOT NULL DEFAULT 1
-      is_default:
-        type: bool
-        required: true
-        postgres_type: BOOLEAN
-        constraints: NOT NULL DEFAULT FALSE
       created_at:
         type: instant
         required: true
@@ -6953,12 +7405,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_account_group_uuid
         type: unique
-        columns: &id056
+        columns: &id062
           - uuid
         where: null
       - name: uk_ai_upstream_account_group_tenant_code
         type: unique
-        columns: &id057
+        columns: &id063
           - tenant_id
           - organization_id
           - group_code
@@ -6982,19 +7434,13 @@ tables:
           >= 0)
     indexes:
       - name: uk_ai_upstream_account_group_uuid
-        columns: *id056
+        columns: *id062
         unique: true
         where: null
       - name: uk_ai_upstream_account_group_tenant_code
-        columns: *id057
+        columns: *id063
         unique: true
         where: null
-      - name: uk_ai_upstream_account_group_default_per_tenant
-        columns:
-          - tenant_id
-          - organization_id
-        unique: true
-        where: is_default AND deleted_at IS NULL
       - name: idx_ai_upstream_account_group_tags
         columns:
           - tags
@@ -7040,6 +7486,12 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /admin/ratelimit
+      - /admin/upstream
+      - /console/api-keys
+      - /console/gateway
+      - /models
   - name: ai_upstream_account_group_member
     domain: ai
     profile: relation_entity
@@ -7162,12 +7614,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_account_group_member_uuid
         type: unique
-        columns: &id058
+        columns: &id064
           - uuid
         where: null
       - name: uk_ai_upstream_account_group_member
         type: unique
-        columns: &id059
+        columns: &id065
           - tenant_id
           - organization_id
           - account_group_id
@@ -7208,11 +7660,11 @@ tables:
         expression: effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from
     indexes:
       - name: uk_ai_upstream_account_group_member_uuid
-        columns: *id058
+        columns: *id064
         unique: true
         where: null
       - name: uk_ai_upstream_account_group_member
-        columns: *id059
+        columns: *id065
         unique: true
         where: null
       - name: idx_ai_upstream_account_group_member_status
@@ -7250,6 +7702,10 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /admin/upstream
+      - /console/api-keys
+      - /models
   - name: ai_upstream_account_group_metric_snapshot
     domain: ai
     profile: projection
@@ -7392,12 +7848,12 @@ tables:
         expression: tenant_id > 0 AND organization_id >= 0
       - name: uk_ai_upstream_account_group_metric_snapshot_uuid
         type: unique
-        columns: &id060
+        columns: &id066
           - uuid
         where: null
       - name: uk_ai_upstream_account_group_metric_snapshot
         type: unique
-        columns: &id061
+        columns: &id067
           - tenant_id
           - organization_id
           - account_group_id
@@ -7417,11 +7873,11 @@ tables:
           0)
     indexes:
       - name: uk_ai_upstream_account_group_metric_snapshot_uuid
-        columns: *id060
+        columns: *id066
         unique: true
         where: null
       - name: uk_ai_upstream_account_group_metric_snapshot
-        columns: *id061
+        columns: *id067
         unique: true
         where: null
       - name: idx_ai_upstream_account_group_metric_tenant_status
@@ -7461,6 +7917,8 @@ tables:
           - organization_id
           - account_group_id
           - snapshot_at
+    frontend_routes:
+      - /console/api-keys
   - name: ai_upstream_account_group_resource
     domain: ai
     profile: relation_entity
@@ -7588,12 +8046,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_account_group_resource_uuid
         type: unique
-        columns: &id062
+        columns: &id068
           - uuid
         where: null
       - name: uk_ai_upstream_account_group_resource
         type: unique
-        columns: &id063
+        columns: &id069
           - tenant_id
           - organization_id
           - account_group_id
@@ -7619,11 +8077,11 @@ tables:
           IN ('allow', 'deny') AND priority >= 0 AND (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from)
     indexes:
       - name: uk_ai_upstream_account_group_resource_uuid
-        columns: *id062
+        columns: *id068
         unique: true
         where: null
       - name: uk_ai_upstream_account_group_resource
-        columns: *id063
+        columns: *id069
         unique: true
         where: null
       - name: idx_ai_upstream_account_group_resource_status
@@ -7653,6 +8111,10 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /admin/upstream
+      - /console/api-keys
+      - /models
   - name: ai_upstream_account_health_state
     domain: ai
     profile: operational_state
@@ -7740,7 +8202,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_account_health_state_scope
         type: unique
-        columns: &id064
+        columns: &id070
           - tenant_id
           - organization_id
           - account_id
@@ -7768,7 +8230,7 @@ tables:
           >= 0
     indexes:
       - name: uk_ai_upstream_account_health_state_scope
-        columns: *id064
+        columns: *id070
         unique: true
         where: null
       - name: idx_ai_upstream_account_health_state_health
@@ -7790,6 +8252,7 @@ tables:
         strategy: foreign_key_cascade
         parent_table: ai_upstream_account
     semantic_contracts: null
+    frontend_routes: []
   - name: ai_upstream_account_resource
     domain: ai
     profile: relation_entity
@@ -7917,12 +8380,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_account_resource_uuid
         type: unique
-        columns: &id065
+        columns: &id071
           - uuid
         where: null
       - name: uk_ai_upstream_account_resource
         type: unique
-        columns: &id066
+        columns: &id072
           - tenant_id
           - organization_id
           - account_id
@@ -7948,11 +8411,11 @@ tables:
           IN ('allow', 'deny') AND priority >= 0 AND (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from)
     indexes:
       - name: uk_ai_upstream_account_resource_uuid
-        columns: *id065
+        columns: *id071
         unique: true
         where: null
       - name: uk_ai_upstream_account_resource
-        columns: *id066
+        columns: *id072
         unique: true
         where: null
       - name: idx_ai_upstream_account_resource_status
@@ -7982,6 +8445,8 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /admin/upstream
   - name: ai_upstream_object_route
     domain: ai
     profile: runtime_binding
@@ -8149,12 +8614,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_object_route_uuid
         type: unique
-        columns: &id067
+        columns: &id073
           - uuid
         where: null
       - name: uk_ai_upstream_object_route_object
         type: unique
-        columns: &id068
+        columns: &id074
           - tenant_id
           - organization_id
           - object_type
@@ -8162,11 +8627,11 @@ tables:
         where: null
     indexes:
       - name: uk_ai_upstream_object_route_uuid
-        columns: *id067
+        columns: *id073
         unique: true
         where: deleted_at IS NULL
       - name: uk_ai_upstream_object_route_object
-        columns: *id068
+        columns: *id074
         unique: true
         where: deleted_at IS NULL
       - name: idx_ai_upstream_object_route_fast
@@ -8212,6 +8677,8 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /admin/upstream
   - name: ai_upstream_supplier
     domain: ai
     profile: tenant_entity
@@ -8389,12 +8856,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_supplier_uuid
         type: unique
-        columns: &id069
+        columns: &id075
           - uuid
         where: null
       - name: uk_ai_upstream_supplier_tenant_code
         type: unique
-        columns: &id070
+        columns: &id076
           - tenant_id
           - organization_id
           - supplier_code
@@ -8405,11 +8872,11 @@ tables:
         expression: supplier_type IN ('official', 'relay')
     indexes:
       - name: uk_ai_upstream_supplier_uuid
-        columns: *id069
+        columns: *id075
         unique: true
         where: null
       - name: uk_ai_upstream_supplier_tenant_code
-        columns: *id070
+        columns: *id076
         unique: true
         where: null
       - name: uk_ai_upstream_supplier_scope_id
@@ -8451,6 +8918,11 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /admin/dashboard
+      - /admin/upstream
+      - /console/api-keys
+      - /models
   - name: ai_upstream_supplier_auth_method
     domain: ai
     profile: tenant_entity
@@ -8573,12 +9045,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_supplier_auth_method_uuid
         type: unique
-        columns: &id071
+        columns: &id077
           - uuid
         where: null
       - name: uk_ai_upstream_supplier_auth_method_supplier_code
         type: unique
-        columns: &id072
+        columns: &id078
           - tenant_id
           - organization_id
           - supplier_id
@@ -8608,11 +9080,11 @@ tables:
         expression: jsonb_typeof(runtime_auth_config) = 'object'
     indexes:
       - name: uk_ai_upstream_supplier_auth_method_uuid
-        columns: *id071
+        columns: *id077
         unique: true
         where: null
       - name: uk_ai_upstream_supplier_auth_method_supplier_code
-        columns: *id072
+        columns: *id078
         unique: true
         where: null
       - name: idx_ai_upstream_supplier_auth_method_supplier_status
@@ -8639,6 +9111,8 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /admin/upstream
   - name: ai_upstream_supplier_endpoint
     domain: ai
     profile: tenant_entity
@@ -8776,12 +9250,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_supplier_endpoint_uuid
         type: unique
-        columns: &id073
+        columns: &id079
           - uuid
         where: null
       - name: uk_ai_upstream_supplier_endpoint_tenant_code
         type: unique
-        columns: &id074
+        columns: &id080
           - tenant_id
           - organization_id
           - supplier_id
@@ -8807,11 +9281,11 @@ tables:
         expression: priority >= 0 AND routing_weight >= 0 AND (timeout_ms IS NULL OR timeout_ms > 0)
     indexes:
       - name: uk_ai_upstream_supplier_endpoint_uuid
-        columns: *id073
+        columns: *id079
         unique: true
         where: null
       - name: uk_ai_upstream_supplier_endpoint_tenant_code
-        columns: *id074
+        columns: *id080
         unique: true
         where: null
       - name: uk_ai_upstream_supplier_endpoint_scope_id
@@ -8838,6 +9312,8 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /admin/upstream
   - name: ai_upstream_supplier_endpoint_health_state
     domain: ai
     profile: operational_state
@@ -8925,7 +9401,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_supplier_endpoint_health_state_scope
         type: unique
-        columns: &id075
+        columns: &id081
           - tenant_id
           - organization_id
           - endpoint_id
@@ -8955,7 +9431,7 @@ tables:
           >= 0
     indexes:
       - name: uk_ai_upstream_supplier_endpoint_health_state_scope
-        columns: *id075
+        columns: *id081
         unique: true
         where: null
       - name: idx_ai_upstream_supplier_endpoint_health_state_health
@@ -8977,6 +9453,7 @@ tables:
         strategy: foreign_key_cascade
         parent_table: ai_upstream_supplier_endpoint
     semantic_contracts: null
+    frontend_routes: []
   - name: ai_upstream_supplier_resource
     domain: ai
     profile: relation_entity
@@ -9109,12 +9586,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_supplier_resource_uuid
         type: unique
-        columns: &id076
+        columns: &id082
           - uuid
         where: null
       - name: uk_ai_upstream_supplier_resource
         type: unique
-        columns: &id077
+        columns: &id083
           - tenant_id
           - organization_id
           - supplier_id
@@ -9142,11 +9619,11 @@ tables:
           IN ('allow', 'deny') AND priority >= 0 AND (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from)
     indexes:
       - name: uk_ai_upstream_supplier_resource_uuid
-        columns: *id076
+        columns: *id082
         unique: true
         where: null
       - name: uk_ai_upstream_supplier_resource
-        columns: *id077
+        columns: *id083
         unique: true
         where: null
       - name: idx_ai_upstream_supplier_resource_lookup
@@ -9165,6 +9642,8 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /admin/upstream
   - name: iam_user_preference
     domain: iam_user
     profile: user_entity
@@ -9277,7 +9756,7 @@ tables:
         expression: tenant_id > 0 AND organization_id >= 0
       - name: uk_iam_user_preference_scope
         type: unique
-        columns: &id078
+        columns: &id084
           - tenant_id
           - organization_id
           - user_id
@@ -9292,7 +9771,7 @@ tables:
         expression: length(language) <= 32 AND length(timezone) <= 64 AND version >= 0
     indexes:
       - name: uk_iam_user_preference_scope
-        columns: *id078
+        columns: *id084
         unique: true
         where: null
       - name: idx_iam_user_preference_user_updated
@@ -9309,6 +9788,8 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /console/settings
   - name: integration_webhook_endpoint
     domain: integration
     profile: user_entity
@@ -9441,7 +9922,7 @@ tables:
         expression: tenant_id > 0 AND organization_id >= 0
       - name: uk_integration_webhook_endpoint_scope_code
         type: unique
-        columns: &id079
+        columns: &id085
           - tenant_id
           - organization_id
           - endpoint_code
@@ -9457,7 +9938,7 @@ tables:
           version >= 0
     indexes:
       - name: uk_integration_webhook_endpoint_scope_code
-        columns: *id079
+        columns: *id085
         unique: true
         where: null
       - name: idx_integration_webhook_endpoint_scope_code
@@ -9473,3 +9954,5 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /console/settings

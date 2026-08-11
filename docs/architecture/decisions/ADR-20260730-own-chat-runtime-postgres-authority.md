@@ -22,7 +22,7 @@ sibling authority that disagree.
 
 ## Decision
 
-Cloud Router owns the current PostgreSQL system of record for these eight
+Cloud Router owns the current PostgreSQL system of record for these ten
 user-scoped tables:
 
 - `ai_chat_conversation`
@@ -32,26 +32,33 @@ user-scoped tables:
 - `ai_chat_message_part`
 - `ai_chat_context_snapshot`
 - `ai_runtime_invocation`
+- `ai_runtime_invocation_event`
+- `ai_runtime_artifact`
 - `ai_runtime_usage_link`
 
 The schema registry fragment
 `docs/schema-registry/tables/ai-chat-runtime.yaml` is the authored authority.
 The database materializer derives the root contract and PostgreSQL baseline;
 `database/migrations/postgres/0004_add_chat_runtime_schema.up.sql` owns the
-incremental installation path.
+incremental installation path, and
+`database/migrations/postgres/0021_add_runtime_event_artifact_tables.up.sql`
+adds the invocation event and artifact tables that the app runtime store
+already writes.
 
 Every table is scoped by trusted numeric `tenant_id`, `organization_id`, and
 `user_id`. Chat sequence allocation is serialized by a locked conversation row
 and unique scoped indexes. Context snapshot ordinals use an atomic update with
-overflow protection. `ai_runtime_usage_link` is traceability data; `ai_usage`
+overflow protection. Invocation event ordinals are allocated inside a
+transaction that locks the parent invocation row and are guarded by a scoped
+unique `(tenant_id, organization_id, user_id, invocation_id, event_no)`
+index. `ai_runtime_usage_link` is traceability data; `ai_usage`
 remains the billing source of truth.
 
 There is no server-side SQLite implementation or PostgreSQL schema mirror.
 SQLite remains eligible only for a separately declared client-local contract.
 
-`ai_runtime_invocation_event`, `ai_runtime_artifact`, agent, and memory tables
-are not part of this decision and must not be described as implemented by the
-current Chat store.
+Agent and memory tables are not part of this decision and must not be
+described as implemented by the current Chat store.
 
 ## Alternatives
 

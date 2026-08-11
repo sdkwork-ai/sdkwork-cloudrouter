@@ -12,7 +12,7 @@
 
 use axum::Router;
 use sdkwork_cloudrouter_http::{
-    merge_federated_app_capability_router_with_optional_auth, AppSubjectBoundaryConfig,
+    merge_federated_app_capability_router, AppSubjectBoundaryConfig,
 };
 use sdkwork_database_sqlx::DatabasePool;
 
@@ -47,7 +47,7 @@ pub async fn merge_federated_community_app_router(
         return Ok(router);
     }
     let community_router = wire_community_app_router(database_pool.clone()).await?;
-    Ok(merge_federated_app_capability_router_with_optional_auth(
+    Ok(merge_federated_app_capability_router(
         router,
         community_router,
         subject_boundary_config,
@@ -61,7 +61,7 @@ mod tests {
         let source = include_str!("community_runtime.rs");
 
         assert!(source.contains("sdkwork_api_community_assembly::assemble_app_api_contribution("));
-        assert!(source.contains("merge_federated_app_capability_router_with_optional_auth("));
+        assert!(source.contains("merge_federated_app_capability_router("));
         assert!(source.contains("database_pool.as_postgres()"));
         let forbidden_direct_route_crate = ["sdkwork_routes_community", "_app_api::"].concat();
         assert!(!source.contains(&forbidden_direct_route_crate));

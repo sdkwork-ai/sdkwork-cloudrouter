@@ -24,7 +24,6 @@ import { EmbeddingsApi, createEmbeddingsApi } from './api/embeddings';
 import { FilesApi, createFilesApi } from './api/files';
 import { ImagesApi, createImagesApi } from './api/images';
 import { ModelsApi, createModelsApi } from './api/models';
-import { UserApi, createUserApi } from './api/user';
 import { ModerationsApi, createModerationsApi } from './api/moderations';
 import { RealtimeApi, createRealtimeApi } from './api/realtime';
 import { ResponsesApi, createResponsesApi } from './api/responses';
@@ -35,7 +34,6 @@ import { VideoApi, createVideoApi } from './api/video';
 import { VideosViduApi, createVideosViduApi } from './api/videos-vidu';
 import { ImagesViduApi, createImagesViduApi } from './api/images-vidu';
 import { VideosVolcengineApi, createVideosVolcengineApi } from './api/videos-volcengine';
-import { VendorApi, createVendorApi } from './api/vendor';
 
 export class SdkworkAiClient {
   private httpClient: HttpClient;
@@ -62,7 +60,6 @@ export class SdkworkAiClient {
   public readonly files: FilesApi;
   public readonly images: ImagesApi;
   public readonly models: ModelsApi;
-  public readonly user: UserApi;
   public readonly moderations: ModerationsApi;
   public readonly realtime: RealtimeApi;
   public readonly responses: ResponsesApi;
@@ -73,7 +70,6 @@ export class SdkworkAiClient {
   public readonly videosVidu: VideosViduApi;
   public readonly imagesVidu: ImagesViduApi;
   public readonly videosVolcengine: VideosVolcengineApi;
-  public readonly vendor: VendorApi;
 
   constructor(config: SdkworkAiConfig) {
     this.httpClient = createHttpClient(config);
@@ -121,8 +117,6 @@ export class SdkworkAiClient {
 
     this.models = createModelsApi(this.httpClient);
 
-    this.user = createUserApi(this.httpClient);
-
     this.moderations = createModerationsApi(this.httpClient);
 
     this.realtime = createRealtimeApi(this.httpClient);
@@ -142,8 +136,6 @@ export class SdkworkAiClient {
     this.imagesVidu = createImagesViduApi(this.httpClient);
 
     this.videosVolcengine = createVideosVolcengineApi(this.httpClient);
-
-    this.vendor = createVendorApi(this.httpClient);
   }
 
   setApiKey(apiKey: string): this {

@@ -55,13 +55,16 @@ services:
       SDKWORK_CLOUDROUTER_DEPLOYMENT_PROFILE: standalone
       SDKWORK_CLOUDROUTER_RUNTIME_TARGET: container
       # IAM deployment posture: the standalone container runs in explicit
-      # development mode so the IAM resolver accepts the gateway-issued
-      # bootstrap Access-Token (credential-entry login flow) through the
-      # development authentication fallback. Production deployments must
-      # instead set SDKWORK_ENV to a production value, provide
-      # SDKWORK_IAM_SIGNING_MASTER_SECRET, and inject a signed token via
-      # SDKWORK_ACCESS_TOKEN.
+      # development mode so the IAM resolver accepts the payload-only
+      # credential-entry bootstrap token through the development
+      # authentication fallback when the explicit development switch is set
+      # (SDKWORK_CLOUDROUTER_PORTAL_DEV_BOOTSTRAP_TOKEN=true). Production
+      # deployments must instead set SDKWORK_ENV to a production value and
+      # configure SDKWORK_IAM_SIGNING_MASTER_SECRET; the gateway never
+      # injects a signed or session-bound token into the portal script.
       SDKWORK_ENV: development
+      # Optional development-only credential-entry bootstrap token injection.
+      SDKWORK_CLOUDROUTER_PORTAL_DEV_BOOTSTRAP_TOKEN: ${SDKWORK_CLOUDROUTER_PORTAL_DEV_BOOTSTRAP_TOKEN:-false}
       # IAM super-admin bootstrap password: when set, the IAM bootstrap
       # provisions/updates the password credential for the default admin user
       # (SDKWORK_IAM_SUPER_ADMIN_PASSWORD). Leave empty for default

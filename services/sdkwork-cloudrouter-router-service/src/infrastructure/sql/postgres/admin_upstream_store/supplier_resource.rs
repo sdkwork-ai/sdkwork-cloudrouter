@@ -5,7 +5,7 @@ use super::shared::{
     DEFAULT_DATA_SCOPE, MAX_NESTED_ITEMS,
 };
 use super::supplier;
-use crate::domain::DomainResult;
+use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::ports::{AdminUpstreamResourceInput, AdminUpstreamResourceItem, AdminUpstreamSubject};
 
@@ -21,7 +21,7 @@ pub(super) async fn list(
         WHERE tenant_id = $1 AND organization_id = $2
           AND supplier_id = $3 AND deleted_at IS NULL
         ORDER BY priority ASC, resource_group_code ASC, resource_code ASC, id ASC
-        LIMIT {MAX_NESTED_ITEMS}
+        LIMIT {{MAX_NESTED_ITEMS + 1}}
         "#
     );
     let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
@@ -31,6 +31,11 @@ pub(super) async fn list(
         .fetch_all(pool)
         .await
         .map_err(|error| store_error("failed to list upstream supplier resources", error))?;
+    if rows.len() > MAX_NESTED_ITEMS {
+        return Err(DomainError::new(format!(
+            "upstream supplier resources exceed the bounded maximum of {MAX_NESTED_ITEMS} items"
+        )));
+    }
     rows.into_iter().map(map_resource_row).collect()
 }
 

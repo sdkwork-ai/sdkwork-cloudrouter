@@ -114,12 +114,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
-        "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}/secret",
-        "ai",
-        "upstreamAccounts.credentials.secret.retrieve",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
         "/backend/v3/api/ai/upstream_accounts/{accountId}/resources",
         "ai",
         "upstreamAccounts.resources.list",
@@ -279,6 +273,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/backend/v3/api/payments/providers",
         "payments",
         "providers.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Patch,
+        "/backend/v3/api/payments/providers/{providerId}",
+        "payments",
+        "payments.providers.update",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,

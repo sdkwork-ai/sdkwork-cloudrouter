@@ -39,7 +39,7 @@ pub(super) async fn list(
         WHERE endpoint.tenant_id = $1 AND endpoint.organization_id = $2
           AND endpoint.supplier_id = $3 AND endpoint.deleted_at IS NULL
         ORDER BY endpoint.priority ASC, endpoint.routing_weight DESC, endpoint.id ASC
-        LIMIT {MAX_NESTED_ITEMS}
+        LIMIT {{MAX_NESTED_ITEMS + 1}}
         "#
     );
     let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
@@ -49,6 +49,11 @@ pub(super) async fn list(
         .fetch_all(pool)
         .await
         .map_err(|error| store_error("failed to list upstream supplier endpoints", error))?;
+    if rows.len() > MAX_NESTED_ITEMS {
+        return Err(DomainError::new(format!(
+            "upstream supplier endpoints exceed the bounded maximum of {MAX_NESTED_ITEMS} items"
+        )));
+    }
     rows.into_iter().map(map_row).collect()
 }
 

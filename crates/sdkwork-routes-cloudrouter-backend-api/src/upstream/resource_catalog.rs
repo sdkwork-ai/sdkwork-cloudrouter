@@ -11,7 +11,7 @@ use sdkwork_models_contract_service::{
 use sdkwork_utils_rust::SdkWorkResultCode;
 use serde::Serialize;
 
-use super::shared::{domain_error, problem, problem_keyed, success_response, UpstreamState};
+use super::shared::{domain_error, problem_keyed, success_response, UpstreamState};
 
 const CATALOG_LIMIT: i64 = 200;
 

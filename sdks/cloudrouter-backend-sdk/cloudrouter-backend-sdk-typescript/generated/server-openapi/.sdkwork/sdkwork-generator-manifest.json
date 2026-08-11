@@ -52,7 +52,7 @@
     },
     {
       "path": "src/api/ai.ts",
-      "sha256": "04122744e102794302d32e8298180b9a13dea4d1a9a8f9ccf02d99eeeffe24c2"
+      "sha256": "d3005eb079d22cfe3f013690e812f72e982e1df45c95e2fb56a099ad225a2885"
     },
     {
       "path": "src/api/base.ts",
@@ -80,7 +80,7 @@
     },
     {
       "path": "src/api/storage.ts",
-      "sha256": "45e69859814aed9831f216be3b76d923ac6c770157be6e675e92f39d8725746e"
+      "sha256": "3443ff3147358f233189ba9c58f15a3743393e6e00486e6c606f95f08c1dff19"
     },
     {
       "path": "src/api/system.ts",
@@ -452,7 +452,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "bd66054d150670ad64e88bcf6ccfa0edd2c151179f45770a886cd69adc5e04bf"
+      "sha256": "f38ee911898356eef7eb7eba908d7b2bb90c93ac300890eec96122605b11fb6e"
     },
     {
       "path": "src/types/installation-status-response.ts",
@@ -629,10 +629,6 @@
     {
       "path": "src/types/upstream-account-credential-list-response.ts",
       "sha256": "e518b547184381edadd96b008d65dee87360c2b5f7d58f4fae7e938f77960865"
-    },
-    {
-      "path": "src/types/upstream-account-credential-secret-response.ts",
-      "sha256": "07feadd2ad1a9b2cb89ec98fb73d0bd0e538b6fd9d9ebf2d5178ebb0425330cd"
     },
     {
       "path": "src/types/upstream-account-credential.ts",

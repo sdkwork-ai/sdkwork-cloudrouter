@@ -592,12 +592,15 @@ export function toIsoString(datetimeLocal: string): string {
   return date.toISOString();
 }
 
-/** 生成幂等键：优先 crypto.randomUUID（安全上下文），非安全上下文回退随机串。 */
+/** 生成幂等键：优先 crypto.randomUUID（安全上下文），非安全上下文回退加密随机串。 */
 export function createIdempotencyKey(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
-  return `mk-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  return `mk-${Date.now().toString(36)}-${hex}`;
 }
 
 export function maskPromotionCode(value: string): string {

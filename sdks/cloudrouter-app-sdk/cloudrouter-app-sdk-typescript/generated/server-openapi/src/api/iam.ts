@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
-import type { AppApiKeyItem, AppApiKeyListResponse, AppInviteClaimRequest, AppInviteClaimResponse, AppInviteCodeResponse, AppInvitePolicyResponse, AppInviteValidateRequest, AppInviteValidateResponse, CreateApiKeyRequest, CreateApiKeyResponse, SettingsDataResponse, UpdateApiKeyRequest, UpdateSettingsRequest, UpdateSettingsResponse } from '../types';
+import type { AppApiKeyItem, AppApiKeyListResponse, AppInviteClaimRequest, AppInviteClaimResponse, AppInvitePolicyResponse, AppInviteValidateRequest, AppInviteValidateResponse, CreateApiKeyRequest, CreateApiKeyResponse, SettingsDataResponse, UpdateApiKeyRequest, UpdateSettingsRequest, UpdateSettingsResponse } from '../types';
 
 
 export class IamUsersSettingsApi {
@@ -98,11 +98,6 @@ export class IamInviteApi {
     this.validate = new IamInvitesValidateApi(client);
   }
 
-
-/** Issue invite code */
-  async create(requestOptions?: ApiRequestOptions): Promise<AppInviteCodeResponse> {
-    return this.client.request<AppInviteCodeResponse>(appApiPath(`/iam/invites/issue`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, sdkworkUnwrapKind: 'data' });
-  }
 }
 
 export interface IamApiKeysListParams {

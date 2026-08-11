@@ -187,7 +187,23 @@
       "system_of_record": true
     },
     {
+      "table_name": "ai_runtime_artifact",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "user_entity",
+      "system_of_record": true
+    },
+    {
       "table_name": "ai_runtime_invocation",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "user_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_runtime_invocation_event",
       "owner": "router-service",
       "compliance_level": "L2",
       "lifecycle_status": "active",

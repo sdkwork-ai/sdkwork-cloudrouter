@@ -199,9 +199,6 @@ mod tests {
                 OpenApiCapability::Knowledgebase,
             ),
             (Method::POST, "/v1/chat/completions", OpenApiCapability::Llm),
-            // Gateway-native balance endpoint: registered in the open-api
-            // authority so both standalone and cloud hosts dispatch it.
-            (Method::GET, "/v1/user/balance", OpenApiCapability::Llm),
             (Method::POST, "/v1/conversations", OpenApiCapability::Memory),
             (
                 Method::POST,
@@ -233,6 +230,12 @@ mod tests {
         assert_eq!(
             None,
             open_api_capability_for_request(&Method::GET, "/not-an-api")
+        );
+        // Gateway-native balance endpoint was retired from the open-api
+        // authority; the capability resolver no longer claims it.
+        assert_eq!(
+            None,
+            open_api_capability_for_request(&Method::GET, "/v1/user/balance")
         );
     }
 }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Activity, BarChart3, CheckCircle2, CreditCard, Eye, Pencil, Plus, QrCode, Receipt, RotateCcw, ShieldCheck, Trash2, Undo2 } from 'lucide-react';
+import { Activity, BarChart3, CheckCircle2, CreditCard, Eye, Pencil, Plus, Power, PowerOff, QrCode, Receipt, RotateCcw, ShieldCheck, Trash2, Undo2 } from 'lucide-react';
 import {
   AdminResourceCenter,
   AdminResourceHelpButton,
@@ -31,6 +31,7 @@ import {
   backendPaymentDevSandboxTrigger,
   backendPaymentMethodsCreate,
   backendPaymentMethodsUpdate,
+  backendPaymentProvidersUpdate,
   backendPaymentReconciliationRunsCreate,
   backendPaymentRefundsCreate,
   backendPaymentRefundsRetry,
@@ -52,18 +53,23 @@ import {
   buildChannelCreateCommand,
   buildMethodCreateCommand,
   buildMethodUpdateCommand,
+  buildProviderUpdateCommand,
   buildReconciliationRunCreateCommand,
   buildRouteRuleCreateCommand,
   buildRouteRuleUpdateCommand,
   methodFormValuesFromRecord,
+  providerFormValuesFromRecord,
   routeRuleFormValuesFromRecord,
   ChannelFormDialog,
   MethodFormDialog,
   PaymentConfirmDialog,
+  ProviderFormDialog,
+  ProviderStatusDialog,
   ReconciliationRunFormDialog,
   RouteRuleFormDialog,
   type PaymentChannelFormValues,
   type PaymentMethodFormValues,
+  type PaymentProviderFormValues,
   type ReconciliationRunFormValues,
   type RouteRuleFormValues,
 } from './forms/PaymentMaintenanceDialogs';
@@ -173,6 +179,8 @@ function PaymentProviderAccountsAdmin() {
 }
 
 type PaymentDialogState =
+  | { kind: 'provider-edit'; record: AdminResourceRecord }
+  | { kind: 'provider-status'; record: AdminResourceRecord }
   | { kind: 'method-create' }
   | { kind: 'method-edit'; record: AdminResourceRecord }
   | { kind: 'method-test-payment'; record: AdminResourceRecord }
@@ -184,25 +192,40 @@ type PaymentDialogState =
   | { kind: 'webhook-replay'; record: AdminResourceRecord }
   | { kind: 'sandbox-trigger-intent'; record: AdminResourceRecord }
   | { kind: 'sandbox-trigger-attempt'; record: AdminResourceRecord }
-  | { kind: 'refund-create'; intentId?: string; intentNo?: string }
+  | { kind: 'refund-create'; record?: AdminResourceRecord }
   | { kind: 'refund-retry'; record: AdminResourceRecord }
   | null;
 
 const PENDING_PAYMENT_STATUSES = new Set(['created', 'pending', 'processing']);
 
 /**
- * Payment method keys that can drive the one-cent test payment, in two
+ * Payment method keys that can drive the one-cent test payment, in three
  * classes: scan-to-pay QR methods (`wechat_native` → WeChat Native
- * `code_url`, `alipay_qr` → Alipay precreate `qr_code`) and web cashier
+ * `code_url`, `alipay_qr` → Alipay precreate `qr_code`), web cashier
  * methods (`alipay_wap`/`alipay_pc` → Alipay H5/PC cashier redirect or
- * form). Other products return SDK invocation payloads, require payer
- * identifiers (openid/buyer_id), or have no checkout at all (sandbox), so
- * they must not show the one-cent test action.
+ * form), and Stripe card methods (`stripe_*` → client-secret card
+ * collection in the dialog). Other products return SDK invocation
+ * payloads, require payer identifiers (openid/buyer_id), or have no
+ * checkout at all (sandbox), so they must not show the one-cent test
+ * action. The local sandbox (`sandbox_test`) is testable through the
+ * simulated success callback and needs no provider credentials.
  */
-const QR_TEST_METHOD_KEYS = new Set(['wechat_native', 'alipay_qr', 'alipay_wap', 'alipay_pc']);
+const QR_TEST_METHOD_KEYS = new Set([
+  'wechat_native',
+  'alipay_qr',
+  'alipay_wap',
+  'alipay_pc',
+  'stripe_card',
+  'stripe_apple_pay',
+  'stripe_google_pay',
+  'stripe_alipay',
+  'stripe_wechat_pay',
+  'sandbox_test',
+]);
 
 function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentResourceTab }) {
   const { t, i18n } = useTranslation();
+  const capabilities = usePaymentMaintenanceCapabilities();
   const [dialog, setDialog] = useState<PaymentDialogState>(null);
   const [detailIntentId, setDetailIntentId] = useState<string | null>(null);
   const [detailRefundId, setDetailRefundId] = useState<string | null>(null);
@@ -228,11 +251,29 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       title: t('admin.commerce.payments.providers.title', 'Payment Providers'),
       description: t(
         'admin.commerce.payments.providers.desc',
-        'Cloud Router provider inventory and product-specific availability metadata.',
+        'Cloud Router provider inventory with operator-managed availability: display names, sort order, and enable/disable state.',
       ),
       icon: <CreditCard className="h-4 w-4" />,
       group: t('admin.commerce.payments.group.providerSetup', 'Provider Setup'),
       load: backendPaymentsProvidersList,
+      rowActions: [{
+        label: t('admin.commerce.payments.providers.edit', 'Edit'),
+        icon: <Pencil className="h-3.5 w-3.5" />,
+        isVisible: () => capabilities.canUpdatePaymentProvider,
+        onClick: (record) => setDialog({ kind: 'provider-edit', record }),
+      }, {
+        label: t('admin.commerce.payments.providers.disable.action', 'Disable'),
+        icon: <PowerOff className="h-3.5 w-3.5" />,
+        isVisible: (record) => capabilities.canUpdatePaymentProvider
+          && String(record.status ?? '') === 'active',
+        onClick: (record) => setDialog({ kind: 'provider-status', record }),
+      }, {
+        label: t('admin.commerce.payments.providers.enable.action', 'Enable'),
+        icon: <Power className="h-3.5 w-3.5" />,
+        isVisible: (record) => capabilities.canUpdatePaymentProvider
+          && String(record.status ?? '') !== 'active',
+        onClick: (record) => setDialog({ kind: 'provider-status', record }),
+      }],
       columns: [
         { key: 'providerCode', label: t('admin.col.provider', 'Provider') },
         { key: 'displayName', label: t('admin.col.name', 'Name'), format: formatLocalizedMethodName },
@@ -254,14 +295,15 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       icon: <CreditCard className="h-4 w-4" />,
       group: t('admin.commerce.payments.group.providerSetup', 'Provider Setup'),
       load: backendPaymentsMethodsList,
-      action: {
+      action: capabilities.canCreatePaymentMethod ? {
         label: t('admin.commerce.payments.methods.create.title', 'Create payment method'),
         icon: <Plus className="h-4 w-4" />,
         onClick: () => setDialog({ kind: 'method-create' }),
-      },
+      } : undefined,
       rowActions: [{
         label: t('admin.commerce.payments.methods.edit', 'Edit'),
         icon: <Pencil className="h-3.5 w-3.5" />,
+        isVisible: () => capabilities.canUpdatePaymentMethod,
         onClick: (record) => setDialog({ kind: 'method-edit', record }),
       }, {
         label: t('admin.commerce.payments.methods.testPayment.action', 'One-cent test'),
@@ -292,11 +334,11 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       icon: <CreditCard className="h-4 w-4" />,
       group: t('admin.commerce.payments.group.providerSetup', 'Provider Setup'),
       load: backendPaymentsChannelsList,
-      action: {
+      action: capabilities.canCreatePaymentChannel ? {
         label: t('admin.commerce.payments.channels.create.title', 'Create payment channel'),
         icon: <Plus className="h-4 w-4" />,
         onClick: () => setDialog({ kind: 'channel-create' }),
-      },
+      } : undefined,
       columns: [
         { key: 'channelNo', label: t('admin.col.channel', 'Channel') },
         { key: 'channelName', label: t('admin.commerce.payments.col.channelName', 'Channel Name'), format: formatLocalizedChannelName },
@@ -321,21 +363,23 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       icon: <ShieldCheck className="h-4 w-4" />,
       group: t('admin.commerce.payments.group.providerSetup', 'Provider Setup'),
       load: backendPaymentsRouteRulesList,
-      action: {
+      action: capabilities.canCreateRouteRule ? {
         label: t('admin.commerce.payments.routeRules.create.title', 'Create route rule'),
         icon: <Plus className="h-4 w-4" />,
         onClick: () => setDialog({ kind: 'routeRule-create' }),
-      },
+      } : undefined,
       rowActions: [
         {
           label: t('admin.commerce.payments.routeRules.edit', 'Edit'),
           icon: <Pencil className="h-3.5 w-3.5" />,
+          isVisible: () => capabilities.canUpdateRouteRule,
           onClick: (record) => setDialog({ kind: 'routeRule-edit', record }),
         },
         {
           label: t('admin.commerce.payments.routeRules.delete', 'Delete'),
           icon: <Trash2 className="h-3.5 w-3.5" />,
           tone: 'danger',
+          isVisible: () => capabilities.canDeleteRouteRule,
           onClick: (record) => setDialog({ kind: 'routeRule-delete', record }),
         },
       ],
@@ -369,16 +413,17 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       }, {
         label: t('admin.commerce.payments.refunds.create.intentAction', 'Refund'),
         icon: <Undo2 className="h-3.5 w-3.5" />,
-        isVisible: (record) => String(record.status ?? '') === 'succeeded',
+        isVisible: (record) => capabilities.canCreateRefund
+          && String(record.status ?? '') === 'succeeded',
         onClick: (record) => setDialog({
           kind: 'refund-create',
-          intentId: String(record.id ?? ''),
-          intentNo: String(record.paymentIntentNo ?? ''),
+          record,
         }),
       }, {
         label: t('admin.commerce.payments.sandboxTrigger.action', 'Simulate success callback'),
         icon: <RotateCcw className="h-3.5 w-3.5" />,
-        isVisible: (record) => PENDING_PAYMENT_STATUSES.has(String(record.status ?? '')),
+        isVisible: (record) => capabilities.canTriggerSandbox
+          && PENDING_PAYMENT_STATUSES.has(String(record.status ?? '')),
         onClick: (record) => setDialog({ kind: 'sandbox-trigger-intent', record }),
       }],
       columns: [
@@ -459,11 +504,11 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       icon: <BarChart3 className="h-4 w-4" />,
       group: t('admin.commerce.payments.group.riskReconciliation', 'Risk & Reconciliation'),
       load: backendPaymentsReconciliationRunsList,
-      action: {
+      action: capabilities.canCreateReconciliationRun ? {
         label: t('admin.commerce.payments.reconciliationRuns.create.title', 'Create reconciliation run'),
         icon: <Plus className="h-4 w-4" />,
         onClick: () => setDialog({ kind: 'reconciliation-create' }),
-      },
+      } : undefined,
       columns: [
         { key: 'runNo', label: t('admin.col.run', 'Run') },
         { key: 'providerCode', label: t('admin.col.provider', 'Provider') },
@@ -488,11 +533,11 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       icon: <Undo2 className="h-4 w-4" />,
       group: t('admin.commerce.payments.group.riskReconciliation', 'Risk & Reconciliation'),
       load: backendPaymentsRefundsList,
-      action: {
+      action: capabilities.canCreateRefund ? {
         label: t('admin.commerce.payments.refunds.create.action', 'Create refund'),
         icon: <Plus className="h-4 w-4" />,
         onClick: () => setDialog({ kind: 'refund-create' }),
-      },
+      } : undefined,
       rowActions: [{
         label: t('admin.commerce.payments.refunds.detail.open', 'Details'),
         icon: <Eye className="h-3.5 w-3.5" />,
@@ -500,7 +545,13 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       }, {
         label: t('admin.commerce.payments.refunds.retry.action', 'Retry'),
         icon: <RotateCcw className="h-3.5 w-3.5" />,
-        isVisible: (record) => String(record.status ?? '') === 'failed',
+        isVisible: (record) => capabilities.canRetryRefund && (() => {
+          const status = String(record.status ?? '');
+          // Failed refunds can be re-submitted; processing refunds (PSP
+          // returned processing and no async notice arrived) can also be
+          // retried — the backend queries the PSP first and reconciles.
+          return status === 'failed' || status === 'processing';
+        })(),
         onClick: (record) => setDialog({ kind: 'refund-retry', record }),
       }],
       columns: [
@@ -520,7 +571,7 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       help: sectionHelp(t, 'refunds', 5, 3),
     }),
     ];
-  }, [t, i18n]);
+  }, [t, i18n, capabilities]);
 
   async function submitMethodForm(values: PaymentMethodFormValues, state: Extract<PaymentDialogState, { kind: 'method-create' } | { kind: 'method-edit' }>) {
     if (state.kind === 'method-create') {
@@ -528,6 +579,18 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
     } else {
       await backendPaymentMethodsUpdate(String(state.record.methodKey ?? state.record.id ?? ''), buildMethodUpdateCommand(values));
     }
+  }
+
+  async function submitProviderForm(values: PaymentProviderFormValues, state: Extract<PaymentDialogState, { kind: 'provider-edit' }>) {
+    await backendPaymentProvidersUpdate(String(state.record.id ?? ''), buildProviderUpdateCommand(values));
+  }
+
+  async function submitProviderStatusChange(state: Extract<PaymentDialogState, { kind: 'provider-status' }>, reason: string) {
+    const targetStatus = String(state.record.status ?? '') === 'active' ? 'inactive' : 'active';
+    await backendPaymentProvidersUpdate(String(state.record.id ?? ''), {
+      status: targetStatus,
+      reason,
+    });
   }
 
   async function submitChannelForm(values: PaymentChannelFormValues) {
@@ -648,6 +711,30 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
         />
       </div>
 
+      {dialog?.kind === 'provider-edit' ? (
+        <ProviderFormDialog
+          initial={providerFormValuesFromRecord(dialog.record)}
+          onClose={() => setDialog(null)}
+          onSubmit={(values) => void runDialogAction(
+            () => submitProviderForm(values, dialog),
+            t('admin.commerce.payments.operationSuccess', 'Operation completed successfully.'),
+            t('admin.commerce.payments.providers.edit.error', 'Payment provider could not be updated.'),
+          )}
+          saving={saving}
+        />
+      ) : null}
+      {dialog?.kind === 'provider-status' ? (
+        <ProviderStatusDialog
+          onClose={() => setDialog(null)}
+          onSubmit={(reason) => void runDialogAction(
+            () => submitProviderStatusChange(dialog, reason),
+            t('admin.commerce.payments.providers.status.success', 'Payment provider status updated successfully.'),
+            t('admin.commerce.payments.providers.status.error', 'Payment provider status could not be updated.'),
+          )}
+          provider={dialog.record}
+          saving={saving}
+        />
+      ) : null}
       {dialog?.kind === 'method-create' ? (
         <MethodFormDialog
           mode="create"
@@ -728,8 +815,7 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       ) : null}
       {dialog?.kind === 'refund-create' ? (
         <RefundCreateDialog
-          initialIntentId={dialog.intentId}
-          initialIntentNo={dialog.intentNo}
+          initialRecord={dialog.record}
           onClose={() => setDialog(null)}
           onSubmit={(values) => void runDialogAction(
             () => submitRefundCreateForm(values),
@@ -819,7 +905,22 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
  * unreachable; the host passes an empty array in that case so the form
  * degrades to free-text country/currency inputs.
  */
-function usePaymentProviderAdminCapabilities(): PaymentProviderAdminCapabilities {
+type PaymentMaintenanceCapabilities = {
+  canUpdatePaymentProvider: boolean;
+  canCreatePaymentMethod: boolean;
+  canUpdatePaymentMethod: boolean;
+  canCreatePaymentChannel: boolean;
+  canCreateRouteRule: boolean;
+  canUpdateRouteRule: boolean;
+  canDeleteRouteRule: boolean;
+  canCreateRefund: boolean;
+  canRetryRefund: boolean;
+  canCreateReconciliationRun: boolean;
+  canTriggerSandbox: boolean;
+  canTestWebhookSignature: boolean;
+};
+
+function usePaymentProviderAdminCapabilities(): PaymentProviderAdminCapabilities & PaymentMaintenanceCapabilities {
   const [permissionScope, setPermissionScope] = useState(() => readPortalPermissionScope());
 
   useEffect(() => {
@@ -861,6 +962,82 @@ function usePaymentProviderAdminCapabilities(): PaymentProviderAdminCapabilities
       'commerce.payments.sub_merchants.delete',
       permissionScope,
     ),
+    // Maintenance-surface mutations (methods, channels, route rules, refunds,
+    // reconciliation, and development triggers). The Payment backend remains
+    // the authorization boundary; these gates only hide unavailable actions.
+    canUpdatePaymentProvider: hasPortalPermission(
+      'commerce.payments.providers.update',
+      permissionScope,
+    ),
+    canCreatePaymentMethod: hasPortalPermission(
+      'commerce.payments.methods.create',
+      permissionScope,
+    ),
+    canUpdatePaymentMethod: hasPortalPermission(
+      'commerce.payments.methods.update',
+      permissionScope,
+    ),
+    canCreatePaymentChannel: hasPortalPermission(
+      'commerce.payments.channels.create',
+      permissionScope,
+    ),
+    canCreateRouteRule: hasPortalPermission(
+      'commerce.payments.route_rules.create',
+      permissionScope,
+    ),
+    canUpdateRouteRule: hasPortalPermission(
+      'commerce.payments.route_rules.update',
+      permissionScope,
+    ),
+    canDeleteRouteRule: hasPortalPermission(
+      'commerce.payments.route_rules.delete',
+      permissionScope,
+    ),
+    canCreateRefund: hasPortalPermission(
+      'commerce.payments.refunds.create',
+      permissionScope,
+    ),
+    canRetryRefund: hasPortalPermission(
+      'commerce.payments.refunds.retry',
+      permissionScope,
+    ),
+    canCreateReconciliationRun: hasPortalPermission(
+      'commerce.payments.reconciliation_runs.create',
+      permissionScope,
+    ),
+    canTriggerSandbox: hasPortalPermission(
+      'commerce.payments.dev.sandbox_trigger',
+      permissionScope,
+    ),
+    canTestWebhookSignature: hasPortalPermission(
+      'commerce.payments.dev.webhook_signature_test',
+      permissionScope,
+    ),
+  }), [permissionScope]);
+}
+
+function usePaymentMaintenanceCapabilities(): PaymentMaintenanceCapabilities {
+  const [permissionScope, setPermissionScope] = useState(() => readPortalPermissionScope());
+
+  useEffect(() => {
+    const syncPermissionScope = () => setPermissionScope(readPortalPermissionScope());
+    syncPermissionScope();
+    return subscribePortalSessionChange(syncPermissionScope);
+  }, []);
+
+  return useMemo(() => ({
+    canUpdatePaymentProvider: hasPortalPermission('commerce.payments.providers.update', permissionScope),
+    canCreatePaymentMethod: hasPortalPermission('commerce.payments.methods.create', permissionScope),
+    canUpdatePaymentMethod: hasPortalPermission('commerce.payments.methods.update', permissionScope),
+    canCreatePaymentChannel: hasPortalPermission('commerce.payments.channels.create', permissionScope),
+    canCreateRouteRule: hasPortalPermission('commerce.payments.route_rules.create', permissionScope),
+    canUpdateRouteRule: hasPortalPermission('commerce.payments.route_rules.update', permissionScope),
+    canDeleteRouteRule: hasPortalPermission('commerce.payments.route_rules.delete', permissionScope),
+    canCreateRefund: hasPortalPermission('commerce.payments.refunds.create', permissionScope),
+    canRetryRefund: hasPortalPermission('commerce.payments.refunds.retry', permissionScope),
+    canCreateReconciliationRun: hasPortalPermission('commerce.payments.reconciliation_runs.create', permissionScope),
+    canTriggerSandbox: hasPortalPermission('commerce.payments.dev.sandbox_trigger', permissionScope),
+    canTestWebhookSignature: hasPortalPermission('commerce.payments.dev.webhook_signature_test', permissionScope),
   }), [permissionScope]);
 }
 

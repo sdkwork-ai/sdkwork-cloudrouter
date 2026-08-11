@@ -27,6 +27,11 @@ fn capability_manifests() -> Vec<HttpRouteManifest> {
         sdkwork_routes_payment_app_api::http_route_manifest::app_route_manifest(),
         sdkwork_routes_promotion_app_api::http_route_manifest::app_route_manifest(),
         sdkwork_routes_invoice_app_api::app_route_manifest(),
+        // Federated Community surface (`/app/v3/api/community/*`) is merged by
+        // `merge_federated_community_app_router`; its route manifest enters
+        // through the dependency assembly entrypoint so the Web Framework
+        // enforces the App routes' declared dual-token auth and permissions.
+        sdkwork_api_community_assembly::app_api_route_manifest(),
     ]
 }
 

@@ -7,7 +7,7 @@ use axum::http::{Request, StatusCode};
 use sdkwork_cloudrouter_router_service::ports::{
     AdminTransactionCenterFuture, AdminTransactionCenterStore, AdminTransactionCollection,
     AdminTransactionJsonRecord, ListAdminTransactionChildRecordsQuery,
-    ListAdminTransactionRecordsQuery, LoadAdminTransactionRecordQuery,
+    ListAdminTransactionRecordsQuery, LoadAdminTransactionRecordQuery, UpdatePaymentProviderCommand,
 };
 use serde_json::{json, Map, Value};
 use tower::ServiceExt;
@@ -54,6 +54,107 @@ async fn admin_transaction_center_provider_inventory_uses_canonical_filters_and_
     }
 }
 
+#[tokio::test]
+async fn admin_transaction_center_provider_update_persists_mutation_and_returns_record() {
+    let store = Arc::new(TestAdminTransactionCenterStore::default());
+    let router =
+        sdkwork_cloudrouter_router_service::api::admin_transaction_center_router_with_store(
+            store.clone(),
+        );
+
+    let payload = request_json(
+        router.clone(),
+        signed_request(
+            "PATCH",
+            "/backend/v3/api/payments/providers/provider-stripe",
+            r#"{"displayName":"Stripe CN","displayNameI18n":{"zh-CN":"斯特赖普"},"sortOrder":150,"status":"inactive","reason":"rename and pause during review"}"#,
+        ),
+        StatusCode::OK,
+    )
+    .await;
+    assert_eq!("Stripe CN", payload["data"]["provider"]["displayName"]);
+    assert_eq!("inactive", payload["data"]["provider"]["status"]);
+    assert_eq!(150, payload["data"]["provider"]["sortOrder"]);
+    assert_eq!("斯特赖普", payload["data"]["provider"]["displayNameI18n"]["zh-CN"]);
+    assert!(
+        payload["data"]["requestId"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty())
+    );
+
+    let updates = store.provider_updates.lock().unwrap();
+    assert_eq!(1, updates.len());
+    let update = &updates[0];
+    assert_eq!("provider-stripe", update.provider_id);
+    assert_eq!(Some("Stripe CN".to_owned()), update.display_name);
+    assert_eq!(Some(150), update.sort_order);
+    assert_eq!(Some("inactive".to_owned()), update.status);
+    assert_eq!("rename and pause during review", update.reason);
+    assert_eq!(TEST_TENANT_ID, update.subject.tenant_id);
+    assert_eq!(TEST_OPERATOR_ID, update.subject.operator_id);
+}
+
+#[tokio::test]
+async fn admin_transaction_center_provider_update_validates_required_and_unknown_fields() {
+    let store = Arc::new(TestAdminTransactionCenterStore::default());
+    let router =
+        sdkwork_cloudrouter_router_service::api::admin_transaction_center_router_with_store(
+            store.clone(),
+        );
+
+    // reason is mandatory (missing required field is rejected by the JSON
+    // extractor).
+    let response = router
+        .clone()
+        .oneshot(signed_request(
+            "PATCH",
+            "/backend/v3/api/payments/providers/provider-stripe",
+            r#"{"displayName":"Stripe CN"}"#,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::UNPROCESSABLE_ENTITY, response.status());
+
+    // At least one mutable field is required.
+    let response = router
+        .clone()
+        .oneshot(signed_request(
+            "PATCH",
+            "/backend/v3/api/payments/providers/provider-stripe",
+            r#"{"reason":"no-op"}"#,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::BAD_REQUEST, response.status());
+
+    // Unknown fields are rejected.
+    let response = router
+        .clone()
+        .oneshot(signed_request(
+            "PATCH",
+            "/backend/v3/api/payments/providers/provider-stripe",
+            r#"{"displayName":"Stripe CN","reason":"review","providerCode":"evil"}"#,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::UNPROCESSABLE_ENTITY, response.status());
+
+    // Status must be one of the canonical provider statuses.
+    let response = router
+        .clone()
+        .oneshot(signed_request(
+            "PATCH",
+            "/backend/v3/api/payments/providers/provider-stripe",
+            r#"{"status":"archived","reason":"review"}"#,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::BAD_REQUEST, response.status());
+
+    // The store must not have been touched by any rejected request.
+    assert!(store.provider_updates.lock().unwrap().is_empty());
+}
+
 fn signed_request(method: &str, path: &str, body: &str) -> Request<Body> {
     Request::builder()
         .method(method)
@@ -90,6 +191,7 @@ async fn json_payload(response: axum::response::Response) -> Value {
 #[derive(Default)]
 struct TestAdminTransactionCenterStore {
     provider_queries: Mutex<Vec<ListAdminTransactionRecordsQuery>>,
+    provider_updates: Mutex<Vec<UpdatePaymentProviderCommand>>,
 }
 
 impl AdminTransactionCenterStore for TestAdminTransactionCenterStore {
@@ -138,6 +240,39 @@ impl AdminTransactionCenterStore for TestAdminTransactionCenterStore {
                 query.page_size,
                 query.offset,
             ))
+        })
+    }
+
+    fn update_payment_provider<'a>(
+        &'a self,
+        command: UpdatePaymentProviderCommand,
+    ) -> AdminTransactionCenterFuture<'a, AdminTransactionJsonRecord> {
+        self.provider_updates.lock().unwrap().push(command.clone());
+        Box::pin(async move {
+            let mut record = record(json!({
+                "id": "provider-stripe",
+                "providerCode": "stripe",
+                "displayName": "Stripe",
+                "providerType": "official",
+                "supportedCountries": ["US"],
+                "supportedCurrencies": ["USD"],
+                "capabilities": ["payment_intent"],
+                "status": "active",
+                "sortOrder": 30
+            }));
+            if let Some(display_name) = &command.display_name {
+                record.insert("displayName".to_owned(), json!(display_name));
+            }
+            if let Some(display_name_i18n) = &command.display_name_i18n {
+                record.insert("displayNameI18n".to_owned(), display_name_i18n.clone());
+            }
+            if let Some(sort_order) = command.sort_order {
+                record.insert("sortOrder".to_owned(), json!(sort_order));
+            }
+            if let Some(status) = &command.status {
+                record.insert("status".to_owned(), json!(status));
+            }
+            Ok(record)
         })
     }
 }

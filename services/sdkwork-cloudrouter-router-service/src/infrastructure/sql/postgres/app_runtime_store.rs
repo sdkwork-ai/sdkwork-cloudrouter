@@ -111,7 +111,11 @@ impl AppRuntimeStore for PostgresAppRuntimeStore {
             let request_json = json_string(&command.request_json, "runtime request json")?;
             let metadata = json_string(&command.metadata, "runtime metadata")?;
             validate_invocation_context(&self.pool, &command).await?;
-            let invocation_no = next_invocation_no(&self.pool, command.subject, &command).await?;
+            let mut tx = self.pool.begin().await.map_err(|error| {
+                DomainError::new(format!("failed to begin runtime transaction: {error}"))
+            })?;
+            let invocation_no =
+                next_invocation_no_in_tx(&mut tx, command.subject, &command).await?;
             sqlx::query(
                 r#"
                 INSERT INTO ai_runtime_invocation (
@@ -155,10 +159,10 @@ impl AppRuntimeStore for PostgresAppRuntimeStore {
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .bind(command.subject.user_id)
-            .bind(&command.conversation_id)
-            .bind(&command.chat_turn_id)
+            .bind(command.conversation_id.as_deref().unwrap_or(""))
+            .bind(command.chat_turn_id.as_deref().unwrap_or(""))
             .bind(&command.chat_item_id)
-            .bind(&command.agent_session_id)
+            .bind(command.agent_session_id.as_deref().unwrap_or(""))
             .bind(&command.agent_run_id)
             .bind(&command.agent_run_step_id)
             .bind(invocation_no)
@@ -181,9 +185,21 @@ impl AppRuntimeStore for PostgresAppRuntimeStore {
             .bind(&request_json)
             .bind(&metadata)
             .bind(next_cloud_runtime_id("ai_runtime_invocation")?)
-            .execute(&self.pool)
+            .execute(&mut *tx)
             .await
-            .map_err(sql_error)?;
+            .map_err(|error| {
+                // The scoped sequence index is the final collision guard; a
+                // duplicate ordinal fails closed instead of silently
+                // reordering the invocation timeline.
+                if is_unique_violation(&error) {
+                    DomainError::conflict("runtime invocation sequence collision")
+                } else {
+                    sql_error(error)
+                }
+            })?;
+            tx.commit().await.map_err(|error| {
+                DomainError::new(format!("failed to commit runtime transaction: {error}"))
+            })?;
 
             self.get_invocation(command.subject, command.invocation_uuid)
                 .await?
@@ -698,11 +714,35 @@ async fn create_artifact(
     row_to_artifact(row)
 }
 
-async fn next_invocation_no(
-    pool: &PgPool,
+async fn next_invocation_no_in_tx(
+    tx: &mut Transaction<'_, Postgres>,
     subject: AppRuntimeSubject,
     command: &CreateAppRuntimeInvocationCommand,
 ) -> DomainResult<i64> {
+    // Serialize ordinal allocation per sequence scope
+    // (tenant, organization, user, conversation, turn, agent session) so two
+    // concurrent creators in the same scope cannot compute the same number.
+    // `pg_advisory_xact_lock` is released at commit/rollback and never blocks
+    // unrelated scopes; the scoped sequence unique index remains the final
+    // collision guard.
+    sqlx::query(
+        r#"
+        SELECT pg_advisory_xact_lock(hashtextextended(
+            'cloudrouter.runtime.invocation:' ||
+            $1::text || ':' || $2::text || ':' || $3::text || ':' ||
+            COALESCE($4, '') || ':' || COALESCE($5, '') || ':' || COALESCE($6, ''),
+            0))
+        "#,
+    )
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(subject.user_id)
+    .bind(command.conversation_id.as_deref())
+    .bind(command.chat_turn_id.as_deref())
+    .bind(command.agent_session_id.as_deref())
+    .execute(&mut **tx)
+    .await
+    .map_err(sql_error)?;
     let row = sqlx::query(
         r#"
         SELECT COUNT(*) + 1 AS next_value
@@ -718,10 +758,10 @@ async fn next_invocation_no(
     .bind(subject.tenant_id)
     .bind(subject.organization_id)
     .bind(subject.user_id)
-    .bind(&command.conversation_id)
-    .bind(&command.chat_turn_id)
-    .bind(&command.agent_session_id)
-    .fetch_one(pool)
+    .bind(command.conversation_id.as_deref())
+    .bind(command.chat_turn_id.as_deref())
+    .bind(command.agent_session_id.as_deref())
+    .fetch_one(&mut **tx)
     .await
     .map_err(sql_error)?;
     Ok(integer_cell(&row, "next_value"))
@@ -1333,4 +1373,12 @@ fn non_empty(value: Option<&str>) -> Option<&str> {
 
 fn sql_error(error: sqlx::Error) -> DomainError {
     DomainError::new(format!("postgres app runtime store error: {error}"))
+}
+
+fn is_unique_violation(error: &sqlx::Error) -> bool {
+    error
+        .as_database_error()
+        .and_then(|database_error| database_error.code())
+        .map(|code| code.as_ref() == "23505")
+        .unwrap_or(false)
 }

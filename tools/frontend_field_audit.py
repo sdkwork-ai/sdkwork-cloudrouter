@@ -23,6 +23,25 @@ def _is_field_audit_exempt_source(source: str) -> bool:
     normalized = source.replace("\\", "/")
     return any(segment in normalized for segment in FIELD_AUDIT_EXEMPT_SOURCE_SEGMENTS)
 
+
+_COMPOSED_CAPABILITY_SDK_PATTERN = re.compile(
+    r"\b(?:getSdkworkPaymentBackendSdkClient|getSdkworkMembershipBackendSdkClient|"
+    r"getSdkworkPromotionBackendSdkClient|getSdkworkBaseDataBackendSdkClient|"
+    r"getSdkworkDriveAppSdkClient|getSdkworkCommerceService)\s*\("
+)
+
+
+def _source_dispatches_composed_capability_sdk(source: str) -> bool:
+    """Service files that dispatch through composed capability SDKs (payment,
+    membership, promotion, base-data, drive) own their view models in their
+    capability contracts; their local model interfaces are not part of the
+    Cloud Router field contract."""
+    try:
+        text = Path(source).read_text(encoding="utf-8")
+    except OSError:
+        return False
+    return _COMPOSED_CAPABILITY_SDK_PATTERN.search(text) is not None
+
 try:
     import yaml
 except ImportError as exc:  # pragma: no cover - exercised only on missing tooling
@@ -270,7 +289,11 @@ class FrontendFieldAudit:
 
         for key in sorted(actual):
             source = key.split("#", 1)[0]
-            if is_relay_retired_admin_source(source) or _is_field_audit_exempt_source(source):
+            if (
+                is_relay_retired_admin_source(source)
+                or _is_field_audit_exempt_source(source)
+                or _source_dispatches_composed_capability_sdk(source)
+            ):
                 continue
             if key not in expected:
                 messages.append(f"frontend model interface missing from contract: {key}")

@@ -3,7 +3,8 @@ use axum::http::request::{Builder as RequestBuilder, Parts as RequestParts};
 use axum::http::uri::PathAndQuery;
 use axum::http::{HeaderMap, Uri};
 use axum::response::Response;
-use bytes::Bytes;
+use axum::body::{Body, Bytes, HttpBody};
+use http_body::Frame;
 use http_body_util::Full;
 use hyper::Request as HyperRequest;
 use hyper_rustls::HttpsConnector;
@@ -18,6 +19,9 @@ use sdkwork_cloudrouter_http::{upsert_query_parameter, OutboundDnsResolver};
 use sdkwork_cloudrouter_router_service::infrastructure::provider::ProviderRelayHttpPoolConfig;
 use sdkwork_cloudrouter_security::{validate_outbound_url, OutboundTargetPolicy};
 use std::collections::HashSet;
+use std::future::Future;
+use std::pin::Pin;
+use std::task::{Context, Poll};
 use std::time::Duration;
 
 pub(crate) type PassthroughBody = Full<Bytes>;
@@ -171,7 +175,75 @@ pub(crate) async fn forward_provider_passthrough_to_target(
                 )
             })?
             .map_err(|error| format!("provider passthrough upstream request failed: {error}"))?;
-    Ok(upstream_to_axum_response(upstream_response))
+    Ok(apply_passthrough_stream_timeouts(
+        upstream_to_axum_response(upstream_response),
+        response_timeout,
+    ))
+}
+
+/// Applies bounded total and idle deadlines to a forwarded streaming response
+/// body. The response-header timeout above only covers header arrival; a
+/// stalled upstream that never sends another frame must not hold the
+/// downstream connection (and its upstream quota) indefinitely.
+fn apply_passthrough_stream_timeouts(
+    response: Response,
+    total_timeout: Duration,
+) -> Response {
+    let (parts, body) = response.into_parts();
+    let idle_timeout = total_timeout.min(Duration::from_secs(60)).max(Duration::from_secs(1));
+    Response::from_parts(parts, Body::new(PassthroughStreamTimeoutBody {
+        inner: body,
+        total_deadline: std::time::Instant::now() + total_timeout,
+        idle: idle_timeout,
+        idle_timer: None,
+    }))
+}
+
+/// Poll-based body wrapper enforcing total and idle deadlines without
+/// buffering the stream.
+struct PassthroughStreamTimeoutBody {
+    inner: Body,
+    total_deadline: std::time::Instant,
+    idle: Duration,
+    idle_timer: Option<Pin<Box<dyn Future<Output = ()> + Send>>>,
+}
+
+impl HttpBody for PassthroughStreamTimeoutBody {
+    type Data = Bytes;
+    type Error = axum::Error;
+
+    fn poll_frame(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<Option<Result<Frame<Self::Data>, Self::Error>>> {
+        if std::time::Instant::now() >= self.total_deadline {
+            return Poll::Ready(Some(Err(axum::Error::new(std::io::Error::other(
+                "provider passthrough stream exceeded the total response deadline",
+            )))));
+        }
+        if let Some(timer) = self.idle_timer.as_mut() {
+            if timer.as_mut().poll(cx).is_ready() {
+                return Poll::Ready(Some(Err(axum::Error::new(std::io::Error::other(
+                    "provider passthrough stream idle deadline exceeded",
+                )))));
+            }
+        }
+        match Pin::new(&mut self.inner).poll_frame(cx) {
+            Poll::Ready(Some(Ok(frame))) => {
+                // A frame arrived: reset the idle timer for the next gap.
+                self.idle_timer = Some(Box::pin(tokio::time::sleep(self.idle)));
+                Poll::Ready(Some(Ok(frame)))
+            }
+            Poll::Ready(Some(Err(error))) => Poll::Ready(Some(Err(error))),
+            Poll::Ready(None) => Poll::Ready(None),
+            Poll::Pending => {
+                if self.idle_timer.is_none() {
+                    self.idle_timer = Some(Box::pin(tokio::time::sleep(self.idle)));
+                }
+                Poll::Pending
+            }
+        }
+    }
 }
 
 pub(crate) fn validate_provider_passthrough_target(

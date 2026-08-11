@@ -4966,6 +4966,7 @@ dependencies = [
  "futures-util",
  "getrandom 0.3.4",
  "hex",
+ "http-body 1.0.1",
  "http-body-util",
  "hyper 1.10.1",
  "hyper-rustls 0.27.9",
@@ -5429,6 +5430,7 @@ dependencies = [
  "sdkwork-community-storage-sqlx-rust",
  "sdkwork-database-id",
  "sdkwork-database-sqlx",
+ "tokio",
 ]
 
 [[package]]

@@ -353,7 +353,9 @@ fn model_from_catalog_key(catalog_key: &str) -> Option<String> {
 }
 
 fn mask_error_message(message: &str) -> String {
-    let mut value = message.trim().replace("sk-", "sk-***");
+    // Use the shared redaction authority so decision records never carry raw
+    // `sk-`/`sp-`/`Bearer` credential material into the audit database.
+    let mut value = crate::redaction::redact_sensitive_tokens(message.trim());
     if value.chars().count() > 1024 {
         value = value.chars().take(1024).collect::<String>();
         value.push_str("...");

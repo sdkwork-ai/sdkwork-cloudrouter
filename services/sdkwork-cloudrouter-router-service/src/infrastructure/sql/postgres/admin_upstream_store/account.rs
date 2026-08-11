@@ -620,49 +620,6 @@ pub(super) async fn deactivate_credential(
     Ok(deactivated)
 }
 
-/// 解密返回账号凭据的明文密钥（仅供管理员在编辑弹窗中查看）。
-/// 仅允许读取当前租户/组织内、账号归属且未软删的凭据。
-pub(super) async fn reveal_credential_secret(
-    pool: &PgPool,
-    secret_codec: &(dyn UpstreamCredentialSecretCodec + Send + Sync),
-    subject: AdminUpstreamSubject,
-    account_id: i64,
-    credential_id: i64,
-) -> DomainResult<String> {
-    let row = sqlx::query(
-        r#"
-        SELECT credential.tenant_id, credential.organization_id,
-               credential.secret_ciphertext, credential.secret_key_id
-        FROM ai_upstream_account_credential credential
-        JOIN ai_upstream_account account
-          ON account.tenant_id = credential.tenant_id
-         AND account.organization_id = credential.organization_id
-         AND account.id = credential.account_id
-        WHERE credential.tenant_id = $1
-          AND credential.organization_id = $2
-          AND credential.account_id = $3
-          AND credential.id = $4
-          AND credential.deleted_at IS NULL
-          AND account.deleted_at IS NULL
-        "#,
-    )
-    .bind(subject.tenant_id)
-    .bind(subject.organization_id)
-    .bind(account_id)
-    .bind(credential_id)
-    .fetch_optional(pool)
-    .await
-    .map_err(|error| store_error("failed to load upstream account credential secret", error))?
-    .ok_or_else(|| not_found("upstream account credential"))?;
-    let tenant_id = column(&row, "tenant_id", "failed to map credential secret tenant")?;
-    let organization_id = column(&row, "organization_id", "failed to map credential secret organization")?;
-    let key_id = column::<String>(&row, "secret_key_id", "failed to map credential secret key id")?;
-    let ciphertext =
-        column::<String>(&row, "secret_ciphertext", "failed to map credential secret ciphertext")?;
-    let context = UpstreamCredentialSecretContext::new(tenant_id, organization_id, account_id, credential_id);
-    secret_codec.decode_secret(context, &key_id, &ciphertext)
-}
-
 async fn insert(
     tx: &mut Transaction<'_, Postgres>,
     command: &SaveAdminUpstreamAccountCommand,

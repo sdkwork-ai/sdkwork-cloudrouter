@@ -311,9 +311,9 @@ modules:
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
   ai-chat-runtime:
     owner: cloud-router-platform
-    description: User-scoped chat transcript, context snapshot, runtime invocation, and usage-link persistence.
+    description: User-scoped chat transcript, context snapshot, runtime invocation, event, artifact, and usage-link persistence.
     compliance_level: L2
-    tables_count: 8
+    tables_count: 10
     tables:
     - ai_chat_conversation
     - ai_chat_turn
@@ -322,6 +322,8 @@ modules:
     - ai_chat_message_part
     - ai_chat_context_snapshot
     - ai_runtime_invocation
+    - ai_runtime_invocation_event
+    - ai_runtime_artifact
     - ai_runtime_usage_link
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
 registry_dependencies:
@@ -513,7 +515,7 @@ statistics:
     ai-pricing: 5
     iam-gateway: 5
     ops-runtime: 10
-    ai-chat-runtime: 8
+    ai-chat-runtime: 10
 compliance:
   financial_tables:
   - ai_metering_usage

@@ -385,6 +385,7 @@ class DatabaseContractMaterializer:
             "projection_policy": table.get("projection_policy"),
             "lifecycle": table.get("lifecycle"),
             "semantic_contracts": table.get("semantic_contracts"),
+            "frontend_routes": table.get("frontend_routes", []),
         }
 
     @staticmethod

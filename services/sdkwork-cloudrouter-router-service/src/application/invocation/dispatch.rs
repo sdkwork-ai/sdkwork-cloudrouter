@@ -271,7 +271,9 @@ fn body_debug_label(body: &super::InvocationBody) -> &'static str {
 }
 
 fn redact_secret_text(value: &str) -> String {
-    value.replace("sk-", "sk-***")
+    // Use the shared redaction authority so debug strings and decision
+    // records never carry raw `sk-`/`sp-`/`Bearer` credential material.
+    crate::redaction::redact_sensitive_tokens(value)
 }
 
 impl InvocationDispatch {

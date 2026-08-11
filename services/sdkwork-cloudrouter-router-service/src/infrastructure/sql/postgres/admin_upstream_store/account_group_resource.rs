@@ -5,7 +5,7 @@ use super::shared::{
     generated_uuid, map_resource_row, record_routing_change, store_error, validate_resource_inputs,
     DEFAULT_DATA_SCOPE, MAX_NESTED_ITEMS,
 };
-use crate::domain::DomainResult;
+use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::ports::{AdminUpstreamResourceInput, AdminUpstreamResourceItem, AdminUpstreamSubject};
 
@@ -21,7 +21,7 @@ pub(super) async fn list(
         WHERE tenant_id = $1 AND organization_id = $2
           AND account_group_id = $3 AND deleted_at IS NULL
         ORDER BY priority ASC, resource_group_code ASC, resource_code ASC, id ASC
-        LIMIT {MAX_NESTED_ITEMS}
+        LIMIT {{MAX_NESTED_ITEMS + 1}}
         "#
     );
     let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
@@ -31,6 +31,11 @@ pub(super) async fn list(
         .fetch_all(pool)
         .await
         .map_err(|error| store_error("failed to list account group resources", error))?;
+    if rows.len() > MAX_NESTED_ITEMS {
+        return Err(DomainError::new(format!(
+            "account group resources exceed the bounded maximum of {MAX_NESTED_ITEMS} items"
+        )));
+    }
     rows.into_iter().map(map_resource_row).collect()
 }
 

@@ -51,6 +51,21 @@ pub struct ListAdminTransactionChildRecordsQuery {
     pub status: Option<String>,
 }
 
+/// Operator edit of a payment provider (display name, localized names, sort
+/// order, status). `reason` is mandatory so every mutation keeps an audit
+/// trail; mutable fields are optional but at least one must be present.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpdatePaymentProviderCommand {
+    pub subject: AdminTransactionCenterSubject,
+    pub provider_id: String,
+    pub display_name: Option<String>,
+    pub display_name_i18n: Option<serde_json::Value>,
+    pub sort_order: Option<i32>,
+    pub status: Option<String>,
+    pub reason: String,
+    pub request_id: Option<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AdminTransactionCollection {
     pub items: Vec<AdminTransactionJsonRecord>,
@@ -69,4 +84,9 @@ pub trait AdminTransactionCenterStore {
         &'a self,
         query: ListAdminTransactionRecordsQuery,
     ) -> AdminTransactionCenterFuture<'a, AdminTransactionCollection>;
+
+    fn update_payment_provider<'a>(
+        &'a self,
+        command: UpdatePaymentProviderCommand,
+    ) -> AdminTransactionCenterFuture<'a, AdminTransactionJsonRecord>;
 }

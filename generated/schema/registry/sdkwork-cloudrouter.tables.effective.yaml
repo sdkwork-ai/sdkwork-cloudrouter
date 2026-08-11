@@ -210,12 +210,22 @@ description: Cloud Router Schema Registry. Machine-readable source of truth for 
   Router-owned runtime tables; generated SQL, manifests, OpenAPI snapshots, SDKs,
   services, and frontends must align to this contract.
 modules:
+  user-settings:
+    owner: cloud-router-platform
+    description: Console user settings preferences and console webhook endpoints (iam_user_preference,
+      integration_webhook_endpoint).
+    compliance_level: L2
+    tables_count: 2
+    tables:
+    - iam_user_preference
+    - integration_webhook_endpoint
+    ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
   ai-routing:
     owner: cloud-router-platform
     description: AI routing, upstream supplier, upstream account, account-group, policy,
       quota, and runtime coordination tables.
     compliance_level: L2
-    tables_count: 23
+    tables_count: 24
     tables:
     - ai_upstream_account
     - ai_upstream_account_health_state
@@ -224,6 +234,7 @@ modules:
     - ai_upstream_account_group_member
     - ai_upstream_account_group_metric_snapshot
     - ai_upstream_account_group_resource
+    - ai_upstream_account_resource
     - ai_upstream_supplier_resource
     - ai_config_version
     - ai_config_change_event
@@ -297,9 +308,9 @@ modules:
   ai-chat-runtime:
     owner: cloud-router-platform
     description: User-scoped chat transcript, context snapshot, runtime invocation,
-      and usage-link persistence.
+      event, artifact, and usage-link persistence.
     compliance_level: L2
-    tables_count: 8
+    tables_count: 10
     tables:
     - ai_chat_conversation
     - ai_chat_turn
@@ -308,6 +319,8 @@ modules:
     - ai_chat_message_part
     - ai_chat_context_snapshot
     - ai_runtime_invocation
+    - ai_runtime_invocation_event
+    - ai_runtime_artifact
     - ai_runtime_usage_link
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
 data_flow:
@@ -332,22 +345,22 @@ data_flow:
     - ops-runtime本地表提供可分页的监控、通知和审计读模型
     - ops_metric_snapshot、ops_job_execution、ops_audit_log写入（cloud-router本地）
 statistics:
-  cloud_router_local_tables: 52
+  cloud_router_local_tables: 53
   composed_dependency_tables: 19
-  total_tables: 71
+  total_tables: 72
   table_prefix_distribution:
-    ai_: 57
+    ai_: 58
     iam_: 4
     ops_: 10
   module_distribution:
-    cloud-router: 52
+    cloud-router: 53
     sdkwork-models: 19
-    ai-routing: 23
+    ai-routing: 24
     ai-metering: 2
     ai-pricing: 5
     iam-gateway: 5
     ops-runtime: 10
-    ai-chat-runtime: 8
+    ai-chat-runtime: 10
 compliance:
   financial_tables:
   - ai_metering_usage
@@ -662,6 +675,8 @@ tables:
   api_surfaces:
   - app
   - worker
+  frontend_routes:
+  - /playground
   columns:
     data_scope:
       type: int32
@@ -1093,6 +1108,8 @@ tables:
   api_surfaces:
   - app
   - worker
+  frontend_routes:
+  - /playground
   columns:
     conversation_id:
       type: int64
@@ -1363,6 +1380,13 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/analytics
+  - /admin/dashboard
+  - /admin/record
+  - /console/dashboard
+  - /console/gateway
+  - /console/usage
   columns:
     attempt_no: int32
     decision_log_id: int64
@@ -1527,6 +1551,15 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/analytics
+  - /admin/dashboard
+  - /admin/model
+  - /admin/record
+  - /console/api-keys
+  - /console/dashboard
+  - /console/usage
+  - /playground
   columns:
     decision_log_id: int64
     api_key_id: int64
@@ -2415,6 +2448,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/model/mappings
   columns:
     source_vendor_id: int64
     source_vendor_code:
@@ -2473,6 +2508,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/model/mappings
   columns:
     rule_id:
       type: int64
@@ -2560,6 +2597,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/model/mappings
   columns:
     rule_id:
       type: int64
@@ -3086,6 +3125,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/model
   columns:
     import_source:
       type: int32
@@ -3192,6 +3233,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /console/api-keys
   columns:
     plan_code:
       type: string(64)
@@ -3616,6 +3659,9 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/ratelimit
+  - /console/api-keys
   columns:
     policy_code: string(64)
     name: string(128)
@@ -3875,6 +3921,10 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/record
+  - /console/gateway
+  - /console/usage
   columns:
     api_key_id: int64
     policy_id: int64
@@ -3967,6 +4017,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/upstream
   columns:
     policy_code: string(64)
     name: string(128)
@@ -4062,6 +4114,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/upstream
   columns:
     profile_id: int64
     rule_code: string(64)
@@ -4108,6 +4162,84 @@ tables:
     - priority
     - status
   imported: false
+- table: ai_runtime_artifact
+  domain: ai
+  profile: user_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: user_runtime_entity
+  api_surfaces:
+  - app
+  - worker
+  frontend_routes:
+  - /playground
+  columns:
+    conversation_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    chat_turn_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    chat_item_id: string(128)
+    agent_session_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    agent_run_id: string(128)
+    agent_run_step_id: string(128)
+    runtime_invocation_id:
+      type: int64
+      constraints: NOT NULL
+    artifact_type:
+      type: string(64)
+      constraints: NOT NULL
+    name: string(512)
+    mime_type: string(128)
+    content_text: string(262144)
+    content_json: json
+    drive_uri: string(1024)
+    resource_snapshot: json
+    sha256: string(64)
+    size_bytes: int64
+  required_columns:
+  - user_id
+  - runtime_invocation_id
+  - artifact_type
+  unique_constraints:
+  - name: uk_ai_runtime_artifact_scope_id
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - id
+  - name: uk_ai_runtime_artifact_scope_uuid
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - uuid
+  check_constraints:
+  - name: ck_ai_runtime_artifact_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+  - name: ck_ai_runtime_artifact_type
+    expression: length(trim(artifact_type)) > 0
+  indexes:
+  - name: idx_ai_runtime_artifact_invocation_created
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - runtime_invocation_id
+    - created_at
+    - id
+  - name: idx_ai_runtime_artifact_user_created
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - created_at
+    - id
+  imported: false
 - table: ai_runtime_invocation
   domain: ai
   profile: user_entity
@@ -4118,11 +4250,19 @@ tables:
   api_surfaces:
   - app
   - worker
+  frontend_routes:
+  - /playground
   columns:
-    conversation_id: string(128)
-    chat_turn_id: string(128)
+    conversation_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    chat_turn_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
     chat_item_id: string(128)
-    agent_session_id: string(128)
+    agent_session_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
     agent_run_id: string(128)
     agent_run_step_id: string(128)
     invocation_no:
@@ -4195,6 +4335,15 @@ tables:
     - organization_id
     - user_id
     - uuid
+  - name: uk_ai_runtime_invocation_scope_sequence
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_id
+    - chat_turn_id
+    - agent_session_id
+    - invocation_no
   check_constraints:
   - name: ck_ai_runtime_invocation_subject_scope
     expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
@@ -4232,6 +4381,89 @@ tables:
     - user_id
     - runtime
     - status
+    - created_at
+    - id
+  imported: false
+- table: ai_runtime_invocation_event
+  domain: ai
+  profile: user_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: user_runtime_entity
+  api_surfaces:
+  - app
+  - worker
+  frontend_routes:
+  - /playground
+  columns:
+    invocation_id:
+      type: int64
+      constraints: NOT NULL
+    conversation_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    chat_turn_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    agent_session_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    agent_run_id: string(128)
+    agent_run_step_id: string(128)
+    event_no:
+      type: int64
+      constraints: NOT NULL
+    event_type:
+      type: string(64)
+      constraints: NOT NULL
+    event_source:
+      type: string(64)
+      constraints: NOT NULL
+    payload_json:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    text_delta: string(16384)
+  required_columns:
+  - user_id
+  - invocation_id
+  - event_no
+  - event_type
+  - event_source
+  unique_constraints:
+  - name: uk_ai_runtime_invocation_event_scope_id
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - id
+  - name: uk_ai_runtime_invocation_event_scope_uuid
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - uuid
+  - name: uk_ai_runtime_invocation_event_sequence
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - invocation_id
+    - event_no
+  check_constraints:
+  - name: ck_ai_runtime_invocation_event_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+  - name: ck_ai_runtime_invocation_event_sequence
+    expression: event_no > 0
+  - name: ck_ai_runtime_invocation_event_type
+    expression: length(trim(event_type)) > 0 AND length(trim(event_source)) > 0
+  indexes:
+  - name: idx_ai_runtime_invocation_event_invocation_created
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - invocation_id
     - created_at
     - id
   imported: false
@@ -4341,6 +4573,11 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/upstream
+  - /console/api-keys
+  - /console/gateway
+  - /models
   columns:
     supplier_id:
       type: int64
@@ -4482,6 +4719,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/upstream
   columns:
     account_id:
       type: int64
@@ -4565,6 +4804,12 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/ratelimit
+  - /admin/upstream
+  - /console/api-keys
+  - /console/gateway
+  - /models
   columns:
     group_code:
       type: string(64)
@@ -4572,10 +4817,11 @@ tables:
     group_name:
       type: string(128)
       constraints: NOT NULL
+    group_name_i18n: json
     description: string(512)
     group_type:
       type: string(32)
-      constraints: NOT NULL DEFAULT 'shared'
+      constraints: NOT NULL DEFAULT 'mixed'
     routing_strategy:
       type: string(32)
       constraints: NOT NULL DEFAULT 'weighted'
@@ -4605,6 +4851,9 @@ tables:
     modalities:
       type: json
       constraints: NOT NULL DEFAULT '[]'::jsonb
+    tags:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
   unique_constraints:
   - name: uk_ai_upstream_account_group_uuid
     columns:
@@ -4615,6 +4864,9 @@ tables:
     - organization_id
     - group_code
   check_constraints:
+  - name: ck_ai_upstream_account_group_type
+    expression: group_type IN ('mixed', 'llm', 'image', 'video', 'audio', 'music',
+      'other')
   - name: ck_ai_upstream_account_group_routing_strategy
     expression: routing_strategy IN ('weighted', 'round_robin', 'least_latency', 'least_cost',
       'failover')
@@ -4624,6 +4876,10 @@ tables:
     expression: cost_multiplier > 0 AND sale_multiplier > 0 AND priority >= 0 AND
       (capacity_limit IS NULL OR capacity_limit >= 0)
   indexes:
+  - name: idx_ai_upstream_account_group_tags
+    columns:
+    - tags
+    using: gin
   - name: uk_ai_upstream_account_group_scope_id
     unique: true
     columns:
@@ -4665,6 +4921,10 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/upstream
+  - /console/api-keys
+  - /models
   columns:
     account_group_id:
       type: int64
@@ -4760,6 +5020,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /console/api-keys
   columns:
     account_group_id: int64
     group_code: string(64)
@@ -4843,6 +5105,10 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/upstream
+  - /console/api-keys
+  - /models
   columns:
     account_group_id:
       type: int64
@@ -4976,6 +5242,88 @@ tables:
       strategy: foreign_key_cascade
       parent_table: ai_upstream_account
   imported: false
+- table: ai_upstream_account_resource
+  domain: ai
+  profile: relation_entity
+  soft_delete_policy: full_lifecycle_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: relation_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  frontend_routes:
+  - /admin/upstream
+  columns:
+    account_id:
+      type: int64
+      constraints: NOT NULL
+    resource_id: int64
+    resource_code:
+      type: string(192)
+      constraints: NOT NULL DEFAULT ''
+    resource_group_id: int64
+    resource_group_code:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    grant_type:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'allow'
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    effective_from: instant
+    effective_to: instant
+  unique_constraints:
+  - name: uk_ai_upstream_account_resource_uuid
+    columns:
+    - uuid
+  - name: uk_ai_upstream_account_resource
+    columns:
+    - tenant_id
+    - organization_id
+    - account_id
+    - resource_code
+    - resource_group_code
+  foreign_keys:
+  - name: fk_ai_upstream_account_resource_account
+    columns:
+    - tenant_id
+    - organization_id
+    - account_id
+    references_table: ai_upstream_account
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_upstream_account_resource_target
+    expression: (NULLIF(resource_code, '') IS NOT NULL) <> (NULLIF(resource_group_code,
+      '') IS NOT NULL) AND grant_type IN ('allow', 'deny') AND priority >= 0 AND (effective_to
+      IS NULL OR effective_from IS NULL OR effective_to > effective_from)
+  indexes:
+  - name: idx_ai_upstream_account_resource_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - account_id
+    - grant_type
+    - priority
+    - id
+  - name: idx_ai_upstream_account_resource_lookup
+    columns:
+    - tenant_id
+    - organization_id
+    - account_id
+    - status
+    - grant_type
+    - priority
+    - id
+  imported: false
 - table: ai_upstream_object_route
   domain: ai
   profile: runtime_binding
@@ -4987,6 +5335,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/upstream
   columns:
     api_key_id: int64
     account_group_id: int64
@@ -5067,6 +5417,11 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/dashboard
+  - /admin/upstream
+  - /console/api-keys
+  - /models
   columns:
     supplier_code:
       type: string(64)
@@ -5077,6 +5432,7 @@ tables:
     display_name:
       type: string(128)
       constraints: NOT NULL
+    display_name_i18n: json
     description: string(512)
     icon_drive_uri: string(512)
     icon_resource_snapshot: json
@@ -5156,6 +5512,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/upstream
   columns:
     supplier_id:
       type: int64
@@ -5240,6 +5598,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/upstream
   columns:
     supplier_id:
       type: int64
@@ -5395,6 +5755,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/upstream
   columns:
     supplier_id:
       type: int64
@@ -5572,6 +5934,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /console/api-keys
   columns:
     name: string(128)
     policy_type: int32
@@ -5619,6 +5983,10 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/ratelimit
+  - /admin/upstream
+  - /console/api-keys
   columns:
     user_id:
       type: int64
@@ -5711,6 +6079,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /console/api-keys
   columns:
     user_id:
       type: int64
@@ -5805,6 +6175,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/ratelimit
   columns:
     policy_name: string(128)
     scope_type: int32
@@ -5840,6 +6212,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/ratelimit
   columns:
     rule_name: string(128)
     rule_category: int32
@@ -5891,6 +6265,140 @@ tables:
     - target_value_hash
     - status
   imported: false
+- table: iam_user_preference
+  domain: iam_user
+  profile: user_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: user_runtime_entity
+  api_surfaces:
+  - app
+  frontend_routes:
+  - /console/settings
+  columns:
+    owner_type:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    owner_id:
+      type: int64
+      constraints: NOT NULL
+    data_scope:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    status:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    version:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    deleted_at: instant
+    deleted_by: int64
+    language:
+      type: string(32)
+      constraints: NOT NULL DEFAULT ''
+    timezone:
+      type: string(64)
+      constraints: NOT NULL DEFAULT ''
+    notification_preferences:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+  required_columns:
+  - user_id
+  unique_constraints:
+  - name: uk_iam_user_preference_scope
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+  check_constraints:
+  - name: ck_iam_user_preference_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+  - name: ck_iam_user_preference_values
+    expression: length(language) <= 32 AND length(timezone) <= 64 AND version >= 0
+  indexes:
+  - name: idx_iam_user_preference_user_updated
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - updated_at
+    - id
+  imported: false
+- table: integration_webhook_endpoint
+  domain: integration
+  profile: user_entity
+  compliance_level: L3
+  system_of_record: true
+  write_owner: router-service
+  common_columns: user_runtime_entity
+  api_surfaces:
+  - app
+  frontend_routes:
+  - /console/settings
+  columns:
+    owner_type:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    owner_id:
+      type: int64
+      constraints: NOT NULL
+    data_scope:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    status:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    version:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    deleted_at: instant
+    deleted_by: int64
+    endpoint_code:
+      type: string(128)
+      constraints: NOT NULL
+    name:
+      type: string(128)
+      constraints: NOT NULL
+    target_url:
+      type: string(1024)
+      constraints: NOT NULL DEFAULT ''
+    event_types:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
+    signing_alg:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'hmac-sha256'
+    retry_policy:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    failure_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+  required_columns:
+  - user_id
+  - endpoint_code
+  - name
+  unique_constraints:
+  - name: uk_integration_webhook_endpoint_scope_code
+    columns:
+    - tenant_id
+    - organization_id
+    - endpoint_code
+  check_constraints:
+  - name: ck_integration_webhook_endpoint_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+  - name: ck_integration_webhook_endpoint_values
+    expression: length(endpoint_code) > 0 AND length(name) > 0 AND length(target_url)
+      <= 1024 AND failure_count >= 0 AND version >= 0
+  indexes:
+  - name: idx_integration_webhook_endpoint_scope_code
+    columns:
+    - tenant_id
+    - organization_id
+    - endpoint_code
+    - id
+  imported: false
 - table: ops_alert_event
   domain: ops
   profile: audit_event
@@ -5902,6 +6410,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/monitor
   columns:
     alert_no: string(128)
     severity: enum_int32
@@ -5985,6 +6495,51 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /
+  - /admin/cache
+  - /admin/marketing/referralStrategies
+  - /admin/memberships/package_groups
+  - /admin/memberships/package_groups/{packageGroupId}
+  - /admin/memberships/packages
+  - /admin/memberships/packages/{packageId}
+  - /admin/memberships/plans
+  - /admin/model
+  - /admin/model/mappings
+  - /admin/model/resources
+  - /admin/payments/channels
+  - /admin/payments/methods
+  - /admin/payments/methods/{methodId}
+  - /admin/payments/provider_accounts
+  - /admin/payments/provider_accounts/{providerAccountId}
+  - /admin/payments/reconciliation_runs
+  - /admin/payments/route_rules
+  - /admin/payments/route_rules/{routeRuleId}
+  - /admin/promotions/coupon_stocks
+  - /admin/promotions/offers
+  - /admin/promotions/offers/{offerId}
+  - /admin/ratelimit
+  - /admin/recharges/exchangeRules
+  - /admin/recharges/packages
+  - /admin/recharges/packages/{packageId}
+  - /admin/recharges/settings
+  - /admin/request-log
+  - /admin/runtime-region
+  - /admin/settings
+  - /admin/site
+  - /admin/storage/buckets
+  - /admin/storage/buckets/{bucketId}
+  - /admin/storage/defaultBuckets
+  - /admin/storage/garbageCollection
+  - /admin/storage/providers
+  - /admin/storage/providers/{providerId}
+  - /admin/storage/quotas
+  - /admin/storage/reconciliation
+  - /admin/upstream
+  - /auth/oauth/callback/:provider
+  - /console/api-keys
+  - /console/notifications
+  - /console/user
   columns:
     id:
       type: int64
@@ -6107,6 +6662,14 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/cache
+  - /admin/runtime-region
+  - /admin/settings
+  - /admin/site
+  - /admin/upstream
+  - /auth/login
+  - /auth/register
   columns:
     snapshot_no: string(128)
     config_scope: enum_int32
@@ -6192,6 +6755,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/monitor
   columns:
     instance_id: int64
     heartbeat_at: instant
@@ -6273,6 +6838,11 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/dashboard
+  - /admin/monitor
+  - /admin/service-nodes
+  - /console/dashboard
   columns:
     instance_code: string(128)
     deployment_mode: enum_int32
@@ -6318,6 +6888,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/model
   columns:
     job_name: string(128)
     job_type: enum_int32
@@ -6471,6 +7043,10 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/dashboard
+  - /admin/monitor
+  - /console/dashboard
   columns:
     metric_scope: enum_int32
     metric_name: string(128)
@@ -6507,6 +7083,22 @@ tables:
     - period_start
     - dimension_key
     - dimension_value
+  indexes:
+  - name: idx_ops_metric_snapshot_name_period
+    columns:
+    - tenant_id
+    - organization_id
+    - metric_name
+    - period_start
+    - id
+  - name: idx_ops_metric_snapshot_scope_period
+    columns:
+    - tenant_id
+    - organization_id
+    - metric_scope
+    - metric_period
+    - period_start
+    - id
   check_constraints:
   - name: ck_ops_metric_snapshot_period_interval
     expression: period_end IS NULL OR period_end > period_start
@@ -6545,6 +7137,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /console/settings
   columns:
     id:
       type: int64
@@ -6653,6 +7247,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /console/dashboard
   columns:
     app_id: string(128)
     scope_type:
@@ -6766,6 +7362,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /auth/register
   columns:
     id:
       type: int64
@@ -6829,6 +7427,9 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/marketing/referrals
+  - /auth/register
   columns:
     id:
       type: int64
@@ -6971,6 +7572,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/marketing/referralStrategies
   columns:
     id:
       type: int64

@@ -52,22 +52,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     if let Some(portal) = &mut portal {
         portal.license_edition = Some(license_edition.as_str().to_owned());
     }
-    // Bootstrap Access-Token for the portal login flow. Every packaged
-    // deployment resolves it here: an explicit SDKWORK_ACCESS_TOKEN wins,
-    // otherwise a signed tenant-bound token is issued (tenant signing key
-    // ensured first, then a signed JWT persisted as an IAM session).
-    if let Some(portal) = &mut portal {
-        match sdkwork_api_cloudrouter_standalone_gateway::bootstrap_credential::resolve_bootstrap_access_token()
-            .await
-        {
-            Ok(Some(token)) => portal.bootstrap_access_token = Some(token),
-            Ok(None) => {}
-            Err(error) => tracing::warn!(
-                %error,
-                "bootstrap access token issuance failed; portal falls back to a payload-only token",
-            ),
-        }
-    }
+    // No bootstrap Access-Token is issued or injected for the portal runtime
+    // script: distributing a signed or session-bound token through an
+    // anonymously readable script would publish a live credential to every
+    // visitor. Development workstations may opt in to a payload-only token
+    // through SDKWORK_CLOUDROUTER_PORTAL_DEV_BOOTSTRAP_TOKEN on the edge server.
     let mut readiness_checks = vec![assembly.readiness_check.clone()];
     if let Some(portal) = &portal {
         readiness_checks.push(portal.readiness_check());

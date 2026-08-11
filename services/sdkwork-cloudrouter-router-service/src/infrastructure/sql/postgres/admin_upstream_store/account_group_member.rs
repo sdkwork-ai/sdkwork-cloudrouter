@@ -43,7 +43,7 @@ pub(super) async fn list(
         WHERE member.tenant_id = $1 AND member.organization_id = $2
           AND member.account_group_id = $3 AND member.deleted_at IS NULL
         ORDER BY member.priority ASC, member.routing_weight DESC, member.id ASC
-        LIMIT {MAX_NESTED_ITEMS}
+        LIMIT {{MAX_NESTED_ITEMS + 1}}
         "#
     );
     let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
@@ -53,6 +53,11 @@ pub(super) async fn list(
         .fetch_all(pool)
         .await
         .map_err(|error| store_error("failed to list upstream account group members", error))?;
+    if rows.len() > MAX_NESTED_ITEMS {
+        return Err(DomainError::new(format!(
+            "upstream account group members exceed the bounded maximum of {MAX_NESTED_ITEMS} items"
+        )));
+    }
     rows.into_iter().map(map_row).collect()
 }
 

@@ -8,6 +8,8 @@ tables:
   common_columns: user_runtime_entity
   api_surfaces:
   - app
+  frontend_routes:
+  - /console/settings
   columns:
     owner_type:
       type: int32
@@ -68,6 +70,8 @@ tables:
   common_columns: user_runtime_entity
   api_surfaces:
   - app
+  frontend_routes:
+  - /console/settings
   columns:
     owner_type:
       type: int32

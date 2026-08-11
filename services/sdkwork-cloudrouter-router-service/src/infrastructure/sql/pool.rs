@@ -37,6 +37,8 @@ const CRITICAL_CHAT_COLUMNS: &[&str] = &[
     "ai_chat_message.message_no",
     "ai_chat_context_snapshot.snapshot_no",
     "ai_runtime_invocation.invocation_no",
+    "ai_runtime_invocation_event.event_no",
+    "ai_runtime_artifact.runtime_invocation_id",
     "ai_runtime_usage_link.user_id",
 ];
 
@@ -47,6 +49,8 @@ const CRITICAL_CHAT_INDEXES: &[&str] = &[
     "uk_ai_chat_message_scope_conversation_no",
     "uk_ai_chat_context_snapshot_scope_turn_no",
     "uk_ai_runtime_invocation_scope_uuid",
+    "uk_ai_runtime_invocation_event_scope_uuid",
+    "uk_ai_runtime_artifact_scope_uuid",
     "uk_ai_runtime_usage_link_scope_uuid",
 ];
 

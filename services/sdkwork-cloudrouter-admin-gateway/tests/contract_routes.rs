@@ -79,11 +79,18 @@ async fn unknown_backend_route_still_returns_not_found() {
 
 #[tokio::test]
 async fn default_router_does_not_mount_commerce_backend_routes_locally() {
-    for path in [
-        "/backend/v3/api/payments/providers",
-        "/backend/v3/api/commerce_reports/payment_reconciliation",
+    for (method, path) in [
+        (Method::GET, "/backend/v3/api/payments/providers"),
+        (
+            Method::PATCH,
+            "/backend/v3/api/payments/providers/provider-stripe",
+        ),
+        (
+            Method::GET,
+            "/backend/v3/api/commerce_reports/payment_reconciliation",
+        ),
     ] {
-        let (status, payload) = call(Method::GET, path).await;
+        let (status, payload) = call(method, path).await;
 
         assert_eq!(StatusCode::NOT_FOUND, status, "{path}");
         assert_eq!(Value::Null, payload, "{path}");

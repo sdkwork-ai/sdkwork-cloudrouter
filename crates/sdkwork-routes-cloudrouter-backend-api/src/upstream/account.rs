@@ -181,10 +181,6 @@ pub(super) fn routes() -> Router<UpstreamState> {
             axum::routing::delete(deactivate_credential),
         )
         .route(
-            "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}/secret",
-            get(reveal_credential_secret),
-        )
-        .route(
             "/backend/v3/api/ai/upstream_accounts/{accountId}/resources",
             get(list_resources).put(replace_resources),
         )
@@ -407,42 +403,6 @@ async fn deactivate_credential(
     {
         Ok(true) => no_content_response(),
         Ok(false) => not_found("upstream account credential"),
-        Err(error) => domain_error(error),
-    }
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct CredentialSecretResponse {
-    credential_id: String,
-    secret: String,
-}
-
-async fn reveal_credential_secret(
-    State(state): State<UpstreamState>,
-    RequiredAdminSqlScopedSubject(scoped): RequiredAdminSqlScopedSubject,
-    Path((account_id, credential_id)): Path<(String, String)>,
-) -> Response {
-    let account_id = match parse_id(account_id, "accountId") {
-        Ok(value) => value,
-        Err(response) => return response.into_response(),
-    };
-    let credential_id = match parse_id(credential_id, "credentialId") {
-        Ok(value) => value,
-        Err(response) => return response.into_response(),
-    };
-    match state
-        .store
-        .reveal_account_credential_secret(subject(scoped), account_id, credential_id)
-        .await
-    {
-        Ok(secret) => item_response(
-            StatusCode::OK,
-            CredentialSecretResponse {
-                credential_id: credential_id.to_string(),
-                secret,
-            },
-        ),
         Err(error) => domain_error(error),
     }
 }

@@ -30,7 +30,7 @@ pub(super) async fn list(
         WHERE tenant_id = $1 AND organization_id = $2
           AND supplier_id = $3 AND deleted_at IS NULL
         ORDER BY priority ASC, id ASC
-        LIMIT {MAX_NESTED_ITEMS}
+        LIMIT {{MAX_NESTED_ITEMS + 1}}
         "#
     );
     let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
@@ -40,6 +40,11 @@ pub(super) async fn list(
         .fetch_all(pool)
         .await
         .map_err(|error| store_error("failed to list upstream supplier auth methods", error))?;
+    if rows.len() > MAX_NESTED_ITEMS {
+        return Err(DomainError::new(format!(
+            "upstream supplier auth methods exceed the bounded maximum of {MAX_NESTED_ITEMS} items"
+        )));
+    }
     rows.into_iter().map(map_row).collect()
 }
 

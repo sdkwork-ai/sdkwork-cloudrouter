@@ -9,57 +9,12 @@ catalogs:
     '@monaco-editor/react':
       specifier: ^4.7.0
       version: 4.7.0
-    '@tanstack/react-query':
-      specifier: ^5.96.2
-      version: 5.101.2
-    '@testing-library/dom':
-      specifier: 10.4.1
-      version: 10.4.1
-    '@testing-library/jest-dom':
-      specifier: 6.9.1
-      version: 6.9.1
-    '@testing-library/react':
-      specifier: 16.3.2
-      version: 16.3.2
-    '@tiptap/core':
-      specifier: ^3.23.4
-      version: 3.28.0
-    '@tiptap/extension-placeholder':
-      specifier: ^3.23.4
-      version: 3.28.0
-    '@tiptap/pm':
-      specifier: ^3.23.4
-      version: 3.28.0
-    '@tiptap/react':
-      specifier: ^3.23.4
-      version: 3.28.0
-    '@tiptap/starter-kit':
-      specifier: ^3.23.4
-      version: 3.28.0
-    '@types/node':
-      specifier: ^22.14.0
-      version: 22.20.0
     '@types/qrcode':
       specifier: ^1.5.6
       version: 1.5.6
-    clsx:
-      specifier: ^2.1.1
-      version: 2.1.1
-    emoji-picker-react:
-      specifier: ^4.18.0
-      version: 4.19.1
-    i18next:
-      specifier: ^26.3.4
-      version: 26.3.6
-    jsdom:
-      specifier: 29.1.1
-      version: 29.1.1
     lucide-react:
       specifier: ^0.546.0
       version: 0.546.0
-    motion:
-      specifier: ^12.38.0
-      version: 12.42.0
     qrcode:
       specifier: ^1.5.4
       version: 1.5.4
@@ -72,24 +27,9 @@ catalogs:
     react-i18next:
       specifier: ^17.0.2
       version: 17.0.8
-    react-markdown:
-      specifier: ^10.1.0
-      version: 10.1.0
-    react-router-dom:
-      specifier: ^7.14.0
-      version: 7.18.0
-    tailwind-merge:
-      specifier: ^3.5.0
-      version: 3.6.0
-    tsx:
-      specifier: ^4.21.0
-      version: 4.22.4
     typescript:
       specifier: ~5.8.2
       version: 5.8.3
-    vite-plugin-dts:
-      specifier: ^4.5.4
-      version: 4.5.4
     vitest:
       specifier: 4.1.5
       version: 4.1.5
@@ -3702,7 +3642,7 @@ importers:
         version: 19.2.3(@types/react@19.2.14)
       autoprefixer:
         specifier: ^10.4.21
-        version: 10.5.2(postcss@8.5.20)
+        version: 10.5.2(postcss@8.5.16)
       esbuild:
         specifier: ^0.28.0
         version: 0.28.1
@@ -3739,7 +3679,7 @@ importers:
         version: 5.8.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.5(@types/node@25.9.4)(jiti@2.7.0)(jsdom@29.1.1)(lightningcss@1.32.0)(tsx@4.22.4)
+        version: 4.1.5(@types/node@22.20.0)(jiti@2.7.0)(jsdom@29.1.1)(lightningcss@1.32.0)(tsx@4.22.4)
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache:
     dependencies:
@@ -3749,7 +3689,7 @@ importers:
     devDependencies:
       vitest:
         specifier: ^4.1.2
-        version: 4.1.5(@types/node@25.9.4)(jiti@2.7.0)(jsdom@29.1.1)(lightningcss@1.32.0)(tsx@4.22.4)
+        version: 4.1.5(@types/node@22.20.0)(jiti@2.7.0)(jsdom@29.1.1)(lightningcss@1.32.0)(tsx@4.22.4)
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-core:
     dependencies:
@@ -3781,7 +3721,7 @@ importers:
         version: 5.8.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.5(@types/node@25.9.4)(jiti@2.7.0)(jsdom@29.1.1)(lightningcss@1.32.0)(tsx@4.22.4)
+        version: 4.1.5(@types/node@22.20.0)(jiti@2.7.0)(jsdom@29.1.1)(lightningcss@1.32.0)(tsx@4.22.4)
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-iam:
     dependencies:
@@ -3904,6 +3844,9 @@ importers:
       '@sdkwork/payment-pc-admin-provider':
         specifier: workspace:*
         version: link:../../../../../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-admin-provider
+      '@stripe/stripe-js':
+        specifier: ^9.13.0
+        version: 9.13.0
       lucide-react:
         specifier: 'catalog:'
         version: 0.546.0(react@19.2.4)
@@ -3915,7 +3858,7 @@ importers:
         version: 19.2.4
       react-i18next:
         specifier: 'catalog:'
-        version: 17.0.8(i18next@26.3.6(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3)
+        version: 17.0.8(i18next@26.3.3(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3)
     devDependencies:
       '@types/qrcode':
         specifier: 'catalog:'
@@ -3962,7 +3905,7 @@ importers:
         version: 5.8.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.5(@types/node@25.9.4)(jiti@2.7.0)(jsdom@29.1.1)(lightningcss@1.32.0)(tsx@4.22.4)
+        version: 4.1.5(@types/node@22.20.0)(jiti@2.7.0)(jsdom@29.1.1)(lightningcss@1.32.0)(tsx@4.22.4)
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes:
     dependencies:
@@ -4009,7 +3952,7 @@ importers:
         version: 5.8.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.5(@types/node@25.9.4)(jiti@2.7.0)(jsdom@29.1.1)(lightningcss@1.32.0)(tsx@4.22.4)
+        version: 4.1.5(@types/node@22.20.0)(jiti@2.7.0)(jsdom@29.1.1)(lightningcss@1.32.0)(tsx@4.22.4)
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage:
     dependencies:
@@ -4036,7 +3979,7 @@ importers:
         version: link:../sdkwork-cloudroutes-pc-commons
       react-i18next:
         specifier: 'catalog:'
-        version: 17.0.8(i18next@26.3.6(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3)
+        version: 17.0.8(i18next@26.3.3(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3)
     devDependencies:
       typescript:
         specifier: 'catalog:'
@@ -4171,7 +4114,7 @@ importers:
         version: 5.8.3
       vite:
         specifier: ^6.2.0
-        version: 6.4.3(@types/node@25.9.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)
+        version: 6.4.3(@types/node@22.20.0)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-downloads:
     dependencies:
@@ -4196,7 +4139,7 @@ importers:
         version: 5.8.3
       vite:
         specifier: ^6.2.0
-        version: 6.4.3(@types/node@25.9.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)
+        version: 6.4.3(@types/node@22.20.0)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-i18n:
     dependencies:
@@ -4233,7 +4176,7 @@ importers:
         version: 5.8.3
       vite:
         specifier: ^6.2.0
-        version: 6.4.3(@types/node@25.9.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)
+        version: 6.4.3(@types/node@22.20.0)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models:
     dependencies:
@@ -4271,7 +4214,7 @@ importers:
         version: 5.8.3
       vite:
         specifier: ^6.2.0
-        version: 6.4.3(@types/node@25.9.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)
+        version: 6.4.3(@types/node@22.20.0)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-rankings:
     dependencies:
@@ -4444,7 +4387,7 @@ importers:
         version: 5.8.3
       vite:
         specifier: ^6.2.0
-        version: 6.4.3(@types/node@25.9.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)
+        version: 6.4.3(@types/node@22.20.0)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)
 
   sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript:
     dependencies:
@@ -6337,6 +6280,10 @@ packages:
 
   '@standard-schema/utils@0.3.0':
     resolution: {integrity: sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g==}
+
+  '@stripe/stripe-js@9.13.0':
+    resolution: {integrity: sha512-/0c72BUgzzVkVTlsw5uBn8x3waTdVJ/PZGfQ6jY1eu6K7olUPf4d9lgDPA9/0sIdsR8j7o3QIG8fOCO6ItcL7A==}
+    engines: {node: '>=12.16'}
 
   '@tabby_ai/hijri-converter@1.0.5':
     resolution: {integrity: sha512-r5bClKrcIusDoo049dSL8CawnHR6mRdDwhlQuIgZRNty68q0x8k3Lf1BtPAMxRf/GgnHBnIO4ujd3+GQdLWzxQ==}
@@ -10997,6 +10944,8 @@ snapshots:
 
   '@standard-schema/utils@0.3.0': {}
 
+  '@stripe/stripe-js@9.13.0': {}
+
   '@tabby_ai/hijri-converter@1.0.5': {}
 
   '@tailwindcss/node@4.2.2':
@@ -11955,6 +11904,15 @@ snapshots:
   aria-query@5.3.2: {}
 
   assertion-error@2.0.1: {}
+
+  autoprefixer@10.5.2(postcss@8.5.16):
+    dependencies:
+      browserslist: 4.28.4
+      caniuse-lite: 1.0.30001799
+      fraction.js: 5.3.4
+      picocolors: 1.1.1
+      postcss: 8.5.16
+      postcss-value-parser: 4.2.0
 
   autoprefixer@10.5.2(postcss@8.5.20):
     dependencies:

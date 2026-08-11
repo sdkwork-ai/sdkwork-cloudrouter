@@ -2,7 +2,6 @@ import {
   createClientOperationToken,
   getCloudRouterAppSdkClient,
   getModelsAppSdkClient,
-  getSdkworkMemoryAppSdkClient,
   streamRuntimeInvocationEvents,
   toSdkMediaResource,
   type CloudRouterAppSdkClient,
@@ -12,7 +11,6 @@ import {
   type ModelsAppSdkClient,
   type RuntimeStreamEvent,
   type RuntimeUsageSnapshot,
-  type SdkworkMemoryAppSdkClient,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 
 type JsonObject = Record<string, JsonValue>;
@@ -28,65 +26,19 @@ interface MutationOptions {
   idempotencyKey?: string;
 }
 
+
+
 interface PageParams {
   page?: number;
   pageSize?: number;
 }
 
-interface CursorPageParams {
-  cursor?: string;
-  pageSize?: number;
-}
-
 const DEFAULT_PAGE_SIZE = 20;
 
-export interface ChatConversationCreateBody {
-  agentId?: string;
-  agentSessionId?: string;
-  defaultModel?: string;
-  defaultProvider?: string;
-  memorySpaceId?: string;
-  metadata?: JsonObject;
-  sourceSurface?: string;
-  title?: string;
-}
 
-export interface ChatTurnCreateBody {
-  message: string;
-  metadata?: JsonObject;
-  mode?: string;
-  model?: string;
-  provider?: string;
-}
 
-export interface ChatTurnResponseBody {
-  message: string;
-  metadata?: JsonObject;
-  model?: string;
-  provider?: string;
-  runtime?: string;
-  runtimeInvocationId?: string;
-  status?: 'completed' | 'failed' | 'cancelled' | 'streaming';
-  usage?: RuntimeUsageSnapshot;
-  usageFactId?: string;
-}
 
-export interface MemorySpaceCreateBody {
-  metadata?: JsonObject;
-  title: string;
-}
 
-export interface MemoryEntryCreateBody {
-  content: string;
-  contentJson?: JsonObject;
-  memoryType?: string;
-  metadata?: JsonObject;
-  sourceConversationId?: string;
-  sourceInvocationId?: string;
-  sourceItemId?: string;
-  sourceKind?: string;
-  sourceTurnId?: string;
-}
 
 export interface RuntimeInvocationCreateBody {
   agentRunId?: string;
@@ -155,9 +107,6 @@ function appClient(client?: CloudRouterAppSdkClient): CloudRouterAppSdkClient {
   return client ?? getCloudRouterAppSdkClient();
 }
 
-function memoryClient(client?: SdkworkMemoryAppSdkClient): SdkworkMemoryAppSdkClient {
-  return client ?? getSdkworkMemoryAppSdkClient();
-}
 
 function mutationParams(prefix: string, options: MutationOptions = {}): { idempotencyKey: string } {
   return {
@@ -173,121 +122,6 @@ export async function listModelCatalog(
     return sdkClient.ai.models.list(params);
   }
   return getModelsAppSdkClient().ai.models.list(params);
-}
-
-export async function listChatConversations(
-  params: PageParams = { pageSize: DEFAULT_PAGE_SIZE },
-  sdkClient?: CloudRouterAppSdkClient,
-): Promise<unknown> {
-  const client = appClient(sdkClient);
-  return client.chat.conversations.list(params);
-}
-
-export async function createChatConversation(
-  body: ChatConversationCreateBody,
-  sdkClient?: CloudRouterAppSdkClient,
-): Promise<unknown> {
-  const client = appClient(sdkClient);
-  return client.chat.conversations.create(body);
-}
-
-export async function retrieveChatConversation(
-  conversationId: string,
-  sdkClient?: CloudRouterAppSdkClient,
-): Promise<unknown> {
-  const client = appClient(sdkClient);
-  return client.chat.conversations.retrieve(conversationId);
-}
-
-export async function listChatMessages(
-  conversationId: string,
-  params: CursorPageParams = { pageSize: DEFAULT_PAGE_SIZE },
-  sdkClient?: CloudRouterAppSdkClient,
-): Promise<unknown> {
-  const client = appClient(sdkClient);
-  return client.chat.conversations.messages.list(conversationId, params);
-}
-
-export async function createChatTurn(
-  conversationId: string,
-  body: ChatTurnCreateBody,
-  sdkClient?: CloudRouterAppSdkClient,
-): Promise<unknown> {
-  const client = appClient(sdkClient);
-  return client.chat.conversations.turns.create(conversationId, body);
-}
-
-export async function completeChatTurnResponse(
-  conversationId: string,
-  turnId: string,
-  body: ChatTurnResponseBody,
-  sdkClient?: CloudRouterAppSdkClient,
-): Promise<unknown> {
-  const client = appClient(sdkClient);
-  return client.chat.conversations.turns.response.create(
-    conversationId,
-    turnId,
-    sdkChatTurnResponseBody(body),
-  );
-}
-
-export async function listMemorySpaces(
-  params: PageParams = { pageSize: DEFAULT_PAGE_SIZE },
-  sdkClient?: SdkworkMemoryAppSdkClient,
-): Promise<unknown> {
-  const client = memoryClient(sdkClient);
-  return client.memory.spaces.list({ pageSize: params.pageSize });
-}
-
-export async function createMemorySpace(
-  body: MemorySpaceCreateBody,
-  options?: MutationOptions,
-  sdkClient?: SdkworkMemoryAppSdkClient,
-): Promise<unknown> {
-  const client = memoryClient(sdkClient);
-  return client.memory.spaces.create(
-    mapMemorySpaceCreateBody(body),
-    mutationParams('memory-space', options),
-  );
-}
-
-export async function retrieveMemorySpace(
-  spaceId: string,
-  sdkClient?: SdkworkMemoryAppSdkClient,
-): Promise<unknown> {
-  const client = memoryClient(sdkClient);
-  return client.memory.spaces.retrieve(spaceId);
-}
-
-export async function listMemoryEntries(
-  spaceId: string,
-  params: PageParams = { pageSize: DEFAULT_PAGE_SIZE },
-  sdkClient?: SdkworkMemoryAppSdkClient,
-): Promise<unknown> {
-  const client = memoryClient(sdkClient);
-  return client.memory.list({ spaceId, pageSize: params.pageSize });
-}
-
-export async function createMemoryEntry(
-  spaceId: string,
-  body: MemoryEntryCreateBody,
-  options?: MutationOptions,
-  sdkClient?: SdkworkMemoryAppSdkClient,
-): Promise<unknown> {
-  const client = memoryClient(sdkClient);
-  return client.memory.create(
-    mapMemoryEntryCreateBody(spaceId, body),
-    mutationParams('memory-entry', options),
-  );
-}
-
-export async function retrieveMemoryEntry(
-  spaceId: string,
-  entryId: string,
-  sdkClient?: SdkworkMemoryAppSdkClient,
-): Promise<unknown> {
-  const client = memoryClient(sdkClient);
-  return client.memory.retrieve(entryId, { spaceId });
 }
 
 export async function listRuntimeInvocations(
@@ -380,77 +214,6 @@ export async function createRuntimeArtifact(
   );
 }
 
-type MemoryRecordType =
-  | 'working'
-  | 'session'
-  | 'semantic'
-  | 'episodic'
-  | 'procedural'
-  | 'habit'
-  | 'relationship'
-  | 'domain_knowledge';
-
-function mapMemorySpaceCreateBody(body: MemorySpaceCreateBody): {
-  ownerSubjectType: string;
-  ownerSubjectId: string;
-  spaceType: string;
-  displayName: string;
-  metadata?: JsonObject;
-} {
-  const metadata = body.metadata ?? {};
-  const ownerSubjectType = readMetadataString(metadata, 'ownerSubjectType') ?? 'user';
-  const ownerSubjectId = readMetadataString(metadata, 'ownerSubjectId') ?? 'playground';
-  const spaceType = readMetadataString(metadata, 'spaceType') ?? 'personal';
-  return {
-    ownerSubjectType,
-    ownerSubjectId,
-    spaceType,
-    displayName: body.title,
-    metadata: body.metadata,
-  };
-}
-
-function mapMemoryEntryCreateBody(spaceId: string, body: MemoryEntryCreateBody): {
-  spaceId: string;
-  scope: string;
-  memoryType: MemoryRecordType;
-  canonicalText: string;
-  metadata?: JsonObject;
-} {
-  return {
-    spaceId,
-    scope: 'user',
-    memoryType: normalizeMemoryRecordType(body.memoryType),
-    canonicalText: body.content,
-    metadata: compactJsonObject({
-      ...body.metadata,
-      contentJson: body.contentJson,
-      sourceConversationId: body.sourceConversationId,
-      sourceInvocationId: body.sourceInvocationId,
-      sourceItemId: body.sourceItemId,
-      sourceKind: body.sourceKind,
-      sourceTurnId: body.sourceTurnId,
-    }),
-  };
-}
-
-function normalizeMemoryRecordType(value: string | undefined): MemoryRecordType {
-  const normalized = (value ?? 'semantic').trim().toLowerCase();
-  switch (normalized) {
-    case 'working':
-    case 'session':
-    case 'semantic':
-    case 'episodic':
-    case 'procedural':
-    case 'habit':
-    case 'relationship':
-    case 'domain_knowledge':
-      return normalized as MemoryRecordType;
-    default:
-      return 'semantic';
-  }
-}
-
 function readMetadataString(metadata: JsonObject, key: string): string | undefined {
   const value = metadata[key];
   return typeof value === 'string' && value.length > 0 ? value : undefined;
@@ -475,14 +238,6 @@ function sdkUsageSnapshot(value: RuntimeUsageSnapshot | undefined): SdkUsageSnap
   };
 }
 
-function sdkChatTurnResponseBody(
-  body: ChatTurnResponseBody,
-): Omit<ChatTurnResponseBody, 'usage'> & { usage?: SdkUsageSnapshot } {
-  return {
-    ...body,
-    usage: sdkUsageSnapshot(body.usage),
-  };
-}
 
 function sdkRuntimeInvocationCompleteBody(body: RuntimeInvocationCompleteBody): Omit<RuntimeInvocationCompleteBody, 'usageJson'> & { usageJson?: SdkUsageSnapshot } {
   return {

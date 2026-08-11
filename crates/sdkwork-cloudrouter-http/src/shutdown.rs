@@ -5,6 +5,11 @@ use tokio::sync::broadcast;
 
 static SHUTDOWN_BROADCAST: OnceLock<broadcast::Sender<()>> = OnceLock::new();
 
+/// Default bounded grace window for in-flight requests after a shutdown
+/// signal before remaining connections are aborted.
+pub const DEFAULT_GRACEFUL_SHUTDOWN_DEADLINE: std::time::Duration =
+    std::time::Duration::from_secs(30);
+
 fn shutdown_broadcast_sender() -> &'static broadcast::Sender<()> {
     SHUTDOWN_BROADCAST.get_or_init(|| {
         let (sender, _) = broadcast::channel(1);
@@ -51,4 +56,42 @@ pub async fn wait_for_shutdown_signal() {
 
     tracing::info!("broadcasting graceful shutdown to background workers");
     let _ = shutdown_broadcast_sender().send(());
+}
+
+/// Serve with graceful shutdown and a hard deadline.
+///
+/// After the shutdown signal, in-flight requests get a bounded grace window;
+/// when the deadline expires, the remaining connections are aborted so
+/// long-lived streams (SSE and streaming relays) cannot block process exit
+/// indefinitely while Kubernetes waits on `terminationGracePeriodSeconds`.
+pub async fn serve_with_graceful_shutdown_deadline(
+    listener: tokio::net::TcpListener,
+    router: axum::Router,
+    grace: std::time::Duration,
+) -> std::io::Result<()> {
+    let server = async {
+        axum::serve(listener, router)
+            .with_graceful_shutdown(wait_for_shutdown_signal())
+            .await
+    };
+    tokio::pin!(server);
+    tokio::select! {
+        result = &mut server => result,
+        _ = async {
+            // The signal broadcast fires after the serve-side graceful
+            // shutdown begins; then start the bounded grace window.
+            let mut receiver = subscribe_shutdown_signal();
+            if receiver.recv().await.is_ok() {
+                tokio::time::sleep(grace).await;
+            } else {
+                std::future::pending::<()>().await;
+            }
+        } => {
+            tracing::warn!(
+                grace_seconds = grace.as_secs(),
+                "graceful shutdown deadline reached; aborting remaining in-flight connections"
+            );
+            Ok(())
+        }
+    }
 }

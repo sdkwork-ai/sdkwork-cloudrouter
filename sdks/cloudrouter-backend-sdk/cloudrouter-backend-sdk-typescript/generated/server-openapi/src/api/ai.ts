@@ -1,7 +1,7 @@
 import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
-import type { CreateUpstreamAccountCredentialRequest, CreateUpstreamAccountGroupRequest, CreateUpstreamAccountRequest, CreateUpstreamSupplierRequest, ExplainUpstreamAccountGroupRouteRequest, ReplaceUpstreamAccountGroupMembersRequest, ReplaceUpstreamAccountGroupResourcesRequest, ReplaceUpstreamAccountResourcesRequest, ReplaceUpstreamSupplierAuthMethodsRequest, ReplaceUpstreamSupplierEndpointsRequest, ReplaceUpstreamSupplierResourcesRequest, UpdateUpstreamAccountGroupRequest, UpdateUpstreamAccountRequest, UpdateUpstreamSupplierRequest, UpstreamAccount, UpstreamAccountCredential, UpstreamAccountCredentialListResponse, UpstreamAccountCredentialSecretResponse, UpstreamAccountGroup, UpstreamAccountGroupListResponse, UpstreamAccountGroupMemberCollection, UpstreamAccountGroupMemberListResponse, UpstreamAccountGroupResourceCollection, UpstreamAccountGroupResourceListResponse, UpstreamAccountGroupRouteExplanation, UpstreamAccountListResponse, UpstreamAccountResourceCollection, UpstreamAccountResourceListResponse, UpstreamAccountVerification, UpstreamResourceCatalogResponse, UpstreamSupplier, UpstreamSupplierAuthMethodCollection, UpstreamSupplierAuthMethodListResponse, UpstreamSupplierEndpointCollection, UpstreamSupplierEndpointListResponse, UpstreamSupplierListResponse, UpstreamSupplierResourceCollection, UpstreamSupplierResourceListResponse, VerifyUpstreamAccountRequest } from '../types';
+import type { CreateUpstreamAccountCredentialRequest, CreateUpstreamAccountGroupRequest, CreateUpstreamAccountRequest, CreateUpstreamSupplierRequest, ExplainUpstreamAccountGroupRouteRequest, ReplaceUpstreamAccountGroupMembersRequest, ReplaceUpstreamAccountGroupResourcesRequest, ReplaceUpstreamAccountResourcesRequest, ReplaceUpstreamSupplierAuthMethodsRequest, ReplaceUpstreamSupplierEndpointsRequest, ReplaceUpstreamSupplierResourcesRequest, UpdateUpstreamAccountGroupRequest, UpdateUpstreamAccountRequest, UpdateUpstreamSupplierRequest, UpstreamAccount, UpstreamAccountCredential, UpstreamAccountCredentialListResponse, UpstreamAccountGroup, UpstreamAccountGroupListResponse, UpstreamAccountGroupMemberCollection, UpstreamAccountGroupMemberListResponse, UpstreamAccountGroupResourceCollection, UpstreamAccountGroupResourceListResponse, UpstreamAccountGroupRouteExplanation, UpstreamAccountListResponse, UpstreamAccountResourceCollection, UpstreamAccountResourceListResponse, UpstreamAccountVerification, UpstreamResourceCatalogResponse, UpstreamSupplier, UpstreamSupplierAuthMethodCollection, UpstreamSupplierAuthMethodListResponse, UpstreamSupplierEndpointCollection, UpstreamSupplierEndpointListResponse, UpstreamSupplierListResponse, UpstreamSupplierResourceCollection, UpstreamSupplierResourceListResponse, VerifyUpstreamAccountRequest } from '../types';
 
 
 export interface AiUpstreamSuppliersResourcesUpdateParams {
@@ -215,20 +215,6 @@ export class AiUpstreamAccountsResourcesApi {
   }
 }
 
-export class AiUpstreamAccountsCredentialsSecretApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Get upstream account credential secret */
-  async retrieve(accountId: string, credentialId: string, requestOptions?: ApiRequestOptions): Promise<UpstreamAccountCredentialSecretResponse> {
-    return this.client.request<UpstreamAccountCredentialSecretResponse>(backendApiPath(`/ai/upstream_accounts/${serializePathParameter(accountId, { name: 'accountId', style: 'simple', explode: false })}/credentials/${serializePathParameter(credentialId, { name: 'credentialId', style: 'simple', explode: false })}/secret`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
-  }
-}
-
 export interface AiUpstreamAccountsCredentialsListParams {
   page?: number;
   pageSize?: number;
@@ -241,11 +227,9 @@ export interface AiUpstreamAccountsCredentialsCreateParams {
 
 export class AiUpstreamAccountsCredentialsApi {
   private client: HttpClient;
-  public readonly secret: AiUpstreamAccountsCredentialsSecretApi;
 
   constructor(client: HttpClient) {
     this.client = client;
-    this.secret = new AiUpstreamAccountsCredentialsSecretApi(client);
   }
 
 

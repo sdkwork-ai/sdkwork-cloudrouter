@@ -283,6 +283,8 @@ mod tests {
             "ai_chat_message_part",
             "ai_chat_context_snapshot",
             "ai_runtime_invocation",
+            "ai_runtime_invocation_event",
+            "ai_runtime_artifact",
             "ai_runtime_usage_link",
             "iam_gateway_api_key",
             "ops_gateway_instance",

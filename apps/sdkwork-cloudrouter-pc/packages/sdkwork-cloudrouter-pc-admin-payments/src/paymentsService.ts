@@ -4,7 +4,10 @@ import {
   getSdkworkPaymentBackendSdkClient,
 } from '@sdkwork/cloudroutes-pc-commons/sdk-clients';
 import { createIdempotencyParams } from '@sdkwork/cloudroutes-pc-commons/idempotency';
+import type { UpdatePaymentProviderRequest } from '@sdkwork/cloudrouter-backend-sdk';
 import type {
+  CheckAttemptStatusCommand,
+  CheckAttemptStatusResult,
   CreatePaymentChannelCommand,
   CreatePaymentMethodCommand,
   CreateReconciliationRunCommand,
@@ -32,9 +35,14 @@ export type { CreateRefundCommand as RefundCreateInput } from '@sdkwork/payment-
 export type { RetryRefundCommand as RefundRetryInput } from '@sdkwork/payment-backend-sdk';
 export type { CreateRouteRuleCommand as RouteRuleCreateInput } from '@sdkwork/payment-backend-sdk';
 export type { UpdateRouteRuleCommand as RouteRuleUpdateInput } from '@sdkwork/payment-backend-sdk';
+export type { UpdatePaymentProviderRequest as PaymentProviderUpdateInput } from '@sdkwork/cloudrouter-backend-sdk';
 
 export async function backendPaymentsProvidersList(params?: Parameters<CloudBackendPaymentsService['providers']['list']>[0]) {
   return getCloudRouterBackendSdkClient().payments.providers.list(params);
+}
+
+export async function backendPaymentProvidersUpdate(providerId: string, body: UpdatePaymentProviderRequest) {
+  return getCloudRouterBackendSdkClient().payments.providers.update(providerId, body);
 }
 
 export async function backendPaymentsMethodsList(params?: Parameters<BackendPaymentsService['methods']['list']>[0]) {
@@ -111,6 +119,13 @@ export async function backendPaymentDevTestPayment(body: CreateTestPaymentComman
   return getSdkworkPaymentBackendSdkClient().payments.dev.testPayments(
     body,
     createIdempotencyParams('test-payment'),
+  );
+}
+
+export async function backendPaymentDevCheckAttemptStatus(body: CheckAttemptStatusCommand): Promise<CheckAttemptStatusResult> {
+  return getSdkworkPaymentBackendSdkClient().payments.dev.checkAttemptStatus(
+    body,
+    createIdempotencyParams('check-attempt-status'),
   );
 }
 

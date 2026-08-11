@@ -1072,6 +1072,13 @@ struct CachedResponsePayload {
     content_type: Option<String>,
 }
 
+/// Upper bound for one cached idempotent response. Caching full multi-megabyte
+/// responses in Redis for the whole TTL lets a caller with a valid key grow
+/// cluster memory without bound; oversized responses are not cached (the
+/// lease is released and the retry simply re-executes under the fingerprint
+/// guard).
+const MAX_CACHED_RESPONSE_BYTES: usize = 1024 * 1024;
+
 impl CachedResponsePayload {
     fn from_response(response: &InvocationDispatchResponse) -> Option<Self> {
         let stream_body = response.stream_body.lock().ok()?;
@@ -1079,12 +1086,26 @@ impl CachedResponsePayload {
             return None;
         }
         drop(stream_body);
-        Some(Self {
+        let payload = Self {
             status_code: response.status_code,
             body: response.body.clone(),
             body_bytes: response.body_bytes.clone(),
             content_type: response.content_type.clone(),
-        })
+        };
+        if payload.encoded_size() > MAX_CACHED_RESPONSE_BYTES {
+            return None;
+        }
+        Some(payload)
+    }
+
+    fn encoded_size(&self) -> usize {
+        let body_size = self
+            .body
+            .as_ref()
+            .map(|value| value.to_string().len())
+            .unwrap_or(0);
+        let bytes_size = self.body_bytes.as_ref().map(Vec::len).unwrap_or(0);
+        body_size.saturating_add(bytes_size)
     }
 
     fn to_dispatch_response(&self) -> InvocationDispatchResponse {

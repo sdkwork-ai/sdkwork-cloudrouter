@@ -208,6 +208,16 @@ class FrontendOperationAudit:
     DRIVE_BACKEND_SDK_PATTERN = re.compile(
         r"\b(?:getSdkworkDriveBackendSdkClient|getDriveStorageSdk)\s*\("
     )
+    # Composed commerce capability SDKs: payment, membership, promotion, and
+    # base-data operations are owned by their capability contracts
+    # (sdkwork-payment / sdkwork-commerce / sdkwork-base-data), so service
+    # files that dispatch through these clients are exempt from the Cloud
+    # Router operation contract.
+    COMPOSED_COMMERCE_SDK_PATTERN = re.compile(
+        r"\b(?:getSdkworkPaymentBackendSdkClient|getSdkworkMembershipBackendSdkClient|"
+        r"getSdkworkPromotionBackendSdkClient|getSdkworkBaseDataBackendSdkClient|"
+        r"getSdkworkCommerceService)\s*\("
+    )
     ADMIN_APP_API_SURFACE_ROUTES = frozenset(
         {
             "/admin/drive/spaces",
@@ -484,6 +494,7 @@ class FrontendOperationAudit:
                 and not is_app_shell_operation
                 and isinstance(route, str)
                 and route_contract is not None
+                and not self._is_dependency_owned_contract_route(route_contract, entries)
             ):
                 for read_source in read_sources:
                     if read_source not in route_tables[route_contract]:
@@ -553,11 +564,15 @@ class FrontendOperationAudit:
                     or self.GENERATIONS_SERVICE_PATTERN.search(source_text) is not None
                     or self.GENERATIONS_SERVICE_TYPE_PATTERN.search(source_text) is not None
                     or self.MEMORY_APP_SDK_PATTERN.search(source_text) is not None
+                    or self.COMPOSED_COMMERCE_SDK_PATTERN.search(source_text) is not None
                 )
             ):
                 # Operations dispatched through external capability SDKs
-                # (sdkwork-generations-app-sdk / sdkwork-memory-app-sdk) are owned
-                # by their capability contracts, not the Cloud Router app contract.
+                # (sdkwork-generations-app-sdk / sdkwork-memory-app-sdk /
+                # sdkwork-payment-backend-sdk / sdkwork-membership-backend-sdk /
+                # sdkwork-promotion-backend-sdk / sdkwork-base-data-backend-sdk)
+                # are owned by their capability contracts, not the Cloud Router
+                # app/backend contract.
                 continue
             messages.append(f"frontend operation missing from contract: {key}")
         for key in sorted(expected):
@@ -1026,6 +1041,26 @@ class FrontendOperationAudit:
             if route == prefix or route.startswith(f"{prefix}/"):
                 return candidate
         return None
+
+    def _is_dependency_owned_contract_route(
+        self,
+        route_contract: str | None,
+        entries: list[dict[str, Any]],
+    ) -> bool:
+        if route_contract is None:
+            return False
+        routes = self._load_contract().get("routes", [])
+        if not isinstance(routes, list):
+            return False
+        for item in routes:
+            if (
+                isinstance(item, dict)
+                and item.get("route") == route_contract
+                and item.get("dependency_owned") is True
+                and isinstance(item.get("dependency_sdk_family"), str)
+            ):
+                return True
+        return False
 
     def _source_text(self, source: str, cache: dict[str, str | None]) -> str | None:
         if source in cache:

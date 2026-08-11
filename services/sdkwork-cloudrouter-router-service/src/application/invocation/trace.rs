@@ -110,7 +110,9 @@ fn inferred_error_type(status_code: u16) -> String {
 }
 
 fn mask_error_message(message: &str) -> String {
-    let mut value = message.trim().replace("sk-", "sk-***");
+    // Use the shared redaction authority so exported traces never carry raw
+    // `sk-`/`sp-`/`Bearer` credential material into the observability backend.
+    let mut value = crate::redaction::redact_sensitive_tokens(message.trim());
     if value.chars().count() > 1024 {
         value = value.chars().take(1024).collect::<String>();
         value.push_str("...");

@@ -46,7 +46,7 @@
     "provider": "default",
     "hooks": []
   },
-  "materializedTableCount": 41,
+  "materializedTableCount": 43,
   "materializedTables": [
     "ai_chat_context_snapshot",
     "ai_chat_conversation",
@@ -71,7 +71,9 @@
     "ai_routing_policy",
     "ai_routing_profile",
     "ai_routing_rule",
+    "ai_runtime_artifact",
     "ai_runtime_invocation",
+    "ai_runtime_invocation_event",
     "ai_runtime_usage_link",
     "ai_upstream_account",
     "ai_upstream_account_credential",

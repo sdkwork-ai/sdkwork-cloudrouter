@@ -39,6 +39,7 @@ const AUTH_BUILDER = {
   public: "public",
   "dual-token": "dual_token",
   "api-key": "api_key",
+  "api-key-or-dual-token": "api_key_or_dual_token",
   oauth: "oauth",
   openApiFlexible: "open_api_flexible",
 };

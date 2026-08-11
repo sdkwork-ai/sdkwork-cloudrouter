@@ -24,7 +24,6 @@ export type { AnthropicUsage } from './anthropic-usage';
 export type { CreateCompletionChoice } from './create-completion-choice';
 export type { CreateCompletionLogprobs } from './create-completion-logprobs';
 export type { DeleteResult } from './delete-result';
-export type { GatewayUserBalance } from './gateway-user-balance';
 export type { GoogleBatchEmbedContentsRequest } from './google-batch-embed-contents-request';
 export type { GoogleBatchEmbedContentsResponse } from './google-batch-embed-contents-response';
 export type { GoogleBlob } from './google-blob';
@@ -233,9 +232,6 @@ export type { OpenAiVectorStoreSearchRequest } from './open-ai-vector-store-sear
 export type { OpenAiVectorStoreSearchResponse } from './open-ai-vector-store-search-response';
 export type { OpenAiVectorStoreSearchResult } from './open-ai-vector-store-search-result';
 export type { OpenAiVectorStoreUpdateRequest } from './open-ai-vector-store-update-request';
-export type { OpenAiVendor } from './open-ai-vendor';
-export type { OpenAiVendorList } from './open-ai-vendor-list';
-export type { OpenAiVendorModel } from './open-ai-vendor-model';
 export type { OpenAiVideo } from './open-ai-video';
 export type { OpenAiVideoCharacter } from './open-ai-video-character';
 export type { OpenAiVideoCharacterCreateRequest } from './open-ai-video-character-create-request';

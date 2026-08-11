@@ -145,7 +145,6 @@ export type { UpstreamAccount } from './upstream-account';
 export type { UpstreamAccountCredential } from './upstream-account-credential';
 export type { UpstreamAccountCredentialItemResponse } from './upstream-account-credential-item-response';
 export type { UpstreamAccountCredentialListResponse } from './upstream-account-credential-list-response';
-export type { UpstreamAccountCredentialSecretResponse } from './upstream-account-credential-secret-response';
 export type { UpstreamAccountGroup } from './upstream-account-group';
 export type { UpstreamAccountGroupItemResponse } from './upstream-account-group-item-response';
 export type { UpstreamAccountGroupListResponse } from './upstream-account-group-list-response';

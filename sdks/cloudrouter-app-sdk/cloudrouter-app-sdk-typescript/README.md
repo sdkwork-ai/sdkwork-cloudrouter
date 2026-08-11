@@ -58,7 +58,6 @@ const client = new SdkworkAppClient({
 ## API Modules
 
 - `client.ai` - ai API
-- `client.chat` - chat API
 - `client.iam` - iam API
 - `client.notification` - notification API
 - `client.runtime` - runtime API
@@ -71,17 +70,6 @@ const client = new SdkworkAppClient({
 ```typescript
 // List routing usage
 const result = await client.ai.routing.usage.retrieve();
-```
-
-### chat
-
-```typescript
-// List chat conversations
-const params = {
-  page: 1,
-  page_size: 2,
-};
-const result = await client.chat.conversations.list(params);
 ```
 
 ### iam

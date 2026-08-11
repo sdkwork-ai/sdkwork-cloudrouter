@@ -30,6 +30,10 @@ type ProxyClient = Client<ProxyConnector, Body>;
 
 const DEFAULT_FORWARD_TIMEOUT: Duration = Duration::from_secs(30);
 const READY_CHECK_TIMEOUT: Duration = Duration::from_secs(2);
+/// Bounded grace window for in-flight requests after a shutdown signal before
+/// remaining connections (including SSE streams) are aborted. Stays below the
+/// Kubernetes `terminationGracePeriodSeconds` of 130 seconds.
+const GRACEFUL_SHUTDOWN_DEADLINE: Duration = Duration::from_secs(60);
 const PRODUCTION_ASSET_CACHE_CONTROL: &str = "public, max-age=31536000, immutable";
 const PRODUCTION_HTML_CACHE_CONTROL: &str = "no-store";
 const DEFAULT_HSTS_MAX_AGE_SECONDS: u64 = 31_536_000;
@@ -126,11 +130,6 @@ pub struct EdgeServerConfig {
     portal_csp_frame_src: Vec<String>,
     portal_cors_allowed_origins: Vec<String>,
     portal_cors_policy: sdkwork_web_core::CorsPolicy,
-    /// Signed tenant-bound bootstrap Access-Token resolved at startup (or
-    /// injected via `SDKWORK_ACCESS_TOKEN`). Injected into the runtime-env
-    /// script so the IAM credential-entry login flow resolves through the
-    /// verified database path.
-    portal_bootstrap_access_token: Option<String>,
     /// Commercial edition (community/pro/enterprise/oem) resolved from the
     /// license key at startup; injected into the runtime-env script.
     portal_license_edition: Option<String>,
@@ -233,9 +232,12 @@ pub async fn serve_with_runtime_config(
     )
     .map_err(anyhow::Error::msg)?;
     let listener = tokio::net::TcpListener::bind(bind_addr).await?;
-    axum::serve(listener, runtime::router_from_env().await?)
-        .with_graceful_shutdown(sdkwork_cloudrouter_http::wait_for_shutdown_signal())
-        .await?;
+    sdkwork_cloudrouter_http::serve_with_graceful_shutdown_deadline(
+        listener,
+        runtime::router_from_env().await?,
+        GRACEFUL_SHUTDOWN_DEADLINE,
+    )
+    .await?;
     Ok(())
 }
 
@@ -261,9 +263,12 @@ pub async fn serve_edge_server_with_runtime_config(
     )
     .map_err(anyhow::Error::msg)?;
     let listener = tokio::net::TcpListener::bind(bind_addr).await?;
-    axum::serve(listener, edge_server_router(config))
-        .with_graceful_shutdown(sdkwork_cloudrouter_http::wait_for_shutdown_signal())
-        .await?;
+    sdkwork_cloudrouter_http::serve_with_graceful_shutdown_deadline(
+        listener,
+        edge_server_router(config),
+        GRACEFUL_SHUTDOWN_DEADLINE,
+    )
+    .await?;
     Ok(())
 }
 
@@ -293,9 +298,12 @@ pub async fn serve_all_in_one_edge_server_with_runtime_config(
     )
     .map_err(anyhow::Error::msg)?;
     let listener = tokio::net::TcpListener::bind(bind_addr).await?;
-    axum::serve(listener, all_in_one_edge_router_from_env(config).await?)
-        .with_graceful_shutdown(sdkwork_cloudrouter_http::wait_for_shutdown_signal())
-        .await?;
+    sdkwork_cloudrouter_http::serve_with_graceful_shutdown_deadline(
+        listener,
+        all_in_one_edge_router_from_env(config).await?,
+        GRACEFUL_SHUTDOWN_DEADLINE,
+    )
+    .await?;
     Ok(())
 }
 
@@ -355,7 +363,6 @@ impl EdgeServerConfig {
             portal_csp_frame_src: default_portal_csp_frame_src(),
             portal_cors_allowed_origins: Vec::new(),
             portal_cors_policy: sdkwork_web_core::CorsPolicy::default(),
-            portal_bootstrap_access_token: None,
             portal_license_edition: None,
             development_private_network_cors: false,
             portal_content_security_policy: default_portal_content_security_policy(),
@@ -653,11 +660,6 @@ impl EdgeServerConfig {
     pub fn with_development_private_network_cors(mut self, enabled: bool) -> Self {
         self.development_private_network_cors = enabled;
         self.rebuild_portal_cors_policy(false);
-        self
-    }
-
-    pub fn with_portal_bootstrap_access_token(mut self, token: Option<String>) -> Self {
-        self.portal_bootstrap_access_token = token;
         self
     }
 
@@ -995,11 +997,7 @@ async fn serve_portal_static(state: &EdgeServerState, request: Request) -> Respo
             StatusCode::OK,
             "application/javascript; charset=utf-8",
             &state.config.portal_html_cache_control,
-            build_portal_runtime_env_script(
-                &state.config.portal_runtime_env,
-                state.config.portal_bootstrap_access_token.as_deref(),
-                state.config.portal_license_edition.as_deref(),
-            ),
+            build_portal_runtime_env_script(&state.config.portal_runtime_env),
             &state.config,
         );
     }
@@ -2599,11 +2597,7 @@ fn find_module_script_index(html: &str) -> Option<usize> {
     None
 }
 
-fn build_portal_runtime_env_script(
-    runtime_env: &PortalRuntimeEnv,
-    bootstrap_access_token: Option<&str>,
-    license_edition: Option<&str>,
-) -> String {
+fn build_portal_runtime_env_script(runtime_env: &PortalRuntimeEnv) -> String {
     let mut runtime_env_json = json!({
         "VITE_API_BASE_URL": runtime_env.api_base_url,
         "VITE_CLOUDROUTER_OPEN_API_BASE_URL": runtime_env.open_api_base_url,
@@ -2627,25 +2621,33 @@ fn build_portal_runtime_env_script(
     let mut script =
         format!("window.__CLOUDROUTER_ENV__ = Object.freeze({serialized});\n");
 
-    // IAM credential-entry bootstrap Access-Token. Priority:
-    // 1. an explicitly configured SDKWORK_ACCESS_TOKEN;
-    // 2. the signed tenant-bound token resolved at startup
-    //    (bootstrap_credential: tenant signing key ensured first, then a
-    //    signed JWT persisted as an IAM session — verified signature, tenant
-    //    binding and permission scope);
-    // 3. payload-only fallback for deployments without an IAM database
-    //    (development workstations), which requires the IAM development
-    //    authentication fallback to be enabled.
-    let bootstrap_access_token = std::env::var("SDKWORK_ACCESS_TOKEN")
-        .ok()
-        .filter(|value| !value.trim().is_empty())
-        .or_else(|| bootstrap_access_token.map(str::to_owned))
-        .unwrap_or_else(payload_only_bootstrap_access_token);
-    let bootstrap_access_token_json = json!(bootstrap_access_token).to_string();
-    script.push_str(&format!(
-        "window.__SDKWORK_CREDENTIAL_ENTRY_BOOTSTRAP_ACCESS_TOKEN__ = {bootstrap_access_token_json};\n"
-    ));
+    // Credential-entry bootstrap Access-Token. A usable Access-Token —
+    // whether an explicitly configured `SDKWORK_ACCESS_TOKEN` or a signed
+    // tenant-bound IAM session token — must never be distributed through an
+    // anonymously readable runtime script: it would publish a live credential
+    // to every visitor. Only an explicit development switch
+    // (`SDKWORK_CLOUDROUTER_PORTAL_DEV_BOOTSTRAP_TOKEN=true`) injects a
+    // payload-only JWT, which the IAM development authentication fallback
+    // accepts and which carries no real session authority.
+    if development_bootstrap_token_enabled() {
+        let bootstrap_access_token_json = json!(payload_only_bootstrap_access_token()).to_string();
+        script.push_str(&format!(
+            "window.__SDKWORK_CREDENTIAL_ENTRY_BOOTSTRAP_ACCESS_TOKEN__ = {bootstrap_access_token_json};\n"
+        ));
+    }
     script
+}
+
+/// Whether the credential-entry bootstrap token injection is explicitly
+/// enabled for development workstations. Off by default so no credential-like
+/// material ever reaches the portal runtime script in ordinary deployments.
+fn development_bootstrap_token_enabled() -> bool {
+    matches!(
+        std::env::var("SDKWORK_CLOUDROUTER_PORTAL_DEV_BOOTSTRAP_TOKEN")
+            .as_deref()
+            .map(str::trim),
+        Ok("true") | Ok("1") | Ok("yes")
+    )
 }
 
 /// Builds a payload-only bootstrap Access-Token JWT for the credential-entry

@@ -25,7 +25,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -53,7 +53,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -81,7 +81,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -109,7 +109,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -137,7 +137,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -165,7 +165,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -193,7 +193,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -221,7 +221,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -249,7 +249,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -277,7 +277,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -305,7 +305,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "anthropic-messages",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -333,7 +333,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -361,7 +361,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -389,7 +389,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -417,7 +417,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -445,7 +445,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -473,7 +473,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -501,7 +501,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -529,7 +529,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -557,7 +557,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -585,7 +585,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -613,7 +613,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -641,7 +641,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -669,7 +669,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -697,7 +697,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "kling-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -725,7 +725,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "kling-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -753,7 +753,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "midjourney-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -781,7 +781,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "midjourney-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -809,7 +809,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "nano-banana-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -837,7 +837,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "nano-banana-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -865,7 +865,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "suno-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -893,7 +893,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "suno-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -921,7 +921,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -949,7 +949,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -977,7 +977,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1005,7 +1005,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1033,7 +1033,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1061,7 +1061,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1089,7 +1089,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1117,7 +1117,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1145,7 +1145,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1173,7 +1173,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1201,7 +1201,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1229,7 +1229,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1257,7 +1257,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1285,7 +1285,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1313,7 +1313,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1341,7 +1341,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1369,7 +1369,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1397,7 +1397,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1425,7 +1425,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1453,7 +1453,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1481,7 +1481,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1509,7 +1509,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1537,7 +1537,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1565,7 +1565,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1593,7 +1593,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1621,7 +1621,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1649,7 +1649,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1677,7 +1677,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1705,7 +1705,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1733,7 +1733,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1761,7 +1761,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1789,7 +1789,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1817,7 +1817,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1845,7 +1845,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1873,7 +1873,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1901,7 +1901,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1929,7 +1929,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1957,7 +1957,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -1985,7 +1985,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2013,7 +2013,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2041,7 +2041,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2069,7 +2069,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2097,7 +2097,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2125,7 +2125,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2153,7 +2153,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2181,7 +2181,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2209,7 +2209,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2237,7 +2237,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2265,7 +2265,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2293,7 +2293,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2321,7 +2321,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2349,7 +2349,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2377,7 +2377,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2405,7 +2405,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2433,7 +2433,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2461,7 +2461,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2480,34 +2480,6 @@
       "apiSurface": "open-api"
     },
     {
-      "method": "GET",
-      "path": "/v1/user/balance",
-      "operationId": "retrieveUserBalance",
-      "tags": [
-        "Models"
-      ],
-      "x-sdkwork-wire-protocol": "external",
-      "x-sdkwork-external-protocol-id": "openai-v1",
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-cloudrouter",
-        "apiAuthority": "sdkwork-cloudrouter-open-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "open-api"
-    },
-    {
       "method": "POST",
       "path": "/v1/moderations",
       "operationId": "createModeration",
@@ -2517,7 +2489,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2545,7 +2517,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2573,7 +2545,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2601,7 +2573,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2629,7 +2601,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2657,7 +2629,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2685,7 +2657,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2713,7 +2685,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2741,7 +2713,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2769,7 +2741,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2797,7 +2769,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2825,7 +2797,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2853,7 +2825,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2881,7 +2853,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2909,7 +2881,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2937,7 +2909,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2965,7 +2937,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -2993,7 +2965,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3021,7 +2993,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3049,7 +3021,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3077,7 +3049,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3105,7 +3077,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3133,7 +3105,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3161,7 +3133,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3189,7 +3161,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3217,7 +3189,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3245,7 +3217,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3273,7 +3245,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3301,7 +3273,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3329,7 +3301,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3357,7 +3329,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3385,7 +3357,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3413,7 +3385,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3441,7 +3413,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3469,7 +3441,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3497,7 +3469,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3525,7 +3497,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3553,7 +3525,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3581,7 +3553,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3609,7 +3581,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3637,7 +3609,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3665,7 +3637,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3693,7 +3665,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3721,7 +3693,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3749,7 +3721,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3777,7 +3749,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3805,7 +3777,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3833,7 +3805,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3861,7 +3833,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3889,7 +3861,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3917,7 +3889,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3945,7 +3917,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -3973,7 +3945,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -4001,7 +3973,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -4029,7 +4001,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -4057,7 +4029,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -4085,7 +4057,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -4113,7 +4085,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -4141,7 +4113,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -4169,7 +4141,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -4197,7 +4169,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -4225,7 +4197,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -4253,7 +4225,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -4281,7 +4253,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "openai-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -4309,7 +4281,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "vidu-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -4337,7 +4309,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "vidu-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -4365,7 +4337,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "vidu-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -4393,7 +4365,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "vidu-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -4421,7 +4393,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "vidu-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -4449,7 +4421,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "vidu-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -4477,7 +4449,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "volcengine-v1",
       "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {
@@ -4505,35 +4477,7 @@
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "volcengine-v1",
       "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-cloudrouter",
-        "apiAuthority": "sdkwork-cloudrouter.ai"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "open-api"
-    },
-    {
-      "method": "GET",
-      "path": "/v1/vendors",
-      "operationId": "listVendors",
-      "tags": [
-        "Vendors"
-      ],
-      "x-sdkwork-wire-protocol": "external",
-      "x-sdkwork-external-protocol-id": "openai-v1",
-      "auth": {
-        "mode": "dual-token",
+        "mode": "api-key-or-dual-token",
         "required": true
       },
       "handler": {

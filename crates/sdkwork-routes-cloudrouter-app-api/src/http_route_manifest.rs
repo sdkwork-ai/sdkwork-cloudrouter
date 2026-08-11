@@ -48,42 +48,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
-        "/app/v3/api/chat/conversations",
-        "chat",
-        "conversations.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/chat/conversations",
-        "chat",
-        "conversations.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/chat/conversations/{conversationId}",
-        "chat",
-        "conversations.retrieve",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/chat/conversations/{conversationId}/messages",
-        "chat",
-        "conversations.messages.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/chat/conversations/{conversationId}/turns",
-        "chat",
-        "conversations.turns.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response",
-        "chat",
-        "conversations.turns.response.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
         "/app/v3/api/iam/api_keys",
         "iam",
         "apiKeys.list",
@@ -117,12 +81,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/app/v3/api/iam/invites/claim",
         "iam",
         "invites.claim.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/iam/invites/issue",
-        "iam",
-        "invites.create",
     ),
     HttpRoute::public(
         HttpMethod::Post,

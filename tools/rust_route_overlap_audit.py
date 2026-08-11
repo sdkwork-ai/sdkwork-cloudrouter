@@ -301,6 +301,17 @@ class RustRouteOverlapAudit:
             }
         ):
             return True
+        if (
+            method == "POST"
+            and path == "/v1/chat/completions"
+            and source_paths
+            == {"services/sdkwork-cloudrouter-router-service/src/api/openai_chat.rs"}
+        ):
+            # openai_chat.rs builds one complete router per composition variant
+            # (relay/streaming/plugins/usage-recorder combinations); the
+            # callers mount exactly one variant, so the per-function route
+            # registration is mutually exclusive by construction.
+            return True
         if self._is_dependency_authority_route_overlap(method, path, source_paths):
             return True
         return False

@@ -838,6 +838,9 @@ class ApiContractManifestGenerator:
         rate_limit_tier = self._normalize_rate_limit_tier(entry.get("rate_limit_tier"))
         if rate_limit_tier:
             compiled["rate_limit_tier"] = rate_limit_tier
+        bounded_collection_max = entry.get("bounded_collection_max")
+        if isinstance(bounded_collection_max, int) and bounded_collection_max > 0:
+            compiled["bounded_collection_max"] = bounded_collection_max
         description = self._string(entry.get("description"))
         if description:
             compiled["description"] = description

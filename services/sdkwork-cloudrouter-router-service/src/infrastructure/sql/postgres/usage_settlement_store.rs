@@ -715,12 +715,16 @@ fn settlement_batch_no(candidates: &[SettlementCandidate]) -> String {
     if candidates.len() == 1 {
         return settlement_no(candidates[0].usage_fact.id);
     }
-    let mut hasher = DefaultHasher::new();
-    "usage-settlement-batch".hash(&mut hasher);
-    for candidate in candidates {
-        candidate.usage_fact.id.hash(&mut hasher);
-    }
-    format!("usage-settlement-batch-{:016x}", hasher.finish())
+    // Deterministic cryptographic idempotency key: a stable hash over the
+    // sorted candidate ids, so the same batch always maps to the same
+    // transaction number across processes and restarts.
+    let mut ids: Vec<String> = candidates
+        .iter()
+        .map(|candidate| candidate.usage_fact.id.to_string())
+        .collect();
+    ids.sort();
+    let digest = sha256_hash(ids.join(",").as_bytes());
+    format!("usage-settlement-batch-{digest}")
 }
 
 fn settlement_retry_delay(attempt: usize) -> Duration {

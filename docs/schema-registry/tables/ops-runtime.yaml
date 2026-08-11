@@ -10,6 +10,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/monitor
   columns:
     alert_no: string(128)
     severity: enum_int32
@@ -91,6 +93,51 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /
+  - /admin/cache
+  - /admin/marketing/referralStrategies
+  - /admin/memberships/package_groups
+  - /admin/memberships/package_groups/{packageGroupId}
+  - /admin/memberships/packages
+  - /admin/memberships/packages/{packageId}
+  - /admin/memberships/plans
+  - /admin/model
+  - /admin/model/mappings
+  - /admin/model/resources
+  - /admin/payments/channels
+  - /admin/payments/methods
+  - /admin/payments/methods/{methodId}
+  - /admin/payments/provider_accounts
+  - /admin/payments/provider_accounts/{providerAccountId}
+  - /admin/payments/reconciliation_runs
+  - /admin/payments/route_rules
+  - /admin/payments/route_rules/{routeRuleId}
+  - /admin/promotions/coupon_stocks
+  - /admin/promotions/offers
+  - /admin/promotions/offers/{offerId}
+  - /admin/ratelimit
+  - /admin/recharges/exchangeRules
+  - /admin/recharges/packages
+  - /admin/recharges/packages/{packageId}
+  - /admin/recharges/settings
+  - /admin/request-log
+  - /admin/runtime-region
+  - /admin/settings
+  - /admin/site
+  - /admin/storage/buckets
+  - /admin/storage/buckets/{bucketId}
+  - /admin/storage/defaultBuckets
+  - /admin/storage/garbageCollection
+  - /admin/storage/providers
+  - /admin/storage/providers/{providerId}
+  - /admin/storage/quotas
+  - /admin/storage/reconciliation
+  - /admin/upstream
+  - /auth/oauth/callback/:provider
+  - /console/api-keys
+  - /console/notifications
+  - /console/user
   columns:
     id:
       type: int64
@@ -211,6 +258,14 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/cache
+  - /admin/runtime-region
+  - /admin/settings
+  - /admin/site
+  - /admin/upstream
+  - /auth/login
+  - /auth/register
   columns:
     snapshot_no: string(128)
     config_scope: enum_int32
@@ -294,6 +349,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/monitor
   columns:
     instance_id: int64
     heartbeat_at: instant
@@ -373,6 +430,11 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/dashboard
+  - /admin/monitor
+  - /admin/service-nodes
+  - /console/dashboard
   columns:
     instance_code: string(128)
     deployment_mode: enum_int32
@@ -417,6 +479,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/model
   columns:
     job_name: string(128)
     job_type: enum_int32
@@ -568,6 +632,10 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/dashboard
+  - /admin/monitor
+  - /console/dashboard
   columns:
     metric_scope: enum_int32
     metric_name: string(128)
@@ -604,6 +672,22 @@ tables:
     - period_start
     - dimension_key
     - dimension_value
+  indexes:
+  - name: idx_ops_metric_snapshot_name_period
+    columns:
+    - tenant_id
+    - organization_id
+    - metric_name
+    - period_start
+    - id
+  - name: idx_ops_metric_snapshot_scope_period
+    columns:
+    - tenant_id
+    - organization_id
+    - metric_scope
+    - metric_period
+    - period_start
+    - id
   check_constraints:
   - name: ck_ops_metric_snapshot_period_interval
     expression: period_end IS NULL OR period_end > period_start
@@ -642,6 +726,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /console/dashboard
   columns:
     app_id: string(128)
     scope_type:
@@ -753,6 +839,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /console/settings
   columns:
     id:
       type: int64
@@ -922,6 +1010,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /auth/register
   columns:
     id:
       type: int64
@@ -984,6 +1074,9 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/marketing/referrals
+  - /auth/register
   columns:
     id:
       type: int64
@@ -1061,6 +1154,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/marketing/referralStrategies
   columns:
     id:
       type: int64

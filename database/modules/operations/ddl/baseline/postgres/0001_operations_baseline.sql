@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.4.0.
--- Registry SHA-256: 0eb8464b76cf2bc38c16b8e6058a048680741bc9a7def3d184ecb08472bac988.
+-- Registry SHA-256: 3ff5b9782ea0271fe269a6cea5ecc908972a9b4ead3cbea6be839e4ad9a17db3.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -231,6 +231,8 @@ CREATE TABLE IF NOT EXISTS ops_metric_snapshot (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_metric_snapshot ON ops_metric_snapshot (tenant_id, organization_id, metric_scope, metric_name, metric_period, period_start, dimension_key, dimension_value);
+CREATE INDEX IF NOT EXISTS idx_ops_metric_snapshot_name_period ON ops_metric_snapshot (tenant_id, organization_id, metric_name, period_start, id);
+CREATE INDEX IF NOT EXISTS idx_ops_metric_snapshot_scope_period ON ops_metric_snapshot (tenant_id, organization_id, metric_scope, metric_period, period_start, id);
 
 CREATE TABLE IF NOT EXISTS ops_notification_message (
     id BIGINT NOT NULL PRIMARY KEY,

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
-import { CheckCircle2, ChevronRight, Edit3, Eye, EyeOff, Layers3, Plus, Power, PowerOff, RefreshCw, Settings2, Trash2, XCircle } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Edit3, Layers3, Plus, Power, PowerOff, RefreshCw, Settings2, Trash2, XCircle } from 'lucide-react';
 import { SdkworkSearchableSelect } from '@sdkwork/appbase-pc-react';
-import { AdminTableShell, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
+import { AdminTableShell, BottomPagination, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
 import { formatDecimalDisplay } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { useTranslation } from 'react-i18next';
 import type {
@@ -84,13 +84,16 @@ export function AccountAdminPanel() {
   const [editing, setEditing] = useState<UpstreamAccount | null | undefined>(undefined);
   const [selected, setSelected] = useState<UpstreamAccount | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UpstreamAccount | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [pageInfo, setPageInfo] = useState<{ totalItems?: string | number } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const [accountPage, supplierPage, groupPage] = await Promise.all([
-        upstreamService.accounts.list({ page: 1, pageSize: 200, q: appliedQuery || undefined }),
+        upstreamService.accounts.list({ page, pageSize, q: appliedQuery || undefined }),
         upstreamService.suppliers.list({ page: 1, pageSize: 200 }),
         upstreamService.accountGroups.list({ page: 1, pageSize: 200 }),
       ]);
@@ -102,6 +105,7 @@ export function AccountAdminPanel() {
       setGroups(groupPage.items);
       setMemberships(nextMemberships);
       setItems(accountPage.items);
+      setPageInfo(accountPage.pageInfo ?? null);
       setSuppliers(supplierPage.items);
       setSelectedKey((current) => current === null || current === UNGROUPED_KEY || groupPage.items.some((group) => group.id === current) ? current : null);
       setSelected((current) => current ? accountPage.items.find((item) => item.id === current.id) ?? null : null);
@@ -110,12 +114,14 @@ export function AccountAdminPanel() {
     } finally {
       setLoading(false);
     }
-  }, [appliedQuery, t]);
+  }, [appliedQuery, page, pageSize, t]);
 
   useEffect(() => { void load(); }, [load]);
 
+  const totalAccountCount = Number(pageInfo?.totalItems ?? items.length);
   const { visibleItems, ungroupedCount } = useMemo(() => {
     const groupedIds = new Set(Object.values(memberships).flat());
+    // 计数针对当前服务端页（账号列表按页加载）；跨页统计需要服务端查询。
     const ungroupedCount = items.filter((item) => !groupedIds.has(item.id)).length;
     let visibleItems: UpstreamAccount[];
     if (selectedKey === null) {
@@ -261,7 +267,7 @@ export function AccountAdminPanel() {
         <div className="min-h-0 flex-1 overflow-y-auto p-2">
           <button type="button" className={groupEntryClass(selectedKey === null)} onClick={() => setSelectedKey(null)}>
             <span className="min-w-0"><span className="block truncate text-sm font-medium text-slate-800 dark:text-slate-200">{t('admin.upstream.account.groups.all')}</span></span>
-            <span className="shrink-0 text-xs text-slate-400">{t('admin.upstream.account.groups.accountCount', { count: items.length })}</span>
+            <span className="shrink-0 text-xs text-slate-400">{t('admin.upstream.account.groups.accountCount', { count: totalAccountCount })}</span>
           </button>
           <button type="button" className={groupEntryClass(selectedKey === UNGROUPED_KEY)} onClick={() => setSelectedKey(UNGROUPED_KEY)}>
             <span className="min-w-0"><span className="block truncate text-sm font-medium text-slate-800 dark:text-slate-200">{t('admin.upstream.account.groups.ungrouped')}</span></span>
@@ -328,6 +334,23 @@ export function AccountAdminPanel() {
           </tbody>
         </table>
         </AdminTableShell>
+        {pageInfo ? (
+          <BottomPagination
+            hasNextPage={Number(pageInfo.totalItems ?? 0) > page * pageSize}
+            itemCount={visibleItems.length}
+            nextLabel={t('common.pagination.next', 'Next page')}
+            onNextPage={() => setPage((current) => current + 1)}
+            onPageSizeChange={(nextPageSize) => { setPage(1); setPageSize(nextPageSize); }}
+            onPreviousPage={() => setPage((current) => Math.max(1, current - 1))}
+            page={page}
+            pageLabel={t('common.pagination.page', 'Page {page}')}
+            pageSize={pageSize}
+            pageSizeLabel={t('common.pagination.rows', 'Rows')}
+            pageSizeOptions={[20, 50, 100]}
+            previousLabel={t('common.pagination.previous', 'Previous page')}
+            showingLabel={t('common.pagination.showing', 'Showing')}
+          />
+        ) : null}
         {editing !== undefined ? <AccountModal account={editing} suppliers={suppliers} groups={groups} initialGroupId={selectedKey !== null && selectedKey !== UNGROUPED_KEY ? selectedKey : null} busy={busy} onSubmit={submitAccount} onClose={() => setEditing(undefined)} /> : null}
         {selected ? <AccountCredentials account={selected} supplier={suppliers.find((item) => item.id === selected.supplierId) ?? null} onClose={() => setSelected(null)} onAccountChanged={(account) => { setSelected(account); setItems((current) => current.map((item) => item.id === account.id ? account : item)); }} /> : null}
         {deleteTarget ? <ConfirmDialog title={t('admin.upstream.account.delete.title')} description={t('admin.upstream.account.delete.description', { name: deleteTarget.accountName })} confirmLabel={t('common.actions.delete')} tone="danger" isBusy={busy} onCancel={() => setDeleteTarget(null)} onConfirm={() => void deleteAccount()} /> : null}
@@ -356,9 +379,6 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
   const [selection, setSelection] = useState<ResourceSelection>(emptyResourceSelection());
   const [apiKeyMasked, setApiKeyMasked] = useState('');
   const [apiKeyInput, setApiKeyInput] = useState('');
-  const [apiKeyVisible, setApiKeyVisible] = useState(false);
-  const [activeCredentialId, setActiveCredentialId] = useState('');
-  const [revealError, setRevealError] = useState('');
   const [resourcesLoading, setResourcesLoading] = useState(true);
   const [groupMissing, setGroupMissing] = useState(false);
 
@@ -392,7 +412,6 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
           const activeCredential = credentials.find((credential) => credential.isActive) ?? credentials[0] ?? null;
           setApiKeyMasked(activeCredential?.maskedLabel ?? '');
           setApiKeyInput(activeCredential?.maskedLabel ?? '');
-          setActiveCredentialId(activeCredential?.id ?? '');
         }
       })
       .catch((cause) => {
@@ -405,22 +424,9 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
   }, [account]);
 
   const selectedAuthMethod = authMethods.find((method) => method.authMethodCode === authMethodCode) ?? null;
-  // 认证方式为 APIKEY 时显示 API Key 输入：创建模式必填，编辑模式展示已录入密钥的掩码
+  // 认证方式为 APIKEY 时显示 API Key 输入：创建模式必填，编辑模式仅展示掩码提示，
+  // 输入新值表示轮换密钥，留空表示保持当前密钥（写后只读，无法查看明文）。
   const showApiKeyInput = selectedAuthMethod?.authType === 'api_key';
-
-  // 编辑模式：解密当前凭据明文并显示；同步 apiKeyMasked 避免未改动提交时误判为换钥
-  const revealApiKey = async () => {
-    if (!account || !activeCredentialId) return;
-    try {
-      const plain = await upstreamService.accounts.getCredentialSecret(account.id, activeCredentialId);
-      setApiKeyMasked(plain);
-      setApiKeyInput(plain);
-      setApiKeyVisible(true);
-      setRevealError('');
-    } catch (cause) {
-      setRevealError(errorMessageI18n(cause, t('admin.upstream.account.errors.secretRevealFailed'), t));
-    }
-  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -450,7 +456,7 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
           </RowField>
           <RowField label={t('admin.upstream.account.form.preferredBaseUrl')}><select name="preferredEndpointId" className={selectClass} defaultValue={account?.preferredEndpointId ?? ''}><option value="">{t('admin.upstream.account.form.automatic')}</option>{endpoints.map((endpoint) => <option key={endpoint.id} value={endpoint.id}>{endpoint.endpointName} ({endpoint.baseUrl})</option>)}</select></RowField>
           <RowField label={t('admin.upstream.account.form.authMethod')} required><select name="authMethodCode" className={selectClass} value={authMethodCode} onChange={(event) => setAuthMethodCode(event.currentTarget.value)} required><option value="">{t('admin.upstream.account.form.selectMethod')}</option>{authMethods.map((method) => <option key={method.id} value={method.authMethodCode}>{method.authMethodName}</option>)}</select></RowField>
-          {showApiKeyInput ? <RowField label={t('admin.upstream.account.form.apiKey')} required={!account}><div className="flex items-center gap-2"><input name="apiKey" type={apiKeyVisible ? 'text' : 'password'} autoComplete="new-password" className={inputClass} value={apiKeyInput} onChange={(event) => setApiKeyInput(event.currentTarget.value)} placeholder={account ? apiKeyMasked || t('admin.upstream.account.form.apiKeyPlaceholder') : undefined} required={!account} />{account ? <button type="button" className={secondaryButtonClass} title={t(apiKeyVisible ? 'admin.upstream.account.form.apiKeyHide' : 'admin.upstream.account.form.apiKeyReveal')} disabled={busy} onClick={() => { if (apiKeyVisible) { setApiKeyVisible(false); setRevealError(''); } else { void revealApiKey(); } }}>{apiKeyVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button> : null}</div>{revealError ? <p className="mt-1 text-xs text-red-500">{revealError}</p> : null}</RowField> : null}
+          {showApiKeyInput ? <RowField label={t('admin.upstream.account.form.apiKey')} required={!account}><div className="flex items-center gap-2"><input name="apiKey" type="password" autoComplete="new-password" className={inputClass} value={apiKeyInput} onChange={(event) => setApiKeyInput(event.currentTarget.value)} placeholder={account ? t('admin.upstream.account.form.apiKeyRotatePlaceholder') : t('admin.upstream.account.form.apiKeyPlaceholder')} required={!account} /></div></RowField> : null}
           {!account ? <RowField label={t('admin.upstream.account.form.accountGroup')} required>
             <div className="min-w-0">
               <SdkworkSearchableSelect

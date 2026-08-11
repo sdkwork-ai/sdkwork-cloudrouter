@@ -2470,649 +2470,6 @@ frontend_operations:
   write_tables:
   - iam_session
   - iam_security_event
-- route: /playground
-  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
-  operation: listChatConversations
-  operation_id: chat.conversations.get
-  kind: read
-  api_surface: app
-  api_method: GET
-  api_path: /app/v3/api/chat/conversations
-  sdk_domain: chat
-  read_sources:
-  - ai_chat_conversation
-  response_schema:
-    name: ChatConversationListResponse
-    schema:
-      additionalProperties: false
-      name: ChatConversationListResponse
-      properties:
-        items:
-          items:
-            additionalProperties: false
-            name: ChatConversationItem
-            properties:
-              agentId:
-                maxLength: 128
-                nullable: true
-                type: string
-              agentSessionId:
-                maxLength: 128
-                nullable: true
-                type: string
-              createdAt:
-                maxLength: 64
-                type: string
-              defaultModel:
-                maxLength: 128
-                nullable: true
-                type: string
-              defaultProvider:
-                maxLength: 128
-                nullable: true
-                type: string
-              id:
-                maxLength: 128
-                minLength: 1
-                type: string
-              lastMessagePreview:
-                maxLength: 4096
-                nullable: true
-                type: string
-              memorySpaceId:
-                maxLength: 128
-                nullable: true
-                type: string
-              messageCount:
-                format: int64
-                pattern: ^[0-9]+$
-                type: string
-                x-sdkwork-int64-string: true
-                x-sdkwork-rust-type: i64
-              sourceSurface:
-                maxLength: 64
-                type: string
-              status:
-                maxLength: 64
-                type: string
-              title:
-                maxLength: 256
-                type: string
-              turnCount:
-                format: int64
-                pattern: ^[0-9]+$
-                type: string
-                x-sdkwork-int64-string: true
-                x-sdkwork-rust-type: i64
-              updatedAt:
-                maxLength: 64
-                type: string
-            required:
-            - id
-            - title
-            - status
-            - sourceSurface
-            - defaultModel
-            - defaultProvider
-            - agentId
-            - agentSessionId
-            - memorySpaceId
-            - lastMessagePreview
-            - messageCount
-            - turnCount
-            - createdAt
-            - updatedAt
-            type: object
-          type: array
-        pageInfo:
-          $ref: '#/components/schemas/PageInfo'
-      required:
-      - items
-      - pageInfo
-      type: object
-  query_parameters:
-  - name: page
-    schema:
-      type: integer
-      format: int32
-      minimum: 1
-      default: 1
-  - name: page_size
-    schema:
-      type: integer
-      format: int32
-      minimum: 1
-      maximum: 200
-      default: 20
-- route: /playground
-  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts
-  operation: fetchSessions
-  operation_id: chat.conversations.get
-  kind: read
-  api_surface: app
-  api_method: GET
-  api_path: /app/v3/api/chat/conversations
-  sdk_domain: chat
-  read_sources:
-  - ai_chat_conversation
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters: []
-  operation_scope: app_shell
-  openapi_exposed: false
-- route: /playground
-  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
-  operation: createChatConversation
-  operation_id: chat.conversations.post
-  kind: create
-  api_surface: app
-  api_method: POST
-  api_path: /app/v3/api/chat/conversations
-  sdk_domain: chat
-  read_sources:
-  - ai_chat_conversation
-  response_schema:
-    name: ChatConversationCreateResponse
-    schema:
-      additionalProperties: false
-      name: ChatConversationCreateResponse
-      properties:
-        item:
-          $ref: '#/components/schemas/ChatConversationItem'
-      required:
-      - item
-      type: object
-  request_schema:
-    name: CreateChatConversationRequest
-    schema:
-      additionalProperties: false
-      name: CreateChatConversationRequest
-      properties:
-        agentId:
-          maxLength: 128
-          type: string
-        agentSessionId:
-          maxLength: 128
-          type: string
-        defaultModel:
-          maxLength: 128
-          type: string
-        defaultProvider:
-          maxLength: 128
-          type: string
-        memorySpaceId:
-          maxLength: 128
-          type: string
-        metadata:
-          additionalProperties: true
-          type: object
-        sourceSurface:
-          maxLength: 64
-          type: string
-        title:
-          maxLength: 256
-          type: string
-      type: object
-  request_body_required: true
-  write_tables:
-  - ai_chat_conversation
-- route: /playground
-  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
-  operation: retrieveChatConversation
-  operation_id: chat.conversations.byId.get
-  kind: read
-  api_surface: app
-  api_method: GET
-  api_path: /app/v3/api/chat/conversations/{conversationId}
-  sdk_domain: chat
-  read_sources:
-  - ai_chat_conversation
-  response_schema:
-    name: ChatConversationItem
-    schema:
-      $ref: '#/components/schemas/ChatConversationItem'
-  query_parameters: []
-- route: /playground
-  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts
-  operation: fetchMessages
-  operation_id: chat.conversations.byId.messages.get
-  kind: read
-  api_surface: app
-  api_method: GET
-  api_path: /app/v3/api/chat/conversations/{conversationId}/messages
-  sdk_domain: chat
-  read_sources:
-  - ai_chat_conversation
-  - ai_chat_turn
-  - ai_chat_message
-  - ai_runtime_usage_link
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters: []
-  operation_scope: app_shell
-  openapi_exposed: false
-- route: /playground
-  source: crates/sdkwork-routes-cloudrouter-app-api/src/http_route_manifest.rs
-  operation: listChatMessages
-  operation_id: chat.conversations.byId.messages.get
-  kind: read
-  api_surface: app
-  api_method: GET
-  api_path: /app/v3/api/chat/conversations/{conversationId}/messages
-  sdk_domain: chat
-  description: P1 high-volume Chat message history using opaque cursor pagination.
-    The first bounded page contains the latest messages, each response page is in
-    chronological conversation order, and nextCursor seeks an earlier window. The
-    only supported pagination inputs are cursor and page_size; the default page size
-    is 20 and the maximum is 200.
-  read_sources:
-  - ai_chat_conversation
-  - ai_chat_turn
-  - ai_chat_message
-  - ai_runtime_usage_link
-  response_schema:
-    name: ChatMessageListResponse
-    schema:
-      additionalProperties: false
-      name: ChatMessageListResponse
-      properties:
-        items:
-          items:
-            additionalProperties: false
-            name: ChatMessageItem
-            properties:
-              content:
-                maxLength: 65536
-                type: string
-              conversationId:
-                maxLength: 128
-                minLength: 1
-                type: string
-              createdAt:
-                maxLength: 64
-                type: string
-              direction:
-                maxLength: 64
-                type: string
-              id:
-                maxLength: 128
-                minLength: 1
-                type: string
-              model:
-                maxLength: 128
-                nullable: true
-                type: string
-              provider:
-                maxLength: 128
-                nullable: true
-                type: string
-              role:
-                maxLength: 64
-                type: string
-              runtime:
-                maxLength: 128
-                nullable: true
-                type: string
-              runtimeInvocationId:
-                maxLength: 128
-                nullable: true
-                type: string
-              status:
-                maxLength: 64
-                type: string
-              turnId:
-                maxLength: 128
-                nullable: true
-                type: string
-              usage:
-                additionalProperties: false
-                name: ChatUsageSnapshot
-                nullable: true
-                properties:
-                  cachedTokens:
-                    format: int64
-                    pattern: ^[0-9]+$
-                    type: string
-                    x-sdkwork-int64-string: true
-                    x-sdkwork-rust-type: i64
-                  costAmount:
-                    nullable: true
-                    pattern: ^[0-9]+(?:\.[0-9]{1,9})?$
-                    type: string
-                  currency:
-                    maxLength: 16
-                    nullable: true
-                    type: string
-                  inputTokens:
-                    format: int64
-                    pattern: ^[0-9]+$
-                    type: string
-                    x-sdkwork-int64-string: true
-                    x-sdkwork-rust-type: i64
-                  outputTokens:
-                    format: int64
-                    pattern: ^[0-9]+$
-                    type: string
-                    x-sdkwork-int64-string: true
-                    x-sdkwork-rust-type: i64
-                  reasoningTokens:
-                    format: int64
-                    pattern: ^[0-9]+$
-                    type: string
-                    x-sdkwork-int64-string: true
-                    x-sdkwork-rust-type: i64
-                  totalTokens:
-                    format: int64
-                    pattern: ^[0-9]+$
-                    type: string
-                    x-sdkwork-int64-string: true
-                    x-sdkwork-rust-type: i64
-                required:
-                - inputTokens
-                - outputTokens
-                - cachedTokens
-                - reasoningTokens
-                - totalTokens
-                - costAmount
-                - currency
-                type: object
-              usageLinkId:
-                maxLength: 128
-                nullable: true
-                type: string
-            required:
-            - id
-            - conversationId
-            - turnId
-            - role
-            - direction
-            - content
-            - status
-            - model
-            - provider
-            - runtime
-            - runtimeInvocationId
-            - usageLinkId
-            - usage
-            - createdAt
-            type: object
-          type: array
-        pageInfo:
-          $ref: '#/components/schemas/PageInfo'
-      required:
-      - items
-      - pageInfo
-      type: object
-  query_parameters:
-  - name: cursor
-    schema:
-      type: string
-      maxLength: 1024
-  - name: page_size
-    schema:
-      type: integer
-      format: int32
-      minimum: 1
-      maximum: 200
-      default: 20
-- route: /playground
-  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
-  operation: listChatMessages
-  operation_id: chat.conversations.byId.messages.get
-  kind: read
-  api_surface: app
-  api_method: GET
-  api_path: /app/v3/api/chat/conversations/{conversationId}/messages
-  sdk_domain: chat
-  read_sources:
-  - ai_chat_conversation
-  - ai_chat_turn
-  - ai_chat_message
-  - ai_runtime_usage_link
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters: []
-  operation_scope: app_shell
-  openapi_exposed: false
-- route: /playground
-  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
-  operation: createChatTurn
-  operation_id: chat.conversations.byId.turns.post
-  kind: create
-  api_surface: app
-  api_method: POST
-  api_path: /app/v3/api/chat/conversations/{conversationId}/turns
-  sdk_domain: chat
-  read_sources:
-  - ai_chat_conversation
-  response_schema:
-    name: ChatTurnOutcome
-    schema:
-      additionalProperties: false
-      name: ChatTurnOutcome
-      properties:
-        messages:
-          items:
-            $ref: '#/components/schemas/ChatMessageItem'
-          type: array
-        turn:
-          additionalProperties: false
-          name: ChatTurnItem
-          properties:
-            agentId:
-              maxLength: 128
-              nullable: true
-              type: string
-            agentSessionId:
-              maxLength: 128
-              nullable: true
-              type: string
-            conversationId:
-              maxLength: 128
-              minLength: 1
-              type: string
-            createdAt:
-              maxLength: 64
-              type: string
-            id:
-              maxLength: 128
-              minLength: 1
-              type: string
-            model:
-              maxLength: 128
-              nullable: true
-              type: string
-            provider:
-              maxLength: 128
-              nullable: true
-              type: string
-            status:
-              maxLength: 64
-              type: string
-            updatedAt:
-              maxLength: 64
-              type: string
-          required:
-          - id
-          - conversationId
-          - status
-          - model
-          - provider
-          - agentId
-          - agentSessionId
-          - createdAt
-          - updatedAt
-          type: object
-      required:
-      - turn
-      - messages
-      type: object
-  request_schema:
-    name: CreateChatTurnRequest
-    schema:
-      additionalProperties: false
-      name: CreateChatTurnRequest
-      properties:
-        agentId:
-          maxLength: 128
-          type: string
-        agentSessionId:
-          maxLength: 128
-          type: string
-        message:
-          maxLength: 65536
-          minLength: 1
-          type: string
-        metadata:
-          additionalProperties: true
-          type: object
-        mode:
-          maxLength: 64
-          type: string
-        model:
-          maxLength: 128
-          type: string
-        provider:
-          maxLength: 128
-          type: string
-      required:
-      - message
-      type: object
-  request_body_required: true
-  write_tables:
-  - ai_chat_turn
-  - ai_chat_item
-  - ai_chat_message
-  - ai_chat_message_part
-- route: /playground
-  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
-  operation: completeChatTurnResponse
-  operation_id: chat.conversations.byId.turns.byId.response.post
-  kind: create
-  api_surface: app
-  api_method: POST
-  api_path: /app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response
-  sdk_domain: chat
-  read_sources:
-  - ai_chat_conversation
-  - ai_chat_turn
-  - ai_chat_item
-  - ai_chat_message
-  - ai_chat_message_part
-  - ai_runtime_invocation
-  - ai_usage
-  response_schema:
-    name: ChatTurnOutcome
-    schema:
-      $ref: '#/components/schemas/ChatTurnOutcome'
-  request_schema:
-    name: CompleteChatTurnResponseRequest
-    schema:
-      additionalProperties: false
-      name: CompleteChatTurnResponseRequest
-      properties:
-        message:
-          maxLength: 65536
-          minLength: 1
-          type: string
-        metadata:
-          additionalProperties: true
-          type: object
-        model:
-          maxLength: 128
-          type: string
-        provider:
-          maxLength: 128
-          type: string
-        runtime:
-          maxLength: 128
-          type: string
-        runtimeInvocationId:
-          maxLength: 128
-          type: string
-        status:
-          default: completed
-          enum:
-          - completed
-          - failed
-          - cancelled
-          - streaming
-          type: string
-        usage:
-          additionalProperties: false
-          properties:
-            cachedTokens:
-              format: int64
-              pattern: ^[0-9]+$
-              type: string
-              x-sdkwork-int64-string: true
-              x-sdkwork-rust-type: i64
-            cost:
-              pattern: ^[0-9]+(?:\.[0-9]{1,9})?$
-              type: string
-            costAmount:
-              pattern: ^[0-9]+(?:\.[0-9]{1,9})?$
-              type: string
-            currency:
-              maxLength: 16
-              type: string
-            inputTokens:
-              format: int64
-              pattern: ^[0-9]+$
-              type: string
-              x-sdkwork-int64-string: true
-              x-sdkwork-rust-type: i64
-            outputTokens:
-              format: int64
-              pattern: ^[0-9]+$
-              type: string
-              x-sdkwork-int64-string: true
-              x-sdkwork-rust-type: i64
-            reasoningTokens:
-              format: int64
-              pattern: ^[0-9]+$
-              type: string
-              x-sdkwork-int64-string: true
-              x-sdkwork-rust-type: i64
-            totalTokens:
-              format: int64
-              pattern: ^[0-9]+$
-              type: string
-              x-sdkwork-int64-string: true
-              x-sdkwork-rust-type: i64
-          type: object
-        usageFactId:
-          format: int64
-          pattern: ^[1-9][0-9]*$
-          type: string
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-      required:
-      - message
-      type: object
-  request_body_required: true
-  write_tables:
-  - ai_chat_turn
-  - ai_chat_item
-  - ai_chat_message
-  - ai_chat_message_part
-  - ai_chat_context_snapshot
-  - ai_runtime_usage_link
 - route: /console/api-keys
   source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts
   operation: fetchKeys
@@ -3972,32 +3329,6 @@ frontend_operations:
       - inviteCode
       type: object
   request_body_required: true
-- route: /auth/register
-  source: apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts
-  operation: issueInviteCode
-  operation_id: invites.create
-  kind: create
-  api_surface: app
-  api_method: POST
-  api_path: /app/v3/api/iam/invites/issue
-  sdk_domain: iam
-  read_sources:
-  - ops_referral_invite_code
-  write_tables:
-  - ops_referral_invite_code
-  request_body_required: false
-  response_schema:
-    name: AppInviteCodeResponse
-    schema:
-      additionalProperties: false
-      name: AppInviteCodeResponse
-      properties:
-        inviteCode:
-          maxLength: 32
-          type: string
-      required:
-      - inviteCode
-      type: object
 - route: /console/user
   source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/iamDirectoryApiOperations.ts
   operation: fetchIamOrganizationMemberships
@@ -5106,31 +4437,6 @@ frontend_operations:
   write_tables:
   - ai_runtime_invocation
 - route: /playground
-  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts
-  operation: sendMessage
-  operation_id: runtime.invocations.post
-  kind: create
-  api_surface: app
-  api_method: POST
-  api_path: /app/v3/api/runtime/invocations
-  sdk_domain: runtime
-  read_sources:
-  - ai_request_trace
-  - ai_usage
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_body_required: false
-  write_tables:
-  - ai_request_trace
-  - ai_usage
-  operation_scope: app_shell
-  openapi_exposed: false
-- route: /playground
   source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundGenerationService.ts
   operation: runPlaygroundGeneration
   operation_id: runtime.invocations.post
@@ -5445,60 +4751,6 @@ frontend_operations:
   request_body_required: true
   write_tables:
   - ai_runtime_invocation
-- route: /playground
-  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts
-  operation: cancelRuntimeInvocation
-  operation_id: invocations.completions.create
-  kind: action
-  api_surface: app
-  api_method: POST
-  api_path: /app/v3/api/runtime/invocations/{invocationId}/completions
-  sdk_domain: runtime
-  read_sources:
-  - ai_runtime_invocation
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_body_required: false
-  write_tables:
-  - ai_runtime_invocation
-  operation_scope: app_shell
-  openapi_exposed: false
-- route: /playground
-  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts
-  operation: resumeMessage
-  operation_id: invocations.completions.create
-  kind: action
-  api_surface: app
-  api_method: POST
-  api_path: /app/v3/api/runtime/invocations/{invocationId}/completions
-  sdk_domain: runtime
-  read_sources:
-  - ai_chat_conversation
-  - ai_chat_turn
-  - ai_runtime_invocation
-  - ai_runtime_invocation_event
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_body_required: false
-  write_tables:
-  - ai_chat_turn
-  - ai_chat_item
-  - ai_chat_message
-  - ai_chat_message_part
-  - ai_runtime_invocation
-  - ai_runtime_usage_link
-  operation_scope: app_shell
-  openapi_exposed: false
 - route: /playground
   source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: listRuntimeEvents
@@ -8935,6 +8187,7 @@ frontend_operations:
   source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamAccountGroupMembers
   operation_id: upstreamAccountGroups.members.list
+  bounded_collection_max: 200
   kind: read
   api_surface: backend
   api_method: GET
@@ -9094,6 +8347,7 @@ frontend_operations:
   source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamAccountGroupResources
   operation_id: upstreamAccountGroups.resources.list
+  bounded_collection_max: 200
   kind: read
   api_surface: backend
   api_method: GET
@@ -9989,34 +9243,6 @@ frontend_operations:
       maxLength: 256
 - route: /admin/upstream
   source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
-  operation: getUpstreamAccountCredentialSecret
-  operation_id: upstreamAccounts.credentials.secret.retrieve
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}/secret
-  sdk_domain: ai
-  query_parameters: []
-  read_sources:
-  - ai_upstream_account
-  - ai_upstream_account_credential
-  response_schema:
-    name: UpstreamAccountCredentialSecretResponse
-    schema:
-      additionalProperties: false
-      name: UpstreamAccountCredentialSecretResponse
-      properties:
-        credentialId:
-          maxLength: 32
-          type: string
-        secret:
-          type: string
-      required:
-      - credentialId
-      - secret
-      type: object
-- route: /admin/upstream
-  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: createUpstreamAccountCredential
   operation_id: upstreamAccounts.credentials.create
   kind: create
@@ -10164,6 +9390,7 @@ frontend_operations:
   openapi_exposed: true
   operation: listUpstreamAccountResources
   operation_id: upstreamAccounts.resources.list
+  bounded_collection_max: 200
   path_params:
   - accountId
   query_parameters: []
@@ -10922,6 +10149,7 @@ frontend_operations:
   source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamSupplierAuthMethods
   operation_id: upstreamSuppliers.authMethods.list
+  bounded_collection_max: 200
   kind: read
   api_surface: backend
   api_method: GET
@@ -11119,6 +10347,7 @@ frontend_operations:
   source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamSupplierEndpoints
   operation_id: upstreamSuppliers.endpoints.list
+  bounded_collection_max: 200
   kind: read
   api_surface: backend
   api_method: GET
@@ -11309,6 +10538,7 @@ frontend_operations:
   source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamSupplierResources
   operation_id: upstreamSuppliers.resources.list
+  bounded_collection_max: 200
   kind: read
   api_surface: backend
   api_method: GET
@@ -14395,8 +13625,8 @@ frontend_operations:
       type: object
   idempotency_required: true
 - route: /admin/storage/buckets/{bucketId}
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: update
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
+  operation: backendStorageBucketUpdate
   operation_id: oss.buckets.update
   kind: update
   api_surface: backend
@@ -18429,8 +17659,653 @@ frontend_operations:
   write_tables:
   - ops_config_snapshot
   - ops_audit_log
-routes: null
+routes:
+- route: /
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables:
+  - ops_audit_log
+- route: /admin/analytics
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ai_request_trace
+  - ai_usage
+- route: /admin/billing/recharges/records
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-commerce-backend-sdk
+  required_tables:
+  - recharges
+- route: /admin/billing/recharges/records/{orderNo}
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-commerce-backend-sdk
+  required_tables:
+  - recharges
+- route: /admin/cache
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - ops_config_snapshot
+- route: /admin/dashboard
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ai_model
+  - ai_request_trace
+  - ai_upstream_supplier
+  - ai_usage
+  - iam_organization_membership
+  - iam_user
+  - ops_gateway_instance
+  - ops_metric_snapshot
+- route: /admin/marketing/:sectionId?
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables: []
+- route: /admin/marketing/:sectionId?/:batchId?
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-promotion-backend-sdk
+  required_tables: []
+- route: /admin/marketing/referralStrategies
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - ops_referral_strategy
+- route: /admin/marketing/referrals
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - growth_referral_stats
+  - ops_referral_relation
+- route: /admin/memberships/:sectionId?
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables: []
+- route: /admin/memberships/entitlements
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - memberships
+- route: /admin/memberships/members
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - memberships
+- route: /admin/memberships/package_groups
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - memberships
+  - ops_audit_log
+- route: /admin/memberships/package_groups/{packageGroupId}
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - memberships
+  - ops_audit_log
+- route: /admin/memberships/packages
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - memberships
+  - ops_audit_log
+- route: /admin/memberships/packages/{packageId}
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - memberships
+  - ops_audit_log
+- route: /admin/memberships/plans
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - memberships
+  - ops_audit_log
+- route: /admin/model
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ai_model
+  - ai_model_capability
+  - ai_model_pricing
+  - ai_model_rank_snapshot
+  - ai_model_vendor
+  - ai_pricing_import_snapshot
+  - ai_usage
+  - ops_audit_log
+  - ops_job_execution
+- route: /admin/model/mappings
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ai_model
+  - ai_model_capability
+  - ai_model_mapping_rule
+  - ai_model_mapping_rule_binding
+  - ai_model_mapping_rule_item
+  - ai_model_pricing
+  - ai_model_vendor
+  - ops_audit_log
+- route: /admin/model/resources
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ai_resource
+  - ai_resource_group
+  - ai_resource_group_item
+  - ops_audit_log
+- route: /admin/monitor
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_alert_event
+  - ops_gateway_heartbeat
+  - ops_gateway_instance
+  - ops_metric_snapshot
+- route: /admin/partner/:sectionId?
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-commerce-backend-sdk
+  required_tables: []
+- route: /admin/payments/:sectionId?
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables: []
+- route: /admin/payments/attempts
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - payments
+- route: /admin/payments/channels
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - payments
+- route: /admin/payments/intents
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - payments
+- route: /admin/payments/intents/{paymentIntentId}
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - payments
+- route: /admin/payments/methods
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - payments
+- route: /admin/payments/methods/{methodId}
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - payments
+- route: /admin/payments/provider_accounts
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - payments
+- route: /admin/payments/provider_accounts/{providerAccountId}
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - payments
+- route: /admin/payments/providers
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - commerce_payment_provider
+- route: /admin/payments/reconciliation_runs
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - payments
+- route: /admin/payments/route_rules
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - payments
+- route: /admin/payments/route_rules/{routeRuleId}
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - payments
+- route: /admin/payments/webhook_events
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - payments
+- route: /admin/promotions/codes
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-promotion-backend-sdk
+  required_tables:
+  - promotions
+- route: /admin/promotions/coupon_ledger_entries
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-promotion-backend-sdk
+  required_tables:
+  - promotions
+- route: /admin/promotions/coupon_stocks
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-promotion-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - promotions
+- route: /admin/promotions/discount_applications
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-promotion-backend-sdk
+  required_tables:
+  - promotions
+- route: /admin/promotions/offers
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-promotion-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - promotions
+- route: /admin/promotions/offers/{offerId}
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-promotion-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - promotions
+- route: /admin/promotions/user_coupons
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-promotion-backend-sdk
+  required_tables:
+  - promotions
+- route: /admin/ratelimit
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ai_metering_quota_policy
+  - ai_quota_policy
+  - ai_upstream_account_group
+  - iam_gateway_api_key
+  - iam_gateway_chain_policy
+  - iam_gateway_risk_rule
+  - ops_audit_log
+- route: /admin/recharges/:sectionId?
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-commerce-backend-sdk
+  required_tables: []
+- route: /admin/recharges/exchangeRules
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-commerce-backend-sdk
+  required_tables:
+  - commerce_exchange_rule
+  - ops_audit_log
+- route: /admin/recharges/packages
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-commerce-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - recharges
+- route: /admin/recharges/packages/{packageId}
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-commerce-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - recharges
+- route: /admin/recharges/settings
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-commerce-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - recharges
+- route: /admin/record
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ai_request_trace
+  - ai_routing_decision_log
+  - ai_usage
+- route: /admin/request-log
+  required_tables:
+  - ops_audit_log
+- route: /admin/runtime-region
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - ops_config_snapshot
+- route: /admin/service-nodes
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_gateway_instance
+- route: /admin/settings
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - ops_config_snapshot
+- route: /admin/site
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - ops_config_snapshot
+- route: /admin/storage/:sectionId?
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables: []
+- route: /admin/storage/buckets
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - storage
+- route: /admin/storage/buckets/{bucketId}
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - storage
+- route: /admin/storage/defaultBuckets
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - storage
+- route: /admin/storage/garbageCollection
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - storage
+- route: /admin/storage/providers
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - storage
+- route: /admin/storage/providers/{providerId}
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - storage
+- route: /admin/storage/quotas
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - storage
+- route: /admin/storage/reconciliation
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ops_audit_log
+  - storage
+- route: /admin/storage/usage
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - storage
+- route: /admin/upstream
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables:
+  - ai_resource
+  - ai_resource_group
+  - ai_routing_policy
+  - ai_routing_rule
+  - ai_upstream_account
+  - ai_upstream_account_credential
+  - ai_upstream_account_group
+  - ai_upstream_account_group_member
+  - ai_upstream_account_group_resource
+  - ai_upstream_account_resource
+  - ai_upstream_object_route
+  - ai_upstream_supplier
+  - ai_upstream_supplier_auth_method
+  - ai_upstream_supplier_endpoint
+  - ai_upstream_supplier_resource
+  - iam_gateway_api_key
+  - ops_audit_log
+  - ops_config_snapshot
+- route: /admin/upstream/account-groups
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables: []
+- route: /admin/upstream/accounts
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables: []
+- route: /admin/upstream/suppliers
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  required_tables: []
+- route: /api-reference
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-documents-app-sdk
+  required_tables: []
+- route: /auth/forgot-password
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables:
+  - iam_audit_event
+  - iam_credential
+  - iam_security_event
+  - iam_user
+  - iam_user_identity
+- route: /auth/login
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables:
+  - iam_audit_event
+  - iam_credential
+  - iam_security_event
+  - iam_session
+  - iam_user
+  - messaging_outbound_delivery
+  - messaging_outbound_message
+  - messaging_verification_attempt
+  - messaging_verification_challenge
+  - messaging_verification_policy
+  - ops_config_snapshot
+- route: /auth/oauth/callback/:provider
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables:
+  - iam_audit_event
+  - iam_security_event
+  - iam_session
+  - iam_user
+  - iam_user_identity
+  - ops_audit_log
+- route: /auth/register
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables:
+  - iam_audit_event
+  - iam_credential
+  - iam_security_event
+  - iam_session
+  - iam_user
+  - iam_user_identity
+  - ops_config_snapshot
+  - ops_referral_invite_code
+  - ops_referral_relation
+- route: /c/:conversationId
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables: []
+- route: /console/account
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables: []
+- route: /console/api-keys
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables:
+  - ai_metering_quota_policy
+  - ai_model_pricing
+  - ai_pricing_plan
+  - ai_quota_policy
+  - ai_upstream_account
+  - ai_upstream_account_group
+  - ai_upstream_account_group_member
+  - ai_upstream_account_group_metric_snapshot
+  - ai_upstream_account_group_resource
+  - ai_upstream_supplier
+  - ai_usage
+  - iam_gateway_access_policy
+  - iam_gateway_api_key
+  - iam_gateway_api_key_account_group
+  - ops_audit_log
+- route: /console/checkout
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables: []
+- route: /console/dashboard
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables:
+  - ai_model_rank_snapshot
+  - ai_request_trace
+  - ai_usage
+  - ops_gateway_instance
+  - ops_metric_snapshot
+  - ops_notification_message
+- route: /console/gateway
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables:
+  - ai_request_trace
+  - ai_routing_decision_log
+  - ai_upstream_account
+  - ai_upstream_account_group
+- route: /console/iam/oauth/official-accounts/:resourceAccountId/custom-menus
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-iam-backend-sdk
+  required_tables: []
+- route: /console/memberships
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables: []
+- route: /console/notifications
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables:
+  - ops_audit_log
+- route: /console/payment
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables: []
+- route: /console/settings
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables:
+  - iam_user_preference
+  - integration_webhook_endpoint
+  - ops_notification_delivery
+- route: /console/settlements
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables: []
+- route: /console/usage
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables:
+  - ai_request_trace
+  - ai_routing_decision_log
+  - ai_usage
+- route: /console/user
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables:
+  - ops_audit_log
+- route: /console/wallet
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables: []
+- route: /docs
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-documents-app-sdk
+  required_tables: []
+- route: /models
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables:
+  - ai_model
+  - ai_model_capability
+  - ai_model_pricing
+  - ai_model_vendor
+  - ai_upstream_account
+  - ai_upstream_account_group
+  - ai_upstream_account_group_member
+  - ai_upstream_account_group_resource
+  - ai_upstream_supplier
+- route: /models/:id
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables: []
+- route: /models/:provider/:model
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables: []
+- route: /playground
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables:
+  - ai_agent
+  - ai_agent_session
+  - ai_chat_conversation
+  - ai_chat_turn
+  - ai_runtime_artifact
+  - ai_runtime_invocation
+  - ai_runtime_invocation_event
+  - ai_usage
+- route: /product-docs
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-documents-app-sdk
+  required_tables: []
+- route: /rankings
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  required_tables:
+  - ai_model
+  - ai_model_rank_snapshot
+  - ai_model_vendor
+- route: /sdk-reference
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-documents-app-sdk
+  required_tables: []
 frontend_models:
+- route: /admin/ratelimit
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  interface: ChainIpAccessPolicy
+  fields:
+  - mode
+  - allowlist
+  - denylist
+  data_sources:
+  - ops_chain_policy
+- route: /admin/ratelimit
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
+  interface: ChainPolicy
+  fields:
+  - policyName
+  - concurrency
+  - concurrency.maxInflight
+  - concurrency.maxInflightPerScope
+  - ipAccess
+  - stages
+  - stages.enabledOnly
+  - stages.disabled
+  data_sources:
+  - ops_chain_policy
 - route: /admin/model
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   interface: InitializedModelCatalog
@@ -18900,6 +18775,8 @@ frontend_models:
   - vendorCode
   - modalityCode
   - apiEndpointCode
+  - method
+  - path
   - catalogKey
   - model
   - providerNativeModel
@@ -18964,6 +18841,8 @@ frontend_models:
   - vendorCode
   - modalityCode
   - apiEndpointCode
+  - method
+  - path
   - catalogKey
   - model
   - providerNativeModel
@@ -19689,6 +19568,7 @@ frontend_models:
   - rawKey
   - accountGroup
   - accountGroupName
+  - accountGroups
   - rate
   - quota
   - usedQuota
@@ -19715,6 +19595,9 @@ frontend_models:
   - name
   - description
   - rate
+  - vendorCode
+  - modalities
+  - tags
   data_sources:
   - ai_upstream_account_group
 - route: /console/api-keys
@@ -19722,7 +19605,8 @@ frontend_models:
   interface: CreateApiKeyInput
   fields:
   - name
-  - accountGroup
+  - chain
+  - accountGroups
   - quota
   - isUnlimitedQuota
   - modalities
@@ -19754,6 +19638,7 @@ frontend_models:
   - key.expires
   - key.status
   - key.defaultForRuntime
+  - key.accountGroups
   - rawKey
   data_sources:
   - iam_gateway_api_key
@@ -20833,3 +20718,4 @@ frontend_models:
   - ops_audit_log
   dependency_owned: true
   dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+

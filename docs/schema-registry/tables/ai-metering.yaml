@@ -10,6 +10,15 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/analytics
+  - /admin/dashboard
+  - /admin/model
+  - /admin/record
+  - /console/api-keys
+  - /console/dashboard
+  - /console/usage
+  - /playground
   columns:
     decision_log_id: int64
     api_key_id: int64
@@ -227,6 +236,13 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/analytics
+  - /admin/dashboard
+  - /admin/record
+  - /console/dashboard
+  - /console/gateway
+  - /console/usage
   columns:
     attempt_no: int32
     decision_log_id: int64

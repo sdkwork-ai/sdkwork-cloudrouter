@@ -120,7 +120,7 @@
 | `alipay_wap` | `alipay.trade.wap.pay` | `payUrl`/`payForm`（H5 收银台） |
 | `alipay_pc` | `alipay.trade.page.pay` | `payUrl`/`payForm`（PC 收银台表单） |
 | `alipay_app` | `alipay.trade.app.pay` | `orderStr`（App SDK 调起串） |
-| `stripe_*` | PaymentIntent | `clientSecret` + `nextAction=stripe_confirm`（前端 Stripe.js 集成另行支持） |
+| `stripe_*` | PaymentIntent | `clientSecret` + `publishableKey`（前端 Stripe.js 卡支付表单，测试卡 4242...） |
 
 ## 4. 一分钱测试（扫码 / 跳转支付自检）
 
@@ -137,9 +137,19 @@
 | `alipay_qr` | 支付宝当面付 | 二维码扫码（`alipay.trade.precreate` → `qr_code`） |
 | `alipay_wap` | 支付宝手机网站支付 | 点击跳转 H5 收银台（`alipay.trade.wap.pay` → 跳转链接/表单） |
 | `alipay_pc` | 支付宝 PC 网站支付 | 点击打开 PC 收银台表单自动提交（`alipay.trade.page.pay` → 表单） |
+| `stripe_card` 等 `stripe_*` | Stripe 卡支付 | 对话框内 Stripe.js 卡表单直接支付（`clientSecret` + `publishableKey`，测试卡 `4242 4242 4242 4242`） |
+| `sandbox_test` | 本地沙箱 | 对话框内「模拟支付成功」（sandbox webhook 回调，无需任何凭据） |
 
 对话框按支付形态自动展示：二维码方式显示扫码区；跳转方式显示「打开支付页面」
-按钮（新窗口打开支付渠道收银台）；扫码+跳转并存时同时展示。
+按钮（新窗口打开支付渠道收银台）；Stripe 方式显示卡支付表单；沙箱方式显示
+「模拟支付成功」；扫码+跳转并存时同时展示。微信/支付宝/Stripe 支付后若渠道
+回调未达，可点「查询支付渠道状态」主动向 PSP 确认并更新本地状态。
+
+**通道覆盖**：四个支付服务商均支持一分钱测试——微信（`wechat_native` 扫码）、
+支付宝（`alipay_qr` 扫码 / `alipay_wap`、`alipay_pc` 网页收银台）、Stripe
+（`stripe_*` 卡支付）、沙箱（`sandbox_test` 本地模拟）。`wechat_jsapi/h5/app`、
+`alipay_app/jsapi` 需要 payer 标识（openid/buyer_id）或 App 唤起，属于 C 端
+支付场景，不提供 admin 网页测试。
 
 其他方式**不显示**「一分钱测试」按钮：
 

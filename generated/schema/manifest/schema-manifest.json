@@ -24,7 +24,9 @@
     "ai_routing_policy",
     "ai_routing_profile",
     "ai_routing_rule",
+    "ai_runtime_artifact",
     "ai_runtime_invocation",
+    "ai_runtime_invocation_event",
     "ai_runtime_usage_link",
     "ai_upstream_account",
     "ai_upstream_account_credential",
@@ -33,6 +35,7 @@
     "ai_upstream_account_group_metric_snapshot",
     "ai_upstream_account_group_resource",
     "ai_upstream_account_health_state",
+    "ai_upstream_account_resource",
     "ai_upstream_object_route",
     "ai_upstream_supplier",
     "ai_upstream_supplier_auth_method",
@@ -44,6 +47,8 @@
     "iam_gateway_api_key_account_group",
     "iam_gateway_chain_policy",
     "iam_gateway_risk_rule",
+    "iam_user_preference",
+    "integration_webhook_endpoint",
     "ops_alert_event",
     "ops_audit_log",
     "ops_config_snapshot",
@@ -75,7 +80,34 @@
         "ai_model_capability",
         "ai_model_family",
         "ai_model_pricing",
-        "ai_model_vendor"
+        "ai_model_vendor",
+        "ops_audit_log"
+      ]
+    },
+    "/admin/analytics": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ai_metering_request_trace",
+        "ai_metering_usage"
+      ]
+    },
+    "/admin/cache": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log",
+        "ops_config_snapshot"
       ]
     },
     "/admin/channel": {
@@ -118,6 +150,22 @@
         "ai_vendor_modality"
       ]
     },
+    "/admin/dashboard": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ai_metering_request_trace",
+        "ai_metering_usage",
+        "ai_upstream_supplier",
+        "ops_gateway_instance",
+        "ops_metric_snapshot"
+      ]
+    },
     "/admin/group": {
       "api_surfaces": [
         "app",
@@ -133,6 +181,91 @@
         "ai_resource_group_item"
       ]
     },
+    "/admin/marketing/referralStrategies": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log",
+        "ops_referral_strategy"
+      ]
+    },
+    "/admin/marketing/referrals": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_referral_relation"
+      ]
+    },
+    "/admin/memberships/package_groups": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/memberships/package_groups/{packageGroupId}": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/memberships/packages": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/memberships/packages/{packageId}": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/memberships/plans": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
     "/admin/model": {
       "api_surfaces": [
         "app",
@@ -144,6 +277,7 @@
       "route_scope": "admin",
       "tables": [
         "ai_billing_meter",
+        "ai_metering_usage",
         "ai_model",
         "ai_model_capability",
         "ai_model_catalog_source",
@@ -151,24 +285,33 @@
         "ai_model_family",
         "ai_model_pricing",
         "ai_model_rank_snapshot",
-        "ai_model_vendor"
+        "ai_model_vendor",
+        "ai_pricing_import_snapshot",
+        "ops_audit_log",
+        "ops_job_execution"
       ]
     },
     "/admin/model/mappings": {
       "api_surfaces": [
         "app",
         "backend",
-        "openai_v1"
+        "openai_v1",
+        "worker"
       ],
       "required_api_surface": "backend",
       "route_scope": "admin",
       "tables": [
         "ai_model",
-        "ai_model_vendor"
+        "ai_model_mapping_rule",
+        "ai_model_mapping_rule_binding",
+        "ai_model_mapping_rule_item",
+        "ai_model_vendor",
+        "ops_audit_log"
       ]
     },
     "/admin/model/resources": {
       "api_surfaces": [
+        "app",
         "backend",
         "worker"
       ],
@@ -177,7 +320,220 @@
       "tables": [
         "ai_resource",
         "ai_resource_group",
-        "ai_resource_group_item"
+        "ai_resource_group_item",
+        "ops_audit_log"
+      ]
+    },
+    "/admin/monitor": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_alert_event",
+        "ops_gateway_heartbeat",
+        "ops_gateway_instance",
+        "ops_metric_snapshot"
+      ]
+    },
+    "/admin/payments/channels": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/payments/methods": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/payments/methods/{methodId}": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/payments/provider_accounts": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/payments/provider_accounts/{providerAccountId}": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/payments/reconciliation_runs": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/payments/route_rules": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/payments/route_rules/{routeRuleId}": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/promotions/coupon_stocks": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/promotions/offers": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/promotions/offers/{offerId}": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/ratelimit": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ai_quota_policy",
+        "ai_upstream_account_group",
+        "iam_gateway_api_key",
+        "iam_gateway_chain_policy",
+        "iam_gateway_risk_rule",
+        "ops_audit_log"
+      ]
+    },
+    "/admin/recharges/exchangeRules": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/recharges/packages": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/recharges/packages/{packageId}": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/recharges/settings": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
       ]
     },
     "/admin/record": {
@@ -189,7 +545,47 @@
       "required_api_surface": "backend",
       "route_scope": "admin",
       "tables": [
-        "ai_billing_meter"
+        "ai_billing_meter",
+        "ai_metering_request_trace",
+        "ai_metering_usage",
+        "ai_routing_decision_log"
+      ]
+    },
+    "/admin/request-log": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/runtime-region": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log",
+        "ops_config_snapshot"
+      ]
+    },
+    "/admin/service-nodes": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_gateway_instance"
       ]
     },
     "/admin/service-providers/pricing": {
@@ -202,6 +598,193 @@
       "route_scope": "admin",
       "tables": [
         "ai_model_pricing"
+      ]
+    },
+    "/admin/settings": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log",
+        "ops_config_snapshot"
+      ]
+    },
+    "/admin/site": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log",
+        "ops_config_snapshot"
+      ]
+    },
+    "/admin/storage/buckets": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/storage/buckets/{bucketId}": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/storage/defaultBuckets": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/storage/garbageCollection": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/storage/providers": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/storage/providers/{providerId}": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/storage/quotas": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/storage/reconciliation": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/admin/upstream": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "ai_routing_policy",
+        "ai_routing_rule",
+        "ai_upstream_account",
+        "ai_upstream_account_credential",
+        "ai_upstream_account_group",
+        "ai_upstream_account_group_member",
+        "ai_upstream_account_group_resource",
+        "ai_upstream_account_resource",
+        "ai_upstream_object_route",
+        "ai_upstream_supplier",
+        "ai_upstream_supplier_auth_method",
+        "ai_upstream_supplier_endpoint",
+        "ai_upstream_supplier_resource",
+        "iam_gateway_api_key",
+        "ops_audit_log",
+        "ops_config_snapshot"
+      ]
+    },
+    "/auth/login": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "app",
+      "route_scope": "public",
+      "tables": [
+        "ops_config_snapshot"
+      ]
+    },
+    "/auth/oauth/callback/:provider": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "app",
+      "route_scope": "public",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/auth/register": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "app",
+      "route_scope": "public",
+      "tables": [
+        "ops_config_snapshot",
+        "ops_referral_invite_code",
+        "ops_referral_relation"
       ]
     },
     "/c/:conversationId": {
@@ -226,7 +809,20 @@
       "required_api_surface": "app",
       "route_scope": "console",
       "tables": [
-        "ai_model_pricing"
+        "ai_metering_usage",
+        "ai_model_pricing",
+        "ai_pricing_plan",
+        "ai_quota_policy",
+        "ai_upstream_account",
+        "ai_upstream_account_group",
+        "ai_upstream_account_group_member",
+        "ai_upstream_account_group_metric_snapshot",
+        "ai_upstream_account_group_resource",
+        "ai_upstream_supplier",
+        "iam_gateway_access_policy",
+        "iam_gateway_api_key",
+        "iam_gateway_api_key_account_group",
+        "ops_audit_log"
       ]
     },
     "/console/dashboard": {
@@ -238,7 +834,53 @@
       "required_api_surface": "app",
       "route_scope": "console",
       "tables": [
-        "ai_model_rank_snapshot"
+        "ai_metering_request_trace",
+        "ai_metering_usage",
+        "ai_model_rank_snapshot",
+        "ops_gateway_instance",
+        "ops_metric_snapshot",
+        "ops_notification_message"
+      ]
+    },
+    "/console/gateway": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "app",
+      "route_scope": "console",
+      "tables": [
+        "ai_metering_request_trace",
+        "ai_routing_decision_log",
+        "ai_upstream_account",
+        "ai_upstream_account_group"
+      ]
+    },
+    "/console/notifications": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "app",
+      "route_scope": "console",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
+    "/console/settings": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "app",
+      "route_scope": "console",
+      "tables": [
+        "iam_user_preference",
+        "integration_webhook_endpoint",
+        "ops_notification_delivery"
       ]
     },
     "/console/usage": {
@@ -250,7 +892,22 @@
       "required_api_surface": "app",
       "route_scope": "console",
       "tables": [
-        "ai_billing_meter"
+        "ai_billing_meter",
+        "ai_metering_request_trace",
+        "ai_metering_usage",
+        "ai_routing_decision_log"
+      ]
+    },
+    "/console/user": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "app",
+      "route_scope": "console",
+      "tables": [
+        "ops_audit_log"
       ]
     },
     "/models": {
@@ -270,7 +927,12 @@
         "ai_model_family",
         "ai_model_modality",
         "ai_model_pricing",
-        "ai_model_vendor"
+        "ai_model_vendor",
+        "ai_upstream_account",
+        "ai_upstream_account_group",
+        "ai_upstream_account_group_member",
+        "ai_upstream_account_group_resource",
+        "ai_upstream_supplier"
       ]
     },
     "/models/:id": {
@@ -317,13 +979,19 @@
       "required_api_surface": "app",
       "route_scope": "public",
       "tables": [
+        "ai_chat_conversation",
+        "ai_chat_turn",
+        "ai_metering_usage",
         "ai_model",
         "ai_model_api_endpoint",
         "ai_model_capability",
         "ai_model_family",
         "ai_model_modality",
         "ai_model_pricing",
-        "ai_model_vendor"
+        "ai_model_vendor",
+        "ai_runtime_artifact",
+        "ai_runtime_invocation",
+        "ai_runtime_invocation_event"
       ]
     },
     "/rankings": {
@@ -350,16 +1018,16 @@
   },
   "summary": {
     "api_surface_counts": {
-      "app": 65,
-      "backend": 68,
+      "app": 70,
+      "backend": 69,
       "openai_v1": 3,
-      "worker": 71
+      "worker": 74
     },
     "external_legacy_table_count": 0,
-    "frontend_route_count": 18,
-    "generated_table_count": 57,
+    "frontend_route_count": 66,
+    "generated_table_count": 62,
     "legacy_table_count": 0,
-    "table_count": 76
+    "table_count": 81
   },
   "tables": [
     {
@@ -1478,7 +2146,9 @@
       "compliance_level": "L2",
       "domain": "ai",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/playground"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -2521,7 +3191,9 @@
           "references_table": "ai_chat_conversation"
         }
       ],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/playground"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -3563,7 +4235,14 @@
       "compliance_level": "L2",
       "domain": "ai",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/analytics",
+        "/admin/dashboard",
+        "/admin/record",
+        "/console/dashboard",
+        "/console/gateway",
+        "/console/usage"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -4170,7 +4849,16 @@
       "compliance_level": "L3",
       "domain": "ai",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/analytics",
+        "/admin/dashboard",
+        "/admin/model",
+        "/admin/record",
+        "/console/api-keys",
+        "/console/dashboard",
+        "/console/usage",
+        "/playground"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -7186,7 +7874,9 @@
       "compliance_level": "L2",
       "domain": "ai",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/model/mappings"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -7443,7 +8133,9 @@
       "compliance_level": "L2",
       "domain": "ai",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/model/mappings"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -7751,7 +8443,9 @@
       "compliance_level": "L2",
       "domain": "ai",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/model/mappings"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -9679,7 +10373,9 @@
       "compliance_level": "L2",
       "domain": "ai",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/model"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -10036,7 +10732,9 @@
       "compliance_level": "L2",
       "domain": "ai",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/console/api-keys"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -11536,7 +12234,10 @@
       "compliance_level": "L2",
       "domain": "ai",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/ratelimit",
+        "/console/api-keys"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -12671,7 +13372,11 @@
       "compliance_level": "L2",
       "domain": "ai",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/record",
+        "/console/gateway",
+        "/console/usage"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -12985,7 +13690,9 @@
       "compliance_level": "L2",
       "domain": "ai",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/upstream"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -13500,7 +14207,9 @@
           "references_table": "ai_routing_profile"
         }
       ],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/upstream"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -13535,6 +14244,256 @@
         }
       ],
       "write_owner": "ai-routing-service"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "conversation_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "chat_turn_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "chat_item_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "agent_session_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "agent_run_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "agent_run_step_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "runtime_invocation_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "artifact_type",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "name",
+          "source": "explicit",
+          "type": "string(512)"
+        },
+        {
+          "name": "mime_type",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "content_text",
+          "source": "explicit",
+          "type": "string(262144)"
+        },
+        {
+          "name": "content_json",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "drive_uri",
+          "source": "explicit",
+          "type": "string(1024)"
+        },
+        {
+          "name": "resource_snapshot",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "sha256",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "size_bytes",
+          "source": "explicit",
+          "type": "int64"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ai",
+      "foreign_keys": [],
+      "frontend_routes": [
+        "/playground"
+      ],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "runtime_invocation_id",
+            "created_at",
+            "id"
+          ],
+          "name": "idx_ai_runtime_artifact_invocation_created",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "created_at",
+            "id"
+          ],
+          "name": "idx_ai_runtime_artifact_user_created",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "user_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ai_runtime_artifact",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "id"
+          ],
+          "name": "uk_ai_runtime_artifact_scope_id"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "uuid"
+          ],
+          "name": "uk_ai_runtime_artifact_scope_uuid"
+        }
+      ],
+      "write_owner": "router-service"
     },
     {
       "api_surfaces": [
@@ -13840,7 +14799,9 @@
       "compliance_level": "L2",
       "domain": "ai",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/playground"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -13909,6 +14870,242 @@
             "uuid"
           ],
           "name": "uk_ai_runtime_invocation_scope_uuid"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "conversation_id",
+            "chat_turn_id",
+            "agent_session_id",
+            "invocation_no"
+          ],
+          "name": "uk_ai_runtime_invocation_scope_sequence"
+        }
+      ],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "invocation_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "conversation_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "chat_turn_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "agent_session_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "agent_run_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "agent_run_step_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "event_no",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "event_type",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "event_source",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "payload_json",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "text_delta",
+          "source": "explicit",
+          "type": "string(16384)"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ai",
+      "foreign_keys": [],
+      "frontend_routes": [
+        "/playground"
+      ],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "invocation_id",
+            "created_at",
+            "id"
+          ],
+          "name": "idx_ai_runtime_invocation_event_invocation_created",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "user_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ai_runtime_invocation_event",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "id"
+          ],
+          "name": "uk_ai_runtime_invocation_event_scope_id"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "uuid"
+          ],
+          "name": "uk_ai_runtime_invocation_event_scope_uuid"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "invocation_id",
+            "event_no"
+          ],
+          "name": "uk_ai_runtime_invocation_event_sequence"
         }
       ],
       "write_owner": "router-service"
@@ -14515,7 +15712,12 @@
           "references_table": "ai_upstream_supplier_auth_method"
         }
       ],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/upstream",
+        "/console/api-keys",
+        "/console/gateway",
+        "/models"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -14833,7 +16035,9 @@
           "references_table": "ai_upstream_account"
         }
       ],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/upstream"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -14970,6 +16174,11 @@
           "type": "string(128)"
         },
         {
+          "name": "group_name_i18n",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
           "name": "description",
           "source": "explicit",
           "type": "string(512)"
@@ -15058,6 +16267,11 @@
           "name": "modalities",
           "source": "explicit",
           "type": "json"
+        },
+        {
+          "name": "tags",
+          "source": "explicit",
+          "type": "json"
         }
       ],
       "common_columns": [
@@ -15137,9 +16351,22 @@
       "compliance_level": "L2",
       "domain": "ai",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/ratelimit",
+        "/admin/upstream",
+        "/console/api-keys",
+        "/console/gateway",
+        "/models"
+      ],
       "generated_by_this_project": true,
       "indexes": [
+        {
+          "columns": [
+            "tags"
+          ],
+          "name": "idx_ai_upstream_account_group_tags",
+          "unique": false
+        },
         {
           "columns": [
             "tenant_id",
@@ -15439,7 +16666,11 @@
           "references_table": "ai_upstream_account"
         }
       ],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/upstream",
+        "/console/api-keys",
+        "/models"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -15726,7 +16957,9 @@
       "compliance_level": "L2",
       "domain": "ai",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/console/api-keys"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -16020,7 +17253,11 @@
           "references_table": "ai_upstream_account_group"
         }
       ],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/upstream",
+        "/console/api-keys",
+        "/models"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -16249,6 +17486,286 @@
             "account_id"
           ],
           "name": "uk_ai_upstream_account_health_state_scope"
+        }
+      ],
+      "write_owner": "ai-routing-service"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "relation_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "account_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "resource_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "resource_code",
+          "source": "explicit",
+          "type": "string(192)"
+        },
+        {
+          "name": "resource_group_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "resource_group_code",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "grant_type",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "priority",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "effective_from",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "effective_to",
+          "source": "explicit",
+          "type": "instant"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "relation_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "relation_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ai",
+      "foreign_keys": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "account_id"
+          ],
+          "name": "fk_ai_upstream_account_resource_account",
+          "references_columns": [
+            "tenant_id",
+            "organization_id",
+            "id"
+          ],
+          "references_table": "ai_upstream_account"
+        }
+      ],
+      "frontend_routes": [
+        "/admin/upstream"
+      ],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "status",
+            "account_id",
+            "grant_type",
+            "priority",
+            "id"
+          ],
+          "name": "idx_ai_upstream_account_resource_status",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "account_id",
+            "status",
+            "grant_type",
+            "priority",
+            "id"
+          ],
+          "name": "idx_ai_upstream_account_resource_lookup",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "relation_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ai_upstream_account_resource",
+      "unique_constraints": [
+        {
+          "columns": [
+            "uuid"
+          ],
+          "name": "uk_ai_upstream_account_resource_uuid"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "account_id",
+            "resource_code",
+            "resource_group_code"
+          ],
+          "name": "uk_ai_upstream_account_resource"
         }
       ],
       "write_owner": "ai-routing-service"
@@ -16496,7 +18013,9 @@
       "compliance_level": "L2",
       "domain": "ai",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/upstream"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -16671,6 +18190,11 @@
           "type": "string(128)"
         },
         {
+          "name": "display_name_i18n",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
           "name": "description",
           "source": "explicit",
           "type": "string(512)"
@@ -16823,7 +18347,12 @@
       "compliance_level": "L2",
       "domain": "ai",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/dashboard",
+        "/admin/upstream",
+        "/console/api-keys",
+        "/models"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -17112,7 +18641,9 @@
           "references_table": "ai_upstream_supplier"
         }
       ],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/upstream"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -17398,7 +18929,9 @@
           "references_table": "ai_upstream_supplier"
         }
       ],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/upstream"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -17854,7 +19387,9 @@
           "references_table": "ai_upstream_supplier"
         }
       ],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/upstream"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -18642,7 +20177,9 @@
       "compliance_level": "L2",
       "domain": "iam_gateway",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/console/api-keys"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -18979,7 +20516,11 @@
       "compliance_level": "L2",
       "domain": "iam_gateway",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/ratelimit",
+        "/admin/upstream",
+        "/console/api-keys"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -19276,7 +20817,9 @@
           "references_table": "iam_gateway_api_key"
         }
       ],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/console/api-keys"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -19523,7 +21066,9 @@
       "compliance_level": "L2",
       "domain": "iam_gateway",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/ratelimit"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -19840,7 +21385,9 @@
       "compliance_level": "L2",
       "domain": "iam_gateway",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/ratelimit"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -19891,6 +21438,419 @@
         }
       ],
       "write_owner": "gateway-iam-service"
+    },
+    {
+      "api_surfaces": [
+        "app"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "owner_type",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "owner_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "data_scope",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "status",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "version",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "deleted_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "deleted_by",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "language",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "timezone",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "notification_preferences",
+          "source": "explicit",
+          "type": "json"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "iam_user",
+      "foreign_keys": [],
+      "frontend_routes": [
+        "/console/settings"
+      ],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "updated_at",
+            "id"
+          ],
+          "name": "idx_iam_user_preference_user_updated",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "user_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "iam_user_preference",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id"
+          ],
+          "name": "uk_iam_user_preference_scope"
+        }
+      ],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "app"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "owner_type",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "owner_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "data_scope",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "status",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "version",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "deleted_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "deleted_by",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "endpoint_code",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "name",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "target_url",
+          "source": "explicit",
+          "type": "string(1024)"
+        },
+        {
+          "name": "event_types",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "signing_alg",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "retry_policy",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "failure_count",
+          "source": "explicit",
+          "type": "int64"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "user_runtime_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "user_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "user_runtime_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L3",
+      "domain": "integration",
+      "foreign_keys": [],
+      "frontend_routes": [
+        "/console/settings"
+      ],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "endpoint_code",
+            "id"
+          ],
+          "name": "idx_integration_webhook_endpoint_scope_code",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "user_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "integration_webhook_endpoint",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "endpoint_code"
+          ],
+          "name": "uk_integration_webhook_endpoint_scope_code"
+        }
+      ],
+      "write_owner": "router-service"
     },
     {
       "api_surfaces": [
@@ -20112,7 +22072,9 @@
       "compliance_level": "L2",
       "domain": "ops",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/monitor"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -20344,7 +22306,52 @@
       "compliance_level": "L3",
       "domain": "ops",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/",
+        "/admin/cache",
+        "/admin/marketing/referralStrategies",
+        "/admin/memberships/package_groups",
+        "/admin/memberships/package_groups/{packageGroupId}",
+        "/admin/memberships/packages",
+        "/admin/memberships/packages/{packageId}",
+        "/admin/memberships/plans",
+        "/admin/model",
+        "/admin/model/mappings",
+        "/admin/model/resources",
+        "/admin/payments/channels",
+        "/admin/payments/methods",
+        "/admin/payments/methods/{methodId}",
+        "/admin/payments/provider_accounts",
+        "/admin/payments/provider_accounts/{providerAccountId}",
+        "/admin/payments/reconciliation_runs",
+        "/admin/payments/route_rules",
+        "/admin/payments/route_rules/{routeRuleId}",
+        "/admin/promotions/coupon_stocks",
+        "/admin/promotions/offers",
+        "/admin/promotions/offers/{offerId}",
+        "/admin/ratelimit",
+        "/admin/recharges/exchangeRules",
+        "/admin/recharges/packages",
+        "/admin/recharges/packages/{packageId}",
+        "/admin/recharges/settings",
+        "/admin/request-log",
+        "/admin/runtime-region",
+        "/admin/settings",
+        "/admin/site",
+        "/admin/storage/buckets",
+        "/admin/storage/buckets/{bucketId}",
+        "/admin/storage/defaultBuckets",
+        "/admin/storage/garbageCollection",
+        "/admin/storage/providers",
+        "/admin/storage/providers/{providerId}",
+        "/admin/storage/quotas",
+        "/admin/storage/reconciliation",
+        "/admin/upstream",
+        "/auth/oauth/callback/:provider",
+        "/console/api-keys",
+        "/console/notifications",
+        "/console/user"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -20678,7 +22685,15 @@
       "compliance_level": "L2",
       "domain": "ops",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/cache",
+        "/admin/runtime-region",
+        "/admin/settings",
+        "/admin/site",
+        "/admin/upstream",
+        "/auth/login",
+        "/auth/register"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -21008,7 +23023,9 @@
       "compliance_level": "L2",
       "domain": "ops",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/monitor"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -21347,7 +23364,12 @@
       "compliance_level": "L2",
       "domain": "ops",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/dashboard",
+        "/admin/monitor",
+        "/admin/service-nodes",
+        "/console/dashboard"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -21614,7 +23636,9 @@
       "compliance_level": "L2",
       "domain": "ops",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/model"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -22010,9 +24034,37 @@
       "compliance_level": "L2",
       "domain": "ops",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/dashboard",
+        "/admin/monitor",
+        "/console/dashboard"
+      ],
       "generated_by_this_project": true,
-      "indexes": [],
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "metric_name",
+            "period_start",
+            "id"
+          ],
+          "name": "idx_ops_metric_snapshot_name_period",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "metric_scope",
+            "metric_period",
+            "period_start",
+            "id"
+          ],
+          "name": "idx_ops_metric_snapshot_scope_period",
+          "unique": false
+        }
+      ],
       "lifecycle": null,
       "not_null_columns": [],
       "physical_columns": null,
@@ -22219,7 +24271,9 @@
           "references_table": "ops_notification_message"
         }
       ],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/console/settings"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -22496,7 +24550,9 @@
       "compliance_level": "L2",
       "domain": "ops",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/console/dashboard"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -22854,7 +24910,9 @@
       "compliance_level": "L2",
       "domain": "ops",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/auth/register"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -22986,7 +25044,10 @@
       "compliance_level": "L2",
       "domain": "ops",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/marketing/referrals",
+        "/auth/register"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {
@@ -23258,7 +25319,9 @@
       "compliance_level": "L2",
       "domain": "ops",
       "foreign_keys": [],
-      "frontend_routes": [],
+      "frontend_routes": [
+        "/admin/marketing/referralStrategies"
+      ],
       "generated_by_this_project": true,
       "indexes": [
         {

@@ -107,6 +107,28 @@ function inferExternalProtocolId(routePath) {
   return "cloudrouter-vendor-relay";
 }
 
+/// Whether a route is a genuine vendor-compatible external wire protocol
+/// surface. Every gateway `/v1` route (including SDKWork-owned endpoints such
+/// as `/v1/user/balance`, which uses the OpenAI-compatible error and payload
+/// style) and partner relay prefix is external wire protocol; there are no
+/// SDKWork-envelope business resources on the open-api surface.
+function isExternalWireProtocolRoute(routePath) {
+  const normalized = String(routePath ?? "").replace(/\\/g, "/");
+  if (normalized.startsWith("/v1/")) {
+    return true;
+  }
+  return (
+    normalized.startsWith("/anthropic/") ||
+    normalized.startsWith("/google/") ||
+    normalized.startsWith("/kling/") ||
+    normalized.startsWith("/midjourney/") ||
+    normalized.startsWith("/nano-banana/") ||
+    normalized.startsWith("/suno/") ||
+    normalized.startsWith("/vidu/") ||
+    normalized.startsWith("/volcengine/")
+  );
+}
+
 function inferAuth(operation) {
   // x-route-scope classifies the frontend route (public/console/admin); it is
   // not an authentication profile. OpenAPI security is the route authority.
@@ -117,6 +139,21 @@ function inferAuth(operation) {
   const names = Object.keys(security[0] ?? {});
   if (names.includes("ApiKeyAuth") || names.includes("X-API-Key")) {
     return { mode: "api-key", required: true };
+  }
+  // The open-api gateway surface authenticates through one bearer header
+  // classified by prefix: `sk-`/`sp-` gateway API keys or IAM auth-token
+  // sessions. The canonical profile for that dual-channel bearer model is
+  // `api-key-or-dual-token` (API_SPEC §9.2), not `dual-token`, which would
+  // require a separate AuthToken+AccessToken scheme pair.
+  if (
+    Array.isArray(operation.security) &&
+    operation.security.some(
+      (entry) =>
+        Object.keys(entry).includes("bearerAuth") ||
+        Object.keys(entry).includes("ApiKey"),
+    )
+  ) {
+    return { mode: "api-key-or-dual-token", required: true };
   }
   return { mode: "dual-token", required: true };
 }
@@ -229,14 +266,26 @@ function stampOpenApiExtensions(document, target) {
         changed += 1;
       }
       if (target.apiSurface === "open-api") {
-        const externalProtocolId = inferExternalProtocolId(routePath);
-        if (operation["x-sdkwork-wire-protocol"] !== "external") {
-          operation["x-sdkwork-wire-protocol"] = "external";
+        // Every gateway `/v1` route and partner relay prefix is external wire
+        // protocol: the open-api surface is the OpenAI-compatible gateway
+        // facade (including SDKWork-owned endpoints such as
+        // `/v1/user/balance`, which use the OpenAI-compatible payload style).
+        const isExternalProtocol = isExternalWireProtocolRoute(routePath);
+        if (operation["x-sdkwork-wire-protocol"] !== (isExternalProtocol ? "external" : undefined)) {
+          if (isExternalProtocol) {
+            operation["x-sdkwork-wire-protocol"] = "external";
+          } else {
+            delete operation["x-sdkwork-wire-protocol"];
+            delete operation["x-sdkwork-external-protocol-id"];
+          }
           changed += 1;
         }
-        if (operation["x-sdkwork-external-protocol-id"] !== externalProtocolId) {
-          operation["x-sdkwork-external-protocol-id"] = externalProtocolId;
-          changed += 1;
+        if (isExternalProtocol) {
+          const externalProtocolId = inferExternalProtocolId(routePath);
+          if (operation["x-sdkwork-external-protocol-id"] !== externalProtocolId) {
+            operation["x-sdkwork-external-protocol-id"] = externalProtocolId;
+            changed += 1;
+          }
         }
       }
       if (!operation.operationId && routePath) {

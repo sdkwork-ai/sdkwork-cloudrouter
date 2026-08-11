@@ -296,36 +296,35 @@ needed), a reverse proxy on port 80 forwards the domains to the container:
 ## 5.2 IAM login Access-Token (auto-generated at deployment)
 
 The credential-entry login flow (`POST /app/v3/api/auth/sessions`) requires a
-bootstrap Access-Token JWT. Standalone containers handle this automatically:
+bootstrap Access-Token JWT. The gateway never distributes a usable token
+through the portal runtime script: a signed or session-bound Access-Token in an
+anonymously readable script would publish a live credential to every visitor.
+Development containers handle the bootstrap flow as follows:
 
 1. **Deployment posture** — `docker-compose.yml` sets `SDKWORK_ENV=development`
    (explicit IAM development deployment), which enables the IAM resolver's
-   development authentication fallback for the gateway-issued bootstrap token.
-2. **Token injection** — the gateway injects
+   development authentication fallback for a payload-only bootstrap token.
+2. **Token injection (development only)** — the gateway injects
    `window.__SDKWORK_CREDENTIAL_ENTRY_BOOTSTRAP_ACCESS_TOKEN__` into the portal
-   runtime-env script. It prefers an explicitly configured
-   `SDKWORK_ACCESS_TOKEN`; when unset it **auto-generates** a payload-only
-   bootstrap JWT bound to the installer-provisioned tenant runtime app
-   (tenant `100001`, app `sdkwork-cloudrouter` — the `iam_tenant_application`
-   row `ensure` creates). No manual token provisioning is required.
-3. **Override at deployment time** — pin or re-scope the token via `.env`
-   (`docker/.env.example`):
+   runtime-env script **only** when the explicit development switch
+   `SDKWORK_CLOUDROUTER_PORTAL_DEV_BOOTSTRAP_TOKEN=true` is set. The injected
+   value is a payload-only bootstrap JWT bound to the installer-provisioned
+   tenant runtime app (tenant `100001`, app `sdkwork-cloudrouter` — the
+   `iam_tenant_application` row `ensure` creates). It carries no real session
+   authority and is accepted only through the IAM development fallback.
+3. **Production posture** — `SDKWORK_CLOUDROUTER_PORTAL_DEV_BOOTSTRAP_TOKEN`
+   must stay unset. Portal users sign in through the normal IAM login; IAM
+   requires a production deployment posture (`SDKWORK_ENV` production value,
+   `SDKWORK_IAM_SIGNING_MASTER_SECRET` configured) and fails closed otherwise.
+   The payload-only scope overrides remain available for development:
    ```bash
-   SDKWORK_ACCESS_TOKEN=<signed bootstrap JWT>          # explicit token wins
    SDKWORK_WEB_FRAMEWORK_JWT_BOOTSTRAP_TENANT_ID=100001 # auto-gen tenant scope
    SDKWORK_WEB_FRAMEWORK_JWT_BOOTSTRAP_APP_ID=sdkwork-cloudrouter # auto-gen app scope
    ```
-4. **Production hardening** — the development fallback is only legal in
-   explicit development deployments. A production deployment must set
-   `SDKWORK_ENV` to a production value, configure
-   `SDKWORK_IAM_SIGNING_MASTER_SECRET`, and inject a signed
-   `SDKWORK_ACCESS_TOKEN`; otherwise IAM fails closed on login.
 
-Verify the token is served:
-
-```bash
-curl -fsS http://127.0.0.1:3903/runtime-env.js | grep BOOTSTRAP_ACCESS_TOKEN
-```
+The portal runtime script never carries a signed or session-bound token in any
+deployment mode; `SDKWORK_ACCESS_TOKEN` is not read by the gateway for script
+injection.
 
 ## 5.3 Multiple custom domains (CORS)
 

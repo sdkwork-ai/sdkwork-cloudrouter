@@ -154,8 +154,9 @@ router-service SQLite adapter directory.
 
 Cloud Router is the current system of record for the first-party Chat surface.
 The authored fragment `docs/schema-registry/tables/ai-chat-runtime.yaml`
-declares six transcript/context tables plus `ai_runtime_invocation` and
-`ai_runtime_usage_link`. All eight are PostgreSQL-only server authorities and
+declares six transcript/context tables plus `ai_runtime_invocation`,
+`ai_runtime_invocation_event`, `ai_runtime_artifact`, and
+`ai_runtime_usage_link`. All ten are PostgreSQL-only server authorities and
 bind numeric `tenant_id`, `organization_id`, and `user_id` scope.
 
 One turn creation transaction locks its conversation row with `FOR UPDATE`,
@@ -190,9 +191,11 @@ or unhealthy ID lease reports not ready.
 `ai_runtime_usage_link` links Chat records to runtime and usage facts but is not
 the billing ledger; `ai_metering_usage` (ai-metering module, co-located with the
 account `acct_*` ledger in the federated commerce pool) remains the billing
-source of truth. Runtime
-events, runtime artifacts, agent state, and memory state are outside the current
-eight-table implementation. Data ownership and future transfer requirements are
+source of truth. Invocation events and runtime artifacts are persisted in the
+scoped `ai_runtime_invocation_event` and `ai_runtime_artifact` tables with
+transactional ordinal allocation and a scoped unique sequence index. Agent
+state and memory state remain outside the current ten-table implementation.
+Data ownership and future transfer requirements are
 recorded in
 [ADR-20260730](../decisions/ADR-20260730-own-chat-runtime-postgres-authority.md).
 

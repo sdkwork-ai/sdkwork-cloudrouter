@@ -10199,6 +10199,77 @@
       ]
     },
     {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/storage/buckets/{bucketId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts#backendStorageBucketUpdate@/admin/storage/buckets/{bucketId}",
+      "kind": "update",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "backendStorageBucketUpdate",
+      "operation_id": "oss.buckets.update",
+      "path_params": [
+        "bucketId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AdminStorageStatusUpdateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminStorageStatusUpdateRequest",
+          "properties": {
+            "reason": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "archived",
+                "disabled"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "reason"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/buckets/{bucketId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
       "api_method": "GET",
       "api_path": "/backend/v3/api/storage/buckets",
       "api_surface": "backend",
@@ -13359,62 +13430,6 @@
     },
     {
       "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}/secret",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts#getUpstreamAccountCredentialSecret@/admin/upstream",
-      "kind": "read",
-      "module": "pc-admin-upstream",
-      "openapi_exposed": true,
-      "operation": "getUpstreamAccountCredentialSecret",
-      "operation_id": "upstreamAccounts.credentials.secret.retrieve",
-      "path_params": [
-        "accountId",
-        "credentialId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "ai_upstream_account",
-        "ai_upstream_account_credential"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "UpstreamAccountCredentialSecretResponse",
-        "schema": {
-          "additionalProperties": false,
-          "name": "UpstreamAccountCredentialSecretResponse",
-          "properties": {
-            "credentialId": {
-              "maxLength": 32,
-              "type": "string"
-            },
-            "secret": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "credentialId",
-            "secret"
-          ],
-          "type": "object"
-        }
-      },
-      "route": "/admin/upstream",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "intelligence",
-      "sdk_family": "cloudrouter-backend-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-      "tag": "ai",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
       "api_path": "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}",
       "api_surface": "backend",
       "file_targets": [],
@@ -13676,6 +13691,7 @@
       "api_method": "GET",
       "api_path": "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/members",
       "api_surface": "backend",
+      "bounded_collection_max": 200,
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
@@ -13787,6 +13803,7 @@
       "api_method": "GET",
       "api_path": "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/resources",
       "api_surface": "backend",
+      "bounded_collection_max": 200,
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
@@ -14127,6 +14144,7 @@
       "api_method": "GET",
       "api_path": "/backend/v3/api/ai/upstream_accounts/{accountId}/resources",
       "api_surface": "backend",
+      "bounded_collection_max": 200,
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
@@ -14446,6 +14464,7 @@
       "api_method": "GET",
       "api_path": "/backend/v3/api/ai/upstream_suppliers/{supplierId}/auth_methods",
       "api_surface": "backend",
+      "bounded_collection_max": 200,
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
@@ -14579,6 +14598,7 @@
       "api_method": "GET",
       "api_path": "/backend/v3/api/ai/upstream_suppliers/{supplierId}/endpoints",
       "api_surface": "backend",
+      "bounded_collection_max": 200,
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
@@ -14708,6 +14728,7 @@
       "api_method": "GET",
       "api_path": "/backend/v3/api/ai/upstream_suppliers/{supplierId}/resources",
       "api_surface": "backend",
+      "bounded_collection_max": 200,
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
@@ -19763,167 +19784,6 @@
     },
     {
       "api_method": "POST",
-      "api_path": "/app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts#completeChatTurnResponse@/playground",
-      "kind": "create",
-      "module": "pc-playground",
-      "openapi_exposed": true,
-      "operation": "completeChatTurnResponse",
-      "operation_id": "conversations.turns.response.create",
-      "path_params": [
-        "conversationId",
-        "turnId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "ai_chat_conversation",
-        "ai_chat_turn",
-        "ai_chat_item",
-        "ai_chat_message",
-        "ai_chat_message_part",
-        "ai_runtime_invocation",
-        "ai_usage"
-      ],
-      "request_body_required": true,
-      "request_id_header": false,
-      "request_schema": {
-        "name": "CompleteChatTurnResponseRequest",
-        "schema": {
-          "additionalProperties": false,
-          "name": "CompleteChatTurnResponseRequest",
-          "properties": {
-            "message": {
-              "maxLength": 65536,
-              "minLength": 1,
-              "type": "string"
-            },
-            "metadata": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "model": {
-              "maxLength": 128,
-              "type": "string"
-            },
-            "provider": {
-              "maxLength": 128,
-              "type": "string"
-            },
-            "runtime": {
-              "maxLength": 128,
-              "type": "string"
-            },
-            "runtimeInvocationId": {
-              "maxLength": 128,
-              "type": "string"
-            },
-            "status": {
-              "default": "completed",
-              "enum": [
-                "completed",
-                "failed",
-                "cancelled",
-                "streaming"
-              ],
-              "type": "string"
-            },
-            "usage": {
-              "additionalProperties": false,
-              "properties": {
-                "cachedTokens": {
-                  "format": "int64",
-                  "pattern": "^[0-9]+$",
-                  "type": "string",
-                  "x-sdkwork-int64-string": true,
-                  "x-sdkwork-rust-type": "i64"
-                },
-                "cost": {
-                  "pattern": "^[0-9]+(?:\\.[0-9]{1,9})?$",
-                  "type": "string"
-                },
-                "costAmount": {
-                  "pattern": "^[0-9]+(?:\\.[0-9]{1,9})?$",
-                  "type": "string"
-                },
-                "currency": {
-                  "maxLength": 16,
-                  "type": "string"
-                },
-                "inputTokens": {
-                  "format": "int64",
-                  "pattern": "^[0-9]+$",
-                  "type": "string",
-                  "x-sdkwork-int64-string": true,
-                  "x-sdkwork-rust-type": "i64"
-                },
-                "outputTokens": {
-                  "format": "int64",
-                  "pattern": "^[0-9]+$",
-                  "type": "string",
-                  "x-sdkwork-int64-string": true,
-                  "x-sdkwork-rust-type": "i64"
-                },
-                "reasoningTokens": {
-                  "format": "int64",
-                  "pattern": "^[0-9]+$",
-                  "type": "string",
-                  "x-sdkwork-int64-string": true,
-                  "x-sdkwork-rust-type": "i64"
-                },
-                "totalTokens": {
-                  "format": "int64",
-                  "pattern": "^[0-9]+$",
-                  "type": "string",
-                  "x-sdkwork-int64-string": true,
-                  "x-sdkwork-rust-type": "i64"
-                }
-              },
-              "type": "object"
-            },
-            "usageFactId": {
-              "format": "int64",
-              "pattern": "^[1-9][0-9]*$",
-              "type": "string",
-              "x-sdkwork-int64-string": true,
-              "x-sdkwork-rust-type": "i64"
-            }
-          },
-          "required": [
-            "message"
-          ],
-          "type": "object"
-        }
-      },
-      "response_schema": {
-        "name": "ChatTurnOutcome",
-        "schema": {
-          "$ref": "#/components/schemas/ChatTurnOutcome"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "chat",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "tag": "chat",
-      "write_tables": [
-        "ai_chat_turn",
-        "ai_chat_item",
-        "ai_chat_message",
-        "ai_chat_message_part",
-        "ai_chat_context_snapshot",
-        "ai_runtime_usage_link"
-      ]
-    },
-    {
-      "api_method": "POST",
       "api_path": "/app/v3/api/runtime/invocations/{invocationId}/completions",
       "api_surface": "app",
       "file_targets": [],
@@ -20048,257 +19908,6 @@
       "tag": "runtime",
       "write_tables": [
         "ai_runtime_invocation"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/chat/conversations",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts#createChatConversation@/playground",
-      "kind": "create",
-      "module": "pc-playground",
-      "openapi_exposed": true,
-      "operation": "createChatConversation",
-      "operation_id": "conversations.create",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "ai_chat_conversation"
-      ],
-      "request_body_required": true,
-      "request_id_header": false,
-      "request_schema": {
-        "name": "CreateChatConversationRequest",
-        "schema": {
-          "additionalProperties": false,
-          "name": "CreateChatConversationRequest",
-          "properties": {
-            "agentId": {
-              "maxLength": 128,
-              "type": "string"
-            },
-            "agentSessionId": {
-              "maxLength": 128,
-              "type": "string"
-            },
-            "defaultModel": {
-              "maxLength": 128,
-              "type": "string"
-            },
-            "defaultProvider": {
-              "maxLength": 128,
-              "type": "string"
-            },
-            "memorySpaceId": {
-              "maxLength": 128,
-              "type": "string"
-            },
-            "metadata": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "sourceSurface": {
-              "maxLength": 64,
-              "type": "string"
-            },
-            "title": {
-              "maxLength": 256,
-              "type": "string"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "response_schema": {
-        "name": "ChatConversationCreateResponse",
-        "schema": {
-          "additionalProperties": false,
-          "name": "ChatConversationCreateResponse",
-          "properties": {
-            "item": {
-              "$ref": "#/components/schemas/ChatConversationItem"
-            }
-          },
-          "required": [
-            "item"
-          ],
-          "type": "object"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "chat",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "tag": "chat",
-      "write_tables": [
-        "ai_chat_conversation"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/chat/conversations/{conversationId}/turns",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts#createChatTurn@/playground",
-      "kind": "create",
-      "module": "pc-playground",
-      "openapi_exposed": true,
-      "operation": "createChatTurn",
-      "operation_id": "conversations.turns.create",
-      "path_params": [
-        "conversationId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "ai_chat_conversation"
-      ],
-      "request_body_required": true,
-      "request_id_header": false,
-      "request_schema": {
-        "name": "CreateChatTurnRequest",
-        "schema": {
-          "additionalProperties": false,
-          "name": "CreateChatTurnRequest",
-          "properties": {
-            "agentId": {
-              "maxLength": 128,
-              "type": "string"
-            },
-            "agentSessionId": {
-              "maxLength": 128,
-              "type": "string"
-            },
-            "message": {
-              "maxLength": 65536,
-              "minLength": 1,
-              "type": "string"
-            },
-            "metadata": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "mode": {
-              "maxLength": 64,
-              "type": "string"
-            },
-            "model": {
-              "maxLength": 128,
-              "type": "string"
-            },
-            "provider": {
-              "maxLength": 128,
-              "type": "string"
-            }
-          },
-          "required": [
-            "message"
-          ],
-          "type": "object"
-        }
-      },
-      "response_schema": {
-        "name": "ChatTurnOutcome",
-        "schema": {
-          "additionalProperties": false,
-          "name": "ChatTurnOutcome",
-          "properties": {
-            "messages": {
-              "items": {
-                "$ref": "#/components/schemas/ChatMessageItem"
-              },
-              "type": "array"
-            },
-            "turn": {
-              "additionalProperties": false,
-              "name": "ChatTurnItem",
-              "properties": {
-                "agentId": {
-                  "maxLength": 128,
-                  "nullable": true,
-                  "type": "string"
-                },
-                "agentSessionId": {
-                  "maxLength": 128,
-                  "nullable": true,
-                  "type": "string"
-                },
-                "conversationId": {
-                  "maxLength": 128,
-                  "minLength": 1,
-                  "type": "string"
-                },
-                "createdAt": {
-                  "maxLength": 64,
-                  "type": "string"
-                },
-                "id": {
-                  "maxLength": 128,
-                  "minLength": 1,
-                  "type": "string"
-                },
-                "model": {
-                  "maxLength": 128,
-                  "nullable": true,
-                  "type": "string"
-                },
-                "provider": {
-                  "maxLength": 128,
-                  "nullable": true,
-                  "type": "string"
-                },
-                "status": {
-                  "maxLength": 64,
-                  "type": "string"
-                },
-                "updatedAt": {
-                  "maxLength": 64,
-                  "type": "string"
-                }
-              },
-              "required": [
-                "id",
-                "conversationId",
-                "status",
-                "model",
-                "provider",
-                "agentId",
-                "agentSessionId",
-                "createdAt",
-                "updatedAt"
-              ],
-              "type": "object"
-            }
-          },
-          "required": [
-            "turn",
-            "messages"
-          ],
-          "type": "object"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "chat",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "tag": "chat",
-      "write_tables": [
-        "ai_chat_turn",
-        "ai_chat_item",
-        "ai_chat_message",
-        "ai_chat_message_part"
       ]
     },
     {
@@ -20655,218 +20264,6 @@
       "write_tables": [
         "ai_runtime_invocation"
       ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/chat/conversations",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts#listChatConversations@/playground",
-      "kind": "read",
-      "module": "pc-playground",
-      "openapi_exposed": true,
-      "operation": "listChatConversations",
-      "operation_id": "conversations.list",
-      "path_params": [],
-      "query_parameters": [
-        {
-          "in": "query",
-          "name": "page",
-          "required": false,
-          "schema": {
-            "default": 1,
-            "format": "int32",
-            "minimum": 1,
-            "type": "integer"
-          }
-        },
-        {
-          "in": "query",
-          "name": "page_size",
-          "required": false,
-          "schema": {
-            "default": 20,
-            "format": "int32",
-            "maximum": 200,
-            "minimum": 1,
-            "type": "integer"
-          }
-        }
-      ],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "ai_chat_conversation"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "ChatConversationListResponse",
-        "schema": {
-          "additionalProperties": false,
-          "name": "ChatConversationListResponse",
-          "properties": {
-            "items": {
-              "items": {
-                "additionalProperties": false,
-                "name": "ChatConversationItem",
-                "properties": {
-                  "agentId": {
-                    "maxLength": 128,
-                    "nullable": true,
-                    "type": "string"
-                  },
-                  "agentSessionId": {
-                    "maxLength": 128,
-                    "nullable": true,
-                    "type": "string"
-                  },
-                  "createdAt": {
-                    "maxLength": 64,
-                    "type": "string"
-                  },
-                  "defaultModel": {
-                    "maxLength": 128,
-                    "nullable": true,
-                    "type": "string"
-                  },
-                  "defaultProvider": {
-                    "maxLength": 128,
-                    "nullable": true,
-                    "type": "string"
-                  },
-                  "id": {
-                    "maxLength": 128,
-                    "minLength": 1,
-                    "type": "string"
-                  },
-                  "lastMessagePreview": {
-                    "maxLength": 4096,
-                    "nullable": true,
-                    "type": "string"
-                  },
-                  "memorySpaceId": {
-                    "maxLength": 128,
-                    "nullable": true,
-                    "type": "string"
-                  },
-                  "messageCount": {
-                    "format": "int64",
-                    "pattern": "^[0-9]+$",
-                    "type": "string",
-                    "x-sdkwork-int64-string": true,
-                    "x-sdkwork-rust-type": "i64"
-                  },
-                  "sourceSurface": {
-                    "maxLength": 64,
-                    "type": "string"
-                  },
-                  "status": {
-                    "maxLength": 64,
-                    "type": "string"
-                  },
-                  "title": {
-                    "maxLength": 256,
-                    "type": "string"
-                  },
-                  "turnCount": {
-                    "format": "int64",
-                    "pattern": "^[0-9]+$",
-                    "type": "string",
-                    "x-sdkwork-int64-string": true,
-                    "x-sdkwork-rust-type": "i64"
-                  },
-                  "updatedAt": {
-                    "maxLength": 64,
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "id",
-                  "title",
-                  "status",
-                  "sourceSurface",
-                  "defaultModel",
-                  "defaultProvider",
-                  "agentId",
-                  "agentSessionId",
-                  "memorySpaceId",
-                  "lastMessagePreview",
-                  "messageCount",
-                  "turnCount",
-                  "createdAt",
-                  "updatedAt"
-                ],
-                "type": "object"
-              },
-              "type": "array"
-            },
-            "pageInfo": {
-              "$ref": "#/components/schemas/PageInfo"
-            }
-          },
-          "required": [
-            "items",
-            "pageInfo"
-          ],
-          "type": "object"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "chat",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "tag": "chat",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/chat/conversations/{conversationId}/messages",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts#listChatMessages@/playground",
-      "kind": "read",
-      "module": "pc-playground",
-      "openapi_exposed": false,
-      "operation": "listChatMessages",
-      "operation_id": "conversations.messages.list",
-      "path_params": [
-        "conversationId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "ai_chat_conversation",
-        "ai_chat_turn",
-        "ai_chat_message",
-        "ai_runtime_usage_link"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "chat",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "tag": "chat",
-      "write_tables": []
     },
     {
       "api_method": "GET",
@@ -21576,45 +20973,6 @@
     },
     {
       "api_method": "GET",
-      "api_path": "/app/v3/api/chat/conversations/{conversationId}",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts#retrieveChatConversation@/playground",
-      "kind": "read",
-      "module": "pc-playground",
-      "openapi_exposed": true,
-      "operation": "retrieveChatConversation",
-      "operation_id": "conversations.retrieve",
-      "path_params": [
-        "conversationId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "ai_chat_conversation"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "ChatConversationItem",
-        "schema": {
-          "$ref": "#/components/schemas/ChatConversationItem"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "chat",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "tag": "chat",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
       "api_path": "/app/v3/api/runtime/invocations/{invocationId}",
       "api_surface": "app",
       "file_targets": [],
@@ -21708,231 +21066,6 @@
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "tag": "runtime",
       "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/runtime/invocations/{invocationId}/completions",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts#cancelRuntimeInvocation@/playground",
-      "kind": "action",
-      "module": "pc-playground",
-      "openapi_exposed": false,
-      "operation": "cancelRuntimeInvocation",
-      "operation_id": "invocations.completions.create",
-      "path_params": [
-        "invocationId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "ai_runtime_invocation"
-      ],
-      "request_body_required": false,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "runtime",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts",
-      "tag": "runtime",
-      "write_tables": [
-        "ai_runtime_invocation"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/chat/conversations/{conversationId}/messages",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts#fetchMessages@/playground",
-      "kind": "read",
-      "module": "pc-playground",
-      "openapi_exposed": false,
-      "operation": "fetchMessages",
-      "operation_id": "conversations.messages.list",
-      "path_params": [
-        "conversationId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "ai_chat_conversation",
-        "ai_chat_turn",
-        "ai_chat_message",
-        "ai_runtime_usage_link"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "chat",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts",
-      "tag": "chat",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/chat/conversations",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts#fetchSessions@/playground",
-      "kind": "read",
-      "module": "pc-playground",
-      "openapi_exposed": false,
-      "operation": "fetchSessions",
-      "operation_id": "conversations.list",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "ai_chat_conversation"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "chat",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts",
-      "tag": "chat",
-      "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/runtime/invocations/{invocationId}/completions",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts#resumeMessage@/playground",
-      "kind": "action",
-      "module": "pc-playground",
-      "openapi_exposed": false,
-      "operation": "resumeMessage",
-      "operation_id": "invocations.completions.create",
-      "path_params": [
-        "invocationId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "ai_chat_conversation",
-        "ai_chat_turn",
-        "ai_runtime_invocation",
-        "ai_runtime_invocation_event"
-      ],
-      "request_body_required": false,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "runtime",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts",
-      "tag": "runtime",
-      "write_tables": [
-        "ai_chat_turn",
-        "ai_chat_item",
-        "ai_chat_message",
-        "ai_chat_message_part",
-        "ai_runtime_invocation",
-        "ai_runtime_usage_link"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/runtime/invocations",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts#sendMessage@/playground",
-      "kind": "create",
-      "module": "pc-playground",
-      "openapi_exposed": false,
-      "operation": "sendMessage",
-      "operation_id": "invocations.create",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "ai_request_trace",
-        "ai_usage"
-      ],
-      "request_body_required": false,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "runtime",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts",
-      "tag": "runtime",
-      "write_tables": [
-        "ai_request_trace",
-        "ai_usage"
-      ]
     },
     {
       "api_method": "POST",
@@ -24969,56 +24102,6 @@
     },
     {
       "api_method": "POST",
-      "api_path": "/app/v3/api/iam/invites/issue",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts#issueInviteCode@/auth/register",
-      "kind": "create",
-      "module": "register",
-      "openapi_exposed": true,
-      "operation": "issueInviteCode",
-      "operation_id": "invites.create",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "ops_referral_invite_code"
-      ],
-      "request_body_required": false,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "AppInviteCodeResponse",
-        "schema": {
-          "additionalProperties": false,
-          "name": "AppInviteCodeResponse",
-          "properties": {
-            "inviteCode": {
-              "maxLength": 32,
-              "type": "string"
-            }
-          },
-          "required": [
-            "inviteCode"
-          ],
-          "type": "object"
-        }
-      },
-      "route": "/auth/register",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "iam",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
-      "tag": "iam",
-      "write_tables": [
-        "ops_referral_invite_code"
-      ]
-    },
-    {
-      "api_method": "POST",
       "api_path": "/app/v3/api/iam/invites/validate",
       "api_surface": "app",
       "file_targets": [],
@@ -25084,230 +24167,6 @@
       "sdk_family": "cloudrouter-app-sdk",
       "source": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
       "tag": "iam",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/chat/conversations/{conversationId}/messages",
-      "api_surface": "app",
-      "description": "P1 high-volume Chat message history using opaque cursor pagination. The first bounded page contains the latest messages, each response page is in chronological conversation order, and nextCursor seeks an earlier window. The only supported pagination inputs are cursor and page_size; the default page size is 20 and the maximum is 200.",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "crates/sdkwork-routes-cloudrouter-app-api/src/http_route_manifest.rs#listChatMessages@/playground",
-      "kind": "read",
-      "module": "playground",
-      "openapi_exposed": true,
-      "operation": "listChatMessages",
-      "operation_id": "conversations.messages.list",
-      "path_params": [
-        "conversationId"
-      ],
-      "query_parameters": [
-        {
-          "in": "query",
-          "name": "cursor",
-          "required": false,
-          "schema": {
-            "maxLength": 1024,
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "page_size",
-          "required": false,
-          "schema": {
-            "default": 20,
-            "format": "int32",
-            "maximum": 200,
-            "minimum": 1,
-            "type": "integer"
-          }
-        }
-      ],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "ai_chat_conversation",
-        "ai_chat_turn",
-        "ai_chat_message",
-        "ai_runtime_usage_link"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "ChatMessageListResponse",
-        "schema": {
-          "additionalProperties": false,
-          "name": "ChatMessageListResponse",
-          "properties": {
-            "items": {
-              "items": {
-                "additionalProperties": false,
-                "name": "ChatMessageItem",
-                "properties": {
-                  "content": {
-                    "maxLength": 65536,
-                    "type": "string"
-                  },
-                  "conversationId": {
-                    "maxLength": 128,
-                    "minLength": 1,
-                    "type": "string"
-                  },
-                  "createdAt": {
-                    "maxLength": 64,
-                    "type": "string"
-                  },
-                  "direction": {
-                    "maxLength": 64,
-                    "type": "string"
-                  },
-                  "id": {
-                    "maxLength": 128,
-                    "minLength": 1,
-                    "type": "string"
-                  },
-                  "model": {
-                    "maxLength": 128,
-                    "nullable": true,
-                    "type": "string"
-                  },
-                  "provider": {
-                    "maxLength": 128,
-                    "nullable": true,
-                    "type": "string"
-                  },
-                  "role": {
-                    "maxLength": 64,
-                    "type": "string"
-                  },
-                  "runtime": {
-                    "maxLength": 128,
-                    "nullable": true,
-                    "type": "string"
-                  },
-                  "runtimeInvocationId": {
-                    "maxLength": 128,
-                    "nullable": true,
-                    "type": "string"
-                  },
-                  "status": {
-                    "maxLength": 64,
-                    "type": "string"
-                  },
-                  "turnId": {
-                    "maxLength": 128,
-                    "nullable": true,
-                    "type": "string"
-                  },
-                  "usage": {
-                    "additionalProperties": false,
-                    "name": "ChatUsageSnapshot",
-                    "nullable": true,
-                    "properties": {
-                      "cachedTokens": {
-                        "format": "int64",
-                        "pattern": "^[0-9]+$",
-                        "type": "string",
-                        "x-sdkwork-int64-string": true,
-                        "x-sdkwork-rust-type": "i64"
-                      },
-                      "costAmount": {
-                        "nullable": true,
-                        "pattern": "^[0-9]+(?:\\.[0-9]{1,9})?$",
-                        "type": "string"
-                      },
-                      "currency": {
-                        "maxLength": 16,
-                        "nullable": true,
-                        "type": "string"
-                      },
-                      "inputTokens": {
-                        "format": "int64",
-                        "pattern": "^[0-9]+$",
-                        "type": "string",
-                        "x-sdkwork-int64-string": true,
-                        "x-sdkwork-rust-type": "i64"
-                      },
-                      "outputTokens": {
-                        "format": "int64",
-                        "pattern": "^[0-9]+$",
-                        "type": "string",
-                        "x-sdkwork-int64-string": true,
-                        "x-sdkwork-rust-type": "i64"
-                      },
-                      "reasoningTokens": {
-                        "format": "int64",
-                        "pattern": "^[0-9]+$",
-                        "type": "string",
-                        "x-sdkwork-int64-string": true,
-                        "x-sdkwork-rust-type": "i64"
-                      },
-                      "totalTokens": {
-                        "format": "int64",
-                        "pattern": "^[0-9]+$",
-                        "type": "string",
-                        "x-sdkwork-int64-string": true,
-                        "x-sdkwork-rust-type": "i64"
-                      }
-                    },
-                    "required": [
-                      "inputTokens",
-                      "outputTokens",
-                      "cachedTokens",
-                      "reasoningTokens",
-                      "totalTokens",
-                      "costAmount",
-                      "currency"
-                    ],
-                    "type": "object"
-                  },
-                  "usageLinkId": {
-                    "maxLength": 128,
-                    "nullable": true,
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "id",
-                  "conversationId",
-                  "turnId",
-                  "role",
-                  "direction",
-                  "content",
-                  "status",
-                  "model",
-                  "provider",
-                  "runtime",
-                  "runtimeInvocationId",
-                  "usageLinkId",
-                  "usage",
-                  "createdAt"
-                ],
-                "type": "object"
-              },
-              "type": "array"
-            },
-            "pageInfo": {
-              "$ref": "#/components/schemas/PageInfo"
-            }
-          },
-          "required": [
-            "items",
-            "pageInfo"
-          ],
-          "type": "object"
-        }
-      },
-      "route": "/playground",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "chat",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "crates/sdkwork-routes-cloudrouter-app-api/src/http_route_manifest.rs",
-      "tag": "chat",
       "write_tables": []
     },
     {
@@ -29303,77 +28162,6 @@
     },
     {
       "api_method": "PATCH",
-      "api_path": "/backend/v3/api/storage/buckets/{bucketId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/storage/buckets/{bucketId}",
-      "kind": "update",
-      "module": "{bucketId}",
-      "openapi_exposed": true,
-      "operation": "update",
-      "operation_id": "oss.buckets.update",
-      "path_params": [
-        "bucketId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "storage"
-      ],
-      "request_body_required": true,
-      "request_id_header": false,
-      "request_schema": {
-        "name": "AdminStorageStatusUpdateRequest",
-        "schema": {
-          "additionalProperties": false,
-          "name": "AdminStorageStatusUpdateRequest",
-          "properties": {
-            "reason": {
-              "maxLength": 512,
-              "minLength": 1,
-              "type": "string"
-            },
-            "status": {
-              "enum": [
-                "active",
-                "archived",
-                "disabled"
-              ],
-              "type": "string"
-            }
-          },
-          "required": [
-            "status",
-            "reason"
-          ],
-          "type": "object"
-        }
-      },
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/storage/buckets/{bucketId}",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "storage",
-      "sdk_family": "cloudrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "storage",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
       "api_path": "/backend/v3/api/storage/providers/{providerId}",
       "api_surface": "backend",
       "file_targets": [],
@@ -29478,24 +28266,24 @@
   "summary": {
     "api_method_counts": {
       "DELETE": 20,
-      "GET": 128,
+      "GET": 121,
       "PATCH": 21,
-      "POST": 72,
+      "POST": 65,
       "PUT": 12
     },
     "api_surface_counts": {
-      "app": 85,
-      "backend": 168
+      "app": 72,
+      "backend": 167
     },
-    "operation_count": 253,
+    "operation_count": 239,
     "route_scope_counts": {
-      "admin": 168,
+      "admin": 167,
       "console": 30,
-      "public": 55
+      "public": 42
     },
     "sdk_client_counts": {
-      "SdkworkAppClient": 85,
-      "SdkworkBackendClient": 168
+      "SdkworkAppClient": 72,
+      "SdkworkBackendClient": 167
     }
   }
 }

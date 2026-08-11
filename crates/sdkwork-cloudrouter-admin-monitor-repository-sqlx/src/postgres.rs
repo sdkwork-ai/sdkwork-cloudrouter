@@ -211,6 +211,7 @@ async fn list_monitor_performance(
               AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
               AND status = 1
               AND metric_name IN ('cpu', 'cpu_percent', 'system.cpu', 'memory', 'memory_percent', 'system.memory', 'network', 'network_mbps', 'network_traffic', 'system.network')
+              AND period_start >= now() - interval '90 days'
               AND period_start IS NOT NULL
             GROUP BY period_start
         )

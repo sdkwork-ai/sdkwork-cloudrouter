@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "52eff63407f4c2c28d1c0599ab909202d00422fca98a11abbbdff5040983b005"
+      "sha256": "603107f223ca507c15793a2ad4417f06a8b1a5c17b535efa71245867966c5bd2"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -59,16 +59,12 @@
       "sha256": "02ad25e6bf331ff241ba387c2947ddf1900dd849038e08c2757416a3aa788a04"
     },
     {
-      "path": "src/api/chat.ts",
-      "sha256": "18c55fc9cf29054132ef8474a62079ecd9c3e55661c2b5a59bab293a3c315aa2"
-    },
-    {
       "path": "src/api/iam.ts",
-      "sha256": "49b6b0c09b3a5b2b3951faefd79b0ac97f2021fc2c5942c34670575de6421352"
+      "sha256": "1d555a877162d9a1e4caa591c8ff28b3688e31e30047e582a4166ca0f95593ec"
     },
     {
       "path": "src/api/index.ts",
-      "sha256": "c4c6dd6ca9b47f5519532bf133f77ddddb343ed5204a0459146962c397b34403"
+      "sha256": "d83a128040f1e9db5e6429343798b70aad5d61772668c555bbde1e53f1153125"
     },
     {
       "path": "src/api/notification.ts",
@@ -104,7 +100,7 @@
     },
     {
       "path": "src/sdk.ts",
-      "sha256": "f2464cdcc367d6c021b60c7aa4806a0f5f95caa1fc243a5234dc197a61fc6b72"
+      "sha256": "b95350add77cdb992ed8de1dee329bf40733a853943d1a0e899cb4fb9b6b9af5"
     },
     {
       "path": "src/types/acknowledge-notification-response.ts",
@@ -125,10 +121,6 @@
     {
       "path": "src/types/app-invite-claim-response.ts",
       "sha256": "eae0648649ff42c1e5211135d9f4fca781dd97f29386ffc596962d15f84b3d86"
-    },
-    {
-      "path": "src/types/app-invite-code-response.ts",
-      "sha256": "cacd381ae3aee55b73ff009af1fa60d2b8c729137fdc78009f56eda002aeecd7"
     },
     {
       "path": "src/types/app-invite-policy-response.ts",
@@ -183,44 +175,8 @@
       "sha256": "7f2294cb55926d7fcdb08e77bfdbb038524e6e13863694d041206edcc9eea006"
     },
     {
-      "path": "src/types/chat-conversation-create-response.ts",
-      "sha256": "508c9db58a5139fb63cc0a70c6ccb32f3df5b8bb98dc7c1fff74e828f490dfca"
-    },
-    {
-      "path": "src/types/chat-conversation-item.ts",
-      "sha256": "12b6d25a462905fcae40c31201b6c2575f015a1ab8e8361bad2a98f7a0e0da00"
-    },
-    {
-      "path": "src/types/chat-conversation-list-response.ts",
-      "sha256": "5569e7752cc04cc93fae6c3dcc3cecbdeaac940cdb949c50d18840459044a668"
-    },
-    {
-      "path": "src/types/chat-message-item.ts",
-      "sha256": "d19fe6a4411fb429b64e587a497741796bfe51c7f01ca607ed13753a912bb7d0"
-    },
-    {
-      "path": "src/types/chat-message-list-response.ts",
-      "sha256": "0468b3ed9da63ac26ee96ea9ef9c0372890731cd1562bd963e9f8879165232c2"
-    },
-    {
-      "path": "src/types/chat-turn-item.ts",
-      "sha256": "26d24f063eefd614becc9e1ca1c7bf6bb34e880e78d1b6fa728d8f65c44e7a01"
-    },
-    {
-      "path": "src/types/chat-turn-outcome.ts",
-      "sha256": "3e8e3e776ca076660bfbdfc49f1ab3d883eb176919e45aa03929ee878a0a670b"
-    },
-    {
-      "path": "src/types/chat-usage-snapshot.ts",
-      "sha256": "2d4e315c4ea4a04d5493321ab3383008df22460dc56bff464e8e633a08a8bce7"
-    },
-    {
       "path": "src/types/common.ts",
       "sha256": "d2506be8c4bdbe8e7059393467e6e71d75ef1d8c018dbf997bb0ab2a77b6c7b6"
-    },
-    {
-      "path": "src/types/complete-chat-turn-response-request.ts",
-      "sha256": "f586e92f22dabc12c53b56c6415815fdfed2e828377de0cf0ec0c2b978c4a36e"
     },
     {
       "path": "src/types/complete-runtime-invocation-request.ts",
@@ -233,14 +189,6 @@
     {
       "path": "src/types/create-api-key-response.ts",
       "sha256": "ed09557a997c947f7778500c16a8de28c5947b5daf24a8402884d5e485cdc40c"
-    },
-    {
-      "path": "src/types/create-chat-conversation-request.ts",
-      "sha256": "1df83245502281e01f0da66274ccab0d4cc1219cbc8dfeb473808fc23e9fa9a0"
-    },
-    {
-      "path": "src/types/create-chat-turn-request.ts",
-      "sha256": "aabef9392088e7a35bdea628e36a08a5b85fba525de1abe9b7f3b9a02e7ef37a"
     },
     {
       "path": "src/types/create-runtime-artifact-request.ts",
@@ -296,7 +244,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "0262e35c371f23f92b32f5caa8c02207fcdd6041611528ba78ed468a747002af"
+      "sha256": "b74feef2c2118a128e42f3537c011f94a7b3f2cb2938b3459f703aeb2cdb7fa1"
     },
     {
       "path": "src/types/json-null.ts",

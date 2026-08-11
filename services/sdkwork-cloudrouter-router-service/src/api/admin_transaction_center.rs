@@ -1,19 +1,21 @@
 use std::sync::Arc;
 
-use axum::extract::{Query, State};
+use axum::extract::{Path, Query, State};
 use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
-use axum::routing::get;
-use axum::Router;
-use serde::Deserialize;
+use axum::routing::{get, patch};
+use axum::{Json, Router};
+use serde::{Deserialize, Serialize};
 
+use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
     json_success_list_response, offset_page_info, parse_offset_list_query, problem_from_wire_code,
-    ApiResponseError,
+    success_envelope, ApiResponseError,
 };
 use crate::domain::DomainError;
 use crate::ports::{
-    AdminTransactionCenterStore, AdminTransactionCollection, ListAdminTransactionRecordsQuery,
+    AdminTransactionCenterStore, AdminTransactionCollection, AdminTransactionJsonRecord,
+    ListAdminTransactionRecordsQuery, UpdatePaymentProviderCommand,
 };
 
 const MAX_QUERY_STATUS_LEN: usize = 32;
@@ -21,6 +23,12 @@ const MAX_ID_LEN: usize = 128;
 const MAX_CODE_LEN: usize = 64;
 const MAX_CURRENCY_LEN: usize = 16;
 const MAX_BUSINESS_DATE_LEN: usize = 32;
+const MAX_PROVIDER_DISPLAY_NAME_LEN: usize = 120;
+const MAX_REASON_LEN: usize = 512;
+const MAX_I18N_LOCALE_KEY_LEN: usize = 32;
+const MAX_I18N_VALUE_LEN: usize = 64;
+const MAX_I18N_LOCALES: usize = 8;
+const PAYMENT_PROVIDER_STATUSES: &[&str] = &["active", "inactive", "disabled"];
 const PAYMENT_PROVIDER_CODES: &[&str] = &[
     "wechat_pay",
     "alipay",
@@ -76,6 +84,23 @@ struct TransactionCenterListQueryRequest {
     business_date: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct UpdatePaymentProviderRequest {
+    display_name: Option<String>,
+    display_name_i18n: Option<serde_json::Value>,
+    sort_order: Option<i64>,
+    status: Option<String>,
+    reason: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct PaymentProviderMutationResponse {
+    provider: AdminTransactionJsonRecord,
+    request_id: String,
+}
+
 pub fn admin_transaction_center_router_with_store(
     store: Arc<dyn AdminTransactionCenterStore + Send + Sync>,
 ) -> Router {
@@ -83,6 +108,10 @@ pub fn admin_transaction_center_router_with_store(
         .route(
             "/backend/v3/api/payments/providers",
             get(list_payment_providers),
+        )
+        .route(
+            "/backend/v3/api/payments/providers/{provider_id}",
+            patch(update_payment_provider),
         )
         .with_state(AdminTransactionCenterState { store })
 }
@@ -97,6 +126,135 @@ async fn list_payment_providers(
         state.store.list_payment_providers(query)
     })
     .await
+}
+
+async fn update_payment_provider(
+    State(state): State<AdminTransactionCenterState>,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+    Path(provider_id): Path<String>,
+    Json(request): Json<UpdatePaymentProviderRequest>,
+) -> Response {
+    let command = match validated_provider_update_command(scoped, provider_id, request) {
+        Ok(command) => command,
+        Err(error) => return error.into_response(),
+    };
+    let request_id = response_request_id(command.request_id.as_deref());
+    match state.store.update_payment_provider(command).await {
+        Ok(provider) => Json(success_envelope(PaymentProviderMutationResponse {
+            provider,
+            request_id,
+        }))
+        .into_response(),
+        Err(error) => transaction_center_write_response(
+            "payment provider update is unavailable",
+            error,
+        ),
+    }
+}
+
+fn validated_provider_update_command(
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    provider_id: String,
+    request: UpdatePaymentProviderRequest,
+) -> Result<UpdatePaymentProviderCommand, ApiResponseError> {
+    let subject = scoped.into();
+    let display_name = match request.display_name {
+        Some(value) => normalize_optional_text(Some(value), "displayName", MAX_PROVIDER_DISPLAY_NAME_LEN)?,
+        None => None,
+    };
+    let display_name_i18n = normalize_display_name_i18n(request.display_name_i18n)?;
+    let sort_order = match request.sort_order {
+        Some(value) => match i32::try_from(value) {
+            Ok(value) => Some(value),
+            Err(_) => return Err(bad_request("sortOrder must be an integer").into()),
+        },
+        None => None,
+    };
+    let status = match request.status {
+        Some(value) => {
+            if let Some(value) =
+                normalize_optional_text(Some(value), "status", MAX_QUERY_STATUS_LEN)?
+            {
+                let value = value.to_ascii_lowercase();
+                if !PAYMENT_PROVIDER_STATUSES.contains(&value.as_str()) {
+                    return Err(bad_request(format!(
+                        "status must be one of {}",
+                        PAYMENT_PROVIDER_STATUSES.join(", ")
+                    ))
+                    .into());
+                }
+                Some(value)
+            } else {
+                None
+            }
+        }
+        None => None,
+    };
+    let reason = normalize_required_text(request.reason, "reason", MAX_REASON_LEN)?;
+    if display_name.is_none()
+        && display_name_i18n.is_none()
+        && sort_order.is_none()
+        && status.is_none()
+    {
+        return Err(bad_request(
+            "at least one of displayName, displayNameI18n, sortOrder, or status is required",
+        )
+        .into());
+    }
+    Ok(UpdatePaymentProviderCommand {
+        subject,
+        provider_id: normalize_required_text(provider_id, "providerId", MAX_ID_LEN)?,
+        display_name,
+        display_name_i18n,
+        sort_order,
+        status,
+        reason,
+        request_id: Some(server_request_id()?),
+    })
+}
+
+/// Localized display names map (locale key -> name). Keys are visible ASCII
+/// (e.g. `zh-CN`, `en-US`); values are non-empty and length-bounded so the
+/// audit trail and list projections stay readable.
+fn normalize_display_name_i18n(
+    value: Option<serde_json::Value>,
+) -> Result<Option<serde_json::Value>, ApiResponseError> {
+    let Some(value) = value else {
+        return Ok(None);
+    };
+    let Some(object) = value.as_object() else {
+        return Err(bad_request("displayNameI18n must be an object").into());
+    };
+    if object.is_empty() {
+        return Err(bad_request("displayNameI18n must not be empty").into());
+    }
+    if object.len() > MAX_I18N_LOCALES {
+        return Err(
+            bad_request(format!("displayNameI18n supports at most {MAX_I18N_LOCALES} locales"))
+                .into(),
+        );
+    }
+    for (key, item) in object {
+        if key.chars().count() > MAX_I18N_LOCALE_KEY_LEN
+            || !key.bytes().all(|byte| (0x20..=0x7e).contains(&byte))
+        {
+            return Err(bad_request(format!(
+                "displayNameI18n locale keys must be visible ASCII and at most {MAX_I18N_LOCALE_KEY_LEN} characters"
+            ))
+            .into());
+        }
+        let Some(text) = item.as_str() else {
+            return Err(bad_request("displayNameI18n values must be strings").into());
+        };
+        if text.trim().is_empty() || text.chars().count() > MAX_I18N_VALUE_LEN {
+            return Err(bad_request(format!(
+                "displayNameI18n values must be non-empty and at most {MAX_I18N_VALUE_LEN} characters"
+            ))
+            .into());
+        }
+    }
+    Ok(Some(value))
 }
 
 async fn list_response<'a, F>(
@@ -132,6 +290,33 @@ fn collection_response(collection: AdminTransactionCollection) -> Response {
 
 fn transaction_center_system_response(context: &str, error: DomainError) -> Response {
     problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
+}
+
+fn transaction_center_write_response(context: &str, error: DomainError) -> Response {
+    if error.is_not_found() {
+        return problem_from_wire_code("4040", error.to_string()).into_response();
+    }
+    transaction_center_system_response(context, error)
+}
+
+fn server_request_id() -> Result<String, ApiResponseError> {
+    generate_server_request_id().map_err(|error| {
+        let response = match error {
+            RequestIdError::Invalid(message) => bad_request(message),
+            RequestIdError::System(message) => transaction_center_system_response(
+                "request id generation failed",
+                DomainError::new(message),
+            ),
+        };
+        response.into()
+    })
+}
+
+fn response_request_id(value: Option<&str>) -> String {
+    value
+        .filter(|item| !item.trim().is_empty())
+        .map(ToOwned::to_owned)
+        .unwrap_or_else(|| "transaction-center-request".to_owned())
 }
 
 fn validated_list_query(

@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.4.0.
--- Registry SHA-256: 0eb8464b76cf2bc38c16b8e6058a048680741bc9a7def3d184ecb08472bac988.
+-- Registry SHA-256: 3ff5b9782ea0271fe269a6cea5ecc908972a9b4ead3cbea6be839e4ad9a17db3.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -105,10 +105,10 @@ CREATE TABLE IF NOT EXISTS ai_runtime_invocation (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    conversation_id VARCHAR(128),
-    chat_turn_id VARCHAR(128),
+    conversation_id VARCHAR(128) NOT NULL DEFAULT '',
+    chat_turn_id VARCHAR(128) NOT NULL DEFAULT '',
     chat_item_id VARCHAR(128),
-    agent_session_id VARCHAR(128),
+    agent_session_id VARCHAR(128) NOT NULL DEFAULT '',
     agent_run_id VARCHAR(128),
     agent_run_step_id VARCHAR(128),
     invocation_no BIGINT NOT NULL,
@@ -154,6 +154,7 @@ CREATE TABLE IF NOT EXISTS ai_runtime_invocation (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_runtime_invocation_scope_id ON ai_runtime_invocation (tenant_id, organization_id, user_id, id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_runtime_invocation_scope_uuid ON ai_runtime_invocation (tenant_id, organization_id, user_id, uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_runtime_invocation_scope_sequence ON ai_runtime_invocation (tenant_id, organization_id, user_id, conversation_id, chat_turn_id, agent_session_id, invocation_no);
 CREATE INDEX IF NOT EXISTS idx_ai_runtime_invocation_user_created ON ai_runtime_invocation (tenant_id, organization_id, user_id, created_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_runtime_invocation_chat_created ON ai_runtime_invocation (tenant_id, organization_id, user_id, conversation_id, chat_turn_id, created_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_runtime_invocation_runtime_status ON ai_runtime_invocation (tenant_id, organization_id, user_id, runtime, status, created_at, id);
@@ -1019,6 +1020,72 @@ CREATE TABLE IF NOT EXISTS ai_routing_rule (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_rule_profile_code ON ai_routing_rule (profile_id, rule_code) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_ai_routing_rule_tenant_profile_priority ON ai_routing_rule (tenant_id, organization_id, profile_id, priority, status);
+
+CREATE TABLE IF NOT EXISTS ai_runtime_artifact (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    user_id BIGINT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    conversation_id VARCHAR(128) NOT NULL DEFAULT '',
+    chat_turn_id VARCHAR(128) NOT NULL DEFAULT '',
+    chat_item_id VARCHAR(128),
+    agent_session_id VARCHAR(128) NOT NULL DEFAULT '',
+    agent_run_id VARCHAR(128),
+    agent_run_step_id VARCHAR(128),
+    runtime_invocation_id BIGINT NOT NULL,
+    artifact_type VARCHAR(64) NOT NULL,
+    name VARCHAR(512),
+    mime_type VARCHAR(128),
+    content_text VARCHAR(262144),
+    content_json JSONB,
+    drive_uri VARCHAR(1024),
+    resource_snapshot JSONB,
+    sha256 VARCHAR(64),
+    size_bytes BIGINT,
+    CONSTRAINT ck_ai_runtime_artifact_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
+    CONSTRAINT ck_ai_runtime_artifact_subject_scope CHECK (tenant_id > 0 AND organization_id >= 0 AND user_id > 0),
+    CONSTRAINT ck_ai_runtime_artifact_type CHECK (length(trim(artifact_type)) > 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_runtime_artifact_scope_id ON ai_runtime_artifact (tenant_id, organization_id, user_id, id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_runtime_artifact_scope_uuid ON ai_runtime_artifact (tenant_id, organization_id, user_id, uuid);
+CREATE INDEX IF NOT EXISTS idx_ai_runtime_artifact_invocation_created ON ai_runtime_artifact (tenant_id, organization_id, user_id, runtime_invocation_id, created_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_runtime_artifact_user_created ON ai_runtime_artifact (tenant_id, organization_id, user_id, created_at, id);
+
+CREATE TABLE IF NOT EXISTS ai_runtime_invocation_event (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    user_id BIGINT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    invocation_id BIGINT NOT NULL,
+    conversation_id VARCHAR(128) NOT NULL DEFAULT '',
+    chat_turn_id VARCHAR(128) NOT NULL DEFAULT '',
+    agent_session_id VARCHAR(128) NOT NULL DEFAULT '',
+    agent_run_id VARCHAR(128),
+    agent_run_step_id VARCHAR(128),
+    event_no BIGINT NOT NULL,
+    event_type VARCHAR(64) NOT NULL,
+    event_source VARCHAR(64) NOT NULL,
+    payload_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+    text_delta VARCHAR(16384),
+    CONSTRAINT ck_ai_runtime_invocation_event_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
+    CONSTRAINT ck_ai_runtime_invocation_event_subject_scope CHECK (tenant_id > 0 AND organization_id >= 0 AND user_id > 0),
+    CONSTRAINT ck_ai_runtime_invocation_event_sequence CHECK (event_no > 0),
+    CONSTRAINT ck_ai_runtime_invocation_event_type CHECK (length(trim(event_type)) > 0 AND length(trim(event_source)) > 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_runtime_invocation_event_scope_id ON ai_runtime_invocation_event (tenant_id, organization_id, user_id, id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_runtime_invocation_event_scope_uuid ON ai_runtime_invocation_event (tenant_id, organization_id, user_id, uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_runtime_invocation_event_sequence ON ai_runtime_invocation_event (tenant_id, organization_id, user_id, invocation_id, event_no);
+CREATE INDEX IF NOT EXISTS idx_ai_runtime_invocation_event_invocation_created ON ai_runtime_invocation_event (tenant_id, organization_id, user_id, invocation_id, created_at, id);
 
 CREATE TABLE IF NOT EXISTS ai_runtime_usage_link (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -2036,6 +2103,8 @@ CREATE TABLE IF NOT EXISTS ops_metric_snapshot (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_metric_snapshot ON ops_metric_snapshot (tenant_id, organization_id, metric_scope, metric_name, metric_period, period_start, dimension_key, dimension_value);
+CREATE INDEX IF NOT EXISTS idx_ops_metric_snapshot_name_period ON ops_metric_snapshot (tenant_id, organization_id, metric_name, period_start, id);
+CREATE INDEX IF NOT EXISTS idx_ops_metric_snapshot_scope_period ON ops_metric_snapshot (tenant_id, organization_id, metric_scope, metric_period, period_start, id);
 
 CREATE TABLE IF NOT EXISTS ops_notification_message (
     id BIGINT NOT NULL PRIMARY KEY,

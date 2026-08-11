@@ -1914,9 +1914,12 @@ pub async fn serve_with_runtime_config(
     )
     .map_err(anyhow::Error::msg)?;
     let listener = tokio::net::TcpListener::bind(bind_addr).await?;
-    axum::serve(listener, router_from_env().await?)
-        .with_graceful_shutdown(sdkwork_cloudrouter_http::wait_for_shutdown_signal())
-        .await?;
+    sdkwork_cloudrouter_http::serve_with_graceful_shutdown_deadline(
+        listener,
+        router_from_env().await?,
+        sdkwork_cloudrouter_http::DEFAULT_GRACEFUL_SHUTDOWN_DEADLINE,
+    )
+    .await?;
     Ok(())
 }
 

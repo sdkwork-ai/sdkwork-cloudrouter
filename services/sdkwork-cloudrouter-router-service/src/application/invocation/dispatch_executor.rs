@@ -83,6 +83,11 @@ impl InvocationInterceptor for DispatchExecutor {
 
             let mut last_error: Option<InvocationError> = None;
             let mut last_response: Option<InvocationDispatchResponse> = None;
+            // Request-level total deadline: every hop gets its own per-account
+            // timeout, but the whole candidate/retry chain must also end so a
+            // failing upstream cannot stretch one client request to
+            // attempts × (timeout + backoff) with no bound.
+            let request_deadline = dispatch_request_deadline(&candidates);
             for (index, candidate) in candidates.iter().enumerate() {
                 ensure_dispatch_active(&cancellation_signal)?;
                 let account = account_from_candidate(candidate)?;
@@ -122,6 +127,13 @@ impl InvocationInterceptor for DispatchExecutor {
                     dispatch_started = true;
                     let dispatch_result = tokio::select! {
                         result = self.dispatcher.dispatch(invocation, &account) => result,
+                        _ = tokio::time::sleep_until(tokio::time::Instant::from_std(request_deadline)) => {
+                            last_error = Some(dispatch_error(
+                                "request dispatch total deadline exceeded",
+                            ));
+                            exhausted_retryable = false;
+                            break;
+                        }
                         _ = cancellation_signal.wait_for_tenant_lease_loss() => {
                             return Err(tenant_lease_loss_error());
                         }
@@ -183,7 +195,7 @@ impl InvocationInterceptor for DispatchExecutor {
                             }
                         }
                     }
-                    sleep_before_retry(candidate, &cancellation_signal).await?;
+                    sleep_before_retry(candidate, request_deadline, &cancellation_signal).await?;
                 }
                 ensure_dispatch_active(&cancellation_signal)?;
                 if !should_try_next(
@@ -337,6 +349,30 @@ fn max_attempts(candidate: &InvocationRouteCandidate, replay_is_safe: bool) -> u
         .unwrap_or(1)
 }
 
+/// Bounds the whole candidate/retry chain to one request-level deadline:
+/// each candidate contributes per-hop timeout × attempts plus backoff for
+/// the intermediate waits, with a 10% scheduling margin and a 30 s floor.
+fn dispatch_request_deadline(candidates: &[InvocationRouteCandidate]) -> Instant {
+    let mut budget_ms: u64 = 0;
+    for candidate in candidates {
+        let per_hop_ms = candidate.timeout_ms.unwrap_or(30_000).max(1000);
+        let attempts = candidate
+            .retry_policy
+            .as_ref()
+            .map(|policy| policy.max_attempts.max(1))
+            .unwrap_or(1) as u64;
+        let backoff_ms = candidate
+            .retry_policy
+            .as_ref()
+            .map(|policy| policy.backoff_ms)
+            .unwrap_or(0);
+        budget_ms = budget_ms.saturating_add(per_hop_ms.saturating_mul(attempts));
+        budget_ms = budget_ms.saturating_add(backoff_ms.saturating_mul(attempts.saturating_sub(1)));
+    }
+    let budget_ms = budget_ms.saturating_add(budget_ms / 10).max(30_000);
+    Instant::now() + Duration::from_millis(budget_ms)
+}
+
 fn request_allows_replay(invocation: &Invocation) -> bool {
     let is_streaming = matches!(
         invocation.dispatch.invocation_shape,
@@ -415,6 +451,7 @@ fn should_retry_candidate(max_attempts: usize, attempt_no: usize, retryable: boo
 
 async fn sleep_before_retry(
     candidate: &InvocationRouteCandidate,
+    request_deadline: Instant,
     cancellation_signal: &InvocationCancellationSignal,
 ) -> Result<(), InvocationError> {
     let Some(backoff_ms) = candidate
@@ -425,8 +462,13 @@ async fn sleep_before_retry(
     else {
         return ensure_dispatch_active(cancellation_signal);
     };
+    let sleep = tokio::time::sleep(Duration::from_millis(backoff_ms));
+    tokio::pin!(sleep);
     tokio::select! {
-        _ = tokio::time::sleep(Duration::from_millis(backoff_ms)) => Ok(()),
+        () = &mut sleep => Ok(()),
+        _ = tokio::time::sleep_until(tokio::time::Instant::from_std(request_deadline)) => {
+            Err(dispatch_error("request dispatch total deadline exceeded during retry backoff"))
+        }
         _ = cancellation_signal.wait_for_tenant_lease_loss() => Err(tenant_lease_loss_error()),
     }
 }

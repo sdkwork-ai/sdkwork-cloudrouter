@@ -252,7 +252,7 @@ async fn interceptor_records_rejection_facts_with_masked_error() {
         .and_then(|v| v.get("message"))
         .and_then(|v| v.as_str())
         .expect("masked message");
-    assert!(message.contains("sk-***"));
+    assert!(message.contains("[REDACTED]"));
     assert!(!message.contains("sk-provider-secret"));
 }
 

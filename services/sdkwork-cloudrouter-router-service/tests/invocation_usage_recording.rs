@@ -549,7 +549,7 @@ async fn usage_recording_records_error_trace_as_pipeline_observer() {
     assert_eq!(Some(502), trace.http_status);
     assert_eq!(Some("dispatch_failed"), trace.error_type.as_deref());
     assert_eq!(
-        Some("provider returned HTTP 503 for sk-***provider-secret"),
+        Some("provider returned HTTP 503 for sk-[REDACTED]-secret"),
         trace.error_message_masked.as_deref()
     );
     assert!(invocation.usage.trace_recorded);

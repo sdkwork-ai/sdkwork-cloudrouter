@@ -833,6 +833,12 @@ class CloudRouterOpenApiGenerator:
         if sdk_domain:
             spec["x-sdkwork-domain"] = sdk_domain
             spec["x-sdk-domain"] = sdk_domain
+        # Bounded-by-design collections (PAGINATION_SPEC §11): the operation
+        # omits pagination because the authoritative store enforces a
+        # documented cardinality ceiling and fails closed above it.
+        bounded_max = operation.get("bounded_collection_max")
+        if isinstance(bounded_max, int) and bounded_max > 0:
+            spec["x-sdkwork-max-items"] = bounded_max
         spec["x-sdkwork-resource"] = self._sdkwork_resource(operation_id)
         if method in {"POST", "PUT", "PATCH"} and self._operation_has_request_body(operation):
             request_schema_ref = self._operation_request_schema(operation, operation_id)
@@ -1266,7 +1272,7 @@ class CloudRouterOpenApiGenerator:
                     "mode": {"type": "string", "enum": ["offset", "cursor"], "description": "Pagination mode."},
                     "page": {"type": "integer", "minimum": 1, "description": "One-based page index for offset mode."},
                     "pageSize": {"type": "integer", "minimum": 1, "maximum": 200, "description": "Effective page size."},
-                    "totalItems": {"type": "string", "pattern": "^[0-9]+$", "description": "Total matching items when available."},
+                    "totalItems": {"type": "string", "format": "int64", "pattern": "^[0-9]+$", "x-sdkwork-int64-string": True, "description": "Total matching items when available."},
                     "totalPages": {"type": "integer", "minimum": 0, "description": "Total pages when available."},
                     "nextCursor": {"type": ["string", "null"], "description": "Opaque cursor for the next page."},
                     "hasMore": {"type": "boolean", "description": "Whether another page exists."},
@@ -1334,7 +1340,7 @@ class CloudRouterOpenApiGenerator:
                 "type": "object",
                 "additionalProperties": {"$ref": "#/components/schemas/JsonValue"},
                 "description": "RFC 9457 problem details error response.",
-                "required": ["type", "title", "status", "code", "traceId"],
+                "required": ["type", "title", "status", "code", "traceId", "instance"],
                 "properties": {
                     "type": {"type": "string", "format": "uri-reference", "description": "Problem type URI reference."},
                     "title": {"type": "string", "description": "Short human-readable problem title."},

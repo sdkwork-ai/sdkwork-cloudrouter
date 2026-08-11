@@ -60,6 +60,7 @@ usage_by_request AS (
     GROUP BY tenant_id, organization_id, request_id
 )
 SELECT
+    COUNT(*) OVER() AS total,
     CAST(t.id AS TEXT) AS id,
     COALESCE(NULLIF(t.request_id, ''), CAST(t.id AS TEXT)) AS request_id,
     CAST(COALESCE(t.started_at, t.created_at) AS TEXT) AS started_at,
@@ -159,83 +160,7 @@ ORDER BY t.started_at DESC NULLS LAST, t.id DESC
 LIMIT $8 OFFSET $9
 "#;
 
-const LOAD_USAGE_LOGS_TOTAL: &str = r#"
-WITH selected_trace AS (
-    SELECT *
-    FROM (
-        SELECT
-            t.*,
-            ROW_NUMBER() OVER (
-                PARTITION BY COALESCE(NULLIF(t.request_id, ''), CAST(t.id AS TEXT))
-                ORDER BY t.started_at DESC NULLS LAST, t.id DESC
-            ) AS trace_rank
-        FROM ai_metering_request_trace t
-        WHERE t.status = 1
-          AND t.tenant_id = $1
-          AND t.organization_id = $2
-          AND t.user_id = $3
-          AND t.started_at IS NOT NULL
-          AND ($4::text IS NULL OR t.started_at >= $4::timestamptz)
-          AND ($5::text IS NULL OR t.started_at <= $5::timestamptz)
-    )
-    WHERE trace_rank = 1
-),
-usage_by_request AS (
-    SELECT tenant_id, organization_id, request_id, MAX(catalog_key) AS catalog_key,
-           MAX(requested_model_catalog_key) AS requested_model_catalog_key,
-           MAX(model) AS model, MAX(provider_native_model) AS provider_native_model,
-           MAX(region_code) AS region_code
-    FROM ai_metering_usage
-    WHERE status = 1
-      AND tenant_id = $1
-      AND organization_id = $2
-      AND user_id = $3
-      AND NULLIF(request_id, '') IS NOT NULL
-      AND ($4::text IS NULL OR occurred_at >= $4::timestamptz)
-      AND ($5::text IS NULL OR occurred_at <= $5::timestamptz)
-    GROUP BY tenant_id, organization_id, request_id
-)
-SELECT CAST(COUNT(1) AS TEXT) AS total
-FROM selected_trace t
-LEFT JOIN ai_upstream_account_group g
-  ON g.status = 1
- AND g.tenant_id = t.tenant_id
- AND g.organization_id = t.organization_id
- AND g.id = t.account_group_id
-LEFT JOIN usage_by_request u
-  ON u.tenant_id = t.tenant_id
- AND u.organization_id = t.organization_id
- AND u.request_id = t.request_id
-LEFT JOIN ai_routing_decision_log d
-  ON d.status = 1
- AND d.tenant_id = t.tenant_id
- AND d.organization_id = t.organization_id
- AND d.request_id = t.request_id
-WHERE (
-    $6::text IS NULL
-    OR lower(COALESCE(t.request_id, '')) LIKE $6
-    OR lower(COALESCE(t.api_key_name_snapshot, '')) LIKE $6
-    OR lower(COALESCE(t.account_group_snapshot, '')) LIKE $6
-    OR lower(COALESCE(g.group_name, '')) LIKE $6
-    OR lower(COALESCE(t.requested_model, '')) LIKE $6
-    OR lower(COALESCE(t.requested_model_catalog_key, '')) LIKE $6
-    OR lower(COALESCE(t.provider_native_model, '')) LIKE $6
-    OR lower(COALESCE(u.catalog_key, '')) LIKE $6
-    OR lower(COALESCE(u.requested_model_catalog_key, '')) LIKE $6
-    OR lower(COALESCE(u.model, '')) LIKE $6
-    OR lower(COALESCE(u.provider_native_model, '')) LIKE $6
-    OR lower(COALESCE(t.request_path, '')) LIKE $6
-    OR lower(COALESCE(t.client_ip_masked, '')) LIKE $6
-    OR lower(COALESCE(t.metadata->>'userAgent', '')) LIKE $6
-    OR lower(COALESCE(t.provider_error_code, '')) LIKE $6
-    OR lower(COALESCE(t.error_message_masked, '')) LIKE $6
-)
-AND (
-    $7 = 0
-    OR ($7 = 1 AND NOT ((t.http_status IS NOT NULL AND t.http_status >= 400) OR NULLIF(NULLIF(CAST(t.error_type AS TEXT), ''), '0') IS NOT NULL OR NULLIF(t.provider_error_code, '') IS NOT NULL))
-    OR ($7 = 2 AND ((t.http_status IS NOT NULL AND t.http_status >= 400) OR NULLIF(NULLIF(CAST(t.error_type AS TEXT), ''), '0') IS NOT NULL OR NULLIF(t.provider_error_code, '') IS NOT NULL))
-)
-"#;
+
 
 pub struct PostgresUsageLogsReadStore {
     pool: PgPool,
@@ -258,7 +183,6 @@ impl UsageLogsReadStore for PostgresUsageLogsReadStore {
             let subject = subject.ok_or_else(|| {
                 DomainError::new("trusted request subject is required for usage logs")
             })?;
-            let total = load_usage_logs_total(&self.pool, &query, subject).await?;
             let rows = sqlx::query(LOAD_USAGE_LOGS)
                 .bind(subject.tenant_id)
                 .bind(subject.organization_id)
@@ -274,6 +198,10 @@ impl UsageLogsReadStore for PostgresUsageLogsReadStore {
                 .await
                 .map_err(sql_error)?;
 
+            let total = rows
+                .first()
+                .and_then(|row| optional_integer_cell(row, "total"))
+                .unwrap_or(0);
             Ok(UsageLogsPage {
                 logs: rows
                     .into_iter()
@@ -287,24 +215,6 @@ impl UsageLogsReadStore for PostgresUsageLogsReadStore {
     }
 }
 
-async fn load_usage_logs_total(
-    pool: &PgPool,
-    query: &UsageLogsQuery,
-    subject: UsageLogsSubject,
-) -> Result<i64, DomainError> {
-    let row = sqlx::query(LOAD_USAGE_LOGS_TOTAL)
-        .bind(subject.tenant_id)
-        .bind(subject.organization_id)
-        .bind(subject.user_id)
-        .bind(query.start_time.as_deref())
-        .bind(query.end_time.as_deref())
-        .bind(keyword_like(query.keyword.as_deref()))
-        .bind(status_code(query.status))
-        .fetch_one(pool)
-        .await
-        .map_err(sql_error)?;
-    Ok(integer_cell(&row, "total"))
-}
 
 fn row_to_usage_log(row: sqlx::postgres::PgRow) -> Result<UsageLogItem, DomainError> {
     Ok(UsageLogItem {
@@ -529,7 +439,7 @@ mod tests {
 
     #[test]
     fn usage_logs_queries_scope_trace_and_usage_rows_to_app_subject() {
-        let sql = [LOAD_USAGE_LOGS, LOAD_USAGE_LOGS_TOTAL].join("\n");
+        let sql = LOAD_USAGE_LOGS;
         for predicate in [
             "t.tenant_id = $1",
             "t.organization_id = $2",
@@ -573,7 +483,7 @@ mod tests {
 
     #[test]
     fn usage_logs_query_uses_upstream_account_group_name_for_display_and_search() {
-        for sql in [LOAD_USAGE_LOGS, LOAD_USAGE_LOGS_TOTAL] {
+        for sql in [LOAD_USAGE_LOGS] {
             assert!(
                 sql.contains("LEFT JOIN ai_upstream_account_group g"),
                 "usage logs Postgres SQL must join the channel group table"
@@ -598,8 +508,7 @@ mod tests {
     }
 
     #[test]
-    fn usage_logs_queries_apply_time_keyword_and_status_filters_to_total_and_page_sql() {
-        let total_sql = LOAD_USAGE_LOGS_TOTAL;
+    fn usage_logs_queries_apply_time_keyword_and_status_filters_and_total_window() {
         let page_sql = LOAD_USAGE_LOGS;
         for predicate in [
             "$4::text IS NULL OR t.started_at >=",
@@ -608,12 +517,17 @@ mod tests {
             "$7 = 0",
             "$7 = 1",
             "$7 = 2",
+            "COUNT(*) OVER() AS total",
         ] {
             assert!(
-                total_sql.contains(predicate) && page_sql.contains(predicate),
-                "usage logs Postgres total and page SQL must both include filter predicate {predicate}"
+                page_sql.contains(predicate),
+                "usage logs Postgres page SQL must include filter predicate {predicate}"
             );
         }
+        assert!(
+            !page_sql.contains("OFFSET") || page_sql.contains("LIMIT"),
+            "usage logs Postgres page SQL must keep bounded LIMIT/OFFSET"
+        );
     }
 
     #[test]
@@ -632,7 +546,7 @@ mod tests {
             ),
             "usage logs Postgres model display must prefer provider_native_model"
         );
-        for sql in [LOAD_USAGE_LOGS, LOAD_USAGE_LOGS_TOTAL] {
+        for sql in [LOAD_USAGE_LOGS] {
             assert!(
                 sql.contains("MAX(provider_native_model) AS provider_native_model"),
                 "usage logs Postgres aggregation must keep provider native model searchable"

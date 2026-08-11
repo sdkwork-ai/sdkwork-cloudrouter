@@ -485,32 +485,6 @@
     },
     {
       "method": "GET",
-      "path": "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}/secret",
-      "operationId": "upstreamAccounts.credentials.secret.retrieve",
-      "tags": [
-        "ai"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-cloudrouter",
-        "apiAuthority": "sdkwork-cloudrouter-backend-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-cloudrouter-backend-api",
-        "openApiAuthority": "apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
-    },
-    {
-      "method": "GET",
       "path": "/backend/v3/api/ai/upstream_accounts/{accountId}/resources",
       "operationId": "upstreamAccounts.resources.list",
       "tags": [

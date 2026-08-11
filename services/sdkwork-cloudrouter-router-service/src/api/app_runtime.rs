@@ -288,20 +288,16 @@ struct AppRuntimeArtifactEnvelope {
 
 struct EmptyAppRuntimeStore;
 
+const RUNTIME_STORE_UNAVAILABLE: &str =
+    "app runtime store is unavailable without database configuration";
+
 impl AppRuntimeStore for EmptyAppRuntimeStore {
     fn list_invocations<'a>(
         &'a self,
         _subject: AppRuntimeSubject,
         _query: AppRuntimeInvocationQuery,
     ) -> AppRuntimeFuture<'a, AppRuntimeInvocationList> {
-        Box::pin(async move {
-            Ok(AppRuntimeInvocationList {
-                items: Vec::new(),
-                total: 0,
-                page_no: _query.page.max(1),
-                page_size: _query.page_size.max(1),
-            })
-        })
+        Box::pin(async { Err(DomainError::new(RUNTIME_STORE_UNAVAILABLE)) })
     }
 
     fn get_invocation<'a>(
@@ -309,7 +305,7 @@ impl AppRuntimeStore for EmptyAppRuntimeStore {
         _subject: AppRuntimeSubject,
         _invocation_id: String,
     ) -> AppRuntimeFuture<'a, Option<AppRuntimeInvocationItem>> {
-        Box::pin(async { Ok(None) })
+        Box::pin(async { Err(DomainError::new(RUNTIME_STORE_UNAVAILABLE)) })
     }
 
     fn get_invocation_execution<'a>(
@@ -317,29 +313,21 @@ impl AppRuntimeStore for EmptyAppRuntimeStore {
         _subject: AppRuntimeSubject,
         _invocation_id: String,
     ) -> AppRuntimeFuture<'a, Option<AppRuntimeInvocationExecution>> {
-        Box::pin(async { Ok(None) })
+        Box::pin(async { Err(DomainError::new(RUNTIME_STORE_UNAVAILABLE)) })
     }
 
     fn create_invocation<'a>(
         &'a self,
         _command: CreateAppRuntimeInvocationCommand,
     ) -> AppRuntimeFuture<'a, AppRuntimeInvocationItem> {
-        Box::pin(async {
-            Err(DomainError::new(
-                "app runtime store is unavailable without database configuration",
-            ))
-        })
+        Box::pin(async { Err(DomainError::new(RUNTIME_STORE_UNAVAILABLE)) })
     }
 
     fn complete_invocation<'a>(
         &'a self,
         _command: CompleteAppRuntimeInvocationCommand,
     ) -> AppRuntimeFuture<'a, AppRuntimeInvocationItem> {
-        Box::pin(async {
-            Err(DomainError::new(
-                "app runtime store is unavailable without database configuration",
-            ))
-        })
+        Box::pin(async { Err(DomainError::new(RUNTIME_STORE_UNAVAILABLE)) })
     }
 
     fn list_events<'a>(
@@ -349,14 +337,7 @@ impl AppRuntimeStore for EmptyAppRuntimeStore {
         _page: i64,
         _page_size: i64,
     ) -> AppRuntimeFuture<'a, AppRuntimeEventList> {
-        Box::pin(async move {
-            Ok(AppRuntimeEventList {
-                items: Vec::new(),
-                total: 0,
-                page_no: _page.max(1),
-                page_size: _page_size.max(1),
-            })
-        })
+        Box::pin(async { Err(DomainError::new(RUNTIME_STORE_UNAVAILABLE)) })
     }
 
     fn list_events_after<'a>(
@@ -366,14 +347,7 @@ impl AppRuntimeStore for EmptyAppRuntimeStore {
         _after_event_no: i64,
         _limit: i64,
     ) -> AppRuntimeFuture<'a, AppRuntimeEventList> {
-        Box::pin(async move {
-            Ok(AppRuntimeEventList {
-                items: Vec::new(),
-                total: 0,
-                page_no: 1,
-                page_size: _limit.max(1),
-            })
-        })
+        Box::pin(async { Err(DomainError::new(RUNTIME_STORE_UNAVAILABLE)) })
     }
 
     fn has_terminal_event<'a>(
@@ -381,7 +355,7 @@ impl AppRuntimeStore for EmptyAppRuntimeStore {
         _subject: AppRuntimeSubject,
         _invocation_id: String,
     ) -> AppRuntimeFuture<'a, bool> {
-        Box::pin(async { Ok(false) })
+        Box::pin(async { Err(DomainError::new(RUNTIME_STORE_UNAVAILABLE)) })
     }
 
     fn get_terminal_event<'a>(
@@ -389,18 +363,14 @@ impl AppRuntimeStore for EmptyAppRuntimeStore {
         _subject: AppRuntimeSubject,
         _invocation_id: String,
     ) -> AppRuntimeFuture<'a, Option<AppRuntimeEventItem>> {
-        Box::pin(async { Ok(None) })
+        Box::pin(async { Err(DomainError::new(RUNTIME_STORE_UNAVAILABLE)) })
     }
 
     fn create_event<'a>(
         &'a self,
         _command: CreateAppRuntimeEventCommand,
     ) -> AppRuntimeFuture<'a, AppRuntimeEventItem> {
-        Box::pin(async {
-            Err(DomainError::new(
-                "app runtime store is unavailable without database configuration",
-            ))
-        })
+        Box::pin(async { Err(DomainError::new(RUNTIME_STORE_UNAVAILABLE)) })
     }
 
     fn list_artifacts<'a>(
@@ -410,25 +380,14 @@ impl AppRuntimeStore for EmptyAppRuntimeStore {
         _page: i64,
         _page_size: i64,
     ) -> AppRuntimeFuture<'a, AppRuntimeArtifactList> {
-        Box::pin(async move {
-            Ok(AppRuntimeArtifactList {
-                items: Vec::new(),
-                total: 0,
-                page_no: _page.max(1),
-                page_size: _page_size.max(1),
-            })
-        })
+        Box::pin(async { Err(DomainError::new(RUNTIME_STORE_UNAVAILABLE)) })
     }
 
     fn create_artifact<'a>(
         &'a self,
         _command: CreateAppRuntimeArtifactCommand,
     ) -> AppRuntimeFuture<'a, AppRuntimeArtifactItem> {
-        Box::pin(async {
-            Err(DomainError::new(
-                "app runtime store is unavailable without database configuration",
-            ))
-        })
+        Box::pin(async { Err(DomainError::new(RUNTIME_STORE_UNAVAILABLE)) })
     }
 }
 

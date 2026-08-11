@@ -22,6 +22,7 @@ FROM ai_metering_usage
 WHERE status = 1
   AND tenant_id = $1
   AND organization_id = $2
+  AND occurred_at >= now() - interval '90 days'
 GROUP BY COALESCE(NULLIF(owner_name_snapshot, ''), NULLIF(CAST(user_id AS TEXT), ''), '-')
 HAVING COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) > 0
 ORDER BY COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) DESC, name ASC
@@ -36,6 +37,7 @@ FROM ai_metering_usage
 WHERE status = 1
   AND tenant_id = $1
   AND organization_id = $2
+  AND occurred_at >= now() - interval '90 days'
   AND modality IS NOT NULL
 GROUP BY modality
 HAVING COALESCE(SUM(COALESCE(request_count, 1)), 0) > 0
@@ -52,6 +54,7 @@ FROM ai_metering_usage
 WHERE status = 1
   AND tenant_id = $1
   AND organization_id = $2
+  AND occurred_at >= now() - interval '90 days'
   AND occurred_at IS NOT NULL
 GROUP BY period
 ORDER BY period ASC
@@ -66,6 +69,7 @@ FROM ai_metering_usage
 WHERE status = 1
   AND tenant_id = $1
   AND organization_id = $2
+  AND occurred_at >= now() - interval '90 days'
 GROUP BY COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), '-')
 HAVING COALESCE(SUM(COALESCE(request_count, 1)), 0) > 0
 ORDER BY COALESCE(SUM(COALESCE(request_count, 1)), 0) DESC, name ASC
@@ -86,6 +90,7 @@ WITH selected_trace AS (
         WHERE t.status = 1
           AND t.tenant_id = $1
           AND t.organization_id = $2
+          AND t.started_at >= now() - interval '90 days'
           AND t.started_at IS NOT NULL
     )
     WHERE trace_rank = 1
@@ -107,6 +112,7 @@ usage_by_request AS (
     WHERE status = 1
       AND tenant_id = $1
       AND organization_id = $2
+      AND occurred_at >= now() - interval '90 days'
       AND NULLIF(request_id, '') IS NOT NULL
     GROUP BY tenant_id, organization_id, request_id
 )

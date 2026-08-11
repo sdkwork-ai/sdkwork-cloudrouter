@@ -71,8 +71,8 @@ evidence.
 - Supplier-specific columns or conditionals in the core routing domain.
 - A second provider-account or service-provider aggregate alongside the
   upstream domain.
-- Claiming unimplemented agent, memory, runtime-event, artifact, or full Chat
-  lifecycle behavior from the current Chat persistence tables.
+- Claiming unimplemented agent, memory, or full Chat lifecycle behavior (such
+  as rename/archive/delete) from the current Chat persistence tables.
 - Advertising OAuth support before authorization, refresh, revocation,
   encrypted persistence, audit, and failure recovery are implemented end to
   end.
@@ -116,15 +116,17 @@ is
   reference, and optional usage linkage.
 - List messages through bounded server-side pagination without loading a user's
   entire transcript into process memory.
-- Persist the current eight-table Chat/runtime authority in PostgreSQL with
+- Persist the current ten-table Chat/runtime authority in PostgreSQL with
   tenant, organization, and user predicates on every read and mutation.
 - Serialize per-conversation turn, item, and message ordinals under concurrent
   writers and fail closed on invalid or exhausted counters.
+- Persist invocation events (including terminal lifecycle events) and runtime
+  artifacts with scoped ordinals, bounded payloads, and user isolation.
 
 The implemented boundary does not yet include conversation rename/archive/
-delete commands, agent and long-term-memory persistence, runtime event streams,
-or runtime artifacts. Those capabilities require separate product contracts
-and executable authorities before they may be advertised. Chat data ownership
+delete commands, or agent and long-term-memory persistence. Those capabilities
+require separate product contracts and executable authorities before they may
+be advertised. Chat data ownership
 is recorded in
 [ADR-20260730](../../architecture/decisions/ADR-20260730-own-chat-runtime-postgres-authority.md).
 

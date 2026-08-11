@@ -62,6 +62,7 @@ export function UpstreamAccountGroupAdmin() {
 export function AccountGroupAdminPanel() {
   const { t, i18n } = useTranslation();
   const [items, setItems] = useState<UpstreamAccountGroup[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [accounts, setAccounts] = useState<UpstreamAccount[]>([]);
   const [query, setQuery] = useState('');
   const [appliedQuery, setAppliedQuery] = useState('');
@@ -86,6 +87,7 @@ export function AccountGroupAdminPanel() {
         upstreamService.accounts.list({ page: 1, pageSize: 200 }),
       ]);
       setItems(groupPage.items);
+      setTotalCount(Number(groupPage.pageInfo?.totalItems ?? groupPage.items.length));
       setAccounts(accountPage.items);
       setSelected((current) => current ? groupPage.items.find((item) => item.id === current.id) ?? null : null);
     } catch (cause) {
@@ -182,6 +184,11 @@ export function AccountGroupAdminPanel() {
             ))}
           </tbody>
         </table>
+        {totalCount > items.length ? (
+          <p className="px-4 py-3 text-xs text-amber-600 dark:text-amber-400">
+            {t('admin.upstream.common.truncated', 'Showing {{shown}} of {{total}} account groups; refine the search to reach the rest.', { shown: items.length, total: totalCount })}
+          </p>
+        ) : null}
       </AdminTableShell>
       {editing !== undefined ? <AccountGroupModal group={editing} busy={busy} onSubmit={submitGroup} onClose={() => setEditing(undefined)} /> : null}
       {copying ? <AccountGroupModal group={copying} copying busy={busy} onSubmit={submitGroup} onClose={() => setCopying(null)} /> : null}

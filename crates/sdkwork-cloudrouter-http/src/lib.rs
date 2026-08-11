@@ -79,7 +79,10 @@ pub use router::{
 pub use rustls_provider::ensure_rustls_crypto_provider;
 pub use sdkwork_cloudrouter_contract::{ApiSurface, ContractOperation};
 pub use sdkwork_iam_web_adapter::TenantSigningKeyResolver;
-pub use shutdown::{subscribe_shutdown_signal, wait_for_shutdown_signal};
+pub use shutdown::{
+    serve_with_graceful_shutdown_deadline, subscribe_shutdown_signal, wait_for_shutdown_signal,
+    DEFAULT_GRACEFUL_SHUTDOWN_DEADLINE,
+};
 #[cfg(test)]
 pub use signing_service::{
     InMemorySigningKeyStore, SessionTokenSigningService, SigningServiceConfig, TokenWithKid,

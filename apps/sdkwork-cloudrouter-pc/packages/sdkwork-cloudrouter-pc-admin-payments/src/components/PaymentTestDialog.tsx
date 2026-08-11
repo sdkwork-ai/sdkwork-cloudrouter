@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toDataURL } from 'qrcode';
-import { CheckCircle2, ExternalLink, Loader2, QrCode, RotateCcw, X } from 'lucide-react';
+import { loadStripe, type Stripe, type StripeCardElement } from '@stripe/stripe-js';
+import { CheckCircle2, CreditCard, ExternalLink, Loader2, QrCode, RefreshCw, RotateCcw, X } from 'lucide-react';
 import type { TestPayment } from '@sdkwork/payment-backend-sdk';
 import {
   readAdminResourceRecordList,
@@ -10,6 +11,7 @@ import {
 } from '@sdkwork/cloudroutes-pc-commons';
 import { getCloudRouterPaymentBackendService } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import {
+  backendPaymentDevCheckAttemptStatus,
   backendPaymentDevSandboxTrigger,
   backendPaymentDevTestPayment,
   backendPaymentsAttemptsList,
@@ -40,6 +42,10 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
   const [error, setError] = useState<string | null>(null);
   const [simulating, setSimulating] = useState(false);
   const [simulateNotice, setSimulateNotice] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [stripe, setStripe] = useState<Stripe | null>(null);
+  const [stripeCardElement, setStripeCardElement] = useState<StripeCardElement | null>(null);
+  const [payingCard, setPayingCard] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
   const [createAttempt, setCreateAttempt] = useState(0);
   const createSequenceRef = useRef(0);
@@ -74,7 +80,7 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
                 setError(t('admin.commerce.payments.methods.testPayment.error.noQrCode'));
               }
             });
-        } else if (!payment.payUrl && !payment.payForm) {
+        } else if (!payment.payUrl && !payment.payForm && !payment.clientSecret && String(payment.providerCode ?? '') !== 'sandbox') {
           setError(t('admin.commerce.payments.methods.testPayment.error.noSurface'));
         }
       })
@@ -144,6 +150,95 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
     };
   }, [phase, testPayment]);
 
+  // Load Stripe.js when the test payment carries a client secret, then mount
+  // the card element for Stripe methods.
+  useEffect(() => {
+    if (!testPayment?.clientSecret || !testPayment.publishableKey || stripe) {
+      return undefined;
+    }
+    let active = true;
+    void loadStripe(testPayment.publishableKey)
+      .then((instance) => {
+        if (active && instance) {
+          setStripe(instance);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setError(t('admin.commerce.payments.methods.testPayment.error.stripeLoad', 'Stripe could not be loaded. Check the publishable key configuration.'));
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [stripe, t, testPayment?.clientSecret, testPayment?.publishableKey]);
+
+  async function payWithCard() {
+    if (!stripe || !stripeCardElement || !testPayment?.clientSecret || payingCard) {
+      return;
+    }
+    setPayingCard(true);
+    setError(null);
+    setSimulateNotice(null);
+    try {
+      const result = await stripe.confirmCardPayment(testPayment.clientSecret, {
+        payment_method: { card: stripeCardElement },
+      });
+      if (result.error) {
+        setError(resolveProblemMessage(
+          result.error,
+          t,
+          t('admin.commerce.payments.methods.testPayment.error.cardDeclined', 'The card payment could not be completed.'),
+        ));
+        return;
+      }
+      const intentStatus = String(result.paymentIntent?.status ?? '');
+      if (SUCCEEDED_PAYMENT_STATUSES.has(intentStatus)) {
+        setSimulateNotice(t('admin.commerce.payments.methods.testPayment.cardPaid', 'Card payment succeeded. Confirming with the payment channel...'));
+        // Confirm through the channel so the local attempt status updates
+        // through the same status machine as the webhook path.
+        await checkProviderStatus();
+        return;
+      }
+      setError(t('admin.commerce.payments.methods.testPayment.cardPending', 'The card payment was submitted. Use "Check payment channel status" after the channel confirms it.'));
+    } catch (cause) {
+      setError(resolveProblemMessage(cause, t, t('admin.commerce.payments.methods.testPayment.error.card', 'The card payment could not be completed.')));
+    } finally {
+      setPayingCard(false);
+    }
+  }
+
+  async function checkProviderStatus() {
+    if (!testPayment || checking) {
+      return;
+    }
+    setChecking(true);
+    setError(null);
+    setSimulateNotice(null);
+    try {
+      const result = await backendPaymentDevCheckAttemptStatus({
+        paymentIntentId: testPayment.paymentIntentId,
+      });
+      if (result.paid) {
+        setPhase('succeeded');
+        return;
+      }
+      const status = String(result.localStatus ?? '');
+      if (FAILED_PAYMENT_STATUSES.has(status)) {
+        setPhase('failed');
+        return;
+      }
+      setError(t(
+        'admin.commerce.payments.methods.testPayment.checkPending',
+        'The payment channel has not confirmed the payment yet. Complete the scan/redirect payment first, then check again.',
+      ));
+    } catch (cause) {
+      setError(resolveProblemMessage(cause, t, t('admin.commerce.payments.methods.testPayment.error.check', 'The payment channel status could not be checked.')));
+    } finally {
+      setChecking(false);
+    }
+  }
+
   async function simulateSuccessCallback() {
     if (!testPayment || simulating) {
       return;
@@ -190,25 +285,51 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
   }
 
   function openPayUrl(url: string) {
-    window.open(url, '_blank', 'noopener,noreferrer');
+    const opened = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!opened) {
+      setError(t('admin.commerce.payments.methods.testPayment.error.popupBlocked'));
+    }
   }
 
   /** Renders the Alipay cashier form in a new window and auto-submits it. */
+  /**
+   * Renders the Alipay cashier form in a new window and auto-submits it.
+   * The form is rebuilt from the parsed action/method/inputs instead of
+   * writing the raw HTML, so no script/style markup from the payload can
+   * ever execute in the opened window.
+   */
   function submitPayForm(form: string) {
     const opened = window.open('', '_blank', 'noopener,noreferrer');
     if (!opened) {
       setError(t('admin.commerce.payments.methods.testPayment.error.popupBlocked'));
       return;
     }
-    opened.document.open();
-    opened.document.write(form);
-    opened.document.close();
-    opened.document.forms[0]?.submit();
+    const document = opened.document;
+    document.open();
+    const parsed = new DOMParser().parseFromString(form, 'text/html');
+    const source = parsed.querySelector('form');
+    const target = document.createElement('form');
+    if (source) {
+      target.action = source.getAttribute('action') ?? '';
+      target.method = source.getAttribute('method') ?? 'post';
+      source.querySelectorAll('input').forEach((input) => {
+        const clone = document.createElement('input');
+        clone.type = input.getAttribute('type') ?? 'text';
+        clone.name = input.getAttribute('name') ?? '';
+        clone.value = input.getAttribute('value') ?? '';
+        target.appendChild(clone);
+      });
+    }
+    document.body.appendChild(target);
+    document.close();
+    target.submit();
   }
 
   const isExpired = phase === 'ready' && remainingSeconds !== null && remainingSeconds === 0;
   const hasQrSurface = Boolean(qrImageUrl);
   const hasJumpSurface = Boolean(testPayment?.payUrl || testPayment?.payForm);
+  const hasCardSurface = Boolean(testPayment?.clientSecret);
+  const isSandbox = String(testPayment?.providerCode ?? '') === 'sandbox';
 
   return (
     <div
@@ -347,7 +468,74 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
                 </div>
               ) : null}
 
-              {!hasQrSurface && !hasJumpSurface ? (
+              {isSandbox && !isExpired ? (
+                <div className="flex w-full flex-col items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 dark:border-white/10 dark:bg-white/5">
+                  <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                    <Loader2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    {t('admin.commerce.payments.methods.testPayment.sandboxTitle', 'Local sandbox simulation')}
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    {t('admin.commerce.payments.methods.testPayment.sandboxDesc', 'The sandbox has no real PSP checkout. Simulate a successful payment to verify the full flow (order gateway → payment status → reconciliation).')}
+                  </div>
+                  <button
+                    className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={simulating}
+                    onClick={() => void simulateSuccessCallback()}
+                    type="button"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    {simulating ? t('admin.commerce.payments.dialog.saving', 'Saving...') : t('admin.commerce.payments.methods.testPayment.sandboxSimulate', 'Simulate payment success')}
+                  </button>
+                  {remainingSeconds !== null ? (
+                    <div className="text-xs text-slate-500 dark:text-slate-400" role="timer">
+                      {t('admin.commerce.payments.methods.testPayment.expiresIn', 'Order remaining time')}: {formatRemainingTime(remainingSeconds)}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {hasCardSurface && !isExpired ? (
+                <div className="flex w-full flex-col items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 dark:border-white/10 dark:bg-white/5">
+                  <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                    <CreditCard className="h-4 w-4" />
+                    {t('admin.commerce.payments.methods.testPayment.cardTitle', 'Pay with card')}
+                  </div>
+                  <div className="w-full max-w-sm">
+                    <div className="rounded-md border border-slate-200 bg-white px-3 py-2.5 dark:border-white/10 dark:bg-[#202020]">
+                      {stripe ? (
+                        <StripeCardElementWrapper
+                          onReady={(element) => setStripeCardElement(element)}
+                          stripe={stripe}
+                        />
+                      ) : (
+                        <div className="flex items-center gap-2 text-sm text-slate-400">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          {t('admin.commerce.payments.methods.testPayment.cardLoading', 'Loading card form...')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    {t('admin.commerce.payments.methods.testPayment.cardHint', 'Test mode: use card 4242 4242 4242 4242, any future expiry and CVC.')}
+                  </div>
+                  <button
+                    className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={!stripe || !stripeCardElement || payingCard}
+                    onClick={() => void payWithCard()}
+                    type="button"
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    {payingCard ? t('admin.commerce.payments.dialog.saving', 'Saving...') : t('admin.commerce.payments.methods.testPayment.cardPay', 'Pay 0.01')}
+                  </button>
+                  {remainingSeconds !== null ? (
+                    <div className="text-xs text-slate-500 dark:text-slate-400" role="timer">
+                      {t('admin.commerce.payments.methods.testPayment.expiresIn', 'Order remaining time')}: {formatRemainingTime(remainingSeconds)}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {!hasQrSurface && !hasJumpSurface && !hasCardSurface && !isSandbox ? (
                 <div className="flex flex-col items-center gap-3">
                   <div className="grid h-64 w-64 place-items-center rounded-lg border border-dashed border-slate-300 dark:border-white/15">
                     <QrCode className="h-8 w-8 text-slate-400" />
@@ -389,6 +577,20 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
               {simulateNotice ? (
                 <div className="text-sm text-emerald-600 dark:text-emerald-400" role="status">{simulateNotice}</div>
               ) : null}
+
+              {error && (hasQrSurface || hasJumpSurface || hasCardSurface || isSandbox) ? (
+                <div className="flex w-full flex-col items-center gap-3">
+                  <div className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</div>
+                  <button
+                    className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5"
+                    onClick={() => setCreateAttempt((value) => value + 1)}
+                    type="button"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    {t('admin.commerce.payments.methods.testPayment.retry', 'Create again')}
+                  </button>
+                </div>
+              ) : null}
             </div>
           ) : null}
 
@@ -419,7 +621,18 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 px-5 py-4 dark:border-white/10">
-          {phase === 'ready' && testPayment && !isExpired ? (
+          {phase === 'ready' && testPayment && !isExpired && !isSandbox ? (
+            <button
+              className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5"
+              disabled={checking}
+              onClick={() => void checkProviderStatus()}
+              type="button"
+            >
+              <RefreshCw className="h-4 w-4" />
+              {checking ? t('admin.commerce.payments.dialog.saving', 'Saving...') : t('admin.commerce.payments.methods.testPayment.checkStatus', 'Check payment channel status')}
+            </button>
+          ) : null}
+          {phase === 'ready' && testPayment && !isExpired && isSandbox ? (
             <button
               className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5"
               disabled={simulating}
@@ -441,4 +654,40 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
       </div>
     </div>
   );
+}
+
+/**
+ * Mounts the Stripe.js card element into the dialog. Uses the raw Stripe
+ * Elements API (no react-stripe-js dependency needed).
+ */
+function StripeCardElementWrapper({
+  stripe,
+  onReady,
+}: {
+  stripe: Stripe;
+  onReady: (element: StripeCardElement) => void;
+}) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) {
+      return undefined;
+    }
+    const elements = stripe.elements();
+    const card = elements.create('card', {
+      style: {
+        base: {
+          fontSize: '14px',
+          color: '#0f172a',
+          '::placeholder': { color: '#94a3b8' },
+        },
+      },
+    });
+    card.mount(host);
+    onReady(card);
+    return () => {
+      card.unmount();
+    };
+  }, [onReady, stripe]);
+  return <div ref={hostRef} />;
 }

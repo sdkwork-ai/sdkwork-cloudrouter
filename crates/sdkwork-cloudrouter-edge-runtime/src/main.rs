@@ -23,21 +23,12 @@ async fn main() -> anyhow::Result<()> {
                 runtime_toml.as_ref(),
             )
             .map_err(anyhow::Error::msg)?;
-        // Bootstrap Access-Token for the portal login flow: an explicit
-        // SDKWORK_ACCESS_TOKEN wins, otherwise a signed tenant-bound token is
-        // issued (tenant signing key ensured first, then a signed JWT
-        // persisted as an IAM session).
-        match sdkwork_iam_web_adapter::resolve_deployment_bootstrap_access_token(None, None).await
-        {
-            Ok(Some(token)) => {
-                edge_config = edge_config.with_portal_bootstrap_access_token(Some(token));
-            }
-            Ok(None) => {}
-            Err(error) => tracing::warn!(
-                %error,
-                "bootstrap access token issuance failed; portal falls back to a payload-only token",
-            ),
-        }
+        // No bootstrap Access-Token is issued or injected for the portal
+        // runtime script: distributing a signed or session-bound token through
+        // an anonymously readable script would publish a live credential to
+        // every visitor. Development workstations may opt in to a payload-only
+        // token through SDKWORK_CLOUDROUTER_PORTAL_DEV_BOOTSTRAP_TOKEN on the
+        // edge server side.
         // Commercial license posture (docs/commercial/PRICING.md).
         use sdkwork_cloudrouter_license::LicenseStatus;
         let license = sdkwork_cloudrouter_license::resolve_license();

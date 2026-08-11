@@ -1,5 +1,33 @@
 # Cloud Router Backend API Changelog
 
+## 0.10.0
+
+- Added `PATCH /backend/v3/api/payments/providers/{providerId}`
+  (`payments.providers.update`): operators can edit a payment provider's
+  display name, localized display names (`displayNameI18n`), sort order, and
+  status (`active | inactive | disabled`). A mandatory `reason` is recorded in
+  `ops_audit_log` (`payments.provider.update`) so every mutation keeps an
+  audit trail; updates are scoped to the operator's tenant and organization
+  (including `organization_id = '0'` platform rows, matching the list query).
+  The admin payment center exposes Edit plus Enable/Disable row actions gated
+  by the new `commerce.payments.providers.update` permission.
+
+## 0.9.0
+
+- Removed `GET /backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}/secret`
+  (`upstreamAccounts.credentials.secret.retrieve`): upstream credential material is write-only
+  per the PRD and is never rehydrated through read APIs. Credential rotation still accepts a new
+  secret through `upstreamAccounts.credentials.create`; the credential list exposes masked
+  metadata only.
+- `PageInfo.totalItems` is now declared with `format: int64` and `x-sdkwork-int64-string: true`
+  (API_SPEC §16.6) so generated SDKs keep the value as an exact string.
+- `ProblemDetail.instance` is now a required member (API_SPEC §15.2) alongside
+  `type`, `title`, `status`, `code`, and `traceId`.
+- Nested collection endpoints (`upstreamAccountGroups.members.list`, `upstreamAccountGroups.resources.list`,
+  `upstreamAccounts.resources.list`, `upstreamSuppliers.authMethods.list`, `upstreamSuppliers.endpoints.list`,
+  `upstreamSuppliers.resources.list`) declare `x-sdkwork-max-items: 200`: they are bounded-by-design
+  collections (PAGINATION_SPEC §11) whose store queries fail closed above the documented ceiling.
+
 ## 0.8.0
 
 - `AdminRechargePackage` gains the `discount` integer (1-100): the discount rate percentage, where `100` means no discount and `90` means the customer pays 90 percent of the price. The value is stored per package and exposed in the catalog; it does not affect the granted-points computation (`grantAmount`/`points` still derive from `priceAmount`).

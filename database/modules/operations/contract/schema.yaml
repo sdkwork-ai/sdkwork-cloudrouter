@@ -218,6 +218,8 @@ tables:
           supported: true
           default: true
     semantic_contracts: null
+    frontend_routes:
+      - /admin/monitor
   - name: ops_audit_log
     domain: ops
     profile: audit_event
@@ -440,6 +442,51 @@ tables:
           supported: true
           default: true
     semantic_contracts: null
+    frontend_routes:
+      - /
+      - /admin/cache
+      - /admin/marketing/referralStrategies
+      - /admin/memberships/package_groups
+      - /admin/memberships/package_groups/{packageGroupId}
+      - /admin/memberships/packages
+      - /admin/memberships/packages/{packageId}
+      - /admin/memberships/plans
+      - /admin/model
+      - /admin/model/mappings
+      - /admin/model/resources
+      - /admin/payments/channels
+      - /admin/payments/methods
+      - /admin/payments/methods/{methodId}
+      - /admin/payments/provider_accounts
+      - /admin/payments/provider_accounts/{providerAccountId}
+      - /admin/payments/reconciliation_runs
+      - /admin/payments/route_rules
+      - /admin/payments/route_rules/{routeRuleId}
+      - /admin/promotions/coupon_stocks
+      - /admin/promotions/offers
+      - /admin/promotions/offers/{offerId}
+      - /admin/ratelimit
+      - /admin/recharges/exchangeRules
+      - /admin/recharges/packages
+      - /admin/recharges/packages/{packageId}
+      - /admin/recharges/settings
+      - /admin/request-log
+      - /admin/runtime-region
+      - /admin/settings
+      - /admin/site
+      - /admin/storage/buckets
+      - /admin/storage/buckets/{bucketId}
+      - /admin/storage/defaultBuckets
+      - /admin/storage/garbageCollection
+      - /admin/storage/providers
+      - /admin/storage/providers/{providerId}
+      - /admin/storage/quotas
+      - /admin/storage/reconciliation
+      - /admin/upstream
+      - /auth/oauth/callback/:provider
+      - /console/api-keys
+      - /console/notifications
+      - /console/user
   - name: ops_config_snapshot
     domain: ops
     profile: audit_event
@@ -649,6 +696,14 @@ tables:
           supported: true
           default: true
     semantic_contracts: null
+    frontend_routes:
+      - /admin/cache
+      - /admin/runtime-region
+      - /admin/settings
+      - /admin/site
+      - /admin/upstream
+      - /auth/login
+      - /auth/register
   - name: ops_gateway_heartbeat
     domain: ops
     profile: operational_state
@@ -857,6 +912,8 @@ tables:
           supported: true
           default: true
     semantic_contracts: null
+    frontend_routes:
+      - /admin/monitor
   - name: ops_gateway_instance
     domain: ops
     profile: operational_state
@@ -1053,6 +1110,11 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /admin/dashboard
+      - /admin/monitor
+      - /admin/service-nodes
+      - /console/dashboard
   - name: ops_job_execution
     domain: ops
     profile: operational_state
@@ -1336,6 +1398,8 @@ tables:
               - empty
           delayed_alerting:
             alert_after_consecutive_failures_default: 3
+    frontend_routes:
+      - /admin/model
   - name: ops_metric_snapshot
     domain: ops
     profile: read_model
@@ -1487,6 +1551,25 @@ tables:
         columns: *id004
         unique: true
         where: null
+      - name: idx_ops_metric_snapshot_name_period
+        columns:
+          - tenant_id
+          - organization_id
+          - metric_name
+          - period_start
+          - id
+        unique: false
+        where: null
+      - name: idx_ops_metric_snapshot_scope_period
+        columns:
+          - tenant_id
+          - organization_id
+          - metric_scope
+          - metric_period
+          - period_start
+          - id
+        unique: false
+        where: null
     source_tables:
       - ai_usage
       - ai_request_trace
@@ -1519,6 +1602,10 @@ tables:
           - period_start
           - dimension_key
           - dimension_value
+    frontend_routes:
+      - /admin/dashboard
+      - /admin/monitor
+      - /console/dashboard
   - name: ops_notification_delivery
     domain: ops
     profile: user_entity
@@ -1711,6 +1798,8 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /console/settings
   - name: ops_notification_message
     domain: ops
     profile: operational_state
@@ -1889,6 +1978,8 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /console/dashboard
   - name: ops_notification_recipient
     domain: ops
     profile: relation_entity
@@ -2046,6 +2137,7 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes: []
   - name: ops_referral_invite_code
     domain: ops
     profile: operational_state
@@ -2153,6 +2245,8 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /auth/register
   - name: ops_referral_relation
     domain: ops
     profile: operational_state
@@ -2282,6 +2376,9 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /admin/marketing/referrals
+      - /auth/register
   - name: ops_referral_stat_snapshot
     domain: ops
     profile: read_model
@@ -2398,6 +2495,7 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes: []
   - name: ops_referral_strategy
     domain: ops
     profile: operational_state
@@ -2508,3 +2606,5 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
+    frontend_routes:
+      - /admin/marketing/referralStrategies

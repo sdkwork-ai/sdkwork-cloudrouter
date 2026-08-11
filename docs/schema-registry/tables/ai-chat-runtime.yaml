@@ -9,6 +9,8 @@ tables:
   api_surfaces:
   - app
   - worker
+  frontend_routes:
+  - /playground
   columns:
     data_scope:
       type: int32
@@ -127,6 +129,8 @@ tables:
   api_surfaces:
   - app
   - worker
+  frontend_routes:
+  - /playground
   columns:
     conversation_id:
       type: int64
@@ -576,11 +580,19 @@ tables:
   api_surfaces:
   - app
   - worker
+  frontend_routes:
+  - /playground
   columns:
-    conversation_id: string(128)
-    chat_turn_id: string(128)
+    conversation_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    chat_turn_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
     chat_item_id: string(128)
-    agent_session_id: string(128)
+    agent_session_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
     agent_run_id: string(128)
     agent_run_step_id: string(128)
     invocation_no:
@@ -653,6 +665,15 @@ tables:
     - organization_id
     - user_id
     - uuid
+  - name: uk_ai_runtime_invocation_scope_sequence
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - conversation_id
+    - chat_turn_id
+    - agent_session_id
+    - invocation_no
   check_constraints:
   - name: ck_ai_runtime_invocation_subject_scope
     expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
@@ -932,4 +953,165 @@ tables:
     - organization_id
     - user_id
     - usage_fact_id
+    - id
+
+- table: ai_runtime_invocation_event
+  domain: ai
+  profile: user_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: user_runtime_entity
+  api_surfaces:
+  - app
+  - worker
+  frontend_routes:
+  - /playground
+  columns:
+    invocation_id:
+      type: int64
+      constraints: NOT NULL
+    conversation_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    chat_turn_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    agent_session_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    agent_run_id: string(128)
+    agent_run_step_id: string(128)
+    event_no:
+      type: int64
+      constraints: NOT NULL
+    event_type:
+      type: string(64)
+      constraints: NOT NULL
+    event_source:
+      type: string(64)
+      constraints: NOT NULL
+    payload_json:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    text_delta: string(16384)
+  required_columns:
+  - user_id
+  - invocation_id
+  - event_no
+  - event_type
+  - event_source
+  unique_constraints:
+  - name: uk_ai_runtime_invocation_event_scope_id
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - id
+  - name: uk_ai_runtime_invocation_event_scope_uuid
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - uuid
+  - name: uk_ai_runtime_invocation_event_sequence
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - invocation_id
+    - event_no
+  check_constraints:
+  - name: ck_ai_runtime_invocation_event_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+  - name: ck_ai_runtime_invocation_event_sequence
+    expression: event_no > 0
+  - name: ck_ai_runtime_invocation_event_type
+    expression: length(trim(event_type)) > 0 AND length(trim(event_source)) > 0
+  indexes:
+  - name: idx_ai_runtime_invocation_event_invocation_created
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - invocation_id
+    - created_at
+    - id
+
+- table: ai_runtime_artifact
+  domain: ai
+  profile: user_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: user_runtime_entity
+  api_surfaces:
+  - app
+  - worker
+  frontend_routes:
+  - /playground
+  columns:
+    conversation_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    chat_turn_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    chat_item_id: string(128)
+    agent_session_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    agent_run_id: string(128)
+    agent_run_step_id: string(128)
+    runtime_invocation_id:
+      type: int64
+      constraints: NOT NULL
+    artifact_type:
+      type: string(64)
+      constraints: NOT NULL
+    name: string(512)
+    mime_type: string(128)
+    content_text: string(262144)
+    content_json: json
+    drive_uri: string(1024)
+    resource_snapshot: json
+    sha256: string(64)
+    size_bytes: int64
+  required_columns:
+  - user_id
+  - runtime_invocation_id
+  - artifact_type
+  unique_constraints:
+  - name: uk_ai_runtime_artifact_scope_id
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - id
+  - name: uk_ai_runtime_artifact_scope_uuid
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - uuid
+  check_constraints:
+  - name: ck_ai_runtime_artifact_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+  - name: ck_ai_runtime_artifact_type
+    expression: length(trim(artifact_type)) > 0
+  indexes:
+  - name: idx_ai_runtime_artifact_invocation_created
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - runtime_invocation_id
+    - created_at
+    - id
+  - name: idx_ai_runtime_artifact_user_created
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - created_at
     - id

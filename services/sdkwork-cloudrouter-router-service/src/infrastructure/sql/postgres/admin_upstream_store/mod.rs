@@ -262,24 +262,6 @@ impl AdminUpstreamStore for PostgresAdminUpstreamStore {
         })
     }
 
-    fn reveal_account_credential_secret<'a>(
-        &'a self,
-        subject: AdminUpstreamSubject,
-        account_id: i64,
-        credential_id: i64,
-    ) -> AdminUpstreamFuture<'a, String> {
-        Box::pin(async move {
-            account::reveal_credential_secret(
-                &self.pool,
-                self.secret_codec.as_ref(),
-                subject,
-                account_id,
-                credential_id,
-            )
-            .await
-        })
-    }
-
     fn list_account_groups<'a>(
         &'a self,
         query: AdminUpstreamListQuery,

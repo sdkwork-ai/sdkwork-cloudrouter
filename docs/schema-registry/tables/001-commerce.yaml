@@ -1167,6 +1167,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/payments/providers
   columns:
     id: int64
 - table: commerce_payment_provider_account
@@ -1503,6 +1505,8 @@ tables:
   - app
   - backend
   - worker
+  frontend_routes:
+  - /admin/recharges/exchangeRules
   columns:
     id: int64
 - table: commerce_invoice_title

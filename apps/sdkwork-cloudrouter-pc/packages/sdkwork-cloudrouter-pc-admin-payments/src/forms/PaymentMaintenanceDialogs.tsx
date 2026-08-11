@@ -19,6 +19,7 @@ import {
   type AdminResourceRecord,
 } from '@sdkwork/cloudroutes-pc-commons';
 import { getCloudRouterPaymentBackendService } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
+import type { UpdatePaymentProviderRequest } from '@sdkwork/cloudrouter-backend-sdk';
 import type {
   CreatePaymentChannelCommand,
   CreatePaymentMethodCommand,
@@ -648,6 +649,172 @@ export function MethodFormDialog({ mode, initial, saving, onClose, onSubmit }: M
         />
       </DialogFieldLabel>
       <TextField label={t('admin.commerce.payments.methods.form.sortOrder', 'Sort order')} pattern="[0-9]*" type="number" value={values.sortOrder} onChange={(value) => set('sortOrder', value)} />
+      {error ? <FormError message={error} /> : null}
+    </PaymentDialog>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Provider form
+// ---------------------------------------------------------------------------
+
+export interface PaymentProviderFormValues {
+  displayName: string;
+  displayNameZhCN: string;
+  displayNameEnUS: string;
+  sortOrder: string;
+  status: string;
+  reason: string;
+}
+
+// Provider catalog statuses; `disabled` is the platform retirement state that
+// the status toggle never targets directly (use the edit dialog for it).
+const PROVIDER_STATUS_OPTIONS = ['active', 'inactive', 'disabled'] as const;
+const PROVIDER_I18N_LOCALES = ['zh-CN', 'en-US'] as const;
+
+export function emptyProviderFormValues(): PaymentProviderFormValues {
+  return {
+    displayName: '', displayNameZhCN: '', displayNameEnUS: '',
+    sortOrder: '', status: 'active', reason: '',
+  };
+}
+
+export function providerFormValuesFromRecord(record: AdminResourceRecord): PaymentProviderFormValues {
+  const i18nMap = record.displayNameI18n;
+  const readLocale = (key: string) =>
+    typeof i18nMap === 'object' && i18nMap !== null
+      ? String((i18nMap as Record<string, unknown>)[key] ?? '')
+      : '';
+  return {
+    displayName: readText(record.displayName),
+    displayNameZhCN: readLocale('zh-CN'),
+    displayNameEnUS: readLocale('en-US'),
+    sortOrder: record.sortOrder === undefined ? '' : String(record.sortOrder),
+    status: readText(record.status) || 'active',
+    reason: '',
+  };
+}
+
+export function buildProviderUpdateCommand(values: PaymentProviderFormValues): UpdatePaymentProviderRequest {
+  const displayNameI18n: Record<string, string> = {};
+  for (const locale of PROVIDER_I18N_LOCALES) {
+    const value = locale === 'zh-CN' ? values.displayNameZhCN : values.displayNameEnUS;
+    if (value.trim()) {
+      displayNameI18n[locale] = value.trim();
+    }
+  }
+  const sortOrder = optionalNumber(values.sortOrder);
+  return {
+    ...(values.displayName.trim() ? { displayName: values.displayName.trim() } : {}),
+    ...(Object.keys(displayNameI18n).length > 0 ? { displayNameI18n } : {}),
+    ...(sortOrder !== undefined ? { sortOrder } : {}),
+    status: values.status as UpdatePaymentProviderRequest['status'],
+    reason: values.reason.trim(),
+  };
+}
+
+export interface ProviderFormDialogProps {
+  initial?: PaymentProviderFormValues;
+  saving: boolean;
+  onClose(): void;
+  onSubmit(values: PaymentProviderFormValues): void;
+}
+
+export function ProviderFormDialog({ initial, saving, onClose, onSubmit }: ProviderFormDialogProps) {
+  const { t } = useTranslation();
+  const [values, setValues] = useState<PaymentProviderFormValues>(() => initial ?? emptyProviderFormValues());
+  const [error, setError] = useState<string | null>(null);
+  const set = <K extends keyof PaymentProviderFormValues>(key: K, value: PaymentProviderFormValues[K]) => setValues((prev) => ({ ...prev, [key]: value }));
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    if (!values.displayName.trim()) {
+      setError(t('admin.commerce.payments.providers.form.displayNameRequired', 'Display name is required.'));
+      return;
+    }
+    if (!values.reason.trim()) {
+      setError(t('admin.commerce.payments.providers.form.reasonRequired', 'A reason is required for the audit trail.'));
+      return;
+    }
+    onSubmit(values);
+  }
+
+  return (
+    <PaymentDialog
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      saving={saving}
+      title={t('admin.commerce.payments.providers.edit.title', 'Edit payment provider')}
+    >
+      <TextField label={t('admin.commerce.payments.providers.form.displayName', 'Display name')} required value={values.displayName} onChange={(value) => set('displayName', value)} />
+      <TextField label={t('admin.commerce.payments.providers.form.displayNameZhCN', 'Display name (zh-CN)')} value={values.displayNameZhCN} onChange={(value) => set('displayNameZhCN', value)} />
+      <TextField label={t('admin.commerce.payments.providers.form.displayNameEnUS', 'Display name (en-US)')} value={values.displayNameEnUS} onChange={(value) => set('displayNameEnUS', value)} />
+      <TextField label={t('admin.commerce.payments.providers.form.sortOrder', 'Sort order')} type="number" value={values.sortOrder} onChange={(value) => set('sortOrder', value)} />
+      <SelectField label={t('admin.commerce.payments.providers.form.status', 'Status')} value={values.status} onChange={(value) => set('status', value)} options={PROVIDER_STATUS_OPTIONS} translateOptionPrefix="admin.commerce.payments.value.status" />
+      <TextField
+        description={t('admin.commerce.payments.providers.form.reasonDesc', 'Recorded in the audit trail for this change.')}
+        label={t('admin.commerce.payments.providers.form.reason', 'Reason')}
+        required
+        value={values.reason}
+        onChange={(value) => set('reason', value)}
+      />
+      {error ? <FormError message={error} /> : null}
+    </PaymentDialog>
+  );
+}
+
+export interface ProviderStatusDialogProps {
+  provider: AdminResourceRecord;
+  saving: boolean;
+  onClose(): void;
+  onSubmit(reason: string): void;
+}
+
+/**
+ * Enable/disable confirmation for a payment provider. The target status is
+ * derived from the current one (`active` → `inactive`, anything else →
+ * `active`); `disabled` (platform retirement) is only reachable through the
+ * edit dialog. A reason is mandatory so the mutation keeps an audit trail.
+ */
+export function ProviderStatusDialog({ provider, saving, onClose, onSubmit }: ProviderStatusDialogProps) {
+  const { t } = useTranslation();
+  const enabling = String(provider.status ?? '') !== 'active';
+  const [reason, setReason] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const providerLabel = String(provider.displayName ?? provider.providerCode ?? provider.id ?? '');
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    if (!reason.trim()) {
+      setError(t('admin.commerce.payments.providers.form.reasonRequired', 'A reason is required for the audit trail.'));
+      return;
+    }
+    onSubmit(reason.trim());
+  }
+
+  return (
+    <PaymentDialog
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      saving={saving}
+      title={enabling
+        ? t('admin.commerce.payments.providers.enable.title', 'Enable payment provider')
+        : t('admin.commerce.payments.providers.disable.title', 'Disable payment provider')}
+    >
+      <p className="text-sm text-slate-600 dark:text-slate-300 md:col-span-2">
+        {enabling
+          ? t('admin.commerce.payments.providers.enable.desc', 'Provider {{provider}} will be re-enabled for new payments.', { provider: providerLabel })
+          : t('admin.commerce.payments.providers.disable.desc', 'Provider {{provider}} will stop receiving new payments. Existing payments keep their lifecycle.', { provider: providerLabel })}
+      </p>
+      <TextField
+        description={t('admin.commerce.payments.providers.form.reasonDesc', 'Recorded in the audit trail for this change.')}
+        label={t('admin.commerce.payments.providers.form.reason', 'Reason')}
+        required
+        value={reason}
+        onChange={setReason}
+      />
       {error ? <FormError message={error} /> : null}
     </PaymentDialog>
   );

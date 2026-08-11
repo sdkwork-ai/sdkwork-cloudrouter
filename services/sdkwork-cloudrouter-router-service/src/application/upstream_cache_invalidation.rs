@@ -261,16 +261,6 @@ impl AdminUpstreamStore for AiRoutingCacheInvalidatingAdminUpstreamStore {
         })
     }
 
-    fn reveal_account_credential_secret<'a>(
-        &'a self,
-        subject: AdminUpstreamSubject,
-        account_id: i64,
-        credential_id: i64,
-    ) -> AdminUpstreamFuture<'a, String> {
-        self.inner
-            .reveal_account_credential_secret(subject, account_id, credential_id)
-    }
-
     fn list_account_groups<'a>(
         &'a self,
         query: AdminUpstreamListQuery,

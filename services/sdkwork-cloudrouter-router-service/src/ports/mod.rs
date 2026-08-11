@@ -203,6 +203,7 @@ pub use admin_transaction_center_store::{
     AdminTransactionCenterFuture, AdminTransactionCenterStore, AdminTransactionCenterSubject,
     AdminTransactionCollection, AdminTransactionJsonRecord, ListAdminTransactionChildRecordsQuery,
     ListAdminTransactionRecordsQuery, LoadAdminTransactionRecordQuery,
+    UpdatePaymentProviderCommand,
 };
 pub use admin_upstream_account_verifier::{
     AdminUpstreamAccountVerificationError, AdminUpstreamAccountVerificationFuture,

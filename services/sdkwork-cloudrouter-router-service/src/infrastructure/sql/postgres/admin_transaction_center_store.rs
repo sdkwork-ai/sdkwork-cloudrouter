@@ -1,10 +1,14 @@
 use sqlx::{PgPool, Row};
 
 use crate::domain::{DomainError, DomainResult};
+use crate::infrastructure::sql::model_catalog_import::stable_uuid;
+use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::ports::{
     AdminTransactionCenterFuture, AdminTransactionCenterStore, AdminTransactionCollection,
-    AdminTransactionJsonRecord, ListAdminTransactionRecordsQuery,
+    AdminTransactionJsonRecord, ListAdminTransactionRecordsQuery, UpdatePaymentProviderCommand,
 };
+
+const PAYMENT_PROVIDER_AUDIT_TARGET: i32 = 2201;
 
 #[derive(Debug, Clone)]
 pub struct PostgresAdminTransactionCenterStore {
@@ -30,6 +34,13 @@ impl AdminTransactionCenterStore for PostgresAdminTransactionCenterStore {
         query: ListAdminTransactionRecordsQuery,
     ) -> AdminTransactionCenterFuture<'a, AdminTransactionCollection> {
         Box::pin(async move { list_payment_provider_accounts(&self.pool, query).await })
+    }
+
+    fn update_payment_provider<'a>(
+        &'a self,
+        command: UpdatePaymentProviderCommand,
+    ) -> AdminTransactionCenterFuture<'a, AdminTransactionJsonRecord> {
+        Box::pin(async move { update_payment_provider(&self.pool, command).await })
     }
 }
 
@@ -81,6 +92,160 @@ async fn list_payment_providers(
     .map_err(store_error)?;
 
     collection_from_rows(rows, &query)
+}
+
+async fn update_payment_provider(
+    pool: &PgPool,
+    command: UpdatePaymentProviderCommand,
+) -> DomainResult<AdminTransactionJsonRecord> {
+    let result = sqlx::query(
+        r#"
+        UPDATE commerce_payment_provider
+        SET display_name = COALESCE($4, display_name),
+            display_name_i18n = COALESCE($5::jsonb, display_name_i18n),
+            sort_order = COALESCE($6, sort_order),
+            status = COALESCE($7, status),
+            updated_at = now()
+        WHERE tenant_id IN (CAST($1 AS TEXT), '0')
+          AND (organization_id = CAST($2 AS TEXT) OR organization_id = '0')
+          AND id = CAST($3 AS TEXT)
+          AND deleted_at IS NULL
+        "#,
+    )
+    .bind(command.subject.tenant_id)
+    .bind(command.subject.organization_id)
+    .bind(&command.provider_id)
+    .bind(command.display_name.as_deref())
+    .bind(command.display_name_i18n.as_ref().map(json_text))
+    .bind(command.sort_order)
+    .bind(command.status.as_deref())
+    .execute(pool)
+    .await
+    .map_err(|error| write_error("failed to update payment provider", error))?;
+    ensure_affected(result.rows_affected(), "payment provider was not found")?;
+    insert_provider_update_audit(pool, &command).await?;
+    load_payment_provider(pool, command.subject, &command.provider_id).await
+}
+
+/// Idempotent audit trail for provider edits: a stable uuid derived from the
+/// subject, provider, request id, and reason keeps replays from writing
+/// duplicate rows while still recording every distinct operator mutation.
+async fn insert_provider_update_audit(
+    pool: &PgPool,
+    command: &UpdatePaymentProviderCommand,
+) -> DomainResult<()> {
+    let change_summary = provider_update_change_summary(command);
+    sqlx::query(
+        r#"
+        INSERT INTO ops_audit_log
+            (uuid, tenant_id, organization_id, request_id, operator_id, operator_type,
+             action, target_type, target_uuid, change_summary, created_at, id)
+        SELECT
+            $1, $2, $3, $4, $5, $6, 'payments.provider.update', $7, $8, $9::jsonb, now(), $10
+        WHERE NOT EXISTS (
+            SELECT 1::bigint
+            FROM ops_audit_log
+            WHERE tenant_id = $11
+              AND organization_id = $12
+              AND action = 'payments.provider.update'
+              AND target_uuid = $13
+              AND request_id = $14
+        )
+        "#,
+    )
+    .bind(stable_uuid(
+        "payments-provider-update",
+        &[
+            &command.subject.tenant_id.to_string(),
+            &command.subject.organization_id.to_string(),
+            &command.provider_id,
+            request_id_or(&command.request_id, "provider-update"),
+            &command.reason,
+        ],
+    ))
+    .bind(command.subject.tenant_id)
+    .bind(command.subject.organization_id)
+    .bind(command.request_id.as_deref())
+    .bind(command.subject.operator_id)
+    .bind(command.subject.operator_type)
+    .bind(PAYMENT_PROVIDER_AUDIT_TARGET)
+    .bind(&command.provider_id)
+    .bind(json_text(&change_summary))
+    .bind(next_cloud_runtime_id("ops_audit_log")?)
+    .bind(command.subject.tenant_id)
+    .bind(command.subject.organization_id)
+    .bind(&command.provider_id)
+    .bind(command.request_id.as_deref())
+    .execute(pool)
+    .await
+    .map_err(|error| write_error("failed to write payment provider audit log", error))?;
+    Ok(())
+}
+
+fn provider_update_change_summary(command: &UpdatePaymentProviderCommand) -> serde_json::Value {
+    let mut object = serde_json::Map::new();
+    if let Some(display_name) = &command.display_name {
+        object.insert(
+            "displayName".to_owned(),
+            serde_json::Value::String(display_name.clone()),
+        );
+    }
+    if let Some(display_name_i18n) = &command.display_name_i18n {
+        object.insert("displayNameI18n".to_owned(), display_name_i18n.clone());
+    }
+    if let Some(sort_order) = command.sort_order {
+        object.insert("sortOrder".to_owned(), serde_json::json!(sort_order));
+    }
+    if let Some(status) = &command.status {
+        object.insert("status".to_owned(), serde_json::Value::String(status.clone()));
+    }
+    object.insert(
+        "reason".to_owned(),
+        serde_json::Value::String(command.reason.clone()),
+    );
+    serde_json::Value::Object(object)
+}
+
+async fn load_payment_provider(
+    pool: &PgPool,
+    subject: crate::ports::AdminTransactionCenterSubject,
+    provider_id: &str,
+) -> DomainResult<AdminTransactionJsonRecord> {
+    let rows = sqlx::query(
+        r#"
+        SELECT json_build_object(
+            'id', id,
+            'providerCode', provider_code,
+            'displayName', display_name,
+            'displayNameI18n', display_name_i18n,
+            'providerType', provider_type,
+            'supportedCountries', COALESCE(NULLIF(supported_countries::text, '')::json, '[]'::json),
+            'supportedCurrencies', COALESCE(NULLIF(supported_currencies::text, '')::json, '[]'::json),
+            'capabilities', '["payment_intent","payment_query","payment_close","refund","webhook","reconciliation"]'::json,
+            'status', status,
+            'sortOrder', sort_order,
+            'createdAt', created_at,
+            'updatedAt', updated_at
+        ) AS item
+        FROM commerce_payment_provider
+        WHERE tenant_id IN (CAST($1 AS TEXT), '0')
+          AND (organization_id = CAST($2 AS TEXT) OR organization_id = '0')
+          AND id = CAST($3 AS TEXT)
+          AND deleted_at IS NULL
+        LIMIT 1
+        "#,
+    )
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(provider_id)
+    .fetch_all(pool)
+    .await
+    .map_err(store_error)?;
+    let row = rows
+        .into_iter()
+        .next()
+        .ok_or_else(|| DomainError::not_found("payment provider was not found"))?;
+    json_record_cell(&row)
 }
 
 async fn list_payment_provider_accounts(
@@ -250,6 +415,25 @@ fn integer_cell(row: &sqlx::postgres::PgRow, column: &str) -> DomainResult<i64> 
     Err(DomainError::new(format!(
         "transaction center row column {column} is not readable as integer"
     )))
+}
+
+fn ensure_affected(rows_affected: u64, message: &str) -> DomainResult<()> {
+    if rows_affected == 0 {
+        return Err(DomainError::not_found(message));
+    }
+    Ok(())
+}
+
+fn request_id_or<'a>(request_id: &'a Option<String>, fallback: &'a str) -> &'a str {
+    request_id.as_deref().unwrap_or(fallback)
+}
+
+fn json_text(value: &serde_json::Value) -> String {
+    serde_json::to_string(value).unwrap_or_else(|_| "{}".to_owned())
+}
+
+fn write_error(context: &str, error: sqlx::Error) -> DomainError {
+    DomainError::new(format!("{context}: {error}"))
 }
 
 fn store_error(error: sqlx::Error) -> DomainError {

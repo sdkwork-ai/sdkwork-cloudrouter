@@ -330,7 +330,7 @@ export class StorageOssBucketsApi {
     return this.client.request<Record<string, never>>(backendApiPath(`/storage/buckets`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 
-/** Update */
+/** Backend storage bucket update */
   async update(bucketId: string, body: AdminStorageStatusUpdateRequest, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
     return this.client.request<Record<string, never>>(backendApiPath(`/storage/buckets/${serializePathParameter(bucketId, { name: 'bucketId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }

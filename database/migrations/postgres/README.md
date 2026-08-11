@@ -40,6 +40,14 @@ Current migrations:
   and `ops_referral_strategy` (marketing-center referral reward strategy
   configuration). Reward granting is a follow-up phase; relations carry a
   `reward_status` marker only.
+- `0021_add_runtime_event_artifact_tables.up.sql` creates `ai_runtime_invocation_event`
+  and `ai_runtime_artifact` so the app runtime store contract (invocation
+  events and artifacts) is backed by real tables, closing the schema drift
+  where the store wrote tables that had no DDL or migration. The baseline
+  (0001) carries the same definitions for clean installs.
+- `0023_ops_metric_snapshot_period_indexes.up.sql` adds period-range indexes
+  to `ops_metric_snapshot` so the admin monitor performance query is served by
+  an index; the baseline carries the same definitions for clean installs.
 - `0020_upstream_account_group_default_flag.up.sql` adds the `is_default`
   flag to `ai_upstream_account_group` with a partial unique index enforcing at
   most one default group per tenant and organization, and promotes the seeded

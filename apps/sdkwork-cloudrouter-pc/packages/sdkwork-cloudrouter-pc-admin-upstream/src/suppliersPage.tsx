@@ -98,6 +98,7 @@ function SupplierTypeBadge({ type }: { type: SupplierType }) {
 export function SupplierAdminPanel() {
   const { t } = useTranslation();
   const [items, setItems] = useState<UpstreamSupplier[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [query, setQuery] = useState('');
   const [appliedQuery, setAppliedQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | SupplierType>('all');
@@ -115,6 +116,7 @@ export function SupplierAdminPanel() {
     try {
       const page = await upstreamService.suppliers.list({ page: 1, pageSize: 200, q: appliedQuery || undefined });
       setItems(page.items);
+      setTotalCount(Number(page.pageInfo?.totalItems ?? page.items.length));
       setSelected((current) => current ? page.items.find((item) => item.id === current.id) ?? null : null);
     } catch (cause) {
       setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
@@ -292,6 +294,11 @@ export function SupplierAdminPanel() {
             ))}
           </tbody>
         </table>
+        {totalCount > items.length ? (
+          <p className="px-4 py-3 text-xs text-amber-600 dark:text-amber-400">
+            {t('admin.upstream.common.truncated', 'Showing {{shown}} of {{total}} suppliers; refine the search to reach the rest.', { shown: items.length, total: totalCount })}
+          </p>
+        ) : null}
       </AdminTableShell>
 
       {editing !== undefined ? (

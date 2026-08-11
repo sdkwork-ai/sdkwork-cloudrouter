@@ -47,6 +47,11 @@ export interface RefundCreateFormValues {
 
 export interface RefundRetryFormValues {
   confirmRefundNo: string;
+  /**
+   * Current refund status the backend must observe before retrying
+   * (`failed` or `processing`). Carried from the list record.
+   */
+  expectedStatus: 'failed' | 'processing';
   /** Stable per-dialog-session idempotency key, same semantics as create. */
   idempotencyKey: string;
 }
@@ -137,7 +142,7 @@ export function buildRefundCreateCommand(values: RefundCreateFormValues): Create
 export function buildRefundRetryCommand(values: RefundRetryFormValues): RetryRefundCommand {
   return {
     confirmRefundNo: values.confirmRefundNo.trim(),
-    expectedStatus: 'failed',
+    expectedStatus: values.expectedStatus,
   };
 }
 
@@ -175,15 +180,21 @@ function useRefundableIntentOptions(enabled: boolean): AdminResourceRecord[] {
 // ---------------------------------------------------------------------------
 
 export interface RefundCreateDialogProps {
-  initialIntentId?: string;
-  initialIntentNo?: string;
+  /**
+   * Pre-selected payment intent (from the intents list row action). Carries
+   * `id`, `paymentIntentNo`, `amount` (minor units) and `currencyCode` so the
+   * dialog can show the original paid amount and bound the refund input.
+   */
+  initialRecord?: AdminResourceRecord;
   saving: boolean;
   onClose(): void;
   onSubmit(values: RefundCreateFormValues): void;
 }
 
-export function RefundCreateDialog({ initialIntentId, initialIntentNo, saving, onClose, onSubmit }: RefundCreateDialogProps) {
+export function RefundCreateDialog({ initialRecord, saving, onClose, onSubmit }: RefundCreateDialogProps) {
   const { t } = useTranslation();
+  const initialIntentId = initialRecord ? String(initialRecord.id ?? '') : undefined;
+  const initialIntentNo = initialRecord ? String(initialRecord.paymentIntentNo ?? '') : undefined;
   const intents = useRefundableIntentOptions(!initialIntentId);
   const [values, setValues] = useState<RefundCreateFormValues>(() => ({
     paymentIntentId: initialIntentId ?? '',
@@ -196,10 +207,16 @@ export function RefundCreateDialog({ initialIntentId, initialIntentNo, saving, o
   const set = <K extends keyof RefundCreateFormValues>(key: K, value: RefundCreateFormValues[K]) =>
     setValues((prev) => ({ ...prev, [key]: value }));
 
-  const selectedIntentNo = values.paymentIntentId
-    ? String(intents.find((intent) => String(intent.id ?? '') === values.paymentIntentId)?.paymentIntentNo ?? '')
-    : '';
-  const targetIntentNo = initialIntentNo ?? selectedIntentNo;
+  // The intent being refunded (from the row action record or the picker) and
+  // its original paid amount, used for display and for bounding the input.
+  const selectedIntent = initialRecord
+    ?? intents.find((intent) => String(intent.id ?? '') === values.paymentIntentId)
+    ?? null;
+  const selectedIntentNo = initialIntentNo
+    ?? (selectedIntent ? String(selectedIntent.paymentIntentNo ?? '') : '');
+  const targetIntentNo = selectedIntentNo;
+  const availableAmountMinor = selectedIntent ? String(selectedIntent.amount ?? '') : '';
+  const availableCurrency = selectedIntent ? String(selectedIntent.currencyCode ?? '') : '';
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -217,6 +234,16 @@ export function RefundCreateDialog({ initialIntentId, initialIntentNo, saving, o
     if (minor !== null && minor === '0') {
       setError(t('admin.commerce.payments.refunds.create.form.amountInvalid', 'Refund amount must be greater than zero.'));
       return;
+    }
+    // Bound the refund to the original paid amount up front (the backend
+    // enforces the same bound on the recorded attempt amount).
+    if (minor !== null && availableAmountMinor && !availableAmountMinor.includes('.')) {
+      const requested = BigInt(minor);
+      const available = BigInt(availableAmountMinor.replace(/^0+(?=\d)/, ''));
+      if (requested > available) {
+        setError(t('admin.commerce.payments.refunds.create.form.amountExceeds', 'Refund amount cannot exceed the original payment amount.'));
+        return;
+      }
     }
     if (values.reasonCode.trim() && !(REFUND_REASON_CODES as readonly string[]).includes(values.reasonCode)) {
       setError(t('admin.commerce.payments.refunds.create.form.reasonInvalid', 'Choose a valid refund reason.'));
@@ -268,6 +295,15 @@ export function RefundCreateDialog({ initialIntentId, initialIntentNo, saving, o
           </FieldLabel>
         </div>
       )}
+      {availableAmountMinor ? (
+        <div className="md:col-span-2">
+          <FieldLabel label={t('admin.commerce.payments.refunds.create.form.originalAmount', 'Original payment amount')}>
+            <div className="mt-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
+              <span className="font-mono text-xs">{formatRefundAmount(availableAmountMinor, availableCurrency)} {availableCurrency}</span>
+            </div>
+          </FieldLabel>
+        </div>
+      ) : null}
       <TextField
         description={t('admin.commerce.payments.refunds.create.form.amountHint', 'Leave empty to refund the full payment amount.')}
         inputMode="decimal"
@@ -309,8 +345,10 @@ export interface RefundRetryDialogProps {
 export function RefundRetryDialog({ record, saving, onClose, onSubmit }: RefundRetryDialogProps) {
   const { t } = useTranslation();
   const refundNo = String(record.refundNo ?? record.id ?? '');
+  const expectedStatus = String(record.status ?? '') === 'processing' ? 'processing' : 'failed';
   const [values, setValues] = useState<RefundRetryFormValues>({
     confirmRefundNo: '',
+    expectedStatus,
     idempotencyKey: createClientOperationToken('payment-refund-retry'),
   });
   const [error, setError] = useState<string | null>(null);

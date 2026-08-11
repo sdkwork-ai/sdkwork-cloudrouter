@@ -56,20 +56,6 @@ routes:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/dashboardService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
-- route: /admin/marketing/:sectionId?
-  package: '@sdkwork/cloudrouter-pc-admin-marketing'
-  owner: admin-control-plane
-  route_scope: admin
-  delivery_kind: sdk_backed_business_runtime
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
-  api_surface: backend
-  operation_routes:
-  - /admin/marketing/:sectionId?
-  evidence:
-  - apps/sdkwork-cloudrouter-pc/src/App.tsx
-  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts
-  - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/memberships/:sectionId?
   package: '@sdkwork/cloudrouter-pc-admin-memberships'
   owner: admin-control-plane
@@ -262,7 +248,7 @@ routes:
   - /admin/upstream/suppliers
   - /admin/upstream/accounts
   - /admin/upstream/account-groups
-  evidence:
+  evidence: &id001
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
@@ -599,7 +585,6 @@ routes:
   evidence:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/pages/Playground.tsx
-  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/ChatPage.tsx
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /product-docs
   package: '@sdkwork/documents-pc-api-reference'
@@ -644,3 +629,88 @@ routes:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-sdk-reference/src/index.ts
   - docs/schema-registry/frontend-field-contracts.yaml
+- package: '@sdkwork/cloudrouter-pc-admin-upstream'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  api_surface: backend
+  route: /admin/upstream/suppliers
+  evidence: *id001
+- package: '@sdkwork/cloudrouter-pc-admin-upstream'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  api_surface: backend
+  route: /admin/upstream/accounts
+  evidence: *id001
+- package: '@sdkwork/cloudrouter-pc-admin-upstream'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  api_surface: backend
+  route: /admin/upstream/account-groups
+  evidence: *id001
+- route: /admin/marketing/:sectionId?/:batchId?
+  package: '@sdkwork/cloudrouter-pc-admin-marketing'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-promotion-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/marketing/:sectionId?/:batchId?
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+- route: /admin/partner/:sectionId?
+  package: '@sdkwork/cloudrouter-pc-admin-partner'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-commerce-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/partner/:sectionId?
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+- route: /admin/recharges/:sectionId?
+  package: '@sdkwork/cloudrouter-pc-admin-memberships'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-commerce-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/recharges/:sectionId?
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+- route: /admin/request-log
+  package: '@sdkwork/log-pc-admin-request-log'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: false
+  api_surface: backend
+  operation_routes:
+  - /admin/request-log
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+- route: /console/iam/oauth/official-accounts/:resourceAccountId/custom-menus
+  package: '@sdkwork/cloudrouter-pc-console-iam'
+  owner: admin-control-plane
+  route_scope: console
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: false
+  api_surface: app
+  operation_routes:
+  - /console/iam/oauth/official-accounts/:resourceAccountId/custom-menus
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
