@@ -48,6 +48,4 @@ pub fn catalog_accepted_count(catalog: &sdkwork_models::ModelCatalog) -> i64 {
 }
 
 #[doc(hidden)]
-pub use infrastructure::sql::commerce_bootstrap::{
-    commerce_database_tables,
-};
+pub use infrastructure::sql::commerce_bootstrap::commerce_database_tables;

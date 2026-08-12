@@ -26,12 +26,14 @@ const HTML_MODULE_SCRIPT_PATTERN = /<script\b(?=[^>]*\btype=["']module["'])(?=[^
 const RUNTIME_ENV_SCRIPT_PATH = '/runtime-env.js';
 const DEFAULT_PORTAL_DEV_PORT = 3901;
 const DEFAULT_BROWSER_DEV_PROXY_GATEWAY_TARGET = 'http://127.0.0.1:3900';
+const DEFAULT_BROWSER_DEV_PROXY_PARTNER_API_TARGET = 'http://127.0.0.1:18098';
 const LOCAL_ROUTE_PACKAGE_PATTERN =
   /\/packages\/(sdkwork-cloudrouter-pc-(?:(?:admin|console)-(?!core(?:\/|$)|shell(?:\/|$))[^/]+|downloads|home|models|playground|rankings))\//u;
 const BROWSER_DEV_PROXY_ENV_KEYS = {
   openApi: 'SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_OPEN_API_ORIGIN',
   backendApi: 'SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_BACKEND_API_ORIGIN',
   appApi: 'SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_APP_API_ORIGIN',
+  partnerApi: 'SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_PARTNER_API_ORIGIN',
 } as const;
 const OPEN_API_PREFIX = '/v1';
 const APP_API_PREFIX = '/app/v3/api';
@@ -87,6 +89,7 @@ const PORTAL_SOURCE_OPTIMIZE_EXCLUDE = [
   '@sdkwork/iam-app-sdk',
   '@sdkwork/iam-backend-sdk',
   '@sdkwork/drive-app-sdk',
+  '@sdkwork/drive-backend-sdk',
   '@sdkwork/memory-app-sdk',
   '@sdkwork/agents-app-sdk',
   '@sdkwork/agents-backend-sdk',
@@ -123,7 +126,6 @@ const PORTAL_SOURCE_OPTIMIZE_EXCLUDE = [
   '@sdkwork/cloudrouter-backend-sdk',
   '@sdkwork/generations-app-sdk',
   '@sdkwork/generations-pc-asset-config',
-  '@sdkwork/drive-backend-sdk',
 ];
 
 const PORTAL_RUNTIME_URL_ENV = [
@@ -935,6 +937,10 @@ function resolvePortalDevProxy(env: NodeJS.ProcessEnv = process.env): Record<str
     env[BROWSER_DEV_PROXY_ENV_KEYS.appApi],
     BROWSER_DEV_PROXY_ENV_KEYS.appApi,
   );
+  const partnerApiTarget = resolvePortalDevProxyTarget(
+    env[BROWSER_DEV_PROXY_ENV_KEYS.partnerApi],
+    BROWSER_DEV_PROXY_ENV_KEYS.partnerApi,
+  );
 
   return {
     '/openapi/schema-tabs.json': portalDevProxyOptions(gatewayTarget),
@@ -943,6 +949,8 @@ function resolvePortalDevProxy(env: NodeJS.ProcessEnv = process.env): Record<str
     '/paas/v3/openapi.json': portalDevProxyOptions(gatewayTarget),
     '/cloud/v3/openapi.json': portalDevProxyOptions(gatewayTarget),
     '/v1': portalDevProxyOptions(gatewayTarget),
+    '/backend/v3/api/partners': portalDevProxyOptions(partnerApiTarget),
+    '/app/v3/api/partner_join': portalDevProxyOptions(partnerApiTarget),
     '/backend/v3/api': portalDevProxyOptions(backendApiTarget),
     '/app/v3/api': portalDevProxyOptions(appApiTarget),
   };
@@ -982,6 +990,7 @@ function resolvePortalDevProxyTarget(
     [BROWSER_DEV_PROXY_ENV_KEYS.openApi]: applicationOpenHttpUrl ?? applicationPublicHttpUrl ?? platformHttpUrl ?? DEFAULT_BROWSER_DEV_PROXY_GATEWAY_TARGET,
     [BROWSER_DEV_PROXY_ENV_KEYS.backendApi]: applicationBackendHttpUrl ?? applicationPublicHttpUrl ?? platformHttpUrl ?? DEFAULT_BROWSER_DEV_PROXY_GATEWAY_TARGET,
     [BROWSER_DEV_PROXY_ENV_KEYS.appApi]: applicationPublicHttpUrl ?? platformHttpUrl ?? DEFAULT_BROWSER_DEV_PROXY_GATEWAY_TARGET,
+    [BROWSER_DEV_PROXY_ENV_KEYS.partnerApi]: DEFAULT_BROWSER_DEV_PROXY_PARTNER_API_TARGET,
   };
   const target = value?.trim() || fallbackByName[name];
   if (!target) {

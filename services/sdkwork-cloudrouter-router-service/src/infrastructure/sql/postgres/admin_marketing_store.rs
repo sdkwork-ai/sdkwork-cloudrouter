@@ -543,9 +543,12 @@ async fn list_recharge_packages(
 ) -> DomainResult<AdminMarketingListPage<AdminRechargePackageItem>> {
     // The catalog is owned and seeded by sdkwork-order; empty tenant catalogs
     // fall back to the platform catalog (S6).
-    let (tenant_id, organization_id, _platform_scope) =
-        resolve_recharge_catalog_scope(pool, query.subject.tenant_id, query.subject.organization_id)
-            .await?;
+    let (tenant_id, organization_id, _platform_scope) = resolve_recharge_catalog_scope(
+        pool,
+        query.subject.tenant_id,
+        query.subject.organization_id,
+    )
+    .await?;
     let settings = load_recharge_settings_model(pool, query.subject).await?;
     let mut sql = String::from(
         r#"

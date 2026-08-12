@@ -10,10 +10,12 @@
 //! `postgres_transaction_integration`).
 
 use chrono::{DateTime, Utc};
-use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
 use sdkwork_account_service::AppendLedgerEntryCommand;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::PostgresUsageSettlementStore;
-use sdkwork_cloudrouter_router_service::ports::{UsageSettlementCommand, UsageSettlementStore as _};
+use sdkwork_cloudrouter_test_support::postgres_account_ledger_append_port;
+use sdkwork_cloudrouter_router_service::ports::{
+    UsageSettlementCommand, UsageSettlementStore as _,
+};
 use sdkwork_contract_service::{
     CommerceAccountAssetType, CommerceLedgerDirection, CommerceMoney, CommerceRequestHash,
 };
@@ -39,7 +41,6 @@ async fn settlement_debits_user_token_bank_wallet_and_marks_facts_settled() {
     let Some(ctx) = PostgresTestContext::new("usage_settlement_debit").await else {
         return;
     };
-    let store = PostgresCommerceAccountStore::new(ctx.pool.clone());
     credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-credit-1", 1000)
         .await
         .expect("credit token bank wallet");
@@ -50,7 +51,7 @@ async fn settlement_debits_user_token_bank_wallet_and_marks_facts_settled() {
         .await
         .expect("insert pending usage fact");
 
-    let settlement = PostgresUsageSettlementStore::new(ctx.pool.clone(), store);
+    let settlement = PostgresUsageSettlementStore::new(ctx.pool.clone(), postgres_account_ledger_append_port(ctx.pool.clone()));
     let outcome = settlement
         .settle_pending_usage(settlement_command(100))
         .await
@@ -58,19 +59,27 @@ async fn settlement_debits_user_token_bank_wallet_and_marks_facts_settled() {
 
     assert_eq!(2, outcome.settled_count);
     assert_eq!(0, outcome.failed_count);
-    assert_eq!(600, outcome.debited_tokens, "60.00 USD at 10 tokens per major unit");
+    assert_eq!(
+        600, outcome.debited_tokens,
+        "60.00 USD at 10 tokens per major unit"
+    );
 
     let (status, settled_at) = usage_fact_settlement(&ctx.pool, 1).await;
     assert_eq!(2, status, "usage fact must be marked settled");
-    assert!(settled_at.is_some(), "successful settlement must record settled_at");
+    assert!(
+        settled_at.is_some(),
+        "successful settlement must record settled_at"
+    );
 
     let balance = token_bank_balance(&ctx.pool, USER_ID).await;
-    assert_eq!(400, balance, "wallet must be debited through the account ledger");
+    assert_eq!(
+        400, balance,
+        "wallet must be debited through the account ledger"
+    );
 
     let debits = ledger_debit_total(&ctx.pool, USER_ID).await;
     assert_eq!(
-        600,
-        debits,
+        600, debits,
         "exactly one usage_settlement ledger entry must exist for the batch"
     );
 
@@ -90,7 +99,7 @@ async fn settlement_marks_insufficient_balance_failed() {
 
     let settlement = PostgresUsageSettlementStore::new(
         ctx.pool.clone(),
-        PostgresCommerceAccountStore::new(ctx.pool.clone()),
+        postgres_account_ledger_append_port(ctx.pool.clone()),
     );
     let outcome = settlement
         .settle_pending_usage(settlement_command(100))
@@ -101,12 +110,11 @@ async fn settlement_marks_insufficient_balance_failed() {
     assert_eq!(1, outcome.failed_count);
     assert_eq!(0, outcome.debited_tokens);
 
-    let row = sqlx::query(
-        "SELECT settlement_status, failure_code FROM ai_metering_usage WHERE id = 1",
-    )
-    .fetch_one(&ctx.pool)
-    .await
-    .expect("read usage fact settlement state");
+    let row =
+        sqlx::query("SELECT settlement_status, failure_code FROM ai_metering_usage WHERE id = 1")
+            .fetch_one(&ctx.pool)
+            .await
+            .expect("read usage fact settlement state");
     assert_eq!(3_i32, row.get::<i32, _>("settlement_status"));
     assert_eq!(
         "INSUFFICIENT_TOKEN_BANK",
@@ -130,14 +138,17 @@ async fn settlement_replays_idempotently_without_double_debit() {
 
     let settlement = PostgresUsageSettlementStore::new(
         ctx.pool.clone(),
-        PostgresCommerceAccountStore::new(ctx.pool.clone()),
+        postgres_account_ledger_append_port(ctx.pool.clone()),
     );
     let first = settlement
         .settle_pending_usage(settlement_command(100))
         .await
         .expect("first settlement run");
     assert_eq!(1, first.settled_count);
-    assert_eq!(200, first.debited_tokens, "20.00 USD at 10 tokens per major unit");
+    assert_eq!(
+        200, first.debited_tokens,
+        "20.00 USD at 10 tokens per major unit"
+    );
 
     // Second run must settle nothing and must not debit the wallet again.
     let second = settlement
@@ -150,7 +161,10 @@ async fn settlement_replays_idempotently_without_double_debit() {
     let balance = token_bank_balance(&ctx.pool, USER_ID).await;
     assert_eq!(800, balance, "wallet must be debited exactly once");
     let debits = ledger_debit_total(&ctx.pool, USER_ID).await;
-    assert_eq!(200, debits, "only one usage_settlement ledger entry may exist");
+    assert_eq!(
+        200, debits,
+        "only one usage_settlement ledger entry may exist"
+    );
 
     ctx.cleanup().await;
 }
@@ -166,7 +180,7 @@ async fn settlement_defers_zero_amount_groups() {
 
     let settlement = PostgresUsageSettlementStore::new(
         ctx.pool.clone(),
-        PostgresCommerceAccountStore::new(ctx.pool.clone()),
+        postgres_account_ledger_append_port(ctx.pool.clone()),
     );
     let outcome = settlement
         .settle_pending_usage(settlement_command(100))
@@ -179,8 +193,7 @@ async fn settlement_defers_zero_amount_groups() {
 
     let (status, _) = usage_fact_settlement(&ctx.pool, 1).await;
     assert_eq!(
-        0,
-        status,
+        0, status,
         "sub-point usage facts must stay pending for deferral until they aggregate"
     );
 
@@ -202,7 +215,7 @@ async fn credit_token_bank(
     idempotency_key: &str,
     tokens: i64,
 ) -> Result<(), String> {
-    let store = PostgresCommerceAccountStore::new(pool.clone());
+    let store = postgres_account_ledger_append_port(pool.clone());
     let append = AppendLedgerEntryCommand {
         tenant_id: TENANT_ID.to_string(),
         organization_id: Some(ORGANIZATION_ID.to_string()),
@@ -222,7 +235,8 @@ async fn credit_token_bank(
         reversed_ledger_id: None,
     };
     let digest = sha256_hash(idempotency_key.as_bytes());
-    let request_hash = CommerceRequestHash::new(&digest).map_err(|error| error.message().to_owned())?;
+    let request_hash =
+        CommerceRequestHash::new(&digest).map_err(|error| error.message().to_owned())?;
     store
         .append_ledger_entry(append, request_hash)
         .await
@@ -261,13 +275,12 @@ async fn insert_usage_fact(
 }
 
 async fn usage_fact_settlement(pool: &PgPool, id: i64) -> (i32, Option<String>) {
-    let row = sqlx::query(
-        "SELECT settlement_status, settled_at FROM ai_metering_usage WHERE id = $1",
-    )
-    .bind(id)
-    .fetch_one(pool)
-    .await
-    .expect("read usage fact settlement state");
+    let row =
+        sqlx::query("SELECT settlement_status, settled_at FROM ai_metering_usage WHERE id = $1")
+            .bind(id)
+            .fetch_one(pool)
+            .await
+            .expect("read usage fact settlement state");
     let settled_at = row
         .try_get::<Option<DateTime<Utc>>, _>("settled_at")
         .ok()

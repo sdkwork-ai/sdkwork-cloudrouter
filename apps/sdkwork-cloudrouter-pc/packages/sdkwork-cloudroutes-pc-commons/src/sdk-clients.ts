@@ -5,8 +5,16 @@ import {
 import { createTokenManager, type AuthTokenManager, type AuthTokens } from '@sdkwork/sdk-common';
 import { SdkworkAppClient, type SdkworkAppConfig } from '@sdkwork/cloudrouter-app-sdk';
 import { SdkworkBackendClient, type SdkworkBackendConfig } from '@sdkwork/cloudrouter-backend-sdk';
-import { SdkworkBackendClient as SdkworkDriveBackendClient } from '@sdkwork/drive-backend-sdk';
-import { SdkworkBackendClient as DriveBackendClient } from '@sdkwork/drive-backend-sdk';
+import {
+  createDriveAdminStorageClient,
+  operations as driveAdminStorageOperations,
+  sdkMetadata as driveAdminStorageSdkMetadata,
+} from '@sdkwork/drive-admin-storage-sdk';
+import {
+  DriveAdminStorageSdkError,
+  type DriveAdminStorageSdkClient,
+  type DriveAdminStorageSdkRequest,
+} from 'sdkwork-drive-pc-admin-core';
 import { SdkworkBackendClient as ModelsBackendClient } from '@sdkwork/models-backend-sdk';
 import { SdkworkAppClient as ModelsAppClient } from '@sdkwork/models-app-sdk';
 import { SdkworkBackendClient as MembershipBackendClient } from '@sdkwork/membership-backend-sdk';
@@ -87,6 +95,10 @@ import {
   SdkworkAppClient as PromotionAppClient,
   type SdkworkAppConfig as PromotionAppConfig,
 } from '@sdkwork/promotion-app-sdk';
+import {
+  SdkworkAppClient as PartnerAppClient,
+  type SdkworkAppConfig as PartnerAppConfig,
+} from '@sdkwork/partner-app-sdk';
 import {
   clearStoredAppSessionToken,
   loadStoredAppSessionToken,
@@ -519,6 +531,7 @@ export type SdkworkPaymentBackendSdkClientOptions = CloudRouterBackendSdkClientO
 export type SdkworkBaseDataBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
 export type SdkworkPromotionBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
 export type SdkworkPartnerBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
+export type SdkworkPartnerAppSdkClientOptions = CloudRouterAppSdkClientOptions;
 export type CloudRouterAiSdkClient = SdkworkAiClient;
 
 type CloudRouterSdkRuntimeHost = typeof globalThis & {
@@ -534,6 +547,7 @@ type CloudRouterSdkRuntimeHost = typeof globalThis & {
   __SDKWORK_AGENT_BACKEND_SDK_CLIENT__?: SdkworkAgentBackendSdkClient | null;
   __SDKWORK_DRIVE_APP_SDK_CLIENT__?: SdkworkDriveAppSdkClient | null;
   __SDKWORK_ACCOUNT_APP_SDK_CLIENT__?: SdkworkAccountAppSdkClient | null;
+  __SDKWORK_PARTNER_APP_SDK_CLIENT__?: PartnerAppClient | null;
   __SDKWORK_CATALOG_APP_SDK_CLIENT__?: SdkworkCatalogAppSdkClient | null;
   __SDKWORK_MEMBERSHIP_APP_SDK_CLIENT__?: SdkworkMembershipAppSdkClient | null;
   __SDKWORK_ORDER_APP_SDK_CLIENT__?: SdkworkOrderAppSdkClient | null;
@@ -572,12 +586,12 @@ let agentAppClient: SdkworkAgentAppClient | null = null;
 let agentBackendClient: SdkworkAgentBackendClient | null = null;
 let promptsBackendClient: SdkworkPromptsBackendClient | null = null;
 let driveAppClient: SdkworkDriveAppClient | null = null;
-let driveBackendClient: DriveBackendSdkClient | null = null;
 let membershipBackendClient: MembershipBackendClient | null = null;
 let paymentBackendClient: PaymentBackendClient | null = null;
 let baseDataBackendClient: BaseDataBackendClient | null = null;
 let promotionBackendClient: PromotionBackendClient | null = null;
 let partnerBackendClient: PartnerBackendClient | null = null;
+let partnerAppClient: PartnerAppClient | null = null;
 let accountAppClient: AccountAppClient | null = null;
 let catalogAppClient: CatalogAppClient | null = null;
 let membershipAppClient: MembershipAppClient | null = null;
@@ -687,6 +701,14 @@ export function createSdkworkPartnerBackendSdkClient(
 ): PartnerBackendClient {
   return attachCloudRouterSdkSessionAuthBoundary(
     new PartnerBackendClient(buildDependencyBackendConfig(options, 'VITE_SDKWORK_PARTNER_BACKEND_API_BASE_URL')),
+  );
+}
+
+export function createSdkworkPartnerAppSdkClient(
+  options: SdkworkPartnerAppSdkClientOptions = {},
+): PartnerAppClient {
+  return attachCloudRouterSdkSessionAuthBoundary(
+    new PartnerAppClient(buildPartnerAppConfig(options)),
   );
 }
 
@@ -1031,25 +1053,111 @@ export function getSdkworkPartnerBackendSdkClient(
   return partnerBackendClient;
 }
 
-export type DriveBackendSdkClient = DriveBackendClient;
-export type DriveBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
+export type SdkworkDriveAdminStorageSdkClientOptions = CloudRouterBackendSdkClientOptions;
 
-export function createSdkworkDriveBackendSdkClient(
-  options: DriveBackendSdkClientOptions = {},
-): DriveBackendSdkClient {
-  return attachCloudRouterSdkSessionAuthBoundary(new DriveBackendClient(buildDriveBackendConfig(options)));
+/**
+ * Drive 存储管理（backend-admin）SDK client：基于 @sdkwork/drive-admin-storage-sdk
+ * 生成客户端装配，接口契约来自 sdkwork-drive-pc-admin-core 的
+ * `DriveAdminStorageSdkClient`。baseUrl 环境变量链与 drive backend client 一致。
+ */
+export function createSdkworkDriveAdminStorageSdkClient(
+  options: SdkworkDriveAdminStorageSdkClientOptions = {},
+): DriveAdminStorageSdkClient {
+  const baseUrl = normalizeGeneratedSdkBaseUrl(
+    options.backendBaseUrl
+      ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_DRIVE_ADMIN_STORAGE_API_BASE_URL')
+      ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL')
+      ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_BACKEND_API_BASE_URL')
+      ?? BACKEND_API_PREFIX,
+    BACKEND_API_PREFIX,
+  );
+  const generatedClient = createDriveAdminStorageClient({
+    authMode: 'dual-token',
+    baseUrl,
+    platform: options.platform ?? 'web-admin',
+    tokenManager: resolveCloudRouterSdkTokenManager(options.tokenManager),
+    timeout: options.timeout,
+  });
+  attachCloudRouterSdkSessionAuthBoundary(generatedClient as unknown as CloudRouterSdkClientWithHttp);
+  return {
+    metadata: { ...driveAdminStorageSdkMetadata, baseUrl },
+    operations: driveAdminStorageOperations,
+    async request<T>(request: DriveAdminStorageSdkRequest): Promise<T> {
+      const operation = driveAdminStorageOperations[request.operationId];
+      try {
+        return await generatedClient.http.request<T>(
+          resolveDriveAdminStorageOperationPath(operation.path, request.pathParams),
+          {
+            method: operation.method,
+            params: request.query,
+            body: request.body,
+            contentType: request.body === undefined ? undefined : 'application/json',
+            signal: request.signal,
+          },
+        );
+      } catch (error) {
+        throw normalizeDriveAdminStorageSdkError(request.operationId, error);
+      }
+    },
+    setTokenManager(manager) {
+      generatedClient.setTokenManager(manager);
+    },
+  };
 }
 
-export function getSdkworkDriveBackendSdkClient(
-  options: DriveBackendSdkClientOptions = {},
-): DriveBackendSdkClient {
+let driveAdminStorageClient: DriveAdminStorageSdkClient | null = null;
+
+export function getSdkworkDriveAdminStorageSdkClient(
+  options: SdkworkDriveAdminStorageSdkClientOptions = {},
+): DriveAdminStorageSdkClient {
   if (hasRuntimeOverrides(options)) {
-    return createSdkworkDriveBackendSdkClient(options);
+    return createSdkworkDriveAdminStorageSdkClient(options);
   }
-  if (!driveBackendClient) {
-    driveBackendClient = createSdkworkDriveBackendSdkClient();
+  if (!driveAdminStorageClient) {
+    driveAdminStorageClient = createSdkworkDriveAdminStorageSdkClient();
   }
-  return driveBackendClient;
+  return driveAdminStorageClient;
+}
+
+/** 替换操作路径中的 `{param}` 占位符（SDK 序列化职责，不做二次编码）。 */
+function resolveDriveAdminStorageOperationPath(
+  path: string,
+  pathParams?: Record<string, string | number>,
+): string {
+  if (!pathParams) {
+    return path;
+  }
+  return Object.entries(pathParams).reduce(
+    (resolved, [name, value]) => resolved.split(`{${name}}`).join(encodeURIComponent(String(value))),
+    path,
+  );
+}
+
+function normalizeDriveAdminStorageSdkError(
+  operationId: DriveAdminStorageSdkRequest['operationId'],
+  error: unknown,
+): DriveAdminStorageSdkError {
+  const record = (error && typeof error === 'object' ? error : {}) as Record<string, unknown>;
+  const numberValue = (key: string): number | undefined => {
+    const value = record[key];
+    return typeof value === 'number' && Number.isFinite(value)
+      ? value
+      : typeof value === 'string' && Number.isFinite(Number(value))
+        ? Number(value)
+        : undefined;
+  };
+  const stringValue = (key: string): string | undefined => {
+    const value = record[key];
+    return typeof value === 'string' && value.trim() !== '' ? value : undefined;
+  };
+  return new DriveAdminStorageSdkError({
+    operationId,
+    status: numberValue('httpStatus') ?? numberValue('status') ?? 0,
+    title: stringValue('title') ?? (typeof record.name === 'string' ? record.name : undefined),
+    detail: stringValue('detail') ?? stringValue('message'),
+    code: numberValue('businessCode') ?? numberValue('code'),
+    traceId: stringValue('traceId') ?? stringValue('trace_id'),
+  });
 }
 
 export function getSdkworkDriveAppSdkClient(
@@ -1066,6 +1174,22 @@ export function getSdkworkDriveAppSdkClient(
     driveAppClient = createSdkworkDriveAppSdkClient();
   }
   return driveAppClient;
+}
+
+export function getSdkworkPartnerAppSdkClient(
+  options: SdkworkPartnerAppSdkClientOptions = {},
+): PartnerAppClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkPartnerAppSdkClient(options);
+  }
+  const injected = readInjectedPartnerAppSdkClient();
+  if (injected) {
+    return attachCloudRouterSdkSessionAuthBoundary(injected);
+  }
+  if (!partnerAppClient) {
+    partnerAppClient = createSdkworkPartnerAppSdkClient();
+  }
+  return partnerAppClient;
 }
 
 export function getSdkworkAccountAppSdkClient(
@@ -1169,7 +1293,6 @@ function resetCloudRouterSdkClientCaches(): void {
   agentBackendClient = null;
   promptsBackendClient = null;
   driveAppClient = null;
-  driveBackendClient = null;
   membershipBackendClient = null;
   paymentBackendClient = null;
   baseDataBackendClient = null;
@@ -1549,21 +1672,6 @@ function buildDriveAppConfig(options: SdkworkDriveAppSdkClientOptions): SdkworkD
   };
 }
 
-function buildDriveBackendConfig(options: DriveBackendSdkClientOptions): SdkworkBackendConfig {
-  return {
-    baseUrl: normalizeGeneratedSdkBaseUrl(
-      options.backendBaseUrl
-      ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL')
-      ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_BACKEND_API_BASE_URL')
-      ?? BACKEND_API_PREFIX,
-      BACKEND_API_PREFIX,
-    ),
-    platform: options.platform ?? 'web-admin',
-    tokenManager: resolveCloudRouterSdkTokenManager(options.tokenManager),
-    timeout: options.timeout,
-  };
-}
-
 function buildDependencyBackendConfig(
   options: CloudRouterBackendSdkClientOptions,
   baseUrlEnvName: string,
@@ -1597,6 +1705,10 @@ export function resolveCloudRouterDependencyBackendBaseUrl(
 
 function buildAccountAppConfig(options: SdkworkAccountAppSdkClientOptions): AccountAppConfig {
   return buildDependencyAppConfig(options, 'VITE_SDKWORK_ACCOUNT_APP_API_BASE_URL');
+}
+
+function buildPartnerAppConfig(options: SdkworkPartnerAppSdkClientOptions): PartnerAppConfig {
+  return buildDependencyAppConfig(options, 'VITE_SDKWORK_PARTNER_APP_API_BASE_URL');
 }
 
 function buildCatalogAppConfig(options: SdkworkCatalogAppSdkClientOptions): CatalogAppConfig {
@@ -1788,6 +1900,10 @@ function readInjectedDriveAppSdkClient(): SdkworkDriveAppSdkClient | undefined {
 
 function readInjectedAccountAppSdkClient(): SdkworkAccountAppSdkClient | undefined {
   return (globalThis as CloudRouterSdkRuntimeHost).__SDKWORK_ACCOUNT_APP_SDK_CLIENT__ ?? undefined;
+}
+
+function readInjectedPartnerAppSdkClient(): PartnerAppClient | undefined {
+  return (globalThis as CloudRouterSdkRuntimeHost).__SDKWORK_PARTNER_APP_SDK_CLIENT__ ?? undefined;
 }
 
 function readInjectedCatalogAppSdkClient(): SdkworkCatalogAppSdkClient | undefined {

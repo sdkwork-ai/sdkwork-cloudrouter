@@ -23,8 +23,22 @@ type RechargeSettingsUpdateInput = Parameters<BackendRechargesService['settings'
 
 export type MembershipsAdminRecord = ApiRecord;
 
+/** Membership catalog classification (`token` Token Plan | `community` 圈子). */
+export type MembershipsAdminCategory = 'token' | 'community';
+
+export interface MembershipsAdminCatalogMeta {
+  categories: MembershipsAdminCategory[];
+  planStatuses: string[];
+  packageStatuses: string[];
+  packageGroupStatuses: string[];
+  billingCycles: string[];
+  benefitTypes: string[];
+  subscriptionStatuses: string[];
+}
+
 export interface MembershipsAdminPackageGroup {
   id: string;
+  category: MembershipsAdminCategory;
   code: string;
   name: string;
   description?: string;
@@ -38,6 +52,7 @@ export interface MembershipsAdminPackageGroup {
 
 export interface MembershipsAdminPackageItem {
   id: string;
+  category: MembershipsAdminCategory;
   packageNo: string;
   groupId: string;
   planId: string;
@@ -53,6 +68,7 @@ export interface MembershipsAdminPackageItem {
 
 export interface MembershipsAdminPlanItem {
   id: string;
+  category: MembershipsAdminCategory;
   planNo: string;
   levelCode: string;
   name: string;
@@ -125,6 +141,7 @@ export interface MembershipsAdminPlanBenefitInput {
 }
 
 export interface MembershipsAdminPlanMutationInput {
+  category: MembershipsAdminCategory;
   code: string;
   name: string;
   rank?: number;
@@ -133,6 +150,7 @@ export interface MembershipsAdminPlanMutationInput {
 }
 
 export interface MembershipsAdminPlanCreateInput {
+  category: MembershipsAdminCategory;
   code: string;
   name: string;
   rank?: number;
@@ -141,6 +159,7 @@ export interface MembershipsAdminPlanCreateInput {
 }
 
 export interface MembershipsAdminPackageGroupMutationInput {
+  category: MembershipsAdminCategory;
   code: string;
   name: string;
   description?: string;
@@ -151,6 +170,7 @@ export interface MembershipsAdminPackageGroupMutationInput {
 }
 
 export interface MembershipsAdminPackageMutationInput {
+  category: MembershipsAdminCategory;
   code: string;
   packageGroupId: string;
   planId: string;
@@ -181,6 +201,7 @@ export interface MembershipsAdminEntitlementsListParams {
 export interface MembershipsAdminPackagesListParams {
   page?: number;
   pageSize?: number;
+  category?: MembershipsAdminCategory;
   packageGroupId?: string;
   planId?: string;
   status?: string;
@@ -189,12 +210,14 @@ export interface MembershipsAdminPackagesListParams {
 export interface MembershipsAdminPackageGroupsListParams {
   page?: number;
   pageSize?: number;
+  category?: MembershipsAdminCategory;
   status?: string;
 }
 
 export interface MembershipsAdminPlansListParams {
   page?: number;
   pageSize?: number;
+  category?: MembershipsAdminCategory;
   status?: string;
 }
 
@@ -318,6 +341,10 @@ async function backendMembershipsEntitlementsList(params?: Parameters<BackendMem
   return getSdkworkMembershipBackendSdkClient().memberships.entitlements.list(params);
 }
 
+async function backendMembershipsCatalogMetaRetrieve() {
+  return getSdkworkMembershipBackendSdkClient().memberships.metaCatalog.retrieve();
+}
+
 async function backendMembershipsRechargePackagesList(params?: Parameters<BackendRechargesService['packages']['list']>[0]) {
   return getCloudRouterBackendSdkClient().recharges.packages.list(params);
 }
@@ -372,6 +399,7 @@ export async function fetchMembershipAdminPackageGroups(
   const result = await backendMembershipsPackageGroupsList({
     page: requiredListPage(params.page),
     pageSize: requiredListPageSize(params.pageSize),
+    category: params.category,
     status: params.status,
   });
   return {
@@ -413,6 +441,7 @@ export async function fetchMembershipAdminPackages(
   const result = await backendMembershipsPackagesList({
     page: requiredListPage(params.page),
     pageSize: requiredListPageSize(params.pageSize),
+    category: params.category,
     packageGroupId: params.packageGroupId,
     planId: params.planId,
     status: params.status,
@@ -455,6 +484,7 @@ export async function fetchMembershipAdminPlans(
   const result = await backendMembershipsPlansList({
     page: requiredListPage(params.page),
     pageSize: requiredListPageSize(params.pageSize),
+    category: params.category,
     status: params.status,
   });
   return {
@@ -521,6 +551,20 @@ export async function fetchMembershipAdminEntitlements(
   return {
     items: readRequiredApiItems(result, 'Entitlements could not be loaded') as MembershipsAdminRecord[],
     pageInfo: result.pageInfo,
+  };
+}
+
+export async function fetchMembershipAdminCatalogMeta(): Promise<MembershipsAdminCatalogMeta> {
+  const result = await backendMembershipsCatalogMetaRetrieve();
+  const item = readRequiredApiItem(result, 'Membership catalog meta could not be loaded') as ApiRecord;
+  return {
+    categories: readCategoryArray(item, 'categories'),
+    planStatuses: readStringArray(item, 'planStatuses'),
+    packageStatuses: readStringArray(item, 'packageStatuses'),
+    packageGroupStatuses: readStringArray(item, 'packageGroupStatuses'),
+    billingCycles: readStringArray(item, 'billingCycles'),
+    benefitTypes: readStringArray(item, 'benefitTypes'),
+    subscriptionStatuses: readStringArray(item, 'subscriptionStatuses'),
   };
 }
 
@@ -606,6 +650,7 @@ function normalizeAdminPackage(value: unknown): MembershipsAdminPackageItem {
   const durationDays = readNumber(item, 'durationDays', 30);
   return {
     id: requireRecordString(item, 'id', 'Membership package id is required'),
+    category: readAdminCategory(item),
     packageNo: code,
     groupId: requireRecordString(item, 'packageGroupId', 'Membership package group id is required'),
     planId: requireRecordString(item, 'planId', 'Membership package plan id is required'),
@@ -627,6 +672,7 @@ function normalizeAdminPackageGroup(value: unknown): MembershipsAdminPackageGrou
   const durationDays = readNumber(item, 'durationDays', inferDurationFromBillingCycle(billingCycle));
   return {
     id: requireRecordString(item, 'id', 'Membership package group id is required'),
+    category: readAdminCategory(item),
     code,
     name: requireRecordString(item, 'name', 'Membership package group name is required'),
     description: readString(item, 'description').trim() || undefined,
@@ -717,6 +763,7 @@ function normalizeAdminPlan(value: unknown): MembershipsAdminPlanItem {
   const code = requireRecordString(item, 'code', 'Membership plan code is required');
   return {
     id: requireRecordString(item, 'id', 'Membership plan id is required'),
+    category: readAdminCategory(item),
     planNo: code,
     levelCode: code,
     name: requireRecordString(item, 'name', 'Membership plan name is required'),
@@ -726,6 +773,28 @@ function normalizeAdminPlan(value: unknown): MembershipsAdminPlanItem {
     benefits,
     updatedAt: readString(item, 'updatedAt').trim(),
   };
+}
+
+function readAdminCategory(item: ApiRecord): MembershipsAdminCategory {
+  const raw = readString(item, 'category').trim().toLowerCase();
+  if (raw === 'community') {
+    return 'community';
+  }
+  return 'token';
+}
+
+function readCategoryArray(item: ApiRecord, key: string): MembershipsAdminCategory[] {
+  return readStringArray(item, key).filter(
+    (value): value is MembershipsAdminCategory => value === 'token' || value === 'community',
+  );
+}
+
+function readStringArray(item: ApiRecord, key: string): string[] {
+  const value = item[key];
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((entry): entry is string => typeof entry === 'string');
 }
 
 function requiredMembershipText(value: string | undefined, fieldName: string): string {
@@ -823,9 +892,18 @@ function requiredMembershipMemberStatus(value: string | undefined): MembershipsA
   throw new Error('status must be active, inactive, expired, suspended, or cancelled');
 }
 
+function requiredMembershipCategory(value: string | undefined, fieldName: string): MembershipsAdminCategory {
+  const normalized = requiredMembershipText(value, fieldName).toLowerCase();
+  if (normalized === 'token' || normalized === 'community') {
+    return normalized;
+  }
+  throw new Error(`${fieldName} must be token or community`);
+}
+
 function buildPlanMutationRequest(input: MembershipsAdminPlanMutationInput) {
   const rank = requiredNonNegativeInt64String(input.rank ?? 0, 'rank');
   return {
+    category: requiredMembershipCategory(input.category, 'category'),
     code: requiredMembershipCode(input.code, 'code'),
     name: requiredMembershipText(input.name, 'name'),
     rank,
@@ -879,6 +957,7 @@ function buildPlanBenefitMutationRequest(
 
 function buildPackageGroupMutationRequest(input: MembershipsAdminPackageGroupMutationInput) {
   return {
+    category: requiredMembershipCategory(input.category, 'category'),
     code: requiredMembershipCode(input.code, 'code'),
     name: requiredMembershipText(input.name, 'name'),
     description: optionalBoundedText(input.description),
@@ -891,6 +970,7 @@ function buildPackageGroupMutationRequest(input: MembershipsAdminPackageGroupMut
 
 function buildPackageMutationRequest(input: MembershipsAdminPackageMutationInput) {
   return {
+    category: requiredMembershipCategory(input.category, 'category'),
     code: requiredMembershipCode(input.code, 'code'),
     packageGroupId: requiredMembershipText(input.packageGroupId, 'packageGroupId'),
     planId: requiredMembershipText(input.planId, 'planId'),

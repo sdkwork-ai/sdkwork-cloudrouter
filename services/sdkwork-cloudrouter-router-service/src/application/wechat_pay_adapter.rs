@@ -38,14 +38,121 @@ static WECHAT_PAY_REAL_CAPABILITIES: PaymentProviderCapabilities = PaymentProvid
     sandbox_only: false,
 };
 
+/// 微信支付 API v3 验签凭据模式（官方"证书密钥概览"二选一）：
+/// - `WeChatPayPublicKey`：微信支付公钥（`pub_key.pem`，SPKI 公钥，无过期时间，
+///   官方推荐且新商户默认；`Wechatpay-Serial` 头携带 `PUB_KEY_ID_` 前缀的公钥 ID）。
+/// - `PlatformCertificate`：平台证书（`wechatpay_cert.pem`，X.509，5 年有效期需轮换；
+///   `Wechatpay-Serial` 头携带平台证书序列号）。
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum WeChatPaySignVerifyMode {
+    PlatformCertificate,
+    WeChatPayPublicKey,
+}
+
+impl WeChatPaySignVerifyMode {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::PlatformCertificate => "platform_certificate",
+            Self::WeChatPayPublicKey => "wechatpay_public_key",
+        }
+    }
+
+    pub fn parse(value: &str) -> Option<Self> {
+        match value.trim() {
+            "platform_certificate" => Some(Self::PlatformCertificate),
+            "wechatpay_public_key" => Some(Self::WeChatPayPublicKey),
+            _ => None,
+        }
+    }
+}
+
+/// 微信支付 API 完整响应（含响应头），供官方要求的应答签名验证使用：
+/// 验签串 `{Wechatpay-Timestamp}\n{Wechatpay-Nonce}\n{body}\n`，`Wechatpay-Serial`
+/// 标识微信支付侧签名密钥（公钥 ID 或平台证书序列号）。
+#[derive(Clone, PartialEq, Eq)]
+pub struct WeChatPayHttpResponse {
+    pub status: u16,
+    pub headers: Vec<(String, String)>,
+    pub body: Value,
+    /// 原始响应体文本；签名验证必须使用原始字节，不能用反序列化后的 JSON。
+    pub body_text: String,
+}
+
+impl fmt::Debug for WeChatPayHttpResponse {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("WeChatPayHttpResponse")
+            .field("status", &self.status)
+            .field("headers", &self.headers)
+            .field("body", &self.body)
+            .finish_non_exhaustive()
+    }
+}
+
 pub trait WeChatPayApiClient: Send + Sync {
     fn post_json<'a>(&'a self, path: &'a str, payload: Value) -> PaymentAdapterFuture<'a, Value>;
     fn get<'a>(&'a self, path: &'a str) -> PaymentAdapterFuture<'a, Value>;
+
+    /// 返回带响应头的完整响应，供微信支付应答签名验证使用。默认实现包装
+    /// `post_json`/`get`（无头），生产实现可覆盖以提供 `Wechatpay-*` 响应头。
+    fn post_json_full<'a>(
+        &'a self,
+        path: &'a str,
+        payload: Value,
+    ) -> PaymentAdapterFuture<'a, WeChatPayHttpResponse> {
+        Box::pin(async move {
+            let body = self.post_json(path, payload).await?;
+            let body_text = serde_json::to_string(&body).map_err(|error| {
+                invalid_response(
+                    PaymentAdapterOperation::InvokeNativeOperation,
+                    format!("WeChat Pay response could not be serialized: {error}"),
+                )
+            })?;
+            Ok(WeChatPayHttpResponse {
+                status: 200,
+                headers: Vec::new(),
+                body,
+                body_text,
+            })
+        })
+    }
+
+    fn get_full<'a>(&'a self, path: &'a str) -> PaymentAdapterFuture<'a, WeChatPayHttpResponse> {
+        Box::pin(async move {
+            let body = self.get(path).await?;
+            let body_text = serde_json::to_string(&body).map_err(|error| {
+                invalid_response(
+                    PaymentAdapterOperation::InvokeNativeOperation,
+                    format!("WeChat Pay response could not be serialized: {error}"),
+                )
+            })?;
+            Ok(WeChatPayHttpResponse {
+                status: 200,
+                headers: Vec::new(),
+                body,
+                body_text,
+            })
+        })
+    }
 }
 
 pub trait WeChatPayCrypto: Send + Sync {
     fn sign(&self, payload: &str) -> Result<String, PaymentProviderRegistryError>;
-    fn verify(&self, payload: &str, signature: &str) -> Result<bool, PaymentProviderRegistryError>;
+
+    /// 无序列号匹配的验签（保留兼容入口，转发 `verify_with_serial`）。
+    fn verify(&self, payload: &str, signature: &str) -> Result<bool, PaymentProviderRegistryError> {
+        self.verify_with_serial(None, payload, signature)
+    }
+
+    /// 按 `Wechatpay-Serial` 头值（微信支付公钥 ID 或平台证书序列号）选择
+    /// 对应验签密钥，用 SHA256withRSA 验证签名。
+    fn verify_with_serial(
+        &self,
+        serial: Option<&str>,
+        payload: &str,
+        signature: &str,
+    ) -> Result<bool, PaymentProviderRegistryError>;
+
     fn decrypt_resource(
         &self,
         associated_data: &str,
@@ -62,6 +169,14 @@ pub struct WeChatPayProviderConfig {
     pub merchant_private_key_pem: String,
     pub api_v3_key: String,
     pub notify_url: Option<String>,
+    /// 验签凭据模式：微信支付公钥（默认、官方推荐）或平台证书。
+    pub sign_verify_mode: WeChatPaySignVerifyMode,
+    /// 验签密钥 PEM：公钥模式为 `pub_key.pem`（SPKI 公钥），证书模式为
+    /// `wechatpay_cert.pem`（X.509 平台证书）。来自账户 certificate 槽。
+    pub verification_key_pem: Option<String>,
+    /// 微信支付公钥 ID（`PUB_KEY_ID_` 前缀）或平台证书序列号，用于与
+    /// `Wechatpay-Serial` 头匹配。
+    pub verification_serial_no: Option<String>,
 }
 
 impl fmt::Debug for WeChatPayProviderConfig {
@@ -73,6 +188,9 @@ impl fmt::Debug for WeChatPayProviderConfig {
             .field("merchant_serial_no", &self.merchant_serial_no)
             .field("merchant_private_key_pem", &"<redacted>")
             .field("api_v3_key", &"<redacted>")
+            .field("sign_verify_mode", &self.sign_verify_mode)
+            .field("verification_key_pem", &self.verification_key_pem.as_deref().map(|_| "<redacted>"))
+            .field("verification_serial_no", &"<redacted>")
             .field("notify_url", &self.notify_url)
             .finish()
     }
@@ -143,7 +261,10 @@ impl PaymentProviderAdapter for WeChatPayProviderAdapter {
                 .map(str::to_owned)
                 .unwrap_or_else(|| out_trade_no.clone());
             let notify_url = require_non_empty(
-                self.config.notify_url.as_deref(),
+                request
+                    .notify_url
+                    .as_deref()
+                    .or_else(|| self.config.notify_url.as_deref()),
                 PaymentAdapterOperation::CreatePaymentIntent,
                 "notify_url",
             )?;
@@ -296,6 +417,24 @@ impl PaymentProviderAdapter for WeChatPayProviderAdapter {
             let timestamp = require_header(&request.headers, "wechatpay-timestamp")?;
             let nonce = require_header(&request.headers, "wechatpay-nonce")?;
             let signature = require_header(&request.headers, "wechatpay-signature")?;
+            let serial = optional_header(&request.headers, "wechatpay-serial");
+            if let Some(configured) = self.config.verification_serial_no.as_deref() {
+                match serial.as_deref() {
+                    Some(header_serial) if header_serial == configured => {}
+                    Some(_) => {
+                        return Ok(PaymentWebhookVerificationOutcome {
+                            verified: false,
+                            provider_event_id: None,
+                        })
+                    }
+                    None => {
+                        return Err(invalid_request(
+                            PaymentAdapterOperation::VerifyWebhook,
+                            "WeChat Pay webhook header wechatpay-serial is required when a verification serial is configured",
+                        ))
+                    }
+                }
+            }
             let body = std::str::from_utf8(&request.body).map_err(|error| {
                 invalid_response(
                     PaymentAdapterOperation::VerifyWebhook,
@@ -303,7 +442,9 @@ impl PaymentProviderAdapter for WeChatPayProviderAdapter {
                 )
             })?;
             let payload = format!("{timestamp}\n{nonce}\n{body}\n");
-            let verified = self.crypto.verify(&payload, &signature)?;
+            let verified = self
+                .crypto
+                .verify_with_serial(serial.as_deref(), &payload, &signature)?;
             Ok(PaymentWebhookVerificationOutcome {
                 verified,
                 provider_event_id: if verified {
@@ -470,7 +611,7 @@ impl WeChatPayHyperApiClient {
         method: Method,
         path: &str,
         payload: Option<Value>,
-    ) -> Result<Value, PaymentProviderRegistryError> {
+    ) -> Result<WeChatPayHttpResponse, PaymentProviderRegistryError> {
         let body = match payload {
             Some(payload) => serde_json::to_vec(&payload).map_err(|error| {
                 invalid_request(
@@ -512,6 +653,12 @@ impl WeChatPayHyperApiClient {
             )
         })?;
         let status_code = response.status().as_u16();
+        let mut headers = Vec::new();
+        for (name, value) in response.headers() {
+            if let Ok(value) = value.to_str() {
+                headers.push((name.as_str().to_owned(), value.to_owned()));
+            }
+        }
         let bytes = response
             .into_body()
             .collect()
@@ -531,14 +678,31 @@ impl WeChatPayHyperApiClient {
                 status_code == 429 || status_code >= 500,
             ));
         }
-        if bytes.is_empty() {
-            return Ok(json!({}));
+        // 官方要求验证应答签名（Wechatpay-Timestamp/Nonce/Signature/Serial + 原始 body）。
+        // 空响应体与账单文件下载接口跳过验签。
+        if !bytes.is_empty() && !path.starts_with("/v3/billdownload") {
+            verify_wechat_pay_response_signature(
+                &self.crypto,
+                &self.config,
+                &headers,
+                &bytes,
+            )?;
         }
-        serde_json::from_slice::<Value>(&bytes).map_err(|error| {
-            invalid_response(
-                PaymentAdapterOperation::InvokeNativeOperation,
-                format!("WeChat Pay returned invalid JSON: {error}"),
-            )
+        let body = if bytes.is_empty() {
+            json!({})
+        } else {
+            serde_json::from_slice::<Value>(&bytes).map_err(|error| {
+                invalid_response(
+                    PaymentAdapterOperation::InvokeNativeOperation,
+                    format!("WeChat Pay returned invalid JSON: {error}"),
+                )
+            })?
+        };
+        Ok(WeChatPayHttpResponse {
+            status: status_code,
+            headers,
+            body,
+            body_text: String::from_utf8_lossy(&bytes).into_owned(),
         })
     }
 }
@@ -556,10 +720,24 @@ impl fmt::Debug for WeChatPayHyperApiClient {
 
 impl WeChatPayApiClient for WeChatPayHyperApiClient {
     fn post_json<'a>(&'a self, path: &'a str, payload: Value) -> PaymentAdapterFuture<'a, Value> {
-        Box::pin(async move { self.send(Method::POST, path, Some(payload)).await })
+        Box::pin(async move {
+            Ok(self.send(Method::POST, path, Some(payload)).await?.body)
+        })
     }
 
     fn get<'a>(&'a self, path: &'a str) -> PaymentAdapterFuture<'a, Value> {
+        Box::pin(async move { Ok(self.send(Method::GET, path, None).await?.body) })
+    }
+
+    fn post_json_full<'a>(
+        &'a self,
+        path: &'a str,
+        payload: Value,
+    ) -> PaymentAdapterFuture<'a, WeChatPayHttpResponse> {
+        Box::pin(async move { self.send(Method::POST, path, Some(payload)).await })
+    }
+
+    fn get_full<'a>(&'a self, path: &'a str) -> PaymentAdapterFuture<'a, WeChatPayHttpResponse> {
         Box::pin(async move { self.send(Method::GET, path, None).await })
     }
 }
@@ -623,6 +801,68 @@ fn require_header(
                 format!("WeChat Pay webhook header {name} is required"),
             )
         })
+}
+
+fn optional_header(headers: &[(String, String)], name: &str) -> Option<String> {
+    headers
+        .iter()
+        .find(|(header_name, _)| header_name.eq_ignore_ascii_case(name))
+        .map(|(_, value)| value.trim().to_owned())
+        .filter(|value| !value.is_empty())
+}
+
+/// 官方应答签名验证：验签串 `{Wechatpay-Timestamp}\n{Wechatpay-Nonce}\n{body}\n`，
+/// 用 `Wechatpay-Serial`（公钥 ID 或平台证书序列号）标识的验签密钥 SHA256withRSA
+/// 验证 `Wechatpay-Signature`。缺少任一验签头时跳过（与官方"下载接口跳过验签"
+/// 的语义一致）；已配置 `verification_serial_no` 时强制匹配，避免误用旧密钥。
+fn verify_wechat_pay_response_signature(
+    crypto: &Arc<dyn WeChatPayCrypto>,
+    config: &WeChatPayProviderConfig,
+    headers: &[(String, String)],
+    body: &[u8],
+) -> Result<(), PaymentProviderRegistryError> {
+    let Some(timestamp) = optional_header(headers, "wechatpay-timestamp") else {
+        return Ok(());
+    };
+    let Some(nonce) = optional_header(headers, "wechatpay-nonce") else {
+        return Ok(());
+    };
+    let Some(signature) = optional_header(headers, "wechatpay-signature") else {
+        return Ok(());
+    };
+    let serial = optional_header(headers, "wechatpay-serial");
+    if let Some(configured) = config.verification_serial_no.as_deref() {
+        match serial.as_deref() {
+            Some(header_serial) if header_serial == configured => {}
+            Some(_) => {
+                return Err(invalid_response(
+                    PaymentAdapterOperation::InvokeNativeOperation,
+                    "WeChat Pay response wechatpay-serial does not match the configured verification serial",
+                ))
+            }
+            None => {
+                return Err(invalid_response(
+                    PaymentAdapterOperation::InvokeNativeOperation,
+                    "WeChat Pay response header wechatpay-serial is required when a verification serial is configured",
+                ))
+            }
+        }
+    }
+    let body = std::str::from_utf8(body).map_err(|error| {
+        invalid_response(
+            PaymentAdapterOperation::InvokeNativeOperation,
+            format!("WeChat Pay response body must be UTF-8: {error}"),
+        )
+    })?;
+    let payload = format!("{timestamp}\n{nonce}\n{body}\n");
+    let verified = crypto.verify_with_serial(serial.as_deref(), &payload, &signature)?;
+    if !verified {
+        return Err(invalid_response(
+            PaymentAdapterOperation::InvokeNativeOperation,
+            "WeChat Pay response signature verification failed",
+        ));
+    }
+    Ok(())
 }
 
 fn require_positive_amount(

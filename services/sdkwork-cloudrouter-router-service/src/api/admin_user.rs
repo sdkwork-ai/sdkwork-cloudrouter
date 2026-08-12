@@ -18,12 +18,11 @@ use crate::api::response::{
 use crate::application::{ApiKeySecretGenerator, ApiKeySecretHasher};
 use crate::domain::{DecimalValue, DomainError, GatewayApiKey};
 use crate::ports::{
-    AccountGroupBindingInput, AdminUserApiKeyItem, AdminUserItem,
-    AdminUserStore, AdminUserSubject, CreateAdminUserApiKeyCommand, CreateAdminUserCommand,
-    CreateGatewayApiKeyCommand, DeleteAdminUserApiKeyCommand,
-    DeleteGatewayApiKeyForOrganizationCommand, EnsureDefaultUpstreamAccountGroupCommand,
-    GatewayApiKeyCommandStore, ListAdminUserApiKeysQuery, ListAdminUsersQuery,
-    UpdateAdminUserCommand,
+    AccountGroupBindingInput, AdminUserApiKeyItem, AdminUserItem, AdminUserStore, AdminUserSubject,
+    CreateAdminUserApiKeyCommand, CreateAdminUserCommand, CreateGatewayApiKeyCommand,
+    DeleteAdminUserApiKeyCommand, DeleteGatewayApiKeyForOrganizationCommand,
+    EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore, ListAdminUserApiKeysQuery,
+    ListAdminUsersQuery, UpdateAdminUserCommand,
 };
 
 const HASH_ALG_HMAC_SHA256: &str = "HMAC_SHA256";
@@ -241,17 +240,12 @@ async fn create_user(
         Ok(value) => value,
         Err(error) => return error.into_response(),
     };
-    let command = match build_create_user_command(
-        &state,
-        subject,
-        email,
-        username,
-        requested_at,
-        request_id,
-    ) {
-        Ok(command) => command,
-        Err(error) => return command_build_error_response(error),
-    };
+    let command =
+        match build_create_user_command(&state, subject, email, username, requested_at, request_id)
+        {
+            Ok(command) => command,
+            Err(error) => return command_build_error_response(error),
+        };
 
     match state.store.create_user(command).await {
         Ok(item) => Json(success_envelope(AdminUserItemEnvelope { item })).into_response(),

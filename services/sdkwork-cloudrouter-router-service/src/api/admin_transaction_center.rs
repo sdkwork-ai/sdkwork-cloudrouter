@@ -146,10 +146,9 @@ async fn update_payment_provider(
             request_id,
         }))
         .into_response(),
-        Err(error) => transaction_center_write_response(
-            "payment provider update is unavailable",
-            error,
-        ),
+        Err(error) => {
+            transaction_center_write_response("payment provider update is unavailable", error)
+        }
     }
 }
 
@@ -160,7 +159,9 @@ fn validated_provider_update_command(
 ) -> Result<UpdatePaymentProviderCommand, ApiResponseError> {
     let subject = scoped.into();
     let display_name = match request.display_name {
-        Some(value) => normalize_optional_text(Some(value), "displayName", MAX_PROVIDER_DISPLAY_NAME_LEN)?,
+        Some(value) => {
+            normalize_optional_text(Some(value), "displayName", MAX_PROVIDER_DISPLAY_NAME_LEN)?
+        }
         None => None,
     };
     let display_name_i18n = normalize_display_name_i18n(request.display_name_i18n)?;
@@ -230,10 +231,10 @@ fn normalize_display_name_i18n(
         return Err(bad_request("displayNameI18n must not be empty").into());
     }
     if object.len() > MAX_I18N_LOCALES {
-        return Err(
-            bad_request(format!("displayNameI18n supports at most {MAX_I18N_LOCALES} locales"))
-                .into(),
-        );
+        return Err(bad_request(format!(
+            "displayNameI18n supports at most {MAX_I18N_LOCALES} locales"
+        ))
+        .into());
     }
     for (key, item) in object {
         if key.chars().count() > MAX_I18N_LOCALE_KEY_LEN

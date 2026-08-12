@@ -221,7 +221,6 @@ data_directory = "/var/lib/sdkwork/router"
 admin_app_json_body_max_bytes = 131072
 admin_skill_json_body_max_bytes = 65536
 forum_json_body_max_bytes = 262144
-payment_callback_body_max_bytes = 65536
 gateway_invocation_body_max_bytes = 1048576
 
 [runtime]
@@ -242,7 +241,6 @@ by default.
 high-risk write APIs. `admin_app_json_body_max_bytes` and
 `admin_skill_json_body_max_bytes` protect backend management APIs,
 `forum_json_body_max_bytes` protects public app forum writes, and
-`payment_callback_body_max_bytes` protects payment provider callbacks, and
 `gateway_invocation_body_max_bytes` protects OpenAI-compatible gateway
 invocation endpoints (`/v1/*`). Keep
 reverse proxy, load balancer, and container ingress request-body limits aligned
@@ -297,7 +295,6 @@ data_directory = "/var/lib/sdkwork/router"
 admin_app_json_body_max_bytes = 131072
 admin_skill_json_body_max_bytes = 65536
 forum_json_body_max_bytes = 262144
-payment_callback_body_max_bytes = 65536
 gateway_invocation_body_max_bytes = 1048576
 
 [runtime]

@@ -8,7 +8,7 @@ use sdkwork_cloudrouter_router_service::application::EntityUuidGenerator;
 use sdkwork_cloudrouter_router_service::domain::DomainResult;
 use sdkwork_cloudrouter_router_service::ports::{
     AdminReferralCommandFuture, AdminReferralListPage, AdminReferralRelationItem,
-    AdminReferralStore, AdminReferralStrategyItem, AdminReferralSubject,
+    AdminReferralStore, AdminReferralStrategyItem,
     CreateAdminReferralStrategyCommand, DeleteAdminReferralStrategyCommand,
     ListAdminReferralRelationsQuery, ListAdminReferralStrategiesQuery,
     RetrieveAdminReferralStrategyQuery, UpdateAdminReferralStrategyCommand,
@@ -110,10 +110,11 @@ impl AdminReferralStore for TestAdminReferralStore {
                             Some("disabled") => item.status == "disabled",
                             _ => true,
                         }
-                        && query
-                            .search
-                            .as_deref()
-                            .is_none_or(|search| item.name.to_ascii_lowercase().contains(&search.to_ascii_lowercase()))
+                        && query.search.as_deref().is_none_or(|search| {
+                            item.name
+                                .to_ascii_lowercase()
+                                .contains(&search.to_ascii_lowercase())
+                        })
                 })
                 .cloned()
                 .collect::<Vec<_>>();
@@ -287,7 +288,10 @@ async fn admin_referral_route_lists_relations_and_strategies() {
         ),
     )
     .await;
-    assert_eq!(1, relation_search["data"]["items"].as_array().unwrap().len());
+    assert_eq!(
+        1,
+        relation_search["data"]["items"].as_array().unwrap().len()
+    );
     assert_eq!("relation-100", relation_search["data"]["items"][0]["id"]);
 }
 
@@ -437,9 +441,3 @@ async fn request_empty_with_status(
     assert_eq!(expected_status, response.status());
 }
 
-async fn json_payload(response: axum::response::Response) -> Value {
-    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
-        .await
-        .unwrap();
-    serde_json::from_slice(&body).unwrap()
-}

@@ -89,12 +89,15 @@ test("production chunks let Rollup keep qrcode with its CommonJS dependencies", 
 
   assert.ok(output && !Array.isArray(output));
   assert.equal(typeof output.manualChunks, "function");
+  // Route packages are lazy-loaded by the router; their chunk assignment is
+  // left to rollup's automatic splitting so the entry never gains a static
+  // dependency on a lazy route chunk (see LOCAL_ROUTE_PACKAGE_PATTERN).
   assert.equal(
     (output.manualChunks as (id: string, meta: unknown) => string | null | undefined)(
       "E:/sdkwork-space/sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/AdminDashboardPage.tsx",
       {} as never,
     ),
-    "route-admin-dashboard",
+    undefined,
   );
   assert.equal(
     (output.manualChunks as (id: string, meta: unknown) => string | null | undefined)(
@@ -122,14 +125,14 @@ test("production chunks let Rollup keep qrcode with its CommonJS dependencies", 
       "E:/sdkwork-space/sdkwork-account/sdks/sdkwork-account-app-sdk/sdkwork-account-app-sdk-typescript/src/index.ts",
       {} as never,
     ),
-    "vendor-sdkwork-sdk",
+    "vendor-ui-sdk",
   );
   assert.equal(
     (output.manualChunks as (id: string, meta: unknown) => string | null | undefined)(
       "E:/sdkwork-space/sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/node_modules/@sdkwork/cloudrouter-backend-sdk/dist/index.js",
       {} as never,
     ),
-    "vendor-sdkwork-sdk",
+    "vendor-ui-sdk",
   );
 });
 
@@ -241,11 +244,17 @@ test("portal workspace packages resolve through pnpm workspace exports", async (
 
   assert.equal(
     resolvedDocumentsRoot,
-    path.resolve(import.meta.dirname, "node_modules/@sdkwork/documents-pc-api-reference/src/index.ts"),
+    path.resolve(
+      import.meta.dirname,
+      "../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/index.ts",
+    ),
   );
   assert.equal(
     resolvedGatewayEndpoint,
-    path.resolve(import.meta.dirname, "node_modules/@sdkwork/utils/dist/gatewayEndpoint.js"),
+    path.resolve(
+      import.meta.dirname,
+      "../../../sdkwork-utils/packages/sdkwork-utils-typescript/dist/gatewayEndpoint.js",
+    ),
   );
   assert.equal(
     resolvedLocalSubpath,
@@ -269,7 +278,10 @@ test("portal local packages resolve scoped cloudrouter pc downloads through pack
 
   assert.equal(
     resolvedRoot,
-    path.resolve(import.meta.dirname, "node_modules/@sdkwork/cloudrouter-pc-downloads/src/index.ts"),
+    path.resolve(
+      import.meta.dirname,
+      "packages/sdkwork-cloudrouter-pc-downloads/src/index.ts",
+    ),
   );
   assert.ok(existsSync(resolvedRoot));
 });
@@ -323,7 +335,7 @@ test("portal resolves CloudRouter generated SDK imports through workspace packag
     );
     assert.match(
       String(resolvedEntry),
-      /[\\/]node_modules[\\/]@sdkwork[\\/]cloudrouter-(?:app|backend|open)-sdk[\\/].*index\.(?:js|ts)$/u,
+      /[\\/]sdks[\\/]cloudrouter-(?:app|backend|open)-sdk[\\/]cloudrouter-(?:app|backend|open)-sdk-typescript[\\/]dist[\\/]index\.js$/u,
       `${packageName} must resolve through the portal install graph`,
     );
     assert.ok(existsSync(resolvedEntry as string), `${packageName} must resolve to an existing workspace entry`);
@@ -347,14 +359,17 @@ test("portal resolves sdkwork UI workspace imports through package exports", asy
   const plugins: unknown[] = Array.isArray(config.plugins) ? config.plugins.flat() : [];
   const resolver = plugins.find((plugin) => hasPluginName(plugin, "cloudrouter-portal-pnpm-workspace-resolver"));
   const expectedUiRoot = resolvePortalWorkspaceDependencyRoot(import.meta.dirname, "sdkwork-ui");
-  const expectedUiEntry = path.resolve(import.meta.dirname, "node_modules/@sdkwork/ui-pc-react/dist/index.js");
+  const expectedUiEntry = path.resolve(
+    import.meta.dirname,
+    "../../../sdkwork-ui/sdkwork-ui-pc-react/dist/index.js",
+  );
   const membershipHeroImporter = path.resolve(
     import.meta.dirname,
     "../../../sdkwork-membership/apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-membership/src/components/membership-hero.tsx",
   );
   const expectedUiButtonEntry = path.resolve(
     import.meta.dirname,
-    "node_modules/@sdkwork/ui-pc-react/src/components/ui/button.tsx",
+    "../../../sdkwork-ui/sdkwork-ui-pc-react/dist/ui-button.js",
   );
 
   assert.ok(resolver && typeof resolver === "object");
@@ -417,8 +432,14 @@ test("portal resolves commerce SDK imports from sibling workspace packages", asy
     orderTransportImporter,
   );
 
-  assert.match(String(resolvedAccountAppSdk), /[\\/]@sdkwork[\\/]account-app-sdk[\\/]src[\\/]index\.ts$/u);
-  assert.match(String(resolvedOrderAppSdk), /[\\/]@sdkwork[\\/]order-app-sdk[\\/]src[\\/]index\.ts$/u);
+  assert.match(
+    String(resolvedAccountAppSdk),
+    /[\\/]sdkwork-account[\\/]sdks[\\/]sdkwork-account-app-sdk[\\/]sdkwork-account-app-sdk-typescript[\\/]src[\\/]index\.ts$/u,
+  );
+  assert.match(
+    String(resolvedOrderAppSdk),
+    /[\\/]sdkwork-order[\\/]sdks[\\/]sdkwork-order-app-sdk[\\/]sdkwork-order-app-sdk-typescript[\\/]src[\\/]index\.ts$/u,
+  );
   assert.ok(existsSync(String(resolvedAccountAppSdk)));
   assert.ok(existsSync(String(resolvedOrderAppSdk)));
 });
@@ -443,7 +464,7 @@ test("portal maps retired cloudrouter commons imports to cloudroutes commons", a
 
   assert.match(
     String(resolvedRuntime),
-    /[\\/]@sdkwork[\\/]cloudroutes-pc-commons[\\/]src[\\/]runtime\.ts$/u,
+    /[\\/]packages[\\/]sdkwork-cloudroutes-pc-commons[\\/]src[\\/]runtime\.ts$/u,
   );
   assert.ok(existsSync(String(resolvedRuntime)));
 });
@@ -510,7 +531,7 @@ test("portal resolves runtime bootstrap workspace imports through package export
   const appbaseRoot = resolvePortalWorkspaceDependencyRoot(import.meta.dirname, "sdkwork-appbase");
   const expectedRuntimeBootstrapEntry = path.resolve(
     import.meta.dirname,
-    "node_modules/@sdkwork/runtime-bootstrap/src/index.ts",
+    "../../../sdkwork-appbase/packages/common/foundation/sdkwork-runtime-bootstrap/src/index.ts",
   );
 
   assert.ok(resolver && typeof resolver === "object");
@@ -535,7 +556,7 @@ test("portal resolves SDK common imports through workspace package exports", asy
   const resolver = plugins.find((plugin) => hasPluginName(plugin, "cloudrouter-portal-pnpm-workspace-resolver"));
   const expectedSdkCommonEntry = path.resolve(
     import.meta.dirname,
-    "node_modules/@sdkwork/sdk-common/dist/index.js",
+    "../../node_modules/.pnpm/@sdkwork+sdk-common@1.0.3/node_modules/@sdkwork/sdk-common/dist/index.js",
   );
 
   assert.ok(resolver && typeof resolver === "object");

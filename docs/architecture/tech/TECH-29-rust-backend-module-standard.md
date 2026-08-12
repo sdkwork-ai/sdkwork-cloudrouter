@@ -141,18 +141,12 @@ deterministic account ordering, idempotent settlement/ledger identities, atomic
 balance guards, and capped retries for PostgreSQL serialization/deadlock
 errors only.
 
-## 9. Signed Payment Callback Boundary
+## 9. Payment Notify Boundary
 
-Payment callbacks are unauthenticated provider ingress and must not use
-`app_request_subject_boundary`. `PaymentWebhookConfig` requires
-`SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET` and bounds clock skew through
-`SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_MAX_CLOCK_SKEW_SECONDS`; unsigned payment
-callbacks are forbidden.
-
-Provider event id, nonce, payload digest, payment identity, and recharge
-fulfillment are persisted atomically and idempotently. Payment callback amounts
-must be parsed as exact decimal values; binary floating-point comparison is
-forbidden and sub-cent callback precision must be rejected.
+Provider payment/refund notifications are owned by the order gateway
+(sdkwork-order building blocks: `payment-notify.spec.json` / `refund-notify.spec.json`).
+Cloud Router serves no payment webhook ingress; provider callback paths must
+not be mounted in this workspace.
 
 ## 10. Concurrency And Memory
 

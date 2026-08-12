@@ -99,6 +99,8 @@ async fn stripe_create_payment_intent_maps_standard_request_to_form_request() {
             merchant_order_no: Some("order-1".to_owned()),
             amount_minor: Some(1234),
             currency: Some("CNY".to_owned()),
+            notify_url: None,
+            return_url: None,
             metadata: json!({
                 "idempotency_key": "idem-create-1",
                 "customer_id": "cus_123"

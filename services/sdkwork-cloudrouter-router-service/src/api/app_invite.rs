@@ -85,22 +85,13 @@ pub fn app_invite_router_with_store(
     auth_settings_store: Arc<dyn AdminAuthSettingsStore + Send + Sync>,
 ) -> Router {
     Router::new()
-        .route(
-            "/app/v3/api/iam/invite/policy",
-            get(fetch_invite_policy),
-        )
+        .route("/app/v3/api/iam/invite/policy", get(fetch_invite_policy))
         .route(
             "/app/v3/api/iam/invites/validate",
             post(validate_invite_code),
         )
-        .route(
-            "/app/v3/api/iam/invites/issue",
-            post(issue_invite_code),
-        )
-        .route(
-            "/app/v3/api/iam/invites/claim",
-            post(claim_invite_relation),
-        )
+        .route("/app/v3/api/iam/invites/issue", post(issue_invite_code))
+        .route("/app/v3/api/iam/invites/claim", post(claim_invite_relation))
         .with_state(AppInviteState {
             store,
             auth_settings_store,
@@ -154,16 +145,11 @@ async fn fetch_invite_policy(
             login_required: false,
         }))
         .into_response(),
-        Err(error) => {
-            invite_system_response("invite policy read model is unavailable", error)
-        }
+        Err(error) => invite_system_response("invite policy read model is unavailable", error),
     }
 }
 
-async fn validate_invite_code(
-    State(state): State<AppInviteState>,
-    body: Bytes,
-) -> Response {
+async fn validate_invite_code(State(state): State<AppInviteState>, body: Bytes) -> Response {
     let request = match parse_json_body::<AppInviteValidateRequest>(&body, "invite code") {
         Ok(request) => request,
         Err(message) => return bad_request(message),
@@ -318,18 +304,21 @@ fn normalize_invite_code(value: &str) -> Result<String, String> {
         return Err("inviteCode is required".to_owned());
     }
     if value.chars().count() > MAX_INVITE_CODE_LEN {
-        return Err(format!("inviteCode must be at most {MAX_INVITE_CODE_LEN} characters"));
+        return Err(format!(
+            "inviteCode must be at most {MAX_INVITE_CODE_LEN} characters"
+        ));
     }
-    if !value
-        .bytes()
-        .all(|byte| byte.is_ascii_alphanumeric())
-    {
+    if !value.bytes().all(|byte| byte.is_ascii_alphanumeric()) {
         return Err("inviteCode may only contain letters and digits".to_owned());
     }
     Ok(value)
 }
 
-fn normalize_optional_field(value: Option<&str>, field_name: &str, max_len: usize) -> Result<Option<String>, String> {
+fn normalize_optional_field(
+    value: Option<&str>,
+    field_name: &str,
+    max_len: usize,
+) -> Result<Option<String>, String> {
     let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) else {
         return Ok(None);
     };

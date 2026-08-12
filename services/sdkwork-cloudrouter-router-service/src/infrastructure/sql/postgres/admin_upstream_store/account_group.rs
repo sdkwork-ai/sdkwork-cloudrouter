@@ -121,8 +121,13 @@ pub(super) async fn save(
         // other group in the scope before the insert/update so the partial
         // unique index keeps exactly one default. Versions advance so
         // concurrent optimistic-lock editors observe the change.
-        clear_default_flag(&mut tx, &command.subject, command.group_code.trim(), &command.requested_at)
-            .await?;
+        clear_default_flag(
+            &mut tx,
+            &command.subject,
+            command.group_code.trim(),
+            &command.requested_at,
+        )
+        .await?;
     }
     let account_group_id = match command.account_group_id {
         Some(account_group_id) => update(&mut tx, account_group_id, &command).await?,
@@ -177,7 +182,12 @@ pub(super) async fn delete(
     .bind(account_group_id)
     .fetch_one(&mut *tx)
     .await
-    .map_err(|error| store_error("failed to inspect upstream account group default flag", error))?;
+    .map_err(|error| {
+        store_error(
+            "failed to inspect upstream account group default flag",
+            error,
+        )
+    })?;
     if default_flag {
         return Err(conflict(
             "default account group cannot be deleted; set another group as default first",
@@ -703,6 +713,8 @@ fn parse_modalities(value: String) -> DomainResult<Vec<String>> {
 
 fn parse_tags(value: String) -> DomainResult<Vec<String>> {
     serde_json::from_str(&value).map_err(|error| {
-        DomainError::new(format!("failed to parse upstream account group tags: {error}"))
+        DomainError::new(format!(
+            "failed to parse upstream account group tags: {error}"
+        ))
     })
 }

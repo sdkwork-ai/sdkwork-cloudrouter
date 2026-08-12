@@ -1,106 +1,6 @@
 import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
-import type { AdminStorageBucketCreateRequest, AdminStorageBucketListResponse, AdminStorageDefaultBucketListResponse, AdminStorageDefaultBucketUpdateRequest, AdminStorageGarbageCollectionCreateRequest, AdminStorageGarbageCollectionJobListResponse, AdminStorageProviderCreateRequest, AdminStorageProviderListResponse, AdminStorageQuotaCreateRequest, AdminStorageQuotaPolicyListResponse, AdminStorageReconciliationCreateRequest, AdminStorageReconciliationRunListResponse, AdminStorageStatusUpdateRequest, AdminStorageUsageListResponse } from '../types';
-export class StorageProvidersApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Backend storage provider health check */
-  async healthCheck(providerId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(backendApiPath(`/storage/providers/${serializePathParameter(providerId, { name: 'providerId', style: 'simple', explode: false })}/health_check`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, sdkworkUnwrapKind: 'data' });
-  }
-}
-
-export interface StorageGcJobsListParams {
-  cursor?: string;
-  pageSize?: number;
-  status?: string;
-  logicalScope?: string;
-  scopeType?: string;
-  scopeId?: string;
-  runType?: string;
-}
-
-export interface StorageGcJobsCreateParams {
-  idempotencyKey: string;
-}
-
-export class StorageGcJobsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Backend storage garbage collection jobs list */
-  async list(params?: StorageGcJobsListParams, requestOptions?: ApiRequestOptions): Promise<AdminStorageGarbageCollectionJobListResponse> {
-    const query = buildQueryString([
-      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
-      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
-      { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
-      { name: 'logical_scope', value: params?.logicalScope, style: 'form', explode: true, allowReserved: false },
-      { name: 'scope_type', value: params?.scopeType, style: 'form', explode: true, allowReserved: false },
-      { name: 'scope_id', value: params?.scopeId, style: 'form', explode: true, allowReserved: false },
-      { name: 'run_type', value: params?.runType, style: 'form', explode: true, allowReserved: false },
-    ]);
-    return this.client.request<AdminStorageGarbageCollectionJobListResponse>(appendQueryString(backendApiPath(`/storage/gc_jobs`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
-  }
-
-/** Backend storage garbage collection job create */
-  async create(params: StorageGcJobsCreateParams, body?: AdminStorageGarbageCollectionCreateRequest, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    const requestHeaders = buildRequestHeaders(
-      {
-        'Idempotency-Key': { value: params.idempotencyKey, style: 'simple', explode: false },
-      },
-      {}
-    );
-    return this.client.request<Record<string, never>>(backendApiPath(`/storage/gc_jobs`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
-  }
-}
-
-export interface StorageDefaultBucketsListParams {
-  cursor?: string;
-  pageSize?: number;
-  status?: string;
-  logicalScope?: string;
-  scopeType?: string;
-  scopeId?: string;
-  runType?: string;
-}
-
-export class StorageDefaultBucketsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Backend storage default buckets list */
-  async list(params?: StorageDefaultBucketsListParams, requestOptions?: ApiRequestOptions): Promise<AdminStorageDefaultBucketListResponse> {
-    const query = buildQueryString([
-      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
-      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
-      { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
-      { name: 'logical_scope', value: params?.logicalScope, style: 'form', explode: true, allowReserved: false },
-      { name: 'scope_type', value: params?.scopeType, style: 'form', explode: true, allowReserved: false },
-      { name: 'scope_id', value: params?.scopeId, style: 'form', explode: true, allowReserved: false },
-      { name: 'run_type', value: params?.runType, style: 'form', explode: true, allowReserved: false },
-    ]);
-    return this.client.request<AdminStorageDefaultBucketListResponse>(appendQueryString(backendApiPath(`/storage/default_buckets`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
-  }
-
-/** Backend storage default bucket update */
-  async update(logicalScope: string, body: AdminStorageDefaultBucketUpdateRequest, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(backendApiPath(`/storage/default_buckets/${serializePathParameter(logicalScope, { name: 'logicalScope', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
-  }
-}
-
+import type { AdminStorageDefaultBucketListResponse, AdminStorageDefaultBucketUpdateRequest, AdminStorageGarbageCollectionCreateRequest, AdminStorageGarbageCollectionJobListResponse, AdminStorageQuotaCreateRequest, AdminStorageQuotaPolicyListResponse, AdminStorageReconciliationCreateRequest, AdminStorageReconciliationRunListResponse, AdminStorageUsageListResponse } from '../types';
 export interface StorageOssUsageListParams {
   cursor?: string;
   pageSize?: number;
@@ -230,124 +130,14 @@ export class StorageOssQuotasApi {
   }
 }
 
-export interface StorageOssProvidersListParams {
-  cursor?: string;
-  pageSize?: number;
-  status?: string;
-  logicalScope?: string;
-  scopeType?: string;
-  scopeId?: string;
-  runType?: string;
-}
-
-export interface StorageOssProvidersCreateParams {
-  idempotencyKey: string;
-}
-
-export class StorageOssProvidersApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Backend storage providers list */
-  async list(params?: StorageOssProvidersListParams, requestOptions?: ApiRequestOptions): Promise<AdminStorageProviderListResponse> {
-    const query = buildQueryString([
-      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
-      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
-      { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
-      { name: 'logical_scope', value: params?.logicalScope, style: 'form', explode: true, allowReserved: false },
-      { name: 'scope_type', value: params?.scopeType, style: 'form', explode: true, allowReserved: false },
-      { name: 'scope_id', value: params?.scopeId, style: 'form', explode: true, allowReserved: false },
-      { name: 'run_type', value: params?.runType, style: 'form', explode: true, allowReserved: false },
-    ]);
-    return this.client.request<AdminStorageProviderListResponse>(appendQueryString(backendApiPath(`/storage/providers`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
-  }
-
-/** Backend storage provider create */
-  async create(body: AdminStorageProviderCreateRequest, params: StorageOssProvidersCreateParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    const requestHeaders = buildRequestHeaders(
-      {
-        'Idempotency-Key': { value: params.idempotencyKey, style: 'simple', explode: false },
-      },
-      {}
-    );
-    return this.client.request<Record<string, never>>(backendApiPath(`/storage/providers`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
-  }
-
-/** Update */
-  async update(providerId: string, body: AdminStorageStatusUpdateRequest, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(backendApiPath(`/storage/providers/${serializePathParameter(providerId, { name: 'providerId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
-  }
-}
-
-export interface StorageOssBucketsListParams {
-  cursor?: string;
-  pageSize?: number;
-  status?: string;
-  logicalScope?: string;
-  scopeType?: string;
-  scopeId?: string;
-  runType?: string;
-}
-
-export interface StorageOssBucketsCreateParams {
-  idempotencyKey: string;
-}
-
-export class StorageOssBucketsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Backend storage buckets list */
-  async list(params?: StorageOssBucketsListParams, requestOptions?: ApiRequestOptions): Promise<AdminStorageBucketListResponse> {
-    const query = buildQueryString([
-      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
-      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
-      { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
-      { name: 'logical_scope', value: params?.logicalScope, style: 'form', explode: true, allowReserved: false },
-      { name: 'scope_type', value: params?.scopeType, style: 'form', explode: true, allowReserved: false },
-      { name: 'scope_id', value: params?.scopeId, style: 'form', explode: true, allowReserved: false },
-      { name: 'run_type', value: params?.runType, style: 'form', explode: true, allowReserved: false },
-    ]);
-    return this.client.request<AdminStorageBucketListResponse>(appendQueryString(backendApiPath(`/storage/buckets`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
-  }
-
-/** Backend storage bucket create */
-  async create(body: AdminStorageBucketCreateRequest, params: StorageOssBucketsCreateParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    const requestHeaders = buildRequestHeaders(
-      {
-        'Idempotency-Key': { value: params.idempotencyKey, style: 'simple', explode: false },
-      },
-      {}
-    );
-    return this.client.request<Record<string, never>>(backendApiPath(`/storage/buckets`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
-  }
-
-/** Backend storage bucket update */
-  async update(bucketId: string, body: AdminStorageStatusUpdateRequest, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(backendApiPath(`/storage/buckets/${serializePathParameter(bucketId, { name: 'bucketId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
-  }
-}
-
 export class StorageOssApi {
   private client: HttpClient;
-  public readonly buckets: StorageOssBucketsApi;
-  public readonly providers: StorageOssProvidersApi;
   public readonly quotas: StorageOssQuotasApi;
   public readonly storageReconciliationRuns: StorageOssStorageReconciliationRunsApi;
   public readonly usage: StorageOssUsageApi;
 
   constructor(client: HttpClient) {
     this.client = client;
-    this.buckets = new StorageOssBucketsApi(client);
-    this.providers = new StorageOssProvidersApi(client);
     this.quotas = new StorageOssQuotasApi(client);
     this.storageReconciliationRuns = new StorageOssStorageReconciliationRunsApi(client);
     this.usage = new StorageOssUsageApi(client);
@@ -355,19 +145,103 @@ export class StorageOssApi {
 
 }
 
-export class StorageApi {
+export interface StorageGcJobsListParams {
+  cursor?: string;
+  pageSize?: number;
+  status?: string;
+  logicalScope?: string;
+  scopeType?: string;
+  scopeId?: string;
+  runType?: string;
+}
+
+export interface StorageGcJobsCreateParams {
+  idempotencyKey: string;
+}
+
+export class StorageGcJobsApi {
   private client: HttpClient;
-  public readonly oss: StorageOssApi;
-  public readonly defaultBuckets: StorageDefaultBucketsApi;
-  public readonly gcJobs: StorageGcJobsApi;
-  public readonly providers: StorageProvidersApi;
 
   constructor(client: HttpClient) {
     this.client = client;
-    this.oss = new StorageOssApi(client);
+  }
+
+
+/** Backend storage garbage collection jobs list */
+  async list(params?: StorageGcJobsListParams, requestOptions?: ApiRequestOptions): Promise<AdminStorageGarbageCollectionJobListResponse> {
+    const query = buildQueryString([
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
+      { name: 'logical_scope', value: params?.logicalScope, style: 'form', explode: true, allowReserved: false },
+      { name: 'scope_type', value: params?.scopeType, style: 'form', explode: true, allowReserved: false },
+      { name: 'scope_id', value: params?.scopeId, style: 'form', explode: true, allowReserved: false },
+      { name: 'run_type', value: params?.runType, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<AdminStorageGarbageCollectionJobListResponse>(appendQueryString(backendApiPath(`/storage/gc_jobs`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  }
+
+/** Backend storage garbage collection job create */
+  async create(params: StorageGcJobsCreateParams, body?: AdminStorageGarbageCollectionCreateRequest, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    const requestHeaders = buildRequestHeaders(
+      {
+        'Idempotency-Key': { value: params.idempotencyKey, style: 'simple', explode: false },
+      },
+      {}
+    );
+    return this.client.request<Record<string, never>>(backendApiPath(`/storage/gc_jobs`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+  }
+}
+
+export interface StorageDefaultBucketsListParams {
+  cursor?: string;
+  pageSize?: number;
+  status?: string;
+  logicalScope?: string;
+  scopeType?: string;
+  scopeId?: string;
+  runType?: string;
+}
+
+export class StorageDefaultBucketsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Backend storage default buckets list */
+  async list(params?: StorageDefaultBucketsListParams, requestOptions?: ApiRequestOptions): Promise<AdminStorageDefaultBucketListResponse> {
+    const query = buildQueryString([
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
+      { name: 'logical_scope', value: params?.logicalScope, style: 'form', explode: true, allowReserved: false },
+      { name: 'scope_type', value: params?.scopeType, style: 'form', explode: true, allowReserved: false },
+      { name: 'scope_id', value: params?.scopeId, style: 'form', explode: true, allowReserved: false },
+      { name: 'run_type', value: params?.runType, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<AdminStorageDefaultBucketListResponse>(appendQueryString(backendApiPath(`/storage/default_buckets`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  }
+
+/** Backend storage default bucket update */
+  async update(logicalScope: string, body: AdminStorageDefaultBucketUpdateRequest, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(backendApiPath(`/storage/default_buckets/${serializePathParameter(logicalScope, { name: 'logicalScope', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+  }
+}
+
+export class StorageApi {
+  private client: HttpClient;
+  public readonly defaultBuckets: StorageDefaultBucketsApi;
+  public readonly gcJobs: StorageGcJobsApi;
+  public readonly oss: StorageOssApi;
+
+  constructor(client: HttpClient) {
+    this.client = client;
     this.defaultBuckets = new StorageDefaultBucketsApi(client);
     this.gcJobs = new StorageGcJobsApi(client);
-    this.providers = new StorageProvidersApi(client);
+    this.oss = new StorageOssApi(client);
   }
 
 }

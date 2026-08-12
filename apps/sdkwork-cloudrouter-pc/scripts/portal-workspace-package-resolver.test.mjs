@@ -37,9 +37,11 @@ test('resolver falls back to ui-pc-react TSX source for deep component imports',
     path.join(portalRoot, 'src/App.tsx'),
   );
 
+  // The resolver canonicalizes pnpm junctions to their real workspace path,
+  // so the package directory is sdkwork-ui-pc-react (not the junction name).
   assert.match(
     (resolved ?? '').replaceAll('\\', '/'),
-    /\/ui-pc-react\/(?:src\/components\/ui\/button\.tsx|dist\/ui-button\.js)$/u,
+    /\/sdkwork-ui-pc-react\/(?:src\/components\/ui\/button\.tsx|dist\/ui-button\.js)$/u,
   );
 });
 
@@ -70,9 +72,11 @@ test('resolver maps retired cloudrouter commons imports to cloudroutes commons',
   const importer = path.join(portalRoot, 'node_modules/@sdkwork/models-pc-admin-catalog/src/modelService.ts');
   const resolved = resolvePortalPackageModule('@sdkwork/cloudrouter-pc-commons/runtime', portalRoot, importer);
 
+  // The resolver canonicalizes pnpm junctions to their real workspace path,
+  // so the package directory is sdkwork-cloudroutes-pc-commons.
   assert.match(
     (resolved ?? '').replaceAll('\\', '/'),
-    /\/cloudroutes-pc-commons\/src\/runtime\.ts$/u,
+    /\/sdkwork-cloudroutes-pc-commons\/src\/runtime\.ts$/u,
   );
 });
 

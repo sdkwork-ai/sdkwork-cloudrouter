@@ -2,12 +2,11 @@ use std::env;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use sqlx::postgres::PgPoolOptions;
-use sqlx::{PgPool, Row};
+use sqlx::PgPool;
 
 const POSTGRES_TEST_DATABASE_URL: &str = "SDKWORK_DATABASE_URL";
-const BASELINE_DDL: &str = include_str!(
-    "../../../database/ddl/baseline/postgres/0001_cloudrouter_baseline.sql"
-);
+const BASELINE_DDL: &str =
+    include_str!("../../../database/ddl/baseline/postgres/0001_cloudrouter_baseline.sql");
 
 #[tokio::test]
 async fn baseline_initializes_canonical_upstream_routing_schema() {

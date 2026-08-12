@@ -45,15 +45,13 @@ async fn admin_recharge_catalog_falls_back_to_platform_scope_when_tenant_catalog
     let subject = make_subject(TENANT_ID);
 
     let page = store
-        .list_recharge_packages(
-            ListAdminRechargePackagesQuery {
-                subject,
-                status: None,
-                page_no: 1,
-                page_size: 50,
-                offset: 0,
-            },
-        )
+        .list_recharge_packages(ListAdminRechargePackagesQuery {
+            subject,
+            status: None,
+            page_no: 1,
+            page_size: 50,
+            offset: 0,
+        })
         .await
         .expect("list recharge packages");
     assert_eq!(
@@ -66,9 +64,7 @@ async fn admin_recharge_catalog_falls_back_to_platform_scope_when_tenant_catalog
         "platform package must be visible through the fallback"
     );
     assert!(
-        page.items
-            .iter()
-            .all(|item| item.discount == 100),
+        page.items.iter().all(|item| item.discount == 100),
         "platform packages without a discount column value must read back as no discount (100)"
     );
 
@@ -77,8 +73,7 @@ async fn admin_recharge_catalog_falls_back_to_platform_scope_when_tenant_catalog
         .await
         .expect("load recharge settings");
     assert_eq!(
-        "10",
-        settings.base_points_per_cny,
+        "10", settings.base_points_per_cny,
         "tenant without a scoped rule must read the platform rule"
     );
 
@@ -94,22 +89,20 @@ async fn admin_recharge_package_crud_writes_scoped_catalog_and_shadows_platform(
     let subject = make_subject(TENANT_ID);
 
     let created = store
-        .create_recharge_package(
-            CreateAdminRechargePackageCommand {
-                subject,
-                package_uuid: "pkg-uuid-1".to_owned(),
-                product_uuid: "product-uuid-1".to_owned(),
-                sku_uuid: "sku-uuid-1".to_owned(),
-                audit_log_uuid: "audit-uuid-1".to_owned(),
-                price_amount: "25.00".to_owned(),
-                currency_code: "CNY".to_owned(),
-                bonus_points: 50,
-                discount: 90,
-                status: AdminRechargePackageStatus::Active,
-                request_id: "request-1".to_owned(),
-                requested_at: "2026-08-06 00:00:00".to_owned(),
-            },
-        )
+        .create_recharge_package(CreateAdminRechargePackageCommand {
+            subject,
+            package_uuid: "pkg-uuid-1".to_owned(),
+            product_uuid: "product-uuid-1".to_owned(),
+            sku_uuid: "sku-uuid-1".to_owned(),
+            audit_log_uuid: "audit-uuid-1".to_owned(),
+            price_amount: "25.00".to_owned(),
+            currency_code: "CNY".to_owned(),
+            bonus_points: 50,
+            discount: 90,
+            status: AdminRechargePackageStatus::Active,
+            request_id: "request-1".to_owned(),
+            requested_at: "2026-08-06 00:00:00".to_owned(),
+        })
         .await
         .expect("create recharge package");
     assert_eq!("25.00", created.price_amount);
@@ -117,15 +110,13 @@ async fn admin_recharge_package_crud_writes_scoped_catalog_and_shadows_platform(
     assert_eq!(90, created.discount);
 
     let page = store
-        .list_recharge_packages(
-            ListAdminRechargePackagesQuery {
-                subject,
-                status: None,
-                page_no: 1,
-                page_size: 50,
-                offset: 0,
-            },
-        )
+        .list_recharge_packages(ListAdminRechargePackagesQuery {
+            subject,
+            status: None,
+            page_no: 1,
+            page_size: 50,
+            offset: 0,
+        })
         .await
         .expect("list recharge packages");
     assert_eq!(
@@ -135,22 +126,20 @@ async fn admin_recharge_package_crud_writes_scoped_catalog_and_shadows_platform(
     );
 
     let updated = store
-        .update_recharge_package(
-            UpdateAdminRechargePackageCommand {
-                subject,
-                package_id: created.id.clone(),
-                product_uuid: "product-uuid-2".to_owned(),
-                sku_uuid: "sku-uuid-2".to_owned(),
-                audit_log_uuid: "audit-uuid-2".to_owned(),
-                price_amount: "30.00".to_owned(),
-                currency_code: "CNY".to_owned(),
-                bonus_points: 60,
-                discount: 85,
-                status: AdminRechargePackageStatus::Active,
-                request_id: "request-2".to_owned(),
-                requested_at: "2026-08-06 00:01:00".to_owned(),
-            },
-        )
+        .update_recharge_package(UpdateAdminRechargePackageCommand {
+            subject,
+            package_id: created.id.clone(),
+            product_uuid: "product-uuid-2".to_owned(),
+            sku_uuid: "sku-uuid-2".to_owned(),
+            audit_log_uuid: "audit-uuid-2".to_owned(),
+            price_amount: "30.00".to_owned(),
+            currency_code: "CNY".to_owned(),
+            bonus_points: 60,
+            discount: 85,
+            status: AdminRechargePackageStatus::Active,
+            request_id: "request-2".to_owned(),
+            requested_at: "2026-08-06 00:01:00".to_owned(),
+        })
         .await
         .expect("update recharge package");
     assert_eq!("30.00", updated.price_amount);
@@ -158,15 +147,13 @@ async fn admin_recharge_package_crud_writes_scoped_catalog_and_shadows_platform(
     assert_eq!(85, updated.discount);
 
     let deleted = store
-        .delete_recharge_package(
-            DeleteAdminRechargePackageCommand {
-                subject,
-                package_id: created.id.clone(),
-                audit_log_uuid: "audit-uuid-3".to_owned(),
-                request_id: "request-3".to_owned(),
-                requested_at: "2026-08-06 00:02:00".to_owned(),
-            },
-        )
+        .delete_recharge_package(DeleteAdminRechargePackageCommand {
+            subject,
+            package_id: created.id.clone(),
+            audit_log_uuid: "audit-uuid-3".to_owned(),
+            request_id: "request-3".to_owned(),
+            requested_at: "2026-08-06 00:02:00".to_owned(),
+        })
         .await
         .expect("delete recharge package");
     assert!(deleted);
@@ -174,15 +161,13 @@ async fn admin_recharge_package_crud_writes_scoped_catalog_and_shadows_platform(
     // Deleting the last scoped package returns the tenant to the platform
     // fallback (mirrors the order `scoped_packages` + `public_packages` read).
     let page = store
-        .list_recharge_packages(
-            ListAdminRechargePackagesQuery {
-                subject,
-                status: None,
-                page_no: 1,
-                page_size: 50,
-                offset: 0,
-            },
-        )
+        .list_recharge_packages(ListAdminRechargePackagesQuery {
+            subject,
+            status: None,
+            page_no: 1,
+            page_size: 50,
+            offset: 0,
+        })
         .await
         .expect("list recharge packages after delete");
     assert_eq!(
@@ -204,17 +189,15 @@ async fn admin_recharge_settings_update_writes_scoped_rule_without_touching_plat
     let platform_subject = make_subject(PLATFORM_TENANT_ID);
 
     store
-        .update_recharge_settings(
-            RechargeSettingsUpdateCommand {
-                subject,
-                audit_log_uuid: "audit-uuid-4".to_owned(),
-                base_currency_code: "CNY".to_owned(),
-                base_points_per_cny: "12".to_owned(),
-                currency_to_cny_rates: BTreeMap::from([("USD".to_owned(), "7.000000".to_owned())]),
-                request_id: "request-4".to_owned(),
-                requested_at: "2026-08-06 00:03:00".to_owned(),
-            },
-        )
+        .update_recharge_settings(RechargeSettingsUpdateCommand {
+            subject,
+            audit_log_uuid: "audit-uuid-4".to_owned(),
+            base_currency_code: "CNY".to_owned(),
+            base_points_per_cny: "12".to_owned(),
+            currency_to_cny_rates: BTreeMap::from([("USD".to_owned(), "7.000000".to_owned())]),
+            request_id: "request-4".to_owned(),
+            requested_at: "2026-08-06 00:03:00".to_owned(),
+        })
         .await
         .expect("update recharge settings");
 
@@ -223,8 +206,7 @@ async fn admin_recharge_settings_update_writes_scoped_rule_without_touching_plat
         .await
         .expect("load scoped recharge settings");
     assert_eq!(
-        "12",
-        settings.base_points_per_cny,
+        "12", settings.base_points_per_cny,
         "scoped settings must win for the admin tenant"
     );
 
@@ -233,24 +215,21 @@ async fn admin_recharge_settings_update_writes_scoped_rule_without_touching_plat
         .await
         .expect("load platform recharge settings");
     assert_eq!(
-        "10",
-        platform_settings.base_points_per_cny,
+        "10", platform_settings.base_points_per_cny,
         "platform rule must stay untouched"
     );
 
     // Exchange-rule list for the scoped tenant shows the scoped rule only.
     let page = store
-        .list_exchange_rules(
-            ListAdminExchangeRulesQuery {
-                subject,
-                source_asset_type: None,
-                target_asset_type: None,
-                status: None,
-                page_no: 1,
-                page_size: 50,
-                offset: 0,
-            },
-        )
+        .list_exchange_rules(ListAdminExchangeRulesQuery {
+            subject,
+            source_asset_type: None,
+            target_asset_type: None,
+            status: None,
+            page_no: 1,
+            page_size: 50,
+            offset: 0,
+        })
         .await
         .expect("list exchange rules");
     assert_eq!(
@@ -368,10 +347,12 @@ async fn create_schema(pool: &PgPool) {
     // Order baseline (commerce_recharge_package) + the shared merchandise
     // catalog DDL from the order e2e test migration, plus the shared
     // exchange-rule and cloudrouter audit tables the admin store writes.
-    for (index, baseline) in [ORDER_BASELINE, ORDER_E2E_MIGRATION, EXTRA_TABLES].iter().enumerate() {
+    for (_, baseline) in [ORDER_BASELINE, ORDER_E2E_MIGRATION, EXTRA_TABLES]
+        .iter()
+        .enumerate()
+    {
         for (statement_index, statement) in split_statements(baseline).iter().enumerate() {
-            if statement_index % 50 == 0 {
-            }
+            if statement_index % 50 == 0 {}
             sqlx::query(sqlx::AssertSqlSafe(statement.to_owned()))
                 .execute(pool)
                 .await

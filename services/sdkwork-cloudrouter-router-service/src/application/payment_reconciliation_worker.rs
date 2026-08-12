@@ -340,7 +340,9 @@ fn summarize_differences(
         // exposure so opposite-sign differences cannot cancel each other out.
         if let Some(amount) = item.difference_amount.as_deref() {
             if let Ok(value) = DecimalValue::parse(amount.trim_start_matches('-')) {
-                total_difference = total_difference.checked_add(value).unwrap_or(total_difference);
+                total_difference = total_difference
+                    .checked_add(value)
+                    .unwrap_or(total_difference);
             }
         }
     }
@@ -469,7 +471,11 @@ mod tests {
         }
     }
 
-    fn statement_item(statement_id: &str, trade_no: &str, amount: &str) -> PaymentStatementItemRecord {
+    fn statement_item(
+        statement_id: &str,
+        trade_no: &str,
+        amount: &str,
+    ) -> PaymentStatementItemRecord {
         PaymentStatementItemRecord {
             id: format!("item-{trade_no}"),
             tenant_id: "10".to_owned(),
@@ -497,7 +503,11 @@ mod tests {
         }
     }
 
-    fn ledger_entry(trade_no: &str, amount: &str, occurred_at: &str) -> RuntimeReconciliationLedgerEntry {
+    fn ledger_entry(
+        trade_no: &str,
+        amount: &str,
+        occurred_at: &str,
+    ) -> RuntimeReconciliationLedgerEntry {
         RuntimeReconciliationLedgerEntry {
             supplier_code: "openai".to_owned(),
             payment_attempt_id: Some(format!("attempt-{trade_no}")),
@@ -606,7 +616,10 @@ mod tests {
             ]);
 
         let worker = worker(store.clone());
-        let outcome = worker.run_once().await.expect("reconciliation must succeed");
+        let outcome = worker
+            .run_once()
+            .await
+            .expect("reconciliation must succeed");
         assert_eq!(1, outcome.runs_claimed);
         assert_eq!(1, outcome.runs_succeeded);
         assert_eq!(0, outcome.runs_failed);
@@ -635,7 +648,10 @@ mod tests {
             )]);
 
         let worker = worker(store.clone());
-        let outcome = worker.run_once().await.expect("reconciliation must succeed");
+        let outcome = worker
+            .run_once()
+            .await
+            .expect("reconciliation must succeed");
         assert_eq!(1, outcome.runs_claimed);
         assert_eq!(1, outcome.runs_skipped_no_statement);
         assert_eq!(0, outcome.differences_generated);
@@ -649,7 +665,10 @@ mod tests {
             .with_runs(vec![due_run("run-1", None)]);
 
         let worker = worker(store.clone());
-        let outcome = worker.run_once().await.expect("reconciliation must succeed");
+        let outcome = worker
+            .run_once()
+            .await
+            .expect("reconciliation must succeed");
         assert_eq!(1, outcome.runs_claimed);
         assert_eq!(1, outcome.runs_failed);
         assert_eq!("failed", store.runs()[0].status);

@@ -160,7 +160,11 @@ pub(super) async fn save(
         None => insert(&mut tx, &command).await?,
     };
     if command.account_id.is_none() {
-        if let Some(secret) = command.api_key.as_deref().filter(|secret| !secret.trim().is_empty()) {
+        if let Some(secret) = command
+            .api_key
+            .as_deref()
+            .filter(|secret| !secret.trim().is_empty())
+        {
             create_credential_in_transaction(
                 &mut tx,
                 secret_codec,
@@ -530,14 +534,10 @@ async fn create_credential_in_transaction(
             "credential idempotency key was already used with a different secret",
         ));
     }
-    let item = get_credential_in_transaction(
-        &mut *tx,
-        &command.subject,
-        command.account_id,
-        resolved_id,
-    )
-    .await?
-    .ok_or_else(|| DomainError::new("created credential could not be reloaded"))?;
+    let item =
+        get_credential_in_transaction(&mut *tx, &command.subject, command.account_id, resolved_id)
+            .await?
+            .ok_or_else(|| DomainError::new("created credential could not be reloaded"))?;
     if created {
         reset_account_health(
             &mut *tx,

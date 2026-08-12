@@ -1,9 +1,9 @@
+use axum::body::{Body, Bytes, HttpBody};
 use axum::http::header::{self, HeaderName, HeaderValue};
 use axum::http::request::{Builder as RequestBuilder, Parts as RequestParts};
 use axum::http::uri::PathAndQuery;
 use axum::http::{HeaderMap, Uri};
 use axum::response::Response;
-use axum::body::{Body, Bytes, HttpBody};
 use http_body::Frame;
 use http_body_util::Full;
 use hyper::Request as HyperRequest;
@@ -185,18 +185,20 @@ pub(crate) async fn forward_provider_passthrough_to_target(
 /// body. The response-header timeout above only covers header arrival; a
 /// stalled upstream that never sends another frame must not hold the
 /// downstream connection (and its upstream quota) indefinitely.
-fn apply_passthrough_stream_timeouts(
-    response: Response,
-    total_timeout: Duration,
-) -> Response {
+fn apply_passthrough_stream_timeouts(response: Response, total_timeout: Duration) -> Response {
     let (parts, body) = response.into_parts();
-    let idle_timeout = total_timeout.min(Duration::from_secs(60)).max(Duration::from_secs(1));
-    Response::from_parts(parts, Body::new(PassthroughStreamTimeoutBody {
-        inner: body,
-        total_deadline: std::time::Instant::now() + total_timeout,
-        idle: idle_timeout,
-        idle_timer: None,
-    }))
+    let idle_timeout = total_timeout
+        .min(Duration::from_secs(60))
+        .max(Duration::from_secs(1));
+    Response::from_parts(
+        parts,
+        Body::new(PassthroughStreamTimeoutBody {
+            inner: body,
+            total_deadline: std::time::Instant::now() + total_timeout,
+            idle: idle_timeout,
+            idle_timer: None,
+        }),
+    )
 }
 
 /// Poll-based body wrapper enforcing total and idle deadlines without

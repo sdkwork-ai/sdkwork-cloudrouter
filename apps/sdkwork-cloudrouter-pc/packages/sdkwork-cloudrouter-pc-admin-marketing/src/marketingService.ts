@@ -307,7 +307,7 @@ export function buildCouponOfferCreateRequests(
   idempotencyKey: string,
 ): CouponOfferCreateRequests {
   const offerRequest: SdkworkPromotionOfferRequest = {
-    campaignId: values.campaignId?.trim() || null,
+    campaignId: values.campaignId?.trim() || undefined,
     offerType: values.offerType,
     displayName: values.displayName,
     description: values.description || null,

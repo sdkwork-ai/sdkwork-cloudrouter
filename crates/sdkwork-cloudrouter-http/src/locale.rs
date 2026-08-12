@@ -245,8 +245,8 @@ impl EmbeddedMessageCatalog {
     fn load() -> Self {
         let mut by_locale = HashMap::new();
         for (locale, raw) in [
-            ("en-US", include_str!("../resources/i18n/en-US/errors/result.json")),
-            ("zh-CN", include_str!("../resources/i18n/zh-CN/errors/result.json")),
+            ("en-US", include_str!("../resources/i18n/en-US/cloudrouter/errors/result.json")),
+            ("zh-CN", include_str!("../resources/i18n/zh-CN/cloudrouter/errors/result.json")),
         ] {
             match serde_json::from_str::<HashMap<String, String>>(raw) {
                 Ok(entries) => {

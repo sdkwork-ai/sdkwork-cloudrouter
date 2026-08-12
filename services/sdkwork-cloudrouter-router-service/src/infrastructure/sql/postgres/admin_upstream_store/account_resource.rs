@@ -49,7 +49,10 @@ pub(super) async fn replace(
 ) -> DomainResult<Vec<AdminUpstreamResourceItem>> {
     validate_resource_inputs(&items)?;
     let mut tx = pool.begin().await.map_err(|error| {
-        store_error("failed to begin upstream account resource replacement", error)
+        store_error(
+            "failed to begin upstream account resource replacement",
+            error,
+        )
     })?;
     account::lock_account_version(&mut tx, &subject, account_id, expected_version).await?;
     let resource_codes = items
@@ -112,8 +115,14 @@ pub(super) async fn replace(
         &requested_at,
     )
     .await?;
-    account::bump_account_version(&mut tx, &subject, account_id, expected_version, &requested_at)
-        .await?;
+    account::bump_account_version(
+        &mut tx,
+        &subject,
+        account_id,
+        expected_version,
+        &requested_at,
+    )
+    .await?;
     let result = list_in_transaction(&mut tx, &subject, account_id).await?;
     record_routing_change(
         &mut tx,
@@ -126,7 +135,10 @@ pub(super) async fn replace(
     )
     .await?;
     tx.commit().await.map_err(|error| {
-        store_error("failed to commit upstream account resource replacement", error)
+        store_error(
+            "failed to commit upstream account resource replacement",
+            error,
+        )
     })?;
     Ok(result)
 }

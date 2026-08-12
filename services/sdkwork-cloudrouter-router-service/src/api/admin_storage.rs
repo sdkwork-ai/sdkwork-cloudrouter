@@ -4,7 +4,7 @@ use axum::extract::rejection::QueryRejection;
 use axum::extract::{Path, Query, State};
 use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
-use axum::routing::{get, patch, post};
+use axum::routing::{get, patch};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
@@ -16,11 +16,9 @@ use crate::api::response::{
 use crate::domain::DomainError;
 use crate::ports::{
     AdminStorageCollection, AdminStorageCursor, AdminStorageJsonRecord, AdminStorageStore,
-    CheckStorageProviderHealthCommand, CreateStorageBucketCommand,
-    CreateStorageGarbageCollectionJobCommand, CreateStorageProviderCommand,
+    CreateStorageGarbageCollectionJobCommand,
     CreateStorageQuotaPolicyCommand, CreateStorageReconciliationRunCommand,
-    ListAdminStorageRecordsQuery, SetStorageDefaultBucketCommand, UpdateStorageBucketCommand,
-    UpdateStorageProviderCommand,
+    ListAdminStorageRecordsQuery, SetStorageDefaultBucketCommand,
 };
 use sdkwork_utils_rust::http_api::cursor_window_page_info;
 use sdkwork_utils_rust::{base64url_decode, base64url_encode, SdkWorkResultCode};
@@ -28,30 +26,12 @@ use sdkwork_utils_rust::{base64url_decode, base64url_encode, SdkWorkResultCode};
 const DEFAULT_LIMIT: i64 = 20;
 const MAX_LIMIT: i64 = 200;
 const MAX_ID_LEN: usize = 128;
-const MAX_CODE_LEN: usize = 96;
-const MAX_PROVIDER_NAME_LEN: usize = 128;
 const MAX_TYPE_LEN: usize = 64;
-const MAX_URL_LEN: usize = 512;
-const MAX_CREDENTIAL_REF_LEN: usize = 256;
 const MAX_REASON_LEN: usize = 512;
 const MAX_REQUEST_ID_LEN: usize = 128;
 const MAX_CURSOR_LEN: usize = 256;
 const IDEMPOTENCY_KEY_HEADER: &str = "Idempotency-Key";
 
-const PROVIDER_TYPES: &[&str] = &[
-    "aws_s3",
-    "baidu_bos",
-    "cloudflare_r2",
-    "cos_s3",
-    "huawei_obs",
-    "jdcloud_oss",
-    "local_dev_s3",
-    "minio",
-    "oss_s3",
-    "qiniu_kodo",
-    "s3_compatible",
-    "volcengine_tos",
-];
 const LOGICAL_SCOPES: &[&str] = &[
     "migration_import",
     "system_archive",
@@ -72,17 +52,6 @@ const USAGE_SCOPE_TYPES: &[&str] = &[
 ];
 const RESOURCE_STATUSES: &[&str] = &["active", "archived", "disabled"];
 const JOB_STATUSES: &[&str] = &["canceled", "completed", "created", "failed", "running"];
-const STORAGE_CLASSES: &[&str] = &[
-    "STANDARD",
-    "INTELLIGENT_TIERING",
-    "STANDARD_IA",
-    "ONEZONE_IA",
-    "GLACIER_IR",
-    "GLACIER",
-    "DEEP_ARCHIVE",
-];
-const ENCRYPTION_MODES: &[&str] = &["none", "sse_kms", "sse_s3"];
-
 #[derive(Clone)]
 struct AdminStorageState {
     store: Arc<dyn AdminStorageStore + Send + Sync>,
@@ -106,46 +75,6 @@ type AdminStorageQueryResult = Result<Query<AdminStorageQuery>, QueryRejection>;
 #[serde(deny_unknown_fields)]
 struct AdminStorageCursorPayload {
     id: i64,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-struct CreateStorageProviderRequest {
-    provider_code: Option<String>,
-    name: String,
-    provider_type: String,
-    endpoint_url: Option<String>,
-    region: Option<String>,
-    credential_ref: String,
-    path_style_enabled: Option<bool>,
-    supports_multipart: Option<bool>,
-    supports_lifecycle: Option<bool>,
-    supports_object_lock: Option<bool>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-struct UpdateStorageStatusRequest {
-    status: String,
-    reason: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-struct CreateStorageBucketRequest {
-    bucket_name: String,
-    provider_id: String,
-    logical_scope: String,
-    bucket_region: Option<String>,
-    data_residency_region: Option<String>,
-    object_key_prefix: Option<String>,
-    default_storage_class: Option<String>,
-    default_encryption_mode: Option<String>,
-    kms_key_ref: Option<String>,
-    versioning_enabled: Option<bool>,
-    object_lock_enabled: Option<bool>,
-    lifecycle_enabled: Option<bool>,
-    public_access_blocked: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -189,20 +118,6 @@ struct CreateStorageGarbageCollectionJobRequest {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct StorageProviderMutationResponse {
-    provider: AdminStorageJsonRecord,
-    request_id: String,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct StorageBucketMutationResponse {
-    bucket: AdminStorageJsonRecord,
-    request_id: String,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
 struct StorageDefaultBucketMutationResponse {
     default_bucket: AdminStorageJsonRecord,
     request_id: String,
@@ -232,26 +147,6 @@ struct StorageGarbageCollectionJobMutationResponse {
 pub fn admin_storage_router_with_store(store: Arc<dyn AdminStorageStore + Send + Sync>) -> Router {
     Router::new()
         .route(
-            "/backend/v3/api/storage/providers",
-            get(list_providers).post(create_provider),
-        )
-        .route(
-            "/backend/v3/api/storage/providers/{provider_id}",
-            patch(update_provider),
-        )
-        .route(
-            "/backend/v3/api/storage/providers/{provider_id}/health_check",
-            post(check_provider_health),
-        )
-        .route(
-            "/backend/v3/api/storage/buckets",
-            get(list_buckets).post(create_bucket),
-        )
-        .route(
-            "/backend/v3/api/storage/buckets/{bucket_id}",
-            patch(update_bucket),
-        )
-        .route(
             "/backend/v3/api/storage/default_buckets",
             get(list_default_buckets),
         )
@@ -265,14 +160,6 @@ pub fn admin_storage_router_with_store(store: Arc<dyn AdminStorageStore + Send +
         )
         .route("/backend/v3/api/storage/usage", get(list_usage_counters))
         .route(
-            "/backend/v3/api/storage/usage/ledger",
-            get(list_usage_ledger),
-        )
-        .route(
-            "/backend/v3/api/storage/usage/snapshots",
-            get(list_usage_snapshots),
-        )
-        .route(
             "/backend/v3/api/storage/reconciliation_runs",
             get(list_reconciliation_runs).post(create_reconciliation_run),
         )
@@ -281,136 +168,6 @@ pub fn admin_storage_router_with_store(store: Arc<dyn AdminStorageStore + Send +
             get(list_gc_jobs).post(create_gc_job),
         )
         .with_state(AdminStorageState { store })
-}
-
-async fn list_providers(
-    State(state): State<AdminStorageState>,
-    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
-    _headers: HeaderMap,
-    query: AdminStorageQueryResult,
-) -> Response {
-    list_response(
-        scoped,
-        query,
-        |query| state.store.list_providers(query),
-        None,
-    )
-    .await
-}
-
-async fn create_provider(
-    State(state): State<AdminStorageState>,
-    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
-    headers: HeaderMap,
-    Json(request): Json<CreateStorageProviderRequest>,
-) -> Response {
-    let command = match validated_provider_create_command(scoped, &headers, request) {
-        Ok(command) => command,
-        Err(error) => return error.into_response(),
-    };
-    let request_id = response_request_id(command.request_id.as_deref());
-    match state.store.create_provider(command).await {
-        Ok(provider) => Json(success_envelope(StorageProviderMutationResponse {
-            provider,
-            request_id,
-        }))
-        .into_response(),
-        Err(error) => storage_error_response("storage provider create is unavailable", error),
-    }
-}
-
-async fn update_provider(
-    State(state): State<AdminStorageState>,
-    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
-    headers: HeaderMap,
-    Path(provider_id): Path<String>,
-    Json(request): Json<UpdateStorageStatusRequest>,
-) -> Response {
-    let command = match validated_provider_update_command(scoped, &headers, provider_id, request) {
-        Ok(command) => command,
-        Err(error) => return error.into_response(),
-    };
-    let request_id = response_request_id(command.request_id.as_deref());
-    match state.store.update_provider(command).await {
-        Ok(provider) => Json(success_envelope(StorageProviderMutationResponse {
-            provider,
-            request_id,
-        }))
-        .into_response(),
-        Err(error) => storage_error_response("storage provider update is unavailable", error),
-    }
-}
-
-async fn check_provider_health(
-    State(state): State<AdminStorageState>,
-    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
-    headers: HeaderMap,
-    Path(provider_id): Path<String>,
-) -> Response {
-    let command = match validated_provider_health_command(scoped, &headers, provider_id) {
-        Ok(command) => command,
-        Err(error) => return error.into_response(),
-    };
-    match state.store.check_provider_health(command).await {
-        Ok(mut item) => {
-            item.entry("requestId".to_owned())
-                .or_insert_with(|| serde_json::Value::String(response_request_id(None)));
-            Json(success_envelope(item)).into_response()
-        }
-        Err(error) => storage_error_response("storage provider health check is unavailable", error),
-    }
-}
-
-async fn list_buckets(
-    State(state): State<AdminStorageState>,
-    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
-    _headers: HeaderMap,
-    query: AdminStorageQueryResult,
-) -> Response {
-    list_response(scoped, query, |query| state.store.list_buckets(query), None).await
-}
-
-async fn create_bucket(
-    State(state): State<AdminStorageState>,
-    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
-    headers: HeaderMap,
-    Json(request): Json<CreateStorageBucketRequest>,
-) -> Response {
-    let command = match validated_bucket_create_command(scoped, &headers, request) {
-        Ok(command) => command,
-        Err(error) => return error.into_response(),
-    };
-    let request_id = response_request_id(command.request_id.as_deref());
-    match state.store.create_bucket(command).await {
-        Ok(bucket) => Json(success_envelope(StorageBucketMutationResponse {
-            bucket,
-            request_id,
-        }))
-        .into_response(),
-        Err(error) => storage_error_response("storage bucket create is unavailable", error),
-    }
-}
-
-async fn update_bucket(
-    State(state): State<AdminStorageState>,
-    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
-    headers: HeaderMap,
-    Path(bucket_id): Path<String>,
-    Json(request): Json<UpdateStorageStatusRequest>,
-) -> Response {
-    let command = match validated_bucket_update_command(scoped, &headers, bucket_id, request) {
-        Ok(command) => command,
-        Err(error) => return error.into_response(),
-    };
-    let request_id = response_request_id(command.request_id.as_deref());
-    match state.store.update_bucket(command).await {
-        Ok(bucket) => Json(success_envelope(StorageBucketMutationResponse {
-            bucket,
-            request_id,
-        }))
-        .into_response(),
-        Err(error) => storage_error_response("storage bucket update is unavailable", error),
-    }
 }
 
 async fn list_default_buckets(
@@ -496,36 +253,6 @@ async fn list_usage_counters(
         scoped,
         query,
         |query| state.store.list_usage_counters(query),
-        Some(USAGE_SCOPE_TYPES),
-    )
-    .await
-}
-
-async fn list_usage_ledger(
-    State(state): State<AdminStorageState>,
-    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
-    _headers: HeaderMap,
-    query: AdminStorageQueryResult,
-) -> Response {
-    list_response(
-        scoped,
-        query,
-        |query| state.store.list_usage_ledger(query),
-        Some(USAGE_SCOPE_TYPES),
-    )
-    .await
-}
-
-async fn list_usage_snapshots(
-    State(state): State<AdminStorageState>,
-    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
-    _headers: HeaderMap,
-    query: AdminStorageQueryResult,
-) -> Response {
-    list_response(
-        scoped,
-        query,
-        |query| state.store.list_usage_snapshots(query),
         Some(USAGE_SCOPE_TYPES),
     )
     .await
@@ -715,141 +442,6 @@ fn decode_storage_cursor(value: &str) -> Result<AdminStorageCursor, String> {
     AdminStorageCursor::new(payload.id).ok_or_else(|| "storage cursor is invalid".to_owned())
 }
 
-fn validated_provider_create_command(
-    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
-    headers: &HeaderMap,
-    request: CreateStorageProviderRequest,
-) -> Result<CreateStorageProviderCommand, ApiResponseError> {
-    let subject = scoped.into();
-    let idempotency_key = required_header(headers, IDEMPOTENCY_KEY_HEADER)?;
-    let provider_type =
-        normalize_required_text(request.provider_type, "providerType", MAX_TYPE_LEN)?;
-    ensure_enum(&provider_type, PROVIDER_TYPES, "providerType")?;
-    Ok(CreateStorageProviderCommand {
-        subject,
-        supplier_code: match request.provider_code.map(|code| code.trim().to_owned()) {
-            Some(code) if !code.is_empty() => {
-                normalize_required_text(code, "providerCode", MAX_CODE_LEN)?
-            }
-            _ => generate_provider_code()?,
-        },
-        name: normalize_display_text(request.name, "name", MAX_PROVIDER_NAME_LEN)?,
-        provider_type,
-        endpoint_url: normalize_optional_text(request.endpoint_url, "endpointUrl", MAX_URL_LEN)?,
-        region: normalize_optional_text(request.region, "region", MAX_TYPE_LEN)?,
-        credential_ref: normalize_required_text(
-            request.credential_ref,
-            "credentialRef",
-            MAX_CREDENTIAL_REF_LEN,
-        )?,
-        path_style_enabled: request.path_style_enabled,
-        supports_multipart: request.supports_multipart,
-        supports_lifecycle: request.supports_lifecycle,
-        supports_object_lock: request.supports_object_lock,
-        idempotency_key,
-        request_id: Some(server_request_id()?),
-    })
-}
-
-fn validated_provider_update_command(
-    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
-    _headers: &HeaderMap,
-    provider_id: String,
-    request: UpdateStorageStatusRequest,
-) -> Result<UpdateStorageProviderCommand, ApiResponseError> {
-    let subject = scoped.into();
-    let status =
-        normalize_required_text(request.status, "status", MAX_TYPE_LEN)?.to_ascii_lowercase();
-    ensure_enum(&status, RESOURCE_STATUSES, "status")?;
-    Ok(UpdateStorageProviderCommand {
-        subject,
-        provider_id: normalize_required_text(provider_id, "providerId", MAX_ID_LEN)?,
-        status,
-        reason: normalize_required_text(request.reason, "reason", MAX_REASON_LEN)?,
-        request_id: Some(server_request_id()?),
-    })
-}
-
-fn validated_provider_health_command(
-    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
-    _headers: &HeaderMap,
-    provider_id: String,
-) -> Result<CheckStorageProviderHealthCommand, ApiResponseError> {
-    Ok(CheckStorageProviderHealthCommand {
-        subject: scoped.into(),
-        provider_id: normalize_required_text(provider_id, "providerId", MAX_ID_LEN)?,
-        request_id: Some(server_request_id()?),
-    })
-}
-
-fn validated_bucket_create_command(
-    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
-    headers: &HeaderMap,
-    request: CreateStorageBucketRequest,
-) -> Result<CreateStorageBucketCommand, ApiResponseError> {
-    let logical_scope =
-        normalize_required_text(request.logical_scope, "logicalScope", MAX_TYPE_LEN)?;
-    ensure_enum(&logical_scope, LOGICAL_SCOPES, "logicalScope")?;
-    if let Some(value) = request.default_storage_class.as_deref() {
-        ensure_enum(value, STORAGE_CLASSES, "defaultStorageClass")?;
-    }
-    if let Some(value) = request.default_encryption_mode.as_deref() {
-        ensure_enum(value, ENCRYPTION_MODES, "defaultEncryptionMode")?;
-    }
-    Ok(CreateStorageBucketCommand {
-        subject: scoped.into(),
-        bucket_name: normalize_required_text(request.bucket_name, "bucketName", MAX_ID_LEN)?,
-        provider_id: normalize_required_text(request.provider_id, "providerId", MAX_ID_LEN)?,
-        logical_scope,
-        bucket_region: normalize_optional_text(
-            request.bucket_region,
-            "bucketRegion",
-            MAX_TYPE_LEN,
-        )?,
-        data_residency_region: normalize_optional_text(
-            request.data_residency_region,
-            "dataResidencyRegion",
-            MAX_TYPE_LEN,
-        )?,
-        object_key_prefix: normalize_optional_text(
-            request.object_key_prefix,
-            "objectKeyPrefix",
-            MAX_URL_LEN,
-        )?,
-        default_storage_class: request.default_storage_class,
-        default_encryption_mode: request.default_encryption_mode,
-        kms_key_ref: normalize_optional_text(
-            request.kms_key_ref,
-            "kmsKeyRef",
-            MAX_CREDENTIAL_REF_LEN,
-        )?,
-        versioning_enabled: request.versioning_enabled,
-        object_lock_enabled: request.object_lock_enabled,
-        lifecycle_enabled: request.lifecycle_enabled,
-        public_access_blocked: request.public_access_blocked,
-        idempotency_key: required_header(headers, IDEMPOTENCY_KEY_HEADER)?,
-        request_id: Some(server_request_id()?),
-    })
-}
-
-fn validated_bucket_update_command(
-    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
-    _headers: &HeaderMap,
-    bucket_id: String,
-    request: UpdateStorageStatusRequest,
-) -> Result<UpdateStorageBucketCommand, ApiResponseError> {
-    let status =
-        normalize_required_text(request.status, "status", MAX_TYPE_LEN)?.to_ascii_lowercase();
-    ensure_enum(&status, RESOURCE_STATUSES, "status")?;
-    Ok(UpdateStorageBucketCommand {
-        subject: scoped.into(),
-        bucket_id: normalize_required_text(bucket_id, "bucketId", MAX_ID_LEN)?,
-        status,
-        reason: normalize_required_text(request.reason, "reason", MAX_REASON_LEN)?,
-        request_id: Some(server_request_id()?),
-    })
-}
-
 fn validated_default_bucket_command(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: &HeaderMap,
@@ -986,17 +578,6 @@ fn optional_header(headers: &HeaderMap, name: &str) -> Result<Option<String>, Ap
 
 /// 自动生成唯一服务商编码：provider-<16位随机hex>。
 /// 数据库唯一索引（tenant+org+supplier_code）兜底保证唯一性。
-fn generate_provider_code() -> Result<String, ApiResponseError> {
-    let mut bytes = [0u8; 8];
-    getrandom::fill(&mut bytes).map_err(|error| {
-        ApiResponseError::from(storage_system_response(
-            "failed to generate provider code",
-            DomainError::new(error.to_string()),
-        ))
-    })?;
-    Ok(format!("provider-{:016x}", u64::from_be_bytes(bytes)))
-}
-
 fn normalize_required_text(
     value: String,
     field_name: &str,
@@ -1029,23 +610,6 @@ fn normalize_optional_text(
 
 /// 显示名称类字段的规范化：允许任意 Unicode 文本（中文等），
 /// 仅拒绝控制字符并限制长度。与编码类字段（visible ASCII）区分。
-fn normalize_display_text(
-    value: String,
-    field_name: &str,
-    max_len: usize,
-) -> Result<String, ApiResponseError> {
-    let value = value.trim();
-    if value.is_empty() {
-        return Err(bad_request(format!("{field_name} is required")).into());
-    }
-    if value.chars().count() > max_len || value.chars().any(|ch| ch.is_control()) {
-        return Err(bad_request(format!(
-            "{field_name} must not contain control characters and at most {max_len} characters"
-        ))
-        .into());
-    }
-    Ok(value.to_owned())
-}
 
 fn ensure_enum(value: &str, allowed: &[&str], field_name: &str) -> Result<(), ApiResponseError> {
     if allowed.contains(&value) {

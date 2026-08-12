@@ -389,7 +389,13 @@ impl AdminUpstreamStore for AiRoutingCacheInvalidatingAdminUpstreamStore {
         Box::pin(async move {
             let items = self
                 .inner
-                .replace_account_resources(subject, account_id, expected_version, items, requested_at)
+                .replace_account_resources(
+                    subject,
+                    account_id,
+                    expected_version,
+                    items,
+                    requested_at,
+                )
                 .await?;
             self.invalidate_after(items).await
         })

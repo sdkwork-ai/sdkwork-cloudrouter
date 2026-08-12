@@ -20,9 +20,9 @@ fn admin_api_database_runtime_does_not_mount_local_storage_center() {
 
 #[tokio::test]
 async fn default_router_acknowledges_storage_contract_without_serving_it_locally() {
+    // providers/buckets 管理面已移交 sdkwork-drive（契约不再收录，路由 404）；
+    // 治理面（defaultBuckets/quotas/usage/reconciliation/gc）仍由 cloudrouter 契约收录。
     for path in [
-        "/backend/v3/api/storage/providers",
-        "/backend/v3/api/storage/buckets",
         "/backend/v3/api/storage/default_buckets",
         "/backend/v3/api/storage/quotas",
         "/backend/v3/api/storage/usage",
@@ -32,7 +32,7 @@ async fn default_router_acknowledges_storage_contract_without_serving_it_locally
         let (status, payload) = contract_call(Method::GET, path).await;
 
         assert_eq!(StatusCode::NOT_IMPLEMENTED, status, "{path}");
-        // 契约路由以结构化 problem detail 声明“已收录但未实现”：存储管理面由
+        // 契约路由以结构化 problem detail 声明“已收录但未实现”：存储治理面由
         // cloudrouter 生产运行时（PostgresAdminStorageStore）挂载，裸默认路由不本地实现。
         let object = payload
             .as_object()

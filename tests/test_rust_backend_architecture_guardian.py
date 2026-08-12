@@ -962,24 +962,6 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
                 result.messages,
             )
 
-    def test_reports_missing_payment_webhook_secret_doc_standard(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            self.write_valid_workspace(root)
-            doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
-            doc.write_text(
-                doc.read_text(encoding="utf-8").replace("SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET", "payment webhook secret"),
-                encoding="utf-8",
-            )
-
-            result = RustBackendArchitectureGuardian(root=root).run()
-
-            self.assertFalse(result.ok)
-            self.assertIn(
-                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET",
-                result.messages,
-            )
-
     def test_reports_missing_async_lock_rule_doc_standard(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

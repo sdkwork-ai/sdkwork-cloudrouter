@@ -196,7 +196,6 @@ data_directory = "/var/lib/sdkwork/router"
 admin_app_json_body_max_bytes = 131072
 admin_skill_json_body_max_bytes = 65536
 forum_json_body_max_bytes = 262144
-payment_callback_body_max_bytes = 65536
 gateway_invocation_body_max_bytes = 1048576
 
 [runtime]
@@ -205,7 +204,6 @@ deployment_mode = "server"
 
 `.deb` 包创建的 `/etc/sdkwork/database/database.secret` 初始内容是占位�?`change-me`。启�?`cloudrouter` 前必须替换为真实 PostgreSQL 密码；server 配置仍使�?`db.example.com` �?`change-me` 时会被启动校验拒绝�?
 server/service/container 部署默认启用并要�?Redis。首次启动前必须配置 `[redis].host`、`[redis].port`、`[redis].database`；只有托�?Redis 端点无法用分离字段清晰表达时，才使用 `[redis].url` 作为高级覆盖。优先使�?`/etc/sdkwork/router/redis.secret` 或其他受保护�?`password_file`，只�?TOML 文件本身按密钥文件管理时才直接使�?`[redis].password`。desktop 部署仍保�?Redis 可选且默认关闭�?
-`[request_limits]` 控制运行�?JSON �?webhook 请求体限制，属于高风险写入入口的防护配置。`admin_app_json_body_max_bytes` �?`admin_skill_json_body_max_bytes` 保护后台管理 API，`forum_json_body_max_bytes` 保护公开应用论坛写入，`payment_callback_body_max_bytes` 保护支付供应商回调。反向代理、负载均衡和容器 ingress 的请求体限制应与这些值保持一致，使超大请求在进入昂贵业务处理前被拒绝�?
 `[edge]` 配置打包后的 Rust edge server 和上游服务目标。`[portal.static]` �?HTML/runtime env �?no-store 缓存策略与长期缓存的 hash 静态资源分离。`[portal.security]` 控制浏览器侧安全策略；只有公网主机名已经通过 HTTPS 访问时才启用 HSTS，启�?preload 时保�?`hsts_max_age_seconds >= 31536000` �?`hsts_include_subdomains = true`。`csp_frame_src` 只填写允�?portal 嵌入的明确信�?HTTP/HTTPS origin。`[portal.tools]` 控制可选本地工�?API 的请求体大小和限流。`[observability]` 负责生产日志默认策略：`log_filter` �?tracing 过滤器，`log_format` 可�?`compact`、`json`、`pretty` �?`full`，systemd �?container 日志建议保持 `log_ansi = false`，target/thread 字段控制输出的日志元信息；`RUST_LOG` 只建议用于临时进程级诊断覆盖�?`[edge].cors_allowed_origins` 是额外可信浏览器 origin 的显�?allowlist，例如外�?CDN 托管�?portal。打包后的同�?edge 部署保持空数组；通配�?origin 和带 path �?origin 会被拒绝�?`[provider_relay.runtime]` 配置 OpenAI-compatible 上游请求的全局响应超时，以�?admin/app 渠道健康检查超时。`[provider_relay.retry]` 是数据库路由渠道未单独定�?retry policy 时使用的默认重试策略�?
 生产 server/service/container 部署使用结构�?TOML。推荐使�?`password_file`，只有当 TOML 文件本身作为密钥文件保护时才直接使用 `password`�?
 - `password_file` 可以是绝对路径�?- `password_file` 可以是相�?`cloudrouter.toml` 所在目录的路径�?- `password_file` 可以使用 `${VAR}`、`$VAR`、`%VAR%` �?`~` 展开，用于平�?Secret 路径�?
@@ -227,7 +225,6 @@ data_directory = "/var/lib/sdkwork/router"
 admin_app_json_body_max_bytes = 131072
 admin_skill_json_body_max_bytes = 65536
 forum_json_body_max_bytes = 262144
-payment_callback_body_max_bytes = 65536
 gateway_invocation_body_max_bytes = 1048576
 
 [runtime]

@@ -7,11 +7,13 @@ import {
   MembershipTextField,
 } from '../components/MembershipFormControls';
 import { membershipStatusLabel } from '../components/MembershipStatusBadge';
+import { membershipCategoryLabel } from '../components/MembershipCategoryBadge';
 import {
   formatMembershipFormValidationError,
   parseOptionalNonNegativeIntegerField,
 } from './membershipFormValues';
 import type {
+  MembershipsAdminCategory,
   MembershipsAdminPlanBenefitInput,
   MembershipsAdminPlanItem,
   MembershipsAdminPlanMutationInput,
@@ -37,6 +39,9 @@ export function MembershipPlanDrawerForm({
   onSubmit,
 }: MembershipPlanDrawerFormProps) {
   const { t } = useTranslation();
+  const [category, setCategory] = useState<MembershipsAdminCategory>(
+    initialValue?.category === 'community' ? 'community' : 'token',
+  );
   const [name, setName] = useState(initialValue?.name ?? '');
   const [rank, setRank] = useState(String(initialValue?.rank ?? 0));
   const [status, setStatus] = useState<'active' | 'inactive' | 'disabled'>(
@@ -56,6 +61,7 @@ export function MembershipPlanDrawerForm({
     setError(null);
     try {
       await onSubmit({
+        category,
         code: mode === 'edit' && (initialValue?.planNo || initialValue?.levelCode)
           ? initialValue.planNo || initialValue.levelCode
           : buildMembershipPlanCode(name),
@@ -82,6 +88,15 @@ export function MembershipPlanDrawerForm({
       onSubmit={handleSubmit}
     >
       <MembershipTextField label={t('admin.commerce.memberships.plans.form.name', 'Name')} value={name} onChange={setName} placeholder={t('admin.commerce.memberships.plans.form.namePlaceholder', 'Gold Member')} />
+      <MembershipSelectField
+        label={t('admin.commerce.memberships.category.label', 'Category')}
+        value={category}
+        options={[
+          { value: 'token', label: membershipCategoryLabel('token', t) },
+          { value: 'community', label: membershipCategoryLabel('community', t) },
+        ]}
+        onChange={(value) => setCategory(value as MembershipsAdminCategory)}
+      />
       <div className="grid grid-cols-2 gap-4">
         <MembershipTextField label={t('admin.commerce.memberships.plans.form.rank', 'Rank')} value={rank} onChange={setRank} placeholder="0" />
         <MembershipSelectField

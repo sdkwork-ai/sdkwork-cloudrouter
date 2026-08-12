@@ -23,16 +23,16 @@ class PostgresIntegrationStandardTest(unittest.TestCase):
         self.assertIn("DROP SCHEMA IF EXISTS", source)
         self.assertIn("max_connections(4)", source)
         self.assertIn(
-            "postgres_payment_callback_concurrent_first_account_creation_credits_one_account",
+            "postgres_gateway_usage_recorder_preserves_non_pending_usage_fact_on_duplicate_request_id",
             source,
         )
         self.assertNotIn(
-            "postgres_billing_redeem_concurrent_first_account_creation_credits_one_account",
+            "postgres_payment_callback_concurrent_first_account_creation_credits_one_account",
             source,
         )
-        self.assertIn("PostgresPaymentCallbackStore", source)
-        self.assertIn("tokio::join!", source)
-        self.assertIn("UNIQUE (tenant_id, organization_id, owner_user_id, asset_type, currency_code)", source)
+        self.assertIn("PostgresGatewayUsageRecorder", source)
+        self.assertNotIn("PostgresPaymentCallbackStore", source)
+        self.assertNotIn("success_command", source)
         self.assertNotIn("uk_plus_account_user_type", source)
 
 

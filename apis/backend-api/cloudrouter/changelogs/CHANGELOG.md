@@ -1,5 +1,28 @@
 # Cloud Router Backend API Changelog
 
+## 0.12.0
+
+- `AdminRechargePackage` gains the `discount` integer (1-100): the discount rate percentage, where `100` means no discount and `90` means the customer pays 90 percent of the price. The value is stored per package and exposed in the catalog; it does not affect the granted-points computation (`grantAmount`/`points` still derive from `priceAmount`).
+- `RechargePackageMutationRequest` gains the required `discount` integer (1-100) so create and update flows configure the discount rate. The `0010` database migration adds the `discount` column with a `100` default and a 1-100 CHECK constraint on `commerce_recharge_package`.
+
+- `PATCH /backend/v3/api/payments/providers/{providerId}` (`providers.update`) is now part of the contract and the generated SDK: the backend handler existed but the operation was never materialized into the OpenAPI authority, so admin UIs could not call it through `@sdkwork/cloudrouter-backend-sdk`. `sortOrder` is transported as a string per the OpenAPI int64-safe convention.
+
+## 0.11.0
+
+- `PATCH /backend/v3/api/storage/providers/{providerId}` (`oss.providers.update`)
+  now accepts optional provider profile fields alongside the mandatory
+  `status`/`reason`: `name`, `endpointUrl`, `region`, `credentialRef`,
+  `pathStyleEnabled`, `supportsMultipart`, `supportsLifecycle`, and
+  `supportsObjectLock`. Absent fields keep their current values; a mandatory
+  `reason` is recorded in `ops_audit_log` (`storage.provider.update`) so every
+  mutation keeps an audit trail. Existing clients that only send
+  `status`/`reason` remain compatible.
+- Added `DELETE /backend/v3/api/storage/providers/{providerId}`
+  (`oss.providers.delete`): removes an unreferenced storage provider after
+  checking `object_bucket`; deleting a provider that is still referenced by
+  buckets fails with a `409` conflict that names the bucket count. Successful
+  deletes are recorded in `ops_audit_log` (`storage.provider.delete`).
+
 ## 0.10.0
 
 - Added `PATCH /backend/v3/api/payments/providers/{providerId}`
@@ -27,11 +50,6 @@
   `upstreamAccounts.resources.list`, `upstreamSuppliers.authMethods.list`, `upstreamSuppliers.endpoints.list`,
   `upstreamSuppliers.resources.list`) declare `x-sdkwork-max-items: 200`: they are bounded-by-design
   collections (PAGINATION_SPEC §11) whose store queries fail closed above the documented ceiling.
-
-## 0.8.0
-
-- `AdminRechargePackage` gains the `discount` integer (1-100): the discount rate percentage, where `100` means no discount and `90` means the customer pays 90 percent of the price. The value is stored per package and exposed in the catalog; it does not affect the granted-points computation (`grantAmount`/`points` still derive from `priceAmount`).
-- `RechargePackageMutationRequest` gains the required `discount` integer (1-100) so create and update flows configure the discount rate. The `0010` database migration adds the `discount` column with a `100` default and a 1-100 CHECK constraint on `commerce_recharge_package`.
 
 ## 0.7.0
 

@@ -7,7 +7,7 @@ use axum::Router;
 use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
 use sdkwork_cloudrouter_config::{
     ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig, DatabaseEngine, DeploymentMode,
-    DeploymentRuntime, InternalGatewaySecurityConfig, PaymentWebhookConfig, ProviderAdapterConfig,
+    DeploymentRuntime, InternalGatewaySecurityConfig, ProviderAdapterConfig,
     ProviderAdapterManifestDiscoveryConfig, ProviderRelayConfig, ProviderSecretMapConfig,
     RedisConfig, RequestLimitsConfig, RuntimeConfigProfile, RuntimeTomlConfig, StartupInstallMode,
     TrustedSubjectConfig, UpstreamCredentialSecurityConfig,
@@ -59,9 +59,10 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::installer::{
     DatabaseInstallError, DatabaseInstaller,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
-    PostgresCatalogLoadError, PostgresGatewayUsageRecorder, PostgresPaymentReconciliationRuntimeStore,
-    PostgresPricingCatalogLoader, PostgresRoutingDecisionLogRecorder, PostgresUsageRetentionStore,
-    PostgresUsageSettlementStore, PostgresUpstreamCredentialRotationStore,
+    PostgresCatalogLoadError, PostgresGatewayUsageRecorder,
+    PostgresPaymentReconciliationRuntimeStore, PostgresPricingCatalogLoader,
+    PostgresRoutingDecisionLogRecorder, PostgresUpstreamCredentialRotationStore,
+    PostgresUsageRetentionStore, PostgresUsageSettlementStore,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::{
     InMemoryGatewayAccountingRetryQueue, OsApiKeySecretGenerator, RedisGatewayAccountingRetryQueue,
@@ -73,7 +74,7 @@ use sdkwork_cloudrouter_router_service::ports::{
     GatewayTraceAttribution, GatewayUsageRecordCommand, GatewayUsageRecordFuture,
     GatewayUsageRecorder, ProviderSecretResolver, ResponsesRelay, RoutingDecisionLogRecorder,
     StickyRouteStore, UpstreamAccountRouteCatalog, UpstreamCredentialRotationStore,
-    UsageSettlementStore, UsageRetentionStore,
+    UsageRetentionStore, UsageSettlementStore,
 };
 use sdkwork_cloudrouter_security::{
     redact_error_message, InMemoryInternalGatewayReplayStore, InternalGatewayReplayStore,
@@ -709,7 +710,6 @@ struct AllInOneRuntimeContext {
     provider_secret_resolver: Option<Arc<RefreshableProviderSecretMapResolver>>,
     trusted_subject_config: TrustedSubjectConfig,
     app_session_config: AppSessionConfig,
-    payment_webhook_config: PaymentWebhookConfig,
     provider_runtime_config: ProviderRelayRuntimeConfig,
     cache_manager: RuntimeCacheManager,
     request_limits_config: RequestLimitsConfig,
@@ -1773,7 +1773,6 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
                 .clone(),
             trusted_subject_config: context.trusted_subject_config.clone(),
             app_session_config: context.app_session_config.clone(),
-            payment_webhook_config: context.payment_webhook_config.clone(),
             deployment_mode: context.deployment_mode,
             request_limits_config: context.request_limits_config,
             app_runtime_gateway_client: Arc::clone(&context.app_runtime_gateway_client),
@@ -1806,9 +1805,8 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
     // twice.
     let mut open_retention_policy = sdkwork_api_log_assembly::LogRetentionPolicy::default_month();
     open_retention_policy.default_retention = sdkwork_api_log_assembly::LogRetention::Permanent;
-    let open_surface_resolver: std::sync::Arc<
-        sdkwork_api_log_assembly::ApiSurfaceResolver,
-    > = std::sync::Arc::new(|_path| sdkwork_api_log_assembly::LogApiSurface::OpenApi);
+    let open_surface_resolver: std::sync::Arc<sdkwork_api_log_assembly::ApiSurfaceResolver> =
+        std::sync::Arc::new(|_path| sdkwork_api_log_assembly::LogApiSurface::OpenApi);
     let open_log_assembly = sdkwork_api_log_assembly::assemble_backend_business_router_with_pool(
         &context.database_pool,
         "sdkwork-cloudrouter-open",
@@ -1869,14 +1867,6 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
             anyhow::Error::msg(format!(
                 "{} is required when all-in-one runtime is enabled",
                 AppSessionConfig::ENV_APP_SESSION_SECRET
-            ))
-        })?;
-    let payment_webhook_config = PaymentWebhookConfig::from_env_or_runtime_toml(runtime_toml_ref)
-        .map_err(anyhow::Error::msg)?
-        .ok_or_else(|| {
-            anyhow::Error::msg(format!(
-                "{} is required when all-in-one runtime is enabled",
-                PaymentWebhookConfig::ENV_PAYMENT_WEBHOOK_SECRET
             ))
         })?;
     let provider_relay_config = ProviderRelayConfig::from_env_or_runtime_toml(runtime_toml_ref)
@@ -2011,12 +2001,16 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
             .as_postgres()
             .cloned()
             .ok_or_else(|| {
-                anyhow::Error::msg("all-in-one commerce runtime requires a PostgreSQL database pool")
+                anyhow::Error::msg(
+                    "all-in-one commerce runtime requires a PostgreSQL database pool",
+                )
             })?;
-        let usage_settlement_wakeup =
-            maybe_spawn_postgres_usage_settlement_worker(&commerce_pool, usage_settlement_worker_config)
-                .await
-                .map_err(anyhow::Error::new)?;
+        let usage_settlement_wakeup = maybe_spawn_postgres_usage_settlement_worker(
+            &commerce_pool,
+            usage_settlement_worker_config,
+        )
+        .await
+        .map_err(anyhow::Error::new)?;
         maybe_spawn_postgres_usage_retention_worker(
             &commerce_pool,
             resolve_usage_retention_config(runtime_toml.as_ref()),
@@ -2055,7 +2049,6 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
             provider_secret_resolver,
             trusted_subject_config,
             app_session_config,
-            payment_webhook_config,
             provider_runtime_config: provider_runtime,
             cache_manager,
             request_limits_config,
@@ -2256,7 +2249,7 @@ async fn maybe_spawn_postgres_usage_settlement_worker(
     }
     let store: SettlementStore = Arc::new(PostgresUsageSettlementStore::new(
         pool.clone(),
-        PostgresCommerceAccountStore::new(pool.clone()),
+        Arc::new(PostgresCommerceAccountStore::new(pool.clone())),
     ));
     let usage_settlement_wakeup = Arc::new(Notify::new());
     spawn_usage_settlement_worker(store, config, Some(Arc::clone(&usage_settlement_wakeup)));
@@ -2310,9 +2303,8 @@ async fn maybe_spawn_postgres_payment_reconciliation_worker(
         );
         return Ok(());
     }
-    let store: Arc<dyn PaymentReconciliationRuntimeStore + Send + Sync> = Arc::new(
-        PostgresPaymentReconciliationRuntimeStore::new(pool.clone()),
-    );
+    let store: Arc<dyn PaymentReconciliationRuntimeStore + Send + Sync> =
+        Arc::new(PostgresPaymentReconciliationRuntimeStore::new(pool.clone()));
     let worker = PaymentReconciliationWorker::new(
         store,
         Arc::new(OsApiKeySecretGenerator::default()),

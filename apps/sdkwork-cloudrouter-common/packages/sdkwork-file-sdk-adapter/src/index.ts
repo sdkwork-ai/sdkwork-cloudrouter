@@ -18,20 +18,14 @@ import {
   type SdkworkStorageUsageSnapshot,
 } from "../../sdkwork-file-contracts/src/index";
 import type {
-  AdminStorageBucketQuery,
-  AdminStorageCreateBucketInput,
   AdminStorageCreateGarbageCollectionJobInput,
-  AdminStorageCreateProviderInput,
   AdminStorageCreateQuotaPolicyInput,
   AdminStorageCreateReconciliationRunInput,
   AdminStorageDefaultBucket,
   AdminStorageDefaultBucketQuery,
-  AdminStorageProviderHealthCheckInput,
   AdminStorageProviderHealthCheckResult,
   AdminStorageReconciliationRunQuery,
   AdminStorageSetDefaultBucketInput,
-  AdminStorageUpdateBucketInput,
-  AdminStorageUpdateProviderInput,
   AdminStorageUsageLedgerQuery,
   AdminStorageUsageQuery,
   AdminStorageUsageSnapshotQuery,
@@ -126,22 +120,6 @@ export interface SdkworkFileDriveUploaderClient {
 
 export interface SdkworkFileBackendSdkClient {
   oss: {
-    buckets: {
-      create(
-        body: Omit<AdminStorageCreateBucketInput, "idempotencyKey" | "requestId">,
-        params: SdkworkFileBackendCommandParams,
-      ): Promise<SdkworkFileBackendSdkResult<{ bucket: unknown; requestId: string }>>;
-      list(params?: Omit<AdminStorageBucketQuery, "requestId">): Promise<SdkworkFileBackendSdkResult<{
-        items: unknown[];
-        nextCursor?: string;
-        requestId: string;
-      }>>;
-      update(
-        bucketId: string,
-        body: Omit<AdminStorageUpdateBucketInput, "bucketId" | "requestId">,
-        params?: SdkworkFileBackendRequestParams,
-      ): Promise<SdkworkFileBackendSdkResult<{ bucket: unknown; requestId: string }>>;
-    };
     defaultBuckets: {
       list(params?: Omit<AdminStorageDefaultBucketQuery, "requestId">): Promise<SdkworkFileBackendSdkResult<{
         items: AdminStorageDefaultBucket[];
@@ -163,24 +141,6 @@ export interface SdkworkFileBackendSdkClient {
         nextCursor?: string;
         requestId: string;
       }>>;
-    };
-    providers: {
-      create(
-        body: Omit<AdminStorageCreateProviderInput, "idempotencyKey" | "requestId">,
-        params: SdkworkFileBackendCommandParams,
-      ): Promise<SdkworkFileBackendSdkResult<{ provider: unknown; requestId: string }>>;
-      healthChecks: {
-        create(
-          providerId: string,
-          params?: SdkworkFileBackendRequestParams,
-        ): Promise<SdkworkFileBackendSdkResult<AdminStorageProviderHealthCheckResult>>;
-      };
-      list(): Promise<SdkworkFileBackendSdkResult<{ items: unknown[]; requestId: string }>>;
-      update(
-        providerId: string,
-        body: Omit<AdminStorageUpdateProviderInput, "providerId" | "requestId">,
-        params?: SdkworkFileBackendRequestParams,
-      ): Promise<SdkworkFileBackendSdkResult<{ provider: unknown; requestId: string }>>;
     };
     quotas: {
       create(
@@ -270,14 +230,7 @@ export const SDKWORK_FILE_SDK_ADAPTER_METHODS: readonly SdkworkFileSdkAdapterMet
   method("app", "listDriveSpaces", "driveSpacesList", "drive.spaces.list"),
   method("app", "listDriveNodes", "driveNodesList", "drive.nodes.list"),
   method("app", "getStorageUsage", "storageUsageRetrieve", "storage.usage.retrieve"),
-  method("backend", "listProviders", "oss.providers.list", "oss.providers.list"),
-  method("backend", "createProvider", "oss.providers.create", "oss.providers.create"),
-  method("backend", "updateProvider", "oss.providers.update", "oss.providers.update"),
-  method("backend", "healthCheckProvider", "oss.providers.healthChecks.create", "oss.providers.healthChecks.create"),
-  method("backend", "listBuckets", "oss.buckets.list", "oss.buckets.list"),
-  method("backend", "createBucket", "oss.buckets.create", "oss.buckets.create"),
-  method("backend", "updateBucket", "oss.buckets.update", "oss.buckets.update"),
-  method("backend", "listDefaultBuckets", "oss.defaultBuckets.list", "oss.defaultBuckets.list"),
+                method("backend", "listDefaultBuckets", "oss.defaultBuckets.list", "oss.defaultBuckets.list"),
   method("backend", "setDefaultBucket", "oss.defaultBuckets.update", "oss.defaultBuckets.update"),
   method("backend", "listQuotaPolicies", "oss.quotas.list", "oss.quotas.list"),
   method("backend", "createQuotaPolicy", "oss.quotas.create", "oss.quotas.create"),
@@ -285,8 +238,6 @@ export const SDKWORK_FILE_SDK_ADAPTER_METHODS: readonly SdkworkFileSdkAdapterMet
   method("backend", "createReconciliationRun", "oss.reconciliationRuns.create", "oss.reconciliationRuns.create"),
   method("backend", "createGarbageCollectionJob", "oss.gcJobs.create", "oss.gcJobs.create"),
   method("backend", "listUsageCounters", "oss.usage.list", "oss.usage.list"),
-  method("backend", "listUsageLedger", "oss.usage.ledger.list", "oss.usage.ledger.list"),
-  method("backend", "listUsageSnapshots", "oss.usage.snapshots.list", "oss.usage.snapshots.list"),
 ] as const;
 
 export function createFilePlatformServiceFromSdkClient({
@@ -376,7 +327,8 @@ export function createFilePlatformServiceFromSdkClient({
       const profile = input.uploadProfileCode ?? inferDriveUploaderProfile(input.contentType, input.filename);
       const result = await invokeSdkOperation("drive.uploader.uploadByProfile", () => drive.uploader.uploadByProfile(profile, {
         file: input.file,
-        anonymousId: input.anonymousId,
+        // drive 上传契约不含 anonymousId（客户端会话匿名追踪字段由调用方保留），
+        // 不向 drive 透传避免类型漂移。
         appResourceType: input.target.type,
         appResourceId: input.target.id,
         scene: input.scene || normalizeUsageLabel(input.slotCode),
@@ -401,32 +353,6 @@ export function createFileAdminStoragePortFromBackendSdkClient(
   backend: SdkworkFileBackendSdkClient,
 ): AdminStoragePort {
   return {
-    async createProvider(input) {
-      return invokeBackendSdkOperation("oss.providers.create", () => backend.oss.providers.create(
-        omitKeys(input, "idempotencyKey", "requestId"),
-        commandParams(input),
-      ));
-    },
-    async updateProvider(input) {
-      return invokeBackendSdkOperation("oss.providers.update", () => backend.oss.providers.update(
-        input.providerId,
-        omitKeys(input, "providerId", "requestId"),
-        requestParams(input),
-      ));
-    },
-    async createBucket(input) {
-      return invokeBackendSdkOperation("oss.buckets.create", () => backend.oss.buckets.create(
-        omitKeys(input, "idempotencyKey", "requestId"),
-        commandParams(input),
-      ));
-    },
-    async updateBucket(input) {
-      return invokeBackendSdkOperation("oss.buckets.update", () => backend.oss.buckets.update(
-        input.bucketId,
-        omitKeys(input, "bucketId", "requestId"),
-        requestParams(input),
-      ));
-    },
     async createQuotaPolicy(input) {
       return invokeBackendSdkOperation("oss.quotas.create", () => backend.oss.quotas.create(
         omitKeys(input, "idempotencyKey", "requestId"),
@@ -445,18 +371,6 @@ export function createFileAdminStoragePortFromBackendSdkClient(
         commandParams(input),
       ));
     },
-    async healthCheckProvider(input) {
-      return invokeBackendSdkOperation("oss.providers.healthChecks.create", () => backend.oss.providers.healthChecks.create(
-        input.providerId,
-        requestParams(input),
-      ));
-    },
-    async listProviders() {
-      return invokeBackendSdkOperation("oss.providers.list", () => backend.oss.providers.list());
-    },
-    async listBuckets(input) {
-      return invokeBackendSdkOperation("oss.buckets.list", () => backend.oss.buckets.list(omitKeys(input, "requestId")));
-    },
     async listDefaultBuckets(input) {
       return invokeBackendSdkOperation("oss.defaultBuckets.list", () => backend.oss.defaultBuckets.list(omitKeys(input, "requestId")));
     },
@@ -468,12 +382,6 @@ export function createFileAdminStoragePortFromBackendSdkClient(
     },
     async listUsageCounters(input) {
       return invokeBackendSdkOperation("oss.usage.list", () => backend.oss.usage.list(omitKeys(input, "requestId")));
-    },
-    async listUsageLedger(input) {
-      return invokeBackendSdkOperation("oss.usage.ledger.list", () => backend.oss.usage.ledger.list(omitKeys(input, "requestId")));
-    },
-    async listUsageSnapshots(input) {
-      return invokeBackendSdkOperation("oss.usage.snapshots.list", () => backend.oss.usage.snapshots.list(omitKeys(input, "requestId")));
     },
     async setDefaultBucket(input) {
       return invokeBackendSdkOperation("oss.defaultBuckets.update", () => backend.oss.defaultBuckets.update(

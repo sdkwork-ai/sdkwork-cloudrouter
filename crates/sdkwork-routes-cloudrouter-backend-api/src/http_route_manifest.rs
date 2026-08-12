@@ -278,7 +278,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Patch,
         "/backend/v3/api/payments/providers/{providerId}",
         "payments",
-        "payments.providers.update",
+        "providers.update",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -318,24 +318,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
-        "/backend/v3/api/storage/buckets",
-        "storage",
-        "oss.buckets.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/backend/v3/api/storage/buckets",
-        "storage",
-        "oss.buckets.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Patch,
-        "/backend/v3/api/storage/buckets/{bucketId}",
-        "storage",
-        "oss.buckets.update",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
         "/backend/v3/api/storage/default_buckets",
         "storage",
         "defaultBuckets.list",
@@ -357,30 +339,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/backend/v3/api/storage/gc_jobs",
         "storage",
         "gcJobs.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/backend/v3/api/storage/providers",
-        "storage",
-        "oss.providers.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/backend/v3/api/storage/providers",
-        "storage",
-        "oss.providers.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Patch,
-        "/backend/v3/api/storage/providers/{providerId}",
-        "storage",
-        "oss.providers.update",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/backend/v3/api/storage/providers/{providerId}/health_check",
-        "storage",
-        "providers.healthCheck",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,

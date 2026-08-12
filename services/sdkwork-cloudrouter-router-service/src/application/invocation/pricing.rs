@@ -511,12 +511,7 @@ mod tests {
         );
         assert_eq!(
             Some(input_quote.clone()),
-            preflight_quote_for_line(
-                &quotes,
-                Some(&account),
-                Some("gpt-4o"),
-                &input_line
-            )
+            preflight_quote_for_line(&quotes, Some(&account), Some("gpt-4o"), &input_line)
         );
         let output_line = InvocationUsageLine::new(
             BillingMeter::LlmOutputToken,
@@ -524,12 +519,7 @@ mod tests {
         );
         assert_eq!(
             Some(output_quote.clone()),
-            preflight_quote_for_line(
-                &quotes,
-                Some(&account),
-                Some("gpt-4o"),
-                &output_line
-            )
+            preflight_quote_for_line(&quotes, Some(&account), Some("gpt-4o"), &output_line)
         );
 
         // A meter without a preflight quote is not reused.
@@ -552,12 +542,7 @@ mod tests {
         };
         assert_eq!(
             None,
-            preflight_quote_for_line(
-                &quotes,
-                Some(&account),
-                Some("gpt-4o"),
-                &override_line
-            )
+            preflight_quote_for_line(&quotes, Some(&account), Some("gpt-4o"), &override_line)
         );
 
         // A changed account (dispatch failover) or requested model must
@@ -580,6 +565,9 @@ mod tests {
             None,
             preflight_quote_for_line(&quotes, Some(&account), Some("gpt-4o-turbo"), &input_line)
         );
-        assert_eq!(None, preflight_quote_for_line(&quotes, None, Some("gpt-4o"), &input_line));
+        assert_eq!(
+            None,
+            preflight_quote_for_line(&quotes, None, Some("gpt-4o"), &input_line)
+        );
     }
 }

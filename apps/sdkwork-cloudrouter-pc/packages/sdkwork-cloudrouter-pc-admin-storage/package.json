@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@sdkwork/cloudroutes-pc-commons": "workspace:*",
-    "@sdkwork/drive-pc-sandbox-explorer": "workspace:*",
-    "@sdkwork/drive-pc-sandbox-explorer-sdk-adapter": "workspace:*"
+    "sdkwork-drive-pc-admin-storage-providers": "workspace:*",
+    "sdkwork-drive-pc-admin-core": "workspace:*",
+    "sdkwork-drive-pc-core": "workspace:*"
   }
 }

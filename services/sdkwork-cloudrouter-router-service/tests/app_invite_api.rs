@@ -5,11 +5,10 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_cloudrouter_router_service::domain::DomainError;
 use sdkwork_cloudrouter_router_service::ports::{
-    AdminAuthSettings, AdminAuthSettingsFuture, AdminAuthSettingsStore,
-    AdminAuthInviteCodePolicy, AppInviteCodeItem, AppInviteCodeOwner,
-    AppInviteRelationClaimed, AppInviteStore, ClaimAppInviteRelationCommand,
-    GetAdminAuthSettingsScopeQuery, IssueAppInviteCodeCommand, UpdateAdminAuthSettingsCommand,
-    ValidateAppInviteCodeQuery,
+    AdminAuthInviteCodePolicy, AdminAuthSettings, AdminAuthSettingsFuture, AdminAuthSettingsStore,
+    AppInviteCodeItem, AppInviteCodeOwner, AppInviteRelationClaimed, AppInviteStore,
+    ClaimAppInviteRelationCommand, GetAdminAuthSettingsScopeQuery, IssueAppInviteCodeCommand,
+    UpdateAdminAuthSettingsCommand, ValidateAppInviteCodeQuery,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -48,8 +47,10 @@ impl AppInviteStore for TestAppInviteStore {
     fn validate_invite_code<'a>(
         &'a self,
         query: ValidateAppInviteCodeQuery,
-    ) -> sdkwork_cloudrouter_router_service::ports::AppInviteCommandFuture<'a, Option<AppInviteCodeOwner>>
-    {
+    ) -> sdkwork_cloudrouter_router_service::ports::AppInviteCommandFuture<
+        'a,
+        Option<AppInviteCodeOwner>,
+    > {
         Box::pin(async move {
             let owner = self
                 .codes
@@ -92,8 +93,10 @@ impl AppInviteStore for TestAppInviteStore {
     fn claim_invite_relation<'a>(
         &'a self,
         command: ClaimAppInviteRelationCommand,
-    ) -> sdkwork_cloudrouter_router_service::ports::AppInviteCommandFuture<'a, AppInviteRelationClaimed>
-    {
+    ) -> sdkwork_cloudrouter_router_service::ports::AppInviteCommandFuture<
+        'a,
+        AppInviteRelationClaimed,
+    > {
         Box::pin(async move {
             let mut relations = self.relations.lock().unwrap();
             if let Some((_invitee, inviter)) = relations
@@ -161,14 +164,11 @@ impl AdminAuthSettingsStore for TestAdminAuthSettingsStore {
     ) -> AdminAuthSettingsFuture<'a, AdminAuthSettings> {
         Box::pin(async move {
             if self.not_found {
-                return Err(DomainError::not_found("auth settings were not found".to_owned()));
+                return Err(DomainError::not_found(
+                    "auth settings were not found".to_owned(),
+                ));
             }
-            let settings = self
-                .settings
-                .lock()
-                .unwrap()
-                .clone()
-                .unwrap_or_default();
+            let settings = self.settings.lock().unwrap().clone().unwrap_or_default();
             Ok(settings)
         })
     }
@@ -216,7 +216,10 @@ async fn json_payload(response: axum::response::Response) -> Value {
 
 #[tokio::test]
 async fn app_invite_policy_defaults_open_when_settings_absent() {
-    let router = router_with(Arc::new(TestAppInviteStore::default()), TestAdminAuthSettingsStore::not_found());
+    let router = router_with(
+        Arc::new(TestAppInviteStore::default()),
+        TestAdminAuthSettingsStore::not_found(),
+    );
 
     let response = router
         .oneshot(signed_request("GET", "/app/v3/api/iam/invite/policy", ""))
@@ -309,7 +312,10 @@ async fn app_invite_validate_rejects_malformed_body() {
 #[tokio::test]
 async fn app_invite_issue_creates_and_reuses_personal_code() {
     let store = Arc::new(TestAppInviteStore::default());
-    let router = router_with(store.clone(), Arc::new(TestAdminAuthSettingsStore::default()));
+    let router = router_with(
+        store.clone(),
+        Arc::new(TestAdminAuthSettingsStore::default()),
+    );
 
     let first = router
         .clone()
@@ -318,7 +324,10 @@ async fn app_invite_issue_creates_and_reuses_personal_code() {
         .unwrap();
     assert_eq!(StatusCode::OK, first.status());
     let first_payload = json_payload(first).await;
-    let first_code = first_payload["data"]["inviteCode"].as_str().unwrap().to_owned();
+    let first_code = first_payload["data"]["inviteCode"]
+        .as_str()
+        .unwrap()
+        .to_owned();
     assert_eq!(8, first_code.len());
 
     let second = router

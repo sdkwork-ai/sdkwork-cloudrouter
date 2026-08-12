@@ -88,28 +88,76 @@ pub fn problem_from_wire_code(
 fn shared_validation_message_key(detail: &str) -> Option<(&'static str, serde_json::Value)> {
     const EXACT: &[(&str, &str)] = &[
         // pagination / list
-        ("at least one domain is required", "validation.common.domain.atLeastOne"),
-        ("domain must be a hostname or URL host", "validation.common.domain.hostname"),
-        ("storage query parameters are invalid", "validation.admin.storage.query.invalid"),
+        (
+            "at least one domain is required",
+            "validation.common.domain.atLeastOne",
+        ),
+        (
+            "domain must be a hostname or URL host",
+            "validation.common.domain.hostname",
+        ),
+        (
+            "storage query parameters are invalid",
+            "validation.admin.storage.query.invalid",
+        ),
         // service node
-        ("status must be enabled or disabled", "validation.common.status.enabledOrDisabled"),
-        ("status must be changed through status endpoint", "business.admin.serviceNode.statusEndpoint"),
-        ("service node update fields are required", "validation.admin.serviceNode.update.required"),
+        (
+            "status must be enabled or disabled",
+            "validation.common.status.enabledOrDisabled",
+        ),
+        (
+            "status must be changed through status endpoint",
+            "business.admin.serviceNode.statusEndpoint",
+        ),
+        (
+            "service node update fields are required",
+            "validation.admin.serviceNode.update.required",
+        ),
         // api keys / auth
-        ("keyPrefix must identify an existing API key prefix", "validation.admin.apiKey.keyPrefix.identifies"),
+        (
+            "keyPrefix must identify an existing API key prefix",
+            "validation.admin.apiKey.keyPrefix.identifies",
+        ),
         ("appId is invalid", "validation.common.appId.invalid"),
-        ("apiKeyId must be a positive integer", "validation.common.apiKeyId.positiveInteger"),
+        (
+            "apiKeyId must be a positive integer",
+            "validation.common.apiKeyId.positiveInteger",
+        ),
         // common
-        ("ip must be a valid IPv4 or IPv6 address", "validation.common.ip.invalid"),
-        ("base URL must be a valid URL", "validation.common.baseUrl.invalid"),
-        ("deployment profile must be standalone or cloud", "validation.common.deploymentProfile.enum"),
+        (
+            "ip must be a valid IPv4 or IPv6 address",
+            "validation.common.ip.invalid",
+        ),
+        (
+            "base URL must be a valid URL",
+            "validation.common.baseUrl.invalid",
+        ),
+        (
+            "deployment profile must be standalone or cloud",
+            "validation.common.deploymentProfile.enum",
+        ),
         // app-facing
-        ("notificationId is invalid", "validation.app.notification.notificationId.invalid"),
-        ("invite code is invalid or inactive", "validation.app.invite.code.invalidOrInactive"),
-        ("datasets must not be empty", "validation.app.chat.datasets.notEmpty"),
-        ("a user cannot invite themselves", "business.app.invite.selfInvite.denied"),
+        (
+            "notificationId is invalid",
+            "validation.app.notification.notificationId.invalid",
+        ),
+        (
+            "invite code is invalid or inactive",
+            "validation.app.invite.code.invalidOrInactive",
+        ),
+        (
+            "datasets must not be empty",
+            "validation.app.chat.datasets.notEmpty",
+        ),
+        (
+            "a user cannot invite themselves",
+            "business.app.invite.selfInvite.denied",
+        ),
         // upstream
-        ("accountGroup must identify an existing upstream account group", "validation.admin.upstream.accountGroup.identifies"),
+        (
+            "accountGroup must identify an existing upstream account group",
+            "validation.admin.upstream.accountGroup.identifies",
+        ),
     ];
     if let Some((_, key)) = EXACT.iter().find(|(template, _)| *template == detail) {
         return Some((key, serde_json::Value::Null));
@@ -218,9 +266,18 @@ fn shared_validation_message_key(detail: &str) -> Option<(&'static str, serde_js
         ));
     }
     for (prefix, key) in [
-        ("refund cancel request body is invalid: ", "validation.payment.refundCancel.body.invalid"),
-        ("payment refund request body is invalid: ", "validation.payment.refund.body.invalid"),
-        ("payment intent request body is invalid: ", "validation.payment.intent.body.invalid"),
+        (
+            "refund cancel request body is invalid: ",
+            "validation.payment.refundCancel.body.invalid",
+        ),
+        (
+            "payment refund request body is invalid: ",
+            "validation.payment.refund.body.invalid",
+        ),
+        (
+            "payment intent request body is invalid: ",
+            "validation.payment.intent.body.invalid",
+        ),
     ] {
         if let Some(error) = detail.strip_prefix(prefix) {
             return Some((key, serde_json::json!({ "error": error.trim() })));
@@ -387,7 +444,8 @@ impl IntoResponse for ProblemResponse {
         let trace_id = self.problem.trace_id.clone();
         let status =
             StatusCode::from_u16(self.problem.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        let mut payload = serde_json::to_value(self.problem).expect("problem detail is serializable");
+        let mut payload =
+            serde_json::to_value(self.problem).expect("problem detail is serializable");
         if let Some(key) = self.i18n_key {
             payload["i18nKey"] = serde_json::Value::String(key);
         }
@@ -564,22 +622,67 @@ mod tests {
     #[test]
     fn shared_validation_messages_resolve_to_keys_with_params() {
         let cases = [
-            ("page must be greater than or equal to 1", "validation.common.list.page.min"),
-            ("page must be between 1 and 2147483647", "validation.common.list.page.max"),
-            ("page_size must be between 1 and 200", "validation.common.list.pageSize.range"),
-            ("q must be visible text and at most 256 characters", "validation.common.field.visibleText"),
-            ("displayName is required", "validation.common.field.required"),
-            ("name header is required", "validation.common.header.required"),
-            ("If-Match header must be visible ASCII", "validation.common.header.visibleAscii"),
-            ("offset must be a non-negative int64 string", "validation.common.field.nonNegativeInt64"),
-            ("limit must be a positive integer or null", "validation.common.field.positiveIntegerOrNull"),
-            ("priority must be a positive integer", "validation.common.field.positiveInteger"),
-            ("config must be a JSON object", "validation.common.field.jsonObject"),
-            ("items must be a JSON array", "validation.common.field.jsonArray"),
-            ("logo must be a MediaResource object", "validation.common.field.mediaResource"),
-            ("code must match ^[a-z]+$", "validation.common.field.pattern"),
+            (
+                "page must be greater than or equal to 1",
+                "validation.common.list.page.min",
+            ),
+            (
+                "page must be between 1 and 2147483647",
+                "validation.common.list.page.max",
+            ),
+            (
+                "page_size must be between 1 and 200",
+                "validation.common.list.pageSize.range",
+            ),
+            (
+                "q must be visible text and at most 256 characters",
+                "validation.common.field.visibleText",
+            ),
+            (
+                "displayName is required",
+                "validation.common.field.required",
+            ),
+            (
+                "name header is required",
+                "validation.common.header.required",
+            ),
+            (
+                "If-Match header must be visible ASCII",
+                "validation.common.header.visibleAscii",
+            ),
+            (
+                "offset must be a non-negative int64 string",
+                "validation.common.field.nonNegativeInt64",
+            ),
+            (
+                "limit must be a positive integer or null",
+                "validation.common.field.positiveIntegerOrNull",
+            ),
+            (
+                "priority must be a positive integer",
+                "validation.common.field.positiveInteger",
+            ),
+            (
+                "config must be a JSON object",
+                "validation.common.field.jsonObject",
+            ),
+            (
+                "items must be a JSON array",
+                "validation.common.field.jsonArray",
+            ),
+            (
+                "logo must be a MediaResource object",
+                "validation.common.field.mediaResource",
+            ),
+            (
+                "code must match ^[a-z]+$",
+                "validation.common.field.pattern",
+            ),
             ("api key was not found", "business.common.notFound"),
-            ("payment intent request body is invalid: bad json", "validation.payment.intent.body.invalid"),
+            (
+                "payment intent request body is invalid: bad json",
+                "validation.payment.intent.body.invalid",
+            ),
         ];
         for (message, expected_key) in cases {
             let (key, _) = shared_validation_message_key(message)
@@ -590,10 +693,9 @@ mod tests {
 
     #[test]
     fn shared_validation_params_extract_field_and_max_length() {
-        let (_, params) = shared_validation_message_key(
-            "search must be visible text and at most 256 characters",
-        )
-        .unwrap();
+        let (_, params) =
+            shared_validation_message_key("search must be visible text and at most 256 characters")
+                .unwrap();
         assert_eq!("search", params["field"]);
         assert_eq!("256", params["maxLength"]);
     }
@@ -602,7 +704,10 @@ mod tests {
     fn shared_validation_key_is_not_applied_to_arbitrary_messages() {
         assert!(shared_validation_message_key("An internal error occurred").is_none());
         assert!(shared_validation_message_key("db connection reset").is_none());
-        assert!(shared_validation_message_key("Idempotency-Key is required for this create operation").is_none());
+        assert!(shared_validation_message_key(
+            "Idempotency-Key is required for this create operation"
+        )
+        .is_none());
     }
 
     #[test]

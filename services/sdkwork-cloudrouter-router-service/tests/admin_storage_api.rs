@@ -7,11 +7,10 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_cloudrouter_router_service::ports::{
     AdminStorageCollection, AdminStorageCommandFuture, AdminStorageCursor, AdminStorageJsonRecord,
-    AdminStorageStore, CheckStorageProviderHealthCommand, CreateStorageBucketCommand,
-    CreateStorageGarbageCollectionJobCommand, CreateStorageProviderCommand,
-    CreateStorageQuotaPolicyCommand, CreateStorageReconciliationRunCommand,
-    ListAdminStorageRecordsQuery, SetStorageDefaultBucketCommand, UpdateStorageBucketCommand,
-    UpdateStorageProviderCommand,
+    AdminStorageStore,
+    CreateStorageGarbageCollectionJobCommand,
+    CreateStorageQuotaPolicyCommand, CreateStorageReconciliationRunCommand, ListAdminStorageRecordsQuery,
+    SetStorageDefaultBucketCommand,
 };
 use serde_json::{json, Map, Value};
 use tower::ServiceExt;
@@ -23,8 +22,6 @@ async fn admin_storage_route_exposes_complete_oss_management_center() {
     );
 
     for (path, expected_id) in [
-        ("/backend/v3/api/storage/providers", "provider-1"),
-        ("/backend/v3/api/storage/buckets", "bucket-1"),
         (
             "/backend/v3/api/storage/default_buckets",
             "default-tenant-private",
@@ -33,14 +30,6 @@ async fn admin_storage_route_exposes_complete_oss_management_center() {
         (
             "/backend/v3/api/storage/usage?scope_type=organization&scope_id=20",
             "usage-1",
-        ),
-        (
-            "/backend/v3/api/storage/usage/ledger?scope_type=user&scope_id=30",
-            "ledger-1",
-        ),
-        (
-            "/backend/v3/api/storage/usage/snapshots?scope_type=tenant&scope_id=10",
-            "snapshot-1",
         ),
         (
             "/backend/v3/api/storage/reconciliation_runs?run_type=metadata&status=created",
@@ -63,7 +52,7 @@ async fn admin_storage_cursor_pages_are_opaque_and_do_not_skip_rows() {
     let router = sdkwork_cloudrouter_router_service::api::admin_storage_router_with_store(
         Arc::new(TestAdminStorageStore),
     );
-    let mut path = "/backend/v3/api/storage/providers?page_size=1".to_owned();
+    let mut path = "/backend/v3/api/storage/default_buckets?page_size=1".to_owned();
     let mut ids = Vec::new();
 
     for expected_has_more in [true, true, false] {
@@ -86,7 +75,7 @@ async fn admin_storage_cursor_pages_are_opaque_and_do_not_skip_rows() {
             assert!(cursor.chars().all(
                 |character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_')
             ));
-            path = format!("/backend/v3/api/storage/providers?page_size=1&cursor={cursor}");
+            path = format!("/backend/v3/api/storage/default_buckets?page_size=1&cursor={cursor}");
         } else {
             assert!(payload["data"]["pageInfo"]["nextCursor"].is_null());
         }
@@ -112,7 +101,7 @@ async fn admin_storage_list_rejects_pagination_aliases_and_plain_cursors() {
             .clone()
             .oneshot(trusted_request(
                 "GET",
-                &format!("/backend/v3/api/storage/providers?{query}"),
+                &format!("/backend/v3/api/storage/default_buckets?{query}"),
             ))
             .await
             .unwrap();
@@ -123,98 +112,10 @@ async fn admin_storage_list_rejects_pagination_aliases_and_plain_cursors() {
 }
 
 #[tokio::test]
-async fn admin_storage_route_exposes_provider_bucket_quota_and_job_commands() {
+async fn admin_storage_route_exposes_governance_commands() {
     let router = sdkwork_cloudrouter_router_service::api::admin_storage_router_with_store(
         Arc::new(TestAdminStorageStore),
     );
-
-    let provider = request_json(
-        router.clone(),
-        trusted_json_request(
-            "POST",
-            "/backend/v3/api/storage/providers",
-            r#"{"providerCode":"aws-primary","name":"AWS Primary","providerType":"aws_s3","region":"us-east-1","endpointUrl":"https://s3.amazonaws.com","credentialRef":"secret://oss/aws-primary","supportsMultipart":true,"supportsLifecycle":true,"supportsObjectLock":false}"#,
-        ),
-    )
-    .await;
-    assert_eq!(0, provider["code"].as_i64().unwrap());
-    assert_eq!("provider-created", provider["data"]["provider"]["id"]);
-    assert_eq!("aws-primary", provider["data"]["provider"]["providerCode"]);
-    assert_eq!("AWS Primary", provider["data"]["provider"]["name"]);
-
-    let chinese_name = request_json(
-        router.clone(),
-        trusted_json_request(
-            "POST",
-            "/backend/v3/api/storage/providers",
-            r#"{"providerCode":"aws-primary","name":"华为云主存储","providerType":"huawei_obs","region":"cn-north-4","endpointUrl":"https://obs.cn-north-4.myhuaweicloud.com","credentialRef":"plain:ak:sk","supportsMultipart":true,"supportsLifecycle":true,"supportsObjectLock":false}"#,
-        ),
-    )
-    .await;
-    // 校验链验证：中文名称通过 normalize_display_text（TestStore 的
-    // create_provider 断言 command.name == "华为云主存储"）。
-    assert_eq!(0, chinese_name["code"].as_i64().unwrap());
-
-    let auto_code = request_json(
-        router.clone(),
-        trusted_json_request(
-            "POST",
-            "/backend/v3/api/storage/providers",
-            r#"{"name":"自动编码服务商","providerType":"oss_s3","region":"cn-hangzhou","endpointUrl":"https://oss-cn-hangzhou.aliyuncs.com","credentialRef":"plain:ak:sk","supportsMultipart":true,"supportsLifecycle":true,"supportsObjectLock":false}"#,
-        ),
-    )
-    .await;
-    // 未提供 providerCode 时自动生成（TestStore 断言 command.supplier_code 以 provider- 开头）。
-    assert_eq!(0, auto_code["code"].as_i64().unwrap());
-
-    let provider_update = request_json(
-        router.clone(),
-        trusted_json_request(
-            "PATCH",
-            "/backend/v3/api/storage/providers/provider-created",
-            r#"{"status":"disabled","reason":"maintenance"}"#,
-        ),
-    )
-    .await;
-    assert_eq!(0, provider_update["code"].as_i64().unwrap());
-    assert_eq!("disabled", provider_update["data"]["provider"]["status"]);
-
-    let health = request_json(
-        router.clone(),
-        trusted_empty_request(
-            "POST",
-            "/backend/v3/api/storage/providers/provider-created/health_check",
-        ),
-    )
-    .await;
-    assert_eq!(0, health["code"].as_i64().unwrap());
-    assert_eq!("provider-created", health["data"]["providerId"]);
-    assert_eq!(true, health["data"]["healthy"]);
-
-    let bucket = request_json(
-        router.clone(),
-        trusted_json_request(
-            "POST",
-            "/backend/v3/api/storage/buckets",
-            r#"{"bucketName":"tenant-assets","providerId":"provider-created","logicalScope":"tenant_private","objectKeyPrefix":"tenants/{tenantId}/","defaultStorageClass":"STANDARD","defaultEncryptionMode":"sse_s3","publicAccessBlocked":true,"versioningEnabled":true}"#,
-        ),
-    )
-    .await;
-    assert_eq!(0, bucket["code"].as_i64().unwrap());
-    assert_eq!("bucket-created", bucket["data"]["bucket"]["id"]);
-    assert_eq!("tenant-assets", bucket["data"]["bucket"]["bucketName"]);
-
-    let bucket_update = request_json(
-        router.clone(),
-        trusted_json_request(
-            "PATCH",
-            "/backend/v3/api/storage/buckets/bucket-created",
-            r#"{"status":"archived","reason":"retired"}"#,
-        ),
-    )
-    .await;
-    assert_eq!(0, bucket_update["code"].as_i64().unwrap());
-    assert_eq!("archived", bucket_update["data"]["bucket"]["status"]);
 
     let default_bucket = request_json(
         router.clone(),
@@ -285,7 +186,7 @@ async fn admin_storage_route_rejects_missing_trusted_subject_before_store_access
         .oneshot(
             Request::builder()
                 .method("GET")
-                .uri("/backend/v3/api/storage/providers")
+                .uri("/backend/v3/api/storage/default_buckets")
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -301,116 +202,29 @@ async fn admin_storage_route_rejects_missing_trusted_subject_before_store_access
 struct TestAdminStorageStore;
 
 impl AdminStorageStore for TestAdminStorageStore {
-    fn list_providers<'a>(
+    fn list_default_buckets<'a>(
         &'a self,
         query: ListAdminStorageRecordsQuery,
     ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
         if query.limit != 1 {
-            return collection("provider-1", provider_record, query.limit, None);
+            return collection("default-tenant-private", default_bucket_record, query.limit, None);
         }
         match query.cursor.map(AdminStorageCursor::id) {
             None => collection(
                 "5",
-                provider_record,
+                default_bucket_record,
                 query.limit,
                 AdminStorageCursor::new(5),
             ),
             Some(5) => collection(
                 "4",
-                provider_record,
+                default_bucket_record,
                 query.limit,
                 AdminStorageCursor::new(4),
             ),
-            Some(4) => collection("3", provider_record, query.limit, None),
-            Some(_) => collection("2", provider_record, query.limit, None),
+            Some(4) => collection("3", default_bucket_record, query.limit, None),
+            Some(_) => collection("2", default_bucket_record, query.limit, None),
         }
-    }
-
-    fn create_provider<'a>(
-        &'a self,
-        command: CreateStorageProviderCommand,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
-        Box::pin(async move {
-            assert!(
-                command.supplier_code == "aws-primary"
-                    || command.supplier_code.starts_with("provider-"),
-                "unexpected supplier code: {}",
-                command.supplier_code,
-            );
-            assert!(
-                command.name == "AWS Primary" || command.name == "华为云主存储" || command.name == "自动编码服务商",
-                "unexpected provider name: {}",
-                command.name,
-            );
-            Ok(provider_record("provider-created"))
-        })
-    }
-
-    fn update_provider<'a>(
-        &'a self,
-        command: UpdateStorageProviderCommand,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
-        Box::pin(async move {
-            assert_eq!("provider-created", command.provider_id);
-            let mut item = provider_record("provider-created");
-            item.insert("status".to_owned(), json!(command.status));
-            Ok(item)
-        })
-    }
-
-    fn check_provider_health<'a>(
-        &'a self,
-        command: CheckStorageProviderHealthCommand,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
-        Box::pin(async move {
-            Ok(record([
-                ("providerId", json!(command.provider_id)),
-                ("healthy", json!(true)),
-                ("status", json!("healthy")),
-                ("checkedAt", json!("2026-05-25T00:00:00Z")),
-            ]))
-        })
-    }
-
-    fn list_buckets<'a>(
-        &'a self,
-        query: ListAdminStorageRecordsQuery,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
-        collection("bucket-1", bucket_record, query.limit, None)
-    }
-
-    fn create_bucket<'a>(
-        &'a self,
-        command: CreateStorageBucketCommand,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
-        Box::pin(async move {
-            assert_eq!("tenant-assets", command.bucket_name);
-            Ok(bucket_record("bucket-created"))
-        })
-    }
-
-    fn update_bucket<'a>(
-        &'a self,
-        command: UpdateStorageBucketCommand,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
-        Box::pin(async move {
-            assert_eq!("bucket-created", command.bucket_id);
-            let mut item = bucket_record("bucket-created");
-            item.insert("status".to_owned(), json!(command.status));
-            Ok(item)
-        })
-    }
-
-    fn list_default_buckets<'a>(
-        &'a self,
-        query: ListAdminStorageRecordsQuery,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
-        collection(
-            "default-tenant-private",
-            default_bucket_record,
-            query.limit,
-            None,
-        )
     }
 
     fn set_default_bucket<'a>(
@@ -445,20 +259,6 @@ impl AdminStorageStore for TestAdminStorageStore {
         query: ListAdminStorageRecordsQuery,
     ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
         collection("usage-1", usage_record, query.limit, None)
-    }
-
-    fn list_usage_ledger<'a>(
-        &'a self,
-        query: ListAdminStorageRecordsQuery,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
-        collection("ledger-1", usage_ledger_record, query.limit, None)
-    }
-
-    fn list_usage_snapshots<'a>(
-        &'a self,
-        query: ListAdminStorageRecordsQuery,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
-        collection("snapshot-1", usage_snapshot_record, query.limit, None)
     }
 
     fn list_reconciliation_runs<'a>(
@@ -512,39 +312,6 @@ fn collection<'a>(
     })
 }
 
-fn provider_record(id: &str) -> AdminStorageJsonRecord {
-    record([
-        ("id", json!(id)),
-        ("providerCode", json!("aws-primary")),
-        ("name", json!("AWS Primary")),
-        ("providerType", json!("aws_s3")),
-        ("region", json!("us-east-1")),
-        ("endpointUrl", json!("https://s3.amazonaws.com")),
-        ("credentialRef", json!("secret://oss/aws-primary")),
-        ("pathStyleEnabled", json!(false)),
-        ("supportsMultipart", json!(true)),
-        ("supportsLifecycle", json!(true)),
-        ("supportsObjectLock", json!(false)),
-        ("status", json!("active")),
-        ("healthStatus", json!("healthy")),
-    ])
-}
-
-fn bucket_record(id: &str) -> AdminStorageJsonRecord {
-    record([
-        ("id", json!(id)),
-        ("bucketName", json!("tenant-assets")),
-        ("logicalScope", json!("tenant_private")),
-        ("providerId", json!("provider-created")),
-        ("providerCode", json!("aws-primary")),
-        ("storageClass", json!("STANDARD")),
-        ("defaultStorageClass", json!("STANDARD")),
-        ("encryption", json!("sse_s3")),
-        ("defaultEncryptionMode", json!("sse_s3")),
-        ("status", json!("active")),
-    ])
-}
-
 fn default_bucket_record(id: &str) -> AdminStorageJsonRecord {
     record([
         ("id", json!(id)),
@@ -587,29 +354,6 @@ fn usage_record(id: &str) -> AdminStorageJsonRecord {
     ])
 }
 
-fn usage_ledger_record(id: &str) -> AdminStorageJsonRecord {
-    record([
-        ("id", json!(id)),
-        ("scopeType", json!("user")),
-        ("scopeId", json!("30")),
-        ("deltaBytes", json!("4096")),
-        ("occurredAt", json!("2026-05-25T00:00:00Z")),
-    ])
-}
-
-fn usage_snapshot_record(id: &str) -> AdminStorageJsonRecord {
-    record([
-        ("id", json!(id)),
-        ("scopeType", json!("tenant")),
-        ("scopeId", json!("10")),
-        ("scope", json!("tenant:10")),
-        ("usedBytes", json!("1073741824")),
-        ("reservedBytes", json!("0")),
-        ("fileCount", json!("42")),
-        ("snapshotAt", json!("2026-05-25T00:00:00Z")),
-    ])
-}
-
 fn reconciliation_record(id: &str) -> AdminStorageJsonRecord {
     record([
         ("id", json!(id)),
@@ -645,16 +389,6 @@ fn trusted_request(method: &str, path: &str) -> Request<Body> {
         .method(method)
         .uri(path)
         .internal_trusted_subject(100001, 0, 30)
-        .body(Body::empty())
-        .unwrap()
-}
-
-fn trusted_empty_request(method: &str, path: &str) -> Request<Body> {
-    Request::builder()
-        .method(method)
-        .uri(path)
-        .internal_trusted_subject(100001, 0, 30)
-        .header("X-Request-Id", "req-test-storage")
         .body(Body::empty())
         .unwrap()
 }

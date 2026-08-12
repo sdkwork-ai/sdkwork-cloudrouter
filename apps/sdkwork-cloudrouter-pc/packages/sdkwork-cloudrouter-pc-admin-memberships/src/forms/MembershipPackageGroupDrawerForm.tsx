@@ -6,12 +6,14 @@ import {
   MembershipTextField,
 } from '../components/MembershipFormControls';
 import { membershipStatusLabel } from '../components/MembershipStatusBadge';
+import { membershipCategoryLabel } from '../components/MembershipCategoryBadge';
 import {
   formatMembershipFormValidationError,
   parseOptionalNonNegativeIntegerField,
   parseRequiredPositiveIntegerField,
 } from './membershipFormValues';
 import type {
+  MembershipsAdminCategory,
   MembershipsAdminPackageGroup,
   MembershipsAdminPackageGroupMutationInput,
 } from '../membershipsService';
@@ -41,6 +43,9 @@ export function MembershipPackageGroupDrawerForm({
   onSubmit,
 }: MembershipPackageGroupDrawerFormProps) {
   const { t } = useTranslation();
+  const [category, setCategory] = useState<MembershipsAdminCategory>(
+    initialValue?.category === 'community' ? 'community' : 'token',
+  );
   const [name, setName] = useState(initialValue?.name ?? '');
   const [description, setDescription] = useState(initialValue?.description ?? '');
   const [billingCycle, setBillingCycle] = useState<MembershipPackageGroupBillingCycle>(
@@ -73,6 +78,7 @@ export function MembershipPackageGroupDrawerForm({
     setError(null);
     try {
       await onSubmit({
+        category,
         code: mode === 'edit' && initialValue?.code ? initialValue.code : buildPackageGroupCode(name),
         name,
         description,
@@ -97,6 +103,15 @@ export function MembershipPackageGroupDrawerForm({
       onSubmit={handleSubmit}
     >
       <MembershipTextField label={t('admin.commerce.memberships.groups.form.name', 'Group Name')} value={name} onChange={setName} placeholder={t('admin.commerce.memberships.groups.form.namePlaceholder', 'Monthly packages')} />
+      <MembershipSelectField
+        label={t('admin.commerce.memberships.category.label', 'Category')}
+        value={category}
+        options={[
+          { value: 'token', label: membershipCategoryLabel('token', t) },
+          { value: 'community', label: membershipCategoryLabel('community', t) },
+        ]}
+        onChange={(value) => setCategory(value as MembershipsAdminCategory)}
+      />
       <MembershipTextField label={t('admin.commerce.memberships.groups.form.description', 'Description')} value={description} onChange={setDescription} />
       <div className="grid grid-cols-2 gap-4">
         <MembershipSelectField

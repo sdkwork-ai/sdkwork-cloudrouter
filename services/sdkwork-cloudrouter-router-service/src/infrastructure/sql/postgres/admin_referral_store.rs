@@ -51,11 +51,9 @@ impl AdminReferralStore for PostgresAdminReferralStore {
         command: CreateAdminReferralStrategyCommand,
     ) -> AdminReferralCommandFuture<'a, AdminReferralStrategyItem> {
         Box::pin(async move {
-            let mut tx = self
-                .pool
-                .begin()
-                .await
-                .map_err(|error| store_error("failed to begin referral strategy transaction", error))?;
+            let mut tx = self.pool.begin().await.map_err(|error| {
+                store_error("failed to begin referral strategy transaction", error)
+            })?;
             let item = insert_referral_strategy(&mut tx, &command).await?;
             insert_audit_log(
                 &mut tx,
@@ -80,11 +78,9 @@ impl AdminReferralStore for PostgresAdminReferralStore {
         command: UpdateAdminReferralStrategyCommand,
     ) -> AdminReferralCommandFuture<'a, AdminReferralStrategyItem> {
         Box::pin(async move {
-            let mut tx = self
-                .pool
-                .begin()
-                .await
-                .map_err(|error| store_error("failed to begin referral strategy transaction", error))?;
+            let mut tx = self.pool.begin().await.map_err(|error| {
+                store_error("failed to begin referral strategy transaction", error)
+            })?;
             let updated = update_referral_strategy(&mut tx, &command).await?;
             match updated {
                 Some(item) => {
@@ -121,11 +117,9 @@ impl AdminReferralStore for PostgresAdminReferralStore {
         command: DeleteAdminReferralStrategyCommand,
     ) -> AdminReferralCommandFuture<'a, bool> {
         Box::pin(async move {
-            let mut tx = self
-                .pool
-                .begin()
-                .await
-                .map_err(|error| store_error("failed to begin referral strategy transaction", error))?;
+            let mut tx = self.pool.begin().await.map_err(|error| {
+                store_error("failed to begin referral strategy transaction", error)
+            })?;
             let deleted = sqlx::query(
                 r#"
                 DELETE FROM ops_referral_strategy
@@ -227,10 +221,14 @@ async fn list_referral_strategies(
     pool: &PgPool,
     query: ListAdminReferralStrategiesQuery,
 ) -> DomainResult<AdminReferralListPage<AdminReferralStrategyItem>> {
-    let rows = match query.status.as_deref().map(str::trim).filter(|value| !value.is_empty()) {
-        Some("active") | Some("enabled") => {
-            sqlx::query(
-                r#"
+    let rows = match query
+        .status
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        Some("active") | Some("enabled") => sqlx::query(
+            r#"
                 SELECT
                     id::text AS id,
                     name AS name,
@@ -253,11 +251,9 @@ async fn list_referral_strategies(
                 ORDER BY updated_at DESC, id DESC
                 LIMIT $3 OFFSET $4
                 "#,
-            )
-        }
-        Some("disabled") | Some("inactive") => {
-            sqlx::query(
-                r#"
+        ),
+        Some("disabled") | Some("inactive") => sqlx::query(
+            r#"
                 SELECT
                     id::text AS id,
                     name AS name,
@@ -280,11 +276,9 @@ async fn list_referral_strategies(
                 ORDER BY updated_at DESC, id DESC
                 LIMIT $3 OFFSET $4
                 "#,
-            )
-        }
-        _ => {
-            sqlx::query(
-                r#"
+        ),
+        _ => sqlx::query(
+            r#"
                 SELECT
                     id::text AS id,
                     name AS name,
@@ -306,8 +300,7 @@ async fn list_referral_strategies(
                 ORDER BY updated_at DESC, id DESC
                 LIMIT $3 OFFSET $4
                 "#,
-            )
-        }
+        ),
     }
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)

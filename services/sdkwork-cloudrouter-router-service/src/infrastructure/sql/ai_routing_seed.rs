@@ -2102,7 +2102,10 @@ mod tests {
         assert_eq!(standard.resource_group_code, "official.openai.full");
         assert!(standard.vendor_code.is_none());
         assert!(standard.modalities.is_empty());
-        assert_eq!(standard.tags, vec!["stable".to_owned(), "recommended".to_owned()]);
+        assert_eq!(
+            standard.tags,
+            vec!["stable".to_owned(), "recommended".to_owned()]
+        );
         assert!(standard.is_default);
     }
 
@@ -2137,7 +2140,9 @@ mod tests {
             "exactly one seed account group must be the default"
         );
         assert!(
-            groups.iter().any(|group| group.is_default && group.group_code == "standard-group"),
+            groups
+                .iter()
+                .any(|group| group.is_default && group.group_code == "standard-group"),
             "the default seed group must be standard-group"
         );
     }
@@ -2327,7 +2332,11 @@ mod tests {
         let expectations: [(&str, &str, &str); 3] = [
             ("openai.chat_completions", "POST", "/v1/chat/completions"),
             ("openai.models", "GET", "/v1/models"),
-            ("gemini.generate_content", "POST", "/v1beta/models/{model}:generateContent"),
+            (
+                "gemini.generate_content",
+                "POST",
+                "/v1beta/models/{model}:generateContent",
+            ),
         ];
         for (api_code, method, path_template) in expectations {
             let resource = by_code

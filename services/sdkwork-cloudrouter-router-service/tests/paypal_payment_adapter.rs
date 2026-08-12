@@ -85,6 +85,8 @@ async fn paypal_create_order_maps_standard_payment_intent_to_order_request() {
             merchant_order_no: Some("order-1".to_owned()),
             amount_minor: Some(1234),
             currency: Some("USD".to_owned()),
+            notify_url: None,
+            return_url: None,
             metadata: json!({ "idempotency_key": "idem-paypal-create-1" }),
         })
         .await

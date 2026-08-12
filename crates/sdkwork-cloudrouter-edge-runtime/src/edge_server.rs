@@ -2618,8 +2618,7 @@ fn build_portal_runtime_env_script(runtime_env: &PortalRuntimeEnv) -> String {
         .replace('\u{2028}', "\\u2028")
         .replace('\u{2029}', "\\u2029");
 
-    let mut script =
-        format!("window.__CLOUDROUTER_ENV__ = Object.freeze({serialized});\n");
+    let mut script = format!("window.__CLOUDROUTER_ENV__ = Object.freeze({serialized});\n");
 
     // Credential-entry bootstrap Access-Token. A usable Access-Token —
     // whether an explicitly configured `SDKWORK_ACCESS_TOKEN` or a signed
@@ -3314,7 +3313,11 @@ fn is_cors_preflight(request: &Request) -> bool {
 fn cors_origin_for_request(state: &EdgeServerState, request: &Request) -> Option<String> {
     let origin = request.headers().get(header::ORIGIN)?;
     let origin_text = origin.to_str().ok()?;
-    if state.config.portal_cors_policy.allows_origin_value(origin_text) {
+    if state
+        .config
+        .portal_cors_policy
+        .allows_origin_value(origin_text)
+    {
         return Some(origin_text.to_owned());
     }
     None

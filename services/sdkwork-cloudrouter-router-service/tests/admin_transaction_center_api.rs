@@ -6,8 +6,9 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_cloudrouter_router_service::ports::{
     AdminTransactionCenterFuture, AdminTransactionCenterStore, AdminTransactionCollection,
-    AdminTransactionJsonRecord, ListAdminTransactionChildRecordsQuery,
-    ListAdminTransactionRecordsQuery, LoadAdminTransactionRecordQuery, UpdatePaymentProviderCommand,
+    AdminTransactionJsonRecord,
+    ListAdminTransactionRecordsQuery,
+    UpdatePaymentProviderCommand,
 };
 use serde_json::{json, Map, Value};
 use tower::ServiceExt;
@@ -75,12 +76,13 @@ async fn admin_transaction_center_provider_update_persists_mutation_and_returns_
     assert_eq!("Stripe CN", payload["data"]["provider"]["displayName"]);
     assert_eq!("inactive", payload["data"]["provider"]["status"]);
     assert_eq!(150, payload["data"]["provider"]["sortOrder"]);
-    assert_eq!("斯特赖普", payload["data"]["provider"]["displayNameI18n"]["zh-CN"]);
-    assert!(
-        payload["data"]["requestId"]
-            .as_str()
-            .is_some_and(|value| !value.is_empty())
+    assert_eq!(
+        "斯特赖普",
+        payload["data"]["provider"]["displayNameI18n"]["zh-CN"]
     );
+    assert!(payload["data"]["requestId"]
+        .as_str()
+        .is_some_and(|value| !value.is_empty()));
 
     let updates = store.provider_updates.lock().unwrap();
     assert_eq!(1, updates.len());

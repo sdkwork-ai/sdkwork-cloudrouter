@@ -5,9 +5,8 @@ use crate::{manifest, paths};
 use axum::Router;
 use sdkwork_cloudrouter_config::{
     ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig, DatabaseEngine, DeploymentMode,
-    InternalGatewaySecurityConfig, PaymentWebhookConfig, RedisConfig, RequestLimitsConfig,
-    RuntimeConfigProfile, RuntimeTomlConfig, StartupInstallMode, TrustedSubjectConfig,
-    UpstreamCredentialSecurityConfig,
+    InternalGatewaySecurityConfig, RedisConfig, RequestLimitsConfig, RuntimeConfigProfile,
+    RuntimeTomlConfig, StartupInstallMode, TrustedSubjectConfig, UpstreamCredentialSecurityConfig,
 };
 use sdkwork_cloudrouter_database_host::connect_cloud_router_database;
 use sdkwork_cloudrouter_http::AppSubjectBoundaryConfig;
@@ -32,9 +31,10 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
     PostgresAdminAuthSettingsStore, PostgresAdminTransactionCenterStore, PostgresAppChatStore,
     PostgresAppGatewayTracesReadStore, PostgresAppInviteStore, PostgresAppNotificationStore,
     PostgresAppRoutingReadStore, PostgresAppRoutingStrategyStore, PostgresAppRuntimeStore,
-    PostgresCatalogLoadError, PostgresDashboardOverviewReadStore, PostgresGatewayApiKeyCommandStore,
-    PostgresPaymentCallbackStore, PostgresPaymentIntentRuntimeStore, PostgresPricingCatalogLoader,
-    PostgresSettingsStore, PostgresSiteSettingsStore, PostgresUsageLogsReadStore,
+    PostgresCatalogLoadError, PostgresDashboardOverviewReadStore,
+    PostgresGatewayApiKeyCommandStore, PostgresPaymentIntentRuntimeStore,
+    PostgresPricingCatalogLoader, PostgresSettingsStore, PostgresSiteSettingsStore,
+    PostgresUsageLogsReadStore,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::{
     AppRuntimeGatewayHttpClient, OsApiKeySecretGenerator, RedisRuntimeStreamBus,
@@ -47,8 +47,8 @@ use sdkwork_cloudrouter_router_service::ports::{
     AppNotificationStore, AppRoutingReadStore, AppRoutingStrategyStore, AppRuntimeStore,
     DashboardOverviewReadStore, GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore,
     ModelRankingRefreshOutcome, ModelRankingRefreshRunStatus, ModelRankingRefreshStore,
-    ModelRankingsCacheInvalidation, ModelRankingsReadModelStore, PaymentCallbackStore,
-    SettingsStore, SettlementsDashboardReadStore, SiteSettingsStore, UsageLogsReadStore,
+    ModelRankingsCacheInvalidation, ModelRankingsReadModelStore, SettingsStore,
+    SettlementsDashboardReadStore, SiteSettingsStore, UsageLogsReadStore,
 };
 use sdkwork_cloudrouter_settlements_dashboard_repository_sqlx::PostgresSettlementsDashboardReadStore;
 use sdkwork_content_documents_sdk_reference::app_sdk_reference_router;
@@ -126,7 +126,6 @@ type AppRoutingStrategyRuntimeStore = Arc<dyn AppRoutingStrategyStore + Send + S
 type AppSiteSettingsRuntimeStore = Arc<dyn SiteSettingsStore + Send + Sync>;
 type DashboardReadStore = Arc<dyn DashboardOverviewReadStore + Send + Sync>;
 type EntityUuidGen = Arc<dyn EntityUuidGenerator + Send + Sync>;
-type PaymentCallbackRuntimeStore = Arc<dyn PaymentCallbackStore + Send + Sync>;
 type PaymentIntentAggregateRuntimeStore = Arc<dyn PaymentAggregateRuntimeStore>;
 type SettlementsDashboardStore = Arc<dyn SettlementsDashboardReadStore + Send + Sync>;
 type SettingsRuntimeStore = Arc<dyn SettingsStore + Send + Sync>;
@@ -160,7 +159,6 @@ fn merge_app_sdk_reference_router(router: Router) -> Router {
 pub fn router() -> Router {
     merge_app_sdk_reference_router(router_with_database_status(None, None, None))
         .merge(sdkwork_cloudrouter_router_service::api::app_site_settings_router())
-        .merge(sdkwork_cloudrouter_router_service::api::app_payment_callback_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_dashboard_overview_router())
         .merge(app_model_rankings_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_settlements_dashboard_router())
@@ -279,7 +277,6 @@ where
 {
     merge_app_sdk_reference_router(router_with_database_status(config, None, None))
         .merge(sdkwork_cloudrouter_router_service::api::app_site_settings_router())
-        .merge(sdkwork_cloudrouter_router_service::api::app_payment_callback_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_dashboard_overview_router())
         .merge(app_model_rankings_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_settlements_dashboard_router())
@@ -322,15 +319,13 @@ async fn finalize_product_router_with_federated_capabilities(
         .await
         .map_err(ProductCatalogRouterError::Config)?;
         match database_pool {
-            Some(database_pool) => {
-                crate::community_runtime::merge_federated_community_app_router(
-                    router,
-                    database_pool,
-                    subject_boundary_config,
-                )
-                .await
-                .map_err(ProductCatalogRouterError::Config)
-            }
+            Some(database_pool) => crate::community_runtime::merge_federated_community_app_router(
+                router,
+                database_pool,
+                subject_boundary_config,
+            )
+            .await
+            .map_err(ProductCatalogRouterError::Config),
             None => {
                 tracing::info!(
                     target: "sdkwork.cloudrouter.community",
@@ -351,8 +346,6 @@ struct AppRouterRuntime<'a> {
     entity_uuid_generator: EntityUuidGen,
     trusted_subject_config: TrustedSubjectConfig,
     app_session_config: AppSessionConfig,
-    payment_webhook_config: Option<PaymentWebhookConfig>,
-    payment_callback_store: Option<PaymentCallbackRuntimeStore>,
     payment_intent_runtime_store: Option<PaymentIntentAggregateRuntimeStore>,
     payment_provider_registry: PaymentProviderRegistry,
     dashboard_read_store: Option<DashboardReadStore>,
@@ -385,8 +378,6 @@ fn router_with_runtime_stores_and_database_status(runtime: AppRouterRuntime<'_>)
         entity_uuid_generator,
         trusted_subject_config,
         app_session_config,
-        payment_webhook_config,
-        payment_callback_store,
         payment_intent_runtime_store,
         payment_provider_registry,
         dashboard_read_store,
@@ -405,7 +396,7 @@ fn router_with_runtime_stores_and_database_status(runtime: AppRouterRuntime<'_>)
         app_routing_strategy_store,
         model_catalog_router,
         config,
-        request_limits_config,
+        request_limits_config: _request_limits_config,
         readiness_check,
         api_key_runtime,
         deployment_mode,
@@ -421,29 +412,16 @@ fn router_with_runtime_stores_and_database_status(runtime: AppRouterRuntime<'_>)
     };
     if let (Some(invite_store), Some(auth_settings_store)) = (app_invite_store, auth_settings_store)
     {
-        router = router.merge(sdkwork_cloudrouter_router_service::api::app_invite_router_with_store(
-            invite_store,
-            auth_settings_store,
-        ));
+        router = router.merge(
+            sdkwork_cloudrouter_router_service::api::app_invite_router_with_store(
+                invite_store,
+                auth_settings_store,
+            ),
+        );
     }
     if let Some(model_catalog_router) = model_catalog_router {
         router = router.merge(model_catalog_router);
     }
-    // payment callback router must not use app_request_subject_boundary: providers cannot send app user session headers.
-    router = match payment_callback_store {
-        Some(store) => match payment_webhook_config {
-            Some(payment_webhook_config) => router.merge(
-                sdkwork_cloudrouter_router_service::api::app_payment_callback_router_with_store_and_body_limit(
-                    store,
-                    Arc::new(OsApiKeySecretGenerator),
-                    payment_webhook_config,
-                    request_limits_config.payment_callback_body_max_bytes(),
-                ),
-            ),
-            None => router.merge(sdkwork_cloudrouter_router_service::api::app_payment_callback_router()),
-        },
-        None => router.merge(sdkwork_cloudrouter_router_service::api::app_payment_callback_router()),
-    };
     router = match payment_intent_runtime_store {
         Some(store) => sdkwork_cloudrouter_http::merge_web_framework_scoped_app_router(
             router,
@@ -620,7 +598,6 @@ pub async fn router_with_postgres_product_catalog(
     upstream_credential_security_config: UpstreamCredentialSecurityConfig,
     trusted_subject_config: TrustedSubjectConfig,
     app_session_config: AppSessionConfig,
-    payment_webhook_config: PaymentWebhookConfig,
 ) -> Result<Router, ProductCatalogRouterError> {
     let deployment_mode = DeploymentMode::from_env().map_err(ProductCatalogRouterError::Config)?;
     let credential_secret_codec =
@@ -639,7 +616,6 @@ pub async fn router_with_postgres_product_catalog(
             &app_session_config,
         ),
     );
-    let payment_callback_store = Arc::new(PostgresPaymentCallbackStore::new(pool.clone()));
     let payment_intent_runtime_store =
         Arc::new(PostgresPaymentIntentRuntimeStore::new(pool.clone()));
     let payment_provider_registry = bootstrap_postgres_payment_provider_registry(&pool).await;
@@ -673,8 +649,6 @@ pub async fn router_with_postgres_product_catalog(
             entity_uuid_generator,
             trusted_subject_config,
             app_session_config,
-            payment_webhook_config: Some(payment_webhook_config),
-            payment_callback_store: Some(payment_callback_store),
             payment_intent_runtime_store: Some(payment_intent_runtime_store),
             payment_provider_registry,
             dashboard_read_store: Some(dashboard_read_store),
@@ -720,7 +694,6 @@ pub struct PostgresSharedRuntime {
     pub upstream_credential_security_config: UpstreamCredentialSecurityConfig,
     pub trusted_subject_config: TrustedSubjectConfig,
     pub app_session_config: AppSessionConfig,
-    pub payment_webhook_config: PaymentWebhookConfig,
     pub deployment_mode: DeploymentMode,
     pub request_limits_config: RequestLimitsConfig,
     pub app_runtime_gateway_client:
@@ -742,7 +715,6 @@ pub async fn router_with_postgres_shared_runtime(
         upstream_credential_security_config,
         trusted_subject_config,
         app_session_config,
-        payment_webhook_config,
         deployment_mode,
         request_limits_config,
         app_runtime_gateway_client,
@@ -768,26 +740,27 @@ pub async fn router_with_postgres_shared_runtime(
             &app_session_config,
         ),
     );
-    let payment_callback_store = Arc::new(PostgresPaymentCallbackStore::new(pool.clone()));
     let payment_intent_runtime_store =
         Arc::new(PostgresPaymentIntentRuntimeStore::new(pool.clone()));
     let payment_provider_registry = bootstrap_postgres_payment_provider_registry(&pool).await;
     // ai-metering read stores (`ai_metering_usage`/`ai_metering_request_trace`)
     // run on the commerce pool where the ai-metering module is co-located with
     // the account `acct_*` tables.
-    let dashboard_read_store =
-        Arc::new(PostgresDashboardOverviewReadStore::new(commerce_pool.clone()));
-    let settlements_dashboard_read_store =
-        Arc::new(PostgresSettlementsDashboardReadStore::new(commerce_pool.clone()));
+    let dashboard_read_store = Arc::new(PostgresDashboardOverviewReadStore::new(
+        commerce_pool.clone(),
+    ));
+    let settlements_dashboard_read_store = Arc::new(PostgresSettlementsDashboardReadStore::new(
+        commerce_pool.clone(),
+    ));
     let settings_store = Arc::new(PostgresSettingsStore::new(pool.clone()));
     let usage_logs_read_store = Arc::new(PostgresUsageLogsReadStore::new(commerce_pool.clone()));
-    let gateway_traces_read_store =
-        Arc::new(PostgresAppGatewayTracesReadStore::new(commerce_pool.clone()));
+    let gateway_traces_read_store = Arc::new(PostgresAppGatewayTracesReadStore::new(
+        commerce_pool.clone(),
+    ));
     let app_notification_store = Arc::new(PostgresAppNotificationStore::new(pool.clone()));
     let app_chat_store = Arc::new(PostgresAppChatStore::new(pool.clone()));
     let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));
-    let app_routing_read_store =
-        Arc::new(PostgresAppRoutingReadStore::new(commerce_pool.clone()));
+    let app_routing_read_store = Arc::new(PostgresAppRoutingReadStore::new(commerce_pool.clone()));
     let app_routing_strategy_store = Arc::new(PostgresAppRoutingStrategyStore::new(pool.clone()));
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
     let api_key_runtime = Some(app_api_key_runtime_deps_for_postgres(
@@ -801,14 +774,10 @@ pub async fn router_with_postgres_shared_runtime(
         router_with_runtime_stores_and_database_status(AppRouterRuntime {
             app_site_settings_store: Some(Arc::new(PostgresSiteSettingsStore::new(pool.clone()))),
             app_invite_store: Some(Arc::new(PostgresAppInviteStore::new(pool.clone()))),
-            auth_settings_store: Some(Arc::new(PostgresAdminAuthSettingsStore::new(
-                pool.clone(),
-            ))),
+            auth_settings_store: Some(Arc::new(PostgresAdminAuthSettingsStore::new(pool.clone()))),
             entity_uuid_generator,
             trusted_subject_config,
             app_session_config,
-            payment_webhook_config: Some(payment_webhook_config),
-            payment_callback_store: Some(payment_callback_store),
             payment_intent_runtime_store: Some(payment_intent_runtime_store),
             payment_provider_registry,
             dashboard_read_store: Some(dashboard_read_store),
@@ -851,15 +820,11 @@ pub async fn router_with_database_config(
     let app_session_config = require_app_session_config(
         AppSessionConfig::from_env().map_err(ProductCatalogRouterError::Config)?,
     )?;
-    let payment_webhook_config = require_payment_webhook_config(
-        PaymentWebhookConfig::from_env().map_err(ProductCatalogRouterError::Config)?,
-    )?;
     router_with_database_config_api_key_trusted_subject_app_session(
         config,
         api_key_security_config,
         trusted_subject_config,
         app_session_config,
-        payment_webhook_config,
         DeploymentMode::from_env().map_err(ProductCatalogRouterError::Config)?,
     )
     .await
@@ -870,14 +835,12 @@ pub async fn router_with_database_config_api_key_trusted_subject_and_app_session
     api_key_security_config: ApiKeySecurityConfig,
     trusted_subject_config: TrustedSubjectConfig,
     app_session_config: AppSessionConfig,
-    payment_webhook_config: PaymentWebhookConfig,
 ) -> Result<Router, ProductCatalogRouterError> {
     router_with_database_config_api_key_trusted_subject_app_session(
         config,
         api_key_security_config,
         trusted_subject_config,
         app_session_config,
-        payment_webhook_config,
         DeploymentMode::from_env().map_err(ProductCatalogRouterError::Config)?,
     )
     .await
@@ -888,7 +851,6 @@ pub async fn router_with_database_config_api_key_trusted_subject_app_session_dep
     api_key_security_config: ApiKeySecurityConfig,
     trusted_subject_config: TrustedSubjectConfig,
     app_session_config: AppSessionConfig,
-    payment_webhook_config: PaymentWebhookConfig,
     deployment_mode: DeploymentMode,
 ) -> Result<Router, ProductCatalogRouterError> {
     router_with_database_config_api_key_trusted_subject_app_session(
@@ -896,7 +858,6 @@ pub async fn router_with_database_config_api_key_trusted_subject_app_session_dep
         api_key_security_config,
         trusted_subject_config,
         app_session_config,
-        payment_webhook_config,
         deployment_mode,
     )
     .await
@@ -907,7 +868,6 @@ async fn router_with_database_config_api_key_trusted_subject_app_session(
     api_key_security_config: ApiKeySecurityConfig,
     trusted_subject_config: TrustedSubjectConfig,
     app_session_config: AppSessionConfig,
-    payment_webhook_config: PaymentWebhookConfig,
     deployment_mode: DeploymentMode,
 ) -> Result<Router, ProductCatalogRouterError> {
     router_with_database_config_api_key_trusted_subject_app_session_and_startup_install_mode(
@@ -916,7 +876,6 @@ async fn router_with_database_config_api_key_trusted_subject_app_session(
             api_key_security_config,
             trusted_subject_config,
             app_session_config,
-            payment_webhook_config,
             deployment_mode,
             startup_install_mode: StartupInstallMode::Ensure,
             runtime_toml: None,
@@ -930,7 +889,6 @@ struct PostgresRuntimeBootstrap<'a> {
     api_key_security_config: ApiKeySecurityConfig,
     trusted_subject_config: TrustedSubjectConfig,
     app_session_config: AppSessionConfig,
-    payment_webhook_config: PaymentWebhookConfig,
     deployment_mode: DeploymentMode,
     startup_install_mode: StartupInstallMode,
     runtime_toml: Option<&'a RuntimeTomlConfig>,
@@ -944,7 +902,6 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
         api_key_security_config,
         trusted_subject_config,
         app_session_config,
-        payment_webhook_config,
         deployment_mode,
         startup_install_mode,
         runtime_toml,
@@ -1030,7 +987,6 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
             &trusted_subject_config,
             &app_session_config,
         ));
-    let payment_callback_store = Arc::new(PostgresPaymentCallbackStore::new(pool.clone()));
     let payment_intent_runtime_store =
         Arc::new(PostgresPaymentIntentRuntimeStore::new(pool.clone()));
     let payment_provider_registry = bootstrap_postgres_payment_provider_registry(&pool).await;
@@ -1065,14 +1021,10 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
         router_with_runtime_stores_and_database_status(AppRouterRuntime {
             app_site_settings_store: Some(Arc::new(PostgresSiteSettingsStore::new(pool.clone()))),
             app_invite_store: Some(Arc::new(PostgresAppInviteStore::new(pool.clone()))),
-            auth_settings_store: Some(Arc::new(PostgresAdminAuthSettingsStore::new(
-                pool.clone(),
-            ))),
+            auth_settings_store: Some(Arc::new(PostgresAdminAuthSettingsStore::new(pool.clone()))),
             entity_uuid_generator,
             trusted_subject_config,
             app_session_config,
-            payment_webhook_config: Some(payment_webhook_config),
-            payment_callback_store: Some(payment_callback_store),
             payment_intent_runtime_store: Some(payment_intent_runtime_store),
             payment_provider_registry,
             dashboard_read_store: Some(dashboard_read_store),
@@ -1136,9 +1088,6 @@ pub async fn router_from_env() -> Result<Router, ProductCatalogRouterError> {
             .map_err(ProductCatalogRouterError::Config)?;
     let app_session_config = AppSessionConfig::from_env_or_runtime_toml(runtime_toml.as_ref())
         .map_err(ProductCatalogRouterError::Config)?;
-    let payment_webhook_config =
-        PaymentWebhookConfig::from_env_or_runtime_toml(runtime_toml.as_ref())
-            .map_err(ProductCatalogRouterError::Config)?;
     ensure_server_safe_deployment_mode(deployment_mode, runtime_toml.as_ref())?;
     sdkwork_cloudrouter_config::ensure_server_production_redis_config(
         deployment_mode,
@@ -1152,7 +1101,6 @@ pub async fn router_from_env() -> Result<Router, ProductCatalogRouterError> {
                 api_key_security_config: require_api_key_security_config(api_key_security_config)?,
                 trusted_subject_config: require_trusted_subject_config(trusted_subject_config)?,
                 app_session_config: require_app_session_config(app_session_config)?,
-                payment_webhook_config: require_payment_webhook_config(payment_webhook_config)?,
                 deployment_mode,
                 startup_install_mode,
                 runtime_toml: runtime_toml.as_ref(),
@@ -1822,17 +1770,6 @@ fn require_app_session_config(
         ProductCatalogRouterError::Config(format!(
             "{} is required when SDKWORK_DATABASE_URL is configured",
             AppSessionConfig::ENV_APP_SESSION_SECRET
-        ))
-    })
-}
-
-fn require_payment_webhook_config(
-    config: Option<PaymentWebhookConfig>,
-) -> Result<PaymentWebhookConfig, ProductCatalogRouterError> {
-    config.ok_or_else(|| {
-        ProductCatalogRouterError::Config(format!(
-            "{} is required when SDKWORK_DATABASE_URL is configured",
-            PaymentWebhookConfig::ENV_PAYMENT_WEBHOOK_SECRET
         ))
     })
 }

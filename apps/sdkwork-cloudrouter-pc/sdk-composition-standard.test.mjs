@@ -117,7 +117,22 @@ test('portal workspace composes business capabilities through independent owner 
   assert.equal(packageJson.dependencies['sdkwork-commerce-backend-sdk-generated-typescript'], undefined);
   assert.equal(packageJson.dependencies['@sdkwork/commerce-service'], undefined);
   assert.equal(commonsPackageJson.dependencies['@sdkwork/commerce-service'], undefined);
-  assert.equal(commonsPackageJson.dependencies['@sdkwork/cloudrouter-pc-core'], 'workspace:*');
+  // The commons package consumes the capability SDKs directly; it must not
+  // round-trip through cloudrouter-pc-core (that cycle was deliberately
+  // broken: pc-core depends on commons/runtime, so commons must not depend
+  // on pc-core).
+  assert.equal(commonsPackageJson.dependencies['@sdkwork/cloudrouter-pc-core'], undefined);
+  for (const packageName of [
+    '@sdkwork/account-app-sdk',
+    '@sdkwork/catalog-app-sdk',
+    '@sdkwork/membership-app-sdk',
+    '@sdkwork/order-app-sdk',
+    '@sdkwork/payment-app-sdk',
+    '@sdkwork/promotion-app-sdk',
+    '@sdkwork/partner-app-sdk',
+  ]) {
+    assert.equal(commonsPackageJson.dependencies[packageName], 'workspace:*');
+  }
   assert.equal(pcCorePackageJson.dependencies['sdkwork-commerce-app-sdk-generated-typescript'], undefined);
   assert.equal(pcCorePackageJson.dependencies['sdkwork-commerce-backend-sdk-generated-typescript'], undefined);
   for (const packageName of [
@@ -288,7 +303,7 @@ test('admin host composes owner admin modules through the backend-admin core SDK
 
   assert.match(appSource, /CloudRouterAdminHostRoutes/);
   assert.doesNotMatch(appSource, /const (?:Dashboard|Model|Upstream)Admin = lazyRoute/);
-  assert.equal((hostSource.match(/\broute\('/g) ?? []).length, 23);
+  assert.equal((hostSource.match(/\broute\('/g) ?? []).length, 24);
   assert.match(hostSource, /'sdkwork-models', '@sdkwork\/models-pc-admin-catalog', \['sdkwork-models-backend-sdk'\]/);
   assert.match(hostSource, /'sdkwork-cloudrouter', '@sdkwork\/cloudrouter-pc-admin-upstream', \['cloudrouter-backend-sdk'\]/);
 
@@ -373,6 +388,7 @@ test('admin host composes owner admin modules through the backend-admin core SDK
     '@sdkwork/cloudrouter-backend-sdk',
     '@sdkwork/cloudroutes-pc-commons',
     '@sdkwork/models-backend-sdk',
+    '@sdkwork/payment-backend-sdk',
   ]);
   assert.deepEqual(
     adminCoreComponent.contracts.sdkDependencies.map((dependency) => dependency.workspace),
@@ -449,7 +465,10 @@ test('commons SDK client bootstrap composes appbase, product and open SDKs throu
 test('commons SDK bootstrap keeps app composition separate and backend client owner-only', () => {
   const sdkClientsSource = source('packages/sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts');
 
-  assert.match(sdkClientsSource, /from '@sdkwork\/cloudrouter-pc-core\/sdk'/);
+  // The commons SDK bootstrap consumes capability SDK clients directly and
+  // must not round-trip through cloudrouter-pc-core (the pc-core ←→ commons
+  // cycle was deliberately broken; pc-core depends on commons/runtime).
+  assert.doesNotMatch(sdkClientsSource, /from '@sdkwork\/cloudrouter-pc-core\/sdk'/);
   assert.doesNotMatch(sdkClientsSource, /DomainTransport|domain-transport|createAppDomainCanonicalFacade/);
   assert.doesNotMatch(sdkClientsSource, /__SDKWORK_CLOUDROUTER_APP_CAPABILITY_SDK_CLIENT__/);
   assert.doesNotMatch(sdkClientsSource, /__SDKWORK_CLOUDROUTER_BACKEND_CAPABILITY_SDK_CLIENT__/);

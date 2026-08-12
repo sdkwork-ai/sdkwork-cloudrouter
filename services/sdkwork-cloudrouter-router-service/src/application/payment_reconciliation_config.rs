@@ -43,11 +43,9 @@ pub fn payment_reconciliation_worker_config_from_env_or_toml(
 ) -> Result<PaymentReconciliationWorkerConfig, String> {
     const ENABLED: &str = "SDKWORK_CLOUDROUTER_PAYMENT_RECONCILIATION_ENABLED";
     const TENANT_ID: &str = "SDKWORK_CLOUDROUTER_PAYMENT_RECONCILIATION_TENANT_ID";
-    const ORGANIZATION_ID: &str =
-        "SDKWORK_CLOUDROUTER_PAYMENT_RECONCILIATION_ORGANIZATION_ID";
+    const ORGANIZATION_ID: &str = "SDKWORK_CLOUDROUTER_PAYMENT_RECONCILIATION_ORGANIZATION_ID";
     const BATCH_SIZE: &str = "SDKWORK_CLOUDROUTER_PAYMENT_RECONCILIATION_BATCH_SIZE";
-    const INTERVAL_MILLIS: &str =
-        "SDKWORK_CLOUDROUTER_PAYMENT_RECONCILIATION_INTERVAL_MILLIS";
+    const INTERVAL_MILLIS: &str = "SDKWORK_CLOUDROUTER_PAYMENT_RECONCILIATION_INTERVAL_MILLIS";
 
     let defaults = PaymentReconciliationWorkerConfig::default();
     Ok(PaymentReconciliationWorkerConfig {

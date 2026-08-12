@@ -13,11 +13,8 @@ packages:
   - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react"
   - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-runtime-pc-react"
   - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-react"
-  - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-user-center-core-pc-react"
-  - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-*"
   - "../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript"
   - "../sdkwork-iam/sdks/sdkwork-iam-backend-sdk/sdkwork-iam-backend-sdk-typescript"
-  - "../sdkwork-messaging/sdks/sdkwork-messaging-app-sdk/sdkwork-messaging-app-sdk-typescript"
   - "../sdkwork-iam/sdks/sdkwork-iam-open-sdk/sdkwork-iam-open-sdk-typescript"
   - "../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-credential-entry"
   - "../sdkwork-appbase/packages/common/foundation/sdkwork-runtime-bootstrap"
@@ -44,10 +41,6 @@ packages:
   - "../sdkwork-models/sdks/sdkwork-models-app-sdk/sdkwork-models-app-sdk-typescript"
   - "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog"
   - "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource"
-  - "../sdkwork-log/sdks/sdkwork-log-backend-sdk/sdkwork-log-backend-sdk-typescript"
-  - "../sdkwork-log/apps/sdkwork-log-pc/packages/sdkwork-log-pc-request-log"
-  - "../sdkwork-log/apps/sdkwork-log-pc/packages/sdkwork-log-pc-admin-request-log"
-  - "../sdkwork-log/apps/sdkwork-log-h5/packages/sdkwork-log-h5-request-log"
   - "../sdkwork-appbase/packages/common/integration/*"
   - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-core-pc-react"
   - "../sdkwork-appbase/packages/pc-react/integration/*"
@@ -58,9 +51,7 @@ packages:
   - "../sdkwork-documents/sdks/sdkwork-documents-app-sdk/sdkwork-documents-app-sdk-typescript/src/index.ts"
   - "../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript"
   - "../sdkwork-drive/sdks/sdkwork-drive-backend-sdk/sdkwork-drive-backend-sdk-typescript/src/index.ts"
-  - "../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-sandbox-contracts"
-  - "../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-sandbox-explorer"
-  - "../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-sandbox-explorer-sdk-adapter"
+  - "../sdkwork-messaging/sdks/sdkwork-messaging-app-sdk/sdkwork-messaging-app-sdk-typescript"
   - "../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground"
   - "../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-asset-config"
   - "../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-studio"
@@ -73,7 +64,6 @@ packages:
   - "../sdkwork-memory/sdks/sdkwork-memory-app-sdk/sdkwork-memory-app-sdk-typescript"
   - "../sdkwork-agents/sdks/sdkwork-agents-app-sdk/sdkwork-agents-app-sdk-typescript"
   - "../sdkwork-agents/sdks/sdkwork-agents-backend-sdk/sdkwork-agents-backend-sdk-typescript"
-  - "../sdkwork-community/sdks/sdkwork-community-app-sdk/sdkwork-community-app-sdk-typescript"
   - "../sdkwork-agents/apps/sdkwork-agents-pc"
   - "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-agents"
   - "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-assets"
@@ -92,6 +82,7 @@ packages:
   - "../sdkwork-prompts/sdks/sdkwork-prompts-app-sdk/generated/server-openapi"
   - "../sdkwork-prompts/sdks/sdkwork-prompts-backend-sdk/sdkwork-prompts-backend-sdk-typescript"
   - "../sdkwork-models/sdks/sdkwork-models-sdk/sdkwork-models-sdk-typescript"
+  - "../sdkwork-community/sdks/sdkwork-community-app-sdk/sdkwork-community-app-sdk-typescript"
   - "../sdkwork-account/sdks/sdkwork-account-app-sdk/sdkwork-account-app-sdk-typescript"
   - "../sdkwork-account/sdks/sdkwork-account-backend-sdk/sdkwork-account-backend-sdk-typescript"
   - "../sdkwork-account/apps/sdkwork-account-common/packages/sdkwork-account-contracts"
@@ -104,7 +95,6 @@ packages:
   - "../sdkwork-membership/apps/sdkwork-membership-common/packages/sdkwork-membership-contracts"
   - "../sdkwork-membership/apps/sdkwork-membership-common/packages/sdkwork-membership-sdk-ports"
   - "../sdkwork-membership/apps/sdkwork-membership-common/packages/sdkwork-membership-service"
-  - "../sdkwork-membership/apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-core"
   - "../sdkwork-membership/apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-membership"
   - "../sdkwork-membership/apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-subscription"
   - "../sdkwork-catalog/sdks/sdkwork-catalog-app-sdk/sdkwork-catalog-app-sdk-typescript"
@@ -112,19 +102,15 @@ packages:
   - "../sdkwork-order/sdks/sdkwork-order-backend-sdk/sdkwork-order-backend-sdk-typescript"
   - "../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-service"
   - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-checkout"
-  - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-core"
   - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-order"
   - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-recharge"
-  - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-subscription"
   - "../sdkwork-payment/sdks/sdkwork-payment-app-sdk/sdkwork-payment-app-sdk-typescript"
   - "../sdkwork-payment/sdks/sdkwork-payment-backend-sdk/sdkwork-payment-backend-sdk-typescript"
-  - "../sdkwork-appbase/sdks/sdkwork-base-data-backend-sdk/sdkwork-base-data-backend-sdk-typescript"
   - "../sdkwork-payment/apps/sdkwork-payment-common/packages/sdkwork-payment-contracts"
   - "../sdkwork-payment/apps/sdkwork-payment-common/packages/sdkwork-payment-sdk-ports"
   - "../sdkwork-payment/apps/sdkwork-payment-common/packages/sdkwork-payment-service"
   - "../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-admin-core"
   - "../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-admin-provider"
-  - "../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-core"
   - "../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-payment"
   - "../sdkwork-promotion/sdks/sdkwork-promotion-app-sdk/sdkwork-promotion-app-sdk-typescript"
   - "../sdkwork-promotion/sdks/sdkwork-promotion-backend-sdk/sdkwork-promotion-backend-sdk-typescript"
@@ -143,34 +129,102 @@ packages:
   - "../sdkwork-models/apps/sdkwork-models-pc/packages/*"
   - "../sdkwork-documents/sdks/sdkwork-documents-app-sdk/sdkwork-documents-app-sdk-typescript"
   - "../sdkwork-drive/sdks/sdkwork-drive-backend-sdk/sdkwork-drive-backend-sdk-typescript"
+  - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-user-center-core-pc-react"
+  - "../sdkwork-partner/sdks/sdkwork-partner-app-sdk/sdkwork-partner-app-sdk-typescript"
+  - "../sdkwork-partner/apps/sdkwork-partner-pc/packages/sdkwork-partner-pc-join"
+  - "../sdkwork-drive/sdks/sdkwork-drive-admin-storage-sdk/sdkwork-drive-admin-storage-sdk-typescript"
+  - "../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-admin-core"
+  - "../sdkwork-appbase/sdks/sdkwork-base-data-backend-sdk/sdkwork-base-data-backend-sdk-typescript"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-common/packages/sdkwork-file-api-contracts"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-common/packages/sdkwork-file-contracts"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-common/packages/sdkwork-file-sdk-ports"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-common/packages/sdkwork-file-service"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-analytics"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-core"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-iam"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-partner"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-record"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-runtime-region"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-shell"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-core"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-messages"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-settings"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-shell"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-usage"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-user"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-core"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-downloads"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-home"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-i18n"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-partner-join"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-rankings"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-shell"
+  - "../sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons"
+  - "../sdkwork-cloudrouter/sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript"
+  - "../sdkwork-cloudrouter/sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript"
+  - "../sdkwork-cloudrouter/sdks/cloudrouter-open-sdk/cloudrouter-open-sdk-typescript"
+  - "../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-admin-storage-providers"
+  - "../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-core"
+  - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-account-binding"
+  - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-audit"
+  - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-oauth"
+  - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-organization"
+  - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-permission"
+  - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-tenant"
+  - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-user"
+  - "../sdkwork-log/apps/sdkwork-log-pc/packages/sdkwork-log-pc-admin-request-log"
+  - "../sdkwork-log/apps/sdkwork-log-pc/packages/sdkwork-log-pc-request-log"
+  - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-subscription"
+  - "../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-commons"
+  - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-core"
+  - "../sdkwork-log/sdks/sdkwork-log-backend-sdk/sdkwork-log-backend-sdk-typescript"
+  - "../sdkwork-membership/apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-core"
+  - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-core"
+  - "../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-core"
 
 catalog:
-  react: ^19.0.0
-  react-dom: ^19.0.0
+  react: ^19.2.8
+  react-dom: ^19.2.8
   "@types/react": ^19.2.14
   "@types/react-dom": ^19.2.3
-  typescript: ~5.8.2
-  vite: ^6.2.0
-  "@vitejs/plugin-react": ^6.0.1
-  vite-plugin-dts: ^4.5.4
-  vitest: 4.1.5
-  tsup: ^8.5.0
-  tsx: ^4.21.0
-  tailwindcss: ^4.1.14
-  "@tailwindcss/vite": ^4.1.14
+  typescript: ^6.0.2
+  vite: ^8.0.3
+  "@vitejs/plugin-react": ^6.0.5
+  vite-plugin-dts: ^5.0.3
+  vitest: ^4.1.10
+  tsup: ^8.5.1
+  tsx: ^4.23.12
+  tailwindcss: ^4.3.3
+  "@tailwindcss/vite": ^4.3.3
   "@tailwindcss/typography": ^0.5.19
   autoprefixer: ^10.4.21
   postcss: ^8.5.8
   clsx: ^2.1.1
-  tailwind-merge: ^3.5.0
+  tailwind-merge: ^3.6.0
   tailwindcss-animate: ^1.0.7
   class-variance-authority: ^0.7.1
-  i18next: ^26.3.4
-  react-i18next: ^17.0.2
-  react-router: ^7.14.0
-  react-router-dom: ^7.14.0
-  react-hook-form: ^7.72.1
-  lucide-react: ^0.546.0
+  i18next: ^26.3.6
+  react-i18next: ^17.0.11
+  react-router: ^7.18.2
+  react-router-dom: ^7.18.2
+  react-hook-form: ^7.85.0
+  lucide-react: ^1.31.0
   qrcode: ^1.5.4
   "@types/qrcode": ^1.5.6
   "@radix-ui/react-avatar": ^1.1.11
@@ -210,7 +264,7 @@ catalog:
   "@tiptap/starter-kit": ^3.23.4
   "@tiptap/suggestion": ^3.23.4
   "@testing-library/dom": 10.4.1
-  "@testing-library/jest-dom": 6.9.1
+  "@testing-library/jest-dom": ^7.0.1
   "@testing-library/react": 16.3.2
   "@playwright/test": ^1.52.0
   jsdom: 29.1.1

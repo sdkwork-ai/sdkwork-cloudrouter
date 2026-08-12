@@ -167,7 +167,6 @@ docker run --rm -d --name cloudrouter \
   -e SDKWORK_CLOUDROUTER_INTERNAL_GATEWAY_SIGNING_SECRET='<random>' \
   -e SDKWORK_CLOUDROUTER_TRUSTED_SUBJECT_SECRET='<random>' \
   -e SDKWORK_CLOUDROUTER_APP_SESSION_SECRET='<random>' \
-  -e SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET='<random>' \
   -e SDKWORK_PAYMENT_CREDENTIAL_MASTER_KEY_FILE='/var/lib/sdkwork/router/secrets/payment-credential-master.key' \
   cloudrouter:local
 ```

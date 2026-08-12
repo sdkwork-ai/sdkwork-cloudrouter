@@ -189,7 +189,7 @@ fn gateway_usage_recorder_does_not_reopen_unknown_settlement_status() {
 fn gateway_usage_recorder_scopes_rows_and_projects_meter_amounts() {
     for expected in [
         "tenant_id, organization_id, user_id, request_id, trace_id",
-        "api_key_id, api_key_name_snapshot, account_group_id, upstream_account_group_snapshot",
+        "api_key_id, api_key_name_snapshot, account_group_id, account_group_snapshot",
         "requested_model, requested_model_catalog_key, provider_model, provider_native_model",
         "region_code, endpoint, request_path",
         "catalog_key, requested_model_catalog_key, model, provider_native_model",

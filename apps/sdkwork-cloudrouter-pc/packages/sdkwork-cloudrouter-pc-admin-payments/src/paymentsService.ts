@@ -4,7 +4,7 @@ import {
   getSdkworkPaymentBackendSdkClient,
 } from '@sdkwork/cloudroutes-pc-commons/sdk-clients';
 import { createIdempotencyParams } from '@sdkwork/cloudroutes-pc-commons/idempotency';
-import type { UpdatePaymentProviderRequest } from '@sdkwork/cloudrouter-backend-sdk';
+import type { UpdatePaymentProviderRequest } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import type {
   CheckAttemptStatusCommand,
   CheckAttemptStatusResult,
@@ -19,23 +19,24 @@ import type {
   RetryRefundCommand,
   SandboxTriggerCommand,
   TestPayment,
+  UpdatePaymentChannelCommand,
   UpdatePaymentMethodCommand,
   UpdateRouteRuleCommand,
-} from '@sdkwork/payment-backend-sdk';
+} from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 
 type BackendPaymentsService = ReturnType<typeof getSdkworkPaymentBackendSdkClient>['payments'];
 type CloudBackendPaymentsService = ReturnType<typeof getCloudRouterBackendSdkClient>['payments'];
 type BackendBaseDataService = ReturnType<typeof getSdkworkBaseDataBackendSdkClient>['baseData'];
 
-export type { CreatePaymentChannelCommand as PaymentChannelCreateInput } from '@sdkwork/payment-backend-sdk';
-export type { CreatePaymentMethodCommand as PaymentMethodCreateInput } from '@sdkwork/payment-backend-sdk';
-export type { UpdatePaymentMethodCommand as PaymentMethodUpdateInput } from '@sdkwork/payment-backend-sdk';
-export type { CreateReconciliationRunCommand as ReconciliationRunCreateInput } from '@sdkwork/payment-backend-sdk';
-export type { CreateRefundCommand as RefundCreateInput } from '@sdkwork/payment-backend-sdk';
-export type { RetryRefundCommand as RefundRetryInput } from '@sdkwork/payment-backend-sdk';
-export type { CreateRouteRuleCommand as RouteRuleCreateInput } from '@sdkwork/payment-backend-sdk';
-export type { UpdateRouteRuleCommand as RouteRuleUpdateInput } from '@sdkwork/payment-backend-sdk';
-export type { UpdatePaymentProviderRequest as PaymentProviderUpdateInput } from '@sdkwork/cloudrouter-backend-sdk';
+export type { CreatePaymentChannelCommand as PaymentChannelCreateInput } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
+export type { CreatePaymentMethodCommand as PaymentMethodCreateInput } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
+export type { UpdatePaymentMethodCommand as PaymentMethodUpdateInput } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
+export type { CreateReconciliationRunCommand as ReconciliationRunCreateInput } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
+export type { CreateRefundCommand as RefundCreateInput } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
+export type { RetryRefundCommand as RefundRetryInput } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
+export type { CreateRouteRuleCommand as RouteRuleCreateInput } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
+export type { UpdateRouteRuleCommand as RouteRuleUpdateInput } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
+export type { UpdatePaymentProviderRequest as PaymentProviderUpdateInput } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 
 export async function backendPaymentsProvidersList(params?: Parameters<CloudBackendPaymentsService['providers']['list']>[0]) {
   return getCloudRouterBackendSdkClient().payments.providers.list(params);
@@ -61,8 +62,30 @@ export async function backendPaymentsChannelsList(params?: Parameters<BackendPay
   return getSdkworkPaymentBackendSdkClient().payments.channels.list(params);
 }
 
+/** Channels list with select-filter support (provider/method/scene/status). */
+export async function backendPaymentsChannelsListFiltered(filters?: Record<string, string>) {
+  const active = (key: string) => {
+    const value = filters?.[key];
+    return value ? String(value) : undefined;
+  };
+  return getSdkworkPaymentBackendSdkClient().payments.channels.list({
+    providerCode: active('providerCode'),
+    methodId: active('methodId'),
+    sceneCode: active('sceneCode') as 'app' | 'web' | 'mini_program' | 'api' | undefined,
+    status: active('status') as 'active' | 'inactive' | 'deprecated' | undefined,
+  });
+}
+
 export async function backendPaymentChannelsCreate(body: CreatePaymentChannelCommand) {
   return getSdkworkPaymentBackendSdkClient().payments.channels.create(body, createIdempotencyParams('payment-channel-create'));
+}
+
+export async function backendPaymentChannelsUpdate(channelId: string, body: UpdatePaymentChannelCommand) {
+  return getSdkworkPaymentBackendSdkClient().payments.channels.update(channelId, body, createIdempotencyParams('payment-channel-update'));
+}
+
+export async function backendPaymentChannelsDelete(channelId: string) {
+  return getSdkworkPaymentBackendSdkClient().payments.channels.delete(channelId);
 }
 
 export async function backendPaymentsRouteRulesList(params?: Parameters<BackendPaymentsService['routeRules']['list']>[0]) {

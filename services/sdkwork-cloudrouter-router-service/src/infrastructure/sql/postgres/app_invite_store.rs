@@ -58,11 +58,9 @@ impl AppInviteStore for PostgresAppInviteStore {
             // colliding code is also taken, so a retry regenerates the code.
             let mut invite_code = command.invite_code.clone();
             for attempt in 0..MAX_INVITE_CODE_GENERATION_ATTEMPTS {
-                let mut tx = self
-                    .pool
-                    .begin()
-                    .await
-                    .map_err(|error| store_error("failed to begin invite code transaction", error))?;
+                let mut tx = self.pool.begin().await.map_err(|error| {
+                    store_error("failed to begin invite code transaction", error)
+                })?;
                 match issue_invite_code_once(&mut tx, &command, &invite_code).await {
                     Ok(item) => {
                         tx.commit().await.map_err(|error| {
@@ -139,10 +137,7 @@ async fn issue_invite_code_once(
         if is_invite_code_unique_violation(&error) {
             return IssueInviteCodeAttemptError::CodeCollision;
         }
-        IssueInviteCodeAttemptError::Domain(store_error(
-            "failed to write invite code",
-            error,
-        ))
+        IssueInviteCodeAttemptError::Domain(store_error("failed to write invite code", error))
     })?;
 
     // A fresh insert means the code is unique (the unique index would have
@@ -198,8 +193,7 @@ const INVITE_CODE_LENGTH: usize = 8;
 /// the first attempt's code via the same scheme.
 fn generate_invite_code() -> DomainResult<String> {
     let mut buffer = [0u8; INVITE_CODE_LENGTH];
-    getrandom::fill(&mut buffer)
-        .map_err(|error| DomainError::new(error.to_string()))?;
+    getrandom::fill(&mut buffer).map_err(|error| DomainError::new(error.to_string()))?;
     Ok(buffer
         .iter()
         .map(|byte| INVITE_CODE_ALPHABET[(*byte as usize) % INVITE_CODE_ALPHABET.len()] as char)
@@ -244,9 +238,9 @@ async fn claim_invite_relation(
     .map_err(|error| store_error("failed to write referral relation", error))?;
 
     if insert_result.rows_affected() > 0 {
-        tx.commit()
-            .await
-            .map_err(|error| store_error("failed to commit referral relation transaction", error))?;
+        tx.commit().await.map_err(|error| {
+            store_error("failed to commit referral relation transaction", error)
+        })?;
         return Ok(AppInviteRelationClaimed {
             relation_id: id,
             reward_status: DEFAULT_REWARD_STATUS.to_owned(),
@@ -277,17 +271,17 @@ async fn claim_invite_relation(
         .map_err(|error| store_error("failed to commit referral relation transaction", error))?;
 
     match existing {
-        Some((relation_id, inviter_user_id, reward_status)) if inviter_user_id == command.inviter_user_id => {
+        Some((relation_id, inviter_user_id, reward_status))
+            if inviter_user_id == command.inviter_user_id =>
+        {
             Ok(AppInviteRelationClaimed {
                 relation_id,
                 reward_status,
             })
         }
-        Some((_relation_id, _inviter_user_id, _reward_status)) => {
-            Err(DomainError::conflict(
-                "the user is already bound to another inviter".to_owned(),
-            ))
-        }
+        Some((_relation_id, _inviter_user_id, _reward_status)) => Err(DomainError::conflict(
+            "the user is already bound to another inviter".to_owned(),
+        )),
         None => Err(DomainError::new(
             "referral relation row was not found after upsert".to_owned(),
         )),

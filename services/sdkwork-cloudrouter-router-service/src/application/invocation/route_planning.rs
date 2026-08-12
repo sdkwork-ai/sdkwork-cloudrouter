@@ -10,9 +10,8 @@ use crate::application::{
     SelectedUpstreamAccountRoute, SelectedUpstreamModelRoute, UpstreamRouteSelector,
 };
 use crate::domain::{
-    provider_native_model_id, AiModel, BillingMeter, ModelUpstreamRoute,
+    has_text, provider_native_model_id, AiModel, BillingMeter, ModelUpstreamRoute,
     ResolveModelMappingContext, UpstreamAccountRoute,
-    has_text,
 };
 use crate::ports::UpstreamAccountRouteCatalog;
 
@@ -53,7 +52,9 @@ where
             }
 
             if let Some(sticky_route) = invocation.routing.sticky_route.clone() {
-                if let Some(reason) = sticky_route_invalid_reason(self.catalog.as_ref(), invocation, &sticky_route) {
+                if let Some(reason) =
+                    sticky_route_invalid_reason(self.catalog.as_ref(), invocation, &sticky_route)
+                {
                     tracing::warn!(
                         tenant_id = invocation.subject.tenant_id,
                         organization_id = invocation.subject.organization_id,
@@ -65,7 +66,8 @@ where
                     );
                     invocation.routing.sticky_route = None;
                 } else {
-                    let candidate = sticky_candidate(self.catalog.as_ref(), invocation, sticky_route);
+                    let candidate =
+                        sticky_candidate(self.catalog.as_ref(), invocation, sticky_route);
                     invocation.routing.route_plan = Some(InvocationRoutePlan::new(vec![candidate]));
                     return Ok(());
                 }
@@ -530,12 +532,13 @@ where
             .iter()
             .any(|binding| binding.account_group_id == group_id);
         if !bound_to_group {
-            return Some("sticky upstream account is no longer bound to the account group".to_owned());
+            return Some(
+                "sticky upstream account is no longer bound to the account group".to_owned(),
+            );
         }
     }
     None
 }
-
 
 fn same_region(left: &str, right: &str) -> bool {
     normalize_region(left).eq_ignore_ascii_case(&normalize_region(right))

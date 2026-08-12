@@ -5,7 +5,7 @@ use sdkwork_cloudrouter_router_service::application::{
     PaymentDownloadStatementRequest, PaymentNormalizeWebhookRequest, PaymentParseStatementRequest,
     PaymentProviderAdapter, PaymentProviderRegistryError, PaymentQueryRefundRequest,
     PaymentVerifyWebhookRequest, WeChatPayApiClient, WeChatPayCrypto, WeChatPayProviderAdapter,
-    WeChatPayProviderConfig,
+    WeChatPayProviderConfig, WeChatPaySignVerifyMode,
 };
 use serde_json::{json, Value};
 
@@ -75,6 +75,17 @@ impl WeChatPayApiClient for RecordingWeChatPayClient {
 #[derive(Clone)]
 struct FixedWeChatPayCrypto {
     verified: bool,
+    /// Records the `Wechatpay-Serial` values passed to `verify_with_serial`.
+    seen_serials: Arc<Mutex<Vec<Option<String>>>>,
+}
+
+impl FixedWeChatPayCrypto {
+    fn new(verified: bool) -> Self {
+        Self {
+            verified,
+            seen_serials: Arc::new(Mutex::new(Vec::new())),
+        }
+    }
 }
 
 impl WeChatPayCrypto for FixedWeChatPayCrypto {
@@ -82,11 +93,16 @@ impl WeChatPayCrypto for FixedWeChatPayCrypto {
         Ok(format!("signed:{payload}"))
     }
 
-    fn verify(
+    fn verify_with_serial(
         &self,
+        serial: Option<&str>,
         _payload: &str,
         _signature: &str,
     ) -> Result<bool, PaymentProviderRegistryError> {
+        self.seen_serials
+            .lock()
+            .unwrap()
+            .push(serial.map(str::to_owned));
         Ok(self.verified)
     }
 
@@ -113,6 +129,8 @@ async fn wechat_native_create_maps_standard_payment_intent() {
             merchant_order_no: Some("order-1".to_owned()),
             amount_minor: Some(1234),
             currency: Some("CNY".to_owned()),
+            notify_url: None,
+            return_url: None,
             metadata: json!({ "description": "SDKWORK order" }),
         })
         .await
@@ -247,6 +265,106 @@ async fn wechat_verify_webhook_uses_crypto_and_extracts_event_id() {
 }
 
 #[tokio::test]
+async fn wechat_verify_webhook_forwards_wechatpay_serial_to_crypto() {
+    let adapter = wechat_adapter(RecordingWeChatPayClient::new(json!({})), true);
+
+    let outcome = adapter
+        .verify_webhook(PaymentVerifyWebhookRequest {
+            headers: vec![
+                ("Wechatpay-Timestamp".to_owned(), "1717171717".to_owned()),
+                ("Wechatpay-Nonce".to_owned(), "nonce-1".to_owned()),
+                ("Wechatpay-Signature".to_owned(), "signature".to_owned()),
+                ("Wechatpay-Serial".to_owned(), "PUB_KEY_ID_00000000000000000000000000000001".to_owned()),
+            ],
+            body: br#"{"id":"event-1"}"#.to_vec(),
+            metadata: json!({}),
+        })
+        .await
+        .unwrap();
+
+    assert!(outcome.verified);
+}
+
+#[tokio::test]
+async fn wechat_verify_webhook_matches_configured_public_key_id() {
+    let adapter = wechat_adapter_with_serial(
+        RecordingWeChatPayClient::new(json!({})),
+        true,
+        Some("PUB_KEY_ID_00000000000000000000000000000001"),
+    );
+
+    let outcome = adapter
+        .verify_webhook(PaymentVerifyWebhookRequest {
+            headers: vec![
+                ("Wechatpay-Timestamp".to_owned(), "1717171717".to_owned()),
+                ("Wechatpay-Nonce".to_owned(), "nonce-1".to_owned()),
+                ("Wechatpay-Signature".to_owned(), "signature".to_owned()),
+                ("Wechatpay-Serial".to_owned(), "PUB_KEY_ID_00000000000000000000000000000001".to_owned()),
+            ],
+            body: br#"{"id":"event-1"}"#.to_vec(),
+            metadata: json!({}),
+        })
+        .await
+        .unwrap();
+
+    assert!(outcome.verified);
+    assert_eq!(Some("event-1".to_owned()), outcome.provider_event_id);
+}
+
+#[tokio::test]
+async fn wechat_verify_webhook_rejects_mismatched_serial() {
+    let adapter = wechat_adapter_with_serial(
+        RecordingWeChatPayClient::new(json!({})),
+        true,
+        Some("PUB_KEY_ID_00000000000000000000000000000001"),
+    );
+
+    let outcome = adapter
+        .verify_webhook(PaymentVerifyWebhookRequest {
+            headers: vec![
+                ("Wechatpay-Timestamp".to_owned(), "1717171717".to_owned()),
+                ("Wechatpay-Nonce".to_owned(), "nonce-1".to_owned()),
+                ("Wechatpay-Signature".to_owned(), "signature".to_owned()),
+                ("Wechatpay-Serial".to_owned(), "6EB892196BEAA85D5E59B06F077C8A2903683649".to_owned()),
+            ],
+            body: br#"{"id":"event-1"}"#.to_vec(),
+            metadata: json!({}),
+        })
+        .await
+        .unwrap();
+
+    assert!(!outcome.verified);
+    assert_eq!(None, outcome.provider_event_id);
+}
+
+#[tokio::test]
+async fn wechat_verify_webhook_requires_serial_when_configured() {
+    let adapter = wechat_adapter_with_serial(
+        RecordingWeChatPayClient::new(json!({})),
+        true,
+        Some("PUB_KEY_ID_00000000000000000000000000000001"),
+    );
+
+    let error = adapter
+        .verify_webhook(PaymentVerifyWebhookRequest {
+            headers: vec![
+                ("Wechatpay-Timestamp".to_owned(), "1717171717".to_owned()),
+                ("Wechatpay-Nonce".to_owned(), "nonce-1".to_owned()),
+                ("Wechatpay-Signature".to_owned(), "signature".to_owned()),
+            ],
+            body: br#"{"id":"event-1"}"#.to_vec(),
+            metadata: json!({}),
+        })
+        .await
+        .expect_err("wechatpay-serial must be required when a verification serial is configured");
+
+    assert!(matches!(
+        error,
+        PaymentProviderRegistryError::InvalidProviderRequest { .. }
+    ));
+}
+
+#[tokio::test]
 async fn wechat_normalize_webhook_decrypts_resource_when_present() {
     let adapter = wechat_adapter(RecordingWeChatPayClient::new(json!({})), true);
 
@@ -347,6 +465,14 @@ async fn wechat_native_create_rejects_non_cny_currency() {
 }
 
 fn wechat_adapter(client: RecordingWeChatPayClient, verified: bool) -> WeChatPayProviderAdapter {
+    wechat_adapter_with_serial(client, verified, None)
+}
+
+fn wechat_adapter_with_serial(
+    client: RecordingWeChatPayClient,
+    verified: bool,
+    verification_serial_no: Option<&str>,
+) -> WeChatPayProviderAdapter {
     WeChatPayProviderAdapter::new(
         WeChatPayProviderConfig {
             app_id: "appid-1".to_owned(),
@@ -355,9 +481,12 @@ fn wechat_adapter(client: RecordingWeChatPayClient, verified: bool) -> WeChatPay
             merchant_private_key_pem: "private-key".to_owned(),
             api_v3_key: "api-v3-key".to_owned(),
             notify_url: Some("https://example.com/wechat/notify".to_owned()),
+            sign_verify_mode: WeChatPaySignVerifyMode::WeChatPayPublicKey,
+            verification_key_pem: Some("verification-key".to_owned()),
+            verification_serial_no: verification_serial_no.map(str::to_owned),
         },
         Arc::new(client),
-        Arc::new(FixedWeChatPayCrypto { verified }),
+        Arc::new(FixedWeChatPayCrypto::new(verified)),
     )
     .unwrap()
 }

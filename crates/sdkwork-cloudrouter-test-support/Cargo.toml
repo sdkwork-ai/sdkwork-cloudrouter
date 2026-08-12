@@ -8,6 +8,9 @@ license-file.workspace = true
 anyhow.workspace = true
 sdkwork-cloudrouter-config.workspace = true
 sdkwork-cloudrouter-http.workspace = true
+sdkwork_account_repository_sqlx.workspace = true
+sdkwork_account_service.workspace = true
+sqlx.workspace = true
 
 [dev-dependencies]
 axum.workspace = true

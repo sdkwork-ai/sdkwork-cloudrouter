@@ -202,9 +202,9 @@ impl AdminUpstreamStore for PostgresAdminUpstreamStore {
         &'a self,
         command: SaveAdminUpstreamAccountCommand,
     ) -> AdminUpstreamFuture<'a, AdminUpstreamAccountItem> {
-        Box::pin(async move {
-            account::save(&self.pool, self.secret_codec.as_ref(), command).await
-        })
+        Box::pin(
+            async move { account::save(&self.pool, self.secret_codec.as_ref(), command).await },
+        )
     }
 
     fn delete_account<'a>(

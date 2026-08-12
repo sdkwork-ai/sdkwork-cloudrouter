@@ -626,30 +626,6 @@
         "ops_config_snapshot"
       ]
     },
-    "/admin/storage/buckets": {
-      "api_surfaces": [
-        "app",
-        "backend",
-        "worker"
-      ],
-      "required_api_surface": "backend",
-      "route_scope": "admin",
-      "tables": [
-        "ops_audit_log"
-      ]
-    },
-    "/admin/storage/buckets/{bucketId}": {
-      "api_surfaces": [
-        "app",
-        "backend",
-        "worker"
-      ],
-      "required_api_surface": "backend",
-      "route_scope": "admin",
-      "tables": [
-        "ops_audit_log"
-      ]
-    },
     "/admin/storage/defaultBuckets": {
       "api_surfaces": [
         "app",
@@ -1024,7 +1000,7 @@
       "worker": 74
     },
     "external_legacy_table_count": 0,
-    "frontend_route_count": 66,
+    "frontend_route_count": 64,
     "generated_table_count": 62,
     "legacy_table_count": 0,
     "table_count": 81
@@ -22338,8 +22314,6 @@
         "/admin/runtime-region",
         "/admin/settings",
         "/admin/site",
-        "/admin/storage/buckets",
-        "/admin/storage/buckets/{bucketId}",
         "/admin/storage/defaultBuckets",
         "/admin/storage/garbageCollection",
         "/admin/storage/providers",

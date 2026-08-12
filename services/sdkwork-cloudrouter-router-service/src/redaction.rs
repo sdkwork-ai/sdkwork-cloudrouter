@@ -138,11 +138,16 @@ mod tests {
 
     #[test]
     fn redacts_multiple_prefixes_in_one_message() {
-        let redacted = redact_sensitive_tokens(
-            "sk-abcdefghijklmnop and sp-qrstuvwxyzabcd both leaked",
+        let redacted =
+            redact_sensitive_tokens("sk-abcdefghijklmnop and sp-qrstuvwxyzabcd both leaked");
+        assert!(
+            !redacted.contains("abcdefghijklmnop"),
+            "sk- token must be redacted"
         );
-        assert!(!redacted.contains("abcdefghijklmnop"), "sk- token must be redacted");
-        assert!(!redacted.contains("qrstuvwxyzabcd"), "sp- token must be redacted");
+        assert!(
+            !redacted.contains("qrstuvwxyzabcd"),
+            "sp- token must be redacted"
+        );
         assert!(redacted.contains("sk-[REDACTED]") && redacted.contains("sp-[REDACTED]"));
     }
 

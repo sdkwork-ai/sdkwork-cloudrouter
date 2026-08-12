@@ -219,7 +219,8 @@ fn add_group_routing_policy(
     rule_id: i64,
     rule_code: &str,
     catalog_key: &str,
-) {    catalog.add_routing_policy(
+) {
+    catalog.add_routing_policy(
         RoutingPolicy::new(
             policy_id,
             10,

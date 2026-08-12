@@ -1,0 +1,38 @@
+{
+  "name": "@sdkwork/cloudrouter-pc-partner-join",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Cloud Router portal host package for the sdkwork-partner join (伙伴计划) marketing module.",
+  "main": "src/index.tsx",
+  "types": "src/index.tsx",
+  "exports": {
+    ".": {
+      "types": "./src/index.tsx",
+      "import": "./src/index.tsx",
+      "default": "./src/index.tsx"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sdkwork/partner-app-sdk": "workspace:*",
+    "@sdkwork/partner-pc-join": "workspace:*",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "@sdkwork/cloudroutes-pc-commons": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "typescript": "catalog:"
+  },
+  "sdkwork": {
+    "workspace": "sdkwork-cloudrouter",
+    "architecture": "pc-react",
+    "domain": "commerce",
+    "capability": "partner",
+    "status": "ready"
+  }
+}

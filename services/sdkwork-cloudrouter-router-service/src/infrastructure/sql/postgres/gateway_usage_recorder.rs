@@ -78,7 +78,7 @@ WHERE NOT EXISTS (
 const UPSERT_USAGE_FACT: &str = r#"
 INSERT INTO ai_metering_usage
     (id, uuid, tenant_id, organization_id, user_id, request_id, trace_id, status,
-     api_key_id, api_key_name_snapshot, account_group_id, upstream_account_group_snapshot,
+     api_key_id, api_key_name_snapshot, account_group_id, account_group_snapshot,
      owner_type, owner_id, catalog_key, requested_model_catalog_key, model, provider_native_model,
      region_code, account_id, modality, usage_type, billing_meter_code,
      billable_quantity, prompt_tokens, cached_tokens, completion_tokens, total_tokens,
@@ -98,7 +98,7 @@ ON CONFLICT (tenant_id, organization_id, request_id, usage_type) DO UPDATE SET
     api_key_id = excluded.api_key_id,
     api_key_name_snapshot = excluded.api_key_name_snapshot,
     account_group_id = excluded.account_group_id,
-    upstream_account_group_snapshot = excluded.upstream_account_group_snapshot,
+    account_group_snapshot = excluded.account_group_snapshot,
     owner_type = excluded.owner_type,
     owner_id = excluded.owner_id,
     catalog_key = excluded.catalog_key,

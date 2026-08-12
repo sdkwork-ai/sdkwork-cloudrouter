@@ -60,8 +60,27 @@ export type {
   UpstreamSupplierEndpoint,
   UpstreamSupplierEndpointInput,
   UpstreamSupplierListResponse,
+  UpdatePaymentProviderRequest,
   VerifyUpstreamAccountRequest,
 } from '@sdkwork/cloudrouter-backend-sdk';
+export type {
+  CheckAttemptStatusCommand,
+  CheckAttemptStatusResult,
+  CreatePaymentChannelCommand,
+  CreatePaymentMethodCommand,
+  CreateReconciliationRunCommand,
+  CreateRefundCommand,
+  CreateRouteRuleCommand,
+  CreateTestPaymentCommand,
+  PaymentIntent,
+  Refund,
+  RetryRefundCommand,
+  SandboxTriggerCommand,
+  TestPayment,
+  UpdatePaymentChannelCommand,
+  UpdatePaymentMethodCommand,
+  UpdateRouteRuleCommand,
+} from '@sdkwork/payment-backend-sdk';
 export type {
   AdminAiResourceCreateRequest,
   AdminAiResourceMemberInput,

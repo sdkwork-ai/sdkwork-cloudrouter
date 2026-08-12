@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "419b8ced71b6e65991236a616c7565c07a650aa8282b85f2f94ebf00d3f0dfb4"
+      "sha256": "3279fe2b0b422c7d400d3dffd98f92cd2b6149fc45f96e1c79f4d56871532197"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -72,7 +72,7 @@
     },
     {
       "path": "src/api/payments.ts",
-      "sha256": "7df16d9abdfa0081ed5e2d1329dac1e7d16672981b82fa9a47b8380488265694"
+      "sha256": "4732a7ba524ff5f2a6a732e5faeaaf740eec4ade8c80a7e72152bf69d178fd7c"
     },
     {
       "path": "src/api/recharges.ts",
@@ -80,7 +80,7 @@
     },
     {
       "path": "src/api/storage.ts",
-      "sha256": "3443ff3147358f233189ba9c58f15a3743393e6e00486e6c606f95f08c1dff19"
+      "sha256": "6c7f8422b8498a74727f3bb69ae75db9cf601f3913fb19498e2be8f71b756dee"
     },
     {
       "path": "src/api/system.ts",
@@ -291,18 +291,6 @@
       "sha256": "698a52a8faa60e11973b2916dea830f37aa1d61a2ed78f9c587f2bc9bc3f65e0"
     },
     {
-      "path": "src/types/admin-storage-bucket-create-request.ts",
-      "sha256": "e07b60af99f12368d643a87a7f8af7ae3d8c96249ca955db68d92f3c6c404142"
-    },
-    {
-      "path": "src/types/admin-storage-bucket-list-response.ts",
-      "sha256": "0825432533b97b76417248f42945bc51ae31c5b83aae47aa62e03c01f68d585a"
-    },
-    {
-      "path": "src/types/admin-storage-bucket.ts",
-      "sha256": "c0dd5f57572af333525440ed9e38d10d81786c24ef73385418dc2a4886bfd58c"
-    },
-    {
       "path": "src/types/admin-storage-default-bucket-list-response.ts",
       "sha256": "cfd1fe3615df7cfe6f25eb1dacdba97d02aad6b88d1aa7c24cca8204991bd048"
     },
@@ -327,18 +315,6 @@
       "sha256": "34d61cd473a63840ca3eca5e4ceb64bcb130cdac1deed772ea2a43a15aa2fa67"
     },
     {
-      "path": "src/types/admin-storage-provider-create-request.ts",
-      "sha256": "2291b2f25f582c0b5abf11f3cecd461c0f9ff111819273cbbdeaa0128f0e6516"
-    },
-    {
-      "path": "src/types/admin-storage-provider-list-response.ts",
-      "sha256": "d98379ffdaaba0ae258f849958f5f55724e622dc4e2b80ee7d020b93c64de554"
-    },
-    {
-      "path": "src/types/admin-storage-provider.ts",
-      "sha256": "4f4e86156d3ab095dfa9923230724452ff9eb6af2c7ac5ad9757cfb743d5d917"
-    },
-    {
       "path": "src/types/admin-storage-quota-create-request.ts",
       "sha256": "0a624bf6d632f2cb7fd405fb03dba10af085142204ed9f5fc7c81edf7fe9f3e7"
     },
@@ -361,10 +337,6 @@
     {
       "path": "src/types/admin-storage-reconciliation-run.ts",
       "sha256": "0c885695d99e23c799d3c43190987175767036a35cf238a14f4484a5cc2d47ee"
-    },
-    {
-      "path": "src/types/admin-storage-status-update-request.ts",
-      "sha256": "f2b185607834c50f5741d75e8559df8375e2d7063d21e2da47fe470c59649758"
     },
     {
       "path": "src/types/admin-storage-usage-list-response.ts",
@@ -452,7 +424,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "f38ee911898356eef7eb7eba908d7b2bb90c93ac300890eec96122605b11fb6e"
+      "sha256": "a3ea4efe7e9629f87f4b329e8d8f3ef1f4d911aa2a3bea6f724a307365767378"
     },
     {
       "path": "src/types/installation-status-response.ts",
@@ -535,6 +507,10 @@
       "sha256": "3d7051e5f4a9099e2d63606d50c8bb7d695eacd0096921caae64794ddcf7b391"
     },
     {
+      "path": "src/types/payment-provider-mutation-response.ts",
+      "sha256": "5643811315b210f27467ef3abeb0e42f35e6ce604d61a89780995ca8fd34a3fd"
+    },
+    {
       "path": "src/types/problem-detail.ts",
       "sha256": "98f0722417f5d85aa7c9ea5b56ca06f0b59a81e6016cfc116e7f4bd01ef9f275"
     },
@@ -609,6 +585,10 @@
     {
       "path": "src/types/token-limit-rule-page.ts",
       "sha256": "ab3b791c0deb67af98b3fcc94430122d2659ee5664d2835a0ac26f63027ca387"
+    },
+    {
+      "path": "src/types/update-payment-provider-request.ts",
+      "sha256": "960a5fbc930092b5c0435ae245d7537727110509e0e5275b42c0199505555b28"
     },
     {
       "path": "src/types/update-upstream-account-group-request.ts",

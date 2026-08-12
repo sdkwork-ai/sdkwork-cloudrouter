@@ -4,18 +4,15 @@ use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::model_catalog_import::stable_uuid;
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::infrastructure::sql::sql_admin_storage::{
-    job_status_label_sql, resource_status_label_sql, STORAGE_AUDIT_TARGET_BUCKET,
-    STORAGE_AUDIT_TARGET_DEFAULT_BUCKET, STORAGE_AUDIT_TARGET_GC_JOB,
-    STORAGE_AUDIT_TARGET_PROVIDER, STORAGE_AUDIT_TARGET_QUOTA_POLICY,
+    job_status_label_sql, resource_status_label_sql, STORAGE_AUDIT_TARGET_DEFAULT_BUCKET,
+    STORAGE_AUDIT_TARGET_GC_JOB, STORAGE_AUDIT_TARGET_QUOTA_POLICY,
     STORAGE_AUDIT_TARGET_RECONCILIATION_RUN,
 };
 use crate::ports::{
     AdminStorageCollection, AdminStorageCommandFuture, AdminStorageCursor, AdminStorageJsonRecord,
-    AdminStorageStore, CheckStorageProviderHealthCommand, CreateStorageBucketCommand,
-    CreateStorageGarbageCollectionJobCommand, CreateStorageProviderCommand,
+    AdminStorageStore, CreateStorageGarbageCollectionJobCommand,
     CreateStorageQuotaPolicyCommand, CreateStorageReconciliationRunCommand,
-    ListAdminStorageRecordsQuery, SetStorageDefaultBucketCommand, UpdateStorageBucketCommand,
-    UpdateStorageProviderCommand,
+    ListAdminStorageRecordsQuery, SetStorageDefaultBucketCommand,
 };
 
 #[derive(Debug, Clone)]
@@ -30,55 +27,6 @@ impl PostgresAdminStorageStore {
 }
 
 impl AdminStorageStore for PostgresAdminStorageStore {
-    fn list_providers<'a>(
-        &'a self,
-        query: ListAdminStorageRecordsQuery,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
-        Box::pin(async move { list_providers(&self.pool, query).await })
-    }
-
-    fn create_provider<'a>(
-        &'a self,
-        command: CreateStorageProviderCommand,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
-        Box::pin(async move { create_provider(&self.pool, command).await })
-    }
-
-    fn update_provider<'a>(
-        &'a self,
-        command: UpdateStorageProviderCommand,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
-        Box::pin(async move { update_provider(&self.pool, command).await })
-    }
-
-    fn check_provider_health<'a>(
-        &'a self,
-        command: CheckStorageProviderHealthCommand,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
-        Box::pin(async move { check_provider_health(&self.pool, command).await })
-    }
-
-    fn list_buckets<'a>(
-        &'a self,
-        query: ListAdminStorageRecordsQuery,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
-        Box::pin(async move { list_buckets(&self.pool, query).await })
-    }
-
-    fn create_bucket<'a>(
-        &'a self,
-        command: CreateStorageBucketCommand,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
-        Box::pin(async move { create_bucket(&self.pool, command).await })
-    }
-
-    fn update_bucket<'a>(
-        &'a self,
-        command: UpdateStorageBucketCommand,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
-        Box::pin(async move { update_bucket(&self.pool, command).await })
-    }
-
     fn list_default_buckets<'a>(
         &'a self,
         query: ListAdminStorageRecordsQuery,
@@ -114,20 +62,6 @@ impl AdminStorageStore for PostgresAdminStorageStore {
         Box::pin(async move { list_usage_counters(&self.pool, query).await })
     }
 
-    fn list_usage_ledger<'a>(
-        &'a self,
-        query: ListAdminStorageRecordsQuery,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
-        Box::pin(async move { list_usage_ledger(&self.pool, query).await })
-    }
-
-    fn list_usage_snapshots<'a>(
-        &'a self,
-        query: ListAdminStorageRecordsQuery,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
-        Box::pin(async move { list_usage_snapshots(&self.pool, query).await })
-    }
-
     fn list_reconciliation_runs<'a>(
         &'a self,
         query: ListAdminStorageRecordsQuery,
@@ -155,405 +89,6 @@ impl AdminStorageStore for PostgresAdminStorageStore {
     ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
         Box::pin(async move { create_gc_job(&self.pool, command).await })
     }
-}
-
-async fn list_providers(
-    pool: &PgPool,
-    query: ListAdminStorageRecordsQuery,
-) -> DomainResult<AdminStorageCollection> {
-    let status_label = resource_status_label_sql("p.status");
-    let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
-        r#"
-        SELECT
-            CAST(p.id AS TEXT) AS id,
-            p.supplier_code AS "providerCode",
-            COALESCE(p.name, '') AS name,
-            p.provider_type AS "providerType",
-            COALESCE(p.endpoint_url, '') AS "endpointUrl",
-            COALESCE(p.region, '') AS region,
-            p.credential_ref AS "credentialRef",
-            COALESCE(p.path_style_enabled, false) AS "pathStyleEnabled",
-            COALESCE(p.supports_multipart, false) AS "supportsMultipart",
-            COALESCE(p.supports_lifecycle, false) AS "supportsLifecycle",
-            COALESCE(p.supports_object_lock, false) AS "supportsObjectLock",
-            {status_label} AS status,
-            COALESCE(p.health_status, 'unknown') AS "healthStatus",
-            CAST(COALESCE(p.last_health_check_at::text, '') AS TEXT) AS "lastHealthCheckAt",
-            CAST(p.created_at AS TEXT) AS "createdAt",
-            CAST(p.updated_at AS TEXT) AS "updatedAt"
-        FROM object_provider p
-        WHERE p.tenant_id = $1
-          AND p.organization_id = $2
-          AND ($3::text IS NULL OR {status_label} = $3)
-          AND ($4::bigint IS NULL OR p.id < $4)
-        ORDER BY p.id DESC
-        LIMIT $5
-        "#
-    )))
-    .bind(query.subject.tenant_id)
-    .bind(query.subject.organization_id)
-    .bind(query.status.as_deref())
-    .bind(query.cursor.map(AdminStorageCursor::id))
-    .bind(query.limit + 1)
-    .fetch_all(pool)
-    .await
-    .map_err(store_error)?;
-    collection_from_rows(rows, query, PROVIDER_FIELDS)
-}
-
-async fn create_provider(
-    pool: &PgPool,
-    command: CreateStorageProviderCommand,
-) -> DomainResult<AdminStorageJsonRecord> {
-    if let Some(id) = existing_idempotent_id(
-        pool,
-        "object_provider",
-        command.subject.tenant_id,
-        command.subject.organization_id,
-        &command.idempotency_key,
-    )
-    .await?
-    {
-        return load_provider(pool, command.subject, id).await;
-    }
-
-    let id: i64 = sqlx::query_scalar(
-        r#"
-        INSERT INTO object_provider
-            (uuid, tenant_id, organization_id, supplier_code, provider_type, endpoint_url, region,
-             credential_ref, name, path_style_enabled, supports_multipart, supports_lifecycle,
-             supports_object_lock, health_status, idempotency_key, request_id, id)
-        VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'unknown', $14, $15, $16)
-        RETURNING id
-        "#,
-    )
-    .bind(stable_uuid(
-        "storage-provider",
-        &[
-            &command.subject.tenant_id.to_string(),
-            &command.subject.organization_id.to_string(),
-            &command.supplier_code,
-            &command.idempotency_key,
-        ],
-    ))
-    .bind(command.subject.tenant_id)
-    .bind(command.subject.organization_id)
-    .bind(&command.supplier_code)
-    .bind(&command.provider_type)
-    .bind(command.endpoint_url.as_deref())
-    .bind(command.region.as_deref())
-    .bind(&command.credential_ref)
-    .bind(&command.name)
-    .bind(command.path_style_enabled.unwrap_or(false))
-    .bind(command.supports_multipart.unwrap_or(true))
-    .bind(command.supports_lifecycle.unwrap_or(false))
-    .bind(command.supports_object_lock.unwrap_or(false))
-    .bind(&command.idempotency_key)
-    .bind(command.request_id.as_deref())
-    .bind(next_cloud_runtime_id("object_provider")?)
-    .fetch_one(pool)
-    .await
-    .map_err(|error| write_error("failed to create storage provider", error))?;
-    insert_audit_if_absent(
-        pool,
-        command.subject,
-        command
-            .request_id
-            .as_deref()
-            .unwrap_or(&command.idempotency_key),
-        "storage.provider.create",
-        STORAGE_AUDIT_TARGET_PROVIDER,
-        id,
-        None,
-    )
-    .await?;
-    load_provider(pool, command.subject, id).await
-}
-
-async fn update_provider(
-    pool: &PgPool,
-    command: UpdateStorageProviderCommand,
-) -> DomainResult<AdminStorageJsonRecord> {
-    let provider_id = parse_required_id(&command.provider_id, "providerId")?;
-    let result = sqlx::query(
-        r#"
-        UPDATE object_provider
-        SET status = $1, updated_at = now(), request_id = $2
-        WHERE tenant_id = $3
-          AND organization_id = $4
-          AND id = $5
-        "#,
-    )
-    .bind(&command.status)
-    .bind(command.request_id.as_deref())
-    .bind(command.subject.tenant_id)
-    .bind(command.subject.organization_id)
-    .bind(provider_id)
-    .execute(pool)
-    .await
-    .map_err(|error| write_error("failed to update storage provider", error))?;
-    ensure_affected(result.rows_affected(), "storage provider was not found")?;
-    insert_audit_if_absent(
-        pool,
-        command.subject,
-        request_id_or(
-            &command.request_id,
-            &format!("provider-{provider_id}-{}", command.status),
-        ),
-        "storage.provider.update",
-        STORAGE_AUDIT_TARGET_PROVIDER,
-        provider_id,
-        None,
-    )
-    .await?;
-    load_provider(pool, command.subject, provider_id).await
-}
-
-async fn check_provider_health(
-    pool: &PgPool,
-    command: CheckStorageProviderHealthCommand,
-) -> DomainResult<AdminStorageJsonRecord> {
-    let provider_id = parse_required_id(&command.provider_id, "providerId")?;
-    let result = sqlx::query(
-        r#"
-        UPDATE object_provider
-        SET health_status = 'healthy', last_health_check_at = now(), updated_at = now()
-        WHERE tenant_id = $1
-          AND organization_id = $2
-          AND id = $3
-        "#,
-    )
-    .bind(command.subject.tenant_id)
-    .bind(command.subject.organization_id)
-    .bind(provider_id)
-    .execute(pool)
-    .await
-    .map_err(|error| write_error("failed to check storage provider health", error))?;
-    ensure_affected(result.rows_affected(), "storage provider was not found")?;
-    insert_audit_if_absent(
-        pool,
-        command.subject,
-        request_id_or(
-            &command.request_id,
-            &format!("provider-{provider_id}-health"),
-        ),
-        "storage.provider.health_check",
-        STORAGE_AUDIT_TARGET_PROVIDER,
-        provider_id,
-        None,
-    )
-    .await?;
-    let checked_at: String = sqlx::query_scalar(
-        r#"
-        SELECT CAST(COALESCE(last_health_check_at::text, now()::text) AS TEXT)
-        FROM object_provider
-        WHERE tenant_id = $1 AND organization_id = $2 AND id = $3
-        "#,
-    )
-    .bind(command.subject.tenant_id)
-    .bind(command.subject.organization_id)
-    .bind(provider_id)
-    .fetch_one(pool)
-    .await
-    .map_err(store_error)?;
-    let mut record = AdminStorageJsonRecord::new();
-    record.insert(
-        "providerId".to_owned(),
-        serde_json::Value::String(provider_id.to_string()),
-    );
-    record.insert("healthy".to_owned(), serde_json::Value::Bool(true));
-    record.insert(
-        "status".to_owned(),
-        serde_json::Value::String("healthy".to_owned()),
-    );
-    record.insert(
-        "checkedAt".to_owned(),
-        serde_json::Value::String(checked_at),
-    );
-    Ok(record)
-}
-
-async fn list_buckets(
-    pool: &PgPool,
-    query: ListAdminStorageRecordsQuery,
-) -> DomainResult<AdminStorageCollection> {
-    let status_label = resource_status_label_sql("b.status");
-    let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
-        r#"
-        SELECT
-            CAST(b.id AS TEXT) AS id,
-            b.bucket_name AS "bucketName",
-            b.logical_scope AS "logicalScope",
-            CAST(b.provider_id AS TEXT) AS "providerId",
-            p.supplier_code AS "providerCode",
-            p.provider_type AS "providerType",
-            COALESCE(b.bucket_region, p.region, '') AS region,
-            COALESCE(b.bucket_region, '') AS "bucketRegion",
-            COALESCE(b.data_residency_region, '') AS "dataResidencyRegion",
-            COALESCE(b.object_key_prefix, '') AS "objectKeyPrefix",
-            COALESCE(b.default_storage_class, 'STANDARD') AS "storageClass",
-            COALESCE(b.default_storage_class, 'STANDARD') AS "defaultStorageClass",
-            COALESCE(b.default_encryption_mode, 'sse_s3') AS encryption,
-            COALESCE(b.default_encryption_mode, 'sse_s3') AS "defaultEncryptionMode",
-            COALESCE(b.kms_key_ref, '') AS "kmsKeyRef",
-            COALESCE(b.versioning_enabled, false) AS "versioningEnabled",
-            COALESCE(b.object_lock_enabled, false) AS "objectLockEnabled",
-            COALESCE(b.lifecycle_enabled, false) AS "lifecycleEnabled",
-            COALESCE(b.public_access_blocked, true) AS "publicAccessBlocked",
-            {status_label} AS status,
-            CAST(b.created_at AS TEXT) AS "createdAt",
-            CAST(b.updated_at AS TEXT) AS "updatedAt"
-        FROM object_bucket b
-        JOIN object_provider p
-          ON p.tenant_id = b.tenant_id
-         AND p.organization_id = b.organization_id
-         AND p.id = b.provider_id
-        WHERE b.tenant_id = $1
-          AND b.organization_id = $2
-          AND ($3::text IS NULL OR {status_label} = $3)
-          AND ($4::text IS NULL OR b.logical_scope = $4)
-          AND ($5::bigint IS NULL OR b.id < $5)
-        ORDER BY b.id DESC
-        LIMIT $6
-        "#
-    )))
-    .bind(query.subject.tenant_id)
-    .bind(query.subject.organization_id)
-    .bind(query.status.as_deref())
-    .bind(query.logical_scope.as_deref())
-    .bind(query.cursor.map(AdminStorageCursor::id))
-    .bind(query.limit + 1)
-    .fetch_all(pool)
-    .await
-    .map_err(store_error)?;
-    collection_from_rows(rows, query, BUCKET_FIELDS)
-}
-
-async fn create_bucket(
-    pool: &PgPool,
-    command: CreateStorageBucketCommand,
-) -> DomainResult<AdminStorageJsonRecord> {
-    if let Some(id) = existing_idempotent_id(
-        pool,
-        "object_bucket",
-        command.subject.tenant_id,
-        command.subject.organization_id,
-        &command.idempotency_key,
-    )
-    .await?
-    {
-        return load_bucket(pool, command.subject, id).await;
-    }
-
-    let provider_id = parse_required_id(&command.provider_id, "providerId")?;
-    ensure_provider_exists(pool, command.subject, provider_id).await?;
-    let id: i64 = sqlx::query_scalar(
-        r#"
-        INSERT INTO object_bucket
-            (uuid, tenant_id, organization_id, provider_id, bucket_name, bucket_region,
-             logical_scope, data_residency_region, object_key_prefix, default_storage_class,
-             default_encryption_mode, kms_key_ref, versioning_enabled, object_lock_enabled,
-             lifecycle_enabled, public_access_blocked, idempotency_key, request_id, id)
-        VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
-        RETURNING id
-        "#,
-    )
-    .bind(stable_uuid(
-        "storage-bucket",
-        &[
-            &command.subject.tenant_id.to_string(),
-            &command.subject.organization_id.to_string(),
-            &provider_id.to_string(),
-            &command.bucket_name,
-            &command.idempotency_key,
-        ],
-    ))
-    .bind(command.subject.tenant_id)
-    .bind(command.subject.organization_id)
-    .bind(provider_id)
-    .bind(&command.bucket_name)
-    .bind(command.bucket_region.as_deref())
-    .bind(&command.logical_scope)
-    .bind(command.data_residency_region.as_deref())
-    .bind(command.object_key_prefix.as_deref().unwrap_or(""))
-    .bind(
-        command
-            .default_storage_class
-            .as_deref()
-            .unwrap_or("STANDARD"),
-    )
-    .bind(
-        command
-            .default_encryption_mode
-            .as_deref()
-            .unwrap_or("sse_s3"),
-    )
-    .bind(command.kms_key_ref.as_deref())
-    .bind(command.versioning_enabled.unwrap_or(false))
-    .bind(command.object_lock_enabled.unwrap_or(false))
-    .bind(command.lifecycle_enabled.unwrap_or(false))
-    .bind(command.public_access_blocked.unwrap_or(true))
-    .bind(&command.idempotency_key)
-    .bind(command.request_id.as_deref())
-    .bind(next_cloud_runtime_id("object_bucket")?)
-    .fetch_one(pool)
-    .await
-    .map_err(|error| write_error("failed to create storage bucket", error))?;
-    insert_audit_if_absent(
-        pool,
-        command.subject,
-        command
-            .request_id
-            .as_deref()
-            .unwrap_or(&command.idempotency_key),
-        "storage.bucket.create",
-        STORAGE_AUDIT_TARGET_BUCKET,
-        id,
-        None,
-    )
-    .await?;
-    load_bucket(pool, command.subject, id).await
-}
-
-async fn update_bucket(
-    pool: &PgPool,
-    command: UpdateStorageBucketCommand,
-) -> DomainResult<AdminStorageJsonRecord> {
-    let bucket_id = parse_required_id(&command.bucket_id, "bucketId")?;
-    let result = sqlx::query(
-        r#"
-        UPDATE object_bucket
-        SET status = $1, updated_at = now(), request_id = $2
-        WHERE tenant_id = $3
-          AND organization_id = $4
-          AND id = $5
-        "#,
-    )
-    .bind(&command.status)
-    .bind(command.request_id.as_deref())
-    .bind(command.subject.tenant_id)
-    .bind(command.subject.organization_id)
-    .bind(bucket_id)
-    .execute(pool)
-    .await
-    .map_err(|error| write_error("failed to update storage bucket", error))?;
-    ensure_affected(result.rows_affected(), "storage bucket was not found")?;
-    insert_audit_if_absent(
-        pool,
-        command.subject,
-        request_id_or(
-            &command.request_id,
-            &format!("bucket-{bucket_id}-{}", command.status),
-        ),
-        "storage.bucket.update",
-        STORAGE_AUDIT_TARGET_BUCKET,
-        bucket_id,
-        None,
-    )
-    .await?;
-    load_bucket(pool, command.subject, bucket_id).await
 }
 
 async fn list_default_buckets(
@@ -819,81 +354,6 @@ async fn list_usage_counters(
     collection_from_rows(rows, query, USAGE_FIELDS)
 }
 
-async fn list_usage_ledger(
-    pool: &PgPool,
-    query: ListAdminStorageRecordsQuery,
-) -> DomainResult<AdminStorageCollection> {
-    let rows = sqlx::query(
-        r#"
-        SELECT
-            CAST(id AS TEXT) AS id,
-            scope_type AS "scopeType",
-            scope_id AS "scopeId",
-            usage_event_type AS "eventType",
-            CAST(delta_logical_bytes AS TEXT) AS "deltaBytes",
-            CAST(COALESCE(delta_file_count, 0) AS TEXT) AS "deltaFileCount",
-            COALESCE(reason, '') AS reason,
-            CAST(occurred_at AS TEXT) AS "occurredAt"
-        FROM storage_usage_ledger
-        WHERE tenant_id = $1
-          AND organization_id = $2
-          AND ($3::text IS NULL OR scope_type = $3)
-          AND ($4::text IS NULL OR scope_id = $4)
-          AND ($5::bigint IS NULL OR id < $5)
-        ORDER BY id DESC
-        LIMIT $6
-        "#,
-    )
-    .bind(query.subject.tenant_id)
-    .bind(query.subject.organization_id)
-    .bind(query.scope_type.as_deref())
-    .bind(query.scope_id.as_deref())
-    .bind(query.cursor.map(AdminStorageCursor::id))
-    .bind(query.limit + 1)
-    .fetch_all(pool)
-    .await
-    .map_err(store_error)?;
-    collection_from_rows(rows, query, USAGE_LEDGER_FIELDS)
-}
-
-async fn list_usage_snapshots(
-    pool: &PgPool,
-    query: ListAdminStorageRecordsQuery,
-) -> DomainResult<AdminStorageCollection> {
-    let rows = sqlx::query(
-        r#"
-        SELECT
-            CAST(id AS TEXT) AS id,
-            scope_type AS "scopeType",
-            scope_id AS "scopeId",
-            scope_type || ':' || scope_id AS scope,
-            snapshot_type AS "snapshotType",
-            CAST(used_logical_bytes AS TEXT) AS "usedBytes",
-            CAST(COALESCE(reserved_bytes, 0) AS TEXT) AS "reservedBytes",
-            CAST(file_count AS TEXT) AS "fileCount",
-            CAST(snapshot_at AS TEXT) AS "snapshotAt"
-        FROM storage_usage_snapshot
-        WHERE tenant_id = $1
-          AND organization_id = $2
-          AND ($3::text IS NULL OR scope_type = $3)
-          AND ($4::text IS NULL OR scope_id = $4)
-          AND ($5::bigint IS NULL OR id < $5)
-        ORDER BY id DESC
-        LIMIT $6
-        "#,
-    )
-    .bind(query.subject.tenant_id)
-    .bind(query.subject.organization_id)
-    .bind(query.scope_type.as_deref())
-    .bind(query.scope_id.as_deref())
-    .bind(query.cursor.map(AdminStorageCursor::id))
-    .bind(query.limit + 1)
-    .fetch_all(pool)
-    .await
-    .map_err(store_error)?;
-    collection_from_rows(rows, query, USAGE_SNAPSHOT_FIELDS)
-}
-
 async fn list_reconciliation_runs(
     pool: &PgPool,
     query: ListAdminStorageRecordsQuery,
@@ -1125,26 +585,6 @@ async fn create_gc_job(
     load_gc_job(pool, command.subject, id).await
 }
 
-async fn load_provider(
-    pool: &PgPool,
-    subject: crate::ports::AdminStorageSubject,
-    id: i64,
-) -> DomainResult<AdminStorageJsonRecord> {
-    let query = load_query(subject, id)?;
-    let collection = list_providers(pool, query).await?;
-    find_loaded_record(collection, id, "storage provider was not found")
-}
-
-async fn load_bucket(
-    pool: &PgPool,
-    subject: crate::ports::AdminStorageSubject,
-    id: i64,
-) -> DomainResult<AdminStorageJsonRecord> {
-    let query = load_query(subject, id)?;
-    let collection = list_buckets(pool, query).await?;
-    find_loaded_record(collection, id, "storage bucket was not found")
-}
-
 async fn load_default_bucket(
     pool: &PgPool,
     subject: crate::ports::AdminStorageSubject,
@@ -1220,78 +660,6 @@ async fn existing_idempotent_id(
     .fetch_optional(pool)
     .await
     .map_err(store_error)
-}
-
-async fn ensure_provider_exists(
-    pool: &PgPool,
-    subject: crate::ports::AdminStorageSubject,
-    provider_id: i64,
-) -> DomainResult<()> {
-    let exists: Option<i64> = sqlx::query_scalar(
-        r#"
-        SELECT 1::bigint
-        FROM object_provider
-        WHERE tenant_id = $1 AND organization_id = $2 AND id = $3
-        LIMIT 1
-        "#,
-    )
-    .bind(subject.tenant_id)
-    .bind(subject.organization_id)
-    .bind(provider_id)
-    .fetch_optional(pool)
-    .await
-    .map_err(store_error)?;
-    if exists.is_none() {
-        return Err(DomainError::not_found("storage provider was not found"));
-    }
-    Ok(())
-}
-
-async fn ensure_bucket_exists(
-    pool: &PgPool,
-    subject: crate::ports::AdminStorageSubject,
-    bucket_id: i64,
-) -> DomainResult<()> {
-    let exists: Option<i64> = sqlx::query_scalar(
-        r#"
-        SELECT 1::bigint
-        FROM object_bucket
-        WHERE tenant_id = $1 AND organization_id = $2 AND id = $3
-        LIMIT 1
-        "#,
-    )
-    .bind(subject.tenant_id)
-    .bind(subject.organization_id)
-    .bind(bucket_id)
-    .fetch_optional(pool)
-    .await
-    .map_err(store_error)?;
-    if exists.is_none() {
-        return Err(DomainError::not_found("storage bucket was not found"));
-    }
-    Ok(())
-}
-
-async fn load_bucket_logical_scope(
-    pool: &PgPool,
-    subject: crate::ports::AdminStorageSubject,
-    bucket_id: i64,
-) -> DomainResult<String> {
-    sqlx::query_scalar(
-        r#"
-        SELECT logical_scope
-        FROM object_bucket
-        WHERE tenant_id = $1 AND organization_id = $2 AND id = $3
-        LIMIT 1
-        "#,
-    )
-    .bind(subject.tenant_id)
-    .bind(subject.organization_id)
-    .bind(bucket_id)
-    .fetch_optional(pool)
-    .await
-    .map_err(store_error)?
-    .ok_or_else(|| DomainError::not_found("storage bucket was not found"))
 }
 
 async fn insert_audit_if_absent(
@@ -1490,12 +858,6 @@ fn optional_parsed_id(value: Option<&str>, field_name: &str) -> DomainResult<Opt
         .transpose()
 }
 
-fn ensure_affected(rows_affected: u64, message: &str) -> DomainResult<()> {
-    if rows_affected == 0 {
-        return Err(DomainError::not_found(message));
-    }
-    Ok(())
-}
 
 fn request_id_or<'a>(request_id: &'a Option<String>, fallback: &'a str) -> &'a str {
     request_id.as_deref().unwrap_or(fallback)
@@ -1568,49 +930,7 @@ enum Field {
     GcComputed,
 }
 
-const PROVIDER_FIELDS: &[Field] = &[
-    Field::String("id"),
-    Field::String("providerCode"),
-    Field::String("name"),
-    Field::String("providerType"),
-    Field::String("endpointUrl"),
-    Field::String("region"),
-    Field::String("credentialRef"),
-    Field::Bool("pathStyleEnabled"),
-    Field::Bool("supportsMultipart"),
-    Field::Bool("supportsLifecycle"),
-    Field::Bool("supportsObjectLock"),
-    Field::String("status"),
-    Field::String("healthStatus"),
-    Field::String("lastHealthCheckAt"),
-    Field::String("createdAt"),
-    Field::String("updatedAt"),
-];
 
-const BUCKET_FIELDS: &[Field] = &[
-    Field::String("id"),
-    Field::String("bucketName"),
-    Field::String("logicalScope"),
-    Field::String("providerId"),
-    Field::String("providerCode"),
-    Field::String("providerType"),
-    Field::String("region"),
-    Field::String("bucketRegion"),
-    Field::String("dataResidencyRegion"),
-    Field::String("objectKeyPrefix"),
-    Field::String("storageClass"),
-    Field::String("defaultStorageClass"),
-    Field::String("encryption"),
-    Field::String("defaultEncryptionMode"),
-    Field::String("kmsKeyRef"),
-    Field::Bool("versioningEnabled"),
-    Field::Bool("objectLockEnabled"),
-    Field::Bool("lifecycleEnabled"),
-    Field::Bool("publicAccessBlocked"),
-    Field::String("status"),
-    Field::String("createdAt"),
-    Field::String("updatedAt"),
-];
 
 const DEFAULT_BUCKET_FIELDS: &[Field] = &[
     Field::String("id"),
@@ -1644,29 +964,6 @@ const USAGE_FIELDS: &[Field] = &[
     Field::String("scopeType"),
     Field::String("scopeId"),
     Field::String("scope"),
-    Field::String("usedBytes"),
-    Field::String("reservedBytes"),
-    Field::String("fileCount"),
-    Field::String("snapshotAt"),
-];
-
-const USAGE_LEDGER_FIELDS: &[Field] = &[
-    Field::String("id"),
-    Field::String("scopeType"),
-    Field::String("scopeId"),
-    Field::String("eventType"),
-    Field::String("deltaBytes"),
-    Field::String("deltaFileCount"),
-    Field::String("reason"),
-    Field::String("occurredAt"),
-];
-
-const USAGE_SNAPSHOT_FIELDS: &[Field] = &[
-    Field::String("id"),
-    Field::String("scopeType"),
-    Field::String("scopeId"),
-    Field::String("scope"),
-    Field::String("snapshotType"),
     Field::String("usedBytes"),
     Field::String("reservedBytes"),
     Field::String("fileCount"),
@@ -1734,4 +1031,76 @@ mod tests {
 
         assert_eq!(vec![5, 4, 3], seen);
     }
+}
+
+async fn ensure_provider_exists(
+    pool: &PgPool,
+    subject: crate::ports::AdminStorageSubject,
+    provider_id: i64,
+) -> DomainResult<()> {
+    let exists: Option<i64> = sqlx::query_scalar(
+        r#"
+        SELECT 1::bigint
+        FROM object_provider
+        WHERE tenant_id = $1 AND organization_id = $2 AND id = $3
+        LIMIT 1
+        "#,
+    )
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(provider_id)
+    .fetch_optional(pool)
+    .await
+    .map_err(store_error)?;
+    if exists.is_none() {
+        return Err(DomainError::not_found("storage provider was not found"));
+    }
+    Ok(())
+}
+
+async fn ensure_bucket_exists(
+    pool: &PgPool,
+    subject: crate::ports::AdminStorageSubject,
+    bucket_id: i64,
+) -> DomainResult<()> {
+    let exists: Option<i64> = sqlx::query_scalar(
+        r#"
+        SELECT 1::bigint
+        FROM object_bucket
+        WHERE tenant_id = $1 AND organization_id = $2 AND id = $3
+        LIMIT 1
+        "#,
+    )
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(bucket_id)
+    .fetch_optional(pool)
+    .await
+    .map_err(store_error)?;
+    if exists.is_none() {
+        return Err(DomainError::not_found("storage bucket was not found"));
+    }
+    Ok(())
+}
+
+async fn load_bucket_logical_scope(
+    pool: &PgPool,
+    subject: crate::ports::AdminStorageSubject,
+    bucket_id: i64,
+) -> DomainResult<String> {
+    sqlx::query_scalar(
+        r#"
+        SELECT logical_scope
+        FROM object_bucket
+        WHERE tenant_id = $1 AND organization_id = $2 AND id = $3
+        LIMIT 1
+        "#,
+    )
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(bucket_id)
+    .fetch_optional(pool)
+    .await
+    .map_err(store_error)?
+    .ok_or_else(|| DomainError::not_found("storage bucket was not found"))
 }

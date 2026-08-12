@@ -138,7 +138,6 @@ data_directory = "/var/lib/sdkwork/router"
 [request_limits]
 admin_app_json_body_max_bytes = 131072
 admin_skill_json_body_max_bytes = 65536
-payment_callback_body_max_bytes = 65536
 gateway_invocation_body_max_bytes = 1048576
 
 [observability]
@@ -173,8 +172,6 @@ trusted_subject_max_clock_skew_seconds = 120
 app_session_secret_file = "/etc/sdkwork/router/app-session.secret"
 app_session_ttl_seconds = 86400
 app_session_max_clock_skew_seconds = 120
-payment_webhook_secret_file = "/etc/sdkwork/router/payment-webhook.secret"
-payment_webhook_max_clock_skew_seconds = 600
 
 [provider_relay.openai]
 base_url = "https://provider-relay.internal/v1"
@@ -360,10 +357,6 @@ password_file = "/etc/sdkwork/router/bootstrap-admin.secret"
         config.request_limits.admin_skill_json_body_max_bytes
     );
     assert_eq!(
-        Some(65536),
-        config.request_limits.payment_callback_body_max_bytes
-    );
-    assert_eq!(
         Some(1048576),
         config.request_limits.gateway_invocation_body_max_bytes
     );
@@ -426,14 +419,6 @@ password_file = "/etc/sdkwork/router/bootstrap-admin.secret"
     assert_eq!(
         Some(120),
         config.security.app_session_max_clock_skew_seconds
-    );
-    assert_eq!(
-        Some("/etc/sdkwork/router/payment-webhook.secret"),
-        config.security.payment_webhook_secret_file.as_deref()
-    );
-    assert_eq!(
-        Some(600),
-        config.security.payment_webhook_max_clock_skew_seconds
     );
     assert_eq!(
         Some("https://provider-relay.internal/v1"),

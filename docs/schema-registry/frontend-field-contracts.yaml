@@ -12488,6 +12488,59 @@ frontend_operations:
       - clip
       - conekta
       - pingpong
+- route: /admin/payments/providers
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts
+  operation: backendPaymentProvidersUpdate
+  operation_id: providers.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/payments/providers/{providerId}
+  sdk_domain: payments
+  read_sources:
+  - commerce_payment_provider
+  write_tables:
+  - commerce_payment_provider
+  response_schema:
+    name: PaymentProviderMutationResponse
+    schema:
+      additionalProperties: false
+      name: PaymentProviderMutationResponse
+      properties:
+        provider:
+          additionalProperties: true
+          type: object
+        requestId:
+          type: string
+      required:
+      - provider
+      - requestId
+      type: object
+  request_schema:
+    name: UpdatePaymentProviderRequest
+    schema:
+      additionalProperties: false
+      name: UpdatePaymentProviderRequest
+      properties:
+        displayName:
+          maxLength: 200
+          type: string
+        displayNameI18n:
+          additionalProperties:
+            type: string
+          type: object
+        sortOrder:
+          format: int64
+          type: integer
+        status:
+          maxLength: 64
+          type: string
+        reason:
+          type: string
+      required:
+      - reason
+      type: object
+
 - route: /admin/payments/reconciliation_runs
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: list
@@ -13383,287 +13436,6 @@ frontend_operations:
     schema:
       type: string
       maxLength: 128
-- route: /admin/storage/buckets
-  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
-  operation: backendStorageBucketsList
-  operation_id: oss.buckets.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/storage/buckets
-  read_sources:
-  - storage
-  response_schema:
-    name: AdminStorageBucketListResponse
-    schema:
-      additionalProperties: false
-      name: AdminStorageBucketListResponse
-      properties:
-        items:
-          items:
-            additionalProperties: false
-            name: AdminStorageBucket
-            properties:
-              bucketName:
-                maxLength: 128
-                type: string
-              bucketRegion:
-                maxLength: 64
-                type: string
-              createdAt:
-                maxLength: 64
-                type: string
-              dataResidencyRegion:
-                maxLength: 64
-                type: string
-              defaultEncryptionMode:
-                maxLength: 64
-                type: string
-              defaultStorageClass:
-                maxLength: 64
-                type: string
-              encryption:
-                maxLength: 64
-                type: string
-              id:
-                maxLength: 128
-                type: string
-              kmsKeyRef:
-                maxLength: 256
-                type: string
-              lifecycleEnabled:
-                type: boolean
-              logicalScope:
-                maxLength: 64
-                type: string
-              objectKeyPrefix:
-                maxLength: 512
-                type: string
-              objectLockEnabled:
-                type: boolean
-              providerCode:
-                maxLength: 96
-                type: string
-              providerId:
-                maxLength: 128
-                type: string
-              providerType:
-                maxLength: 64
-                type: string
-              publicAccessBlocked:
-                type: boolean
-              region:
-                maxLength: 64
-                type: string
-              status:
-                maxLength: 64
-                type: string
-              storageClass:
-                maxLength: 64
-                type: string
-              updatedAt:
-                maxLength: 64
-                type: string
-              versioningEnabled:
-                type: boolean
-            required:
-            - id
-            - bucketName
-            - logicalScope
-            - providerId
-            - providerCode
-            - providerType
-            - region
-            - bucketRegion
-            - dataResidencyRegion
-            - objectKeyPrefix
-            - storageClass
-            - defaultStorageClass
-            - encryption
-            - defaultEncryptionMode
-            - kmsKeyRef
-            - versioningEnabled
-            - objectLockEnabled
-            - lifecycleEnabled
-            - publicAccessBlocked
-            - status
-            - createdAt
-            - updatedAt
-            type: object
-          type: array
-        pageInfo:
-          $ref: '#/components/schemas/PageInfo'
-      required:
-      - items
-      - pageInfo
-      type: object
-  query_parameters:
-  - name: cursor
-    type: string
-    required: false
-    maxLength: 256
-  - name: page_size
-    required: false
-    schema:
-      type: integer
-      minimum: 1
-      maximum: 200
-  - name: status
-    type: string
-    required: false
-    maxLength: 64
-  - name: logical_scope
-    type: string
-    required: false
-    maxLength: 64
-  - name: scope_type
-    type: string
-    required: false
-    maxLength: 64
-  - name: scope_id
-    type: string
-    required: false
-    maxLength: 128
-  - name: run_type
-    type: string
-    required: false
-    maxLength: 64
-- route: /admin/storage/buckets
-  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
-  operation: backendStorageBucketCreate
-  operation_id: oss.buckets.create
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/storage/buckets
-  read_sources:
-  - storage
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_body_required: true
-  write_tables:
-  - ops_audit_log
-  request_schema:
-    name: AdminStorageBucketCreateRequest
-    schema:
-      additionalProperties: false
-      name: AdminStorageBucketCreateRequest
-      properties:
-        bucketName:
-          maxLength: 128
-          minLength: 1
-          type: string
-        bucketRegion:
-          maxLength: 64
-          nullable: true
-          type: string
-        dataResidencyRegion:
-          maxLength: 64
-          nullable: true
-          type: string
-        defaultEncryptionMode:
-          enum:
-          - none
-          - sse_kms
-          - sse_s3
-          nullable: true
-          type: string
-        defaultStorageClass:
-          enum:
-          - STANDARD
-          - INTELLIGENT_TIERING
-          - STANDARD_IA
-          - ONEZONE_IA
-          - GLACIER_IR
-          - GLACIER
-          - DEEP_ARCHIVE
-          nullable: true
-          type: string
-        kmsKeyRef:
-          maxLength: 256
-          nullable: true
-          type: string
-        lifecycleEnabled:
-          nullable: true
-          type: boolean
-        logicalScope:
-          enum:
-          - migration_import
-          - system_archive
-          - system_quarantine
-          - system_temp
-          - system_variant
-          - tenant_private
-          - tenant_public_asset
-          type: string
-        objectKeyPrefix:
-          maxLength: 512
-          nullable: true
-          type: string
-        objectLockEnabled:
-          nullable: true
-          type: boolean
-        providerId:
-          maxLength: 128
-          minLength: 1
-          type: string
-        publicAccessBlocked:
-          nullable: true
-          type: boolean
-        versioningEnabled:
-          nullable: true
-          type: boolean
-      required:
-      - bucketName
-      - providerId
-      - logicalScope
-      type: object
-  idempotency_required: true
-- route: /admin/storage/buckets/{bucketId}
-  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
-  operation: backendStorageBucketUpdate
-  operation_id: oss.buckets.update
-  kind: update
-  api_surface: backend
-  api_method: PATCH
-  api_path: /backend/v3/api/storage/buckets/{bucketId}
-  read_sources:
-  - storage
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_body_required: true
-  write_tables:
-  - ops_audit_log
-  request_schema:
-    name: AdminStorageStatusUpdateRequest
-    schema:
-      additionalProperties: false
-      name: AdminStorageStatusUpdateRequest
-      properties:
-        reason:
-          maxLength: 512
-          minLength: 1
-          type: string
-        status:
-          enum:
-          - active
-          - archived
-          - disabled
-          type: string
-      required:
-      - status
-      - reason
-      type: object
 - route: /admin/storage/defaultBuckets
   source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
   operation: backendStorageDefaultBucketsList
@@ -13961,266 +13733,6 @@ frontend_operations:
           type: string
       type: object
   idempotency_required: true
-- route: /admin/storage/providers
-  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
-  operation: backendStorageProvidersList
-  operation_id: oss.providers.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/storage/providers
-  read_sources:
-  - storage
-  response_schema:
-    name: AdminStorageProviderListResponse
-    schema:
-      additionalProperties: false
-      name: AdminStorageProviderListResponse
-      properties:
-        items:
-          items:
-            additionalProperties: false
-            name: AdminStorageProvider
-            properties:
-              createdAt:
-                maxLength: 64
-                type: string
-              credentialRef:
-                maxLength: 256
-                type: string
-              endpointUrl:
-                maxLength: 512
-                type: string
-              healthStatus:
-                maxLength: 64
-                type: string
-              id:
-                maxLength: 128
-                type: string
-              lastHealthCheckAt:
-                maxLength: 64
-                type: string
-              name:
-                maxLength: 128
-                type: string
-              pathStyleEnabled:
-                type: boolean
-              providerCode:
-                maxLength: 96
-                type: string
-              providerType:
-                maxLength: 64
-                type: string
-              region:
-                maxLength: 64
-                type: string
-              status:
-                maxLength: 64
-                type: string
-              supportsLifecycle:
-                type: boolean
-              supportsMultipart:
-                type: boolean
-              supportsObjectLock:
-                type: boolean
-              updatedAt:
-                maxLength: 64
-                type: string
-            required:
-            - id
-            - providerCode
-            - name
-            - providerType
-            - endpointUrl
-            - region
-            - credentialRef
-            - pathStyleEnabled
-            - supportsMultipart
-            - supportsLifecycle
-            - supportsObjectLock
-            - status
-            - healthStatus
-            - lastHealthCheckAt
-            - createdAt
-            - updatedAt
-            type: object
-          type: array
-        pageInfo:
-          $ref: '#/components/schemas/PageInfo'
-      required:
-      - items
-      - pageInfo
-      type: object
-  query_parameters:
-  - name: cursor
-    type: string
-    required: false
-    maxLength: 256
-  - name: page_size
-    required: false
-    schema:
-      type: integer
-      minimum: 1
-      maximum: 200
-  - name: status
-    type: string
-    required: false
-    maxLength: 64
-  - name: logical_scope
-    type: string
-    required: false
-    maxLength: 64
-  - name: scope_type
-    type: string
-    required: false
-    maxLength: 64
-  - name: scope_id
-    type: string
-    required: false
-    maxLength: 128
-  - name: run_type
-    type: string
-    required: false
-    maxLength: 64
-- route: /admin/storage/providers
-  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
-  operation: backendStorageProviderCreate
-  operation_id: oss.providers.create
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/storage/providers
-  read_sources:
-  - storage
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_body_required: true
-  write_tables:
-  - ops_audit_log
-  request_schema:
-    name: AdminStorageProviderCreateRequest
-    schema:
-      additionalProperties: false
-      name: AdminStorageProviderCreateRequest
-      properties:
-        credentialRef:
-          maxLength: 256
-          minLength: 1
-          type: string
-        endpointUrl:
-          maxLength: 512
-          nullable: true
-          type: string
-        name:
-          maxLength: 128
-          minLength: 1
-          type: string
-        pathStyleEnabled:
-          nullable: true
-          type: boolean
-        providerCode:
-          maxLength: 96
-          nullable: true
-          type: string
-        providerType:
-          enum:
-          - aws_s3
-          - baidu_bos
-          - cloudflare_r2
-          - cos_s3
-          - huawei_obs
-          - jdcloud_oss
-          - local_dev_s3
-          - minio
-          - oss_s3
-          - qiniu_kodo
-          - s3_compatible
-          - volcengine_tos
-          type: string
-        region:
-          maxLength: 64
-          nullable: true
-          type: string
-        supportsLifecycle:
-          nullable: true
-          type: boolean
-        supportsMultipart:
-          nullable: true
-          type: boolean
-        supportsObjectLock:
-          nullable: true
-          type: boolean
-      required:
-      - name
-      - providerType
-      - credentialRef
-      type: object
-  idempotency_required: true
-- route: /admin/storage/providers
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: update
-  operation_id: oss.providers.update
-  kind: update
-  api_surface: backend
-  api_method: PATCH
-  api_path: /backend/v3/api/storage/providers/{providerId}
-  read_sources:
-  - storage
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_body_required: true
-  write_tables:
-  - ops_audit_log
-  request_schema:
-    name: AdminStorageStatusUpdateRequest
-    schema:
-      additionalProperties: false
-      name: AdminStorageStatusUpdateRequest
-      properties:
-        reason:
-          maxLength: 512
-          minLength: 1
-          type: string
-        status:
-          enum:
-          - active
-          - archived
-          - disabled
-          type: string
-      required:
-      - status
-      - reason
-      type: object
-- route: /admin/storage/providers/{providerId}
-  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
-  operation: backendStorageProviderHealthCheck
-  operation_id: providers.healthCheck
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/storage/providers/{providerId}/health_check
-  read_sources:
-  - storage
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_body_required: false
-  write_tables:
-  - ops_audit_log
 - route: /admin/storage/quotas
   source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
   operation: backendStorageQuotasList
@@ -17999,18 +17511,6 @@ routes:
   dependency_owned: true
   dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   required_tables: []
-- route: /admin/storage/buckets
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
-  required_tables:
-  - ops_audit_log
-  - storage
-- route: /admin/storage/buckets/{bucketId}
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
-  required_tables:
-  - ops_audit_log
-  - storage
 - route: /admin/storage/defaultBuckets
   dependency_owned: true
   dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
@@ -18018,18 +17518,6 @@ routes:
   - ops_audit_log
   - storage
 - route: /admin/storage/garbageCollection
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
-  required_tables:
-  - ops_audit_log
-  - storage
-- route: /admin/storage/providers
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
-  required_tables:
-  - ops_audit_log
-  - storage
-- route: /admin/storage/providers/{providerId}
   dependency_owned: true
   dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   required_tables:

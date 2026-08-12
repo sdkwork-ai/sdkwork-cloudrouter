@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { toDataURL } from 'qrcode';
 import { loadStripe, type Stripe, type StripeCardElement } from '@stripe/stripe-js';
 import { CheckCircle2, CreditCard, ExternalLink, Loader2, QrCode, RefreshCw, RotateCcw, X } from 'lucide-react';
-import type { TestPayment } from '@sdkwork/payment-backend-sdk';
+import type { TestPayment } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import {
   readAdminResourceRecordList,
   resolveProblemMessage,
@@ -25,6 +25,41 @@ export interface PaymentTestDialogProps {
 const PAYMENT_STATUS_POLL_INTERVAL_MS = 3000;
 const SUCCEEDED_PAYMENT_STATUSES = new Set(['succeeded', 'success']);
 const FAILED_PAYMENT_STATUSES = new Set(['failed', 'closed', 'canceled', 'cancelled', 'expired', 'timeout']);
+
+type TestPaymentTranslate = ReturnType<typeof useTranslation>['t'];
+
+/**
+ * Appends operator-facing guidance when the backend diagnostic carries a
+ * configuration-issue keyword, so zh-CN admins see actionable steps next to
+ * the raw English detail instead of having to decode it.
+ */
+function enrichTestPaymentError(detail: string, t: TestPaymentTranslate): string {
+  if (detail.includes('is inactive')) {
+    return `${detail}
+${t('admin.commerce.payments.methods.testPayment.guide.inactiveAccount', '→ 请前往 支付中心 → 机构账户 → 编辑对应账户 → 配置真实或 PSP 沙箱凭据 → 点 Test 校验 → 通过后启用，再重新测试。')}`;
+  }
+  if (detail.includes('has no provider account bound') || detail.includes('no channel')) {
+    return `${detail}
+${t('admin.commerce.payments.methods.testPayment.guide.noChannel', '→ 请前往 支付中心 → 支付通道 → 为该支付方式创建并启用通道（绑定已启用的机构账户）。')}`;
+  }
+  if (detail.includes('is not configured')) {
+    return `${detail}
+${t('admin.commerce.payments.methods.testPayment.guide.notConfigured', '→ 请前往 支付中心 → 机构账户 → 创建并启用对应 PSP 账户（真实或沙箱凭据）。')}`;
+  }
+  if (detail.includes('storage failed')) {
+    return `${detail}
+${t('admin.commerce.payments.methods.testPayment.guide.storage', '→ 数据库结构问题：请核对部署库的 payment/order 表结构（缺列或类型不符）。')}`;
+  }
+  if (detail.includes('SIGN_ERROR') || detail.includes('签名')) {
+    return `${detail}
+${t('admin.commerce.payments.methods.testPayment.guide.signError', '→ 请求已真实到达支付网关，是网关拒绝签名：当前账户用的是自动填充的测试凭据，不是真实商户密钥。请前往 支付中心 → 机构账户 → 编辑对应账户 → 填入真实商户 API 私钥/证书（微信商户平台获取）→ 保存后重试；HTTP 401 来自微信网关，不是登录问题，你的会话正常。')}`;
+  }
+  if (detail.includes('401') || detail.includes('Unauthorized') || detail.includes('Invalid API Key')) {
+    return `${detail}
+${t('admin.commerce.payments.methods.testPayment.guide.auth401', '→ HTTP 401 来自支付网关（凭据被拒绝），不是本系统登录问题，你的会话正常。请前往 支付中心 → 机构账户 → 编辑对应账户 → 填入真实或沙箱凭据 → 保存后重试。')}`;
+  }
+  return detail;
+}
 
 /**
  * One-cent test payment dialog. Creates a 0.01 test payment through the
@@ -88,7 +123,7 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
         if (!mounted || createSequenceRef.current !== sequence) {
           return;
         }
-        setError(resolveProblemMessage(cause, t, t('admin.commerce.payments.methods.testPayment.error.create')));
+        setError(enrichTestPaymentError(resolveProblemMessage(cause, t, t('admin.commerce.payments.methods.testPayment.error.create')), t));
         setPhase('failed');
       });
 
@@ -233,7 +268,7 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
         'The payment channel has not confirmed the payment yet. Complete the scan/redirect payment first, then check again.',
       ));
     } catch (cause) {
-      setError(resolveProblemMessage(cause, t, t('admin.commerce.payments.methods.testPayment.error.check', 'The payment channel status could not be checked.')));
+      setError(enrichTestPaymentError(resolveProblemMessage(cause, t, t('admin.commerce.payments.methods.testPayment.error.check', 'The payment channel status could not be checked.')), t));
     } finally {
       setChecking(false);
     }

@@ -131,7 +131,9 @@ pub fn resolve_upstream_credential_rotation_config(
             match sdkwork_cloudrouter_config::DeploymentMode::from_env_or_runtime_toml(runtime_toml)
             {
                 Ok(mode) if mode.is_production_like() => {
-                    panic!("invalid credential rotation config in production-like deployment: {error}");
+                    panic!(
+                        "invalid credential rotation config in production-like deployment: {error}"
+                    );
                 }
                 Err(lifecycle_error) => {
                     panic!(
@@ -237,7 +239,9 @@ fn parse_batch_size_config(
     let parsed = sdkwork_cloudrouter_config::runtime::config_i64(name, config_value)?
         .unwrap_or(default_value);
     if !(MIN_BATCH_SIZE..=MAX_BATCH_SIZE).contains(&parsed) {
-        return Err(format!("{name} must be between {MIN_BATCH_SIZE} and {MAX_BATCH_SIZE}"));
+        return Err(format!(
+            "{name} must be between {MIN_BATCH_SIZE} and {MAX_BATCH_SIZE}"
+        ));
     }
     Ok(parsed)
 }
@@ -393,9 +397,8 @@ impl UpstreamCredentialRotationWorker {
         account: &CredentialRotationAccount,
         now: &str,
     ) -> DomainResult<CredentialRotationAction> {
-        let interval_days = rotation_interval_days(account).unwrap_or(
-            self.config.default_rotation_interval_days,
-        );
+        let interval_days =
+            rotation_interval_days(account).unwrap_or(self.config.default_rotation_interval_days);
         self.store
             .try_rotate_account(TryRotateCredentialCommand {
                 tenant_id: account.tenant_id,
@@ -585,7 +588,10 @@ mod tests {
         .normalized();
         assert_eq!(MAX_BATCH_SIZE, normalized.batch_size);
         assert_eq!(MIN_INTERVAL_MILLIS, normalized.interval_millis);
-        assert_eq!(MAX_ROTATION_INTERVAL_DAYS, normalized.default_rotation_interval_days);
+        assert_eq!(
+            MAX_ROTATION_INTERVAL_DAYS,
+            normalized.default_rotation_interval_days
+        );
         assert!(normalized.validate_for_deployment().is_ok());
         assert!(UpstreamCredentialRotationConfig::disabled()
             .validate_for_deployment()

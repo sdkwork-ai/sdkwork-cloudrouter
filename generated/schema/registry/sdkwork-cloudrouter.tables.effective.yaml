@@ -6527,8 +6527,6 @@ tables:
   - /admin/runtime-region
   - /admin/settings
   - /admin/site
-  - /admin/storage/buckets
-  - /admin/storage/buckets/{bucketId}
   - /admin/storage/defaultBuckets
   - /admin/storage/garbageCollection
   - /admin/storage/providers

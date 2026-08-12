@@ -1050,9 +1050,9 @@ fn model_route_fails_fast_with_clear_error_when_group_has_no_supporting_account(
         UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
         error.kind()
     );
-    assert!(
-        error.to_string().contains("no upstream account in account group group-50")
-    );
+    assert!(error
+        .to_string()
+        .contains("no upstream account in account group group-50"));
 }
 
 #[test]
@@ -1119,11 +1119,9 @@ fn account_route_denies_api_resource_not_covered_by_entitlements() {
         UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
         error.kind()
     );
-    assert!(
-        error
-            .to_string()
-            .contains("no upstream account in account group group-52")
-    );
+    assert!(error
+        .to_string()
+        .contains("no upstream account in account group group-52"));
 }
 
 #[test]

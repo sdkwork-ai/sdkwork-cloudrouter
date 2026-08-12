@@ -248,15 +248,6 @@ export interface AdminStorageUsageSnapshotQuery extends AdminStorageUsageQuery {
   snapshotType?: string;
 }
 
-export interface AdminStorageBucketQuery {
-  cursor?: string;
-  limit?: number;
-  logicalScope?: SdkworkStorageBucketLogicalScope;
-  providerId?: string;
-  requestId: string;
-  status?: string;
-}
-
 export interface AdminStorageDefaultBucketQuery {
   logicalScope?: SdkworkStorageBucketLogicalScope;
   requestId: string;
@@ -281,63 +272,12 @@ export interface AdminStorageSetDefaultBucketInput {
   requestId: string;
 }
 
-export interface AdminStorageProviderHealthCheckInput {
-  providerId: string;
-  requestId: string;
-}
-
 export interface AdminStorageProviderHealthCheckResult {
   checkedAt?: string;
   healthy: boolean;
   providerId: string;
   requestId: string;
   status: string;
-}
-
-export interface AdminStorageUpdateProviderInput {
-  providerId: string;
-  reason: string;
-  requestId: string;
-  status: SdkworkStorageResourceStatus;
-}
-
-export interface AdminStorageUpdateBucketInput {
-  bucketId: string;
-  reason: string;
-  requestId: string;
-  status: SdkworkStorageResourceStatus;
-}
-
-export interface AdminStorageCreateProviderInput {
-  credentialRef: string;
-  endpointUrl?: string;
-  idempotencyKey: string;
-  pathStyleEnabled?: boolean;
-  providerCode: string;
-  providerType: SdkworkStorageProviderType;
-  region?: string;
-  requestId: string;
-  supportsLifecycle?: boolean;
-  supportsMultipart?: boolean;
-  supportsObjectLock?: boolean;
-}
-
-export interface AdminStorageCreateBucketInput {
-  bucketName: string;
-  bucketRegion?: string;
-  dataResidencyRegion?: string;
-  defaultEncryptionMode?: SdkworkStorageEncryptionMode;
-  defaultStorageClass?: SdkworkStorageBucketStorageClass;
-  idempotencyKey: string;
-  kmsKeyRef?: string;
-  lifecycleEnabled?: boolean;
-  logicalScope: SdkworkStorageBucketLogicalScope;
-  objectKeyPrefix?: string;
-  objectLockEnabled?: boolean;
-  providerId: string;
-  publicAccessBlocked?: boolean;
-  requestId: string;
-  versioningEnabled?: boolean;
 }
 
 export interface AdminStorageCreateQuotaPolicyInput {
@@ -375,22 +315,13 @@ export interface AdminStorageCreateGarbageCollectionJobInput {
 }
 
 export interface AdminStoragePort {
-  createProvider(input: AdminStorageCreateProviderInput): Promise<{ provider: unknown; requestId: string }>;
-  updateProvider(input: AdminStorageUpdateProviderInput): Promise<{ provider: unknown; requestId: string }>;
-  createBucket(input: AdminStorageCreateBucketInput): Promise<{ bucket: unknown; requestId: string }>;
-  updateBucket(input: AdminStorageUpdateBucketInput): Promise<{ bucket: unknown; requestId: string }>;
   createQuotaPolicy(input: AdminStorageCreateQuotaPolicyInput): Promise<{ quotaPolicy: unknown; requestId: string }>;
   createReconciliationRun(input: AdminStorageCreateReconciliationRunInput): Promise<{ reconciliationRun: unknown; requestId: string }>;
   createGarbageCollectionJob(input: AdminStorageCreateGarbageCollectionJobInput): Promise<{ job: unknown; requestId: string }>;
-  healthCheckProvider(input: AdminStorageProviderHealthCheckInput): Promise<AdminStorageProviderHealthCheckResult>;
-  listProviders(query: { requestId: string }): Promise<{ items: unknown[]; requestId: string }>;
-  listBuckets(query: AdminStorageBucketQuery): Promise<{ items: unknown[]; nextCursor?: string; requestId: string }>;
   listDefaultBuckets(query: AdminStorageDefaultBucketQuery): Promise<{ items: AdminStorageDefaultBucket[]; requestId: string }>;
   listQuotaPolicies(query: { requestId: string }): Promise<{ items: unknown[]; requestId: string }>;
   listReconciliationRuns(query: AdminStorageReconciliationRunQuery): Promise<{ items: unknown[]; nextCursor?: string; requestId: string }>;
   listUsageCounters(query: AdminStorageUsageQuery): Promise<{ items: unknown[]; nextCursor?: string; requestId: string }>;
-  listUsageLedger(query: AdminStorageUsageLedgerQuery): Promise<{ items: unknown[]; nextCursor?: string; requestId: string }>;
-  listUsageSnapshots(query: AdminStorageUsageSnapshotQuery): Promise<{ items: unknown[]; nextCursor?: string; requestId: string }>;
   setDefaultBucket(input: AdminStorageSetDefaultBucketInput): Promise<{ defaultBucket: AdminStorageDefaultBucket; requestId: string }>;
 }
 
@@ -412,22 +343,13 @@ export function createUnsupportedFilePlatformPorts(): FilePlatformPorts {
       listFiles: unsupported("access.listFiles"),
     },
     adminStorage: {
-      createProvider: unsupported("adminStorage.createProvider"),
-      updateProvider: unsupported("adminStorage.updateProvider"),
-      createBucket: unsupported("adminStorage.createBucket"),
-      updateBucket: unsupported("adminStorage.updateBucket"),
       createQuotaPolicy: unsupported("adminStorage.createQuotaPolicy"),
       createReconciliationRun: unsupported("adminStorage.createReconciliationRun"),
       createGarbageCollectionJob: unsupported("adminStorage.createGarbageCollectionJob"),
-      healthCheckProvider: unsupported("adminStorage.healthCheckProvider"),
-      listProviders: unsupported("adminStorage.listProviders"),
-      listBuckets: unsupported("adminStorage.listBuckets"),
       listDefaultBuckets: unsupported("adminStorage.listDefaultBuckets"),
       listQuotaPolicies: unsupported("adminStorage.listQuotaPolicies"),
       listReconciliationRuns: unsupported("adminStorage.listReconciliationRuns"),
       listUsageCounters: unsupported("adminStorage.listUsageCounters"),
-      listUsageLedger: unsupported("adminStorage.listUsageLedger"),
-      listUsageSnapshots: unsupported("adminStorage.listUsageSnapshots"),
       setDefaultBucket: unsupported("adminStorage.setDefaultBucket"),
     },
     binding: {

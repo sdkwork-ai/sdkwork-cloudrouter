@@ -99,6 +99,8 @@ async fn alipay_page_pay_maps_standard_payment_intent_to_trade_page_pay() {
             merchant_order_no: Some("order-1".to_owned()),
             amount_minor: Some(1234),
             currency: Some("CNY".to_owned()),
+            notify_url: None,
+            return_url: None,
             metadata: json!({ "subject": "SDKWORK order" }),
         })
         .await
@@ -140,6 +142,8 @@ async fn alipay_qr_precreate_maps_standard_payment_intent_to_scan_to_pay_qr_code
             merchant_order_no: Some("order-1".to_owned()),
             amount_minor: Some(1234),
             currency: Some("CNY".to_owned()),
+            notify_url: None,
+            return_url: None,
             metadata: json!({
                 "subject": "SDKWORK order",
                 "payment_method": "alipay_qr",

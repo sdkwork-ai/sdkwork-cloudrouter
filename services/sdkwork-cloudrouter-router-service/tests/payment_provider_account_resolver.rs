@@ -5,6 +5,7 @@ use sdkwork_cloudrouter_router_service::application::{
     PaymentAdapterFuture, PaymentProviderAccountCredentialRefs,
     PaymentProviderAccountCredentialResolver, PaymentProviderRegistryError,
     PaymentProviderResolvedCredentials, PaymentProviderSecretResolver, PaymentProviderSecretValue,
+    WeChatPaySignVerifyMode,
 };
 use serde_json::json;
 
@@ -267,7 +268,139 @@ async fn resolver_builds_wechat_pay_credentials_from_key_and_certificate_refs() 
         Some("https://merchant.example/payments/wechat/notify".to_owned()),
         config.notify_url
     );
+    assert_eq!(WeChatPaySignVerifyMode::WeChatPayPublicKey, config.sign_verify_mode);
+    assert_eq!(None, config.verification_key_pem);
+    assert_eq!(None, config.verification_serial_no);
     assert!(!format!("{config:?}").contains("wechat-api-v3-key"));
+}
+
+#[tokio::test]
+async fn resolver_builds_wechat_pay_public_key_mode_credentials_from_certificate_ref() {
+    let resolver =
+        PaymentProviderAccountCredentialResolver::new(Arc::new(StaticSecretResolver::with(&[
+            (
+                "secret://payments/wechat/private-key",
+                "-----BEGIN PRIVATE KEY-----",
+            ),
+            ("secret://payments/wechat/api-v3-key", "wechat-api-v3-key"),
+            (
+                "secret://payments/wechat/public-key",
+                "-----BEGIN PUBLIC KEY-----",
+            ),
+        ])));
+
+    let credentials = resolver
+        .resolve(PaymentProviderAccountCredentialRefs {
+            supplier_code: "wechat_pay".to_owned(),
+            merchant_id: "1900000109".to_owned(),
+            environment: "live".to_owned(),
+            secret_ref: "secret://payments/wechat/private-key".to_owned(),
+            webhook_secret_ref: Some("secret://payments/wechat/api-v3-key".to_owned()),
+            certificate_ref: Some("secret://payments/wechat/public-key".to_owned()),
+            metadata: json!({
+                "appId": "wx2421b1c4370ec43b",
+                "merchantSerialNo": "5157F09EFDC096DE15EBE81A47057A7232F1B8E1",
+                "signVerifyMode": "wechatpay_public_key",
+                "wechatpayPublicKeyId": "PUB_KEY_ID_00000000000000000000000000000001"
+            }),
+        })
+        .await
+        .unwrap();
+
+    let PaymentProviderResolvedCredentials::WeChatPay(config) = credentials else {
+        panic!("expected WeChat Pay credentials");
+    };
+    assert_eq!(WeChatPaySignVerifyMode::WeChatPayPublicKey, config.sign_verify_mode);
+    assert_eq!(
+        Some("-----BEGIN PUBLIC KEY-----".to_owned()),
+        config.verification_key_pem
+    );
+    assert_eq!(
+        Some("PUB_KEY_ID_00000000000000000000000000000001".to_owned()),
+        config.verification_serial_no
+    );
+}
+
+#[tokio::test]
+async fn resolver_builds_wechat_pay_platform_certificate_mode_credentials() {
+    let resolver =
+        PaymentProviderAccountCredentialResolver::new(Arc::new(StaticSecretResolver::with(&[
+            (
+                "secret://payments/wechat/private-key",
+                "-----BEGIN PRIVATE KEY-----",
+            ),
+            ("secret://payments/wechat/api-v3-key", "wechat-api-v3-key"),
+            (
+                "secret://payments/wechat/platform-cert",
+                "-----BEGIN CERTIFICATE-----",
+            ),
+        ])));
+
+    let credentials = resolver
+        .resolve(PaymentProviderAccountCredentialRefs {
+            supplier_code: "wechat_pay".to_owned(),
+            merchant_id: "1900000109".to_owned(),
+            environment: "live".to_owned(),
+            secret_ref: "secret://payments/wechat/private-key".to_owned(),
+            webhook_secret_ref: Some("secret://payments/wechat/api-v3-key".to_owned()),
+            certificate_ref: Some("secret://payments/wechat/platform-cert".to_owned()),
+            metadata: json!({
+                "appId": "wx2421b1c4370ec43b",
+                "merchantSerialNo": "5157F09EFDC096DE15EBE81A47057A7232F1B8E1",
+                "signVerifyMode": "platform_certificate",
+                "platformCertificateSerialNo": "6EB892196BEAA85D5E59B06F077C8A2903683649"
+            }),
+        })
+        .await
+        .unwrap();
+
+    let PaymentProviderResolvedCredentials::WeChatPay(config) = credentials else {
+        panic!("expected WeChat Pay credentials");
+    };
+    assert_eq!(WeChatPaySignVerifyMode::PlatformCertificate, config.sign_verify_mode);
+    assert_eq!(
+        Some("-----BEGIN CERTIFICATE-----".to_owned()),
+        config.verification_key_pem
+    );
+    assert_eq!(
+        Some("6EB892196BEAA85D5E59B06F077C8A2903683649".to_owned()),
+        config.verification_serial_no
+    );
+}
+
+#[tokio::test]
+async fn resolver_rejects_unknown_wechat_pay_sign_verify_mode() {
+    let resolver =
+        PaymentProviderAccountCredentialResolver::new(Arc::new(StaticSecretResolver::with(&[
+            (
+                "secret://payments/wechat/private-key",
+                "-----BEGIN PRIVATE KEY-----",
+            ),
+            ("secret://payments/wechat/api-v3-key", "wechat-api-v3-key"),
+        ])));
+
+    let error = resolver
+        .resolve(PaymentProviderAccountCredentialRefs {
+            supplier_code: "wechat_pay".to_owned(),
+            merchant_id: "1900000109".to_owned(),
+            environment: "live".to_owned(),
+            secret_ref: "secret://payments/wechat/private-key".to_owned(),
+            webhook_secret_ref: Some("secret://payments/wechat/api-v3-key".to_owned()),
+            certificate_ref: None,
+            metadata: json!({
+                "appId": "wx2421b1c4370ec43b",
+                "merchantSerialNo": "5157F09EFDC096DE15EBE81A47057A7232F1B8E1",
+                "signVerifyMode": "md5"
+            }),
+        })
+        .await
+        .expect_err("unknown signVerifyMode must be rejected");
+
+    assert!(matches!(
+        error,
+        PaymentProviderRegistryError::InvalidProviderRequest { .. }
+    ));
+    assert!(format!("{error}").contains("signVerifyMode"));
 }
 
 #[tokio::test]

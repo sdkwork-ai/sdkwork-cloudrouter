@@ -84,8 +84,13 @@ fn referral_strategies_search_is_parameterized_in_all_status_branches() {
     let sql = POSTGRES_ADMIN_REFERRAL_STORE;
     // Every status branch binds the search as a parameter instead of
     // interpolating user input into the SQL text.
-    let branches = sql.matches("($5 = '' OR name ILIKE '%' || $5 || '%')").count();
-    assert_eq!(3, branches, "all three status branches must parameterize search");
+    let branches = sql
+        .matches("($5 = '' OR name ILIKE '%' || $5 || '%')")
+        .count();
+    assert_eq!(
+        3, branches,
+        "all three status branches must parameterize search"
+    );
     assert_sql_contains(sql, "LIMIT $3 OFFSET $4");
 }
 

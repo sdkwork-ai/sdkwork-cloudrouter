@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshCw, Search } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MoreHorizontal, RefreshCw, Search } from 'lucide-react';
 import { AdminTableShell } from './AdminTableShell';
 import { BottomPagination } from './BottomPagination';
 import { BusinessStatePanel, BusinessStateTableRow } from './BusinessState';
@@ -9,6 +9,19 @@ export type AdminResourceRecord = Record<string, unknown>;
 export type AdminResourceLoadParams = {
   page: number;
   pageSize: number;
+  /** Active select-filter values keyed by filter key. */
+  filters?: Record<string, string>;
+};
+
+export type AdminResourceSelectFilter = {
+  key: string;
+  label: string;
+  /** 静态选项，或按当前 filter 值动态求值的级联选项
+   *  （如 region 选项随选中的 provider 变化）。 */
+  options:
+    | readonly { value: string; label: string }[]
+    | ((filters: Record<string, string>) => readonly { value: string; label: string }[]);
+  placeholder?: string;
 };
 
 export type AdminResourceCollectionMeta = {
@@ -34,6 +47,9 @@ export type AdminResourceSection<TSectionId extends string = string, TGroup exte
   load: (params?: AdminResourceLoadParams) => Promise<unknown>;
   columns: AdminResourceColumn[];
   searchFields: string[];
+  /** Optional select dropdowns rendered above the list; values are forwarded
+   *  to `load` through `AdminResourceLoadParams.filters`. */
+  filters?: AdminResourceSelectFilter[];
   group: TGroup;
   action?: AdminResourceAction;
   actions?: AdminResourceAction[];
@@ -62,6 +78,9 @@ export type AdminResourceRowAction<TSectionId extends string = string, TGroup ex
   isVisible?: (record: AdminResourceRecord) => boolean;
   onClick: (record: AdminResourceRecord, section: AdminResourceSection<TSectionId, TGroup>) => void;
 };
+
+/** 行操作平铺上限：超出部分收进「更多」溢出菜单，避免窄屏溢出。 */
+const ROW_ACTIONS_PINNED_LIMIT = 3;
 
 type AdminResourceState = {
   loading: boolean;
@@ -95,6 +114,8 @@ export interface AdminResourceCenterProps<TSectionId extends string = string, TG
   helpLabel?: string;
   helpCloseLabel?: string;
   helpNotesLabel?: string;
+  /** 「更多」溢出菜单按钮的无障碍标签。 */
+  rowActionsMoreLabel?: string;
 }
 
 const INITIAL_STATE: AdminResourceState = {
@@ -129,6 +150,7 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
   helpLabel,
   helpCloseLabel,
   helpNotesLabel,
+  rowActionsMoreLabel = 'More',
 }: AdminResourceCenterProps<TSectionId, TGroup>) {
   const firstSection = sections[0];
   if (!firstSection) {
@@ -139,6 +161,7 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
     activeSectionId ?? initialSectionId ?? firstSection.id,
   );
   const [search, setSearch] = useState('');
+  const [filterState, setFilterState] = useState<Record<string, string>>({});
   const [stateByTab, setStateByTab] = useState<Record<TSectionId, AdminResourceState>>(
     () => Object.fromEntries(sections.map((section) => [section.id, INITIAL_STATE])) as Record<TSectionId, AdminResourceState>,
   );
@@ -189,7 +212,16 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
       [section.id]: { ...(current[section.id] ?? INITIAL_STATE), loading: true, error: null },
     }));
     try {
-      const result = await section.load(section.pagination ? pageState : undefined);
+      const activeFilters = Object.fromEntries(
+        (section.filters ?? []).map((filter) => [filter.key, filterState[filter.key] ?? '']),
+      );
+      const result = await section.load(
+        pageState
+          ? { ...pageState, filters: activeFilters }
+          : section.filters?.length
+            ? { page: 1, pageSize: 20, filters: activeFilters }
+            : undefined,
+      );
       const records = readAdminResourceRecordList(result);
       const collectionMeta = readAdminResourceCollectionMeta(result);
       if (isActive()) {
@@ -211,7 +243,9 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
         }));
       }
     }
-  }, [errorTitle]);
+    // filterState 参与依赖：filter 变化时重建闭包，由 useEffect 驱动重新加载，
+    // 保证传入 section.load 的 filters 始终是最新值。
+  }, [errorTitle, filterState]);
 
   useEffect(() => {
     let active = true;
@@ -223,6 +257,7 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
 
   useEffect(() => {
     setSearch('');
+    setFilterState({});
   }, [activeTab]);
 
   useEffect(() => {
@@ -329,9 +364,39 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
       )}
 
       <main className="flex min-w-0 flex-1 flex-col bg-white dark:bg-[#1a1a1a]">
-        <div className="flex shrink-0 flex-col gap-3 border-b border-slate-200 p-3 dark:border-white/10 md:flex-row md:items-center md:justify-end">
-          <div className="flex w-full gap-3 md:w-auto">
-            <div className="relative min-w-0 flex-1 md:w-72">
+        <div className="flex shrink-0 flex-col gap-3 border-b border-slate-200 p-3 dark:border-white/10 md:flex-row md:items-center md:justify-between">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+            {activeSection.filters?.map((filter) => {
+              const filterOptions = typeof filter.options === 'function'
+                ? filter.options(filterState)
+                : filter.options;
+              return (
+                <select
+                  aria-label={filter.label}
+                  className="h-9 shrink-0 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700 shadow-sm outline-none transition-colors focus:border-blue-500 dark:border-white/10 dark:bg-[#1e1e1e] dark:text-slate-200"
+                  key={filter.key}
+                  onChange={(event) => {
+                    // 仅更新 filter 状态；loadSection 随 filterState 重建，
+                    // 由 useEffect 依赖驱动重新加载（filters 始终为最新值）。
+                    setFilterState((current) => ({ ...current, [filter.key]: event.target.value }));
+                    // 过滤条件变化时回到第一页，避免停留在旧过滤下的深页。
+                    if (activePagination) {
+                      setPaginationByTab((current) => ({
+                        ...current,
+                        [activeTab]: { ...(current[activeTab] ?? activePageState), page: 1 },
+                      }));
+                    }
+                  }}
+                  value={filterState[filter.key] ?? ''}
+                >
+                  <option value="">{filter.placeholder ?? filter.label}</option>
+                  {filterOptions.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              );
+            })}
+            <div className="relative min-w-0 flex-1 md:max-w-72">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-900 shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 dark:border-white/10 dark:bg-[#1e1e1e] dark:text-white"
@@ -341,6 +406,8 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
                 value={search}
               />
             </div>
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-3">
             {activeActions.map((action, index) => (
               <button
                 className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-60"
@@ -429,38 +496,55 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
                         </td>
                       );
                     })}
-                    {hasRecordActions ? (
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          {onRecordOpen ? (
-                            <button
-                              className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
-                              onClick={() => onRecordOpen(record, activeSection)}
-                              type="button"
-                            >
-                              {recordOpenLabel}
-                            </button>
-                          ) : null}
-                          {recordRowActions.filter((action) => action.isVisible?.(record) ?? true).map((action, actionIndex) => {
-                            const actionDisabled = action.isDisabled?.(record) ?? false;
-                            const actionTitle = typeof action.title === 'function' ? action.title(record) : action.title;
-                            return (
-                              <button
-                                className={adminResourceRowActionClassName(action.tone)}
-                                disabled={actionDisabled}
-                                key={`${action.label}-${actionIndex}`}
-                                onClick={() => action.onClick(record, activeSection)}
-                                title={actionTitle}
-                                type="button"
-                              >
-                                {action.icon}
-                                {action.label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </td>
-                    ) : null}
+                        {hasRecordActions ? (
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              {onRecordOpen ? (
+                                <button
+                                  className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+                                  onClick={() => onRecordOpen(record, activeSection)}
+                                  type="button"
+                                >
+                                  {recordOpenLabel}
+                                </button>
+                              ) : null}
+                              {(() => {
+                                const visibleActions = recordRowActions.filter((action) => action.isVisible?.(record) ?? true);
+                                const pinnedActions = visibleActions.slice(0, ROW_ACTIONS_PINNED_LIMIT);
+                                const overflowActions = visibleActions.slice(ROW_ACTIONS_PINNED_LIMIT);
+                                return (
+                                  <>
+                                    {pinnedActions.map((action, actionIndex) => {
+                                      const actionDisabled = action.isDisabled?.(record) ?? false;
+                                      const actionTitle = typeof action.title === 'function' ? action.title(record) : action.title;
+                                      return (
+                                        <button
+                                          className={adminResourceRowActionClassName(action.tone)}
+                                          disabled={actionDisabled}
+                                          key={`${action.label}-${actionIndex}`}
+                                          onClick={() => action.onClick(record, activeSection)}
+                                          title={actionTitle}
+                                          type="button"
+                                        >
+                                          {action.icon}
+                                          {action.label}
+                                        </button>
+                                      );
+                                    })}
+                                    {overflowActions.length > 0 ? (
+                                      <RowActionsMenu
+                                        actions={overflowActions}
+                                        moreLabel={rowActionsMoreLabel}
+                                        record={record}
+                                        section={activeSection}
+                                      />
+                                    ) : null}
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          </td>
+                        ) : null}
                   </tr>
                 ))}
               </tbody>
@@ -602,4 +686,104 @@ function formatAdminResourceCell(value: unknown): string {
     return String(value);
   }
   return JSON.stringify(value);
+}
+
+/** 行操作溢出菜单：超出平铺上限的操作收进「更多」下拉，点击外部或 Esc 关闭。 */
+function RowActionsMenu<TSectionId extends string, TGroup extends string>({
+  actions,
+  moreLabel,
+  record,
+  section,
+}: {
+  actions: readonly AdminResourceRowAction<TSectionId, TGroup>[];
+  moreLabel: string;
+  record: AdminResourceRecord;
+  section: AdminResourceSection<TSectionId, TGroup>;
+}) {
+  const [open, setOpen] = useState(false);
+  /** 菜单视口坐标（fixed 定位）：表格滚动容器会裁剪 absolute 菜单，故用视口定位。 */
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const dismiss = (event: PointerEvent) => {
+      if (!wrapperRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const dismissFromKeyboard = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    // 滚动时关闭：fixed 菜单不跟随滚动，避免错位悬空。
+    const dismissOnScroll = () => setOpen(false);
+    document.addEventListener('pointerdown', dismiss);
+    document.addEventListener('keydown', dismissFromKeyboard);
+    document.addEventListener('scroll', dismissOnScroll, true);
+    return () => {
+      document.removeEventListener('pointerdown', dismiss);
+      document.removeEventListener('keydown', dismissFromKeyboard);
+      document.removeEventListener('scroll', dismissOnScroll, true);
+    };
+  }, [open]);
+
+  const openMenu = () => {
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (!rect) {
+      setOpen(true);
+      return;
+    }
+    // 菜单右缘对齐按钮右缘；估算高度不足以放下时向上展开，避免超出视口底部。
+    const estimatedHeight = actions.length * 36 + 16;
+    const fitsBelow = rect.bottom + estimatedHeight <= window.innerHeight - 8;
+    setPosition({
+      top: fitsBelow ? rect.bottom + 4 : Math.max(8, rect.top - estimatedHeight - 4),
+      left: rect.right,
+    });
+    setOpen(true);
+  };
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <button
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label={moreLabel}
+        className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+        onClick={open ? () => setOpen(false) : openMenu}
+        ref={buttonRef}
+        type="button"
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </button>
+      {open && position ? (
+        <div
+          className="fixed z-50 min-w-40 overflow-hidden rounded-md border border-slate-200 bg-white py-1 shadow-xl dark:border-white/10 dark:bg-[#252525]"
+          role="menu"
+          style={{ top: position.top, left: position.left, transform: 'translateX(-100%)' }}
+        >
+          {actions.map((action, index) => {
+            const actionDisabled = action.isDisabled?.(record) ?? false;
+            const actionTitle = typeof action.title === 'function' ? action.title(record) : action.title;
+            return (
+              <button
+                className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-white/10 ${action.tone === 'danger' ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-200'}`}
+                disabled={actionDisabled}
+                key={`${action.label}-${index}`}
+                onClick={() => {
+                  setOpen(false);
+                  action.onClick(record, section);
+                }}
+                role="menuitem"
+                title={actionTitle}
+                type="button"
+              >
+                {action.icon}
+                {action.label}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
 }

@@ -121,7 +121,6 @@ class RustBackendArchitectureGuardian:
         "PostgresGatewayUsageRecorder",
         "UsageSettlementWorker",
         "FOR UPDATE SKIP LOCKED",
-        "SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET",
         "Do not hold locks across `.await`",
         "backpressure",
         "bounded database pools",

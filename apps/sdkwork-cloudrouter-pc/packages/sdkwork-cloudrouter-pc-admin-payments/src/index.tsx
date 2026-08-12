@@ -28,6 +28,9 @@ import {
 import { getCloudRouterPaymentBackendService } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import {
   backendPaymentChannelsCreate,
+  backendPaymentChannelsDelete,
+  backendPaymentChannelsUpdate,
+  backendPaymentsChannelsListFiltered,
   backendPaymentDevSandboxTrigger,
   backendPaymentMethodsCreate,
   backendPaymentMethodsUpdate,
@@ -57,9 +60,13 @@ import {
   buildReconciliationRunCreateCommand,
   buildRouteRuleCreateCommand,
   buildRouteRuleUpdateCommand,
+  channelFormValuesFromRecord,
   methodFormValuesFromRecord,
   providerFormValuesFromRecord,
   routeRuleFormValuesFromRecord,
+  PROVIDER_CODES,
+  SCENE_OPTIONS,
+  STATUS_OPTIONS,
   ChannelFormDialog,
   MethodFormDialog,
   PaymentConfirmDialog,
@@ -185,6 +192,8 @@ type PaymentDialogState =
   | { kind: 'method-edit'; record: AdminResourceRecord }
   | { kind: 'method-test-payment'; record: AdminResourceRecord }
   | { kind: 'channel-create' }
+  | { kind: 'channel-edit'; record: AdminResourceRecord }
+  | { kind: 'channel-delete'; record: AdminResourceRecord }
   | { kind: 'routeRule-create' }
   | { kind: 'routeRule-edit'; record: AdminResourceRecord }
   | { kind: 'routeRule-delete'; record: AdminResourceRecord }
@@ -232,6 +241,26 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ kind: 'error' | 'success'; text: string } | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  // Payment method options for the channels list filter (loaded once; the
+  // channel list itself does not paginate method catalogs).
+  const [methodOptions, setMethodOptions] = useState<readonly { value: string; label: string }[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void backendPaymentsMethodsList({ page: 1, pageSize: 200 }).then((result) => {
+      if (cancelled) return;
+      const records = readAdminResourceRecordList(result);
+      setMethodOptions(records.map((record) => ({
+        value: String(record.id ?? ''),
+        label: String(record.methodKey ?? record.id ?? ''),
+      })));
+    }).catch(() => {
+      // Filter options degrade to an empty list; the channels list still loads.
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const paymentSections = useMemo<AdminResourceSection<PaymentResourceTab, PaymentsAdminGroup>[]>(() => {
     const formatStatus = formatEnumCell(t, 'admin.commerce.payments.value.status');
@@ -282,7 +311,7 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
         { key: 'supportedCurrencies', label: t('admin.col.currencies', 'Currencies'), format: formatArrayCell },
         { key: 'capabilities', label: t('admin.col.capabilities', 'Capabilities'), format: formatCapabilities },
         { key: 'status', label: t('admin.col.status', 'Status'), format: formatStatus },
-        { key: 'updatedAt', label: t('admin.col.updated', 'Updated') },
+        { key: 'updatedAt', label: t('admin.col.updated', 'Updated'), format: formatDateTime },
       ],
       
       searchFields: ['providerCode', 'displayName', 'providerType', 'supportedCountries', 'supportedCurrencies', 'capabilities', 'status'],
@@ -321,7 +350,7 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
         { key: 'countryCode', label: t('admin.col.country', 'Country') },
         { key: 'sortOrder', label: t('admin.col.sort', 'Sort'), align: 'right' },
         { key: 'status', label: t('admin.col.status', 'Status'), format: formatStatus },
-        { key: 'updatedAt', label: t('admin.col.updated', 'Updated') },
+        { key: 'updatedAt', label: t('admin.col.updated', 'Updated'), format: formatDateTime },
       ],
       
       searchFields: ['methodKey', 'displayName', 'providerCode', 'scope', 'currencyCode', 'status'],
@@ -333,24 +362,74 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       description: t('admin.commerce.payments.channels.desc', 'Country, currency, scene, and provider-account routing channels.'),
       icon: <CreditCard className="h-4 w-4" />,
       group: t('admin.commerce.payments.group.providerSetup', 'Provider Setup'),
-      load: backendPaymentsChannelsList,
+      load: (params) => backendPaymentsChannelsListFiltered((params as { filters?: Record<string, string> } | undefined)?.filters),
+      filters: [
+        {
+          key: 'providerCode',
+          label: t('admin.commerce.payments.channels.filter.provider', 'Provider'),
+          placeholder: t('admin.commerce.payments.channels.filter.allProviders', 'All providers'),
+          options: PROVIDER_CODES.map((code) => ({
+            value: code,
+            label: t(`admin.commerce.payments.value.provider.${code}`, code),
+          })),
+        },
+        {
+          key: 'methodId',
+          label: t('admin.commerce.payments.channels.filter.method', 'Payment method'),
+          placeholder: t('admin.commerce.payments.channels.filter.allMethods', 'All methods'),
+          options: methodOptions,
+        },
+        {
+          key: 'sceneCode',
+          label: t('admin.commerce.payments.channels.filter.scene', 'Scene'),
+          placeholder: t('admin.commerce.payments.channels.filter.allScenes', 'All scenes'),
+          options: SCENE_OPTIONS.map((code) => ({
+            value: code,
+            label: t(`admin.commerce.payments.value.scene.${code}`, code),
+          })),
+        },
+        {
+          key: 'status',
+          label: t('admin.commerce.payments.channels.filter.status', 'Status'),
+          placeholder: t('admin.commerce.payments.channels.filter.allStatuses', 'All statuses'),
+          options: STATUS_OPTIONS.map((code) => ({
+            value: code,
+            label: t(`admin.commerce.payments.value.status.${code}`, code),
+          })),
+        },
+      ],
       action: capabilities.canCreatePaymentChannel ? {
         label: t('admin.commerce.payments.channels.create.title', 'Create payment channel'),
         icon: <Plus className="h-4 w-4" />,
         onClick: () => setDialog({ kind: 'channel-create' }),
       } : undefined,
+      rowActions: [
+        {
+          label: t('admin.commerce.payments.channels.edit.action', 'Edit'),
+          icon: <Pencil className="h-3.5 w-3.5" />,
+          isVisible: () => capabilities.canUpdatePaymentChannel,
+          onClick: (record) => setDialog({ kind: 'channel-edit', record }),
+        },
+        {
+          label: t('admin.commerce.payments.channels.delete.action', 'Delete'),
+          icon: <Trash2 className="h-3.5 w-3.5" />,
+          tone: 'danger',
+          isVisible: () => capabilities.canDeletePaymentChannel,
+          onClick: (record) => setDialog({ kind: 'channel-delete', record }),
+        },
+      ],
       columns: [
         { key: 'channelNo', label: t('admin.col.channel', 'Channel') },
         { key: 'channelName', label: t('admin.commerce.payments.col.channelName', 'Channel Name'), format: formatLocalizedChannelName },
-        { key: 'methodId', label: t('admin.commerce.payments.col.methodId', 'Method ID') },
+        { key: 'methodId', label: t('admin.commerce.payments.col.methodId', 'Method'), format: (value, record) => String(record.methodKey ?? value ?? '') },
         { key: 'providerCode', label: t('admin.col.provider', 'Provider') },
-        { key: 'providerAccountId', label: t('admin.col.account', 'Account') },
+        { key: 'providerAccountId', label: t('admin.col.account', 'Account'), format: (value, record) => String(record.providerAccountName ?? value ?? '') },
         { key: 'sceneCode', label: t('admin.col.scene', 'Scene'), format: formatScene },
         { key: 'countryCode', label: t('admin.col.country', 'Country') },
         { key: 'currencyCode', label: t('admin.col.currency', 'Currency') },
         { key: 'priority', label: t('admin.col.priority', 'Priority'), align: 'right' },
         { key: 'status', label: t('admin.col.status', 'Status'), format: formatStatus },
-        { key: 'updatedAt', label: t('admin.col.updated', 'Updated') },
+        { key: 'updatedAt', label: t('admin.col.updated', 'Updated'), format: formatDateTime },
       ],
       
       searchFields: ['channelNo', 'channelName', 'methodId', 'providerAccountId', 'countryCode', 'currencyCode', 'sceneCode', 'status'],
@@ -393,7 +472,7 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
         { key: 'clientPlatform', label: t('admin.commerce.payments.col.clientPlatform', 'Client Platform') },
         { key: 'riskLevel', label: t('admin.commerce.payments.col.riskLevel', 'Risk Level') },
         { key: 'status', label: t('admin.col.status', 'Status'), format: formatStatus },
-        { key: 'updatedAt', label: t('admin.col.updated', 'Updated') },
+        { key: 'updatedAt', label: t('admin.col.updated', 'Updated'), format: formatDateTime },
       ],
       
       searchFields: ['ruleNo', 'purchaseType', 'countryCode', 'currencyCode', 'clientPlatform', 'channelId', 'status'],
@@ -435,8 +514,8 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
         { key: 'amount', label: t('admin.col.amount', 'Amount'), align: 'right' },
         { key: 'currencyCode', label: t('admin.col.currency', 'Currency') },
         { key: 'status', label: t('admin.col.status', 'Status'), format: formatStatus },
-        { key: 'createdAt', label: t('admin.col.created', 'Created') },
-        { key: 'updatedAt', label: t('admin.col.updated', 'Updated') },
+        { key: 'createdAt', label: t('admin.col.created', 'Created'), format: formatDateTime },
+        { key: 'updatedAt', label: t('admin.col.updated', 'Updated'), format: formatDateTime },
       ],
       
       searchFields: ['paymentIntentNo', 'orderId', 'paymentMethod', 'ownerUserId', 'providerCode', 'currencyCode', 'status'],
@@ -465,7 +544,7 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
         { key: 'currencyCode', label: t('admin.col.currency', 'Currency') },
         { key: 'status', label: t('admin.col.status', 'Status'), format: formatStatus },
         { key: 'paidAt', label: t('admin.col.paid', 'Paid') },
-        { key: 'createdAt', label: t('admin.col.created', 'Created') },
+        { key: 'createdAt', label: t('admin.col.created', 'Created'), format: formatDateTime },
       ],
       
       searchFields: ['attemptNo', 'paymentIntentId', 'providerCode', 'outTradeNo', 'providerTransactionId', 'currencyCode', 'status'],
@@ -520,7 +599,7 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
         { key: 'mismatchedCount', label: t('admin.commerce.payments.col.mismatched', 'Mismatched'), align: 'right' },
         { key: 'unmatchedCount', label: t('admin.commerce.payments.col.unmatched', 'Unmatched'), align: 'right' },
         { key: 'currencyCode', label: t('admin.col.currency', 'Currency') },
-        { key: 'createdAt', label: t('admin.col.created', 'Created') },
+        { key: 'createdAt', label: t('admin.col.created', 'Created'), format: formatDateTime },
       ],
       
       searchFields: ['runNo', 'providerCode', 'reconciliationType', 'status', 'periodStart', 'periodEnd'],
@@ -564,14 +643,14 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
         { key: 'status', label: t('admin.col.status', 'Status'), format: formatStatus },
         { key: 'reasonCode', label: t('admin.commerce.payments.col.reasonCode', 'Reason'), format: formatReasonCode },
         { key: 'requestedByType', label: t('admin.commerce.payments.col.requestedByType', 'Requested By'), format: formatRequestedByType },
-        { key: 'createdAt', label: t('admin.col.created', 'Created') },
-        { key: 'updatedAt', label: t('admin.col.updated', 'Updated') },
+        { key: 'createdAt', label: t('admin.col.created', 'Created'), format: formatDateTime },
+        { key: 'updatedAt', label: t('admin.col.updated', 'Updated'), format: formatDateTime },
       ],
       searchFields: ['refundNo', 'orderId', 'paymentIntentId', 'status', 'reasonCode'],
       help: sectionHelp(t, 'refunds', 5, 3),
     }),
     ];
-  }, [t, i18n, capabilities]);
+  }, [t, i18n, capabilities, methodOptions]);
 
   async function submitMethodForm(values: PaymentMethodFormValues, state: Extract<PaymentDialogState, { kind: 'method-create' } | { kind: 'method-edit' }>) {
     if (state.kind === 'method-create') {
@@ -593,8 +672,12 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
     });
   }
 
-  async function submitChannelForm(values: PaymentChannelFormValues) {
-    await backendPaymentChannelsCreate(buildChannelCreateCommand(values));
+  async function submitChannelForm(values: PaymentChannelFormValues, state: Extract<PaymentDialogState, { kind: 'channel-create' } | { kind: 'channel-edit' }>) {
+    if (state.kind === 'channel-create') {
+      await backendPaymentChannelsCreate(buildChannelCreateCommand(values));
+    } else {
+      await backendPaymentChannelsUpdate(String(state.record.id ?? ''), buildChannelCreateCommand(values));
+    }
   }
 
   async function submitRouteRuleForm(values: RouteRuleFormValues, state: Extract<PaymentDialogState, { kind: 'routeRule-create' } | { kind: 'routeRule-edit' }>) {
@@ -768,13 +851,43 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       ) : null}
       {dialog?.kind === 'channel-create' ? (
         <ChannelFormDialog
+          mode="create"
           onClose={() => setDialog(null)}
           onSubmit={(values) => void runDialogAction(
-            () => submitChannelForm(values),
+            () => submitChannelForm(values, dialog),
             t('admin.commerce.payments.saveSuccess', 'Payment configuration saved successfully.'),
             t('admin.commerce.payments.saveError', 'Payment configuration could not be saved.'),
           )}
           saving={saving}
+        />
+      ) : null}
+      {dialog?.kind === 'channel-edit' ? (
+        <ChannelFormDialog
+          mode="edit"
+          initial={channelFormValuesFromRecord(dialog.record)}
+          onClose={() => setDialog(null)}
+          onSubmit={(values) => void runDialogAction(
+            () => submitChannelForm(values, dialog),
+            t('admin.commerce.payments.saveSuccess', 'Payment configuration saved successfully.'),
+            t('admin.commerce.payments.saveError', 'Payment configuration could not be saved.'),
+          )}
+          saving={saving}
+        />
+      ) : null}
+      {dialog?.kind === 'channel-delete' ? (
+        <PaymentConfirmDialog
+          confirmLabel={t('admin.commerce.payments.channels.delete.confirm', 'Delete')}
+          description={t('admin.commerce.payments.channels.delete.desc', 'Delete channel {{channelNo}}? This action cannot be undone.', {
+            channelNo: String(dialog.record.channelNo ?? dialog.record.id ?? ''),
+          })}
+          onClose={() => setDialog(null)}
+          onConfirm={() => void runDialogAction(
+            () => backendPaymentChannelsDelete(String(dialog.record.id ?? '')),
+            t('admin.commerce.payments.operationSuccess', 'Operation completed successfully.'),
+            t('admin.commerce.payments.operationError', 'Operation failed.'),
+          )}
+          processing={saving}
+          title={t('admin.commerce.payments.channels.delete.title', 'Delete payment channel?')}
         />
       ) : null}
       {dialog?.kind === 'routeRule-create' ? (
@@ -910,6 +1023,8 @@ type PaymentMaintenanceCapabilities = {
   canCreatePaymentMethod: boolean;
   canUpdatePaymentMethod: boolean;
   canCreatePaymentChannel: boolean;
+  canUpdatePaymentChannel: boolean;
+  canDeletePaymentChannel: boolean;
   canCreateRouteRule: boolean;
   canUpdateRouteRule: boolean;
   canDeleteRouteRule: boolean;
@@ -981,6 +1096,14 @@ function usePaymentProviderAdminCapabilities(): PaymentProviderAdminCapabilities
       'commerce.payments.channels.create',
       permissionScope,
     ),
+    canUpdatePaymentChannel: hasPortalPermission(
+      'commerce.payments.channels.update',
+      permissionScope,
+    ),
+    canDeletePaymentChannel: hasPortalPermission(
+      'commerce.payments.channels.delete',
+      permissionScope,
+    ),
     canCreateRouteRule: hasPortalPermission(
       'commerce.payments.route_rules.create',
       permissionScope,
@@ -1030,6 +1153,8 @@ function usePaymentMaintenanceCapabilities(): PaymentMaintenanceCapabilities {
     canCreatePaymentMethod: hasPortalPermission('commerce.payments.methods.create', permissionScope),
     canUpdatePaymentMethod: hasPortalPermission('commerce.payments.methods.update', permissionScope),
     canCreatePaymentChannel: hasPortalPermission('commerce.payments.channels.create', permissionScope),
+    canUpdatePaymentChannel: hasPortalPermission('commerce.payments.channels.update', permissionScope),
+    canDeletePaymentChannel: hasPortalPermission('commerce.payments.channels.delete', permissionScope),
     canCreateRouteRule: hasPortalPermission('commerce.payments.route_rules.create', permissionScope),
     canUpdateRouteRule: hasPortalPermission('commerce.payments.route_rules.update', permissionScope),
     canDeleteRouteRule: hasPortalPermission('commerce.payments.route_rules.delete', permissionScope),
@@ -1058,6 +1183,19 @@ function formatArrayCell(value: unknown): string {
     return value.map((item) => String(item)).join(', ');
   }
   return value === null || value === undefined ? '-' : String(value);
+}
+
+/** 时间字符串格式化为本地日期时间；无法解析时原样回退。 */
+function formatDateTime(value: unknown): string {
+  if (typeof value !== 'string' || !value) {
+    return value === null || value === undefined || value === '' ? '-' : String(value);
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString(undefined, {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  });
 }
 
 /**

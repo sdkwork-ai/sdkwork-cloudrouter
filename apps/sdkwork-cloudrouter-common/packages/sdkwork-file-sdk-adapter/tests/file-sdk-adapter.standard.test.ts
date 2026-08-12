@@ -39,20 +39,12 @@ describe("SDKWork file SDK adapter", () => {
         "bindFile",
         "listDriveSpaces",
         "getStorageUsage",
-        "listProviders",
-        "createProvider",
-        "updateProvider",
-        "healthCheckProvider",
-        "listBuckets",
-        "createBucket",
-        "updateBucket",
         "listDefaultBuckets",
         "setDefaultBucket",
         "listReconciliationRuns",
         "createReconciliationRun",
         "createGarbageCollectionJob",
         "createQuotaPolicy",
-        "listUsageSnapshots",
       ]),
     );
     expect(SDKWORK_FILE_SDK_ADAPTER_METHODS.map((entry) => entry.serviceMethod)).not.toEqual(
@@ -191,123 +183,9 @@ describe("SDKWork file SDK adapter", () => {
     const events: string[] = [];
     const port = createFileAdminStoragePortFromBackendSdkClient(createRecordingBackendSdk(events));
 
-    await expect(port.listProviders({ requestId: "req-providers" })).resolves.toEqual({
-      items: [{ providerCode: "primary-s3", providerType: "aws_s3" }],
-      requestId: "req-providers",
-    });
-    await expect(
-      port.createProvider({
-        credentialRef: "secret/storage/primary",
-        endpointUrl: "https://s3.us-east-1.example.test",
-        idempotencyKey: "provider-primary-s3",
-        pathStyleEnabled: true,
-        providerCode: "primary-s3",
-        providerType: "s3_compatible",
-        region: "us-east-1",
-        requestId: "req-create-provider",
-        supportsLifecycle: true,
-        supportsMultipart: true,
-        supportsObjectLock: false,
-      }),
-    ).resolves.toEqual({
-      provider: {
-        credentialRef: "secret/storage/primary",
-        endpointUrl: "https://s3.us-east-1.example.test",
-        pathStyleEnabled: true,
-        providerCode: "primary-s3",
-        providerType: "s3_compatible",
-        region: "us-east-1",
-        supportsLifecycle: true,
-        supportsMultipart: true,
-        supportsObjectLock: false,
-      },
-      requestId: "req-create-provider",
-    });
-    await expect(
-      port.updateProvider({
-        providerId: "provider_1",
-        reason: "maintenance window",
-        requestId: "req-update-provider",
-        status: "disabled",
-      }),
-    ).resolves.toEqual({
-      provider: {
-        providerId: "provider_1",
-        reason: "maintenance window",
-        status: "disabled",
-      },
-      requestId: "req-update-provider",
-    });
-    await expect(
-      port.healthCheckProvider({
-        providerId: "provider_1",
-        requestId: "req-provider-health",
-      }),
-    ).resolves.toEqual({
-      checkedAt: "2026-05-23T08:00:00.000Z",
-      healthy: true,
-      providerId: "provider_1",
-      requestId: "req-provider-health",
-      status: "reachable",
-    });
     await expect(port.listQuotaPolicies({ requestId: "req-quotas" })).resolves.toEqual({
       items: [{ policyCode: "org-standard", scopeType: "organization" }],
       requestId: "req-quotas",
-    });
-    await expect(port.listBuckets({ logicalScope: "tenant_private", requestId: "req-buckets" })).resolves.toEqual({
-      items: [{ bucketName: "tenant-private", logicalScope: "tenant_private" }],
-      requestId: "req-buckets",
-    });
-    await expect(
-      port.createBucket({
-        bucketName: "tenant-private",
-        bucketRegion: "us-east-1",
-        dataResidencyRegion: "us-east-1",
-        defaultEncryptionMode: "sse_kms",
-        defaultStorageClass: "STANDARD",
-        idempotencyKey: "bucket-tenant-private",
-        kmsKeyRef: "kms/storage/private",
-        lifecycleEnabled: true,
-        logicalScope: "tenant_private",
-        objectKeyPrefix: "tenants/private/",
-        objectLockEnabled: false,
-        providerId: "provider_1",
-        publicAccessBlocked: true,
-        requestId: "req-create-bucket",
-        versioningEnabled: true,
-      }),
-    ).resolves.toEqual({
-      bucket: {
-        bucketName: "tenant-private",
-        bucketRegion: "us-east-1",
-        dataResidencyRegion: "us-east-1",
-        defaultEncryptionMode: "sse_kms",
-        defaultStorageClass: "STANDARD",
-        kmsKeyRef: "kms/storage/private",
-        lifecycleEnabled: true,
-        logicalScope: "tenant_private",
-        objectKeyPrefix: "tenants/private/",
-        objectLockEnabled: false,
-        providerId: "provider_1",
-        publicAccessBlocked: true,
-        versioningEnabled: true,
-      },
-      requestId: "req-create-bucket",
-    });
-    await expect(
-      port.updateBucket({
-        bucketId: "bucket_1",
-        reason: "retired route",
-        requestId: "req-update-bucket",
-        status: "archived",
-      }),
-    ).resolves.toEqual({
-      bucket: {
-        bucketId: "bucket_1",
-        reason: "retired route",
-        status: "archived",
-      },
-      requestId: "req-update-bucket",
     });
     await expect(port.listDefaultBuckets({ logicalScope: "tenant_private", requestId: "req-default-buckets" })).resolves.toEqual({
       items: [
@@ -371,30 +249,6 @@ describe("SDKWork file SDK adapter", () => {
       requestId: "req-usage",
     });
     await expect(
-      port.listUsageLedger({
-        requestId: "req-ledger",
-        scopeId: "org_1",
-        scopeType: "organization",
-      }),
-    ).resolves.toEqual({
-      items: [{ idempotencyKey: "usage-ledger-1", scopeId: "org_1" }],
-      nextCursor: "ledger-cursor-2",
-      requestId: "req-ledger",
-    });
-    await expect(
-      port.listUsageSnapshots({
-        periodStartAt: "2026-05-23T00:00:00.000Z",
-        requestId: "req-snapshots",
-        scopeId: "org_1",
-        scopeType: "organization",
-        snapshotType: "daily",
-      }),
-    ).resolves.toEqual({
-      items: [{ periodStartAt: "2026-05-23T00:00:00.000Z", scopeId: "org_1", snapshotType: "daily" }],
-      nextCursor: "snapshot-cursor-2",
-      requestId: "req-snapshots",
-    });
-    await expect(
       port.listReconciliationRuns({
         requestId: "req-runs",
         runType: "inventory",
@@ -428,20 +282,11 @@ describe("SDKWork file SDK adapter", () => {
       requestId: "req-gc",
     });
     expect(events).toEqual([
-      "oss.providers.list",
-      "oss.providers.create:primary-s3:s3_compatible:provider-primary-s3:req-create-provider:path-style:multipart:lifecycle:no-object-lock",
-      "oss.providers.update:provider_1:disabled:req-update-provider",
-      "oss.providers.healthChecks.create:provider_1:req-provider-health",
       "oss.quotas.list",
-      "oss.buckets.list:tenant_private",
-      "oss.buckets.create:tenant-private:tenant_private:bucket-tenant-private:req-create-bucket:STANDARD:sse_kms:versioned:public-blocked",
-      "oss.buckets.update:bucket_1:archived:req-update-bucket",
       "oss.defaultBuckets.list:tenant_private",
       "oss.defaultBuckets.update:tenant_private:bucket_1:req-set-default-bucket",
       "oss.quotas.create:organization:org_1:quota-org-1:req-create-quota",
       "oss.usage.list:organization:org_1",
-      "oss.usage.ledger.list:organization:org_1",
-      "oss.usage.snapshots.list:daily:org_1",
       "oss.reconciliationRuns.list:inventory:completed",
       "oss.reconciliationRuns.create:inventory:true:reconcile-inventory-1:req-create-run",
       "oss.gcJobs.create:orphan_objects:true:gc-1:req-gc",
@@ -473,12 +318,12 @@ describe("SDKWork file SDK adapter", () => {
 
   it("normalizes backend SDK envelope failures instead of leaking empty successful payloads", async () => {
     const backend = createRecordingBackendSdk([]);
-    backend.oss.providers.list = async () => ({ code: "4010", msg: "trusted request subject is required" });
+    backend.oss.quotas.list = async () => ({ code: "4010", msg: "trusted request subject is required" });
     const port = createFileAdminStoragePortFromBackendSdkClient(backend);
 
     let caught: unknown;
     try {
-      await port.listProviders({ requestId: "req-providers" });
+      await port.listQuotaPolicies({ requestId: "req-quotas" });
     } catch (error) {
       caught = error;
     }
@@ -486,14 +331,14 @@ describe("SDKWork file SDK adapter", () => {
     expect(isFileSdkAdapterError(caught)).toBe(true);
     expect(caught).toMatchObject({
       code: "file.sdk_operation_failed",
-      operationId: "oss.providers.list",
+      operationId: "oss.quotas.list",
     });
     expect(String((caught as Error).message)).toContain("trusted request subject is required");
 
-    backend.oss.providers.list = async () => ({ code: "2000", msg: "ok" });
-    await expect(port.listProviders({ requestId: "req-providers" })).rejects.toMatchObject({
+    backend.oss.quotas.list = async () => ({ code: "2000", msg: "ok" });
+    await expect(port.listQuotaPolicies({ requestId: "req-quotas" })).rejects.toMatchObject({
       code: "file.sdk_operation_failed",
-      operationId: "oss.providers.list",
+      operationId: "oss.quotas.list",
     });
   });
 });
@@ -669,53 +514,6 @@ function createTestFile(name: string, type: string, size: number): Blob & { name
 function createRecordingBackendSdk(events: string[]): SdkworkFileBackendSdkClient {
   return {
     oss: {
-      buckets: {
-        async create(body, params) {
-          events.push([
-            `oss.buckets.create:${body.bucketName}:${body.logicalScope}:${params.idempotencyKey}:${params.xRequestId}`,
-            body.defaultStorageClass ?? "storage-class-default",
-            body.defaultEncryptionMode ?? "encryption-default",
-            body.versioningEnabled ? "versioned" : "unversioned",
-            body.publicAccessBlocked ? "public-blocked" : "public-open",
-          ].join(":"));
-          return sdkEnvelope({
-            bucket: {
-              bucketName: body.bucketName,
-              bucketRegion: body.bucketRegion,
-              dataResidencyRegion: body.dataResidencyRegion,
-              defaultEncryptionMode: body.defaultEncryptionMode,
-              defaultStorageClass: body.defaultStorageClass,
-              kmsKeyRef: body.kmsKeyRef,
-              lifecycleEnabled: body.lifecycleEnabled,
-              logicalScope: body.logicalScope,
-              objectKeyPrefix: body.objectKeyPrefix,
-              objectLockEnabled: body.objectLockEnabled,
-              providerId: body.providerId,
-              publicAccessBlocked: body.publicAccessBlocked,
-              versioningEnabled: body.versioningEnabled,
-            },
-            requestId: params.xRequestId ?? "",
-          });
-        },
-        async list(params) {
-          events.push(`oss.buckets.list:${params?.logicalScope}`);
-          return sdkEnvelope({
-            items: [{ bucketName: "tenant-private", logicalScope: params?.logicalScope }],
-            requestId: "req-buckets",
-          });
-        },
-        async update(bucketId, body, params) {
-          events.push(`oss.buckets.update:${bucketId}:${body.status}:${params?.xRequestId}`);
-          return sdkEnvelope({
-            bucket: {
-              bucketId,
-              reason: body.reason,
-              status: body.status,
-            },
-            requestId: params?.xRequestId ?? "",
-          });
-        },
-      },
       defaultBuckets: {
         async list(params) {
           events.push(`oss.defaultBuckets.list:${params?.logicalScope}`);
@@ -856,32 +654,12 @@ function createRecordingBackendSdk(events: string[]): SdkworkFileBackendSdkClien
         },
       },
       usage: {
-        ledger: {
-          async list(params) {
-            events.push(`oss.usage.ledger.list:${params?.scopeType}:${params?.scopeId}`);
-            return sdkEnvelope({
-              items: [{ idempotencyKey: "usage-ledger-1", scopeId: params?.scopeId }],
-              nextCursor: "ledger-cursor-2",
-              requestId: "req-ledger",
-            });
-          },
-        },
         async list(params) {
           events.push(`oss.usage.list:${params?.scopeType}:${params?.scopeId}`);
           return sdkEnvelope({
             items: [{ scopeId: params?.scopeId, usedLogicalBytes: 2048 }],
             requestId: "req-usage",
           });
-        },
-        snapshots: {
-          async list(params) {
-            events.push(`oss.usage.snapshots.list:${params?.snapshotType}:${params?.scopeId}`);
-            return sdkEnvelope({
-              items: [{ periodStartAt: params?.periodStartAt, scopeId: params?.scopeId, snapshotType: params?.snapshotType }],
-              nextCursor: "snapshot-cursor-2",
-              requestId: "req-snapshots",
-            });
-          },
         },
       },
     },

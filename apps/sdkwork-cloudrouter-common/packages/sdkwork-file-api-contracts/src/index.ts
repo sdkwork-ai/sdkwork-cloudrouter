@@ -215,18 +215,6 @@ const REQUIRED_SCHEMA_ENUM_CONTRACTS = [
 const BACKEND_STORAGE_CONFIGURATION_COMMANDS = [
   {
     method: "post",
-    path: SDKWORK_FILE_API_ROUTES.backend.storage.providers,
-    responseSchemaName: "StorageProviderMutationResponse",
-    schemaName: "CreateStorageProviderRequest",
-  },
-  {
-    method: "post",
-    path: SDKWORK_FILE_API_ROUTES.backend.storage.buckets,
-    responseSchemaName: "StorageBucketMutationResponse",
-    schemaName: "CreateStorageBucketRequest",
-  },
-  {
-    method: "post",
     path: SDKWORK_FILE_API_ROUTES.backend.storage.quotas,
     responseSchemaName: "StorageQuotaPolicyMutationResponse",
     schemaName: "CreateStorageQuotaPolicyRequest",
@@ -254,21 +242,6 @@ const BACKEND_STORAGE_DEFAULT_BUCKET_COMMANDS = [
     path: SDKWORK_FILE_API_ROUTES.backend.storage.defaultBucket,
     responseSchemaName: "StorageDefaultBucketMutationResponse",
     schemaName: "SetStorageDefaultBucketRequest",
-  },
-] as const;
-
-const BACKEND_STORAGE_GOVERNANCE_COMMANDS = [
-  {
-    method: "patch",
-    path: SDKWORK_FILE_API_ROUTES.backend.storage.provider,
-    responseSchemaName: "StorageProviderMutationResponse",
-    schemaName: "UpdateStorageProviderRequest",
-  },
-  {
-    method: "patch",
-    path: SDKWORK_FILE_API_ROUTES.backend.storage.bucket,
-    responseSchemaName: "StorageBucketMutationResponse",
-    schemaName: "UpdateStorageBucketRequest",
   },
 ] as const;
 
@@ -408,16 +381,6 @@ const FOUNDATION_READ_RESPONSE_CONTRACTS = [
     surface: "app",
   },
   {
-    operationId: "oss.providers.list",
-    responseSchemaName: "StorageProviderListResponse",
-    surface: "backend",
-  },
-  {
-    operationId: "oss.buckets.list",
-    responseSchemaName: "StorageBucketListResponse",
-    surface: "backend",
-  },
-  {
     operationId: "oss.defaultBuckets.list",
     responseSchemaName: "StorageDefaultBucketListResponse",
     surface: "backend",
@@ -435,16 +398,6 @@ const FOUNDATION_READ_RESPONSE_CONTRACTS = [
   {
     operationId: "oss.usage.list",
     responseSchemaName: "StorageUsageCounterListResponse",
-    surface: "backend",
-  },
-  {
-    operationId: "oss.usage.ledger.list",
-    responseSchemaName: "StorageUsageLedgerListResponse",
-    surface: "backend",
-  },
-  {
-    operationId: "oss.usage.snapshots.list",
-    responseSchemaName: "StorageUsageSnapshotListResponse",
     surface: "backend",
   },
 ] as const;
@@ -540,23 +493,6 @@ const FOUNDATION_QUERY_PARAMETER_CONTRACTS = [
       requiredStringQueryParameter("scopeId", "Quota scope id."),
     ],
     surface: "app",
-  },
-  {
-    operationId: "oss.providers.list",
-    parameters: [requestIdQueryParameter()],
-    surface: "backend",
-  },
-  {
-    operationId: "oss.buckets.list",
-    parameters: [
-      requestIdQueryParameter(),
-      optionalStringQueryParameter("cursor", "Pagination cursor."),
-      optionalIntegerQueryParameter("limit", "Page size.", 1, 200),
-      optionalEnumQueryParameter("logicalScope", "Logical bucket scope filter.", SDKWORK_STORAGE_BUCKET_LOGICAL_SCOPES),
-      optionalStringQueryParameter("providerId", "Storage provider id filter."),
-      optionalStringQueryParameter("status", "Bucket mapping status filter."),
-    ],
-    surface: "backend",
   },
   {
     operationId: "oss.defaultBuckets.list",
@@ -796,25 +732,46 @@ export function validateFileApiContractStandard(
       violations.push(`backend_storage_default_bucket_command_shape:${command.schemaName}`);
     }
   }
-  for (const command of BACKEND_STORAGE_GOVERNANCE_COMMANDS) {
+  for (const command of BACKEND_STORAGE_OPERATION_COMMANDS) {
     const operation = bundle.backend.paths[command.path]?.[command.method];
     if (!operation) {
-      violations.push(`missing_backend_storage_governance_command:${command.path}:${command.method}`);
+      violations.push(`missing_backend_storage_operation_command:${command.path}:${command.method}`);
       continue;
     }
     if (!isJsonRequestBodyRef(operation.requestBody, command.schemaName)) {
-      violations.push(`backend_storage_governance_command_request_body:${operation.operationId}`);
+      violations.push(`backend_storage_operation_command_request_body:${operation.operationId}`);
     }
     if (!isJsonResponseRef(operation.responses["200"], command.responseSchemaName)) {
-      violations.push(`backend_storage_governance_command_response_body:${operation.operationId}`);
+      violations.push(`backend_storage_operation_command_response_body:${operation.operationId}`);
     }
     const schema = bundle.backend.components.schemas[command.schemaName];
     if (!schema) {
-      violations.push(`missing_backend_storage_governance_command_schema:${command.schemaName}`);
+      violations.push(`missing_backend_storage_operation_command_schema:${command.schemaName}`);
       continue;
     }
-    if (schema.required?.includes("idempotencyKey") || !schema.required?.includes("requestId") || !schema.required.includes("reason") || !schema.required.includes("status")) {
-      violations.push(`backend_storage_governance_command_shape:${command.schemaName}`);
+    if (!schema.required?.includes("idempotencyKey") || !schema.required.includes("requestId")) {
+      violations.push(`backend_storage_operation_command_idempotency:${command.schemaName}`);
+    }
+  }
+  for (const command of BACKEND_STORAGE_DEFAULT_BUCKET_COMMANDS) {
+    const operation = bundle.backend.paths[command.path]?.[command.method];
+    if (!operation) {
+      violations.push(`missing_backend_storage_default_bucket_command:${command.path}:${command.method}`);
+      continue;
+    }
+    if (!isJsonRequestBodyRef(operation.requestBody, command.schemaName)) {
+      violations.push(`backend_storage_default_bucket_command_request_body:${operation.operationId}`);
+    }
+    if (!isJsonResponseRef(operation.responses["200"], command.responseSchemaName)) {
+      violations.push(`backend_storage_default_bucket_command_response_body:${operation.operationId}`);
+    }
+    const schema = bundle.backend.components.schemas[command.schemaName];
+    if (!schema) {
+      violations.push(`missing_backend_storage_default_bucket_command_schema:${command.schemaName}`);
+      continue;
+    }
+    if (schema.required?.includes("idempotencyKey") || !schema.required?.includes("requestId") || !schema.required.includes("bucketId") || !schema.required.includes("reason")) {
+      violations.push(`backend_storage_default_bucket_command_shape:${command.schemaName}`);
     }
   }
   for (const command of APP_FILE_COMMANDS) {
@@ -1203,47 +1160,6 @@ function createBackendPaths(): Record<string, OpenApiPathItem> {
   const routes = SDKWORK_FILE_API_ROUTES.backend;
 
   return {
-    [routes.storage.overview]: {
-      get: backendOperation("oss.overview.retrieve", "oss", "Get storage overview", "Read storage platform usage, health, failure, and reconciliation overview.", {
-        responseSchemaName: "StorageOverview",
-      }),
-    },
-    [routes.storage.providers]: {
-      get: backendOperation("oss.providers.list", "oss", "List storage providers", "List configured S3-compatible storage providers.", {
-        responseSchemaName: "StorageProviderListResponse",
-      }),
-      post: backendOperation("oss.providers.create", "oss", "Create storage provider", "Create an S3-compatible storage provider configuration.", {
-        requestSchemaName: "CreateStorageProviderRequest",
-        responseSchemaName: "StorageProviderMutationResponse",
-      }),
-    },
-    [routes.storage.provider]: {
-      patch: backendOperation("oss.providers.update", "oss", "Update storage provider", "Update storage provider governance state.", {
-        requestSchemaName: "UpdateStorageProviderRequest",
-        responseSchemaName: "StorageProviderMutationResponse",
-      }),
-    },
-    [routes.storage.providerHealthCheck]: {
-      post: backendOperation("oss.providers.healthChecks.create", "oss", "Run provider health check", "Run and audit a storage provider health check.", {
-        requestSchemaName: "StorageProviderHealthCheckRequest",
-        responseSchemaName: "StorageProviderHealthCheckResponse",
-      }),
-    },
-    [routes.storage.buckets]: {
-      get: backendOperation("oss.buckets.list", "oss", "List storage buckets", "List logical bucket mappings.", {
-        responseSchemaName: "StorageBucketListResponse",
-      }),
-      post: backendOperation("oss.buckets.create", "oss", "Create storage bucket", "Create a logical bucket mapping.", {
-        requestSchemaName: "CreateStorageBucketRequest",
-        responseSchemaName: "StorageBucketMutationResponse",
-      }),
-    },
-    [routes.storage.bucket]: {
-      patch: backendOperation("oss.buckets.update", "oss", "Update storage bucket", "Update logical bucket governance state.", {
-        requestSchemaName: "UpdateStorageBucketRequest",
-        responseSchemaName: "StorageBucketMutationResponse",
-      }),
-    },
     [routes.storage.defaultBuckets]: {
       get: backendOperation("oss.defaultBuckets.list", "oss", "List default storage buckets", "List default logical bucket policies used by upload routing.", {
         responseSchemaName: "StorageDefaultBucketListResponse",
@@ -1267,16 +1183,6 @@ function createBackendPaths(): Record<string, OpenApiPathItem> {
     [routes.storage.usage]: {
       get: backendOperation("oss.usage.list", "oss", "List storage usage", "List storage usage counters by scope.", {
         responseSchemaName: "StorageUsageCounterListResponse",
-      }),
-    },
-    [routes.storage.usageLedger]: {
-      get: backendOperation("oss.usage.ledger.list", "oss", "List usage ledger", "List append-only storage usage ledger events.", {
-        responseSchemaName: "StorageUsageLedgerListResponse",
-      }),
-    },
-    [routes.storage.usageSnapshots]: {
-      get: backendOperation("oss.usage.snapshots.list", "oss", "List usage snapshots", "List point-in-time storage usage snapshots.", {
-        responseSchemaName: "StorageUsageSnapshotListResponse",
       }),
     },
     [routes.storage.reconciliationRuns]: {

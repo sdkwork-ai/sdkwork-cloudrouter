@@ -20,8 +20,6 @@ pub(crate) fn job_status_label_sql(column: &'static str) -> String {
     )
 }
 
-pub(crate) const STORAGE_AUDIT_TARGET_PROVIDER: i32 = 2101;
-pub(crate) const STORAGE_AUDIT_TARGET_BUCKET: i32 = 2102;
 pub(crate) const STORAGE_AUDIT_TARGET_DEFAULT_BUCKET: i32 = 2103;
 pub(crate) const STORAGE_AUDIT_TARGET_QUOTA_POLICY: i32 = 2104;
 pub(crate) const STORAGE_AUDIT_TARGET_RECONCILIATION_RUN: i32 = 2105;

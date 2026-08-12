@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Terminal, Github, Twitter, Linkedin, Mail, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Terminal, Globe, AtSign, Briefcase, Mail, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useSiteBranding } from '../siteBranding';
 import { readMediaResourceUrl } from '../media-resource';
 
@@ -61,9 +61,9 @@ export function Footer() {
   ];
 
   const socials = [
-    { label: 'GitHub', icon: <Github className="h-4 w-4" />, href: 'https://github.com' },
-    { label: 'Twitter', icon: <Twitter className="h-4 w-4" />, href: 'https://twitter.com' },
-    { label: 'LinkedIn', icon: <Linkedin className="h-4 w-4" />, href: 'https://linkedin.com' },
+    { label: 'GitHub', icon: <Globe className="h-4 w-4" />, href: 'https://github.com' },
+    { label: 'Twitter', icon: <AtSign className="h-4 w-4" />, href: 'https://twitter.com' },
+    { label: 'LinkedIn', icon: <Briefcase className="h-4 w-4" />, href: 'https://linkedin.com' },
     { label: 'Email', icon: <Mail className="h-4 w-4" />, href: 'mailto:hello@example.com' },
   ];
 

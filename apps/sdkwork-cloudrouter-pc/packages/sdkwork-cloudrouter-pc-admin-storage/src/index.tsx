@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type InputHTMLAttributes } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type InputHTMLAttributes } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons';
@@ -9,56 +9,52 @@ import {
   ChevronDown,
   CloudCog,
   DatabaseZap,
-  FolderCog,
+  Eye,
   FolderOpen,
   Gauge,
+  KeyRound,
   Pencil,
   Plus,
+  Power,
+  PowerOff,
   Recycle,
   ShieldCheck,
+  Trash2,
   X,
 } from 'lucide-react';
-import { SandboxExplorerView } from '@sdkwork/drive-pc-sandbox-explorer';
+import { StorageObjectBrowser } from 'sdkwork-drive-pc-admin-storage-providers';
 import {
   AdminResourceCenter,
   type AdminResourceRecord,
   type AdminResourceSection,
 } from '@sdkwork/cloudroutes-pc-commons';
 import {
-  backendStorageBucketCreate,
-  backendStorageBucketUpdate,
-  backendStorageBucketsList,
   backendStorageDefaultBucketUpdate,
   backendStorageDefaultBucketsList,
   backendStorageGarbageCollectionJobCreate,
   backendStorageGarbageCollectionJobsList,
   backendStorageProviderCreate,
+  backendStorageProviderDelete,
   backendStorageProviderHealthCheck,
   backendStorageProvidersList,
+  backendStorageProviderUpdate,
   backendStorageQuotaCreate,
   backendStorageQuotasList,
   backendStorageReconciliationRunCreate,
   backendStorageReconciliationRunsList,
   backendStorageUsageList,
-  type StorageBucketCreateInput,
-  type StorageBucketRecord,
+  getStorageProviderAdminService,
   type StorageDefaultBucketUpdateInput,
   type StorageGarbageCollectionCreateInput,
   type StorageProviderCreateInput,
   type StorageProviderRecord,
+  type StorageProviderUpdateInput,
   type StorageQuotaCreateInput,
   type StorageReconciliationCreateInput,
-  type StorageStatusUpdateInput,
 } from './storageService';
-import {
-  bucketExplorerLabels,
-  createBucketExplorerPort,
-  type BucketExplorerTarget,
-} from './bucketExplorerService';
 
 type StorageAdminSectionId =
   | 'providers'
-  | 'buckets'
   | 'defaultBuckets'
   | 'quotas'
   | 'usage'
@@ -71,34 +67,44 @@ type StorageAdminProps = {
   sectionId?: string;
 };
 
+/** 提示消息类型：成功与错误统一走 Toast 弹出，不再占用表格顶部空间。 */
+type ToastKind = 'error' | 'success';
+
+type ToastItem = {
+  id: number;
+  kind: ToastKind;
+  text: string;
+};
+
+/** 成功提示展示时长（毫秒）。 */
+const TOAST_SUCCESS_DURATION_MS = 4000;
+/** 错误提示展示时长（毫秒），略长于成功，便于阅读后端详情。 */
+const TOAST_ERROR_DURATION_MS = 6500;
+
+/** 快速设置凭证对话框的表单状态：凭证方式 + 密钥/引用字段（明文密钥不回显）。 */
+type ProviderCredentialForm = {
+  credentialMode: 'plain' | 'reference';
+  accessKeyId: string;
+  secretAccessKey: string;
+  sessionToken: string;
+  credentialRef: string;
+};
+
 type StorageFormState = {
-  providerName: string;
-  providerType: StorageProviderCreateInput['providerType'];
+  providerName: string;  providerType: StorageProviderCreateInput['providerKind'];
   endpointUrl: string;
   region: string;
+  bucketName: string;
   credentialRef: string;
   credentialMode: 'plain' | 'reference';
   accessKeyId: string;
   secretAccessKey: string;
   sessionToken: string;
-  accountId: string;
   pathStyleEnabled: boolean;
-  supportsMultipart: boolean;
-  supportsLifecycle: boolean;
-  supportsObjectLock: boolean;
-  bucketName: string;
+  strictTlsEnabled: boolean;
+  providerStatus: string;
   providerId: string;
-  logicalScope: StorageBucketCreateInput['logicalScope'];
-  bucketRegion: string;
-  dataResidencyRegion: string;
-  objectKeyPrefix: string;
-  defaultStorageClass: NonNullable<StorageBucketCreateInput['defaultStorageClass']>;
-  defaultEncryptionMode: NonNullable<StorageBucketCreateInput['defaultEncryptionMode']>;
-  kmsKeyRef: string;
-  versioningEnabled: boolean;
-  objectLockEnabled: boolean;
-  lifecycleEnabled: boolean;
-  publicAccessBlocked: boolean;
+  logicalScope: StorageQuotaCreateInput['scopeType'] | 'tenant_private';
   bucketId: string;
   reason: string;
   scopeType: StorageQuotaCreateInput['scopeType'];
@@ -120,29 +126,17 @@ const DEFAULT_FORM_STATE: StorageFormState = {
   providerType: 's3_compatible',
   endpointUrl: '',
   region: '',
+  bucketName: '',
   credentialRef: '',
   credentialMode: 'plain',
   accessKeyId: '',
   secretAccessKey: '',
   sessionToken: '',
-  accountId: '',
   pathStyleEnabled: false,
-  supportsMultipart: true,
-  supportsLifecycle: true,
-  supportsObjectLock: false,
-  bucketName: '',
+  strictTlsEnabled: true,
+  providerStatus: 'active',
   providerId: '',
   logicalScope: 'tenant_private',
-  bucketRegion: '',
-  dataResidencyRegion: '',
-  objectKeyPrefix: '',
-  defaultStorageClass: 'STANDARD',
-  defaultEncryptionMode: 'sse_s3',
-  kmsKeyRef: '',
-  versioningEnabled: true,
-  objectLockEnabled: false,
-  lifecycleEnabled: true,
-  publicAccessBlocked: true,
   bucketId: '',
   reason: '',
   scopeType: 'tenant',
@@ -161,7 +155,6 @@ const DEFAULT_FORM_STATE: StorageFormState = {
 
 const SECTION_IDS: readonly StorageAdminSectionId[] = [
   'providers',
-  'buckets',
   'defaultBuckets',
   'quotas',
   'usage',
@@ -175,28 +168,34 @@ export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
   const [dialogKind, setDialogKind] = useState<StorageDialogKind | null>(null);
   const [form, setForm] = useState<StorageFormState>(DEFAULT_FORM_STATE);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ kind: 'error' | 'success'; text: string } | null>(null);
+  const [toasts, setToasts] = useState<readonly ToastItem[]>([]);
+  const toastIdRef = useRef(0);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [explorerBucket, setExplorerBucket] = useState<BucketExplorerTarget | null>(null);
-  const [editingBucket, setEditingBucket] = useState<{ id: string; bucketName: string; status: string } | null>(null);
-  const [providerNameById, setProviderNameById] = useState<ReadonlyMap<string, string>>(() => new Map());
+  const [explorerProvider, setExplorerProvider] = useState<StorageProviderRecord | null>(null);
+  const [viewingProvider, setViewingProvider] = useState<AdminResourceRecord | null>(null);
+  const [editingProvider, setEditingProvider] = useState<AdminResourceRecord | null>(null);
+  const [credentialEditor, setCredentialEditor] = useState<AdminResourceRecord | null>(null);
+  const [credentialForm, setCredentialForm] = useState<ProviderCredentialForm>({
+    credentialMode: 'reference',
+    accessKeyId: '',
+    secretAccessKey: '',
+    sessionToken: '',
+    credentialRef: '',
+  });
+  const [deletingProvider, setDeletingProvider] = useState<{ id: string; name: string; providerCode: string } | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    void backendStorageProvidersList()
-      .then((response) => {
-        if (cancelled) return;
-        setProviderNameById(new Map(
-          response.items.map((provider) => [provider.id, provider.name || provider.providerCode]),
-        ));
-      })
-      .catch(() => {
-        // 名称映射加载失败时列表回退显示 providerCode。
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshKey]);
+  /** 推送一条 Toast 提示，超时后自动移除（错误比成功展示更久）；最多同时保留 5 条防堆积。 */
+  const pushToast = useCallback((kind: ToastKind, text: string) => {
+    const id = ++toastIdRef.current;
+    setToasts((current) => [...current.slice(-4), { id, kind, text }]);
+    window.setTimeout(() => {
+      setToasts((current) => current.filter((item) => item.id !== id));
+    }, kind === 'error' ? TOAST_ERROR_DURATION_MS : TOAST_SUCCESS_DURATION_MS);
+  }, []);
+
+  const dismissToast = useCallback((id: number) => {
+    setToasts((current) => current.filter((item) => item.id !== id));
+  }, []);
 
   const sections = useMemo<AdminResourceSection<StorageAdminSectionId, string>[]>(() => [
     {
@@ -207,59 +206,64 @@ export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
       group: t('admin.menu.storage.configuration', 'Storage Configuration'),
       load: () => backendStorageProvidersList(),
       action: createAction(t('admin.storage.providers.add', 'Add provider'), () => openDialog('providers')),
-      rowActions: [{
-        label: t('admin.storage.providers.healthCheck', 'Health check'),
-        icon: <Activity className="h-3.5 w-3.5" />,
-        onClick: (record) => void runProviderHealthCheck(record),
-      }],
-      columns: [
-        { key: 'name', label: t('admin.storage.col.name', 'Name'), format: (value, record) => {
-          const name = typeof value === 'string' && value ? value : '';
-          return name || (typeof record.providerCode === 'string' ? record.providerCode : '-');
-        } },
-        { key: 'providerCode', label: t('admin.storage.col.providerCode', 'Provider') },
-        { key: 'providerType', label: t('admin.storage.col.type', 'Type'), format: (value) => translateStorageValue(t, 'providerType', value) },
-        { key: 'endpointUrl', label: t('admin.storage.col.endpoint', 'Endpoint') },
-        { key: 'region', label: t('admin.storage.col.region', 'Region') },
-        { key: 'credentialRef', label: t('admin.storage.col.credentialRef', 'Credential Ref') },
-        { key: 'healthStatus', label: t('admin.storage.col.health', 'Health'), format: (value) => translateStorageValue(t, 'health', value) },
-        { key: 'status', label: t('admin.storage.col.status', 'Status'), format: (value) => translateStorageValue(t, 'status', value) },
-      ],
-      searchFields: ['providerCode', 'name', 'providerType', 'endpointUrl', 'region', 'healthStatus', 'status'],
-    },
-    {
-      id: 'buckets',
-      title: t('admin.storage.buckets.title', 'Storage Buckets'),
-      description: t('admin.storage.buckets.desc', 'Bucket placement, encryption, lifecycle, residency, versioning, and public-access policy.'),
-      icon: <FolderCog className="h-4 w-4" />,
-      group: t('admin.menu.storage.configuration', 'Storage Configuration'),
-      load: () => backendStorageBucketsList(),
-      action: createAction(t('admin.storage.buckets.add', 'Add bucket'), () => openDialog('buckets')),
       rowActions: [
         {
-          label: t('admin.storage.buckets.edit', 'Edit'),
+          label: t('admin.storage.providers.detail', 'Details'),
+          icon: <Eye className="h-3.5 w-3.5" />,
+          onClick: (record) => openProviderDetail(record),
+        },
+        {
+          label: t('admin.storage.providers.credential', 'Credentials'),
+          icon: <KeyRound className="h-3.5 w-3.5" />,
+          onClick: (record) => openProviderCredentialEditor(record),
+        },
+        {
+          label: t('admin.storage.providers.disable', 'Disable'),
+          icon: <PowerOff className="h-3.5 w-3.5" />,
+          isVisible: (record) => record.status !== 'disabled',
+          onClick: (record) => void toggleProviderStatus(record),
+        },
+        {
+          label: t('admin.storage.providers.enable', 'Enable'),
+          icon: <Power className="h-3.5 w-3.5" />,
+          isVisible: (record) => record.status === 'disabled',
+          onClick: (record) => void toggleProviderStatus(record),
+        },
+        {
+          label: t('admin.storage.providers.edit', 'Edit'),
           icon: <Pencil className="h-3.5 w-3.5" />,
-          onClick: (record) => openBucketStatusEditor(record),
+          onClick: (record) => openProviderEditor(record),
+        },
+        {
+          label: t('admin.storage.providers.healthCheck', 'Health check'),
+          icon: <Activity className="h-3.5 w-3.5" />,
+          onClick: (record) => void runProviderHealthCheck(record),
         },
         {
           label: t('admin.storage.buckets.files', 'Browse files'),
           icon: <FolderOpen className="h-3.5 w-3.5" />,
-          onClick: (record) => openBucketExplorer(record),
+          onClick: (record) => openProviderExplorer(record),
+        },
+        {
+          label: t('admin.storage.providers.delete', 'Delete'),
+          icon: <Trash2 className="h-3.5 w-3.5" />,
+          tone: 'danger',
+          onClick: (record) => openProviderDelete(record),
         },
       ],
       columns: [
-        { key: 'bucketName', label: t('admin.storage.col.bucket', 'Bucket') },
-        { key: 'providerCode', label: t('admin.storage.col.providerCode', 'Provider'), format: (value, record) => {
-          const providerId = typeof record.providerId === 'string' ? record.providerId : '';
-          return (providerId && providerNameById.get(providerId)) || (typeof value === 'string' ? value : '-');
+        { key: 'name', label: t('admin.storage.col.name', 'Name'), format: (value) => {
+          const name = typeof value === 'string' && value ? value : '';
+          return name || '-';
         } },
-        { key: 'logicalScope', label: t('admin.storage.col.logicalScope', 'Logical Scope'), format: (value) => translateStorageValue(t, 'logicalScope', value) },
-        { key: 'bucketRegion', label: t('admin.storage.col.region', 'Region') },
-        { key: 'defaultStorageClass', label: t('admin.storage.col.storageClass', 'Storage Class'), format: (value) => translateStorageValue(t, 'storageClass', value) },
-        { key: 'defaultEncryptionMode', label: t('admin.storage.col.encryption', 'Encryption'), format: (value) => translateStorageValue(t, 'encryption', value) },
+        { key: 'providerType', label: t('admin.storage.col.type', 'Type'), format: (value) => translateStorageValue(t, 'providerType', value) },
+        { key: 'bucket', label: t('admin.storage.col.bucket', 'Bucket') },
+        { key: 'endpointUrl', label: t('admin.storage.col.endpoint', 'Endpoint') },
+        { key: 'region', label: t('admin.storage.col.region', 'Region') },
+        { key: 'credentialConfigured', label: t('admin.storage.col.credentialRef', 'Credential Ref'), format: (value) => formatCredentialConfigured(t, value) },
         { key: 'status', label: t('admin.storage.col.status', 'Status'), format: (value) => translateStorageValue(t, 'status', value) },
       ],
-      searchFields: ['bucketName', 'providerCode', 'logicalScope', 'bucketRegion', 'defaultStorageClass', 'status'],
+      searchFields: ['name', 'providerType', 'bucket', 'endpointUrl', 'region', 'status'],
     },
     {
       id: 'defaultBuckets',
@@ -351,48 +355,159 @@ export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
       ],
       searchFields: ['jobId', 'jobType', 'target', 'status'],
     },
-  ], [t, providerNameById]);
+  ], [t]);
 
   function openDialog(kind: StorageDialogKind) {
     setForm(DEFAULT_FORM_STATE);
-    setMessage(null);
     setDialogKind(kind);
   }
 
-  function openBucketExplorer(record: AdminResourceRecord) {
+  function openProviderExplorer(record: AdminResourceRecord) {
     const id = typeof record.id === 'string' ? record.id : '';
-    const bucketName = typeof record.bucketName === 'string' ? record.bucketName : id;
     if (!id) {
-      setMessage({ kind: 'error', text: t('admin.storage.error.missingBucketId', 'Bucket ID is missing.') });
+      pushToast('error', t('admin.storage.error.missingProviderId', 'Provider ID is missing.'));
       return;
     }
-    setMessage(null);
-    setExplorerBucket({ id, bucketName });
+    // drive 存储提供者即桶浏览入口（单桶 per provider）。
+    setExplorerProvider(record as unknown as StorageProviderRecord);
   }
 
-  function openBucketStatusEditor(record: AdminResourceRecord) {
-    const id = typeof record.id === 'string' ? record.id : '';
-    const bucketName = typeof record.bucketName === 'string' ? record.bucketName : id;
-    const status = typeof record.status === 'string' ? record.status : 'active';
-    if (!id) {
-      setMessage({ kind: 'error', text: t('admin.storage.error.missingBucketId', 'Bucket ID is missing.') });
+  function openProviderDetail(record: AdminResourceRecord) {
+    if (!readRecordId(record)) {
+      pushToast('error', t('admin.storage.error.missingProviderId', 'Provider ID is missing.'));
       return;
     }
-    setMessage(null);
-    setEditingBucket({ id, bucketName, status });
+    setViewingProvider(record);
   }
 
-  async function submitBucketStatusUpdate(status: string, reason: string) {
-    if (!editingBucket) return;
+  function openProviderEditor(record: AdminResourceRecord) {
+    const providerType = typeof record.providerType === 'string' && record.providerType in PROVIDER_PRESETS
+      ? record.providerType as StorageFormState['providerType']
+      : 's3_compatible';
+    // 凭证回显策略：托管引用（vault:/kms:/secret: 等）原样回显可编辑；
+    // 明文凭证（plain:...）只回显「访问密钥」模式，密钥内容永不回显（安全），
+    // 编辑时留空表示保持现有凭证。
+    const currentCredentialRef = typeof record.credentialRef === 'string' ? record.credentialRef : '';
+    const isPlainCredential = currentCredentialRef.startsWith('plain:');
+    setForm({
+      ...DEFAULT_FORM_STATE,
+      // 非敏感配置回填；明文凭证永不回显，编辑时留空表示保持不变。
+      providerName: typeof record.displayName === 'string' ? record.displayName
+        : typeof record.name === 'string' ? record.name : '',
+      providerType,
+      endpointUrl: typeof record.endpointUrl === 'string' ? record.endpointUrl : '',
+      region: typeof record.region === 'string' ? record.region : '',
+      bucketName: typeof record.bucket === 'string' ? record.bucket : '',
+      pathStyleEnabled: record.pathStyle === true,
+      credentialMode: isPlainCredential ? 'plain' : 'reference',
+      credentialRef: isPlainCredential ? '' : currentCredentialRef,
+      providerStatus: typeof record.status === 'string' ? record.status : 'active',
+        });
+    setEditingProvider(record);
+    setDialogKind('providers');
+  }
+
+  function openProviderCredentialEditor(record: AdminResourceRecord) {
+    if (!readRecordId(record)) {
+      pushToast('error', t('admin.storage.error.missingProviderId', 'Provider ID is missing.'));
+      return;
+    }
+    // drive 管理面不回显凭证内容（仅 credentialConfigured 布尔）；
+    // 快速设置对话框始终从空白开始，填写后整体轮换凭证。
+    setCredentialForm({
+      credentialMode: 'plain',
+      accessKeyId: '',
+      secretAccessKey: '',
+      sessionToken: '',
+        credentialRef: '',
+    });
+    setCredentialEditor(record);
+  }
+
+  async function submitProviderCredential() {
+    if (!credentialEditor) return;
+    const providerId = readRecordId(credentialEditor);
+    if (!providerId) {
+      pushToast('error', t('admin.storage.error.missingProviderId', 'Provider ID is missing.'));
+      return;
+    }
     setSaving(true);
-    setMessage(null);
     try {
-      await backendStorageBucketUpdate(editingBucket.id, { status: status as StorageStatusUpdateInput['status'], reason });
-      setEditingBucket(null);
+      const body: StorageProviderUpdateInput = {};
+      if (credentialForm.credentialMode === 'plain') {
+        // 访问密钥：双密钥都填写才提交（防止空值覆盖现有凭证）。
+        if (credentialForm.accessKeyId.trim() && credentialForm.secretAccessKey.trim()) {
+          body.credentialRef = buildPlainCredentialRef(
+            credentialForm.accessKeyId,
+            credentialForm.secretAccessKey,
+            credentialForm.sessionToken,
+          );
+        }
+      } else if (credentialForm.credentialRef.trim()) {
+        body.credentialRef = credentialForm.credentialRef.trim();
+      }
+      await backendStorageProviderUpdate(providerId, body);
+      setCredentialEditor(null);
       setRefreshKey((value) => value + 1);
-      setMessage({ kind: 'success', text: t('admin.storage.buckets.statusSaved', 'Bucket status updated successfully.') });
+      pushToast('success', t('admin.storage.providers.credentialSuccess', 'Provider credentials updated successfully.'));
     } catch (error) {
-      setMessage({ kind: 'error', text: readError(error, t('admin.storage.buckets.statusError', 'Bucket status could not be updated.'), t) });
+      pushToast('error', readError(error, t('admin.storage.providers.credentialError', 'Provider credentials could not be updated.'), t));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function openProviderDelete(record: AdminResourceRecord) {
+    const id = readRecordId(record);
+    if (!id) {
+      pushToast('error', t('admin.storage.error.missingProviderId', 'Provider ID is missing.'));
+      return;
+    }
+    const name = typeof record.displayName === 'string' && record.displayName
+      ? record.displayName
+      : typeof record.name === 'string' && record.name ? record.name : id;
+    setDeletingProvider({
+      id,
+      name,
+      providerCode: typeof record.providerCode === 'string' ? record.providerCode : '',
+    });
+  }
+
+  /** 一键切换服务商启用状态：active → disabled，disabled → active。 */
+  async function toggleProviderStatus(record: AdminResourceRecord) {
+    const providerId = readRecordId(record);
+    if (!providerId) {
+      pushToast('error', t('admin.storage.error.missingProviderId', 'Provider ID is missing.'));
+      return;
+    }
+    const current = typeof record.status === 'string' ? record.status : 'active';
+    const disabling = current !== 'disabled';
+    const nextStatus = disabling ? 'disabled' : 'active';
+    try {
+      await backendStorageProviderUpdate(providerId, {
+        status: nextStatus as StorageProviderUpdateInput['status'],
+      });
+      setRefreshKey((value) => value + 1);
+      pushToast('success', disabling
+        ? t('admin.storage.providers.disableSuccess', 'Provider disabled successfully.')
+        : t('admin.storage.providers.enableSuccess', 'Provider enabled successfully.'));
+    } catch (error) {
+      pushToast('error', readError(error, disabling
+        ? t('admin.storage.providers.disableError', 'Provider could not be disabled.')
+        : t('admin.storage.providers.enableError', 'Provider could not be enabled.'), t));
+    }
+  }
+
+  async function submitProviderDelete() {
+    if (!deletingProvider) return;
+    setSaving(true);
+    try {
+      await backendStorageProviderDelete(deletingProvider.id);
+      setDeletingProvider(null);
+      setRefreshKey((value) => value + 1);
+      pushToast('success', t('admin.storage.providers.deleteSuccess', 'Provider deleted successfully.'));
+    } catch (error) {
+      pushToast('error', readError(error, t('admin.storage.providers.deleteError', 'Provider could not be deleted.'), t));
     } finally {
       setSaving(false);
     }
@@ -401,15 +516,15 @@ export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
   async function runProviderHealthCheck(record: AdminResourceRecord) {
     const providerId = readRecordId(record);
     if (!providerId) {
-      setMessage({ kind: 'error', text: t('admin.storage.error.missingProviderId', 'Provider ID is missing.') });
+      pushToast('error', t('admin.storage.error.missingProviderId', 'Provider ID is missing.'));
       return;
     }
     try {
       await backendStorageProviderHealthCheck(providerId);
-      setMessage({ kind: 'success', text: t('admin.storage.providers.healthSuccess', 'Provider health check completed.') });
+      pushToast('success', t('admin.storage.providers.healthSuccess', 'Provider health check completed.'));
       setRefreshKey((value) => value + 1);
     } catch (error) {
-      setMessage({ kind: 'error', text: readError(error, t('admin.storage.providers.healthError', 'Provider health check failed.'), t) });
+      pushToast('error', readError(error, t('admin.storage.providers.healthError', 'Provider health check failed.'), t));
     }
   }
 
@@ -417,14 +532,27 @@ export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
     event.preventDefault();
     if (!dialogKind) return;
     setSaving(true);
-    setMessage(null);
+    // GC 任务的 criteria 为 JSON 文本：提交前预校验，给出明确错误而不是吞进通用失败。
+    if (dialogKind === 'garbageCollection') {
+      try {
+        JSON.parse(form.criteria || '{}');
+      } catch {
+        setSaving(false);
+        pushToast('error', t('admin.storage.form.criteriaInvalid', 'Criteria must be valid JSON.'));
+        return;
+      }
+    }
+    const wasEditingProvider = editingProvider !== null;
     try {
-      await submitStorageForm(dialogKind, form);
+      await submitStorageForm(dialogKind, form, editingProvider);
       setDialogKind(null);
+      setEditingProvider(null);
       setRefreshKey((value) => value + 1);
-      setMessage({ kind: 'success', text: t('admin.storage.saveSuccess', 'Storage configuration saved successfully.') });
+      pushToast('success', wasEditingProvider
+        ? t('admin.storage.providers.editSuccess', 'Provider configuration saved successfully.')
+        : t('admin.storage.saveSuccess', 'Storage configuration saved successfully.'));
     } catch (error) {
-      setMessage({ kind: 'error', text: readError(error, t('admin.storage.saveError', 'Storage configuration could not be saved.'), t) });
+      pushToast('error', readError(error, t('admin.storage.saveError', 'Storage configuration could not be saved.'), t));
     } finally {
       setSaving(false);
     }
@@ -432,16 +560,6 @@ export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
-      {message ? (
-        <div className={message.kind === 'success'
-          ? 'flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200'
-          : 'flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200'}
-          role="status"
-        >
-          {message.kind === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <Activity className="h-4 w-4" />}
-          <span>{message.text}</span>
-        </div>
-      ) : null}
       <div className="min-h-0 flex-1">
         <AdminResourceCenter
           activeSectionId={activeSectionId}
@@ -464,43 +582,148 @@ export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
           form={form}
           kind={dialogKind}
           onChange={setForm}
-          onClose={() => !saving && setDialogKind(null)}
+          onClose={() => !saving && (setDialogKind(null), setEditingProvider(null))}
           onSubmit={submitDialog}
           saving={saving}
+          titleOverride={editingProvider
+            ? t('admin.storage.providers.editTitle', 'Edit provider')
+            : undefined}
+          editingProvider={editingProvider !== null}
         />
       ) : null}
-      {explorerBucket ? (
-        <BucketExplorerDialog
-          bucket={explorerBucket}
-          onClose={() => setExplorerBucket(null)}
+      {viewingProvider ? (
+        <ProviderDetailDialog
+          record={viewingProvider}
+          onClose={() => setViewingProvider(null)}
+          onEdit={() => {
+            openProviderEditor(viewingProvider);
+            setViewingProvider(null);
+          }}
+          onToggle={() => {
+            void toggleProviderStatus(viewingProvider);
+            setViewingProvider(null);
+          }}
         />
       ) : null}
-      {editingBucket ? (
-        <BucketStatusDialog
-          bucket={editingBucket}
-          onClose={() => !saving && setEditingBucket(null)}
-          onSubmit={(status, reason) => void submitBucketStatusUpdate(status, reason)}
+      {credentialEditor ? (
+        <ProviderCredentialDialog
+          form={credentialForm}
+          onChange={setCredentialForm}
+          onClose={() => !saving && setCredentialEditor(null)}
+          onSubmit={() => void submitProviderCredential()}
+          provider={credentialEditor}
           saving={saving}
         />
       ) : null}
+      {deletingProvider ? (
+        <ProviderDeleteDialog
+          provider={deletingProvider}
+          onClose={() => !saving && setDeletingProvider(null)}
+          onSubmit={() => void submitProviderDelete()}
+          saving={saving}
+        />
+      ) : null}
+      {explorerProvider ? (
+        <ProviderObjectExplorerDialog
+          provider={explorerProvider}
+          onClose={() => setExplorerProvider(null)}
+        />
+      ) : null}
+      <ToastViewport onDismiss={dismissToast} toasts={toasts} />
     </div>
   );
 }
 
-function BucketStatusDialog({
-  bucket,
-  onClose,
-  onSubmit,
-  saving,
-}: {
-  bucket: { id: string; bucketName: string; status: string };
-  onClose: () => void;
-  onSubmit: (status: string, reason: string) => void;
-  saving: boolean;
-}) {
+/** 对话框 Esc 关闭：避免各对话框重复实现键盘处理。 */
+function useDialogEscape(onClose: () => void) {
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+}
+
+/** 右下角 Toast 容器：fixed 定位不占布局空间，多条自动堆叠；含入场动画 keyframes。 */
+function ToastViewport({ onDismiss, toasts }: { onDismiss: (id: number) => void; toasts: readonly ToastItem[] }) {
+  return (
+    <>
+      <style>{`@keyframes sdkwork-storage-toast-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+      <div
+        aria-live="polite"
+        className="pointer-events-none fixed bottom-6 right-6 z-[70] flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2"
+      >
+        {toasts.map((toast) => (
+          <ToastCard key={toast.id} onDismiss={onDismiss} toast={toast} />
+        ))}
+      </div>
+    </>
+  );
+}
+
+function ToastCard({ onDismiss, toast }: { onDismiss: (id: number) => void; toast: ToastItem }) {
   const { t } = useTranslation();
-  const [status, setStatus] = useState(bucket.status);
-  const [reason, setReason] = useState('');
+  const success = toast.kind === 'success';
+  return (
+    <div
+      className={success
+        ? 'pointer-events-auto flex items-start gap-3 rounded-lg border border-emerald-200 bg-white px-4 py-3 shadow-xl dark:border-emerald-500/30 dark:bg-[#1d2a22]'
+        : 'pointer-events-auto flex items-start gap-3 rounded-lg border border-red-200 bg-white px-4 py-3 shadow-xl dark:border-red-500/30 dark:bg-[#2a1d1d]'}
+      role="status"
+      style={{ animation: 'sdkwork-storage-toast-enter 0.22s ease-out' }}
+    >
+      {success ? (
+        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+      ) : (
+        <Activity className="mt-0.5 h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
+      )}
+      <span className="min-w-0 flex-1 break-words text-sm text-slate-800 dark:text-slate-100">{toast.text}</span>
+      <button
+        aria-label={t('admin.storage.toast.close', 'Dismiss')}
+        className="grid h-6 w-6 shrink-0 place-items-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/10"
+        onClick={() => onDismiss(toast.id)}
+        type="button"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
+/** 凭证配置状态：drive 管理面只回显是否已配置（不泄露凭证内容）。 */
+function formatCredentialConfigured(t: TFunction, value: unknown): string {
+  return value === true
+    ? t('admin.storage.value.credentialConfigured.true', 'Configured')
+    : t('admin.storage.value.credentialConfigured.false', 'Missing');
+}
+
+function ProviderDetailDialog({
+  record,
+  onClose,
+  onEdit,
+  onToggle,
+}: {
+  record: AdminResourceRecord;
+  onClose: () => void;
+  onEdit?: () => void;
+  onToggle?: () => void;
+}) {
+  useDialogEscape(onClose);
+  const { t } = useTranslation();
+  const stringValue = (value: unknown, fallback = '-') =>
+    value === null || value === undefined || value === '' ? fallback : String(value);
+  const name = stringValue(record.displayName, stringValue(record.name, readRecordId(record)));
+  const rows: ReadonlyArray<{ label: string; value: string }> = [
+    { label: t('admin.storage.col.name', 'Name'), value: stringValue(record.displayName, stringValue(record.name)) },
+    { label: t('admin.storage.col.type', 'Type'), value: translateStorageValue(t, 'providerType', record.providerType) },
+    { label: t('admin.storage.col.bucket', 'Bucket'), value: stringValue(record.bucket) },
+    { label: t('admin.storage.col.endpoint', 'Endpoint'), value: stringValue(record.endpointUrl) },
+    { label: t('admin.storage.col.region', 'Region'), value: stringValue(record.region) },
+    { label: t('admin.storage.col.credentialRef', 'Credential Ref'), value: formatCredentialConfigured(t, record.credentialConfigured) },
+    { label: t('admin.storage.col.pathStyle', 'Path Style'), value: formatBoolean(t, record.pathStyle) },
+    { label: t('admin.storage.col.status', 'Status'), value: translateStorageValue(t, 'status', record.status) },
+  ];
 
   return (
     <div
@@ -513,61 +736,211 @@ function BucketStatusDialog({
       }}
     >
       <div
-        aria-labelledby="bucket-status-dialog-title"
+        aria-labelledby="provider-detail-dialog-title"
+        aria-modal="true"
+        className="flex w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#181818]"
+        role="dialog"
+      >
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-white/10">
+          <div>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white" id="provider-detail-dialog-title">
+              {t('admin.storage.providers.detailTitle', 'Provider details')}
+            </h2>
+            <p className="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">{name}</p>
+          </div>
+          <button aria-label={t('admin.storage.dialog.close', 'Close')} className="grid h-9 w-9 place-items-center rounded-md text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10" onClick={onClose} type="button"><X className="h-4 w-4" /></button>
+        </div>
+        <div className="grid max-h-[70vh] grid-cols-1 gap-x-6 gap-y-3 overflow-y-auto p-5 md:grid-cols-2">
+          {rows.map((row) => (
+            <div key={row.label} className="min-w-0">
+              <div className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">{row.label}</div>
+              <div className="mt-0.5 break-words text-sm text-slate-800 dark:text-slate-100">{row.value}</div>
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-end gap-3 border-t border-slate-200 px-5 py-4 dark:border-white/10">
+          {onToggle ? (
+            <button className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5" onClick={onToggle} type="button">{record.status === 'disabled' ? <Power className="h-4 w-4" /> : <PowerOff className="h-4 w-4" />}{record.status === 'disabled' ? t('admin.storage.providers.enable', 'Enable') : t('admin.storage.providers.disable', 'Disable')}</button>
+          ) : null}
+          {onEdit ? (
+            <button className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700" onClick={onEdit} type="button"><Pencil className="h-4 w-4" />{t('admin.storage.providers.edit', 'Edit')}</button>
+          ) : null}
+          <button className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5" onClick={onClose} type="button">{t('admin.storage.dialog.close', 'Close')}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** 快速设置凭证对话框：凭证方式选择 + 密钥/引用输入，明文密钥不回显。 */
+function ProviderCredentialDialog({
+  form,
+  onChange,
+  onClose,
+  onSubmit,
+  provider,
+  saving,
+}: {
+  form: ProviderCredentialForm;
+  onChange: (value: ProviderCredentialForm) => void;
+  onClose: () => void;
+  onSubmit: () => void;
+  provider: AdminResourceRecord;
+  saving: boolean;
+}) {
+  useDialogEscape(onClose);
+  const { t } = useTranslation();
+  const providerType = typeof provider.providerType === 'string' ? provider.providerType : 's3_compatible';
+  const credentialFields = PROVIDER_CREDENTIAL_FIELD_KEYS[providerType] ?? PROVIDER_CREDENTIAL_FIELD_KEYS.s3_compatible;
+  const credentialLabel = (fieldKey: string) => (
+    t(`admin.storage.form.credential.${providerType}.${fieldKey}`,
+      t(`admin.storage.form.credential.${fieldKey}`, fieldKey))
+  );
+  const set = <K extends keyof ProviderCredentialForm,>(key: K, value: ProviderCredentialForm[K]) => onChange({ ...form, [key]: value });
+  const displayName = typeof provider.displayName === 'string' && provider.displayName
+    ? provider.displayName
+    : typeof provider.name === 'string' && provider.name
+      ? provider.name
+      : typeof provider.providerCode === 'string' ? provider.providerCode : readRecordId(provider);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
+      role="presentation"
+      onPointerDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        aria-labelledby="provider-credential-dialog-title"
+        aria-modal="true"
+        className="flex w-full max-w-lg flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#181818]"
+        role="dialog"
+      >
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-white/10">
+          <div>
+            <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white" id="provider-credential-dialog-title">
+              <KeyRound className="h-4 w-4 text-slate-400" />
+              {t('admin.storage.providers.credentialTitle', 'Set provider credentials')}
+            </h2>
+            <p className="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">{displayName}</p>
+          </div>
+          <button aria-label={t('admin.storage.dialog.close', 'Close')} className="grid h-9 w-9 place-items-center rounded-md text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10" onClick={onClose} type="button"><X className="h-4 w-4" /></button>
+        </div>
+        <div className="flex flex-col gap-4 p-5">
+          {credentialFields === null ? (
+            <div className="rounded-md border border-slate-200 px-3 py-2.5 text-sm text-slate-600 dark:border-white/10 dark:text-slate-300">
+              {t('admin.storage.form.localDevHint', 'Local development providers do not require access credentials.')}
+            </div>
+          ) : (
+            <>
+              <SelectField label={t('admin.storage.form.credentialMode', 'Credential mode')} value={form.credentialMode} onChange={(value) => set('credentialMode', value as ProviderCredentialForm['credentialMode'])} options={[
+                { value: 'plain', label: t('admin.storage.form.credentialModePlain', 'Access keys') },
+                { value: 'reference', label: t('admin.storage.form.credentialModeReference', 'Managed reference') },
+              ]} />
+              {form.credentialMode === 'plain' ? (
+                <>
+                  <TextField autoComplete="new-password" label={credentialLabel(credentialFields.accessKey)} required type="password" value={form.accessKeyId} onChange={(value) => set('accessKeyId', value)} />
+                  <TextField autoComplete="new-password" label={credentialLabel(credentialFields.secretKey)} required type="password" value={form.secretAccessKey} onChange={(value) => set('secretAccessKey', value)} />
+                  {credentialFields.sessionToken ? (
+                    <TextField autoComplete="new-password" label={credentialLabel(credentialFields.sessionToken)} type="password" value={form.sessionToken} onChange={(value) => set('sessionToken', value)} />
+                  ) : null}
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    {t('admin.storage.form.plainCredentialEditDesc', 'Field names follow the provider console. Leave all key fields empty to keep the current credentials; filling them replaces the stored credentials. Credentials are never rendered back.')}
+                  </div>
+                </>
+              ) : (
+                <TextField description={t('admin.storage.form.credentialRefDesc', 'Use a vault/KMS/secret reference such as vault:<ref>, kms:<ref>, secret:<ref>, or env:<ref>.')} label={t('admin.storage.form.credentialRef', 'Credential reference')} value={form.credentialRef} onChange={(value) => set('credentialRef', value)} />
+              )}
+            </>
+          )}
+          <div className="flex justify-end gap-3 border-t border-slate-200 pt-4 dark:border-white/10">
+            <button className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5" disabled={saving} onClick={onClose} type="button">{t('admin.storage.dialog.cancel', 'Cancel')}</button>
+            <button className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60" disabled={saving || (credentialFields !== null && form.credentialMode === 'plain' && (!form.accessKeyId.trim() || !form.secretAccessKey.trim()))} onClick={onSubmit} type="button"><KeyRound className="h-4 w-4" />{saving ? t('admin.storage.dialog.saving', 'Saving...') : t('admin.storage.dialog.save', 'Save')}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProviderDeleteDialog({
+  provider,
+  onClose,
+  onSubmit,
+  saving,
+}: {
+  provider: { id: string; name: string; providerCode: string };
+  onClose: () => void;
+  onSubmit: () => void;
+  saving: boolean;
+}) {
+  useDialogEscape(onClose);
+  const { t } = useTranslation();
+  const [confirmation, setConfirmation] = useState('');
+  const displayName = provider.name || provider.providerCode || provider.id;
+  const confirmed = confirmation.trim() === displayName;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
+      role="presentation"
+      onPointerDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        aria-labelledby="provider-delete-dialog-title"
         aria-modal="true"
         className="flex w-full max-w-md flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#181818]"
         role="dialog"
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-white/10">
           <div>
-            <h2 className="text-base font-semibold text-slate-900 dark:text-white" id="bucket-status-dialog-title">
-              {t('admin.storage.buckets.editTitle', 'Edit bucket')}
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white" id="provider-delete-dialog-title">
+              {t('admin.storage.providers.deleteTitle', 'Delete provider')}
             </h2>
-            <p className="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">{bucket.bucketName}</p>
+            <p className="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">{displayName}</p>
           </div>
           <button aria-label={t('admin.storage.dialog.close', 'Close')} className="grid h-9 w-9 place-items-center rounded-md text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10" onClick={onClose} type="button"><X className="h-4 w-4" /></button>
         </div>
-        <form
-          className="flex flex-col gap-4 p-5"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (!reason.trim()) return;
-            onSubmit(status, reason.trim());
-          }}
-        >
-          <SelectField
-            label={t('admin.storage.form.bucketStatus', 'Status')}
-            options={storageSelectOptions(t, 'status', ['active', 'archived', 'disabled'])}
-            value={status}
-            onChange={setStatus}
-          />
+        <div className="flex flex-col gap-4 p-5">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            {t('admin.storage.providers.deleteConfirmDesc', 'This permanently removes the storage provider. Providers still referenced by buckets cannot be deleted. Type the provider name to confirm.')}
+          </p>
           <TextField
             autoComplete="off"
-            label={t('admin.storage.form.changeReason', 'Change reason')}
+            label={t('admin.storage.providers.deleteConfirmName', 'Type the provider name to confirm')}
+            placeholder={displayName}
             required
-            value={reason}
-            onChange={setReason}
+            value={confirmation}
+            onChange={setConfirmation}
           />
           <div className="flex justify-end gap-3">
             <button className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5" disabled={saving} onClick={onClose} type="button">{t('admin.storage.dialog.cancel', 'Cancel')}</button>
-            <button className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60" disabled={saving || !reason.trim()} type="submit">{saving ? t('admin.storage.dialog.saving', 'Saving...') : t('admin.storage.dialog.save', 'Save')}</button>
+            <button className="inline-flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60" disabled={saving || !confirmed} onClick={onSubmit} type="button"><Trash2 className="h-4 w-4" />{saving ? t('admin.storage.dialog.deleting', 'Deleting...') : t('admin.storage.providers.delete', 'Delete')}</button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
 }
 
-function BucketExplorerDialog({
-  bucket,
+/** 桶对象浏览器对话框：复用 drive 存储提供者管理包的 StorageObjectBrowser（对象浏览属主在 sdkwork-drive）。 */
+function ProviderObjectExplorerDialog({
+  provider,
   onClose,
 }: {
-  bucket: BucketExplorerTarget;
+  provider: StorageProviderRecord;
   onClose: () => void;
 }) {
+  useDialogEscape(onClose);
   const { t } = useTranslation();
-  const port = useMemo(() => createBucketExplorerPort(bucket), [bucket]);
-  const labels = useMemo(() => bucketExplorerLabels(t), [t]);
+  const service = getStorageProviderAdminService();
 
   return (
     <div
@@ -580,37 +953,32 @@ function BucketExplorerDialog({
       }}
     >
       <div
-        aria-labelledby="bucket-explorer-dialog-title"
+        aria-labelledby="provider-object-explorer-dialog-title"
         aria-modal="true"
-        className="flex h-full w-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-[#181818] shadow-2xl dark:border-white/10"
+        className="flex h-full w-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#181818]"
         role="dialog"
       >
-        <div className="flex items-center justify-between border-b border-slate-700 bg-[#1e1e1e] px-5 py-3.5">
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3.5 dark:border-white/10">
           <div className="min-w-0">
-            <h2 className="flex items-center gap-2 truncate text-base font-semibold text-white" id="bucket-explorer-dialog-title">
-              <FolderOpen className="h-4 w-4 shrink-0 text-slate-300" />
-              <span className="truncate">{bucket.bucketName}</span>
+            <h2 className="flex items-center gap-2 truncate text-base font-semibold text-slate-900 dark:text-white" id="provider-object-explorer-dialog-title">
+              <FolderOpen className="h-4 w-4 shrink-0 text-slate-400" />
+              <span className="truncate">{provider.displayName || provider.bucket}</span>
             </h2>
-            <p className="mt-0.5 truncate text-sm text-slate-400">
+            <p className="mt-0.5 truncate text-sm text-slate-500 dark:text-slate-400">
               {t('admin.storage.bucketExplorer.desc', 'Browse bucket files with full create, read, update, rename, move, and delete operations.')}
             </p>
           </div>
           <button
             aria-label={t('admin.storage.dialog.close', 'Close')}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-slate-300 hover:bg-white/10"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10"
             onClick={onClose}
             type="button"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="min-h-0 flex-1">
-          <SandboxExplorerView
-            className="h-full min-h-[520px] rounded-b-lg"
-            labels={labels}
-            mode="manage"
-            port={port}
-          />
+        <div className="min-h-0 flex-1 overflow-auto p-4">
+          <StorageObjectBrowser provider={provider} service={service} />
         </div>
       </div>
     </div>
@@ -625,6 +993,8 @@ function StorageDialog({
   onSubmit,
   saving,
   closeOnClickOutside = true,
+  titleOverride,
+  editingProvider,
 }: {
   form: StorageFormState;
   kind: StorageDialogKind;
@@ -634,9 +1004,14 @@ function StorageDialog({
   saving: boolean;
   /** 点击遮罩（弹窗外）时是否关闭；默认 true */
   closeOnClickOutside?: boolean;
+  /** 标题覆盖（编辑场景复用同一对话框时使用） */
+  titleOverride?: string;
+  /** 服务商编辑模式：凭证可选更新、附带状态与变更说明 */
+  editingProvider?: boolean;
 }) {
+  useDialogEscape(onClose);
   const { t } = useTranslation();
-  const title = dialogTitle(kind, t);
+  const title = titleOverride ?? dialogTitle(kind, t);
   const set = <K extends keyof StorageFormState,>(key: K, value: StorageFormState[K]) => onChange({ ...form, [key]: value });
   const patch = (values: Partial<StorageFormState>) => onChange({ ...form, ...values });
 
@@ -659,9 +1034,12 @@ function StorageDialog({
           <button aria-label={t('admin.storage.dialog.close', 'Close')} className="grid h-9 w-9 place-items-center rounded-md text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10" onClick={onClose} type="button"><X className="h-4 w-4" /></button>
         </div>
         <form autoComplete="off" className="flex min-h-0 flex-1 flex-col" onSubmit={onSubmit}>
+          <div className="shrink-0 px-5 pt-3 text-xs text-slate-400 dark:text-slate-500">
+            <span aria-hidden="true" className="font-bold text-red-500">*</span>
+            {' '}{t('admin.storage.form.requiredLegend', 'Required fields are marked with an asterisk.')}
+          </div>
           <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto p-5 md:grid-cols-2">
-            {kind === 'providers' ? <ProviderFields form={form} patch={patch} set={set} /> : null}
-            {kind === 'buckets' ? <BucketFields form={form} set={set} /> : null}
+            {kind === 'providers' ? <ProviderFields editing={editingProvider} form={form} patch={patch} set={set} /> : null}
             {kind === 'defaultBuckets' ? <DefaultBucketFields form={form} set={set} /> : null}
             {kind === 'quotas' ? <QuotaFields form={form} set={set} /> : null}
             {kind === 'reconciliation' ? <ReconciliationFields form={form} set={set} /> : null}
@@ -694,32 +1072,21 @@ type ProviderCredentialFieldKeys = {
   readonly secretKey: string;
   /** 会话令牌字段（部分服务商无 STS/临时凭证概念，如 Cloudflare R2）。 */
   readonly sessionToken?: string;
-  /** 账号级标识字段（如 Cloudflare R2 的 Account ID，构成端点）。 */
-  readonly accountId?: string;
 };
 
 /**
  * 各服务商访问凭证字段的官方命名（对齐服务商控制台/文档），
  * 映射到统一的 accessKeyId/secretAccessKey/sessionToken/accountId 状态位。
- * local_dev_s3 无访问凭证。
+ * 枚举与 drive 存储管理面（DriveStorageProviderKind）一致。
  */
 const PROVIDER_CREDENTIAL_FIELD_KEYS: Readonly<Record<string, ProviderCredentialFieldKeys | null>> = {
-  aws_s3: { accessKey: 'accessKeyId', secretKey: 'secretAccessKey', sessionToken: 'sessionToken' },
-  cloudflare_r2: { accessKey: 'accessKeyId', secretKey: 'secretAccessKey', accountId: 'accountId' },
   s3_compatible: { accessKey: 'accessKeyId', secretKey: 'secretAccessKey', sessionToken: 'sessionToken' },
-  minio: { accessKey: 'accessKey', secretKey: 'secretKey', sessionToken: 'sessionToken' },
-  oss_s3: { accessKey: 'accessKeyId', secretKey: 'accessKeySecret', sessionToken: 'securityToken' },
-  cos_s3: { accessKey: 'secretId', secretKey: 'secretKey', sessionToken: 'token' },
+  aliyun_oss: { accessKey: 'accessKeyId', secretKey: 'accessKeySecret', sessionToken: 'securityToken' },
+  tencent_cos: { accessKey: 'secretId', secretKey: 'secretKey', sessionToken: 'token' },
   huawei_obs: { accessKey: 'accessKeyId', secretKey: 'secretAccessKey' },
   volcengine_tos: { accessKey: 'accessKeyId', secretKey: 'secretAccessKey', sessionToken: 'sessionToken' },
-  baidu_bos: { accessKey: 'accessKeyId', secretKey: 'secretAccessKey' },
-  qiniu_kodo: { accessKey: 'accessKey', secretKey: 'secretKey' },
-  jdcloud_oss: { accessKey: 'accessKeyId', secretKey: 'secretAccessKey' },
-  local_dev_s3: null,
+  google_cloud_storage: { accessKey: 'accessKeyId', secretKey: 'secretAccessKey' },
 };
-
-/** Cloudflare R2 官方端点模板：由 Account ID 构成。 */
-const R2_ENDPOINT_TEMPLATE = (accountId: string) => `https://${accountId}.r2.cloudflarestorage.com`;
 
 /** 明文访问凭证组装为 drive 兼容的 plain:<accessKeyId>:<secretAccessKey>[:<sessionToken>] 格式。 */
 function buildPlainCredentialRef(accessKeyId: string, secretAccessKey: string, sessionToken: string): string {
@@ -747,9 +1114,6 @@ type ProviderPreset = {
   /** region → 官方端点模板；存在时区域变化自动联动端点（端点处于自动态时）。 */
   readonly endpointTemplate?: (region: string) => string;
   readonly pathStyleEnabled: boolean;
-  readonly supportsMultipart: boolean;
-  readonly supportsLifecycle: boolean;
-  readonly supportsObjectLock: boolean;
   /** 端点输入提示 i18n key（可选）。 */
   readonly endpointHintKey?: string;
 };
@@ -762,15 +1126,15 @@ const OSS_ENDPOINT = (regionCode: string) => `https://oss-${regionCode}.aliyuncs
 const COS_ENDPOINT = (regionCode: string) => `https://cos.${regionCode}.myqcloud.com`;
 const OBS_ENDPOINT = (regionCode: string) => `https://obs.${regionCode}.myhuaweicloud.com`;
 const TOS_ENDPOINT = (regionCode: string) => `https://tos-${regionCode}.volces.com`;
-const BOS_ENDPOINT = (regionCode: string) => `https://${regionCode}.bcebos.com`;
-const KODO_ENDPOINT = (regionCode: string) => `https://s3-${regionCode}.qiniucs.com`;
-const JDOSS_ENDPOINT = (regionCode: string) => `https://s3.${regionCode}.jdcloud-oss.com`;
 
 /** 各服务商预设配置：切换服务商类型时自动填充端点/区域与能力默认值，降低录入错误。 */
 const PROVIDER_PRESETS: Readonly<Record<string, ProviderPreset>> = {
-  aws_s3: {
-    endpointOptions: [],
-    endpointHintKey: 'admin.storage.form.endpointHintAws',
+  s3_compatible: {
+    endpointOptions: [
+      endpoint('http://localhost:9000', 'admin.storage.preset.endpoint.localhost'),
+      endpoint('https://s3.us-east-1.amazonaws.com', 'admin.storage.preset.endpoint.aws'),
+    ],
+    endpointHintKey: 'admin.storage.form.endpointHintS3',
     regionOptions: [
       region('us-east-1'), region('us-east-2'), region('us-west-1'), region('us-west-2'),
       region('ap-northeast-1'), region('ap-southeast-1'), region('ap-southeast-2'), region('ap-south-1'),
@@ -778,33 +1142,8 @@ const PROVIDER_PRESETS: Readonly<Record<string, ProviderPreset>> = {
     ],
     defaultRegion: 'us-east-1',
     pathStyleEnabled: false,
-    supportsMultipart: true,
-    supportsLifecycle: true,
-    supportsObjectLock: true,
   },
-  cloudflare_r2: {
-    endpointOptions: [endpoint('https://{accountId}.r2.cloudflarestorage.com', 'admin.storage.preset.endpoint.r2')],
-    endpointHintKey: 'admin.storage.form.endpointHintR2',
-    regionOptions: [region('auto')],
-    defaultEndpoint: 'https://{accountId}.r2.cloudflarestorage.com',
-    defaultRegion: 'auto',
-    pathStyleEnabled: false,
-    supportsMultipart: true,
-    supportsLifecycle: true,
-    supportsObjectLock: true,
-  },
-  minio: {
-    endpointOptions: [endpoint('http://localhost:9000', 'admin.storage.preset.endpoint.localhost')],
-    endpointHintKey: 'admin.storage.form.endpointHintMinio',
-    regionOptions: [region('us-east-1')],
-    defaultEndpoint: 'http://localhost:9000',
-    defaultRegion: 'us-east-1',
-    pathStyleEnabled: true,
-    supportsMultipart: true,
-    supportsLifecycle: true,
-    supportsObjectLock: true,
-  },
-  oss_s3: {
+  aliyun_oss: {
     endpointOptions: [
       endpoint(OSS_ENDPOINT('cn-hangzhou'), undefined, 'cn-hangzhou'),
       endpoint(OSS_ENDPOINT('cn-shanghai'), undefined, 'cn-shanghai'),
@@ -822,163 +1161,57 @@ const PROVIDER_PRESETS: Readonly<Record<string, ProviderPreset>> = {
     defaultEndpoint: OSS_ENDPOINT('cn-hangzhou'),
     defaultRegion: 'cn-hangzhou',
     pathStyleEnabled: false,
-    supportsMultipart: true,
-    supportsLifecycle: true,
-    supportsObjectLock: true,
   },
-  cos_s3: {
+  tencent_cos: {
     endpointOptions: [
-      endpoint(COS_ENDPOINT('ap-guangzhou'), undefined, 'ap-guangzhou'),
       endpoint(COS_ENDPOINT('ap-shanghai'), undefined, 'ap-shanghai'),
+      endpoint(COS_ENDPOINT('ap-guangzhou'), undefined, 'ap-guangzhou'),
       endpoint(COS_ENDPOINT('ap-beijing'), undefined, 'ap-beijing'),
       endpoint(COS_ENDPOINT('ap-hongkong'), undefined, 'ap-hongkong'),
-      endpoint(COS_ENDPOINT('ap-singapore'), undefined, 'ap-singapore'),
-      endpoint(COS_ENDPOINT('na-siliconvalley'), undefined, 'na-siliconvalley'),
     ],
     regionOptions: [
-      region('ap-guangzhou'), region('ap-shanghai'), region('ap-beijing'), region('ap-hongkong'),
-      region('ap-singapore'), region('na-siliconvalley'),
+      region('ap-shanghai'), region('ap-guangzhou'), region('ap-beijing'), region('ap-hongkong'),
     ],
     endpointTemplate: COS_ENDPOINT,
-    defaultEndpoint: COS_ENDPOINT('ap-guangzhou'),
-    defaultRegion: 'ap-guangzhou',
+    defaultEndpoint: COS_ENDPOINT('ap-shanghai'),
+    defaultRegion: 'ap-shanghai',
     pathStyleEnabled: false,
-    supportsMultipart: true,
-    supportsLifecycle: true,
-    supportsObjectLock: false,
   },
   huawei_obs: {
     endpointOptions: [
       endpoint(OBS_ENDPOINT('cn-north-4'), undefined, 'cn-north-4'),
-      endpoint(OBS_ENDPOINT('cn-north-1'), undefined, 'cn-north-1'),
       endpoint(OBS_ENDPOINT('cn-east-3'), undefined, 'cn-east-3'),
       endpoint(OBS_ENDPOINT('cn-south-1'), undefined, 'cn-south-1'),
-      endpoint(OBS_ENDPOINT('cn-hongkong'), undefined, 'cn-hongkong'),
-      endpoint(OBS_ENDPOINT('ap-southeast-1'), undefined, 'ap-southeast-1'),
     ],
     regionOptions: [
-      region('cn-north-4'), region('cn-north-1'), region('cn-east-3'), region('cn-south-1'),
-      region('cn-hongkong'), region('ap-southeast-1'),
+      region('cn-north-4'), region('cn-east-3'), region('cn-south-1'),
     ],
     endpointTemplate: OBS_ENDPOINT,
     defaultEndpoint: OBS_ENDPOINT('cn-north-4'),
     defaultRegion: 'cn-north-4',
     pathStyleEnabled: false,
-    supportsMultipart: true,
-    supportsLifecycle: true,
-    supportsObjectLock: true,
   },
   volcengine_tos: {
     endpointOptions: [
       endpoint(TOS_ENDPOINT('cn-beijing'), undefined, 'cn-beijing'),
       endpoint(TOS_ENDPOINT('cn-shanghai'), undefined, 'cn-shanghai'),
-      endpoint(TOS_ENDPOINT('cn-guangzhou'), undefined, 'cn-guangzhou'),
-      endpoint(TOS_ENDPOINT('ap-southeast-1'), undefined, 'ap-southeast-1'),
     ],
     regionOptions: [
-      region('cn-beijing'), region('cn-shanghai'), region('cn-guangzhou'), region('ap-southeast-1'),
+      region('cn-beijing'), region('cn-shanghai'),
     ],
     endpointTemplate: TOS_ENDPOINT,
     defaultEndpoint: TOS_ENDPOINT('cn-beijing'),
     defaultRegion: 'cn-beijing',
     pathStyleEnabled: false,
-    supportsMultipart: true,
-    supportsLifecycle: true,
-    supportsObjectLock: false,
-  },
-  baidu_bos: {
-    endpointOptions: [
-      endpoint(BOS_ENDPOINT('bj'), undefined, 'bj'),
-      endpoint(BOS_ENDPOINT('gz'), undefined, 'gz'),
-      endpoint(BOS_ENDPOINT('su'), undefined, 'su'),
-      endpoint(BOS_ENDPOINT('hkg'), undefined, 'hkg'),
-    ],
-    regionOptions: [
-      region('bj'), region('gz'), region('su'), region('hkg'),
-    ],
-    endpointTemplate: BOS_ENDPOINT,
-    defaultEndpoint: BOS_ENDPOINT('bj'),
-    defaultRegion: 'bj',
-    pathStyleEnabled: false,
-    supportsMultipart: true,
-    supportsLifecycle: true,
-    supportsObjectLock: false,
-  },
-  qiniu_kodo: {
-    endpointOptions: [
-      endpoint(KODO_ENDPOINT('cn-east-1'), undefined, 'cn-east-1'),
-      endpoint(KODO_ENDPOINT('cn-north-1'), undefined, 'cn-north-1'),
-      endpoint(KODO_ENDPOINT('cn-south-1'), undefined, 'cn-south-1'),
-    ],
-    regionOptions: [
-      region('cn-east-1'), region('cn-north-1'), region('cn-south-1'),
-    ],
-    endpointTemplate: KODO_ENDPOINT,
-    defaultEndpoint: KODO_ENDPOINT('cn-east-1'),
-    defaultRegion: 'cn-east-1',
-    pathStyleEnabled: true,
-    supportsMultipart: true,
-    supportsLifecycle: true,
-    supportsObjectLock: false,
-  },
-  jdcloud_oss: {
-    endpointOptions: [
-      endpoint(JDOSS_ENDPOINT('cn-north-1'), undefined, 'cn-north-1'),
-      endpoint(JDOSS_ENDPOINT('cn-east-1'), undefined, 'cn-east-1'),
-      endpoint(JDOSS_ENDPOINT('cn-south-1'), undefined, 'cn-south-1'),
-    ],
-    regionOptions: [
-      region('cn-north-1'), region('cn-east-1'), region('cn-south-1'),
-    ],
-    endpointTemplate: JDOSS_ENDPOINT,
-    defaultEndpoint: JDOSS_ENDPOINT('cn-north-1'),
-    defaultRegion: 'cn-north-1',
-    pathStyleEnabled: false,
-    supportsMultipart: true,
-    supportsLifecycle: true,
-    supportsObjectLock: false,
-  },
-  s3_compatible: {
-    endpointOptions: [],
-    endpointHintKey: 'admin.storage.form.endpointHintGeneric',
-    regionOptions: [
-      region('us-east-1'), region('us-west-2'), region('ap-northeast-1'), region('ap-southeast-1'),
-      region('eu-central-1'),
-    ],
-    defaultRegion: 'us-east-1',
-    pathStyleEnabled: false,
-    supportsMultipart: true,
-    supportsLifecycle: true,
-    supportsObjectLock: false,
-  },
-  local_dev_s3: {
-    endpointOptions: [
-      endpoint('http://localhost:9000', 'admin.storage.preset.endpoint.localhost'),
-      endpoint('http://127.0.0.1:9000'),
-    ],
-    regionOptions: [region('us-east-1')],
-    defaultEndpoint: 'http://localhost:9000',
-    defaultRegion: 'us-east-1',
-    pathStyleEnabled: true,
-    supportsMultipart: true,
-    supportsLifecycle: true,
-    supportsObjectLock: false,
   },
 };
 
-/** 预设选项显示文案：labelKey 查 i18n，缺省回退 value。 */
+/**
+ * 预设选项文案：labelKey 优先走 i18n，缺省回退 value。
+ */
 function presetOptionLabel(t: TFunction, option: ProviderPresetOption): string {
   return option.labelKey ? t(option.labelKey, option.value) : option.value;
 }
-
-/** 桶创建/默认桶使用的区域预设（各服务商预设区域并集，auto 除外）。 */
-const BUCKET_REGION_OPTIONS: readonly ProviderPresetOption[] = [
-  region('us-east-1'), region('us-east-2'), region('us-west-1'), region('us-west-2'),
-  region('ap-northeast-1'), region('ap-southeast-1'), region('ap-southeast-2'), region('ap-south-1'),
-  region('eu-central-1'), region('eu-west-1'),
-  region('cn-hangzhou'), region('cn-shanghai'), region('cn-beijing'), region('cn-shenzhen'),
-  region('cn-hongkong'), region('ap-guangzhou'), region('ap-singapore'), region('na-siliconvalley'),
-];
 
 /**
  * 通用异步选项加载：列表接口 → 选项映射，带 loading/empty/error 三态。
@@ -988,7 +1221,7 @@ function useStorageSelectOptions<T>(
   load: () => Promise<{ items: readonly T[] }>,
   mapItem: (item: T) => SelectOption,
   labels: { readonly loading: string; readonly empty: string; readonly error: string },
-): { readonly options: readonly SelectOption[]; readonly status: 'loading' | 'ready' | 'error' } {
+): { readonly items: readonly T[]; readonly options: readonly SelectOption[]; readonly status: 'loading' | 'ready' | 'error' } {
   const [items, setItems] = useState<readonly T[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   useEffect(() => {
@@ -1013,10 +1246,10 @@ function useStorageSelectOptions<T>(
     }
     return items.map(mapItem);
   }, [items, labels.empty, labels.error, labels.loading, mapItem, status]);
-  return { options, status };
+  return { items, options, status };
 }
 
-function ProviderFields({ form, patch, set }: { form: StorageFormState; patch: (values: Partial<StorageFormState>) => void; set: FieldSetter }) {
+function ProviderFields({ editing = false, form, patch, set }: { editing?: boolean; form: StorageFormState; patch: (values: Partial<StorageFormState>) => void; set: FieldSetter }) {
   const { t } = useTranslation();
   const preset = PROVIDER_PRESETS[form.providerType] ?? PROVIDER_PRESETS.s3_compatible;
   const credentialFields = PROVIDER_CREDENTIAL_FIELD_KEYS[form.providerType] ?? PROVIDER_CREDENTIAL_FIELD_KEYS.s3_compatible;
@@ -1040,21 +1273,6 @@ function ProviderFields({ form, patch, set }: { form: StorageFormState; patch: (
       endpointUrl: next.defaultEndpoint ?? '',
       region: next.defaultRegion,
       pathStyleEnabled: next.pathStyleEnabled,
-      supportsMultipart: next.supportsMultipart,
-      supportsLifecycle: next.supportsLifecycle,
-      supportsObjectLock: next.supportsObjectLock,
-    });
-  };
-  const handleAccountIdChange = (accountId: string) => {
-    const cleaned = accountId.trim();
-    const nextEndpoint = cleaned ? R2_ENDPOINT_TEMPLATE(cleaned) : '';
-    const currentEndpoint = form.endpointUrl.trim();
-    const isAutoEndpoint = !currentEndpoint
-      || currentEndpoint === 'https://{accountId}.r2.cloudflarestorage.com'
-      || currentEndpoint === R2_ENDPOINT_TEMPLATE(form.accountId.trim());
-    patch({
-      accountId: cleaned,
-      ...(isAutoEndpoint ? { endpointUrl: nextEndpoint } : {}),
     });
   };
   /** 区域变化 → 端点联动：端点为空或仍为自动生成值时，按官方模板更新。 */
@@ -1078,7 +1296,7 @@ function ProviderFields({ form, patch, set }: { form: StorageFormState; patch: (
   };
   return <>
     <TextField label={t('admin.storage.form.providerName', 'Provider name')} required value={form.providerName} onChange={(value) => set('providerName', value)} />
-    <SelectField label={t('admin.storage.form.providerType', 'Provider type')} value={form.providerType} onChange={(value) => applyProviderPreset(value as StorageFormState['providerType'])} options={storageSelectOptions(t, 'providerType', ['s3_compatible', 'aws_s3', 'cloudflare_r2', 'minio', 'oss_s3', 'cos_s3', 'huawei_obs', 'volcengine_tos', 'baidu_bos', 'qiniu_kodo', 'jdcloud_oss', 'local_dev_s3'])} />
+    <SelectField label={t('admin.storage.form.providerType', 'Provider type')} value={form.providerType} onChange={(value) => applyProviderPreset(value as StorageFormState['providerType'])} options={storageSelectOptions(t, 'providerType', ['s3_compatible', 'aliyun_oss', 'tencent_cos', 'huawei_obs', 'volcengine_tos', 'google_cloud_storage'])} />
     <PrefillSelectField
       label={t('admin.storage.form.region', 'Region')}
       options={regionOptions}
@@ -1099,6 +1317,7 @@ function ProviderFields({ form, patch, set }: { form: StorageFormState; patch: (
       value={form.endpointUrl}
       onChange={handleEndpointChange}
     />
+    <TextField label={t('admin.storage.form.bucketName', 'Bucket name')} required value={form.bucketName} onChange={(value) => set('bucketName', value)} />
     <SelectField label={t('admin.storage.form.credentialMode', 'Credential mode')} value={form.credentialMode} onChange={(value) => set('credentialMode', value as StorageFormState['credentialMode'])} options={[
       { value: 'plain', label: t('admin.storage.form.credentialModePlain', 'Access keys') },
       { value: 'reference', label: t('admin.storage.form.credentialModeReference', 'Managed reference') },
@@ -1109,86 +1328,35 @@ function ProviderFields({ form, patch, set }: { form: StorageFormState; patch: (
       </div>
     ) : form.credentialMode === 'plain' ? (
       <>
-        <TextField autoComplete="new-password" label={credentialLabel(credentialFields.accessKey)} required type="password" value={form.accessKeyId} onChange={(value) => set('accessKeyId', value)} />
-        <TextField autoComplete="new-password" label={credentialLabel(credentialFields.secretKey)} required type="password" value={form.secretAccessKey} onChange={(value) => set('secretAccessKey', value)} />
-        {credentialFields.accountId ? (
-          <TextField
-            autoComplete="off"
-            description={credentialFields.accountId === 'accountId' ? t('admin.storage.form.accountIdDesc', 'Your Cloudflare account ID. The R2 endpoint is generated from it automatically.') : undefined}
-            label={credentialLabel(credentialFields.accountId)}
-            required
-            value={form.accountId}
-            onChange={handleAccountIdChange}
-          />
-        ) : null}
+        <TextField autoComplete="new-password" label={credentialLabel(credentialFields.accessKey)} required={!editing} type="password" value={form.accessKeyId} onChange={(value) => set('accessKeyId', value)} />
+        <TextField autoComplete="new-password" label={credentialLabel(credentialFields.secretKey)} required={!editing} type="password" value={form.secretAccessKey} onChange={(value) => set('secretAccessKey', value)} />
         {credentialFields.sessionToken ? (
           <TextField autoComplete="new-password" label={credentialLabel(credentialFields.sessionToken)} type="password" value={form.sessionToken} onChange={(value) => set('sessionToken', value)} />
         ) : null}
         <div className="md:col-span-2 text-xs text-slate-500 dark:text-slate-400">
-          {t('admin.storage.form.plainCredentialDesc', 'Field names follow the provider console. Credentials are submitted as a plain:<accessKeyId>:<secretAccessKey>[:<sessionToken>] string and are never rendered back.')}
+          {editing
+            ? t('admin.storage.form.plainCredentialEditDesc', 'Field names follow the provider console. Leave all key fields empty to keep the current credentials; filling them replaces the stored credentials. Credentials are never rendered back.')
+            : t('admin.storage.form.plainCredentialDesc', 'Field names follow the provider console. Credentials are submitted as a plain:<accessKeyId>:<secretAccessKey>[:<sessionToken>] string and are never rendered back.')}
         </div>
       </>
     ) : (
-      <div className="md:col-span-2"><TextField description={t('admin.storage.form.credentialRefDesc', 'Use a vault/KMS/secret reference such as vault:<ref>, kms:<ref>, secret:<ref>, or env:<ref>.')} label={t('admin.storage.form.credentialRef', 'Credential reference')} required value={form.credentialRef} onChange={(value) => set('credentialRef', value)} /></div>
+      <div className="md:col-span-2"><TextField description={t('admin.storage.form.credentialRefDesc', 'Use a vault/KMS/secret reference such as vault:<ref>, kms:<ref>, secret:<ref>, or env:<ref>.')} label={t('admin.storage.form.credentialRef', 'Credential reference')} required={!editing} value={form.credentialRef} onChange={(value) => set('credentialRef', value)} /></div>
     )}
+    {editing ? (
+      <>
+        <SelectField label={t('admin.storage.form.providerStatus', 'Status')} value={form.providerStatus} onChange={(value) => set('providerStatus', value)} options={storageSelectOptions(t, 'status', ['active', 'disabled'])} />
+      </>
+    ) : null}
     <ToggleField checked={form.pathStyleEnabled} label={t('admin.storage.form.pathStyle', 'Path-style access')} onChange={(value) => set('pathStyleEnabled', value)} />
-    <ToggleField checked={form.supportsMultipart} label={t('admin.storage.form.multipart', 'Multipart uploads')} onChange={(value) => set('supportsMultipart', value)} />
-    <ToggleField checked={form.supportsLifecycle} label={t('admin.storage.form.lifecycle', 'Lifecycle policies')} onChange={(value) => set('supportsLifecycle', value)} />
-    <ToggleField checked={form.supportsObjectLock} label={t('admin.storage.form.objectLock', 'Object Lock')} onChange={(value) => set('supportsObjectLock', value)} />
-  </>;
-}
-
-function BucketFields({ form, set }: { form: StorageFormState; set: FieldSetter }) {
-  const { t } = useTranslation();
-  const providerSelect = useStorageSelectOptions(
-    backendStorageProvidersList,
-    (provider) => ({ value: provider.id, label: provider.name || provider.providerCode }),
-    {
-      loading: t('admin.storage.form.providerLoading', 'Loading providers...'),
-      empty: t('admin.storage.form.providerEmpty', 'No providers available yet. Create one in Storage Providers first.'),
-      error: t('admin.storage.form.providerError', 'Providers could not be loaded.'),
-    },
-  );
-  const bucketRegionOptions = BUCKET_REGION_OPTIONS.map((option) => ({
-    value: option.value,
-    label: presetOptionLabel(t, option),
-  }));
-
-  return <>
-    <TextField label={t('admin.storage.form.bucketName', 'Bucket name')} required value={form.bucketName} onChange={(value) => set('bucketName', value)} />
-    <SelectField
-      disabled={providerSelect.status !== 'ready' || providerSelect.options.length === 0}
-      label={t('admin.storage.form.providerId', 'Provider ID')}
-      options={providerSelect.options}
-      required
-      value={form.providerId}
-      onChange={(value) => set('providerId', value)}
-    />
-    <SelectField label={t('admin.storage.form.logicalScope', 'Logical scope')} value={form.logicalScope} onChange={(value) => set('logicalScope', value as StorageFormState['logicalScope'])} options={storageSelectOptions(t, 'logicalScope', ['tenant_private', 'tenant_public_asset', 'system_temp', 'system_variant', 'system_archive', 'system_quarantine', 'migration_import'])} />
-    <PrefillSelectField
-      label={t('admin.storage.form.bucketRegion', 'Bucket region')}
-      options={bucketRegionOptions}
-      placeholder={t('admin.storage.form.regionPlaceholder', 'Select a preset region or type a custom region')}
-      value={form.bucketRegion}
-      onChange={(value) => set('bucketRegion', value)}
-    />
-    <TextField label={t('admin.storage.form.dataResidencyRegion', 'Data residency region')} value={form.dataResidencyRegion} onChange={(value) => set('dataResidencyRegion', value)} />
-    <TextField label={t('admin.storage.form.objectKeyPrefix', 'Object key prefix')} value={form.objectKeyPrefix} onChange={(value) => set('objectKeyPrefix', value)} />
-    <SelectField label={t('admin.storage.form.storageClass', 'Storage class')} value={form.defaultStorageClass} onChange={(value) => set('defaultStorageClass', value as StorageFormState['defaultStorageClass'])} options={storageSelectOptions(t, 'storageClass', ['STANDARD', 'INTELLIGENT_TIERING', 'STANDARD_IA', 'ONEZONE_IA', 'GLACIER_IR', 'GLACIER', 'DEEP_ARCHIVE'])} />
-    <SelectField label={t('admin.storage.form.encryption', 'Encryption')} value={form.defaultEncryptionMode} onChange={(value) => set('defaultEncryptionMode', value as StorageFormState['defaultEncryptionMode'])} options={storageSelectOptions(t, 'encryption', ['sse_s3', 'sse_kms', 'none'])} />
-    {form.defaultEncryptionMode === 'sse_kms' ? <div className="md:col-span-2"><TextField label={t('admin.storage.form.kmsKeyRef', 'KMS key reference')} required value={form.kmsKeyRef} onChange={(value) => set('kmsKeyRef', value)} /></div> : null}
-    <ToggleField checked={form.versioningEnabled} label={t('admin.storage.form.versioning', 'Versioning')} onChange={(value) => set('versioningEnabled', value)} />
-    <ToggleField checked={form.objectLockEnabled} label={t('admin.storage.form.objectLock', 'Object Lock')} onChange={(value) => set('objectLockEnabled', value)} />
-    <ToggleField checked={form.lifecycleEnabled} label={t('admin.storage.form.lifecycle', 'Lifecycle policies')} onChange={(value) => set('lifecycleEnabled', value)} />
-    <ToggleField checked={form.publicAccessBlocked} label={t('admin.storage.form.publicAccess', 'Block public access')} onChange={(value) => set('publicAccessBlocked', value)} />
+    <ToggleField checked={form.strictTlsEnabled} label={t('admin.storage.form.strictTls', 'Strict TLS')} onChange={(value) => set('strictTlsEnabled', value)} />
   </>;
 }
 
 function DefaultBucketFields({ form, set }: { form: StorageFormState; set: FieldSetter }) {
   const { t } = useTranslation();
   const bucketSelect = useStorageSelectOptions(
-    backendStorageBucketsList,
-    (bucket) => ({ value: bucket.id, label: `${bucket.bucketName} · ${bucket.providerCode}` }),
+    () => backendStorageProvidersList().then((items) => ({ items })),
+    (provider) => ({ value: provider.id, label: `${provider.displayName} · ${provider.bucket}` }),
     {
       loading: t('admin.storage.form.bucketLoading', 'Loading buckets...'),
       empty: t('admin.storage.form.bucketEmpty', 'No buckets available yet. Create one first.'),
@@ -1223,8 +1391,8 @@ function QuotaFields({ form, set }: { form: StorageFormState; set: FieldSetter }
 function ReconciliationFields({ form, set }: { form: StorageFormState; set: FieldSetter }) {
   const { t } = useTranslation();
   const providerSelect = useStorageSelectOptions(
-    backendStorageProvidersList,
-    (provider) => ({ value: provider.id, label: provider.name || provider.providerCode }),
+    () => backendStorageProvidersList().then((items) => ({ items })),
+    (provider) => ({ value: provider.id, label: provider.displayName }),
     {
       loading: t('admin.storage.form.providerLoading', 'Loading providers...'),
       empty: t('admin.storage.form.providerEmpty', 'No providers available yet. Create one in Storage Providers first.'),
@@ -1232,8 +1400,8 @@ function ReconciliationFields({ form, set }: { form: StorageFormState; set: Fiel
     },
   );
   const bucketSelect = useStorageSelectOptions(
-    backendStorageBucketsList,
-    (bucket) => ({ value: bucket.id, label: `${bucket.bucketName} · ${bucket.providerCode}` }),
+    () => backendStorageProvidersList().then((items) => ({ items })),
+    (provider) => ({ value: provider.id, label: `${provider.displayName} · ${provider.bucket}` }),
     {
       loading: t('admin.storage.form.bucketLoading', 'Loading buckets...'),
       empty: t('admin.storage.form.bucketEmpty', 'No buckets available yet. Create one first.'),
@@ -1261,8 +1429,18 @@ function GarbageCollectionFields({ form, set }: { form: StorageFormState; set: F
   </>;
 }
 
+/** 字段标签：必填时追加红色星号（aria-hidden，语义由输入控件 required 属性提供）。 */
+function FieldLabel({ children, required }: { children: string; required?: boolean }) {
+  return (
+    <span>
+      {children}
+      {required ? <span aria-hidden="true" className="ml-0.5 font-bold text-red-500">*</span> : null}
+    </span>
+  );
+}
+
 function TextField({ description, label, onChange, ...props }: { description?: string; label: string; onChange: (value: string) => void } & Omit<InputHTMLAttributes<HTMLInputElement>, 'className' | 'onChange'>) {
-  return <label className="block text-sm font-medium text-slate-700 dark:text-slate-200"><span>{label}</span><input {...props} className="mt-1.5 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white" onChange={(event) => onChange(event.target.value)} />{description ? <span className="mt-1 block text-xs font-normal text-slate-500">{description}</span> : null}</label>;
+  return <label className="block text-sm font-medium text-slate-700 dark:text-slate-200"><FieldLabel required={props.required}>{label}</FieldLabel><input {...props} className="mt-1.5 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white" onChange={(event) => onChange(event.target.value)} />{description ? <span className="mt-1 block text-xs font-normal text-slate-500">{description}</span> : null}</label>;
 }
 
 /**
@@ -1310,7 +1488,7 @@ function PrefillSelectField({ description, label, onChange, options, placeholder
 
   return (
     <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-      <span>{label}</span>
+      <FieldLabel required={required}>{label}</FieldLabel>
       <div ref={wrapperRef} className="relative mt-1.5">
         <input
           ref={inputRef}
@@ -1377,41 +1555,59 @@ function PrefillSelectField({ description, label, onChange, options, placeholder
   );
 }
 
-function TextAreaField({ label, onChange, value }: { label: string; onChange: (value: string) => void; value: string }) {
-  return <label className="block text-sm font-medium text-slate-700 dark:text-slate-200"><span>{label}</span><textarea className="mt-1.5 min-h-24 w-full rounded-md border border-slate-200 bg-white px-3 py-2 font-mono text-sm text-slate-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white" onChange={(event) => onChange(event.target.value)} value={value} /></label>;
+function TextAreaField({ label, onChange, required = false, value }: { label: string; onChange: (value: string) => void; required?: boolean; value: string }) {
+  return <label className="block text-sm font-medium text-slate-700 dark:text-slate-200"><FieldLabel required={required}>{label}</FieldLabel><textarea className="mt-1.5 min-h-24 w-full rounded-md border border-slate-200 bg-white px-3 py-2 font-mono text-sm text-slate-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white" onChange={(event) => onChange(event.target.value)} value={value} /></label>;
 }
 
 function SelectField({ disabled = false, label, onChange, options, required = false, value }: { disabled?: boolean; label: string; onChange: (value: string) => void; options: readonly (string | SelectOption)[]; required?: boolean; value: string }) {
-  return <label className="block text-sm font-medium text-slate-700 dark:text-slate-200"><span>{label}</span><select className="mt-1.5 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-[#202020] dark:text-white" disabled={disabled} onChange={(event) => onChange(event.target.value)} required={required} value={value}>{options.map((option) => { const normalized = typeof option === 'string' ? { value: option, label: option } : option; return <option disabled={normalized.disabled ?? false} key={normalized.value} value={normalized.value}>{normalized.label}</option>; })}</select></label>;
+  return <label className="block text-sm font-medium text-slate-700 dark:text-slate-200"><FieldLabel required={required}>{label}</FieldLabel><select className="mt-1.5 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-[#202020] dark:text-white" disabled={disabled} onChange={(event) => onChange(event.target.value)} required={required} value={value}>{options.map((option) => { const normalized = typeof option === 'string' ? { value: option, label: option } : option; return <option disabled={normalized.disabled ?? false} key={normalized.value} value={normalized.value}>{normalized.label}</option>; })}</select></label>;
 }
 
-function ToggleField({ checked, label, onChange }: { checked: boolean; label: string; onChange: (value: boolean) => void }) {
-  return <label className="flex min-h-10 items-center justify-between gap-3 rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 dark:border-white/10 dark:text-slate-200"><span>{label}</span><input checked={checked} className="h-4 w-4 accent-blue-600" onChange={(event) => onChange(event.target.checked)} type="checkbox" /></label>;
+function ToggleField({ checked, disabled = false, label, onChange }: { checked: boolean; disabled?: boolean; label: string; onChange: (value: boolean) => void }) {
+  return <label className="flex min-h-10 items-center justify-between gap-3 rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 dark:border-white/10 dark:text-slate-200"><span>{label}</span><input checked={checked} className="h-4 w-4 accent-blue-600 disabled:cursor-not-allowed disabled:opacity-50" disabled={disabled} onChange={(event) => onChange(event.target.checked)} type="checkbox" /></label>;
 }
 
-async function submitStorageForm(kind: StorageDialogKind, form: StorageFormState): Promise<unknown> {
+async function submitStorageForm(
+  kind: StorageDialogKind,
+  form: StorageFormState,
+  editingProvider: AdminResourceRecord | null,
+): Promise<unknown> {
   if (kind === 'providers') {
-    const credentialRef = form.providerType === 'local_dev_s3'
-      ? 'local:'
-      : form.credentialMode === 'plain'
-        ? buildPlainCredentialRef(form.accessKeyId, form.secretAccessKey, form.sessionToken)
-        : form.credentialRef.trim();
+    const credentialRef = form.credentialMode === 'plain'
+      ? buildPlainCredentialRef(form.accessKeyId, form.secretAccessKey, form.sessionToken)
+      : form.credentialRef.trim();
+    if (editingProvider) {
+      const providerId = readRecordId(editingProvider);
+      const body: StorageProviderUpdateInput = {
+        status: form.providerStatus,
+        name: form.providerName.trim(),
+        endpointUrl: optionalText(form.endpointUrl),
+        region: optionalText(form.region),
+        bucket: optionalText(form.bucketName),
+        pathStyle: form.pathStyleEnabled,
+        strictTls: form.strictTlsEnabled,
+      };
+      // 凭证更新策略：访问密钥模式仅当 Access Key / Secret Key 都填写时才更换凭证
+      // （防止只填一项或全空时把现有凭证覆盖成坏值）；托管引用模式填写新引用则覆盖。
+      if (form.credentialMode === 'plain') {
+        if (form.accessKeyId.trim() && form.secretAccessKey.trim()) {
+          body.credentialRef = buildPlainCredentialRef(form.accessKeyId, form.secretAccessKey, form.sessionToken);
+        }
+      } else if (form.credentialRef.trim()) {
+        body.credentialRef = form.credentialRef.trim();
+      }
+      return backendStorageProviderUpdate(providerId, body);
+    }
     return backendStorageProviderCreate({
-      name: form.providerName.trim(), providerType: form.providerType,
-      endpointUrl: optionalText(form.endpointUrl), region: optionalText(form.region),
-      credentialRef, pathStyleEnabled: form.pathStyleEnabled,
-      supportsMultipart: form.supportsMultipart, supportsLifecycle: form.supportsLifecycle,
-      supportsObjectLock: form.supportsObjectLock,
-    });
-  }
-  if (kind === 'buckets') {
-    return backendStorageBucketCreate({
-      bucketName: form.bucketName.trim(), providerId: form.providerId.trim(), logicalScope: form.logicalScope,
-      bucketRegion: optionalText(form.bucketRegion), dataResidencyRegion: optionalText(form.dataResidencyRegion),
-      objectKeyPrefix: optionalText(form.objectKeyPrefix), defaultStorageClass: form.defaultStorageClass,
-      defaultEncryptionMode: form.defaultEncryptionMode, kmsKeyRef: optionalText(form.kmsKeyRef),
-      versioningEnabled: form.versioningEnabled, objectLockEnabled: form.objectLockEnabled,
-      lifecycleEnabled: form.lifecycleEnabled, publicAccessBlocked: form.publicAccessBlocked,
+      id: generateProviderId(form.providerType),
+      providerKind: form.providerType,
+      name: form.providerName.trim(),
+      endpointUrl: form.endpointUrl.trim(),
+      region: optionalText(form.region),
+      bucket: form.bucketName.trim(),
+      pathStyle: form.pathStyleEnabled,
+      strictTls: form.strictTlsEnabled,
+      credentialRef,
     });
   }
   if (kind === 'defaultBuckets') {
@@ -1438,6 +1634,15 @@ async function submitStorageForm(kind: StorageDialogKind, form: StorageFormState
   });
 }
 
+/** drive provider id 生成：kind 前缀 + 随机后缀（与 drive 管理端 providerId 工具同构）。 */
+function generateProviderId(providerKind: string): string {
+  const prefix = providerKind.startsWith('custom:')
+    ? providerKind.replace(/[^a-z0-9_-]/g, '').slice(0, 24)
+    : providerKind.replace(/[^a-z0-9_-]/g, '').slice(0, 24);
+  const random = Math.random().toString(36).slice(2, 10);
+  return `${prefix || 'provider'}-${random}-${Date.now().toString(36)}`;
+}
+
 function resolveStorageSectionId(value: string | undefined): StorageAdminSectionId {
   return SECTION_IDS.includes(value as StorageAdminSectionId) ? value as StorageAdminSectionId : 'providers';
 }
@@ -1448,7 +1653,7 @@ function createAction(label: string, onClick: () => void) {
 
 function dialogTitle(kind: StorageDialogKind, t: ReturnType<typeof useTranslation>['t']): string {
   const titles: Record<StorageDialogKind, string> = {
-    providers: t('admin.storage.providers.add', 'Add provider'), buckets: t('admin.storage.buckets.add', 'Add bucket'),
+    providers: t('admin.storage.providers.add', 'Add provider'),
     defaultBuckets: t('admin.storage.defaultBuckets.set', 'Set default bucket'), quotas: t('admin.storage.quotas.add', 'Add quota'),
     reconciliation: t('admin.storage.reconciliation.run', 'Start reconciliation'), garbageCollection: t('admin.storage.gc.add', 'Create garbage collection job'),
   };

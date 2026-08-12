@@ -145,11 +145,7 @@ async fn fetch_usage_logs(
 
     match state
         .read_store
-        .load_usage_logs(
-            validated_query.query,
-            subject,
-            locale.as_deref(),
-        )
+        .load_usage_logs(validated_query.query, subject, locale.as_deref())
         .await
     {
         Ok(page) => json_success_list_response(

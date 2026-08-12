@@ -20,7 +20,7 @@ import { createClientOperationToken } from '@sdkwork/cloudroutes-pc-commons/idem
 import type {
   CreateRefundCommand,
   RetryRefundCommand,
-} from '@sdkwork/payment-backend-sdk';
+} from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import { backendPaymentsIntentsList } from '../paymentsService';
 import {
   DialogFieldLabel as FieldLabel,

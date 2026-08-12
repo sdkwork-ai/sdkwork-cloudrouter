@@ -7,11 +7,10 @@ use std::collections::BTreeMap;
 use std::fmt::{Display, Formatter};
 
 use crate::domain::{
-    parse_model_catalog_identity, provider_native_model_id, BillingMeter, DomainError,
+    has_text, parse_model_catalog_identity, provider_native_model_id, BillingMeter, DomainError,
     DomainResult, GatewayApiKeyAccountGroupBinding, ModelUpstreamRoute, RouteCandidate,
     RoutingCapability, RoutingPolicy, RoutingPolicyScope, RoutingRule, UpstreamAccountGroup,
     UpstreamAccountGroupBinding, UpstreamAccountRoute,
-    has_text,
 };
 use crate::ports::UpstreamAccountRouteCatalog;
 
@@ -222,12 +221,14 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             }
         }
 
-        Err(last_pricing_unavailable.or(last_unavailable).unwrap_or_else(|| {
-            UpstreamRouteSelectionError::upstream_route_unavailable(format!(
-                "upstream route is not available for model: {}",
-                query.catalog_key
-            ))
-        }))
+        Err(last_pricing_unavailable
+            .or(last_unavailable)
+            .unwrap_or_else(|| {
+                UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                    "upstream route is not available for model: {}",
+                    query.catalog_key
+                ))
+            }))
     }
 
     fn select_model_route_plan_for_context(
@@ -282,10 +283,12 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             .cloned()
             .collect::<Vec<_>>();
         if supporting_account_routes.is_empty() {
-            return Err(UpstreamRouteSelectionError::upstream_route_unavailable(format!(
-                "no upstream account in account group {} supports model {} for api {}",
-                query.context.group_code, query.catalog_key, query.api_code
-            )));
+            return Err(UpstreamRouteSelectionError::upstream_route_unavailable(
+                format!(
+                    "no upstream account in account group {} supports model {} for api {}",
+                    query.context.group_code, query.catalog_key, query.api_code
+                ),
+            ));
         }
 
         let policy_scopes = self.select_policy_scopes(&query.context);
@@ -392,10 +395,12 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             .cloned()
             .collect::<Vec<_>>();
         if supporting_account_routes.is_empty() {
-            return Err(UpstreamRouteSelectionError::upstream_route_unavailable(format!(
-                "no upstream account in account group {} supports api resource {}",
-                query.context.group_code, query.api_code
-            )));
+            return Err(UpstreamRouteSelectionError::upstream_route_unavailable(
+                format!(
+                    "no upstream account in account group {} supports api resource {}",
+                    query.context.group_code, query.api_code
+                ),
+            ));
         }
 
         let policy_scopes = self.select_policy_scopes(&query.context);
@@ -1302,7 +1307,6 @@ fn same_tenant(policy: &RoutingPolicy, context: &AuthenticatedApiKeyContext) -> 
     policy.tenant_id == context.tenant_id
 }
 
-
 fn normalized_text_or(value: &str, fallback: &str) -> String {
     let value = value.trim();
     if value.is_empty() {
@@ -1624,7 +1628,11 @@ fn resource_entitlement_matches_api_request(
     {
         constrained = true;
         let matches = parse_model_catalog_identity(&query.route_key)
-            .map(|identity| identity.vendor_code.eq_ignore_ascii_case(vendor_code.trim()))
+            .map(|identity| {
+                identity
+                    .vendor_code
+                    .eq_ignore_ascii_case(vendor_code.trim())
+            })
             .unwrap_or(false);
         if !matches {
             return false;

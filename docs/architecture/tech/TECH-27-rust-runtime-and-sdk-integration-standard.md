@@ -127,13 +127,10 @@ timeouts. High-cardinality provider data is excluded from metric labels. Route
 and pricing snapshots use shared immutable memory rather than per-request
 catalog allocation.
 
-Payment provider callbacks are signed public ingress and must not use
-`app_request_subject_boundary`. `PaymentWebhookConfig` requires
-`SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET`, enforces
-`SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_MAX_CLOCK_SKEW_SECONDS`, and fails closed because
-unsigned payment callbacks are forbidden. Payment callback amounts must be
-parsed as exact decimal values; binary floating-point comparison is forbidden
-and sub-cent callback precision must be rejected.
+Payment provider notifications are owned by the order gateway
+(sdkwork-order: `POST /app/v3/api/orders/payments/webhooks/{providerCode}` and
+`POST /app/v3/api/orders/refunds/webhooks/{providerCode}`); cloudrouter serves
+no payment webhook ingress and must not mount provider callback paths.
 
 ## 9. Deployment Profiles
 

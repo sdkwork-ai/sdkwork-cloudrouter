@@ -10,7 +10,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
-import type { Refund } from '@sdkwork/payment-backend-sdk';
+import type { Refund } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import { backendPaymentRefundsRetrieve } from '../paymentsService';
 import { formatRefundAmount, translateEnumValue } from '../forms/RefundDialogs';
 import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';

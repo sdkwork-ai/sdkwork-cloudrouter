@@ -31,7 +31,6 @@ mod gateway_usage_recorder;
 mod loader;
 pub(crate) mod model_catalog_import;
 mod openai_invocation_telemetry_plugin;
-mod payment_callback_store;
 mod payment_intent_runtime_store;
 mod payment_provider_route_resolver;
 mod payment_reconciliation_runtime_store;
@@ -40,9 +39,9 @@ mod row_mapping;
 mod runtime_region_settings_store;
 mod settings_store;
 mod site_settings_store;
+mod upstream_credential_rotation_store;
 mod usage_logs_read_store;
 mod usage_retention_store;
-mod upstream_credential_rotation_store;
 mod usage_settlement_store;
 
 pub use admin_announcement_store::PostgresAdminAnnouncementStore;
@@ -77,7 +76,6 @@ pub use gateway_chain_policy_store::PostgresGatewayChainPolicyStore;
 pub use gateway_usage_recorder::PostgresGatewayUsageRecorder;
 pub use loader::PostgresPricingCatalogLoader;
 pub use openai_invocation_telemetry_plugin::PostgresOpenAiInvocationTelemetryPlugin;
-pub use payment_callback_store::PostgresPaymentCallbackStore;
 pub use payment_intent_runtime_store::PostgresPaymentIntentRuntimeStore;
 pub use payment_provider_route_resolver::{
     payment_provider_route_resolver_for_postgres, PostgresPaymentProviderRouteResolver,
@@ -87,7 +85,7 @@ pub use routing_decision_log_recorder::PostgresRoutingDecisionLogRecorder;
 pub use runtime_region_settings_store::PostgresRuntimeRegionSettingsStore;
 pub use settings_store::PostgresSettingsStore;
 pub use site_settings_store::PostgresSiteSettingsStore;
+pub use upstream_credential_rotation_store::PostgresUpstreamCredentialRotationStore;
 pub use usage_logs_read_store::PostgresUsageLogsReadStore;
 pub use usage_retention_store::PostgresUsageRetentionStore;
-pub use upstream_credential_rotation_store::PostgresUpstreamCredentialRotationStore;
 pub use usage_settlement_store::PostgresUsageSettlementStore;

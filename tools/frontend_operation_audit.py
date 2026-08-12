@@ -136,6 +136,7 @@ class FrontendOperationAudit:
     )
     MEMORY_DEPENDENCY_DOMAINS = frozenset({"memory"})
     MEMORY_APP_SDK_PATTERN = re.compile(r"\bgetSdkworkMemoryAppSdkClient\s*\(")
+    DRIVE_ADMIN_STORAGE_SDK_PATTERN = re.compile(r"\bgetStorageProviderAdminService\s*\(")
     MEMORY_CLIENT_PATTERN = re.compile(r"\bclient\s*\.\s*memory\s*\.")
     NOTIFICATION_DEPENDENCY_DOMAINS = frozenset({"notification"})
     NOTIFICATION_SERVICE_PATTERN = re.compile(r"\bcreatePortalNotificationService\s*\(")
@@ -564,6 +565,7 @@ class FrontendOperationAudit:
                     or self.GENERATIONS_SERVICE_PATTERN.search(source_text) is not None
                     or self.GENERATIONS_SERVICE_TYPE_PATTERN.search(source_text) is not None
                     or self.MEMORY_APP_SDK_PATTERN.search(source_text) is not None
+                    or self.DRIVE_ADMIN_STORAGE_SDK_PATTERN.search(source_text) is not None
                     or self.COMPOSED_COMMERCE_SDK_PATTERN.search(source_text) is not None
                 )
             ):

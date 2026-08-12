@@ -1,6 +1,4 @@
-use sdkwork_cloudrouter_config::{
-    ApiKeySecurityConfig, AppSessionConfig, PaymentWebhookConfig, TrustedSubjectConfig,
-};
+use sdkwork_cloudrouter_config::{ApiKeySecurityConfig, AppSessionConfig, TrustedSubjectConfig};
 use sdkwork_cloudrouter_http::{
     sign_app_session_token, sign_trusted_request_subject, TrustedRequestSubject,
 };
@@ -9,7 +7,6 @@ pub const API_KEY_PEPPER: &str = "0123456789abcdef0123456789abcdef";
 pub const GATEWAY_API_KEY: &str = "sk-live-test-gateway";
 pub const TRUSTED_SUBJECT_SECRET: &str = "trusted-subject-secret-0123456789abcdef";
 pub const APP_SESSION_SECRET: &str = "app-session-secret-0123456789abcdef012";
-pub const PAYMENT_WEBHOOK_SECRET: &str = "payment-webhook-secret-0123456789abcdef";
 
 /// Mirrors `sdkwork-iam-module-registry::bootstrap_subject` canonical bootstrap scope.
 pub const DEFAULT_TENANT_ID: i64 = 100_001;
@@ -31,10 +28,6 @@ pub fn trusted_subject_config() -> anyhow::Result<TrustedSubjectConfig> {
 
 pub fn app_session_config() -> anyhow::Result<AppSessionConfig> {
     AppSessionConfig::from_signing_secret(APP_SESSION_SECRET).map_err(anyhow::Error::msg)
-}
-
-pub fn payment_webhook_config() -> anyhow::Result<PaymentWebhookConfig> {
-    PaymentWebhookConfig::from_signing_secret(PAYMENT_WEBHOOK_SECRET).map_err(anyhow::Error::msg)
 }
 
 pub fn trusted_request_subject(
@@ -190,4 +183,19 @@ mod tests {
         assert!(headers.get("x-sdkwork-organization-id").is_none());
         assert!(headers.get("x-sdkwork-user-id").is_none());
     }
+}
+
+/// Account-domain ledger append port backed by the concrete commerce account
+/// repository on the shared pool (test composition layer).
+///
+/// Service crates must depend on service ports only; the concrete repository
+/// is injected at runtime. This helper keeps that boundary intact for e2e
+/// tests: they receive `Arc<dyn AccountLedgerAppendPort>` without naming the
+/// repository crate themselves.
+pub fn postgres_account_ledger_append_port(
+    pool: sqlx::PgPool,
+) -> std::sync::Arc<dyn sdkwork_account_service::AccountLedgerAppendPort + Send + Sync> {
+    std::sync::Arc::new(
+        sdkwork_account_repository_sqlx::PostgresCommerceAccountStore::new(pool),
+    )
 }

@@ -25,7 +25,7 @@ export function CloudRouterTokenPlanSurface() {
   const { NotifyOutlet, onNotify } = useTokenPlanNotify();
 
   return (
-    <div className="mx-auto w-full max-w-7xl" data-token-plan-surface>
+    <div className="mx-auto w-full max-w-7xl px-4 py-10 md:px-6 lg:px-8" data-token-plan-surface>
       <SdkworkSubscriptionCatalogPage
         components={{
           ...sdkworkSubscriptionCatalogHostComponents,

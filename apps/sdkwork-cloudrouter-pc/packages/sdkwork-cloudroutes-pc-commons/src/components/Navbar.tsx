@@ -151,6 +151,7 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
     { name: t('nav.sdk'), href: '/sdk-reference', showFrom: '2xl' as const },
     { name: t('nav.playground', 'Playground'), href: '/playground' },
     { name: t('nav.tokenPlan', 'Token Plan'), href: '/token-plan', showFrom: '2xl' as const },
+    { name: t('nav.partnerJoin', 'Partner Program'), href: '/partner-join' },
   ];
 
   const navLinkVisibilityClass = (showFrom?: 'xl' | '2xl') => {

@@ -375,16 +375,10 @@ const LazyIamOauthOfficialAccountsAdmin = lazy(async () => {
   return {
     default: function CloudRouterIamOauthOfficialAccountsAdminContent() {
       const service = useIamAdminService();
-      const navigate = useNavigate();
       const controller = useMemo(() => createSdkworkIamOauthAdminController(service), [service]);
-      return (
-        <SdkworkIamOauthOfficialAccountsPage
-          controller={controller}
-          onOpenCustomMenu={(resourceAccountId) => {
-            navigate(`/admin/iam/oauth/official-accounts/${encodeURIComponent(resourceAccountId)}/custom-menus`);
-          }}
-        />
-      );
+      // The custom menu manager opens as a full-screen modal inside the page;
+      // the dedicated route below remains for deep links.
+      return <SdkworkIamOauthOfficialAccountsPage controller={controller} />;
     },
   };
 });

@@ -1,8 +1,4 @@
 export {
-  SdkworkBackendClient as SdkworkDriveBackendClient,
-} from '@sdkwork/drive-backend-sdk';
-
-export {
   SdkworkAppClient as SdkworkGenerationsAppSdkClient,
   type SdkworkAppConfig as SdkworkGenerationsAppSdkConfig,
 } from '@sdkwork/generations-app-sdk';

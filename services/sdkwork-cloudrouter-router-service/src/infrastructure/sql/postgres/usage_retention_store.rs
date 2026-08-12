@@ -54,9 +54,7 @@ impl UsageRetentionStore for PostgresUsageRetentionStore {
             .bind(command.retention_days)
             .execute(&self.pool)
             .await
-            .map_err(|error| {
-                store_error("failed to backfill usage retention_until", error)
-            })?;
+            .map_err(|error| store_error("failed to backfill usage retention_until", error))?;
 
             let mut deleted_usage_facts: i64 = 0;
             loop {
@@ -107,9 +105,7 @@ impl UsageRetentionStore for PostgresUsageRetentionStore {
             .bind(command.retention_days)
             .execute(&self.pool)
             .await
-            .map_err(|error| {
-                store_error("failed to backfill trace retention_until", error)
-            })?;
+            .map_err(|error| store_error("failed to backfill trace retention_until", error))?;
             loop {
                 let trace_result = sqlx::query(
                     r#"

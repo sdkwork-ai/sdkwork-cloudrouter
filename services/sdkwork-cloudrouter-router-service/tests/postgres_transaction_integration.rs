@@ -1,13 +1,8 @@
 use std::env;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
-    PostgresGatewayUsageRecorder, PostgresPaymentCallbackStore,
-};
-use sdkwork_cloudrouter_router_service::ports::{
-    GatewayUsageRecordCommand, GatewayUsageRecorder, PaymentCallbackCommand, PaymentCallbackStatus,
-    PaymentCallbackStore,
-};
+use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::PostgresGatewayUsageRecorder;
+use sdkwork_cloudrouter_router_service::ports::{GatewayUsageRecordCommand, GatewayUsageRecorder};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{PgPool, Row};
 
@@ -15,99 +10,6 @@ const POSTGRES_TEST_DATABASE_URL: &str = "SDKWORK_DATABASE_URL";
 const ACCOUNT_BASELINE: &str = include_str!(
     "../../../../sdkwork-account/database/ddl/baseline/postgres/0001_account_baseline.sql"
 );
-
-#[tokio::test]
-async fn postgres_payment_callback_concurrent_first_account_creation_credits_one_account() {
-    let Some(ctx) = PostgresTestContext::new("payment_callback").await else {
-        return;
-    };
-    seed_pending_recharge_payment(&ctx.pool, "pg-order-1", "10.00", 100).await;
-    seed_pending_recharge_payment(&ctx.pool, "pg-order-2", "20.00", 200).await;
-
-    let store_a = PostgresPaymentCallbackStore::new(ctx.pool.clone());
-    let store_b = store_a.clone();
-    let first = async move {
-        store_a
-            .process_payment_callback(success_command(
-                "pg-evt-1",
-                "pg-nonce-1",
-                "pg-order-1",
-                "pg-txn-1",
-                Some("10.00"),
-            ))
-            .await
-    };
-    let second = async move {
-        store_b
-            .process_payment_callback(success_command(
-                "pg-evt-2",
-                "pg-nonce-2",
-                "pg-order-2",
-                "pg-txn-2",
-                Some("20.00"),
-            ))
-            .await
-    };
-
-    let (first, second) = tokio::join!(first, second);
-    let first = first.unwrap();
-    let second = second.unwrap();
-    let mut balances = [first.balance, second.balance];
-    balances.sort();
-
-    assert_eq!([100, 300], balances);
-    assert_eq!(300, first.credited_points + second.credited_points);
-    assert_eq!(
-        1,
-        scalar_i64(
-            &ctx.pool,
-            "SELECT COUNT(1) FROM acct_account WHERE tenant_id = 10 AND organization_id = 20 AND owner_type = 'USER' AND owner_id = 30 AND asset_code = 'points' AND currency_code = 'POINT' AND account_purpose = 'GENERAL'"
-        )
-        .await
-    );
-    assert_eq!(
-        300,
-        scalar_i64(
-            &ctx.pool,
-            "SELECT available_amount FROM acct_account WHERE tenant_id = 10 AND organization_id = 20 AND owner_type = 'USER' AND owner_id = 30 AND asset_code = 'points' AND currency_code = 'POINT' AND account_purpose = 'GENERAL'"
-        )
-        .await
-    );
-    assert_eq!(
-        2,
-        scalar_i64(
-            &ctx.pool,
-            "SELECT COUNT(1) FROM acct_ledger_entry WHERE business_type = 'points_recharge' AND direction = 'CREDIT'"
-        )
-        .await
-    );
-    assert_eq!(
-        2,
-        scalar_i64(
-            &ctx.pool,
-            "SELECT COUNT(1) FROM commerce_payment_attempt WHERE status = 'succeeded'"
-        )
-        .await
-    );
-    assert_eq!(
-        2,
-        scalar_i64(
-            &ctx.pool,
-            "SELECT COUNT(1) FROM commerce_payment_intent WHERE status = 'succeeded'"
-        )
-        .await
-    );
-    assert_eq!(
-        2,
-        scalar_i64(
-            &ctx.pool,
-            "SELECT COUNT(1) FROM commerce_order WHERE status = 'paid'"
-        )
-        .await
-    );
-
-    ctx.cleanup().await;
-}
 
 #[tokio::test]
 async fn postgres_gateway_usage_recorder_preserves_non_pending_usage_fact_on_duplicate_request_id()
@@ -527,90 +429,6 @@ async fn create_schema(pool: &PgPool) {
     }
 }
 
-async fn seed_pending_recharge_payment(
-    pool: &PgPool,
-    out_trade_no: &str,
-    amount: &str,
-    point_amount: i64,
-) {
-    let order_id = format!("order-entity-{out_trade_no}");
-    let payment_intent_id = format!("payment-intent-{out_trade_no}");
-    sqlx::query(
-        r#"
-        INSERT INTO commerce_order
-            (id, tenant_id, organization_id, owner_user_id, order_no, status, subject, currency_code, request_no, idempotency_key, created_at, paid_at, cancelled_at, expired_at, updated_at)
-        VALUES
-            ($1, '10', '20', '30', $2, 'pending_payment', 'points_recharge', 'CNY', $3, $4, '2026-04-29 00:00:00', NULL, NULL, NULL, '2026-04-29 00:00:00')
-        "#,
-    )
-    .bind(&order_id)
-    .bind(out_trade_no)
-    .bind(format!("request-{out_trade_no}"))
-    .bind(format!("idem-{out_trade_no}"))
-    .execute(pool)
-    .await
-    .unwrap();
-    sqlx::query(
-        r#"
-        INSERT INTO commerce_payment_intent
-            (id, tenant_id, organization_id, owner_user_id, order_id, provider, amount, currency_code, status, request_no, idempotency_key, created_at, updated_at)
-        VALUES
-            ($1, '10', '20', '30', $2, 'stripe', $3, 'CNY', 'pending', $4, $5, '2026-04-29 00:00:00', '2026-04-29 00:00:00')
-        "#,
-    )
-    .bind(&payment_intent_id)
-    .bind(&order_id)
-    .bind(amount)
-    .bind(format!("payment-request-{out_trade_no}"))
-    .bind(format!("payment-idem-{out_trade_no}"))
-    .execute(pool)
-    .await
-    .unwrap();
-    sqlx::query(
-        r#"
-        INSERT INTO commerce_payment_attempt
-            (id, tenant_id, organization_id, owner_user_id, payment_intent_id, order_id, provider_code, out_trade_no, amount, currency_code, status, callback_payload, created_at, paid_at, updated_at)
-        VALUES
-            ($1, '10', '20', '30', $2, $3, 'stripe', $4, $5, 'CNY', 'pending', $6, '2026-04-29 00:00:00', NULL, '2026-04-29 00:00:00')
-        "#,
-    )
-    .bind(format!("payment-attempt-{out_trade_no}"))
-    .bind(&payment_intent_id)
-    .bind(&order_id)
-    .bind(out_trade_no)
-    .bind(amount)
-    .bind(format!(r#"{{"points":{point_amount}}}"#))
-    .execute(pool)
-    .await
-    .unwrap();
-}
-
-fn success_command(
-    event_id: &str,
-    nonce: &str,
-    out_trade_no: &str,
-    transaction_id: &str,
-    amount: Option<&str>,
-) -> PaymentCallbackCommand {
-    PaymentCallbackCommand {
-        supplier_code: "stripe".to_owned(),
-        event_uuid: format!("{event_id}-uuid"),
-        delivery_uuid: format!("{event_id}-delivery"),
-        account_uuid: format!("{event_id}-account"),
-        account_history_uuid: format!("{event_id}-history"),
-        event_id: event_id.to_owned(),
-        nonce: nonce.to_owned(),
-        signature: Some(format!("{event_id}-signature")),
-        request_timestamp: Some(1_777_440_000),
-        payload_digest: format!("{event_id}-digest"),
-        out_trade_no: out_trade_no.to_owned(),
-        transaction_id: transaction_id.to_owned(),
-        amount: amount.map(ToOwned::to_owned),
-        status: PaymentCallbackStatus::Success,
-        received_at: "2026-04-29 00:00:00".to_owned(),
-    }
-}
-
 fn usage_command(request_id: &str, http_status: u16) -> GatewayUsageRecordCommand {
     GatewayUsageRecordCommand {
         request_id: request_id.to_owned(),
@@ -667,15 +485,6 @@ fn usage_command(request_id: &str, http_status: u16) -> GatewayUsageRecordComman
         pricing_plan_code: "standard".to_owned(),
         pricing_snapshot: r#"{"vendor":{"code":"openai"},"model":{"catalogKey":"openai/gpt-4o-mini"},"provider":{"code":"openrouter"},"pricingPlan":{"code":"standard"},"multipliers":{"rate":"1.000000","reference":"1.320000"},"meters":{"input":{"customerUnitPrice":"0.198000"},"output":{"customerUnitPrice":"0.792000"},"cacheRead":{"customerUnitPrice":"0.099000"}}}"#.to_owned(),
     }
-}
-
-async fn scalar_i64(pool: &PgPool, sql: &'static str) -> i64 {
-    sqlx::query(sql)
-        .fetch_one(pool)
-        .await
-        .unwrap()
-        .try_get::<i64, _>(0)
-        .unwrap()
 }
 
 fn unique_schema_name(label: &str) -> String {

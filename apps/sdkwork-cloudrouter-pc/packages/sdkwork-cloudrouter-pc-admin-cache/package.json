@@ -12,7 +12,7 @@
     "@sdkwork/cloudroutes-pc-commons": "workspace:*"
   },
   "devDependencies": {
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.10"
   },
   "publishConfig": {
     "access": "public",

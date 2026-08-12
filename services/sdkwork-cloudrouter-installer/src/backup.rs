@@ -79,7 +79,7 @@ impl PostgresTarget {
     }
 
     fn pg_args(&self) -> Vec<String> {
-        let mut args = vec![
+        vec![
             "-h".to_owned(),
             self.host.clone(),
             "-p".to_owned(),
@@ -88,8 +88,7 @@ impl PostgresTarget {
             self.username.clone(),
             "-d".to_owned(),
             self.database.clone(),
-        ];
-        args
+        ]
     }
 
     fn apply_password(&self, command: &mut Command) {
@@ -170,7 +169,7 @@ pub async fn run_backup(
     // 2. Durable data volume (backup output directory excluded to avoid
     //    recursive self-capture; other backups under the volume are kept).
     //    GNU tar: options must precede the file arguments.
-    let mut tar_args = vec![
+    let tar_args = vec![
         "-czf".to_owned(),
         output.display().to_string(),
         // Exclude the backups directory at any depth: the output file lives

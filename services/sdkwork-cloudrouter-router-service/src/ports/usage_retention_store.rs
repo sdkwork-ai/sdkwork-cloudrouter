@@ -3,7 +3,8 @@ use std::pin::Pin;
 
 use crate::domain::DomainResult;
 
-pub type UsageRetentionFuture<'a> = Pin<Box<dyn Future<Output = DomainResult<UsageRetentionOutcome>> + Send + 'a>>;
+pub type UsageRetentionFuture<'a> =
+    Pin<Box<dyn Future<Output = DomainResult<UsageRetentionOutcome>> + Send + 'a>>;
 
 /// Command for deleting settled metering facts older than the retention
 /// window. Pending/failed/terminally-failed facts are intentionally excluded:

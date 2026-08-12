@@ -102,6 +102,14 @@ pub struct PaymentCreateIntentRequest {
     pub merchant_order_no: Option<String>,
     pub amount_minor: Option<i64>,
     pub currency: Option<String>,
+    /// Effective notify URL resolved at intent creation (order-provided
+    /// override or deployment standard URL). Providers call this URL on
+    /// asynchronous payment results; adapters prefer it over their
+    /// per-account config value.
+    pub notify_url: Option<String>,
+    /// Optional synchronous return URL for providers that support a payer
+    /// redirect-back surface (e.g. Alipay page pay).
+    pub return_url: Option<String>,
     pub metadata: Value,
 }
 

@@ -3,7 +3,6 @@ pub mod app_session;
 pub mod database;
 pub mod deployment;
 pub mod internal_gateway;
-pub mod payment_webhook;
 pub mod provider_adapter;
 pub mod provider_relay;
 pub mod provider_secret_map;
@@ -26,7 +25,6 @@ pub use deployment::{
     DeploymentRuntime, RuntimeTarget, DEFAULT_REGION_CODE, ENV_REGION_CODE,
 };
 pub use internal_gateway::InternalGatewaySecurityConfig;
-pub use payment_webhook::PaymentWebhookConfig;
 pub use provider_adapter::{ProviderAdapterConfig, ProviderAdapterManifestDiscoveryConfig};
 pub use provider_relay::{
     OpenAiRelayConfig, ProviderPassthroughAuth, ProviderPassthroughAuthType,

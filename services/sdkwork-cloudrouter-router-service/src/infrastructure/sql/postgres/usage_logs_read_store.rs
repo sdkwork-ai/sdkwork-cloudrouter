@@ -160,8 +160,6 @@ ORDER BY t.started_at DESC NULLS LAST, t.id DESC
 LIMIT $8 OFFSET $9
 "#;
 
-
-
 pub struct PostgresUsageLogsReadStore {
     pool: PgPool,
 }
@@ -214,7 +212,6 @@ impl UsageLogsReadStore for PostgresUsageLogsReadStore {
         })
     }
 }
-
 
 fn row_to_usage_log(row: sqlx::postgres::PgRow) -> Result<UsageLogItem, DomainError> {
     Ok(UsageLogItem {

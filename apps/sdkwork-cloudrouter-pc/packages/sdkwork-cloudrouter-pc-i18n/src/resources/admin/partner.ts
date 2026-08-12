@@ -16,6 +16,7 @@ export const adminPartnerMessages = {
     'admin.partner.menu.withdrawals': 'Withdrawals',
     'admin.partner.menu.stats': 'Stats',
     'admin.partner.menu.auditLogs': 'Audit Log',
+    'admin.partner.menu.applications': 'Join Applications',
     'admin.menu.partner.governance': 'Governance',
   },
   zh: {
@@ -35,6 +36,7 @@ export const adminPartnerMessages = {
     'admin.partner.menu.withdrawals': '提现管理',
     'admin.partner.menu.stats': '业绩统计',
     'admin.partner.menu.auditLogs': '操作审计',
+    'admin.partner.menu.applications': '伙伴计划申请',
     'admin.menu.partner.governance': '治理与审计',
   },
 };

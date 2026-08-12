@@ -20,7 +20,14 @@ const AUTH_BASE_PATH = '/auth';
 const AUTH_LOGIN_PATH = '/auth/login';
 const DEFAULT_AUTHENTICATED_HOME_PATH = '/admin';
 
-export const PROTECTED_PORTAL_ROUTE_PREFIXES = ['/console', '/admin', '/playground', '/c'] as const;
+export const PROTECTED_PORTAL_ROUTE_PREFIXES = [
+  '/console',
+  '/admin',
+  '/playground',
+  '/c',
+  '/partner-join/apply',
+  '/partner-join/status',
+] as const;
 
 export function isProtectedPortalPath(pathname: string): boolean {
   const normalized = normalizePortalPathname(pathname);

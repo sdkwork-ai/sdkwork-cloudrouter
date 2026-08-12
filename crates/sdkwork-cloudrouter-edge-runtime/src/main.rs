@@ -47,9 +47,8 @@ async fn main() -> anyhow::Result<()> {
                 "cloud router license is invalid or expired; running community edition",
             ),
         }
-        edge_config = edge_config.with_portal_license_edition(
-            Some(license.edition().as_str().to_owned()),
-        );
+        edge_config =
+            edge_config.with_portal_license_edition(Some(license.edition().as_str().to_owned()));
         sdkwork_cloudrouter_edge_runtime::serve_edge_server_with_runtime_config(
             config.bind_addr(),
             edge_config,

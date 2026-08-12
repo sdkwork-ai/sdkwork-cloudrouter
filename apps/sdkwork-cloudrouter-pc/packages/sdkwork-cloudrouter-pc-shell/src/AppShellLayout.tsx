@@ -21,6 +21,8 @@ export type AppShellLayoutProps = AppShellRouteProps & {
   Playground: ComponentType;
   TokenPlan: ComponentType;
   navbarAuthenticatedActionsStart?: ReactNode;
+  /** Host-owned extra portal routes rendered inside the shell layout. */
+  extraRoutes?: ReactNode;
 };
 
 export function ScrollToTop() {
@@ -46,7 +48,7 @@ export function RouteFallback() {
 }
 
 const PORTAL_HOST_OFFSET_ROUTE_PATTERN =
-  /^\/(?:product-docs|docs|api-reference|token-plan)(?:\/|$)/;
+  /^\/(?:product-docs|docs|api-reference|token-plan|partner-join)(?:\/|$)/;
 
 export function AppShellLayout({
   isDark,
@@ -62,6 +64,7 @@ export function AppShellLayout({
   Playground,
   TokenPlan,
   navbarAuthenticatedActionsStart,
+  extraRoutes,
 }: AppShellLayoutProps) {
   const location = useLocation();
   const { t } = useTranslation();
@@ -104,6 +107,7 @@ export function AppShellLayout({
           <Route path="/playground/*" element={<Playground />} />
           <Route path="/c/:conversationId" element={<Playground />} />
           <Route path="/token-plan" element={<TokenPlan />} />
+          {extraRoutes}
         </Routes>
       </div>
       {!isPlayground && <Footer />}

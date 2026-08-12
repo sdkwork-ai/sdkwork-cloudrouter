@@ -43,11 +43,19 @@ pub fn cloud_router_app_composed_route_manifest() -> HttpRouteManifest {
     let mut routes = owned.routes().to_vec();
     let mut seen: BTreeSet<(String, String)> = routes
         .iter()
-        .map(|route| (method_label(route.method).to_owned(), normalized_path(route.path)))
+        .map(|route| {
+            (
+                method_label(route.method).to_owned(),
+                normalized_path(route.path),
+            )
+        })
         .collect();
     for manifest in capability_manifests() {
         for route in manifest.routes() {
-            let identity = (method_label(route.method).to_owned(), normalized_path(route.path));
+            let identity = (
+                method_label(route.method).to_owned(),
+                normalized_path(route.path),
+            );
             if !seen.insert(identity) {
                 panic!(
                     "composed app-surface route collision for {} {}: capability manifest \

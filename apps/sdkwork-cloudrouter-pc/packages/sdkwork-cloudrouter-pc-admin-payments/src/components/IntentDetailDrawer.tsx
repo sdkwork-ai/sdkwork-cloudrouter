@@ -9,7 +9,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
-import type { PaymentIntent } from '@sdkwork/payment-backend-sdk';
+import type { PaymentIntent } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import { backendPaymentIntentsRetrieve } from '../paymentsService';
 import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 

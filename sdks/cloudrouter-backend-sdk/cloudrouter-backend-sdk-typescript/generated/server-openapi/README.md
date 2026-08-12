@@ -100,7 +100,7 @@ const result = await client.recharges.settings.retrieve();
 ### storage
 
 ```typescript
-// Backend storage buckets list
+// Backend storage default buckets list
 const params = {
   cursor: 'cursor',
   page_size: 2,
@@ -110,7 +110,7 @@ const params = {
   scope_id: 'scope_id',
   run_type: 'run_type',
 };
-const result = await client.storage.oss.buckets.list(params);
+const result = await client.storage.defaultBuckets.list(params);
 ```
 
 ### system

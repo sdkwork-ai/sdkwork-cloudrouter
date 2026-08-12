@@ -5,7 +5,8 @@ use crate::application::{
     PaymentIntentStatus, PaymentOperationAttemptRecord, PaymentRefundAttemptRecord,
     PaymentRefundEventRecord, PaymentRefundItemRecord, PaymentRefundRuntimeRecord,
     PaymentRefundRuntimeStore, PaymentRefundRuntimeStoreFuture, PaymentRefundStatus,
-    PaymentRouteDecisionRecord,
+    PaymentRouteDecisionRecord, PAYMENT_NOTIFY_BUSINESS_ORDER,
+    PAYMENT_NOTIFY_BUSINESS_TYPE_PAYLOAD_KEY,
 };
 use crate::domain::{DomainError, DomainResult};
 
@@ -233,7 +234,7 @@ async fn insert_payment_intent(
     .bind(intent.status.as_str())
     .bind(&intent.merchant_order_no)
     .bind(&intent.idempotency_key)
-    .bind("{}")
+    .bind(payment_intent_metadata(&intent))
     .bind("0.00")
     .bind("0.00")
     .bind(&intent.created_at)
@@ -246,7 +247,7 @@ async fn insert_payment_intent(
         INSERT INTO commerce_payment_attempt
             (id, tenant_id, organization_id, owner_user_id, payment_intent_id, order_id, provider, out_trade_no, amount, currency_code, status, callback_payload, created_at, paid_at, updated_at)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NULL, $12, NULL, $13)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NULL, $14)
         "#,
     )
     .bind(&route_decision.payment_attempt_id)
@@ -260,6 +261,7 @@ async fn insert_payment_intent(
     .bind(&intent.amount)
     .bind(&intent.currency_code)
     .bind(intent.status.as_str())
+    .bind(payment_attempt_callback_payload(&intent))
     .bind(&intent.created_at)
     .bind(&intent.updated_at)
     .execute(&mut *tx)
@@ -294,6 +296,26 @@ async fn insert_payment_intent(
         .await
         .map_err(|error| store_error("failed to commit payment intent transaction", error))?;
     Ok(intent)
+}
+
+/// Standard `commerce_payment_intent.metadata_json` payload. The business
+/// type is the canonical notify dispatch key; keeping it in the intent JSON
+/// makes the payment fact self-describing without a dedicated column.
+fn payment_intent_metadata(intent: &PaymentIntentRuntimeRecord) -> String {
+    serde_json::json!({
+        PAYMENT_NOTIFY_BUSINESS_TYPE_PAYLOAD_KEY: intent.business_type,
+    })
+    .to_string()
+}
+
+/// Standard `commerce_payment_attempt.callback_payload` payload. The notify
+/// pipeline reads `businessType` from this JSON text to dispatch the callback
+/// to the business handler registered for the type.
+fn payment_attempt_callback_payload(intent: &PaymentIntentRuntimeRecord) -> String {
+    serde_json::json!({
+        PAYMENT_NOTIFY_BUSINESS_TYPE_PAYLOAD_KEY: intent.business_type,
+    })
+    .to_string()
 }
 
 async fn insert_operation_attempt(
@@ -692,6 +714,10 @@ fn intent_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<PaymentIntentRun
         amount: string_cell(row, "amount"),
         currency_code: string_cell(row, "currency_code"),
         subject: string_cell(row, "subject"),
+        // Reloaded intents serve operational flows (confirm/capture/cancel)
+        // that never re-dispatch business fulfillment, so the canonical
+        // dispatch key defaults to the plain order business.
+        business_type: PAYMENT_NOTIFY_BUSINESS_ORDER.to_owned(),
         supplier_code: string_cell(row, "supplier_code"),
         payment_method: string_cell(row, "payment_method"),
         scene: string_cell(row, "scene_code"),

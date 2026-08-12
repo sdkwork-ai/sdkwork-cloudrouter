@@ -12,6 +12,13 @@ use crate::application::{
 };
 use crate::domain::{DomainError, DomainResult};
 
+/// Canonical notify business type for a plain order payment (the default
+/// when no explicit business type is declared at intent creation).
+pub const PAYMENT_NOTIFY_BUSINESS_ORDER: &str = "order";
+/// Standard `metadata_json`/`callback_payload` JSON key carrying the business
+/// type declared at payment intent creation time.
+pub const PAYMENT_NOTIFY_BUSINESS_TYPE_PAYLOAD_KEY: &str = "businessType";
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PaymentIntentStatus {
     RequiresConfirmation,
@@ -44,6 +51,15 @@ pub struct RuntimeCreatePaymentIntentCommand {
     pub amount: String,
     pub currency_code: String,
     pub subject: String,
+    /// Canonical notify business type (defaults to `order`). The value is
+    /// persisted on the payment attempt so the notify pipeline dispatches the
+    /// callback to the matching business handler.
+    pub business_type: Option<String>,
+    /// Explicit notify URL override. When absent, the deployment standard
+    /// notify URL (or the provider account metadata) is used.
+    pub notify_url: Option<String>,
+    /// Optional synchronous return URL override (Alipay page pay).
+    pub return_url: Option<String>,
     pub supplier_code: String,
     pub payment_method: Option<String>,
     pub scene: Option<String>,
@@ -88,6 +104,10 @@ pub struct PaymentIntentRuntimeRecord {
     pub amount: String,
     pub currency_code: String,
     pub subject: String,
+    /// Canonical notify business type. Persisted at creation for the callback
+    /// dispatch; reloaded records default to the plain `order` type because
+    /// operational flows never re-dispatch business fulfillment.
+    pub business_type: String,
     pub supplier_code: String,
     pub payment_method: String,
     pub scene: String,
@@ -104,6 +124,10 @@ pub struct PaymentIntentRuntimeRecord {
 pub struct PaymentIntentCreationResult {
     pub intent: PaymentIntentRuntimeRecord,
     pub provider_outcome: Option<PaymentProviderOperationOutcome>,
+    /// Effective notify URL registered with the provider for this intent
+    /// (explicit override or the deployment standard URL). Echoed so order
+    /// placement observes exactly what the provider will call back on.
+    pub notify_url: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -212,11 +236,15 @@ where
         command: RuntimeCreatePaymentIntentCommand,
     ) -> DomainResult<PaymentIntentCreationResult> {
         validate_create_command(&command)?;
+        let business_type = validate_business_type(command.business_type.as_deref())?;
         let adapter = self
             .provider_registry
             .resolve(&command.supplier_code)
             .map_err(registry_error)?;
         let supplier_code = adapter.capabilities().supplier_code.to_owned();
+        // The notify URL is resolved by the order gateway at checkout (or by
+        // the client explicitly); the intent runtime only passes it through.
+        let notify_url = command.notify_url.clone();
 
         if let Some(existing) = self
             .store
@@ -226,6 +254,7 @@ where
             return Ok(PaymentIntentCreationResult {
                 intent: existing,
                 provider_outcome: None,
+                notify_url,
             });
         }
 
@@ -246,6 +275,7 @@ where
             amount: command.amount.clone(),
             currency_code: command.currency_code.clone(),
             subject: command.subject.clone(),
+            business_type: business_type.clone(),
             supplier_code: supplier_code.clone(),
             payment_method: payment_method.clone(),
             scene: scene.clone(),
@@ -293,6 +323,8 @@ where
                     merchant_order_no: Some(command.merchant_order_no.clone()),
                     amount_minor: decimal_amount_to_minor(&command.amount),
                     currency: Some(command.currency_code.clone()),
+                    notify_url: notify_url.clone(),
+                    return_url: command.return_url.clone(),
                     metadata: serde_json::json!({
                         "description": command.subject.clone(),
                         "subject": command.subject.clone(),
@@ -340,6 +372,7 @@ where
         Ok(PaymentIntentCreationResult {
             intent,
             provider_outcome,
+            notify_url,
         })
     }
 
@@ -829,6 +862,35 @@ impl PaymentAdapterOperation {
             Self::ParseStatement => "parse_statement",
             Self::InvokeNativeOperation => "invoke_native_operation",
         }
+    }
+}
+
+/// Resolves the canonical notify business type from the create command.
+/// Business types must be lowercase snake-case tokens (`^[a-z][a-z0-9_]{0,63}$`)
+/// so they stay safe as JSON keys, URL segments, and registry keys. Absent
+/// values default to the plain `order` business; invalid values are rejected
+/// so business fulfillment can never be silently mis-routed.
+fn validate_business_type(business_type: Option<&str>) -> DomainResult<String> {
+    let Some(business_type) = business_type
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    else {
+        return Ok(PAYMENT_NOTIFY_BUSINESS_ORDER.to_owned());
+    };
+    let valid = business_type.len() <= 64
+        && business_type
+            .chars()
+            .next()
+            .is_some_and(|character| character.is_ascii_lowercase())
+        && business_type.chars().all(|character| {
+            character.is_ascii_lowercase() || character.is_ascii_digit() || character == '_'
+        });
+    if valid {
+        Ok(business_type.to_owned())
+    } else {
+        Err(DomainError::new(
+            "payment business_type must match ^[a-z][a-z0-9_]{0,63}$",
+        ))
     }
 }
 

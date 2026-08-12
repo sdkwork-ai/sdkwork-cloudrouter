@@ -67,8 +67,7 @@ impl InvocationInterceptor for DispatchExecutor {
                     }
                     return Ok(());
                 }
-                DispatchMode::DirectHttpPassthrough
-                | DispatchMode::InternalProviderAdapter => {}
+                DispatchMode::DirectHttpPassthrough | DispatchMode::InternalProviderAdapter => {}
             }
 
             let candidates = invocation

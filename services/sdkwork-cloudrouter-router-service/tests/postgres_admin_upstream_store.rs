@@ -482,7 +482,10 @@ async fn postgres_upstream_store_creates_initial_credential_atomically_with_acco
     assert_eq!(1, credentials.total);
     assert_eq!("primary", credentials.items[0].credential_name);
     assert_eq!("api-key", credentials.items[0].auth_method_code);
-    assert_eq!(Some("sk-a****cret".to_owned()), credentials.items[0].masked_label);
+    assert_eq!(
+        Some("sk-a****cret".to_owned()),
+        credentials.items[0].masked_label
+    );
 
     let without_key = store
         .save_account(SaveAdminUpstreamAccountCommand {
@@ -743,7 +746,8 @@ async fn postgres_upstream_store_account_resources_scope_runtime_routes() {
     assert_ne!(serde_json::json!(["__deny__"]), bindings[0]["apiScope"]);
 
     // 场景 2：账号绑定与分组匹配 → 交集生效，版本与配置版本递增
-    let config_before = routing_config_version(&context.pool, subject.tenant_id, subject.organization_id).await;
+    let config_before =
+        routing_config_version(&context.pool, subject.tenant_id, subject.organization_id).await;
     let replaced = store
         .replace_account_resources(
             subject.clone(),
@@ -957,7 +961,10 @@ async fn postgres_upstream_store_enforces_single_default_account_group() {
         )
         .await;
     let delete_error = delete_result.expect_err("deleting the default group must fail");
-    assert!(delete_error.is_conflict(), "default group deletion must conflict");
+    assert!(
+        delete_error.is_conflict(),
+        "default group deletion must conflict"
+    );
 
     store
         .delete_account_group(

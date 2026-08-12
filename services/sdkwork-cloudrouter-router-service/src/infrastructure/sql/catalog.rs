@@ -4,11 +4,11 @@ use std::sync::Arc;
 use arc_swap::ArcSwap;
 
 use crate::domain::{
-    AiModel, BillingMeter, DecimalValue, DomainResult, GatewayAccessPolicy, GatewayApiKey,
-    GatewayRiskRule, ModelMappingRule, ModelPrice, ModelUpstreamRoute, ModelVendorDefinition,
-    Money, PriceSide, PricingPlan, QuotaPolicy, ResolveModelMappingContext, RoutingPolicy,
-    RoutingRule, UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot, UpstreamAccountRoute,
-    has_text,
+    has_text, AiModel, BillingMeter, DecimalValue, DomainResult, GatewayAccessPolicy,
+    GatewayApiKey, GatewayRiskRule, ModelMappingRule, ModelPrice, ModelUpstreamRoute,
+    ModelVendorDefinition, Money, PriceSide, PricingPlan, QuotaPolicy, ResolveModelMappingContext,
+    RoutingPolicy, RoutingRule, UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot,
+    UpstreamAccountRoute,
 };
 use crate::infrastructure::in_memory_pricing_catalog::resolve_model_mapping_from_rules;
 use crate::infrastructure::sql::rows::{
@@ -870,7 +870,6 @@ fn scope_specificity(
     }
     None
 }
-
 
 fn option_matches(actual: Option<&str>, expected: Option<&str>) -> bool {
     match expected {

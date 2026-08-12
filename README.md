@@ -982,7 +982,6 @@ data_directory = "/var/lib/sdkwork/router"
 [request_limits]
 admin_app_json_body_max_bytes = 131072
 admin_skill_json_body_max_bytes = 65536
-payment_callback_body_max_bytes = 65536
 gateway_invocation_body_max_bytes = 1048576
 
 [install]

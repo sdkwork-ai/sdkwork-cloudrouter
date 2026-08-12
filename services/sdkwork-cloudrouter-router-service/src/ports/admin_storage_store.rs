@@ -53,68 +53,6 @@ pub struct AdminStorageCollection {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CreateStorageProviderCommand {
-    pub subject: AdminStorageSubject,
-    pub supplier_code: String,
-    pub name: String,
-    pub provider_type: String,
-    pub endpoint_url: Option<String>,
-    pub region: Option<String>,
-    pub credential_ref: String,
-    pub path_style_enabled: Option<bool>,
-    pub supports_multipart: Option<bool>,
-    pub supports_lifecycle: Option<bool>,
-    pub supports_object_lock: Option<bool>,
-    pub idempotency_key: String,
-    pub request_id: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct UpdateStorageProviderCommand {
-    pub subject: AdminStorageSubject,
-    pub provider_id: String,
-    pub status: String,
-    pub reason: String,
-    pub request_id: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CheckStorageProviderHealthCommand {
-    pub subject: AdminStorageSubject,
-    pub provider_id: String,
-    pub request_id: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CreateStorageBucketCommand {
-    pub subject: AdminStorageSubject,
-    pub bucket_name: String,
-    pub provider_id: String,
-    pub logical_scope: String,
-    pub bucket_region: Option<String>,
-    pub data_residency_region: Option<String>,
-    pub object_key_prefix: Option<String>,
-    pub default_storage_class: Option<String>,
-    pub default_encryption_mode: Option<String>,
-    pub kms_key_ref: Option<String>,
-    pub versioning_enabled: Option<bool>,
-    pub object_lock_enabled: Option<bool>,
-    pub lifecycle_enabled: Option<bool>,
-    pub public_access_blocked: Option<bool>,
-    pub idempotency_key: String,
-    pub request_id: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct UpdateStorageBucketCommand {
-    pub subject: AdminStorageSubject,
-    pub bucket_id: String,
-    pub status: String,
-    pub reason: String,
-    pub request_id: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SetStorageDefaultBucketCommand {
     pub subject: AdminStorageSubject,
     pub logical_scope: String,
@@ -161,41 +99,6 @@ pub struct CreateStorageGarbageCollectionJobCommand {
 }
 
 pub trait AdminStorageStore {
-    fn list_providers<'a>(
-        &'a self,
-        query: ListAdminStorageRecordsQuery,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageCollection>;
-
-    fn create_provider<'a>(
-        &'a self,
-        command: CreateStorageProviderCommand,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord>;
-
-    fn update_provider<'a>(
-        &'a self,
-        command: UpdateStorageProviderCommand,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord>;
-
-    fn check_provider_health<'a>(
-        &'a self,
-        command: CheckStorageProviderHealthCommand,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord>;
-
-    fn list_buckets<'a>(
-        &'a self,
-        query: ListAdminStorageRecordsQuery,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageCollection>;
-
-    fn create_bucket<'a>(
-        &'a self,
-        command: CreateStorageBucketCommand,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord>;
-
-    fn update_bucket<'a>(
-        &'a self,
-        command: UpdateStorageBucketCommand,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord>;
-
     fn list_default_buckets<'a>(
         &'a self,
         query: ListAdminStorageRecordsQuery,
@@ -217,16 +120,6 @@ pub trait AdminStorageStore {
     ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord>;
 
     fn list_usage_counters<'a>(
-        &'a self,
-        query: ListAdminStorageRecordsQuery,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageCollection>;
-
-    fn list_usage_ledger<'a>(
-        &'a self,
-        query: ListAdminStorageRecordsQuery,
-    ) -> AdminStorageCommandFuture<'a, AdminStorageCollection>;
-
-    fn list_usage_snapshots<'a>(
         &'a self,
         query: ListAdminStorageRecordsQuery,
     ) -> AdminStorageCommandFuture<'a, AdminStorageCollection>;

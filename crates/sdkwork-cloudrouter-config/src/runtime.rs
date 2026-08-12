@@ -144,7 +144,7 @@ pub struct PathsSectionConfig {
 pub struct RequestLimitsSectionConfig {
     pub admin_app_json_body_max_bytes: Option<u64>,
     pub admin_skill_json_body_max_bytes: Option<u64>,
-    pub payment_callback_body_max_bytes: Option<u64>,
+
     pub gateway_invocation_body_max_bytes: Option<u64>,
 }
 
@@ -197,9 +197,6 @@ pub struct SecuritySectionConfig {
     pub app_session_secret_file: Option<String>,
     pub app_session_ttl_seconds: Option<u64>,
     pub app_session_max_clock_skew_seconds: Option<u64>,
-    pub payment_webhook_secret: Option<String>,
-    pub payment_webhook_secret_file: Option<String>,
-    pub payment_webhook_max_clock_skew_seconds: Option<u64>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]

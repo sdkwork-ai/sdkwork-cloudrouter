@@ -368,7 +368,12 @@ async fn plans_model_route_and_resolves_account() {
 async fn plans_management_api_account_route() {
     let mut catalog = base_catalog();
     add_account_route(&mut catalog, 3002, "openrouter-files");
-    add_route_key_upstream_cost(&mut catalog, "openai/management/files", "openrouter-files", 3002);
+    add_route_key_upstream_cost(
+        &mut catalog,
+        "openai/management/files",
+        "openrouter-files",
+        3002,
+    );
     add_group_policy_rule(
         &mut catalog,
         3,

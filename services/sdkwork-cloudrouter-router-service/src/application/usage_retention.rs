@@ -11,9 +11,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use crate::domain::DomainResult;
-use crate::ports::{
-    DeleteExpiredSettledUsageCommand, UsageRetentionOutcome, UsageRetentionStore,
-};
+use crate::ports::{DeleteExpiredSettledUsageCommand, UsageRetentionOutcome, UsageRetentionStore};
 
 const DEFAULT_RETENTION_DAYS: i64 = 180;
 const MAX_RETENTION_DAYS: i64 = 3_650;
@@ -42,11 +40,7 @@ impl UsageRetentionConfig {
             enabled: self.enabled,
             tenant_id: self.tenant_id.max(0),
             organization_id: self.organization_id.max(0),
-            retention_days: sdkwork_utils_rust::clamp(
-                self.retention_days,
-                1,
-                MAX_RETENTION_DAYS,
-            ),
+            retention_days: sdkwork_utils_rust::clamp(self.retention_days, 1, MAX_RETENTION_DAYS),
             interval_millis: self.interval_millis.max(MIN_INTERVAL_MILLIS),
         }
     }
@@ -217,7 +211,10 @@ pub struct UsageRetentionWorker {
 }
 
 impl UsageRetentionWorker {
-    pub fn new(store: Arc<dyn UsageRetentionStore + Send + Sync>, config: UsageRetentionConfig) -> Self {
+    pub fn new(
+        store: Arc<dyn UsageRetentionStore + Send + Sync>,
+        config: UsageRetentionConfig,
+    ) -> Self {
         Self {
             store,
             config: config.normalized(),
@@ -260,9 +257,7 @@ impl UsageRetentionWorker {
                 );
             }
             Err(_) => {
-                retention_run_counter()
-                    .with_label_values(&["error"])
-                    .inc();
+                retention_run_counter().with_label_values(&["error"]).inc();
             }
         }
         outcome

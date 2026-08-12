@@ -414,10 +414,7 @@ async fn payment_aggregate_api_returns_scan_to_pay_qr_code_next_action_for_wecha
     assert_eq!(StatusCode::CREATED, response.status());
     let payload = response_json(response).await;
     assert_eq!("wechat_pay", payload["data"]["item"]["providerCode"]);
-    assert_eq!(
-        "qr_code",
-        payload["data"]["item"]["nextAction"]["type"]
-    );
+    assert_eq!("qr_code", payload["data"]["item"]["nextAction"]["type"]);
     assert_eq!(
         "image",
         payload["data"]["item"]["nextAction"]["qrCode"]["kind"]
@@ -509,10 +506,7 @@ async fn payment_aggregate_api_returns_redirect_next_action_for_alipay_page_pay(
 
     assert_eq!(StatusCode::CREATED, response.status());
     let payload = response_json(response).await;
-    assert_eq!(
-        "redirect",
-        payload["data"]["item"]["nextAction"]["type"]
-    );
+    assert_eq!("redirect", payload["data"]["item"]["nextAction"]["type"]);
     assert_eq!(
         "https://openapi.alipay.test/gateway.do?method=alipay.trade.page.pay",
         payload["data"]["item"]["nextAction"]["redirectUrl"]
@@ -569,11 +563,12 @@ static ALIPAY_FAKE_QR_CAPABILITIES: PaymentProviderCapabilities = PaymentProvide
     sandbox_only: false,
 };
 
-static ALIPAY_FAKE_PAGE_PAY_CAPABILITIES: PaymentProviderCapabilities = PaymentProviderCapabilities {
-    supplier_code: "alipay",
-    operations: FAKE_QR_OPERATIONS,
-    sandbox_only: false,
-};
+static ALIPAY_FAKE_PAGE_PAY_CAPABILITIES: PaymentProviderCapabilities =
+    PaymentProviderCapabilities {
+        supplier_code: "alipay",
+        operations: FAKE_QR_OPERATIONS,
+        sandbox_only: false,
+    };
 
 /// Real-mode adapter mimicking the WeChat Pay Native scan-to-pay response.
 struct FakeWeChatNativeAdapter {
@@ -607,77 +602,110 @@ impl PaymentProviderAdapter for FakeWeChatNativeAdapter {
         &'a self,
         _request: PaymentConfirmPaymentIntentRequest,
     ) -> PaymentAdapterFuture<'a, PaymentProviderOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::ConfirmPaymentIntent)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::ConfirmPaymentIntent,
+        )
     }
 
     fn capture_payment_intent<'a>(
         &'a self,
         _request: PaymentCapturePaymentIntentRequest,
     ) -> PaymentAdapterFuture<'a, PaymentProviderOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::CapturePaymentIntent)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::CapturePaymentIntent,
+        )
     }
 
     fn cancel_payment_intent<'a>(
         &'a self,
         _request: PaymentCancelPaymentIntentRequest,
     ) -> PaymentAdapterFuture<'a, PaymentProviderOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::CancelPaymentIntent)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::CancelPaymentIntent,
+        )
     }
 
     fn create_refund<'a>(
         &'a self,
         _request: PaymentCreateRefundRequest,
     ) -> PaymentAdapterFuture<'a, PaymentProviderOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::CreateRefund)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::CreateRefund,
+        )
     }
 
     fn query_refund<'a>(
         &'a self,
         _request: PaymentQueryRefundRequest,
     ) -> PaymentAdapterFuture<'a, PaymentProviderOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::QueryRefund)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::QueryRefund,
+        )
     }
 
     fn cancel_refund<'a>(
         &'a self,
         _request: PaymentCancelRefundRequest,
     ) -> PaymentAdapterFuture<'a, PaymentProviderOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::CancelRefund)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::CancelRefund,
+        )
     }
 
     fn verify_webhook<'a>(
         &'a self,
         _request: PaymentVerifyWebhookRequest,
     ) -> PaymentAdapterFuture<'a, PaymentWebhookVerificationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::VerifyWebhook)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::VerifyWebhook,
+        )
     }
 
     fn normalize_webhook<'a>(
         &'a self,
         _request: PaymentNormalizeWebhookRequest,
     ) -> PaymentAdapterFuture<'a, PaymentNormalizedWebhookEvent> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::NormalizeWebhook)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::NormalizeWebhook,
+        )
     }
 
     fn download_statement<'a>(
         &'a self,
         _request: PaymentDownloadStatementRequest,
     ) -> PaymentAdapterFuture<'a, PaymentStatementDownloadOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::DownloadStatement)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::DownloadStatement,
+        )
     }
 
     fn parse_statement<'a>(
         &'a self,
         _request: PaymentParseStatementRequest,
     ) -> PaymentAdapterFuture<'a, PaymentStatementParseOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::ParseStatement)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::ParseStatement,
+        )
     }
 
     fn invoke_native_operation<'a>(
         &'a self,
         _request: PaymentNativeOperationRequest,
     ) -> PaymentAdapterFuture<'a, PaymentNativeOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::InvokeNativeOperation)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::InvokeNativeOperation,
+        )
     }
 }
 
@@ -713,77 +741,110 @@ impl PaymentProviderAdapter for FakeAlipayPrecreateAdapter {
         &'a self,
         _request: PaymentConfirmPaymentIntentRequest,
     ) -> PaymentAdapterFuture<'a, PaymentProviderOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::ConfirmPaymentIntent)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::ConfirmPaymentIntent,
+        )
     }
 
     fn capture_payment_intent<'a>(
         &'a self,
         _request: PaymentCapturePaymentIntentRequest,
     ) -> PaymentAdapterFuture<'a, PaymentProviderOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::CapturePaymentIntent)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::CapturePaymentIntent,
+        )
     }
 
     fn cancel_payment_intent<'a>(
         &'a self,
         _request: PaymentCancelPaymentIntentRequest,
     ) -> PaymentAdapterFuture<'a, PaymentProviderOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::CancelPaymentIntent)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::CancelPaymentIntent,
+        )
     }
 
     fn create_refund<'a>(
         &'a self,
         _request: PaymentCreateRefundRequest,
     ) -> PaymentAdapterFuture<'a, PaymentProviderOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::CreateRefund)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::CreateRefund,
+        )
     }
 
     fn query_refund<'a>(
         &'a self,
         _request: PaymentQueryRefundRequest,
     ) -> PaymentAdapterFuture<'a, PaymentProviderOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::QueryRefund)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::QueryRefund,
+        )
     }
 
     fn cancel_refund<'a>(
         &'a self,
         _request: PaymentCancelRefundRequest,
     ) -> PaymentAdapterFuture<'a, PaymentProviderOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::CancelRefund)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::CancelRefund,
+        )
     }
 
     fn verify_webhook<'a>(
         &'a self,
         _request: PaymentVerifyWebhookRequest,
     ) -> PaymentAdapterFuture<'a, PaymentWebhookVerificationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::VerifyWebhook)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::VerifyWebhook,
+        )
     }
 
     fn normalize_webhook<'a>(
         &'a self,
         _request: PaymentNormalizeWebhookRequest,
     ) -> PaymentAdapterFuture<'a, PaymentNormalizedWebhookEvent> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::NormalizeWebhook)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::NormalizeWebhook,
+        )
     }
 
     fn download_statement<'a>(
         &'a self,
         _request: PaymentDownloadStatementRequest,
     ) -> PaymentAdapterFuture<'a, PaymentStatementDownloadOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::DownloadStatement)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::DownloadStatement,
+        )
     }
 
     fn parse_statement<'a>(
         &'a self,
         _request: PaymentParseStatementRequest,
     ) -> PaymentAdapterFuture<'a, PaymentStatementParseOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::ParseStatement)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::ParseStatement,
+        )
     }
 
     fn invoke_native_operation<'a>(
         &'a self,
         _request: PaymentNativeOperationRequest,
     ) -> PaymentAdapterFuture<'a, PaymentNativeOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::InvokeNativeOperation)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::InvokeNativeOperation,
+        )
     }
 }
 
@@ -819,77 +880,110 @@ impl PaymentProviderAdapter for FakeAlipayPagePayAdapter {
         &'a self,
         _request: PaymentConfirmPaymentIntentRequest,
     ) -> PaymentAdapterFuture<'a, PaymentProviderOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::ConfirmPaymentIntent)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::ConfirmPaymentIntent,
+        )
     }
 
     fn capture_payment_intent<'a>(
         &'a self,
         _request: PaymentCapturePaymentIntentRequest,
     ) -> PaymentAdapterFuture<'a, PaymentProviderOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::CapturePaymentIntent)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::CapturePaymentIntent,
+        )
     }
 
     fn cancel_payment_intent<'a>(
         &'a self,
         _request: PaymentCancelPaymentIntentRequest,
     ) -> PaymentAdapterFuture<'a, PaymentProviderOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::CancelPaymentIntent)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::CancelPaymentIntent,
+        )
     }
 
     fn create_refund<'a>(
         &'a self,
         _request: PaymentCreateRefundRequest,
     ) -> PaymentAdapterFuture<'a, PaymentProviderOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::CreateRefund)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::CreateRefund,
+        )
     }
 
     fn query_refund<'a>(
         &'a self,
         _request: PaymentQueryRefundRequest,
     ) -> PaymentAdapterFuture<'a, PaymentProviderOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::QueryRefund)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::QueryRefund,
+        )
     }
 
     fn cancel_refund<'a>(
         &'a self,
         _request: PaymentCancelRefundRequest,
     ) -> PaymentAdapterFuture<'a, PaymentProviderOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::CancelRefund)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::CancelRefund,
+        )
     }
 
     fn verify_webhook<'a>(
         &'a self,
         _request: PaymentVerifyWebhookRequest,
     ) -> PaymentAdapterFuture<'a, PaymentWebhookVerificationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::VerifyWebhook)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::VerifyWebhook,
+        )
     }
 
     fn normalize_webhook<'a>(
         &'a self,
         _request: PaymentNormalizeWebhookRequest,
     ) -> PaymentAdapterFuture<'a, PaymentNormalizedWebhookEvent> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::NormalizeWebhook)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::NormalizeWebhook,
+        )
     }
 
     fn download_statement<'a>(
         &'a self,
         _request: PaymentDownloadStatementRequest,
     ) -> PaymentAdapterFuture<'a, PaymentStatementDownloadOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::DownloadStatement)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::DownloadStatement,
+        )
     }
 
     fn parse_statement<'a>(
         &'a self,
         _request: PaymentParseStatementRequest,
     ) -> PaymentAdapterFuture<'a, PaymentStatementParseOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::ParseStatement)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::ParseStatement,
+        )
     }
 
     fn invoke_native_operation<'a>(
         &'a self,
         _request: PaymentNativeOperationRequest,
     ) -> PaymentAdapterFuture<'a, PaymentNativeOperationOutcome> {
-        fake_unsupported(self.capabilities.supplier_code, PaymentAdapterOperation::InvokeNativeOperation)
+        fake_unsupported(
+            self.capabilities.supplier_code,
+            PaymentAdapterOperation::InvokeNativeOperation,
+        )
     }
 }
 

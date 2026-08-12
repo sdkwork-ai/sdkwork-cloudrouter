@@ -12,13 +12,13 @@ use serde_json::Value;
 
 use crate::api::response::{json_created_response, problem_from_wire_code, success_envelope};
 use crate::application::{
-    resolve_payment_provider_registry_for_deployment, EntityUuidGenerator,
-    InMemoryPaymentIntentRuntimeStore, PaymentAggregateRuntimeStore, PaymentIntentRuntimeRecord,
-    PaymentIntentRuntimeService, PaymentProviderOperationOutcome, PaymentProviderRegistry,
-    PaymentRefundRuntimeRecord, PaymentRefundRuntimeService, RuntimeCancelPaymentIntentCommand,
-    RuntimeCancelRefundCommand, RuntimeCapturePaymentIntentCommand,
-    RuntimeConfirmPaymentIntentCommand, RuntimeCreatePaymentIntentCommand,
-    RuntimeCreateRefundCommand, RuntimeCreateRefundItemCommand,
+    resolve_payment_provider_registry_for_deployment, validate_payment_notify_url,
+    EntityUuidGenerator, InMemoryPaymentIntentRuntimeStore, PaymentAggregateRuntimeStore,
+    PaymentIntentRuntimeRecord, PaymentIntentRuntimeService, PaymentProviderOperationOutcome,
+    PaymentProviderRegistry, PaymentRefundRuntimeRecord, PaymentRefundRuntimeService,
+    RuntimeCancelPaymentIntentCommand, RuntimeCancelRefundCommand,
+    RuntimeCapturePaymentIntentCommand, RuntimeConfirmPaymentIntentCommand,
+    RuntimeCreatePaymentIntentCommand, RuntimeCreateRefundCommand, RuntimeCreateRefundItemCommand,
 };
 use crate::infrastructure::OsApiKeySecretGenerator;
 
@@ -37,6 +37,18 @@ struct PaymentIntentCreateRequest {
     merchant_order_no: String,
     amount: MoneyAmountRequest,
     subject: String,
+    /// Canonical notify business type dispatched by the callback pipeline
+    /// (defaults to `order`). Must match `^[a-z][a-z0-9_]{0,63}$`.
+    #[serde(default)]
+    business_type: Option<String>,
+    /// Explicit notify URL override for this order. When absent, the
+    /// deployment standard notify URL (or the provider account metadata) is
+    /// registered with the provider.
+    #[serde(default)]
+    notify_url: Option<String>,
+    /// Optional synchronous return URL override (Alipay page pay).
+    #[serde(default)]
+    return_url: Option<String>,
     #[serde(rename = "providerCode")]
     supplier_code: String,
     payment_method: Option<String>,
@@ -106,10 +118,16 @@ struct PaymentIntentResponse {
     merchant_order_no: String,
     amount: MoneyAmountResponse,
     subject: String,
+    /// Canonical notify business type the callback pipeline will dispatch on.
+    business_type: String,
     #[serde(rename = "providerCode")]
     supplier_code: String,
     payment_method: String,
     status: String,
+    /// Effective notify URL registered with the provider for this intent
+    /// (explicit override or the deployment standard URL).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    notify_url: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     next_action: Option<PaymentNextActionResponse>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -345,6 +363,20 @@ async fn create_payment_intent(
             return bad_request(format!("payment intent request body is invalid: {error}"));
         }
     };
+    let notify_url = match request.notify_url {
+        Some(value) => match validate_payment_notify_url(&value) {
+            Ok(value) => Some(value),
+            Err(message) => return bad_request(message),
+        },
+        None => None,
+    };
+    let return_url = match request.return_url {
+        Some(value) => match validate_payment_notify_url(&value) {
+            Ok(value) => Some(value),
+            Err(message) => return bad_request(message),
+        },
+        None => None,
+    };
     let service = PaymentIntentRuntimeService::new(
         state.store.as_ref(),
         state.provider_registry.clone(),
@@ -360,6 +392,9 @@ async fn create_payment_intent(
             amount: request.amount.value,
             currency_code: request.amount.currency,
             subject: request.subject,
+            business_type: request.business_type,
+            notify_url,
+            return_url,
             supplier_code: request.supplier_code,
             payment_method: request.payment_method,
             scene: request.scene,
@@ -368,9 +403,14 @@ async fn create_payment_intent(
         })
         .await
     {
-        Ok(creation) => {
-            json_created_response(None, intent_response_data(creation.intent, creation.provider_outcome))
-        }
+        Ok(creation) => json_created_response(
+            None,
+            intent_response_data(
+                creation.intent,
+                creation.provider_outcome,
+                creation.notify_url.as_deref(),
+            ),
+        ),
         Err(error) if error.is_conflict() => conflict(error.to_string()),
         Err(error) => unprocessable(error.to_string()),
     }
@@ -408,7 +448,9 @@ async fn confirm_payment_intent(
         })
         .await
     {
-        Ok(intent) => Json(success_envelope(intent_response_data(intent, None))).into_response(),
+        Ok(intent) => {
+            Json(success_envelope(intent_response_data(intent, None, None))).into_response()
+        }
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) => unprocessable(error.to_string()),
     }
@@ -451,7 +493,9 @@ async fn capture_payment_intent(
         })
         .await
     {
-        Ok(intent) => Json(success_envelope(intent_response_data(intent, None))).into_response(),
+        Ok(intent) => {
+            Json(success_envelope(intent_response_data(intent, None, None))).into_response()
+        }
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) => unprocessable(error.to_string()),
     }
@@ -493,7 +537,9 @@ async fn cancel_payment_intent(
         })
         .await
     {
-        Ok(intent) => Json(success_envelope(intent_response_data(intent, None))).into_response(),
+        Ok(intent) => {
+            Json(success_envelope(intent_response_data(intent, None, None))).into_response()
+        }
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) => unprocessable(error.to_string()),
     }
@@ -502,6 +548,7 @@ async fn cancel_payment_intent(
 fn intent_response_data(
     intent: PaymentIntentRuntimeRecord,
     provider_outcome: Option<PaymentProviderOperationOutcome>,
+    notify_url: Option<&str>,
 ) -> PaymentIntentResultData {
     PaymentIntentResultData {
         item: PaymentIntentResponse {
@@ -512,9 +559,11 @@ fn intent_response_data(
                 value: intent.amount,
             },
             subject: intent.subject,
+            business_type: intent.business_type,
             supplier_code: intent.supplier_code,
             payment_method: intent.payment_method,
             status: intent.status.as_str().to_owned(),
+            notify_url: notify_url.map(str::to_owned),
             next_action: next_action_from_outcome(provider_outcome.as_ref()),
             provider_native: provider_native_from_outcome(provider_outcome.as_ref()),
             created_at: intent.created_at,
@@ -546,10 +595,8 @@ fn next_action_from_outcome(
                     redirect_url: None,
                     qr_code: Some(qr_code_media_resource(qr_code)),
                 })
-            } else if let Some(page_pay_url) = outcome
-                .payload
-                .get("page_pay_url")
-                .and_then(Value::as_str)
+            } else if let Some(page_pay_url) =
+                outcome.payload.get("page_pay_url").and_then(Value::as_str)
             {
                 Some(PaymentNextActionResponse {
                     r#type: "redirect".to_owned(),

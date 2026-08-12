@@ -207,11 +207,11 @@ async fn create_referral_strategy(
     body: Bytes,
 ) -> Response {
     let subject = scoped.into();
-    let request = match parse_json_body::<ReferralStrategyMutationRequest>(&body, "referral strategy")
-    {
-        Ok(request) => request,
-        Err(message) => return bad_request(message),
-    };
+    let request =
+        match parse_json_body::<ReferralStrategyMutationRequest>(&body, "referral strategy") {
+            Ok(request) => request,
+            Err(message) => return bad_request(message),
+        };
     let mutation = match normalize_strategy_mutation(request) {
         Ok(mutation) => mutation,
         Err(error) => return command_build_error_response(error),
@@ -223,7 +223,9 @@ async fn create_referral_strategy(
     match state.store.create_referral_strategy(command).await {
         Ok(item) => json_created_response(None, item),
         Err(error) if error.is_conflict() => conflict_response(error),
-        Err(error) => referral_system_response("referral strategy command store is unavailable", error),
+        Err(error) => {
+            referral_system_response("referral strategy command store is unavailable", error)
+        }
     }
 }
 
@@ -238,11 +240,11 @@ async fn update_referral_strategy(
         Ok(value) => value,
         Err(message) => return bad_request(message),
     };
-    let request = match parse_json_body::<ReferralStrategyMutationRequest>(&body, "referral strategy")
-    {
-        Ok(request) => request,
-        Err(message) => return bad_request(message),
-    };
+    let request =
+        match parse_json_body::<ReferralStrategyMutationRequest>(&body, "referral strategy") {
+            Ok(request) => request,
+            Err(message) => return bad_request(message),
+        };
     let current = match state
         .store
         .retrieve_referral_strategy(RetrieveAdminReferralStrategyQuery {
@@ -254,10 +256,7 @@ async fn update_referral_strategy(
         Ok(Some(item)) => item,
         Ok(None) => return not_found_response("referral strategy was not found"),
         Err(error) => {
-            return referral_system_response(
-                "referral strategy read model is unavailable",
-                error,
-            );
+            return referral_system_response("referral strategy read model is unavailable", error);
         }
     };
     let mutation = match merge_strategy_mutation(current, request) {
@@ -272,7 +271,9 @@ async fn update_referral_strategy(
         Ok(item) => Json(success_envelope(item)).into_response(),
         Err(error) if error.is_not_found() => not_found_response("referral strategy was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
-        Err(error) => referral_system_response("referral strategy command store is unavailable", error),
+        Err(error) => {
+            referral_system_response("referral strategy command store is unavailable", error)
+        }
     }
 }
 
@@ -294,7 +295,9 @@ async fn delete_referral_strategy(
         Ok(true) => no_content_response(None),
         Ok(false) => not_found_response("referral strategy was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
-        Err(error) => referral_system_response("referral strategy command store is unavailable", error),
+        Err(error) => {
+            referral_system_response("referral strategy command store is unavailable", error)
+        }
     }
 }
 
@@ -302,8 +305,7 @@ fn parse_referral_list_query(
     page: Option<i64>,
     page_size: Option<i64>,
 ) -> Result<ParsedOffsetListQuery, crate::api::response::ApiResponseError> {
-    parse_offset_list_query(page, page_size)
-        .map_err(|message| bad_request(message).into())
+    parse_offset_list_query(page, page_size).map_err(|message| bad_request(message).into())
 }
 
 fn normalize_search_query(value: Option<&str>) -> Option<String> {
@@ -398,7 +400,11 @@ fn build_delete_command(
 fn normalize_strategy_mutation(
     request: ReferralStrategyMutationRequest,
 ) -> Result<NormalizedReferralStrategyMutation, AdminReferralCommandBuildError> {
-    let name = normalize_required_text(&request.name, "referral strategy name", MAX_STRATEGY_NAME_LEN)?;
+    let name = normalize_required_text(
+        &request.name,
+        "referral strategy name",
+        MAX_STRATEGY_NAME_LEN,
+    )?;
     let description = normalize_optional_text(
         request.description.as_deref(),
         "referral strategy description",
@@ -421,11 +427,12 @@ fn normalize_strategy_mutation(
         "referral strategy triggerEvent",
         &[TRIGGER_EVENT_REGISTER],
     )?;
-    let max_rewards_per_inviter = normalize_max_rewards_per_inviter(
-        request.max_rewards_per_inviter.as_ref(),
-    )?;
-    let starts_at = normalize_optional_timestamp(request.starts_at.as_deref(), "referral strategy startsAt")?;
-    let ends_at = normalize_optional_timestamp(request.ends_at.as_deref(), "referral strategy endsAt")?;
+    let max_rewards_per_inviter =
+        normalize_max_rewards_per_inviter(request.max_rewards_per_inviter.as_ref())?;
+    let starts_at =
+        normalize_optional_timestamp(request.starts_at.as_deref(), "referral strategy startsAt")?;
+    let ends_at =
+        normalize_optional_timestamp(request.ends_at.as_deref(), "referral strategy endsAt")?;
     validate_strategy_window(starts_at.as_deref(), ends_at.as_deref())?;
     Ok(NormalizedReferralStrategyMutation {
         name,
@@ -448,7 +455,11 @@ fn merge_strategy_mutation(
     request: ReferralStrategyMutationRequest,
 ) -> Result<NormalizedReferralStrategyMutation, AdminReferralCommandBuildError> {
     let name = match request.name {
-        Some(value) => normalize_required_text(&Some(value), "referral strategy name", MAX_STRATEGY_NAME_LEN)?,
+        Some(value) => normalize_required_text(
+            &Some(value),
+            "referral strategy name",
+            MAX_STRATEGY_NAME_LEN,
+        )?,
         None => current.name,
     };
     let description = normalize_optional_text(
@@ -525,7 +536,10 @@ fn validate_strategy_window(
     ends_at: Option<&str>,
 ) -> Result<(), AdminReferralCommandBuildError> {
     if let (Some(starts_at), Some(ends_at)) = (starts_at, ends_at) {
-        match (parse_wall_clock_seconds(starts_at), parse_wall_clock_seconds(ends_at)) {
+        match (
+            parse_wall_clock_seconds(starts_at),
+            parse_wall_clock_seconds(ends_at),
+        ) {
             (Some(starts), Some(ends)) if starts >= ends => {
                 return Err(AdminReferralCommandBuildError::BadRequest(
                     "referral strategy endsAt must be after startsAt".to_owned(),
@@ -661,9 +675,7 @@ fn normalize_reward_value(
         )));
     }
     let valid = match reward_type {
-        REWARD_TYPE_POINTS => {
-            !raw.is_empty() && raw.bytes().all(|byte| byte.is_ascii_digit())
-        }
+        REWARD_TYPE_POINTS => !raw.is_empty() && raw.bytes().all(|byte| byte.is_ascii_digit()),
         REWARD_TYPE_CASH => is_cash_amount(&raw),
         REWARD_TYPE_COUPON => raw
             .bytes()
@@ -752,9 +764,11 @@ fn is_valid_timestamp(value: &str) -> bool {
     if bytes[10] != b' ' && bytes[10] != b'T' {
         return false;
     }
-    if !bytes.iter().enumerate().all(|(index, byte)| {
-        matches!(index, 4 | 7 | 10 | 13 | 16) || byte.is_ascii_digit()
-    }) {
+    if !bytes
+        .iter()
+        .enumerate()
+        .all(|(index, byte)| matches!(index, 4 | 7 | 10 | 13 | 16) || byte.is_ascii_digit())
+    {
         return false;
     }
     let parse = |index: usize, len: usize| {
@@ -766,7 +780,8 @@ fn is_valid_timestamp(value: &str) -> bool {
     let (Some(year), Some(month), Some(day)) = (parse(0, 4), parse(5, 2), parse(8, 2)) else {
         return false;
     };
-    let (Some(hour), Some(minute), Some(second)) = (parse(11, 2), parse(14, 2), parse(17, 2)) else {
+    let (Some(hour), Some(minute), Some(second)) = (parse(11, 2), parse(14, 2), parse(17, 2))
+    else {
         return false;
     };
     if !(1..=12).contains(&month)
@@ -866,7 +881,9 @@ fn normalize_path_id(value: &str, field_name: &str) -> Result<String, String> {
         return Err(format!("{field_name} is required"));
     }
     if value.chars().count() > MAX_STRATEGY_ID_LEN {
-        return Err(format!("{field_name} must be at most {MAX_STRATEGY_ID_LEN} characters"));
+        return Err(format!(
+            "{field_name} must be at most {MAX_STRATEGY_ID_LEN} characters"
+        ));
     }
     Ok(value.to_owned())
 }
@@ -989,13 +1006,12 @@ mod tests {
 
     #[test]
     fn merge_strategy_mutation_clears_optional_fields_with_empty_strings() {
-        let request: ReferralStrategyMutationRequest =
-            serde_json::from_value(json!({
-                "description": "",
-                "startsAt": "",
-                "endsAt": ""
-            }))
-            .unwrap();
+        let request: ReferralStrategyMutationRequest = serde_json::from_value(json!({
+            "description": "",
+            "startsAt": "",
+            "endsAt": ""
+        }))
+        .unwrap();
 
         let mutation = merge_strategy_mutation(seeded_strategy(), request).unwrap();
 
@@ -1006,12 +1022,11 @@ mod tests {
 
     #[test]
     fn merge_strategy_mutation_rejects_reward_value_mismatching_merged_reward_type() {
-        let request: ReferralStrategyMutationRequest =
-            serde_json::from_value(json!({
-                "rewardType": "POINTS",
-                "rewardValue": "5.00"
-            }))
-            .unwrap();
+        let request: ReferralStrategyMutationRequest = serde_json::from_value(json!({
+            "rewardType": "POINTS",
+            "rewardValue": "5.00"
+        }))
+        .unwrap();
 
         let error = merge_strategy_mutation(seeded_strategy(), request).unwrap_err();
         match error {

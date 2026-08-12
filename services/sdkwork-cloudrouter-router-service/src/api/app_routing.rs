@@ -247,9 +247,7 @@ fn resolved_request_locale(
     request_context
         .map(|context| context.0.locale)
         .flatten()
-        .or_else(|| {
-            locale_extension.map(|extension| extension.0.effective().to_owned())
-        })
+        .or_else(|| locale_extension.map(|extension| extension.0.effective().to_owned()))
 }
 
 fn build_routing_list_query(

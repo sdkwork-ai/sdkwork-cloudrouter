@@ -162,13 +162,13 @@ async fn insert_statement(
              fee_amount, net_amount, downloaded_at, parsed_at, request_no, idempotency_key,
              created_at, updated_at)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
-             $17, $18, $19, $20, $21, $22, $23, $24, $25)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9::timestamptz, $10::timestamptz, $11, $12, $13, $14, $15, $16,
+             $17, $18, $19, $20::timestamptz, $21::timestamptz, $22, $23, $24::timestamptz, $25::timestamptz)
         "#,
     )
     .bind(&statement.id)
     .bind(&statement.tenant_id)
-    .bind(statement.organization_id.as_deref())
+    .bind(statement.organization_id.as_deref().or(Some("0")))
     .bind(&statement.statement_no)
     .bind(&statement.supplier_code)
     .bind(statement.provider_account_id.as_deref())
@@ -205,13 +205,13 @@ async fn insert_statement(
                  fee_amount, net_amount, currency_code, provider_status, raw_row_digest,
                  metadata_json, created_at)
             VALUES
-                ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-                 $16, $17, $18, $19, $20, $21, $22, $23)
+                ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::timestamptz, $15::timestamptz,
+                 $16, $17, $18, $19, $20, $21, $22, $23::timestamptz)
             "#,
         )
         .bind(&item.id)
         .bind(&item.tenant_id)
-        .bind(item.organization_id.as_deref())
+        .bind(item.organization_id.as_deref().or(Some("0")))
         .bind(&item.statement_id)
         .bind(&item.supplier_code)
         .bind(item.provider_account_id.as_deref())
@@ -260,12 +260,12 @@ async fn insert_reconciliation_items(
                  resolved_at, created_at, updated_at)
             VALUES
                 ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-                 $16, $17, $18, $19, $20, $21, $22, $23, $24)
+                 $16, $17, $18, $19, $20, $21, $22::timestamptz, $23::timestamptz, $24::timestamptz)
             "#,
         )
         .bind(&item.id)
         .bind(&item.tenant_id)
-        .bind(item.organization_id.as_deref())
+        .bind(item.organization_id.as_deref().or(Some("0")))
         .bind(&item.reconciliation_run_id)
         .bind(&item.statement_id)
         .bind(item.statement_item_id.as_deref())
@@ -501,10 +501,7 @@ async fn load_reconciliation_ledger_entries(
     .fetch_all(pool)
     .await
     .map_err(|error| store_error("failed to load payment reconciliation ledger", error))?;
-    Ok(rows
-        .iter()
-        .map(ledger_entry_from_row)
-        .collect::<Vec<_>>())
+    Ok(rows.iter().map(ledger_entry_from_row).collect::<Vec<_>>())
 }
 
 async fn finish_reconciliation_run(

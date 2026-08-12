@@ -14,6 +14,11 @@ import {
   membershipPageLabel,
 } from '../components/MembershipPageControls';
 import { MembershipStatusBadge } from '../components/MembershipStatusBadge';
+import { MembershipCategoryBadge } from '../components/MembershipCategoryBadge';
+import {
+  MembershipCategoryFilter,
+  type MembershipCategoryFilterValue,
+} from '../components/MembershipCategoryFilter';
 import { MembershipPlanDrawerForm } from '../forms/MembershipPlanDrawerForm';
 import {
   createMembershipAdminPlan,
@@ -37,11 +42,13 @@ export function MembershipPlansPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [pageInfo, setPageInfo] = useState<MembershipsAdminPageInfo | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<MembershipCategoryFilterValue>('all');
   const requestIdRef = useRef(0);
 
   const loadPlans = useCallback(async (
     requestedPage: number,
     requestedPageSize: number,
+    requestedCategory: MembershipCategoryFilterValue,
   ) => {
     const requestId = ++requestIdRef.current;
     setIsLoading(true);
@@ -50,6 +57,7 @@ export function MembershipPlansPage() {
       const result = await fetchMembershipAdminPlans({
         page: requestedPage,
         pageSize: requestedPageSize,
+        category: requestedCategory === 'all' ? undefined : requestedCategory,
       });
       if (requestId !== requestIdRef.current) {
         return;
@@ -68,11 +76,19 @@ export function MembershipPlansPage() {
   }, [t]);
 
   useEffect(() => {
-    void loadPlans(page, pageSize);
+    void loadPlans(page, pageSize, categoryFilter);
     return () => {
       requestIdRef.current += 1;
     };
-  }, [loadPlans, page, pageSize]);
+  }, [loadPlans, page, pageSize, categoryFilter]);
+
+  const handleCategoryFilterChange = (nextCategory: MembershipCategoryFilterValue) => {
+    if (nextCategory === categoryFilter) {
+      return;
+    }
+    setCategoryFilter(nextCategory);
+    setPage(1);
+  };
 
   const openCreateDrawer = () => {
     setEditingPlan(null);
@@ -94,7 +110,7 @@ export function MembershipPlansPage() {
       }
       setIsDrawerOpen(false);
       setEditingPlan(null);
-      await loadPlans(page, pageSize);
+      await loadPlans(page, pageSize, categoryFilter);
     } finally {
       setIsSaving(false);
     }
@@ -105,7 +121,7 @@ export function MembershipPlansPage() {
       <MembershipAdminPageShell
         isLoading={isLoading}
         error={error}
-        onRefresh={() => loadPlans(page, pageSize)}
+        onRefresh={() => loadPlans(page, pageSize, categoryFilter)}
         actions={(
           <button type="button" onClick={openCreateDrawer} className="inline-flex items-center gap-1 rounded-md bg-lobster-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-lobster-700">
             <Plus className="h-3.5 w-3.5" />
@@ -113,6 +129,10 @@ export function MembershipPlansPage() {
           </button>
         )}
       >
+        <div className="flex shrink-0 items-center justify-between gap-3">
+          <MembershipCategoryFilter value={categoryFilter} onChange={handleCategoryFilterChange} />
+          <span className="text-xs text-slate-400">{t('admin.commerce.memberships.category.filterHint', 'Filter by plan family')}</span>
+        </div>
         <MembershipTablePanel
           footer={(
             <BottomPagination
@@ -143,6 +163,7 @@ export function MembershipPlansPage() {
               <thead>
                 <tr className="border-b border-slate-100 dark:border-white/5">
                   <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.plans.table.level', 'Level')}</th>
+                  <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.plans.table.category', 'Category')}</th>
                   <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.plans.table.code', 'Code')}</th>
                   <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.plans.table.rank', 'Rank')}</th>
                   <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.plans.table.benefits', 'Benefits')}</th>
@@ -155,6 +176,7 @@ export function MembershipPlansPage() {
                 {plans.map((plan) => (
                   <tr key={plan.id} className="border-b border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5">
                     <td className="px-4 py-2.5 font-medium text-slate-900 dark:text-white">{plan.name}</td>
+                    <td className="px-4 py-2.5"><MembershipCategoryBadge category={plan.category} /></td>
                     <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{plan.levelCode || plan.planNo}</td>
                     <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">{plan.rank}</td>
                     <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">{plan.benefitCount}</td>

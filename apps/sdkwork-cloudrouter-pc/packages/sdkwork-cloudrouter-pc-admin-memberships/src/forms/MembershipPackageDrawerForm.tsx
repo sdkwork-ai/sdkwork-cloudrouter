@@ -8,6 +8,7 @@ import {
   MembershipTextField,
 } from '../components/MembershipFormControls';
 import { membershipStatusLabel } from '../components/MembershipStatusBadge';
+import { membershipCategoryLabel } from '../components/MembershipCategoryBadge';
 import {
   formatMembershipFormValidationError,
   parseRequiredDiscountField,
@@ -15,6 +16,7 @@ import {
   parseRequiredPositiveIntegerField,
 } from './membershipFormValues';
 import type {
+  MembershipsAdminCategory,
   MembershipsAdminPackageGroup,
   MembershipsAdminPackageItem,
   MembershipsAdminPackageMutationInput,
@@ -65,6 +67,12 @@ export function MembershipPackageDrawerForm({
   const [name, setName] = useState(initialValue?.name ?? '');
   const [packageGroupId, setPackageGroupId] = useState(initialValue?.groupId ?? defaultGroupId ?? groups[0]?.id ?? '');
   const [planId, setPlanId] = useState(initialValue?.planId ?? plans[0]?.id ?? '');
+  const [category, setCategory] = useState<MembershipsAdminCategory>(
+    initialValue?.category
+    ?? categoryOf(groups, packageGroupId)
+    ?? categoryOf(plans, planId)
+    ?? 'token',
+  );
   const [priceAmount, setPriceAmount] = useState(initialValue?.priceAmount ?? '');
   const [currencyCode, setCurrencyCode] = useState(normalizeCurrencyCodeValue(initialValue?.currencyCode));
   const [durationDays, setDurationDays] = useState(String(initialValue?.durationDays ?? 30));
@@ -94,6 +102,7 @@ export function MembershipPackageDrawerForm({
     setError(null);
     try {
       await onSubmit({
+        category,
         code: mode === 'edit' && initialValue?.packageNo ? initialValue.packageNo : buildMembershipPackageCode(name),
         packageGroupId,
         planId,
@@ -125,7 +134,7 @@ export function MembershipPackageDrawerForm({
         value={packageGroupId}
         placeholder={t(`${translationKeyPrefix}.form.selectGroup`, 'Select group')}
         options={groupOptions}
-        onChange={setPackageGroupId}
+        onChange={handleGroupChange}
       />
       {groupPagination ? (
         <MembershipReferencePageControls
@@ -140,7 +149,7 @@ export function MembershipPackageDrawerForm({
         value={planId}
         placeholder={t(`${translationKeyPrefix}.form.selectPlan`, 'Select plan')}
         options={planOptions}
-        onChange={setPlanId}
+        onChange={handlePlanChange}
       />
       {planPagination ? (
         <MembershipReferencePageControls
@@ -150,6 +159,15 @@ export function MembershipPackageDrawerForm({
           pageLabel={t('admin.commerce.memberships.pagination.page', 'Page {{page}}', { page: planPagination.page })}
         />
       ) : null}
+      <MembershipSelectField
+        label={t('admin.commerce.memberships.category.label', 'Category')}
+        value={category}
+        options={[
+          { value: 'token', label: membershipCategoryLabel('token', t) },
+          { value: 'community', label: membershipCategoryLabel('community', t) },
+        ]}
+        onChange={(value) => setCategory(value as MembershipsAdminCategory)}
+      />
       <div className="grid grid-cols-2 gap-4">
         <MembershipTextField label={t(`${translationKeyPrefix}.form.price`, 'Price')} value={priceAmount} onChange={setPriceAmount} placeholder="69.90" />
         <label className="block">
@@ -193,6 +211,42 @@ export function MembershipPackageDrawerForm({
       </div>
     </MembershipFormFrame>
   );
+
+  function handleGroupChange(nextGroupId: string) {
+    setPackageGroupId(nextGroupId);
+    // The backend requires the package category to match its group and plan,
+    // so switching groups auto-follows the group's plan family.
+    const nextCategory = categoryOf(groups, nextGroupId);
+    if (nextCategory) {
+      setCategory(nextCategory);
+    }
+  }
+
+  function handlePlanChange(nextPlanId: string) {
+    setPlanId(nextPlanId);
+    const nextCategory = categoryOf(plans, nextPlanId);
+    if (nextCategory && nextCategory !== category) {
+      setCategory(nextCategory);
+    }
+  }
+}
+
+/** Category of a referenced catalog record, when present in the current page. */
+function categoryOf(
+  items: Array<{ id: string; category?: MembershipsAdminCategory }>,
+  id: string | null | undefined,
+): MembershipsAdminCategory | undefined {
+  if (!id) {
+    return undefined;
+  }
+  const item = items.find((candidate) => candidate.id === id);
+  if (item?.category === 'community') {
+    return 'community';
+  }
+  if (item?.category === 'token') {
+    return 'token';
+  }
+  return undefined;
 }
 
 function MembershipReferencePageControls({

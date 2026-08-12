@@ -5,12 +5,12 @@ import {
   BarChart3,
   Boxes,
   Building2,
+  ClipboardList,
   CloudCog,
   CreditCard,
   Crown,
   Database,
   DatabaseZap,
-  FolderCog,
   Gauge,
   Gift,
   Globe2,
@@ -221,6 +221,7 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
         itemBlock({ path: '/admin/partner/partners', labelKey: 'admin.partner.menu.partners', icon: UsersRound }),
         itemBlock({ path: '/admin/partner/customers', labelKey: 'admin.partner.menu.customers', icon: Users }),
         itemBlock({ path: '/admin/partner/tree', labelKey: 'admin.partner.menu.tree', icon: Network }),
+        itemBlock({ path: '/admin/partner/applications', labelKey: 'admin.partner.menu.applications', icon: ClipboardList }),
       ]),
       groupBlock('admin.menu.partner.commission', [
         itemBlock({ path: '/admin/partner/levels', labelKey: 'admin.partner.menu.levels', icon: BadgePercent }),
@@ -287,7 +288,6 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
     groups: [
       groupBlock('admin.menu.storage.configuration', [
         itemBlock({ path: '/admin/storage/providers', labelKey: 'admin.menu.storage.providers', icon: CloudCog }),
-        itemBlock({ path: '/admin/storage/buckets', labelKey: 'admin.menu.storage.buckets', icon: FolderCog }),
         itemBlock({ path: '/admin/storage/defaultBuckets', labelKey: 'admin.menu.storage.defaultBuckets', icon: HardDrive }),
       ]),
       groupBlock('admin.menu.storage.governance', [

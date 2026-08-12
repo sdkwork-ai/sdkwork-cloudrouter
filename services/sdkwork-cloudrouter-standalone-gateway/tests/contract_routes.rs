@@ -3,7 +3,7 @@ use axum::http::{Method, Request, StatusCode};
 use sdkwork_cloudrouter_config::DatabaseConfig;
 use sdkwork_cloudrouter_test_support::{
     api_key_security_config, app_session_config, app_session_dual_token_headers,
-    default_trusted_request_subject, payment_webhook_config, trusted_subject_config,
+    default_trusted_request_subject, trusted_subject_config,
 };
 use serde_json::Value;
 use std::sync::atomic::{AtomicU64, Ordering};

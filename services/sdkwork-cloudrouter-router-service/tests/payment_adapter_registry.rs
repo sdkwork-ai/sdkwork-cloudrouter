@@ -148,6 +148,8 @@ async fn registry_can_replace_mainstream_sandbox_adapter_with_configured_real_ad
                 merchant_order_no: Some("order-1".to_owned()),
                 amount_minor: Some(100),
                 currency: Some("USD".to_owned()),
+                notify_url: None,
+                return_url: None,
                 metadata: json!({}),
                 tenant_id: None,
             },

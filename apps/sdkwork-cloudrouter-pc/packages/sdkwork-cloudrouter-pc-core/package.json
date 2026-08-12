@@ -51,7 +51,6 @@
     "@sdkwork/catalog-app-sdk": "workspace:*",
     "@sdkwork/cloudrouter-app-sdk": "workspace:*",
     "@sdkwork/cloudroutes-pc-commons": "workspace:*",
-    "@sdkwork/drive-backend-sdk": "workspace:*",
     "@sdkwork/generations-app-sdk": "workspace:*",
     "@sdkwork/membership-app-sdk": "workspace:*",
     "@sdkwork/order-app-sdk": "workspace:*",

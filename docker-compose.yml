@@ -129,7 +129,6 @@ services:
       # webhook). Local defaults; override via .env for anything real.
       SDKWORK_CLOUDROUTER_TRUSTED_SUBJECT_SECRET: ${CLOUDROUTER_TRUSTED_SUBJECT_SECRET:-cloudrouter-local-dev-trusted-subject-change-me}
       SDKWORK_CLOUDROUTER_APP_SESSION_SECRET: ${CLOUDROUTER_APP_SESSION_SECRET:-cloudrouter-local-dev-app-session-change-me}
-      SDKWORK_CLOUDROUTER_PAYMENT_WEBHOOK_SECRET: ${CLOUDROUTER_PAYMENT_WEBHOOK_SECRET:-cloudrouter-local-dev-payment-webhook-change-me}
       # Payment sandbox: local/development deployments default to the built-in
       # sandbox provider registry so recharge/checkout flows are exercisable.
       # Set CLOUDROUTER_PAYMENT_SANDBOX=0 (and configure provider secrets) for

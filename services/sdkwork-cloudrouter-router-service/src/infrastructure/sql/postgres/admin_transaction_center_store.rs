@@ -197,7 +197,10 @@ fn provider_update_change_summary(command: &UpdatePaymentProviderCommand) -> ser
         object.insert("sortOrder".to_owned(), serde_json::json!(sort_order));
     }
     if let Some(status) = &command.status {
-        object.insert("status".to_owned(), serde_json::Value::String(status.clone()));
+        object.insert(
+            "status".to_owned(),
+            serde_json::Value::String(status.clone()),
+        );
     }
     object.insert(
         "reason".to_owned(),

@@ -356,10 +356,9 @@ async fn try_rotate_account(
 }
 
 fn required_i64_cell(row: &sqlx::postgres::PgRow, name: &str, source: &str) -> DomainResult<i64> {
-    row.try_get::<i64, _>(name)
-        .map_err(|error| {
-            DomainError::new(format!("failed to read {source} column {name}: {error}"))
-        })
+    row.try_get::<i64, _>(name).map_err(|error| {
+        DomainError::new(format!("failed to read {source} column {name}: {error}"))
+    })
 }
 
 fn string_cell(row: &sqlx::postgres::PgRow, name: &str) -> String {

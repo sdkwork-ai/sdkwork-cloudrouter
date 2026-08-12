@@ -3,8 +3,7 @@ use std::pin::Pin;
 
 use crate::domain::DomainResult;
 
-pub type AppInviteCommandFuture<'a, T> =
-    Pin<Box<dyn Future<Output = DomainResult<T>> + Send + 'a>>;
+pub type AppInviteCommandFuture<'a, T> = Pin<Box<dyn Future<Output = DomainResult<T>> + Send + 'a>>;
 
 /// Tenant/user scope for app-api invite stores that persist BIGINT subject columns.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -44,7 +44,6 @@ sdkwork-cloudrouter-provider-adapter-registry.workspace = true
 sdkwork-database-id.workspace = true
 sdkwork_contract_service.workspace = true
 sdkwork_account_service.workspace = true
-sdkwork_account_repository_sqlx.workspace = true
 sdkwork_invoice_service.workspace = true
 sdkwork_invoice_database_bootstrap.workspace = true
 sdkwork_payment_service.workspace = true
@@ -66,3 +65,5 @@ tower.workspace = true
 chrono.workspace = true
 sdkwork-cloudrouter-test-support.workspace = true
 sdkwork_commerce_promotion_service.workspace = true
+
+

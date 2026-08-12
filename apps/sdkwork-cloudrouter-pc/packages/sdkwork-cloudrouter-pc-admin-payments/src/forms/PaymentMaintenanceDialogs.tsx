@@ -19,7 +19,7 @@ import {
   type AdminResourceRecord,
 } from '@sdkwork/cloudroutes-pc-commons';
 import { getCloudRouterPaymentBackendService } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
-import type { UpdatePaymentProviderRequest } from '@sdkwork/cloudrouter-backend-sdk';
+import type { UpdatePaymentProviderRequest } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import type {
   CreatePaymentChannelCommand,
   CreatePaymentMethodCommand,
@@ -27,7 +27,7 @@ import type {
   CreateRouteRuleCommand,
   UpdatePaymentMethodCommand,
   UpdateRouteRuleCommand,
-} from '@sdkwork/payment-backend-sdk';
+} from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import {
   backendBaseDataDictionariesList,
   backendPaymentsChannelsList,
@@ -37,9 +37,9 @@ import {
 // Built-in option constants. They act as the initial and fallback option set
 // when the base-data dictionary service is unreachable, so the admin surface
 // never blocks on a dependency (degraded but functional).
-const PROVIDER_CODES = ['stripe', 'alipay', 'wechat_pay', 'sandbox'] as const;
-const STATUS_OPTIONS = ['active', 'inactive', 'deprecated'] as const;
-const SCENE_OPTIONS = ['app', 'web', 'mini_program', 'api'] as const;
+export const PROVIDER_CODES = ['stripe', 'alipay', 'wechat_pay', 'sandbox'] as const;
+export const STATUS_OPTIONS = ['active', 'inactive', 'deprecated'] as const;
+export const SCENE_OPTIONS = ['app', 'web', 'mini_program', 'api'] as const;
 const SCOPE_OPTIONS = ['global', 'tenant', 'organization'] as const;
 const RECONCILIATION_TYPE_OPTIONS = ['daily', 'weekly', 'monthly', 'manual', 'settlement'] as const;
 
@@ -707,7 +707,8 @@ export function buildProviderUpdateCommand(values: PaymentProviderFormValues): U
   return {
     ...(values.displayName.trim() ? { displayName: values.displayName.trim() } : {}),
     ...(Object.keys(displayNameI18n).length > 0 ? { displayNameI18n } : {}),
-    ...(sortOrder !== undefined ? { sortOrder } : {}),
+    // sortOrder 按 OpenAPI int64 安全策略以字符串传输（生成 SDK 类型为 string）。
+    ...(sortOrder !== undefined ? { sortOrder: String(sortOrder) } : {}),
     status: values.status as UpdatePaymentProviderRequest['status'],
     reason: values.reason.trim(),
   };
@@ -825,14 +826,16 @@ export function ProviderStatusDialog({ provider, saving, onClose, onSubmit }: Pr
 // ---------------------------------------------------------------------------
 
 export interface ChannelFormDialogProps {
+  mode?: 'create' | 'edit';
+  initial?: PaymentChannelFormValues;
   saving: boolean;
   onClose(): void;
   onSubmit(values: PaymentChannelFormValues): void;
 }
 
-export function ChannelFormDialog({ saving, onClose, onSubmit }: ChannelFormDialogProps) {
+export function ChannelFormDialog({ mode = 'create', initial, saving, onClose, onSubmit }: ChannelFormDialogProps) {
   const { t, i18n } = useTranslation();
-  const [values, setValues] = useState<PaymentChannelFormValues>(emptyChannelFormValues);
+  const [values, setValues] = useState<PaymentChannelFormValues>(() => initial ?? emptyChannelFormValues());
   const [error, setError] = useState<string | null>(null);
   const providerAccounts = useProviderAccountOptions();
   const methods = useMethodOptions();
@@ -860,8 +863,16 @@ export function ChannelFormDialog({ saving, onClose, onSubmit }: ChannelFormDial
   }
 
   return (
-    <PaymentDialog onClose={onClose} onSubmit={handleSubmit} saving={saving} title={t('admin.commerce.payments.channels.create.title', 'Create payment channel')}>
-      <TextField label={t('admin.commerce.payments.channels.form.channelNo', 'Channel no')} required value={values.channelNo} onChange={(value) => set('channelNo', value)} />
+    <PaymentDialog
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      saving={saving}
+      title={mode === 'create'
+        ? t('admin.commerce.payments.channels.create.title', 'Create payment channel')
+        : t('admin.commerce.payments.channels.edit.title', 'Edit payment channel')}
+    >
+      {/* Channel no identifies the routing channel and is immutable after creation. */}
+      <TextField disabled={mode === 'edit'} label={t('admin.commerce.payments.channels.form.channelNo', 'Channel no')} required value={values.channelNo} onChange={(value) => set('channelNo', value)} />
       <TextField label={t('admin.commerce.payments.channels.form.channelName', 'Channel name')} value={values.channelName} onChange={(value) => set('channelName', value)} />
       <SelectField label={t('admin.commerce.payments.channels.form.providerAccountId', 'Provider account')} value={values.providerAccountId} onChange={(value) => set('providerAccountId', value)} options={providerAccounts.map((account) => ({ label: providerAccountOptionLabel(account, i18n.language), value: String(account.id ?? '') }))} />
       <SelectField label={t('admin.commerce.payments.channels.form.methodId', 'Payment method')} value={values.methodId} onChange={(value) => set('methodId', value)} options={methods.map((method) => ({ label: String(method.methodKey ?? method.id ?? ''), value: String(method.id ?? '') }))} />
@@ -1042,6 +1053,23 @@ export function FormError({ message }: { message: string }) {
 
 function readText(value: unknown): string {
   return value === null || value === undefined ? '' : String(value);
+}
+
+/** Build channel form values from a list row for the edit dialog. */
+export function channelFormValuesFromRecord(record: AdminResourceRecord): PaymentChannelFormValues {
+  return {
+    channelNo: readText(record.channelNo ?? record.id),
+    channelName: readText(record.channelName),
+    providerAccountId: readText(record.providerAccountId),
+    methodId: readText(record.methodId),
+    providerCode: readText(record.providerCode),
+    sceneCode: readText(record.sceneCode),
+    currencyCode: readText(record.currencyCode),
+    countryCode: readText(record.countryCode),
+    priority: record.priority === undefined ? '' : String(record.priority),
+    sortOrder: record.sortOrder === undefined ? '' : String(record.sortOrder),
+    status: readText(record.status) || 'active',
+  };
 }
 
 function optionalText(value: string): string | undefined {

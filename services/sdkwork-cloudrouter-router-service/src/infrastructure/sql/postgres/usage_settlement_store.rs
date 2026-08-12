@@ -1,10 +1,8 @@
-use std::collections::hash_map::DefaultHasher;
 use std::collections::BTreeMap;
-use std::hash::{Hash, Hasher};
+use std::sync::Arc;
 use std::time::Duration;
 
-use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
-use sdkwork_account_service::AppendLedgerEntryCommand;
+use sdkwork_account_service::{AccountLedgerAppendPort, AppendLedgerEntryCommand};
 use sdkwork_contract_service::{
     CommerceAccountAssetType, CommerceLedgerDirection, CommerceMoney, CommerceRequestHash,
     CommerceServiceError,
@@ -81,14 +79,15 @@ impl From<DomainError> for SettlementStoreError {
 #[derive(Debug, Clone)]
 pub struct PostgresUsageSettlementStore {
     pool: PgPool,
-    /// Account-domain wallet store on the shared commerce pool. Usage
+    /// Account-domain ledger append port on the shared commerce pool. Usage
     /// settlement debits the USER token bank wallet through this port — the
-    /// account ledger (`acct_*`) is the only writer of balances.
-    account_store: PostgresCommerceAccountStore,
+    /// account ledger (`acct_*`) is the only writer of balances. The concrete
+    /// repository is injected at runtime by the wiring layer.
+    account_store: Arc<dyn AccountLedgerAppendPort + Send + Sync>,
 }
 
 impl PostgresUsageSettlementStore {
-    pub fn new(pool: PgPool, account_store: PostgresCommerceAccountStore) -> Self {
+    pub fn new(pool: PgPool, account_store: Arc<dyn AccountLedgerAppendPort + Send + Sync>) -> Self {
         Self { pool, account_store }
     }
 }
@@ -99,7 +98,7 @@ impl UsageSettlementStore for PostgresUsageSettlementStore {
         command: UsageSettlementCommand,
     ) -> UsageSettlementFuture<'a> {
         Box::pin(async move {
-            settle_pending_usage(&self.pool, &self.account_store, command).await
+            settle_pending_usage(&self.pool, self.account_store.as_ref(), command).await
         })
     }
 }
@@ -136,7 +135,7 @@ struct SettlementGroup {
 
 async fn settle_pending_usage(
     pool: &PgPool,
-    account_store: &PostgresCommerceAccountStore,
+    account_store: &dyn AccountLedgerAppendPort,
     command: UsageSettlementCommand,
 ) -> Result<UsageSettlementOutcome, DomainError> {
     let command = command.bounded();
@@ -172,7 +171,7 @@ async fn settle_pending_usage(
 
 async fn settle_pending_usage_once(
     pool: &PgPool,
-    account_store: &PostgresCommerceAccountStore,
+    account_store: &dyn AccountLedgerAppendPort,
     command: UsageSettlementCommand,
 ) -> SettlementResult<UsageSettlementOutcome> {
     let mut tx = pool
@@ -365,7 +364,7 @@ async fn settle_usage_group(
     tx: &mut Transaction<'_, Postgres>,
     command: &UsageSettlementCommand,
     group: &SettlementGroup,
-    account_store: &PostgresCommerceAccountStore,
+    account_store: &dyn AccountLedgerAppendPort,
 ) -> SettlementResult<UsageSettlementOutcome> {
     if group.candidates.is_empty() {
         return Ok(empty_outcome());
@@ -431,7 +430,7 @@ async fn settle_usage_group(
 /// the next settlement run — the account ledger (`acct_*`) is the only writer
 /// of balances.
 async fn debit_user_token_bank(
-    account_store: &PostgresCommerceAccountStore,
+    account_store: &dyn AccountLedgerAppendPort,
     usage_fact: &UsageFactForSettlement,
     tokens: i64,
     transaction_id: &str,

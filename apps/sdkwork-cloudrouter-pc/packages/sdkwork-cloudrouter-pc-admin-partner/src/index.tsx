@@ -51,6 +51,7 @@ configurePartnerSearchPort(async (keyword) => {
 
 type PartnerAdminTab =
   | 'partners'
+  | 'applications'
   | 'tree'
   | 'customers'
   | 'join-fees'
@@ -66,6 +67,7 @@ const DEFAULT_SECTION: PartnerAdminTab = 'partners';
 
 function resolveSectionId(sectionId: string | undefined): PartnerAdminTab {
   switch (sectionId) {
+    case 'applications':
     case 'tree':
     case 'customers':
     case 'join-fees':
@@ -90,6 +92,8 @@ export function CloudRouterPartnerAdmin({ sectionId }: PartnerAdminProps = {}) {
   switch (resolveSectionId(sectionId)) {
     case 'partners':
       return <PartnerAdmin sectionId="partners" />;
+    case 'applications':
+      return <PartnerAdmin sectionId="applications" />;
     case 'tree':
       return <PartnerAdmin sectionId="tree" />;
     case 'customers':

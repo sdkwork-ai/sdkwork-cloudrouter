@@ -6,7 +6,7 @@ use serde_json::{Map, Value};
 use super::{
     AlipayPaymentProviderConfig, PayPalPaymentProviderConfig, PaymentAdapterFuture,
     PaymentAdapterOperation, PaymentProviderRegistryError, StripePaymentProviderConfig,
-    WeChatPayProviderConfig,
+    WeChatPayProviderConfig, WeChatPaySignVerifyMode,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -235,6 +235,17 @@ impl PaymentProviderAccountCredentialResolver {
         )?;
         let merchant_private_key_pem = self.resolve_secret(&account.secret_ref).await?;
         let api_v3_key = self.resolve_secret(api_v3_key_ref).await?;
+        let sign_verify_mode = resolve_wechat_pay_sign_verify_mode(&account.metadata)?;
+        // 验签凭据（官方二选一）：微信支付公钥（推荐/新商户默认）或平台证书。
+        // 内容来自 certificate 槽，序列号（公钥 ID 或平台证书序列号）来自 metadata。
+        let verification_key_pem = match account.certificate_ref.as_deref() {
+            Some(certificate_ref) => Some(self.resolve_secret(certificate_ref).await?),
+            None => None,
+        };
+        let verification_serial_no = resolve_wechat_pay_verification_serial_no(
+            &account.metadata,
+            sign_verify_mode,
+        );
 
         Ok(PaymentProviderResolvedCredentials::WeChatPay(
             WeChatPayProviderConfig {
@@ -244,6 +255,9 @@ impl PaymentProviderAccountCredentialResolver {
                 merchant_private_key_pem,
                 api_v3_key,
                 notify_url: metadata_text(&account.metadata, &["notifyUrl", "notify_url"]),
+                sign_verify_mode,
+                verification_key_pem,
+                verification_serial_no,
             },
         ))
     }
@@ -381,6 +395,43 @@ fn required_projection_text(
             ),
         )
     })
+}
+
+/// 解析微信支付验签模式：`metadata.signVerifyMode` 显式配置时严格校验；
+/// 未配置（历史账户）按官方推荐默认 `wechatpay_public_key`（与既有
+/// "证书槽即验签公钥"行为兼容）。
+fn resolve_wechat_pay_sign_verify_mode(
+    metadata: &Value,
+) -> Result<WeChatPaySignVerifyMode, PaymentProviderRegistryError> {
+    let Some(raw) = metadata_text(metadata, &["signVerifyMode", "sign_verify_mode"]) else {
+        return Ok(WeChatPaySignVerifyMode::WeChatPayPublicKey);
+    };
+    WeChatPaySignVerifyMode::parse(&raw).ok_or_else(|| {
+        invalid_request(
+            "wechat_pay",
+            PaymentAdapterOperation::Capabilities,
+            format!(
+                "metadata.signVerifyMode must be \"platform_certificate\" or \"wechatpay_public_key\", got \"{raw}\""
+            ),
+        )
+    })
+}
+
+/// 按验签模式取对应的序列号：公钥模式取微信支付公钥 ID（`PUB_KEY_ID_` 前缀），
+/// 证书模式取平台证书序列号；均支持 camelCase 与 snake_case 两种 metadata 键。
+fn resolve_wechat_pay_verification_serial_no(
+    metadata: &Value,
+    mode: WeChatPaySignVerifyMode,
+) -> Option<String> {
+    match mode {
+        WeChatPaySignVerifyMode::WeChatPayPublicKey => {
+            metadata_text(metadata, &["wechatpayPublicKeyId", "wechatpay_public_key_id"])
+        }
+        WeChatPaySignVerifyMode::PlatformCertificate => metadata_text(
+            metadata,
+            &["platformCertificateSerialNo", "platform_certificate_serial_no"],
+        ),
+    }
 }
 
 fn optional_projection_text(record: &Map<String, Value>, keys: &[&str]) -> Option<String> {

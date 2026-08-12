@@ -2,9 +2,8 @@ use std::cmp::Reverse;
 use std::collections::BTreeMap;
 
 use crate::domain::{
-    AiRouteFailureStrategy, AiRouteModelRequirement, AiRouteStrategy, BillingMeter,
+    has_text, AiRouteFailureStrategy, AiRouteModelRequirement, AiRouteStrategy, BillingMeter,
     RoutingCapability, UpstreamAccountRoute,
-    has_text,
 };
 use crate::ports::PricingCatalog;
 
@@ -716,4 +715,3 @@ fn normalize_route_key(value: &str) -> String {
 fn account_route_is_callable(route: &UpstreamAccountRoute) -> bool {
     has_text(route.base_url.as_deref()) && has_text(route.secret_ref.as_deref())
 }
-

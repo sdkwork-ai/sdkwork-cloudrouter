@@ -11,7 +11,8 @@
   "dependencies": {
     "@sdkwork/cloudroutes-pc-commons": "workspace:*",
     "@sdkwork/cloudrouter-backend-sdk": "workspace:*",
-    "@sdkwork/models-backend-sdk": "workspace:*"
+    "@sdkwork/models-backend-sdk": "workspace:*",
+    "@sdkwork/payment-backend-sdk": "workspace:*"
   },
   "devDependencies": {
     "typescript": "catalog:"

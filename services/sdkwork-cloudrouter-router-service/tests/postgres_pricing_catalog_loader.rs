@@ -154,7 +154,7 @@ async fn postgres_executes_the_authoritative_upstream_account_route_query() {
             tenant_id BIGINT,
             vendor_code TEXT
 )"#,
-                r#"CREATE TEMP TABLE ai_upstream_supplier (
+        r#"CREATE TEMP TABLE ai_upstream_supplier (
             id BIGINT PRIMARY KEY,
             deleted_at TIMESTAMPTZ,
             organization_id BIGINT NOT NULL DEFAULT 0,
@@ -223,7 +223,7 @@ async fn postgres_executes_the_authoritative_upstream_account_route_query() {
             status INTEGER,
             tenant_id BIGINT
 )"#,
-                r#"CREATE TEMP TABLE ai_upstream_account_group_member (
+        r#"CREATE TEMP TABLE ai_upstream_account_group_member (
             id BIGINT PRIMARY KEY,
             account_group_id BIGINT,
             account_id BIGINT,

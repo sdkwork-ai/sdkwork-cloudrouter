@@ -144,15 +144,13 @@ where
     catalog.visit_models(None, &mut |model| {
         // Model routes are keyed by catalog key (`vendor/model`), so the
         // lookup must try both the model name and the catalog key.
-        let reachable = model_route_targets_callable_account(
-            catalog,
-            &model.model,
-            &callable_accounts,
-        ) || model_route_targets_callable_account(
-            catalog,
-            &model.catalog_key,
-            &callable_accounts,
-        );
+        let reachable =
+            model_route_targets_callable_account(catalog, &model.model, &callable_accounts)
+                || model_route_targets_callable_account(
+                    catalog,
+                    &model.catalog_key,
+                    &callable_accounts,
+                );
         if !reachable {
             return true;
         }
@@ -212,7 +210,6 @@ fn account_route_is_callable_for_group(
         && (has_text(route.secret_ref.as_deref()) || !route.auth_profile.default_headers.is_empty())
         && route.is_account_healthy()
 }
-
 
 fn authenticate<C>(
     state: &OpenAiVendorsState<C>,

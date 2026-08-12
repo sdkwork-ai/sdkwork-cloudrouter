@@ -162,24 +162,7 @@
       "ownerReviewRequired": true
     },
     {
-      "capability": "payment-callback",
-      "targetCrate": "crates/sdkwork-cloudrouter-payment-callback-repository-sqlx",
-      "storePaths": [
-        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/payment_callback_store.rs"
-      ],
-      "tables": [
-        "commerce_account",
-        "commerce_account_ledger_entry",
-        "commerce_order",
-        "commerce_payment_attempt",
-        "commerce_payment_intent",
-        "commerce_payment_webhook_delivery",
-        "commerce_payment_webhook_event"
-      ],
-      "priority": "CRITICAL",
-      "migrationOrder": 9,
-      "ownerReviewRequired": true
-    },
+
     {
       "capability": "admin-transaction-center",
       "targetCrate": "crates/sdkwork-cloudrouter-admin-transaction-center-repository-sqlx",
@@ -388,14 +371,12 @@
     },
     {
       "capability": "admin-storage",
-      "targetCrate": "crates/sdkwork-cloudrouter-admin-storage-repository-sqlx",
+      "status": "decommissioned",
+      "note": "Storage provider/bucket management moved to sdkwork-drive (dr_drive_storage_provider). Governance tables stay in sdkwork-cloudrouter-router-service; the planned dedicated repository crate is no longer required.",
       "storePaths": [
         "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_storage_store.rs"
       ],
       "tables": [
-        "object_bucket",
-        "object_provider",
-        "ops_audit_log",
         "storage_default_bucket_policy",
         "storage_gc_job",
         "storage_quota_policy",
@@ -404,7 +385,7 @@
         "storage_usage_ledger",
         "storage_usage_snapshot"
       ],
-      "priority": "HIGH",
+      "priority": "LOW",
       "migrationOrder": 20,
       "ownerReviewRequired": true
     },

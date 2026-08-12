@@ -159,10 +159,20 @@ impl PaymentProviderAdapter for AlipayPaymentProviderAdapter {
             if let Some(tenant_id) = request.tenant_id {
                 biz_content["passback_params"] = json!(format!("tenant_id={tenant_id}"));
             }
-            if let Some(notify_url) = normalized_optional(self.config.notify_url.clone()) {
+            if let Some(notify_url) = normalized_optional(
+                request
+                    .notify_url
+                    .clone()
+                    .or_else(|| self.config.notify_url.clone()),
+            ) {
                 biz_content["notify_url"] = json!(notify_url);
             }
-            if let Some(return_url) = normalized_optional(self.config.return_url.clone()) {
+            if let Some(return_url) = normalized_optional(
+                request
+                    .return_url
+                    .clone()
+                    .or_else(|| self.config.return_url.clone()),
+            ) {
                 biz_content["return_url"] = json!(return_url);
             }
             let method = if qr_scan_payment {

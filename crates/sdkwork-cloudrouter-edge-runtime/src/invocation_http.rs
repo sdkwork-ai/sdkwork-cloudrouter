@@ -416,15 +416,13 @@ fn apply_gateway_dispatch_defaults<C>(
         catalog.visit_models(None, &mut |model| {
             // Model routes are keyed by catalog key (`vendor/model`), so the
             // lookup must try both the model name and the catalog key.
-            let reachable = model_upstream_route_matches_account(
-                catalog,
-                &model.model,
-                &callable_accounts,
-            ) || model_upstream_route_matches_account(
-                catalog,
-                &model.catalog_key,
-                &callable_accounts,
-            );
+            let reachable =
+                model_upstream_route_matches_account(catalog, &model.model, &callable_accounts)
+                    || model_upstream_route_matches_account(
+                        catalog,
+                        &model.catalog_key,
+                        &callable_accounts,
+                    );
             if !reachable {
                 return true;
             }
@@ -926,7 +924,11 @@ mod gateway_dispatch_defaults_tests {
             .iter()
             .map(|model| model["id"].as_str().unwrap_or_default())
             .collect::<Vec<_>>();
-        assert_eq!(vec!["gpt-4o-mini"], ids, "unreachable model must be filtered");
+        assert_eq!(
+            vec!["gpt-4o-mini"],
+            ids,
+            "unreachable model must be filtered"
+        );
     }
 
     #[test]

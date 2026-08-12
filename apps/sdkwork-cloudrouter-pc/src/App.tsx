@@ -36,6 +36,9 @@ const SdkReference = lazyRoute(() => import('@sdkwork/documents-pc-sdk-reference
 const Playground = lazyRoute(() => import('@sdkwork/cloudrouter-pc-playground'), 'Playground');
 const CloudRouterTokenPlanPage = lazyRoute(() => import('./token-plan/CloudRouterTokenPlanPage'), 'CloudRouterTokenPlanPage');
 const CloudRouterAuthRoutes = lazyRoute(() => import('./auth/CloudRouterAuthRoutes'), 'CloudRouterAuthRoutes');
+const PartnerJoinLanding = lazyRoute(() => import('@sdkwork/cloudrouter-pc-partner-join'), 'PartnerJoinLanding');
+const PartnerJoinApply = lazyRoute(() => import('@sdkwork/cloudrouter-pc-partner-join'), 'PartnerJoinApply');
+const PartnerJoinStatus = lazyRoute(() => import('@sdkwork/cloudrouter-pc-partner-join'), 'PartnerJoinStatus');
 
 const DashboardView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-dashboard'), 'DashboardView');
 const UsageView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-usage'), 'UsageView');
@@ -73,6 +76,14 @@ function MainLayout({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () 
       SdkReference={SdkReference}
       Playground={Playground}
       TokenPlan={CloudRouterTokenPlanPage}
+      extraRoutes={
+        <>
+          {/* Partner join (伙伴计划) — public portal marketing module outside console/admin. */}
+          <Route path="/partner-join" element={<PartnerJoinLanding />} />
+          <Route path="/partner-join/apply" element={<PartnerJoinApply />} />
+          <Route path="/partner-join/status" element={<PartnerJoinStatus />} />
+        </>
+      }
     />
   );
 }

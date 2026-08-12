@@ -9,7 +9,7 @@ use sdkwork_cloudrouter_router_service::application::{
     PaymentProviderResolvedCredentials, PaymentProviderRuntimeAssembler,
     PaymentProviderSecretResolver, PaymentProviderSecretValue, StripePaymentHttpClient,
     StripePaymentProviderAdapter, StripePaymentProviderConfig, WeChatPayApiClient, WeChatPayCrypto,
-    WeChatPayProviderConfig,
+    WeChatPayProviderConfig, WeChatPaySignVerifyMode,
 };
 use serde_json::json;
 
@@ -147,8 +147,9 @@ impl WeChatPayCrypto for RegistryWeChatPayCrypto {
         Ok("signed".to_owned())
     }
 
-    fn verify(
+    fn verify_with_serial(
         &self,
+        _serial: Option<&str>,
         _payload: &str,
         _signature: &str,
     ) -> Result<bool, PaymentProviderRegistryError> {
@@ -232,6 +233,8 @@ async fn assembler_registers_stripe_adapter_from_projection() {
             merchant_order_no: Some("order-1".to_owned()),
             amount_minor: Some(100),
             currency: Some("USD".to_owned()),
+            notify_url: None,
+            return_url: None,
             metadata: json!({}),
             tenant_id: None,
         })
@@ -364,6 +367,9 @@ async fn default_adapter_factory_requires_injected_crypto_for_domestic_adapters(
                 merchant_private_key_pem: "private-key".to_owned(),
                 api_v3_key: "api-v3-key".to_owned(),
                 notify_url: None,
+                sign_verify_mode: WeChatPaySignVerifyMode::WeChatPayPublicKey,
+                verification_key_pem: None,
+                verification_serial_no: None,
             },
         ))
         .await
@@ -417,6 +423,9 @@ async fn configurable_adapter_factory_builds_alipay_and_wechat_pay_when_security
                 merchant_private_key_pem: "private-key".to_owned(),
                 api_v3_key: "api-v3-key".to_owned(),
                 notify_url: None,
+                sign_verify_mode: WeChatPaySignVerifyMode::WeChatPayPublicKey,
+                verification_key_pem: None,
+                verification_serial_no: None,
             },
         ))
         .await
@@ -445,6 +454,9 @@ async fn configurable_adapter_factory_rejects_partial_domestic_security_injectio
                 merchant_private_key_pem: "private-key".to_owned(),
                 api_v3_key: "api-v3-key".to_owned(),
                 notify_url: None,
+                sign_verify_mode: WeChatPaySignVerifyMode::WeChatPayPublicKey,
+                verification_key_pem: None,
+                verification_serial_no: None,
             },
         ))
         .await
