@@ -2,14 +2,14 @@ use sqlx::postgres::PgRow;
 use sqlx::{PgPool, Postgres, Transaction};
 
 use super::shared::{
-    column, conflict, not_found, record_routing_change, search_pattern, store_error,
-    DEFAULT_DATA_SCOPE,
+    column, conflict, model_list_json, not_found, parse_model_list, record_routing_change,
+    search_pattern, store_error, DEFAULT_DATA_SCOPE,
 };
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::ports::{
-    AdminUpstreamAccountGroupItem, AdminUpstreamListQuery, AdminUpstreamPage, AdminUpstreamSubject,
-    SaveAdminUpstreamAccountGroupCommand,
+    AdminUpstreamAccountGroupItem, AdminUpstreamListQuery, AdminUpstreamPage,
+    AdminUpstreamSubject, SaveAdminUpstreamAccountGroupCommand,
 };
 
 const GROUP_COLUMNS: &str = r#"
@@ -19,6 +19,8 @@ const GROUP_COLUMNS: &str = r#"
     cost_multiplier::text AS cost_multiplier,
     sale_multiplier::text AS sale_multiplier,
     environment, vendor_code, modalities::text AS modalities, tags::text AS tags,
+    model_blacklist::text AS model_blacklist,
+    model_whitelist::text AS model_whitelist,
     status, is_default, version,
     TO_CHAR(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS updated_at
 "#;
@@ -362,14 +364,16 @@ async fn insert(
             group_code, group_name, description, group_type,
             routing_strategy, fallback_mode, priority,
             cost_multiplier, sale_multiplier, environment,
-            vendor_code, modalities, tags, is_default
+            vendor_code, modalities, tags, is_default,
+            model_blacklist, model_whitelist
         ) VALUES (
             $1, $2, $3, $4, $5, $6,
             $7::timestamptz, $7::timestamptz, 0, '{}'::jsonb,
             $8, $9, $10, $11,
             $12, $13, $14,
             $15::numeric, $16::numeric, $17,
-            $18, $19::jsonb, $20::jsonb, $21
+            $18, $19::jsonb, $20::jsonb, $21,
+            $22::jsonb, $23::jsonb
         )
         "#,
     )
@@ -394,6 +398,8 @@ async fn insert(
     .bind(modalities_json(&command.modalities))
     .bind(tags_json(&command.tags))
     .bind(command.is_default)
+    .bind(model_list_json(&command.model_blacklist))
+    .bind(model_list_json(&command.model_whitelist))
     .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to create upstream account group", error))?;
@@ -461,10 +467,12 @@ async fn update(
             tags = $12::jsonb,
             status = $13,
             is_default = $14,
+            model_blacklist = $15::jsonb,
+            model_whitelist = $16::jsonb,
             version = version + 1,
-            updated_at = $15::timestamptz
-        WHERE tenant_id = $16 AND organization_id = $17
-          AND id = $18 AND version = $19 AND deleted_at IS NULL
+            updated_at = $17::timestamptz
+        WHERE tenant_id = $18 AND organization_id = $19
+          AND id = $20 AND version = $21 AND deleted_at IS NULL
         "#,
     )
     .bind(command.group_name.trim())
@@ -481,6 +489,8 @@ async fn update(
     .bind(tags_json(&command.tags))
     .bind(command.status)
     .bind(command.is_default)
+    .bind(model_list_json(&command.model_blacklist))
+    .bind(model_list_json(&command.model_whitelist))
     .bind(&command.requested_at)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
@@ -672,6 +682,22 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamAccountGroupItem> {
             "tags",
             "failed to map upstream account group tags",
         )?)?,
+        model_blacklist: parse_model_list(
+            "upstream account group",
+            column(
+                &row,
+                "model_blacklist",
+                "failed to map upstream account group model blacklist",
+            )?,
+        )?,
+        model_whitelist: parse_model_list(
+            "upstream account group",
+            column(
+                &row,
+                "model_whitelist",
+                "failed to map upstream account group model whitelist",
+            )?,
+        )?,
         status: column(
             &row,
             "status",

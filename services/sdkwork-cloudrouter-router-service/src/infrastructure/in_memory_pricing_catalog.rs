@@ -5,9 +5,10 @@ use crate::domain::{
     RoutingPolicy, RoutingRule, UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot,
     UpstreamAccountRoute,
 };
+use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::ports::{PricingCatalog, UpstreamAccountRouteCatalog};
+use crate::ports::{AccountGroupModelAccess, PricingCatalog, UpstreamAccountRouteCatalog};
 
 #[derive(Debug, Default, Clone)]
 pub struct InMemoryPricingCatalog {
@@ -26,6 +27,7 @@ pub struct InMemoryPricingCatalog {
     gateway_risk_rules: Vec<GatewayRiskRule>,
     upstream_account_group_metric_snapshots: Vec<UpstreamAccountGroupMetricSnapshot>,
     prices: Vec<ModelPrice>,
+    account_group_model_access: HashMap<i64, AccountGroupModelAccess>,
 }
 
 impl InMemoryPricingCatalog {
@@ -107,6 +109,10 @@ impl InMemoryPricingCatalog {
 
     pub fn add_price(&mut self, price: ModelPrice) {
         self.prices.push(price);
+    }
+
+    pub fn set_account_group_model_access(&mut self, access: AccountGroupModelAccess) {
+        self.account_group_model_access.insert(access.group_id, access);
     }
 }
 
@@ -327,6 +333,10 @@ impl PricingCatalog for InMemoryPricingCatalog {
 impl UpstreamAccountRouteCatalog for InMemoryPricingCatalog {
     fn shared_upstream_account_routes(&self) -> Arc<[UpstreamAccountRoute]> {
         self.upstream_account_routes.clone().into()
+    }
+
+    fn account_group_model_access(&self, group_id: i64) -> Option<AccountGroupModelAccess> {
+        self.account_group_model_access.get(&group_id).cloned()
     }
 }
 

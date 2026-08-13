@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@sdkwork/cloudrouter-pc-admin-iam": "workspace:*",
+    "@sdkwork/cloudrouter-pc-admin-rtc": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-upstream": "workspace:*",
     "@sdkwork/i18n-pc-react": "workspace:*",
     "@sdkwork/partner-pc-admin-partner": "workspace:*",

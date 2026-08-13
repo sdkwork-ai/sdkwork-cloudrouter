@@ -12,6 +12,7 @@ import {
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import type { Model, ModelCategoryKey, ModelGroupKey } from './data/models';
 import {
+  decodeModelRouteId,
   findModelByCatalogRouteId,
   mergeRuntimeModelCatalog,
   resolveRuntimeModelCatalog,
@@ -23,6 +24,8 @@ export { findModelByCatalogRouteId, mergeRuntimeModelCatalog, resolveRuntimeMode
 
 const DEFAULT_MODEL_CATALOG_PAGE_SIZE = 20;
 const MAX_MODEL_CATALOG_PAGE_SIZE = 200;
+/** 详情页按供应商目录翻页查找的最大页数（200 × 25 = 5000 个模型）。 */
+const MAX_MODEL_CATALOG_LOOKUP_PAGES = 25;
 
 export interface ModelCatalogServiceFilters {
   billingMeter?: string;
@@ -101,20 +104,9 @@ export class ModelService {
   }
 
   static async fetchModelByCatalogRouteId(routeId: string): Promise<Model | null> {
-    const normalizedRouteId = routeId.trim();
+    const normalizedRouteId = decodeModelRouteId(routeId.trim());
     if (normalizedRouteId.length === 0) {
       return null;
-    }
-
-    const directMatch = findModelByCatalogRouteId(
-      (await fetchModelCatalogResult({
-        searchQuery: normalizedRouteId,
-        pageSize: MAX_MODEL_CATALOG_PAGE_SIZE,
-      })).models,
-      normalizedRouteId,
-    );
-    if (directMatch) {
-      return directMatch;
     }
 
     const slashIndex = normalizedRouteId.indexOf('/');
@@ -128,14 +120,24 @@ export class ModelService {
       return null;
     }
 
-    return findModelByCatalogRouteId(
-      (await fetchModelCatalogResult({
+    // 不能依赖 q 搜索：后端会把查询词 snake_case 化，带 `/`、`-` 的模型键永远匹配不到。
+    // 改为按供应商拉取公开目录并逐页比对 catalogKey，直到命中或目录翻完。
+    for (let page = 1; page <= MAX_MODEL_CATALOG_LOOKUP_PAGES; page += 1) {
+      const result = await fetchModelCatalogResult({
         vendorCodes: [vendorCode],
-        searchQuery: modelQuery,
+        page,
         pageSize: MAX_MODEL_CATALOG_PAGE_SIZE,
-      })).models,
-      normalizedRouteId,
-    );
+      });
+      const match = findModelByCatalogRouteId(result.models, normalizedRouteId);
+      if (match) {
+        return match;
+      }
+      if (!result.pageInfo.hasMore) {
+        break;
+      }
+    }
+
+    return null;
   }
 }
 

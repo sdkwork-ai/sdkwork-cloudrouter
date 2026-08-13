@@ -4052,6 +4052,70 @@
             "nullable": true,
             "type": "array"
           },
+          "modelBlacklist": {
+            "description": "Model blacklist of this group. Vendor + model entries the whole group is forbidden to serve. An entry with an empty models array forbids every model of the vendor. The blacklist wins over the whitelist.",
+            "items": {
+              "additionalProperties": false,
+              "description": "Model blacklist field on create upstream account group request.",
+              "properties": {
+                "models": {
+                  "description": "Models field on create upstream account group request.",
+                  "items": {
+                    "description": "Model blacklist field on create upstream account group request.",
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "maxItems": 200,
+                  "type": "array"
+                },
+                "vendorCode": {
+                  "description": "Vendor code field on create upstream account group request.",
+                  "maxLength": 64,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "vendorCode",
+                "models"
+              ],
+              "type": "object"
+            },
+            "maxItems": 100,
+            "nullable": true,
+            "type": "array"
+          },
+          "modelWhitelist": {
+            "description": "Model whitelist of this group. When non-empty, the group serves only matching vendor + model entries. An entry with an empty models array allows every model of the vendor.",
+            "items": {
+              "additionalProperties": false,
+              "description": "Model whitelist field on create upstream account group request.",
+              "properties": {
+                "models": {
+                  "description": "Models field on create upstream account group request.",
+                  "items": {
+                    "description": "Model whitelist field on create upstream account group request.",
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "maxItems": 200,
+                  "type": "array"
+                },
+                "vendorCode": {
+                  "description": "Vendor code field on create upstream account group request.",
+                  "maxLength": 64,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "vendorCode",
+                "models"
+              ],
+              "type": "object"
+            },
+            "maxItems": 100,
+            "nullable": true,
+            "type": "array"
+          },
           "priority": {
             "description": "Priority field on create upstream account group request.",
             "format": "int32",
@@ -4267,10 +4331,14 @@
             "nullable": true,
             "type": "integer"
           },
-          "protocolCode": {
-            "description": "Protocol code field on create upstream supplier request.",
-            "maxLength": 128,
-            "type": "string"
+          "protocols": {
+            "description": "Protocols field on create upstream supplier request.",
+            "items": {
+              "$ref": "#/components/schemas/LlmProtocolConfig"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "type": "array"
           },
           "regionCode": {
             "description": "Region code field on create upstream supplier request.",
@@ -4321,7 +4389,7 @@
           "supplierName",
           "supplierType",
           "adapterCode",
-          "protocolCode"
+          "protocols"
         ],
         "type": "object"
       },
@@ -5028,6 +5096,31 @@
             "description": "Null JSON value."
           }
         ]
+      },
+      "LlmProtocolConfig": {
+        "additionalProperties": false,
+        "description": "Llm protocol config schema exposed by Cloud Router.",
+        "properties": {
+          "baseUrl": {
+            "description": "Base url field on llm protocol config.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "protocolCode": {
+            "description": "Protocol code field on llm protocol config.",
+            "enum": [
+              "openai_chat_completions",
+              "openai_responses",
+              "anthropic_messages"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "protocolCode",
+          "baseUrl"
+        ],
+        "type": "object"
       },
       "MediaAccess": {
         "additionalProperties": false,
@@ -7499,6 +7592,70 @@
             "nullable": true,
             "type": "array"
           },
+          "modelBlacklist": {
+            "description": "Model blacklist of this group. Vendor + model entries the whole group is forbidden to serve. An entry with an empty models array forbids every model of the vendor. The blacklist wins over the whitelist.",
+            "items": {
+              "additionalProperties": false,
+              "description": "Model blacklist field on update upstream account group request.",
+              "properties": {
+                "models": {
+                  "description": "Models field on update upstream account group request.",
+                  "items": {
+                    "description": "Model blacklist field on update upstream account group request.",
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "maxItems": 200,
+                  "type": "array"
+                },
+                "vendorCode": {
+                  "description": "Vendor code field on update upstream account group request.",
+                  "maxLength": 64,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "vendorCode",
+                "models"
+              ],
+              "type": "object"
+            },
+            "maxItems": 100,
+            "nullable": true,
+            "type": "array"
+          },
+          "modelWhitelist": {
+            "description": "Model whitelist of this group. When non-empty, the group serves only matching vendor + model entries. An entry with an empty models array allows every model of the vendor.",
+            "items": {
+              "additionalProperties": false,
+              "description": "Model whitelist field on update upstream account group request.",
+              "properties": {
+                "models": {
+                  "description": "Models field on update upstream account group request.",
+                  "items": {
+                    "description": "Model whitelist field on update upstream account group request.",
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "maxItems": 200,
+                  "type": "array"
+                },
+                "vendorCode": {
+                  "description": "Vendor code field on update upstream account group request.",
+                  "maxLength": 64,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "vendorCode",
+                "models"
+              ],
+              "type": "object"
+            },
+            "maxItems": 100,
+            "nullable": true,
+            "type": "array"
+          },
           "priority": {
             "description": "Priority field on update upstream account group request.",
             "format": "int32",
@@ -7692,10 +7849,14 @@
             "nullable": true,
             "type": "integer"
           },
-          "protocolCode": {
-            "description": "Protocol code field on update upstream supplier request.",
-            "maxLength": 128,
-            "type": "string"
+          "protocols": {
+            "description": "Protocols field on update upstream supplier request.",
+            "items": {
+              "$ref": "#/components/schemas/LlmProtocolConfig"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "type": "array"
           },
           "regionCode": {
             "description": "Region code field on update upstream supplier request.",
@@ -8114,6 +8275,22 @@
             },
             "type": "array"
           },
+          "modelBlacklist": {
+            "description": "Model blacklist of this group. Vendor + model entries the whole group is forbidden to serve. An entry with an empty models array forbids every model of the vendor. The blacklist wins over the whitelist.",
+            "items": {
+              "$ref": "#/components/schemas/UpstreamAccountGroupModelListEntry"
+            },
+            "maxItems": 100,
+            "type": "array"
+          },
+          "modelWhitelist": {
+            "description": "Model whitelist of this group. When non-empty, the group serves only matching vendor + model entries. An entry with an empty models array allows every model of the vendor.",
+            "items": {
+              "$ref": "#/components/schemas/UpstreamAccountGroupModelListEntry"
+            },
+            "maxItems": 100,
+            "type": "array"
+          },
           "priority": {
             "description": "Priority field on upstream account group.",
             "format": "int32",
@@ -8427,6 +8604,32 @@
         "required": [
           "items",
           "pageInfo"
+        ],
+        "type": "object"
+      },
+      "UpstreamAccountGroupModelListEntry": {
+        "additionalProperties": false,
+        "description": "Upstream account group model list entry schema exposed by Cloud Router.",
+        "properties": {
+          "models": {
+            "description": "Models field on upstream account group model list entry.",
+            "items": {
+              "description": "Models field on upstream account group model list entry.",
+              "maxLength": 256,
+              "type": "string"
+            },
+            "maxItems": 200,
+            "type": "array"
+          },
+          "vendorCode": {
+            "description": "Vendor code field on upstream account group model list entry.",
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        "required": [
+          "vendorCode",
+          "models"
         ],
         "type": "object"
       },
@@ -9821,6 +10024,15 @@
             "maxLength": 128,
             "type": "string"
           },
+          "protocols": {
+            "description": "Protocols field on upstream supplier.",
+            "items": {
+              "$ref": "#/components/schemas/LlmProtocolConfig"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "type": "array"
+          },
           "regionCode": {
             "description": "Region code field on upstream supplier.",
             "maxLength": 128,
@@ -9889,6 +10101,7 @@
           "defaultVendorCode",
           "adapterCode",
           "protocolCode",
+          "protocols",
           "websiteUrl",
           "docsUrl",
           "regionCode",

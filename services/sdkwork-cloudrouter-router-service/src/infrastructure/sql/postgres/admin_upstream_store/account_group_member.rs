@@ -43,8 +43,9 @@ pub(super) async fn list(
         WHERE member.tenant_id = $1 AND member.organization_id = $2
           AND member.account_group_id = $3 AND member.deleted_at IS NULL
         ORDER BY member.priority ASC, member.routing_weight DESC, member.id ASC
-        LIMIT {{MAX_NESTED_ITEMS + 1}}
-        "#
+        LIMIT {limit}
+        "#,
+        limit = MAX_NESTED_ITEMS + 1
     );
     let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(subject.tenant_id)

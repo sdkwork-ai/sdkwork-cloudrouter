@@ -299,6 +299,7 @@ async fn finalize_product_router_with_federated_capabilities(
 ) -> Result<Router, ProductCatalogRouterError> {
     let router = crate::invoice_runtime::merge_federated_invoice_app_router(
         router,
+        database_pool,
         subject_boundary_config.clone(),
     )
     .await

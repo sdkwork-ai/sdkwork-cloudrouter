@@ -993,12 +993,15 @@ SELECT
     COALESCE(organization_id, 0) AS organization_id,
     COALESCE(NULLIF(group_name, ''), group_code) AS name,
     group_code AS code,
+    COALESCE(is_default, FALSE) AS is_default,
     COALESCE(NULLIF(BTRIM(pricing_plan_code), ''), 'standard') AS pricing_plan_code,
     routing_strategy,
     fallback_mode,
     priority,
     cost_multiplier::text AS cost_multiplier,
-    sale_multiplier::text AS sale_multiplier
+    sale_multiplier::text AS sale_multiplier,
+    model_blacklist::text AS model_blacklist,
+    model_whitelist::text AS model_whitelist
 FROM ai_upstream_account_group
 WHERE deleted_at IS NULL
   AND status = 1

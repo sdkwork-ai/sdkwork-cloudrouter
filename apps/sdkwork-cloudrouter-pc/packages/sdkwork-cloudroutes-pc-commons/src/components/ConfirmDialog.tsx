@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 export interface ConfirmDialogProps {
   title: string;
   description: string;
+  /** 附加内容（如警告、勾选项），渲染在描述文本下方 */
+  children?: ReactNode;
   confirmLabel?: string;
   confirmDisabled?: boolean;
   cancelLabel?: string;
@@ -19,6 +21,7 @@ export interface ConfirmDialogProps {
 export function ConfirmDialog({
   title,
   description,
+  children,
   confirmLabel = 'Confirm',
   confirmDisabled = false,
   cancelLabel = 'Cancel',
@@ -64,6 +67,7 @@ export function ConfirmDialog({
             <p id="confirm-dialog-description" className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
               {description}
             </p>
+            {children ? <div className="mt-3">{children}</div> : null}
           </div>
         </div>
         <div className="mt-5 flex justify-end gap-3">

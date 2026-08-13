@@ -8,6 +8,7 @@ import type {
   UpstreamAccount,
   UpstreamAccountGroup,
   UpstreamAccountGroupMemberInput,
+  UpstreamAccountGroupModelListEntry,
   UpstreamAccountGroupRouteExplanation,
   UpstreamResourceCatalogResponse,
   UpstreamResourceEntitlementInput,
@@ -50,6 +51,11 @@ type TranslationFunction = ReturnType<typeof useTranslation>['t'];
 
 const emptyMember = (accountId = ''): UpstreamAccountGroupMemberInput => ({ accountId, enabled: true, priority: 100, routingWeight: 100, status: 1 });
 const emptyDenyResource = (): UpstreamResourceEntitlementInput => ({ resourceCode: '', resourceGroupCode: '', grantType: 'deny', priority: 100, status: 1 });
+const emptyModelListEntry = (): UpstreamAccountGroupModelListEntry => ({ vendorCode: '', models: [] });
+const parseModelNames = (value: string): string[] => value.split(/[,，\n]/).map((model) => model.trim()).filter(Boolean);
+const normalizeModelList = (entries: UpstreamAccountGroupModelListEntry[]): UpstreamAccountGroupModelListEntry[] => entries
+  .map(({ vendorCode, models }) => ({ vendorCode: vendorCode.trim(), models: models.map((model) => model.trim()).filter(Boolean) }))
+  .filter((entry) => entry.vendorCode !== '');
 
 export function UpstreamAccountGroupAdmin() {
   return (
@@ -176,9 +182,9 @@ export function AccountGroupAdminPanel() {
           <tbody className="divide-y divide-slate-100 dark:divide-white/5">
             {visibleItems.length === 0 ? <TableState loading={loading} empty={t(listFiltered ? 'admin.upstream.accountGroup.filter.empty' : 'admin.upstream.accountGroup.empty')} colSpan={8} /> : visibleItems.map((group) => (
               <tr key={group.id} className="text-slate-700 hover:bg-slate-50/80 dark:text-slate-200 dark:hover:bg-white/[0.03]">
-                <td className="px-4 py-3"><button type="button" className="text-left" onClick={() => setSelected(group)}><span className="flex items-center gap-2"><span className="block font-semibold text-slate-900 dark:text-white">{resolveGroupDisplayName(group, i18n.language)}</span>{group.isDefault ? <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300">{t('admin.upstream.accountGroup.table.default')}</span> : null}</span><span className="block font-mono text-xs text-slate-500">{group.groupCode}</span></button></td>
+                <td className="px-4 py-3"><button type="button" className="text-left" onClick={() => setSelected(group)}><span className="flex items-center gap-2"><span className="block font-semibold text-slate-900 dark:text-white">{resolveGroupDisplayName(group, i18n.language)}</span>{group.isDefault ? <span className="rounded-full bg-lobster-50 px-2 py-0.5 text-xs font-semibold text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-300">{t('admin.upstream.accountGroup.table.default')}</span> : null}</span><span className="block font-mono text-xs text-slate-500">{group.groupCode}</span></button></td>
                 <td className="px-4 py-3"><div className="flex max-w-44 flex-wrap gap-1">{group.tags?.map((tag) => <TagBadge key={tag} tag={tag} small />)}</div></td>
-                <td className="px-4 py-3">{labelStrategy(group.routingStrategy, t)}</td><td className="px-4 py-3">{labelFallback(group.fallbackMode, t)}</td><td className="px-4 py-3 font-mono">{formatDecimalDisplay(group.costMultiplier)}</td><td className="px-4 py-3 font-mono">{formatDecimalDisplay(group.saleMultiplier)}</td><td className="px-4 py-3"><StatusBadge status={group.status} /></td>
+                <td className="px-4 py-3">{labelStrategy(group.routingStrategy, t)}</td><td className="px-4 py-3">{labelFallback(group.fallbackMode, t)}</td><td className="px-4 py-3 font-mono">×{formatDecimalDisplay(group.costMultiplier)}</td><td className="px-4 py-3 font-mono">×{formatDecimalDisplay(group.saleMultiplier)}</td><td className="px-4 py-3"><StatusBadge status={group.status} /></td>
                 <td className="px-4 py-3"><div className="flex justify-end gap-1">{!group.isDefault ? <button type="button" className={secondaryButtonClass} onClick={() => setDefaultTarget(group)} title={t('admin.upstream.accountGroup.actions.setDefault')}><Star className="h-4 w-4" /></button> : null}<button type="button" className={secondaryButtonClass} onClick={() => setSelected(group)} title={t('admin.upstream.common.actions.configure')}><Settings2 className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setCopying(group)} title={t('admin.upstream.accountGroup.actions.copy')}><Copy className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setEditing(group)} title={t('common.actions.edit')}><Edit3 className="h-4 w-4" /></button><button type="button" className={dangerButtonClass} onClick={() => setDeleteTarget(group)} title={t('common.actions.delete')}><Trash2 className="h-4 w-4" /></button></div></td>
               </tr>
             ))}
@@ -219,10 +225,10 @@ function AccountGroupModal({ group, copying, busy, onSubmit, onClose }: { group:
           <input type="hidden" name="tags" value={JSON.stringify(selectedTags)} />
           <div className="flex flex-wrap items-center gap-1.5">
             {SUPPORTED_GROUP_TAGS.map((tag) => (
-              <button key={tag} type="button" className={`rounded-full transition ${selectedTags.includes(tag) ? 'ring-2 ring-indigo-500/60' : 'opacity-55 hover:opacity-100'}`} onClick={() => setSelectedTags((current) => current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag])}><TagBadge tag={tag} small /></button>
+              <button key={tag} type="button" className={`rounded-full transition ${selectedTags.includes(tag) ? 'ring-2 ring-lobster-500/60' : 'opacity-55 hover:opacity-100'}`} onClick={() => setSelectedTags((current) => current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag])}><TagBadge tag={tag} small /></button>
             ))}
             {selectedTags.length > 0 ? (
-              <button type="button" className="ml-1 text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400" onClick={() => setSelectedTags([])}>{t('common.actions.clear')}</button>
+              <button type="button" className="ml-1 text-xs font-medium text-lobster-600 hover:underline dark:text-lobster-400" onClick={() => setSelectedTags([])}>{t('common.actions.clear')}</button>
             ) : null}
           </div>
         </Field></div>
@@ -236,6 +242,8 @@ function AccountGroupConfiguration({ group, accounts, onChanged, onClose }: { gr
   const { t, i18n } = useTranslation();
   const [members, setMembers] = useState<UpstreamAccountGroupMemberInput[]>([]);
   const [resources, setResources] = useState<UpstreamResourceEntitlementInput[]>([]);
+  const [modelBlacklist, setModelBlacklist] = useState<UpstreamAccountGroupModelListEntry[]>(() => group.modelBlacklist ?? []);
+  const [modelWhitelist, setModelWhitelist] = useState<UpstreamAccountGroupModelListEntry[]>(() => group.modelWhitelist ?? []);
   const [catalog, setCatalog] = useState<UpstreamResourceCatalogResponse | null>(null);
   const [resourcePickerOpen, setResourcePickerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -293,6 +301,36 @@ function AccountGroupConfiguration({ group, accounts, onChanged, onClose }: { gr
     const resource = catalog?.resources.find((entry) => entry.resourceCode === code);
     const groupEntry = catalog?.resourceGroups.find((entry) => entry.groupCode === code);
     return resource?.displayName ?? groupEntry?.groupName ?? code;
+  };
+
+  const availableVendors = useMemo(() => {
+    const labels = new Map<string, string>();
+    for (const resource of catalog?.resources.filter((entry) => entry.resourceType === 'vendor') ?? []) {
+      if (resource.vendorCode) labels.set(resource.vendorCode, `${resource.displayName} (${resource.vendorCode})`);
+    }
+    // Keep entries whose vendor is no longer present in the catalog selectable.
+    for (const entry of [...modelBlacklist, ...modelWhitelist]) {
+      if (entry.vendorCode && !labels.has(entry.vendorCode)) labels.set(entry.vendorCode, entry.vendorCode);
+    }
+    return [...labels.entries()].map(([vendorCode, label]) => ({ vendorCode, label }));
+  }, [catalog, modelBlacklist, modelWhitelist]);
+
+  const saveModelAccess = async () => {
+    setBusySection('modelAccess');
+    setError(null);
+    try {
+      await upstreamService.accountGroups.update(group, {
+        modelBlacklist: normalizeModelList(modelBlacklist),
+        modelWhitelist: normalizeModelList(modelWhitelist),
+      });
+      const refreshed = await upstreamService.accountGroups.retrieve(group.id);
+      onChanged(refreshed);
+      await load();
+    } catch (cause) {
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
+    } finally {
+      setBusySection(null);
+    }
   };
 
   const explain = async (event: FormEvent<HTMLFormElement>) => {
@@ -371,6 +409,29 @@ function AccountGroupConfiguration({ group, accounts, onChanged, onClose }: { gr
             <button type="button" className={primaryButtonClass} disabled={busySection !== null} onClick={() => void save('resources')}>{t('admin.upstream.accountGroup.resources.save')}</button>
           </div>
         </Section>
+        <Section title={t('admin.upstream.accountGroup.access.title')}>
+          <div className="grid gap-3">
+            <ModelAccessListEditor
+              title={t('admin.upstream.accountGroup.access.blacklistTitle')}
+              hint={t('admin.upstream.accountGroup.access.blacklistHint')}
+              entries={modelBlacklist}
+              vendors={availableVendors}
+              danger
+              onEntriesChange={setModelBlacklist}
+              t={t}
+            />
+            <ModelAccessListEditor
+              title={t('admin.upstream.accountGroup.access.whitelistTitle')}
+              hint={t('admin.upstream.accountGroup.access.whitelistHint')}
+              entries={modelWhitelist}
+              vendors={availableVendors}
+              danger={false}
+              onEntriesChange={setModelWhitelist}
+              t={t}
+            />
+            <button type="button" className={primaryButtonClass} disabled={busySection !== null} onClick={() => void saveModelAccess()}>{t('admin.upstream.accountGroup.access.save')}</button>
+          </div>
+        </Section>
         <Section title={t('admin.upstream.accountGroup.explain.title')}>
           <form className="grid gap-3 sm:grid-cols-2" onSubmit={explain}>
             <Field label={t('admin.upstream.accountGroup.explain.apiKeyId')} required><input name="apiKeyId" className={inputClass} required /></Field><Field label={t('admin.upstream.common.fields.resourceCode')} required><input name="resourceCode" className={inputClass} required /></Field><Field label={t('admin.upstream.accountGroup.explain.model')}><input name="model" className={inputClass} /></Field><Field label={t('admin.upstream.accountGroup.explain.catalogKey')}><input name="catalogKey" className={inputClass} /></Field><Field label={t('admin.upstream.accountGroup.explain.capability')}><input name="capability" className={inputClass} placeholder="chat" /></Field><Field label={t('admin.upstream.accountGroup.explain.apiCode')}><input name="apiCode" className={inputClass} placeholder="chat.completions" /></Field>
@@ -380,6 +441,51 @@ function AccountGroupConfiguration({ group, accounts, onChanged, onClose }: { gr
         </Section>
       </div>
     </SidePanel>
+  );
+}
+
+function ModelAccessListEditor({
+  title,
+  hint,
+  entries,
+  vendors,
+  danger,
+  onEntriesChange,
+  t,
+}: {
+  title: string;
+  hint: string;
+  entries: UpstreamAccountGroupModelListEntry[];
+  vendors: { vendorCode: string; label: string }[];
+  danger: boolean;
+  onEntriesChange: (entries: UpstreamAccountGroupModelListEntry[]) => void;
+  t: TranslationFunction;
+}) {
+  const tone = danger
+    ? 'border-red-200 bg-red-50/40 dark:border-red-500/20 dark:bg-red-500/5'
+    : 'border-emerald-200 bg-emerald-50/40 dark:border-emerald-500/20 dark:bg-emerald-500/5';
+  const textTone = danger
+    ? 'text-red-700 dark:text-red-300'
+    : 'text-emerald-700 dark:text-emerald-300';
+  return (
+    <div className={`grid gap-2 rounded-md border p-3 ${tone}`}>
+      <div className="flex items-center justify-between gap-2">
+        <span className={`text-xs font-semibold ${textTone}`}>{title}</span>
+        <button type="button" className={secondaryButtonClass} onClick={() => onEntriesChange([...entries, emptyModelListEntry()])}><Plus className="h-4 w-4" />{t('admin.upstream.common.actions.add')}</button>
+      </div>
+      <p className="text-xs text-slate-500 dark:text-slate-400">{hint}</p>
+      {entries.length === 0 ? <p className="py-2 text-center text-sm text-slate-500">{t('admin.upstream.accountGroup.access.empty')}</p> : null}
+      {entries.map((entry, index) => (
+        <div key={`${entry.vendorCode}-${index}`} className="grid gap-2 sm:grid-cols-[1fr_1fr_40px]">
+          <select aria-label={t('admin.upstream.accountGroup.access.vendor')} className={selectClass} value={entry.vendorCode} onChange={(event) => onEntriesChange(updateAt(entries, index, { vendorCode: event.currentTarget.value }))}>
+            <option value="">{t('admin.upstream.accountGroup.access.selectVendor')}</option>
+            {vendors.map((vendor) => <option key={vendor.vendorCode} value={vendor.vendorCode}>{vendor.label}</option>)}
+          </select>
+          <input aria-label={t('admin.upstream.accountGroup.access.models')} placeholder={t('admin.upstream.accountGroup.access.modelsPlaceholder')} className={inputClass} value={entry.models.join(', ')} onChange={(event) => onEntriesChange(updateAt(entries, index, { models: parseModelNames(event.currentTarget.value) }))} />
+          <button type="button" title={t('common.actions.delete')} className={dangerButtonClass} onClick={() => onEntriesChange(removeAt(entries, index))}><Trash2 className="h-4 w-4" /></button>
+        </div>
+      ))}
+    </div>
   );
 }
 

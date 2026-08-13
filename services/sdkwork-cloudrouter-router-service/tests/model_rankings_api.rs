@@ -198,6 +198,37 @@ async fn model_ranking_list_routes_reject_invalid_or_overflowing_pages() {
 }
 
 #[tokio::test]
+async fn app_model_rankings_route_accepts_contract_page_and_page_size_query() {
+    // The generated app SDK always sends page=1&page_size=N for modelRankings.list.
+    // The server must accept the contract-declared `page` query parameter instead of
+    // rejecting it as an unknown field (40002 Malformed request).
+    let router =
+        sdkwork_cloudrouter_router_service::api::app_model_rankings_router_with_read_store(
+            Arc::new(StubModelRankingsReadStore),
+        );
+    let response = router
+        .oneshot(common::web_framework_app_request(
+            "GET",
+            "/app/v3/api/ai/model_rankings?page=1&page_size=200",
+            Body::empty(),
+            "100001",
+            Some("0"),
+            "30",
+        ))
+        .await
+        .unwrap();
+
+    // The request must reach the read store handler (stub returns 503), not be
+    // rejected at query deserialization with 400 Malformed request.
+    assert_eq!(StatusCode::SERVICE_UNAVAILABLE, response.status());
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(50301, payload["code"].as_i64().unwrap());
+}
+
+#[tokio::test]
 async fn admin_model_ranking_manual_refresh_route_requires_trusted_subject() {
     let router =
         sdkwork_cloudrouter_router_service::api::admin_model_rankings_router_with_read_store_and_refresh_store(

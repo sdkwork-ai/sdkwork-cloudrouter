@@ -18,6 +18,7 @@ import {
 import { SdkworkBackendClient as ModelsBackendClient } from '@sdkwork/models-backend-sdk';
 import { SdkworkAppClient as ModelsAppClient } from '@sdkwork/models-app-sdk';
 import { SdkworkBackendClient as MembershipBackendClient } from '@sdkwork/membership-backend-sdk';
+import { SdkworkBackendClient as CommunityBackendClient } from '@sdkwork/community-backend-sdk';
 import { SdkworkBackendClient as PaymentBackendClient } from '@sdkwork/payment-backend-sdk';
 import { SdkworkBackendClient as BaseDataBackendClient } from '@sdkwork/base-data-backend-sdk';
 import { SdkworkBackendClient as PromotionBackendClient } from '@sdkwork/promotion-backend-sdk';
@@ -587,6 +588,7 @@ let agentBackendClient: SdkworkAgentBackendClient | null = null;
 let promptsBackendClient: SdkworkPromptsBackendClient | null = null;
 let driveAppClient: SdkworkDriveAppClient | null = null;
 let membershipBackendClient: MembershipBackendClient | null = null;
+let communityBackendClient: CommunityBackendClient | null = null;
 let paymentBackendClient: PaymentBackendClient | null = null;
 let baseDataBackendClient: BaseDataBackendClient | null = null;
 let promotionBackendClient: PromotionBackendClient | null = null;
@@ -677,6 +679,16 @@ export function createSdkworkMembershipBackendSdkClient(
 ): MembershipBackendClient {
   return attachCloudRouterSdkSessionAuthBoundary(
     new MembershipBackendClient(buildDependencyBackendConfig(options, 'VITE_SDKWORK_MEMBERSHIP_BACKEND_API_BASE_URL')),
+  );
+}
+
+export type SdkworkCommunityBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
+
+export function createSdkworkCommunityBackendSdkClient(
+  options: SdkworkCommunityBackendSdkClientOptions = {},
+): CommunityBackendClient {
+  return attachCloudRouterSdkSessionAuthBoundary(
+    new CommunityBackendClient(buildDependencyBackendConfig(options, 'VITE_SDKWORK_COMMUNITY_BACKEND_API_BASE_URL')),
   );
 }
 
@@ -995,6 +1007,18 @@ export function getSdkworkMembershipBackendSdkClient(
     membershipBackendClient = createSdkworkMembershipBackendSdkClient();
   }
   return membershipBackendClient;
+}
+
+export function getSdkworkCommunityBackendSdkClient(
+  options: SdkworkCommunityBackendSdkClientOptions = {},
+): CommunityBackendClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkCommunityBackendSdkClient(options);
+  }
+  if (!communityBackendClient) {
+    communityBackendClient = createSdkworkCommunityBackendSdkClient();
+  }
+  return communityBackendClient;
 }
 
 export function getSdkworkPaymentBackendSdkClient(

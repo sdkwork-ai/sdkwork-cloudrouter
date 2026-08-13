@@ -87,6 +87,7 @@ test('cloudrouter admin mounts standalone business control centers without legac
   for (const pkg of [
     '@sdkwork/cloudrouter-pc-admin-marketing',
     '@sdkwork/cloudrouter-pc-admin-memberships',
+    '@sdkwork/cloudrouter-pc-admin-community',
     '@sdkwork/cloudrouter-pc-admin-payments',
     '@sdkwork/cloudrouter-pc-admin-storage',
   ]) {
@@ -95,6 +96,7 @@ test('cloudrouter admin mounts standalone business control centers without legac
 
   assert.doesNotMatch(appSource, /InventoryAdmin|FilePlatformAdmin|DriveAdmin|CatalogAdmin|OrdersAdmin|FinanceAdmin|WalletAdmin|MessagingAdmin|AgentsAdmin|SkillAdmin|PromptsAdmin|McpAdmin|AnnouncementAdmin|UserAdmin|OrganizationAdmin|OauthAdmin|ServiceProviderAdmin/);
   assert.match(registrySource, /id:\s*'membershipCenter'/);
+  assert.match(registrySource, /id:\s*'communityCenter'/);
   assert.match(registrySource, /id:\s*'marketingCenter'/);
   assert.match(registrySource, /id:\s*'paymentCenter'/);
   assert.match(registrySource, /id:\s*'storageCenter'/);
@@ -115,6 +117,9 @@ test('cloudrouter admin mounts standalone business control centers without legac
     assert.match(serviceSource, /getCloudRouterBackendSdkClient\(\)/, `${servicePath} must use the backend SDK boundary`);
     assert.doesNotMatch(serviceSource, /\bfetch\s*\(|axios|XMLHttpRequest/, `${servicePath} must not bypass the generated SDK`);
   }
+  const communityServiceSource = readPortalFile('./packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts');
+  assert.match(communityServiceSource, /getSdkworkCommunityBackendSdkClient\(\)/, 'communityService must use the community backend SDK boundary');
+  assert.doesNotMatch(communityServiceSource, /\bfetch\s*\(|axios|XMLHttpRequest/, 'communityService must not bypass the generated SDK');
 });
 
 test('cloudrouter admin owns storage governance without mounting inventory or Drive control planes', () => {

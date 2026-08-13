@@ -79,10 +79,6 @@
         },
         {
           "itemType": "resource",
-          "resourceCode": "api.openai.video"
-        },
-        {
-          "itemType": "resource",
           "resourceCode": "api.openai.videos"
         },
         {
@@ -265,10 +261,6 @@
         },
         {
           "itemType": "resource",
-          "resourceCode": "api.openai.video"
-        },
-        {
-          "itemType": "resource",
           "resourceCode": "api.openai.videos"
         },
         {
@@ -436,20 +428,6 @@
       ]
     },
     {
-      "groupCode": "api.claude.all",
-      "groupName": "Claude All APIs",
-      "groupType": "api_group",
-      "selectionMode": "all",
-      "description": "All Anthropic Claude API resources currently exposed by the relay.",
-      "sortOrder": 10,
-      "items": [
-        {
-          "itemType": "resource",
-          "resourceCode": "api.anthropic.claude_code"
-        }
-      ]
-    },
-    {
       "groupCode": "api.google.all",
       "groupName": "Google All APIs",
       "groupType": "api_group",
@@ -569,10 +547,6 @@
       "items": [
         {
           "itemType": "resource",
-          "resourceCode": "api.jimeng.image_generation"
-        },
-        {
-          "itemType": "resource",
           "resourceCode": "api.volcengine.image_generation"
         }
       ]
@@ -585,10 +559,6 @@
       "description": "Volcengine video generation API resources.",
       "sortOrder": 17,
       "items": [
-        {
-          "itemType": "resource",
-          "resourceCode": "api.jimeng.video_generation"
-        },
         {
           "itemType": "resource",
           "resourceCode": "api.volcengine.video_generation"

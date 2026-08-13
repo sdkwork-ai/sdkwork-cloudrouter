@@ -90,6 +90,7 @@ export type { IpLimitRulePage } from './ip-limit-rule-page';
 export type { JsonNull } from './json-null';
 export type { JsonObject } from './json-object';
 export type { JsonValue } from './json-value';
+export type { LlmProtocolConfig } from './llm-protocol-config';
 export type { MediaAccess } from './media-access';
 export type { MediaAiProvenance } from './media-ai-provenance';
 export type { MediaChecksum } from './media-checksum';
@@ -148,6 +149,7 @@ export type { UpstreamAccountGroupMemberCollection } from './upstream-account-gr
 export type { UpstreamAccountGroupMemberCollectionResponse } from './upstream-account-group-member-collection-response';
 export type { UpstreamAccountGroupMemberInput } from './upstream-account-group-member-input';
 export type { UpstreamAccountGroupMemberListResponse } from './upstream-account-group-member-list-response';
+export type { UpstreamAccountGroupModelListEntry } from './upstream-account-group-model-list-entry';
 export type { UpstreamAccountGroupResourceCollection } from './upstream-account-group-resource-collection';
 export type { UpstreamAccountGroupResourceCollectionResponse } from './upstream-account-group-resource-collection-response';
 export type { UpstreamAccountGroupResourceListResponse } from './upstream-account-group-resource-list-response';

@@ -645,5 +645,11 @@ fn upstream_route_selection_error(error: UpstreamRouteSelectionError) -> OpenAiR
             "invalid_request_error",
             message,
         )),
+        UpstreamRouteSelectionErrorKind::ModelForbidden => Box::new(openai_error(
+            StatusCode::FORBIDDEN,
+            "model_forbidden",
+            "invalid_request_error",
+            message,
+        )),
     }
 }

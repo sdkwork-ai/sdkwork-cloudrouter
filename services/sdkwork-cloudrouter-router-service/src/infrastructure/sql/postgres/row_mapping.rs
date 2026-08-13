@@ -214,12 +214,15 @@ pub async fn load_upstream_account_groups(
             organization_id: row.try_get("organization_id")?,
             name: row.try_get("name")?,
             code: row.try_get("code")?,
+            is_default: row.try_get("is_default")?,
             pricing_plan_code: row.try_get("pricing_plan_code")?,
             routing_strategy: row.try_get("routing_strategy")?,
             fallback_mode: row.try_get("fallback_mode")?,
             priority: row.try_get("priority")?,
             cost_multiplier: row.try_get("cost_multiplier")?,
             sale_multiplier: row.try_get("sale_multiplier")?,
+            model_blacklist_json: row.try_get("model_blacklist")?,
+            model_whitelist_json: row.try_get("model_whitelist")?,
         })
     })
     .fetch(executor)

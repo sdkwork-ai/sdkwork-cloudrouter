@@ -241,6 +241,8 @@ fn account_group_rows_use_decimal_cost_and_sale_multipliers() {
         priority: 10,
         cost_multiplier: "1.080000".to_owned(),
         sale_multiplier: "1.250000".to_owned(),
+        model_blacklist_json: "[]".to_owned(),
+        model_whitelist_json: "[]".to_owned(),
     }
     .try_into_domain()
     .unwrap();
@@ -274,6 +276,8 @@ fn account_group_rows_use_decimal_cost_and_sale_multipliers() {
         priority: 100,
         cost_multiplier: "not-a-decimal".to_owned(),
         sale_multiplier: "1.000000".to_owned(),
+        model_blacklist_json: "[]".to_owned(),
+        model_whitelist_json: "[]".to_owned(),
     };
     assert!(invalid.try_into_domain().is_err());
 }

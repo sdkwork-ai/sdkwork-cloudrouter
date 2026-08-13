@@ -1761,6 +1761,44 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
         .await
         .map_err(anyhow::Error::msg)?;
     let backend_router = backend_router.merge(iam_backend_assembly.router);
+    // Partner backend surface (`/backend/v3/api/partners/*`) is
+    // dependency-owned. It enters through the partner API assembly entrypoint
+    // on the shared commerce pool — not through a direct `sdkwork-routes-*`
+    // import — per API_ASSEMBLY_SPEC §3/§6.1, and must be merged before the
+    // Web Framework layer is installed by `finalize_all_in_one_route_surfaces`.
+    let partner_backend_assembly =
+        sdkwork_api_partner_assembly::assemble_backend_business_router_with_pool(
+            payment_host.database_pool(),
+        )
+        .await
+        .map_err(anyhow::Error::msg)?;
+    let backend_router = backend_router.merge(partner_backend_assembly.router);
+    // Promotion backend surface (`/backend/v3/api/promotions/*`,
+    // `/backend/v3/api/coupons/*`) is dependency-owned. It enters through the
+    // promotion API assembly entrypoint on the shared commerce pool — not
+    // through a direct `sdkwork-routes-*` import — per API_ASSEMBLY_SPEC
+    // §3/§6.1, and must be merged before the Web Framework layer is installed
+    // by `finalize_all_in_one_route_surfaces`.
+    let promotion_backend_assembly =
+        sdkwork_api_promotion_assembly::assemble_backend_business_router_with_pool(
+            payment_host.database_pool(),
+        )
+        .await
+        .map_err(anyhow::Error::msg)?;
+    let backend_router = backend_router.merge(promotion_backend_assembly.router);
+    // Community backend surface (`/backend/v3/api/community/*`) is
+    // dependency-owned. It enters through the community API assembly
+    // entrypoint on the process-shared database pool — not through a direct
+    // `sdkwork-routes-*` import — per API_ASSEMBLY_SPEC §3/§6.1, and must be
+    // merged before the Web Framework layer is installed by
+    // `finalize_all_in_one_route_surfaces`.
+    let community_backend_assembly =
+        sdkwork_api_community_assembly::assemble_backend_business_router_with_pool(
+            context.database_pool.clone(),
+        )
+        .await
+        .map_err(anyhow::Error::msg)?;
+    let backend_router = backend_router.merge(community_backend_assembly.router);
     let app_router = sdkwork_routes_cloudrouter_app_api::router_with_postgres_shared_runtime(
         sdkwork_routes_cloudrouter_app_api::PostgresSharedRuntime {
             config: context.database_config.clone(),
@@ -1788,6 +1826,18 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
     )
     .await
     .map_err(anyhow::Error::new)?;
+    // Partner join (伙伴计划) app surface (`/app/v3/api/partner_join/*`) is
+    // dependency-owned. It enters through the partner API assembly entrypoint
+    // on the shared commerce pool — not through a direct `sdkwork-routes-*`
+    // import — per API_ASSEMBLY_SPEC §3/§6.1, and must be merged before the
+    // Web Framework layer is installed by `finalize_all_in_one_route_surfaces`.
+    let partner_app_assembly =
+        sdkwork_api_partner_assembly::assemble_app_business_router_with_pool(
+            payment_host.database_pool(),
+        )
+        .await
+        .map_err(anyhow::Error::msg)?;
+    let app_router = app_router.merge(partner_app_assembly.router);
     let (backend_router, app_router) = finalize_all_in_one_route_surfaces(
         &context.database_config,
         &context.database_pool,
@@ -2150,7 +2200,16 @@ async fn build_gateway_router_from_all_in_one_context(
         request_limits_config: context.request_limits_config,
         call_chain,
         gateway_balance_store: Some(gateway_balance_store),
-        auth_token_authenticator: None,
+        // Resolves non-API-key bearer credentials (SDKWork login auth tokens)
+        // into the tenant default upstream account group so open-api chat
+        // completions accept the agents turn executor's auth-token channel
+        // (vendor compatibility surface, API_SPEC §4.5.2). Mirrors the
+        // database-runtime wiring in
+        // `router_with_database_api_key_and_provider_configs`.
+        auth_token_authenticator: Some(Arc::new(IamAuthTokenAuthenticator::new(
+            context.database_pool.clone(),
+            Arc::clone(&context.catalog),
+        ))),
     })
     .map_err(anyhow::Error::new)
 }

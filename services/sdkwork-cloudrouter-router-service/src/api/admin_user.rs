@@ -32,7 +32,7 @@ const MAX_USERNAME_LEN: usize = 168;
 const MAX_EMAIL_LEN: usize = 255;
 const MAX_GROUP_LEN: usize = 64;
 const MAX_API_KEY_NAME_LEN: usize = 128;
-const DEFAULT_ACCOUNT_GROUP_CODE: &str = "default";
+const DEFAULT_ACCOUNT_GROUP_CODE: &str = "default-group";
 const DEFAULT_ACCOUNT_GROUP_NAME: &str = "Default";
 const DEFAULT_PRICING_PLAN_CODE: &str = "standard";
 

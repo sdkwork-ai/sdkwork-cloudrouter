@@ -20,13 +20,24 @@ use sdkwork_web_core::HttpRouteManifest;
 use crate::http_route_manifest::http_route_manifest;
 
 /// Capability app-API manifests mounted into the Cloud Router app surface.
+///
+/// Dependency-owned manifests enter through their dependency assembly
+/// entrypoints — not through direct `sdkwork-routes-*` imports — per
+/// API_ASSEMBLY_SPEC §3/§6.1.
 fn capability_manifests() -> Vec<HttpRouteManifest> {
     vec![
-        sdkwork_routes_models_catalog_app_api::app_route_manifest(),
-        sdkwork_routes_membership_app_api::app_route_manifest(),
-        sdkwork_routes_payment_app_api::http_route_manifest::app_route_manifest(),
-        sdkwork_routes_promotion_app_api::http_route_manifest::app_route_manifest(),
-        sdkwork_routes_invoice_app_api::app_route_manifest(),
+        sdkwork_api_models_assembly::app_api_route_manifest(),
+        sdkwork_api_membership_assembly::app_api_route_manifest(),
+        sdkwork_api_payment_assembly::federated_app_route_manifest(),
+        sdkwork_api_promotion_assembly::app_api_route_manifest(),
+        sdkwork_api_invoice_assembly::app_api_route_manifest(),
+        // Partner join (伙伴计划) surface (`/app/v3/api/partner_join/*`) is
+        // merged by the partner API assembly entrypoint; its route manifest
+        // enters through the dependency assembly so the Web Framework enforces
+        // the program catalog and invite-code validation as public routes and
+        // the application endpoints as session-protected (API_ASSEMBLY_SPEC
+        // §3/§6.1).
+        sdkwork_api_partner_assembly::app_api_route_manifest(),
         // Federated Community surface (`/app/v3/api/community/*`) is merged by
         // `merge_federated_community_app_router`; its route manifest enters
         // through the dependency assembly entrypoint so the Web Framework

@@ -154,7 +154,7 @@ fn admin_web_context(path: &str, method: &str) -> WebRequestContext {
 #[tokio::test]
 async fn injected_product_catalog_route_overrides_manifest_fallback() {
     let router =
-        sdkwork_cloudrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
+        sdkwork_routes_cloudrouter_backend_api::router_with_product_catalog(Arc::new(catalog()));
     let response = router
         .oneshot(
             Request::builder()
@@ -186,7 +186,7 @@ async fn injected_product_catalog_route_overrides_manifest_fallback() {
 #[tokio::test]
 async fn runtime_route_explain_uses_selector_and_masks_provider_secrets() {
     let router =
-        sdkwork_cloudrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
+        sdkwork_routes_cloudrouter_backend_api::router_with_product_catalog(Arc::new(catalog()));
     let response = router
         .oneshot(
             Request::builder()
@@ -261,7 +261,7 @@ async fn runtime_route_explain_uses_selector_and_masks_provider_secrets() {
 #[tokio::test]
 async fn runtime_route_explain_reports_selector_pricing_blocking_reason() {
     let router =
-        sdkwork_cloudrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
+        sdkwork_routes_cloudrouter_backend_api::router_with_product_catalog(Arc::new(catalog()));
     let response = router
         .oneshot(
             Request::builder()
@@ -311,7 +311,7 @@ async fn runtime_route_explain_reports_selector_pricing_blocking_reason() {
 #[tokio::test]
 async fn runtime_route_explain_reports_selector_route_blocking_reason() {
     let router =
-        sdkwork_cloudrouter_admin_gateway::router_with_product_catalog(Arc::new(catalog()));
+        sdkwork_routes_cloudrouter_backend_api::router_with_product_catalog(Arc::new(catalog()));
     let response = router
         .oneshot(
             Request::builder()

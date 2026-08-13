@@ -17,10 +17,15 @@ pub type OpenAiAuthTokenError = Box<Response>;
 
 /// Resolves an SDKWork auth token into the account route context used by the
 /// chat completions pipeline (tenant/org/user + default upstream account group).
+///
+/// `access_token` carries the dual-token session access context (API_SPEC
+/// §819/§824): when present it MUST belong to the same session as the auth
+/// token, and implementations reject mismatches.
 #[async_trait]
 pub trait OpenAiAuthTokenAuthenticator: Send + Sync + 'static {
     async fn authenticate(
         &self,
         raw_bearer_token: &str,
+        access_token: Option<&str>,
     ) -> Result<AuthenticatedApiKeyContext, OpenAiAuthTokenError>;
 }

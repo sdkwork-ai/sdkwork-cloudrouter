@@ -2,14 +2,14 @@ use sqlx::postgres::PgRow;
 use sqlx::{PgPool, Postgres, Transaction};
 
 use super::shared::{
-    column, conflict, not_found, record_routing_change, search_pattern, store_error,
-    DEFAULT_DATA_SCOPE,
+    column, conflict, model_list_json, not_found, parse_model_list, record_routing_change,
+    search_pattern, store_error, DEFAULT_DATA_SCOPE,
 };
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::ports::{
-    AdminUpstreamListQuery, AdminUpstreamPage, AdminUpstreamSubject, AdminUpstreamSupplierItem,
-    SaveAdminUpstreamSupplierCommand,
+    AdminLlmProtocolConfig, AdminUpstreamListQuery, AdminUpstreamPage, AdminUpstreamSubject,
+    AdminUpstreamSupplierItem, SaveAdminUpstreamSupplierCommand,
 };
 
 const SUPPLIER_COLUMNS: &str = r#"
@@ -23,6 +23,9 @@ const SUPPLIER_COLUMNS: &str = r#"
     supplier.default_vendor_code,
     supplier.adapter_code,
     supplier.protocol_code,
+    supplier.protocols,
+    supplier.model_blacklist::text AS model_blacklist,
+    supplier.model_whitelist::text AS model_whitelist,
     supplier.website_url,
     supplier.docs_url,
     supplier.region_code,
@@ -361,14 +364,18 @@ async fn insert(
             id, uuid, tenant_id, organization_id, data_scope, status,
             created_at, updated_at, version, metadata,
             supplier_code, supplier_name, display_name, description,
-            supplier_type, default_vendor_code, adapter_code, protocol_code, website_url, docs_url,
+            supplier_type, default_vendor_code, adapter_code, protocol_code, protocols,
+            model_blacklist, model_whitelist,
+            website_url, docs_url,
             region_code, environment, sort_order
         ) VALUES (
             $1, $2, $3, $4, $5, $6,
             $7::timestamptz, $7::timestamptz, 0, '{}'::jsonb,
             $8, $9, $10, $11,
-            $12, $13, $14, $15, $16, $17,
-            $18, $19, $20
+            $12, $13, $14, $15, $16,
+            $17::jsonb, $18::jsonb,
+            $19, $20,
+            $21, $22, $23
         )
         "#,
     )
@@ -387,6 +394,9 @@ async fn insert(
     .bind(command.default_vendor_code.as_deref().map(str::trim))
     .bind(command.adapter_code.trim())
     .bind(command.protocol_code.trim())
+    .bind(serde_json::to_value(&command.protocols).map_err(store_error_json)?)
+    .bind(model_list_json(&command.model_blacklist))
+    .bind(model_list_json(&command.model_whitelist))
     .bind(command.website_url.as_deref().map(str::trim))
     .bind(command.docs_url.as_deref().map(str::trim))
     .bind(command.region_code.as_deref().map(str::trim))
@@ -460,7 +470,10 @@ async fn update(
             sort_order = $12,
             status = $13,
             version = version + 1,
-            updated_at = $14::timestamptz
+            updated_at = $14::timestamptz,
+            protocols = $19::jsonb,
+            model_blacklist = $20::jsonb,
+            model_whitelist = $21::jsonb
         WHERE tenant_id = $15 AND organization_id = $16
           AND id = $17 AND version = $18 AND deleted_at IS NULL
         "#,
@@ -483,6 +496,9 @@ async fn update(
     .bind(command.subject.organization_id)
     .bind(supplier_id)
     .bind(expected_version)
+    .bind(serde_json::to_value(&command.protocols).map_err(store_error_json)?)
+    .bind(model_list_json(&command.model_blacklist))
+    .bind(model_list_json(&command.model_whitelist))
     .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to update upstream supplier", error))?;
@@ -557,6 +573,27 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamSupplierItem> {
             "protocol_code",
             "failed to map upstream supplier protocol",
         )?,
+        protocols: parse_protocols(column(
+            &row,
+            "protocols",
+            "failed to map upstream supplier protocols",
+        )?)?,
+        model_blacklist: parse_model_list(
+            "upstream supplier",
+            column(
+                &row,
+                "model_blacklist",
+                "failed to map upstream supplier model blacklist",
+            )?,
+        )?,
+        model_whitelist: parse_model_list(
+            "upstream supplier",
+            column(
+                &row,
+                "model_whitelist",
+                "failed to map upstream supplier model whitelist",
+            )?,
+        )?,
         website_url: column(
             &row,
             "website_url",
@@ -591,4 +628,16 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamSupplierItem> {
             "failed to map upstream supplier updated time",
         )?,
     })
+}
+
+fn parse_protocols(value: serde_json::Value) -> DomainResult<Vec<AdminLlmProtocolConfig>> {
+    serde_json::from_value(value).map_err(|error| {
+        DomainError::new(format!("failed to parse upstream supplier protocols: {error}"))
+    })
+}
+
+fn store_error_json(error: serde_json::Error) -> DomainError {
+    DomainError::new(format!(
+        "failed to serialize upstream supplier protocols: {error}"
+    ))
 }

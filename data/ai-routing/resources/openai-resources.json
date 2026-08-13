@@ -11,7 +11,10 @@
       "method": "POST",
       "pathTemplate": "/v1/responses",
       "capability": "llm",
-      "capabilities": ["llm", "chat"],
+      "capabilities": [
+        "llm",
+        "chat"
+      ],
       "sortOrder": 200
     },
     {
@@ -24,7 +27,10 @@
       "method": "POST",
       "pathTemplate": "/v1/chat/completions",
       "capability": "llm",
-      "capabilities": ["llm", "chat"],
+      "capabilities": [
+        "llm",
+        "chat"
+      ],
       "sortOrder": 210
     },
     {
@@ -37,7 +43,11 @@
       "method": "POST",
       "pathTemplate": "/v1/conversations",
       "capability": "llm",
-      "capabilities": ["llm", "chat", "network"],
+      "capabilities": [
+        "llm",
+        "chat",
+        "network"
+      ],
       "sortOrder": 212
     },
     {
@@ -50,7 +60,10 @@
       "method": "POST",
       "pathTemplate": "/v1/completions",
       "capability": "llm",
-      "capabilities": ["llm", "chat"],
+      "capabilities": [
+        "llm",
+        "chat"
+      ],
       "sortOrder": 215
     },
     {
@@ -63,7 +76,11 @@
       "method": "POST",
       "pathTemplate": "/v1/embeddings",
       "capability": "embedding",
-      "capabilities": ["embedding", "embeddings", "llm"],
+      "capabilities": [
+        "embedding",
+        "embeddings",
+        "llm"
+      ],
       "sortOrder": 220
     },
     {
@@ -76,7 +93,9 @@
       "method": "POST",
       "pathTemplate": "/v1/images/generations",
       "capability": "image",
-      "capabilities": ["image"],
+      "capabilities": [
+        "image"
+      ],
       "sortOrder": 225
     },
     {
@@ -89,7 +108,9 @@
       "method": "POST",
       "pathTemplate": "/v1/images/generations",
       "capability": "image",
-      "capabilities": ["image"],
+      "capabilities": [
+        "image"
+      ],
       "sortOrder": 230
     },
     {
@@ -102,7 +123,9 @@
       "method": "POST",
       "pathTemplate": "/v1/images/edits",
       "capability": "image",
-      "capabilities": ["image"],
+      "capabilities": [
+        "image"
+      ],
       "sortOrder": 240
     },
     {
@@ -115,7 +138,9 @@
       "method": "POST",
       "pathTemplate": "/v1/images/variations",
       "capability": "image",
-      "capabilities": ["image"],
+      "capabilities": [
+        "image"
+      ],
       "sortOrder": 242
     },
     {
@@ -128,7 +153,10 @@
       "method": "POST",
       "pathTemplate": "/v1/audio",
       "capability": "audio",
-      "capabilities": ["audio", "speech"],
+      "capabilities": [
+        "audio",
+        "speech"
+      ],
       "sortOrder": 245
     },
     {
@@ -141,7 +169,10 @@
       "method": "POST",
       "pathTemplate": "/v1/audio/transcriptions",
       "capability": "audio",
-      "capabilities": ["audio", "speech"],
+      "capabilities": [
+        "audio",
+        "speech"
+      ],
       "sortOrder": 250
     },
     {
@@ -154,7 +185,10 @@
       "method": "POST",
       "pathTemplate": "/v1/audio/translations",
       "capability": "audio",
-      "capabilities": ["audio", "speech"],
+      "capabilities": [
+        "audio",
+        "speech"
+      ],
       "sortOrder": 255
     },
     {
@@ -167,7 +201,10 @@
       "method": "POST",
       "pathTemplate": "/v1/audio/speech",
       "capability": "audio",
-      "capabilities": ["audio", "speech"],
+      "capabilities": [
+        "audio",
+        "speech"
+      ],
       "sortOrder": 260
     },
     {
@@ -180,7 +217,10 @@
       "method": "GET",
       "pathTemplate": "/v1/files",
       "capability": "network",
-      "capabilities": ["network", "http"],
+      "capabilities": [
+        "network",
+        "http"
+      ],
       "sortOrder": 270
     },
     {
@@ -193,7 +233,10 @@
       "method": "POST",
       "pathTemplate": "/v1/uploads",
       "capability": "network",
-      "capabilities": ["network", "http"],
+      "capabilities": [
+        "network",
+        "http"
+      ],
       "sortOrder": 275
     },
     {
@@ -206,7 +249,10 @@
       "method": "POST",
       "pathTemplate": "/v1/batches",
       "capability": "network",
-      "capabilities": ["network", "http"],
+      "capabilities": [
+        "network",
+        "http"
+      ],
       "sortOrder": 280
     },
     {
@@ -219,21 +265,11 @@
       "method": "POST",
       "pathTemplate": "/v1/realtime",
       "capability": "audio",
-      "capabilities": ["audio", "llm"],
+      "capabilities": [
+        "audio",
+        "llm"
+      ],
       "sortOrder": 300
-    },
-    {
-      "resourceCode": "api.openai.video",
-      "resourceType": "api_endpoint",
-      "displayName": "OpenAI Video",
-      "vendorCode": "openai",
-      "modalityCode": "video",
-      "apiCode": "openai.video",
-      "method": "POST",
-      "pathTemplate": "/v1/videos",
-      "capability": "video",
-      "capabilities": ["video"],
-      "sortOrder": 305
     },
     {
       "resourceCode": "api.openai.videos",
@@ -245,7 +281,9 @@
       "method": "POST",
       "pathTemplate": "/v1/videos",
       "capability": "video",
-      "capabilities": ["video"],
+      "capabilities": [
+        "video"
+      ],
       "sortOrder": 310
     },
     {
@@ -258,7 +296,10 @@
       "method": "GET",
       "pathTemplate": "/v1/models",
       "capability": "network",
-      "capabilities": ["network", "http"],
+      "capabilities": [
+        "network",
+        "http"
+      ],
       "sortOrder": 312
     },
     {
@@ -271,7 +312,10 @@
       "method": "POST",
       "pathTemplate": "/v1/moderations",
       "capability": "network",
-      "capabilities": ["network", "http"],
+      "capabilities": [
+        "network",
+        "http"
+      ],
       "sortOrder": 314
     },
     {
@@ -284,7 +328,11 @@
       "method": "POST",
       "pathTemplate": "/v1/assistants",
       "capability": "llm",
-      "capabilities": ["llm", "chat", "network"],
+      "capabilities": [
+        "llm",
+        "chat",
+        "network"
+      ],
       "sortOrder": 316
     },
     {
@@ -297,7 +345,11 @@
       "method": "POST",
       "pathTemplate": "/v1/threads",
       "capability": "llm",
-      "capabilities": ["llm", "chat", "network"],
+      "capabilities": [
+        "llm",
+        "chat",
+        "network"
+      ],
       "sortOrder": 318
     },
     {
@@ -310,7 +362,10 @@
       "method": "POST",
       "pathTemplate": "/v1/vector_stores",
       "capability": "network",
-      "capabilities": ["network", "http"],
+      "capabilities": [
+        "network",
+        "http"
+      ],
       "sortOrder": 319
     },
     {
@@ -323,7 +378,11 @@
       "method": "POST",
       "pathTemplate": "/v1/codex/responses",
       "capability": "llm",
-      "capabilities": ["llm", "chat", "coding"],
+      "capabilities": [
+        "llm",
+        "chat",
+        "coding"
+      ],
       "sortOrder": 320
     },
     {
@@ -336,7 +395,11 @@
       "method": "POST",
       "pathTemplate": "/v1/chatkit/sessions",
       "capability": "llm",
-      "capabilities": ["llm", "chat", "network"],
+      "capabilities": [
+        "llm",
+        "chat",
+        "network"
+      ],
       "sortOrder": 340
     },
     {
@@ -349,7 +412,10 @@
       "method": "GET",
       "pathTemplate": "/v1/containers",
       "capability": "network",
-      "capabilities": ["network", "http"],
+      "capabilities": [
+        "network",
+        "http"
+      ],
       "sortOrder": 350
     }
   ]

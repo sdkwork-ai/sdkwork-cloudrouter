@@ -376,6 +376,24 @@
         }
       },
       {
+        "sdkFamily": "sdkwork-community-backend-sdk",
+        "packageName": "@sdkwork/community-backend-sdk",
+        "surface": "backend-api",
+        "apiPrefix": "/backend/v3/api",
+        "sourceExport": "./sdk-clients",
+        "factory": "createSdkworkCommunityBackendSdkClient",
+        "getter": "getSdkworkCommunityBackendSdkClient",
+        "dependencyApiSurface": "sdkwork-community-backend-sdk",
+        "runtimeIntegration": {
+          "mode": "dependency-backend-api",
+          "sameOriginAllowed": true,
+          "baseUrlEnv": "VITE_SDKWORK_COMMUNITY_BACKEND_API_BASE_URL",
+          "fallbackBaseUrlEnv": "VITE_CLOUDROUTER_BACKEND_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "tokenManager": "cloud-router-global"
+        }
+      },
+      {
         "sdkFamily": "sdkwork-payment-backend-sdk",
         "packageName": "@sdkwork/payment-backend-sdk",
         "surface": "backend-api",

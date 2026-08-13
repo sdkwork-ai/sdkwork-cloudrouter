@@ -364,6 +364,30 @@ test("portal bootstrap mounts the documents runtime provider with the cloudroute
   assert.match(source, /<\/DocumentsReferenceRuntimeProvider>/);
 });
 
+test("portal error boundary renders inside the i18n provider so its labels translate", () => {
+  const source = readPortalSource("./src/main.tsx");
+
+  const i18nProviderIndex = source.indexOf("<SdkworkI18nProvider");
+  const boundaryIndex = source.indexOf("<PortalErrorBoundary>");
+  const boundaryCloseIndex = source.indexOf("</PortalErrorBoundary>");
+  const i18nProviderCloseIndex = source.lastIndexOf("</SdkworkI18nProvider>");
+
+  assert.ok(i18nProviderIndex !== -1, "bootstrap must mount the i18n provider");
+  assert.ok(boundaryIndex !== -1, "bootstrap must mount the portal error boundary");
+  assert.ok(
+    i18nProviderIndex < boundaryIndex,
+    "the error boundary must be nested inside the i18n provider",
+  );
+  assert.ok(
+    boundaryCloseIndex < i18nProviderCloseIndex,
+    "the error boundary must close before the i18n provider",
+  );
+  assert.ok(
+    source.indexOf("<App />") > boundaryIndex && source.indexOf("<App />") < boundaryCloseIndex,
+    "the error boundary must wrap the app tree",
+  );
+});
+
 test("portal shell offsets embedded documents routes below the fixed navbar", () => {
   const shellSource = readPortalSource("./packages/sdkwork-cloudrouter-pc-shell/src/AppShellLayout.tsx");
   const indexCssSource = readPortalSource("./src/index.css");

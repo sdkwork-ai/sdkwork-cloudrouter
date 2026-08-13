@@ -3,8 +3,22 @@ use sdkwork_api_cloudrouter_assembly as api_assembly;
 use sdkwork_api_cloudrouter_standalone_gateway::portal::{mount_portal_static, PortalStaticConfig};
 use sdkwork_web_bootstrap::{service_router, ServiceRouterConfig};
 
+fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    // Windows main-thread stacks default to 1 MiB. The all-in-one assembly
+    // chain (in-process upstreams + dependency assemblies + web framework)
+    // polls a deep async future graph on the block_on thread, so run the
+    // gateway on a dedicated thread with a larger stack.
+    std::thread::Builder::new()
+        .name("cloudrouter-gateway-main".to_owned())
+        .stack_size(16 * 1024 * 1024)
+        .spawn(gateway_main)
+        .map_err(|error| std::io::Error::other(format!("spawn gateway main thread: {error}")))?
+        .join()
+        .map_err(|_| std::io::Error::other("gateway main thread panicked"))?
+}
+
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn gateway_main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     sdkwork_web_bootstrap::init_tracing_from_env();
     let runtime_toml = sdkwork_cloudrouter_config::RuntimeTomlConfig::from_env_config_file()
         .map_err(std::io::Error::other)?;

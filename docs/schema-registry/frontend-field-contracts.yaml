@@ -7780,6 +7780,53 @@ frontend_operations:
                   maxLength: 16
                   type: string
                 type: array
+              modelBlacklist:
+                description: Model blacklist of this group. Vendor + model entries
+                  the whole group is forbidden to serve. An entry with an empty
+                  models array forbids every model of the vendor. The blacklist
+                  wins over the whitelist.
+                items:
+                  additionalProperties: false
+                  name: UpstreamAccountGroupModelListEntry
+                  properties:
+                    models:
+                      items:
+                        maxLength: 256
+                        type: string
+                      maxItems: 200
+                      type: array
+                    vendorCode:
+                      maxLength: 64
+                      type: string
+                  required:
+                  - vendorCode
+                  - models
+                  type: object
+                maxItems: 100
+                type: array
+              modelWhitelist:
+                description: Model whitelist of this group. When non-empty, the
+                  group serves only matching vendor + model entries. An entry with
+                  an empty models array allows every model of the vendor.
+                items:
+                  additionalProperties: false
+                  name: UpstreamAccountGroupModelListEntry
+                  properties:
+                    models:
+                      items:
+                        maxLength: 256
+                        type: string
+                      maxItems: 200
+                      type: array
+                    vendorCode:
+                      maxLength: 64
+                      type: string
+                  required:
+                  - vendorCode
+                  - models
+                  type: object
+                maxItems: 100
+                type: array
               priority:
                 format: int32
                 minimum: 0
@@ -7948,6 +7995,53 @@ frontend_operations:
             - music
             maxLength: 16
             type: string
+          nullable: true
+          type: array
+        modelBlacklist:
+          description: Model blacklist of this group. Vendor + model entries the
+            whole group is forbidden to serve. An entry with an empty models array
+            forbids every model of the vendor. The blacklist wins over the
+            whitelist.
+          items:
+            additionalProperties: false
+            properties:
+              models:
+                items:
+                  maxLength: 256
+                  type: string
+                maxItems: 200
+                type: array
+              vendorCode:
+                maxLength: 64
+                type: string
+            required:
+            - vendorCode
+            - models
+            type: object
+          maxItems: 100
+          nullable: true
+          type: array
+        modelWhitelist:
+          description: Model whitelist of this group. When non-empty, the group
+            serves only matching vendor + model entries. An entry with an empty
+            models array allows every model of the vendor.
+          items:
+            additionalProperties: false
+            properties:
+              models:
+                items:
+                  maxLength: 256
+                  type: string
+                maxItems: 200
+                type: array
+              vendorCode:
+                maxLength: 64
+                type: string
+            required:
+            - vendorCode
+            - models
+            type: object
+          maxItems: 100
           nullable: true
           type: array
         priority:
@@ -8129,6 +8223,53 @@ frontend_operations:
             - music
             maxLength: 16
             type: string
+          nullable: true
+          type: array
+        modelBlacklist:
+          description: Model blacklist of this group. Vendor + model entries the
+            whole group is forbidden to serve. An entry with an empty models array
+            forbids every model of the vendor. The blacklist wins over the
+            whitelist.
+          items:
+            additionalProperties: false
+            properties:
+              models:
+                items:
+                  maxLength: 256
+                  type: string
+                maxItems: 200
+                type: array
+              vendorCode:
+                maxLength: 64
+                type: string
+            required:
+            - vendorCode
+            - models
+            type: object
+          maxItems: 100
+          nullable: true
+          type: array
+        modelWhitelist:
+          description: Model whitelist of this group. When non-empty, the group
+            serves only matching vendor + model entries. An entry with an empty
+            models array allows every model of the vendor.
+          items:
+            additionalProperties: false
+            properties:
+              models:
+                items:
+                  maxLength: 256
+                  type: string
+                maxItems: 200
+                type: array
+              vendorCode:
+                maxLength: 64
+                type: string
+            required:
+            - vendorCode
+            - models
+            type: object
+          maxItems: 100
           nullable: true
           type: array
         priority:
@@ -9838,6 +9979,27 @@ frontend_operations:
               protocolCode:
                 maxLength: 128
                 type: string
+              protocols:
+                items:
+                  additionalProperties: false
+                  name: LlmProtocolConfig
+                  properties:
+                    baseUrl:
+                      maxLength: 2048
+                      type: string
+                    protocolCode:
+                      enum:
+                      - openai_chat_completions
+                      - openai_responses
+                      - anthropic_messages
+                      type: string
+                  required:
+                  - protocolCode
+                  - baseUrl
+                  type: object
+                maxItems: 8
+                minItems: 1
+                type: array
               regionCode:
                 maxLength: 128
                 nullable: true
@@ -9884,6 +10046,7 @@ frontend_operations:
             - defaultVendorCode
             - adapterCode
             - protocolCode
+            - protocols
             - websiteUrl
             - docsUrl
             - regionCode
@@ -9970,9 +10133,12 @@ frontend_operations:
           format: int32
           nullable: true
           type: integer
-        protocolCode:
-          maxLength: 128
-          type: string
+        protocols:
+          items:
+            $ref: '#/components/schemas/LlmProtocolConfig'
+          maxItems: 8
+          minItems: 1
+          type: array
         regionCode:
           maxLength: 128
           nullable: true
@@ -10006,7 +10172,7 @@ frontend_operations:
       - supplierName
       - supplierType
       - adapterCode
-      - protocolCode
+      - protocols
       type: object
   write_tables:
   - ai_upstream_supplier
@@ -10111,9 +10277,12 @@ frontend_operations:
           format: int32
           nullable: true
           type: integer
-        protocolCode:
-          maxLength: 128
-          type: string
+        protocols:
+          items:
+            $ref: '#/components/schemas/LlmProtocolConfig'
+          maxItems: 8
+          minItems: 1
+          type: array
         regionCode:
           maxLength: 128
           nullable: true

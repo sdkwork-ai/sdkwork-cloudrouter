@@ -30,6 +30,43 @@ pub struct AdminUpstreamPage<T> {
     pub total: i64,
 }
 
+/// LLM API 协议枚举。工具（OpenAI Codex、Claude Code）运行在底层协议之上，
+/// 不属于协议值本身；历史数据中的 `openai_compatible` 仅保留在旧记录列上。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum LlmProtocolCode {
+    OpenaiChatCompletions,
+    OpenaiResponses,
+    AnthropicMessages,
+}
+
+impl LlmProtocolCode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::OpenaiChatCompletions => "openai_chat_completions",
+            Self::OpenaiResponses => "openai_responses",
+            Self::AnthropicMessages => "anthropic_messages",
+        }
+    }
+
+    pub fn parse(value: &str) -> Option<Self> {
+        match value {
+            "openai_chat_completions" => Some(Self::OpenaiChatCompletions),
+            "openai_responses" => Some(Self::OpenaiResponses),
+            "anthropic_messages" => Some(Self::AnthropicMessages),
+            _ => None,
+        }
+    }
+}
+
+/// 单个协议的配置：协议代码 + 该协议独立的 Base URL。
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminLlmProtocolConfig {
+    pub protocol_code: LlmProtocolCode,
+    pub base_url: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AdminUpstreamSupplierItem {
     pub id: i64,
@@ -42,6 +79,9 @@ pub struct AdminUpstreamSupplierItem {
     pub default_vendor_code: Option<String>,
     pub adapter_code: String,
     pub protocol_code: String,
+    pub protocols: Vec<AdminLlmProtocolConfig>,
+    pub model_blacklist: Vec<AdminUpstreamModelListEntry>,
+    pub model_whitelist: Vec<AdminUpstreamModelListEntry>,
     pub website_url: Option<String>,
     pub docs_url: Option<String>,
     pub region_code: Option<String>,
@@ -67,6 +107,9 @@ pub struct SaveAdminUpstreamSupplierCommand {
     pub default_vendor_code: Option<String>,
     pub adapter_code: String,
     pub protocol_code: String,
+    pub protocols: Vec<AdminLlmProtocolConfig>,
+    pub model_blacklist: Vec<AdminUpstreamModelListEntry>,
+    pub model_whitelist: Vec<AdminUpstreamModelListEntry>,
     pub website_url: Option<String>,
     pub docs_url: Option<String>,
     pub region_code: Option<String>,
@@ -230,6 +273,12 @@ pub struct CreateAdminUpstreamAccountCredentialCommand {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdminUpstreamModelListEntry {
+    pub vendor_code: String,
+    pub models: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AdminUpstreamAccountGroupItem {
     pub id: i64,
     pub uuid: String,
@@ -247,6 +296,8 @@ pub struct AdminUpstreamAccountGroupItem {
     pub vendor_code: Option<String>,
     pub modalities: Vec<String>,
     pub tags: Vec<String>,
+    pub model_blacklist: Vec<AdminUpstreamModelListEntry>,
+    pub model_whitelist: Vec<AdminUpstreamModelListEntry>,
     pub is_default: bool,
     pub status: i32,
     pub version: i64,
@@ -272,6 +323,8 @@ pub struct SaveAdminUpstreamAccountGroupCommand {
     pub vendor_code: Option<String>,
     pub modalities: Vec<String>,
     pub tags: Vec<String>,
+    pub model_blacklist: Vec<AdminUpstreamModelListEntry>,
+    pub model_whitelist: Vec<AdminUpstreamModelListEntry>,
     pub is_default: bool,
     pub status: i32,
     pub requested_at: String,

@@ -56,3 +56,27 @@ describe('ConfirmDialog click-outside', () => {
     expect(onCancel).not.toHaveBeenCalled();
   });
 });
+
+describe('ConfirmDialog children', () => {
+  it('renders custom children below the description', () => {
+    const onConfirm = vi.fn();
+    const onCancel = vi.fn();
+    const { getByLabelText, getByText } = render(
+      <ConfirmDialog
+        title="Delete item"
+        description="This cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+      >
+        <label>
+          <input type="checkbox" aria-label="also remove from groups" />
+          Also remove from groups
+        </label>
+      </ConfirmDialog>,
+    );
+    expect(getByLabelText('also remove from groups')).toBeInTheDocument();
+    expect(getByText('Also remove from groups')).toBeInTheDocument();
+  });
+});

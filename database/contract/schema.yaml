@@ -8818,6 +8818,11 @@ tables:
         required: true
         postgres_type: VARCHAR(64)
         constraints: NOT NULL
+      protocols:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '[]'::jsonb
       owner_kind:
         type: string(32)
         required: false

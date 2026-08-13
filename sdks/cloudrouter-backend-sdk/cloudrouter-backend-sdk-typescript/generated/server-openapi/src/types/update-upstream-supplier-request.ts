@@ -1,3 +1,5 @@
+import type { LlmProtocolConfig } from './llm-protocol-config';
+
 /** Update upstream supplier request schema exposed by Cloud Router. */
 export interface UpdateUpstreamSupplierRequest {
   /** Adapter code field on update upstream supplier request. */
@@ -12,8 +14,8 @@ export interface UpdateUpstreamSupplierRequest {
   docsUrl?: string | null;
   /** Environment field on update upstream supplier request. */
   environment?: number | null;
-  /** Protocol code field on update upstream supplier request. */
-  protocolCode?: string;
+  /** Protocols field on update upstream supplier request. */
+  protocols?: LlmProtocolConfig[];
   /** Region code field on update upstream supplier request. */
   regionCode?: string | null;
   /** Sort order field on update upstream supplier request. */

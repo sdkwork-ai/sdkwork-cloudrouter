@@ -1,5 +1,19 @@
+fn main() -> anyhow::Result<()> {
+    // Windows main-thread stacks default to 1 MiB. The all-in-one assembly
+    // chain (in-process upstreams + dependency assemblies + web framework)
+    // polls a deep async future graph on the block_on thread, so run the
+    // gateway on a dedicated thread with a larger stack.
+    std::thread::Builder::new()
+        .name("cloudrouter-edge-runtime-main".to_owned())
+        .stack_size(16 * 1024 * 1024)
+        .spawn(gateway_main)
+        .map_err(|error| anyhow::anyhow!("spawn gateway main thread: {error}"))?
+        .join()
+        .map_err(|_| anyhow::anyhow!("gateway main thread panicked"))?
+}
+
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn gateway_main() -> anyhow::Result<()> {
     sdkwork_database_sqlx::enable_process_shared_database_pool();
     let runtime_toml = sdkwork_cloudrouter_config::RuntimeTomlConfig::from_env_config_file()
         .map_err(anyhow::Error::msg)?;

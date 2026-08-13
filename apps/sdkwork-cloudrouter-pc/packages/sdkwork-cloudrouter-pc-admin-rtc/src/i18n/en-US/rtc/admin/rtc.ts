@@ -1,0 +1,22 @@
+/** RTC admin domain copy (en-US) for the Cloud Router admin surface. */
+export const en = {
+  'admin.header.rtcCenter': 'Real-time AV Center',
+  'admin.rtc.loading': 'Loading real-time AV center...',
+  'admin.menu.rtc.realtime': 'Real-time AV Center',
+  'admin.menu.rtc.dashboard': 'Overview',
+  'admin.menu.rtc.sessions': 'Live Sessions',
+  'admin.menu.rtc.rooms': 'Call Rooms',
+  'admin.menu.rtc.artifacts': 'Recording Files',
+  'admin.menu.rtc.quality': 'Quality Monitoring',
+  'admin.menu.rtc.provider': 'Provider Management',
+  'admin.menu.rtc.providerAccounts': 'Accounts',
+  'admin.menu.rtc.providerApplications': 'Applications',
+  'admin.menu.rtc.providerCredentials': 'Credentials',
+  'admin.menu.rtc.providerProfiles': 'Profiles',
+  'admin.menu.rtc.providerRoutes': 'Routes',
+  'admin.menu.rtc.providers': 'Plugins',
+  'admin.menu.rtc.wizard': 'Setup Wizard',
+  'admin.menu.rtc.system': 'System Tools',
+  'admin.menu.rtc.webhookEvents': 'Webhook Events',
+  'admin.menu.rtc.queryJobs': 'Query Jobs',
+};

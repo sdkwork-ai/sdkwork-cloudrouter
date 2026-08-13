@@ -15,10 +15,6 @@ use sdkwork_database_lifecycle::RegistryLifecycleOrchestrator;
 use sdkwork_database_spi::DatabaseModuleRegistry;
 use sdkwork_database_sqlx::DatabasePool;
 use sdkwork_payment_service_host::PaymentServiceHost;
-use sdkwork_routes_account_app_api::app_account_wallet_router_with_postgres_pool;
-use sdkwork_routes_membership_app_api::app_membership_router_with_postgres_pool;
-use sdkwork_routes_payment_app_api::routes::build_payment_app_router;
-use sdkwork_routes_promotion_app_api::app_promotion_router_with_postgres_pool;
 
 pub async fn merge_federated_commerce_app_routers(
     router: Router,
@@ -40,7 +36,7 @@ pub async fn merge_federated_commerce_app_routers(
     // init + migrate + seed once per module while respecting each module's own
     // manifest/env lifecycle options. No per-capability manual wiring needed.
     bootstrap_federated_databases(payment.database_pool()).await?;
-    let membership_router = build_membership_router_from_pool(payment.database_pool())?;
+    let membership_router = build_membership_router_from_pool(payment.database_pool()).await?;
     Ok(merge_federated_app_capability_router_with_optional_auth(
         router,
         membership_router,
@@ -113,43 +109,41 @@ async fn bootstrap_federated_databases(pool: &DatabasePool) -> Result<(), String
 }
 
 async fn wire_commerce_app_router(payment: Arc<PaymentServiceHost>) -> Result<Router, String> {
-    let promotion_router = build_promotion_router_from_payment_pool(payment.database_pool())?;
-    let account_wallet_router =
-        build_account_wallet_router_from_payment_pool(payment.database_pool())?;
+    // Federated commerce app surfaces are dependency-owned. Each enters
+    // through its dependency API assembly entrypoint on the shared commerce
+    // pool — not through direct `sdkwork-routes-*` imports — per
+    // API_ASSEMBLY_SPEC §3/§6.1.
+    let payment_assembly =
+        sdkwork_api_payment_assembly::assemble_federated_app_api_contribution(payment.clone())
+            .await?;
+    let promotion_assembly =
+        sdkwork_api_promotion_assembly::assemble_app_api_contribution_with_pool(
+            payment.database_pool(),
+        )
+        .await?;
+    let account_assembly = sdkwork_api_account_assembly::assemble_app_api_contribution_with_pool(
+        payment.database_pool(),
+    )
+    .await?;
     let order_assembly = sdkwork_api_order_assembly::assemble_app_api_contribution_with_pool(
         payment.database_pool().clone(),
     )
     .await?;
 
     Ok(Router::new()
-        .merge(build_payment_app_router(payment))
-        .merge(promotion_router)
-        .merge(account_wallet_router)
+        .merge(payment_assembly.router)
+        .merge(promotion_assembly.router)
+        .merge(account_assembly.router)
         .merge(order_assembly.router))
 }
 
-fn build_membership_router_from_pool(pool: &DatabasePool) -> Result<Router, String> {
-    let pool = pool
-        .as_postgres()
-        .cloned()
-        .ok_or_else(|| "Cloud Router commerce runtime requires PostgreSQL".to_owned())?;
-    Ok(app_membership_router_with_postgres_pool(pool))
-}
-
-fn build_promotion_router_from_payment_pool(pool: &DatabasePool) -> Result<Router, String> {
-    let pool = pool
-        .as_postgres()
-        .cloned()
-        .ok_or_else(|| "Cloud Router commerce runtime requires PostgreSQL".to_owned())?;
-    Ok(app_promotion_router_with_postgres_pool(pool))
-}
-
-fn build_account_wallet_router_from_payment_pool(pool: &DatabasePool) -> Result<Router, String> {
-    let pool = pool
-        .as_postgres()
-        .cloned()
-        .ok_or_else(|| "Cloud Router commerce runtime requires PostgreSQL".to_owned())?;
-    Ok(app_account_wallet_router_with_postgres_pool(pool))
+async fn build_membership_router_from_pool(pool: &DatabasePool) -> Result<Router, String> {
+    let contribution = sdkwork_api_membership_assembly::assemble_app_api_contribution_with_pool(
+        pool,
+    )
+    .await
+    .map_err(|error| format!("compose membership app-api contribution failed: {error}"))?;
+    Ok(contribution.router)
 }
 
 #[cfg(test)]
@@ -227,7 +221,29 @@ mod tests {
         assert!(
             source.contains("sdkwork_api_order_assembly::assemble_app_api_contribution_with_pool(")
         );
-        let forbidden_direct_route_crate = ["sdkwork_routes_order", "_app_api::"].concat();
-        assert!(!source.contains(&forbidden_direct_route_crate));
+        assert!(
+            source.contains(
+                "sdkwork_api_payment_assembly::assemble_federated_app_api_contribution("
+            )
+        );
+        assert!(source.contains(
+            "sdkwork_api_promotion_assembly::assemble_app_api_contribution_with_pool("
+        ));
+        assert!(source.contains(
+            "sdkwork_api_account_assembly::assemble_app_api_contribution_with_pool("
+        ));
+        assert!(source.contains(
+            "sdkwork_api_membership_assembly::assemble_app_api_contribution_with_pool("
+        ));
+        let forbidden_direct_route_crates = [
+            "sdkwork_routes_order",
+            "sdkwork_routes_payment",
+            "sdkwork_routes_promotion",
+            "sdkwork_routes_account",
+            "sdkwork_routes_membership",
+            "_app_api::",
+        ]
+        .concat();
+        assert!(!source.contains(&forbidden_direct_route_crates));
     }
 }

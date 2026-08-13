@@ -368,6 +368,7 @@ fn route_explain_error_code(kind: UpstreamRouteSelectionErrorKind) -> &'static s
     match kind {
         UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable => "route.unavailable",
         UpstreamRouteSelectionErrorKind::PricingUnavailable => "pricing.unavailable",
+        UpstreamRouteSelectionErrorKind::ModelForbidden => "route.model_forbidden",
     }
 }
 

@@ -38,7 +38,24 @@
       "iam.roles.read",
       "iam.permissions.read",
       "iam.oauth.read",
-      "iam.oauth.manage"
+      "iam.oauth.manage",
+      "community.categories.read",
+      "community.categories.manage",
+      "community.entries.read",
+      "community.entries.write",
+      "community.comments.read",
+      "community.comments.write",
+      "community.reactions.write",
+      "community.moderation.read",
+      "community.moderation.manage",
+      "community.recommendations.read",
+      "community.recommendations.manage",
+      "community.members.read",
+      "community.members.write",
+      "community.groups.read",
+      "community.groups.write",
+      "community.tiers.read",
+      "community.tiers.write"
     ]
   },
   "runtime": {

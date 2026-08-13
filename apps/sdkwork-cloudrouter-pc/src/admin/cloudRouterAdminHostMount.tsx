@@ -1,10 +1,12 @@
 import { lazy, type ComponentType, type LazyExoticComponent, type ReactElement } from 'react';
 import { Navigate, Route, useParams } from 'react-router-dom';
 import { IAM_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-iam/contribution';
+import { RTC_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-rtc/contribution';
+import { RTC_ADMIN_ROUTE_ELEMENTS } from '@sdkwork/cloudrouter-pc-admin-rtc';
 
 export type CloudRouterAdminRouteContribution = {
   path: string;
-  owner: 'sdkwork-cloudrouter' | 'sdkwork-models' | 'sdkwork-log' | 'sdkwork-partner';
+  owner: 'sdkwork-cloudrouter' | 'sdkwork-models' | 'sdkwork-log' | 'sdkwork-partner' | 'sdkwork-rtc';
   adminPackage: `@sdkwork/${string}`;
   backendSdkFamilies: readonly string[];
   requiredPermission: string;
@@ -40,6 +42,7 @@ const CloudRouterAuthSettingsPage = lazyAdminRoute(() => import('@sdkwork/cloudr
 const CloudRouterSiteSettingsPage = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-site'), 'CloudRouterSiteSettingsPage');
 const MembershipsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-memberships'), 'MembershipsAdmin');
 const RechargeAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-memberships'), 'RechargeAdmin');
+const CommunityAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-community'), 'CommunityAdmin');
 const MarketingAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-marketing'), 'MarketingAdmin');
 const PartnerAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-partner'), 'CloudRouterPartnerAdmin');
 const PaymentsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-payments'), 'PaymentsAdmin');
@@ -107,6 +110,7 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   route('runtime-region', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-runtime-region', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <RuntimeRegionAdmin />),
   route('site', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-site', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <CloudRouterSiteSettingsPage />),
   route('memberships/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-memberships', ['sdkwork-membership-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={MembershipsAdmin} />),
+  route('community/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-community', ['sdkwork-community-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={CommunityAdmin} />),
   route('recharges/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-memberships', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={RechargeAdmin} />),
   route('marketing/:sectionId?/:batchId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-marketing', ['sdkwork-promotion-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminMarketingRoute component={MarketingAdmin} />),
   route('partner/:sectionId?', 'sdkwork-partner', '@sdkwork/cloudrouter-pc-admin-partner', ['sdkwork-partner-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={PartnerAdmin} />),
@@ -122,6 +126,18 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
       record.redirectTo
         ? <Navigate to={record.redirectTo} replace />
         : IAM_ADMIN_ROUTE_ELEMENTS[record.path]!,
+    ),
+  ),
+  ...RTC_ADMIN_ROUTE_RECORDS.map((record) =>
+    route(
+      record.path,
+      'sdkwork-rtc',
+      '@sdkwork/cloudrouter-pc-admin-rtc',
+      ['sdkwork-rtc-backend-sdk'],
+      record.requiredPermission,
+      record.redirectTo
+        ? <Navigate to={record.redirectTo} replace />
+        : RTC_ADMIN_ROUTE_ELEMENTS[record.path]!,
     ),
   ),
 ];

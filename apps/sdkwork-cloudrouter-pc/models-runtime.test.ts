@@ -1519,3 +1519,168 @@ test("model service fetches one catalog page and exposes pageInfo metadata", asy
     },
   );
 });
+
+test("model service resolves a detail model by catalog route id without relying on q search", async () => {
+  await withAppSdkFetch(
+    (url) => {
+      const requestUrl = new URL(url, "http://localhost");
+      assert.equal(requestUrl.pathname, "/app/v3/api/ai/models");
+      assert.equal(requestUrl.searchParams.get("vendor_codes"), "openai");
+      assert.equal(requestUrl.searchParams.has("q"), false);
+      return {
+        items: [
+          {
+            model: "text-davinci-003",
+            catalogKey: "openai/text-davinci-003",
+            displayName: "Text Davinci 003",
+            vendorCode: "openai",
+            vendor: "OpenAI",
+            capabilities: ["chat"],
+            groups: ["default"],
+            categories: ["Recommended"],
+            modalities: ["text"],
+            providerCodes: ["openai"],
+            officialReferencePrices: [],
+            priceAvailability: { status: "unavailable" },
+          },
+          {
+            model: "gpt-4o-mini",
+            catalogKey: "openai/gpt-4o-mini",
+            displayName: "GPT-4o mini",
+            vendorCode: "openai",
+            vendor: "OpenAI",
+            capabilities: ["chat"],
+            groups: ["default"],
+            categories: ["Recommended"],
+            modalities: ["text"],
+            providerCodes: ["openai"],
+            officialReferencePrices: [
+              { regionCode: "global", billingMeter: "llm_input_token", unitPrice: "0.150000", currency: "USD" },
+            ],
+            priceAvailability: { status: "reference" },
+          },
+        ],
+      };
+    },
+    async (captured) => {
+      const model = await ModelService.fetchModelByCatalogRouteId("openai%2Fgpt-4o-mini");
+
+      assert.equal(model?.id, "openai/gpt-4o-mini");
+      assert.equal(captured.length, 1);
+      assert.equal(captured[0].method, "GET");
+    },
+  );
+});
+
+test("model service walks vendor catalog pages to resolve a detail model", async () => {
+  await withAppSdkFetch(
+    (url) => {
+      const requestUrl = new URL(url, "http://localhost");
+      const page = requestUrl.searchParams.get("page");
+      assert.equal(requestUrl.searchParams.get("vendor_codes"), "openai");
+      assert.equal(requestUrl.searchParams.has("q"), false);
+      if (page === "1") {
+        return {
+          items: [
+            {
+              model: "other-model",
+              catalogKey: "openai/other-model",
+              displayName: "Other Model",
+              vendorCode: "openai",
+              vendor: "OpenAI",
+              capabilities: ["chat"],
+              groups: ["default"],
+              categories: ["Recommended"],
+              modalities: ["text"],
+              providerCodes: ["openai"],
+              officialReferencePrices: [],
+              priceAvailability: { status: "unavailable" },
+            },
+          ],
+          pageInfo: { totalItems: 210 },
+        };
+      }
+      return {
+        items: [
+          {
+            model: "gpt-4o-mini",
+            catalogKey: "openai/gpt-4o-mini",
+            displayName: "GPT-4o mini",
+            vendorCode: "openai",
+            vendor: "OpenAI",
+            capabilities: ["chat"],
+            groups: ["default"],
+            categories: ["Recommended"],
+            modalities: ["text"],
+            providerCodes: ["openai"],
+            officialReferencePrices: [
+              { regionCode: "global", billingMeter: "llm_input_token", unitPrice: "0.150000", currency: "USD" },
+            ],
+            priceAvailability: { status: "reference" },
+          },
+        ],
+        pageInfo: { totalItems: 210 },
+      };
+    },
+    async (captured) => {
+      const model = await ModelService.fetchModelByCatalogRouteId("openai/gpt-4o-mini");
+
+      assert.equal(model?.id, "openai/gpt-4o-mini");
+      assert.deepEqual(
+        captured.map((request) => new URL(request.url, "http://localhost").searchParams.get("page")),
+        ["1", "2"],
+      );
+    },
+  );
+});
+
+test("model service returns null when no catalog model matches the detail route id", async () => {
+  await withAppSdkFetch(
+    (url) => {
+      const requestUrl = new URL(url, "http://localhost");
+      assert.equal(requestUrl.searchParams.get("vendor_codes"), "openai");
+      assert.equal(requestUrl.searchParams.has("q"), false);
+      return {
+        items: [
+          {
+            model: "other-model",
+            catalogKey: "openai/other-model",
+            displayName: "Other Model",
+            vendorCode: "openai",
+            vendor: "OpenAI",
+            capabilities: ["chat"],
+            groups: ["default"],
+            categories: ["Recommended"],
+            modalities: ["text"],
+            providerCodes: ["openai"],
+            officialReferencePrices: [],
+            priceAvailability: { status: "unavailable" },
+          },
+        ],
+        pageInfo: { totalItems: 1 },
+      };
+    },
+    async (captured) => {
+      const model = await ModelService.fetchModelByCatalogRouteId("openai/missing-model");
+
+      assert.equal(model, null);
+      assert.equal(captured.length, 1);
+    },
+  );
+});
+
+test("model service rejects detail route ids without a vendor/model split", async () => {
+  await withAppSdkFetch(
+    () => {
+      throw new Error("unexpected model catalog request");
+    },
+    async (captured) => {
+      assert.equal(await ModelService.fetchModelByCatalogRouteId(""), null);
+      assert.equal(await ModelService.fetchModelByCatalogRouteId("   "), null);
+      assert.equal(await ModelService.fetchModelByCatalogRouteId("no-slash"), null);
+      assert.equal(await ModelService.fetchModelByCatalogRouteId("/missing-vendor"), null);
+      assert.equal(await ModelService.fetchModelByCatalogRouteId("openai/"), null);
+      assert.equal(captured.length, 0);
+    },
+  );
+});

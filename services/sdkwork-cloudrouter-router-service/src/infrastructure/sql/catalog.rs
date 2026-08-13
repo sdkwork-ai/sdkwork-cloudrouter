@@ -4,7 +4,7 @@ use std::sync::Arc;
 use arc_swap::ArcSwap;
 
 use crate::domain::{
-    has_text, AiModel, BillingMeter, DecimalValue, DomainResult, GatewayAccessPolicy,
+    has_text, AiModel, BillingMeter, DecimalValue, DomainError, DomainResult, GatewayAccessPolicy,
     GatewayApiKey, GatewayRiskRule, ModelMappingRule, ModelPrice, ModelUpstreamRoute,
     ModelVendorDefinition, Money, PriceSide, PricingPlan, QuotaPolicy, ResolveModelMappingContext,
     RoutingPolicy, RoutingRule, UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot,
@@ -17,7 +17,7 @@ use crate::infrastructure::sql::rows::{
     RoutingPolicyRow, RoutingRuleRow, UpstreamAccountGroupMetricSnapshotRow,
     UpstreamAccountGroupRow, UpstreamAccountRouteRow,
 };
-use crate::ports::{PricingCatalog, UpstreamAccountRouteCatalog};
+use crate::ports::{AccountGroupModelAccess, PricingCatalog, UpstreamAccountRouteCatalog, VendorModelListEntry};
 
 #[derive(Default)]
 pub struct PricingCatalogRows {
@@ -113,6 +113,7 @@ pub struct SqlPricingCatalogSnapshot {
     upstream_account_group_metric_snapshots: Vec<UpstreamAccountGroupMetricSnapshot>,
     prices: Vec<ScopedModelPrice>,
     managed_provider_secrets: BTreeMap<String, String>,
+    account_group_model_access_by_id: HashMap<i64, AccountGroupModelAccess>,
     // --- Indexes for O(1) hot-path lookups ---
     models_by_key: HashMap<String, AiModel>,
     api_keys_by_hash: HashMap<String, GatewayApiKey>,
@@ -135,6 +136,20 @@ impl SqlPricingCatalogSnapshot {
     ) -> DomainResult<Self> {
         let pricing_plans = scoped_pricing_plans_with_standard_fallback(rows.pricing_plans)?;
         let prices = map_scoped_model_prices(rows.prices)?;
+        let account_group_model_access_by_id = rows
+            .upstream_account_groups
+            .iter()
+            .map(|row| {
+                Ok((
+                    row.id,
+                    AccountGroupModelAccess {
+                        group_id: row.id,
+                        blacklist: parse_vendor_model_list(&row.model_blacklist_json)?,
+                        whitelist: parse_vendor_model_list(&row.model_whitelist_json)?,
+                    },
+                ))
+            })
+            .collect::<DomainResult<HashMap<_, _>>>()?;
         let mut snapshot = Self {
             vendors: map_rows(rows.vendors, ModelVendorRow::try_into_domain)?,
             models: map_rows(rows.models, AiModelRow::try_into_domain)?,
@@ -171,6 +186,7 @@ impl SqlPricingCatalogSnapshot {
             )?,
             prices,
             managed_provider_secrets,
+            account_group_model_access_by_id,
             models_by_key: HashMap::new(),
             api_keys_by_hash: HashMap::new(),
             api_keys_by_id: HashMap::new(),
@@ -388,6 +404,10 @@ impl RefreshableSqlPricingCatalog {
 impl UpstreamAccountRouteCatalog for RefreshableSqlPricingCatalog {
     fn shared_upstream_account_routes(&self) -> Arc<[UpstreamAccountRoute]> {
         Arc::clone(&self.current_snapshot().upstream_account_routes)
+    }
+
+    fn account_group_model_access(&self, group_id: i64) -> Option<AccountGroupModelAccess> {
+        self.current_snapshot().account_group_model_access(group_id)
     }
 }
 
@@ -799,10 +819,52 @@ impl UpstreamAccountRouteCatalog for SqlPricingCatalogSnapshot {
     fn shared_upstream_account_routes(&self) -> Arc<[UpstreamAccountRoute]> {
         Arc::clone(&self.upstream_account_routes)
     }
+
+    fn account_group_model_access(&self, group_id: i64) -> Option<AccountGroupModelAccess> {
+        self.account_group_model_access_by_id.get(&group_id).cloned()
+    }
 }
 
 fn map_rows<R, T>(rows: Vec<R>, mapper: impl Fn(R) -> DomainResult<T>) -> DomainResult<Vec<T>> {
     rows.into_iter().map(mapper).collect()
+}
+
+fn parse_vendor_model_list(value: &str) -> DomainResult<Vec<VendorModelListEntry>> {
+    let items = serde_json::from_str::<Vec<serde_json::Value>>(value).map_err(|error| {
+        DomainError::new(format!(
+            "failed to parse upstream account group model list JSON: {error}"
+        ))
+    })?;
+    items
+        .into_iter()
+        .map(|item| {
+            let vendor_code = item
+                .get("vendorCode")
+                .and_then(|value| value.as_str())
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| {
+                    DomainError::new(
+                        "upstream account group model list entry requires a vendorCode",
+                    )
+                })?
+                .to_owned();
+            let models = item
+                .get("models")
+                .and_then(|value| value.as_array())
+                .map(|models| {
+                    models
+                        .iter()
+                        .filter_map(|value| value.as_str())
+                        .map(str::trim)
+                        .filter(|value| !value.is_empty())
+                        .map(ToOwned::to_owned)
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default();
+            Ok(VendorModelListEntry { vendor_code, models })
+        })
+        .collect()
 }
 
 fn scoped_pricing_plans_with_standard_fallback(

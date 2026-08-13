@@ -57,12 +57,6 @@ use sdkwork_cloudrouter_router_service::ports::{
     ModelRankingRefreshStore, ModelRankingsReadModelStore, RuntimeRegionSettingsStore,
     SiteSettingsStore, UpstreamAccountRouteCatalog,
 };
-use sdkwork_commerce_promotion_repository_sqlx::PostgresPromotionAdminRepository;
-use sdkwork_commerce_promotion_service::{PromotionAdminRepositoryPort, PromotionAdminService};
-use sdkwork_commerce_partner_repository_sqlx::{
-    account_adapter::PartnerAccountWalletAdapter, PostgresPartnerAdminRepository,
-};
-use sdkwork_commerce_partner_service::backend_admin::{PartnerAdminRepositoryPort, PartnerAdminService};
 use sdkwork_database_sqlx::DatabasePool;
 use sdkwork_models_catalog_repository_sqlx::{
     PostgresAdminAiResourceStore as CatalogPostgresAdminAiResourceStore,
@@ -825,7 +819,7 @@ pub async fn router_with_postgres_shared_runtime(
     // Admin ai-metering read stores (dashboard, analytics, records) read
     // `ai_metering_*` tables co-located with the account ledger in the
     // federated commerce pool, so they use the commerce pool like the
-    // promotion/partner repositories below.
+    // promotion repositories below.
     let dashboard_read_store: AdminDashboardRuntimeReadStore =
         Arc::new(PostgresAdminDashboardReadStore::new(commerce_pool.clone()));
     let analytics_read_store: AdminAnalyticsRuntimeReadStore =
@@ -841,29 +835,6 @@ pub async fn router_with_postgres_shared_runtime(
     let model_ranking_refresh_store: ModelRankingRefreshRuntimeStore =
         Arc::new(PostgresModelRankingRefreshStore::new(commerce_pool.clone()));
     let admin_access_checker = AdminAccessChecker(pool.clone());
-
-    // Promotion admin tables live in the federated commerce database
-    // (bootstrapped by the commerce runtime), so the promotion repository
-    // must use the commerce pool rather than the gateway pool.
-    let promotion_repository: Arc<dyn PromotionAdminRepositoryPort> =
-        Arc::new(PostgresPromotionAdminRepository::new(commerce_pool.clone()));
-    let promotion_router = sdkwork_routes_promotion_backend_api::build_backend_promotion_router(
-        Arc::new(PromotionAdminService::new(promotion_repository)),
-    );
-
-    // Partner (multi-level agent) admin tables live in the federated commerce
-    // database (bootstrapped by the commerce runtime), so the partner
-    // repository uses the commerce pool like the promotion repository. Wallet
-    // writes go through the account-domain ledger adapter (S4).
-    let partner_repository: Arc<dyn PartnerAdminRepositoryPort> = Arc::new(
-        PostgresPartnerAdminRepository::new(
-            commerce_pool.clone(),
-            Arc::new(PartnerAccountWalletAdapter::new(commerce_pool.clone())),
-        ),
-    );
-    let partner_router = sdkwork_routes_partner_backend_api::build_backend_partner_router(
-        Arc::new(PartnerAdminService::new(partner_repository)),
-    );
 
     // SDKWork log foundation: request log query router + full capture layer.
     // One row per request is persisted through the sdkwork-log store (metadata
@@ -926,8 +897,6 @@ pub async fn router_with_postgres_shared_runtime(
             readiness_check: None,
         },
     )
-    .merge(promotion_router)
-    .merge(partner_router)
     .merge(log_assembly.router)
     .layer(log_assembly.capture_layer))
 }

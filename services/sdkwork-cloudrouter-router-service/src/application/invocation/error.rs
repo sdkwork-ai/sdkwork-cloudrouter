@@ -3,6 +3,9 @@ pub enum InvocationErrorKind {
     InvalidRequest,
     Authentication,
     Authorization,
+    /// Request rejected because the account group's model blacklist/whitelist
+    /// forbids the requested model. Maps to HTTP 403.
+    ModelForbidden,
     ResourceClassification,
     Routing,
     Pricing,
@@ -23,6 +26,7 @@ impl InvocationErrorKind {
             Self::InvalidRequest => "invalid_request",
             Self::Authentication => "authentication_failed",
             Self::Authorization => "authorization_failed",
+            Self::ModelForbidden => "model_forbidden",
             Self::ResourceClassification => "resource_classification_failed",
             Self::Routing => "routing_failed",
             Self::Pricing => "pricing_failed",

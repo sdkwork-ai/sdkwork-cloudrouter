@@ -207,9 +207,10 @@ pub use upstream_credential_secret_codec::{
     EncodedUpstreamCredentialSecret, UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext,
 };
 pub use upstream_route_selector::{
-    SelectUpstreamAccountRouteQuery, SelectUpstreamModelRouteQuery, SelectedUpstreamAccountRoute,
-    SelectedUpstreamModelRoute, SelectedUpstreamModelRoutePlan, UpstreamRouteSelectionError,
-    UpstreamRouteSelectionErrorKind, UpstreamRouteSelector,
+    model_access_forbidden_message, model_access_forbidden_reason, SelectUpstreamAccountRouteQuery,
+    SelectUpstreamModelRouteQuery, SelectedUpstreamAccountRoute, SelectedUpstreamModelRoute,
+    SelectedUpstreamModelRoutePlan, UpstreamRouteSelectionError, UpstreamRouteSelectionErrorKind,
+    UpstreamRouteSelector,
 };
 pub use usage_retention::{
     resolve_usage_retention_config, resolve_usage_retention_config_result,

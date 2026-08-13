@@ -2525,10 +2525,17 @@ test("admin model resource page exposes group CRUD and static all-api safeguards
   assert.doesNotMatch(source, /value=\{form\.members\}/);
   assert.doesNotMatch(source, /rows=\{8\}/);
   assert.match(source, /className="flex min-h-0 h-full w-full flex-col[\s\S]*overflow-hidden/);
+  assert.match(source, /<aside data-admin-model-resource-sidebar className="flex w-\[27rem\] min-w-\[27rem\] flex-col border-r/);
   assert.match(source, /data-admin-model-resource-sidebar-list[\s\S]*className="min-h-0 flex-1 overflow-y-auto/);
   assert.match(source, /data-admin-model-resource-main-panel[\s\S]*className="flex min-h-0 flex-1 flex-col overflow-hidden/);
   assert.match(source, /data-admin-model-resource-table-scroll[\s\S]*className="min-h-0 flex-1 overflow-auto/);
   assert.match(source, /data-admin-model-resource-pagination[\s\S]*<BottomPagination/);
+  const sidebarPaginationSource = source.slice(source.indexOf('<aside data-admin-model-resource-sidebar'), source.indexOf('</aside>'));
+  assert.match(sidebarPaginationSource, /<BottomPagination[\s\S]*\bnowrap\b/);
+  assert.match(sidebarPaginationSource, /page=\{groupPage\}/);
+  const resourcePaginationSource = source.slice(source.indexOf('data-admin-model-resource-pagination'));
+  assert.match(resourcePaginationSource, /<BottomPagination[\s\S]*\bnowrap\b/);
+  assert.match(resourcePaginationSource, /page=\{resourcePage\}/);
   assert.match(source, /itemCount=\{groupResources\.length\}/);
   assert.match(source, /hasNextPage=\{resourcePageInfo\.hasMore\}/);
   assert.match(source, /onPreviousPage=\{\(\) => setResourcePage\(\(current\) => Math\.max\(1, current - 1\)\)\}/);
@@ -2578,6 +2585,9 @@ test("admin model resource page exposes group CRUD and static all-api safeguards
     const occurrences = i18nSource.match(new RegExp(`"${escapeRegExp(key)}"`, "g"))?.length ?? 0;
     assert.equal(occurrences, 2, `expected ${key} in English and Chinese resources`);
   }
+
+  assert.match(i18nSource, /"admin\.model\.resources\.sidebarTitle": "Resource groups"/);
+  assert.match(i18nSource, /"admin\.model\.resources\.sidebarTitle": "资源分组"/);
 });
 
 test("admin model resource group detail panel uses paginated single-member mutations", () => {
@@ -2972,7 +2982,6 @@ test("admin API resource group seed defines supported API groups with static all
     "api.openai.embeddings",
     "api.claude.code",
     "api.gemini.chat",
-    "api.claude.all",
     "api.google.all",
     "api.kling.all",
     "api.kling.image",
@@ -3025,8 +3034,11 @@ test("admin API resource group seed defines supported API groups with static all
     ]),
   );
   assert.ok(groupItems.get("api.minimax.music")?.has("api.minimax.music_generation"));
-  assert.ok(groupItems.get("api.volcengine.image")?.has("api.jimeng.image_generation"));
-  assert.ok(groupItems.get("api.volcengine.video")?.has("api.jimeng.video_generation"));
+  // volcengine 分组只包含 volcengine 资源（jimeng 资源由 official.jimeng.full 覆盖，不跨 vendor 混用）
+  assert.ok(groupItems.get("api.volcengine.image")?.has("api.volcengine.image_generation"));
+  assert.ok(groupItems.get("api.volcengine.video")?.has("api.volcengine.video_generation"));
+  assert.ok(!groupItems.get("api.volcengine.image")?.has("api.jimeng.image_generation"));
+  assert.ok(!groupItems.get("api.volcengine.video")?.has("api.jimeng.video_generation"));
   assert.ok(groupItems.get("api.vidu.image")?.has("api.vidu.reference_to_image"));
   assert.ok(groupItems.get("api.vidu.video")?.has("api.vidu.start_end_to_video"));
 });

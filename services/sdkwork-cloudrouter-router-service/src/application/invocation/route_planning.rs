@@ -6,8 +6,9 @@ use super::{
     InvocationRoutePlan, InvocationSurface, ResourceType, StickyRouteConstraint,
 };
 use crate::application::{
-    AuthenticatedApiKeyContext, SelectUpstreamAccountRouteQuery, SelectUpstreamModelRouteQuery,
-    SelectedUpstreamAccountRoute, SelectedUpstreamModelRoute, UpstreamRouteSelector,
+    model_access_forbidden_message, model_access_forbidden_reason, AuthenticatedApiKeyContext,
+    SelectUpstreamAccountRouteQuery, SelectUpstreamModelRouteQuery, SelectedUpstreamAccountRoute,
+    SelectedUpstreamModelRoute, UpstreamRouteSelectionErrorKind, UpstreamRouteSelector,
 };
 use crate::domain::{
     has_text, provider_native_model_id, AiModel, BillingMeter, ModelUpstreamRoute,
@@ -117,7 +118,13 @@ where
             capability: invocation.resource.capability,
             billing_meter,
         })
-        .map_err(|error| route_error(error.to_string()))?;
+        .map_err(|error| {
+            if error.kind() == UpstreamRouteSelectionErrorKind::ModelForbidden {
+                InvocationError::new(InvocationErrorKind::ModelForbidden, error.to_string())
+            } else {
+                route_error(error.to_string())
+            }
+        })?;
 
     invocation.routing.policy_id = plan.policy_id;
     invocation.routing.rule_id = plan.rule_id;
@@ -535,6 +542,29 @@ where
             return Some(
                 "sticky upstream account is no longer bound to the account group".to_owned(),
             );
+        }
+        // The group's model blacklist/whitelist also governs sticky routes:
+        // a forbidden model invalidates the sticky route so the request falls
+        // back to regular route planning, which rejects it with a
+        // model-forbidden error.
+        if let Some(requested_model) = invocation.resource.requested_model.as_deref() {
+            if let Some(access) = catalog.account_group_model_access(group_id) {
+                let vendor_code = resolve_catalog_key(catalog, invocation, requested_model)
+                    .ok()
+                    .and_then(|catalog_key| catalog.find_model(&catalog_key))
+                    .map(|model| model.vendor_code);
+                if let Some(rule) = model_access_forbidden_reason(
+                    vendor_code.as_deref(),
+                    requested_model,
+                    &access,
+                ) {
+                    return Some(model_access_forbidden_message(
+                        rule,
+                        requested_model,
+                        &group_id.to_string(),
+                    ));
+                }
+            }
         }
     }
     None

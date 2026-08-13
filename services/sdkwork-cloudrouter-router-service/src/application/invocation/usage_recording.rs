@@ -278,7 +278,7 @@ fn status_code_for_error(error: &InvocationError) -> u16 {
     match error.kind {
         InvocationErrorKind::InvalidRequest | InvocationErrorKind::ResourceClassification => 400,
         InvocationErrorKind::Authentication => 401,
-        InvocationErrorKind::Authorization => 403,
+        InvocationErrorKind::Authorization | InvocationErrorKind::ModelForbidden => 403,
         InvocationErrorKind::Idempotency => 409,
         InvocationErrorKind::Routing
         | InvocationErrorKind::Pricing

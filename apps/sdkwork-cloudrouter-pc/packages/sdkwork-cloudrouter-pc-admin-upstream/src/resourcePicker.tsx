@@ -144,14 +144,14 @@ export function ResourcePicker({
           <button
             type="button"
             onClick={() => setTab('groups')}
-            className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${tab === 'groups' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:bg-white/10'}`}
+            className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${tab === 'groups' ? 'bg-lobster-600 text-white' : 'text-slate-500 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:bg-white/10'}`}
           >
             {t('admin.upstream.supplier.resources.tab.groups')}
           </button>
           <button
             type="button"
             onClick={() => setTab('resources')}
-            className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${tab === 'resources' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:bg-white/10'}`}
+            className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${tab === 'resources' ? 'bg-lobster-600 text-white' : 'text-slate-500 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:bg-white/10'}`}
           >
             {t('admin.upstream.supplier.resources.tab.resources')}
           </button>
@@ -175,7 +175,7 @@ export function ResourcePicker({
                 key={type}
                 type="button"
                 onClick={() => setTypeFilter(type)}
-                className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition ${typeFilter === type ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-300 dark:ring-indigo-500/30' : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5'}`}
+                className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition ${typeFilter === type ? 'bg-lobster-50 text-lobster-700 ring-1 ring-inset ring-lobster-200 dark:bg-lobster-500/10 dark:text-lobster-300 dark:ring-lobster-500/30' : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5'}`}
               >
                 {t(`admin.upstream.supplier.resources.filter.${type}`)}
               </button>
@@ -183,7 +183,7 @@ export function ResourcePicker({
           </div>
         ) : null}
       </div>
-      <div className={`max-h-64 overflow-x-hidden overflow-y-auto ${listClassName ?? ''}`}>
+      <div className={`overflow-x-hidden overflow-y-auto ${listClassName ?? 'max-h-64'}`}>
         {tab === 'resources' ? (
           vendorGroups.length === 0 ? (
             <p className="py-8 text-center text-sm text-slate-500">{t('admin.upstream.supplier.resources.empty')}</p>
@@ -197,7 +197,7 @@ export function ResourcePicker({
                       {vendorCode ? <span className="ml-1.5 font-mono font-normal normal-case text-slate-400 dark:text-slate-500">{vendorCode}</span> : null}
                     </span>
                     {vendorCode ? (
-                      <button type="button" onClick={() => toggleVendor(vendorCode)} className="shrink-0 text-xs font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-300">
+                      <button type="button" onClick={() => toggleVendor(vendorCode)} className="shrink-0 text-xs font-medium text-lobster-600 hover:text-lobster-700 dark:text-lobster-300">
                         {items.every((resource) => selection.resourceCodes.includes(resource.resourceCode))
                           ? t('admin.upstream.supplier.resources.deselectAll')
                           : t('admin.upstream.supplier.resources.selectAll')}
@@ -208,13 +208,13 @@ export function ResourcePicker({
                     {items.map((resource) => {
                       const selected = selection.resourceCodes.includes(resource.resourceCode);
                       return (
-                        <label key={resource.resourceCode} className={`flex cursor-pointer items-center gap-2.5 rounded-md border px-2.5 py-2 transition ${selected ? 'border-indigo-300 bg-indigo-50/70 dark:border-indigo-500/40 dark:bg-indigo-500/10' : 'border-slate-200 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/[0.03]'}`}>
-                          <input type="checkbox" checked={selected} onChange={() => toggleResource(resource.resourceCode)} className="h-4 w-4 shrink-0 accent-indigo-600" />
+                        <label key={resource.resourceCode} className={`flex cursor-pointer items-center gap-2.5 rounded-md border px-2.5 py-2 transition ${selected ? 'border-lobster-300 bg-lobster-50/70 dark:border-lobster-500/40 dark:bg-lobster-500/10' : 'border-slate-200 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/[0.03]'}`}>
+                          <input type="checkbox" checked={selected} onChange={() => toggleResource(resource.resourceCode)} className="h-4 w-4 shrink-0 accent-lobster-600" />
                           <span className="min-w-0 flex-1">
                             <span className="block truncate font-mono text-xs text-slate-800 dark:text-slate-100">{resource.resourceCode}</span>
                             <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{resource.displayName}</span>
                           </span>
-                          {selected ? <CheckSquare className="h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-300" /> : <Square className="h-4 w-4 shrink-0 text-slate-300 dark:text-slate-600" />}
+                          {selected ? <CheckSquare className="h-4 w-4 shrink-0 text-lobster-600 dark:text-lobster-300" /> : <Square className="h-4 w-4 shrink-0 text-slate-300 dark:text-slate-600" />}
                         </label>
                       );
                     })}
@@ -230,8 +230,8 @@ export function ResourcePicker({
             {filteredGroups.map((group) => {
               const selected = selection.resourceGroupCodes.includes(group.groupCode);
               return (
-                <label key={group.groupCode} className={`flex cursor-pointer items-center gap-2.5 rounded-md border px-2.5 py-2 transition ${selected ? 'border-indigo-300 bg-indigo-50/70 dark:border-indigo-500/40 dark:bg-indigo-500/10' : 'border-slate-200 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/[0.03]'}`}>
-                  <input type="checkbox" checked={selected} onChange={() => toggleGroup(group.groupCode)} className="h-4 w-4 shrink-0 accent-indigo-600" />
+                <label key={group.groupCode} className={`flex cursor-pointer items-center gap-2.5 rounded-md border px-2.5 py-2 transition ${selected ? 'border-lobster-300 bg-lobster-50/70 dark:border-lobster-500/40 dark:bg-lobster-500/10' : 'border-slate-200 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/[0.03]'}`}>
+                  <input type="checkbox" checked={selected} onChange={() => toggleGroup(group.groupCode)} className="h-4 w-4 shrink-0 accent-lobster-600" />
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
                       <span className="min-w-0 truncate text-sm font-medium text-slate-800 dark:text-slate-100">{group.groupName}</span>

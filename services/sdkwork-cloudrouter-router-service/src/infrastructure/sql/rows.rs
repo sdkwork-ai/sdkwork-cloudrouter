@@ -619,12 +619,15 @@ pub struct UpstreamAccountGroupRow {
     pub organization_id: i64,
     pub name: String,
     pub code: String,
+    pub is_default: bool,
     pub pricing_plan_code: String,
     pub routing_strategy: String,
     pub fallback_mode: String,
     pub priority: i32,
     pub cost_multiplier: String,
     pub sale_multiplier: String,
+    pub model_blacklist_json: String,
+    pub model_whitelist_json: String,
 }
 
 pub struct GatewayAccessPolicyRow {
@@ -742,6 +745,7 @@ impl UpstreamAccountGroupRow {
                 self.name
             },
             code: self.code,
+            is_default: self.is_default,
             pricing_plan_code: self.pricing_plan_code,
             routing_strategy: crate::domain::UpstreamAccountRoutingStrategy::from_code(
                 &self.routing_strategy,

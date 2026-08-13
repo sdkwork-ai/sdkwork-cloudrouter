@@ -303,7 +303,7 @@ test('admin host composes owner admin modules through the backend-admin core SDK
 
   assert.match(appSource, /CloudRouterAdminHostRoutes/);
   assert.doesNotMatch(appSource, /const (?:Dashboard|Model|Upstream)Admin = lazyRoute/);
-  assert.equal((hostSource.match(/\broute\('/g) ?? []).length, 24);
+  assert.equal((hostSource.match(/\broute\('/g) ?? []).length, 25);
   assert.match(hostSource, /'sdkwork-models', '@sdkwork\/models-pc-admin-catalog', \['sdkwork-models-backend-sdk'\]/);
   assert.match(hostSource, /'sdkwork-cloudrouter', '@sdkwork\/cloudrouter-pc-admin-upstream', \['cloudrouter-backend-sdk'\]/);
 
@@ -490,6 +490,7 @@ test('commerce admin services consume owner backend SDKs while preserving produc
   const marketingService = source('packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts');
   const paymentsAdmin = source('packages/sdkwork-cloudrouter-pc-admin-payments/src/index.tsx');
   const paymentsService = source('packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts');
+  const communityService = source('packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts');
 
   assert.match(membershipsService, /getSdkworkMembershipBackendSdkClient\(\)\.memberships/);
   assert.doesNotMatch(membershipsService, /getCloudRouterBackendSdkClient\(\)\.memberships/);
@@ -515,6 +516,23 @@ test('commerce admin services consume owner backend SDKs while preserving produc
   assert.match(marketingService, /promotions\.codeBatches\.list/);
   assert.match(marketingService, /promotions\.codes\.list/);
 
+  assert.match(communityService, /getSdkworkCommunityBackendSdkClient\(\)\.community/);
+  assert.doesNotMatch(communityService, /getCloudRouterBackendSdkClient\(\)\.community/);
+  assert.match(communityService, /community\.categories\.management\.list/);
+  assert.match(communityService, /community\.entries\.management\.list/);
+  assert.match(communityService, /community\.tiers\.management\.list/);
+  for (const listFunction of [
+    'fetchCommunityAdminEntries',
+    'fetchCommunityAdminMembers',
+    'fetchCommunityAdminGroups',
+    'fetchCommunityAdminTiers',
+  ]) {
+    const signatureStart = communityService.indexOf(`export async function ${listFunction}(`);
+    const signatureEnd = communityService.indexOf('): Promise', signatureStart);
+    assert.ok(signatureStart >= 0 && signatureEnd > signatureStart);
+    assert.doesNotMatch(communityService, new RegExp(`${listFunction}\\(\\s*\\)`));
+  }
+
   for (const resource of ['methods', 'channels', 'routeRules', 'intents', 'attempts', 'webhookEvents', 'reconciliationRuns']) {
     assert.match(paymentsService, new RegExp(`getSdkworkPaymentBackendSdkClient\\(\\)\\.payments\\.${resource}\\.list`));
   }
@@ -535,7 +553,7 @@ test('commerce admin services consume owner backend SDKs while preserving produc
     assert.match(paymentsAdmin, new RegExp(permission.replaceAll('.', '\\.')));
   }
 
-  for (const serviceSource of [membershipsService, marketingService, paymentsService]) {
+  for (const serviceSource of [membershipsService, marketingService, paymentsService, communityService]) {
     assert.doesNotMatch(serviceSource, /fetch\(|axios|XMLHttpRequest|authorization/i);
   }
 });

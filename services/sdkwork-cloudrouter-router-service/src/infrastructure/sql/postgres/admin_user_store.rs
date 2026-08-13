@@ -17,7 +17,7 @@ const API_KEY_STATUS_ACTIVE: i32 = 1;
 const API_KEY_STATUS_REVOKED: i32 = 4;
 const TARGET_TYPE_USER: i32 = 61;
 const TARGET_TYPE_API_KEY: i32 = 62;
-const DEFAULT_ACCOUNT_GROUP_CODE: &str = "default";
+const DEFAULT_ACCOUNT_GROUP_CODE: &str = "default-group";
 const DEFAULT_ACCOUNT_GROUP_NAME: &str = "Default";
 const DEFAULT_PRICING_PLAN_CODE: &str = "standard";
 

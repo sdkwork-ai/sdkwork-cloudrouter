@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   readPortalPermissionScope,
+  resolveStoredPortalTenantId,
   subscribePortalSessionChange,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { hasPermissionInScope } from '@sdkwork/iam-contracts';
@@ -130,9 +131,13 @@ const LazyIamApplicationsAdmin = lazy(async () => {
     default: function CloudRouterIamApplicationsAdminContent() {
       const service = useIamAdminService();
       const permissionScope = useIamAdminPermissionScope();
+      // The applications page targets the operator's current tenant; the
+      // session-scoped tenant id seeds the controller's initial selection so
+      // no tenant picker is rendered.
+      const selectedTenantId = useMemo(resolveStoredPortalTenantId, []);
       const controller = useMemo(
-        () => createSdkworkIamTenantController({ permissionScope, service }),
-        [permissionScope, service],
+        () => createSdkworkIamTenantController({ permissionScope, selectedTenantId, service }),
+        [permissionScope, selectedTenantId, service],
       );
       return <SdkworkIamTenantApplicationsAdminWorkspace controller={controller} />;
     },

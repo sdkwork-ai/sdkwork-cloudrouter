@@ -12,7 +12,7 @@
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-shell/src";
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-tenant/src";
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-user/src";
-@source "../../../../sdkwork-log/apps/sdkwork-log-pc/packages/*/src";
+@source "../../../../sdkwork-log/apps/sdkwork-log-pc/packages/*/src/**";
 @source "../../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src";
 @source "../../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-sdk-reference/src";
 @source "../../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-commons/src";
@@ -28,16 +28,16 @@
 @source "../../../../sdkwork-membership/apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-subscription/src";
 @source "../../../../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-payment/src";
 @source "../../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-order/src";
-@source "../../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/*/src";
-@source "../../../../sdkwork-assets/apps/sdkwork-assets-pc/packages/*/src";
-@source "../../../../sdkwork-image/apps/sdkwork-image-pc/packages/*/src";
-@source "../../../../sdkwork-video/apps/sdkwork-video-pc/packages/*/src";
-@source "../../../../sdkwork-music/apps/sdkwork-music-pc/packages/*/src";
-@source "../../../../sdkwork-audio/apps/sdkwork-audio-pc/packages/*/src";
-@source "../../../../sdkwork-models/apps/sdkwork-models-pc/packages/*/src";
+@source "../../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/*/src/**";
+@source "../../../../sdkwork-assets/apps/sdkwork-assets-pc/packages/*/src/**";
+@source "../../../../sdkwork-image/apps/sdkwork-image-pc/packages/*/src/**";
+@source "../../../../sdkwork-video/apps/sdkwork-video-pc/packages/*/src/**";
+@source "../../../../sdkwork-music/apps/sdkwork-music-pc/packages/*/src/**";
+@source "../../../../sdkwork-audio/apps/sdkwork-audio-pc/packages/*/src/**";
+@source "../../../../sdkwork-models/apps/sdkwork-models-pc/packages/*/src/**";
 @source "../../../../sdkwork-agents/apps/sdkwork-agents-pc/packages";
 @source "../../../../sdkwork-agents/apps/sdkwork-agents-pc/src";
-@source "../../../../sdkwork-partner/apps/sdkwork-partner-pc/packages/*/src";
+@source "../../../../sdkwork-partner/apps/sdkwork-partner-pc/packages/*/src/**";
 
 @custom-variant dark (&:is(.dark *));
 

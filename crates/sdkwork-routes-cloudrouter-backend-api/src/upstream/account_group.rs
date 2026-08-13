@@ -7,7 +7,7 @@ use axum::{Json, Router};
 use sdkwork_cloudrouter_router_service::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use sdkwork_cloudrouter_router_service::ports::{
     AdminUpstreamAccountGroupItem, AdminUpstreamAccountGroupMemberInput,
-    AdminUpstreamAccountGroupMemberItem, AdminUpstreamResourceInput,
+    AdminUpstreamAccountGroupMemberItem, AdminUpstreamModelListEntry, AdminUpstreamResourceInput,
     SaveAdminUpstreamAccountGroupCommand,
 };
 use sdkwork_utils_rust::SdkWorkResultCode;
@@ -20,6 +20,7 @@ use super::shared::{
     required_text, subject, ListQuery, RequestResult, UpstreamState, MAX_NESTED_ITEMS,
 };
 use super::supplier::ResourceResponse;
+use super::{model_list, ModelListEntryInput, ModelListEntryResponse};
 
 const MAX_CODE_LENGTH: usize = 128;
 const MAX_NAME_LENGTH: usize = 200;
@@ -47,6 +48,8 @@ struct AccountGroupCreateRequest {
     vendor_code: Option<String>,
     modalities: Option<Vec<String>>,
     tags: Option<Vec<String>>,
+    model_blacklist: Option<Vec<ModelListEntryInput>>,
+    model_whitelist: Option<Vec<ModelListEntryInput>>,
     status: Option<i32>,
 }
 
@@ -65,6 +68,8 @@ struct AccountGroupUpdateRequest {
     vendor_code: Option<String>,
     modalities: Option<Vec<String>>,
     tags: Option<Vec<String>>,
+    model_blacklist: Option<Vec<ModelListEntryInput>>,
+    model_whitelist: Option<Vec<ModelListEntryInput>>,
     is_default: Option<bool>,
     status: Option<i32>,
 }
@@ -121,6 +126,8 @@ struct AccountGroupResponse {
     vendor_code: Option<String>,
     modalities: Vec<String>,
     tags: Vec<String>,
+    model_blacklist: Vec<ModelListEntryResponse>,
+    model_whitelist: Vec<ModelListEntryResponse>,
     is_default: bool,
     status: i32,
     version: String,
@@ -463,6 +470,8 @@ fn create_command(
         vendor_code: vendor_code(request.vendor_code)?,
         modalities: modalities(request.modalities)?,
         tags: tags(request.tags)?,
+        model_blacklist: model_list("accountGroup", request.model_blacklist)?,
+        model_whitelist: model_list("accountGroup", request.model_whitelist)?,
         is_default: false,
         status: status(request.status.unwrap_or(1))?,
         requested_at: requested_at(),
@@ -528,6 +537,14 @@ fn update_command(
         tags: match request.tags {
             Some(values) => tags(Some(values))?,
             None => existing.tags,
+        },
+        model_blacklist: match request.model_blacklist {
+            Some(values) => model_list("accountGroup", Some(values))?,
+            None => existing.model_blacklist,
+        },
+        model_whitelist: match request.model_whitelist {
+            Some(values) => model_list("accountGroup", Some(values))?,
+            None => existing.model_whitelist,
         },
         is_default: match request.is_default {
             Some(true) => true,
@@ -739,6 +756,7 @@ fn status(value: i32) -> RequestResult<i32> {
     Ok(value)
 }
 
+
 fn non_negative(value: i32, field: &str) -> RequestResult<i32> {
     if value < 0 {
         return Err(problem_keyed(
@@ -782,6 +800,22 @@ impl From<AdminUpstreamAccountGroupItem> for AccountGroupResponse {
             vendor_code: item.vendor_code,
             modalities: item.modalities,
             tags: item.tags,
+            model_blacklist: item
+                .model_blacklist
+                .into_iter()
+                .map(|entry| ModelListEntryResponse {
+                    vendor_code: entry.vendor_code,
+                    models: entry.models,
+                })
+                .collect(),
+            model_whitelist: item
+                .model_whitelist
+                .into_iter()
+                .map(|entry| ModelListEntryResponse {
+                    vendor_code: entry.vendor_code,
+                    models: entry.models,
+                })
+                .collect(),
             is_default: item.is_default,
             status: item.status,
             version: item.version.to_string(),

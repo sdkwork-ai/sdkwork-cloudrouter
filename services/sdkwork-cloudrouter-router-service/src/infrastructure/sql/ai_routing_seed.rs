@@ -33,7 +33,7 @@ const SYSTEM_DATA_SCOPE: i32 = 1;
 const DEFAULT_ADMIN_DATA_SCOPE: i32 = 1;
 const MAX_SEED_UUID_LENGTH: usize = 64;
 const DEFAULT_OPENAI_BASE_URL: &str = "https://api.openai.com/v1";
-const DEFAULT_ADMIN_ROUTING_TOPOLOGY_SEED_SOURCE: &str = "default-admin-routing-topology-seed.v4|openai-default|standard-group|official.openai.full|openai|official|openai_compatible|https://api.openai.com/v1|vendor-modality-groups|i18n-zh-en";
+const DEFAULT_ADMIN_ROUTING_TOPOLOGY_SEED_SOURCE: &str = "default-admin-routing-topology-seed.v4|openai-default|default-group|official.openai.full|openai|official|openai_compatible|https://api.openai.com/v1|vendor-modality-groups|i18n-zh-en";
 
 #[derive(Debug)]
 pub(crate) enum AiRoutingSeedLoadError {
@@ -257,9 +257,9 @@ fn modality_group_type(modality: &str) -> &'static str {
     }
 }
 
-fn standard_admin_upstream_account_group() -> DefaultAdminUpstreamAccountGroupSeed {
+fn default_admin_upstream_account_group() -> DefaultAdminUpstreamAccountGroupSeed {
     DefaultAdminUpstreamAccountGroupSeed {
-        group_code: "standard-group".to_owned(),
+        group_code: "default-group".to_owned(),
         group_name: "账号默认分组".to_owned(),
         group_name_i18n: "{\"en-US\":\"账号默认分组\",\"zh-CN\":\"账号默认分组\"}".to_owned(),
         group_type: "mixed",
@@ -866,6 +866,24 @@ async fn import_postgres_default_admin_upstream_topology(
         .execute(&mut **tx)
         .await?;
 
+        // Resolve the upserted supplier's actual id: ON CONFLICT preserves the
+        // id of a pre-existing row (e.g., one written by an older seed
+        // derivation), so dependent inserts must reference the real id instead
+        // of the deterministic seed id.
+        let supplier_id = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT id
+            FROM ai_upstream_supplier
+            WHERE tenant_id = $1 AND organization_id = $2
+              AND supplier_code = $3 AND deleted_at IS NULL
+            "#,
+        )
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(account.supplier_code)
+        .fetch_one(&mut **tx)
+        .await?;
+
         sqlx::query(
             r#"
             INSERT INTO ai_upstream_supplier_endpoint (
@@ -913,6 +931,23 @@ async fn import_postgres_default_admin_upstream_topology(
         .bind(account.priority)
         .bind(account.routing_weight)
         .execute(&mut **tx)
+        .await?;
+
+        // Resolve the upserted endpoint's actual id so the health state row
+        // references the real supplier endpoint (see the supplier resolution).
+        let endpoint_id = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT id
+            FROM ai_upstream_supplier_endpoint
+            WHERE tenant_id = $1 AND organization_id = $2
+              AND supplier_id = $3 AND endpoint_code = $4 AND deleted_at IS NULL
+            "#,
+        )
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(supplier_id)
+        .bind(account.endpoint_code)
+        .fetch_one(&mut **tx)
         .await?;
 
         sqlx::query(
@@ -1027,6 +1062,22 @@ async fn import_postgres_default_admin_upstream_topology(
         .bind(account.account_type)
         .bind(account.auth_method_code)
         .execute(&mut **tx)
+        .await?;
+
+        // Resolve the upserted account's actual id so the health state row
+        // references the real account (see the supplier resolution).
+        let account_id = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT id
+            FROM ai_upstream_account
+            WHERE tenant_id = $1 AND organization_id = $2
+              AND account_code = $3 AND deleted_at IS NULL
+            "#,
+        )
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(account.account_code)
+        .fetch_one(&mut **tx)
         .await?;
 
         sqlx::query(
@@ -1229,6 +1280,23 @@ async fn import_postgres_default_admin_upstream_topology(
         .bind(tags_json)
         .bind(group.is_default)
         .execute(&mut **tx)
+        .await?;
+
+        // Resolve the upserted group's actual id (see the supplier resolution):
+        // members and group resource grants must reference the real id instead
+        // of the deterministic seed id, which a pre-existing row does not have.
+        let account_group_id = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT id
+            FROM ai_upstream_account_group
+            WHERE tenant_id = $1 AND organization_id = $2
+              AND group_code = $3 AND deleted_at IS NULL
+            "#,
+        )
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(group.group_code.as_str())
+        .fetch_one(&mut **tx)
         .await?;
 
         if let Some(account_id) = account_id {
@@ -1602,7 +1670,7 @@ fn default_admin_upstream_account_groups(
     catalog: &AiRoutingSeedCatalog,
 ) -> Result<Vec<DefaultAdminUpstreamAccountGroupSeed>, AiRoutingSeedLoadError> {
     let mut groups = Vec::new();
-    groups.push(standard_admin_upstream_account_group());
+    groups.push(default_admin_upstream_account_group());
     groups.extend(derive_vendor_account_group_seeds(catalog)?);
     Ok(groups)
 }
@@ -2095,8 +2163,8 @@ mod tests {
         let groups = test_groups();
         let standard = groups
             .iter()
-            .find(|group| group.group_code == "standard-group")
-            .expect("standard-group must be seeded");
+            .find(|group| group.group_code == "default-group")
+            .expect("default-group must be seeded");
         assert_eq!(standard.group_type, "mixed");
         assert_eq!(standard.account_code.as_deref(), Some("openai-default"));
         assert_eq!(standard.resource_group_code, "official.openai.full");
@@ -2114,20 +2182,20 @@ mod tests {
         let groups = test_groups();
         let standard = groups
             .iter()
-            .find(|group| group.group_code == "standard-group")
-            .expect("standard-group must be seeded");
+            .find(|group| group.group_code == "default-group")
+            .expect("default-group must be seeded");
         assert_eq!(standard.group_name, "账号默认分组");
         let i18n: serde_json::Value = serde_json::from_str(&standard.group_name_i18n)
-            .expect("standard-group i18n must be valid JSON");
+            .expect("default-group i18n must be valid JSON");
         assert_eq!(
             i18n.get("en-US").and_then(serde_json::Value::as_str),
             Some("账号默认分组"),
-            "standard-group en-US name must match the default account group"
+            "default-group en-US name must match the default account group"
         );
         assert_eq!(
             i18n.get("zh-CN").and_then(serde_json::Value::as_str),
             Some("账号默认分组"),
-            "standard-group zh-CN name must match the default account group"
+            "default-group zh-CN name must match the default account group"
         );
     }
 
@@ -2142,8 +2210,8 @@ mod tests {
         assert!(
             groups
                 .iter()
-                .any(|group| group.is_default && group.group_code == "standard-group"),
-            "the default seed group must be standard-group"
+                .any(|group| group.is_default && group.group_code == "default-group"),
+            "the default seed group must be default-group"
         );
     }
 
@@ -2155,7 +2223,7 @@ mod tests {
             .map(|group| group.group_code.as_str())
             .collect();
         let expected = [
-            "standard-group",
+            "default-group",
             "openai.text",
             "openai.image",
             "openai.audio",
@@ -2192,7 +2260,7 @@ mod tests {
     #[test]
     fn vendor_groups_are_memberless_with_single_modality() {
         for group in test_groups() {
-            if group.group_code == "standard-group" {
+            if group.group_code == "default-group" {
                 continue;
             }
             assert!(

@@ -4,11 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import type { UpstreamAccountGroup } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 
-export const inputClass = 'h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-white/10 dark:bg-[#111] dark:text-white';
+export const inputClass = 'h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-white/5 dark:text-white';
 export const selectClass = inputClass;
-export const textAreaClass = 'min-h-20 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-white/10 dark:bg-[#111] dark:text-white';
-export const secondaryButtonClass = 'inline-flex h-9 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-[#171717] dark:text-slate-200 dark:hover:bg-white/5';
-export const primaryButtonClass = 'inline-flex h-9 items-center justify-center gap-2 rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50';
+export const textAreaClass = 'min-h-20 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-white/5 dark:text-white';
+export const secondaryButtonClass = 'inline-flex h-9 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10';
+export const primaryButtonClass = 'inline-flex h-9 items-center justify-center gap-2 rounded-md bg-lobster-600 px-3 text-sm font-semibold text-white transition hover:bg-lobster-700 disabled:cursor-not-allowed disabled:opacity-50';
 export const dangerButtonClass = 'inline-flex h-8 items-center justify-center gap-1 rounded-md px-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-500/10';
 
 export function Field({
@@ -79,7 +79,7 @@ export function SearchBox({
         type="submit"
         title={t('common.actions.search')}
         aria-label={t('common.actions.search')}
-        className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-md bg-indigo-600 text-white transition hover:bg-indigo-700"
+        className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-md bg-lobster-600 text-white transition hover:bg-lobster-700"
       >
         <Search className="h-4 w-4" />
       </button>
@@ -198,23 +198,52 @@ export function Modal({
   );
 }
 
-export function SidePanel({ title, subtitle, children, onClose, closeOnClickOutside = true }: { title: string; subtitle?: string; children: ReactNode; onClose: () => void; /** 点击遮罩（抽屉外）时是否关闭；默认 true */ closeOnClickOutside?: boolean }) {
+export function SidePanel({
+  title,
+  subtitle,
+  children,
+  onClose,
+  closeOnClickOutside = true,
+  anchor = 'right',
+  widthClass = 'max-w-3xl',
+  action,
+  footer,
+}: {
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+  onClose: () => void;
+  /** 点击遮罩（抽屉外）时是否关闭；默认 true */
+  closeOnClickOutside?: boolean;
+  /** 抽屉弹出方向：left 从左侧滑出，right 从右侧滑出；默认 right */
+  anchor?: 'left' | 'right';
+  /** 抽屉宽度档位；默认 max-w-3xl */
+  widthClass?: string;
+  /** 头部操作区（位于标题与关闭按钮之间） */
+  action?: ReactNode;
+  /** 底部操作栏（可选，如取消/提交） */
+  footer?: ReactNode;
+}) {
   const { t } = useTranslation();
+  const left = anchor === 'left';
   return (
-    <div className="fixed inset-0 z-[60] flex justify-end bg-slate-950/30 backdrop-blur-[1px]">
-      <button type="button" aria-label={t('admin.upstream.common.aria.close')} className="min-w-0 flex-1" onPointerDown={() => { if (closeOnClickOutside) onClose(); }} />
-      <aside className="flex h-full w-full max-w-3xl flex-col border-l border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#171717]">
+    <div className={`fixed inset-0 z-[60] flex ${left ? 'justify-start' : 'justify-end'} bg-slate-950/30 backdrop-blur-[1px]`}>
+      {left ? null : <button type="button" aria-label={t('admin.upstream.common.aria.close')} className="min-w-0 flex-1" onPointerDown={() => { if (closeOnClickOutside) onClose(); }} />}
+      <aside className={`flex h-full w-full ${widthClass} flex-col bg-white shadow-2xl dark:bg-[#171717] ${left ? 'border-r border-slate-200 dark:border-white/10' : 'border-l border-slate-200 dark:border-white/10'}`}>
         <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 dark:border-white/10">
           <div className="min-w-0">
             <h2 className="truncate text-base font-bold text-slate-900 dark:text-white">{title}</h2>
             {subtitle ? <p className="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">{subtitle}</p> : null}
           </div>
+          {action ? <div className="flex shrink-0 items-center gap-2">{action}</div> : null}
           <button type="button" aria-label={t('admin.upstream.common.aria.close')} onClick={onClose} className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10">
             <X className="h-4 w-4" />
           </button>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto p-5">{children}</div>
+        {footer ? <footer className="flex justify-end gap-2 border-t border-slate-200 px-5 py-3 dark:border-white/10">{footer}</footer> : null}
       </aside>
+      {left ? <button type="button" aria-label={t('admin.upstream.common.aria.close')} className="min-w-0 flex-1" onPointerDown={() => { if (closeOnClickOutside) onClose(); }} /> : null}
     </div>
   );
 }
@@ -273,7 +302,7 @@ export type GroupTypeFilterValue = UpstreamAccountGroup['groupType'] | 'all';
 const GROUP_TYPE_ORDER: UpstreamAccountGroup['groupType'][] = ['mixed', 'llm', 'image', 'video', 'audio', 'music', 'other'];
 
 function typeTabClass(selected: boolean): string {
-  return `shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${selected ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5'}`;
+  return `shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${selected ? 'bg-lobster-600 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5'}`;
 }
 
 export function GroupTypeFilter({ value, onChange, className }: { value: GroupTypeFilterValue; onChange: (value: GroupTypeFilterValue) => void; className?: string }) {
@@ -320,7 +349,7 @@ export function matchesMultiplierRange(group: { costMultiplier: string; saleMult
   return within(parseFloat(group.costMultiplier), range.costMin, range.costMax) && within(parseFloat(group.saleMultiplier), range.saleMin, range.saleMax);
 }
 
-const rangeInputClass = 'h-7 w-20 min-w-0 rounded-md border border-slate-300 bg-white px-2 text-xs text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-white/10 dark:bg-[#111] dark:text-white';
+const rangeInputClass = 'h-7 w-20 min-w-0 rounded-md border border-slate-300 bg-white px-2 text-xs text-slate-900 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-white/5 dark:text-white';
 
 function MultiplierRangeInputs({ label, min, max, onMinChange, onMaxChange }: { label: string; min: string; max: string; onMinChange: (value: string) => void; onMaxChange: (value: string) => void }) {
   const { t } = useTranslation();
@@ -343,7 +372,7 @@ export function MultiplierRangeFilter({ value, onChange, className }: { value: M
       <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{t('admin.upstream.accountGroup.multiplier.title')}</span>
       <MultiplierRangeInputs label={t('admin.upstream.accountGroup.multiplier.cost')} min={value.costMin} max={value.costMax} onMinChange={update('costMin')} onMaxChange={update('costMax')} />
       <MultiplierRangeInputs label={t('admin.upstream.accountGroup.multiplier.sale')} min={value.saleMin} max={value.saleMax} onMinChange={update('saleMin')} onMaxChange={update('saleMax')} />
-      {active ? <button type="button" className="text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400" onClick={() => onChange(EMPTY_MULTIPLIER_RANGE)}>{t('common.actions.clear')}</button> : null}
+      {active ? <button type="button" className="text-xs font-medium text-lobster-600 hover:underline dark:text-lobster-400" onClick={() => onChange(EMPTY_MULTIPLIER_RANGE)}>{t('common.actions.clear')}</button> : null}
     </div>
   );
 }
@@ -390,7 +419,7 @@ export function TagFilter({ value, onChange, className }: { value: string[]; onC
         </button>
       ))}
       {value.length > 0 ? (
-        <button type="button" className="ml-1 shrink-0 text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400" onClick={() => onChange([])}>{t('common.actions.clear')}</button>
+        <button type="button" className="ml-1 shrink-0 text-xs font-medium text-lobster-600 hover:underline dark:text-lobster-400" onClick={() => onChange([])}>{t('common.actions.clear')}</button>
       ) : null}
     </div>
   );

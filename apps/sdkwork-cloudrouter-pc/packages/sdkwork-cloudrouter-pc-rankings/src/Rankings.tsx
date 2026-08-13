@@ -23,7 +23,6 @@ import {
   Cpu,
   Unlock,
   Lock,
-  ArrowRight,
   Sparkles,
   Play,
   Pause,
@@ -37,10 +36,17 @@ import {
   DEFAULT_RANKING_SNAPSHOT_SOURCE,
   EMPTY_RANKING_CATALOG,
   EMPTY_RANKING_HISTORY,
+  RANKING_MODALITY_TABS,
+  deriveRankingModalityCounts,
   deriveVendorOptionsForRankings,
   deriveRankingViewModel,
   findRankingColor,
   formatRankingVolume,
+  formatRankingWinRate,
+  localizeRankingPricing,
+  localizeRankingStrength,
+  parseRankingModalityParam,
+  rankingModalityParam,
   resolveActiveRankingWeekIndex,
   type RankingLicense,
   type RankingModality,
@@ -66,6 +72,7 @@ const getModalityIcon = (modality: Modality) => {
 export function Rankings() {
   const { t } = useTranslation();
   const [rankingCatalog, setRankingCatalog] = useState(EMPTY_RANKING_CATALOG);
+  const [rankingCountsCatalog, setRankingCountsCatalog] = useState(EMPTY_RANKING_CATALOG);
   const [rankingHistory, setRankingHistory] = useState(EMPTY_RANKING_HISTORY);
   const [rankingSnapshotSource, setRankingSnapshotSource] = useState(DEFAULT_RANKING_SNAPSHOT_SOURCE);
   const [rankingVendors, setRankingVendors] = useState<RankingVendorOption[]>([]);
@@ -74,7 +81,11 @@ export function Rankings() {
   const [rankingLoadFailed, setRankingLoadFailed] = useState(false);
   const [rankingReloadVersion, setRankingReloadVersion] = useState(0);
   const [vendorReloadVersion, setVendorReloadVersion] = useState(0);
-  const [activeModality, setActiveModality] = useState<Modality>('All');
+  const [activeModality, setActiveModality] = useState<Modality>(() =>
+    typeof window === 'undefined'
+      ? 'All'
+      : parseRankingModalityParam(new URLSearchParams(window.location.search).get('modality')),
+  );
   const [hoveredWeekIndex, setHoveredWeekIndex] = useState<number | null>(null);
   const [selectedWeekIndex, setSelectedWeekIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -124,9 +135,12 @@ export function Rankings() {
     chartKeys,
     displayRankings,
     dynamicStats,
-    modalityCounts,
     panelStats,
   } = rankingView;
+  const modalityCounts = useMemo(
+    () => deriveRankingModalityCounts(rankingCountsCatalog),
+    [rankingCountsCatalog],
+  );
   const { vendorModelCounts, vendors } = vendorOptions;
   const activeBackendModality = activeModality === 'All' ? undefined : activeModality.toLowerCase();
   const recordingErrorMessage = t('rankings.videoExportError');
@@ -194,6 +208,10 @@ export function Rankings() {
         setRankingSnapshotSource(snapshot.source);
         setHoveredWeekIndex(null);
         setSelectedWeekIndex(null);
+        if (activeBackendModality === undefined) {
+          // The global tab already carries the full catalog; reuse it for tab counts.
+          setRankingCountsCatalog(snapshot.catalog);
+        }
         setIsRankingLoading(false);
       })
       .catch(() => {
@@ -207,6 +225,58 @@ export function Rankings() {
       cancelled = true;
     };
   }, [activeBackendModality, rankingReloadVersion, rankingSearchQuery, selectedVendorCode]);
+
+  useEffect(() => {
+    // Keep tab counts accurate for every modality while a specific tab is active:
+    // fetch the full catalog (best effort) in parallel with the filtered display data.
+    // Runs only when the filter context changes; tab switches reuse the snapshot
+    // (the global tab's display fetch also refreshes it).
+    if (activeBackendModality === undefined) {
+      return;
+    }
+    let cancelled = false;
+    RankingService.fetchModelRankings({
+      vendorCode: selectedVendorCode,
+      searchQuery: rankingSearchQuery,
+      pageSize: 200,
+    })
+      .then((snapshot) => {
+        if (cancelled) {
+          return;
+        }
+        setRankingCountsCatalog(snapshot.catalog);
+      })
+      .catch(() => {
+        // Counts are an enhancement; keep the last known snapshot on failure.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [rankingReloadVersion, rankingSearchQuery, selectedVendorCode]);
+
+  useEffect(() => {
+    // Keep `?modality=` in sync so the active tab survives refresh and is shareable.
+    const param = rankingModalityParam(activeModality);
+    const url = new URL(window.location.href);
+    if (param) {
+      url.searchParams.set('modality', param);
+    } else {
+      url.searchParams.delete('modality');
+    }
+    window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+  }, [activeModality]);
+
+  useEffect(() => {
+    const onPopState = () => {
+      setActiveModality(
+        parseRankingModalityParam(new URLSearchParams(window.location.search).get('modality')),
+      );
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -379,6 +449,17 @@ export function Rankings() {
     }
   };
 
+  const handleModalityTabKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
+      return;
+    }
+    event.preventDefault();
+    const currentIndex = RANKING_MODALITY_TABS.indexOf(activeModality);
+    const direction = event.key === 'ArrowRight' ? 1 : -1;
+    const nextIndex = (currentIndex + direction + RANKING_MODALITY_TABS.length) % RANKING_MODALITY_TABS.length;
+    setActiveModality(RANKING_MODALITY_TABS[nextIndex]);
+  };
+
   return (
     <div className="theme-aware-dark-surface min-h-screen bg-slate-50 dark:bg-[#050505] text-slate-700 dark:text-slate-300 pt-20 flex flex-col relative overflow-hidden font-sans">
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
@@ -402,41 +483,6 @@ export function Rankings() {
               <p className="text-sm text-slate-500 mt-2 font-medium">
                 {t('rankings.subtitle')}
               </p>
-            </div>
-
-            {/* Modalities List */}
-            <div className="flex flex-col gap-2">
-              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-3 mb-1 flex items-center gap-2">
-                <LayoutGrid className="w-3 h-3" /> {t('rankings.categories')}
-              </h3>
-              {(['All', 'LLM', 'Image', 'Video', 'Audio', 'Music', 'Embedding', 'Rerank'] as Modality[]).map(modality => {
-                const isActive = activeModality === modality;
-                const count = modalityCounts[modality];
-                return (
-                  <button
-                    key={modality}
-                    onClick={() => setActiveModality(modality)}
-                    className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-                      isActive
-                        ? 'bg-white/10 text-white shadow-sm ring-1 ring-white/20'
-                        : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className={isActive ? 'text-white' : 'opacity-70'}>
-                        {getModalityIcon(modality)}
-                      </span>
-                      {modalityLabels[modality]}
-                    </div>
-                    <div className="flex items-center gap-2">
-                       <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md ${isActive ? 'bg-white/20 text-white' : 'bg-white/5 text-slate-500'}`}>
-                         {count}
-                       </span>
-                      {isActive && <div className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" />}
-                    </div>
-                  </button>
-                )
-              })}
             </div>
 
             {/* Market Insights / License Filter */}
@@ -562,7 +608,7 @@ export function Rankings() {
               <span className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1 flex items-center gap-2">
                 <Zap className="w-3.5 h-3.5" /> {t('rankings.avgLatency')}
               </span>
-              <div className="text-3xl font-black font-mono text-white mt-1">{dynamicStats.avgLatency}<span className="text-sm text-slate-500 tracking-normal ml-1">ms</span></div>
+              <div className="text-3xl font-black font-mono text-white mt-1">{dynamicStats.avgLatency}<span className="text-sm text-slate-500 tracking-normal ml-1">{t('rankings.unitMilliseconds')}</span></div>
               <div className="text-emerald-500 text-xs font-bold mt-2 flex items-center gap-1">
                 {t('rankings.weightedByBenchmark')}
               </div>
@@ -755,7 +801,7 @@ export function Rankings() {
                           <div className="flex items-center gap-3 overflow-hidden">
                             <div className="w-1 h-4 rounded-full shrink-0" style={{ backgroundColor: model.color }} />
                             <span className={`text-[13px] truncate ${model.isOthers ? 'text-slate-500' : 'text-slate-200 font-medium group-hover:text-white transition-colors'}`}>
-                              {model.name}
+                              {model.isOthers ? t('rankings.others') : model.name}
                             </span>
                           </div>
                           <span className="text-[13px] font-mono text-slate-300 shrink-0 pl-3">
@@ -778,23 +824,82 @@ export function Rankings() {
           <div className="h-px w-full bg-white/5 my-4" />
 
           {/* Detailed Leaderboard List */}
-          <div className="flex flex-col gap-6">
+          <div id="rankings-panel" className="flex flex-col gap-6">
             <div className="flex flex-col flex-wrap sm:flex-row sm:items-center justify-between gap-4">
               <h2 className="text-2xl font-bold text-white flex items-center gap-3">
                 <Activity className="w-6 h-6 text-emerald-500" />
                 {t('rankings.leaderboardTitle', { modality: activeLeaderboardModality })}
               </h2>
 
-              <div className="relative w-full sm:w-64 max-w-xs">
-                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  maxLength={200}
-                  placeholder={t('rankings.searchPlaceholder')}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 border border-white/10 rounded-xl bg-[#111] text-sm focus:outline-none focus:ring-1 focus:ring-white/30 text-white placeholder:text-slate-500 transition-shadow"
-                />
+              <div className="flex items-center gap-3">
+                {isRankingLoading && displayRankings.length > 0 && (
+                  <div role="status" aria-live="polite" className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                    <span className="h-1 w-24 overflow-hidden rounded-full bg-white/10">
+                      <span className="block h-full w-full rounded-full bg-indigo-400/70 animate-pulse" />
+                    </span>
+                    {t('rankings.tabs.loading')}
+                  </div>
+                )}
+                <div className="relative w-full sm:w-64 max-w-xs">
+                  <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    maxLength={200}
+                    placeholder={t('rankings.searchPlaceholder')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 border border-white/10 rounded-xl bg-[#0a0a0a] text-sm focus:outline-none focus:ring-1 focus:ring-white/30 text-white placeholder:text-slate-500 transition-shadow"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Modality Tabs */}
+            <div
+              role="tablist"
+              aria-label={t('rankings.tabs.ariaLabel')}
+              onKeyDown={handleModalityTabKeyDown}
+              className="-mx-1 px-1 overflow-x-auto hide-scrollbar"
+            >
+              <div className="flex w-max min-w-full gap-1.5 sm:gap-2">
+                {RANKING_MODALITY_TABS.map(modality => {
+                  const isActive = activeModality === modality;
+                  const tabParam = rankingModalityParam(modality) ?? 'all';
+                  return (
+                    <button
+                      key={modality}
+                      type="button"
+                      role="tab"
+                      id={`ranking-tab-${tabParam}`}
+                      aria-selected={isActive}
+                      aria-controls="rankings-panel"
+                      tabIndex={isActive ? 0 : -1}
+                      onClick={() => setActiveModality(modality)}
+                      className={`relative flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-bold whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 ${
+                        isActive ? 'text-white' : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {isActive && (
+                        <motion.span
+                          layoutId="ranking-modality-tab-pill"
+                          transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                          className="absolute inset-0 rounded-xl bg-white/10 ring-1 ring-white/20 shadow-[0_0_18px_rgba(255,255,255,0.06)]"
+                        />
+                      )}
+                      <span className="relative flex items-center gap-2">
+                        <span className={isActive ? 'text-amber-300' : 'opacity-75'}>
+                          {getModalityIcon(modality)}
+                        </span>
+                        {modalityLabels[modality]}
+                        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md transition-colors ${
+                          isActive ? 'bg-amber-400/15 text-amber-300' : 'bg-white/5 text-slate-500'
+                        }`}>
+                          {modalityCounts[modality]}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -811,10 +916,10 @@ export function Rankings() {
               </div>
             )}
 
-            {/* Rich Table Container */}
-            <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl overflow-hidden">
+            {/* Leaderboard Table */}
+            <div className="bg-[#0a0a0a] border border-white/10 rounded-xl overflow-hidden">
               {/* Header */}
-              <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-4 border-b border-white/10 bg-white/5 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              <div className="hidden md:grid grid-cols-12 gap-2 md:gap-3 px-3 md:px-4 py-2.5 border-b border-white/10 bg-white/5 text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
                 <div className="col-span-1 text-center">{t('rankings.table.rank')}</div>
                 <div className="col-span-4">{t('rankings.table.modelProvider')}</div>
                 <div className="col-span-2 text-right">{t('rankings.table.benchmark')}</div>
@@ -823,37 +928,39 @@ export function Rankings() {
               </div>
 
               <div className="flex flex-col divide-y divide-white/5">
-                <AnimatePresence mode="popLayout">
+                  <AnimatePresence mode="popLayout">
                   {displayRankings.length === 0 ? (
-                    <div className="p-16 text-center flex flex-col items-center">
-                      <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                    <div className="p-10 text-center flex flex-col items-center">
+                      <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3">
                         {rankingLoadFailed ? (
-                          <AlertCircle className="w-8 h-8 text-amber-400" />
+                          <AlertCircle className="w-6 h-6 text-amber-400" />
                         ) : isRankingLoading ? (
-                          <Activity className="w-8 h-8 text-slate-500 animate-pulse" />
+                          <Activity className="w-6 h-6 text-slate-500 animate-pulse" />
                         ) : (
-                          <Search className="w-8 h-8 text-slate-600" />
+                          <Search className="w-6 h-6 text-slate-600" />
                         )}
                       </div>
-                      <h3 className="text-white font-bold text-lg">
+                      <h3 className="text-white font-bold text-base">
                         {rankingLoadFailed
                           ? t('rankings.loadErrorTitle')
                           : isRankingLoading
                             ? t('rankings.loadingTitle')
                             : t('rankings.emptyTitle')}
                       </h3>
-                      <p className="text-slate-500 text-sm mt-1">
+                      <p className="text-slate-500 text-xs mt-1">
                         {rankingLoadFailed
                           ? t('rankings.loadErrorDescription')
                           : isRankingLoading
                             ? t('rankings.loadingDescription')
-                            : t('rankings.emptyDescription')}
+                            : activeModality !== 'All'
+                              ? t('rankings.emptyModalityDescription', { modality: modalityLabels[activeModality] })
+                              : t('rankings.emptyDescription')}
                       </p>
                       {rankingLoadFailed && (
                         <button
                           type="button"
                           onClick={retryModelRankings}
-                          className="mt-4 font-bold uppercase text-sm text-amber-200 hover:text-white"
+                          className="mt-3 font-bold uppercase text-xs text-amber-200 hover:text-white"
                         >
                           {t('rankings.retry')}
                         </button>
@@ -864,77 +971,70 @@ export function Rankings() {
                       const rankChange = model.calculatedPrevRank - model.displayRank;
                       const bgGlow = model.displayRank === 1 ? 'bg-gradient-to-r from-amber-500/10 to-transparent border-l-2 border-l-amber-500' :
                                      model.displayRank === 2 ? 'bg-gradient-to-r from-slate-300/10 to-transparent border-l-2 border-l-slate-300' :
-                                     model.displayRank === 3 ? 'bg-gradient-to-r from-orange-400/10 to-transparent border-l-2 border-l-orange-400' : 'border-l-2 border-l-transparent hover:bg-white/[0.02]';
+                                     model.displayRank === 3 ? 'bg-gradient-to-r from-orange-400/10 to-transparent border-l-2 border-l-orange-400' : 'border-l-2 border-l-transparent hover:bg-white/[0.03]';
 
                       return (
                         <motion.div
                           key={model.id}
                           layout
                           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                          className={`flex flex-col md:grid md:grid-cols-12 gap-4 items-center px-4 md:px-6 py-5 transition-colors group relative ${bgGlow}`}
+                          className={`flex flex-col md:grid md:grid-cols-12 gap-1.5 md:gap-3 items-center px-3 md:px-4 py-2.5 transition-colors group relative ${bgGlow}`}
                         >
-                          {/* CTA Action */}
-                          <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-300 z-10 hidden md:block">
-                            <button className="bg-white text-[#050505] px-4 py-1.5 rounded-full text-xs font-bold hover:bg-slate-200 transition-all transform hover:scale-105 active:scale-95 flex items-center gap-1.5 shadow-[0_0_15px_rgba(255,255,255,0.3)]">
-                              {t('rankings.deploy')} <ArrowRight className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-
                           {/* Rank */}
-                          <div className="col-span-1 flex flex-col items-center justify-center w-full md:w-auto shrink-0 mb-2 md:mb-0 relative py-1">
+                          <div className="col-span-1 flex items-center justify-center gap-1 w-full md:w-auto shrink-0 mb-0.5 md:mb-0">
                             {model.displayRank === 1 && (
-                              <Trophy className="absolute -top-3 w-4 h-4 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
+                              <Trophy className="w-3 h-3 text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.5)]" />
                             )}
-                            <span className={`text-2xl font-black font-mono ${
-                              model.displayRank === 1 ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]' :
+                            <span className={`text-base font-black font-mono ${
+                              model.displayRank === 1 ? 'text-amber-400' :
                               model.displayRank === 2 ? 'text-slate-300' :
                               model.displayRank === 3 ? 'text-orange-400' : 'text-slate-500'
                             }`}>
                               {model.displayRank}
                             </span>
                             {model.displayRank > 3 && (
-                              <div className="flex items-center text-[10px] font-bold mt-1">
-                                {rankChange > 0 && <span className="text-emerald-500 flex items-center"><ArrowUp className="w-3 h-3" /> {rankChange}</span>}
-                                {rankChange < 0 && <span className="text-red-500 flex items-center"><ArrowDown className="w-3 h-3" /> {Math.abs(rankChange)}</span>}
-                                {rankChange === 0 && <span className="text-slate-600"><Minus className="w-3 h-3" /></span>}
-                              </div>
+                              <span className="flex items-center text-[9px] font-bold">
+                                {rankChange > 0 && <ArrowUp className="w-2.5 h-2.5 text-emerald-500" />}
+                                {rankChange < 0 && <ArrowDown className="w-2.5 h-2.5 text-red-500" />}
+                                {rankChange === 0 && <Minus className="w-2.5 h-2.5 text-slate-600" />}
+                              </span>
                             )}
                           </div>
 
                           {/* Model Info */}
-                          <div className="col-span-4 flex items-center gap-4 w-full min-w-0">
-                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border border-white/10 bg-[#111] text-white">
+                          <div className="col-span-4 flex items-center gap-2.5 w-full min-w-0">
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/10 bg-[#111] text-white">
                                 {getModalityIcon(model.modality)}
                             </div>
-                            <div className="flex flex-col truncate w-full">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-bold text-slate-200 text-base truncate group-hover:text-white transition-colors">
+                            <div className="flex flex-col truncate w-full min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <h3 className="font-bold text-slate-200 text-sm truncate group-hover:text-white transition-colors">
                                   {model.name}
                                 </h3>
                                 {model.isNew && (
-                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-widest shrink-0 hidden sm:block">
+                                  <span className="px-1 py-px rounded text-[8px] font-black bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-widest shrink-0">
                                     {t('rankings.new')}
                                   </span>
                                 )}
                               </div>
-                              <div className="text-xs font-medium text-slate-500 flex flex-wrap items-center gap-2 mt-1">
-                                <span className="flex items-center gap-1.5"><Globe className="w-3 h-3" /> {model.vendor}</span>
+                              <div className="text-[11px] font-medium text-slate-500 flex flex-wrap items-center gap-x-1.5 mt-0.5">
+                                <span className="flex items-center gap-1"><Globe className="w-2.5 h-2.5" /> {model.vendor}</span>
                                 {model.license && (
                                   <>
                                     <span className="text-slate-600">/</span>
-                                    <span className="flex items-center gap-1">
-                                      {model.license === 'Open Source' ? <Unlock className="w-3 h-3 text-indigo-400" /> : <Lock className="w-3 h-3 text-slate-400" />}
+                                    <span className="flex items-center gap-0.5">
+                                      {model.license === 'Open Source' ? <Unlock className="w-2.5 h-2.5 text-indigo-400" /> : <Lock className="w-2.5 h-2.5 text-slate-400" />}
                                       <span className={model.license === 'Open Source' ? 'text-indigo-400' : 'text-slate-400'}>{licenseLabels[model.license]}</span>
                                     </span>
                                   </>
                                 )}
                               </div>
                               {model.strengths && model.strengths.length > 0 && (
-                                <div className="flex flex-wrap items-center gap-1.5 mt-2 hidden lg:flex">
+                                <div className="flex flex-wrap items-center gap-1 mt-1 hidden xl:flex">
                                   {model.strengths.map(s => (
-                                     <div key={s} className="text-[10px] font-bold tracking-widest uppercase bg-gradient-to-r from-white/10 to-white/5 border border-white/10 px-2 py-0.5 rounded-full text-slate-300 shrink-0">
-                                       {s}
-                                     </div>
+                                     <span key={s} className="text-[9px] font-semibold tracking-wide bg-white/5 border border-white/10 px-1.5 py-px rounded text-slate-400 shrink-0">
+                                       {localizeRankingStrength(s)}
+                                     </span>
                                   ))}
                                 </div>
                               )}
@@ -942,11 +1042,11 @@ export function Rankings() {
                           </div>
 
                           {/* Benchmark */}
-                          <div className="col-span-2 flex flex-col items-center md:items-end w-full gap-1.5 mt-4 md:mt-0">
+                          <div className="col-span-2 flex flex-col items-center md:items-end w-full gap-1 mt-1 md:mt-0">
                             <span className="text-slate-200 text-sm font-bold font-mono">
                                {formatRankingVolume(model.currentVolume)}
                             </span>
-                            <div className="h-1 w-24 bg-[#111] rounded-full overflow-hidden hidden md:block">
+                            <div className="h-0.5 w-16 bg-[#111] rounded-full overflow-hidden hidden md:block">
                               <div
                                 className="h-full rounded-full transition-all duration-300"
                                 style={{
@@ -958,49 +1058,45 @@ export function Rankings() {
                           </div>
 
                           {/* Context & Speed */}
-                          <div className="col-span-2 flex flex-row md:flex-col items-center justify-center gap-4 md:gap-1.5 w-full mt-2 md:mt-0 text-sm border-y border-white/5 py-3 md:py-0 md:border-0">
+                          <div className="col-span-2 flex flex-row md:flex-col items-center justify-center gap-1.5 w-full mt-1 md:mt-0 text-[11px]">
                             {model.contextSize ? (
-                              <span className="text-slate-300 font-semibold bg-[#1a1a1a] border border-white/5 px-2 py-0.5 rounded text-xs flex items-center gap-1.5 hover:bg-white/5 transition-colors cursor-default">
-                                <Cpu className="w-3 h-3 text-slate-500" />
+                              <span className="text-slate-300 font-medium truncate max-w-full" title={t('rankings.contextValue', { value: model.contextSize })}>
                                 {t('rankings.contextValue', { value: model.contextSize })}
                               </span>
                             ) : (
-                              <span className="text-slate-600 text-xs">-</span>
+                              <span className="text-slate-600">-</span>
                             )}
-                            <span className="text-xs text-slate-400 font-mono flex items-center gap-1">
-                              <Zap className="w-3 h-3 text-amber-500/70" /> {model.latency}ms
+                            <span className="text-slate-400 font-mono flex items-center gap-0.5">
+                              <Zap className="w-2.5 h-2.5 text-amber-500/70" /> {model.latency}{t('rankings.unitMilliseconds')}
                             </span>
                           </div>
 
                           {/* Performance & Price */}
-                          <div className="col-span-3 flex flex-row md:flex-col items-center justify-between md:items-end w-full mt-2 md:mt-0 text-sm">
-                            <div className="flex flex-col items-end gap-1.5 w-full">
+                          <div className="col-span-3 flex flex-row md:flex-col items-center justify-between md:items-end w-full mt-1 md:mt-0">
+                            <div className="flex flex-col items-end gap-1 w-full">
                               {model.winRate ? (
-                                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded">
-                                  <CheckCircle2 className="w-3 h-3" />
-                                  {t('rankings.winRate', { value: model.winRate })}
-                                </div>
+                                <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded">
+                                  <CheckCircle2 className="w-2.5 h-2.5" />
+                                  {t('rankings.winRate', { value: formatRankingWinRate(model.winRate) })}
+                                </span>
                               ) : (
-                                <div className="text-xs text-slate-600 hidden md:block">{t('rankings.naBenchmark')}</div>
+                                <span className="text-[10px] text-slate-600 hidden md:block">{t('rankings.naBenchmark')}</span>
                               )}
 
-                              <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-0.5" title={t('rankings.costIndicator')}>
+                              <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-px" title={t('rankings.costIndicator')}>
                                   {[...Array(5)].map((_, i) => (
-                                    <span key={i} className={`text-[11px] font-black tracking-tight ${
+                                    <span key={i} className={`text-[9px] font-black tracking-tight ${
                                       i < model.costIndicator
-                                        ? 'text-indigo-400 drop-shadow-[0_0_2px_rgba(129,140,248,0.5)]'
+                                        ? 'text-indigo-400'
                                         : 'text-slate-700/50'
                                     }`}>$</span>
                                   ))}
                                 </div>
                                 {model.pricing && (
-                                  <>
-                                    <span className="w-1 h-1 rounded-full bg-slate-700 hidden md:block" />
-                                    <span className="text-[10px] text-slate-400 font-mono tracking-tight hidden md:block bg-[#111] px-1.5 rounded">
-                                      {model.pricing}
-                                    </span>
-                                  </>
+                                  <span className="text-[10px] text-slate-400 font-mono tracking-tight truncate max-w-[130px]">
+                                    {localizeRankingPricing(model.pricing)}
+                                  </span>
                                 )}
                               </div>
                             </div>

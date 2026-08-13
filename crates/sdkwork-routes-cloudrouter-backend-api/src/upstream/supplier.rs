@@ -6,9 +6,10 @@ use axum::routing::get;
 use axum::{Json, Router};
 use sdkwork_cloudrouter_router_service::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use sdkwork_cloudrouter_router_service::ports::{
-    AdminUpstreamResourceInput, AdminUpstreamResourceItem, AdminUpstreamSupplierAuthMethodInput,
-    AdminUpstreamSupplierAuthMethodItem, AdminUpstreamSupplierEndpointInput,
-    AdminUpstreamSupplierEndpointItem, AdminUpstreamSupplierItem, SaveAdminUpstreamSupplierCommand,
+    AdminLlmProtocolConfig, AdminUpstreamResourceInput, AdminUpstreamResourceItem,
+    AdminUpstreamSupplierAuthMethodInput, AdminUpstreamSupplierAuthMethodItem,
+    AdminUpstreamSupplierEndpointInput, AdminUpstreamSupplierEndpointItem,
+    AdminUpstreamSupplierItem, LlmProtocolCode, SaveAdminUpstreamSupplierCommand,
 };
 use sdkwork_utils_rust::SdkWorkResultCode;
 use serde::{Deserialize, Serialize};
@@ -19,12 +20,21 @@ use super::shared::{
     optional_text, parse_id, parse_if_match, problem, problem_keyed, requested_at, required_text, subject,
     ListQuery, RequestResult, UpstreamState, MAX_NESTED_ITEMS,
 };
+use super::{model_list, ModelListEntryInput, ModelListEntryResponse};
 
 const MAX_CODE_LENGTH: usize = 128;
 const MAX_NAME_LENGTH: usize = 200;
 const MAX_DESCRIPTION_LENGTH: usize = 4_000;
 const MAX_URL_LENGTH: usize = 2_048;
+const MAX_PROTOCOLS: usize = 8;
 const SUPPLIER_CREATE_IDEMPOTENCY_SCOPE: i64 = 1_000_001;
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ProtocolConfigInput {
+    protocol_code: String,
+    base_url: String,
+}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -36,7 +46,9 @@ struct SupplierCreateRequest {
     supplier_type: String,
     default_vendor_code: Option<String>,
     adapter_code: String,
-    protocol_code: String,
+    protocols: Vec<ProtocolConfigInput>,
+    model_blacklist: Option<Vec<ModelListEntryInput>>,
+    model_whitelist: Option<Vec<ModelListEntryInput>>,
     website_url: Option<String>,
     docs_url: Option<String>,
     region_code: Option<String>,
@@ -54,7 +66,9 @@ struct SupplierUpdateRequest {
     supplier_type: Option<String>,
     default_vendor_code: Option<String>,
     adapter_code: Option<String>,
-    protocol_code: Option<String>,
+    protocols: Option<Vec<ProtocolConfigInput>>,
+    model_blacklist: Option<Vec<ModelListEntryInput>>,
+    model_whitelist: Option<Vec<ModelListEntryInput>>,
     website_url: Option<String>,
     docs_url: Option<String>,
     region_code: Option<String>,
@@ -131,6 +145,9 @@ struct SupplierResponse {
     default_vendor_code: Option<String>,
     adapter_code: String,
     protocol_code: String,
+    protocols: Vec<AdminLlmProtocolConfig>,
+    model_blacklist: Vec<ModelListEntryResponse>,
+    model_whitelist: Vec<ModelListEntryResponse>,
     website_url: Option<String>,
     docs_url: Option<String>,
     region_code: Option<String>,
@@ -543,6 +560,8 @@ fn create_command(
             "defaultVendorCode is required for official suppliers",
         ));
     }
+    let protocols = protocol_configs(request.protocols)?;
+    let protocol_code = primary_protocol_code(&protocols);
     Ok(SaveAdminUpstreamSupplierCommand {
         subject,
         supplier_id: None,
@@ -562,7 +581,10 @@ fn create_command(
         supplier_type,
         default_vendor_code,
         adapter_code: required_text(request.adapter_code, "adapterCode", MAX_CODE_LENGTH)?,
-        protocol_code: required_text(request.protocol_code, "protocolCode", MAX_CODE_LENGTH)?,
+        protocols,
+        protocol_code,
+        model_blacklist: model_list("supplier", request.model_blacklist)?,
+        model_whitelist: model_list("supplier", request.model_whitelist)?,
         website_url: optional_text(request.website_url, "websiteUrl", MAX_URL_LENGTH)?,
         docs_url: optional_text(request.docs_url, "docsUrl", MAX_URL_LENGTH)?,
         region_code: optional_text(request.region_code, "regionCode", MAX_CODE_LENGTH)?,
@@ -596,6 +618,19 @@ fn update_command(
             "defaultVendorCode is required for official suppliers",
         ));
     }
+    let protocols = match request.protocols {
+        Some(inputs) => protocol_configs(inputs)?,
+        None => existing.protocols,
+    };
+    let protocol_code = primary_protocol_code(&protocols);
+    let model_blacklist = match request.model_blacklist {
+        Some(inputs) => model_list("supplier", Some(inputs))?,
+        None => existing.model_blacklist,
+    };
+    let model_whitelist = match request.model_whitelist {
+        Some(inputs) => model_list("supplier", Some(inputs))?,
+        None => existing.model_whitelist,
+    };
     Ok(SaveAdminUpstreamSupplierCommand {
         subject,
         supplier_id: Some(existing.id),
@@ -623,11 +658,10 @@ fn update_command(
             .map(|value| required_text(value, "adapterCode", MAX_CODE_LENGTH))
             .transpose()?
             .unwrap_or(existing.adapter_code),
-        protocol_code: request
-            .protocol_code
-            .map(|value| required_text(value, "protocolCode", MAX_CODE_LENGTH))
-            .transpose()?
-            .unwrap_or(existing.protocol_code),
+        protocols,
+        protocol_code,
+        model_blacklist,
+        model_whitelist,
         website_url: match request.website_url {
             Some(value) => optional_text(Some(value), "websiteUrl", MAX_URL_LENGTH)?,
             None => existing.website_url,
@@ -776,6 +810,59 @@ fn supplier_type(value: String) -> RequestResult<String> {
     Ok(value)
 }
 
+fn protocol_configs(inputs: Vec<ProtocolConfigInput>) -> RequestResult<Vec<AdminLlmProtocolConfig>> {
+    if inputs.is_empty() {
+        return Err(problem_keyed(
+            SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.supplier.protocols.minItems",
+            serde_json::json!({ "min": 1 }),
+            "at least one LLM protocol is required",
+        ));
+    }
+    if inputs.len() > MAX_PROTOCOLS {
+        return Err(problem_keyed(
+            SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.supplier.protocols.maxItems",
+            serde_json::json!({ "field": "protocols", "max": MAX_PROTOCOLS }),
+            format!("protocols must contain at most {MAX_PROTOCOLS} items"),
+        ));
+    }
+    inputs
+        .into_iter()
+        .map(|item| {
+            let protocol_code =
+                required_text(item.protocol_code, "protocolCode", MAX_CODE_LENGTH)?;
+            let protocol_code = LlmProtocolCode::parse(&protocol_code).ok_or_else(|| {
+                problem_keyed(
+                    SdkWorkResultCode::InvalidParameter,
+                    "validation.admin.upstream.supplier.protocolCode.enum",
+                    serde_json::json!({
+                        "allowed": [
+                            "openai_chat_completions",
+                            "openai_responses",
+                            "anthropic_messages",
+                        ]
+                    }),
+                    "protocolCode is not a supported LLM protocol",
+                )
+            })?;
+            Ok(AdminLlmProtocolConfig {
+                protocol_code,
+                base_url: required_text(item.base_url, "baseUrl", MAX_URL_LENGTH)?,
+            })
+        })
+        .collect()
+}
+
+/// 主协议 = protocols 列表首项（验证保证非空），用于列表展示与验证器兼容。
+fn primary_protocol_code(protocols: &[AdminLlmProtocolConfig]) -> String {
+    protocols
+        .first()
+        .map(|config| config.protocol_code.as_str())
+        .unwrap_or("openai_chat_completions")
+        .to_owned()
+}
+
 fn auth_type(value: String) -> RequestResult<String> {
     let value = required_text(value, "authType", 64)?;
     if !matches!(value.as_str(), "api_key" | "bearer_token" | "custom") {
@@ -850,6 +937,23 @@ impl From<AdminUpstreamSupplierItem> for SupplierResponse {
             default_vendor_code: item.default_vendor_code,
             adapter_code: item.adapter_code,
             protocol_code: item.protocol_code,
+            protocols: item.protocols,
+            model_blacklist: item
+                .model_blacklist
+                .into_iter()
+                .map(|entry| ModelListEntryResponse {
+                    vendor_code: entry.vendor_code,
+                    models: entry.models,
+                })
+                .collect(),
+            model_whitelist: item
+                .model_whitelist
+                .into_iter()
+                .map(|entry| ModelListEntryResponse {
+                    vendor_code: entry.vendor_code,
+                    models: entry.models,
+                })
+                .collect(),
             website_url: item.website_url,
             docs_url: item.docs_url,
             region_code: item.region_code,

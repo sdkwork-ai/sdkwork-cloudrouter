@@ -16,6 +16,7 @@ import { adminWithdrawalMessages } from '@sdkwork/partner-pc-admin-withdrawal/i1
 import { adminStatsMessages } from '@sdkwork/partner-pc-admin-stats/i18n';
 import { partnerJoinMessages } from '@sdkwork/partner-pc-join/i18n';
 import { cloudRouterIamAdminMessages } from '@sdkwork/cloudrouter-pc-admin-iam/i18n';
+import { cloudRouterRtcAdminMessages } from '@sdkwork/cloudrouter-pc-admin-rtc/i18n';
 import { logAdminI18n } from '@sdkwork/log-pc-admin-request-log/i18n';
 import { mergeI18nBundles } from './merge';
 import { adminAnalyticsRecordMessages } from './admin/analytics-record';
@@ -29,6 +30,7 @@ import { adminMarketingMessages } from './admin/marketing';
 import { adminMarketingReferralsMessages } from './admin/marketing-referrals';
 import { adminPartnerMessages as adminPartnerShellMessages } from './admin/partner';
 import { adminMembershipsMessages } from './admin/memberships';
+import { adminCommunityMessages } from './admin/community';
 import { adminMiscMessages } from './admin/misc';
 import { adminModelMessages } from './admin/model';
 import { adminMonitorMessages } from './admin/monitor';
@@ -82,6 +84,7 @@ export const resources = mergeI18nBundles([
   adminStatsMessages,
   partnerJoinMessages,
   adminMembershipsMessages,
+  adminCommunityMessages,
   adminMiscMessages,
   adminModelMessages,
   adminMonitorMessages,
@@ -98,6 +101,7 @@ export const resources = mergeI18nBundles([
   upstreamAccountMessages,
   upstreamAccountGroupMessages,
   cloudRouterIamAdminMessages,
+  cloudRouterRtcAdminMessages,
   logAdminI18n,
   consoleAccountMessages,
   consoleApiKeysMessages,

@@ -8,9 +8,11 @@ import {
   DEFAULT_RANKING_SNAPSHOT_SOURCE,
   EMPTY_RANKING_CATALOG,
   EMPTY_RANKING_HISTORY,
+  RANKING_MODALITY_TABS,
   createRankingHistory,
   deriveRankingChartData,
   deriveRankingChartKeys,
+  deriveRankingDisplayRows,
   deriveRankingDynamicStats,
   deriveRankingPanelStats,
   deriveRankingViewModel,
@@ -18,7 +20,12 @@ import {
   filterRankingsForCatalog,
   findRankingColor,
   formatRankingVolume,
+  formatRankingWinRate,
+  localizeRankingPricing,
+  localizeRankingStrength,
+  parseRankingModalityParam,
   rankingHistoryKey,
+  rankingModalityParam,
   resolveActiveRankingWeekIndex,
   type RankingModel,
 } from "./packages/sdkwork-cloudrouter-pc-rankings/src/rankingCatalog.ts";
@@ -103,8 +110,10 @@ test("ranking page wires i18n keys and server-backed vendor loading", () => {
     "rankings.badge",
     "rankings.title",
     "rankings.subtitle",
-    "rankings.categories",
     "rankings.allModalities",
+    "rankings.tabs.ariaLabel",
+    "rankings.tabs.loading",
+    "rankings.emptyModalityDescription",
     "rankings.modelAccess",
     "rankings.allModels",
     "rankings.modelVendors",
@@ -114,10 +123,12 @@ test("ranking page wires i18n keys and server-backed vendor loading", () => {
     "rankings.loadErrorTitle",
     "rankings.loadErrorDescription",
     "rankings.benchmarkIndex",
+    "rankings.avgLatency",
+    "rankings.unitMilliseconds",
+    "rankings.others",
     "rankings.searchPlaceholder",
     "rankings.table.rank",
     "rankings.emptyTitle",
-    "rankings.deploy",
     "rankings.winRate",
     "rankings.costIndicator",
   ];
@@ -142,6 +153,12 @@ test("ranking page wires i18n keys and server-backed vendor loading", () => {
     "selectedVendorCode must be derived before deriveRankingViewModel receives it",
   );
   assert.doesNotMatch(rankingsSource, /\bfetch\s*\(/);
+  assert.match(rankingsSource, /role="tablist"/, "modality tabs must be announced as a tablist");
+  assert.match(rankingsSource, /RANKING_MODALITY_TABS\.map/, "modality tabs must be driven by the shared tab order");
+  assert.match(rankingsSource, /parseRankingModalityParam\(new URLSearchParams\(window\.location\.search\)/);
+  assert.match(rankingsSource, /rankingModalityParam\(activeModality\)/);
+  assert.match(rankingsSource, /setRankingCountsCatalog\(snapshot\.catalog\)/);
+  assert.doesNotMatch(rankingsSource, /rankings\.categories/, "sidebar category list must be replaced by the top tabs");
 
   for (const key of expectedKeys) {
     assert.match(rankingsSource, new RegExp(`t\\('${escapeRegex(key)}'`));
@@ -1132,6 +1149,107 @@ test("ranking helper functions handle empty and boundary states safely", () => {
   assert.equal(formatRankingVolume(1_200_000_000_000), "1.20T");
   assert.equal(formatRankingVolume(1_200_000_000), "1.2B");
   assert.equal(formatRankingVolume(12_000), "12.0K");
+});
+
+test("ranking modality tabs lead with All followed by the curated capability order", () => {
+  assert.deepEqual(RANKING_MODALITY_TABS, [
+    "All",
+    "LLM",
+    "Video",
+    "Image",
+    "Music",
+    "Audio",
+    "Embedding",
+    "Rerank",
+  ]);
+});
+
+test("ranking modality URL parameter parsing is case tolerant and falls back to All", () => {
+  assert.equal(parseRankingModalityParam(null), "All");
+  assert.equal(parseRankingModalityParam(undefined), "All");
+  assert.equal(parseRankingModalityParam(""), "All");
+  assert.equal(parseRankingModalityParam("all"), "All");
+  assert.equal(parseRankingModalityParam("ALL"), "All");
+  assert.equal(parseRankingModalityParam("llm"), "LLM");
+  assert.equal(parseRankingModalityParam("LLM"), "LLM");
+  assert.equal(parseRankingModalityParam(" Video "), "Video");
+  assert.equal(parseRankingModalityParam("video"), "Video");
+  assert.equal(parseRankingModalityParam("image"), "Image");
+  assert.equal(parseRankingModalityParam("music"), "Music");
+  assert.equal(parseRankingModalityParam("audio"), "Audio");
+  assert.equal(parseRankingModalityParam("embedding"), "Embedding");
+  assert.equal(parseRankingModalityParam("rerank"), "Rerank");
+  assert.equal(parseRankingModalityParam("unknown"), "All");
+  assert.equal(parseRankingModalityParam("text"), "All");
+});
+
+test("ranking modality URL parameter serialization omits the global tab", () => {
+  assert.equal(rankingModalityParam("All"), undefined);
+  assert.equal(rankingModalityParam("LLM"), "llm");
+  assert.equal(rankingModalityParam("Video"), "video");
+  assert.equal(rankingModalityParam("Image"), "image");
+  assert.equal(rankingModalityParam("Music"), "music");
+  assert.equal(rankingModalityParam("Audio"), "audio");
+  assert.equal(rankingModalityParam("Embedding"), "embedding");
+  assert.equal(rankingModalityParam("Rerank"), "rerank");
+});
+
+test("ranking win rate renders the server 0..1 decimal as a whole percentage", () => {
+  assert.equal(formatRankingWinRate(0.91), "91");
+  assert.equal(formatRankingWinRate(0.5), "50");
+  assert.equal(formatRankingWinRate(1), "100");
+  assert.equal(formatRankingWinRate(0), "0");
+  assert.equal(formatRankingWinRate(0.888), "89");
+  assert.equal(formatRankingWinRate(Number.NaN), "");
+});
+
+test("ranking strength labels localize known capabilities and fall back verbatim", () => {
+  assert.equal(localizeRankingStrength("Text to video"), "文生视频");
+  assert.equal(localizeRankingStrength("  SONG GENERATION  "), "歌曲生成");
+  assert.equal(localizeRankingStrength("character voice cloning"), "角色声音克隆");
+  assert.equal(localizeRankingStrength("Unknown capability"), "Unknown capability");
+});
+
+test("ranking pricing normalizes currency codes to symbols and keeps plain amounts", () => {
+  assert.equal(localizeRankingPricing("CNY 0.625 / output second (720p)"), "¥0.625 / output second (720p)");
+  assert.equal(localizeRankingPricing("USD 0.05–0.10 / sfx result"), "$0.05–0.10 / sfx result");
+  assert.equal(localizeRankingPricing("$0.045 / song generation"), "$0.045 / song generation");
+  assert.equal(localizeRankingPricing("  EUR 1.20 / 1K characters "), "€1.20 / 1K characters");
+});
+
+test("ranking display rows honor the server snapshot rank over week volume", () => {
+  const low = rankingModel({ id: "low", rank: 2, prevRank: 1, name: "low", baseVolume: 5000 });
+  const high = rankingModel({ id: "high", rank: 1, prevRank: 2, name: "high", baseVolume: 100 });
+  const keyLow = rankingHistoryKey(low);
+  const keyHigh = rankingHistoryKey(high);
+  const history = [
+    { name: "2026-05-03", rawDate: Date.parse("2026-05-03T00:00:00.000Z"), index: 0, Others: 0, [keyLow]: 5000, [keyHigh]: 100 },
+    { name: "2026-05-10", rawDate: Date.parse("2026-05-10T00:00:00.000Z"), index: 1, Others: 0, [keyLow]: 6000, [keyHigh]: 200 },
+  ];
+  const rows = deriveRankingDisplayRows([low, high], history, 1);
+
+  // "high" ranks first on the server snapshot despite carrying far less week
+  // volume; the previous rank is derived from prevRank, not volume.
+  assert.deepEqual(rows.map((model) => [model.id, model.displayRank, model.calculatedPrevRank]), [
+    ["high", 1, 2],
+    ["low", 2, 1],
+  ]);
+});
+
+test("ranking display rows fall back to week volume when snapshot ranks tie", () => {
+  const alpha = rankingModel({ id: "alpha", rank: 1, name: "alpha" });
+  const beta = rankingModel({ id: "beta", rank: 1, name: "beta" });
+  const keyAlpha = rankingHistoryKey(alpha);
+  const keyBeta = rankingHistoryKey(beta);
+  const history = [
+    { name: "2026-05-03", rawDate: Date.parse("2026-05-03T00:00:00.000Z"), index: 0, Others: 0, [keyAlpha]: 150, [keyBeta]: 240 },
+  ];
+  const rows = deriveRankingDisplayRows([alpha, beta], history, 0);
+
+  assert.deepEqual(rows.map((model) => [model.id, model.displayRank]), [
+    ["beta", 1],
+    ["alpha", 2],
+  ]);
 });
 
 const TEST_RANKING_CATALOG: RankingModel[] = [

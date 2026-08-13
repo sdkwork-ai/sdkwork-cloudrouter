@@ -1,3 +1,5 @@
+import type { UpstreamAccountGroupModelListEntry } from './upstream-account-group-model-list-entry';
+
 /** Upstream account group schema exposed by Cloud Router. */
 export interface UpstreamAccountGroup {
   /** Cost multiplier field on upstream account group. */
@@ -22,6 +24,10 @@ export interface UpstreamAccountGroup {
   isDefault: boolean;
   /** Modalities field on upstream account group. */
   modalities?: ('text' | 'audio' | 'image' | 'video' | 'music')[];
+  /** Model blacklist of this group. Vendor + model entries the whole group is forbidden to serve. An entry with an empty models array forbids every model of the vendor. The blacklist wins over the whitelist. */
+  modelBlacklist?: UpstreamAccountGroupModelListEntry[];
+  /** Model whitelist of this group. When non-empty, the group serves only matching vendor + model entries. An entry with an empty models array allows every model of the vendor. */
+  modelWhitelist?: UpstreamAccountGroupModelListEntry[];
   /** Priority field on upstream account group. */
   priority: number;
   /** Routing strategy field on upstream account group. */

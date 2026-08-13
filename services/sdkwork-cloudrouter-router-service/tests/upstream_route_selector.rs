@@ -12,6 +12,7 @@ use sdkwork_cloudrouter_router_service::domain::{
     UpstreamAccountRoutingStrategy, UpstreamResourceEntitlement,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
+use sdkwork_cloudrouter_router_service::ports::{AccountGroupModelAccess, VendorModelListEntry};
 
 const TENANT_ID: i64 = 10;
 const ORGANIZATION_ID: i64 = 20;
@@ -1281,4 +1282,203 @@ fn account_route_without_api_request_price_reports_pricing_unavailable() {
         UpstreamRouteSelectionErrorKind::PricingUnavailable,
         error.kind()
     );
+}
+
+#[test]
+fn group_model_blacklist_forbids_the_model_for_the_whole_group() {
+    let group_id = 10;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::None,
+    ));
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 201, "openai", 100, 100),
+    );
+    catalog.set_account_group_model_access(AccountGroupModelAccess {
+        group_id,
+        blacklist: vec![VendorModelListEntry {
+            vendor_code: "openai".to_owned(),
+            models: vec![MODEL_ID.to_owned()],
+        }],
+        whitelist: Vec::new(),
+    });
+
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
+        .expect_err("blacklisted model must be rejected");
+    assert_eq!(UpstreamRouteSelectionErrorKind::ModelForbidden, error.kind());
+    assert!(error.to_string().contains("model blacklist"));
+}
+
+#[test]
+fn group_model_blacklist_vendor_wide_entry_blocks_every_model_of_the_vendor() {
+    let group_id = 10;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::None,
+    ));
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 201, "openai", 100, 100),
+    );
+    catalog.set_account_group_model_access(AccountGroupModelAccess {
+        group_id,
+        blacklist: vec![VendorModelListEntry {
+            vendor_code: "openai".to_owned(),
+            models: Vec::new(),
+        }],
+        whitelist: Vec::new(),
+    });
+
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
+        .expect_err("vendor-wide blacklist entry must reject the model");
+    assert_eq!(UpstreamRouteSelectionErrorKind::ModelForbidden, error.kind());
+}
+
+#[test]
+fn group_model_blacklist_matching_is_case_insensitive() {
+    let group_id = 10;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::None,
+    ));
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 201, "openai", 100, 100),
+    );
+    catalog.set_account_group_model_access(AccountGroupModelAccess {
+        group_id,
+        blacklist: vec![VendorModelListEntry {
+            vendor_code: "openai".to_owned(),
+            models: vec!["GPT-4O-MINI".to_owned()],
+        }],
+        whitelist: Vec::new(),
+    });
+
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
+        .expect_err("blacklist model matching must be case-insensitive");
+    assert_eq!(UpstreamRouteSelectionErrorKind::ModelForbidden, error.kind());
+}
+
+#[test]
+fn group_model_blacklist_ignores_other_vendors_and_other_models() {
+    let group_id = 10;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::None,
+    ));
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 201, "openai", 100, 100),
+    );
+    // Entries for a different vendor and for a different model must not
+    // affect the request, and an empty blacklist/whitelist is unrestricted.
+    catalog.set_account_group_model_access(AccountGroupModelAccess {
+        group_id,
+        blacklist: vec![
+            VendorModelListEntry {
+                vendor_code: "anthropic".to_owned(),
+                models: vec![MODEL_ID.to_owned()],
+            },
+            VendorModelListEntry {
+                vendor_code: "openai".to_owned(),
+                models: vec!["gpt-3.5-turbo".to_owned()],
+            },
+        ],
+        whitelist: Vec::new(),
+    });
+
+    let account_id = select_account(&catalog, group_id);
+    assert_eq!(201, account_id);
+}
+
+#[test]
+fn group_model_whitelist_is_fail_closed() {
+    let group_id = 10;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::None,
+    ));
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 201, "openai", 100, 100),
+    );
+    catalog.set_account_group_model_access(AccountGroupModelAccess {
+        group_id,
+        blacklist: Vec::new(),
+        whitelist: vec![VendorModelListEntry {
+            vendor_code: "openai".to_owned(),
+            models: vec!["gpt-3.5-turbo".to_owned()],
+        }],
+    });
+
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
+        .expect_err("model outside the whitelist must be rejected");
+    assert_eq!(UpstreamRouteSelectionErrorKind::ModelForbidden, error.kind());
+    assert!(error.to_string().contains("model whitelist"));
+}
+
+#[test]
+fn group_model_whitelist_allows_matching_models() {
+    let group_id = 10;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::None,
+    ));
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 201, "openai", 100, 100),
+    );
+    catalog.set_account_group_model_access(AccountGroupModelAccess {
+        group_id,
+        blacklist: Vec::new(),
+        whitelist: vec![VendorModelListEntry {
+            vendor_code: "openai".to_owned(),
+            models: vec![MODEL_ID.to_owned()],
+        }],
+    });
+
+    let account_id = select_account(&catalog, group_id);
+    assert_eq!(201, account_id);
+}
+
+#[test]
+fn group_model_blacklist_wins_over_whitelist() {
+    let group_id = 10;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::None,
+    ));
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 201, "openai", 100, 100),
+    );
+    catalog.set_account_group_model_access(AccountGroupModelAccess {
+        group_id,
+        blacklist: vec![VendorModelListEntry {
+            vendor_code: "openai".to_owned(),
+            models: vec![MODEL_ID.to_owned()],
+        }],
+        whitelist: vec![VendorModelListEntry {
+            vendor_code: "openai".to_owned(),
+            models: vec![MODEL_ID.to_owned()],
+        }],
+    });
+
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
+        .expect_err("blacklist must win over whitelist");
+    assert_eq!(UpstreamRouteSelectionErrorKind::ModelForbidden, error.kind());
+    assert!(error.to_string().contains("model blacklist"));
 }

@@ -1152,6 +1152,7 @@ CREATE TABLE IF NOT EXISTS ai_upstream_supplier (
     supplier_type VARCHAR(32) NOT NULL DEFAULT 'official',
     adapter_code VARCHAR(64) NOT NULL,
     protocol_code VARCHAR(64) NOT NULL,
+    protocols JSONB NOT NULL DEFAULT '[]'::jsonb,
     owner_kind VARCHAR(32),
     region_code VARCHAR(64),
     environment INTEGER NOT NULL DEFAULT 1,

@@ -83,10 +83,6 @@
         },
         {
           "itemType": "resource",
-          "resourceCode": "api.openai.video"
-        },
-        {
-          "itemType": "resource",
           "resourceCode": "api.openai.videos"
         },
         {
@@ -116,32 +112,6 @@
         {
           "itemType": "resource",
           "resourceCode": "api.openai.chatkit.sessions"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.openai.containers"
-        }
-      ]
-    },
-    {
-      "groupCode": "official.openai.codex",
-      "groupName": "OpenAI Codex",
-      "groupType": "api_group",
-      "selectionMode": "all",
-      "description": "OpenAI account resources for Codex and coding-agent workflows.",
-      "sortOrder": 105,
-      "items": [
-        {
-          "itemType": "resource",
-          "resourceCode": "vendor.openai"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.openai.codex"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.openai.responses"
         },
         {
           "itemType": "resource",
@@ -188,28 +158,6 @@
         {
           "itemType": "resource",
           "resourceCode": "api.gemini.video_generation"
-        }
-      ]
-    },
-    {
-      "groupCode": "official.gemini.code",
-      "groupName": "Gemini Code",
-      "groupType": "api_group",
-      "selectionMode": "all",
-      "description": "Gemini account resources for coding assistants and streaming code-generation clients.",
-      "sortOrder": 115,
-      "items": [
-        {
-          "itemType": "resource",
-          "resourceCode": "vendor.gemini"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.gemini.generate_content"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.gemini.stream_generate_content"
         }
       ]
     },

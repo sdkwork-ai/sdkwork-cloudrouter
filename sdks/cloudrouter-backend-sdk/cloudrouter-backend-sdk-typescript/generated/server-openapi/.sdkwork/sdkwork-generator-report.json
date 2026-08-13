@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "9316553fb510fd7e18ef3b4457fb82a7a7d417957121a80001766ef2f63467d5",
+  "changeFingerprint": "87cb91715aad50c50849551fcab2a68468327bbc486fef3cc7c494af8f1a04ee",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -131,6 +131,7 @@
           "src/types/json-null.ts",
           "src/types/json-object.ts",
           "src/types/json-value.ts",
+          "src/types/llm-protocol-config.ts",
           "src/types/media-access.ts",
           "src/types/media-ai-provenance.ts",
           "src/types/media-checksum.ts",
@@ -179,6 +180,7 @@
           "src/types/upstream-account-group-member-input.ts",
           "src/types/upstream-account-group-member-list-response.ts",
           "src/types/upstream-account-group-member.ts",
+          "src/types/upstream-account-group-model-list-entry.ts",
           "src/types/upstream-account-group-resource-collection-response.ts",
           "src/types/upstream-account-group-resource-collection.ts",
           "src/types/upstream-account-group-resource-list-response.ts",
@@ -384,10 +386,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 285,
-    "models": 256,
+    "totalFiles": 287,
+    "models": 258,
     "apis": 6,
-    "types": 258
+    "types": 260
   },
   "warnings": [
     {
@@ -430,12 +432,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 199,
+    "writtenFiles": 201,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "9316553fb510fd7e18ef3b4457fb82a7a7d417957121a80001766ef2f63467d5",
+    "changeFingerprint": "87cb91715aad50c50849551fcab2a68468327bbc486fef3cc7c494af8f1a04ee",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -548,6 +550,7 @@
         "src/types/json-null.ts",
         "src/types/json-object.ts",
         "src/types/json-value.ts",
+        "src/types/llm-protocol-config.ts",
         "src/types/media-access.ts",
         "src/types/media-ai-provenance.ts",
         "src/types/media-checksum.ts",
@@ -596,6 +599,7 @@
         "src/types/upstream-account-group-member-input.ts",
         "src/types/upstream-account-group-member-list-response.ts",
         "src/types/upstream-account-group-member.ts",
+        "src/types/upstream-account-group-model-list-entry.ts",
         "src/types/upstream-account-group-resource-collection-response.ts",
         "src/types/upstream-account-group-resource-collection.ts",
         "src/types/upstream-account-group-resource-list-response.ts",
@@ -764,6 +768,7 @@
             "src/types/json-null.ts",
             "src/types/json-object.ts",
             "src/types/json-value.ts",
+            "src/types/llm-protocol-config.ts",
             "src/types/media-access.ts",
             "src/types/media-ai-provenance.ts",
             "src/types/media-checksum.ts",
@@ -812,6 +817,7 @@
             "src/types/upstream-account-group-member-input.ts",
             "src/types/upstream-account-group-member-list-response.ts",
             "src/types/upstream-account-group-member.ts",
+            "src/types/upstream-account-group-model-list-entry.ts",
             "src/types/upstream-account-group-resource-collection-response.ts",
             "src/types/upstream-account-group-resource-collection.ts",
             "src/types/upstream-account-group-resource-list-response.ts",

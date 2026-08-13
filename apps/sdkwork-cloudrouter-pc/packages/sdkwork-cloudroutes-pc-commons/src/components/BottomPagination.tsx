@@ -12,6 +12,8 @@ export interface BottomPaginationProps {
   nextLabel?: string;
   pageSizeOptions?: number[];
   disabled?: boolean;
+  /** Keep the pagination bar on a single line; controls never wrap onto a second row. */
+  nowrap?: boolean;
   className?: string;
   onPreviousPage: () => void;
   onNextPage: () => void;
@@ -32,6 +34,7 @@ export function BottomPagination({
   nextLabel = 'Next page',
   pageSizeOptions = defaultPageSizeOptions,
   disabled = false,
+  nowrap = false,
   className = '',
   onPreviousPage,
   onNextPage,
@@ -44,16 +47,20 @@ export function BottomPagination({
 
   return (
     <div
-      className={`flex flex-col gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-600 dark:border-white/10 dark:text-slate-300 md:flex-row md:items-center md:justify-between ${className}`.trim()}
+      className={`${
+        nowrap
+          ? 'flex flex-row items-center justify-between gap-3'
+          : 'flex flex-col gap-3 md:flex-row md:items-center md:justify-between'
+      } border-t border-slate-200 px-4 py-3 text-sm text-slate-600 dark:border-white/10 dark:text-slate-300 ${className}`.trim()}
     >
-      <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
+      <div className="whitespace-nowrap text-xs font-medium text-slate-500 dark:text-slate-400">
         {showingLabel}
         <span className="ml-2 font-mono text-slate-700 dark:text-slate-200">
           {start} - {end}
         </span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className={`flex items-center gap-2 ${nowrap ? 'flex-nowrap' : 'flex-wrap'}`}>
         <label className="inline-flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
           <span>{pageSizeLabel}</span>
           <select

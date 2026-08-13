@@ -23,20 +23,22 @@ configureCloudRouterPartnerBackendSdkClient();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <PortalErrorBoundary>
-      <PortalQueryProvider>
-        <SdkworkI18nProvider
-          catalogs={[cloudRouterI18nCatalog, ...agentsWorkbenchI18nCatalogs]}
-          config={cloudRouterI18nRuntimeConfig}
-          defaultVariables={{ platformName: 'Cloud Router' }}
-          locale={resolveCloudRouterInitialLocale()}
-          syncDocumentLanguage
-        >
-          <DocumentsReferenceRuntimeProvider value={cloudRouterDocumentsReferenceRuntime}>
+    <PortalQueryProvider>
+      <SdkworkI18nProvider
+        catalogs={[cloudRouterI18nCatalog, ...agentsWorkbenchI18nCatalogs]}
+        config={cloudRouterI18nRuntimeConfig}
+        defaultVariables={{ platformName: 'Cloud Router' }}
+        locale={resolveCloudRouterInitialLocale()}
+        syncDocumentLanguage
+      >
+        <DocumentsReferenceRuntimeProvider value={cloudRouterDocumentsReferenceRuntime}>
+          {/* The error boundary must live inside the i18n provider so its
+              labels resolve through the provider's i18next instance. */}
+          <PortalErrorBoundary>
             <App />
-          </DocumentsReferenceRuntimeProvider>
-        </SdkworkI18nProvider>
-      </PortalQueryProvider>
-    </PortalErrorBoundary>
+          </PortalErrorBoundary>
+        </DocumentsReferenceRuntimeProvider>
+      </SdkworkI18nProvider>
+    </PortalQueryProvider>
   </StrictMode>,
 );

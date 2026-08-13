@@ -30,7 +30,7 @@ use crate::ports::{
     UpdateGatewayApiKeyCommand, UpsertChainPolicyCommand, ADMIN_CHAIN_POLICY_SCOPE_API_KEY,
 };
 
-const DEFAULT_ACCOUNT_GROUP: &str = "default";
+const DEFAULT_ACCOUNT_GROUP: &str = "default-group";
 
 #[derive(Debug, Default, Deserialize)]
 struct AppApiKeyListQueryRequest {

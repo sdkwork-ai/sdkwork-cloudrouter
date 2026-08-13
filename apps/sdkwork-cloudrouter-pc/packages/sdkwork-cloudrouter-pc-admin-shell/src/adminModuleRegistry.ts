@@ -7,10 +7,12 @@ import {
   Building2,
   ClipboardList,
   CloudCog,
+  Compass,
   CreditCard,
   Crown,
   Database,
   DatabaseZap,
+  FileText,
   Gauge,
   Gift,
   Globe2,
@@ -19,6 +21,7 @@ import {
   Layers3,
   LayoutDashboard,
   Megaphone,
+  MessagesSquare,
   Network,
   Package,
   ReceiptText,
@@ -39,11 +42,14 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { IAM_ADMIN_MENU, IAM_ADMIN_MODULE_DEF } from '@sdkwork/cloudrouter-pc-admin-iam/contribution';
+import { RTC_ADMIN_MENU, RTC_ADMIN_MODULE_DEF } from '@sdkwork/cloudrouter-pc-admin-rtc/contribution';
 
 export type AdminModuleId =
   | 'home'
   | 'iam'
+  | 'rtc'
   | 'membershipCenter'
+  | 'communityCenter'
   | 'rechargeCenter'
   | 'marketingCenter'
   | 'partnerCenter'
@@ -105,12 +111,20 @@ export const ADMIN_MODULES: AdminModuleDef[] = [
     ],
   }),
   IAM_ADMIN_MODULE_DEF,
+  RTC_ADMIN_MODULE_DEF,
   moduleBlock({
     id: 'membershipCenter',
     nameKey: 'admin.header.membershipCenter',
     icon: Crown,
     defaultPath: '/admin/memberships/plans',
     pathPrefixes: ['/admin/memberships'],
+  }),
+  moduleBlock({
+    id: 'communityCenter',
+    nameKey: 'admin.header.communityCenter',
+    icon: Compass,
+    defaultPath: '/admin/community/overview',
+    pathPrefixes: ['/admin/community'],
   }),
   moduleBlock({
     id: 'rechargeCenter',
@@ -189,6 +203,7 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
     ],
   },
   IAM_ADMIN_MENU,
+  RTC_ADMIN_MENU,
   {
     moduleId: 'membershipCenter',
     groups: [
@@ -201,6 +216,24 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
       groupBlock('admin.menu.memberships.users', [
         itemBlock({ path: '/admin/memberships/members', labelKey: 'admin.menu.memberships.members', icon: Users }),
         itemBlock({ path: '/admin/memberships/entitlements', labelKey: 'admin.menu.memberships.entitlements', icon: ShieldCheck }),
+      ]),
+    ],
+  },
+  {
+    moduleId: 'communityCenter',
+    groups: [
+      groupBlock('admin.menu.community.content', [
+        itemBlock({ path: '/admin/community/overview', labelKey: 'admin.menu.community.overview', icon: LayoutDashboard }),
+        itemBlock({ path: '/admin/community/circles', labelKey: 'admin.menu.community.circles', icon: Compass, iconColor: 'text-violet-500' }),
+        itemBlock({ path: '/admin/community/entries', labelKey: 'admin.menu.community.entries', icon: FileText, iconColor: 'text-cyan-500' }),
+        itemBlock({ path: '/admin/community/moderation', labelKey: 'admin.menu.community.moderation', icon: ShieldCheck, iconColor: 'text-amber-500' }),
+      ]),
+      groupBlock('admin.menu.community.members', [
+        itemBlock({ path: '/admin/community/members', labelKey: 'admin.menu.community.members', icon: Users }),
+        itemBlock({ path: '/admin/community/groups', labelKey: 'admin.menu.community.groups', icon: MessagesSquare, iconColor: 'text-emerald-500' }),
+      ]),
+      groupBlock('admin.menu.community.monetize', [
+        itemBlock({ path: '/admin/community/tiers', labelKey: 'admin.menu.community.tiers', icon: Crown, iconColor: 'text-amber-500' }),
       ]),
     ],
   },

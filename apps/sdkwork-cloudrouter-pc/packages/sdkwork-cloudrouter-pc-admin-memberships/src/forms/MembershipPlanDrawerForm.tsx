@@ -29,9 +29,12 @@ type MembershipPlanBenefitFormValue = Omit<MembershipsAdminPlanBenefitInput, 'us
   usageLimitText: string;
 };
 
-type MembershipBenefitType = 'quota' | 'feature' | 'discount' | 'service';
+// Benefit type vocabulary aligned with the backend CHECK constraint
+// (points | feature | queue | quota | service); `discount` was removed when
+// the vocabulary was standardised and legacy values map to `service`.
+type MembershipBenefitType = 'points' | 'feature' | 'queue' | 'quota' | 'service';
 
-const baseBenefitTypeValues: MembershipBenefitType[] = ['quota', 'feature', 'discount', 'service'];
+const baseBenefitTypeValues: MembershipBenefitType[] = ['quota', 'feature', 'points', 'queue', 'service'];
 
 export function MembershipPlanDrawerForm({
   mode,

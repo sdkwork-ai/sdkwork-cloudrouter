@@ -877,7 +877,7 @@ function sanitizePublicCatalogText(value: string, maxLength: number): string {
   return `${normalized.slice(0, Math.max(0, maxLength - 3)).trimEnd()}...`;
 }
 
-function decodeModelRouteId(value: string): string {
+export function decodeModelRouteId(value: string): string {
   try {
     return decodeURIComponent(value);
   } catch {

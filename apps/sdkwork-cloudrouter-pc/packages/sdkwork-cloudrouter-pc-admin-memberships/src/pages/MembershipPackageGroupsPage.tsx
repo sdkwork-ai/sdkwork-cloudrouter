@@ -190,7 +190,14 @@ export function MembershipPackageGroupsPage() {
                   <tr key={group.id} className="border-b border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5">
                     <td className="px-4 py-2.5">
                       <div className="font-medium text-slate-900 dark:text-white">{group.name}</div>
-                      <div className="text-xs text-slate-400">{group.code}</div>
+                      <div className="flex items-center gap-2 text-xs text-slate-400">
+                        <span>{group.code}</span>
+                        {group.autoProvisioned ? (
+                          <span className="inline-flex rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                            {t('admin.commerce.memberships.autoProvisioned', 'Auto-created')}
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-4 py-2.5"><MembershipCategoryBadge category={group.category} /></td>
                     <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{membershipBillingCycleLabel(group.billingCycle, t)}</td>

@@ -352,7 +352,9 @@ pub use sticky_route_store::{
     StickyObjectRouteBinding, StickyObjectRouteLookup, StickyObjectRouteUpsert, StickyRouteStore,
     StickyRouteStoreFuture,
 };
-pub use upstream_account_route_catalog::UpstreamAccountRouteCatalog;
+pub use upstream_account_route_catalog::{
+    AccountGroupModelAccess, UpstreamAccountRouteCatalog, VendorModelListEntry,
+};
 pub use upstream_credential_rotation_store::{
     CredentialRotationAccount, CredentialRotationAction, CredentialRotationSweepCommand,
     TryRotateCredentialCommand, UpstreamCredentialRotationStore,

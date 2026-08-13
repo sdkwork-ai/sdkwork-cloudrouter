@@ -8,10 +8,64 @@ use crate::infrastructure::sql::routing_config_change::{
     record_postgres_ai_routing_config_change, AiRoutingConfigChange,
 };
 use crate::infrastructure::sql::store_error::redacted_store_error;
-use crate::ports::{AdminUpstreamResourceInput, AdminUpstreamResourceItem, AdminUpstreamSubject};
+use crate::ports::{
+    AdminUpstreamModelListEntry, AdminUpstreamResourceInput, AdminUpstreamResourceItem,
+    AdminUpstreamSubject,
+};
 
 pub(super) const DEFAULT_DATA_SCOPE: i32 = 1;
 pub(super) const MAX_NESTED_ITEMS: usize = 200;
+
+/** 模型黑白名单条目 → JSONB 字符串（结构与账号分组一致：{vendorCode, models}） */
+pub(super) fn model_list_json(entries: &[AdminUpstreamModelListEntry]) -> String {
+    serde_json::to_string(
+        &entries
+            .iter()
+            .map(|entry| {
+                serde_json::json!({
+                    "vendorCode": entry.vendor_code,
+                    "models": entry.models,
+                })
+            })
+            .collect::<Vec<_>>(),
+    )
+    .unwrap_or_else(|_| "[]".to_owned())
+}
+
+pub(super) fn parse_model_list(
+    context: &str,
+    value: String,
+) -> DomainResult<Vec<AdminUpstreamModelListEntry>> {
+    let items = serde_json::from_str::<Vec<serde_json::Value>>(&value).map_err(|error| {
+        DomainError::new(format!("failed to parse {context} model list: {error}"))
+    })?;
+    Ok(items
+        .into_iter()
+        .filter_map(|item| {
+            let vendor_code = item.get("vendorCode")?.as_str()?.trim();
+            if vendor_code.is_empty() {
+                return None;
+            }
+            let models = item
+                .get("models")
+                .and_then(|models| models.as_array())
+                .map(|models| {
+                    models
+                        .iter()
+                        .filter_map(|model| model.as_str())
+                        .map(str::trim)
+                        .filter(|model| !model.is_empty())
+                        .map(ToOwned::to_owned)
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default();
+            Some(AdminUpstreamModelListEntry {
+                vendor_code: vendor_code.to_owned(),
+                models,
+            })
+        })
+        .collect())
+}
 
 pub(super) fn store_error(context: &str, error: sqlx::Error) -> DomainError {
     redacted_store_error(context, error)

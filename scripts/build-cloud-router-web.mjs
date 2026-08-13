@@ -3,7 +3,7 @@
 // Builds the SDKWork Cloud Router cloud web bundle for one lifecycle
 // environment (test | production). The cloud bundle is the frontend-only
 // artifact consumed by the cloud deployment: backend APIs are served by the
-// platform sdkwork-api-cloud-gateway (api-dev|test|staging.sdkwork.com / api.sdkwork.com),
+// platform cloud gateway (api-dev|test|staging.sdkwork.com / api.sdkwork.com),
 // and per-environment API origins flow through the deploy host runtime env
 // (/runtime-env.js PORTAL_PUBLIC_*) with the materialized .env.cloud.<env>
 // profile as the build-time fallback.

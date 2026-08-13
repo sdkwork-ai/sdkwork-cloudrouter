@@ -173,7 +173,7 @@ export function applyTopologyProfileToWorkspaceSettings(settings, profileEnv = {
   }
   if (platformGatewayHttpUrl && !settings.remoteApiIngressOriginExplicit) {
     // Cloud client development consumes the deployed platform cloud gateway
-    // (sdkwork-api-cloud-gateway) as the remote API ingress for every surface.
+    // (platform cloud gateway) as the remote API ingress for every surface.
     settings.remoteApiIngressOrigin = platformGatewayHttpUrl;
   }
 

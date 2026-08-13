@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
-import { CheckCircle2, ChevronRight, Edit3, Layers3, Plus, Power, PowerOff, RefreshCw, Settings2, Trash2, XCircle } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { CheckCircle2, ChevronRight, Edit3, Layers3, Plus, Power, PowerOff, RefreshCw, Search, Settings2, SlidersHorizontal, Trash2, X, XCircle } from 'lucide-react';
 import { SdkworkSearchableSelect } from '@sdkwork/appbase-pc-react';
 import { AdminTableShell, BottomPagination, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
 import { formatDecimalDisplay } from '@sdkwork/cloudroutes-pc-commons/runtime';
@@ -14,6 +14,7 @@ import type {
   UpstreamResourceEntitlementInput,
   UpstreamSupplier,
   UpstreamSupplierAuthMethod,
+  UpstreamSupplierAuthMethodInput,
   UpstreamSupplierEndpoint,
   UpdateUpstreamAccountRequest,
 } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
@@ -54,8 +55,31 @@ type TranslationFunction = ReturnType<typeof useTranslation>['t'];
 /** 左侧分组列表的「未分组」虚拟条目 key（null 表示「全部账号」） */
 const UNGROUPED_KEY = '__ungrouped__';
 
+/** 供应商未配置认证方式时一键播种的默认认证方式（与供应商页默认模板一致） */
+const DEFAULT_ACCOUNT_AUTH_METHOD: UpstreamSupplierAuthMethodInput = {
+  authMethodCode: 'api-key',
+  authMethodName: 'API Key',
+  authType: 'api_key',
+  priority: 100,
+  status: 1,
+  configSchema: {},
+  runtimeAuthConfig: { credentialTransport: 'bearer', credentialParameter: null, defaultHeaders: {} },
+};
+
+/** 新建账号默认认证方式：优先标准 API Key（code api-key），其次任意 api_key 类型，再取首个 */
+function defaultAuthMethodCode(methods: UpstreamSupplierAuthMethod[]): string {
+  return methods.find((method) => method.authMethodCode === 'api-key')?.authMethodCode
+    ?? methods.find((method) => method.authType === 'api_key')?.authMethodCode
+    ?? methods[0]?.authMethodCode
+    ?? '';
+}
+
 function groupEntryClass(selected: boolean): string {
-  return `flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left transition-colors ${selected ? 'bg-indigo-50 dark:bg-indigo-500/10' : 'hover:bg-slate-50 dark:hover:bg-white/5'}`;
+  return `flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left transition-colors ${selected ? 'bg-lobster-50 dark:bg-lobster-500/10' : 'hover:bg-slate-50 dark:hover:bg-white/5'}`;
+}
+
+function iconToolClass(active: boolean): string {
+  return `flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors ${active ? 'bg-lobster-50 text-lobster-600 dark:bg-lobster-500/10 dark:text-lobster-300' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/5 dark:hover:text-slate-200'}`;
 }
 
 export function UpstreamAccountAdmin() {
@@ -75,18 +99,28 @@ export function AccountAdminPanel() {
   const [typeFilter, setTypeFilter] = useState<GroupTypeFilterValue>('all');
   const [multiplierRange, setMultiplierRange] = useState<MultiplierRangeValue>(EMPTY_MULTIPLIER_RANGE);
   const [tagFilter, setTagFilter] = useState<string[]>([]);
+  const [groupSearchOpen, setGroupSearchOpen] = useState(false);
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [groupQuery, setGroupQuery] = useState('');
   const [suppliers, setSuppliers] = useState<UpstreamSupplier[]>([]);
   const [query, setQuery] = useState('');
   const [appliedQuery, setAppliedQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [membersLoading, setMembersLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<UpstreamAccount | null | undefined>(undefined);
   const [selected, setSelected] = useState<UpstreamAccount | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UpstreamAccount | null>(null);
+  const [deleteTargetGroups, setDeleteTargetGroups] = useState<UpstreamAccountGroup[]>([]);
+  const [groupsChecking, setGroupsChecking] = useState(false);
+  const [removeFromGroups, setRemoveFromGroups] = useState(true);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [pageInfo, setPageInfo] = useState<{ totalItems?: string | number } | null>(null);
+
+  const selectedKeyRef = useRef<string | null>(null);
+  useEffect(() => { selectedKeyRef.current = selectedKey; }, [selectedKey]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -97,18 +131,23 @@ export function AccountAdminPanel() {
         upstreamService.suppliers.list({ page: 1, pageSize: 200 }),
         upstreamService.accountGroups.list({ page: 1, pageSize: 200 }),
       ]);
-      const memberPages = await Promise.all(groupPage.items.map((group) => upstreamService.accountGroups.listMembers(group.id)));
-      const nextMemberships: Record<string, string[]> = {};
-      groupPage.items.forEach((group, index) => {
-        nextMemberships[group.id] = memberPages[index].map((member) => member.accountId);
-      });
       setGroups(groupPage.items);
-      setMemberships(nextMemberships);
       setItems(accountPage.items);
       setPageInfo(accountPage.pageInfo ?? null);
       setSuppliers(supplierPage.items);
       setSelectedKey((current) => current === null || current === UNGROUPED_KEY || groupPage.items.some((group) => group.id === current) ? current : null);
       setSelected((current) => current ? accountPage.items.find((item) => item.id === current.id) ?? null : null);
+      // 只保留仍存在的分组成员缓存；当前选中分组的成员由下方懒加载 effect 在 load 后重新拉取，保证数据新鲜。
+      // 不在此处批量查询所有分组成员，避免一次进入页面发出上百个成员请求。
+      setMemberships((current) => {
+        const known = new Set(groupPage.items.map((group) => group.id));
+        const selected = selectedKeyRef.current;
+        const next: Record<string, string[]> = {};
+        for (const [groupId, memberIds] of Object.entries(current)) {
+          if (known.has(groupId) && groupId !== selected) next[groupId] = memberIds;
+        }
+        return next;
+      });
     } catch (cause) {
       setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
@@ -117,6 +156,43 @@ export function AccountAdminPanel() {
   }, [appliedQuery, page, pageSize, t]);
 
   useEffect(() => { void load(); }, [load]);
+
+  // 成员关系只按需加载：选中某个分组时才查询该分组成员；「未分组」视图首次选中时一次性补全缺失分组并缓存。
+  useEffect(() => {
+    let cancelled = false;
+    if (selectedKey === null) {
+      setMembersLoading(false);
+      return;
+    }
+    const targets: UpstreamAccountGroup[] = [];
+    if (selectedKey === UNGROUPED_KEY) {
+      targets.push(...groups.filter((group) => !(group.id in memberships)));
+    } else {
+      const group = groups.find((item) => item.id === selectedKey);
+      if (group && !(selectedKey in memberships)) targets.push(group);
+    }
+    if (targets.length === 0) {
+      setMembersLoading(false);
+      return;
+    }
+    setMembersLoading(true);
+    Promise.all(targets.map((group) => upstreamService.accountGroups.listMembers(group.id)))
+      .then((pages) => {
+        if (cancelled) return;
+        setMemberships((current) => {
+          const next = { ...current };
+          targets.forEach((group, index) => { next[group.id] = pages[index].map((member) => member.accountId); });
+          return next;
+        });
+      })
+      .catch((cause) => {
+        if (!cancelled) setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
+      })
+      .finally(() => {
+        if (!cancelled) setMembersLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [selectedKey, groups, memberships, t]);
 
   const totalAccountCount = Number(pageInfo?.totalItems ?? items.length);
   const { visibleItems, ungroupedCount } = useMemo(() => {
@@ -127,22 +203,28 @@ export function AccountAdminPanel() {
     if (selectedKey === null) {
       visibleItems = items;
     } else if (selectedKey === UNGROUPED_KEY) {
-      visibleItems = items.filter((item) => !groupedIds.has(item.id));
+      // 补全成员关系期间不展示不完整的过滤结果，由 TableState 显示加载态
+      visibleItems = membersLoading ? [] : items.filter((item) => !groupedIds.has(item.id));
     } else {
       const memberIds = new Set(memberships[selectedKey] ?? []);
       visibleItems = items.filter((item) => memberIds.has(item.id));
     }
     return { visibleItems, ungroupedCount };
-  }, [items, memberships, selectedKey]);
+  }, [items, memberships, selectedKey, membersLoading]);
 
   const filteredGroups = useMemo(() => {
     let next = typeFilter === 'all' ? groups : groups.filter((group) => group.groupType === typeFilter);
     if (hasMultiplierFilter(multiplierRange)) next = next.filter((group) => matchesMultiplierRange(group, multiplierRange));
     if (tagFilter.length > 0) next = next.filter((group) => matchesTagFilter(group, tagFilter));
+    if (groupQuery.trim() !== '') {
+      const q = groupQuery.trim().toLowerCase();
+      next = next.filter((group) => resolveGroupDisplayName(group, i18n.language).toLowerCase().includes(q) || group.groupCode.toLowerCase().includes(q));
+    }
     return next;
-  }, [groups, typeFilter, multiplierRange, tagFilter]);
+  }, [groups, typeFilter, multiplierRange, tagFilter, groupQuery, i18n.language]);
 
-  const groupListFiltered = typeFilter !== 'all' || hasMultiplierFilter(multiplierRange) || tagFilter.length > 0;
+  const groupListFiltered = typeFilter !== 'all' || hasMultiplierFilter(multiplierRange) || tagFilter.length > 0 || groupQuery.trim() !== '';
+  const activeFilterCount = (typeFilter !== 'all' ? 1 : 0) + (tagFilter.length > 0 ? 1 : 0) + (hasMultiplierFilter(multiplierRange) ? 1 : 0);
 
   const changeTypeFilter = (next: GroupTypeFilterValue) => {
     setTypeFilter(next);
@@ -208,17 +290,56 @@ export function AccountAdminPanel() {
     }
   };
 
+  // 打开删除确认弹窗前补齐未加载的分组成员，定位该账号所属的分组（懒加载缓存之外的部分按需查询一次）
+  const openDeleteDialog = async (account: UpstreamAccount) => {
+    setDeleteTarget(account);
+    setRemoveFromGroups(true);
+    setDeleteTargetGroups([]);
+    setGroupsChecking(true);
+    try {
+      const missing = groups.filter((group) => !(group.id in memberships));
+      const pages = await Promise.all(missing.map((group) => upstreamService.accountGroups.listMembers(group.id)));
+      const nextMemberships = { ...memberships };
+      missing.forEach((group, index) => { nextMemberships[group.id] = pages[index].map((member) => member.accountId); });
+      setMemberships(nextMemberships);
+      setDeleteTargetGroups(groups.filter((group) => (nextMemberships[group.id] ?? []).includes(account.id)));
+    } catch {
+      // 分组检查失败时仍可删除：后端会以 40901 兜底并展示专门提示
+      setDeleteTargetGroups([]);
+    } finally {
+      setGroupsChecking(false);
+    }
+  };
+
+  // 从所属分组中移除账号（全量替换成员列表，保留其余成员的配置）
+  const removeAccountFromGroups = async (account: UpstreamAccount, accountGroups: UpstreamAccountGroup[]) => {
+    await Promise.all(accountGroups.map(async (group) => {
+      const members = await upstreamService.accountGroups.listMembers(group.id);
+      const remaining = members
+        .filter((member) => member.accountId !== account.id)
+        .map(({ accountId, costMultiplierOverride, enabled, priority, routingWeight, status }) => ({ accountId, costMultiplierOverride, enabled, priority, routingWeight, status }));
+      await upstreamService.accountGroups.replaceMembers(group, { items: remaining });
+    }));
+  };
+
   const deleteAccount = async () => {
     if (!deleteTarget) return;
     setBusy(true);
     setError(null);
     try {
+      if (removeFromGroups && deleteTargetGroups.length > 0) {
+        await removeAccountFromGroups(deleteTarget, deleteTargetGroups);
+      }
       await upstreamService.accounts.delete(deleteTarget);
       setSelected((current) => current?.id === deleteTarget.id ? null : current);
       setDeleteTarget(null);
       await load();
     } catch (cause) {
-      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
+      // 并发场景下账号仍属于分组（缓存/检查过期）时，显示专门提示而非通用冲突文案
+      const problem = (cause as { problem?: { code?: number | string } } | undefined)?.problem;
+      setError(problem?.code === 40901
+        ? t('admin.upstream.account.errors.deleteInGroup')
+        : errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
       setBusy(false);
     }
@@ -251,19 +372,40 @@ export function AccountAdminPanel() {
     : selectedKey !== null
       ? t('admin.upstream.account.groups.groupEmpty')
       : t('admin.upstream.account.empty');
+  // 分组徽标只在对应成员已按需加载后显示，避免为显示计数而批量查询所有分组
+  const allMembershipsLoaded = groups.every((group) => group.id in memberships);
 
   return (
     <div className="grid min-h-0 flex-1 auto-rows-[minmax(0,1fr)] gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
       <aside className="flex min-h-0 flex-col rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5">
-        <header className="flex items-center gap-2 border-b border-slate-200 px-4 py-3 dark:border-white/10">
-          <Layers3 className="h-4 w-4 text-slate-400" />
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t('admin.upstream.account.groups.title')}</h3>
+        <header className="flex items-center gap-2 border-b border-slate-200 px-4 py-2.5 dark:border-white/10">
+          <Layers3 className="h-4 w-4 shrink-0 text-slate-400" />
+          {groupSearchOpen ? (
+            <div className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+              <input autoFocus value={groupQuery} onChange={(event) => setGroupQuery(event.currentTarget.value)} placeholder={t('admin.upstream.accountGroup.search.placeholder')} className="h-8 w-full rounded-md border border-slate-300 bg-white pl-8 pr-8 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-white/5 dark:text-white" />
+              {groupQuery.trim() !== '' ? <button type="button" className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-400 transition-colors hover:text-slate-600 dark:hover:text-slate-200" onClick={() => setGroupQuery('')} title={t('common.actions.clear')}><X className="h-3.5 w-3.5" /></button> : null}
+            </div>
+          ) : (
+            <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900 dark:text-white">{t('admin.upstream.account.groups.title')}</h3>
+          )}
+          <div className="flex shrink-0 items-center gap-0.5">
+            <button type="button" className={iconToolClass(groupSearchOpen || groupQuery.trim() !== '')} onClick={() => setGroupSearchOpen((current) => !current)} title={t('common.actions.search')} aria-label={t('common.actions.search')} aria-expanded={groupSearchOpen}><Search className="h-4 w-4" /></button>
+            <div className="relative">
+              <button type="button" className={iconToolClass(filterPanelOpen || activeFilterCount > 0)} onClick={() => setFilterPanelOpen((current) => !current)} title={t('admin.upstream.account.groups.filter')} aria-label={t('admin.upstream.account.groups.filter')} aria-expanded={filterPanelOpen}><SlidersHorizontal className="h-4 w-4" />{activeFilterCount > 0 ? <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-lobster-600 px-0.5 text-[9px] font-semibold text-white">{activeFilterCount}</span> : null}</button>
+              {filterPanelOpen ? (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setFilterPanelOpen(false)} />
+                  <div className="absolute right-0 top-full z-50 mt-1 w-72 rounded-xl border border-slate-200 bg-white p-3 shadow-2xl dark:border-white/10 dark:bg-[#1a1a1a]">
+                    <GroupTypeFilter value={typeFilter} onChange={changeTypeFilter} />
+                    <TagFilter value={tagFilter} onChange={setTagFilter} className="mt-3" />
+                    <MultiplierRangeFilter value={multiplierRange} onChange={setMultiplierRange} className="mt-3" />
+                  </div>
+                </>
+              ) : null}
+            </div>
+          </div>
         </header>
-        <div className="border-b border-slate-200 px-4 py-2 dark:border-white/10">
-          <GroupTypeFilter value={typeFilter} onChange={changeTypeFilter} />
-          <TagFilter value={tagFilter} onChange={setTagFilter} className="mt-2" />
-          <MultiplierRangeFilter value={multiplierRange} onChange={setMultiplierRange} className="mt-2" />
-        </div>
         <div className="min-h-0 flex-1 overflow-y-auto p-2">
           <button type="button" className={groupEntryClass(selectedKey === null)} onClick={() => setSelectedKey(null)}>
             <span className="min-w-0"><span className="block truncate text-sm font-medium text-slate-800 dark:text-slate-200">{t('admin.upstream.account.groups.all')}</span></span>
@@ -271,7 +413,7 @@ export function AccountAdminPanel() {
           </button>
           <button type="button" className={groupEntryClass(selectedKey === UNGROUPED_KEY)} onClick={() => setSelectedKey(UNGROUPED_KEY)}>
             <span className="min-w-0"><span className="block truncate text-sm font-medium text-slate-800 dark:text-slate-200">{t('admin.upstream.account.groups.ungrouped')}</span></span>
-            <span className="shrink-0 text-xs text-slate-400">{t('admin.upstream.account.groups.accountCount', { count: ungroupedCount })}</span>
+            {allMembershipsLoaded ? <span className="shrink-0 text-xs text-slate-400">{t('admin.upstream.account.groups.accountCount', { count: ungroupedCount })}</span> : null}
           </button>
           <div className="my-2 border-t border-slate-200 dark:border-white/10" />
           {filteredGroups.length === 0 ? (
@@ -284,7 +426,7 @@ export function AccountAdminPanel() {
                 {group.tags && group.tags.length > 0 ? <span className="mt-0.5 flex flex-wrap gap-1">{group.tags.map((tag) => <TagBadge key={tag} tag={tag} small />)}</span> : null}
                 <span className="block truncate font-mono text-xs text-slate-400">{t('admin.upstream.accountGroup.table.costMultiplier')} ×{formatDecimalDisplay(group.costMultiplier)} · {t('admin.upstream.accountGroup.table.saleMultiplier')} ×{formatDecimalDisplay(group.saleMultiplier)}</span>
               </span>
-              <span className="shrink-0 text-xs text-slate-400">{t('admin.upstream.account.groups.accountCount', { count: memberships[group.id]?.length ?? 0 })}</span>
+              <span className="shrink-0 text-xs text-slate-400">{memberships[group.id] ? t('admin.upstream.account.groups.accountCount', { count: memberships[group.id].length }) : null}</span>
             </button>
           ))}
         </div>
@@ -298,7 +440,7 @@ export function AccountAdminPanel() {
           </div>
         </div>
         <nav className="flex min-w-0 items-center gap-1.5 text-sm" aria-label={t('admin.upstream.account.groups.title')}>
-          <button type="button" className="shrink-0 text-slate-500 transition-colors hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400" onClick={() => setSelectedKey(null)}>{t('admin.upstream.account.groups.title')}</button>
+          <button type="button" className="shrink-0 text-slate-500 transition-colors hover:text-lobster-600 dark:text-slate-400 dark:hover:text-lobster-400" onClick={() => setSelectedKey(null)}>{t('admin.upstream.account.groups.title')}</button>
           <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400" />
           {selectedKey === null ? (
             <span className="truncate font-medium text-slate-900 dark:text-white">{t('admin.upstream.account.groups.all')}</span>
@@ -306,7 +448,7 @@ export function AccountAdminPanel() {
             <span className="truncate font-medium text-slate-900 dark:text-white">{t('admin.upstream.account.groups.ungrouped')}</span>
           ) : selectedGroup ? (
             <>
-              <button type="button" className="shrink-0 text-slate-500 transition-colors hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400" onClick={() => { setTypeFilter(selectedGroup.groupType); setSelectedKey(null); }}>{t(`admin.upstream.accountGroup.groupType.${selectedGroup.groupType}`)}</button>
+              <button type="button" className="shrink-0 text-slate-500 transition-colors hover:text-lobster-600 dark:text-slate-400 dark:hover:text-lobster-400" onClick={() => { setTypeFilter(selectedGroup.groupType); setSelectedKey(null); }}>{t(`admin.upstream.accountGroup.groupType.${selectedGroup.groupType}`)}</button>
               <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400" />
               <span className="truncate font-medium text-slate-900 dark:text-white">{contextName}</span>
             </>
@@ -320,7 +462,7 @@ export function AccountAdminPanel() {
               <tr><th className="px-4 py-3">{t('admin.upstream.account.table.account')}</th><th className="px-4 py-3">{t('admin.upstream.account.table.supplier')}</th><th className="px-4 py-3">{t('admin.upstream.account.table.authentication')}</th><th className="px-4 py-3">{t('admin.upstream.account.table.costMultiplier')}</th><th className="px-4 py-3">{t('admin.upstream.account.table.quota')}</th><th className="px-4 py-3">{t('admin.upstream.account.table.status')}</th><th className="px-4 py-3 text-right">{t('admin.upstream.account.table.actions')}</th></tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-              {visibleItems.length === 0 ? <TableState loading={loading} empty={emptyText} colSpan={7} /> : visibleItems.map((account) => (
+              {visibleItems.length === 0 ? <TableState loading={loading || membersLoading} empty={emptyText} colSpan={7} /> : visibleItems.map((account) => (
               <tr key={account.id} className="text-slate-700 hover:bg-slate-50/80 dark:text-slate-200 dark:hover:bg-white/[0.03]">
                 <td className="px-4 py-3"><button type="button" className="text-left" onClick={() => setSelected(account)}><span className="block font-semibold text-slate-900 dark:text-white">{account.accountName}</span><span className="block font-mono text-xs text-slate-500">{account.accountCode}</span></button></td>
                 <td className="px-4 py-3"><span className="font-medium">{supplierName(account.supplierId)}</span><span className="block text-xs text-slate-500">{account.supplierCode}</span></td>
@@ -328,7 +470,7 @@ export function AccountAdminPanel() {
                 <td className="px-4 py-3 font-mono">{formatDecimalDisplay(account.contractCostMultiplier)}</td>
                 <td className="px-4 py-3"><span>{formatDecimalDisplay(account.quotaUsed, '0')} / {formatDecimalDisplay(account.quotaLimit)}</span><span className="block text-xs text-slate-500">{t('admin.upstream.account.table.rpm', { value: account.rpmLimit ?? '-' })}</span></td>
                 <td className="px-4 py-3"><StatusBadge status={account.status} healthy={account.healthStatus} /></td>
-                <td className="px-4 py-3"><div className="flex justify-end gap-1">{account.status === 1 ? <button type="button" className={dangerButtonClass} onClick={() => void toggleAccountStatus(account)} title={t('admin.upstream.account.actions.disable')}><PowerOff className="h-4 w-4" /></button> : <button type="button" className={secondaryButtonClass} onClick={() => void toggleAccountStatus(account)} title={t('admin.upstream.account.actions.enable')}><Power className="h-4 w-4" /></button>}<button type="button" className={secondaryButtonClass} onClick={() => setSelected(account)} title={t('admin.upstream.account.actions.credentials')}><Settings2 className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setEditing(account)} title={t('common.actions.edit')}><Edit3 className="h-4 w-4" /></button><button type="button" className={dangerButtonClass} onClick={() => setDeleteTarget(account)} title={t('common.actions.delete')}><Trash2 className="h-4 w-4" /></button></div></td>
+                <td className="px-4 py-3"><div className="flex justify-end gap-1">{account.status === 1 ? <button type="button" className={dangerButtonClass} onClick={() => void toggleAccountStatus(account)} title={t('admin.upstream.account.actions.disable')}><PowerOff className="h-4 w-4" /></button> : <button type="button" className={secondaryButtonClass} onClick={() => void toggleAccountStatus(account)} title={t('admin.upstream.account.actions.enable')}><Power className="h-4 w-4" /></button>}<button type="button" className={secondaryButtonClass} onClick={() => setSelected(account)} title={t('admin.upstream.account.actions.credentials')}><Settings2 className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setEditing(account)} title={t('common.actions.edit')}><Edit3 className="h-4 w-4" /></button><button type="button" className={dangerButtonClass} onClick={() => void openDeleteDialog(account)} title={t('common.actions.delete')}><Trash2 className="h-4 w-4" /></button></div></td>
               </tr>
             ))}
           </tbody>
@@ -353,7 +495,30 @@ export function AccountAdminPanel() {
         ) : null}
         {editing !== undefined ? <AccountModal account={editing} suppliers={suppliers} groups={groups} initialGroupId={selectedKey !== null && selectedKey !== UNGROUPED_KEY ? selectedKey : null} busy={busy} onSubmit={submitAccount} onClose={() => setEditing(undefined)} /> : null}
         {selected ? <AccountCredentials account={selected} supplier={suppliers.find((item) => item.id === selected.supplierId) ?? null} onClose={() => setSelected(null)} onAccountChanged={(account) => { setSelected(account); setItems((current) => current.map((item) => item.id === account.id ? account : item)); }} /> : null}
-        {deleteTarget ? <ConfirmDialog title={t('admin.upstream.account.delete.title')} description={t('admin.upstream.account.delete.description', { name: deleteTarget.accountName })} confirmLabel={t('common.actions.delete')} tone="danger" isBusy={busy} onCancel={() => setDeleteTarget(null)} onConfirm={() => void deleteAccount()} /> : null}
+        {deleteTarget ? <ConfirmDialog
+          title={t('admin.upstream.account.delete.title')}
+          description={deleteTargetGroups.length > 0
+            ? t('admin.upstream.account.delete.inGroups', {
+                count: deleteTargetGroups.length,
+                names: deleteTargetGroups.map((group) => resolveGroupDisplayName(group, i18n.language)).join(i18n.language.toLowerCase().startsWith('zh') ? '、' : ', '),
+              })
+            : t('admin.upstream.account.delete.description', { name: deleteTarget.accountName })}
+          confirmLabel={t('common.actions.delete')}
+          confirmDisabled={groupsChecking || (deleteTargetGroups.length > 0 && !removeFromGroups)}
+          tone="danger"
+          isBusy={busy}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={() => void deleteAccount()}
+        >
+          {groupsChecking ? (
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t('admin.upstream.common.status.loading')}</p>
+          ) : deleteTargetGroups.length > 0 ? (
+            <label className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
+              <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-lobster-600" checked={removeFromGroups} onChange={(event) => setRemoveFromGroups(event.currentTarget.checked)} />
+              <span>{t('admin.upstream.account.delete.removeFromGroups', { count: deleteTargetGroups.length })}</span>
+            </label>
+          ) : null}
+        </ConfirmDialog> : null}
       </div>
     </div>
   );
@@ -381,6 +546,8 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [resourcesLoading, setResourcesLoading] = useState(true);
   const [groupMissing, setGroupMissing] = useState(false);
+  const [seedingAuth, setSeedingAuth] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!supplierId) return;
@@ -390,12 +557,32 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
     ]).then(([nextMethods, nextEndpoints]) => {
       setAuthMethods(nextMethods);
       setEndpoints(nextEndpoints);
+      // 创建模式：默认选中 API Key（优先 code api-key，其次 api_key 类型）；切换供应商时重置选择，
+      // 避免残留上一供应商的认证方式
       if (!account) {
-        // 创建模式默认选中 APIKEY 认证方式（无则取首个）
-        setAuthMethodCode((current) => current || (nextMethods.find((method) => method.authType === 'api_key')?.authMethodCode ?? nextMethods[0]?.authMethodCode ?? ''));
+        setAuthMethodCode(defaultAuthMethodCode(nextMethods));
       }
     });
   }, [supplierId, account]);
+
+  // 供应商未配置认证方式时一键播种默认 API Key 认证方式（后端验证/运行时按 auth_method_code
+  // 关联供应商认证方式，供应商侧必须存在对应配置）
+  const seedDefaultAuthMethod = async () => {
+    const supplier = suppliers.find((item) => item.id === supplierId);
+    if (!supplier) return;
+    setSeedingAuth(true);
+    setAuthError(null);
+    try {
+      await upstreamService.suppliers.replaceAuthMethods(supplier, { items: [DEFAULT_ACCOUNT_AUTH_METHOD] });
+      const nextMethods = await upstreamService.suppliers.listAuthMethods(supplier.id);
+      setAuthMethods(nextMethods);
+      setAuthMethodCode(defaultAuthMethodCode(nextMethods));
+    } catch (cause) {
+      setAuthError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
+    } finally {
+      setSeedingAuth(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -446,6 +633,7 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
           <RowField label={t('admin.upstream.account.form.supplier')} required>
             <input type="hidden" name="supplierId" value={supplierId} />
             <SdkworkSearchableSelect
+              className="h-9"
               value={supplierId}
               onValueChange={(value) => setSupplierId(value)}
               options={suppliers.map((supplier) => ({ value: supplier.id, label: supplier.displayName, keywords: [supplier.supplierCode] }))}
@@ -454,15 +642,27 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
               emptyText={t('admin.upstream.account.form.supplierEmpty')}
             />
           </RowField>
-          <RowField label={t('admin.upstream.account.form.preferredBaseUrl')}><select name="preferredEndpointId" className={selectClass} defaultValue={account?.preferredEndpointId ?? ''}><option value="">{t('admin.upstream.account.form.automatic')}</option>{endpoints.map((endpoint) => <option key={endpoint.id} value={endpoint.id}>{endpoint.endpointName} ({endpoint.baseUrl})</option>)}</select></RowField>
-          <RowField label={t('admin.upstream.account.form.authMethod')} required><select name="authMethodCode" className={selectClass} value={authMethodCode} onChange={(event) => setAuthMethodCode(event.currentTarget.value)} required><option value="">{t('admin.upstream.account.form.selectMethod')}</option>{authMethods.map((method) => <option key={method.id} value={method.authMethodCode}>{method.authMethodName}</option>)}</select></RowField>
+          {account ? <RowField label={t('admin.upstream.account.form.preferredBaseUrl')}><select name="preferredEndpointId" className={selectClass} defaultValue={account?.preferredEndpointId ?? ''}><option value="">{t('admin.upstream.account.form.automatic')}</option>{endpoints.map((endpoint) => <option key={endpoint.id} value={endpoint.id}>{endpoint.endpointName} ({endpoint.baseUrl})</option>)}</select></RowField> : null}
+          <RowField label={t('admin.upstream.account.form.authMethod')} required>
+            <div className="min-w-0">
+              <select name="authMethodCode" className={selectClass} value={authMethodCode} onChange={(event) => setAuthMethodCode(event.currentTarget.value)} required disabled={authMethods.length === 0}><option value="">{t('admin.upstream.account.form.selectMethod')}</option>{authMethods.map((method) => <option key={method.id} value={method.authMethodCode}>{method.authMethodName}</option>)}</select>
+              {authMethods.length === 0 ? (
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="text-xs text-amber-600 dark:text-amber-400">{t('admin.upstream.account.errors.authMethodMissing')}</span>
+                  <button type="button" className="text-xs font-medium text-lobster-600 hover:underline dark:text-lobster-400" onClick={() => void seedDefaultAuthMethod()} disabled={seedingAuth}>{t('admin.upstream.account.actions.seedAuthMethod')}</button>
+                </div>
+              ) : null}
+              {authError ? <p className="mt-1 text-xs text-red-500">{authError}</p> : null}
+            </div>
+          </RowField>
           {showApiKeyInput ? <RowField label={t('admin.upstream.account.form.apiKey')} required={!account}><div className="flex items-center gap-2"><input name="apiKey" type="password" autoComplete="new-password" className={inputClass} value={apiKeyInput} onChange={(event) => setApiKeyInput(event.currentTarget.value)} placeholder={account ? t('admin.upstream.account.form.apiKeyRotatePlaceholder') : t('admin.upstream.account.form.apiKeyPlaceholder')} required={!account} /></div></RowField> : null}
           {!account ? <RowField label={t('admin.upstream.account.form.accountGroup')} required>
             <div className="min-w-0">
               <SdkworkSearchableSelect
+                className="h-9"
                 value={groupId}
                 onValueChange={(value) => { setGroupId(value); setGroupMissing(false); }}
-                options={groups.map((group) => ({ value: group.id, label: resolveGroupDisplayName(group, i18n.language), keywords: [group.groupCode, ...(group.tags ?? [])] }))}
+                options={groups.map((group) => ({ value: group.id, label: `${resolveGroupDisplayName(group, i18n.language)} ×${formatDecimalDisplay(group.saleMultiplier)}`, keywords: [group.groupCode, ...(group.tags ?? [])] }))}
                 placeholder={t('admin.upstream.account.form.selectGroup')}
                 searchPlaceholder={t('admin.upstream.account.form.groupSearch')}
                 emptyText={t('admin.upstream.account.form.groupEmpty')}
@@ -682,7 +882,6 @@ function createAccountInput(form: FormData, t: TranslationFunction): CreateUpstr
     accountName: required(form, 'accountName', t('admin.upstream.account.form.accountName'), t),
     supplierId: required(form, 'supplierId', t('admin.upstream.account.form.supplier'), t),
     authMethodCode: required(form, 'authMethodCode', t('admin.upstream.account.form.authMethod'), t),
-    preferredEndpointId: optional(form, 'preferredEndpointId'),
     contractCostMultiplier: required(form, 'contractCostMultiplier', t('admin.upstream.account.form.contractCostMultiplier'), t),
     quotaLimit: optional(form, 'quotaLimit'),
     rpmLimit: optional(form, 'rpmLimit'),

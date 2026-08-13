@@ -16,6 +16,10 @@ export interface UpdateUpstreamAccountGroupRequest {
   isDefault?: boolean;
   /** Modalities field on update upstream account group request. */
   modalities?: ('text' | 'audio' | 'image' | 'video' | 'music')[] | null;
+  /** Model blacklist of this group. Vendor + model entries the whole group is forbidden to serve. An entry with an empty models array forbids every model of the vendor. The blacklist wins over the whitelist. */
+  modelBlacklist?: { models: string[]; vendorCode: string; }[] | null;
+  /** Model whitelist of this group. When non-empty, the group serves only matching vendor + model entries. An entry with an empty models array allows every model of the vendor. */
+  modelWhitelist?: { models: string[]; vendorCode: string; }[] | null;
   /** Priority field on update upstream account group request. */
   priority?: number | null;
   /** Routing strategy field on update upstream account group request. */

@@ -632,7 +632,9 @@ pub(crate) fn response_from_invocation_error(error: &InvocationError) -> Respons
             StatusCode::BAD_REQUEST
         }
         InvocationErrorKind::Authentication => StatusCode::UNAUTHORIZED,
-        InvocationErrorKind::Authorization => StatusCode::FORBIDDEN,
+        InvocationErrorKind::Authorization | InvocationErrorKind::ModelForbidden => {
+            StatusCode::FORBIDDEN
+        }
         InvocationErrorKind::Routing
         | InvocationErrorKind::Pricing
         | InvocationErrorKind::Dispatch

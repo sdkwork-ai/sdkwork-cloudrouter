@@ -4,6 +4,151 @@ export type RankingModality = 'All' | 'LLM' | 'Image' | 'Audio' | 'Video' | 'Mus
 
 export type RankingLicense = 'All' | 'Open Source' | 'Proprietary';
 
+/** Modality tab order for the global leaderboard (All first, then curated capability order). */
+export const RANKING_MODALITY_ORDER: Exclude<RankingModality, 'All'>[] = [
+  'LLM',
+  'Video',
+  'Image',
+  'Music',
+  'Audio',
+  'Embedding',
+  'Rerank',
+] as const;
+
+export const RANKING_MODALITY_TABS: RankingModality[] = ['All', ...RANKING_MODALITY_ORDER] as const;
+
+const RANKING_MODALITY_PARAM_VALUES: Record<Exclude<RankingModality, 'All'>, string> = {
+  LLM: 'llm',
+  Video: 'video',
+  Image: 'image',
+  Music: 'music',
+  Audio: 'audio',
+  Embedding: 'embedding',
+  Rerank: 'rerank',
+};
+
+const RANKING_MODALITY_BY_PARAM: Record<string, Exclude<RankingModality, 'All'>> = Object.fromEntries(
+  (Object.entries(RANKING_MODALITY_PARAM_VALUES) as [Exclude<RankingModality, 'All'>, string][]).map(
+    ([modality, param]) => [param, modality],
+  ),
+);
+
+/** Resolves a `?modality=` URL parameter to a valid tab, falling back to `All`. */
+export function parseRankingModalityParam(value: string | null | undefined): RankingModality {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized) {
+    return 'All';
+  }
+  return RANKING_MODALITY_BY_PARAM[normalized] ?? 'All';
+}
+
+/** Serializes a tab to its `?modality=` parameter value (`All` → undefined). */
+export function rankingModalityParam(modality: RankingModality): string | undefined {
+  return modality === 'All' ? undefined : RANKING_MODALITY_PARAM_VALUES[modality];
+}
+
+/**
+ * Server catalog strengths are English capability labels (e.g. "Text to video").
+ * Localize known labels so non-English surfaces render translated capability tags;
+ * unknown labels fall back to their original text.
+ */
+const RANKING_STRENGTH_LOCALIZATIONS: Record<string, string> = {
+  'text to video': '文生视频',
+  'image to video': '图生视频',
+  'start-end frame': '首尾帧控制',
+  'native audio': '原生音频',
+  'real-time streaming interaction': '实时流式交互',
+  'voice-driven full-body motion': '语音驱动全身动作',
+  'hour-long stable interaction': '小时级稳定交互',
+  'one-shot digital human': '单次生成数字人',
+  'consumer-gpu deployment': '消费级 GPU 部署',
+  'interruptible commands': '可打断指令',
+  'test-time music reasoning': '推理时音乐理解',
+  'extended musicot': '扩展 MusiCoT 思维链',
+  'premium multilingual composition': '优质多语种作曲',
+  'least ai-flavored music': '低 AI 味音乐',
+  'vocal-arrangement-emotion balance': '人声-编曲-情感平衡',
+  'breathable arrangement': '呼吸感编曲',
+  'tightened prompt adherence': '精准提示词跟随',
+  'character voice cloning': '角色声音克隆',
+  'song generation': '歌曲生成',
+  'lyric control': '歌词控制',
+  'cleaner mix': '更纯净混音',
+  'faster generation': '更快生成',
+  'high quality motion': '高质量运动',
+  'physics simulation': '物理模拟',
+  'premium quality': '优质品质',
+  'multilingual composition': '多语种作曲',
+  'contextual bgm': '情境背景音乐',
+  'fast generation': '快速生成',
+  'cover generation': '翻唱生成',
+  'reference audio': '参考音频',
+  'style transfer': '风格迁移',
+  'streaming playback': '流式播放',
+  'enhanced vocals': '增强人声',
+  'vocal clarity': '人声清晰度',
+  'vocal expression': '人声表现力',
+  'melody structure': '旋律结构',
+  'instrumental mode': '纯音乐模式',
+  'lyrics optimizer': '歌词优化器',
+  'bpm and key control': 'BPM 与调性控制',
+  'reference audio conditioning': '参考音频条件控制',
+  'multilingual vocals': '多语种人声',
+  'text to speech': '文生语音（TTS）',
+  'high fidelity': '高保真',
+  'multilingual': '多语种',
+  'low latency': '低延迟',
+  'text to sfx': '文本生成音效',
+  'timeline sfx': '时间轴音效',
+  'multi-event cues': '多事件提示',
+  'overlapping events': '重叠事件',
+  'foley control': '拟音控制',
+  'background ambience': '背景氛围',
+  'bgm': '背景音乐',
+  'emotion expression 7.88': '情感表达 7.88',
+  'arrangement structure 7.20': '编曲结构 7.20',
+};
+
+export function localizeRankingStrength(value: string): string {
+  const key = value.trim().toLowerCase();
+  return RANKING_STRENGTH_LOCALIZATIONS[key] ?? value.trim();
+}
+
+/**
+ * Server win_rate is a 0..1 decimal (default 0.5 = 50%). Render it as a
+ * whole percentage: 0.91 → 91.
+ */
+export function formatRankingWinRate(value: number): string {
+  if (!Number.isFinite(value)) {
+    return '';
+  }
+  return String(Math.round(value * 100));
+}
+
+/**
+ * Server pricing text mixes currency codes ("CNY 0.625 / output second (720p)")
+ * with plain "$" amounts. Normalize currency codes to their symbols so the
+ * rendered amount reads naturally in any locale; "$" amounts stay untouched.
+ */
+export function localizeRankingPricing(value: string): string {
+  let normalized = value.trim();
+  for (const [code, symbol] of RANKING_CURRENCY_SYMBOLS) {
+    const pattern = new RegExp(`\\b${code}\\b`, 'gu');
+    normalized = normalized.replace(pattern, symbol);
+  }
+  // "CNY 0.625" → "¥0.625": drop the space between the currency symbol and the amount.
+  return normalized.replace(/([¥$€£])\s+(?=\d)/gu, '$1');
+}
+
+const RANKING_CURRENCY_SYMBOLS: ReadonlyArray<readonly [string, string]> = [
+  ['CNY', '¥'],
+  ['USD', '$'],
+  ['EUR', '€'],
+  ['GBP', '£'],
+  ['JPY', '¥'],
+  ['HKD', 'HK$'],
+];
+
 export interface RankingSnapshotSource {
   sourceLabel: string;
   sourceDescription: string;
@@ -310,12 +455,15 @@ export function deriveRankingDisplayRows(
   }
   const previousWeekData = activeWeekIndex > 0 ? history[activeWeekIndex - 1] : null;
 
+  // The server snapshot rank is the ranking authority; week volume only breaks
+  // ties (or orders rows when ranks are unavailable). Re-ranking purely by
+  // volume scrambles the leaderboard whenever volumes are zero or equal.
   const currentRanking = filteredRankings
     .map((model) => ({
       ...model,
       currentVolume: numericCell(activeWeekData, rankingHistoryKey(model)),
     }))
-    .sort((first, second) => second.currentVolume - first.currentVolume)
+    .sort((first, second) => first.rank - second.rank || second.currentVolume - first.currentVolume)
     .map((model, index) => ({
       ...model,
       displayRank: index + 1,
@@ -330,9 +478,10 @@ export function deriveRankingDisplayRows(
     filteredRankings
       .map((model) => ({
         id: model.id,
+        prevRank: model.prevRank,
         previousVolume: numericCell(previousWeekData, rankingHistoryKey(model)),
       }))
-      .sort((first, second) => second.previousVolume - first.previousVolume)
+      .sort((first, second) => first.prevRank - second.prevRank || second.previousVolume - first.previousVolume)
       .map((model, index) => [model.id, index + 1] as const),
   );
 

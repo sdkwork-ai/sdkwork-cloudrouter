@@ -1,0 +1,22 @@
+/** RTC admin domain copy (zh-CN) for the Cloud Router admin surface. */
+export const zh = {
+  'admin.header.rtcCenter': '实时音视频中心',
+  'admin.rtc.loading': '正在加载实时音视频中心...',
+  'admin.menu.rtc.realtime': '实时音视频中心',
+  'admin.menu.rtc.dashboard': '综合总览',
+  'admin.menu.rtc.sessions': '实时会话',
+  'admin.menu.rtc.rooms': '通话房间',
+  'admin.menu.rtc.artifacts': '通话记录文件',
+  'admin.menu.rtc.quality': '质量监控',
+  'admin.menu.rtc.provider': 'Provider 管理',
+  'admin.menu.rtc.providerAccounts': '账户',
+  'admin.menu.rtc.providerApplications': '应用',
+  'admin.menu.rtc.providerCredentials': '凭据',
+  'admin.menu.rtc.providerProfiles': '配置',
+  'admin.menu.rtc.providerRoutes': '路由',
+  'admin.menu.rtc.providers': '插件',
+  'admin.menu.rtc.wizard': '配置向导',
+  'admin.menu.rtc.system': '系统工具',
+  'admin.menu.rtc.webhookEvents': 'Webhook 事件',
+  'admin.menu.rtc.queryJobs': 'Query Jobs',
+};

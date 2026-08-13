@@ -12,7 +12,7 @@ use crate::domain::{
     RoutingCapability, RoutingPolicy, RoutingPolicyScope, RoutingRule, UpstreamAccountGroup,
     UpstreamAccountGroupBinding, UpstreamAccountRoute,
 };
-use crate::ports::UpstreamAccountRouteCatalog;
+use crate::ports::{AccountGroupModelAccess, UpstreamAccountRouteCatalog};
 
 #[derive(Debug, Clone, Default)]
 struct UpstreamAccountGroupBindings {
@@ -109,6 +109,10 @@ pub struct UpstreamRouteSelectionError {
 pub enum UpstreamRouteSelectionErrorKind {
     UpstreamRouteUnavailable,
     PricingUnavailable,
+    /// The requested model is rejected by the account group's model
+    /// blacklist/whitelist. Raised as a hard error: the group forbids the
+    /// model, so no other bound group is tried.
+    ModelForbidden,
 }
 
 impl UpstreamRouteSelectionError {
@@ -122,6 +126,13 @@ impl UpstreamRouteSelectionError {
     pub fn pricing_unavailable(message: impl Into<String>) -> Self {
         Self {
             kind: UpstreamRouteSelectionErrorKind::PricingUnavailable,
+            message: message.into(),
+        }
+    }
+
+    pub fn model_forbidden(message: impl Into<String>) -> Self {
+        Self {
+            kind: UpstreamRouteSelectionErrorKind::ModelForbidden,
             message: message.into(),
         }
     }
@@ -207,6 +218,14 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             match self.select_model_route_plan_for_context(scoped_query) {
                 Ok(selection) => return Ok(selection),
                 Err(error)
+                    if error.kind() == UpstreamRouteSelectionErrorKind::ModelForbidden =>
+                {
+                    // A model forbidden by a bound group is a hard rejection
+                    // of the request: the group's blacklist denies the model
+                    // for the whole group, so no other bound group is tried.
+                    return Err(error);
+                }
+                Err(error)
                     if error.kind() == UpstreamRouteSelectionErrorKind::PricingUnavailable =>
                 {
                     // A pricing gap in one bound group must not fail the whole
@@ -244,6 +263,30 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             &api_scope_keys,
             query.capability,
         );
+
+        // Group model access gate: the selected account group's blacklist
+        // forbids the whole group from serving matching models, and a
+        // non-empty whitelist restricts the group to matching models only.
+        // Checked before any account/resource resolution so a forbidden model
+        // fails fast with a model-forbidden error instead of a misleading
+        // route-unavailable one.
+        if let Some(access) = self.catalog.account_group_model_access(query.context.group_id) {
+            let vendor_code = self
+                .catalog
+                .find_model(&query.catalog_key)
+                .map(|model| model.vendor_code);
+            let reason = model_access_forbidden_reason(
+                vendor_code.as_deref(),
+                &query.requested_model,
+                &access,
+            );
+            if let Some(rule) = reason {
+                return Err(UpstreamRouteSelectionError::model_forbidden(
+                    model_access_forbidden_message(&rule, &query.requested_model, &query.context.group_code),
+                ));
+            }
+        }
+
         let model_routes = self.catalog.list_model_upstream_routes(&query.catalog_key);
         let model_routes_loaded = model_routes.len();
         let routes =
@@ -1787,4 +1830,47 @@ fn provider_native_model_from_query(query: &SelectUpstreamModelRouteQuery) -> St
 
 fn native_model_from_base_catalog_key(value: &str) -> Option<String> {
     parse_model_catalog_identity(value).map(|identity| identity.model_id())
+}
+
+/// Returns `Some(rule)` when the account group's model access rules reject
+/// the requested model (`"blacklist"` when a blacklist entry matches,
+/// `"whitelist"` when a non-empty whitelist does not match), or `None` when
+/// the request is allowed. The blacklist wins over the whitelist. An entry
+/// with an empty `models` list covers every model of the vendor, and an
+/// entry matches only when the request's model vendor is known and equals the
+/// entry vendor; model names compare case-insensitively against the requested
+/// model.
+pub fn model_access_forbidden_reason(
+    vendor_code: Option<&str>,
+    requested_model: &str,
+    access: &AccountGroupModelAccess,
+) -> Option<&'static str> {
+    let entry_matches = |entry: &crate::ports::VendorModelListEntry| {
+        vendor_code
+            .map(|vendor| vendor == entry.vendor_code)
+            .unwrap_or(false)
+            && (entry.models.is_empty()
+                || entry
+                    .models
+                    .iter()
+                    .any(|model| model.eq_ignore_ascii_case(requested_model)))
+    };
+    if access.blacklist.iter().any(entry_matches) {
+        return Some("blacklist");
+    }
+    if !access.whitelist.is_empty() && !access.whitelist.iter().any(entry_matches) {
+        return Some("whitelist");
+    }
+    None
+}
+
+pub fn model_access_forbidden_message(rule: &str, requested_model: &str, group_code: &str) -> String {
+    match rule {
+        "blacklist" => format!(
+            "model {requested_model} is forbidden by account group {group_code} (model blacklist)"
+        ),
+        _ => format!(
+            "model {requested_model} is not allowed by account group {group_code} (model whitelist)"
+        ),
+    }
 }

@@ -597,6 +597,15 @@ mod tests {
             StatusCode::OK,
         )
         .await;
+        // Dependency-owned community backend surface is dispatched to the
+        // in-process backend router in the standalone profile
+        // (API_ASSEMBLY_SPEC §6.1 same-origin dependency composition).
+        assert_status(
+            &router,
+            get("/backend/v3/api/community/categories"),
+            StatusCode::OK,
+        )
+        .await;
     }
 
     #[tokio::test]
@@ -633,6 +642,15 @@ mod tests {
             StatusCode::NOT_FOUND,
         )
         .await;
+        // Dependency-owned community backend surface is likewise external in
+        // the cloud profile (API_ASSEMBLY_SPEC §6.2 external dependency
+        // upstream serves it).
+        assert_status(
+            &router,
+            get("/backend/v3/api/community/categories"),
+            StatusCode::NOT_FOUND,
+        )
+        .await;
     }
 
     fn test_assembly(context: ApiAssemblyContext) -> Router {
@@ -651,6 +669,10 @@ mod tests {
             .route(
                 "/backend/v3/api/memberships/package_groups",
                 route_get(|| async { "membership-groups" }),
+            )
+            .route(
+                "/backend/v3/api/community/categories",
+                route_get(|| async { "community-categories" }),
             )
             .route("/readyz", route_get(|| async { "ready" }));
         let app_router = Router::new()

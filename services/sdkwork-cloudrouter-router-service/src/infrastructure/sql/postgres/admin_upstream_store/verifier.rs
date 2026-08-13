@@ -250,7 +250,12 @@ fn ensure_openai_compatible_protocol(
     let protocol = protocol_code.trim().to_ascii_lowercase().replace('-', "_");
     if matches!(
         protocol.as_str(),
-        "openai" | "openai_v1" | "openai_compatible" | "openai_compat"
+        "openai"
+            | "openai_v1"
+            | "openai_compatible"
+            | "openai_compat"
+            | "openai_chat_completions"
+            | "openai_responses"
     ) {
         return Ok(());
     }

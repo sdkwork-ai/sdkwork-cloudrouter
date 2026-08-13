@@ -180,24 +180,6 @@
           "resourceCode": "api.vidu.start_end_to_video"
         }
       ]
-    },
-    {
-      "groupCode": "relay.minimax.music",
-      "groupName": "MiniMax Music Relay",
-      "groupType": "api_group",
-      "selectionMode": "any",
-      "description": "Relay account group for MiniMax music generation APIs.",
-      "sortOrder": 230,
-      "items": [
-        {
-          "itemType": "resource",
-          "resourceCode": "vendor.minimax"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.minimax.music_generation"
-        }
-      ]
     }
   ]
 }

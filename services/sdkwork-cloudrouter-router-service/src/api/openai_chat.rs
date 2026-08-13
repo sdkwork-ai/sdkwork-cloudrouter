@@ -611,7 +611,12 @@ where
                     "auth token authentication is not configured",
                 );
             };
-            match authenticator.authenticate(credential_secret).await {
+            let access_token = headers
+                .get("Access-Token")
+                .and_then(|value| value.to_str().ok())
+                .map(|value| value.trim())
+                .filter(|value| !value.is_empty());
+            match authenticator.authenticate(credential_secret, access_token).await {
                 Ok(context) => context,
                 Err(response) => return *response,
             }

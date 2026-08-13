@@ -153,7 +153,8 @@ fn status_code_for_error(error: &InvocationError) -> u16 {
         super::InvocationErrorKind::InvalidRequest
         | super::InvocationErrorKind::ResourceClassification => 400,
         super::InvocationErrorKind::Authentication => 401,
-        super::InvocationErrorKind::Authorization => 403,
+        super::InvocationErrorKind::Authorization
+        | super::InvocationErrorKind::ModelForbidden => 403,
         super::InvocationErrorKind::Idempotency => 409,
         super::InvocationErrorKind::Routing
         | super::InvocationErrorKind::Pricing

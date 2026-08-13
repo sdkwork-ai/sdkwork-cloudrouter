@@ -42,6 +42,8 @@ export interface MembershipsAdminPackageGroup {
   code: string;
   name: string;
   description?: string;
+  /** True when the row was auto-provisioned by an external integration. */
+  autoProvisioned?: boolean;
   planId?: string;
   billingCycle: string;
   durationDays: number;
@@ -77,6 +79,8 @@ export interface MembershipsAdminPlanItem {
   benefitCount: number;
   benefits: MembershipsAdminPlanBenefitInput[];
   updatedAt: string;
+  /** True when the row was auto-provisioned by an external integration. */
+  autoProvisioned?: boolean;
 }
 
 export interface MembershipsAdminRechargePackageItem {
@@ -670,12 +674,14 @@ function normalizeAdminPackageGroup(value: unknown): MembershipsAdminPackageGrou
   const code = requireRecordString(item, 'code', 'Membership package group code is required');
   const billingCycle = readString(item, 'billingCycle').trim();
   const durationDays = readNumber(item, 'durationDays', inferDurationFromBillingCycle(billingCycle));
+  const description = readString(item, 'description').trim() || undefined;
   return {
     id: requireRecordString(item, 'id', 'Membership package group id is required'),
     category: readAdminCategory(item),
     code,
     name: requireRecordString(item, 'name', 'Membership package group name is required'),
-    description: readString(item, 'description').trim() || undefined,
+    description,
+    autoProvisioned: isAutoProvisionedDescription(description),
     planId: readString(item, 'planId').trim() || undefined,
     billingCycle: billingCycle || inferAdminBillingCycle(durationDays),
     durationDays,
@@ -772,7 +778,13 @@ function normalizeAdminPlan(value: unknown): MembershipsAdminPlanItem {
     benefitCount: benefits.length,
     benefits,
     updatedAt: readString(item, 'updatedAt').trim(),
+    autoProvisioned: isAutoProvisionedDescription(readString(item, 'description').trim() || undefined),
   };
+}
+
+/** Detects the backend auto-provisioned placeholder marker. */
+function isAutoProvisionedDescription(description: string | undefined): boolean {
+  return Boolean(description && description.includes('Auto-provisioned'));
 }
 
 function readAdminCategory(item: ApiRecord): MembershipsAdminCategory {

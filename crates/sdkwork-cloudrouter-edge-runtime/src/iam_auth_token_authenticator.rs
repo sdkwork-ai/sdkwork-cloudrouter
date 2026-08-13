@@ -18,7 +18,7 @@ use sdkwork_iam_web_adapter::resolve_iam_app_context_from_oauth_bearer_pool;
 
 /// Default upstream account group code selected for auth-token sessions
 /// (mirrors the gateway API key default group convention).
-pub const DEFAULT_ACCOUNT_GROUP_CODE: &str = "default";
+pub const DEFAULT_ACCOUNT_GROUP_CODE: &str = "default-group";
 
 /// Error body for the auth-token channel (OpenAI-compatible error envelope).
 fn auth_token_error(code: &str, message: &str) -> OpenAiAuthTokenError {
@@ -56,6 +56,7 @@ where
     async fn authenticate(
         &self,
         raw_bearer_token: &str,
+        access_token: Option<&str>,
     ) -> Result<AuthenticatedApiKeyContext, OpenAiAuthTokenError> {
         let context =
             resolve_iam_app_context_from_oauth_bearer_pool(&self.iam_pool, raw_bearer_token)
@@ -63,6 +64,31 @@ where
                 .ok_or_else(|| {
                     auth_token_error("invalid_auth_token", "invalid or expired auth token")
                 })?;
+
+        // Dual-token check (API_SPEC §819/§824): when the caller supplies an
+        // Access-Token it must resolve to the same IAM session as the auth
+        // token; a mismatched pair is rejected instead of silently using the
+        // auth token alone.
+        if let Some(access_token) = access_token {
+            let access_context =
+                resolve_iam_app_context_from_oauth_bearer_pool(&self.iam_pool, access_token)
+                    .await
+                    .ok_or_else(|| {
+                        auth_token_error(
+                            "invalid_access_token",
+                            "invalid or expired access token",
+                        )
+                    })?;
+            if access_context.session_id != context.session_id
+                || access_context.tenant_id != context.tenant_id
+                || access_context.user_id != context.user_id
+            {
+                return Err(auth_token_error(
+                    "access_token_mismatch",
+                    "access token does not match the auth token session",
+                ));
+            }
+        }
 
         let tenant_id = context.tenant_id.parse::<i64>().map_err(|_| {
             auth_token_error("invalid_auth_token", "auth token tenant is not numeric")
@@ -81,6 +107,15 @@ where
             .list_upstream_account_groups()
             .into_iter()
             .find(|group| group.tenant_id == tenant_id && group.code == DEFAULT_ACCOUNT_GROUP_CODE)
+            // Seeded tenants mark their default group with `is_default`
+            // (code `default-group`); the fallback keeps legacy or
+            // custom-named default groups routable for auth-token sessions.
+            .or_else(|| {
+                self.catalog
+                    .list_upstream_account_groups()
+                    .into_iter()
+                    .find(|group| group.tenant_id == tenant_id && group.is_default)
+            })
             .ok_or_else(|| {
                 auth_token_error(
                     "account_group_unavailable",

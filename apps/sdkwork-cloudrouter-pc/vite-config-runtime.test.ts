@@ -556,7 +556,7 @@ test("portal resolves SDK common imports through workspace package exports", asy
   const resolver = plugins.find((plugin) => hasPluginName(plugin, "cloudrouter-portal-pnpm-workspace-resolver"));
   const expectedSdkCommonEntry = path.resolve(
     import.meta.dirname,
-    "../../node_modules/.pnpm/@sdkwork+sdk-common@1.0.3/node_modules/@sdkwork/sdk-common/dist/index.js",
+    "../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/index.js",
   );
 
   assert.ok(resolver && typeof resolver === "object");

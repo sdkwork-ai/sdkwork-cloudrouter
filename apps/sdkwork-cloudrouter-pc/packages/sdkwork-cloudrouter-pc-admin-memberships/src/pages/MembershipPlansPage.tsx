@@ -175,7 +175,14 @@ export function MembershipPlansPage() {
               <tbody>
                 {plans.map((plan) => (
                   <tr key={plan.id} className="border-b border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5">
-                    <td className="px-4 py-2.5 font-medium text-slate-900 dark:text-white">{plan.name}</td>
+                    <td className="px-4 py-2.5">
+                      <span className="font-medium text-slate-900 dark:text-white">{plan.name}</span>
+                      {plan.autoProvisioned ? (
+                        <span className="ml-2 inline-flex rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                          {t('admin.commerce.memberships.autoProvisioned', 'Auto-created')}
+                        </span>
+                      ) : null}
+                    </td>
                     <td className="px-4 py-2.5"><MembershipCategoryBadge category={plan.category} /></td>
                     <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{plan.levelCode || plan.planNo}</td>
                     <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">{plan.rank}</td>

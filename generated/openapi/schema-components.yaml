@@ -6743,6 +6743,9 @@ components:
         protocol_code:
           type: string
           maxLength: 64
+        protocols:
+          type: object
+          additionalProperties: true
         owner_kind:
           type: string
           maxLength: 32

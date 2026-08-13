@@ -4,6 +4,7 @@
  * IAM hints are owned by @sdkwork/cloudrouter-pc-admin-iam/contribution.
  */
 import { IAM_ADMIN_PERMISSION_HINTS } from '@sdkwork/cloudrouter-pc-admin-iam/contribution';
+import { RTC_ADMIN_PERMISSION_HINTS } from '@sdkwork/cloudrouter-pc-admin-rtc/contribution';
 
 export type AdminRoutePermissionHint = {
   pathPrefix: string;
@@ -25,12 +26,14 @@ export const ADMIN_ROUTE_PERMISSION_HINTS: readonly AdminRoutePermissionHint[] =
   { pathPrefix: '/admin/runtime-region', requiredPermission: 'cloudrouter.system.read' },
   { pathPrefix: '/admin/site', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/memberships', requiredPermission: 'cloudrouter.admin.access' },
+  { pathPrefix: '/admin/community', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/recharges', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/marketing', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/partner', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/payments', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/storage', requiredPermission: 'cloudrouter.admin.access' },
   ...IAM_ADMIN_PERMISSION_HINTS,
+  ...RTC_ADMIN_PERMISSION_HINTS,
   { pathPrefix: '/admin/relay', requiredPermission: 'cloudrouter.gateway.read' },
 ];
 
