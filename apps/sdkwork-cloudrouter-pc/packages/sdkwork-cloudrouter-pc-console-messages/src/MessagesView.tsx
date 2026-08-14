@@ -68,7 +68,7 @@ export function MessagesView() {
   if (loadError) {
     return (
       <div className="mx-auto flex h-full w-full flex-col overflow-hidden bg-slate-50 dark:bg-[#121212]">
-        <BusinessStatePanel kind="error" title={loadError} onRetry={() => void loadMessages()} retryLabel={t('commons.actions.retry', 'Retry')} />
+        <BusinessStatePanel kind="error" title={loadError} onRetry={() => void loadMessages()} retryLabel={t('common.actions.retry', 'Retry')} />
       </div>
     );
   }

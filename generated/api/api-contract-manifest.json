@@ -16234,6 +16234,42 @@
               "maxLength": 32,
               "type": "string"
             },
+            "groupRoutingPolicies": {
+              "description": "Per-bound-group routing policies. Each entry must reference a code listed in accountGroups; entries absent here default to routingStrategy price_first with weight 100.",
+              "items": {
+                "additionalProperties": false,
+                "description": "Group routing policy on create api key request.",
+                "properties": {
+                  "accountGroup": {
+                    "description": "Bound group code; must also be present in accountGroups.",
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "routingStrategy": {
+                    "description": "Per-key routing strategy for this bound group. Defaults to price_first.",
+                    "enum": [
+                      "weighted",
+                      "price_first",
+                      "quality_first"
+                    ],
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "weight": {
+                    "description": "Binding weight used to order groups sharing the same priority. Defaults to 100.",
+                    "maximum": 10000,
+                    "minimum": 0,
+                    "nullable": true,
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              },
+              "maxItems": 100,
+              "nullable": true,
+              "type": "array"
+            },
             "ipLimit": {
               "description": "Comma-separated IP or CIDR allowlist, or unrestricted.",
               "maxLength": 1024,
@@ -16322,6 +16358,49 @@
                 "expires": {
                   "maxLength": 64,
                   "type": "string"
+                },
+                "groupBindings": {
+                  "description": "Route binding group routing policies (priority order), including the default group.",
+                  "items": {
+                    "additionalProperties": false,
+                    "description": "Account group binding with per-key routing strategy on app api key item.",
+                    "properties": {
+                      "accountGroup": {
+                        "description": "Account group field on app api key item group binding.",
+                        "maxLength": 128,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "priority": {
+                        "description": "Binding attempt order within this API key; lower values are tried first.",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "routingStrategy": {
+                        "description": "Per-key routing strategy for this bound group (weighted, price_first (default), or quality_first.",
+                        "enum": [
+                          "weighted",
+                          "price_first",
+                          "quality_first"
+                        ],
+                        "type": "string"
+                      },
+                      "weight": {
+                        "description": "Binding weight used to order groups sharing the same priority.",
+                        "maximum": 10000,
+                        "minimum": 0,
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "accountGroup",
+                      "routingStrategy",
+                      "weight",
+                      "priority"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
                 },
                 "id": {
                   "maxLength": 128,
@@ -16623,6 +16702,49 @@
                     "maxLength": 64,
                     "type": "string"
                   },
+                  "groupBindings": {
+                    "description": "Route binding group routing policies (priority order), including the default group.",
+                    "items": {
+                      "additionalProperties": false,
+                      "description": "Account group binding with per-key routing strategy on app api key item.",
+                      "properties": {
+                        "accountGroup": {
+                          "description": "Account group field on app api key item group binding.",
+                          "maxLength": 128,
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "priority": {
+                          "description": "Binding attempt order within this API key; lower values are tried first.",
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "routingStrategy": {
+                          "description": "Per-key routing strategy for this bound group (weighted, price_first (default), or quality_first.",
+                          "enum": [
+                            "weighted",
+                            "price_first",
+                            "quality_first"
+                          ],
+                          "type": "string"
+                        },
+                        "weight": {
+                          "description": "Binding weight used to order groups sharing the same priority.",
+                          "maximum": 10000,
+                          "minimum": 0,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "accountGroup",
+                        "routingStrategy",
+                        "weight",
+                        "priority"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
                   "id": {
                     "maxLength": 128,
                     "minLength": 1,
@@ -16877,6 +16999,42 @@
               "maxLength": 32,
               "type": "string"
             },
+            "groupRoutingPolicies": {
+              "description": "Per-bound-group routing policies. Each entry must reference a code listed in accountGroups; entries absent here default to routingStrategy price_first with weight 100.",
+              "items": {
+                "additionalProperties": false,
+                "description": "Group routing policy on update api key request.",
+                "properties": {
+                  "accountGroup": {
+                    "description": "Bound group code; must also be present in accountGroups.",
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "routingStrategy": {
+                    "description": "Per-key routing strategy for this bound group. Defaults to price_first.",
+                    "enum": [
+                      "weighted",
+                      "price_first",
+                      "quality_first"
+                    ],
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "weight": {
+                    "description": "Binding weight used to order groups sharing the same priority. Defaults to 100.",
+                    "maximum": 10000,
+                    "minimum": 0,
+                    "nullable": true,
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              },
+              "maxItems": 100,
+              "nullable": true,
+              "type": "array"
+            },
             "ipLimit": {
               "description": "Comma-separated IP or CIDR allowlist, or unrestricted.",
               "maxLength": 1024,
@@ -16958,6 +17116,49 @@
                 "expires": {
                   "maxLength": 64,
                   "type": "string"
+                },
+                "groupBindings": {
+                  "description": "Route binding group routing policies (priority order), including the default group.",
+                  "items": {
+                    "additionalProperties": false,
+                    "description": "Account group binding with per-key routing strategy on app api key item.",
+                    "properties": {
+                      "accountGroup": {
+                        "description": "Account group field on app api key item group binding.",
+                        "maxLength": 128,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "priority": {
+                        "description": "Binding attempt order within this API key; lower values are tried first.",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "routingStrategy": {
+                        "description": "Per-key routing strategy for this bound group (weighted, price_first (default), or quality_first.",
+                        "enum": [
+                          "weighted",
+                          "price_first",
+                          "quality_first"
+                        ],
+                        "type": "string"
+                      },
+                      "weight": {
+                        "description": "Binding weight used to order groups sharing the same priority.",
+                        "maximum": 10000,
+                        "minimum": 0,
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "accountGroup",
+                      "routingStrategy",
+                      "weight",
+                      "priority"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
                 },
                 "id": {
                   "maxLength": 128,

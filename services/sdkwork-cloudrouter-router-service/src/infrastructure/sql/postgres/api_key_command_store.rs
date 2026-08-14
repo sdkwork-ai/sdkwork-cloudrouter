@@ -487,15 +487,23 @@ async fn replace_account_group_bindings(
         let group_code: String = row.try_get("group_code").map_err(row_error)?;
         let pricing_plan_code: String = row.try_get("pricing_plan_code").map_err(row_error)?;
         let priority = binding.priority.max(0);
+        let routing_strategy = binding.routing_strategy.trim();
+        let routing_strategy = if routing_strategy.is_empty() {
+            "price_first"
+        } else {
+            routing_strategy
+        };
+        let weight = binding.weight.max(0);
         sqlx::query(
             r#"
             INSERT INTO iam_gateway_api_key_account_group
                 (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, user_id, api_key_id, account_group_id, account_group_code, binding_role, routing_strategy, priority, weight, effective_from, effective_to)
             VALUES
-                ($1, $2, $3, $4, 0, 1, $5::timestamptz, $5::timestamptz, 0, '{}'::jsonb, $6, $7, $8, $9, 'route', 'auto', $10, 100, NULL, NULL)
+                ($1, $2, $3, $4, 0, 1, $5::timestamptz, $5::timestamptz, 0, '{}'::jsonb, $6, $7, $8, $9, 'route', $10, $11, $12, NULL, NULL)
             ON CONFLICT (tenant_id, organization_id, api_key_id, account_group_id, binding_role) WHERE deleted_at IS NULL
             DO UPDATE SET
                 account_group_code = EXCLUDED.account_group_code,
+                routing_strategy = EXCLUDED.routing_strategy,
                 priority = EXCLUDED.priority,
                 weight = EXCLUDED.weight,
                 status = 1,
@@ -512,17 +520,22 @@ async fn replace_account_group_bindings(
         .bind(api_key_id)
         .bind(binding.group_id)
         .bind(&group_code)
+        .bind(routing_strategy)
         .bind(priority)
+        .bind(weight)
         .execute(&mut **tx)
         .await
         .map_err(|error| store_error("failed to insert api key account group binding", error))?;
-        resolved.push(GatewayApiKeyAccountGroupBinding::new(
-            binding.group_id,
-            &group_code,
-            &pricing_plan_code,
-            priority,
-            100,
-        ));
+        resolved.push(
+            GatewayApiKeyAccountGroupBinding::new(
+                binding.group_id,
+                &group_code,
+                &pricing_plan_code,
+                priority,
+                weight,
+            )
+            .with_routing_strategy(routing_strategy),
+        );
     }
     Ok(resolved)
 }

@@ -23,6 +23,7 @@ function sampleKey(): ApiKey {
     accountGroup: 'g1',
     accountGroupName: 'Group One',
     accountGroups: ['g1'],
+    groupBindings: [{ accountGroup: 'g1', routingStrategy: 'price_first', weight: 100, priority: 100 }],
     rate: null,
     quota: '100',
     usedQuota: '0',

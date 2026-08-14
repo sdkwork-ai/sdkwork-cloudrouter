@@ -615,6 +615,7 @@ SELECT
     100 AS credential_weight,
     c.contract_cost_multiplier::text AS contract_cost_multiplier,
     account_health.last_latency_ms,
+    account_health.consecutive_error_count AS account_consecutive_error_count,
     NULLIF(c.account_code, '') AS account_code,
     COALESCE(NULLIF(c.region_code, ''), 'global') AS region_code,
     c.supplier_id,

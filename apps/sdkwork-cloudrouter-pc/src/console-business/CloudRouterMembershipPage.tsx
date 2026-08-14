@@ -132,10 +132,10 @@ function CloudRouterMembershipPageContent() {
 
         {rechargeResult ? (
           <div className="mt-4">
-            <StatusNotice tone="success" title={t('console.membership.recharge.created', 'Recharge order created')}>
+            <StatusNotice tone="success" title={t('console.memberships.recharge.created', 'Recharge order created')}>
               <span className="text-sm">
                 {t(
-                  'console.membership.recharge.amount',
+                  'console.memberships.recharge.amount',
                   'Order {{orderId}} ({{amount}} CNY) — complete the payment in the opened window.',
                   { orderId: rechargeResult.orderId ?? '-', amount: rechargeResult.amountCny ?? '-' },
                 )}

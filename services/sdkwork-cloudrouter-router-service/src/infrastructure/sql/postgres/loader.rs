@@ -542,6 +542,7 @@ mod tests {
             credential_weight: 100,
             contract_cost_multiplier: "1".to_owned(),
             last_latency_ms: None,
+            account_consecutive_error_count: None,
             account_code: Some("primary".to_owned()),
             region_code: "global".to_owned(),
             supplier_id: 13,

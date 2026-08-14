@@ -10,6 +10,8 @@ export interface CreateApiKeyRequest {
   defaultForRuntime?: boolean;
   /** Expiration timestamp in YYYY-MM-DDTHH:mm format, or never. */
   expires: string;
+  /** Per-bound-group routing policies. Each entry must reference a code listed in accountGroups; entries absent here default to routingStrategy price_first with weight 100. */
+  groupRoutingPolicies?: ({ accountGroup?: string; routingStrategy?: 'weighted' | 'price_first' | 'quality_first' | null; weight?: number | null; })[] | null;
   /** Comma-separated IP or CIDR allowlist, or unrestricted. */
   ipLimit: string;
   /** Whether the quota is unlimited. */

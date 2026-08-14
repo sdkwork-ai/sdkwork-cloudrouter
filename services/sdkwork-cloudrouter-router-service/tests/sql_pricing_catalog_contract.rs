@@ -445,6 +445,7 @@ fn upstream_account_route_row(account_id: i64) -> UpstreamAccountRouteRow {
         credential_weight: 100,
         contract_cost_multiplier: "0.950000".to_owned(),
         last_latency_ms: Some(125),
+        account_consecutive_error_count: Some(0),
         account_code: Some(format!("openai-{account_id}")),
         region_code: "global".to_owned(),
         supplier_id: 5001,

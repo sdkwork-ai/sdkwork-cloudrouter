@@ -1541,3 +1541,82 @@ fn account_route_path_without_fallback_keeps_single_candidate() {
     // fallback None：故障转移序列为空（与模型路径的截断语义一致）
     assert!(selection.failover_routes.is_empty());
 }
+
+#[test]
+fn binding_price_first_overrides_group_default_strategy() {
+    // 分组默认 Failover（按 member priority 固定首个成员）；API Key 绑定
+    // price_first 应覆盖分组默认，选中成本最低的账号。
+    let group_id = 12;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    catalog.add_api_key(
+        GatewayApiKey::new(API_KEY_ID, group_id, "sk-test", "hash:sk-test")
+            .with_owner(TENANT_ID, ORGANIZATION_ID, USER_ID)
+            .with_account_group_bindings(vec![
+                GatewayApiKeyAccountGroupBinding::new(group_id, &format!("group-{group_id}"), "standard", 100, 100)
+                    .with_routing_strategy("price_first"),
+            ]),
+    );
+    let mut expensive = account_route(group_id, 3001, "openai-a", 100, 100);
+    expensive.contract_cost_multiplier = decimal("2.000000");
+    add_route_and_price(&mut catalog, expensive);
+    add_route_and_price(&mut catalog, account_route(group_id, 3002, "openai-b", 100, 100));
+
+    assert_eq!(3002, select_account(&catalog, group_id));
+}
+
+#[test]
+fn binding_quality_first_prefers_healthy_account() {
+    // 质量优先：健康账号（health=1）优先于不健康账号（health=2），
+    // 即使不健康账号在同优先级中排位更前。
+    let group_id = 13;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    catalog.add_api_key(
+        GatewayApiKey::new(API_KEY_ID, group_id, "sk-test", "hash:sk-test")
+            .with_owner(TENANT_ID, ORGANIZATION_ID, USER_ID)
+            .with_account_group_bindings(vec![
+                GatewayApiKeyAccountGroupBinding::new(group_id, &format!("group-{group_id}"), "standard", 100, 100)
+                    .with_routing_strategy("quality_first"),
+            ]),
+    );
+    let mut unhealthy = account_route(group_id, 3001, "openai-a", 100, 100);
+    unhealthy.account_health_status = 2;
+    add_route_and_price(&mut catalog, unhealthy);
+    add_route_and_price(&mut catalog, account_route(group_id, 3002, "openai-b", 100, 100));
+
+    assert_eq!(3002, select_account(&catalog, group_id));
+}
+
+#[test]
+fn legacy_auto_binding_falls_back_to_group_default_strategy() {
+    // 存量 'auto' 绑定（或未配置绑定）不注入策略：回退分组默认策略。
+    // 分组默认 Failover 时选中同优先级首个成员（3001），而不是按成本排序。
+    let group_id = 14;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    catalog.add_api_key(
+        GatewayApiKey::new(API_KEY_ID, group_id, "sk-test", "hash:sk-test")
+            .with_owner(TENANT_ID, ORGANIZATION_ID, USER_ID)
+            .with_account_group_bindings(vec![
+                GatewayApiKeyAccountGroupBinding::new(group_id, &format!("group-{group_id}"), "standard", 100, 100)
+                    .with_routing_strategy("auto"),
+            ]),
+    );
+    let mut expensive = account_route(group_id, 3001, "openai-a", 100, 100);
+    expensive.contract_cost_multiplier = decimal("2.000000");
+    add_route_and_price(&mut catalog, expensive);
+    add_route_and_price(&mut catalog, account_route(group_id, 3002, "openai-b", 100, 100));
+
+    // Failover 默认：不重排，首个成员 3001 胜出（auto 未注入 price_first）
+    assert_eq!(3001, select_account(&catalog, group_id));
+}

@@ -18,6 +18,11 @@ struct AccountCandidate {
     weight: i32,
     effective_cost_multiplier: DecimalValue,
     last_latency_ms: Option<u64>,
+    /// `ai_upstream_account_health_state.health_status` (0 unknown, 1 healthy,
+    /// 2 unhealthy) used by the quality-first strategy.
+    account_health_status: i32,
+    /// Consecutive upstream errors; `None` when no health record exists.
+    account_consecutive_error_count: Option<u64>,
     routes: Vec<UpstreamAccountRoute>,
 }
 
@@ -33,6 +38,7 @@ impl AccountCandidate {
 
 pub(crate) fn plan_upstream_account_routes(
     group: &UpstreamAccountGroup,
+    binding_strategy: Option<UpstreamAccountRoutingStrategy>,
     routes: Vec<UpstreamAccountRoute>,
 ) -> DomainResult<Vec<UpstreamAccountRoute>> {
     validate_group_multipliers(group)?;
@@ -41,7 +47,10 @@ pub(crate) fn plan_upstream_account_routes(
         return Ok(Vec::new());
     }
 
-    order_accounts(group, &mut accounts)?;
+    // Per-key binding strategy wins; fall back to the group default when the
+    // binding is absent (e.g. token sessions without an api key binding).
+    let effective_strategy = binding_strategy.unwrap_or(group.routing_strategy);
+    order_accounts(group, effective_strategy, &mut accounts)?;
     apply_account_fallback_mode(group.fallback_mode, &mut accounts);
 
     Ok(accounts
@@ -137,12 +146,20 @@ fn build_account_candidate(
         weight: binding.weight.max(0),
         effective_cost_multiplier,
         last_latency_ms,
+        account_health_status: routes
+            .first()
+            .map(|route| route.account_health_status)
+            .unwrap_or(0),
+        account_consecutive_error_count: routes
+            .first()
+            .and_then(|route| route.account_consecutive_error_count),
         routes,
     })
 }
 
 fn order_accounts(
     group: &UpstreamAccountGroup,
+    binding_strategy: UpstreamAccountRoutingStrategy,
     accounts: &mut [AccountCandidate],
 ) -> DomainResult<()> {
     accounts.sort_by(AccountCandidate::stable_compare);
@@ -158,7 +175,7 @@ fn order_accounts(
         return Ok(());
     }
 
-    match group.routing_strategy {
+    match binding_strategy {
         UpstreamAccountRoutingStrategy::Weighted => {
             let selected = weighted_index(
                 &format!("group:{}:weighted", group.id),
@@ -190,9 +207,37 @@ fn order_accounts(
                     .then_with(|| left.stable_compare(right))
             });
         }
+        // Quality-first: healthy accounts first (1 healthy > 0 unknown > 2
+        // unhealthy), then lowest latency, then fewest consecutive errors.
+        UpstreamAccountRoutingStrategy::QualityFirst => {
+            accounts[..active_count].sort_by(|left, right| {
+                quality_rank(left)
+                    .cmp(&quality_rank(right))
+                    .then_with(|| {
+                        left.last_latency_ms
+                            .unwrap_or(u64::MAX)
+                            .cmp(&right.last_latency_ms.unwrap_or(u64::MAX))
+                    })
+                    .then_with(|| {
+                        left.account_consecutive_error_count
+                            .unwrap_or(0)
+                            .cmp(&right.account_consecutive_error_count.unwrap_or(0))
+                    })
+                    .then_with(|| left.stable_compare(right))
+            });
+        }
         UpstreamAccountRoutingStrategy::Failover => {}
     }
     Ok(())
+}
+
+/// Quality rank: healthy (1) first, unknown (0) next, unhealthy (2) last.
+fn quality_rank(candidate: &AccountCandidate) -> u8 {
+    match candidate.account_health_status {
+        1 => 0,
+        0 => 1,
+        _ => 2,
+    }
 }
 
 fn apply_account_fallback_mode(
@@ -503,4 +548,140 @@ fn random_offset(modulus: usize) -> usize {
         return u64::from_le_bytes(bytes) as usize % modulus;
     }
     0
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::domain::{
+        UpstreamAccountFallbackMode, UpstreamAccountGroup, UpstreamAccountGroupBinding,
+        UpstreamAccountRoute, UpstreamAccountRoutingStrategy,
+    };
+
+    const GROUP_ID: i64 = 1;
+
+    fn decimal(value: &str) -> DecimalValue {
+        DecimalValue::parse(value).unwrap()
+    }
+
+    fn group(strategy: UpstreamAccountRoutingStrategy) -> UpstreamAccountGroup {
+        UpstreamAccountGroup::new(
+            GROUP_ID,
+            "group-1",
+            "standard",
+            decimal("1.000000"),
+            decimal("1.100000"),
+        )
+        .with_routing_strategy(strategy)
+        .with_fallback_mode(UpstreamAccountFallbackMode::Sequential)
+    }
+
+    fn route(
+        supplier: &str,
+        account_id: i64,
+        cost: &str,
+        latency_ms: Option<u64>,
+        health_status: i32,
+        consecutive_errors: Option<u64>,
+    ) -> UpstreamAccountRoute {
+        let mut route = UpstreamAccountRoute::new(supplier, account_id)
+            .with_contract_cost_multiplier(decimal(cost))
+            .with_last_latency_ms(latency_ms);
+        route.account_group_bindings =
+            vec![UpstreamAccountGroupBinding::new(GROUP_ID, 100, 100)];
+        route.account_health_status = health_status;
+        route.account_consecutive_error_count = consecutive_errors;
+        route
+    }
+
+    fn planned_accounts(
+        binding_strategy: Option<UpstreamAccountRoutingStrategy>,
+        routes: Vec<UpstreamAccountRoute>,
+    ) -> Vec<i64> {
+        plan_upstream_account_routes(&group(UpstreamAccountRoutingStrategy::Weighted), binding_strategy, routes)
+            .unwrap()
+            .iter()
+            .map(|route| route.account_id)
+            .collect()
+    }
+
+    #[test]
+    fn quality_first_orders_by_health_then_latency_then_errors() {
+        // Healthy accounts first, then lowest latency, then fewest errors;
+        // unknown-health accounts rank after healthy, unhealthy last.
+        let routes = vec![
+            route("openai", 1, "1.000000", Some(50), 1, Some(5)),
+            route("openai", 2, "1.000000", Some(50), 1, Some(2)),
+            route("openai", 3, "1.000000", Some(10), 0, Some(0)),
+            route("openai", 4, "1.000000", Some(1), 2, Some(0)),
+        ];
+        let planned = planned_accounts(
+            Some(UpstreamAccountRoutingStrategy::QualityFirst),
+            routes,
+        );
+        assert_eq!(planned, vec![2, 1, 3, 4]);
+    }
+
+    #[test]
+    fn quality_first_treats_missing_latency_and_errors_as_neutral() {
+        // Missing latency sorts last among the same health rank; missing error
+        // counts are treated as zero (no recorded error history).
+        let routes = vec![
+            route("openai", 1, "1.000000", None, 1, None),
+            route("openai", 2, "1.000000", Some(200), 1, None),
+            route("openai", 3, "1.000000", Some(200), 1, Some(1)),
+        ];
+        let planned = planned_accounts(
+            Some(UpstreamAccountRoutingStrategy::QualityFirst),
+            routes,
+        );
+        assert_eq!(planned, vec![2, 3, 1]);
+    }
+
+    #[test]
+    fn price_first_orders_by_effective_cost() {
+        let routes = vec![
+            route("openai", 1, "1.200000", None, 1, None),
+            route("openai", 2, "0.800000", None, 1, None),
+            route("openai", 3, "1.000000", None, 1, None),
+        ];
+        let planned = planned_accounts(Some(UpstreamAccountRoutingStrategy::LeastCost), routes);
+        assert_eq!(planned, vec![2, 3, 1]);
+    }
+
+    #[test]
+    fn binding_strategy_overrides_group_strategy() {
+        // Group default is weighted; the binding strategy (price first) wins.
+        let routes = vec![
+            route("openai", 1, "1.200000", None, 1, None),
+            route("openai", 2, "0.800000", None, 1, None),
+        ];
+        let planned = planned_accounts(Some(UpstreamAccountRoutingStrategy::LeastCost), routes);
+        assert_eq!(planned, vec![2, 1]);
+    }
+
+    #[test]
+    fn missing_binding_strategy_falls_back_to_group_strategy() {
+        // No binding strategy (token session / legacy auto binding): the group
+        // default strategy is used. The group here defaults to weighted, which
+        // keeps every account in the plan without reordering by cost.
+        let routes = vec![
+            route("openai", 1, "0.800000", None, 1, None),
+            route("openai", 2, "1.200000", None, 1, None),
+        ];
+        let planned = planned_accounts(None, routes);
+        assert_eq!(planned.len(), 2);
+        assert!(planned.contains(&1) && planned.contains(&2));
+    }
+
+    #[test]
+    fn weighted_strategy_keeps_all_accounts() {
+        let routes = vec![
+            route("openai", 1, "1.000000", None, 1, None),
+            route("openai", 2, "1.000000", None, 1, None),
+            route("openai", 3, "1.000000", None, 1, None),
+        ];
+        let planned = planned_accounts(Some(UpstreamAccountRoutingStrategy::Weighted), routes);
+        assert_eq!(planned.len(), 3);
+    }
 }

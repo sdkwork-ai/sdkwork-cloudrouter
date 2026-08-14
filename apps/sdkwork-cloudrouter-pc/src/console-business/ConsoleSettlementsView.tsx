@@ -36,55 +36,36 @@ const SETTLEMENTS_FILTERS: SdkworkOrderFilter[] = [
   'pending-payment',
   'paid',
   'completed',
+  'expired',
+  'refunding',
+  'refunded',
   'cancelled',
 ];
 
-function isZhLocale(locale: string | null | undefined): boolean {
-  return String(locale || '').trim().toLowerCase().startsWith('zh');
-}
+type TranslationFunction = ReturnType<typeof useTranslation>['t'];
 
-function createSettlementsOverrides(locale: string | null | undefined): SdkworkOrderMessagesOverrides {
-  if (isZhLocale(locale)) {
-    return {
-      page: {
-        description: '集中查看账单历史、支付状态与消费汇总，掌握每一笔账单的完整生命周期。',
-        title: '账单与报表',
-      },
-      views: {
-        empty: '当前筛选条件下没有匹配的账单记录。',
-        eyebrow: '明细',
-        title: '账单明细',
-      },
-      pagination: {
-        summary: '共 {total} 条账单，当前展示 {shown} 条',
-      },
-      stats: {
-        completed: '已完成',
-        pendingPayment: '待支付',
-        totalAmount: '消费总额',
-        totalOrders: '账单总数',
-      },
-    };
-  }
-
+function createSettlementsOverrides(t: TranslationFunction): SdkworkOrderMessagesOverrides {
   return {
     page: {
-      description: 'Review billing history, payment status, and spending summaries — all in one place.',
-      title: 'Bills & Reports',
+      description: t(
+        'console.settlements.page.description',
+        'Review billing history, payment status, and spending summaries — all in one place.',
+      ),
+      title: t('console.settlements.page.title', 'Bills & Reports'),
     },
     views: {
-      empty: 'No bills matched the current filter.',
-      eyebrow: 'Details',
-      title: 'Billing Details',
+      empty: t('console.settlements.views.empty', 'No bills matched the current filter.'),
+      eyebrow: t('console.settlements.views.eyebrow', 'Details'),
+      title: t('console.settlements.views.title', 'Billing Details'),
     },
     pagination: {
-      summary: 'Showing {shown} of {total} bills',
+      summary: t('console.settlements.pagination.summary', 'Showing {shown} of {total} bills'),
     },
     stats: {
-      completed: 'Completed',
-      pendingPayment: 'Pending',
-      totalAmount: 'Total Spend',
-      totalOrders: 'Total Bills',
+      completed: t('console.settlements.stats.completed', 'Completed'),
+      pendingPayment: t('console.settlements.stats.pendingPayment', 'Pending'),
+      totalAmount: t('console.settlements.stats.totalAmount', 'Total Spend'),
+      totalOrders: t('console.settlements.stats.totalOrders', 'Total Bills'),
     },
   };
 }
@@ -172,14 +153,15 @@ function SettlementsPagination({ controller }: { controller: SdkworkOrderControl
 
 function SettlementsPageContent({ controller }: { controller: SdkworkOrderController }) {
   const state = useSdkworkOrderControllerState(controller);
+  const { t } = useTranslation();
   const {
     copy,
     formatFilter,
+    formatPaymentMethod,
     formatStatus,
     formatTimestamp,
     locale,
   } = useSdkworkOrderIntl();
-  const zh = isZhLocale(locale);
 
   const stats: SettlementsStat[] = useMemo(() => [
     {
@@ -239,7 +221,7 @@ function SettlementsPageContent({ controller }: { controller: SdkworkOrderContro
             variant="outline"
           >
             <RefreshCw className={state.isLoading ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
-            <span>{zh ? '刷新' : 'Refresh'}</span>
+            <span>{t('console.settlements.page.refresh', 'Refresh')}</span>
           </Button>
         </header>
 
@@ -280,7 +262,7 @@ function SettlementsPageContent({ controller }: { controller: SdkworkOrderContro
         {/* Table panel */}
         <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] shadow-[var(--sdk-shadow-sm)]">
           {/* Filter tabs */}
-          <div className="flex shrink-0 items-center gap-1 border-b border-[var(--sdk-color-border-subtle)] px-3 py-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-1 border-b border-[var(--sdk-color-border-subtle)] px-3 py-2">
             {SETTLEMENTS_FILTERS.map((filter) => {
               const active = state.activeFilter === filter;
 
@@ -320,19 +302,31 @@ function SettlementsPageContent({ controller }: { controller: SdkworkOrderContro
                   <thead className="sticky top-0 z-10 bg-[var(--sdk-color-surface-panel)]">
                     <tr className="border-b border-[var(--sdk-color-border-subtle)]">
                       <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
-                        {zh ? '账单编号' : 'Bill ID'}
+                        {t('console.settlements.columns.billId', 'Bill ID')}
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
-                        {zh ? '摘要' : 'Subject'}
+                        {t('console.settlements.columns.subject', 'Subject')}
                       </th>
                       <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
-                        {copy.detail.status}
+                        {t('console.settlements.columns.status', 'Status')}
                       </th>
                       <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
-                        {copy.overview.createdAt}
+                        {t('console.settlements.columns.createdAt', 'Created')}
+                      </th>
+                      <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
+                        {t('console.settlements.columns.paymentMethod', 'Payment method')}
+                      </th>
+                      <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
+                        {t('console.settlements.columns.paidAt', 'Paid')}
                       </th>
                       <th className="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
-                        {zh ? '金额' : 'Amount'}
+                        {t('console.settlements.columns.amount', 'Amount')}
+                      </th>
+                      <th className="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
+                        {t('console.settlements.columns.paidAmount', 'Paid amount')}
+                      </th>
+                      <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
+                        {t('console.settlements.columns.expireAt', 'Expires')}
                       </th>
                     </tr>
                   </thead>
@@ -368,8 +362,20 @@ function SettlementsPageContent({ controller }: { controller: SdkworkOrderContro
                           <td className="whitespace-nowrap px-4 py-3.5 text-sm text-[var(--sdk-color-text-secondary)]">
                             {formatTimestamp(order.createdAt)}
                           </td>
+                          <td className="whitespace-nowrap px-4 py-3.5 text-sm text-[var(--sdk-color-text-secondary)]">
+                            {formatPaymentMethod(order.paymentMethod)}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3.5 text-sm text-[var(--sdk-color-text-secondary)]">
+                            {formatTimestamp(order.payTime)}
+                          </td>
                           <td className="whitespace-nowrap px-4 py-3.5 text-right text-sm font-semibold tabular-nums text-[var(--sdk-color-text-primary)]">
                             {formatMoney(order.totalAmountCny, { currency: 'CNY', locale, mode: 'symbol' }) ?? '--'}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3.5 text-right text-sm tabular-nums text-[var(--sdk-color-text-secondary)]">
+                            {formatMoney(order.paidAmountCny, { currency: 'CNY', locale, mode: 'symbol' }) ?? '--'}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3.5 text-sm text-[var(--sdk-color-text-secondary)]">
+                            {formatTimestamp(order.expireTime)}
                           </td>
                         </tr>
                       );
@@ -389,9 +395,9 @@ function SettlementsPageContent({ controller }: { controller: SdkworkOrderContro
 }
 
 export function ConsoleSettlementsView() {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const locale = resolveConsoleOrderLocale(i18n.resolvedLanguage ?? i18n.language);
-  const messages = useMemo(() => createSettlementsOverrides(locale), [locale]);
+  const messages = useMemo(() => createSettlementsOverrides(t), [t]);
   const controller = useMemo(
     () => createSdkworkOrderController({ locale, messages }),
     [locale, messages],

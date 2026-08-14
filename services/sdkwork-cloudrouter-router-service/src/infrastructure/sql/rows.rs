@@ -150,6 +150,7 @@ pub struct UpstreamAccountRouteRow {
     pub credential_weight: i32,
     pub contract_cost_multiplier: String,
     pub last_latency_ms: Option<i32>,
+    pub account_consecutive_error_count: Option<i64>,
     pub account_code: Option<String>,
     pub region_code: String,
     pub supplier_id: i64,
@@ -248,6 +249,15 @@ impl UpstreamAccountRouteRow {
                     "ai_upstream_account_health_state.last_latency_ms must be non-negative: {error}"
                 ))
             })?;
+        let account_consecutive_error_count = self
+            .account_consecutive_error_count
+            .map(u64::try_from)
+            .transpose()
+            .map_err(|error| {
+                DomainError::new(format!(
+                    "ai_upstream_account_health_state.consecutive_error_count must be non-negative: {error}"
+                ))
+            })?;
 
         Ok(UpstreamAccountRoute {
             supplier_code: self.supplier_code,
@@ -258,6 +268,7 @@ impl UpstreamAccountRouteRow {
             credential_weight: self.credential_weight.max(0),
             contract_cost_multiplier: DecimalValue::parse(&self.contract_cost_multiplier)?,
             last_latency_ms,
+            account_consecutive_error_count,
             account_code: self.account_code.filter(|value| !value.trim().is_empty()),
             region_code: normalized_region_code(self.region_code),
             supplier_id: (self.supplier_id > 0).then_some(self.supplier_id),

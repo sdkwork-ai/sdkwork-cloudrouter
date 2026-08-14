@@ -1,10 +1,12 @@
-import type { CreateApiKeyInput } from './apiKeyService';
+import type { ApiKeyGroupRoutingPolicy, CreateApiKeyInput } from './apiKeyService';
 import type { UpdateApiKeyRequest } from '@sdkwork/cloudrouter-pc-console-core/sdk';
 
 export type ApiKeyFormValues = {
   name: string;
   /** 路由绑定分组 code 数组；第一个为默认分组 */
   accountGroups: string[];
+  /** 按分组的路由策略（可选）；未配置的分组由服务端按 price_first/weight 100 落库 */
+  groupRoutingPolicies?: ApiKeyGroupRoutingPolicy[];
   quota: string;
   isUnlimitedQuota: boolean;
   modalities: string[];
@@ -61,6 +63,7 @@ export function createApiKeyInputFromForm(values: ApiKeyFormValues, _index = 0):
   return {
     name: requiredText(values.name, 'name'),
     accountGroups: normalizeAccountGroups(values.accountGroups),
+    groupRoutingPolicies: normalizeGroupRoutingPolicies(values.accountGroups, values.groupRoutingPolicies),
     quota: normalizeQuota(values.quota, values.isUnlimitedQuota),
     isUnlimitedQuota: values.isUnlimitedQuota,
     modalities: normalizeModalities(values.modalities),
@@ -110,6 +113,25 @@ function normalizeAccountGroups(values: string[]): string[] {
     groups.push(DEFAULT_ACCOUNT_GROUP);
   }
   return groups;
+}
+
+/** 仅保留绑定分组内的策略；缺省策略由服务端按 price_first/weight 100 落库 */
+function normalizeGroupRoutingPolicies(
+  accountGroups: string[],
+  policies: ApiKeyGroupRoutingPolicy[] | undefined,
+): ApiKeyGroupRoutingPolicy[] | undefined {
+  if (!Array.isArray(policies) || policies.length === 0) {
+    return undefined;
+  }
+  const bound = new Set(normalizeAccountGroups(accountGroups));
+  const normalized = policies
+    .map((policy) => ({
+      accountGroup: policy.accountGroup.trim(),
+      routingStrategy: policy.routingStrategy,
+      weight: policy.weight,
+    }))
+    .filter((policy) => bound.has(policy.accountGroup) && policy.accountGroup.length > 0);
+  return normalized.length > 0 ? normalized : undefined;
 }
 
 function normalizeQuota(value: string, isUnlimitedQuota: boolean): string {

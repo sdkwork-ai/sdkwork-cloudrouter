@@ -25,6 +25,22 @@ import type {
 import { DEFAULT_ACCOUNT_GROUP } from './apiKeyForm.ts';
 
 type ApiKeyModality = NonNullable<CreateApiKeyRequest['modalities']>[number];
+export type ApiKeyGroupRoutingStrategy = 'weighted' | 'price_first' | 'quality_first';
+
+/** API Key × 分组绑定的路由策略（响应侧） */
+export interface ApiKeyGroupBinding {
+  accountGroup: string;
+  routingStrategy: ApiKeyGroupRoutingStrategy;
+  weight: number;
+  priority: number;
+}
+
+/** 请求侧分组路由策略；缺省由服务端按 price_first/weight 100 落库 */
+export interface ApiKeyGroupRoutingPolicy {
+  accountGroup: string;
+  routingStrategy?: ApiKeyGroupRoutingStrategy;
+  weight?: number;
+}
 
 export interface ApiKey {
   id: SdkAppApiKeyListResponse['items'][number]['id'];
@@ -36,6 +52,8 @@ export interface ApiKey {
   accountGroupName: string | null;
   /** 路由绑定分组 code 数组（priority 序，含默认分组） */
   accountGroups: string[];
+  /** 路由绑定分组策略（priority 序，含默认分组） */
+  groupBindings: ApiKeyGroupBinding[];
   rate: SdkAppApiKeyListResponse['items'][number]['rate'];
   quota: SdkAppApiKeyListResponse['items'][number]['quota'];
   usedQuota: SdkAppApiKeyListResponse['items'][number]['usedQuota'];
@@ -54,6 +72,8 @@ export interface AccountGroup {
   description: string | null;
   /** 销售倍率（app 面不暴露成本倍率） */
   rate: string | null;
+  /** 分组默认路由策略（参考展示；绑定策略缺省 price_first 时不依赖它） */
+  routingStrategy: string | null;
   vendorCode: string | null;
   modalities: string[];
   tags: string[];
@@ -65,6 +85,8 @@ export interface CreateApiKeyInput {
   chain?: UpdateApiKeyRequest['chain'];
   /** 路由绑定分组 code 数组；第一个为默认分组 */
   accountGroups: string[];
+  /** 按分组的路由策略（可选）；缺省分组由服务端按 price_first/weight 100 落库 */
+  groupRoutingPolicies?: ApiKeyGroupRoutingPolicy[];
   quota: string;
   isUnlimitedQuota: boolean;
   modalities: string[];
@@ -233,6 +255,10 @@ function toCreateApiKeyRequest(input: CreateApiKeyInput): CreateApiKeyRequest {
     ipLimit: optionalText(input.ipLimit) ?? 'unrestricted',
     expires: optionalText(input.expires) ?? 'never',
   } as CreateApiKeyRequest & Record<string, unknown>;
+  const groupRoutingPolicies = toGroupRoutingPolicies(input);
+  if (groupRoutingPolicies !== undefined) {
+    request.groupRoutingPolicies = groupRoutingPolicies;
+  }
   if (input.defaultForRuntime !== undefined) {
     request.defaultForRuntime = Boolean(input.defaultForRuntime);
   }
@@ -246,6 +272,12 @@ function toUpdateApiKeyRequest(input: UpdateApiKeyInput): UpdateApiKeyRequest {
   }
   if (input.accountGroups !== undefined) {
     request.accountGroups = normalizeAccountGroups(input.accountGroups);
+  }
+  if (input.accountGroups !== undefined || input.groupRoutingPolicies !== undefined) {
+    const groupRoutingPolicies = toGroupRoutingPolicies(input);
+    if (groupRoutingPolicies !== undefined) {
+      request.groupRoutingPolicies = groupRoutingPolicies;
+    }
   }
   if (input.quota !== undefined) {
     request.quota = decimalQuota(input.quota);
@@ -321,6 +353,29 @@ function normalizeAccountGroups(values: string[]): string[] {
   return groups;
 }
 
+/**
+ * Normalizes the form's per-group routing policies into the wire request.
+ * Only policies referencing a bound group are sent; undefined (or empty)
+ * payloads are omitted entirely so the server defaults apply.
+ */
+function toGroupRoutingPolicies(
+  input: { accountGroups?: string[]; groupRoutingPolicies?: ApiKeyGroupRoutingPolicy[] },
+): ApiKeyGroupRoutingPolicy[] | undefined {
+  const policies = input.groupRoutingPolicies;
+  if (!Array.isArray(policies) || policies.length === 0) {
+    return undefined;
+  }
+  const bound = new Set(normalizeAccountGroups(input.accountGroups ?? []));
+  const normalized = policies
+    .map((policy) => ({
+      accountGroup: requiredText(policy.accountGroup, 'groupRoutingPolicies accountGroup'),
+      routingStrategy: policy.routingStrategy,
+      weight: policy.weight,
+    }))
+    .filter((policy) => bound.has(policy.accountGroup));
+  return normalized.length > 0 ? normalized : undefined;
+}
+
 function requiredText(value: string, fieldName: string): string {
   const normalized = value.trim();
   if (!normalized) {
@@ -359,6 +414,7 @@ function normalizeApiKey(value: unknown): ApiKey {
     accountGroup: readRequiredString(value, 'accountGroup', 'API key account group is required'),
     accountGroupName: readNullableString(value, 'accountGroupName'),
     accountGroups: readStringArray(value, 'accountGroups'),
+    groupBindings: readGroupBindings(value),
     rate: readNullableString(value, 'rate'),
     quota: readRequiredString(value, 'quota', 'API key quota is required'),
     usedQuota: readRequiredString(value, 'usedQuota', 'API key used quota is required'),
@@ -399,6 +455,7 @@ function normalizeAccountGroup(value: unknown): AccountGroup {
     name: readRequiredString(value, 'groupName', 'Account group name is required'),
     description: readNullableString(value, 'description'),
     rate: readNullableString(value, 'saleMultiplier'),
+    routingStrategy: readNullableString(value, 'routingStrategy'),
     vendorCode: readNullableString(value, 'vendorCode'),
     modalities: readStringArray(value, 'modalities'),
     tags: readStringArray(value, 'tags'),
@@ -411,6 +468,32 @@ function readStringArray(value: Record<string, unknown>, field: string): string[
     return [];
   }
   return raw.filter((item): item is string => typeof item === 'string');
+}
+
+/** 读取绑定分组策略数组；服务端未返回（旧部署）时回退为空数组 */
+function readGroupBindings(value: Record<string, unknown>): ApiKeyGroupBinding[] {
+  const raw = value.groupBindings;
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const bindings: ApiKeyGroupBinding[] = [];
+  for (const item of raw) {
+    if (!isRecord(item)) {
+      continue;
+    }
+    const accountGroup = readString(item, 'accountGroup');
+    if (!accountGroup) {
+      continue;
+    }
+    const routingStrategy = readString(item, 'routingStrategy');
+    if (routingStrategy !== 'weighted' && routingStrategy !== 'price_first' && routingStrategy !== 'quality_first') {
+      continue;
+    }
+    const weight = typeof item.weight === 'number' && Number.isFinite(item.weight) ? item.weight : 100;
+    const priority = typeof item.priority === 'number' && Number.isFinite(item.priority) ? item.priority : 100;
+    bindings.push({ accountGroup, routingStrategy, weight, priority });
+  }
+  return bindings;
 }
 
 function toApiKeyModalities(values: string[]): ApiKeyModality[] {

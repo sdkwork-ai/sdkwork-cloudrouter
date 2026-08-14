@@ -13,6 +13,11 @@ pub type ApiKeyCommandStoreFuture<'a, T> =
 pub struct AccountGroupBindingInput {
     pub group_id: i64,
     pub priority: i32,
+    /// Per-key routing strategy for this bound group
+    /// (`weighted` | `price_first` | `quality_first`); defaults to `price_first`.
+    pub routing_strategy: String,
+    /// Binding weight used to order groups sharing the same priority; defaults to 100.
+    pub weight: i32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -658,6 +658,8 @@ fn build_backend_create_api_key_command(
         account_group_bindings: vec![AccountGroupBindingInput {
             group_id,
             priority: 100,
+            routing_strategy: "price_first".to_owned(),
+            weight: 100,
         }],
         key_prefix: key_prefix(raw_key),
         key_display_masked: mask_created_key(raw_key),

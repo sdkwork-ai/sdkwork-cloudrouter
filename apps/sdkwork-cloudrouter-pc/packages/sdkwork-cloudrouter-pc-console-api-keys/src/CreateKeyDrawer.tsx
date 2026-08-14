@@ -9,6 +9,7 @@ import {
   MessageSquare,
   Mic,
   Music,
+  Route,
   Video,
   X,
   Zap,
@@ -20,7 +21,11 @@ import {
   type GroupPickerOption,
   type GroupPickerVendor,
 } from '@sdkwork/cloudroutes-pc-commons/components/GroupPicker';
-import type { AccountGroup, ApiKey } from './apiKeyService';
+import type {
+  AccountGroup,
+  ApiKey,
+  ApiKeyGroupRoutingStrategy,
+} from './apiKeyService';
 import { DEFAULT_ACCOUNT_GROUP, type ApiKeyFormValues as ApiKeyFormValuesContract } from './apiKeyForm';
 import { buildTagLabels, toGroupPickerOptions } from './accountGroups';
 import { formatApiKeyCreated, formatApiKeyNumber } from './display';
@@ -52,6 +57,23 @@ const MODALITIES = [
 ];
 
 const DEFAULT_MODALITIES = MODALITIES.map((item) => item.id);
+
+/** 分组路由策略三选一；默认价格优先（与服务端缺省一致） */
+const ROUTING_STRATEGY_OPTIONS: { value: ApiKeyGroupRoutingStrategy; labelKey: string }[] = [
+  { value: 'price_first', labelKey: 'console.apiKeys.strategyPriceFirst' },
+  { value: 'weighted', labelKey: 'console.apiKeys.strategyWeighted' },
+  { value: 'quality_first', labelKey: 'console.apiKeys.strategyQualityFirst' },
+];
+
+const DEFAULT_GROUP_ROUTING_STRATEGY: ApiKeyGroupRoutingStrategy = 'price_first';
+const DEFAULT_GROUP_ROUTING_WEIGHT = 100;
+const MAX_GROUP_ROUTING_WEIGHT = 10000;
+
+/** 分组路由策略草稿：weight 用文本保存便于输入 */
+interface GroupRoutingPolicyDraft {
+  strategy: ApiKeyGroupRoutingStrategy;
+  weight: string;
+}
 
 /** 紧凑扁平风格：无边框下划线输入（长写边框属性，避免简写/长写级联覆盖问题） */
 const FLAT_INPUT_CLASS =
@@ -105,6 +127,8 @@ export function CreateKeyDrawer({
   }, [groups, groupsLoading, t]);
   const [name, setName] = useState('');
   const [accountGroups, setAccountGroups] = useState<string[]>([defaultGroup]);
+  /** 分组路由策略草稿（keyed by group code）；未记录的分组按默认 price_first/100 处理 */
+  const [groupRoutingPolicies, setGroupRoutingPolicies] = useState<Record<string, GroupRoutingPolicyDraft>>({});
   /** 触发器摘要：展示已选分组名（最多 2 个，其余折叠为 +N） */
   const groupTriggerLabel = useMemo(() => {
     if (accountGroups.length === 0) {
@@ -139,6 +163,14 @@ export function CreateKeyDrawer({
         ? initialData.accountGroups
         : [initialData.accountGroup.trim() || DEFAULT_ACCOUNT_GROUP];
       setAccountGroups(boundGroups.filter((code) => code.trim().length > 0));
+      const policyDrafts: Record<string, GroupRoutingPolicyDraft> = {};
+      for (const binding of initialData.groupBindings) {
+        policyDrafts[binding.accountGroup] = {
+          strategy: binding.routingStrategy,
+          weight: String(binding.weight),
+        };
+      }
+      setGroupRoutingPolicies(policyDrafts);
       setIpLimit(initialData.ipLimit === 'unrestricted' ? '' : initialData.ipLimit);
       setExpiryType(initialData.expires === 'never' ? 'never' : 'custom');
       setExpiryDate(initialData.expires === 'never' ? '' : initialData.expires.replace(' ', 'T').slice(0, 16));
@@ -150,6 +182,7 @@ export function CreateKeyDrawer({
     }
     setName('');
     setAccountGroups([defaultGroup]);
+    setGroupRoutingPolicies({});
     setExpiryType('never');
     setExpiryDate('');
     setCreateCount(1);
@@ -224,6 +257,20 @@ export function CreateKeyDrawer({
     setAllowedModalities(next);
   };
 
+  /** 更新单个分组的策略草稿（未记录的分组先落到默认值） */
+  const updatePolicy = (code: string, patch: Partial<GroupRoutingPolicyDraft>) => {
+    setGroupRoutingPolicies((current) => ({
+      ...current,
+      [code]: {
+        ...(current[code] ?? {
+          strategy: DEFAULT_GROUP_ROUTING_STRATEGY,
+          weight: String(DEFAULT_GROUP_ROUTING_WEIGHT),
+        }),
+        ...patch,
+      },
+    }));
+  };
+
   const submit = async () => {
     if (!canSubmit || !onSubmit) {
       return;
@@ -231,6 +278,7 @@ export function CreateKeyDrawer({
     await onSubmit({
       name: name.trim(),
       accountGroups: group,
+      groupRoutingPolicies: buildGroupRoutingPolicies(group, groupRoutingPolicies),
       quota: isUnlimitedQuota ? '0.000000' : quota.trim(),
       isUnlimitedQuota,
       modalities: Array.from(allowedModalities),
@@ -372,6 +420,77 @@ export function CreateKeyDrawer({
               />
             </div>
           </div>
+
+          <section className="space-y-2.5">
+            <SectionLabel icon={<Route className="h-3.5 w-3.5 text-primary-500" />}>
+              {t('console.apiKeys.groupRoutingPolicy', '分组路由策略')}
+            </SectionLabel>
+            {group.length === 0 ? (
+              <p className="text-xs text-slate-400 dark:text-slate-500">
+                {t('console.apiKeys.groupRoutingPolicyEmpty', '选择分组后可为每个分组配置路由策略')}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {group.map((code) => {
+                  const draft = groupRoutingPolicies[code];
+                  const strategy = draft?.strategy ?? DEFAULT_GROUP_ROUTING_STRATEGY;
+                  const weightText = draft?.weight ?? String(DEFAULT_GROUP_ROUTING_WEIGHT);
+                  const strategyOption = ROUTING_STRATEGY_OPTIONS.find((item) => item.value === strategy);
+                  const defaultStrategy = groups.find((g) => g.code === code)?.routingStrategy;
+                  return (
+                    <div key={code} className="rounded-lg border border-slate-200 px-3 py-2 dark:border-white/10">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="min-w-0 truncate text-xs font-semibold text-slate-700 dark:text-slate-200">
+                          {groupPickerOptions.find((option) => option.value === code)?.label ?? code}
+                        </span>
+                        {isView ? (
+                          <span className="shrink-0 text-xs font-medium text-slate-500 dark:text-slate-400">
+                            {t(strategyOption?.labelKey ?? 'console.apiKeys.strategyPriceFirst')}
+                            {strategy === 'weighted' ? ` · ${t('console.apiKeys.strategyWeight', '权重')} ${weightText}` : ''}
+                          </span>
+                        ) : (
+                          <div className="flex shrink-0 items-center gap-2">
+                            <select
+                              value={strategy}
+                              onChange={(event) =>
+                                updatePolicy(code, { strategy: event.target.value as ApiKeyGroupRoutingStrategy })
+                              }
+                              className={`${FLAT_INPUT_CLASS} w-36!`}
+                              aria-label={t('console.apiKeys.groupRoutingStrategy', '路由策略')}
+                            >
+                              {ROUTING_STRATEGY_OPTIONS.map((item) => (
+                                <option key={item.value} value={item.value}>
+                                  {t(item.labelKey)}
+                                </option>
+                              ))}
+                            </select>
+                            {strategy === 'weighted' ? (
+                              <input
+                                type="number"
+                                min={0}
+                                max={MAX_GROUP_ROUTING_WEIGHT}
+                                value={weightText}
+                                onChange={(event) => updatePolicy(code, { weight: event.target.value })}
+                                className={`${FLAT_INPUT_CLASS} w-24!`}
+                                aria-label={t('console.apiKeys.strategyWeight', '权重')}
+                              />
+                            ) : null}
+                          </div>
+                        )}
+                      </div>
+                      {defaultStrategy ? (
+                        <div className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
+                          {t('console.apiKeys.groupRoutingDefaultHint', '分组默认：{{strategy}}', {
+                            strategy: defaultStrategy,
+                          })}
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
 
           <section className="space-y-2.5">
             <div className="flex items-center justify-between gap-3">
@@ -627,4 +746,23 @@ function ReadOnlyRow({
 function toLocalInputValue(date: Date): string {
   const offset = date.getTimezoneOffset() * 60000;
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
+/**
+ * 为每个已选分组构造请求侧策略；未显式配置的分组按服务端缺省
+ * price_first/weight 100 落库，权重做 0..10000 收敛。
+ */
+function buildGroupRoutingPolicies(
+  groups: string[],
+  drafts: Record<string, GroupRoutingPolicyDraft>,
+): { accountGroup: string; routingStrategy: ApiKeyGroupRoutingStrategy; weight: number }[] {
+  return groups.map((code) => {
+    const draft = drafts[code];
+    const strategy = draft?.strategy ?? DEFAULT_GROUP_ROUTING_STRATEGY;
+    const parsed = Number(draft?.weight);
+    const weight = draft && Number.isFinite(parsed)
+      ? Math.min(Math.max(Math.trunc(parsed), 0), MAX_GROUP_ROUTING_WEIGHT)
+      : DEFAULT_GROUP_ROUTING_WEIGHT;
+    return { accountGroup: code, routingStrategy: strategy, weight };
+  });
 }

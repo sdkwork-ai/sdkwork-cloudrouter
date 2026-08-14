@@ -10,7 +10,7 @@ use crate::domain::{
     has_text, parse_model_catalog_identity, provider_native_model_id, BillingMeter, DomainError,
     DomainResult, GatewayApiKeyAccountGroupBinding, ModelUpstreamRoute, RouteCandidate,
     RoutingCapability, RoutingPolicy, RoutingPolicyScope, RoutingRule, UpstreamAccountGroup,
-    UpstreamAccountGroupBinding, UpstreamAccountRoute,
+    UpstreamAccountGroupBinding, UpstreamAccountRoute, UpstreamAccountRoutingStrategy,
 };
 use crate::ports::{AccountGroupModelAccess, UpstreamAccountRouteCatalog};
 
@@ -543,6 +543,28 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         })
     }
 
+    /// Resolves the per-key binding routing strategy for a bound group.
+    /// Returns `None` when the api key or binding is absent, or when the
+    /// persisted strategy is the legacy `auto` value — the caller then falls
+    /// back to the group default strategy.
+    fn binding_strategy_for_group(
+        &self,
+        api_key_id: i64,
+        account_group_id: i64,
+    ) -> Option<UpstreamAccountRoutingStrategy> {
+        let api_key = self.catalog.find_api_key(api_key_id)?;
+        api_key
+            .effective_account_group_bindings()
+            .iter()
+            .find(|binding| binding.account_group_id == account_group_id)
+            .and_then(|binding| match binding.routing_strategy.trim() {
+                "weighted" => Some(UpstreamAccountRoutingStrategy::Weighted),
+                "price_first" => Some(UpstreamAccountRoutingStrategy::LeastCost),
+                "quality_first" => Some(UpstreamAccountRoutingStrategy::QualityFirst),
+                _ => None,
+            })
+    }
+
     fn select_policy_scopes(
         &self,
         context: &AuthenticatedApiKeyContext,
@@ -943,7 +965,11 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             .into_iter()
             .cloned()
             .collect::<Vec<_>>();
-        let account_routes = plan_upstream_account_routes(&group, account_routes)?;
+        let account_routes = plan_upstream_account_routes(
+            &group,
+            self.binding_strategy_for_group(query.context.api_key_id, candidate.account_group_id),
+            account_routes,
+        )?;
         let mut resolved = Vec::new();
         for account_route in account_routes {
             let matching_model_routes = routes.iter().filter(|route| {
@@ -1012,7 +1038,11 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                     return CandidateUpstreamAccountRouteEvaluation::RoutingInvalid(error)
                 }
             };
-            let routes = match plan_upstream_account_routes(&group, candidate_routes) {
+            let routes = match plan_upstream_account_routes(
+                &group,
+                self.binding_strategy_for_group(query.context.api_key_id, candidate.account_group_id),
+                candidate_routes,
+            ) {
                 Ok(routes) => routes,
                 Err(error) => {
                     return CandidateUpstreamAccountRouteEvaluation::RoutingInvalid(error)

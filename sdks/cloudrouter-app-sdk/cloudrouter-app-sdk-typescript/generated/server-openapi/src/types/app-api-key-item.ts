@@ -12,6 +12,8 @@ export interface AppApiKeyItem {
   defaultForRuntime: boolean;
   /** Expires field on app api key item. */
   expires: string;
+  /** Route binding group routing policies (priority order), including the default group. */
+  groupBindings?: ({ accountGroup: string; priority: number; routingStrategy: 'weighted' | 'price_first' | 'quality_first'; weight: number; })[];
   /** Id field on app api key item. */
   id: string;
   /** Ip limit field on app api key item. */

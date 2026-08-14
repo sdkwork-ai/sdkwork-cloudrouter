@@ -77,6 +77,7 @@ pub async fn load_upstream_account_routes(
             credential_weight: row.try_get("credential_weight")?,
             contract_cost_multiplier: row.try_get("contract_cost_multiplier")?,
             last_latency_ms: row.try_get("last_latency_ms")?,
+            account_consecutive_error_count: row.try_get("account_consecutive_error_count")?,
             account_code: row.try_get("account_code")?,
             region_code: row.try_get("region_code")?,
             supplier_id: row.try_get("supplier_id")?,

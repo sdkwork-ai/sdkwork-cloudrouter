@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::net::IpAddr;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -44,6 +45,12 @@ const UNRESTRICTED_MODALITIES: [&str; 5] = ["text", "image", "video", "audio", "
 const HASH_ALG_HMAC_SHA256: &str = "HMAC_SHA256";
 const SECRET_VERSION: i64 = 1;
 const IDEMPOTENCY_KEY_HEADER: &str = "Idempotency-Key";
+/// Per-key group binding routing strategies; `price_first` is the default.
+const BINDING_STRATEGY_PRICE_FIRST: &str = "price_first";
+const BINDING_STRATEGY_WEIGHTED: &str = "weighted";
+const BINDING_STRATEGY_QUALITY_FIRST: &str = "quality_first";
+const BINDING_DEFAULT_WEIGHT: i32 = 100;
+const BINDING_MAX_WEIGHT: i32 = 10000;
 
 struct AppApiKeyState {
     read_store: Arc<dyn GatewayApiKeyManagementReadStore + Send + Sync>,
@@ -97,6 +104,7 @@ struct AppApiKeyItemResponse {
     account_group: String,
     account_group_name: String,
     account_groups: Vec<String>,
+    group_bindings: Vec<AppApiKeyGroupBindingResponse>,
     rate: Option<String>,
     quota: String,
     used_quota: String,
@@ -106,6 +114,23 @@ struct AppApiKeyItemResponse {
     expires: String,
     status: &'static str,
     default_for_runtime: bool,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AppApiKeyGroupBindingResponse {
+    account_group: String,
+    routing_strategy: String,
+    weight: i32,
+    priority: i32,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GroupRoutingPolicy {
+    account_group: Option<String>,
+    routing_strategy: Option<String>,
+    weight: Option<i32>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -121,6 +146,11 @@ struct AppApiKeyCreateRequest {
     /// also the default group. Replaces `account_group`/`account_group_id`
     /// when provided.
     account_groups: Option<Vec<String>>,
+    /// Per-bound-group routing policies. Each entry must reference a code
+    /// listed in `account_groups`; missing entries default to
+    /// `price_first`/weight 100.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    group_routing_policies: Option<Vec<GroupRoutingPolicy>>,
     quota: Option<String>,
     is_unlimited_quota: Option<bool>,
     modalities: Option<Vec<String>>,
@@ -139,6 +169,11 @@ struct AppApiKeyUpdateRequest {
     /// (first entry becomes the default group). Replaces
     /// `account_group`/`account_group_id` when provided.
     account_groups: Option<Vec<String>>,
+    /// Per-bound-group routing policies. Each entry must reference a code
+    /// listed in `account_groups`; missing entries default to
+    /// `price_first`/weight 100.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    group_routing_policies: Option<Vec<GroupRoutingPolicy>>,
     quota: Option<String>,
     is_unlimited_quota: Option<bool>,
     modalities: Option<Vec<String>>,
@@ -321,6 +356,14 @@ async fn create_key_inner(
     let default_group = groups.first().ok_or_else(|| {
         AppApiKeyCreateError::BadRequest("accountGroups must not be empty".to_owned())
     })?;
+    let group_codes = groups
+        .iter()
+        .map(|group| group.code.clone())
+        .collect::<Vec<_>>();
+    let binding_policies = resolve_group_routing_policies(
+        &group_codes,
+        request.group_routing_policies.as_deref(),
+    )?;
     let name = normalize_name(request.name.as_deref())?;
     let quota_limit = normalize_quota_limit(&request)?;
     let requested_modalities = normalize_modalities(request.modalities)?;
@@ -364,9 +407,22 @@ async fn create_key_inner(
         account_group_bindings: groups
             .iter()
             .enumerate()
-            .map(|(index, group)| AccountGroupBindingInput {
-                group_id: group.id,
-                priority: ((index as i32) + 1) * 100,
+            .map(|(index, group)| {
+                let (routing_strategy, weight) = binding_policies
+                    .get(&group.code)
+                    .cloned()
+                    .unwrap_or_else(|| {
+                        (
+                            BINDING_STRATEGY_PRICE_FIRST.to_owned(),
+                            BINDING_DEFAULT_WEIGHT,
+                        )
+                    });
+                AccountGroupBindingInput {
+                    group_id: group.id,
+                    priority: ((index as i32) + 1) * 100,
+                    routing_strategy,
+                    weight,
+                }
             })
             .collect(),
         key_prefix: key_prefix(&raw_key),
@@ -448,12 +504,33 @@ async fn update_key_inner(
         Some(codes) => {
             let groups = resolve_group_codes(&snapshot, codes, subject, &state).await?;
             let default_id = groups[0].id;
+            let group_codes = groups
+                .iter()
+                .map(|group| group.code.clone())
+                .collect::<Vec<_>>();
+            let binding_policies = resolve_group_routing_policies(
+                &group_codes,
+                request.group_routing_policies.as_deref(),
+            )?;
             let bindings = groups
                 .iter()
                 .enumerate()
-                .map(|(index, group)| AccountGroupBindingInput {
-                    group_id: group.id,
-                    priority: ((index as i32) + 1) * 100,
+                .map(|(index, group)| {
+                    let (routing_strategy, weight) = binding_policies
+                        .get(&group.code)
+                        .cloned()
+                        .unwrap_or_else(|| {
+                            (
+                                BINDING_STRATEGY_PRICE_FIRST.to_owned(),
+                                BINDING_DEFAULT_WEIGHT,
+                            )
+                        });
+                    AccountGroupBindingInput {
+                        group_id: group.id,
+                        priority: ((index as i32) + 1) * 100,
+                        routing_strategy,
+                        weight,
+                    }
                 })
                 .collect::<Vec<_>>();
             (Some(default_id), Some(bindings))
@@ -464,6 +541,8 @@ async fn update_key_inner(
                 Some(vec![AccountGroupBindingInput {
                     group_id: group.id,
                     priority: 100,
+                    routing_strategy: BINDING_STRATEGY_PRICE_FIRST.to_owned(),
+                    weight: BINDING_DEFAULT_WEIGHT,
                 }]),
             ),
             None => (None, None),
@@ -682,6 +761,17 @@ fn to_item_response_with_used_quota(
         account_group: group_code(group.as_ref()),
         account_group_name: group_name(group.as_ref()),
         account_groups: account_group_codes(&api_key, snapshot),
+        group_bindings: api_key
+            .account_group_bindings
+            .iter()
+            .filter(|binding| binding.binding_role.trim().eq_ignore_ascii_case("route"))
+            .map(|binding| AppApiKeyGroupBindingResponse {
+                account_group: binding.account_group_code.trim().to_owned(),
+                routing_strategy: normalized_binding_strategy(&binding.routing_strategy),
+                weight: binding.weight,
+                priority: binding.priority,
+            })
+            .collect(),
         rate: group_rate(group.as_ref()),
         quota: quota_limit(quota_policy.as_ref(), metric_snapshot.as_ref()),
         used_quota: used_quota_override.unwrap_or_else(|| used_quota(metric_snapshot.as_ref())),
@@ -735,6 +825,76 @@ fn account_group_codes(
         codes.push(default_code);
     }
     codes
+}
+
+/// Per-key group binding routing policies keyed by group code (strategy, weight).
+/// Every bound group is present; entries missing from the request default to
+/// `price_first`/weight 100. Unknown strategies are rejected; the legacy
+/// `auto` value is treated as `price_first` for backward compatibility.
+fn resolve_group_routing_policies(
+    group_codes: &[String],
+    policies: Option<&[GroupRoutingPolicy]>,
+) -> Result<BTreeMap<String, (String, i32)>, AppApiKeyCreateError> {
+    let mut resolved = group_codes
+        .iter()
+        .map(|code| {
+            (
+                code.clone(),
+                (BINDING_STRATEGY_PRICE_FIRST.to_owned(), BINDING_DEFAULT_WEIGHT),
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    if let Some(policies) = policies {
+        for policy in policies {
+            let Some(code) = policy
+                .account_group
+                .as_deref()
+                .map(str::trim)
+                .filter(|code| !code.is_empty())
+            else {
+                return Err(AppApiKeyCreateError::BadRequest(
+                    "groupRoutingPolicies[].accountGroup is required".to_owned(),
+                ));
+            };
+            if !resolved.contains_key(code) {
+                return Err(AppApiKeyCreateError::BadRequest(format!(
+                    "groupRoutingPolicies references a group that is not bound to this API key: {code}"
+                )));
+            }
+            let strategy = match policy.routing_strategy.as_deref() {
+                None | Some("auto") => BINDING_STRATEGY_PRICE_FIRST,
+                Some(
+                    value @ (BINDING_STRATEGY_WEIGHTED
+                    | BINDING_STRATEGY_PRICE_FIRST
+                    | BINDING_STRATEGY_QUALITY_FIRST),
+                ) => value,
+                Some(value) => {
+                    return Err(AppApiKeyCreateError::BadRequest(format!(
+                        "unsupported groupRoutingPolicies routingStrategy: {value}"
+                    )));
+                }
+            };
+            let weight = policy.weight.unwrap_or(BINDING_DEFAULT_WEIGHT);
+            if !(0..=BINDING_MAX_WEIGHT).contains(&weight) {
+                return Err(AppApiKeyCreateError::BadRequest(format!(
+                    "groupRoutingPolicies weight must be in 0..={BINDING_MAX_WEIGHT}: {weight}"
+                )));
+            }
+            resolved.insert(code.to_owned(), (strategy.to_owned(), weight));
+        }
+    }
+    Ok(resolved)
+}
+
+/// Normalizes a persisted binding strategy for response payloads; legacy
+/// `auto` and unknown values fall back to the default `price_first`.
+fn normalized_binding_strategy(value: &str) -> String {
+    match value.trim() {
+        BINDING_STRATEGY_WEIGHTED | BINDING_STRATEGY_PRICE_FIRST | BINDING_STRATEGY_QUALITY_FIRST => {
+            value.trim().to_owned()
+        }
+        _ => BINDING_STRATEGY_PRICE_FIRST.to_owned(),
+    }
 }
 
 fn quota_limit(
@@ -1392,4 +1552,103 @@ enum AppApiKeyCreateError {
     BadRequest(String),
     Conflict(String),
     System(String),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn codes(values: &[&str]) -> Vec<String> {
+        values.iter().map(|value| (*value).to_owned()).collect()
+    }
+
+    fn policy(account_group: &str, strategy: Option<&str>, weight: Option<i32>) -> GroupRoutingPolicy {
+        GroupRoutingPolicy {
+            account_group: Some(account_group.to_owned()),
+            routing_strategy: strategy.map(str::to_owned),
+            weight,
+        }
+    }
+
+    #[test]
+    fn missing_policies_default_to_price_first_weight_100() {
+        let resolved =
+            resolve_group_routing_policies(&codes(&["g1", "g2"]), None).unwrap();
+        assert_eq!(
+            resolved.get("g1"),
+            Some(&(BINDING_STRATEGY_PRICE_FIRST.to_owned(), 100))
+        );
+        assert_eq!(
+            resolved.get("g2"),
+            Some(&(BINDING_STRATEGY_PRICE_FIRST.to_owned(), 100))
+        );
+    }
+
+    #[test]
+    fn explicit_policies_override_defaults() {
+        let policies = vec![
+            policy("g1", Some("weighted"), Some(200)),
+            policy("g2", Some("quality_first"), None),
+        ];
+        let resolved =
+            resolve_group_routing_policies(&codes(&["g1", "g2"]), Some(&policies)).unwrap();
+        assert_eq!(
+            resolved.get("g1"),
+            Some(&(BINDING_STRATEGY_WEIGHTED.to_owned(), 200))
+        );
+        assert_eq!(
+            resolved.get("g2"),
+            Some(&(BINDING_STRATEGY_QUALITY_FIRST.to_owned(), 100))
+        );
+    }
+
+    #[test]
+    fn legacy_auto_strategy_is_treated_as_price_first() {
+        let policies = vec![policy("g1", Some("auto"), None)];
+        let resolved =
+            resolve_group_routing_policies(&codes(&["g1"]), Some(&policies)).unwrap();
+        assert_eq!(
+            resolved.get("g1"),
+            Some(&(BINDING_STRATEGY_PRICE_FIRST.to_owned(), 100))
+        );
+    }
+
+    #[test]
+    fn unknown_group_is_rejected() {
+        let policies = vec![policy("missing", Some("weighted"), None)];
+        let error = resolve_group_routing_policies(&codes(&["g1"]), Some(&policies))
+            .unwrap_err();
+        assert!(matches!(error, AppApiKeyCreateError::BadRequest(_)));
+    }
+
+    #[test]
+    fn unknown_strategy_is_rejected() {
+        let policies = vec![policy("g1", Some("round_robin"), None)];
+        let error = resolve_group_routing_policies(&codes(&["g1"]), Some(&policies))
+            .unwrap_err();
+        assert!(matches!(error, AppApiKeyCreateError::BadRequest(_)));
+    }
+
+    #[test]
+    fn weight_out_of_range_is_rejected() {
+        let policies = vec![policy("g1", None, Some(10001))];
+        let error = resolve_group_routing_policies(&codes(&["g1"]), Some(&policies))
+            .unwrap_err();
+        assert!(matches!(error, AppApiKeyCreateError::BadRequest(_)));
+    }
+
+    #[test]
+    fn normalized_strategy_maps_legacy_values_to_price_first() {
+        assert_eq!(normalized_binding_strategy("auto"), BINDING_STRATEGY_PRICE_FIRST);
+        assert_eq!(normalized_binding_strategy(""), BINDING_STRATEGY_PRICE_FIRST);
+        assert_eq!(
+            normalized_binding_strategy("least_cost"),
+            BINDING_STRATEGY_PRICE_FIRST
+        );
+        assert_eq!(normalized_binding_strategy("weighted"), BINDING_STRATEGY_WEIGHTED);
+        assert_eq!(
+            normalized_binding_strategy("quality_first"),
+            BINDING_STRATEGY_QUALITY_FIRST
+        );
+    }
 }
