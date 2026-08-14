@@ -222,9 +222,9 @@ function RiskDashboardView() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { title: t("admin.ratelimit.index.text.1hlr3sa", "生效 IP 限流"), value: activeIpLimits, detail: t("admin.ratelimit.index.text.ipRuleCount", "{{count}} 条 IP 规则", { count: snapshot?.ipLimitsTotal ?? ipLimits.length }), icon: Globe, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-500/10' },
-          { title: t("admin.ratelimit.index.text.s7fzhe", "耗尽令牌限额"), value: exhaustedTokenLimits, detail: t("admin.ratelimit.index.text.apiKeyRuleCount", "{{count}} 条令牌规则", { count: snapshot?.tokenLimitsTotal ?? tokenLimits.length }), icon: Key, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-500/10' },
-          { title: t("admin.ratelimit.index.text.10f9m11", "强制模型频控"), value: activeModelLimits, detail: t("admin.ratelimit.index.text.modelRuleCount", "{{count}} 条模型规则", { count: snapshot?.modelLimitsTotal ?? modelLimits.length }), icon: Database, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-500/10' },
+          { title: t("admin.ratelimit.index.text.1hlr3sa", "生效 IP 限流"), value: activeIpLimits, detail: t("admin.ratelimit.index.text.ipRuleCount", "{{count}} 条 IP 规则", { count: snapshot?.ipLimitsTotal ?? ipLimits.length }), icon: Globe, color: 'text-lobster-500', bg: 'bg-lobster-50 dark:bg-lobster-500/10' },
+          { title: t("admin.ratelimit.index.text.s7fzhe", "耗尽令牌限额"), value: exhaustedTokenLimits, detail: t("admin.ratelimit.index.text.apiKeyRuleCount", "{{count}} 条令牌规则", { count: snapshot?.tokenLimitsTotal ?? tokenLimits.length }), icon: Key, color: 'text-lobster-500', bg: 'bg-lobster-50 dark:bg-lobster-500/10' },
+          { title: t("admin.ratelimit.index.text.10f9m11", "强制模型频控"), value: activeModelLimits, detail: t("admin.ratelimit.index.text.modelRuleCount", "{{count}} 条模型规则", { count: snapshot?.modelLimitsTotal ?? modelLimits.length }), icon: Database, color: 'text-lobster-500', bg: 'bg-lobster-50 dark:bg-lobster-500/10' },
           { title: t("admin.ratelimit.index.text.z0wwym", "WAF 名单规则"), value: totalFirewallRules, detail: t("admin.ratelimit.index.text.totalRuleCount", "{{count}} 条总规则", { count: totalConfiguredRules }), icon: Lock, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-500/10' },
         ].map(item => (
           <div key={item.title} className="bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-white/10 rounded-xl p-5 shadow-sm flex items-center justify-between">
@@ -367,7 +367,7 @@ function IpRateLimitView() {
             ) : limits.map(rule => (
               <tr key={rule.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
                 <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-200">{rule.ruleName}</td>
-                <td className="px-4 py-3 font-mono text-blue-600 dark:text-blue-400"><span className="bg-slate-100 dark:bg-white/10 px-2 py-1 rounded">{rule.targetIp}</span></td>
+                <td className="px-4 py-3 font-mono text-lobster-600 dark:text-lobster-400"><span className="bg-slate-100 dark:bg-white/10 px-2 py-1 rounded">{rule.targetIp}</span></td>
                 <td className="px-4 py-3 font-mono">{rule.rps} req/s</td>
                 <td className="px-4 py-3 font-mono">{rule.rpm} req/m</td>
                 <td className="px-4 py-3 text-red-600 dark:text-red-400 text-xs font-semibold">{rule.blockDuration}</td>
@@ -682,7 +682,7 @@ function ModelRateLimitView() {
                />
              ) : limits.map(m => (
                <tr key={m.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
-                 <td className="px-4 py-3 font-medium font-mono text-slate-900 dark:text-slate-200"><span className="bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 px-2 py-1 rounded text-xs">{m.model}</span></td>
+                 <td className="px-4 py-3 font-medium font-mono text-slate-900 dark:text-slate-200"><span className="bg-lobster-50 dark:bg-lobster-500/10 text-lobster-600 dark:text-lobster-400 border border-lobster-200 dark:border-lobster-500/20 px-2 py-1 rounded text-xs">{m.model}</span></td>
                  <td className="px-4 py-3">{m.accountGroupName ?? m.accountGroup}</td>
                  <td className="px-4 py-3 font-mono text-red-600 dark:text-red-400">{m.rpm} <span className="text-slate-400 text-xs font-sans">RPM</span></td>
                  <td className="px-4 py-3 font-mono text-red-600 dark:text-red-400">{m.tpm} <span className="text-slate-400 text-xs font-sans">TPM</span></td>
@@ -869,7 +869,7 @@ function FirewallView() {
                   <button
                     onClick={() => setRemoveTarget(f)}
                     disabled={removingFirewallId === f.id}
-                    className="text-slate-400 hover:text-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors text-xs border border-slate-200 dark:border-white/10 px-2 py-1 rounded"
+                    className="text-slate-400 hover:text-lobster-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors text-xs border border-slate-200 dark:border-white/10 px-2 py-1 rounded"
                   >
                     {t("admin.ratelimit.index.text.1iv1xe", "解除")}</button>
                  </td>

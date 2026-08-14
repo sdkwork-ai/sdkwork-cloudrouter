@@ -193,7 +193,7 @@ export function CloudRouterAuthSettingsPage() {
             type="button"
             disabled={saving}
             onClick={() => void saveSettings()}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg bg-lobster-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-lobster-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {t('common.actions.save')}
@@ -220,7 +220,7 @@ export function CloudRouterAuthSettingsPage() {
           className="space-y-5 xl:min-h-0 xl:overflow-y-auto xl:pr-1 custom-scrollbar"
         >
           <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
-            <SectionHeader icon={<Settings2 className="h-5 w-5 text-blue-500" />} title={t('admin.authSettings.sections.runtime')} />
+            <SectionHeader icon={<Settings2 className="h-5 w-5 text-lobster-500" />} title={t('admin.authSettings.sections.runtime')} />
             <div className="mt-5 space-y-6">
               <SegmentedControl
                 label={t('admin.authSettings.fields.leftRail')}
@@ -264,7 +264,7 @@ export function CloudRouterAuthSettingsPage() {
           </section>
 
           <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
-            <SectionHeader icon={<ShieldCheck className="h-5 w-5 text-amber-500" />} title={t('admin.authSettings.sections.verificationPolicy')} />
+            <SectionHeader icon={<ShieldCheck className="h-5 w-5 text-lobster-500" />} title={t('admin.authSettings.sections.verificationPolicy')} />
             <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <ToggleRow
                 label={t('admin.authSettings.fields.emailCodeLogin')}
@@ -298,7 +298,7 @@ export function CloudRouterAuthSettingsPage() {
           </section>
 
           <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
-            <SectionHeader icon={<ShieldCheck className="h-5 w-5 text-violet-500" />} title={t('admin.authSettings.sections.inviteCodePolicy')} />
+            <SectionHeader icon={<ShieldCheck className="h-5 w-5 text-lobster-500" />} title={t('admin.authSettings.sections.inviteCodePolicy')} />
             <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
               {t('admin.authSettings.descriptions.inviteCodePolicy')}
             </p>
@@ -334,7 +334,7 @@ export function CloudRouterAuthSettingsPage() {
           className="mt-5 xl:mt-0 xl:min-h-0 xl:overflow-y-auto xl:pr-1 custom-scrollbar"
         >
           <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
-            <SectionHeader icon={<QrCode className="h-5 w-5 text-emerald-500" />} title={t('admin.authSettings.sections.oauthQr')} />
+            <SectionHeader icon={<QrCode className="h-5 w-5 text-lobster-500" />} title={t('admin.authSettings.sections.oauthQr')} />
             <div className="mt-5 space-y-5">
               <ToggleRow
                 label={t('admin.authSettings.fields.qrLogin')}
@@ -414,7 +414,7 @@ function ToggleRow({ checked, label, onChange }: { checked: boolean, label: stri
         role="switch"
         aria-checked={checked}
         onClick={onChange}
-        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-[#1a1a1a] ${checked ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-lobster-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-[#1a1a1a] ${checked ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`}
       >
         <span className="sr-only">{label}</span>
         <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-5' : 'translate-x-0.5'}`} />
@@ -444,7 +444,7 @@ function SegmentedControl<T extends string>({
             type="button"
             onClick={() => onChange(option.value)}
             className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${value === option.value
-              ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400/70 dark:bg-blue-500/10 dark:text-blue-300'
+              ? 'border-lobster-500 bg-lobster-50 text-lobster-700 dark:border-lobster-400/70 dark:bg-lobster-500/10 dark:text-lobster-300'
               : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10'
             }`}
           >
@@ -486,7 +486,7 @@ function CheckboxGroup<T extends string>({
                   : [...values, option.value];
                 onChange(next);
               }}
-              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              className="h-4 w-4 rounded border-slate-300 text-lobster-500 focus:ring-lobster-500"
             />
             <span>{option.label}</span>
           </label>
@@ -518,7 +518,7 @@ function OAuthProviderEditor({
         onChange={(event) => onChange(parseOAuthProviderText(event.target.value))}
         rows={3}
             placeholder={t('admin.authSettings.placeholders.oauthProviderCodes')}
-        className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-sm text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder:text-slate-500"
+        className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-sm text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-lobster-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder:text-slate-500"
       />
       <div className="mt-3 flex flex-wrap gap-2">
         {OAUTH_PROVIDER_OPTIONS.map((value) => {
@@ -532,7 +532,7 @@ function OAuthProviderEditor({
                 onChange(normalizeOAuthProviders(next));
               }}
               className={`rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${active
-                ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400/70 dark:bg-blue-500/10 dark:text-blue-300'
+                ? 'border-lobster-500 bg-lobster-50 text-lobster-700 dark:border-lobster-400/70 dark:bg-lobster-500/10 dark:text-lobster-300'
                 : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10'
               }`}
             >
@@ -681,7 +681,7 @@ function WechatChannelEditor(props: WechatChannelEditorProps) {
                     <select
                       value={(item as AdminAuthWechatMini).env}
                       onChange={(event) => updateItem(index, { env: readWechatEnv(event.target.value) } as Partial<AdminAuthWechatMini>)}
-                      className="h-9 w-full rounded-md border border-slate-200 bg-white px-2.5 text-sm text-slate-700 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
+                      className="h-9 w-full rounded-md border border-slate-200 bg-white px-2.5 text-sm text-slate-700 outline-none focus:border-lobster-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
                     >
                       {WECHAT_ENV_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
@@ -704,7 +704,7 @@ function WechatChannelEditor(props: WechatChannelEditorProps) {
                   type="checkbox"
                   checked={item.enabled}
                   onChange={() => updateItem(index, { enabled: !item.enabled })}
-                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  className="h-4 w-4 rounded border-slate-300 text-lobster-500 focus:ring-lobster-500"
                 />
                 {t('admin.authSettings.fields.wechatEnabled')}
               </label>
@@ -712,7 +712,7 @@ function WechatChannelEditor(props: WechatChannelEditorProps) {
                 type="button"
                 onClick={() => markPrimary(index)}
                 className={`inline-flex min-h-9 items-center rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${item.primary
-                  ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400/70 dark:bg-blue-500/10 dark:text-blue-300'
+                  ? 'border-lobster-500 bg-lobster-50 text-lobster-700 dark:border-lobster-400/70 dark:bg-lobster-500/10 dark:text-lobster-300'
                   : 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10'
                 }`}
               >
@@ -752,7 +752,7 @@ function TextField({
         type="text"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-9 w-full rounded-md border border-slate-200 bg-white px-2.5 text-sm text-slate-700 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
+        className="h-9 w-full rounded-md border border-slate-200 bg-white px-2.5 text-sm text-slate-700 outline-none focus:border-lobster-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
       />
     </div>
   );

@@ -271,15 +271,21 @@ fn parse_duration_string(value: &str) -> Result<i64, String> {
         .parse::<i64>()
         .map_err(|_| "blockDuration must include a valid duration number".to_owned())?;
     if normalized.contains('d') || normalized.contains("day") {
-        Ok(amount * 86_400)
+        amount
+            .checked_mul(86_400)
+            .ok_or_else(|| "blockDuration day value is too large".to_owned())
     } else if normalized.contains('h') || normalized.contains("hour") {
-        Ok(amount * 3_600)
+        amount
+            .checked_mul(3_600)
+            .ok_or_else(|| "blockDuration hour value is too large".to_owned())
     } else if normalized.contains("ms") {
         Err("blockDuration must use seconds or larger units".to_owned())
     } else if normalized.contains('s') || normalized.contains("sec") {
         Ok(amount)
     } else if normalized.contains('m') || normalized.contains("min") || !value.is_ascii() {
-        Ok(amount * 60)
+        amount
+            .checked_mul(60)
+            .ok_or_else(|| "blockDuration minute value is too large".to_owned())
     } else {
         Ok(amount)
     }

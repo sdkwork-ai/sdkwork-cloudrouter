@@ -21,6 +21,7 @@ const SUPPLIER_COLUMNS: &str = r#"
     supplier.description,
     supplier.supplier_type,
     supplier.default_vendor_code,
+    supplier.default_base_url,
     supplier.adapter_code,
     supplier.protocol_code,
     supplier.protocols,
@@ -364,7 +365,7 @@ async fn insert(
             id, uuid, tenant_id, organization_id, data_scope, status,
             created_at, updated_at, version, metadata,
             supplier_code, supplier_name, display_name, description,
-            supplier_type, default_vendor_code, adapter_code, protocol_code, protocols,
+            supplier_type, default_vendor_code, default_base_url, adapter_code, protocol_code, protocols,
             model_blacklist, model_whitelist,
             website_url, docs_url,
             region_code, environment, sort_order
@@ -372,10 +373,10 @@ async fn insert(
             $1, $2, $3, $4, $5, $6,
             $7::timestamptz, $7::timestamptz, 0, '{}'::jsonb,
             $8, $9, $10, $11,
-            $12, $13, $14, $15, $16,
-            $17::jsonb, $18::jsonb,
-            $19, $20,
-            $21, $22, $23
+            $12, $13, $14, $15, $16, $17,
+            $18::jsonb, $19::jsonb,
+            $20, $21,
+            $22, $23, $24
         )
         "#,
     )
@@ -392,6 +393,7 @@ async fn insert(
     .bind(command.description.as_deref().map(str::trim))
     .bind(command.supplier_type.trim())
     .bind(command.default_vendor_code.as_deref().map(str::trim))
+    .bind(command.default_base_url.as_deref().map(str::trim))
     .bind(command.adapter_code.trim())
     .bind(command.protocol_code.trim())
     .bind(serde_json::to_value(&command.protocols).map_err(store_error_json)?)
@@ -473,7 +475,8 @@ async fn update(
             updated_at = $14::timestamptz,
             protocols = $19::jsonb,
             model_blacklist = $20::jsonb,
-            model_whitelist = $21::jsonb
+            model_whitelist = $21::jsonb,
+            default_base_url = $22
         WHERE tenant_id = $15 AND organization_id = $16
           AND id = $17 AND version = $18 AND deleted_at IS NULL
         "#,
@@ -499,6 +502,7 @@ async fn update(
     .bind(serde_json::to_value(&command.protocols).map_err(store_error_json)?)
     .bind(model_list_json(&command.model_blacklist))
     .bind(model_list_json(&command.model_whitelist))
+    .bind(command.default_base_url.as_deref().map(str::trim))
     .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to update upstream supplier", error))?;
@@ -562,6 +566,11 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamSupplierItem> {
             &row,
             "default_vendor_code",
             "failed to map upstream supplier default vendor code",
+        )?,
+        default_base_url: column(
+            &row,
+            "default_base_url",
+            "failed to map upstream supplier default base URL",
         )?,
         adapter_code: column(
             &row,

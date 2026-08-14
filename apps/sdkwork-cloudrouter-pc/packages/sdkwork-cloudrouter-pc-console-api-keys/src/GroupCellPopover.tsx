@@ -231,7 +231,7 @@ export function GroupCellPopover({
                   <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     {labels.title ?? 'Groups'}
                   </span>
-                  <span className="rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
+                  <span className="rounded-full bg-primary-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
                     {options.length}
                   </span>
                 </div>
@@ -277,7 +277,7 @@ export function GroupCellPopover({
                       setOpen(false);
                       onEdit?.();
                     }}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
                     data-sdk-group-cell-popover-edit
                   >
                     <Pencil className="h-3.5 w-3.5" aria-hidden="true" />

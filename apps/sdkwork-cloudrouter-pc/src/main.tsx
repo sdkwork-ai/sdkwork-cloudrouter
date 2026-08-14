@@ -11,6 +11,7 @@ import App from './App.tsx';
 import { PortalQueryProvider, PortalErrorBoundary, cloudRouterDocumentsReferenceRuntime } from '@sdkwork/cloudroutes-pc-commons';
 import { configureCloudRouterDomainServiceProviders } from '@sdkwork/cloudroutes-pc-commons/domain-service-providers';
 import { configureCloudRouterLogBackendSdkClient } from './admin/logSdkHostWiring.ts';
+import { configureCloudRouterOrderBackendSdkClient } from './admin/orderSdkHostWiring.ts';
 import { configureCloudRouterPartnerBackendSdkClient } from './admin/partnerSdkHostWiring.ts';
 import { DocumentsReferenceRuntimeProvider } from '@sdkwork/documents-pc-commons';
 import { initializeThemePreferences } from './themePreference.ts';
@@ -19,6 +20,7 @@ import './index.css';
 initializeThemePreferences();
 configureCloudRouterDomainServiceProviders();
 configureCloudRouterLogBackendSdkClient();
+configureCloudRouterOrderBackendSdkClient();
 configureCloudRouterPartnerBackendSdkClient();
 
 createRoot(document.getElementById('root')!).render(

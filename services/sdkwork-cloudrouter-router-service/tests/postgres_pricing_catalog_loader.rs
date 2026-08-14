@@ -156,6 +156,7 @@ async fn postgres_executes_the_authoritative_upstream_account_route_query() {
 )"#,
         r#"CREATE TEMP TABLE ai_upstream_supplier (
             id BIGINT PRIMARY KEY,
+            default_base_url TEXT,
             deleted_at TIMESTAMPTZ,
             organization_id BIGINT NOT NULL DEFAULT 0,
             status INTEGER,

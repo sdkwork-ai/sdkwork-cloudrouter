@@ -191,7 +191,7 @@ export function CacheAdmin() {
             type="button"
             disabled={loading || operationBusy !== null}
             onClick={() => { void executeOperation('refresh-all', () => AdminCacheService.refreshAll()); }}
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:border-emerald-500/40 dark:hover:text-emerald-300"
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:border-lobster-300 hover:text-lobster-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:border-lobster-500/40 dark:hover:text-lobster-300"
           >
             <RefreshCw className={`h-4 w-4 ${operationBusy === 'refresh-all' ? 'animate-spin' : ''}`} />
             {t('admin.cache.actions.refreshAll', 'Refresh all')}
@@ -314,7 +314,7 @@ export function CacheAdmin() {
                     onClick={() => setActiveTab(tab)}
                     className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                       activeTab === tab
-                        ? 'bg-white text-emerald-600 shadow-sm dark:bg-white/10 dark:text-emerald-300'
+                        ? 'bg-white text-lobster-600 shadow-sm dark:bg-white/10 dark:text-lobster-300'
                         : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                     }`}
                   >
@@ -330,7 +330,7 @@ export function CacheAdmin() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder={t('admin.cache.filters.search', 'Search instance, namespace, tag...')}
-                className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:border-emerald-500/70"
+                className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-lobster-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:border-lobster-500/70"
               />
             </div>
           </div>
@@ -412,7 +412,7 @@ export function CacheAdmin() {
                         setDeleteKeyNamespace(item.namespace);
                         setDeleteKeyValue(item.key);
                       }}
-                      className="flex w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 text-left transition-colors hover:border-emerald-300 hover:bg-emerald-50/50 dark:border-white/10 dark:hover:border-emerald-500/40 dark:hover:bg-emerald-500/10"
+                      className="flex w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 text-left transition-colors hover:border-lobster-300 hover:bg-lobster-50/50 dark:border-white/10 dark:hover:border-lobster-500/40 dark:hover:bg-lobster-500/10"
                     >
                       <span className="min-w-0">
                         <span className="block truncate font-mono text-xs text-slate-800 dark:text-slate-100">{item.key}</span>
@@ -433,7 +433,7 @@ export function CacheAdmin() {
                     onClick={() => {
                       void inspectNamespaceKeys(keyList.namespace, keyList.pageInfo.nextCursor);
                     }}
-                    className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:border-emerald-500/40 dark:hover:text-emerald-300"
+                    className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:border-lobster-300 hover:text-lobster-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:border-lobster-500/40 dark:hover:text-lobster-300"
                   >
                     <ChevronDown className="h-4 w-4" />
                     {t('admin.cache.actions.loadMoreKeys', 'Load more keys')}
@@ -458,7 +458,7 @@ export function CacheAdmin() {
                   type="text"
                   value={deleteKeyNamespace}
                   onChange={(event) => setDeleteKeyNamespace(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-400 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-lobster-400 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   placeholder="auth.qr.challenge"
                 />
               </label>
@@ -468,7 +468,7 @@ export function CacheAdmin() {
                   type="text"
                   value={deleteKeyValue}
                   onChange={(event) => setDeleteKeyValue(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-400 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-lobster-400 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   placeholder="qr-key"
                 />
               </label>
@@ -566,7 +566,7 @@ function MetricCard({
         </div>
         <div className="mt-0.5 truncate text-[11px] text-slate-400 dark:text-slate-500">{detail}</div>
       </div>
-      <div className="ml-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">
+      <div className="ml-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-lobster-50 text-lobster-600 dark:bg-lobster-500/10 dark:text-lobster-300">
         <Icon className="h-4 w-4" />
       </div>
     </div>
@@ -669,7 +669,7 @@ function InstancesTable({
                 type="button"
                 disabled={!instance.supportsRefresh || busyKey !== null}
                 onClick={() => onRefresh(instance.name)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:text-slate-200 dark:hover:border-emerald-500/40 dark:hover:text-emerald-300"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:border-lobster-300 hover:text-lobster-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:text-slate-200 dark:hover:border-lobster-500/40 dark:hover:text-lobster-300"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${busyKey === `refresh-instance:${instance.name}` ? 'animate-spin' : ''}`} />
                 {instance.supportsRefresh
@@ -785,7 +785,7 @@ function NamespacesTable({
                   type="button"
                   disabled={!supportsInspect || busyKey !== null}
                   onClick={() => onInspect(policy.namespace)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:text-slate-200 dark:hover:border-emerald-500/40 dark:hover:text-emerald-300"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:border-lobster-300 hover:text-lobster-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:text-slate-200 dark:hover:border-lobster-500/40 dark:hover:text-lobster-300"
                 >
                   <Eye className="h-3.5 w-3.5" />
                   {supportsInspect
@@ -796,7 +796,7 @@ function NamespacesTable({
                   type="button"
                   disabled={!supportsRefresh || busyKey !== null}
                   onClick={() => onRefresh(policy.namespace)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:text-slate-200 dark:hover:border-emerald-500/40 dark:hover:text-emerald-300"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:border-lobster-300 hover:text-lobster-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:text-slate-200 dark:hover:border-lobster-500/40 dark:hover:text-lobster-300"
                 >
                   <RefreshCw className={`h-3.5 w-3.5 ${busyKey === `refresh-namespace:${policy.namespace}` ? 'animate-spin' : ''}`} />
                   {supportsRefresh

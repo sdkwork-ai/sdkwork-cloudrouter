@@ -155,7 +155,7 @@ export function RuntimeRegionAdmin() {
           {t('common.actions.reload')}
         </button>
         <button
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-lg bg-lobster-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-lobster-600 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={saving || Boolean(regionCodeError) || Boolean(regionNameError)}
           onClick={() => void saveSettings()}
           type="button"
@@ -179,7 +179,7 @@ export function RuntimeRegionAdmin() {
       <div className="min-h-0 flex-1 overflow-y-auto pr-1" data-admin-runtime-region-scroll>
       <div className="grid min-h-0 grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
         <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
-          <SectionHeader icon={<Globe2 className="h-5 w-5 text-blue-500" />} title={t('admin.runtimeRegion.sections.current')} />
+          <SectionHeader icon={<Globe2 className="h-5 w-5 text-lobster-500" />} title={t('admin.runtimeRegion.sections.current')} />
           <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
             <TextField
               error={regionCodeError}
@@ -206,7 +206,7 @@ export function RuntimeRegionAdmin() {
         </section>
 
         <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
-          <SectionHeader icon={<MapPin className="h-5 w-5 text-emerald-500" />} title={t('admin.runtimeRegion.sections.presets')} />
+          <SectionHeader icon={<MapPin className="h-5 w-5 text-lobster-500" />} title={t('admin.runtimeRegion.sections.presets')} />
           <div className="mt-5 grid grid-cols-1 gap-3">
             {REGION_PRESETS.map((preset) => {
               const active = form.currentRegionCode.trim() === preset.code;
@@ -214,7 +214,7 @@ export function RuntimeRegionAdmin() {
                 <button
                   className={`flex min-h-14 items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors ${
                     active
-                      ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-500/10 dark:text-blue-200'
+                      ? 'border-lobster-500 bg-lobster-50 text-lobster-700 dark:border-lobster-400 dark:bg-lobster-500/10 dark:text-lobster-200'
                       : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10'
                   }`}
                   key={preset.code}
@@ -264,7 +264,7 @@ function TextField({ label, value, onChange, className = '', required = false, e
         className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:ring-2 dark:bg-black/20 dark:text-white ${
           error
             ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20 dark:border-red-500/40'
-            : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 dark:border-white/10'
+            : 'border-slate-200 focus:border-lobster-500 focus:ring-lobster-500/20 dark:border-white/10'
         }`}
         onChange={(event) => onChange(event.target.value)}
         required={required}
@@ -286,7 +286,7 @@ function TextArea({ label, value, onChange, className = '', rows = 4 }: {
     <label className={`block ${className}`}>
       <span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
       <textarea
-        className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-black/20 dark:text-white"
+        className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/20 dark:border-white/10 dark:bg-black/20 dark:text-white"
         onChange={(event) => onChange(event.target.value)}
         rows={rows}
         value={value}

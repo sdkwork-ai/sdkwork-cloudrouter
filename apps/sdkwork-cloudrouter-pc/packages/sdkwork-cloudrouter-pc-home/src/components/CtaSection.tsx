@@ -14,20 +14,10 @@ export function CtaSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-slate-900 px-8 py-16 text-center md:px-16 md:py-20 dark:border dark:border-white/10"
+          className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 px-8 py-16 text-center md:px-16 md:py-20 dark:border-white/10"
         >
-          {/* Layered background */}
-          <div className="pointer-events-none absolute inset-0">
-            {/* Primary center glow */}
-            <div className="absolute left-1/2 top-0 h-80 w-[680px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(229,80,57,0.35),transparent_70%)] blur-3xl" />
-            {/* Secondary corner accents */}
-            <div className="absolute -left-20 top-1/2 h-64 w-64 -translate-y-1/2 rounded-full bg-orange-500/15 blur-3xl" />
-            <div className="absolute -right-20 bottom-0 h-64 w-64 rounded-full bg-amber-500/10 blur-3xl" />
-            {/* Grid overlay */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_50%,#000_50%,transparent_100%)]" />
-            {/* Top hairline accent */}
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-lobster-500/60 to-transparent" />
-          </div>
+          {/* Top hairline accent */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-lobster-500/60" />
 
           <div className="relative">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-sm font-medium text-white backdrop-blur-sm">
@@ -45,10 +35,10 @@ export function CtaSection() {
 
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link
-                className="group flex items-center gap-2 rounded-full bg-white px-8 py-4 font-semibold text-slate-900 shadow-lg shadow-black/20 transition-all hover:scale-105 hover:bg-slate-100"
+                className="group flex items-center gap-2 rounded-full bg-lobster-500 px-8 py-4 font-semibold text-white shadow-lg shadow-lobster-500/25 transition-all hover:scale-105 hover:bg-lobster-600"
                 to="/console"
               >
-                <Zap className="h-5 w-5 text-lobster-500" />
+                <Zap className="h-5 w-5" />
                 {t('cta.primary')}
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
               </Link>

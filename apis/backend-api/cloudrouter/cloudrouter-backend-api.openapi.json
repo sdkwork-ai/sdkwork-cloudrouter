@@ -4301,6 +4301,12 @@
             "maxLength": 128,
             "type": "string"
           },
+          "defaultBaseUrl": {
+            "description": "Default base url field on create upstream supplier request.",
+            "maxLength": 2048,
+            "nullable": true,
+            "type": "string"
+          },
           "defaultVendorCode": {
             "description": "Default vendor code field on create upstream supplier request.",
             "maxLength": 64,
@@ -7837,6 +7843,12 @@
             "maxLength": 128,
             "type": "string"
           },
+          "defaultBaseUrl": {
+            "description": "Default base url field on update upstream supplier request.",
+            "maxLength": 2048,
+            "nullable": true,
+            "type": "string"
+          },
           "defaultVendorCode": {
             "description": "Default vendor code field on update upstream supplier request.",
             "maxLength": 64,
@@ -10017,6 +10029,12 @@
             "maxLength": 128,
             "type": "string"
           },
+          "defaultBaseUrl": {
+            "description": "Default base url field on upstream supplier.",
+            "maxLength": 2048,
+            "nullable": true,
+            "type": "string"
+          },
           "defaultVendorCode": {
             "description": "Default vendor code field on upstream supplier.",
             "maxLength": 64,
@@ -10151,6 +10169,7 @@
           "description",
           "supplierType",
           "defaultVendorCode",
+          "defaultBaseUrl",
           "adapterCode",
           "protocolCode",
           "protocols",
@@ -10496,6 +10515,17 @@
             "minimum": 1,
             "nullable": true,
             "type": "integer"
+          },
+          "vendorCodes": {
+            "description": "Vendor codes field on upstream supplier endpoint.",
+            "items": {
+              "description": "Vendor codes field on upstream supplier endpoint.",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "maxItems": 9,
+            "minItems": 1,
+            "type": "array"
           }
         },
         "required": [
@@ -10510,7 +10540,8 @@
           "routingWeight",
           "timeoutMs",
           "healthStatus",
-          "status"
+          "status",
+          "vendorCodes"
         ],
         "type": "object"
       },
@@ -10619,12 +10650,24 @@
             "minimum": 1,
             "nullable": true,
             "type": "integer"
+          },
+          "vendorCodes": {
+            "description": "Vendor codes field on upstream supplier endpoint input.",
+            "items": {
+              "description": "Vendor codes field on upstream supplier endpoint input.",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "maxItems": 9,
+            "minItems": 1,
+            "type": "array"
           }
         },
         "required": [
           "endpointCode",
           "endpointName",
-          "baseUrl"
+          "baseUrl",
+          "vendorCodes"
         ],
         "type": "object"
       },

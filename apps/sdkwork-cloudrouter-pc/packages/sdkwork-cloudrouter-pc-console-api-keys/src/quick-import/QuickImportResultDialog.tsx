@@ -103,7 +103,7 @@ export function QuickImportResultDialog({ result, appUnavailable, onRetryOpen, o
           <div className="mt-5">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-                <Key className="h-4 w-4 text-blue-500" />
+                <Key className="h-4 w-4 text-primary-500" />
                 {t('console.apiKeys.quickImport.contentLabel', '配置内容')}
               </div>
               <div className="flex items-center gap-2">
@@ -117,7 +117,7 @@ export function QuickImportResultDialog({ result, appUnavailable, onRetryOpen, o
                 <button
                   type="button"
                   onClick={() => downloadQuickImportContent(result)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600 transition-colors hover:bg-blue-100 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-primary-200 bg-primary-50 px-3 py-1.5 text-xs font-semibold text-primary-600 transition-colors hover:bg-primary-100 dark:border-primary-500/20 dark:bg-primary-500/10 dark:text-primary-400 dark:hover:bg-primary-500/20"
                 >
                   <Download className="h-3.5 w-3.5" />
                   {t('console.apiKeys.quickImport.download', '下载文件')}
@@ -132,7 +132,7 @@ export function QuickImportResultDialog({ result, appUnavailable, onRetryOpen, o
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-[#1e1e1e]">
               <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-                <FolderOpen className="h-4 w-4 text-amber-500" />
+                <FolderOpen className="h-4 w-4 text-lobster-500" />
                 {t('console.apiKeys.quickImport.configPath', '配置位置')}
               </div>
               <div className="mt-2 break-all font-mono text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -141,7 +141,7 @@ export function QuickImportResultDialog({ result, appUnavailable, onRetryOpen, o
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-[#1e1e1e]">
               <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-                <ListChecks className="h-4 w-4 text-emerald-500" />
+                <ListChecks className="h-4 w-4 text-lobster-500" />
                 {t('console.apiKeys.quickImport.steps', '导入步骤')}
               </div>
               <ol className="mt-2 list-decimal space-y-1 pl-4 text-xs leading-5 text-slate-600 dark:text-slate-300">
@@ -157,7 +157,7 @@ export function QuickImportResultDialog({ result, appUnavailable, onRetryOpen, o
           {appUnavailable && onRetryOpen && (
             <button
               onClick={onRetryOpen}
-              className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-5 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 dark:border-blue-500/20 dark:bg-transparent dark:text-blue-300 dark:hover:bg-blue-500/10"
+              className="inline-flex items-center gap-2 rounded-lg border border-primary-200 bg-white px-5 py-2 text-sm font-medium text-primary-600 transition-colors hover:bg-primary-50 dark:border-primary-500/20 dark:bg-transparent dark:text-primary-300 dark:hover:bg-primary-500/10"
             >
               <ExternalLink className="h-4 w-4" />
               {t('console.apiKeys.quickImport.retryOpenApp', {
@@ -168,7 +168,7 @@ export function QuickImportResultDialog({ result, appUnavailable, onRetryOpen, o
           )}
           <button
             onClick={onClose}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-700"
           >
             <Check className="h-4 w-4" />
             {t('common.actions.close', '关闭')}

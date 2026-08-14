@@ -11,7 +11,7 @@ use crate::application::{
     SelectedUpstreamModelRoute, UpstreamRouteSelectionErrorKind, UpstreamRouteSelector,
 };
 use crate::domain::{
-    has_text, provider_native_model_id, BillingMeter, ModelUpstreamRoute,
+    has_text, provider_native_model_id, BillingMeter, ModelUpstreamRoute, RoutingCapability,
     ResolveModelMappingContext, UpstreamAccountRoute,
 };
 use crate::ports::UpstreamAccountRouteCatalog;
@@ -132,7 +132,13 @@ where
         plan.routes
             .into_iter()
             .map(|selection| {
-                mapped_model_candidate(catalog, &requested_model, selection, &mapping_context)
+                mapped_model_candidate(
+                    catalog,
+                    &requested_model,
+                    invocation.resource.capability,
+                    selection,
+                    &mapping_context,
+                )
             })
             .collect::<Vec<_>>(),
     ));
@@ -158,10 +164,16 @@ where
 
     invocation.routing.policy_id = selection.policy_id;
     invocation.routing.rule_id = selection.rule_id;
-    invocation.routing.route_plan =
-        Some(InvocationRoutePlan::new(vec![upstream_account_candidate(
-            selection, invocation,
-        )]));
+    // 最终账号 + 故障转移序列（planner 已按策略排序并按 fallback mode 截断），
+    // 供过滤链与 dispatch 的 failover 使用。
+    let failover_routes = selection.failover_routes.clone();
+    let mut candidates = vec![upstream_account_candidate(selection, invocation, catalog)];
+    candidates.extend(
+        failover_routes
+            .into_iter()
+            .map(|route| account_route_candidate(route, invocation, catalog)),
+    );
+    invocation.routing.route_plan = Some(InvocationRoutePlan::new(candidates));
     Ok(())
 }
 
@@ -215,9 +227,11 @@ where
         credential_rotation: account_route
             .as_ref()
             .map(|route| route.credential_rotation.clone()),
-        base_url: account_route
-            .as_ref()
-            .and_then(|route| route.base_url.clone()),
+        base_url: effective_base_url(
+            invocation.resource.capability,
+            account_route.as_ref().and_then(|route| route.base_url.clone()),
+            catalog.supplier_default_base_url(&sticky_route.supplier_code),
+        ),
         secret_ref: account_route
             .as_ref()
             .and_then(|route| route.secret_ref.clone()),
@@ -235,6 +249,7 @@ where
 fn mapped_model_candidate<C>(
     catalog: &C,
     requested_model: &str,
+    capability: RoutingCapability,
     selection: SelectedUpstreamModelRoute,
     context: &AuthenticatedApiKeyContext,
 ) -> InvocationRouteCandidate
@@ -265,7 +280,8 @@ where
     let catalog_key = route.catalog_key.clone();
     let model = route.model.clone();
     let provider_model = route.provider_model.clone();
-    let mut candidate = model_candidate(selection);
+    let supplier_default_base_url = catalog.supplier_default_base_url(&route.supplier_code);
+    let mut candidate = model_candidate(selection, capability, supplier_default_base_url);
     candidate.provider_model = Some(
         account_mapping
             .as_ref()
@@ -329,7 +345,29 @@ fn normalized_resolved_provider_model(
     }
 }
 
-fn model_candidate(selection: SelectedUpstreamModelRoute) -> InvocationRouteCandidate {
+/// 按请求资源能力判定最终调用 Base URL：Chat（LLM）走协议端点 Base URL；
+/// 非 LLM 资源（图片/视频/音频等）优先使用供应商默认 Base URL，未配置时回退端点地址。
+fn effective_base_url(
+    capability: RoutingCapability,
+    endpoint_base_url: Option<String>,
+    supplier_default_base_url: Option<String>,
+) -> Option<String> {
+    if capability != RoutingCapability::Chat {
+        if let Some(default_url) = supplier_default_base_url {
+            let trimmed = default_url.trim();
+            if !trimmed.is_empty() {
+                return Some(trimmed.to_owned());
+            }
+        }
+    }
+    endpoint_base_url
+}
+
+fn model_candidate(
+    selection: SelectedUpstreamModelRoute,
+    capability: RoutingCapability,
+    supplier_default_base_url: Option<String>,
+) -> InvocationRouteCandidate {
     let route = selection.route;
     InvocationRouteCandidate {
         kind: InvocationRouteCandidateKind::Model,
@@ -347,7 +385,11 @@ fn model_candidate(selection: SelectedUpstreamModelRoute) -> InvocationRouteCand
         region_code: route.region_code.clone(),
         credential_id: route.credential_id,
         credential_rotation: Some(route.credential_rotation.clone()),
-        base_url: route.base_url.clone(),
+        base_url: effective_base_url(
+            capability,
+            route.base_url.clone(),
+            supplier_default_base_url,
+        ),
         secret_ref: route.secret_ref.clone(),
         auth_profile: route.auth_profile.clone(),
         timeout_ms: route.timeout_ms,
@@ -355,10 +397,14 @@ fn model_candidate(selection: SelectedUpstreamModelRoute) -> InvocationRouteCand
     }
 }
 
-fn upstream_account_candidate(
+fn upstream_account_candidate<C>(
     selection: SelectedUpstreamAccountRoute,
     invocation: &Invocation,
-) -> InvocationRouteCandidate {
+    catalog: &C,
+) -> InvocationRouteCandidate
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
     let route = selection.route;
     InvocationRouteCandidate {
         kind: InvocationRouteCandidateKind::UpstreamAccount,
@@ -376,7 +422,49 @@ fn upstream_account_candidate(
         region_code: route.region_code.clone(),
         credential_id: route.credential_id,
         credential_rotation: Some(route.credential_rotation.clone()),
-        base_url: route.base_url.clone(),
+        base_url: effective_base_url(
+            invocation.resource.capability,
+            route.base_url.clone(),
+            catalog.supplier_default_base_url(&route.supplier_code),
+        ),
+        secret_ref: route.secret_ref.clone(),
+        auth_profile: route.auth_profile.clone(),
+        timeout_ms: route.timeout_ms,
+        retry_policy: route.retry_policy.clone(),
+    }
+}
+
+/// 故障转移候选：与 `upstream_account_candidate` 同构，用于无模型/账号路由
+/// 路径的剩余账号（policy/rule 归属与主账号相同来源，故障转移语义一致）。
+fn account_route_candidate<C>(
+    route: UpstreamAccountRoute,
+    invocation: &Invocation,
+    catalog: &C,
+) -> InvocationRouteCandidate
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    InvocationRouteCandidate {
+        kind: InvocationRouteCandidateKind::UpstreamAccount,
+        supplier_code: route.supplier_code.clone(),
+        account_id: route.account_id,
+        account_group_id: invocation.subject.account_group_id,
+        account_group_code: invocation.subject.account_group_code.clone(),
+        pricing_plan_code: invocation.subject.pricing_plan_code.clone(),
+        policy_id: None,
+        rule_id: None,
+        api_code: invocation.resource.api_code.clone(),
+        catalog_key: invocation.resource.requested_model_catalog_key.clone(),
+        requested_model: invocation.resource.requested_model.clone(),
+        provider_model: invocation.resource.provider_native_model.clone(),
+        region_code: route.region_code.clone(),
+        credential_id: route.credential_id,
+        credential_rotation: Some(route.credential_rotation.clone()),
+        base_url: effective_base_url(
+            invocation.resource.capability,
+            route.base_url.clone(),
+            catalog.supplier_default_base_url(&route.supplier_code),
+        ),
         secret_ref: route.secret_ref.clone(),
         auth_profile: route.auth_profile.clone(),
         timeout_ms: route.timeout_ms,

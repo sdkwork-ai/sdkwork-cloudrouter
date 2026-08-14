@@ -315,7 +315,7 @@ export function PaymentDialog({ title, description, saving, onClose, onSubmit, c
               {t('admin.commerce.payments.dialog.cancel', 'Cancel')}
             </button>
             <button
-              className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-md bg-lobster-500 px-4 py-2 text-sm font-medium text-white hover:bg-lobster-600 disabled:opacity-60"
               disabled={saving}
               type="submit"
             >
@@ -387,7 +387,7 @@ export function TextField({ description, label, onChange, ...props }: { descript
   return (
     <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
       <span>{label}</span>
-      <input {...props} className="mt-1.5 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white" onChange={(event) => onChange(event.target.value)} />
+      <input {...props} className="mt-1.5 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-lobster-500 dark:border-white/10 dark:bg-white/5 dark:text-white" onChange={(event) => onChange(event.target.value)} />
       {description ? <span className="mt-1 block text-xs font-normal text-slate-500">{description}</span> : null}
     </label>
   );
@@ -413,7 +413,7 @@ export function SelectField({ disabled, label, onChange, options, translateOptio
   return (
     <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
       <span>{label}</span>
-      <select className="mt-1.5 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-[#202020] dark:text-white" disabled={disabled} onChange={(event) => onChange(event.target.value)} value={value}>
+      <select className="mt-1.5 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-lobster-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-[#202020] dark:text-white" disabled={disabled} onChange={(event) => onChange(event.target.value)} value={value}>
         {options.map((option) => typeof option === 'string'
           ? <option key={option} value={option}>{optionLabel(option)}</option>
           : <option key={option.value} value={option.value}>{optionLabel(option)}</option>)}

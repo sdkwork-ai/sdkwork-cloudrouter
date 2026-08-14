@@ -877,12 +877,15 @@ async fn invocation_router_returns_not_found_for_unknown_openai_prefixed_paths_b
                 .method("POST")
                 .uri("/v1/not-openai-standard")
                 .header("content-type", "application/json")
+                .header("authorization", "Bearer sk-live-secret")
                 .body(Body::from(r#"{"model":"gpt-4o-mini"}"#))
                 .unwrap(),
         )
         .await
         .unwrap();
 
+    // 鉴权先于分类（安全顺序）：未认证请求先被 401 拦截；已认证的未知
+    // OpenAI 前缀路径不进入调用管道，直接 404。
     assert_eq!(StatusCode::NOT_FOUND, response.status());
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
@@ -1009,6 +1012,79 @@ async fn invocation_router_routes_extended_model_resource_and_percent_encodes_qu
         panic!("expected JSON provider request body");
     };
     assert_eq!(None, provider_body.get("model"));
+}
+
+#[tokio::test]
+async fn invocation_router_uses_supplier_default_base_url_for_non_llm_resources() {
+    let hasher = hasher();
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let dispatcher = Arc::new(CapturingDispatcher::default());
+    let mut catalog = catalog_with_encoded_image_model_and_hashed_api_key(&key_hash);
+    // 供应商默认 Base URL：非 LLM 资源（图片/视频等）调用使用；Chat 请求仍走协议端点地址
+    catalog.set_supplier_default_base_url("openrouter", "http://default.openrouter.internal");
+    let router = sdkwork_cloudrouter_edge_runtime::invocation_router_with_full_pipeline(
+        Arc::new(catalog),
+        hasher,
+        dispatcher.clone(),
+        Some(secret_resolver()),
+        None,
+        None,
+    );
+
+    // 图片请求：资源未匹配 LLM API 协议 → 走供应商默认 Base URL
+    let response = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/images/generations?model=openrouter%2Fgpt-4o-mini%2Blatest")
+                .header("authorization", "Bearer sk-live-secret")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"prompt":"city skyline","n":1}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::OK, response.status());
+    let calls = dispatcher.calls();
+    assert_eq!(1, calls.len());
+    let provider_request = calls[0]
+        .provider_request
+        .as_ref()
+        .expect("provider request");
+    assert_eq!(
+        Some(
+            "http://default.openrouter.internal/v1/images/generations?model=gpt-4o-mini%2Blatest"
+        ),
+        provider_request.url.as_deref()
+    );
+
+    // Chat 请求：LLM 资源匹配协议端点 → 仍走协议端点 Base URL
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/chat/completions")
+                .header("authorization", "Bearer sk-live-secret")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"model":"gpt-4o-mini","messages":[{"role":"user","content":"ping"}]}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::OK, response.status());
+    let calls = dispatcher.calls();
+    assert_eq!(2, calls.len());
+    let provider_request = calls[1]
+        .provider_request
+        .as_ref()
+        .expect("provider request");
+    assert_eq!(
+        Some("http://provider-proxy.internal/openrouter/v1/chat/completions"),
+        provider_request.url.as_deref()
+    );
 }
 
 #[tokio::test]

@@ -302,6 +302,14 @@ where
     let Some(config) = provider_passthrough_config else {
         return router;
     };
+    // 遗留降级模式：未配置 provider secret resolver 时启用静态 relay
+    // passthrough。该路径不解析账号/模型路由，也不做用量计量与计价——
+    // 生产部署应配置 secret resolver 走完整调用管道；此处显式告警，
+    // 避免运营对无计量转发产生计费预期。
+    tracing::warn!(
+        "provider secret resolver is not configured: legacy static relay passthrough is active; \
+         relay usage is NOT metered and model/account routing is bypassed"
+    );
     router.merge(
         crate::passthrough::authenticated_gateway_passthrough_router_with_adapter_config_and_query_string_api_key_policy(
             crate::passthrough::AuthenticatedGatewayPassthroughConfig {
@@ -1612,16 +1620,18 @@ async fn finalize_all_in_one_route_surfaces(
     database_pool: &DatabasePool,
     backend_router: Router,
     app_router: Router,
+    backend_domain_injectors: Vec<Arc<dyn sdkwork_web_core::DomainContextInjector>>,
 ) -> (Router, Router) {
     let postgres_pool = database_pool
         .as_postgres()
         .cloned()
         .map(std::sync::Arc::new);
     (
-        sdkwork_routes_cloudrouter_backend_api::maybe_wrap_router_with_web_framework_and_iam_pool(
+        sdkwork_routes_cloudrouter_backend_api::maybe_wrap_router_with_web_framework_and_iam_pool_with_injectors(
             backend_router,
             database_config,
             postgres_pool.clone(),
+            backend_domain_injectors,
         )
         .await,
         sdkwork_routes_cloudrouter_app_api::maybe_wrap_router_with_web_framework_and_iam_pool(
@@ -1799,6 +1809,21 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
         .await
         .map_err(anyhow::Error::msg)?;
     let backend_router = backend_router.merge(community_backend_assembly.router);
+    // RTC backend surface (`/backend/v3/api/rtc/*`) is dependency-owned. It
+    // enters through the RTC API assembly backend contribution on the
+    // process-shared database pool — not through a direct `sdkwork-routes-*`
+    // import — per API_ASSEMBLY_SPEC §3/§6.1, and must be merged before the
+    // Web Framework layer is installed by `finalize_all_in_one_route_surfaces`.
+    // The contribution's domain context injector is registered with the
+    // backend Web Framework layer below so RTC handlers receive the RTC
+    // `AppContext` extension they extract.
+    let rtc_backend_contribution =
+        sdkwork_api_rtc_assembly::assemble_backend_api_contribution_with_pool(
+            context.database_pool.clone(),
+        )
+        .await
+        .map_err(anyhow::Error::msg)?;
+    let backend_router = backend_router.merge(rtc_backend_contribution.router);
     let app_router = sdkwork_routes_cloudrouter_app_api::router_with_postgres_shared_runtime(
         sdkwork_routes_cloudrouter_app_api::PostgresSharedRuntime {
             config: context.database_config.clone(),
@@ -1843,6 +1868,7 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
         &context.database_pool,
         backend_router,
         app_router,
+        rtc_backend_contribution.domain_context_injectors,
     )
     .await;
     // Open-api surface request logging: every request that reaches the gateway
@@ -3665,6 +3691,42 @@ gateway_invocation_body_max_bytes = 37
             .find("= finalize_all_in_one_route_surfaces(")
             .expect("framework finalize call after iam merge");
         assert!(merge_at < finalize_at);
+    }
+
+    #[test]
+    fn all_in_one_backend_composes_rtc_backend_surface_through_assembly() {
+        let source = include_str!("runtime.rs");
+
+        // Dependency-owned RTC backend surface enters through the RTC API
+        // assembly backend contribution on the process-shared database pool
+        // (API_ASSEMBLY_SPEC §3/§6.1), never through a direct route-crate
+        // import.
+        assert!(source.contains(
+            "sdkwork_api_rtc_assembly::assemble_backend_api_contribution_with_pool("
+        ));
+        let forbidden_route_crate_import = ["sdkwork_routes_rtc", "_backend_api::"].concat();
+        assert!(
+            !source.contains(&forbidden_route_crate_import),
+            "rtc backend surface must not import the dependency route crate directly"
+        );
+        // The RTC backend router must be merged before the Web Framework layer
+        // is installed by `finalize_all_in_one_route_surfaces`; a merge after
+        // framework installation would leave it without request context.
+        let merge_at = source
+            .find(".merge(rtc_backend_contribution.router)")
+            .expect("rtc backend router merge before framework finalize");
+        let finalize_at = source
+            .find("= finalize_all_in_one_route_surfaces(")
+            .expect("framework finalize call after rtc merge");
+        assert!(merge_at < finalize_at);
+        // The RTC contribution's domain context injector must be registered
+        // with the backend Web Framework layer so RTC handlers receive the
+        // RTC `AppContext` extension they extract; it is passed into the
+        // framework finalize call after the router merge.
+        let injectors_at = source
+            .find("rtc_backend_contribution.domain_context_injectors")
+            .expect("rtc domain context injectors passed into framework finalize");
+        assert!(injectors_at > merge_at && injectors_at > finalize_at);
     }
 
     #[test]

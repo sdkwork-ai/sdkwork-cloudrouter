@@ -154,7 +154,7 @@ export function AiResourceSelectorModal({
               }}
               aria-label={labels.searchPlaceholder}
               placeholder={labels.searchPlaceholder}
-              className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white dark:border-white/10 dark:bg-[#121212] dark:text-white dark:focus:border-emerald-500"
+              className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-lobster-500 focus:bg-white dark:border-white/10 dark:bg-[#121212] dark:text-white dark:focus:border-lobster-500"
             />
           </div>
         </div>
@@ -190,7 +190,7 @@ export function AiResourceSelectorModal({
                         type={selectionMode === 'multiple' ? 'checkbox' : 'radio'}
                         checked={selected.has(option.resourceCode)}
                         onChange={() => toggleCode(option.resourceCode)}
-                        className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                        className="h-4 w-4 rounded border-slate-300 text-lobster-500 focus:ring-lobster-500"
                       />
                     </td>
                     <td className="px-5 py-3">
@@ -202,7 +202,7 @@ export function AiResourceSelectorModal({
                         {((option.capabilities?.length ?? 0) > 0 ? option.capabilities ?? [] : [option.capability ?? option.resourceType])
                           .filter(Boolean)
                           .map(capability => (
-                            <span key={capability} className="rounded bg-emerald-50 px-1.5 py-0.5 font-mono text-[10px] text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+                            <span key={capability} className="rounded bg-lobster-50 px-1.5 py-0.5 font-mono text-[10px] text-lobster-600 dark:bg-lobster-500/10 dark:text-lobster-300">
                               {capability}
                             </span>
                           ))}

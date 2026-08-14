@@ -623,8 +623,11 @@ SELECT
     COALESCE(e.priority, 100) AS endpoint_priority,
     COALESCE(e.routing_weight, 100) AS endpoint_weight,
     CASE
-        WHEN endpoint_health.endpoint_id IS NULL THEN 0
-        WHEN endpoint_health.health_status = 1
+        -- 无端点（仅供应商默认 Base URL）的兜底行视为健康，否则会被 is_account_healthy 剔除
+        WHEN e.id IS NULL THEN 1
+        -- 无健康记录 = 未知 = 放行（新端点初始化为 0，剔除会导致新建资源无法路由的死锁）
+        WHEN endpoint_health.endpoint_id IS NULL THEN 1
+        WHEN endpoint_health.health_status IN (0, 1)
           OR (
               endpoint_health.health_status = 2
               AND endpoint_health.updated_at + ($1 * INTERVAL '1 second') <= CURRENT_TIMESTAMP
@@ -633,6 +636,7 @@ SELECT
         ELSE endpoint_health.health_status
     END AS endpoint_health_status,
     e.base_url,
+    s.default_base_url AS supplier_default_base_url,
     'managed://upstream-account-credential/' || cc.id::text AS secret_ref,
     cc.secret_ciphertext,
     cc.secret_key_id,
@@ -641,8 +645,9 @@ SELECT
     COALESCE(c.timeout_ms, e.timeout_ms) AS timeout_ms,
     c.retry_policy::text AS retry_policy_json,
     CASE
-        WHEN account_health.account_id IS NULL THEN 0
-        WHEN account_health.health_status = 1
+        -- 无健康记录 = 未知 = 放行（新账号初始化为 0，剔除会导致新建账号无法路由的死锁）
+        WHEN account_health.account_id IS NULL THEN 1
+        WHEN account_health.health_status IN (0, 1)
           OR (
               account_health.health_status = 2
               AND account_health.updated_at + ($1 * INTERVAL '1 second') <= CURRENT_TIMESTAMP
@@ -819,7 +824,7 @@ JOIN ai_upstream_account_credential cc
  AND cc.status = 1
  AND cc.is_active
  AND (cc.expires_at IS NULL OR cc.expires_at > CURRENT_TIMESTAMP)
-JOIN ai_upstream_supplier_endpoint e
+LEFT JOIN ai_upstream_supplier_endpoint e
   ON e.supplier_id = c.supplier_id
  AND e.tenant_id = c.tenant_id
  AND e.organization_id = c.organization_id
@@ -848,7 +853,7 @@ WHERE c.deleted_at IS NULL
         AND (member.effective_to IS NULL OR member.effective_to > CURRENT_TIMESTAMP)
   )
   AND NULLIF(cc.secret_ciphertext, '') IS NOT NULL
-  AND NULLIF(e.base_url, '') IS NOT NULL
+  AND (NULLIF(e.base_url, '') IS NOT NULL OR NULLIF(s.default_base_url, '') IS NOT NULL)
 ORDER BY CASE WHEN e.id = c.preferred_endpoint_id THEN 0 ELSE 1 END ASC,
          COALESCE(e.priority, 100) ASC,
          COALESCE(e.routing_weight, 100) DESC,

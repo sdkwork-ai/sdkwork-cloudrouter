@@ -41,6 +41,7 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
             uuid: "test-upstream-supplier-openai".to_owned(),
             supplier_code: "openai".to_owned(),
             default_vendor_code: None,
+            default_base_url: Some("https://default.openai.com/v1".to_owned()),
             supplier_name: "OpenAI".to_owned(),
             display_name: "OpenAI Official".to_owned(),
             description: Some("Official upstream".to_owned()),
@@ -61,6 +62,11 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
         .await
         .expect("create supplier");
     assert_eq!(0, supplier.version);
+    // 供应商默认 Base URL 持久化：保存与重读一致
+    assert_eq!(
+        Some("https://default.openai.com/v1".to_owned()),
+        supplier.default_base_url
+    );
 
     let auth_methods = store
         .replace_supplier_auth_methods(
@@ -101,12 +107,26 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
                 routing_weight: 100,
                 timeout_ms: Some(30_000),
                 status: 1,
+                vendor_codes: vec!["openai".to_owned(), "anthropic".to_owned()],
             }],
             REQUESTED_AT.to_owned(),
         )
         .await
         .expect("replace endpoints");
     assert_eq!(1, endpoints.len());
+    // 官方 vendor 多选持久化：重读后逐项断言
+    assert_eq!(
+        vec!["openai".to_owned(), "anthropic".to_owned()],
+        endpoints[0].vendor_codes
+    );
+    let reloaded_endpoints = store
+        .list_supplier_endpoints(subject.clone(), supplier.id)
+        .await
+        .expect("list endpoints");
+    assert_eq!(
+        vec!["openai".to_owned(), "anthropic".to_owned()],
+        reloaded_endpoints[0].vendor_codes
+    );
 
     store
         .replace_supplier_resources(
@@ -414,6 +434,7 @@ async fn postgres_upstream_store_creates_initial_credential_atomically_with_acco
             uuid: "test-upstream-supplier-atomic".to_owned(),
             supplier_code: "atomic-openai".to_owned(),
             default_vendor_code: None,
+            default_base_url: None,
             supplier_name: "Atomic OpenAI".to_owned(),
             display_name: "Atomic OpenAI Official".to_owned(),
             description: None,
@@ -597,6 +618,7 @@ async fn postgres_upstream_store_account_resources_scope_runtime_routes() {
             uuid: "test-upstream-supplier-scope".to_owned(),
             supplier_code: "scope-openai".to_owned(),
             default_vendor_code: None,
+            default_base_url: None,
             supplier_name: "Scope OpenAI".to_owned(),
             display_name: "Scope OpenAI Official".to_owned(),
             description: None,
@@ -653,6 +675,7 @@ async fn postgres_upstream_store_account_resources_scope_runtime_routes() {
                 routing_weight: 100,
                 timeout_ms: Some(30_000),
                 status: 1,
+                vendor_codes: vec!["openai".to_owned()],
             }],
             REQUESTED_AT.to_owned(),
         )
@@ -1132,6 +1155,18 @@ impl PostgresTestContext {
         .execute(&pool)
         .await
         .expect("apply upstream account group default flag migration");
+        sqlx::raw_sql(include_str!(
+            "../../../database/migrations/postgres/0027_add_upstream_supplier_endpoint_vendors.up.sql"
+        ))
+        .execute(&pool)
+        .await
+        .expect("apply upstream supplier endpoint vendor codes migration");
+        sqlx::raw_sql(include_str!(
+            "../../../database/migrations/postgres/0028_add_upstream_supplier_default_base_url.up.sql"
+        ))
+        .execute(&pool)
+        .await
+        .expect("apply upstream supplier default base URL migration");
         create_resource_catalog(&pool).await;
         Some(Self {
             pool,

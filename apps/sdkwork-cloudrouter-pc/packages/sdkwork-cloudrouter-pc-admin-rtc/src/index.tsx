@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { getCloudRouterRtcAdminService } from './rtcService';
 
 import '@sdkwork/rtc-pc-admin-core/src/admin-design-system.css';
+import '@sdkwork/rtc-pc-admin-core/src/admin-styles.css';
 
 export { RTC_ADMIN_DEFAULT_PATH } from './rtcAdminContribution';
 

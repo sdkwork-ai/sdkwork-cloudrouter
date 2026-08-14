@@ -44,6 +44,7 @@ pub fn cloud_router_backend_domain_context_injector() -> Arc<dyn DomainContextIn
 
 fn build_cloud_router_backend_web_framework_layer(
     resolver: IamWebRequestContextResolver,
+    extra_domain_injectors: Vec<Arc<dyn DomainContextInjector>>,
 ) -> WebFrameworkLayer<IamWebRequestContextResolver> {
     let route_manifest = http_route_manifest();
     let prefixes = cloud_router_backend_public_path_prefixes();
@@ -53,7 +54,7 @@ fn build_cloud_router_backend_web_framework_layer(
     let environment = resolve_cloud_web_environment_from_process_env();
     let security_policy = cloud_service_security_policy(&environment);
 
-    WebFrameworkLayer::new(resolver)
+    let mut framework = WebFrameworkLayer::new(resolver)
         .with_profile(WebRequestContextProfile {
             public_path_prefixes: prefixes,
             environment,
@@ -63,16 +64,32 @@ fn build_cloud_router_backend_web_framework_layer(
         .with_route_manifest(route_manifest.clone())
         .with_metrics(shared_http_metrics_registry())
         .with_authorization_policy(Arc::new(IamAuthorizationPolicy::new(route_manifest)))
-        .with_domain_injector(Arc::new(CloudRouterBackendDomainInjector))
+        .with_domain_injector(Arc::new(CloudRouterBackendDomainInjector));
+    for injector in extra_domain_injectors {
+        framework = framework.with_domain_injector(injector);
+    }
+    framework
 }
 
 pub fn wrap_router_with_web_framework(
     resolver: IamWebRequestContextResolver,
     router: Router,
 ) -> Router {
+    wrap_router_with_web_framework_and_injectors(resolver, router, Vec::new())
+}
+
+/// Same-origin dependency composition: registers dependency-owned domain
+/// context injectors (e.g. the RTC `AppContext` injector) with the backend
+/// Web Framework layer so dependency handlers receive the extensions they
+/// extract (API_ASSEMBLY_SPEC §3/§4/§6.1).
+pub fn wrap_router_with_web_framework_and_injectors(
+    resolver: IamWebRequestContextResolver,
+    router: Router,
+    extra_domain_injectors: Vec<Arc<dyn DomainContextInjector>>,
+) -> Router {
     with_web_request_context(
         router,
-        build_cloud_router_backend_web_framework_layer(resolver),
+        build_cloud_router_backend_web_framework_layer(resolver, extra_domain_injectors),
     )
 }
 
@@ -98,7 +115,13 @@ pub async fn maybe_wrap_router_with_web_framework_and_database_config(
     router: Router,
     database_config: &DatabaseConfig,
 ) -> Router {
-    maybe_wrap_router_with_web_framework_and_iam_pool(router, database_config, None).await
+    maybe_wrap_router_with_web_framework_and_iam_pool_with_injectors(
+        router,
+        database_config,
+        None,
+        Vec::new(),
+    )
+    .await
 }
 
 pub async fn maybe_wrap_router_with_web_framework_and_iam_pool(
@@ -106,9 +129,29 @@ pub async fn maybe_wrap_router_with_web_framework_and_iam_pool(
     database_config: &DatabaseConfig,
     postgres_pool: Option<Arc<PgPool>>,
 ) -> Router {
+    maybe_wrap_router_with_web_framework_and_iam_pool_with_injectors(
+        router,
+        database_config,
+        postgres_pool,
+        Vec::new(),
+    )
+    .await
+}
+
+/// Same-origin dependency composition: merges dependency business routers
+/// into the backend router BEFORE the Web Framework layer, and registers the
+/// dependency contributions' domain context injectors with that layer so
+/// dependency handlers receive the extensions they extract
+/// (API_ASSEMBLY_SPEC §3/§4/§6.1).
+pub async fn maybe_wrap_router_with_web_framework_and_iam_pool_with_injectors(
+    router: Router,
+    database_config: &DatabaseConfig,
+    postgres_pool: Option<Arc<PgPool>>,
+    extra_domain_injectors: Vec<Arc<dyn DomainContextInjector>>,
+) -> Router {
     let router = if web_framework_enabled_from_env() {
         let resolver = iam_web_resolver_from_env(Some(database_config), postgres_pool).await;
-        wrap_router_with_web_framework(resolver, router)
+        wrap_router_with_web_framework_and_injectors(resolver, router, extra_domain_injectors)
     } else {
         router
     };

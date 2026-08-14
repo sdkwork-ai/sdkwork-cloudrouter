@@ -25,6 +25,8 @@ use super::{InvocationRouteCandidate, InvocationRouteCandidateKind};
 /// 过滤链上下文：请求级一次提取，链内各过滤器共享，避免重复查询。
 pub struct RoutingFilterContext<'a> {
     pub catalog: &'a dyn UpstreamAccountRouteCatalog,
+    /// 租户（日志/追踪）
+    pub tenant_id: i64,
     /// 请求的模型名（模型路由/provider-native 均可能携带）
     pub requested_model: Option<&'a str>,
     /// 请求模型对应的 vendor code（一次提取；catalog key 已在规划阶段解析）
@@ -60,7 +62,6 @@ impl fmt::Display for FilterRejection {
 
 /// 过滤器组件：单一职责，纯函数式候选变换，独立可单测。
 pub trait CandidateFilter: Send + Sync {
-    #[allow(dead_code)]
     fn name(&self) -> &'static str;
 
     fn apply(
@@ -251,18 +252,17 @@ impl RoutingFilterChain {
     }
 
     /// 自定义过滤器列表（测试或扩展装配）。
-    #[allow(dead_code)]
     pub fn with_filters(filters: Vec<Box<dyn CandidateFilter>>) -> Self {
         Self { filters }
     }
 
-    #[allow(dead_code)]
     pub fn filters(&self) -> &[Box<dyn CandidateFilter>] {
         &self.filters
     }
 
-    /// 依次执行过滤器；任一拒绝即短路；候选耗尽视为路由不可用；
-    /// 否则取首个为最终账号，其余保留为故障转移序列。
+    /// 依次执行过滤器；任一拒绝即短路（记录拒绝过滤器名，便于追踪
+    /// 路由决策）；候选耗尽视为路由不可用；否则取首个为最终账号，
+    /// 其余保留为故障转移序列。
     pub fn select_account(
         &self,
         ctx: &RoutingFilterContext<'_>,
@@ -272,7 +272,15 @@ impl RoutingFilterChain {
         for filter in &self.filters {
             match filter.apply(ctx, current) {
                 FilterDecision::Continue(next) => current = next,
-                FilterDecision::Reject(rejection) => return Err(rejection),
+                FilterDecision::Reject(rejection) => {
+                    tracing::debug!(
+                        tenant_id = ctx.tenant_id,
+                        filter = filter.name(),
+                        kind = ?rejection.kind,
+                        "route filter rejected candidates"
+                    );
+                    return Err(rejection);
+                }
             }
         }
         let mut iter = current.into_iter();
@@ -298,6 +306,7 @@ fn candidate_is_callable(candidate: &InvocationRouteCandidate) -> bool {
 /// 构建请求级过滤上下文：一次提取模型 vendor code 与账号健康表。
 pub fn routing_filter_context<'a>(
     catalog: &'a dyn UpstreamAccountRouteCatalog,
+    tenant_id: i64,
     requested_model: Option<&'a str>,
     requested_model_catalog_key: Option<&'a str>,
 ) -> RoutingFilterContext<'a> {
@@ -310,6 +319,7 @@ pub fn routing_filter_context<'a>(
     }
     RoutingFilterContext {
         catalog,
+        tenant_id,
         requested_model,
         requested_model_vendor_code,
         account_health,
@@ -359,6 +369,7 @@ mod tests {
     fn ctx(catalog: &InMemoryPricingCatalog) -> RoutingFilterContext<'_> {
         RoutingFilterContext {
             catalog,
+            tenant_id: 10,
             requested_model: Some("gpt-4"),
             requested_model_vendor_code: None,
             account_health: HashMap::new(),
@@ -514,5 +525,132 @@ mod tests {
             .select_account(&context, vec![sticky])
             .expect_err("non-callable sticky candidate rejected");
         assert_eq!(rejection.kind, FilterRejectionKind::RouteUnavailable);
+    }
+
+    #[test]
+    fn supplier_blacklist_rejects_candidate_of_that_supplier() {
+        use crate::ports::{SupplierModelAccess, VendorModelListEntry};
+        let mut catalog = test_catalog();
+        catalog.set_supplier_model_access(SupplierModelAccess {
+            supplier_code: "openai".to_owned(),
+            blacklist: vec![VendorModelListEntry {
+                vendor_code: "openai".to_owned(),
+                models: vec!["gpt-4".to_owned()],
+            }],
+            whitelist: Vec::new(),
+        });
+        let chain = RoutingFilterChain::new();
+        let mut context = ctx(&catalog);
+        context.requested_model_vendor_code = Some("openai".to_owned());
+        let rejection = chain
+            .select_account(
+                &context,
+                vec![candidate(1, None, InvocationRouteCandidateKind::Model)],
+            )
+            .expect_err("supplier-blacklisted model rejected");
+        assert_eq!(rejection.kind, FilterRejectionKind::ModelForbidden);
+        assert!(rejection.message.contains("upstream supplier openai"));
+    }
+
+    /// 测试用过滤器：记录执行顺序
+    struct RecordingFilter {
+        name: &'static str,
+        log: std::sync::Arc<std::sync::Mutex<Vec<&'static str>>>,
+    }
+
+    impl CandidateFilter for RecordingFilter {
+        fn name(&self) -> &'static str {
+            self.name
+        }
+
+        fn apply(
+            &self,
+            _ctx: &RoutingFilterContext<'_>,
+            candidates: Vec<InvocationRouteCandidate>,
+        ) -> FilterDecision {
+            self.log.lock().unwrap().push(self.name);
+            FilterDecision::Continue(candidates)
+        }
+    }
+
+    /// 测试用过滤器：无条件拒绝
+    struct RejectAllFilter;
+
+    impl CandidateFilter for RejectAllFilter {
+        fn name(&self) -> &'static str {
+            "reject_all"
+        }
+
+        fn apply(
+            &self,
+            _ctx: &RoutingFilterContext<'_>,
+            _candidates: Vec<InvocationRouteCandidate>,
+        ) -> FilterDecision {
+            FilterDecision::Reject(FilterRejection {
+                kind: FilterRejectionKind::RouteUnavailable,
+                message: "reject all (test)".to_owned(),
+            })
+        }
+    }
+
+    #[test]
+    fn custom_filter_chain_executes_in_assembly_order() {
+        let catalog = test_catalog();
+        let log = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let chain = RoutingFilterChain::with_filters(vec![
+            Box::new(RecordingFilter { name: "first", log: log.clone() }),
+            Box::new(RecordingFilter { name: "second", log: log.clone() }),
+        ]);
+        let mut context = ctx(&catalog);
+        context.requested_model = None;
+        chain
+            .select_account(&context, vec![candidate(1, None, InvocationRouteCandidateKind::Model)])
+            .expect("selected");
+        assert_eq!(vec!["first", "second"], *log.lock().unwrap());
+        assert_eq!(2, chain.filters().len());
+    }
+
+    #[test]
+    fn custom_filter_chain_short_circuits_on_rejection() {
+        let catalog = test_catalog();
+        let log = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let chain = RoutingFilterChain::with_filters(vec![
+            Box::new(RecordingFilter { name: "first", log: log.clone() }),
+            Box::new(RejectAllFilter),
+            Box::new(RecordingFilter { name: "third", log: log.clone() }),
+        ]);
+        let mut context = ctx(&catalog);
+        context.requested_model = None;
+        let rejection = chain
+            .select_account(&context, vec![candidate(1, None, InvocationRouteCandidateKind::Model)])
+            .expect_err("rejected by second filter");
+        assert_eq!(FilterRejectionKind::RouteUnavailable, rejection.kind);
+        // 短路语义：拒绝后的过滤器不再执行
+        assert_eq!(vec!["first"], *log.lock().unwrap());
+    }
+
+    #[test]
+    fn supplier_whitelist_does_not_restrict_other_suppliers() {
+        use crate::ports::{SupplierModelAccess, VendorModelListEntry};
+        let mut catalog = test_catalog();
+        catalog.set_supplier_model_access(SupplierModelAccess {
+            supplier_code: "anthropic".to_owned(),
+            blacklist: Vec::new(),
+            whitelist: vec![VendorModelListEntry {
+                vendor_code: "anthropic".to_owned(),
+                models: vec!["claude-3-5-sonnet".to_owned()],
+            }],
+        });
+        let chain = RoutingFilterChain::new();
+        let mut context = ctx(&catalog);
+        context.requested_model_vendor_code = Some("openai".to_owned());
+        // openai 供应商没有配置黑白名单 → 不受 anthropic 白名单影响
+        let result = chain
+            .select_account(
+                &context,
+                vec![candidate(1, None, InvocationRouteCandidateKind::Model)],
+            )
+            .expect("unrestricted supplier candidate selected");
+        assert_eq!(result.account.account_id, 1);
     }
 }

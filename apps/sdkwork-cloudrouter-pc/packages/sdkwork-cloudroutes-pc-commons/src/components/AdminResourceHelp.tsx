@@ -85,7 +85,7 @@ export function AdminResourceHelpDialog({ closeLabel = 'Close', content, notesLa
             <ol className="mt-4 space-y-2.5">
               {content.steps.map((step, index) => (
                 <li className="flex gap-3 text-sm text-slate-700 dark:text-slate-200" key={index}>
-                  <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-blue-600 text-[11px] font-semibold text-white">
+                  <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-lobster-500 text-[11px] font-semibold text-white">
                     {index + 1}
                   </span>
                   <span className="leading-relaxed">{step}</span>

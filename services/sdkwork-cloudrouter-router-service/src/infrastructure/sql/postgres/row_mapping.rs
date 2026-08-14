@@ -86,6 +86,7 @@ pub async fn load_upstream_account_routes(
             endpoint_weight: row.try_get("endpoint_weight")?,
             endpoint_health_status: row.try_get("endpoint_health_status")?,
             base_url: row.try_get("base_url")?,
+            supplier_default_base_url: row.try_get("supplier_default_base_url")?,
             secret_ref: row.try_get("secret_ref")?,
             secret_ciphertext: row.try_get("secret_ciphertext")?,
             secret_key_id: row.try_get("secret_key_id")?,

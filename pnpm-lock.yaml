@@ -114,6 +114,9 @@ catalogs:
     tailwindcss:
       specifier: ^4.3.3
       version: 4.3.3
+    tailwindcss-animate:
+      specifier: ^1.0.7
+      version: 1.0.7
     tsx:
       specifier: ^4.23.12
       version: 4.23.12
@@ -548,6 +551,9 @@ importers:
       '@sdkwork/drive-app-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript
+      '@sdkwork/feeds-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-feeds/sdks/sdkwork-feeds-sdk/sdkwork-feeds-sdk-typescript
       '@sdkwork/generations-app-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-generations/sdks/sdkwork-generations-app-sdk/sdkwork-generations-app-sdk-typescript
@@ -1288,6 +1294,15 @@ importers:
       typescript:
         specifier: ^5.8.2
         version: 5.8.3
+
+  ../sdkwork-feeds/sdks/sdkwork-feeds-sdk/sdkwork-feeds-sdk-typescript:
+    dependencies:
+      '@sdkwork/sdk-common':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+      '@sdkwork/utils':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-utils/packages/sdkwork-utils-typescript
 
   ../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-asset-config: {}
 
@@ -2415,6 +2430,95 @@ importers:
       '@sdkwork/utils':
         specifier: workspace:*
         version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
+
+  ../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-admin-core:
+    dependencies:
+      '@sdkwork/order-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../../sdks/sdkwork-order-backend-sdk/sdkwork-order-backend-sdk-typescript
+      '@sdkwork/order-service':
+        specifier: workspace:*
+        version: link:../../../sdkwork-order-common/packages/sdkwork-order-service
+
+  ../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-admin-orders:
+    dependencies:
+      '@sdkwork/order-pc-admin-core':
+        specifier: workspace:*
+        version: link:../sdkwork-order-pc-admin-core
+      '@sdkwork/order-pc-core':
+        specifier: workspace:*
+        version: link:../sdkwork-order-pc-core
+      '@sdkwork/order-service':
+        specifier: workspace:*
+        version: link:../../../sdkwork-order-common/packages/sdkwork-order-service
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.31.0(react@19.2.8)
+    devDependencies:
+      '@sdkwork/ui-pc-react':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-ui/sdkwork-ui-pc-react
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.8(react@19.2.8)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
+  ../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-admin-trade:
+    dependencies:
+      '@sdkwork/order-pc-admin-core':
+        specifier: workspace:*
+        version: link:../sdkwork-order-pc-admin-core
+      '@sdkwork/order-pc-admin-orders':
+        specifier: workspace:*
+        version: link:../sdkwork-order-pc-admin-orders
+      '@sdkwork/order-pc-core':
+        specifier: workspace:*
+        version: link:../sdkwork-order-pc-core
+      '@sdkwork/order-service':
+        specifier: workspace:*
+        version: link:../../../sdkwork-order-common/packages/sdkwork-order-service
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.31.0(react@19.2.8)
+    devDependencies:
+      '@sdkwork/ui-pc-react':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-ui/sdkwork-ui-pc-react
+      '@testing-library/react':
+        specifier: 'catalog:'
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      jsdom:
+        specifier: 'catalog:'
+        version: 29.1.1
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.8(react@19.2.8)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@25.9.4)(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(tsx@4.23.12)
 
   ../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-checkout:
     dependencies:
@@ -3600,6 +3704,9 @@ importers:
       '@sdkwork/order-backend-sdk':
         specifier: workspace:*
         version: link:../../../sdkwork-order/sdks/sdkwork-order-backend-sdk/sdkwork-order-backend-sdk-typescript
+      '@sdkwork/order-pc-admin-trade':
+        specifier: workspace:*
+        version: link:../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-admin-trade
       '@sdkwork/order-pc-checkout':
         specifier: workspace:*
         version: link:../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-checkout
@@ -3612,6 +3719,9 @@ importers:
       '@sdkwork/order-pc-subscription':
         specifier: workspace:*
         version: link:../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-subscription
+      '@sdkwork/order-service':
+        specifier: workspace:*
+        version: link:../../../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-service
       '@sdkwork/partner-pc-admin-core':
         specifier: workspace:*
         version: link:../../../sdkwork-partner/apps/sdkwork-partner-pc/packages/sdkwork-partner-pc-admin-core
@@ -3789,6 +3899,9 @@ importers:
       tailwindcss:
         specifier: 'catalog:'
         version: 4.3.3
+      tailwindcss-animate:
+        specifier: 'catalog:'
+        version: 1.0.7(tailwindcss@4.3.3)
       use-sync-external-store:
         specifier: ^1.6.0
         version: 1.6.0(react@19.2.8)
@@ -4153,6 +4266,9 @@ importers:
       '@sdkwork/iam-contracts':
         specifier: workspace:*
         version: link:../../../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-contracts
+      '@sdkwork/order-pc-admin-trade':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-admin-trade
     devDependencies:
       '@types/react':
         specifier: ^19.0.0
@@ -4381,6 +4497,12 @@ importers:
       '@sdkwork/i18n-pc-react':
         specifier: workspace:*
         version: link:../../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-i18n-pc-react
+      '@sdkwork/order-pc-admin-orders':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-admin-orders
+      '@sdkwork/order-pc-admin-trade':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-admin-trade
       '@sdkwork/partner-pc-admin-commission':
         specifier: workspace:*
         version: link:../../../../../sdkwork-partner/apps/sdkwork-partner-pc/packages/sdkwork-partner-pc-admin-commission
@@ -9491,6 +9613,11 @@ packages:
 
   tailwind-merge@3.6.0:
     resolution: {integrity: sha512-uxL7qAVQriqRQPAyK3pj66VqskWqoZ37PW94jwOTwNfq/z9oyu1V+eqrZqtR2+fCiXdYOZe/Modt8GtvqNzu+w==}
+
+  tailwindcss-animate@1.0.7:
+    resolution: {integrity: sha512-bl6mpH3T7I3UFxuvDEXLxy/VuFxBk5bbzplh7tXI68mwMokNYd1t9qPBHlnyTwfa4JGC4zP516I1hYYtQ/vspA==}
+    peerDependencies:
+      tailwindcss: '>=3.0.0 || insiders'
 
   tailwindcss@4.2.2:
     resolution: {integrity: sha512-KWBIxs1Xb6NoLdMVqhbhgwZf2PGBpPEiwOqgI4pFIYbNTfBXiKYyWoTsXgBQ9WFg/OlhnvHaY+AEpW7wSmFo2Q==}
@@ -15301,6 +15428,10 @@ snapshots:
   tabbable@6.5.0: {}
 
   tailwind-merge@3.6.0: {}
+
+  tailwindcss-animate@1.0.7(tailwindcss@4.3.3):
+    dependencies:
+      tailwindcss: 4.3.3
 
   tailwindcss@4.2.2: {}
 

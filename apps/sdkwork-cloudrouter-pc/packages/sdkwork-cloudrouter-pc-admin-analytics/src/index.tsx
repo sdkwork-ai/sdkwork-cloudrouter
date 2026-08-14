@@ -146,7 +146,7 @@ export function AnalyticsAdmin() {
                   onClick={() => setTimeRange(range)}
                   className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                     timeRange === range
-                      ? 'bg-white text-blue-600 shadow-sm dark:bg-white/10 dark:text-blue-300'
+                      ? 'bg-white text-lobster-600 shadow-sm dark:bg-white/10 dark:text-lobster-300'
                       : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                   }`}
                 >
@@ -158,7 +158,7 @@ export function AnalyticsAdmin() {
               type="button"
               onClick={() => { void loadOverview(); }}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:border-blue-300 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:border-blue-500/40 dark:hover:text-blue-300"
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:border-lobster-300 hover:text-lobster-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:border-lobster-500/40 dark:hover:text-lobster-300"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               {t('admin.analytics.actions.refresh', 'Refresh')}
@@ -203,7 +203,7 @@ export function AnalyticsAdmin() {
                 onClick={() => setActiveSection(section)}
                 className={`flex items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
                   activeSection === section
-                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300'
+                    ? 'bg-lobster-50 text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-300'
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white'
                 }`}
               >
@@ -313,7 +313,7 @@ export function AnalyticsAdmin() {
                           onClick={() => setRankMetric(metric)}
                           className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
                             rankMetric === metric
-                              ? 'bg-white text-blue-600 shadow-sm dark:bg-white/10 dark:text-blue-300'
+                              ? 'bg-white text-lobster-600 shadow-sm dark:bg-white/10 dark:text-lobster-300'
                               : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                           }`}
                         >
@@ -329,7 +329,7 @@ export function AnalyticsAdmin() {
                       value={search}
                       onChange={(event) => setSearch(event.target.value)}
                       placeholder={t('admin.analytics.filters.search', 'Search user, model, vendor...')}
-                      className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:border-blue-500/70"
+                      className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-lobster-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:border-lobster-500/70"
                     />
                   </div>
                 </div>
@@ -736,7 +736,7 @@ function buildMetricCards(
         success: formatInteger(summary.successfulRequests, locale),
         failed: formatInteger(summary.failedRequests, locale),
       }),
-      tone: 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300',
+      tone: 'bg-lobster-50 text-lobster-600 dark:bg-lobster-500/10 dark:text-lobster-300',
       icon: Activity,
     },
     {
@@ -744,7 +744,7 @@ function buildMetricCards(
       label: t('admin.analytics.metrics.tokens', 'Tokens'),
       value: formatCompactNumber(summary.totalTokens, locale),
       detail: t('admin.analytics.metrics.averageTokens', '{{value}} average', { value: formatDecimal(summary.averageTokensPerRequest, locale) }),
-      tone: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300',
+      tone: 'bg-lobster-50 text-lobster-600 dark:bg-lobster-500/10 dark:text-lobster-300',
       icon: Zap,
     },
     {
@@ -752,7 +752,7 @@ function buildMetricCards(
       label: t('admin.analytics.metrics.points', 'Compute Credits'),
       value: formatDecimal(summary.totalPoints, locale),
       detail: t('admin.analytics.metrics.averagePoints', '{{value}} per request', { value: formatDecimal(summary.averagePointsPerRequest, locale) }),
-      tone: 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-300',
+      tone: 'bg-lobster-50 text-lobster-600 dark:bg-lobster-500/10 dark:text-lobster-300',
       icon: Coins,
     },
     {
@@ -760,7 +760,7 @@ function buildMetricCards(
       label: t('admin.analytics.metrics.users', 'Users'),
       value: formatInteger(summary.activeUsers, locale),
       detail: t('admin.analytics.metrics.totalUsers', '{{value}} total users', { value: formatInteger(summary.totalUsers, locale) }),
-      tone: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-300',
+      tone: 'bg-lobster-50 text-lobster-600 dark:bg-lobster-500/10 dark:text-lobster-300',
       icon: Users,
     },
     {
@@ -768,7 +768,7 @@ function buildMetricCards(
       label: t('admin.analytics.metrics.models', 'Models'),
       value: formatInteger(summary.activeModels, locale),
       detail: t('admin.analytics.metrics.modelRows', '{{value}} ranked rows', { value: formatInteger(overview.modelRankings.points.length, locale) }),
-      tone: 'bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-300',
+      tone: 'bg-lobster-50 text-lobster-600 dark:bg-lobster-500/10 dark:text-lobster-300',
       icon: Database,
     },
     {
@@ -776,7 +776,7 @@ function buildMetricCards(
       label: t('admin.analytics.metrics.errorRate', 'Error rate'),
       value: formatPercent(summary.errorRate, locale),
       detail: t('admin.analytics.metrics.upstreamCost', '{{value}} upstream cost', { value: formatCurrency(summary.upstreamCost, locale) }),
-      tone: 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-300',
+      tone: 'bg-lobster-50 text-lobster-600 dark:bg-lobster-500/10 dark:text-lobster-300',
       icon: AlertTriangle,
     },
   ];

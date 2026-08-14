@@ -288,7 +288,7 @@ export function UsageView() {
             value={draftQuery.startTime}
             onChange={(event) => updateDraftQuery({ startTime: event.target.value })}
             placeholder={t('console.usage.startTimePlaceholder', 'Start time, for example 2026-04-21 00:00:00')}
-            className="w-full bg-slate-50 dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 text-slate-800 dark:text-white transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
+            className="w-full bg-slate-50 dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 text-slate-800 dark:text-white transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
           />
         </div>
 
@@ -298,7 +298,7 @@ export function UsageView() {
             value={draftQuery.endTime}
             onChange={(event) => updateDraftQuery({ endTime: event.target.value })}
             placeholder={t('console.usage.endTimePlaceholder', 'End time, for example 2026-04-21 23:59:59')}
-            className="w-full bg-slate-50 dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 text-slate-800 dark:text-white transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
+            className="w-full bg-slate-50 dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 text-slate-800 dark:text-white transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
           />
         </div>
 
@@ -312,7 +312,7 @@ export function UsageView() {
               if (event.key === 'Enter') void applyFilters();
             }}
             placeholder={t('console.usage.searchPlaceholder', '搜索密钥、模型、请求或路径...')}
-            className="w-full bg-slate-50 dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 pl-9 pr-4 py-2 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 text-slate-800 dark:text-white transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
+            className="w-full bg-slate-50 dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 pl-9 pr-4 py-2 rounded-lg text-sm focus:outline-none focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 text-slate-800 dark:text-white transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
           />
         </div>
 
@@ -321,7 +321,7 @@ export function UsageView() {
           <select
             value={draftQuery.status}
             onChange={(event) => updateDraftQuery({ status: event.target.value as UsageLogStatus })}
-            className="w-full appearance-none bg-slate-50 dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 pl-9 pr-8 py-2 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 text-slate-800 dark:text-white transition-all cursor-pointer"
+            className="w-full appearance-none bg-slate-50 dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 pl-9 pr-8 py-2 rounded-lg text-sm focus:outline-none focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 text-slate-800 dark:text-white transition-all cursor-pointer"
           >
             <option value="all">{t('console.usage.status.all', 'All statuses')}</option>
             <option value="success">{t('console.usage.status.success', 'Success')}</option>
@@ -334,21 +334,21 @@ export function UsageView() {
           <button
             type="button"
             onClick={() => void applyFilters()}
-            className="flex-1 md:flex-none px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg text-sm font-medium transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-1 dark:focus:ring-offset-[#252525]"
+            className="flex-1 md:flex-none px-4 py-2 bg-lobster-500 hover:bg-lobster-600 active:bg-lobster-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-lobster-500/40 focus:ring-offset-1 dark:focus:ring-offset-[#252525]"
           >
             {t('common.actions.query')}
           </button>
           <button
             type="button"
             onClick={() => void resetFilters()}
-            className="px-3.5 py-2 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            className="px-3.5 py-2 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-lobster-500/20"
           >
             {t('common.actions.reset')}
           </button>
           <button
             type="button"
             onClick={() => void loadUsageLogs()}
-            className="px-2.5 py-2 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-lg text-sm transition-colors border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            className="px-2.5 py-2 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-lg text-sm transition-colors border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-lobster-500/20"
             title={t('common.actions.refresh')}
             aria-label={t('common.actions.refresh')}
           >
@@ -407,7 +407,7 @@ export function UsageView() {
                   const displayModel = log.providerNativeModel || log.model;
                   const modelTooltip = log.requestedModelCatalogKey || displayModel;
                   const rowBg = expanded
-                    ? 'bg-blue-50/70 dark:bg-blue-500/[0.06]'
+                    ? 'bg-lobster-50/70 dark:bg-lobster-500/[0.06]'
                     : index % 2 === 1
                       ? 'bg-slate-50/50 dark:bg-white/[0.015] hover:bg-slate-100/80 dark:hover:bg-white/[0.04]'
                       : 'hover:bg-slate-100/80 dark:hover:bg-white/[0.04]';
@@ -422,7 +422,7 @@ export function UsageView() {
                           <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-mono">
                             <span className="p-0.5 rounded-md group-hover:bg-slate-200 dark:group-hover:bg-white/10 transition-colors">
                               {expanded
-                                ? <ChevronDown className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                ? <ChevronDown className="w-4 h-4 text-lobster-600 dark:text-lobster-400" />
                                 : <ChevronRight className="w-4 h-4 text-slate-400" />}
                             </span>
                             <span>{formatUsageLogLocalTime(log.time)}</span>
@@ -467,7 +467,7 @@ export function UsageView() {
                         <td className="px-4 py-3 align-middle">
                           <div
                             title={modelTooltip}
-                            className="flex items-center gap-1.5 font-medium text-blue-600 dark:text-blue-400"
+                            className="flex items-center gap-1.5 font-medium text-lobster-600 dark:text-lobster-400"
                           >
                             <Cpu className="w-3.5 h-3.5 opacity-70 shrink-0" />
                             <span className="inline-block max-w-[220px] truncate">{displayModel}</span>
@@ -479,7 +479,7 @@ export function UsageView() {
                             <span className="text-amber-700 dark:text-amber-400 font-mono text-[11px] bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-100 dark:border-amber-500/20">{log.totalTime}</span>
                             <span className="text-emerald-700 dark:text-emerald-400 font-mono text-[11px] bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-100 dark:border-emerald-500/20">{log.ttft}</span>
                             {log.isStream && (
-                              <span className="text-[11px] bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded font-semibold border border-blue-200 dark:border-blue-500/20">stream</span>
+                              <span className="text-[11px] bg-lobster-50 dark:bg-lobster-500/15 text-lobster-600 dark:text-lobster-400 px-1.5 py-0.5 rounded font-semibold border border-lobster-200 dark:border-lobster-500/20">stream</span>
                             )}
                           </div>
                         </td>
@@ -565,7 +565,7 @@ export function UsageView() {
                                       <span className="text-slate-400"> / 1M {t('console.usage.unit.tokens', 'tokens')}</span>
                                     </span>
                                     <span className="text-slate-600 dark:text-slate-300">
-                                      {t('console.usage.metric.multiplier', 'multiplier')} <span className="font-mono text-blue-600 dark:text-blue-400">{formatDisplayAmount(log.multiplier)}x</span>
+                                      {t('console.usage.metric.multiplier', 'multiplier')} <span className="font-mono text-lobster-600 dark:text-lobster-400">{formatDisplayAmount(log.multiplier)}x</span>
                                     </span>
                                   </div>
                                 </div>
@@ -645,7 +645,7 @@ export function UsageView() {
               type="button"
               disabled={page <= 1 || loading}
               onClick={() => void goToPage(1)}
-              className="w-7 h-7 flex items-center justify-center rounded-md border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              className="w-7 h-7 flex items-center justify-center rounded-md border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-lobster-500/20"
               aria-label={t('console.usage.pagination.first', '第一页')}
             >
               <ChevronsLeft className="w-3.5 h-3.5" />
@@ -654,19 +654,19 @@ export function UsageView() {
               type="button"
               disabled={page <= 1 || loading}
               onClick={() => void goToPage(page - 1)}
-              className="w-7 h-7 flex items-center justify-center rounded-md border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              className="w-7 h-7 flex items-center justify-center rounded-md border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-lobster-500/20"
               aria-label={t('console.usage.pagination.prev', '上一页')}
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
-            <span className="px-3 h-7 flex items-center rounded-md bg-blue-600 text-white font-medium text-[11px] shadow-sm">{page}</span>
+            <span className="px-3 h-7 flex items-center rounded-md bg-lobster-500 text-white font-medium text-[11px] shadow-sm">{page}</span>
             <span className="text-slate-400 dark:text-slate-500 px-1">/</span>
             <span className="text-slate-600 dark:text-slate-300 font-medium px-1">{pageCount}</span>
             <button
               type="button"
               disabled={!hasMore || loading}
               onClick={() => void goToPage(page + 1)}
-              className="w-7 h-7 flex items-center justify-center rounded-md border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              className="w-7 h-7 flex items-center justify-center rounded-md border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-lobster-500/20"
               aria-label={t('console.usage.pagination.next', '下一页')}
             >
               <ChevronRight className="w-3.5 h-3.5" />
@@ -675,7 +675,7 @@ export function UsageView() {
               type="button"
               disabled={page >= pageCount || loading}
               onClick={() => void goToPage(pageCount)}
-              className="w-7 h-7 flex items-center justify-center rounded-md border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              className="w-7 h-7 flex items-center justify-center rounded-md border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-lobster-500/20"
               aria-label={t('console.usage.pagination.last', '最后一页')}
             >
               <ChevronsRight className="w-3.5 h-3.5" />
@@ -693,7 +693,7 @@ export function UsageView() {
                   setDraftQuery(nextQuery);
                   setQuery(nextQuery);
                 }}
-                className="appearance-none bg-white dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 rounded-md pl-2.5 pr-7 py-1 text-slate-700 dark:text-slate-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 cursor-pointer text-[11px]"
+                className="appearance-none bg-white dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 rounded-md pl-2.5 pr-7 py-1 text-slate-700 dark:text-slate-300 focus:outline-none focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 cursor-pointer text-[11px]"
               >
                 <option value={10}>{t('console.usage.pagination.pageSize', '{{size}} / page', { size: 10 })}</option>
                 <option value={20}>{t('console.usage.pagination.pageSize', '{{size}} / page', { size: 20 })}</option>

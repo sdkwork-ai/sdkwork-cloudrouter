@@ -32,11 +32,7 @@ export function ModelShowcase() {
   const filteredModels = models.filter(m => m.category === activeCategory);
 
   return (
-    <section id="models" className="py-24 bg-slate-50 dark:bg-[#050505] relative border-t border-slate-200 dark:border-white/5 overflow-hidden">
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)] -z-10" />
-      {/* Soft accent glow */}
-      <div className="pointer-events-none absolute left-1/2 top-0 h-72 w-[640px] -translate-x-1/2 rounded-full bg-lobster-500/10 blur-3xl" />
-
+    <section id="models" className="py-24 bg-slate-50 dark:bg-[#050505] relative border-t border-slate-200 dark:border-white/5">
       <div className="relative mx-auto w-full max-w-7xl px-6 md:px-8 lg:px-12">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div className="max-w-2xl">

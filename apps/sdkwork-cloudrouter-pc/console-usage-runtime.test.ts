@@ -264,7 +264,9 @@ test("console usage logs keep pagination visible while the table body scrolls in
 test("console usage logs do not expand the first record until the user clicks it", () => {
   const source = readPortalFile("./packages/sdkwork-cloudrouter-pc-console-usage/src/UsageView.tsx");
 
-  assert.match(source, /setUsageLogs\(data\.logs\);\s*setTotalLogs\(data\.total\);\s*setExpandedIds\(\[\]\);/);
+  assert.match(source, /setUsageLogs\(data\.items\);/);
+  assert.match(source, /setTotalLogs\(data\.pageInfo\.totalItems\);/);
+  assert.match(source, /setExpandedIds\(\[\]\);/);
   assert.doesNotMatch(source, /setExpandedIds\(data\.logs\.length > 0 \? \[data\.logs\[0\]\.id\] : \[\]\)/);
   assert.match(source, /onClick=\{\(e\) => toggleExpand\(log\.id, e\)\}/);
 });
@@ -272,16 +274,15 @@ test("console usage logs do not expand the first record until the user clicks it
 test("console usage service reads SdkWork list totals from pageInfo.totalItems", () => {
   const serviceSource = readPortalFile("./packages/sdkwork-cloudrouter-pc-console-usage/src/usageService.ts");
 
-  assert.match(serviceSource, /readUsageLogPageTotal/);
-  assert.match(serviceSource, /totalItems', 'total_items'/);
-  assert.match(serviceSource, /readRequiredApiItems\(data,/);
+  assert.match(serviceSource, /readRequiredUnsignedInt64String\(pageInfo, 'totalItems'/);
+  assert.match(serviceSource, /Array\.isArray\(page\.items\)/);
 });
 
 test("console usage model cell displays provider native model and exposes catalog key as hover title", () => {
   const viewSource = readPortalFile("./packages/sdkwork-cloudrouter-pc-console-usage/src/UsageView.tsx");
   const serviceSource = readPortalFile("./packages/sdkwork-cloudrouter-pc-console-usage/src/usageService.ts");
 
-  assert.match(serviceSource, /providerNativeModel:/);
+  assert.match(serviceSource, /providerNativeModel\b/);
   assert.match(serviceSource, /requestedModelCatalogKey:/);
   assert.match(serviceSource, /readOptionalString\(item, 'providerNativeModel'\)/);
   assert.match(serviceSource, /readOptionalString\(item, 'requestedModelCatalogKey'\)/);
@@ -545,17 +546,15 @@ test("admin guidance copy stays product-focused without implementation caveats",
   assert.doesNotMatch(upstreamSource, /backend contract|implementation caveat/i);
 });
 
-test("admin user management keeps search on the left and the primary action on the right", () => {
-  const source = readPortalFile("./packages/sdkwork-cloudrouter-pc-admin-user/src/index.tsx");
-  const searchIndex = source.indexOf("data-admin-user-search");
-  const primaryActionIndex = source.indexOf("data-admin-user-primary-action");
+test("admin IAM integration lazy-loads capability workspaces through the shared IAM service", () => {
+  const source = readPortalFile("./packages/sdkwork-cloudrouter-pc-admin-iam/src/index.tsx");
 
-  assert.match(source, /data-admin-user-toolbar/);
-  assert.match(source, /data-admin-user-search/);
-  assert.match(source, /data-admin-user-primary-action/);
-  assert.match(source, /className="[^"]*justify-between/);
-  assert.doesNotMatch(source, /className="flex shrink-0 justify-end gap-3"/);
-  assert.ok(searchIndex > -1 && primaryActionIndex > -1 && searchIndex < primaryActionIndex);
+  assert.match(source, /lazy\(/);
+  assert.match(source, /@sdkwork\/iam-pc-admin-user/);
+  assert.match(source, /getCloudRouterIamAdminService\(\)/);
+  assert.match(source, /Suspense/);
+  // IAM 能力 workspace 通过共享 service 接线，不直接创建 HTTP 客户端
+  assert.doesNotMatch(source, /fetch\(|axios|new HttpClient/);
 });
 
 test("console API key management keeps search on the left and create action on the right", () => {

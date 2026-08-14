@@ -231,10 +231,10 @@ export function DashboardView() {
     <div className="min-h-full w-full space-y-2 bg-slate-50 text-slate-800 dark:bg-[#121212] dark:text-slate-100">
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          icon={<Wallet className="h-4 w-4 text-blue-500" />}
+          icon={<Wallet className="h-4 w-4 text-lobster-500" />}
           title={t("console.dashboard.dashboardview.text.uvto1d", "可用额度")}
           value={t("console.dashboard.dashboardview.text.pointsValue", "{{value}} Compute Credits", { value: formatCredits(snapshot.summary.tokenBankAvailable, displayLocale) })}
-          valueIcon={<Zap className="h-6 w-6 text-amber-500" />}
+          valueIcon={<Zap className="h-6 w-6 text-lobster-500" />}
           footerLabel={t("console.dashboard.dashboardview.text.totalUsedCredits", "历史总消耗")}
           footerValue={t("console.dashboard.dashboardview.text.pointsValue", "{{value}} Compute Credits", { value: formatCredits(snapshot.summary.totalUsedCredits, displayLocale) })}
           action={
@@ -250,7 +250,7 @@ export function DashboardView() {
           }
         />
         <MetricCard
-          icon={<TrendingUp className="h-4 w-4 text-emerald-500" />}
+          icon={<TrendingUp className="h-4 w-4 text-lobster-500" />}
           title={t("console.dashboard.dashboardview.text.totalRequestCount", "总请求次数")}
           value={formatCount(snapshot.summary.totalRequestCount)}
           footerLabel={t("console.dashboard.dashboardview.text.windowRequestCount", "当前周期请求")}
@@ -259,7 +259,7 @@ export function DashboardView() {
           sparklineColor="#10b981"
         />
         <MetricCard
-          icon={<ImageIcon className="h-4 w-4 text-pink-500" />}
+          icon={<ImageIcon className="h-4 w-4 text-lobster-500" />}
           title={t("console.dashboard.dashboardview.text.174ug4u", "多模态用量")}
           value={formatCount(
             snapshot.summary.imageRequests +
@@ -273,7 +273,7 @@ export function DashboardView() {
           sparklineColor="#ec4899"
         />
         <MetricCard
-          icon={<Clock className="h-4 w-4 text-indigo-500" />}
+          icon={<Clock className="h-4 w-4 text-lobster-500" />}
           title={t("console.dashboard.dashboardview.text.1celmyr", "吞吐性能")}
           value={`${formatCount(snapshot.summary.rpm)} RPM`}
           footerLabel={t("console.dashboard.dashboardview.text.tpm", "每分钟 Token")}
@@ -319,7 +319,7 @@ export function DashboardView() {
             <div className="flex flex-col gap-2 border-b border-slate-100 p-3 dark:border-white/5 md:flex-row md:items-center md:justify-between">
               <div className="flex flex-col gap-1">
                 <h2 className="flex items-center gap-2 text-base font-bold">
-                  <Activity className="h-5 w-5 text-blue-500" /> {t("console.dashboard.dashboardview.text.1bgdsz6", "用量趋势")}</h2>
+                  <Activity className="h-5 w-5 text-lobster-500" /> {t("console.dashboard.dashboardview.text.1bgdsz6", "用量趋势")}</h2>
                 <p className="flex items-center gap-1.5 pl-7 text-xs font-medium text-slate-400 dark:text-slate-500">
                   <span>{t("console.dashboard.dashboardview.text.rangePrefix", "近")} {TIME_RANGE_WINDOWS[timeRange](t)}</span>
                   <span className="text-slate-300 dark:text-slate-600">·</span>
@@ -356,7 +356,7 @@ export function DashboardView() {
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("console.dashboard.dashboardview.text.3jbcte", "合计")}</span>
                 <span className="flex items-center gap-1 font-mono text-xl font-bold">
-                  {metricType === 'cost' && <Zap className="h-4 w-4 text-amber-500" />}
+                  {metricType === 'cost' && <Zap className="h-4 w-4 text-lobster-500" />}
                   {formatMetricValue(totalValue, metricType, displayLocale)}
                 </span>
               </div>
@@ -409,7 +409,7 @@ export function DashboardView() {
               {isRefreshing && (
                 <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
                   <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-[#252525]/90 dark:text-slate-300">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-lobster-500" />
                     {t("console.dashboard.dashboardview.text.refreshing", "刷新中…")}
                   </div>
                 </div>
@@ -420,7 +420,7 @@ export function DashboardView() {
           <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-white/5 dark:bg-[#252525]">
             <div className="flex items-center justify-between border-b border-slate-100 p-3 dark:border-white/5">
               <h3 className="flex items-center gap-2 text-sm font-bold">
-                <TrendingUp className="h-4 w-4 text-emerald-500" /> {t("console.dashboard.dashboardview.text.k4ppgb", "模型排行")}</h3>
+                <TrendingUp className="h-4 w-4 text-lobster-500" /> {t("console.dashboard.dashboardview.text.k4ppgb", "模型排行")}</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
@@ -462,7 +462,7 @@ export function DashboardView() {
                                 <span className="font-mono text-sm font-medium">{formatCount(row.requests)}</span>
                               </div>
                               <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-100 dark:bg-[#1e1e1e]">
-                                <div className="h-full rounded-full bg-blue-500/50 dark:bg-blue-400/50" style={{ width: `${widthPercent}%` }} />
+                                <div className="h-full rounded-full bg-lobster-500/50 dark:bg-lobster-400/50" style={{ width: `${widthPercent}%` }} />
                               </div>
                             </div>
                           </td>
@@ -483,7 +483,7 @@ export function DashboardView() {
           <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-white/5 dark:bg-[#252525]">
             <div className="flex items-center justify-between gap-3 border-b border-slate-100 p-3 dark:border-white/5">
               <h3 className="flex items-center gap-2 text-sm font-bold">
-                <Server className="h-4 w-4 text-sky-500" /> {t("console.dashboard.dashboardview.text.configInfo", "配置信息")}
+                <Server className="h-4 w-4 text-lobster-500" /> {t("console.dashboard.dashboardview.text.configInfo", "配置信息")}
               </h3>
               <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:bg-white/10 dark:text-slate-300">
                 {t("console.dashboard.dashboardview.text.domainCount", "{{count}} 个服务节点", { count: snapshot.configurationDomains.length })}
@@ -518,7 +518,7 @@ export function DashboardView() {
                         <div className="flex shrink-0 items-center gap-1">
                           <button
                             type="button"
-                            className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 dark:border-white/10 dark:text-slate-300 dark:hover:border-sky-400/40 dark:hover:bg-sky-400/10 dark:hover:text-sky-200"
+                            className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-lobster-300 hover:bg-lobster-50 hover:text-lobster-600 dark:border-white/10 dark:text-slate-300 dark:hover:border-lobster-400/40 dark:hover:bg-lobster-400/10 dark:hover:text-lobster-200"
                             title={t("console.dashboard.dashboardview.text.openDomain", "跳转")}
                             aria-label={t("console.dashboard.dashboardview.text.openDomain", "跳转")}
                             onClick={() => openConfigurationDomain(item.domain)}
@@ -527,7 +527,7 @@ export function DashboardView() {
                           </button>
                           <button
                             type="button"
-                            className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-600 disabled:cursor-wait disabled:opacity-70 dark:border-white/10 dark:text-slate-300 dark:hover:border-emerald-400/40 dark:hover:bg-emerald-400/10 dark:hover:text-emerald-200"
+                            className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-lobster-300 hover:bg-lobster-50 hover:text-lobster-600 disabled:cursor-wait disabled:opacity-70 dark:border-white/10 dark:text-slate-300 dark:hover:border-lobster-400/40 dark:hover:bg-lobster-400/10 dark:hover:text-lobster-200"
                             title={t("console.dashboard.dashboardview.text.speedTest", "测速")}
                             aria-label={t("console.dashboard.dashboardview.text.speedTest", "测速")}
                             disabled={speedState?.status === 'testing'}
@@ -570,7 +570,7 @@ export function DashboardView() {
           <section className="flex h-[240px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-white/5 dark:bg-[#252525]">
             <div className="flex items-center justify-between border-b border-slate-100 p-2.5 dark:border-white/5">
               <h3 className="flex items-center gap-2 text-sm font-bold">
-                <PieChartIcon className="h-4 w-4 text-blue-500" /> {t("console.dashboard.dashboardview.text.da5r28", "模态分布")}</h3>
+                <PieChartIcon className="h-4 w-4 text-lobster-500" /> {t("console.dashboard.dashboardview.text.da5r28", "模态分布")}</h3>
             </div>
             <div className="flex flex-1 items-center p-2.5">
               <>
@@ -622,7 +622,7 @@ export function DashboardView() {
           <section className="flex min-h-[200px] flex-1 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-white/5 dark:bg-[#252525]">
             <div className="flex items-center justify-between border-b border-slate-100 p-2.5 dark:border-white/5">
               <h3 className="flex items-center gap-2 text-sm font-bold">
-                <Bell className="h-4 w-4 text-blue-500" /> {t("console.dashboard.dashboardview.text.1qzse", "系统消息")}</h3>
+                <Bell className="h-4 w-4 text-lobster-500" /> {t("console.dashboard.dashboardview.text.1qzse", "系统消息")}</h3>
             </div>
             <div className="flex-1 overflow-y-auto p-2.5">
               {snapshot.announcements.length === 0 ? (
@@ -632,7 +632,7 @@ export function DashboardView() {
                   {snapshot.announcements.map((notice) => (
                     <div key={notice.id} className="group relative border-l-2 border-slate-200 pl-4 dark:border-white/10">
                       <div className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full ring-4 ring-white dark:ring-[#252525]" style={{ backgroundColor: announcementColor(notice.type) }} />
-                      <div className="mb-1 line-clamp-1 cursor-pointer text-sm text-slate-700 transition-colors hover:text-blue-600 dark:text-slate-300 dark:hover:text-white">{formatDashboardAnnouncementText(notice, t)}</div>
+                      <div className="mb-1 line-clamp-1 cursor-pointer text-sm text-slate-700 transition-colors hover:text-lobster-600 dark:text-slate-300 dark:hover:text-white">{formatDashboardAnnouncementText(notice, t)}</div>
                       <div className="font-mono text-[11px] text-slate-500">{formatDashboardAnnouncementTime(notice, t) || '-'}</div>
                     </div>
                   ))}
@@ -660,7 +660,7 @@ interface MetricCardProps {
 
 function MetricCard({ icon, title, value, valueIcon, footerLabel, footerValue, sparkline = [], sparklineColor = '#3b82f6', action }: MetricCardProps) {
   return (
-    <div className="relative overflow-hidden rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-colors hover:border-blue-500/30 dark:border-white/5 dark:bg-[#252525]">
+    <div className="relative overflow-hidden rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-colors hover:border-lobster-500/30 dark:border-white/5 dark:bg-[#252525]">
       <div className="relative z-10">
         <div className="mb-0.5 flex items-start justify-between gap-3">
           <div className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
@@ -674,7 +674,7 @@ function MetricCard({ icon, title, value, valueIcon, footerLabel, footerValue, s
         </div>
         <div className="border-t border-slate-100 pt-3 dark:border-white/5">
           <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-            <Activity className="h-3.5 w-3.5 text-purple-400" /> {footerLabel}
+            <Activity className="h-3.5 w-3.5 text-lobster-400" /> {footerLabel}
           </div>
           <div className="mt-0.5 text-sm font-bold text-slate-600 dark:text-slate-300">{footerValue}</div>
         </div>

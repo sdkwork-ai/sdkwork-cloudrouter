@@ -159,6 +159,7 @@ pub struct UpstreamAccountRouteRow {
     pub endpoint_weight: i32,
     pub endpoint_health_status: i32,
     pub base_url: Option<String>,
+    pub supplier_default_base_url: Option<String>,
     pub secret_ref: Option<String>,
     pub secret_ciphertext: Option<String>,
     pub secret_key_id: Option<String>,
@@ -265,7 +266,9 @@ impl UpstreamAccountRouteRow {
             endpoint_priority: self.endpoint_priority.max(0),
             endpoint_weight: self.endpoint_weight.max(0),
             endpoint_health_status: self.endpoint_health_status,
-            base_url: self.base_url,
+            // 端点 Base URL 优先；无端点/端点无 URL 时以供应商默认 Base URL 兜底，
+            // 保证「非 LLM 资源走默认端点」的路由行始终可调用（callable 判定不变）。
+            base_url: self.base_url.or(self.supplier_default_base_url),
             secret_ref: self.secret_ref,
             auth_profile,
             timeout_ms,

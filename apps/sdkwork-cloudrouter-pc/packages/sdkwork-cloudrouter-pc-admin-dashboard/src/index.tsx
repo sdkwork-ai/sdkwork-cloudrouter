@@ -97,14 +97,14 @@ const SUMMARY_CARD_ICONS = [
   ReceiptText,
 ] as const;
 const SUMMARY_CARD_COLORS = [
-  'text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-500/10',
-  'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10',
-  'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10',
-  'text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10',
-  'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10',
-  'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10',
-  'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10',
-  'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10',
+  'text-lobster-600 dark:text-lobster-400 bg-lobster-50 dark:bg-lobster-500/10',
+  'text-lobster-600 dark:text-lobster-400 bg-lobster-50 dark:bg-lobster-500/10',
+  'text-lobster-600 dark:text-lobster-400 bg-lobster-50 dark:bg-lobster-500/10',
+  'text-lobster-600 dark:text-lobster-400 bg-lobster-50 dark:bg-lobster-500/10',
+  'text-lobster-600 dark:text-lobster-400 bg-lobster-50 dark:bg-lobster-500/10',
+  'text-lobster-600 dark:text-lobster-400 bg-lobster-50 dark:bg-lobster-500/10',
+  'text-lobster-600 dark:text-lobster-400 bg-lobster-50 dark:bg-lobster-500/10',
+  'text-lobster-600 dark:text-lobster-400 bg-lobster-50 dark:bg-lobster-500/10',
 ] as const;
 
 type DashboardChartTab = 'modelDistribution' | 'userConsumption';
@@ -233,7 +233,7 @@ export function DashboardAdmin() {
   if (loading && !hasSnapshot) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center space-y-4">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        <Loader2 className="w-8 h-8 animate-spin text-lobster-500" />
         <span className="text-slate-500 dark:text-slate-400">{t("admin.dashboard.index.text.1chgta4", "加载大盘数据中...")}</span>
       </div>
     );
@@ -246,7 +246,7 @@ export function DashboardAdmin() {
         <span className="text-sm font-medium text-slate-900 dark:text-white">{t("admin.dashboard.index.text.1colgfp", "大盘数据加载失败")}</span>
         <span className="max-w-xl text-xs text-slate-500 dark:text-slate-400">{errorMessage}</span>
         <button
-          className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-white/15 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+          className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lobster-500 dark:border-white/15 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
           onClick={() => setRefreshRequest((request) => request + 1)}
           type="button"
         >
@@ -522,7 +522,7 @@ export function DashboardAdmin() {
       <div className="mx-4 mt-2 flex min-h-[320px] flex-1 shrink-0 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-base font-bold text-slate-900 dark:text-white">{t("admin.dashboard.index.text.13upnw7", "平台实时调用流水 (Live Traces)")}</h3>
-          <Link to="/admin/record" className="text-xs text-blue-500 hover:text-blue-600 font-medium flex items-center px-2 py-1 rounded hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors gap-1">
+          <Link to="/admin/record" className="text-xs text-lobster-500 hover:text-lobster-600 font-medium flex items-center px-2 py-1 rounded hover:bg-lobster-50 dark:hover:bg-lobster-500/10 transition-colors gap-1">
             {t("admin.dashboard.index.text.19174dl", "查看完整日志")}<ExternalLink className="w-3 h-3" />
           </Link>
         </div>
@@ -555,21 +555,21 @@ export function DashboardAdmin() {
                 <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                       {item.isApiUser ? <Key className="w-3.5 h-3.5 text-indigo-500" /> : <Fingerprint className="w-3.5 h-3.5 text-slate-400" />}
+                       {item.isApiUser ? <Key className="w-3.5 h-3.5 text-lobster-500" /> : <Fingerprint className="w-3.5 h-3.5 text-slate-400" />}
                        <span className="font-medium text-slate-900 dark:text-slate-300">{item.user}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
                     <span className="inline-flex px-2 py-1 rounded-md bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-mono font-medium items-center gap-1.5 shadow-sm">
-                       {item.type === 'image' ? <Image className="w-3 h-3 text-amber-500" /> : <MessageSquare className="w-3 h-3 text-blue-500" />} {item.model}
+                       {item.type === 'image' ? <Image className="w-3 h-3 text-lobster-500" /> : <MessageSquare className="w-3 h-3 text-lobster-500" />} {item.model}
                     </span>
                   </td>
                   <td className="px-4 py-3">
                     {item.billingMode === 'token' ? (
-                      <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 tracking-wide">
+                      <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-medium bg-lobster-50 text-lobster-600 dark:bg-lobster-500/10 dark:text-lobster-400 border border-lobster-200 dark:border-lobster-500/20 tracking-wide">
                         {t("admin.dashboard.index.text.11f9jft", "按 Token")}</span>
                     ) : (
-                      <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 tracking-wide">
+                      <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-medium bg-lobster-50 text-lobster-600 dark:bg-lobster-500/10 dark:text-lobster-400 border border-lobster-200 dark:border-lobster-500/20 tracking-wide">
                         {t("admin.dashboard.index.text.158oqsl", "按 次数")}</span>
                     )}
                   </td>
@@ -577,26 +577,26 @@ export function DashboardAdmin() {
                     {item.billingMode === 'token' ? (
                       <div className="flex items-center gap-3">
                         <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400" title={t('admin.dashboard.recentUsage.inputTokens', 'Input Tokens')}>
-                          <span className="flex items-center justify-center w-4 h-4 rounded-full bg-emerald-50 dark:bg-emerald-500/10">
-                            <ArrowDownRight className="w-3 h-3 text-emerald-500" />
+                          <span className="flex items-center justify-center w-4 h-4 rounded-full bg-lobster-50 dark:bg-lobster-500/10">
+                            <ArrowDownRight className="w-3 h-3 text-lobster-500" />
                           </span>
                           <span className="font-medium text-slate-700 dark:text-slate-300">{item.usageIn?.toLocaleString()}</span>
                         </span>
                         <div className="w-px h-3 bg-slate-200 dark:bg-white/10"></div>
                         <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400" title={t('admin.dashboard.recentUsage.outputTokens', 'Output Tokens')}>
-                          <span className="flex items-center justify-center w-4 h-4 rounded-full bg-blue-50 dark:bg-blue-500/10">
-                            <ArrowUpRight className="w-3 h-3 text-blue-500" />
+                          <span className="flex items-center justify-center w-4 h-4 rounded-full bg-lobster-50 dark:bg-lobster-500/10">
+                            <ArrowUpRight className="w-3 h-3 text-lobster-500" />
                           </span>
                           <span className="font-medium text-slate-700 dark:text-slate-300">{item.usageOut?.toLocaleString()}</span>
                         </span>
                       </div>
                     ) : (
                        <span className="text-slate-700 dark:text-slate-300 font-medium bg-slate-100 dark:bg-white/5 px-2.5 py-1 rounded-md border border-slate-200 dark:border-white/10 flex items-center w-fit gap-1.5 shadow-sm">
-                         <Activity className="w-3 h-3 text-amber-500" /> {item.usageCount} <span className="opacity-60 text-[10px]">{t('admin.dashboard.recentUsage.requestsUnit', 'REQS')}</span>
+                         <Activity className="w-3 h-3 text-lobster-500" /> {item.usageCount} <span className="opacity-60 text-[10px]">{t('admin.dashboard.recentUsage.requestsUnit', 'REQS')}</span>
                        </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 font-mono text-emerald-600 dark:text-emerald-400">
+                  <td className="px-4 py-3 font-mono text-lobster-600 dark:text-lobster-400">
                     {formatChargeAmount(item.cost)}
                   </td>
                   <td className="px-4 py-3 font-mono text-[11px] text-slate-500">{item.time}</td>

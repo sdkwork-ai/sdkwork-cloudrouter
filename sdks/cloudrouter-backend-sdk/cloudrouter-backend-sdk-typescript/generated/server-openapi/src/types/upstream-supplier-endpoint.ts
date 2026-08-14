@@ -24,4 +24,6 @@ export interface UpstreamSupplierEndpoint {
   status: number;
   /** Timeout ms field on upstream supplier endpoint. */
   timeoutMs: number | null;
+  /** Vendor codes field on upstream supplier endpoint. */
+  vendorCodes: string[];
 }

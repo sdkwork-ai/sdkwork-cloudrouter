@@ -216,7 +216,7 @@ export function ReferralStrategiesPage() {
           <button
             type="button"
             onClick={openCreate}
-            className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
+            className="inline-flex items-center gap-1 rounded-md bg-lobster-500 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-lobster-600"
           >
             <Plus className="h-3.5 w-3.5" />
             {t('admin.marketing.referralStrategies.actions.create', 'New Strategy')}
@@ -329,7 +329,7 @@ export function ReferralStrategiesPage() {
                 ...current,
                 status: current.status === 'active' ? 'disabled' : 'active',
               }))}
-              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form.status === 'active' ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-lobster-500 focus:ring-offset-2 ${form.status === 'active' ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`}
             >
               <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${form.status === 'active' ? 'translate-x-5' : 'translate-x-0.5'}`} />
             </button>
@@ -346,7 +346,7 @@ export function ReferralStrategiesPage() {
               type="button"
               disabled={saving}
               onClick={() => void saveStrategy()}
-              className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-md bg-lobster-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-lobster-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {t('common.actions.save', 'Save')}
@@ -379,7 +379,7 @@ function TextField({
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className="h-9 w-full rounded-md border border-slate-200 bg-white px-2.5 text-sm text-slate-700 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
+        className="h-9 w-full rounded-md border border-slate-200 bg-white px-2.5 text-sm text-slate-700 outline-none focus:border-lobster-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
       />
     </div>
   );
@@ -402,7 +402,7 @@ function SelectField({
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-9 w-full rounded-md border border-slate-200 bg-white px-2.5 text-sm text-slate-700 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
+        className="h-9 w-full rounded-md border border-slate-200 bg-white px-2.5 text-sm text-slate-700 outline-none focus:border-lobster-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>{option.label}</option>

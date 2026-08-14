@@ -291,7 +291,7 @@ function CloudRouterTokenPlanCommerceModal({
                   {variant === "redeem" ? (
                     <Crown aria-hidden="true" className="h-5 w-5 text-yellow-500" />
                   ) : (
-                    <Wallet aria-hidden="true" className="h-5 w-5 text-sky-400" />
+                    <Wallet aria-hidden="true" className="h-5 w-5 text-lobster-400" />
                   )}
                 </div>
                 <div>
@@ -316,7 +316,7 @@ function CloudRouterTokenPlanCommerceModal({
               </p>
 
               <div className="flex items-center gap-2 rounded-2xl border border-zinc-800/70 bg-zinc-900/70 px-4 py-3 text-sm text-zinc-300">
-                <Sparkles aria-hidden="true" className="h-4 w-4 shrink-0 text-sky-400" />
+                <Sparkles aria-hidden="true" className="h-4 w-4 shrink-0 text-lobster-400" />
                 <span>{t("token_plan_console_wallet_hint", "将在控制台钱包中继续处理。")}</span>
               </div>
 

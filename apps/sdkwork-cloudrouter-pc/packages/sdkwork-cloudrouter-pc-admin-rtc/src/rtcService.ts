@@ -4,39 +4,36 @@ import {
   readSdkWorkListPage,
   type RtcAdminCenterServices,
 } from '@sdkwork/rtc-pc-admin-core';
-import { getCloudRouterGlobalTokenManager } from '@sdkwork/cloudroutes-pc-commons/sdk-clients';
-import { readCloudRouterRuntimeEnv } from '@sdkwork/cloudroutes-pc-commons/utils/env';
+import {
+  getCloudRouterGlobalTokenManager,
+  resolveCloudRouterDependencyBackendBaseUrl,
+} from '@sdkwork/cloudroutes-pc-commons/sdk-clients';
 
 /**
  * Cloud Router RTC admin service.
  *
  * Single injected service implementation of `RtcAdminCenterServices` for the
- * Cloud Router admin surface. The backend base URL resolves from
- * `VITE_SDKWORK_RTC_BACKEND_API_BASE_URL` and all requests flow through the
- * portal's shared token manager — mirroring the IAM admin service pattern.
+ * Cloud Router admin surface. All requests flow through the generated
+ * `@sdkwork/rtc-backend-sdk` client and the portal's shared token manager —
+ * mirroring the IAM admin service pattern. The RTC backend surface is a
+ * dependency surface served by the Cloud Router gateway under
+ * `/backend/v3/api` (same-origin dependency composition, API_ASSEMBLY_SPEC
+ * §6.1), so the base URL follows the portal dependency-SDK resolution chain:
+ * `VITE_SDKWORK_RTC_BACKEND_API_BASE_URL`, then
+ * `VITE_CLOUDROUTER_BACKEND_API_BASE_URL`, then `PORTAL_PUBLIC_SDK_BASE_URL`
+ * + `/backend/v3/api`, then the same-origin prefix.
  */
 
 let cloudRouterRtcAdminService: RtcAdminCenterServices | null = null;
 
-function resolveRtcBackendBaseUrl(): string {
-  const explicit = readCloudRouterRuntimeEnv('VITE_SDKWORK_RTC_BACKEND_API_BASE_URL');
-  if (explicit && explicit.trim().length > 0) {
-    return explicit.trim();
-  }
-  // Fall back to the portal's own backend gateway so the module still renders
-  // in deployments that proxy /backend/v3/api/rtc/* through the admin host.
-  const portalBackend = readCloudRouterRuntimeEnv('VITE_SDKWORK_PORTAL_BACKEND_API_BASE_URL');
-  if (portalBackend && portalBackend.trim().length > 0) {
-    return portalBackend.trim();
-  }
-  return '';
-}
-
 export function getCloudRouterRtcAdminService(): RtcAdminCenterServices {
   if (!cloudRouterRtcAdminService) {
-    const client = createBackendRtcClient(resolveRtcBackendBaseUrl(), {
-      tokenManager: getCloudRouterGlobalTokenManager(),
-    });
+    const client = createBackendRtcClient(
+      resolveCloudRouterDependencyBackendBaseUrl('VITE_SDKWORK_RTC_BACKEND_API_BASE_URL'),
+      {
+        tokenManager: getCloudRouterGlobalTokenManager(),
+      },
+    );
     cloudRouterRtcAdminService = {
       accounts: {
         list: (params) => client.rtcProviderAccounts.rtc.providerAccounts.list({ page: params?.cursor ? undefined : 1, pageSize: params?.limit ?? 200, cursor: params?.cursor }).then(toListPage),

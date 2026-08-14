@@ -343,7 +343,7 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
                   <button
                     className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
                       activeTab === section.id
-                        ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400'
+                        ? 'bg-lobster-50 text-lobster-600 dark:bg-lobster-500/10 dark:text-lobster-400'
                         : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white'
                     }`}
                     key={section.id}
@@ -373,7 +373,7 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
               return (
                 <select
                   aria-label={filter.label}
-                  className="h-9 shrink-0 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700 shadow-sm outline-none transition-colors focus:border-blue-500 dark:border-white/10 dark:bg-[#1e1e1e] dark:text-slate-200"
+                  className="h-9 shrink-0 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700 shadow-sm outline-none transition-colors focus:border-lobster-500 dark:border-white/10 dark:bg-[#1e1e1e] dark:text-slate-200"
                   key={filter.key}
                   onChange={(event) => {
                     // 仅更新 filter 状态；loadSection 随 filterState 重建，
@@ -399,7 +399,7 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
             <div className="relative min-w-0 flex-1 md:max-w-72">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
-                className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-900 shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 dark:border-white/10 dark:bg-[#1e1e1e] dark:text-white"
+                className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-900 shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-lobster-500 dark:border-white/10 dark:bg-[#1e1e1e] dark:text-white"
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder={searchPlaceholder}
                 type="text"
@@ -410,7 +410,7 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
           <div className="flex shrink-0 flex-wrap items-center gap-3">
             {activeActions.map((action, index) => (
               <button
-                className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-60"
+                className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-lobster-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-lobster-600 disabled:opacity-60"
                 key={`${action.label}-${index}`}
                 onClick={action.onClick}
                 type="button"

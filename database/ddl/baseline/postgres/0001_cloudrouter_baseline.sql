@@ -1149,6 +1149,7 @@ CREATE TABLE IF NOT EXISTS ai_upstream_supplier (
     docs_url VARCHAR(512),
     website_url VARCHAR(512),
     default_vendor_code VARCHAR(64),
+    default_base_url VARCHAR(2048),
     supplier_type VARCHAR(32) NOT NULL DEFAULT 'official',
     adapter_code VARCHAR(64) NOT NULL,
     protocol_code VARCHAR(64) NOT NULL,

@@ -77,6 +77,7 @@ pub struct AdminUpstreamSupplierItem {
     pub description: Option<String>,
     pub supplier_type: String,
     pub default_vendor_code: Option<String>,
+    pub default_base_url: Option<String>,
     pub adapter_code: String,
     pub protocol_code: String,
     pub protocols: Vec<AdminLlmProtocolConfig>,
@@ -105,6 +106,7 @@ pub struct SaveAdminUpstreamSupplierCommand {
     pub description: Option<String>,
     pub supplier_type: String,
     pub default_vendor_code: Option<String>,
+    pub default_base_url: Option<String>,
     pub adapter_code: String,
     pub protocol_code: String,
     pub protocols: Vec<AdminLlmProtocolConfig>,
@@ -133,6 +135,7 @@ pub struct AdminUpstreamSupplierEndpointItem {
     pub timeout_ms: Option<i32>,
     pub health_status: i32,
     pub status: i32,
+    pub vendor_codes: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -147,6 +150,7 @@ pub struct AdminUpstreamSupplierEndpointInput {
     pub routing_weight: i32,
     pub timeout_ms: Option<i32>,
     pub status: i32,
+    pub vendor_codes: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

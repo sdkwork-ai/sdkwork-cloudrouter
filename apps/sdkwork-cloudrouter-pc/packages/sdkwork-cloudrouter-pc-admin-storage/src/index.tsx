@@ -763,7 +763,7 @@ function ProviderDetailDialog({
             <button className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5" onClick={onToggle} type="button">{record.status === 'disabled' ? <Power className="h-4 w-4" /> : <PowerOff className="h-4 w-4" />}{record.status === 'disabled' ? t('admin.storage.providers.enable', 'Enable') : t('admin.storage.providers.disable', 'Disable')}</button>
           ) : null}
           {onEdit ? (
-            <button className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700" onClick={onEdit} type="button"><Pencil className="h-4 w-4" />{t('admin.storage.providers.edit', 'Edit')}</button>
+            <button className="inline-flex items-center gap-2 rounded-md bg-lobster-500 px-4 py-2 text-sm font-medium text-white hover:bg-lobster-600" onClick={onEdit} type="button"><Pencil className="h-4 w-4" />{t('admin.storage.providers.edit', 'Edit')}</button>
           ) : null}
           <button className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5" onClick={onClose} type="button">{t('admin.storage.dialog.close', 'Close')}</button>
         </div>
@@ -858,7 +858,7 @@ function ProviderCredentialDialog({
           )}
           <div className="flex justify-end gap-3 border-t border-slate-200 pt-4 dark:border-white/10">
             <button className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5" disabled={saving} onClick={onClose} type="button">{t('admin.storage.dialog.cancel', 'Cancel')}</button>
-            <button className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60" disabled={saving || (credentialFields !== null && form.credentialMode === 'plain' && (!form.accessKeyId.trim() || !form.secretAccessKey.trim()))} onClick={onSubmit} type="button"><KeyRound className="h-4 w-4" />{saving ? t('admin.storage.dialog.saving', 'Saving...') : t('admin.storage.dialog.save', 'Save')}</button>
+            <button className="inline-flex items-center gap-2 rounded-md bg-lobster-500 px-4 py-2 text-sm font-medium text-white hover:bg-lobster-600 disabled:opacity-60" disabled={saving || (credentialFields !== null && form.credentialMode === 'plain' && (!form.accessKeyId.trim() || !form.secretAccessKey.trim()))} onClick={onSubmit} type="button"><KeyRound className="h-4 w-4" />{saving ? t('admin.storage.dialog.saving', 'Saving...') : t('admin.storage.dialog.save', 'Save')}</button>
           </div>
         </div>
       </div>
@@ -1047,7 +1047,7 @@ function StorageDialog({
           </div>
           <div className="flex justify-end gap-3 border-t border-slate-200 px-5 py-4 dark:border-white/10">
             <button className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5" disabled={saving} onClick={onClose} type="button">{t('admin.storage.dialog.cancel', 'Cancel')}</button>
-            <button className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60" disabled={saving} type="submit"><CheckCircle2 className="h-4 w-4" />{saving ? t('admin.storage.dialog.saving', 'Saving...') : t('admin.storage.dialog.save', 'Save')}</button>
+            <button className="inline-flex items-center gap-2 rounded-md bg-lobster-500 px-4 py-2 text-sm font-medium text-white hover:bg-lobster-600 disabled:opacity-60" disabled={saving} type="submit"><CheckCircle2 className="h-4 w-4" />{saving ? t('admin.storage.dialog.saving', 'Saving...') : t('admin.storage.dialog.save', 'Save')}</button>
           </div>
         </form>
       </div>
@@ -1440,7 +1440,7 @@ function FieldLabel({ children, required }: { children: string; required?: boole
 }
 
 function TextField({ description, label, onChange, ...props }: { description?: string; label: string; onChange: (value: string) => void } & Omit<InputHTMLAttributes<HTMLInputElement>, 'className' | 'onChange'>) {
-  return <label className="block text-sm font-medium text-slate-700 dark:text-slate-200"><FieldLabel required={props.required}>{label}</FieldLabel><input {...props} className="mt-1.5 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white" onChange={(event) => onChange(event.target.value)} />{description ? <span className="mt-1 block text-xs font-normal text-slate-500">{description}</span> : null}</label>;
+  return <label className="block text-sm font-medium text-slate-700 dark:text-slate-200"><FieldLabel required={props.required}>{label}</FieldLabel><input {...props} className="mt-1.5 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-lobster-500 dark:border-white/10 dark:bg-white/5 dark:text-white" onChange={(event) => onChange(event.target.value)} />{description ? <span className="mt-1 block text-xs font-normal text-slate-500">{description}</span> : null}</label>;
 }
 
 /**
@@ -1502,7 +1502,7 @@ function PrefillSelectField({ description, label, onChange, options, placeholder
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
-          className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 pr-9 text-sm text-slate-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+          className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 pr-9 text-sm text-slate-900 outline-none focus:border-lobster-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
         />
         <button
           type="button"
@@ -1523,7 +1523,7 @@ function PrefillSelectField({ description, label, onChange, options, placeholder
                 key={option.value}
                 type="button"
                 className={`block w-full px-3 py-1.5 text-left text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/10 ${option.value === value
-                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300'
+                  ? 'bg-lobster-50 text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-300'
                   : 'text-slate-700 dark:text-slate-200'}`}
                 onClick={() => {
                   onChange(option.value);
@@ -1556,15 +1556,15 @@ function PrefillSelectField({ description, label, onChange, options, placeholder
 }
 
 function TextAreaField({ label, onChange, required = false, value }: { label: string; onChange: (value: string) => void; required?: boolean; value: string }) {
-  return <label className="block text-sm font-medium text-slate-700 dark:text-slate-200"><FieldLabel required={required}>{label}</FieldLabel><textarea className="mt-1.5 min-h-24 w-full rounded-md border border-slate-200 bg-white px-3 py-2 font-mono text-sm text-slate-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white" onChange={(event) => onChange(event.target.value)} value={value} /></label>;
+  return <label className="block text-sm font-medium text-slate-700 dark:text-slate-200"><FieldLabel required={required}>{label}</FieldLabel><textarea className="mt-1.5 min-h-24 w-full rounded-md border border-slate-200 bg-white px-3 py-2 font-mono text-sm text-slate-900 outline-none focus:border-lobster-500 dark:border-white/10 dark:bg-white/5 dark:text-white" onChange={(event) => onChange(event.target.value)} value={value} /></label>;
 }
 
 function SelectField({ disabled = false, label, onChange, options, required = false, value }: { disabled?: boolean; label: string; onChange: (value: string) => void; options: readonly (string | SelectOption)[]; required?: boolean; value: string }) {
-  return <label className="block text-sm font-medium text-slate-700 dark:text-slate-200"><FieldLabel required={required}>{label}</FieldLabel><select className="mt-1.5 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-[#202020] dark:text-white" disabled={disabled} onChange={(event) => onChange(event.target.value)} required={required} value={value}>{options.map((option) => { const normalized = typeof option === 'string' ? { value: option, label: option } : option; return <option disabled={normalized.disabled ?? false} key={normalized.value} value={normalized.value}>{normalized.label}</option>; })}</select></label>;
+  return <label className="block text-sm font-medium text-slate-700 dark:text-slate-200"><FieldLabel required={required}>{label}</FieldLabel><select className="mt-1.5 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-lobster-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-[#202020] dark:text-white" disabled={disabled} onChange={(event) => onChange(event.target.value)} required={required} value={value}>{options.map((option) => { const normalized = typeof option === 'string' ? { value: option, label: option } : option; return <option disabled={normalized.disabled ?? false} key={normalized.value} value={normalized.value}>{normalized.label}</option>; })}</select></label>;
 }
 
 function ToggleField({ checked, disabled = false, label, onChange }: { checked: boolean; disabled?: boolean; label: string; onChange: (value: boolean) => void }) {
-  return <label className="flex min-h-10 items-center justify-between gap-3 rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 dark:border-white/10 dark:text-slate-200"><span>{label}</span><input checked={checked} className="h-4 w-4 accent-blue-600 disabled:cursor-not-allowed disabled:opacity-50" disabled={disabled} onChange={(event) => onChange(event.target.checked)} type="checkbox" /></label>;
+  return <label className="flex min-h-10 items-center justify-between gap-3 rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 dark:border-white/10 dark:text-slate-200"><span>{label}</span><input checked={checked} className="h-4 w-4 accent-lobster-500 disabled:cursor-not-allowed disabled:opacity-50" disabled={disabled} onChange={(event) => onChange(event.target.checked)} type="checkbox" /></label>;
 }
 
 async function submitStorageForm(

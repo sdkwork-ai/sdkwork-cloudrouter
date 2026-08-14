@@ -149,7 +149,7 @@ export function CommunityModerationPage() {
                   <td className="max-w-72 px-4 py-2.5">
                     <p className="truncate font-medium text-slate-900 dark:text-white">
                       {entry.isPinned ? <Pin className="mr-1 inline h-3.5 w-3.5 text-lobster-500" /> : null}
-                      {entry.isFeatured ? <Star className="mr-1 inline h-3.5 w-3.5 text-amber-500" /> : null}
+                      {entry.isFeatured ? <Star className="mr-1 inline h-3.5 w-3.5 text-lobster-500" /> : null}
                       {entry.title}
                     </p>
                     {entry.categoryLabel ? (

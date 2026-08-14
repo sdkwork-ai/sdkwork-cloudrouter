@@ -132,7 +132,7 @@ export function CloudRouterSiteSettingsPage() {
             {t('common.actions.reload')}
           </button>
           <button
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg bg-lobster-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-lobster-600 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={saving || Boolean(siteNameError)}
             onClick={() => void saveSettings()}
             type="button"
@@ -156,7 +156,7 @@ export function CloudRouterSiteSettingsPage() {
       <div className="min-h-0 flex-1 overflow-y-auto pr-1" data-admin-site-settings-scroll>
       <div className="grid min-h-0 grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
-          <SectionHeader icon={<Settings2 className="h-5 w-5 text-blue-500" />} title={t('admin.siteSettings.sections.identity')} />
+          <SectionHeader icon={<Settings2 className="h-5 w-5 text-lobster-500" />} title={t('admin.siteSettings.sections.identity')} />
           <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
             <TextField error={siteNameError} label={t('admin.siteSettings.fields.siteName')} onChange={(value) => updateField('siteName', value)} required value={form.siteName} />
             <TextField label={t('admin.siteSettings.fields.shortName')} onChange={(value) => updateField('shortName', value)} value={form.shortName} />
@@ -167,7 +167,7 @@ export function CloudRouterSiteSettingsPage() {
         </section>
 
         <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
-          <SectionHeader icon={<Image className="h-5 w-5 text-emerald-500" />} title={t('admin.siteSettings.sections.assets')} />
+          <SectionHeader icon={<Image className="h-5 w-5 text-lobster-500" />} title={t('admin.siteSettings.sections.assets')} />
           <div className="mt-5 grid grid-cols-1 gap-4">
             <TextField label={t('admin.siteSettings.fields.logo')} onChange={(value) => updateMediaField('logo', value)} value={logoSource} />
             <TextField label={t('admin.siteSettings.fields.icon')} onChange={(value) => updateMediaField('icon', value)} value={iconSource} />
@@ -185,7 +185,7 @@ export function CloudRouterSiteSettingsPage() {
         </section>
 
         <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
-          <SectionHeader icon={<Palette className="h-5 w-5 text-purple-500" />} title={t('admin.siteSettings.sections.theme')} />
+          <SectionHeader icon={<Palette className="h-5 w-5 text-lobster-500" />} title={t('admin.siteSettings.sections.theme')} />
           <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
             <ColorField label={t('admin.siteSettings.fields.brandColor')} onChange={(value) => updateField('brandColor', value)} value={form.brandColor} />
             <ColorField label={t('admin.siteSettings.fields.accentColor')} onChange={(value) => updateField('accentColor', value)} value={form.accentColor} />
@@ -253,7 +253,7 @@ function TextField({ label, value, onChange, className = '', error = null, requi
         className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:ring-2 dark:bg-black/20 dark:text-white ${
           error
             ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20 dark:border-red-500/60'
-            : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 dark:border-white/10'
+            : 'border-slate-200 focus:border-lobster-500 focus:ring-lobster-500/20 dark:border-white/10'
         }`}
         onChange={(event) => onChange(event.target.value)}
         required={required}
@@ -279,7 +279,7 @@ function TextArea({ label, value, onChange, className = '', rows = 4 }: {
     <label className={`block ${className}`}>
       <span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
       <textarea
-        className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-black/20 dark:text-white"
+        className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/20 dark:border-white/10 dark:bg-black/20 dark:text-white"
         onChange={(event) => onChange(event.target.value)}
         rows={rows}
         value={value}
@@ -304,7 +304,7 @@ function ColorField({ label, value, onChange }: {
           value={/^#[0-9a-f]{6}$/iu.test(value) ? value : '#0f172a'}
         />
         <input
-          className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-black/20 dark:text-white"
+          className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/20 dark:border-white/10 dark:bg-black/20 dark:text-white"
           onChange={(event) => onChange(event.target.value)}
           value={value}
         />

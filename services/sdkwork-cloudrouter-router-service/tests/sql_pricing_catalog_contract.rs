@@ -43,7 +43,7 @@ const RETIRED_UPSTREAM_TABLES: [&str; 10] = [
 #[test]
 fn snapshot_query_set_is_complete_and_uses_only_postgresql_upstream_authorities() {
     let queries = PricingCatalogSql::snapshot_load_queries();
-    assert_eq!(14, queries.len());
+    assert_eq!(15, queries.len());
 
     let sql = queries.join("\n");
     for table in CANONICAL_UPSTREAM_TABLES {
@@ -92,6 +92,7 @@ fn upstream_account_route_query_projects_the_complete_callable_route() {
         "account_health.last_latency_ms",
         "e.id AS endpoint_id",
         "e.base_url",
+        "s.default_base_url AS supplier_default_base_url",
         "cc.id AS credential_id",
         "cc.secret_ciphertext",
         "cc.secret_key_id",
@@ -111,7 +112,23 @@ fn upstream_account_route_query_projects_the_complete_callable_route() {
     assert!(sql.contains("sr.tenant_id = gr.tenant_id"));
     assert!(sql.contains("sr.organization_id = gr.organization_id"));
     assert!(sql.contains("NULLIF(cc.secret_ciphertext, '') IS NOT NULL"));
-    assert!(sql.contains("NULLIF(e.base_url, '') IS NOT NULL"));
+    // 无端点但有供应商默认 Base URL 的账号同样可路由（LEFT JOIN + 条件过滤）
+    assert!(sql.contains("LEFT JOIN ai_upstream_supplier_endpoint e"));
+    assert!(sql.contains(
+        "NULLIF(e.base_url, '') IS NOT NULL OR NULLIF(s.default_base_url, '') IS NOT NULL"
+    ));
+    // 无端点兜底行必须视为健康，否则 is_account_healthy 会将其从候选过滤中剔除
+    assert!(
+        sql.contains("WHEN e.id IS NULL THEN 1"),
+        "endpoint health CASE must treat default-URL fallback rows (no endpoint) as healthy"
+    );
+    // 未知健康（0，新建资源初始化值）必须放行；失败中（2，未过冷却）才剔除。
+    // 否则新建账号/端点永远无法路由（无法触发成功调用来更新健康状态，形成死锁）
+    assert!(
+        sql.contains("endpoint_health.health_status IN (0, 1)")
+            && sql.contains("account_health.health_status IN (0, 1)"),
+        "health CASE must treat unknown health (0) as healthy for endpoint and account"
+    );
     assert!(sql.contains("member.account_id = c.id"));
     assert!(sql.contains("COALESCE(member.enabled, true)"));
     // Accounts without explicit resource bindings must stay unrestricted:
@@ -437,6 +454,7 @@ fn upstream_account_route_row(account_id: i64) -> UpstreamAccountRouteRow {
         endpoint_weight: 100,
         endpoint_health_status: 1,
         base_url: Some("https://api.openai.com/v1".to_owned()),
+        supplier_default_base_url: None,
         secret_ref: Some("managed://upstream-account-credential/7001".to_owned()),
         secret_ciphertext: Some("encrypted-value".to_owned()),
         secret_key_id: Some("test-active".to_owned()),

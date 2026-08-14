@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "tailwindcss-animate";
 @source "../packages";
 @source "../src";
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src";
@@ -44,15 +45,25 @@
 @theme {
   --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  --color-lobster-50: #fdf3f2;
-  --color-lobster-100: #fbe4e2;
-  --color-lobster-200: #f8c8c1;
-  --color-lobster-300: #f59a8c;
-  --color-lobster-400: #ef705d;
-  --color-lobster-500: #e55039;
-  --color-lobster-600: #c83f2a;
-  --color-lobster-700: #9f3020;
-  --color-lobster-900: #641e13;
+  --color-lobster-50: #eff6ff;
+  --color-lobster-100: #dbeafe;
+  --color-lobster-200: #bfdbfe;
+  --color-lobster-300: #93c5fd;
+  --color-lobster-400: #60a5fa;
+  --color-lobster-500: #2563eb;
+  --color-lobster-600: #1d4ed8;
+  --color-lobster-700: #1e40af;
+  --color-lobster-900: #1e3a8a;
+  /* 主题强调色别名：组件统一引用 primary-*，换主题只改此处 */
+  --color-primary-50: var(--color-lobster-50);
+  --color-primary-100: var(--color-lobster-100);
+  --color-primary-200: var(--color-lobster-200);
+  --color-primary-300: var(--color-lobster-300);
+  --color-primary-400: var(--color-lobster-400);
+  --color-primary-500: var(--color-lobster-500);
+  --color-primary-600: var(--color-lobster-600);
+  --color-primary-700: var(--color-lobster-700);
+  --color-primary-900: var(--color-lobster-900);
   --color-background: #f8fafc;
   --color-foreground: #0f172a;
   --animate-scan: scan 3s linear infinite;
@@ -68,7 +79,9 @@
   --sdkwork-playground-workspace-sidebar-width: 28rem;
   --sdkwork-playground-chat-sidebar-width: 16rem;
   --sdkwork-playground-rail-width: 3.5rem;
-  --sdkwork-sidebar-accent-rgb: 229 80 57;
+  --sdkwork-sidebar-accent-rgb: 37 99 235;
+  --sdkwork-sidebar-accent-hover-rgb: 29 78 216;
+  --sdkwork-sidebar-accent-soft-rgb: 191 219 254;
   --sdkwork-sidebar-item-radius: 10px;
   --sdkwork-sidebar-transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -171,7 +184,7 @@ html.dark [data-admin-model-table-header] > tr > th {
 .sdkwork-admin-shell :where(button, a)[class*='bg-indigo-600']:hover,
 .sdkwork-admin-shell :where(button, a)[class*='bg-violet-600']:hover,
 .sdkwork-admin-shell :where(button, a)[class*='bg-purple-600']:hover {
-  background-color: rgb(200 63 42) !important;
+  background-color: rgb(var(--sdkwork-sidebar-accent-hover-rgb)) !important;
 }
 
 .dark .sdkwork-console-shell,
@@ -235,7 +248,7 @@ html.dark [data-admin-model-table-header] > tr > th {
 }
 
 .dark .sdkwork-portal-sidebar-item[data-active='true'] {
-  color: rgb(252 211 207);
+  color: rgb(var(--sdkwork-sidebar-accent-soft-rgb));
   background: rgb(var(--sdkwork-sidebar-accent-rgb) / 0.18);
   border-color: rgb(var(--sdkwork-sidebar-accent-rgb) / 0.3);
   box-shadow: none;
@@ -1853,7 +1866,7 @@ html.dark .theme-aware-dark-surface.sdkwork-playground-page {
 
 .sdkwork-chat-session-item[data-active='true'] .sdkwork-chat-session-item__badge {
   background-color: rgb(var(--sdkwork-sidebar-accent-rgb) / 0.18);
-  color: rgb(252 211 207);
+  color: rgb(var(--sdkwork-sidebar-accent-soft-rgb));
 }
 
 .sdkwork-playground-chat-page {
@@ -4323,7 +4336,7 @@ html:not(.dark) [data-slot="dialog-content"] {
   --sdkwork-playground-rail-item-hover-color: rgb(226 232 240);
   --sdkwork-playground-rail-item-hover-bg: rgb(255 255 255 / 0.06);
   --sdkwork-playground-rail-item-hover-border: rgb(255 255 255 / 0.06);
-  --sdkwork-playground-rail-item-active-color: rgb(252 211 207);
+  --sdkwork-playground-rail-item-active-color: rgb(var(--sdkwork-sidebar-accent-soft-rgb));
   --sdkwork-playground-rail-tooltip-bg: rgb(26 26 26 / 0.96);
   --sdkwork-playground-rail-tooltip-border: rgb(255 255 255 / 0.08);
   --sdkwork-playground-rail-tooltip-text: rgb(241 245 249);
@@ -5305,12 +5318,12 @@ body.sdkwork-cloudrouter-auth-active {
   --sdkwork-cloudrouter-auth-aside-text: #f5f5f5;
   --sdkwork-cloudrouter-auth-aside-card-bg: rgba(255, 255, 255, 0.08);
   --sdkwork-cloudrouter-auth-aside-card-border: rgba(255, 255, 255, 0.1);
-  --sdkwork-cloudrouter-auth-aside-badge-bg: rgba(229, 80, 57, 0.14);
-  --sdkwork-cloudrouter-auth-aside-badge-text: #f8a08f;
+  --sdkwork-cloudrouter-auth-aside-badge-bg: rgb(var(--sdkwork-sidebar-accent-rgb) / 0.14);
+  --sdkwork-cloudrouter-auth-aside-badge-text: rgb(var(--sdkwork-sidebar-accent-soft-rgb));
   --sdkwork-cloudrouter-auth-qr-bg: rgba(8, 11, 18, 0.94);
   background:
-    radial-gradient(circle at 18% 24%, rgba(229, 80, 57, 0.16), transparent 30%),
-    radial-gradient(circle at 82% 72%, rgba(200, 63, 42, 0.12), transparent 32%),
+    radial-gradient(circle at 18% 24%, rgb(var(--sdkwork-sidebar-accent-rgb) / 0.16), transparent 30%),
+    radial-gradient(circle at 82% 72%, rgb(var(--sdkwork-sidebar-accent-hover-rgb) / 0.12), transparent 32%),
     linear-gradient(180deg, #111217 0%, #0c0d11 100%);
   color: var(--sdkwork-cloudrouter-auth-content-text);
   display: flex;
@@ -5339,12 +5352,12 @@ html.light-mode .sdkwork-cloudrouter-auth-shell {
   --sdkwork-cloudrouter-auth-aside-text: #18181b;
   --sdkwork-cloudrouter-auth-aside-card-bg: rgba(15, 23, 42, 0.04);
   --sdkwork-cloudrouter-auth-aside-card-border: rgba(15, 23, 42, 0.08);
-  --sdkwork-cloudrouter-auth-aside-badge-bg: rgba(229, 80, 57, 0.12);
-  --sdkwork-cloudrouter-auth-aside-badge-text: #c83f2a;
+  --sdkwork-cloudrouter-auth-aside-badge-bg: rgb(var(--sdkwork-sidebar-accent-rgb) / 0.12);
+  --sdkwork-cloudrouter-auth-aside-badge-text: rgb(var(--sdkwork-sidebar-accent-hover-rgb));
   --sdkwork-cloudrouter-auth-qr-bg: rgba(255, 255, 255, 0.94);
   background:
-    radial-gradient(circle at 18% 24%, rgba(229, 80, 57, 0.1), transparent 30%),
-    radial-gradient(circle at 82% 72%, rgba(200, 63, 42, 0.08), transparent 32%),
+    radial-gradient(circle at 18% 24%, rgb(var(--sdkwork-sidebar-accent-rgb) / 0.1), transparent 30%),
+    radial-gradient(circle at 82% 72%, rgb(var(--sdkwork-sidebar-accent-hover-rgb) / 0.08), transparent 32%),
     linear-gradient(180deg, #fafafa 0%, #f4f4f5 100%);
 }
 
@@ -5372,7 +5385,7 @@ html.light-mode .sdkwork-cloudrouter-auth-shell {
 
 .sdkwork-cloudrouter-auth-header-mark {
   align-items: center;
-  background: linear-gradient(135deg, #e55039, #c83f2a);
+  background: rgb(var(--sdkwork-sidebar-accent-rgb));
   border-radius: 6px;
   color: #ffffff;
   display: inline-flex;
@@ -5433,8 +5446,8 @@ html.light-mode .sdkwork-cloudrouter-auth-window-button:hover {
 .sdkwork-auth-route-fallback.sdkwork-cloudrouter-auth-route-fallback {
   align-items: center;
   background:
-    radial-gradient(circle at 18% 24%, rgba(229, 80, 57, 0.16), transparent 30%),
-    radial-gradient(circle at 82% 72%, rgba(200, 63, 42, 0.12), transparent 32%),
+    radial-gradient(circle at 18% 24%, rgb(var(--sdkwork-sidebar-accent-rgb) / 0.16), transparent 30%),
+    radial-gradient(circle at 82% 72%, rgb(var(--sdkwork-sidebar-accent-hover-rgb) / 0.12), transparent 32%),
     linear-gradient(180deg, #111217 0%, #0c0d11 100%);
   display: flex;
   height: 100dvh;

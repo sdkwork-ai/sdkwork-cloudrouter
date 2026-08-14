@@ -14,6 +14,8 @@ pub use web_bootstrap::{
     cloud_router_backend_domain_context_injector, finalize_served_router,
     maybe_wrap_router_with_web_framework, maybe_wrap_router_with_web_framework_and_database_config,
     maybe_wrap_router_with_web_framework_and_iam_pool,
+    maybe_wrap_router_with_web_framework_and_iam_pool_with_injectors,
+    wrap_router_with_web_framework_and_injectors,
 };
 
 use axum::Router;

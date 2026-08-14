@@ -463,8 +463,8 @@ export function Rankings() {
   return (
     <div className="theme-aware-dark-surface min-h-screen bg-slate-50 dark:bg-[#050505] text-slate-700 dark:text-slate-300 pt-20 flex flex-col relative overflow-hidden font-sans">
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
-      <div className="absolute left-[20%] top-[-10%] z-0 h-[500px] w-[500px] rounded-full bg-indigo-600/[0.04] blur-[120px] pointer-events-none" />
-      <div className="absolute right-[10%] top-[40%] z-0 h-[400px] w-[400px] rounded-full bg-amber-600/[0.03] blur-[100px] pointer-events-none" />
+      <div className="absolute left-[20%] top-[-10%] z-0 h-[500px] w-[500px] rounded-full bg-lobster-500/[0.06] blur-[120px] pointer-events-none" />
+      <div className="absolute right-[10%] top-[40%] z-0 h-[400px] w-[400px] rounded-full bg-lobster-500/[0.04] blur-[100px] pointer-events-none" />
 
       <div className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 flex flex-col lg:flex-row gap-8 relative z-10">
 
@@ -489,7 +489,7 @@ export function Rankings() {
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between px-3 mb-1">
                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                  <Sparkles className="w-3 h-3 text-indigo-400" /> {t('rankings.modelAccess')}
+                  <Sparkles className="w-3 h-3 text-lobster-400" /> {t('rankings.modelAccess')}
                 </h3>
               </div>
               <div className="flex flex-col gap-1">
@@ -501,7 +501,7 @@ export function Rankings() {
                       onClick={() => setLicenseFilter(license)}
                       className={`flex items-center justify-between px-3 py-1.5 text-sm rounded-lg transition-colors group ${
                         isActive
-                          ? 'text-white font-semibold bg-indigo-500/10 text-indigo-300'
+                          ? 'text-white font-semibold bg-lobster-500/10 text-lobster-300'
                           : 'text-slate-500 hover:text-slate-300 hover:bg-white/5 font-medium'
                       }`}
                     >
@@ -510,7 +510,7 @@ export function Rankings() {
                          license === 'Proprietary' ? <Lock className="w-3.5 h-3.5" /> : null}
                         <span>{licenseLabels[license]}</span>
                       </div>
-                      {isActive && <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />}
+                      {isActive && <div className="w-1.5 h-1.5 rounded-full bg-lobster-400" />}
                     </button>
                   )
                 })}
@@ -574,7 +574,7 @@ export function Rankings() {
           <div ref={targetRef} className="flex flex-col gap-10 relative rounded-2xl bg-[#050505]">
             {/* Watermark for Video Export */}
             <div className={`absolute bottom-6 right-6 z-[100] pointer-events-none transition-all duration-700 flex items-center gap-2 ${isPlaying || isRecording ? 'opacity-80 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}`}>
-              <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <div className="w-8 h-8 rounded-lg bg-lobster-500 flex items-center justify-center shadow-lg shadow-lobster-500/20">
                 <Cpu className="w-5 h-5 text-white" />
               </div>
               <span className="text-white font-black font-mono tracking-wider text-xl drop-shadow-md">Cloud Router</span>
@@ -673,7 +673,7 @@ export function Rankings() {
                        setIsPlaying(true);
                      }
                    }}
-                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${isPlaying ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.2)]' : 'bg-indigo-500 text-white hover:bg-indigo-600 shadow-[0_0_15px_rgba(99,102,241,0.4)]'}`}
+                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${isPlaying ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.2)]' : 'bg-lobster-500 text-white hover:bg-lobster-600 shadow-[0_0_15px_rgba(229,80,57,0.35)]'}`}
                  >
                    {isPlaying ? (
                      <><Pause className="w-4 h-4 fill-current" /> {t('rankings.pauseRace')}</>
@@ -835,7 +835,7 @@ export function Rankings() {
                 {isRankingLoading && displayRankings.length > 0 && (
                   <div role="status" aria-live="polite" className="flex items-center gap-2 text-xs text-slate-500 font-medium">
                     <span className="h-1 w-24 overflow-hidden rounded-full bg-white/10">
-                      <span className="block h-full w-full rounded-full bg-indigo-400/70 animate-pulse" />
+                      <span className="block h-full w-full rounded-full bg-lobster-400/70 animate-pulse" />
                     </span>
                     {t('rankings.tabs.loading')}
                   </div>
@@ -875,7 +875,7 @@ export function Rankings() {
                       aria-controls="rankings-panel"
                       tabIndex={isActive ? 0 : -1}
                       onClick={() => setActiveModality(modality)}
-                      className={`relative flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-bold whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 ${
+                      className={`relative flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-bold whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-lobster-400/60 ${
                         isActive ? 'text-white' : 'text-slate-400 hover:text-slate-200'
                       }`}
                     >
@@ -1023,8 +1023,8 @@ export function Rankings() {
                                   <>
                                     <span className="text-slate-600">/</span>
                                     <span className="flex items-center gap-0.5">
-                                      {model.license === 'Open Source' ? <Unlock className="w-2.5 h-2.5 text-indigo-400" /> : <Lock className="w-2.5 h-2.5 text-slate-400" />}
-                                      <span className={model.license === 'Open Source' ? 'text-indigo-400' : 'text-slate-400'}>{licenseLabels[model.license]}</span>
+                                      {model.license === 'Open Source' ? <Unlock className="w-2.5 h-2.5 text-lobster-400" /> : <Lock className="w-2.5 h-2.5 text-slate-400" />}
+                                      <span className={model.license === 'Open Source' ? 'text-lobster-400' : 'text-slate-400'}>{licenseLabels[model.license]}</span>
                                     </span>
                                   </>
                                 )}
@@ -1088,7 +1088,7 @@ export function Rankings() {
                                   {[...Array(5)].map((_, i) => (
                                     <span key={i} className={`text-[9px] font-black tracking-tight ${
                                       i < model.costIndicator
-                                        ? 'text-indigo-400'
+                                        ? 'text-lobster-400'
                                         : 'text-slate-700/50'
                                     }`}>$</span>
                                   ))}

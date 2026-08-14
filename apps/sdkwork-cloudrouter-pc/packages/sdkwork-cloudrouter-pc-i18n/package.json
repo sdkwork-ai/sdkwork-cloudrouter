@@ -22,6 +22,8 @@
     "@sdkwork/cloudrouter-pc-admin-rtc": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-upstream": "workspace:*",
     "@sdkwork/i18n-pc-react": "workspace:*",
+    "@sdkwork/order-pc-admin-orders": "workspace:*",
+    "@sdkwork/order-pc-admin-trade": "workspace:*",
     "@sdkwork/partner-pc-admin-partner": "workspace:*",
     "@sdkwork/partner-pc-admin-commission": "workspace:*",
     "@sdkwork/partner-pc-admin-withdrawal": "workspace:*",

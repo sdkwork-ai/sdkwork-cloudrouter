@@ -47,6 +47,7 @@ where
             // 模型路由与账号路由（含 provider-native）走同一套过滤）。
             let ctx = routing_filter_context(
                 self.catalog.as_ref(),
+                invocation.subject.tenant_id,
                 invocation.resource.requested_model.as_deref(),
                 invocation.resource.requested_model_catalog_key.as_deref(),
             );

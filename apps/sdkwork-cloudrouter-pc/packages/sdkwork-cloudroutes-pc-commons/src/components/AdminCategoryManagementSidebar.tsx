@@ -71,7 +71,7 @@ export function AdminCategoryManagementSidebar({
       <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 p-3 dark:border-white/10">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-            <FolderTree className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
+            <FolderTree className="h-4 w-4 text-lobster-500 dark:text-lobster-400" />
             <span>{labels.title}</span>
           </div>
           <div className="mt-1 truncate text-xs text-slate-500">
@@ -90,7 +90,7 @@ export function AdminCategoryManagementSidebar({
         <button
           className={`mb-1 flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${
             !selectedCategoryId
-              ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-100'
+              ? 'bg-lobster-50 text-lobster-700 dark:bg-lobster-500/15 dark:text-lobster-200'
               : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-white/[0.04]'
           }`}
           onClick={() => onSelect('')}
@@ -166,7 +166,7 @@ function AdminCategoryTreeItem({
       <div
         className={`group flex items-center gap-1 rounded-lg py-1.5 pl-2 pr-1 transition-colors ${
           isSelected
-            ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-100'
+            ? 'bg-lobster-50 text-lobster-700 dark:bg-lobster-500/15 dark:text-lobster-200'
             : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-white/[0.04]'
         }`}
         style={{ marginLeft: `${node.depth * 14}px` }}

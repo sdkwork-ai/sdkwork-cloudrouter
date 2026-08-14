@@ -5,6 +5,8 @@ import type { UpstreamSupplierModelListEntry } from './upstream-supplier-model-l
 export interface UpdateUpstreamSupplierRequest {
   /** Adapter code field on update upstream supplier request. */
   adapterCode?: string;
+  /** Default base url field on update upstream supplier request. */
+  defaultBaseUrl?: string | null;
   /** Default vendor code field on update upstream supplier request. */
   defaultVendorCode?: string | null;
   /** Description field on update upstream supplier request. */

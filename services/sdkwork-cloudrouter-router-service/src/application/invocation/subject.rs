@@ -41,6 +41,14 @@ impl InvocationSubject {
         }
     }
 
+    /// 内部网关请求的 subject：与外部 API Key 同源，但 auth_type 标记为
+    /// InternalService，供管道区分内部/外部调用以应用差异化策略。
+    pub fn from_internal_api_key_context(context: AuthenticatedApiKeyContext) -> Self {
+        let mut subject = Self::from_api_key_context(context);
+        subject.auth_type = InvocationAuthType::InternalService;
+        subject
+    }
+
     pub fn anonymous_free(tenant_id: i64, organization_id: i64) -> Self {
         Self {
             auth_type: InvocationAuthType::AnonymousFree,

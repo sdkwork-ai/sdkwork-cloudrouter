@@ -34,12 +34,14 @@ import {
   GroupPicker,
   type GroupPickerHandle,
   type GroupPickerOption,
+  type GroupPickerVendor,
 } from '@sdkwork/cloudroutes-pc-commons/components/GroupPicker';
 import { CreateKeyDrawer, type ApiKeyFormValues } from './CreateKeyDrawer';
 import { GroupCellPopover } from './GroupCellPopover';
 import { chainInputFromForm, createApiKeyInputsFromForm } from './apiKeyForm';
 import { ApiKeyService, type AccountGroup, type ApiKey } from './apiKeyService';
 import { buildTagLabels, toGroupPickerOptions } from './accountGroups';
+import { fetchModelVendors } from './vendorCatalog';
 import {
   displayApiKeyGroupName,
   formatApiKeyCreated,
@@ -95,6 +97,8 @@ export function ApiKeysView() {
   const [groups, setGroups] = useState<AccountGroup[]>([]);
   const [groupsLoaded, setGroupsLoaded] = useState(false);
   const [groupsLoading, setGroupsLoading] = useState(false);
+  /** 模型厂商列表（code + 显示名）；null = 未加载/加载失败（回退推导） */
+  const [vendors, setVendors] = useState<GroupPickerVendor[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -319,8 +323,20 @@ export function ApiKeysView() {
     return groupsRef.current;
   };
 
+  /**
+   * 懒加载模型厂商列表（sdkwork-models 权威主数据）。失败时保持 null，
+   * GroupPicker 自动回退到分组选项去重推导。
+   */
+  const ensureVendorsLoaded = async (): Promise<void> => {
+    if (vendors !== null) {
+      return;
+    }
+    setVendors(await fetchModelVendors());
+  };
+
   const openCreateDrawer = async () => {
     setShowCreateDrawer(true);
+    void ensureVendorsLoaded();
   };
 
   const openDetailsDrawer = async (key: ApiKey) => {
@@ -329,6 +345,7 @@ export function ApiKeysView() {
 
   const openEditDrawer = async (key: ApiKey) => {
     setEditingKey(key);
+    void ensureVendorsLoaded();
   };
 
   useEffect(() => {
@@ -488,7 +505,7 @@ export function ApiKeysView() {
               setCurrentPage(1);
             }}
             placeholder={t('console.apiKeys.searchPlaceholder', '搜索令牌或分组')}
-            className="w-full bg-slate-50 dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 pl-9 pr-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-shadow text-slate-800 dark:text-white placeholder:text-slate-400"
+            className="w-full bg-slate-50 dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 pl-9 pr-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-shadow text-slate-800 dark:text-white placeholder:text-slate-400"
           />
         </div>
 
@@ -498,7 +515,7 @@ export function ApiKeysView() {
             onClick={() => {
               void openCreateDrawer();
             }}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 sm:w-auto"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-transparent bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-700 sm:w-auto"
           >
             <Plus className="w-4 h-4" /> {t('common.actions.createKey')}
           </button>
@@ -556,7 +573,7 @@ export function ApiKeysView() {
                             }}
                             title={key.rawKey ? t('common.actions.copyKey') : undefined}
                             aria-label={key.rawKey ? t('common.actions.copyKey') : undefined}
-                            className="group/secret inline-flex max-w-full items-center gap-1.5 rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 font-mono text-[11px] font-medium text-slate-600 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed dark:border-white/5 dark:bg-[#1e1e1e] dark:text-slate-300 dark:hover:border-blue-500/30 dark:hover:bg-blue-500/10 dark:hover:text-blue-300"
+                            className="group/secret inline-flex max-w-full items-center gap-1.5 rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 font-mono text-[11px] font-medium text-slate-600 transition-colors hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700 disabled:cursor-not-allowed dark:border-white/5 dark:bg-[#1e1e1e] dark:text-slate-300 dark:hover:border-primary-500/30 dark:hover:bg-primary-500/10 dark:hover:text-primary-300"
                           >
                             <span className="max-w-[240px] truncate">{key.rawKey ?? key.maskedKey}</span>
                             {copiedKeyId === key.id ? (
@@ -599,13 +616,14 @@ export function ApiKeysView() {
                           disableTriggerOpen
                           selectionMode="multiple"
                           options={groupPickerOptionsFor(key)}
+                          vendors={vendors ?? undefined}
                           value={boundGroupsFor(key)}
                           onChange={(next) => {
                             void handleGroupChange(key, next);
                           }}
                           disabled={mutatingKeyId === key.id}
                           triggerLabel={displayApiKeyGroupName(key, groups, t)}
-                          triggerClassName="h-7 max-w-[180px] rounded border border-blue-200 bg-blue-50 px-1.5 text-[10px] font-bold uppercase tracking-wider text-blue-600 hover:bg-blue-100 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20"
+                          triggerClassName="h-7 max-w-[180px] rounded border border-primary-200 bg-primary-50 px-1.5 text-[10px] font-bold uppercase tracking-wider text-primary-600 hover:bg-primary-100 dark:border-primary-500/20 dark:bg-primary-500/10 dark:text-primary-400 dark:hover:bg-primary-500/20"
                           labels={{
                             triggerPlaceholder: t('console.apiKeys.group', '分组'),
                             title: t('console.apiKeys.groupPickerTitle', '选择分组'),
@@ -628,13 +646,14 @@ export function ApiKeysView() {
                           }}
                           onOpen={() => {
                             void ensureGroupsLoaded();
+                            void ensureVendorsLoaded();
                           }}
                         />
                       </GroupCellPopover>
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-col gap-1 text-[11px]">
-                        <span className="text-amber-600 dark:text-amber-500 font-mono font-bold flex items-center gap-1">
+                        <span className="text-lobster-500 dark:text-lobster-400 font-mono font-bold flex items-center gap-1">
                           <Zap className="w-3 h-3" /> {formatApiKeyNumber(key.usedQuota, i18n.language)}
                         </span>
                         <span className="text-slate-500 font-mono font-medium">/ {formatApiKeyQuota(key.quota, t, i18n.language)}</span>
@@ -689,7 +708,7 @@ export function ApiKeysView() {
                                 openQuickImportMenu(key, event.currentTarget);
                               }
                             }}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:bg-transparent dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-emerald-400"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-lobster-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:bg-transparent dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-lobster-400"
                             title={key.rawKey
                               ? t('console.apiKeys.quickImport', '导入到')
                               : t('console.apiKeys.quickImport.noPlaintext', '该令牌无明文值，无法快速导入')}
@@ -703,7 +722,7 @@ export function ApiKeysView() {
                         </div>
                         <button
                           onClick={() => setUsageDetailsKey(key)}
-                          className="bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/20 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                          className="bg-lobster-50 dark:bg-lobster-500/10 hover:bg-lobster-100 dark:hover:bg-lobster-500/20 text-lobster-700 dark:text-lobster-300 border border-lobster-200 dark:border-lobster-500/20 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                         >
                           {t('console.apiKeys.usageDetails', '使用详情')}
                         </button>
@@ -711,7 +730,7 @@ export function ApiKeysView() {
                           onClick={() => {
                             void openDetailsDrawer(key);
                           }}
-                          className="bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                          className="bg-primary-50 dark:bg-primary-500/10 hover:bg-primary-100 dark:hover:bg-primary-500/20 text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-500/20 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                         >
                           {t('common.actions.details')}
                         </button>
@@ -720,7 +739,7 @@ export function ApiKeysView() {
                           onClick={() => {
                             void openEditDrawer(key);
                           }}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:text-blue-600 hover:bg-slate-50 dark:border-white/10 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:text-primary-600 hover:bg-slate-50 dark:border-white/10 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5"
                           title={t('common.actions.edit', '编辑')}
                           aria-label={t('common.actions.edit', '编辑')}
                         >
@@ -769,7 +788,7 @@ export function ApiKeysView() {
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <div className="bg-blue-600 text-white min-w-[28px] h-7 px-2 rounded flex items-center justify-center font-bold shadow-sm">
+            <div className="bg-primary-600 text-white min-w-[28px] h-7 px-2 rounded flex items-center justify-center font-bold shadow-sm">
               {currentPage}
             </div>
             <button
@@ -788,6 +807,7 @@ export function ApiKeysView() {
         mode="create"
         groups={groups}
         groupsLoading={groupsLoading}
+        vendors={vendors ?? undefined}
         submitting={creating}
         onRequestGroups={() => {
           void ensureGroupsLoaded();
@@ -801,6 +821,7 @@ export function ApiKeysView() {
         initialData={detailsKey}
         groups={groups}
         groupsLoading={groupsLoading}
+        vendors={vendors ?? undefined}
         onRequestGroups={() => {
           void ensureGroupsLoaded();
         }}
@@ -824,11 +845,11 @@ export function ApiKeysView() {
                 key={target.id}
                 type="button"
                 onClick={() => selectQuickImportTarget(target.id)}
-                className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition-colors hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-blue-500/10 dark:hover:text-blue-300"
+                className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition-colors hover:bg-primary-50 hover:text-primary-700 dark:text-slate-200 dark:hover:bg-primary-500/10 dark:hover:text-primary-300"
               >
                 {target.id === 'birdcoder'
                   ? <Bird className="h-4 w-4 shrink-0 text-lobster-500" />
-                  : <Repeat className="h-4 w-4 shrink-0 text-blue-500" />}
+                  : <Repeat className="h-4 w-4 shrink-0 text-primary-500" />}
                 <span className="truncate">{t(target.labelKey, target.fallbackLabel)}</span>
               </button>
             ))}
@@ -875,6 +896,7 @@ export function ApiKeysView() {
         initialData={editingKey}
         groups={groups}
         groupsLoading={groupsLoading}
+        vendors={vendors ?? undefined}
         onRequestGroups={() => {
           void ensureGroupsLoaded();
         }}
@@ -937,7 +959,7 @@ export function ApiKeysView() {
                         text={item.rawKey}
                         label={t('common.actions.copyKey')}
                         copiedLabel={t('common.actions.keyCopied')}
-                        className="absolute right-2 p-2 bg-white dark:bg-[#252525] text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white rounded-lg border border-slate-200 dark:border-white/10 transition-colors shadow-sm"
+                        className="absolute right-2 p-2 bg-white dark:bg-[#252525] text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-white rounded-lg border border-slate-200 dark:border-white/10 transition-colors shadow-sm"
                         title={t('common.actions.copyKey')}
                       />
                     </div>
@@ -952,7 +974,7 @@ export function ApiKeysView() {
                 ))}
 
                 <div className="pt-2 flex justify-end">
-                  <button onClick={closeSuccessDialog} className="px-6 py-2.5 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors w-full shadow-sm">
+                  <button onClick={closeSuccessDialog} className="px-6 py-2.5 text-sm font-medium bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors w-full shadow-sm">
                     {t('common.actions.close')}
                   </button>
                 </div>

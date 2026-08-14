@@ -60,7 +60,7 @@ const APP_OPTIONS: AppOption[] = [
   {
     id: 'gemini',
     icon: <Gem className="h-5 w-5" />,
-    iconClassName: 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-400',
+    iconClassName: 'bg-primary-50 text-primary-600 border-primary-200 dark:bg-primary-500/10 dark:border-primary-500/20 dark:text-primary-400',
   },
   {
     id: 'grokbuild',
@@ -141,7 +141,7 @@ export function QuickImportAppPickerDialog({
   };
 
   const inputClassName =
-    'w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 dark:border-white/10 dark:bg-[#1e1e1e] dark:text-white placeholder:text-slate-400';
+    'w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 dark:border-white/10 dark:bg-[#1e1e1e] dark:text-white placeholder:text-slate-400';
 
   return (
     <div
@@ -196,7 +196,7 @@ export function QuickImportAppPickerDialog({
                 window.open(homepage, '_blank', 'noopener,noreferrer');
               }
             }}
-            className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 transition-colors hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
+            className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-primary-600 transition-colors hover:text-primary-700 hover:underline dark:text-primary-400 dark:hover:text-primary-300"
           >
             <ExternalLink className="h-3.5 w-3.5" />
             {t('console.apiKeys.quickImport.relayHomepage', '中转站官网')}
@@ -263,8 +263,8 @@ export function QuickImportAppPickerDialog({
                       ))}
                       className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors ${
                         isSelected
-                          ? 'border-blue-500 bg-blue-50 dark:border-blue-500/40 dark:bg-blue-500/10'
-                          : 'border-slate-200 bg-slate-50 hover:border-blue-300 hover:bg-blue-50 dark:border-white/10 dark:bg-[#1e1e1e] dark:hover:border-blue-500/30 dark:hover:bg-blue-500/10'
+                          ? 'border-primary-500 bg-primary-50 dark:border-primary-500/40 dark:bg-primary-500/10'
+                          : 'border-slate-200 bg-slate-50 hover:border-primary-300 hover:bg-primary-50 dark:border-white/10 dark:bg-[#1e1e1e] dark:hover:border-primary-500/30 dark:hover:bg-primary-500/10'
                       }`}
                     >
                       <span
@@ -286,7 +286,7 @@ export function QuickImportAppPickerDialog({
                       <span
                         className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors ${
                           isSelected
-                            ? 'border-blue-500 bg-blue-500 text-white'
+                            ? 'border-primary-500 bg-primary-500 text-white'
                             : 'border-slate-300 bg-white text-transparent dark:border-white/20 dark:bg-transparent'
                         }`}
                       >
@@ -318,7 +318,7 @@ export function QuickImportAppPickerDialog({
                 window.open(homepage, '_blank', 'noopener,noreferrer');
               }
             }}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 transition-colors hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-600 transition-colors hover:text-primary-700 hover:underline dark:text-primary-400 dark:hover:text-primary-300"
           >
             <ExternalLink className="h-3.5 w-3.5" />
             {t('console.apiKeys.quickImport.relayHomepage', '中转站官网')}
@@ -333,14 +333,14 @@ export function QuickImportAppPickerDialog({
                     submit(selectedApp);
                   }
                 }}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {t('console.apiKeys.quickImport.confirmImport', '确认导入')}
               </button>
             ) : confirmLabel ? (
               <button
                 onClick={() => submit('claude')}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-700"
               >
                 {confirmLabel}
               </button>

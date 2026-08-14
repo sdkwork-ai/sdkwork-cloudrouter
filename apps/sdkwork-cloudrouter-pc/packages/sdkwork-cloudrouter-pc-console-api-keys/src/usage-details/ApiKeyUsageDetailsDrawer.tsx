@@ -156,7 +156,7 @@ export function ApiKeyUsageDetailsDrawer({
                     aria-current={isActive ? 'true' : undefined}
                     className={`flex min-h-12 items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors ${
                       isActive
-                        ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300'
+                        ? 'border-primary-200 bg-primary-50 text-primary-700 dark:border-primary-500/30 dark:bg-primary-500/10 dark:text-primary-300'
                         : 'border-transparent text-slate-600 hover:bg-white hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white'
                     }`}
                   >
@@ -175,7 +175,7 @@ export function ApiKeyUsageDetailsDrawer({
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white">
-                        <Terminal className="h-4 w-4 text-blue-500" />
+                        <Terminal className="h-4 w-4 text-primary-500" />
                         {t(activeProfile.labelKey, activeProfile.fallbackLabel)}
                       </div>
                       <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">
@@ -229,7 +229,7 @@ export function ApiKeyUsageDetailsDrawer({
                         id="usage-details-model-id"
                         value={modelId}
                         onChange={(event) => setModelId(event.target.value)}
-                        className="min-w-0 max-w-full flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono text-xs font-semibold text-slate-800 focus:border-blue-400 focus:outline-none dark:border-white/10 dark:bg-[#1e1e1e] dark:text-slate-200"
+                        className="min-w-0 max-w-full flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono text-xs font-semibold text-slate-800 focus:border-primary-400 focus:outline-none dark:border-white/10 dark:bg-[#1e1e1e] dark:text-slate-200"
                       >
                         {availableModels.map((id) => (
                           <option key={id} value={id}>
@@ -244,7 +244,7 @@ export function ApiKeyUsageDetailsDrawer({
                         value={modelId}
                         onChange={(event) => setModelId(event.target.value)}
                         placeholder={FALLBACK_MODEL_ID}
-                        className="min-w-0 max-w-full flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono text-xs font-semibold text-slate-800 focus:border-blue-400 focus:outline-none dark:border-white/10 dark:bg-[#1e1e1e] dark:text-slate-200"
+                        className="min-w-0 max-w-full flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono text-xs font-semibold text-slate-800 focus:border-primary-400 focus:outline-none dark:border-white/10 dark:bg-[#1e1e1e] dark:text-slate-200"
                       />
                     )}
                     {!modelsLoading && availableModels.length === 0 && (
@@ -289,7 +289,7 @@ export function ApiKeyUsageDetailsDrawer({
                 </details>
                 <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-[#252525]">
                   <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-                    <BookOpen className="h-4 w-4 text-blue-500" />
+                    <BookOpen className="h-4 w-4 text-primary-500" />
                     {t('console.apiKeys.usageDetails.reference', '参考')}
                   </div>
                   <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
@@ -320,7 +320,7 @@ function InfoBlock({
     <div
       className={`rounded-lg border p-4 ${
         highlight
-          ? 'border-blue-200 bg-blue-50 dark:border-blue-500/30 dark:bg-blue-500/10'
+          ? 'border-primary-200 bg-primary-50 dark:border-primary-500/30 dark:bg-primary-500/10'
           : 'border-slate-200 bg-white dark:border-white/10 dark:bg-[#252525]'
       }`}
     >

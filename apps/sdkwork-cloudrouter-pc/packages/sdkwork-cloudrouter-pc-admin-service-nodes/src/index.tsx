@@ -153,7 +153,7 @@ export function ServiceNodesAdmin() {
                     }
                   }}
                   placeholder={t('admin.serviceNodes.search.placeholder', 'Search name, domain or IP')}
-                  className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
+                  className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-800 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
                 />
               </div>
               <select
@@ -163,7 +163,7 @@ export function ServiceNodesAdmin() {
                   setStatusFilter(nextStatus);
                   void loadNodes(search, nextStatus);
                 }}
-                className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-slate-200"
+                className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-slate-200"
               >
                 <option value="all">{t('admin.serviceNodes.filters.all', 'All statuses')}</option>
                 <option value="enabled">{t('admin.serviceNodes.status.enabled', 'Enabled')}</option>
@@ -191,7 +191,7 @@ export function ServiceNodesAdmin() {
             <button
               type="button"
               onClick={() => setDialog({ mode: 'create' })}
-              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-cyan-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-700"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-lobster-500 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-lobster-600"
             >
               <Plus className="h-4 w-4" />
               {t('admin.serviceNodes.actions.create', 'New node')}
@@ -238,7 +238,7 @@ export function ServiceNodesAdmin() {
               <tr key={node.id} className="transition hover:bg-slate-50 dark:hover:bg-white/5">
                 <td className="px-5 py-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-300">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-lobster-50 text-lobster-600 dark:bg-lobster-500/10 dark:text-lobster-300">
                       <Server className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
@@ -420,7 +420,7 @@ function IconButton({
 }) {
   const toneClass = tone === 'danger'
     ? 'text-red-600 hover:border-red-200 hover:bg-red-50 hover:text-red-700 dark:text-red-300 dark:hover:border-red-500/30 dark:hover:bg-red-500/10'
-    : 'text-slate-600 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700 dark:text-slate-300 dark:hover:border-cyan-500/30 dark:hover:bg-cyan-500/10 dark:hover:text-cyan-200';
+    : 'text-slate-600 hover:border-lobster-200 hover:bg-lobster-50 hover:text-lobster-700 dark:text-slate-300 dark:hover:border-lobster-500/30 dark:hover:bg-lobster-500/10 dark:hover:text-lobster-200';
   return (
     <button
       type="button"
@@ -522,7 +522,7 @@ function ServiceNodeDialog({
         className="max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-[#1a1a1a]"
       >
         <div className="mb-5 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-300">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-lobster-50 text-lobster-600 dark:bg-lobster-500/10 dark:text-lobster-300">
             <Server className="h-5 w-5" />
           </div>
           <div>
@@ -541,7 +541,7 @@ function ServiceNodeDialog({
           <button
             type="button"
             onClick={() => applyPreset('standalone')}
-            className="inline-flex h-8 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-emerald-500/10"
+            className="inline-flex h-8 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:border-lobster-300 hover:bg-lobster-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-emerald-500/10"
           >
             <HardDrive className="h-3.5 w-3.5" />
             {t('admin.serviceNodes.quickConfig.standalone', 'Local standalone')}
@@ -549,7 +549,7 @@ function ServiceNodeDialog({
           <button
             type="button"
             onClick={() => applyPreset('cloud')}
-            className="inline-flex h-8 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-blue-500/10"
+            className="inline-flex h-8 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:border-lobster-300 hover:bg-lobster-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-blue-500/10"
           >
             <CopyPlus className="h-3.5 w-3.5" />
             {t('admin.serviceNodes.quickConfig.cloud', 'SDKWork Cloud Gateway')}
@@ -601,7 +601,7 @@ function ServiceNodeDialog({
               onChange={(event) => setForm((current) => ({ ...current, domainsText: event.target.value }))}
               rows={3}
               placeholder={t('admin.serviceNodes.fields.domainsPlaceholder', 'One domain per line')}
-              className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
+              className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-sm text-slate-800 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
             />
           </label>
           <TextField
@@ -616,7 +616,7 @@ function ServiceNodeDialog({
             <select
               value={form.status}
               onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as ServiceNodeStatus }))}
-              className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
+              className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
             >
               <option value="enabled">{t('admin.serviceNodes.status.enabled', 'Enabled')}</option>
               <option value="disabled">{t('admin.serviceNodes.status.disabled', 'Disabled')}</option>
@@ -630,7 +630,7 @@ function ServiceNodeDialog({
               value={form.remark}
               onChange={(event) => setForm((current) => ({ ...current, remark: event.target.value }))}
               rows={3}
-              className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
+              className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
             />
           </label>
         </div>
@@ -653,7 +653,7 @@ function ServiceNodeDialog({
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg bg-lobster-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-lobster-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {saving ? t('common.actions.saving', 'Saving...') : t('common.actions.save', 'Save')}
           </button>
@@ -698,7 +698,7 @@ function TextField({
         type="text"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
+        className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
       />
     </label>
   );

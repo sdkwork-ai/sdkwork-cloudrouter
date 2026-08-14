@@ -400,7 +400,7 @@
     },
     {
       "path": "src/types/create-upstream-supplier-request.ts",
-      "sha256": "4d700fda5c5c30f353e75c6ec592ac847b97369d0d2c1ce21bf1f8563ec17788"
+      "sha256": "9215f7fad65e241d8fb398fcc42c52bb9d15211bf252d6d6589a5cbe67f2b9d4"
     },
     {
       "path": "src/types/exchange-rule-mutation-request.ts",
@@ -604,7 +604,7 @@
     },
     {
       "path": "src/types/update-upstream-supplier-request.ts",
-      "sha256": "007e09e8034af29a2fb32ca75e498fbc2c0885012235b1533623aa021f22cda4"
+      "sha256": "707d46443e69cb2d42b00d988bb1d55772d07823b6302db7d4dac50748ae5b1b"
     },
     {
       "path": "src/types/upstream-account-credential-item-response.ts",
@@ -764,7 +764,7 @@
     },
     {
       "path": "src/types/upstream-supplier-endpoint-input.ts",
-      "sha256": "c8d0245ebb483ce21f70785cedffd81bfb496091d35a531b5a5f9e39a731f5f1"
+      "sha256": "749e38e30b223294a0cbe1f8155684a85cee2e12a74642d16708a8da0fe9331f"
     },
     {
       "path": "src/types/upstream-supplier-endpoint-list-response.ts",
@@ -772,7 +772,7 @@
     },
     {
       "path": "src/types/upstream-supplier-endpoint.ts",
-      "sha256": "a3c60496069b39df1638482e2b9a4c5d588281b5ec5eb8afc41745866e6cac15"
+      "sha256": "5fbb0deafc0d1b8bd6e79c4d3730baa09ccef7ed3484d68378f40c68f57e7704"
     },
     {
       "path": "src/types/upstream-supplier-item-response.ts",
@@ -800,7 +800,7 @@
     },
     {
       "path": "src/types/upstream-supplier.ts",
-      "sha256": "8d28d3c5a391e82bce60753f124de746dbfd118fabfbe053c5318d9476631980"
+      "sha256": "dad80624b593404a2a3b1df56eb695ca3630effc663e135115fe2c0a931530d7"
     },
     {
       "path": "src/types/verify-upstream-account-request.ts",

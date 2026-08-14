@@ -6,7 +6,7 @@ export const CLOUD_ROUTER_THEME_STORAGE_KEY = 'cloud-router-theme';
 export const CLOUD_ROUTER_THEME_COLOR_STORAGE_KEY = 'cloud-router-theme-color';
 
 const DEFAULT_THEME_PREFERENCE: ThemePreference = 'system';
-const DEFAULT_THEME_COLOR_PREFERENCE: ThemeColorPreference = 'lobster';
+const DEFAULT_THEME_COLOR_PREFERENCE: ThemeColorPreference = 'blue';
 
 type ThemeColorShade = '50' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '900';
 
@@ -161,6 +161,19 @@ export function applyThemePreference(theme: ThemePreference): ResolvedThemePrefe
   return resolvedTheme;
 }
 
+/**
+ * 将 #rrggbb 颜色转换为 "r g b" 空格分隔的 RGB 三元组，
+ * 供 rgb(var(--x) / alpha) 这类 CSS 用法消费。
+ */
+function hexToRgbTriplet(hex: string): string {
+  const value = hex.replace('#', '');
+  const parsed = Number.parseInt(value, 16);
+  const r = (parsed >> 16) & 255;
+  const g = (parsed >> 8) & 255;
+  const b = parsed & 255;
+  return `${r} ${g} ${b}`;
+}
+
 export function applyThemeColorPreference(themeColor: ThemeColorPreference): void {
   if (typeof document === 'undefined') {
     return;
@@ -173,6 +186,15 @@ export function applyThemeColorPreference(themeColor: ThemeColorPreference): voi
   root.style.setProperty('--cloud-router-accent', palette['500']);
   root.style.setProperty('--cloud-router-accent-soft', palette['100']);
   root.style.setProperty('--color-lobster-500', palette['500']);
+
+  // 侧边栏/导航强调色同步跟随主题色（console/admin/playground 共享）
+  root.style.setProperty('--sdkwork-sidebar-accent-rgb', hexToRgbTriplet(palette['500']));
+  root.style.setProperty('--sdkwork-sidebar-accent-hover-rgb', hexToRgbTriplet(palette['600']));
+  root.style.setProperty('--sdkwork-sidebar-accent-soft-rgb', hexToRgbTriplet(palette['200']));
+  root.style.setProperty(
+    '--sdkwork-playground-rail-item-active-color',
+    `rgb(${hexToRgbTriplet(palette['200'])})`,
+  );
 
   for (const [shade, color] of Object.entries(palette)) {
     if (shade === '500') {

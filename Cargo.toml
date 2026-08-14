@@ -282,6 +282,10 @@ sdkwork_catalog_service_host = { package = "sdkwork-catalog-service-host", path 
 sdkwork_catalog_database_host = { package = "sdkwork-catalog-database-host", path = "../sdkwork-catalog/crates/sdkwork-catalog-database-host" }
 sdkwork_invoice_database_bootstrap = { package = "sdkwork-invoice-database-bootstrap", path = "../sdkwork-invoice/crates/sdkwork-invoice-database-bootstrap" }
 sdkwork_api_community_assembly = { package = "sdkwork-api-community-assembly", path = "../sdkwork-community/crates/sdkwork-api-community-assembly" }
+# SDKWork communication RTC capability: the RTC backend surface
+# (`/backend/v3/api/rtc/*`) enters through the RTC API assembly contribution
+# (API_ASSEMBLY_SPEC §3/§6.1), never through a direct route-crate import.
+sdkwork_api_rtc_assembly = { package = "sdkwork-api-rtc-assembly", path = "../sdkwork-rtc/crates/sdkwork-api-rtc-assembly" }
 sdkwork-web-bootstrap = { path = "../sdkwork-web-framework/crates/sdkwork-web-bootstrap" }
 
 # SDKWork web framework dependencies

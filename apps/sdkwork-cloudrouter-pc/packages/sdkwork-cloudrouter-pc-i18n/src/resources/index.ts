@@ -17,6 +17,8 @@ import { adminStatsMessages } from '@sdkwork/partner-pc-admin-stats/i18n';
 import { partnerJoinMessages } from '@sdkwork/partner-pc-join/i18n';
 import { cloudRouterIamAdminMessages } from '@sdkwork/cloudrouter-pc-admin-iam/i18n';
 import { cloudRouterRtcAdminMessages } from '@sdkwork/cloudrouter-pc-admin-rtc/i18n';
+import { adminOrdersMessages } from '@sdkwork/order-pc-admin-orders/i18n';
+import { adminTradeMessages } from '@sdkwork/order-pc-admin-trade/i18n';
 import { logAdminI18n } from '@sdkwork/log-pc-admin-request-log/i18n';
 import { mergeI18nBundles } from './merge';
 import { adminAnalyticsRecordMessages } from './admin/analytics-record';
@@ -102,6 +104,8 @@ export const resources = mergeI18nBundles([
   upstreamAccountGroupMessages,
   cloudRouterIamAdminMessages,
   cloudRouterRtcAdminMessages,
+  adminOrdersMessages,
+  adminTradeMessages,
   logAdminI18n,
   consoleAccountMessages,
   consoleApiKeysMessages,

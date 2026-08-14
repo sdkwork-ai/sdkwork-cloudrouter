@@ -56,6 +56,7 @@ pub struct SqlPricingCatalogSnapshotSummary {
     pub model_mappings: usize,
     pub pricing_plans: usize,
     pub upstream_account_groups: usize,
+    pub upstream_suppliers: usize,
     pub api_keys: usize,
     pub prices: usize,
     pub managed_provider_secrets: usize,
@@ -119,6 +120,7 @@ pub struct SqlPricingCatalogSnapshot {
     managed_provider_secrets: BTreeMap<String, String>,
     account_group_model_access_by_id: HashMap<i64, AccountGroupModelAccess>,
     supplier_model_access_by_code: HashMap<String, SupplierModelAccess>,
+    supplier_default_base_url_by_code: HashMap<String, String>,
     // --- Indexes for O(1) hot-path lookups ---
     models_by_key: HashMap<String, AiModel>,
     models_by_name: HashMap<String, Vec<String>>,
@@ -170,6 +172,18 @@ impl SqlPricingCatalogSnapshot {
                 ))
             })
             .collect::<DomainResult<HashMap<_, _>>>()?;
+        // 供应商默认 Base URL 映射（非 LLM 资源请求走默认端点）；同一供应商多行取同一值
+        let supplier_default_base_url_by_code = rows
+            .upstream_account_routes
+            .iter()
+            .filter_map(|row| {
+                row.supplier_default_base_url
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(|value| (row.supplier_code.clone(), value.to_owned()))
+            })
+            .collect::<HashMap<_, _>>();
         let mut snapshot = Self {
             vendors: map_rows(rows.vendors, ModelVendorRow::try_into_domain)?,
             models: map_rows(rows.models, AiModelRow::try_into_domain)?,
@@ -208,6 +222,7 @@ impl SqlPricingCatalogSnapshot {
             managed_provider_secrets,
             account_group_model_access_by_id,
             supplier_model_access_by_code,
+            supplier_default_base_url_by_code,
             models_by_key: HashMap::new(),
             models_by_name: HashMap::new(),
             api_keys_by_hash: HashMap::new(),
@@ -325,6 +340,7 @@ impl SqlPricingCatalogSnapshot {
             model_mappings: self.model_mappings.len(),
             pricing_plans: self.pricing_plans.len(),
             upstream_account_groups: self.upstream_account_groups.len(),
+            upstream_suppliers: self.supplier_model_access_by_code.len(),
             api_keys: self.api_keys.len(),
             prices: self.prices.len(),
             managed_provider_secrets: self.managed_provider_secrets.len(),
@@ -446,6 +462,13 @@ impl UpstreamAccountRouteCatalog for RefreshableSqlPricingCatalog {
 
     fn supplier_model_access(&self, supplier_code: &str) -> Option<SupplierModelAccess> {
         self.current_snapshot().supplier_model_access(supplier_code)
+    }
+
+    fn supplier_default_base_url(&self, supplier_code: &str) -> Option<String> {
+        self.current_snapshot()
+            .supplier_default_base_url_by_code
+            .get(supplier_code)
+            .cloned()
     }
 
     fn model_catalog_keys_by_name(&self, model_name: &str) -> Vec<String> {
@@ -868,6 +891,12 @@ impl UpstreamAccountRouteCatalog for SqlPricingCatalogSnapshot {
 
     fn supplier_model_access(&self, supplier_code: &str) -> Option<SupplierModelAccess> {
         self.supplier_model_access_by_code
+            .get(supplier_code)
+            .cloned()
+    }
+
+    fn supplier_default_base_url(&self, supplier_code: &str) -> Option<String> {
+        self.supplier_default_base_url_by_code
             .get(supplier_code)
             .cloned()
     }

@@ -3,10 +3,12 @@ import { Navigate, Route, useParams } from 'react-router-dom';
 import { IAM_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-iam/contribution';
 import { RTC_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-rtc/contribution';
 import { RTC_ADMIN_ROUTE_ELEMENTS } from '@sdkwork/cloudrouter-pc-admin-rtc';
+import { TRADE_ADMIN_ROUTE_RECORDS } from '@sdkwork/order-pc-admin-trade/contribution';
+import { TradeCenterHostElement } from './tradeCenterHostElement.tsx';
 
 export type CloudRouterAdminRouteContribution = {
   path: string;
-  owner: 'sdkwork-cloudrouter' | 'sdkwork-models' | 'sdkwork-log' | 'sdkwork-partner' | 'sdkwork-rtc';
+  owner: 'sdkwork-cloudrouter' | 'sdkwork-models' | 'sdkwork-log' | 'sdkwork-partner' | 'sdkwork-rtc' | 'sdkwork-order';
   adminPackage: `@sdkwork/${string}`;
   backendSdkFamilies: readonly string[];
   requiredPermission: string;
@@ -138,6 +140,18 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
       record.redirectTo
         ? <Navigate to={record.redirectTo} replace />
         : RTC_ADMIN_ROUTE_ELEMENTS[record.path]!,
+    ),
+  ),
+  ...TRADE_ADMIN_ROUTE_RECORDS.map((record) =>
+    route(
+      record.path,
+      'sdkwork-order',
+      '@sdkwork/order-pc-admin-trade',
+      ['sdkwork-order-backend-sdk'],
+      record.requiredPermission,
+      record.redirectTo
+        ? <Navigate to={record.redirectTo} replace />
+        : <TradeCenterHostElement />,
     ),
   ),
 ];

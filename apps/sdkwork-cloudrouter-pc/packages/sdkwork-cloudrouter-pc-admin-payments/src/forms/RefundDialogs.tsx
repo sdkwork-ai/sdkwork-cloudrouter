@@ -280,7 +280,7 @@ export function RefundCreateDialog({ initialRecord, saving, onClose, onSubmit }:
         <div className="md:col-span-2">
           <FieldLabel label={t('admin.commerce.payments.refunds.create.form.paymentIntent', 'Payment intent')}>
             <select
-              className="mt-1.5 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-[#202020] dark:text-white"
+              className="mt-1.5 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-lobster-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-[#202020] dark:text-white"
               disabled={saving}
               onChange={(event) => set('paymentIntentId', event.target.value)}
               value={values.paymentIntentId}

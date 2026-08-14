@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import { IAM_ADMIN_MENU, IAM_ADMIN_MODULE_DEF } from '@sdkwork/cloudrouter-pc-admin-iam/contribution';
 import { RTC_ADMIN_MENU, RTC_ADMIN_MODULE_DEF } from '@sdkwork/cloudrouter-pc-admin-rtc/contribution';
+import { TRADE_ADMIN_MENU, TRADE_ADMIN_MODULE_DEF } from '@sdkwork/order-pc-admin-trade/contribution';
 
 export type AdminModuleId =
   | 'home'
@@ -55,6 +56,7 @@ export type AdminModuleId =
   | 'partnerCenter'
   | 'paymentCenter'
   | 'storageCenter'
+  | 'tradeCenter'
   | 'operations';
 
 export interface AdminModuleDef {
@@ -112,6 +114,7 @@ export const ADMIN_MODULES: AdminModuleDef[] = [
   }),
   IAM_ADMIN_MODULE_DEF,
   RTC_ADMIN_MODULE_DEF,
+  TRADE_ADMIN_MODULE_DEF,
   moduleBlock({
     id: 'membershipCenter',
     nameKey: 'admin.header.membershipCenter',
@@ -187,13 +190,13 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
     groups: [
       groupBlock('admin.menu.home.modelManagement', [
         itemBlock({ path: '/admin/model', labelKey: 'admin.menu.models', icon: Database }),
-        itemBlock({ path: '/admin/model/resources', labelKey: 'admin.menu.modelResources', icon: Boxes, iconColor: 'text-emerald-500' }),
-        itemBlock({ path: '/admin/model/mappings', labelKey: 'admin.menu.modelMappings', icon: ArrowRightLeft, iconColor: 'text-indigo-500' }),
+        itemBlock({ path: '/admin/model/resources', labelKey: 'admin.menu.modelResources', icon: Boxes, iconColor: 'text-lobster-400' }),
+        itemBlock({ path: '/admin/model/mappings', labelKey: 'admin.menu.modelMappings', icon: ArrowRightLeft, iconColor: 'text-lobster-400' }),
       ]),
       groupBlock('admin.menu.home.upstreamManagement', [
-        itemBlock({ path: '/admin/upstream/suppliers', labelKey: 'admin.menu.upstream.suppliers', icon: Building2, iconColor: 'text-cyan-500' }),
-        itemBlock({ path: '/admin/upstream/accounts', labelKey: 'admin.menu.upstream.accounts', icon: UsersRound, iconColor: 'text-violet-500' }),
-        itemBlock({ path: '/admin/upstream/account-groups', labelKey: 'admin.menu.upstream.accountGroups', icon: Layers3, iconColor: 'text-amber-500' }),
+        itemBlock({ path: '/admin/upstream/suppliers', labelKey: 'admin.menu.upstream.suppliers', icon: Building2, iconColor: 'text-lobster-400' }),
+        itemBlock({ path: '/admin/upstream/accounts', labelKey: 'admin.menu.upstream.accounts', icon: UsersRound, iconColor: 'text-lobster-400' }),
+        itemBlock({ path: '/admin/upstream/account-groups', labelKey: 'admin.menu.upstream.accountGroups', icon: Layers3, iconColor: 'text-lobster-400' }),
       ]),
       groupBlock('admin.menu.home.dataManagement', [
         itemBlock({ path: '/admin/record', labelKey: 'admin.menu.records', icon: Activity }),
@@ -204,6 +207,7 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
   },
   IAM_ADMIN_MENU,
   RTC_ADMIN_MENU,
+  TRADE_ADMIN_MENU,
   {
     moduleId: 'membershipCenter',
     groups: [
@@ -224,16 +228,16 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
     groups: [
       groupBlock('admin.menu.community.content', [
         itemBlock({ path: '/admin/community/overview', labelKey: 'admin.menu.community.overview', icon: LayoutDashboard }),
-        itemBlock({ path: '/admin/community/circles', labelKey: 'admin.menu.community.circles', icon: Compass, iconColor: 'text-violet-500' }),
-        itemBlock({ path: '/admin/community/entries', labelKey: 'admin.menu.community.entries', icon: FileText, iconColor: 'text-cyan-500' }),
-        itemBlock({ path: '/admin/community/moderation', labelKey: 'admin.menu.community.moderation', icon: ShieldCheck, iconColor: 'text-amber-500' }),
+        itemBlock({ path: '/admin/community/circles', labelKey: 'admin.menu.community.circles', icon: Compass, iconColor: 'text-lobster-400' }),
+        itemBlock({ path: '/admin/community/entries', labelKey: 'admin.menu.community.entries', icon: FileText, iconColor: 'text-lobster-400' }),
+        itemBlock({ path: '/admin/community/moderation', labelKey: 'admin.menu.community.moderation', icon: ShieldCheck, iconColor: 'text-lobster-400' }),
       ]),
       groupBlock('admin.menu.community.members', [
         itemBlock({ path: '/admin/community/members', labelKey: 'admin.menu.community.members', icon: Users }),
-        itemBlock({ path: '/admin/community/groups', labelKey: 'admin.menu.community.groups', icon: MessagesSquare, iconColor: 'text-emerald-500' }),
+        itemBlock({ path: '/admin/community/groups', labelKey: 'admin.menu.community.groups', icon: MessagesSquare, iconColor: 'text-lobster-400' }),
       ]),
       groupBlock('admin.menu.community.monetize', [
-        itemBlock({ path: '/admin/community/tiers', labelKey: 'admin.menu.community.tiers', icon: Crown, iconColor: 'text-amber-500' }),
+        itemBlock({ path: '/admin/community/tiers', labelKey: 'admin.menu.community.tiers', icon: Crown, iconColor: 'text-lobster-400' }),
       ]),
     ],
   },
@@ -341,13 +345,13 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
         itemBlock({ path: '/admin/ratelimit', labelKey: 'admin.menu.rateLimit', icon: ShieldAlert, iconColor: 'text-red-500' }),
       ]),
       groupBlock('admin.menu.ops.infrastructure', [
-        itemBlock({ path: '/admin/service-nodes', labelKey: 'admin.menu.serviceNodes', icon: Server, iconColor: 'text-cyan-500' }),
-        itemBlock({ path: '/admin/cache', labelKey: 'admin.menu.cache', icon: HardDrive, iconColor: 'text-emerald-500' }),
+        itemBlock({ path: '/admin/service-nodes', labelKey: 'admin.menu.serviceNodes', icon: Server, iconColor: 'text-lobster-400' }),
+        itemBlock({ path: '/admin/cache', labelKey: 'admin.menu.cache', icon: HardDrive, iconColor: 'text-lobster-400' }),
       ]),
       groupBlock('admin.menu.ops.system', [
-        itemBlock({ path: '/admin/settings', labelKey: 'admin.menu.authSettings', icon: ShieldCheck, iconColor: 'text-blue-500' }),
-        itemBlock({ path: '/admin/runtime-region', labelKey: 'admin.menu.runtimeRegion', icon: Globe2, iconColor: 'text-cyan-500' }),
-        itemBlock({ path: '/admin/site', labelKey: 'admin.menu.siteSettings', icon: Settings, iconColor: 'text-indigo-500' }),
+        itemBlock({ path: '/admin/settings', labelKey: 'admin.menu.authSettings', icon: ShieldCheck, iconColor: 'text-lobster-400' }),
+        itemBlock({ path: '/admin/runtime-region', labelKey: 'admin.menu.runtimeRegion', icon: Globe2, iconColor: 'text-lobster-400' }),
+        itemBlock({ path: '/admin/site', labelKey: 'admin.menu.siteSettings', icon: Settings, iconColor: 'text-lobster-400' }),
       ]),
     ],
   },

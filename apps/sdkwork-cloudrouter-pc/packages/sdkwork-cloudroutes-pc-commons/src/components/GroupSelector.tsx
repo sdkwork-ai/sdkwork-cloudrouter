@@ -355,12 +355,12 @@ export function GroupSelector({
         className={
           variant === 'compact'
             ? cn(
-                'inline-flex max-w-[170px] items-center gap-1 rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-600 transition-colors hover:bg-blue-100 disabled:opacity-60 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20',
-                open && 'bg-blue-100 dark:bg-blue-500/20',
+                'inline-flex max-w-[170px] items-center gap-1 rounded border border-lobster-200 bg-lobster-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-lobster-600 transition-colors hover:bg-lobster-100 disabled:opacity-60 dark:border-lobster-500/20 dark:bg-lobster-500/10 dark:text-lobster-400 dark:hover:bg-lobster-500/20',
+                open && 'bg-lobster-100 dark:bg-lobster-500/20',
               )
             : cn(
-                'flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/40 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-[#252525] dark:text-white',
-                open && 'border-blue-500 ring-2 ring-blue-500/30',
+                'flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-lobster-500/40 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-[#252525] dark:text-white',
+                open && 'border-lobster-500 ring-2 ring-lobster-500/30',
               )
         }
       >
@@ -446,7 +446,7 @@ export function GroupSelector({
                       value={filterQuery}
                       onChange={(event) => setFilterQuery(event.currentTarget.value)}
                       placeholder={labels.searchPlaceholder ?? 'Filter groups'}
-                      className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-2 text-xs text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-[#121212] dark:text-white dark:focus:border-blue-500"
+                      className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-2 text-xs text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-lobster-500 focus:bg-white dark:border-white/10 dark:bg-[#121212] dark:text-white dark:focus:border-blue-500"
                     />
                   </div>
                 </div>
@@ -480,7 +480,7 @@ export function GroupSelector({
                         className={cn(
                           'flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors disabled:opacity-50',
                           selected
-                            ? 'bg-blue-50 dark:bg-blue-500/10'
+                            ? 'bg-lobster-50 dark:bg-lobster-500/10'
                             : 'hover:bg-slate-50 dark:hover:bg-white/5',
                         )}
                       >
@@ -503,10 +503,10 @@ export function GroupSelector({
                               ? cn(
                                   'rounded border',
                                   selected
-                                    ? 'border-blue-600 bg-blue-600 text-white dark:border-blue-500 dark:bg-blue-500'
+                                    ? 'border-lobster-500 bg-lobster-500 text-white dark:border-lobster-500 dark:bg-lobster-500'
                                     : 'border-slate-300 bg-white dark:border-white/20 dark:bg-transparent',
                                 )
-                              : 'text-blue-600 dark:text-blue-400',
+                              : 'text-lobster-600 dark:text-lobster-400',
                           )}
                         >
                           {selected ? <Check className="h-3 w-3" /> : null}
@@ -525,7 +525,7 @@ export function GroupSelector({
                   <button
                     type="button"
                     onClick={() => onChange([])}
-                    className="rounded px-2 py-0.5 text-xs font-semibold text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10"
+                    className="rounded px-2 py-0.5 text-xs font-semibold text-lobster-600 transition-colors hover:bg-lobster-50 dark:text-lobster-400 dark:hover:bg-lobster-500/10"
                   >
                     {labels.clear ?? 'Clear'}
                   </button>

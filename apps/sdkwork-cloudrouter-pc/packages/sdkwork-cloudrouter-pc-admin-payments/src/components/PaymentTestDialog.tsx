@@ -406,7 +406,7 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
             <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
               <div className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</div>
               <button
-                className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                className="inline-flex items-center gap-2 rounded-md bg-lobster-500 px-4 py-2 text-sm font-medium text-white hover:bg-lobster-600"
                 onClick={() => setCreateAttempt((value) => value + 1)}
                 type="button"
               >
@@ -418,7 +418,7 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
 
           {phase === 'creating' ? (
             <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
+              <Loader2 className="h-8 w-8 animate-spin text-lobster-500 dark:text-lobster-400" />
               <div className="text-sm text-slate-500 dark:text-slate-400">
                 {t('admin.commerce.payments.methods.testPayment.creating', 'Creating payment QR code...')}
               </div>
@@ -476,7 +476,7 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
                   <div className="flex flex-wrap items-center justify-center gap-3">
                     {testPayment?.payUrl ? (
                       <button
-                        className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                        className="inline-flex items-center gap-2 rounded-md bg-lobster-500 px-4 py-2 text-sm font-medium text-white hover:bg-lobster-600"
                         onClick={() => openPayUrl(String(testPayment.payUrl))}
                         type="button"
                       >
@@ -486,7 +486,7 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
                     ) : null}
                     {testPayment?.payForm ? (
                       <button
-                        className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                        className="inline-flex items-center gap-2 rounded-md bg-lobster-500 px-4 py-2 text-sm font-medium text-white hover:bg-lobster-600"
                         onClick={() => submitPayForm(String(testPayment.payForm))}
                         type="button"
                       >
@@ -506,7 +506,7 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
               {isSandbox && !isExpired ? (
                 <div className="flex w-full flex-col items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 dark:border-white/10 dark:bg-white/5">
                   <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
-                    <Loader2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <Loader2 className="h-4 w-4 text-lobster-500 dark:text-lobster-400" />
                     {t('admin.commerce.payments.methods.testPayment.sandboxTitle', 'Local sandbox simulation')}
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400">
@@ -554,7 +554,7 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
                     {t('admin.commerce.payments.methods.testPayment.cardHint', 'Test mode: use card 4242 4242 4242 4242, any future expiry and CVC.')}
                   </div>
                   <button
-                    className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex items-center gap-2 rounded-md bg-lobster-500 px-4 py-2 text-sm font-medium text-white hover:bg-lobster-600 disabled:cursor-not-allowed disabled:opacity-60"
                     disabled={!stripe || !stripeCardElement || payingCard}
                     onClick={() => void payWithCard()}
                     type="button"
@@ -644,7 +644,7 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
                 {error ?? t('admin.commerce.payments.methods.testPayment.failed', 'Payment failed.')}
               </div>
               <button
-                className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                className="inline-flex items-center gap-2 rounded-md bg-lobster-500 px-4 py-2 text-sm font-medium text-white hover:bg-lobster-600"
                 onClick={() => setCreateAttempt((value) => value + 1)}
                 type="button"
               >

@@ -225,6 +225,15 @@ fn add_model_policy(
     );
 }
 
+fn account_route_query(group_id: i64) -> SelectUpstreamAccountRouteQuery {
+    SelectUpstreamAccountRouteQuery {
+        context: context(group_id),
+        route_key: RESOURCE_ROUTE_KEY.to_owned(),
+        api_code: RESOURCE_API_CODE.to_owned(),
+        capability: RoutingCapability::Network,
+    }
+}
+
 fn select_account(catalog: &InMemoryPricingCatalog, group_id: i64) -> i64 {
     UpstreamRouteSelector::new(catalog)
         .select_model_route(model_query(group_id))
@@ -652,16 +661,17 @@ fn endpoint_weight_distributes_equal_priority_base_urls() {
 }
 
 #[test]
-fn unhealthy_endpoint_is_never_selected() {
+fn failing_endpoint_is_never_selected() {
     let group_id = 21;
     let mut catalog = catalog_for_group(account_group(
         group_id,
         UpstreamAccountRoutingStrategy::Failover,
         UpstreamAccountFallbackMode::None,
     ));
+    // health=2（失败中且未过冷却）的端点必须被剔除
     add_route_and_price(
         &mut catalog,
-        account_route(group_id, 3001, "unhealthy", 1, 100).with_endpoint_routing(1, 100, 0),
+        account_route(group_id, 3001, "unhealthy", 1, 100).with_endpoint_routing(1, 100, 2),
     );
     add_route_and_price(
         &mut catalog,
@@ -1481,4 +1491,53 @@ fn group_model_blacklist_wins_over_whitelist() {
         .expect_err("blacklist must win over whitelist");
     assert_eq!(UpstreamRouteSelectionErrorKind::ModelForbidden, error.kind());
     assert!(error.to_string().contains("model blacklist"));
+}
+
+#[test]
+fn account_route_path_returns_failover_chain_for_dispatch() {
+    let group_id = 10;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Weighted,
+        UpstreamAccountFallbackMode::CrossSupplier,
+    ));
+    add_route_and_price(&mut catalog, account_route(group_id, 1001, "openai", 100, 100));
+    add_route_and_price(&mut catalog, account_route(group_id, 1002, "openai", 200, 100));
+    add_route_and_price(&mut catalog, account_route(group_id, 1003, "anthropic", 300, 100));
+
+    let selection = UpstreamRouteSelector::new(&catalog)
+        .select_account_route(account_route_query(group_id))
+        .expect("account route selection");
+
+    // 主账号 = 最低 priority 成员
+    assert_eq!(1001, selection.route.account_id);
+    // CrossSupplier fallback 保留全部账号：过滤链/调度获得故障转移序列
+    assert_eq!(
+        vec![1002, 1003],
+        selection
+            .failover_routes
+            .iter()
+            .map(|route| route.account_id)
+            .collect::<Vec<_>>()
+    );
+}
+
+#[test]
+fn account_route_path_without_fallback_keeps_single_candidate() {
+    let group_id = 10;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Weighted,
+        UpstreamAccountFallbackMode::None,
+    ));
+    add_route_and_price(&mut catalog, account_route(group_id, 1001, "openai", 100, 100));
+    add_route_and_price(&mut catalog, account_route(group_id, 1002, "openai", 200, 100));
+
+    let selection = UpstreamRouteSelector::new(&catalog)
+        .select_account_route(account_route_query(group_id))
+        .expect("account route selection");
+
+    assert_eq!(1001, selection.route.account_id);
+    // fallback None：故障转移序列为空（与模型路径的截断语义一致）
+    assert!(selection.failover_routes.is_empty());
 }

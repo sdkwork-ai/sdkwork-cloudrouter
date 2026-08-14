@@ -109,7 +109,8 @@ export class ApiKeyService {
 
   static async fetchGroups(): Promise<AccountGroup[]> {
     try {
-      const result = await getCloudRouterAppSdkClient().ai.routing.accountGroups.list();
+      // 分组数量可能超过默认页大小（20），显式拉取全量避免厂商/分组截断
+      const result = await getCloudRouterAppSdkClient().ai.routing.accountGroups.list({ pageSize: 100 });
       ensureSdkworkApiSuccess(result, 'console.apiKeys.errors.loadGroupsFallback');
       const items = readRequiredApiItems(result, 'console.apiKeys.errors.loadGroupsFallback');
       return items.map(normalizeAccountGroup);

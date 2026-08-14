@@ -1699,6 +1699,7 @@ version = "1.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "843fba2746e448b37e26a819579957415c8cef339bf08564fe8b7ddbd959573c"
 dependencies = [
+ "crc32fast",
  "miniz_oxide",
  "zlib-rs",
 ]
@@ -4956,6 +4957,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-api-rtc-assembly"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum 0.8.9",
+ "sdkwork-communication-rtc-repository-sqlx",
+ "sdkwork-communication-rtc-service",
+ "sdkwork-database-sqlx",
+ "sdkwork-routes-rtc-app-api",
+ "sdkwork-routes-rtc-backend-api",
+ "sdkwork-rtc-plugin-bootstrap",
+ "sdkwork-rtc-service-host",
+ "sdkwork-web-bootstrap",
+ "sdkwork-web-core",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "sdkwork-base-data-database-host"
 version = "0.1.0"
 dependencies = [
@@ -5133,6 +5153,7 @@ dependencies = [
  "sdkwork-api-partner-assembly",
  "sdkwork-api-payment-assembly",
  "sdkwork-api-promotion-assembly",
+ "sdkwork-api-rtc-assembly",
  "sdkwork-base-data-service-host",
  "sdkwork-cloudrouter-config",
  "sdkwork-cloudrouter-database-host",
@@ -5544,6 +5565,29 @@ name = "sdkwork-commerce-promotion-service"
 version = "0.1.0"
 dependencies = [
  "sdkwork-contract-service",
+]
+
+[[package]]
+name = "sdkwork-communication-rtc-repository-sqlx"
+version = "0.1.0"
+dependencies = [
+ "sdkwork-communication-rtc-service",
+ "sdkwork-database-config",
+ "sdkwork-database-repository",
+ "sdkwork-database-sqlx",
+ "sdkwork-rtc-database-host",
+ "serde",
+ "serde_json",
+ "sqlx",
+]
+
+[[package]]
+name = "sdkwork-communication-rtc-service"
+version = "0.1.0"
+dependencies = [
+ "sdkwork-utils-rust",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -6984,6 +7028,7 @@ dependencies = [
  "sqlx",
  "tokio",
  "tracing",
+ "url",
 ]
 
 [[package]]
@@ -7647,6 +7692,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-routes-rtc-app-api"
+version = "0.1.0"
+dependencies = [
+ "axum 0.8.9",
+ "sdkwork-communication-rtc-service",
+ "sdkwork-iam-web-adapter",
+ "sdkwork-rtc-app-context",
+ "sdkwork-utils-rust",
+ "sdkwork-web-axum",
+ "sdkwork-web-contract",
+ "sdkwork-web-core",
+ "serde",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
+name = "sdkwork-routes-rtc-backend-api"
+version = "0.1.0"
+dependencies = [
+ "axum 0.8.9",
+ "sdkwork-communication-rtc-service",
+ "sdkwork-iam-web-adapter",
+ "sdkwork-rtc-app-context",
+ "sdkwork-utils-rust",
+ "sdkwork-web-axum",
+ "sdkwork-web-contract",
+ "sdkwork-web-core",
+ "serde",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
 name = "sdkwork-routes-storage-backend-api"
 version = "0.1.0"
 dependencies = [
@@ -7679,6 +7758,108 @@ version = "0.3.0"
 dependencies = [
  "axum 0.8.9",
  "sdkwork-cloudrouter-http",
+]
+
+[[package]]
+name = "sdkwork-rtc-adapter-agora"
+version = "0.1.0"
+dependencies = [
+ "hmac 0.12.1",
+ "sdkwork-communication-rtc-service",
+ "sdkwork-utils-rust",
+ "serde_json",
+ "sha2 0.10.9",
+]
+
+[[package]]
+name = "sdkwork-rtc-adapter-aliyun"
+version = "0.1.0"
+dependencies = [
+ "sdkwork-communication-rtc-service",
+ "sdkwork-utils-rust",
+ "serde_json",
+]
+
+[[package]]
+name = "sdkwork-rtc-adapter-livekit"
+version = "0.1.0"
+dependencies = [
+ "hmac 0.12.1",
+ "sdkwork-communication-rtc-service",
+ "sdkwork-utils-rust",
+ "serde_json",
+ "sha2 0.10.9",
+]
+
+[[package]]
+name = "sdkwork-rtc-adapter-tencent"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "hmac 0.12.1",
+ "sdkwork-communication-rtc-service",
+ "sdkwork-utils-rust",
+ "serde_json",
+ "sha2 0.10.9",
+]
+
+[[package]]
+name = "sdkwork-rtc-adapter-volcengine"
+version = "0.1.0"
+dependencies = [
+ "hmac 0.12.1",
+ "sdkwork-communication-rtc-service",
+ "sdkwork-utils-rust",
+ "serde_json",
+ "sha2 0.10.9",
+]
+
+[[package]]
+name = "sdkwork-rtc-app-context"
+version = "0.1.0"
+dependencies = [
+ "axum 0.8.9",
+ "base64",
+ "hmac 0.12.1",
+ "sdkwork-web-core",
+ "sha2 0.10.9",
+]
+
+[[package]]
+name = "sdkwork-rtc-database-host"
+version = "0.1.0"
+dependencies = [
+ "dotenvy",
+ "sdkwork-database-config",
+ "sdkwork-database-lifecycle",
+ "sdkwork-database-spi",
+ "sdkwork-database-sqlx",
+]
+
+[[package]]
+name = "sdkwork-rtc-plugin-bootstrap"
+version = "0.1.0"
+dependencies = [
+ "sdkwork-communication-rtc-service",
+ "sdkwork-rtc-adapter-agora",
+ "sdkwork-rtc-adapter-aliyun",
+ "sdkwork-rtc-adapter-livekit",
+ "sdkwork-rtc-adapter-tencent",
+ "sdkwork-rtc-adapter-volcengine",
+ "sdkwork-rtc-service-host",
+]
+
+[[package]]
+name = "sdkwork-rtc-service-host"
+version = "0.1.0"
+dependencies = [
+ "sdkwork-communication-rtc-service",
+ "sdkwork-drive-storage-contract",
+ "sdkwork-drive-workspace-service",
+ "sdkwork-routes-rtc-app-api",
+ "sdkwork-routes-rtc-backend-api",
+ "serde_json",
+ "uuid",
 ]
 
 [[package]]

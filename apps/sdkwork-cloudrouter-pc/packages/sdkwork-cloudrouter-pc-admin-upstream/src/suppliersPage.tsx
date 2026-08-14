@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { Building2, Check, CheckCircle2, Edit3, ExternalLink, Loader2, Plus, RefreshCw, Settings2, Share2, Sparkles, Trash2, X } from 'lucide-react';
+import { Building2, Check, CheckCircle2, ChevronDown, Edit3, ExternalLink, Loader2, Plus, RefreshCw, Settings2, Share2, Sparkles, Trash2, X } from 'lucide-react';
 import { AdminTableShell, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
 import { SdkworkSearchableSelect } from '@sdkwork/appbase-pc-react';
 import { useTranslation } from 'react-i18next';
@@ -45,8 +45,11 @@ interface SupplierFormValues {
   description: string;
   supplierType: SupplierType;
   defaultVendorCode: string | null;
+  defaultBaseUrl: string;
   adapterCode: string;
   protocols: LlmProtocolConfig[];
+  // 协议行（派生为 protocol-* 中转站）的官方 vendor 多选
+  protocolVendors: Record<string, string[]>;
   authMethods: UpstreamSupplierAuthMethodInput[];
   modelBlacklist: UpstreamSupplierModelListEntry[];
   modelWhitelist: UpstreamSupplierModelListEntry[];
@@ -75,6 +78,7 @@ const emptyEndpoint = (): UpstreamSupplierEndpointInput => ({
   priority: 100,
   routingWeight: 100,
   status: 1,
+  vendorCodes: [],
 });
 
 const emptyAuthMethod = (): UpstreamSupplierAuthMethodInput => ({
@@ -217,6 +221,7 @@ export function SupplierAdminPanel() {
         description: values.description || null,
         supplierType: values.supplierType,
         defaultVendorCode: values.defaultVendorCode,
+        defaultBaseUrl: values.defaultBaseUrl.trim() || null,
         adapterCode: values.adapterCode,
         protocols: values.protocols,
         modelBlacklist: normalizeModelList(values.modelBlacklist),
@@ -250,9 +255,13 @@ export function SupplierAdminPanel() {
         // 每个协议行同步为一条 endpoint（protocolCode + baseUrl），供运行时路由使用；
         // 保留详情面板中手动添加的非协议端点（protocol-* 前缀由抽屉管理，避免全量替换时静默丢失）
         const existingEndpoints = await upstreamService.suppliers.listEndpoints(supplier.id);
+        // 官方供应商的中转站自动绑定其自身 vendor（默认 vendor 为空时保留原值，由后端必填校验拦截）
+        const officialVendorCodes = values.supplierType === 'official' && values.defaultVendorCode
+          ? [values.defaultVendorCode as string]
+          : null;
         const customEndpoints = existingEndpoints
           .filter((endpoint) => !(endpoint.endpointCode ?? '').startsWith('protocol-'))
-          .map(({ endpointCode, endpointName, baseUrl, protocolCode, regionCode, environment, priority, routingWeight, timeoutMs, status }) => ({ endpointCode, endpointName, baseUrl, protocolCode, regionCode, environment, priority, routingWeight, timeoutMs, status }));
+          .map(({ endpointCode, endpointName, baseUrl, protocolCode, regionCode, environment, priority, routingWeight, timeoutMs, status, vendorCodes }) => ({ endpointCode, endpointName, baseUrl, protocolCode, regionCode, environment, priority, routingWeight, timeoutMs, status, vendorCodes: officialVendorCodes ?? vendorCodes }));
         await upstreamService.suppliers.replaceEndpoints(supplier, {
           items: [
             ...values.protocols.map((protocol, index) => ({
@@ -264,6 +273,7 @@ export function SupplierAdminPanel() {
               priority: 100 + index,
               routingWeight: 100,
               status: values.status,
+              vendorCodes: officialVendorCodes ?? (values.protocolVendors[protocol.protocolCode] ?? []),
             })),
             ...customEndpoints,
           ],
@@ -441,6 +451,7 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
   const { t } = useTranslation();
   const [supplierType, setSupplierType] = useState<SupplierType>(supplier?.supplierType as SupplierType ?? 'official');
   const [defaultVendorCode, setDefaultVendorCode] = useState<string | null>(supplier?.defaultVendorCode ?? null);
+  const [defaultBaseUrl, setDefaultBaseUrl] = useState(supplier?.defaultBaseUrl ?? '');
   const [regionCode, setRegionCode] = useState(supplier?.regionCode ?? '');
   const [protocols, setProtocols] = useState<LlmProtocolConfig[]>(() => {
     if (supplier?.protocols?.length) return supplier.protocols;
@@ -451,6 +462,8 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
     // 新建：空起点，由选择 vendor 的级联自动勾选协议
     return [];
   });
+  // 每个协议行（将派生为 protocol-* 中转站）的官方 vendor 多选，protocolCode → vendorCodes[]
+  const [protocolVendors, setProtocolVendors] = useState<Record<string, string[]>>({});
   const [selection, setSelection] = useState<ResourceSelection>(emptyResourceSelection());
   // 认证方式：预设枚举多选；已存在但不属于任何预设的自定义认证方式原样保留
   const [selectedAuthPresets, setSelectedAuthPresets] = useState<string[]>(() => (supplier ? [] : ['api-key']));
@@ -463,6 +476,10 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
   const [formError, setFormError] = useState<string | null>(null);
 
   const vendorResources = useMemo(() => (catalog?.resources ?? []).filter((resource) => resource.resourceType === 'vendor'), [catalog]);
+  // 官方 vendor 多选选项（协议行/中转站共用）
+  const officialVendorOptions = useMemo(() => vendorResources
+    .filter((resource) => resource.vendorCode)
+    .map((resource) => ({ vendorCode: resource.vendorCode as string, label: resource.displayName })), [vendorResources]);
   // 模型黑白名单可选的 vendor 列表（含已配置但目录中已下线的 vendor）
   const availableVendors = useMemo(() => {
     const labels = new Map<string, string>();
@@ -511,6 +528,41 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
     return () => { cancelled = true; };
   }, [supplier, t]);
 
+  // 编辑模式：把已存在的 protocol-* 中转站官方 vendor 回填到对应协议行；
+  // 旧数据（空 vendor）自动带供应商默认 vendor，兼容必填语义
+  useEffect(() => {
+    if (!supplier) return;
+    let cancelled = false;
+    void upstreamService.suppliers.listEndpoints(supplier.id)
+      .then((items) => {
+        if (cancelled) return;
+        const filled: Record<string, string[]> = {};
+        for (const endpoint of items) {
+          const code = endpoint.endpointCode;
+          if (code && code.startsWith('protocol-') && (endpoint.vendorCodes?.length ?? 0) > 0) {
+            filled[code.slice('protocol-'.length)] = endpoint.vendorCodes;
+          }
+        }
+        setProtocolVendors((current) => {
+          // 用户已手动勾选的值优先；其余协议行（含旧数据空 vendor）回填
+          const merged: Record<string, string[]> = { ...filled };
+          for (const [code, vendors] of Object.entries(current)) {
+            if (vendors.length > 0) merged[code] = vendors;
+          }
+          const fallback = supplier.defaultVendorCode ?? '';
+          for (const protocol of protocols) {
+            if (fallback && !(merged[protocol.protocolCode]?.length)) merged[protocol.protocolCode] = [fallback];
+          }
+          return merged;
+        });
+      })
+      .catch((cause) => {
+        if (!cancelled) setFormError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
+      });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supplier, t]);
+
   // 根据 sdkwork-models 的 vendor×region×协议配置，自动补填仍为空的协议行 Base URL（不覆盖已编辑的值）
   const fillEmptyProtocolBaseUrls = (vendorCode: string | null, region: string) => {
     setProtocols((current) => current.map((item) => (
@@ -528,7 +580,22 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
   const vendorProtocolSupport = useMemo(() => vendorSupportedProtocols(defaultVendorCode), [defaultVendorCode]);
 
   const handleVendorChange = (vendorCode: string) => {
+    const previousVendor = defaultVendorCode;
     setDefaultVendorCode(vendorCode);
+    // 官方 vendor 切换联动：仍为默认值（或为空）的协议行跟随新的默认 vendor，手动多选过的行保留
+    if (previousVendor !== vendorCode) {
+      setProtocolVendors((current) => {
+        const next: Record<string, string[]> = {};
+        for (const [code, vendors] of Object.entries(current)) {
+          if (vendors.length === 0 || (vendors.length === 1 && vendors[0] === previousVendor)) {
+            next[code] = vendorCode ? [vendorCode] : [];
+          } else {
+            next[code] = vendors;
+          }
+        }
+        return next;
+      });
+    }
     const supported = vendorSupportedProtocols(vendorCode);
     // 已知 vendor：联动勾选其支持的全部 LLM 协议，并按 region 自动填入官方默认 Base URL
     // 未收录 vendor：保留当前协议行；自动填入的地址重新解析，手动编辑的值保留
@@ -590,6 +657,15 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
       }
       return [...current, { protocolCode, baseUrl: resolveVendorProtocolDefaultUrl(defaultVendorCode, regionCode, protocolCode)?.baseUrl ?? '' }];
     });
+    // 新勾选协议自动带上默认官方 vendor；取消勾选时同步清理该行 vendor 选择
+    setProtocolVendors((current) => {
+      if (!adding) {
+        const next = { ...current };
+        delete next[protocolCode];
+        return next;
+      }
+      return { ...current, [protocolCode]: defaultVendorCode ? [defaultVendorCode] : [] };
+    });
     // 协议 ↔ 资源分组联动：勾选时加入对应分组，取消时移除
     const groupCodes = protocolGroupCodes(protocolCode);
     if (groupCodes.length === 0) return;
@@ -628,6 +704,11 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
       setFormError(t('admin.upstream.supplier.form.protocols.baseUrlRequired'));
       return;
     }
+    // 官方 vendor 为必填项（仅中转站供应商需手动多选；官方供应商中转站自动绑定其自身 vendor）
+    if (supplierType !== 'official' && protocols.some((protocol) => (protocolVendors[protocol.protocolCode]?.length ?? 0) === 0)) {
+      setFormError(t('admin.upstream.supplier.form.protocols.vendorsRequired'));
+      return;
+    }
     // 认证方式：预设勾选项生成记录，旧自定义项原样保留
     const authMethodItems: UpstreamSupplierAuthMethodInput[] = [
       ...AUTH_METHOD_PRESETS
@@ -647,7 +728,7 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
       setFormError(t('admin.upstream.supplier.form.authMethods.required'));
       return;
     }
-    const values = valuesFromForm(event.currentTarget, supplierType, defaultVendorCode, selection, protocols, regionCode, authMethodItems, modelBlacklist, modelWhitelist);
+    const values = valuesFromForm(event.currentTarget, supplierType, defaultVendorCode, defaultBaseUrl, selection, protocols, protocolVendors, regionCode, authMethodItems, modelBlacklist, modelWhitelist);
     if (!values) {
       setFormError(t('admin.upstream.common.validation.required', { field: t('admin.upstream.supplier.form.supplierName') }));
       return;
@@ -752,6 +833,9 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
         </FormSection>
         <FormSection title={t('admin.upstream.supplier.form.section.protocol')}>
           <div className={`grid gap-4 ${supplierType === 'official' ? 'grid-cols-3' : 'grid-cols-4'}`}>
+            <DrawerField label={t('admin.upstream.supplier.form.defaultBaseUrl.label')} hint={t('admin.upstream.supplier.form.defaultBaseUrl.hint')} className={supplierType === 'official' ? 'col-span-3' : 'col-span-4'}>
+              <input aria-label={t('admin.upstream.supplier.form.defaultBaseUrl.label')} placeholder="https://api.example.com/v1" className={inputClass} value={defaultBaseUrl} onChange={(event) => setDefaultBaseUrl(event.currentTarget.value)} />
+            </DrawerField>
             <DrawerField label={t('admin.upstream.supplier.form.protocols.title')} required hint={t('admin.upstream.supplier.form.protocols.description')} className={supplierType === 'official' ? 'col-span-3' : 'col-span-4'}>
               <div className="grid grid-cols-3 gap-1.5">
                 {LLM_PROTOCOLS.map((option) => {
@@ -766,15 +850,29 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
                 })}
               </div>
               {protocols.length > 0 ? (
-                <div className="grid gap-1.5">
+                <div className="grid gap-1">
                   {protocols.map((protocol, index) => (
-                    <div key={protocol.protocolCode} className="grid grid-cols-[200px_minmax(0,1fr)_auto] items-center gap-2">
-                      <span className="truncate text-sm font-medium text-slate-700 dark:text-slate-200" title={protocol.protocolCode}>
-                        {t(llmProtocolLabelKey(protocol.protocolCode))}
-                      </span>
-                      <input aria-label={t('admin.upstream.common.fields.baseUrl')} placeholder="https://api.example.com/v1" className={inputClass} value={protocol.baseUrl} onChange={(event) => { const value = event.currentTarget.value; setProtocols((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, baseUrl: value } : item)); }} />
-                      {defaultVendorCode && !resolveVendorProtocolDefaultUrl(defaultVendorCode, regionCode, protocol.protocolCode) ? (
-                        <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">{t('admin.upstream.supplier.form.protocols.noDefault')}</span>
+                    <div key={protocol.protocolCode} className="grid gap-1">
+                      <div className="grid grid-cols-[200px_minmax(0,1fr)_auto] items-center gap-2">
+                        <span className="truncate text-sm font-medium text-slate-700 dark:text-slate-200" title={protocol.protocolCode}>
+                          {t(llmProtocolLabelKey(protocol.protocolCode))}
+                        </span>
+                        <input aria-label={t('admin.upstream.common.fields.baseUrl')} placeholder="https://api.example.com/v1" className={inputClass} value={protocol.baseUrl} onChange={(event) => { const value = event.currentTarget.value; setProtocols((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, baseUrl: value } : item)); }} />
+                        {defaultVendorCode && !resolveVendorProtocolDefaultUrl(defaultVendorCode, regionCode, protocol.protocolCode) ? (
+                          <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">{t('admin.upstream.supplier.form.protocols.noDefault')}</span>
+                        ) : null}
+                      </div>
+                      {/* 官方供应商的中转站自动绑定其自身 vendor；仅中转站供应商需要手动多选官方 vendor */}
+                      {supplierType === 'relay' ? (
+                        <div className="flex items-center gap-x-2">
+                          <span className="shrink-0 text-xs font-medium text-slate-500 dark:text-slate-400">{t('admin.upstream.supplier.form.protocols.vendors.label')}<span className="ml-0.5 text-red-500">*</span></span>
+                          <VendorMultiSelect
+                            vendors={officialVendorOptions}
+                            value={protocolVendors[protocol.protocolCode] ?? []}
+                            onChange={(next) => setProtocolVendors((current) => ({ ...current, [protocol.protocolCode]: next }))}
+                            placeholder={t('admin.upstream.supplier.endpoints.vendors.placeholder')}
+                          />
+                        </div>
                       ) : null}
                     </div>
                   ))}
@@ -889,7 +987,7 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
   );
 }
 
-function valuesFromForm(form: HTMLFormElement, supplierType: SupplierType, defaultVendorCode: string | null, selection: ResourceSelection, protocols: LlmProtocolConfig[], regionCode: string, authMethods: UpstreamSupplierAuthMethodInput[], modelBlacklist: UpstreamSupplierModelListEntry[], modelWhitelist: UpstreamSupplierModelListEntry[]): SupplierFormValues | null {
+function valuesFromForm(form: HTMLFormElement, supplierType: SupplierType, defaultVendorCode: string | null, defaultBaseUrl: string, selection: ResourceSelection, protocols: LlmProtocolConfig[], protocolVendors: Record<string, string[]>, regionCode: string, authMethods: UpstreamSupplierAuthMethodInput[], modelBlacklist: UpstreamSupplierModelListEntry[], modelWhitelist: UpstreamSupplierModelListEntry[]): SupplierFormValues | null {
   const formData = new FormData(form);
   const read = (key: string) => String(formData.get(key) ?? '').trim();
   const supplierName = read('supplierName');
@@ -900,8 +998,10 @@ function valuesFromForm(form: HTMLFormElement, supplierType: SupplierType, defau
     description: read('description'),
     supplierType,
     defaultVendorCode,
+    defaultBaseUrl,
     adapterCode: 'openai',
     protocols,
+    protocolVendors,
     authMethods,
     modelBlacklist,
     modelWhitelist,
@@ -984,7 +1084,7 @@ function SupplierCapabilities({ supplier, onChanged, onClose }: { supplier: Upst
         upstreamService.suppliers.listAuthMethods(supplier.id),
         upstreamService.suppliers.listResources(supplier.id),
       ]);
-      const nextEndpointsInput = nextEndpoints.map(({ endpointCode, endpointName, baseUrl, protocolCode, regionCode, environment, priority, routingWeight, timeoutMs, status }) => ({ endpointCode, endpointName, baseUrl, protocolCode, regionCode, environment, priority, routingWeight, timeoutMs, status }));
+      const nextEndpointsInput = nextEndpoints.map(({ endpointCode, endpointName, baseUrl, protocolCode, regionCode, environment, priority, routingWeight, timeoutMs, status, vendorCodes }) => ({ endpointCode, endpointName, baseUrl, protocolCode, regionCode, environment, priority, routingWeight, timeoutMs, status, vendorCodes }));
       const nextAuthMethodsInput = nextAuthMethods.map(({ authMethodCode, authMethodName, authType, configSchema, runtimeAuthConfig, priority, status }) => ({ authMethodCode, authMethodName, authType, configSchema, runtimeAuthConfig, priority, status }));
       const nextResourcesInput = nextResources.map(({ resourceCode, resourceGroupCode, grantType, priority, status }) => ({ resourceCode, resourceGroupCode, grantType, priority, status }));
       setEndpoints(nextEndpointsInput);
@@ -1026,7 +1126,15 @@ function SupplierCapabilities({ supplier, onChanged, onClose }: { supplier: Upst
           setError(t('admin.upstream.supplier.endpoints.incomplete'));
           return;
         }
-        await upstreamService.suppliers.replaceEndpoints(supplier, { items: endpoints });
+        // 官方供应商的中转站自动绑定其自身 vendor；仅中转站供应商需手动选择官方 vendor（必填）
+        const items = supplier.supplierType === 'official' && supplier.defaultVendorCode
+          ? endpoints.map((endpoint) => ({ ...endpoint, vendorCodes: [supplier.defaultVendorCode as string] }))
+          : endpoints;
+        if (supplier.supplierType !== 'official' && items.some((endpoint) => (endpoint.vendorCodes?.length ?? 0) === 0)) {
+          setError(t('admin.upstream.supplier.endpoints.vendors.required'));
+          return;
+        }
+        await upstreamService.suppliers.replaceEndpoints(supplier, { items });
       }
       if (section === 'authMethods') {
         if (!authMethods.every((method) => method.authMethodCode.trim() && method.authMethodName.trim())) {
@@ -1061,6 +1169,10 @@ function SupplierCapabilities({ supplier, onChanged, onClose }: { supplier: Upst
     const group = catalog?.resourceGroups.find((entry) => entry.groupCode === code);
     return resource?.displayName ?? group?.groupName ?? code;
   };
+  // 官方 vendor 选项（资源目录中 resourceType === 'vendor'）
+  const vendorOptions = useMemo(() => (catalog?.resources ?? [])
+    .filter((resource) => resource.resourceType === 'vendor' && resource.vendorCode)
+    .map((resource) => ({ vendorCode: resource.vendorCode as string, label: resource.displayName })), [catalog]);
 
   // 当前 Vendor 的标准 Base URL（有规则时展示提示）；无 Vendor 或未收录时为空
   const vendorStandardUrl = useMemo(() => vendorStandardBaseUrl(supplier.defaultVendorCode), [supplier.defaultVendorCode]);
@@ -1127,7 +1239,7 @@ function SupplierCapabilities({ supplier, onChanged, onClose }: { supplier: Upst
           ))}
         </div>
         {activeSection === 'endpoints' ? (
-          <div className="grid gap-1.5">
+          <div className="grid gap-1">
             <div className="grid grid-cols-[56px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.4fr)_100px_150px_72px_72px_32px] items-center gap-2 text-xs font-medium text-slate-400 dark:text-slate-500">
               <span>{t('admin.upstream.supplier.endpoints.default')}</span>
               <span>{t('admin.upstream.supplier.endpoints.code')}</span>
@@ -1147,35 +1259,51 @@ function SupplierCapabilities({ supplier, onChanged, onClose }: { supplier: Upst
             ) : endpoints.length === 0 ? (
               <p className="py-8 text-center text-sm text-slate-500">{t('admin.upstream.supplier.endpoints.empty')}</p>
             ) : endpoints.map((endpoint, index) => (
-              <div key={`${endpoint.endpointCode}-${index}`} className="grid grid-cols-[56px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.4fr)_100px_150px_72px_72px_32px] items-center gap-2">
-                {defaultEndpointIndex === index ? <span className="w-fit rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">{t('admin.upstream.supplier.endpoints.default')}</span> : null}
-                <input aria-label={t('admin.upstream.supplier.endpoints.code')} placeholder={t('admin.upstream.supplier.endpoints.code')} className={inputClass} value={endpoint.endpointCode} onChange={(event) => setEndpoints(updateAt(endpoints, index, { endpointCode: event.currentTarget.value }))} />
-                <input aria-label={t('admin.upstream.supplier.endpoints.name')} placeholder={t('admin.upstream.supplier.endpoints.name')} className={inputClass} value={endpoint.endpointName} onChange={(event) => setEndpoints(updateAt(endpoints, index, { endpointName: event.currentTarget.value }))} />
-                <div className="flex min-w-0 items-center gap-1.5">
-                  <input aria-label={t('admin.upstream.common.fields.baseUrl')} placeholder="https://api.example.com/v1" className={inputClass} value={endpoint.baseUrl} onChange={(event) => setEndpoints(updateAt(endpoints, index, { baseUrl: event.currentTarget.value }))} />
-                  <button type="button" title={t('admin.upstream.supplier.endpoints.generate.title')} className={`${secondaryButtonClass} w-9 shrink-0 px-0`} onClick={() => setEndpoints(updateAt(endpoints, index, { baseUrl: resolveEndpointBaseUrl(endpoint) }))}><Sparkles className="h-4 w-4" /></button>
+              <div key={`${endpoint.endpointCode}-${index}`}>
+                <div className="grid grid-cols-[56px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.4fr)_100px_150px_72px_72px_32px] items-center gap-2">
+                  {defaultEndpointIndex === index ? <span className="w-fit rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">{t('admin.upstream.supplier.endpoints.default')}</span> : null}
+                  <input aria-label={t('admin.upstream.supplier.endpoints.code')} placeholder={t('admin.upstream.supplier.endpoints.code')} className={inputClass} value={endpoint.endpointCode} onChange={(event) => setEndpoints(updateAt(endpoints, index, { endpointCode: event.currentTarget.value }))} />
+                  <input aria-label={t('admin.upstream.supplier.endpoints.name')} placeholder={t('admin.upstream.supplier.endpoints.name')} className={inputClass} value={endpoint.endpointName} onChange={(event) => setEndpoints(updateAt(endpoints, index, { endpointName: event.currentTarget.value }))} />
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <input aria-label={t('admin.upstream.common.fields.baseUrl')} placeholder="https://api.example.com/v1" className={inputClass} value={endpoint.baseUrl} onChange={(event) => setEndpoints(updateAt(endpoints, index, { baseUrl: event.currentTarget.value }))} />
+                    <button type="button" title={t('admin.upstream.supplier.endpoints.generate.title')} className={`${secondaryButtonClass} w-9 shrink-0 px-0`} onClick={() => setEndpoints(updateAt(endpoints, index, { baseUrl: resolveEndpointBaseUrl(endpoint) }))}><Sparkles className="h-4 w-4" /></button>
+                  </div>
+                  <div className="min-w-0">
+                    <SdkworkSearchableSelect
+                      className="h-9"
+                      value={endpoint.regionCode ?? ''}
+                      onValueChange={(value) => setEndpoints(updateAt(endpoints, index, { regionCode: emptyToNull(value) }))}
+                      options={[
+                        { value: 'global', label: t('admin.upstream.supplier.protocols.region.global') },
+                        { value: 'cn', label: t('admin.upstream.supplier.protocols.region.cn') },
+                      ]}
+                      placeholder={t('admin.upstream.common.fields.regionCode')}
+                      searchPlaceholder={t('admin.upstream.common.fields.regionCode')}
+                      emptyText={t('admin.upstream.common.fields.regionCode')}
+                    />
+                  </div>
+                  <select aria-label={t('admin.upstream.supplier.endpoints.protocol')} className={selectClass} value={endpoint.protocolCode ?? ''} onChange={(event) => setEndpoints(updateAt(endpoints, index, { protocolCode: emptyToNull(event.currentTarget.value) }))}>
+                    <option value="">{t('admin.upstream.supplier.form.protocols.none')}</option>
+                    {LLM_PROTOCOLS.map((option) => <option key={option.code} value={option.code}>{t(option.labelKey)}</option>)}
+                  </select>
+                  <input aria-label={t('admin.upstream.common.fields.priority')} title={t('admin.upstream.common.fields.priority')} type="number" min="0" className={inputClass} value={endpoint.priority ?? 100} onChange={(event) => setEndpoints(updateAt(endpoints, index, { priority: Number(event.currentTarget.value) }))} />
+                  <input aria-label={t('admin.upstream.common.fields.weight')} title={t('admin.upstream.common.fields.weight')} type="number" min="0" className={inputClass} value={endpoint.routingWeight ?? 100} onChange={(event) => setEndpoints(updateAt(endpoints, index, { routingWeight: Number(event.currentTarget.value) }))} />
+                  <button type="button" title={t('common.actions.delete')} aria-label={t('common.actions.delete')} className={dangerButtonClass} onClick={() => setEndpoints(removeAt(endpoints, index))}><Trash2 className="h-4 w-4" /></button>
                 </div>
-                <div className="min-w-0">
-                  <SdkworkSearchableSelect
-                    className="h-9"
-                    value={endpoint.regionCode ?? ''}
-                    onValueChange={(value) => setEndpoints(updateAt(endpoints, index, { regionCode: emptyToNull(value) }))}
-                    options={[
-                      { value: 'global', label: t('admin.upstream.supplier.protocols.region.global') },
-                      { value: 'cn', label: t('admin.upstream.supplier.protocols.region.cn') },
-                    ]}
-                    placeholder={t('admin.upstream.common.fields.regionCode')}
-                    searchPlaceholder={t('admin.upstream.common.fields.regionCode')}
-                    emptyText={t('admin.upstream.common.fields.regionCode')}
-                  />
-                </div>
-                <select aria-label={t('admin.upstream.supplier.endpoints.protocol')} className={selectClass} value={endpoint.protocolCode ?? ''} onChange={(event) => setEndpoints(updateAt(endpoints, index, { protocolCode: emptyToNull(event.currentTarget.value) }))}>
-                  <option value="">{t('admin.upstream.supplier.form.protocols.none')}</option>
-                  {LLM_PROTOCOLS.map((option) => <option key={option.code} value={option.code}>{t(option.labelKey)}</option>)}
-                </select>
-                <input aria-label={t('admin.upstream.common.fields.priority')} title={t('admin.upstream.common.fields.priority')} type="number" min="0" className={inputClass} value={endpoint.priority ?? 100} onChange={(event) => setEndpoints(updateAt(endpoints, index, { priority: Number(event.currentTarget.value) }))} />
-                <input aria-label={t('admin.upstream.common.fields.weight')} title={t('admin.upstream.common.fields.weight')} type="number" min="0" className={inputClass} value={endpoint.routingWeight ?? 100} onChange={(event) => setEndpoints(updateAt(endpoints, index, { routingWeight: Number(event.currentTarget.value) }))} />
-                <button type="button" title={t('common.actions.delete')} aria-label={t('common.actions.delete')} className={dangerButtonClass} onClick={() => setEndpoints(removeAt(endpoints, index))}><Trash2 className="h-4 w-4" /></button>
+                {/* 官方供应商的中转站自动绑定其自身 vendor（只读展示）；仅中转站供应商可手动多选官方 vendor */}
+                {supplier.supplierType === 'relay' ? (
+                  <div className="mt-1 flex items-center gap-x-2">
+                    <span className="shrink-0 text-xs font-medium text-slate-500 dark:text-slate-400">{t('admin.upstream.supplier.endpoints.vendors.title')}<span className="ml-0.5 text-red-500">*</span></span>
+                    <VendorMultiSelect vendors={vendorOptions} value={endpoint.vendorCodes ?? []} onChange={(next) => setEndpoints(updateAt(endpoints, index, { vendorCodes: next }))} placeholder={t('admin.upstream.supplier.endpoints.vendors.placeholder')} />
+                  </div>
+                ) : (
+                  <div className="mt-1 flex items-center gap-x-2">
+                    <span className="shrink-0 text-xs font-medium text-slate-500 dark:text-slate-400">{t('admin.upstream.supplier.endpoints.vendors.title')}</span>
+                    <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">
+                      <span className="min-w-0 truncate">{vendorOptions.find((vendor) => vendor.vendorCode === supplier.defaultVendorCode)?.label ?? supplier.defaultVendorCode}</span>
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
             <div className="mt-1 flex items-center gap-2">
@@ -1287,4 +1415,82 @@ function removeAt<T>(items: T[], index: number): T[] {
 
 function emptyToNull(value: string): string | null {
   return value.trim() || null;
+}
+
+/** 下拉多选触发按钮内最多平铺展示的已选标签数，超出部分折叠为 +N */
+const MAX_VISIBLE_VENDOR_TAGS = 3;
+
+/** 官方 vendor 下拉多选：点击展开勾选面板（checkbox 多选），已选 vendor 显示为可删除标签 */
+function VendorMultiSelect({ vendors, value, onChange, placeholder }: { vendors: { vendorCode: string; label: string }[]; value: string[]; onChange: (next: string[]) => void; placeholder: string }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  // 点击组件外部时收起下拉面板
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [open]);
+
+  const selected = value
+    .map((code) => vendors.find((vendor) => vendor.vendorCode === code))
+    .filter((vendor): vendor is { vendorCode: string; label: string } => Boolean(vendor));
+  const toggle = (vendorCode: string) => {
+    onChange(value.includes(vendorCode) ? value.filter((item) => item !== vendorCode) : [...value, vendorCode]);
+  };
+  const remove = (vendorCode: string) => {
+    onChange(value.filter((item) => item !== vendorCode));
+  };
+
+  return (
+    <div ref={rootRef} className="relative min-w-0 flex-1">
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        aria-expanded={open}
+        className={`flex h-9 w-full min-w-0 items-center gap-1.5 rounded-md border px-2.5 text-left text-sm transition ${open ? 'border-lobster-500 ring-2 ring-lobster-500/15' : 'border-slate-300 hover:border-slate-400 dark:border-white/10 dark:hover:border-white/20'} ${selected.length > 0 ? 'bg-white text-slate-900 dark:bg-white/5 dark:text-white' : 'text-slate-400 dark:text-slate-500'}`}
+      >
+        {selected.length > 0 ? (
+          <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
+            {selected.slice(0, MAX_VISIBLE_VENDOR_TAGS).map((vendor) => (
+              <span key={vendor.vendorCode} className="inline-flex max-w-full items-center gap-1 rounded-full bg-lobster-50 px-1.5 py-0.5 text-xs font-medium text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-200">
+                <span className="min-w-0 truncate">{vendor.label}</span>
+                <button
+                  type="button"
+                  title={t('admin.upstream.supplier.endpoints.vendors.remove', { vendor: vendor.label })}
+                  aria-label={t('admin.upstream.supplier.endpoints.vendors.remove', { vendor: vendor.label })}
+                  className="shrink-0 rounded-full transition-colors hover:text-red-500"
+                  onClick={(event) => { event.stopPropagation(); remove(vendor.vendorCode); }}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+            {selected.length > MAX_VISIBLE_VENDOR_TAGS ? <span className="shrink-0 text-xs font-medium text-slate-500 dark:text-slate-400">+{selected.length - MAX_VISIBLE_VENDOR_TAGS}</span> : null}
+          </span>
+        ) : (
+          <span className="truncate">{placeholder}</span>
+        )}
+        <ChevronDown className={`ml-auto h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open ? (
+        <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-md border border-slate-200 bg-white p-1 shadow-lg dark:border-white/10 dark:bg-[#171717]">
+          {vendors.map((vendor) => {
+            const checked = value.includes(vendor.vendorCode);
+            return (
+              <label key={vendor.vendorCode} className={`flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors ${checked ? 'bg-lobster-50 text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-200' : 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5'}`}>
+                <input type="checkbox" className="h-4 w-4 shrink-0 accent-lobster-600" checked={checked} onChange={() => toggle(vendor.vendorCode)} />
+                <span className="min-w-0 truncate">{vendor.label}</span>
+                <span className="ml-auto shrink-0 font-mono text-[10px] text-slate-400 dark:text-slate-500">{vendor.vendorCode}</span>
+              </label>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
 }

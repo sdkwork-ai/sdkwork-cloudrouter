@@ -33,7 +33,7 @@ async fn app_api_key_create_ensures_default_group_when_missing() {
         .oneshot(signed_request(
             "POST",
             "/app/v3/api/iam/api_keys",
-            r#"{"name":"Console Key","accountGroup":"default","quota":"1000","modalities":["text"]}"#,
+            r#"{"name":"Console Key","accountGroup":"default-group","quota":"1000","modalities":["text"]}"#,
         ))
         .await
         .unwrap();
@@ -41,7 +41,7 @@ async fn app_api_key_create_ensures_default_group_when_missing() {
     assert_eq!(StatusCode::CREATED, response.status());
     let payload = json_payload(response).await;
     assert_eq!(0, payload["code"].as_i64().unwrap());
-    assert_eq!("default", payload["data"]["item"]["accountGroup"]);
+    assert_eq!("default-group", payload["data"]["item"]["accountGroup"]);
     assert_eq!("Default", payload["data"]["item"]["accountGroupName"]);
     assert_eq!("sk-test-secret", payload["data"]["rawKey"]);
     assert_eq!("sk-test-secret", payload["data"]["item"]["rawKey"]);

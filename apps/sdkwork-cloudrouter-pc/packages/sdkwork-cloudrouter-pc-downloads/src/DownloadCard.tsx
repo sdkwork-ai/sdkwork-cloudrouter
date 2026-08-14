@@ -29,15 +29,15 @@ const iconByName: Record<SdkworkDownloadCardIcon, LucideIcon> = {
 };
 
 const iconToneClass: Record<SdkworkDownloadCardTone, string> = {
-  brand: "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-300",
-  mobile: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300",
+  brand: "bg-lobster-50 text-lobster-600 dark:bg-lobster-500/10 dark:text-lobster-300",
+  mobile: "bg-lobster-50 text-lobster-600 dark:bg-lobster-500/10 dark:text-lobster-300",
   neutral: "bg-slate-100 text-slate-700 dark:bg-white/5 dark:text-slate-300",
   server: "bg-slate-100 text-slate-700 dark:bg-white/5 dark:text-slate-300",
 };
 
 const primaryToneClass: Record<SdkworkDownloadCardTone, string> = {
-  brand: "bg-rose-600 text-white hover:bg-rose-700",
-  mobile: "bg-emerald-600 text-white hover:bg-emerald-700",
+  brand: "bg-lobster-500 text-white hover:bg-lobster-600",
+  mobile: "bg-lobster-500 text-white hover:bg-lobster-600",
   neutral: "bg-slate-900 text-white hover:bg-slate-800 dark:bg-white/10 dark:hover:bg-white/20",
   server: "bg-slate-900 text-white hover:bg-slate-800 dark:bg-white/10 dark:hover:bg-white/20",
 };

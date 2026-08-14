@@ -20,8 +20,35 @@ const ENDPOINT_COLUMNS: &str = r#"
     endpoint.protocol_code, endpoint.region_code, endpoint.environment,
     endpoint.priority, endpoint.routing_weight, endpoint.timeout_ms,
     COALESCE(endpoint_health.health_status, 0) AS health_status,
-    endpoint.status
+    endpoint.status,
+    endpoint.vendor_codes::text AS vendor_codes
 "#;
+
+/** 官方 vendor 上限，与 OpenAPI 契约 maxItems 保持一致（资源目录中官方 vendor 数量） */
+const MAX_ENDPOINT_VENDORS: usize = 9;
+
+fn vendor_codes_json(codes: &[String]) -> String {
+    serde_json::to_string(
+        &codes
+            .iter()
+            .map(String::as_str)
+            .map(str::trim)
+            .filter(|code| !code.is_empty())
+            .collect::<Vec<_>>(),
+    )
+    .unwrap_or_else(|_| "[]".to_owned())
+}
+
+fn parse_vendor_codes(context: &str, value: String) -> DomainResult<Vec<String>> {
+    let codes = serde_json::from_str::<Vec<String>>(&value).map_err(|error| {
+        DomainError::new(format!("failed to parse {context} vendor codes: {error}"))
+    })?;
+    Ok(codes
+        .into_iter()
+        .map(|code| code.trim().to_owned())
+        .filter(|code| !code.is_empty())
+        .collect())
+}
 
 pub(super) async fn list(
     pool: &PgPool,
@@ -88,13 +115,13 @@ pub(super) async fn replace(
                 created_at, updated_at, version, metadata,
                 supplier_id, supplier_code, endpoint_code, endpoint_name, base_url,
                 protocol_code, region_code, environment,
-                priority, routing_weight, timeout_ms
+                priority, routing_weight, timeout_ms, vendor_codes
             ) VALUES (
                 $1, $2, $3, $4, $5, $6,
                 $7::timestamptz, $7::timestamptz, 0, '{}'::jsonb,
                 $8, $9, $10, $11, $12,
                 $13, $14, $15,
-                $16, $17, $18
+                $16, $17, $18, $19::jsonb
             )
             ON CONFLICT (tenant_id, organization_id, supplier_id, endpoint_code)
             DO UPDATE SET
@@ -107,6 +134,7 @@ pub(super) async fn replace(
                 routing_weight = EXCLUDED.routing_weight,
                 timeout_ms = EXCLUDED.timeout_ms,
                 status = EXCLUDED.status,
+                vendor_codes = EXCLUDED.vendor_codes,
                 deleted_at = NULL,
                 deleted_by = NULL,
                 version = ai_upstream_supplier_endpoint.version + 1,
@@ -132,6 +160,7 @@ pub(super) async fn replace(
         .bind(item.priority)
         .bind(item.routing_weight)
         .bind(item.timeout_ms)
+        .bind(vendor_codes_json(&item.vendor_codes))
         .fetch_one(&mut *tx)
         .await
         .map_err(|error| store_error("failed to upsert upstream supplier endpoint", error))?;
@@ -333,6 +362,25 @@ fn validate_inputs(items: &[AdminUpstreamSupplierEndpointInput]) -> DomainResult
         if item.timeout_ms.is_some_and(|value| value <= 0) {
             return Err(DomainError::new("endpoint timeoutMs must be positive"));
         }
+        if item.vendor_codes.is_empty() {
+            return Err(DomainError::new(
+                "vendorCodes is required; an endpoint must serve at least one official vendor",
+            ));
+        }
+        if item.vendor_codes.len() > MAX_ENDPOINT_VENDORS {
+            return Err(DomainError::new(format!(
+                "vendorCodes must contain at most {MAX_ENDPOINT_VENDORS} official vendors"
+            )));
+        }
+        let mut vendors = HashSet::with_capacity(item.vendor_codes.len());
+        for vendor_code in &item.vendor_codes {
+            let code = vendor_code.trim();
+            if code.is_empty() || !vendors.insert(code.to_owned()) {
+                return Err(DomainError::new(
+                    "vendorCodes entries must be non-empty and unique",
+                ));
+            }
+        }
     }
     Ok(())
 }
@@ -383,5 +431,9 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamSupplierEndpointItem> {
             "failed to map upstream endpoint health status",
         )?,
         status: column(&row, "status", "failed to map upstream endpoint status")?,
+        vendor_codes: parse_vendor_codes(
+            "endpoint",
+            column(&row, "vendor_codes", "failed to map upstream endpoint vendor codes")?,
+        )?,
     })
 }

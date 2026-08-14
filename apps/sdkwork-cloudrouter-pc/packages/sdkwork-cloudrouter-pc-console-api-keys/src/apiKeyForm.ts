@@ -48,7 +48,7 @@ function splitIpLines(text: string): string[] {
 }
 
 export const DEFAULT_API_KEY_MODALITIES = ['text', 'image', 'video', 'audio', 'music'] as const;
-export const DEFAULT_ACCOUNT_GROUP = 'default';
+export const DEFAULT_ACCOUNT_GROUP = 'default-group';
 
 type ApiKeyModality = (typeof DEFAULT_API_KEY_MODALITIES)[number];
 

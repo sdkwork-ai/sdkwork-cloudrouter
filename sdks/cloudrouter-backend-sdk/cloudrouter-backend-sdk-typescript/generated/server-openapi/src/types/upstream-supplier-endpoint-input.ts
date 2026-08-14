@@ -20,4 +20,6 @@ export interface UpstreamSupplierEndpointInput {
   status?: number | null;
   /** Timeout ms field on upstream supplier endpoint input. */
   timeoutMs?: number | null;
+  /** Vendor codes field on upstream supplier endpoint input. */
+  vendorCodes: string[];
 }

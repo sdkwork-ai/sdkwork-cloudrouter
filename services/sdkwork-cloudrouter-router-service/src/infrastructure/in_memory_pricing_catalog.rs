@@ -31,6 +31,7 @@ pub struct InMemoryPricingCatalog {
     prices: Vec<ModelPrice>,
     account_group_model_access: HashMap<i64, AccountGroupModelAccess>,
     supplier_model_access: HashMap<String, SupplierModelAccess>,
+    supplier_default_base_urls: HashMap<String, String>,
 }
 
 impl InMemoryPricingCatalog {
@@ -117,6 +118,11 @@ impl InMemoryPricingCatalog {
     pub fn set_supplier_model_access(&mut self, access: SupplierModelAccess) {
         self.supplier_model_access
             .insert(access.supplier_code.clone(), access);
+    }
+
+    pub fn set_supplier_default_base_url(&mut self, supplier_code: &str, url: &str) {
+        self.supplier_default_base_urls
+            .insert(supplier_code.to_owned(), url.to_owned());
     }
 
     pub fn set_account_group_model_access(&mut self, access: AccountGroupModelAccess) {
@@ -349,6 +355,10 @@ impl UpstreamAccountRouteCatalog for InMemoryPricingCatalog {
 
     fn supplier_model_access(&self, supplier_code: &str) -> Option<SupplierModelAccess> {
         self.supplier_model_access.get(supplier_code).cloned()
+    }
+
+    fn supplier_default_base_url(&self, supplier_code: &str) -> Option<String> {
+        self.supplier_default_base_urls.get(supplier_code).cloned()
     }
 }
 

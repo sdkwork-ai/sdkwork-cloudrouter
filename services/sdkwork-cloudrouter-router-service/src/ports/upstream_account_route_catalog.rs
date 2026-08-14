@@ -52,6 +52,14 @@ pub trait UpstreamAccountRouteCatalog: PricingCatalog {
         None
     }
 
+    /// Returns the supplier-level default Base URL used when an invocation
+    /// resource (e.g. image, video, audio APIs) does not match any configured
+    /// LLM API protocol endpoint. `None` when the supplier declares none.
+    fn supplier_default_base_url(&self, supplier_code: &str) -> Option<String> {
+        let _ = supplier_code;
+        None
+    }
+
     /// 按模型名（catalog key 或展示名，精确匹配）解析可能的 catalog key 列表。
     /// 索引实现为 O(1)；默认实现线性扫描回退（兼容非索引实现）。
     /// 空列表 = 未知模型；多于一个 = 歧义。

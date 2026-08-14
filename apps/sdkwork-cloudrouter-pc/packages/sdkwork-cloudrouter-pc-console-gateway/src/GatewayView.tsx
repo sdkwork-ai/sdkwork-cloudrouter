@@ -143,10 +143,10 @@ export function GatewayView() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-white dark:bg-[#0d1117] border border-slate-200 dark:border-white/10 p-2 rounded-xl shadow-sm">
-        <SummaryItem icon={<AlignLeft className="w-4 h-4 text-blue-500" />} label={t('console.gateway.summary.traceRows')} value={summary.total.toString()} />
+        <SummaryItem icon={<AlignLeft className="w-4 h-4 text-lobster-500" />} label={t('console.gateway.summary.traceRows')} value={summary.total.toString()} />
         <SummaryItem icon={<Activity className="w-4 h-4 text-emerald-500" />} label={t('console.gateway.summary.successful')} value={summary.success.toString()} />
         <SummaryItem icon={<Timer className="w-4 h-4 text-rose-500" />} label={t('console.gateway.summary.failed')} value={summary.failed.toString()} />
-        <SummaryItem icon={<Server className="w-4 h-4 text-indigo-500" />} label={t('console.gateway.summary.accounts')} value={summary.uniqueAccounts.toString()} />
+        <SummaryItem icon={<Server className="w-4 h-4 text-lobster-500" />} label={t('console.gateway.summary.accounts')} value={summary.uniqueAccounts.toString()} />
       </div>
 
       <div className="space-y-3 flex flex-col items-start w-full">

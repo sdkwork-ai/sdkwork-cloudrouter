@@ -92,6 +92,8 @@ pub struct SelectUpstreamAccountRouteQuery {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SelectedUpstreamAccountRoute {
     pub route: UpstreamAccountRoute,
+    /// 故障转移序列（planner 排序 + fallback 截断后的其余账号）
+    pub failover_routes: Vec<UpstreamAccountRoute>,
     pub group_id: i64,
     pub group_code: String,
     pub pricing_plan_code: String,
@@ -180,7 +182,7 @@ enum CandidateUpstreamModelRouteEvaluation {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum CandidateUpstreamAccountRouteEvaluation {
-    Selected(Box<UpstreamAccountRoute>),
+    Selected(Box<UpstreamAccountRoute>, Vec<UpstreamAccountRoute>),
     PricingUnavailable(DomainError),
     RoutingInvalid(DomainError),
     NoCallableCandidate,
@@ -718,10 +720,11 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             let used_rule_fallback_chain =
                 candidate_chain_uses_rule_fallback(&rule, &candidate_chain);
             match self.evaluate_candidate_account_routes(routes, candidate_chain, query) {
-                CandidateUpstreamAccountRouteEvaluation::Selected(route) => {
+                CandidateUpstreamAccountRouteEvaluation::Selected(primary, failover) => {
                     return PolicyScopeUpstreamAccountRouteSelection::Selected(Box::new(
                         selected_upstream_account_route(
-                            *route,
+                            *primary,
+                            failover,
                             &query.context,
                             Some(policy.id),
                             Some(rule.id),
@@ -1015,16 +1018,21 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                     return CandidateUpstreamAccountRouteEvaluation::RoutingInvalid(error)
                 }
             };
-            let Some(route) = routes.into_iter().next() else {
+            // 首个为最终账号，其余为故障转移序列（planner 已按策略排序并
+            // 按 fallback mode 截断），供 dispatch 的 failover 使用。
+            let Some((primary, failover)) = routes.split_first() else {
                 continue;
             };
             // Model-less requests are api-request-metered; verify the
             // candidate has an api-request price so pricing preflight cannot
             // fail after the account was selected.
-            if let Err(error) = self.ensure_account_route_is_priced(query, &route) {
+            if let Err(error) = self.ensure_account_route_is_priced(query, primary) {
                 return CandidateUpstreamAccountRouteEvaluation::PricingUnavailable(error);
             }
-            return CandidateUpstreamAccountRouteEvaluation::Selected(Box::new(route));
+            return CandidateUpstreamAccountRouteEvaluation::Selected(
+                Box::new(primary.clone()),
+                failover.to_vec(),
+            );
         }
         CandidateUpstreamAccountRouteEvaluation::NoCallableCandidate
     }
@@ -1062,9 +1070,10 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
     ) -> Result<Option<SelectedUpstreamAccountRoute>, UpstreamRouteSelectionError> {
         let candidates = group_bound_account_route_candidates(routes, account_group_bindings);
         match self.evaluate_candidate_account_routes(routes, candidates, query) {
-            CandidateUpstreamAccountRouteEvaluation::Selected(route) => {
+            CandidateUpstreamAccountRouteEvaluation::Selected(primary, failover) => {
                 Ok(Some(selected_upstream_account_route(
-                    *route,
+                    *primary,
+                    failover,
                     &query.context,
                     None,
                     None,
@@ -1215,12 +1224,14 @@ fn selected_upstream_model_route(
 
 fn selected_upstream_account_route(
     route: UpstreamAccountRoute,
+    failover_routes: Vec<UpstreamAccountRoute>,
     context: &AuthenticatedApiKeyContext,
     policy_id: Option<i64>,
     rule_id: Option<i64>,
 ) -> SelectedUpstreamAccountRoute {
     SelectedUpstreamAccountRoute {
         route,
+        failover_routes,
         group_id: context.group_id,
         group_code: context.group_code.clone(),
         pricing_plan_code: context.pricing_plan_code.clone(),

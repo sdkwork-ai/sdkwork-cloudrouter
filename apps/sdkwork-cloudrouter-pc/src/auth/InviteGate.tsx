@@ -193,13 +193,13 @@ function InviteCodeStep({ onVerified }: { onVerified: (code: string) => void }) 
             }}
             placeholder={t('auth.inviteGate.placeholder', 'Invite code')}
             disabled={checking}
-            className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 font-mono text-sm uppercase tracking-widest text-slate-700 outline-none transition-colors placeholder:font-sans placeholder:normal-case placeholder:tracking-normal placeholder:text-slate-400 focus:border-blue-500 disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
+            className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 font-mono text-sm uppercase tracking-widest text-slate-700 outline-none transition-colors placeholder:font-sans placeholder:normal-case placeholder:tracking-normal placeholder:text-slate-400 focus:border-lobster-500 disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
           />
           <button
             type="button"
             disabled={checking}
             onClick={() => void submit()}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-lobster-500 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-lobster-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {checking ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             {t('auth.inviteGate.continue', 'Continue')}

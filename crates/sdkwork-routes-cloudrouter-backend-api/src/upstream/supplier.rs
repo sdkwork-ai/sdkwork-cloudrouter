@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use axum::extract::rejection::{JsonRejection, QueryRejection};
 use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
@@ -27,6 +29,8 @@ const MAX_NAME_LENGTH: usize = 200;
 const MAX_DESCRIPTION_LENGTH: usize = 4_000;
 const MAX_URL_LENGTH: usize = 2_048;
 const MAX_PROTOCOLS: usize = 8;
+/** 官方 vendor 上限，与 OpenAPI 契约 maxItems 保持一致 */
+const MAX_ENDPOINT_VENDORS: usize = 9;
 const SUPPLIER_CREATE_IDEMPOTENCY_SCOPE: i64 = 1_000_001;
 
 #[derive(Debug, Deserialize)]
@@ -45,6 +49,7 @@ struct SupplierCreateRequest {
     description: Option<String>,
     supplier_type: String,
     default_vendor_code: Option<String>,
+    default_base_url: Option<String>,
     adapter_code: String,
     protocols: Vec<ProtocolConfigInput>,
     model_blacklist: Option<Vec<ModelListEntryInput>>,
@@ -65,6 +70,7 @@ struct SupplierUpdateRequest {
     description: Option<String>,
     supplier_type: Option<String>,
     default_vendor_code: Option<String>,
+    default_base_url: Option<String>,
     adapter_code: Option<String>,
     protocols: Option<Vec<ProtocolConfigInput>>,
     model_blacklist: Option<Vec<ModelListEntryInput>>,
@@ -96,6 +102,7 @@ struct EndpointRequestItem {
     routing_weight: Option<i32>,
     timeout_ms: Option<i32>,
     status: Option<i32>,
+    vendor_codes: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -143,6 +150,7 @@ struct SupplierResponse {
     description: Option<String>,
     supplier_type: String,
     default_vendor_code: Option<String>,
+    default_base_url: Option<String>,
     adapter_code: String,
     protocol_code: String,
     protocols: Vec<AdminLlmProtocolConfig>,
@@ -174,6 +182,7 @@ struct EndpointResponse {
     timeout_ms: Option<i32>,
     health_status: i32,
     status: i32,
+    vendor_codes: Vec<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -580,6 +589,11 @@ fn create_command(
         description: optional_text(request.description, "description", MAX_DESCRIPTION_LENGTH)?,
         supplier_type,
         default_vendor_code,
+        default_base_url: optional_https_base_url(
+            request.default_base_url,
+            "defaultBaseUrl",
+            request.environment.unwrap_or(1),
+        )?,
         adapter_code: required_text(request.adapter_code, "adapterCode", MAX_CODE_LENGTH)?,
         protocols,
         protocol_code,
@@ -653,6 +667,14 @@ fn update_command(
         },
         supplier_type,
         default_vendor_code,
+        default_base_url: match request.default_base_url {
+            Some(value) => optional_https_base_url(
+                Some(value),
+                "defaultBaseUrl",
+                request.environment.unwrap_or(existing.environment),
+            )?,
+            None => existing.default_base_url,
+        },
         adapter_code: request
             .adapter_code
             .map(|value| required_text(value, "adapterCode", MAX_CODE_LENGTH))
@@ -703,6 +725,7 @@ fn endpoint_inputs(
                 routing_weight: non_negative(item.routing_weight.unwrap_or(100), "routingWeight")?,
                 timeout_ms: positive_optional(item.timeout_ms, "timeoutMs")?,
                 status: status(item.status.unwrap_or(1))?,
+                vendor_codes: endpoint_vendor_codes(item.vendor_codes)?,
             })
         })
         .collect()
@@ -924,6 +947,106 @@ fn ensure_count(count: usize, field: &str) -> RequestResult<()> {
     Ok(())
 }
 
+/** 官方 vendor 多选：必填、去重、限长（与 OpenAPI vendorCodes minItems/maxItems 一致） */fn endpoint_vendor_codes(value: Option<Vec<String>>) -> RequestResult<Vec<String>> {
+    let Some(items) = value else {
+        return Err(problem_keyed(
+            SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.endpoint.vendors.required",
+            serde_json::Value::Null,
+            "vendorCodes is required; an endpoint must serve at least one official vendor",
+        ));
+    };
+    if items.is_empty() {
+        return Err(problem_keyed(
+            SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.endpoint.vendors.required",
+            serde_json::Value::Null,
+            "vendorCodes is required; an endpoint must serve at least one official vendor",
+        ));
+    }
+    if items.len() > MAX_ENDPOINT_VENDORS {
+        return Err(problem_keyed(
+            SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.endpoint.vendors.maxItems",
+            serde_json::json!({ "max": MAX_ENDPOINT_VENDORS }),
+            format!("vendorCodes must contain at most {MAX_ENDPOINT_VENDORS} official vendors"),
+        ));
+    }
+    let mut seen = HashSet::with_capacity(items.len());
+    let mut codes = Vec::with_capacity(items.len());
+    for item in items {
+        let code = item.trim();
+        if code.is_empty() {
+            return Err(problem_keyed(
+                SdkWorkResultCode::InvalidParameter,
+                "validation.admin.upstream.endpoint.vendors.blank",
+                serde_json::Value::Null,
+                "vendorCodes entries must be non-empty strings",
+            ));
+        }
+        if !seen.insert(code.to_owned()) {
+            return Err(problem_keyed(
+                SdkWorkResultCode::InvalidParameter,
+                "validation.admin.upstream.endpoint.vendors.unique",
+                serde_json::json!({ "vendorCode": code }),
+                "vendorCodes entries must be unique",
+            ));
+        }
+        codes.push(code.to_owned());
+    }
+    Ok(codes)
+}
+
+/// 可选 URL 校验（与中转站 baseUrl 规则一致）：绝对 URL、HTTPS（环境 0 的开发端点允许 HTTP）、
+/// 不得携带内嵌凭据/查询串/fragment。空值视为未配置。
+fn optional_https_base_url(
+    value: Option<String>,
+    field: &str,
+    environment: i32,
+) -> RequestResult<Option<String>> {
+    let Some(value) = value else {
+        return Ok(None);
+    };
+    let value = optional_text(Some(value), field, MAX_URL_LENGTH)?.unwrap_or_default();
+    if value.is_empty() {
+        return Ok(None);
+    }
+    let url = url::Url::parse(&value).map_err(|error| {
+        problem_keyed(
+            SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.url.absolute",
+            serde_json::json!({ "field": field }),
+            format!("{field} must be an absolute URL: {error}"),
+        )
+    })?;
+    let development_http = environment == 0 && url.scheme() == "http";
+    if url.scheme() != "https" && !development_http {
+        return Err(problem_keyed(
+            SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.url.https",
+            serde_json::json!({ "field": field, "environment": environment }),
+            format!("{field} must use HTTPS; HTTP is allowed only for environment 0 development"),
+        ));
+    }
+    if !url.username().is_empty() || url.password().is_some() {
+        return Err(problem_keyed(
+            SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.url.credentials",
+            serde_json::json!({ "field": field }),
+            format!("{field} must not contain embedded credentials"),
+        ));
+    }
+    if url.query().is_some() || url.fragment().is_some() {
+        return Err(problem_keyed(
+            SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.url.queryOrFragment",
+            serde_json::json!({ "field": field }),
+            format!("{field} must not contain a query string or fragment"),
+        ));
+    }
+    Ok(Some(value))
+}
+
 impl From<AdminUpstreamSupplierItem> for SupplierResponse {
     fn from(item: AdminUpstreamSupplierItem) -> Self {
         Self {
@@ -935,6 +1058,7 @@ impl From<AdminUpstreamSupplierItem> for SupplierResponse {
             description: item.description,
             supplier_type: item.supplier_type,
             default_vendor_code: item.default_vendor_code,
+            default_base_url: item.default_base_url,
             adapter_code: item.adapter_code,
             protocol_code: item.protocol_code,
             protocols: item.protocols,
@@ -982,6 +1106,7 @@ impl From<AdminUpstreamSupplierEndpointItem> for EndpointResponse {
             timeout_ms: item.timeout_ms,
             health_status: item.health_status,
             status: item.status,
+            vendor_codes: item.vendor_codes,
         }
     }
 }

@@ -120,7 +120,7 @@ export function ModelDetails() {
             {/* Overview */}
             <section>
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                <Info className="w-6 h-6 text-blue-500" />
+                <Info className="w-6 h-6 text-lobster-500" />
                 {t('models.details.capabilityIntro', 'Capability Introduction')}
               </h2>
               <div className="prose prose-slate dark:prose-invert max-w-none">
@@ -134,7 +134,7 @@ export function ModelDetails() {
             {detail.useCases.length > 0 && (
               <section>
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                  <Zap className="w-6 h-6 text-yellow-500" />
+                  <Zap className="w-6 h-6 text-lobster-500" />
                   {t('models.details.useCases', 'Use Cases')}
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -153,7 +153,7 @@ export function ModelDetails() {
             {/* API Example */}
             <section>
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                <Code2 className="w-6 h-6 text-indigo-500" />
+                <Code2 className="w-6 h-6 text-lobster-500" />
                 {t('models.details.apiExample', 'API Example')}
               </h2>
               <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shadow-sm dark:border-white/10 dark:bg-[#0d1117]">
@@ -178,7 +178,7 @@ export function ModelDetails() {
             <section>
               <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-6">
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Activity className="w-6 h-6 text-emerald-500" />
+                <Activity className="w-6 h-6 text-lobster-500" />
                   {t(detail.performanceSummary.titleLabelKey, detail.performanceSummary.fallbackTitle)}
                 </h2>
                 <span className="text-xs font-medium uppercase tracking-wider text-slate-500">

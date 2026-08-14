@@ -468,13 +468,23 @@ where
     if let Some(response) = reject_unsupported_openai_method(&request) {
         return response;
     }
-    if let Err(error) = authenticate_passthrough_api_key(&state, &headers, &uri) {
-        return error.into_response();
-    }
+    let context = match authenticate_passthrough_api_key(&state, &headers, &uri) {
+        Ok(context) => context,
+        Err(error) => return error.into_response(),
+    };
     *request.uri_mut() = match sanitize_authenticated_gateway_uri(&uri) {
         Ok(uri) => uri,
         Err(error) => return error.into_response(),
     };
+    // 遗留 relay 路径：认证上下文保留用于日志归属（计量/路由由完整管道承担）。
+    tracing::debug!(
+        tenant_id = context.tenant_id,
+        organization_id = context.organization_id,
+        api_key_id = context.api_key_id,
+        group_code = %context.group_code,
+        path = %uri.path(),
+        "openai relay passthrough forward"
+    );
     match state.runtime.forward_openai(request).await {
         Ok(response) => response,
         Err(error) => passthrough_forward_failed("openai_passthrough_relay_failed", error),

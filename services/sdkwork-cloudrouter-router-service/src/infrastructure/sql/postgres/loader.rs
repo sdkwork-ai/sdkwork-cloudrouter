@@ -551,6 +551,7 @@ mod tests {
             endpoint_weight: 100,
             endpoint_health_status: 1,
             base_url: Some("https://api.openai.com/v1".to_owned()),
+            supplier_default_base_url: None,
             secret_ref: Some("managed://upstream-account-credential/12".to_owned()),
             secret_ciphertext: Some(encoded.ciphertext.clone()),
             secret_key_id: Some(encoded.key_id.clone()),

@@ -289,13 +289,13 @@ export function Models() {
 
         <CollapsibleSection title={t('models.provider')} icon={Database}>
           <div className="relative mb-3 group">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-lobster-500 transition-colors" />
             <input
               type="text"
               placeholder={t('models.providerSearch')}
               value={filters.providerSearchQuery}
               onChange={(e) => updateFilters({ providerSearchQuery: e.target.value })}
-              className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
+              className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-lobster-500 focus:ring-1 focus:ring-lobster-500 transition-all"
             />
           </div>
           <div className="space-y-2 pr-2">
@@ -317,7 +317,7 @@ export function Models() {
           {providerShowMoreState.visible && (
             <button
               onClick={() => setShowAllProviders(!showAllProviders)}
-              className="mt-3 text-xs font-medium text-orange-500 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-300 transition-colors flex items-center gap-1"
+              className="mt-3 text-xs font-medium text-lobster-500 hover:text-lobster-600 dark:text-lobster-400 dark:hover:text-lobster-300 transition-colors flex items-center gap-1"
             >
               {t(providerShowMoreState.labelKey, {
                 count: providerShowMoreState.hiddenCount,

@@ -11929,6 +11929,11 @@
               "maxLength": 128,
               "type": "string"
             },
+            "defaultBaseUrl": {
+              "maxLength": 2048,
+              "nullable": true,
+              "type": "string"
+            },
             "defaultVendorCode": {
               "maxLength": 64,
               "nullable": true,
@@ -14123,6 +14128,15 @@
                     "minimum": 1,
                     "nullable": true,
                     "type": "integer"
+                  },
+                  "vendorCodes": {
+                    "items": {
+                      "maxLength": 64,
+                      "type": "string"
+                    },
+                    "maxItems": 9,
+                    "minItems": 1,
+                    "type": "array"
                   }
                 },
                 "required": [
@@ -14137,7 +14151,8 @@
                   "routingWeight",
                   "timeoutMs",
                   "healthStatus",
-                  "status"
+                  "status",
+                  "vendorCodes"
                 ],
                 "type": "object"
               },
@@ -14333,6 +14348,11 @@
                     "maxLength": 128,
                     "type": "string"
                   },
+                  "defaultBaseUrl": {
+                    "maxLength": 2048,
+                    "nullable": true,
+                    "type": "string"
+                  },
                   "defaultVendorCode": {
                     "maxLength": 64,
                     "nullable": true,
@@ -14508,6 +14528,7 @@
                   "description",
                   "supplierType",
                   "defaultVendorCode",
+                  "defaultBaseUrl",
                   "adapterCode",
                   "protocolCode",
                   "protocols",
@@ -15345,6 +15366,11 @@
               "maxLength": 128,
               "type": "string"
             },
+            "defaultBaseUrl": {
+              "maxLength": 2048,
+              "nullable": true,
+              "type": "string"
+            },
             "defaultVendorCode": {
               "maxLength": 64,
               "nullable": true,
@@ -15711,12 +15737,22 @@
                     "minimum": 1,
                     "nullable": true,
                     "type": "integer"
+                  },
+                  "vendorCodes": {
+                    "items": {
+                      "maxLength": 64,
+                      "type": "string"
+                    },
+                    "maxItems": 9,
+                    "minItems": 1,
+                    "type": "array"
                   }
                 },
                 "required": [
                   "endpointCode",
                   "endpointName",
-                  "baseUrl"
+                  "baseUrl",
+                  "vendorCodes"
                 ],
                 "type": "object"
               },

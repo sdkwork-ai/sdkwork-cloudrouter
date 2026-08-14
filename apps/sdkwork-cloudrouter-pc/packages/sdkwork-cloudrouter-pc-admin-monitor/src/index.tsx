@@ -96,7 +96,7 @@ function NodesTab() {
       {/* Overview Cards */}
       <div className="grid shrink-0 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { title: t('admin.monitor.stats.totalNodes', 'Total Nodes'), value: String(totalNodes), desc: t('admin.monitor.stats.totalNodesDesc', 'Across {{regions}} regions', { regions }), icon: Server, color: 'text-blue-500' },
+          { title: t('admin.monitor.stats.totalNodes', 'Total Nodes'), value: String(totalNodes), desc: t('admin.monitor.stats.totalNodesDesc', 'Across {{regions}} regions', { regions }), icon: Server, color: 'text-lobster-500' },
           { title: t('admin.monitor.stats.systemHealth', 'System Health'), value: `${healthRate.toFixed(1)}%`, desc: t('admin.monitor.stats.systemHealthDesc', '{{online}}/{{total}} nodes online', { online: onlineNodes, total: overviewNodes.length }), icon: Activity, color: 'text-green-500' },
           { title: t('admin.monitor.stats.avgCpu', 'Avg CPU Load'), value: `${avgCpu.toFixed(1)}%`, desc: t('admin.monitor.stats.avgCpuDesc', 'Backend reported average'), icon: Cpu, color: 'text-yellow-500' },
           { title: t('admin.monitor.stats.activeIncidents', 'Active Incidents'), value: String(activeIncidents), desc: t('admin.monitor.stats.activeIncidentsDesc', 'Warning or offline nodes'), icon: AlertTriangle, color: 'text-red-500' },
@@ -178,7 +178,7 @@ function NodesTab() {
                   value={nodeSearch}
                   onChange={(event) => setNodeSearch(event.target.value)}
                   placeholder={t('admin.monitor.nodes.searchPlaceholder', 'Search nodes...')}
-                  className="pl-9 pr-4 py-1.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                  className="pl-9 pr-4 py-1.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-lobster-500/50"
                 />
              </div>
           </div>
@@ -396,7 +396,7 @@ function AlertsTab() {
             <select
               value={severityFilter}
               onChange={(event) => setSeverityFilter(event.target.value as 'all' | Alert['severity'])}
-              className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+              className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-lobster-500/50"
             >
               <option value="all">{t('admin.monitor.alerts.allSeverities', 'All Severities')}</option>
               <option value="critical">{t('admin.monitor.alerts.criticalShort', 'Critical')}</option>
@@ -406,7 +406,7 @@ function AlertsTab() {
             <select
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value as 'all' | Alert['status'])}
-              className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+              className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-lobster-500/50"
             >
               <option value="all">{t('admin.monitor.alerts.allStatus', 'All Status')}</option>
               <option value="active">{t('admin.monitor.alerts.active', 'Active')}</option>

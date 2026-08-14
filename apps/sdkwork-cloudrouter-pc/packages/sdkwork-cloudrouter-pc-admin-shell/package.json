@@ -21,7 +21,8 @@
     "@sdkwork/cloudrouter-pc-admin-iam": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-rtc": "workspace:*",
     "@sdkwork/cloudroutes-pc-commons": "workspace:*",
-    "@sdkwork/iam-contracts": "workspace:*"
+    "@sdkwork/iam-contracts": "workspace:*",
+    "@sdkwork/order-pc-admin-trade": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=19.0.0 <20.0.0",

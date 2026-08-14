@@ -67,7 +67,7 @@ export function BottomPagination({
             value={pageSize}
             disabled={disabled}
             onChange={(event) => onPageSizeChange(Number(event.target.value))}
-            className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 outline-none focus:border-emerald-400 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-[#202020] dark:text-slate-200"
+            className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 outline-none focus:border-lobster-400 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-[#202020] dark:text-slate-200"
           >
             {pageSizeOptions.map((option) => (
               <option key={option} value={option}>
@@ -87,7 +87,7 @@ export function BottomPagination({
           disabled={!canPrevious}
           aria-label={previousLabel}
           title={previousLabel}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:border-emerald-500/40 dark:hover:text-emerald-300"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:border-lobster-300 hover:text-lobster-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:border-lobster-500/40 dark:hover:text-lobster-300"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -97,7 +97,7 @@ export function BottomPagination({
           disabled={!canNext}
           aria-label={nextLabel}
           title={nextLabel}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:border-emerald-500/40 dark:hover:text-emerald-300"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:border-lobster-300 hover:text-lobster-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:border-lobster-500/40 dark:hover:text-lobster-300"
         >
           <ChevronRight className="h-4 w-4" />
         </button>

@@ -62,6 +62,7 @@ where
         Request::from_parts(parts, body),
         auth_context,
         preclassified_openai,
+        false,
     )
     .await
 }
@@ -133,6 +134,7 @@ where
         Request::from_parts(parts, Body::from(body)),
         auth_context,
         None,
+        true,
     )
     .await
 }
@@ -142,6 +144,7 @@ async fn handle_authenticated_invocation<C>(
     request: Request<Body>,
     auth_context: sdkwork_cloudrouter_router_service::application::AuthenticatedApiKeyContext,
     preclassified_openai: Option<(InvocationClassification, String)>,
+    internal: bool,
 ) -> Response
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
@@ -178,7 +181,13 @@ where
         body,
     );
     let account_group_id = auth_context.group_id;
-    let subject = InvocationSubject::from_api_key_context(auth_context);
+    // 内部网关请求携带独立的 auth_type（InternalService），管道可据此
+    // 对内部/外部调用应用差异化策略（限流、审计、决策日志等）。
+    let subject = if internal {
+        InvocationSubject::from_internal_api_key_context(auth_context)
+    } else {
+        InvocationSubject::from_api_key_context(auth_context)
+    };
     let mut invocation = Invocation::new(request, subject, resource, billing);
     invocation.routing = routing;
     apply_gateway_dispatch_defaults(&mut invocation, state.catalog.as_ref(), account_group_id);
