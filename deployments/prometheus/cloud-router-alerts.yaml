@@ -41,7 +41,7 @@ groups:
         annotations:
           summary: "Cloud Router availability budget is burning rapidly"
           description: "The 1h and 5m HTTP 5xx ratios both exceed the 14.4x burn-rate threshold."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
       - alert: CloudRouterAvailabilityMediumBurn
         expr: |
@@ -78,7 +78,7 @@ groups:
         annotations:
           summary: "Cloud Router availability budget is burning"
           description: "The 6h and 30m HTTP 5xx ratios both exceed the 6x burn-rate threshold."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
       - alert: CloudRouterAvailabilitySlowBurn
         expr: |
@@ -115,7 +115,7 @@ groups:
         annotations:
           summary: "Cloud Router availability budget has a sustained burn"
           description: "The 3d and 6h HTTP 5xx ratios both exceed the base error-budget rate."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
   - name: cloudrouter-http
     interval: 30s
@@ -137,7 +137,7 @@ groups:
         annotations:
           summary: "Cloud Router control-plane p95 latency is high"
           description: "The 10m p95 app/backend API latency exceeds the 1 second operational guardrail."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
       - alert: CloudRouterControlPlaneP99LatencyCritical
         expr: |
@@ -156,7 +156,7 @@ groups:
         annotations:
           summary: "Cloud Router control-plane p99 latency is critical"
           description: "The 5m p99 app/backend API latency exceeds the 2 second operational guardrail."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
       - alert: CloudRouterHighServerErrorRate
         expr: |
@@ -176,7 +176,7 @@ groups:
         annotations:
           summary: "Cloud Router HTTP 5xx rate is elevated"
           description: "The 5m HTTP 5xx ratio exceeds 1%."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
       - alert: CloudRouterVeryHighServerErrorRate
         expr: |
@@ -196,7 +196,7 @@ groups:
         annotations:
           summary: "Cloud Router HTTP 5xx rate is critical"
           description: "The 5m HTTP 5xx ratio exceeds 5%."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
       - alert: CloudRouterOnlyServerErrors
         expr: |
@@ -213,7 +213,7 @@ groups:
         annotations:
           summary: "Cloud Router is serving only HTTP 5xx responses"
           description: "Traffic is present, but no non-5xx response has been observed for 5 minutes."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
   - name: cloudrouter-accounting-integrity
     interval: 30s
@@ -227,7 +227,7 @@ groups:
         annotations:
           summary: "A successful provider response omitted required usage"
           description: "At least one provider response could not produce an authoritative usage fact. The request trace requires reconciliation; zero usage must not be inferred."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
       - alert: CloudRouterUsageSettlementError
         expr: sum(increase(cloudrouter_usage_settlement_errors_total[5m])) > 0
@@ -238,7 +238,7 @@ groups:
         annotations:
           summary: "Usage settlement worker failed"
           description: "At least one settlement run failed before producing an authoritative outcome; unsettled usage may be accumulating."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
       - alert: CloudRouterUsageSettlementPartialFailure
         expr: sum(increase(cloudrouter_usage_settlement_runs_total{outcome="partial_failure"}[10m])) > 0
@@ -249,7 +249,7 @@ groups:
         annotations:
           summary: "Usage settlement completed with failed items"
           description: "A settlement batch persisted one or more failed items. Successful rows remain authoritative, while failed rows require bounded retry or reconciliation."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
       - alert: CloudRouterPaymentReconciliationFailed
         expr: sum(increase(cloudrouter_payment_reconciliation_runs_total{outcome="failed"}[10m])) > 0
@@ -260,7 +260,7 @@ groups:
         annotations:
           summary: "Payment reconciliation run failed"
           description: "A payment reconciliation run failed before producing an authoritative outcome (for example a run without provider_code). Failed runs stay visible in the payment center with status failed; the next cycle only picks up queued runs."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
       - alert: CloudRouterCredentialExpiredDeactivated
         expr: sum(increase(cloudrouter_upstream_credential_rotation_actions_total{action="expired_deactivated"}[30m])) > 0
@@ -271,7 +271,7 @@ groups:
         annotations:
           summary: "Upstream credential expired without a replacement"
           description: "An active upstream account credential reached its expiry and was deactivated, but no pre-provisioned candidate existed. The account may lose upstream access; provision a new credential through the backend credential API immediately."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
       - alert: CloudRouterCredentialRotationOverdue
         expr: sum(increase(cloudrouter_upstream_credential_rotation_actions_total{action="overdue"}[30m])) > 0
@@ -282,7 +282,7 @@ groups:
         annotations:
           summary: "Upstream credential rotation is overdue"
           description: "An upstream account is past its scheduled credential rotation and has no candidate credential to promote. Provision a newer credential_version through the backend credential API so the worker can rotate on the next sweep."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
   - name: cloudrouter-infrastructure
     interval: 30s
@@ -295,7 +295,7 @@ groups:
         annotations:
           summary: "Cloud Router metrics endpoint is unavailable"
           description: "Prometheus cannot scrape a discovered Cloud Router pod."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
       - alert: CloudRouterReadinessFailure
         expr: increase(sdkwork_http_readiness_checks_total{result="not_ready"}[5m]) > 0
@@ -305,7 +305,7 @@ groups:
         annotations:
           summary: "Cloud Router readiness checks are failing"
           description: "At least one required dependency readiness check failed in the last 5 minutes."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
       - alert: CloudRouterMetricSeriesDropped
         expr: increase(sdkwork_http_metric_series_dropped_total[10m]) > 0
@@ -315,7 +315,7 @@ groups:
         annotations:
           summary: "Cloud Router dropped bounded metric series"
           description: "The HTTP metric registry rejected a new series because its fixed capacity or label-byte bound was reached."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
       - alert: CloudRouterCircuitBreakerCoordinationDegraded
         expr: sum(increase(cloudrouter_circuit_breaker_degraded_total[5m])) > 0
@@ -326,7 +326,7 @@ groups:
         annotations:
           summary: "Distributed circuit breaker coordination is degraded"
           description: "At least one Redis-backed circuit breaker operation failed. Inspect the mode label before mitigation; fail-closed rejects provider calls while fail-open reduces protection."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
       - alert: CloudRouterCircuitBreakerRejectionsHigh
         expr: sum(increase(cloudrouter_circuit_breaker_rejections_total[5m])) > 10
@@ -337,7 +337,7 @@ groups:
         annotations:
           summary: "Circuit breaker provider rejections are elevated"
           description: "More than ten provider account permits were rejected in five minutes. Correlate reasons and transitions with provider health and fallback capacity."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
       - alert: CloudRouterContainerMemoryHigh
         expr: |
@@ -364,7 +364,7 @@ groups:
         annotations:
           summary: "Cloud Router container memory exceeds 80% of its limit"
           description: "The container working set is approaching its declared cgroup memory limit."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
       - alert: CloudRouterContainerOOMKilled
         expr: |
@@ -378,4 +378,4 @@ groups:
         annotations:
           summary: "Cloud Router container was OOM-killed"
           description: "Kubernetes reports OOMKilled as the most recent container termination reason."
-          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"

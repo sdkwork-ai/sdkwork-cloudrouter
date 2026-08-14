@@ -28,7 +28,7 @@ python --version
 ## 2. Clone
 
 ```bash
-git clone https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter.git
+git clone https://github.com/sdkwork-ai/sdkwork-cloudrouter.git
 cd sdkwork-cloudrouter
 ```
 

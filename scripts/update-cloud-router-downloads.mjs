@@ -25,7 +25,7 @@ const DEFAULT_DOWNLOAD_CATALOG_PATH = path.join(
   'downloads',
   'cloud-router-downloads.json',
 );
-const DEFAULT_RELEASE_REPOSITORY = 'https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter';
+const DEFAULT_RELEASE_REPOSITORY = 'https://github.com/sdkwork-ai/sdkwork-cloudrouter';
 const DEFAULT_CHANNEL = 'stable';
 const DOWNLOAD_CDN_BASE_URL_ENV = 'CLOUDROUTER_DOWNLOAD_CDN_BASE_URL';
 const DOWNLOAD_ARTIFACT_PLATFORMS = Object.freeze(['linux', 'windows', 'macos']);

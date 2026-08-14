@@ -15,7 +15,7 @@ DASHBOARD = (
 ALERTS = ROOT / "deployments" / "prometheus" / "cloud-router-alerts.yaml"
 RUNBOOK = ROOT / "docs" / "runbooks" / "observability-alert-response.md"
 RUNBOOK_URL = (
-    "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/blob/main/"
+    "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/"
     "docs/runbooks/observability-alert-response.md"
 )
 

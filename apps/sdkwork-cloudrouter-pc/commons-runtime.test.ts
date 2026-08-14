@@ -1192,7 +1192,7 @@ test("navbar keeps the public GitHub repository entry hidden", () => {
     "utf8",
   );
 
-  assert.doesNotMatch(navbarSource, /github\.com\/Sdkwork-Cloud\/sdkwork-cloudrouter\.git/u);
+  assert.doesNotMatch(navbarSource, /github\.com\/sdkwork-ai\/sdkwork-cloudrouter\.git/u);
   assert.doesNotMatch(navbarSource, /GitHub Repository/u);
   assert.doesNotMatch(navbarSource, /\bGithub\b/u);
 });

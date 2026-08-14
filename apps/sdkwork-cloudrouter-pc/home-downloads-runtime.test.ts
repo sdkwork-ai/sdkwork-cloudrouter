@@ -145,7 +145,7 @@ test("home download catalog consumes the release JSON data contract for exact po
           actions: [
             {
               fileName: "cloudrouter-windows-x64-desktop-1.2.3.msi",
-              href: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/releases/download/v1.2.3/cloudrouter-windows-x64-desktop-1.2.3.msi",
+              href: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/releases/download/v1.2.3/cloudrouter-windows-x64-desktop-1.2.3.msi",
               id: "desktop-windows-x64",
               label: "Windows x64",
               platform: "windows",
@@ -185,7 +185,7 @@ test("home download catalog consumes the release JSON data contract for exact po
 
   assert.equal(
     actionsById.get("desktop-windows-x64")?.href,
-    "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/releases/download/v1.2.3/cloudrouter-windows-x64-desktop-1.2.3.msi",
+    "https://github.com/sdkwork-ai/sdkwork-cloudrouter/releases/download/v1.2.3/cloudrouter-windows-x64-desktop-1.2.3.msi",
   );
   assert.equal(actionsById.get("server-docker")?.disabled, true);
   assert.equal(actionsById.get("server-docker")?.href, "");
@@ -206,13 +206,13 @@ test("home download catalog preserves selectable download sources from release J
           actions: [
             {
               fileName: "cloudrouter-windows-x64-desktop-1.2.3.msi",
-              href: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/releases/download/v1.2.3/cloudrouter-windows-x64-desktop-1.2.3.msi",
+              href: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/releases/download/v1.2.3/cloudrouter-windows-x64-desktop-1.2.3.msi",
               id: "desktop-windows-x64",
               label: "Windows x64",
               platform: "windows",
               sources: [
                 {
-                  href: "https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/releases/download/v1.2.3/cloudrouter-windows-x64-desktop-1.2.3.msi",
+                  href: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/releases/download/v1.2.3/cloudrouter-windows-x64-desktop-1.2.3.msi",
                   id: "github",
                   label: "GitHub",
                   primary: true,
@@ -266,7 +266,7 @@ test("checked-in release download JSON is the default homepage data source", () 
   assert.equal(actions.some((action) => action.href === "#"), false);
   assert.ok(
     actions.some((action) =>
-      action.href.includes("https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/releases/download/v0.3.0/")
+      action.href.includes("https://github.com/sdkwork-ai/sdkwork-cloudrouter/releases/download/v0.3.0/")
     ),
     "default homepage catalog must include release asset URLs",
   );

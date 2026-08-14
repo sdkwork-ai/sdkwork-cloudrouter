@@ -8369,8 +8369,8 @@
               "artifact": {
                 "kind": "document",
                 "source": "external_url",
-                "url": "https://github.com/Sdkwork-Cloud/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_x64_en-US.msi",
-                "publicUrl": "https://github.com/Sdkwork-Cloud/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_x64_en-US.msi"
+                "url": "https://github.com/sdkwork-ai/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_x64_en-US.msi",
+                "publicUrl": "https://github.com/sdkwork-ai/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_x64_en-US.msi"
               }
             },
             {
@@ -8391,8 +8391,8 @@
               "artifact": {
                 "kind": "document",
                 "source": "external_url",
-                "url": "https://github.com/Sdkwork-Cloud/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_x64-setup.exe",
-                "publicUrl": "https://github.com/Sdkwork-Cloud/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_x64-setup.exe"
+                "url": "https://github.com/sdkwork-ai/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_x64-setup.exe",
+                "publicUrl": "https://github.com/sdkwork-ai/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_x64-setup.exe"
               }
             },
             {
@@ -8413,8 +8413,8 @@
               "artifact": {
                 "kind": "document",
                 "source": "external_url",
-                "url": "https://github.com/Sdkwork-Cloud/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_amd64.deb",
-                "publicUrl": "https://github.com/Sdkwork-Cloud/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_amd64.deb"
+                "url": "https://github.com/sdkwork-ai/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_amd64.deb",
+                "publicUrl": "https://github.com/sdkwork-ai/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_amd64.deb"
               }
             },
             {
@@ -8435,8 +8435,8 @@
               "artifact": {
                 "kind": "document",
                 "source": "external_url",
-                "url": "https://github.com/Sdkwork-Cloud/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_amd64.AppImage",
-                "publicUrl": "https://github.com/Sdkwork-Cloud/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_amd64.AppImage"
+                "url": "https://github.com/sdkwork-ai/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_amd64.AppImage",
+                "publicUrl": "https://github.com/sdkwork-ai/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_amd64.AppImage"
               }
             },
             {
@@ -8457,8 +8457,8 @@
               "artifact": {
                 "kind": "document",
                 "source": "external_url",
-                "url": "https://github.com/Sdkwork-Cloud/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_x64.dmg",
-                "publicUrl": "https://github.com/Sdkwork-Cloud/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_x64.dmg"
+                "url": "https://github.com/sdkwork-ai/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_x64.dmg",
+                "publicUrl": "https://github.com/sdkwork-ai/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_x64.dmg"
               }
             },
             {
@@ -8479,8 +8479,8 @@
               "artifact": {
                 "kind": "document",
                 "source": "external_url",
-                "url": "https://github.com/Sdkwork-Cloud/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_aarch64.dmg",
-                "publicUrl": "https://github.com/Sdkwork-Cloud/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_aarch64.dmg"
+                "url": "https://github.com/sdkwork-ai/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_aarch64.dmg",
+                "publicUrl": "https://github.com/sdkwork-ai/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_aarch64.dmg"
               }
             }
           ],
@@ -8686,8 +8686,8 @@
         "artifact": {
           "kind": "document",
           "source": "external_url",
-          "url": "https://github.com/Sdkwork-Cloud/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_x64_en-US.msi",
-          "publicUrl": "https://github.com/Sdkwork-Cloud/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_x64_en-US.msi"
+          "url": "https://github.com/sdkwork-ai/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_x64_en-US.msi",
+          "publicUrl": "https://github.com/sdkwork-ai/sdkwork-video-cut/releases/download/v0.1.8/SDKWork%20Video%20Cut_0.1.8_x64_en-US.msi"
         }
       },
       "source": {

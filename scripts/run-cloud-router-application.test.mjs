@@ -1399,14 +1399,14 @@ test('download catalog generator emits selectable CDN sources only when configur
 
   const githubOnlyCatalog = module.createCloudRouterDownloadCatalog({
     generatedAt: '2026-05-18T00:00:00.000Z',
-    releaseBaseUrl: 'https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/releases/download/v1.2.3',
+    releaseBaseUrl: 'https://github.com/sdkwork-ai/sdkwork-cloudrouter/releases/download/v1.2.3',
     releaseTag: 'v1.2.3',
     version: '1.2.3',
   });
   const cdnCatalog = module.createCloudRouterDownloadCatalog({
     cdnBaseUrl: 'https://cdn.example.test/cloud-router/v1.2.3',
     generatedAt: '2026-05-18T00:00:00.000Z',
-    releaseBaseUrl: 'https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/releases/download/v1.2.3',
+    releaseBaseUrl: 'https://github.com/sdkwork-ai/sdkwork-cloudrouter/releases/download/v1.2.3',
     releaseTag: 'v1.2.3',
     version: '1.2.3',
   });
@@ -1422,7 +1422,7 @@ test('download catalog generator emits selectable CDN sources only when configur
   assert.deepEqual(windowsSources.map((source) => source.id), ['github', 'cdn']);
   assert.equal(
     windowsSources.find((source) => source.id === 'github')?.href,
-    'https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter/releases/download/v1.2.3/cloudrouter-windows-x64-desktop-1.2.3.msi',
+    'https://github.com/sdkwork-ai/sdkwork-cloudrouter/releases/download/v1.2.3/cloudrouter-windows-x64-desktop-1.2.3.msi',
   );
   assert.equal(
     windowsSources.find((source) => source.id === 'cdn')?.href,

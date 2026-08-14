@@ -736,7 +736,7 @@ function createDebianControl(plan) {
     'Priority: optional',
     `Architecture: ${debianArchitecture(packageItem.architecture)}`,
     'Maintainer: SdkWork Cloud <release@sdkwork.cloud>',
-    'Homepage: https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter',
+    'Homepage: https://github.com/sdkwork-ai/sdkwork-cloudrouter',
     // PACKAGING_SPEC §5.2: .deb MUST declare real runtime dependencies and
     // must not bundle the distro-provided libraries. The edge runtime links
     // OpenSSL 3 (libssl3) and the glibc/gcc runtime (libc6, libgcc-s1).

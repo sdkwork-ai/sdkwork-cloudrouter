@@ -278,7 +278,7 @@ catalog data.
 repository:
 
 ```powershell
-git submodule add https://github.com/Sdkwork-Cloud/sdkwork-models.git ../sdkwork-models
+git submodule add https://github.com/sdkwork-ai/sdkwork-models.git ../sdkwork-models
 git submodule update --init --recursive
 ```
 
@@ -290,7 +290,7 @@ git init
 git add .
 git commit -m "first commit"
 git branch -M main
-git remote add origin https://github.com/Sdkwork-Cloud/sdkwork-models.git
+git remote add origin https://github.com/sdkwork-ai/sdkwork-models.git
 git push -u origin main
 ```
 

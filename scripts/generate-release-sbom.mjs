@@ -348,7 +348,7 @@ const checksums = {
       buildType: 'https://sdkwork.com/buildtypes/cloudrouter/release/v1',
       invocation: {
         configSource: {
-          uri: 'git+https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter',
+          uri: 'git+https://github.com/sdkwork-ai/sdkwork-cloudrouter',
           digest: {
             cargoLock: hashFile(join(root, 'Cargo.lock')),
             rootPnpmLock: hashFile(join(root, 'pnpm-lock.yaml')),

@@ -115,7 +115,7 @@
       "buildType": "https://sdkwork.com/buildtypes/cloudrouter/release/v1",
       "invocation": {
         "configSource": {
-          "uri": "git+https://github.com/Sdkwork-Cloud/sdkwork-cloudrouter",
+          "uri": "git+https://github.com/sdkwork-ai/sdkwork-cloudrouter",
           "digest": {
             "cargoLock": "f89969c688303c898b0a0a1b88c0b467e8ce8b38be6fa99523f2921aa74c50fa",
             "rootPnpmLock": "7aa4f89afe24192c0cee74ab38ccf9a1fcbc6f5bc07ad2c6a2ca796a1e2f6664",

@@ -164,7 +164,7 @@ function updateRepoIdentity() {
       const original = readFileSync(filePath, 'utf8');
       const next = replaceAll(original, [
         ['sdkwork-cloudrouter', 'sdkwork-cloudrouter'],
-        ['Sdkwork-Cloud/sdkwork-cloudrouter', 'Sdkwork-Cloud/sdkwork-cloudrouter'],
+        ['sdkwork-ai/sdkwork-cloudrouter', 'sdkwork-ai/sdkwork-cloudrouter'],
       ]);
       if (next !== original) {
         writeFileSync(filePath, next, 'utf8');

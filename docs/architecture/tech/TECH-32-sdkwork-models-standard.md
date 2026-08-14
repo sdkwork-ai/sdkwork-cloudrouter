@@ -1274,7 +1274,7 @@ tenant policy.
 `sdkwork-models` is intended to be an independent Git repository:
 
 ```text
-https://github.com/Sdkwork-Cloud/sdkwork-models.git
+https://github.com/sdkwork-ai/sdkwork-models.git
 ```
 
 When embedded in CloudRouter, it should be mounted as:
