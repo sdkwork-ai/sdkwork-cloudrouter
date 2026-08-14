@@ -5,7 +5,7 @@ use crate::infrastructure::sql::rows::{
     AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, GatewayRiskRuleRow, ModelMappingRuleRow,
     ModelPriceRow, ModelVendorRow, PricingPlanRow, QuotaPolicyRow, RoutingPolicyRow,
     RoutingRuleRow, UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow,
-    UpstreamAccountRouteRow,
+    UpstreamAccountRouteRow, UpstreamSupplierModelAccessRow,
 };
 
 pub async fn load_vendors(
@@ -221,6 +221,21 @@ pub async fn load_upstream_account_groups(
             priority: row.try_get("priority")?,
             cost_multiplier: row.try_get("cost_multiplier")?,
             sale_multiplier: row.try_get("sale_multiplier")?,
+            model_blacklist_json: row.try_get("model_blacklist")?,
+            model_whitelist_json: row.try_get("model_whitelist")?,
+        })
+    })
+    .fetch(executor)
+    .await
+}
+
+pub async fn load_upstream_supplier_model_access(
+    executor: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
+    sql: &'static str,
+) -> Result<Vec<UpstreamSupplierModelAccessRow>, sqlx::Error> {
+    map_query(sql, |row| {
+        Ok(UpstreamSupplierModelAccessRow {
+            supplier_code: row.try_get("supplier_code")?,
             model_blacklist_json: row.try_get("model_blacklist")?,
             model_whitelist_json: row.try_get("model_whitelist")?,
         })

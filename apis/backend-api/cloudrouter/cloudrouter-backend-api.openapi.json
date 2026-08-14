@@ -4331,6 +4331,24 @@
             "nullable": true,
             "type": "integer"
           },
+          "modelBlacklist": {
+            "description": "Model blacklist of vendor + model entries for this supplier.",
+            "items": {
+              "$ref": "#/components/schemas/UpstreamSupplierModelListEntry"
+            },
+            "maxItems": 100,
+            "nullable": true,
+            "type": "array"
+          },
+          "modelWhitelist": {
+            "description": "Model whitelist of vendor + model entries for this supplier.",
+            "items": {
+              "$ref": "#/components/schemas/UpstreamSupplierModelListEntry"
+            },
+            "maxItems": 100,
+            "nullable": true,
+            "type": "array"
+          },
           "protocols": {
             "description": "Protocols field on create upstream supplier request.",
             "items": {
@@ -7849,6 +7867,24 @@
             "nullable": true,
             "type": "integer"
           },
+          "modelBlacklist": {
+            "description": "Model blacklist of vendor + model entries for this supplier.",
+            "items": {
+              "$ref": "#/components/schemas/UpstreamSupplierModelListEntry"
+            },
+            "maxItems": 100,
+            "nullable": true,
+            "type": "array"
+          },
+          "modelWhitelist": {
+            "description": "Model whitelist of vendor + model entries for this supplier.",
+            "items": {
+              "$ref": "#/components/schemas/UpstreamSupplierModelListEntry"
+            },
+            "maxItems": 100,
+            "nullable": true,
+            "type": "array"
+          },
           "protocols": {
             "description": "Protocols field on update upstream supplier request.",
             "items": {
@@ -10019,6 +10055,22 @@
             "maxLength": 32,
             "type": "string"
           },
+          "modelBlacklist": {
+            "description": "Model blacklist of this supplier. Vendor + model entries the supplier is forbidden to serve. An entry with an empty models array forbids every model of the vendor. The blacklist wins over the whitelist.",
+            "items": {
+              "$ref": "#/components/schemas/UpstreamSupplierModelListEntry"
+            },
+            "maxItems": 100,
+            "type": "array"
+          },
+          "modelWhitelist": {
+            "description": "Model whitelist of this supplier. When non-empty, the supplier serves only matching vendor + model entries. An entry with an empty models array allows every model of the vendor.",
+            "items": {
+              "$ref": "#/components/schemas/UpstreamSupplierModelListEntry"
+            },
+            "maxItems": 100,
+            "type": "array"
+          },
           "protocolCode": {
             "description": "Protocol code field on upstream supplier.",
             "maxLength": 128,
@@ -10102,6 +10154,8 @@
           "adapterCode",
           "protocolCode",
           "protocols",
+          "modelBlacklist",
+          "modelWhitelist",
           "websiteUrl",
           "docsUrl",
           "regionCode",
@@ -10644,6 +10698,32 @@
         "required": [
           "items",
           "pageInfo"
+        ],
+        "type": "object"
+      },
+      "UpstreamSupplierModelListEntry": {
+        "additionalProperties": false,
+        "description": "Upstream supplier model list entry schema exposed by Cloud Router.",
+        "properties": {
+          "models": {
+            "description": "Models field on upstream supplier model list entry.",
+            "items": {
+              "description": "Models field on upstream supplier model list entry.",
+              "maxLength": 256,
+              "type": "string"
+            },
+            "maxItems": 200,
+            "type": "array"
+          },
+          "vendorCode": {
+            "description": "Vendor code field on upstream supplier model list entry.",
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        "required": [
+          "vendorCode",
+          "models"
         ],
         "type": "object"
       },

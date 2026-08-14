@@ -15,9 +15,12 @@ use crate::infrastructure::sql::rows::{
     AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, GatewayRiskRuleRow, ModelMappingRuleRow,
     ModelPriceRow, ModelUpstreamRouteRow, ModelVendorRow, PricingPlanRow, QuotaPolicyRow,
     RoutingPolicyRow, RoutingRuleRow, UpstreamAccountGroupMetricSnapshotRow,
-    UpstreamAccountGroupRow, UpstreamAccountRouteRow,
+    UpstreamAccountGroupRow, UpstreamAccountRouteRow, UpstreamSupplierModelAccessRow,
 };
-use crate::ports::{AccountGroupModelAccess, PricingCatalog, UpstreamAccountRouteCatalog, VendorModelListEntry};
+use crate::ports::{
+    AccountGroupModelAccess, PricingCatalog, SupplierModelAccess, UpstreamAccountRouteCatalog,
+    VendorModelListEntry,
+};
 
 #[derive(Default)]
 pub struct PricingCatalogRows {
@@ -30,6 +33,7 @@ pub struct PricingCatalogRows {
     pub model_mappings: Vec<ModelMappingRuleRow>,
     pub pricing_plans: Vec<PricingPlanRow>,
     pub upstream_account_groups: Vec<UpstreamAccountGroupRow>,
+    pub upstream_supplier_model_access: Vec<UpstreamSupplierModelAccessRow>,
     pub api_keys: Vec<GatewayApiKeyRow>,
     pub access_policies: Vec<GatewayAccessPolicyRow>,
     pub quota_policies: Vec<QuotaPolicyRow>,
@@ -114,8 +118,10 @@ pub struct SqlPricingCatalogSnapshot {
     prices: Vec<ScopedModelPrice>,
     managed_provider_secrets: BTreeMap<String, String>,
     account_group_model_access_by_id: HashMap<i64, AccountGroupModelAccess>,
+    supplier_model_access_by_code: HashMap<String, SupplierModelAccess>,
     // --- Indexes for O(1) hot-path lookups ---
     models_by_key: HashMap<String, AiModel>,
+    models_by_name: HashMap<String, Vec<String>>,
     api_keys_by_hash: HashMap<String, GatewayApiKey>,
     api_keys_by_id: HashMap<i64, GatewayApiKey>,
     upstream_account_groups_by_id: HashMap<i64, UpstreamAccountGroup>,
@@ -144,6 +150,20 @@ impl SqlPricingCatalogSnapshot {
                     row.id,
                     AccountGroupModelAccess {
                         group_id: row.id,
+                        blacklist: parse_vendor_model_list(&row.model_blacklist_json)?,
+                        whitelist: parse_vendor_model_list(&row.model_whitelist_json)?,
+                    },
+                ))
+            })
+            .collect::<DomainResult<HashMap<_, _>>>()?;
+        let supplier_model_access_by_code = rows
+            .upstream_supplier_model_access
+            .iter()
+            .map(|row| {
+                Ok((
+                    row.supplier_code.clone(),
+                    SupplierModelAccess {
+                        supplier_code: row.supplier_code.clone(),
                         blacklist: parse_vendor_model_list(&row.model_blacklist_json)?,
                         whitelist: parse_vendor_model_list(&row.model_whitelist_json)?,
                     },
@@ -187,7 +207,9 @@ impl SqlPricingCatalogSnapshot {
             prices,
             managed_provider_secrets,
             account_group_model_access_by_id,
+            supplier_model_access_by_code,
             models_by_key: HashMap::new(),
+            models_by_name: HashMap::new(),
             api_keys_by_hash: HashMap::new(),
             api_keys_by_id: HashMap::new(),
             upstream_account_groups_by_id: HashMap::new(),
@@ -209,6 +231,18 @@ impl SqlPricingCatalogSnapshot {
             .iter()
             .map(|model| (model.catalog_key.clone(), model.clone()))
             .collect();
+        self.models_by_name =
+            self.models
+                .iter()
+                .fold(HashMap::new(), |mut index, model| {
+                    for name in [&model.catalog_key, &model.model] {
+                        let keys = index.entry(name.clone()).or_default();
+                        if !keys.contains(&model.catalog_key) {
+                            keys.push(model.catalog_key.clone());
+                        }
+                    }
+                    index
+                });
         self.api_keys_by_hash = self
             .api_keys
             .iter()
@@ -408,6 +442,14 @@ impl UpstreamAccountRouteCatalog for RefreshableSqlPricingCatalog {
 
     fn account_group_model_access(&self, group_id: i64) -> Option<AccountGroupModelAccess> {
         self.current_snapshot().account_group_model_access(group_id)
+    }
+
+    fn supplier_model_access(&self, supplier_code: &str) -> Option<SupplierModelAccess> {
+        self.current_snapshot().supplier_model_access(supplier_code)
+    }
+
+    fn model_catalog_keys_by_name(&self, model_name: &str) -> Vec<String> {
+        self.current_snapshot().model_catalog_keys_by_name(model_name)
     }
 }
 
@@ -822,6 +864,16 @@ impl UpstreamAccountRouteCatalog for SqlPricingCatalogSnapshot {
 
     fn account_group_model_access(&self, group_id: i64) -> Option<AccountGroupModelAccess> {
         self.account_group_model_access_by_id.get(&group_id).cloned()
+    }
+
+    fn supplier_model_access(&self, supplier_code: &str) -> Option<SupplierModelAccess> {
+        self.supplier_model_access_by_code
+            .get(supplier_code)
+            .cloned()
+    }
+
+    fn model_catalog_keys_by_name(&self, model_name: &str) -> Vec<String> {
+        self.models_by_name.get(model_name).cloned().unwrap_or_default()
     }
 }
 

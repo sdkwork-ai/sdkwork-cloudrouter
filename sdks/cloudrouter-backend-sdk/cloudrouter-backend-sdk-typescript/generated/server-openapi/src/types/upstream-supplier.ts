@@ -1,4 +1,5 @@
 import type { LlmProtocolConfig } from './llm-protocol-config';
+import type { UpstreamSupplierModelListEntry } from './upstream-supplier-model-list-entry';
 
 /** Upstream supplier schema exposed by Cloud Router. */
 export interface UpstreamSupplier {
@@ -18,6 +19,10 @@ export interface UpstreamSupplier {
   healthStatus: number;
   /** Id field on upstream supplier. */
   id: string;
+  /** Model blacklist of this supplier. Vendor + model entries the supplier is forbidden to serve. An entry with an empty models array forbids every model of the vendor. The blacklist wins over the whitelist. */
+  modelBlacklist: UpstreamSupplierModelListEntry[];
+  /** Model whitelist of this supplier. When non-empty, the supplier serves only matching vendor + model entries. An entry with an empty models array allows every model of the vendor. */
+  modelWhitelist: UpstreamSupplierModelListEntry[];
   /** Protocol code field on upstream supplier. */
   protocolCode: string;
   /** Protocols field on upstream supplier. */

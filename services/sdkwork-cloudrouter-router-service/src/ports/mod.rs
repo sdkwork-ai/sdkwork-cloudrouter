@@ -353,7 +353,8 @@ pub use sticky_route_store::{
     StickyRouteStoreFuture,
 };
 pub use upstream_account_route_catalog::{
-    AccountGroupModelAccess, UpstreamAccountRouteCatalog, VendorModelListEntry,
+    AccountGroupModelAccess, SupplierModelAccess, UpstreamAccountRouteCatalog,
+    VendorModelListEntry,
 };
 pub use upstream_credential_rotation_store::{
     CredentialRotationAccount, CredentialRotationAction, CredentialRotationSweepCommand,

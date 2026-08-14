@@ -11,7 +11,7 @@ use crate::application::{
     SelectedUpstreamModelRoute, UpstreamRouteSelectionErrorKind, UpstreamRouteSelector,
 };
 use crate::domain::{
-    has_text, provider_native_model_id, AiModel, BillingMeter, ModelUpstreamRoute,
+    has_text, provider_native_model_id, BillingMeter, ModelUpstreamRoute,
     ResolveModelMappingContext, UpstreamAccountRoute,
 };
 use crate::ports::UpstreamAccountRouteCatalog;
@@ -452,35 +452,18 @@ where
     {
         return Ok(catalog_key.to_owned());
     }
-    if requested_model.contains('/') && catalog.find_model(requested_model).is_some() {
-        return Ok(requested_model.to_owned());
-    }
-    let mut first_catalog_key = None;
-    let mut ambiguous = false;
-    catalog.visit_models(None, &mut |model| {
-        if !model_matches_requested(model, requested_model) {
-            return true;
-        }
-        if first_catalog_key.is_none() {
-            first_catalog_key = Some(model.catalog_key.clone());
-            return true;
-        }
-        ambiguous = true;
-        false
-    });
-    match (first_catalog_key, ambiguous) {
-        (Some(catalog_key), false) => Ok(catalog_key),
-        (None, _) => Err(route_error(format!(
+    // 目录级索引（快照加载时构建），O(1) 解析模型名 → catalog key，
+    // 避免每个请求线性扫描全部模型。
+    let keys = catalog.model_catalog_keys_by_name(requested_model);
+    match keys.as_slice() {
+        [catalog_key] => Ok(catalog_key.clone()),
+        [] => Err(route_error(format!(
             "model is not available for route planning: {requested_model}"
         ))),
-        (Some(_), true) => Err(route_error(format!(
+        _ => Err(route_error(format!(
             "model id is ambiguous for route planning: {requested_model}"
         ))),
     }
-}
-
-fn model_matches_requested(model: &AiModel, requested_model: &str) -> bool {
-    model.catalog_key == requested_model || model.model == requested_model
 }
 
 fn matching_upstream_account_route<C>(

@@ -11,6 +11,7 @@ impl PricingCatalogSql {
             Self::load_model_mappings(),
             Self::load_pricing_plans(),
             Self::load_upstream_account_groups(),
+            Self::load_upstream_supplier_model_access(),
             Self::load_api_keys(),
             Self::load_access_policies(),
             Self::load_quota_policies(),
@@ -1003,6 +1004,19 @@ SELECT
     model_blacklist::text AS model_blacklist,
     model_whitelist::text AS model_whitelist
 FROM ai_upstream_account_group
+WHERE deleted_at IS NULL
+  AND status = 1
+ORDER BY updated_at DESC, id DESC
+"#
+    }
+
+    pub fn load_upstream_supplier_model_access() -> &'static str {
+        r#"
+SELECT
+    supplier_code,
+    model_blacklist::text AS model_blacklist,
+    model_whitelist::text AS model_whitelist
+FROM ai_upstream_supplier
 WHERE deleted_at IS NULL
   AND status = 1
 ORDER BY updated_at DESC, id DESC

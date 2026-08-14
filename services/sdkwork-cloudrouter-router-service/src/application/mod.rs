@@ -207,7 +207,8 @@ pub use upstream_credential_secret_codec::{
     EncodedUpstreamCredentialSecret, UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext,
 };
 pub use upstream_route_selector::{
-    model_access_forbidden_message, model_access_forbidden_reason, SelectUpstreamAccountRouteQuery,
+    model_access_forbidden_message, model_access_forbidden_reason,
+    model_access_forbidden_reason_lists, SelectUpstreamAccountRouteQuery,
     SelectUpstreamModelRouteQuery, SelectedUpstreamAccountRoute, SelectedUpstreamModelRoute,
     SelectedUpstreamModelRoutePlan, UpstreamRouteSelectionError, UpstreamRouteSelectionErrorKind,
     UpstreamRouteSelector,

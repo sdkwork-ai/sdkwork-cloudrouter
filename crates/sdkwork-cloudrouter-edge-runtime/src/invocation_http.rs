@@ -6,14 +6,15 @@ use axum::extract::ConnectInfo;
 use axum::http::{header, HeaderMap, HeaderValue, Request, StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
 use sdkwork_cloudrouter_router_service::application::{
-    BillingMode, DeferredStreamInvocation, DeferredStreamResponse, DispatchMode,
-    GatewayInvocationPolicyViolation, Invocation, InvocationBody, InvocationClassification,
-    InvocationClassificationRequest, InvocationDispatchResponse, InvocationError,
-    InvocationErrorKind, InvocationPipelineExecution, InvocationRequest,
-    InvocationResourceClassifier, InvocationSubject, InvocationSurface, OpenAiResourceClassifier,
+    model_access_forbidden_reason, BillingMode, DeferredStreamInvocation,
+    DeferredStreamResponse, DispatchMode, GatewayInvocationPolicyViolation, Invocation,
+    InvocationBody, InvocationClassification, InvocationClassificationRequest,
+    InvocationDispatchResponse, InvocationError, InvocationErrorKind,
+    InvocationPipelineExecution, InvocationRequest, InvocationResourceClassifier,
+    InvocationSubject, InvocationSurface, OpenAiResourceClassifier,
     ProviderNativeResourceClassifier, ResourceType,
 };
-use sdkwork_cloudrouter_router_service::ports::{PricingCatalog, UpstreamAccountRouteCatalog};
+use sdkwork_cloudrouter_router_service::ports::UpstreamAccountRouteCatalog;
 use sdkwork_cloudrouter_security::{INTERNAL_GATEWAY_AUTH_HEADERS, INTERNAL_GATEWAY_ROUTE_PREFIX};
 use serde_json::{json, Value};
 
@@ -33,14 +34,7 @@ where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let (mut parts, body) = request.into_parts();
-    let preclassified_openai = if is_openai_prefixed_path(parts.uri.path()) {
-        match classify_request(&parts.method, &parts.uri) {
-            Ok(classified) => Some(classified),
-            Err(_) => return not_found_response(),
-        }
-    } else {
-        None
-    };
+    // 安全：先鉴权后分类——未认证请求不触发任何分类/解析逻辑，缩小信息暴露面
     let auth_context = match authenticate_gateway_api_key(
         state.catalog.as_ref(),
         state.api_key_hasher.as_ref(),
@@ -54,6 +48,14 @@ where
     parts.uri = match sanitize_authenticated_gateway_uri(&parts.uri) {
         Ok(uri) => uri,
         Err(error) => return error.into_response(),
+    };
+    let preclassified_openai = if is_openai_prefixed_path(parts.uri.path()) {
+        match classify_request(&parts.method, &parts.uri) {
+            Ok(classified) => Some(classified),
+            Err(_) => return not_found_response(),
+        }
+    } else {
+        None
     };
     handle_authenticated_invocation(
         state,
@@ -395,7 +397,7 @@ fn apply_gateway_dispatch_defaults<C>(
     catalog: &C,
     account_group_id: i64,
 ) where
-    C: PricingCatalog,
+    C: UpstreamAccountRouteCatalog,
 {
     if invocation.resource.surface == InvocationSurface::OpenAiCompatible
         && invocation.resource.resource_type == ResourceType::FreeEndpoint
@@ -413,6 +415,8 @@ fn apply_gateway_dispatch_defaults<C>(
             .into_iter()
             .filter(|route| group_account_route_is_callable(route, account_group_id))
             .collect::<Vec<_>>();
+        // 分组模型黑白名单：禁止的模型不进入可见列表（与路由执行一致）
+        let model_access = catalog.account_group_model_access(account_group_id);
         catalog.visit_models(None, &mut |model| {
             // Model routes are keyed by catalog key (`vendor/model`), so the
             // lookup must try both the model name and the catalog key.
@@ -425,6 +429,13 @@ fn apply_gateway_dispatch_defaults<C>(
                     );
             if !reachable {
                 return true;
+            }
+            if let Some(access) = model_access.as_ref() {
+                if model_access_forbidden_reason(Some(&model.vendor_code), &model.model, access)
+                    .is_some()
+                {
+                    return true;
+                }
             }
             let owned_by = catalog
                 .find_vendor(&model.vendor_code)
@@ -878,6 +889,64 @@ mod gateway_dispatch_defaults_tests {
         let response = invocation.dispatch.response.expect("synthetic response");
         let body = response.body.expect("json body");
         assert_eq!(0, body["data"].as_array().expect("data array").len());
+    }
+
+    #[test]
+    fn models_response_excludes_blacklisted_models() {
+        use sdkwork_cloudrouter_router_service::ports::{
+            AccountGroupModelAccess, VendorModelListEntry,
+        };
+        let mut catalog = catalog();
+        catalog.set_account_group_model_access(AccountGroupModelAccess {
+            group_id: 10,
+            blacklist: vec![VendorModelListEntry {
+                vendor_code: "openai".to_owned(),
+                models: vec!["gpt-4o-mini".to_owned()],
+            }],
+            whitelist: Vec::new(),
+        });
+        let mut invocation = models_invocation();
+        apply_gateway_dispatch_defaults(&mut invocation, &catalog, 10);
+        assert_eq!(
+            invocation.dispatch.mode,
+            DispatchMode::SyntheticLocalResponse
+        );
+        let body = invocation
+            .dispatch
+            .response
+            .expect("synthetic response")
+            .body
+            .expect("json body");
+        let models = body["data"].as_array().expect("model data array");
+        // 黑名单禁止的模型不出现在可见列表（与路由执行一致）
+        assert!(models.iter().all(|model| model["id"] != "gpt-4o-mini"));
+    }
+
+    #[test]
+    fn models_response_keeps_whitelisted_models() {
+        use sdkwork_cloudrouter_router_service::ports::{
+            AccountGroupModelAccess, VendorModelListEntry,
+        };
+        let mut catalog = catalog();
+        catalog.set_account_group_model_access(AccountGroupModelAccess {
+            group_id: 10,
+            blacklist: Vec::new(),
+            whitelist: vec![VendorModelListEntry {
+                vendor_code: "openai".to_owned(),
+                models: vec!["gpt-4o-mini".to_owned()],
+            }],
+        });
+        let mut invocation = models_invocation();
+        apply_gateway_dispatch_defaults(&mut invocation, &catalog, 10);
+        let body = invocation
+            .dispatch
+            .response
+            .expect("synthetic response")
+            .body
+            .expect("json body");
+        let models = body["data"].as_array().expect("model data array");
+        assert_eq!(1, models.len());
+        assert_eq!("gpt-4o-mini", models[0]["id"]);
     }
 
     #[test]

@@ -25,6 +25,16 @@ pub struct AccountGroupModelAccess {
     pub whitelist: Vec<VendorModelListEntry>,
 }
 
+/// Supplier-level model access control loaded from `ai_upstream_supplier`
+/// `model_blacklist` / `model_whitelist` (同分组级结构与语义，按供应商生效：
+/// 命中供应商黑名单的模型不可经该供应商的任何账号路由)。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SupplierModelAccess {
+    pub supplier_code: String,
+    pub blacklist: Vec<VendorModelListEntry>,
+    pub whitelist: Vec<VendorModelListEntry>,
+}
+
 pub trait UpstreamAccountRouteCatalog: PricingCatalog {
     fn shared_upstream_account_routes(&self) -> Arc<[UpstreamAccountRoute]>;
 
@@ -33,5 +43,28 @@ pub trait UpstreamAccountRouteCatalog: PricingCatalog {
     fn account_group_model_access(&self, group_id: i64) -> Option<AccountGroupModelAccess> {
         let _ = group_id;
         None
+    }
+
+    /// Returns the model blacklist/whitelist configured for the upstream
+    /// supplier, or `None` when the supplier has no model access restriction.
+    fn supplier_model_access(&self, supplier_code: &str) -> Option<SupplierModelAccess> {
+        let _ = supplier_code;
+        None
+    }
+
+    /// 按模型名（catalog key 或展示名，精确匹配）解析可能的 catalog key 列表。
+    /// 索引实现为 O(1)；默认实现线性扫描回退（兼容非索引实现）。
+    /// 空列表 = 未知模型；多于一个 = 歧义。
+    fn model_catalog_keys_by_name(&self, model_name: &str) -> Vec<String> {
+        let mut keys = Vec::new();
+        self.visit_models(None, &mut |model| {
+            if model.catalog_key == model_name || model.model == model_name {
+                if !keys.contains(&model.catalog_key) {
+                    keys.push(model.catalog_key.clone());
+                }
+            }
+            true
+        });
+        keys
     }
 }

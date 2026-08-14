@@ -1,4 +1,5 @@
 import type { LlmProtocolConfig } from './llm-protocol-config';
+import type { UpstreamSupplierModelListEntry } from './upstream-supplier-model-list-entry';
 
 /** Update upstream supplier request schema exposed by Cloud Router. */
 export interface UpdateUpstreamSupplierRequest {
@@ -14,6 +15,10 @@ export interface UpdateUpstreamSupplierRequest {
   docsUrl?: string | null;
   /** Environment field on update upstream supplier request. */
   environment?: number | null;
+  /** Model blacklist of vendor + model entries for this supplier. */
+  modelBlacklist?: UpstreamSupplierModelListEntry[] | null;
+  /** Model whitelist of vendor + model entries for this supplier. */
+  modelWhitelist?: UpstreamSupplierModelListEntry[] | null;
   /** Protocols field on update upstream supplier request. */
   protocols?: LlmProtocolConfig[];
   /** Region code field on update upstream supplier request. */

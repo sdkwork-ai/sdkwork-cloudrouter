@@ -138,6 +138,11 @@ impl PostgresPricingCatalogLoader {
                 PricingCatalogSql::load_upstream_account_groups(),
             )
             .await?,
+            upstream_supplier_model_access: row_mapping::load_upstream_supplier_model_access(
+                &mut *tx,
+                PricingCatalogSql::load_upstream_supplier_model_access(),
+            )
+            .await?,
             api_keys,
             access_policies: row_mapping::load_access_policies(
                 &mut *tx,

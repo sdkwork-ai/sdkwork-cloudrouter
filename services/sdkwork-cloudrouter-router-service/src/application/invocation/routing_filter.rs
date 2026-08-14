@@ -1,0 +1,518 @@
+//! 路由过滤链（Candidate Filter Chain）：候选账号从「路由规划产出」到
+//! 「最终账号」的过滤框架。
+//!
+//! 每个过滤器组件负责一个过滤阶段（黑白名单门禁、健康、可调用性等），
+//! 按序执行，任一阶段可短路拒绝（如模型被黑白名单禁止），最终产出
+//! 最终账号与故障转移序列。过滤链在账号解析阶段统一执行，确保模型
+//! 路由与账号路由（含 provider-native）两条路径走同一套门禁。
+//!
+//! 编排职责划分：
+//! - 规划阶段（selector / planner）：候选生成、排序（权重/轮询/策略）、
+//!   fallback 截断、熔断许可（拦截器层）。
+//! - 过滤链阶段（本模块）：黑白名单、健康、可调用性等防护性过滤。
+
+use std::collections::HashMap;
+use std::fmt;
+
+use crate::application::{
+    model_access_forbidden_message, model_access_forbidden_reason,
+    model_access_forbidden_reason_lists,
+};
+use crate::ports::UpstreamAccountRouteCatalog;
+
+use super::{InvocationRouteCandidate, InvocationRouteCandidateKind};
+
+/// 过滤链上下文：请求级一次提取，链内各过滤器共享，避免重复查询。
+pub struct RoutingFilterContext<'a> {
+    pub catalog: &'a dyn UpstreamAccountRouteCatalog,
+    /// 请求的模型名（模型路由/provider-native 均可能携带）
+    pub requested_model: Option<&'a str>,
+    /// 请求模型对应的 vendor code（一次提取；catalog key 已在规划阶段解析）
+    pub requested_model_vendor_code: Option<String>,
+    /// account_id -> 是否健康（请求级一次提取自共享路由）
+    pub account_health: HashMap<i64, bool>,
+}
+
+/// 过滤决策：继续（携带过滤后的候选）或拒绝（短路）。
+pub enum FilterDecision {
+    Continue(Vec<InvocationRouteCandidate>),
+    Reject(FilterRejection),
+}
+
+/// 拒绝原因：保留错误码语义（模型禁止 / 路由不可用）。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FilterRejectionKind {
+    ModelForbidden,
+    RouteUnavailable,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FilterRejection {
+    pub kind: FilterRejectionKind,
+    pub message: String,
+}
+
+impl fmt::Display for FilterRejection {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&self.message)
+    }
+}
+
+/// 过滤器组件：单一职责，纯函数式候选变换，独立可单测。
+pub trait CandidateFilter: Send + Sync {
+    #[allow(dead_code)]
+    fn name(&self) -> &'static str;
+
+    fn apply(
+        &self,
+        ctx: &RoutingFilterContext<'_>,
+        candidates: Vec<InvocationRouteCandidate>,
+    ) -> FilterDecision;
+}
+
+/// 模型黑白名单门禁：候选所属分组或供应商禁止该模型（黑名单命中或白名单
+/// 未覆盖）时硬拒绝（ModelForbidden）。所有路由路径统一执行，黑名单优先
+/// 于白名单；供应商级与分组级任一命中即拒绝。
+pub struct ModelAccessFilter;
+
+impl CandidateFilter for ModelAccessFilter {
+    fn name(&self) -> &'static str {
+        "model_access"
+    }
+
+    fn apply(
+        &self,
+        ctx: &RoutingFilterContext<'_>,
+        candidates: Vec<InvocationRouteCandidate>,
+    ) -> FilterDecision {
+        let Some(requested_model) = ctx.requested_model else {
+            return FilterDecision::Continue(candidates);
+        };
+        let vendor_code = ctx.requested_model_vendor_code.as_deref();
+        for candidate in &candidates {
+            // 分组级黑白名单
+            if let Some(group_id) = candidate.account_group_id {
+                if let Some(access) = ctx.catalog.account_group_model_access(group_id) {
+                    if let Some(rule) =
+                        model_access_forbidden_reason(vendor_code, requested_model, &access)
+                    {
+                        let group_code = match candidate.account_group_code.as_deref() {
+                            Some(code) => code.to_owned(),
+                            None => group_id.to_string(),
+                        };
+                        return FilterDecision::Reject(FilterRejection {
+                            kind: FilterRejectionKind::ModelForbidden,
+                            message: model_access_forbidden_message(
+                                rule,
+                                requested_model,
+                                &group_code,
+                            ),
+                        });
+                    }
+                }
+            }
+            // 供应商级黑白名单（管理端配置与路由执行一致）
+            if let Some(access) = ctx
+                .catalog
+                .supplier_model_access(candidate.supplier_code.trim())
+            {
+                if let Some(rule) = model_access_forbidden_reason_lists(
+                    vendor_code,
+                    requested_model,
+                    &access.blacklist,
+                    &access.whitelist,
+                ) {
+                    let message = match rule {
+                        "blacklist" => format!(
+                            "model {requested_model} is forbidden by upstream supplier {} (model blacklist)",
+                            candidate.supplier_code
+                        ),
+                        _ => format!(
+                            "model {requested_model} is not allowed by upstream supplier {} (model whitelist)",
+                            candidate.supplier_code
+                        ),
+                    };
+                    return FilterDecision::Reject(FilterRejection {
+                        kind: FilterRejectionKind::ModelForbidden,
+                        message,
+                    });
+                }
+            }
+        }
+        FilterDecision::Continue(candidates)
+    }
+}
+
+/// 账号健康过滤：剔除健康状态未知或标记为不健康的账号（防御性过滤，
+/// 规划阶段已做主要筛选；sticky 候选同样受此约束）。
+pub struct HealthFilter;
+
+impl CandidateFilter for HealthFilter {
+    fn name(&self) -> &'static str {
+        "account_health"
+    }
+
+    fn apply(
+        &self,
+        ctx: &RoutingFilterContext<'_>,
+        candidates: Vec<InvocationRouteCandidate>,
+    ) -> FilterDecision {
+        let healthy = candidates
+            .into_iter()
+            .filter(|candidate| {
+                ctx.account_health
+                    .get(&candidate.account_id)
+                    .copied()
+                    .unwrap_or(true)
+            })
+            .collect();
+        FilterDecision::Continue(healthy)
+    }
+}
+
+/// 可调用性过滤：剔除缺少 base URL 或认证信息的候选
+/// （与规划阶段的 callable 判定一致，防御路由后置变化）。
+pub struct EntitlementFilter;
+
+impl CandidateFilter for EntitlementFilter {
+    fn name(&self) -> &'static str {
+        "account_callable"
+    }
+
+    fn apply(
+        &self,
+        _ctx: &RoutingFilterContext<'_>,
+        candidates: Vec<InvocationRouteCandidate>,
+    ) -> FilterDecision {
+        let callable = candidates
+            .into_iter()
+            .filter(|candidate| candidate_is_callable(candidate))
+            .collect();
+        FilterDecision::Continue(callable)
+    }
+}
+
+/// sticky 候选再校验：sticky 目标必须是可调用账号（健康与黑白名单由
+/// 后续过滤器统一执行）。
+pub struct StickyRouteFilter;
+
+impl CandidateFilter for StickyRouteFilter {
+    fn name(&self) -> &'static str {
+        "sticky_route"
+    }
+
+    fn apply(
+        &self,
+        _ctx: &RoutingFilterContext<'_>,
+        candidates: Vec<InvocationRouteCandidate>,
+    ) -> FilterDecision {
+        for candidate in &candidates {
+            if candidate.kind == InvocationRouteCandidateKind::Sticky
+                && !candidate_is_callable(candidate)
+            {
+                return FilterDecision::Reject(FilterRejection {
+                    kind: FilterRejectionKind::RouteUnavailable,
+                    message: "sticky upstream account is not callable".to_owned(),
+                });
+            }
+        }
+        FilterDecision::Continue(candidates)
+    }
+}
+
+/// 过滤链：按序执行过滤器；短路拒绝；产出最终账号与故障转移序列。
+pub struct RoutingFilterChain {
+    filters: Vec<Box<dyn CandidateFilter>>,
+}
+
+/// 链的选择结果：最终账号 + 剩余故障转移序列（供 dispatch 的 failover 使用）。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SelectedRoute {
+    pub account: InvocationRouteCandidate,
+    pub failover_candidates: Vec<InvocationRouteCandidate>,
+}
+
+impl Default for RoutingFilterChain {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl RoutingFilterChain {
+    pub fn new() -> Self {
+        Self {
+            filters: vec![
+                Box::new(ModelAccessFilter),
+                Box::new(HealthFilter),
+                Box::new(EntitlementFilter),
+                Box::new(StickyRouteFilter),
+            ],
+        }
+    }
+
+    /// 自定义过滤器列表（测试或扩展装配）。
+    #[allow(dead_code)]
+    pub fn with_filters(filters: Vec<Box<dyn CandidateFilter>>) -> Self {
+        Self { filters }
+    }
+
+    #[allow(dead_code)]
+    pub fn filters(&self) -> &[Box<dyn CandidateFilter>] {
+        &self.filters
+    }
+
+    /// 依次执行过滤器；任一拒绝即短路；候选耗尽视为路由不可用；
+    /// 否则取首个为最终账号，其余保留为故障转移序列。
+    pub fn select_account(
+        &self,
+        ctx: &RoutingFilterContext<'_>,
+        candidates: Vec<InvocationRouteCandidate>,
+    ) -> Result<SelectedRoute, FilterRejection> {
+        let mut current = candidates;
+        for filter in &self.filters {
+            match filter.apply(ctx, current) {
+                FilterDecision::Continue(next) => current = next,
+                FilterDecision::Reject(rejection) => return Err(rejection),
+            }
+        }
+        let mut iter = current.into_iter();
+        let account = iter.next().ok_or_else(|| FilterRejection {
+            kind: FilterRejectionKind::RouteUnavailable,
+            message: "no callable upstream account remains after routing filters".to_owned(),
+        })?;
+        Ok(SelectedRoute {
+            account,
+            failover_candidates: iter.collect(),
+        })
+    }
+}
+
+fn candidate_is_callable(candidate: &InvocationRouteCandidate) -> bool {
+    !candidate.supplier_code.trim().is_empty()
+        && candidate.account_id > 0
+        && !candidate.base_url.as_deref().unwrap_or("").trim().is_empty()
+        && (!candidate.secret_ref.as_deref().unwrap_or("").trim().is_empty()
+            || !candidate.auth_profile.default_headers.is_empty())
+}
+
+/// 构建请求级过滤上下文：一次提取模型 vendor code 与账号健康表。
+pub fn routing_filter_context<'a>(
+    catalog: &'a dyn UpstreamAccountRouteCatalog,
+    requested_model: Option<&'a str>,
+    requested_model_catalog_key: Option<&'a str>,
+) -> RoutingFilterContext<'a> {
+    let requested_model_vendor_code = requested_model_catalog_key
+        .and_then(|key| catalog.find_model(key))
+        .map(|model| model.vendor_code);
+    let mut account_health = HashMap::new();
+    for route in catalog.shared_upstream_account_routes().iter() {
+        account_health.insert(route.account_id, route.is_account_healthy());
+    }
+    RoutingFilterContext {
+        catalog,
+        requested_model,
+        requested_model_vendor_code,
+        account_health,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::application::invocation::InvocationRouteCandidateKind;
+    use crate::domain::ProviderAuthProfile;
+    use crate::infrastructure::InMemoryPricingCatalog;
+
+    fn test_catalog() -> InMemoryPricingCatalog {
+        InMemoryPricingCatalog::default()
+    }
+
+    fn candidate(
+        account_id: i64,
+        group_id: Option<i64>,
+        kind: InvocationRouteCandidateKind,
+    ) -> InvocationRouteCandidate {
+        InvocationRouteCandidate {
+            kind,
+            supplier_code: "openai".to_owned(),
+            account_id,
+            account_group_id: group_id,
+            account_group_code: group_id.map(|id| format!("group-{id}")),
+            pricing_plan_code: None,
+            policy_id: None,
+            rule_id: None,
+            api_code: "chat.completions".to_owned(),
+            catalog_key: Some("openai/gpt-4".to_owned()),
+            requested_model: Some("gpt-4".to_owned()),
+            provider_model: Some("gpt-4".to_owned()),
+            region_code: "global".to_owned(),
+            credential_id: Some(1),
+            credential_rotation: None,
+            base_url: Some("https://api.openai.com/v1".to_owned()),
+            secret_ref: Some("secret-1".to_owned()),
+            auth_profile: ProviderAuthProfile::default(),
+            timeout_ms: Some(30_000),
+            retry_policy: None,
+        }
+    }
+
+    fn ctx(catalog: &InMemoryPricingCatalog) -> RoutingFilterContext<'_> {
+        RoutingFilterContext {
+            catalog,
+            requested_model: Some("gpt-4"),
+            requested_model_vendor_code: None,
+            account_health: HashMap::new(),
+        }
+    }
+
+    #[test]
+    fn selects_first_unrestricted_candidate() {
+        let catalog = test_catalog();
+        let chain = RoutingFilterChain::new();
+        let result = chain
+            .select_account(
+                &ctx(&catalog),
+                vec![candidate(1, None, InvocationRouteCandidateKind::Model)],
+            )
+            .expect("unrestricted candidate selected");
+        assert_eq!(result.account.account_id, 1);
+        assert!(result.failover_candidates.is_empty());
+    }
+
+    #[test]
+    fn empty_candidates_yield_route_unavailable() {
+        let catalog = test_catalog();
+        let chain = RoutingFilterChain::new();
+        let rejection = chain
+            .select_account(&ctx(&catalog), vec![])
+            .expect_err("no candidates");
+        assert_eq!(rejection.kind, FilterRejectionKind::RouteUnavailable);
+    }
+
+    #[test]
+    fn model_blacklist_rejects_forbidden_group() {
+        use crate::ports::{AccountGroupModelAccess, VendorModelListEntry};
+        let mut catalog = test_catalog();
+        catalog.set_account_group_model_access(AccountGroupModelAccess {
+            group_id: 7,
+            blacklist: vec![VendorModelListEntry {
+                vendor_code: "openai".to_owned(),
+                models: vec!["gpt-4".to_owned()],
+            }],
+            whitelist: Vec::new(),
+        });
+        let chain = RoutingFilterChain::new();
+        let mut context = ctx(&catalog);
+        context.requested_model_vendor_code = Some("openai".to_owned());
+        let rejection = chain
+            .select_account(
+                &context,
+                vec![candidate(1, Some(7), InvocationRouteCandidateKind::Model)],
+            )
+            .expect_err("blacklisted model rejected");
+        assert_eq!(rejection.kind, FilterRejectionKind::ModelForbidden);
+        assert!(rejection.message.contains("model blacklist"));
+    }
+
+    #[test]
+    fn model_whitelist_rejects_unlisted_model() {
+        use crate::ports::{AccountGroupModelAccess, VendorModelListEntry};
+        let mut catalog = test_catalog();
+        catalog.set_account_group_model_access(AccountGroupModelAccess {
+            group_id: 7,
+            blacklist: Vec::new(),
+            whitelist: vec![VendorModelListEntry {
+                vendor_code: "openai".to_owned(),
+                models: vec!["gpt-4o".to_owned()],
+            }],
+        });
+        let chain = RoutingFilterChain::new();
+        let mut context = ctx(&catalog);
+        context.requested_model_vendor_code = Some("openai".to_owned());
+        let rejection = chain
+            .select_account(
+                &context,
+                vec![candidate(1, Some(7), InvocationRouteCandidateKind::Model)],
+            )
+            .expect_err("model not in whitelist rejected");
+        assert_eq!(rejection.kind, FilterRejectionKind::ModelForbidden);
+        assert!(rejection.message.contains("model whitelist"));
+    }
+
+    #[test]
+    fn health_filter_drops_unhealthy_accounts() {
+        let catalog = test_catalog();
+        let chain = RoutingFilterChain::new();
+        let mut context = ctx(&catalog);
+        context.requested_model = None;
+        context.account_health.insert(1, true);
+        context.account_health.insert(2, false);
+        let result = chain
+            .select_account(
+                &context,
+                vec![
+                    candidate(1, None, InvocationRouteCandidateKind::Model),
+                    candidate(2, None, InvocationRouteCandidateKind::Model),
+                ],
+            )
+            .expect("healthy account selected");
+        assert_eq!(result.account.account_id, 1);
+        assert!(result.failover_candidates.is_empty());
+    }
+
+    #[test]
+    fn failover_sequence_preserves_remaining_candidates() {
+        let catalog = test_catalog();
+        let chain = RoutingFilterChain::new();
+        let mut context = ctx(&catalog);
+        context.requested_model = None;
+        let result = chain
+            .select_account(
+                &context,
+                vec![
+                    candidate(1, None, InvocationRouteCandidateKind::Model),
+                    candidate(2, None, InvocationRouteCandidateKind::Model),
+                    candidate(3, None, InvocationRouteCandidateKind::Model),
+                ],
+            )
+            .expect("selected");
+        assert_eq!(result.account.account_id, 1);
+        assert_eq!(
+            result
+                .failover_candidates
+                .iter()
+                .map(|c| c.account_id)
+                .collect::<Vec<_>>(),
+            vec![2, 3]
+        );
+    }
+
+    #[test]
+    fn non_callable_candidates_are_filtered() {
+        let catalog = test_catalog();
+        let chain = RoutingFilterChain::new();
+        let mut context = ctx(&catalog);
+        context.requested_model = None;
+        let mut broken = candidate(9, None, InvocationRouteCandidateKind::Model);
+        broken.base_url = None;
+        let rejection = chain
+            .select_account(&context, vec![broken])
+            .expect_err("non-callable candidate rejected");
+        assert_eq!(rejection.kind, FilterRejectionKind::RouteUnavailable);
+    }
+
+    #[test]
+    fn sticky_candidate_must_be_callable() {
+        let catalog = test_catalog();
+        let chain = RoutingFilterChain::new();
+        let mut context = ctx(&catalog);
+        context.requested_model = None;
+        let mut sticky = candidate(1, None, InvocationRouteCandidateKind::Sticky);
+        sticky.secret_ref = None;
+        sticky.auth_profile = ProviderAuthProfile::default();
+        let rejection = chain
+            .select_account(&context, vec![sticky])
+            .expect_err("non-callable sticky candidate rejected");
+        assert_eq!(rejection.kind, FilterRejectionKind::RouteUnavailable);
+    }
+}

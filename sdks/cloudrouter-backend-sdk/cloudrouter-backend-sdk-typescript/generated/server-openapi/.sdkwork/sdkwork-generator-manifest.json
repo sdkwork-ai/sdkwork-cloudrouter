@@ -400,7 +400,7 @@
     },
     {
       "path": "src/types/create-upstream-supplier-request.ts",
-      "sha256": "1f8bac1e5f433839e312080a69bda1de4f6e972c74c926ba42d6e669adb540df"
+      "sha256": "4d700fda5c5c30f353e75c6ec592ac847b97369d0d2c1ce21bf1f8563ec17788"
     },
     {
       "path": "src/types/exchange-rule-mutation-request.ts",
@@ -424,7 +424,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "60b27fbd2723e27e1b16059d27737c0cb396bdf48c718f4339d702cba010bed1"
+      "sha256": "0c8a72299de720257b0a1618fc42943a96d31fd24d5faf9381c87623fd3b996c"
     },
     {
       "path": "src/types/installation-status-response.ts",
@@ -604,7 +604,7 @@
     },
     {
       "path": "src/types/update-upstream-supplier-request.ts",
-      "sha256": "9d94046585d9b24466e7d76ed4515e6b1dd48567c6e663217a14327c77260891"
+      "sha256": "007e09e8034af29a2fb32ca75e498fbc2c0885012235b1533623aa021f22cda4"
     },
     {
       "path": "src/types/upstream-account-credential-item-response.ts",
@@ -783,6 +783,10 @@
       "sha256": "664458a050fa2a26874a367eec3b26a71939d2fefdb14bc0f26bfaa1be4c11fa"
     },
     {
+      "path": "src/types/upstream-supplier-model-list-entry.ts",
+      "sha256": "b8bdf02be3a32b62ab722cbcd4f825babc4e72188c95081f797c4bbc8f8df5e3"
+    },
+    {
       "path": "src/types/upstream-supplier-resource-collection-response.ts",
       "sha256": "3f18ba54aed64dc3c0d03f2a133b5dff22df414087e5d773f352b5a9ebadd287"
     },
@@ -796,7 +800,7 @@
     },
     {
       "path": "src/types/upstream-supplier.ts",
-      "sha256": "52b8c7633f9e522c4b9097ed04cefc3c1ceeca7ea888a4a4e6921d09c910b2dc"
+      "sha256": "8d28d3c5a391e82bce60753f124de746dbfd118fabfbe053c5318d9476631980"
     },
     {
       "path": "src/types/verify-upstream-account-request.ts",

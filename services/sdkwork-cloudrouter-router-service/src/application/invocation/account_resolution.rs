@@ -3,23 +3,24 @@ use std::sync::Arc;
 use sdkwork_utils_rust::is_blank;
 
 use super::{
-    DispatchMode, Invocation, InvocationAccount, InvocationError, InvocationErrorKind,
-    InvocationFuture, InvocationInterceptor, InvocationRouteCandidate, InvocationSurface,
+    routing_filter_context, DispatchMode, FilterRejectionKind, Invocation, InvocationAccount,
+    InvocationError, InvocationErrorKind, InvocationFuture, InvocationInterceptor,
+    InvocationRouteCandidate, InvocationSurface, RoutingFilterChain,
 };
 use crate::domain::provider_native_model_id;
-use crate::ports::PricingCatalog;
+use crate::ports::UpstreamAccountRouteCatalog;
 
 #[derive(Clone)]
 pub struct AccountResolutionInterceptor<C>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     catalog: Arc<C>,
 }
 
 impl<C> AccountResolutionInterceptor<C>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     pub fn new(catalog: Arc<C>) -> Self {
         Self { catalog }
@@ -28,7 +29,7 @@ where
 
 impl<C> InvocationInterceptor for AccountResolutionInterceptor<C>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     fn name(&self) -> &str {
         "account_resolution"
@@ -39,13 +40,31 @@ where
             if invocation.dispatch.mode == DispatchMode::SyntheticLocalResponse {
                 return Ok(());
             }
-            let _ = &self.catalog;
-            let Some(plan) = invocation.routing.route_plan.as_ref() else {
+            let Some(plan) = invocation.routing.route_plan.as_mut() else {
                 return Ok(());
             };
-            let candidate = plan
-                .current_candidate()
-                .ok_or_else(|| account_error("route plan has no selected candidate"))?;
+            // 路由过滤链：候选 → 最终账号（模型黑白名单/健康/可调用性统一门禁，
+            // 模型路由与账号路由（含 provider-native）走同一套过滤）。
+            let ctx = routing_filter_context(
+                self.catalog.as_ref(),
+                invocation.resource.requested_model.as_deref(),
+                invocation.resource.requested_model_catalog_key.as_deref(),
+            );
+            let selected = RoutingFilterChain::new()
+                .select_account(&ctx, plan.candidates.clone())
+                .map_err(|rejection| match rejection.kind {
+                    FilterRejectionKind::ModelForbidden => {
+                        InvocationError::new(InvocationErrorKind::ModelForbidden, rejection.message)
+                    }
+                    FilterRejectionKind::RouteUnavailable => account_error(rejection.message),
+                })?;
+            // 最终账号 + 故障转移序列回写 plan：dispatch 的重试/故障转移继续使用
+            // 剩余候选，避免账号解析与调度各自独立选择造成不一致。
+            plan.candidates = std::iter::once(selected.account.clone())
+                .chain(selected.failover_candidates)
+                .collect();
+            plan.selected_index = 0;
+            let candidate = &selected.account;
             validate_callable_candidate(candidate)?;
 
             invocation.account = Some(InvocationAccount {

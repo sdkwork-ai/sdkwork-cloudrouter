@@ -11,6 +11,7 @@ import type {
   UpstreamSupplier,
   UpstreamSupplierAuthMethodInput,
   UpstreamSupplierEndpointInput,
+  UpstreamSupplierModelListEntry,
 } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import { upstreamService } from './upstreamService';
 import { isKnownLlmProtocol, LLM_PROTOCOLS, llmProtocolLabelKey, PROTOCOL_RESOURCE_GROUPS } from './llmProtocols';
@@ -23,6 +24,8 @@ import {
   errorMessageI18n,
   InlineError,
   inputClass,
+  ModelAccessListEditor,
+  normalizeModelList,
   primaryButtonClass,
   SearchBox,
   secondaryButtonClass,
@@ -45,6 +48,8 @@ interface SupplierFormValues {
   adapterCode: string;
   protocols: LlmProtocolConfig[];
   authMethods: UpstreamSupplierAuthMethodInput[];
+  modelBlacklist: UpstreamSupplierModelListEntry[];
+  modelWhitelist: UpstreamSupplierModelListEntry[];
   websiteUrl: string;
   docsUrl: string;
   regionCode: string;
@@ -214,6 +219,8 @@ export function SupplierAdminPanel() {
         defaultVendorCode: values.defaultVendorCode,
         adapterCode: values.adapterCode,
         protocols: values.protocols,
+        modelBlacklist: normalizeModelList(values.modelBlacklist),
+        modelWhitelist: normalizeModelList(values.modelWhitelist),
         websiteUrl: values.websiteUrl || null,
         docsUrl: values.docsUrl || null,
         regionCode: values.regionCode || null,
@@ -448,10 +455,25 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
   // 认证方式：预设枚举多选；已存在但不属于任何预设的自定义认证方式原样保留
   const [selectedAuthPresets, setSelectedAuthPresets] = useState<string[]>(() => (supplier ? [] : ['api-key']));
   const [preservedAuthMethods, setPreservedAuthMethods] = useState<UpstreamSupplierAuthMethodInput[]>([]);
+  // 模型黑白名单（结构 {vendorCode, models}，与账号分组一致）
+  const [modelBlacklist, setModelBlacklist] = useState<UpstreamSupplierModelListEntry[]>(() => supplier?.modelBlacklist ?? []);
+  const [modelWhitelist, setModelWhitelist] = useState<UpstreamSupplierModelListEntry[]>(() => supplier?.modelWhitelist ?? []);
+  const [rightTab, setRightTab] = useState<'groups' | 'resources' | 'modelBlacklist'>('groups');
   const [resourcesLoading, setResourcesLoading] = useState(Boolean(supplier));
   const [formError, setFormError] = useState<string | null>(null);
 
   const vendorResources = useMemo(() => (catalog?.resources ?? []).filter((resource) => resource.resourceType === 'vendor'), [catalog]);
+  // 模型黑白名单可选的 vendor 列表（含已配置但目录中已下线的 vendor）
+  const availableVendors = useMemo(() => {
+    const labels = new Map<string, string>();
+    for (const resource of catalog?.resources.filter((entry) => entry.resourceType === 'vendor') ?? []) {
+      if (resource.vendorCode) labels.set(resource.vendorCode, `${resource.displayName} (${resource.vendorCode})`);
+    }
+    for (const entry of [...modelBlacklist, ...modelWhitelist]) {
+      if (entry.vendorCode && !labels.has(entry.vendorCode)) labels.set(entry.vendorCode, entry.vendorCode);
+    }
+    return [...labels.entries()].map(([vendorCode, label]) => ({ vendorCode, label }));
+  }, [catalog, modelBlacklist, modelWhitelist]);
   const grantableVendorResources = useMemo(() => {
     if (!defaultVendorCode) return [];
     return (catalog?.resources ?? []).filter((resource) => resource.vendorCode === defaultVendorCode);
@@ -625,7 +647,7 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
       setFormError(t('admin.upstream.supplier.form.authMethods.required'));
       return;
     }
-    const values = valuesFromForm(event.currentTarget, supplierType, defaultVendorCode, selection, protocols, regionCode, authMethodItems);
+    const values = valuesFromForm(event.currentTarget, supplierType, defaultVendorCode, selection, protocols, regionCode, authMethodItems, modelBlacklist, modelWhitelist);
     if (!values) {
       setFormError(t('admin.upstream.common.validation.required', { field: t('admin.upstream.supplier.form.supplierName') }));
       return;
@@ -816,13 +838,45 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
         </div>
 
         <div className="flex min-w-0 flex-col lg:min-h-0">
-          {catalog ? (
+          <div className="mb-2 flex items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-white/5">
+            {([['groups', 'admin.upstream.supplier.resources.tab.groups'], ['resources', 'admin.upstream.supplier.resources.tab.resources'], ['modelBlacklist', 'admin.upstream.supplier.tab.modelBlacklist']] as const).map(([key, labelKey]) => (
+              <button key={key} type="button" onClick={() => setRightTab(key)}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition ${rightTab === key ? 'bg-white text-slate-900 shadow-sm dark:bg-white/10 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>
+                {t(labelKey)}
+              </button>
+            ))}
+          </div>
+          {rightTab === 'modelBlacklist' ? (
+            <div className="grid content-start gap-3">
+              <ModelAccessListEditor
+                title={t('admin.upstream.supplier.modelList.blacklistTitle')}
+                hint={t('admin.upstream.supplier.modelList.blacklistHint')}
+                entries={modelBlacklist}
+                vendors={availableVendors}
+                danger
+                keyPrefix="admin.upstream.supplier.modelList"
+                onEntriesChange={setModelBlacklist}
+                t={t}
+              />
+              <ModelAccessListEditor
+                title={t('admin.upstream.supplier.modelList.whitelistTitle')}
+                hint={t('admin.upstream.supplier.modelList.whitelistHint')}
+                entries={modelWhitelist}
+                vendors={availableVendors}
+                danger={false}
+                keyPrefix="admin.upstream.supplier.modelList"
+                onEntriesChange={setModelWhitelist}
+                t={t}
+              />
+            </div>
+          ) : catalog ? (
             <ResourcePicker
               resources={catalog.resources}
               resourceGroups={catalog.resourceGroups}
               selection={selection}
               onChange={setSelection}
               flat
+              fixedTab={rightTab}
               className="flex min-h-0 flex-1 flex-col"
               listClassName="min-h-0 flex-1 max-h-80 lg:max-h-none"
             />
@@ -835,7 +889,7 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
   );
 }
 
-function valuesFromForm(form: HTMLFormElement, supplierType: SupplierType, defaultVendorCode: string | null, selection: ResourceSelection, protocols: LlmProtocolConfig[], regionCode: string, authMethods: UpstreamSupplierAuthMethodInput[]): SupplierFormValues | null {
+function valuesFromForm(form: HTMLFormElement, supplierType: SupplierType, defaultVendorCode: string | null, selection: ResourceSelection, protocols: LlmProtocolConfig[], regionCode: string, authMethods: UpstreamSupplierAuthMethodInput[], modelBlacklist: UpstreamSupplierModelListEntry[], modelWhitelist: UpstreamSupplierModelListEntry[]): SupplierFormValues | null {
   const formData = new FormData(form);
   const read = (key: string) => String(formData.get(key) ?? '').trim();
   const supplierName = read('supplierName');
@@ -849,6 +903,8 @@ function valuesFromForm(form: HTMLFormElement, supplierType: SupplierType, defau
     adapterCode: 'openai',
     protocols,
     authMethods,
+    modelBlacklist,
+    modelWhitelist,
     websiteUrl: read('websiteUrl'),
     docsUrl: read('docsUrl'),
     regionCode,

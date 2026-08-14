@@ -24,10 +24,11 @@ use crate::api::openai_contract::{
 };
 use crate::api::openai_error::openai_error;
 use crate::application::{
-    ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
+    model_access_forbidden_reason, ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery,
+    AuthenticatedApiKeyContext,
 };
 use crate::domain::UpstreamAccountRoute;
-use crate::ports::PricingCatalog;
+use crate::ports::{PricingCatalog, UpstreamAccountRouteCatalog};
 
 type OpenAiResponseError = Box<Response>;
 
@@ -67,7 +68,7 @@ pub fn openai_vendors_router<C>(
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     Router::new()
         .route("/v1/vendors", get(list_vendors::<C>))
@@ -83,7 +84,7 @@ async fn list_vendors<C>(
     uri: Uri,
 ) -> Response
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let identity = match ApiKeyIdentity::from_headers_and_uri(&headers, &uri) {
         Ok(identity) => identity,
@@ -133,13 +134,16 @@ where
 /// from the catalog and falls back to the code itself.
 pub fn list_group_scoped_vendors<C>(catalog: &C, account_group_id: i64) -> Vec<GatewayVendorModels>
 where
-    C: PricingCatalog,
+    C: UpstreamAccountRouteCatalog,
 {
     let callable_accounts = catalog
         .list_upstream_account_routes()
         .into_iter()
         .filter(|route| account_route_is_callable_for_group(route, account_group_id))
         .collect::<Vec<_>>();
+    // 分组模型黑白名单：禁止的模型不进入可见列表（与路由执行一致，
+    // 避免向调用方暴露其分组无权使用的模型）。
+    let model_access = catalog.account_group_model_access(account_group_id);
     let mut by_vendor: BTreeMap<String, (String, Vec<GatewayVendorModel>)> = BTreeMap::new();
     catalog.visit_models(None, &mut |model| {
         // Model routes are keyed by catalog key (`vendor/model`), so the
@@ -153,6 +157,12 @@ where
                 );
         if !reachable {
             return true;
+        }
+        if let Some(access) = model_access.as_ref() {
+            if model_access_forbidden_reason(Some(&model.vendor_code), &model.model, access).is_some()
+            {
+                return true;
+            }
         }
         let entry = by_vendor
             .entry(model.vendor_code.clone())
@@ -238,4 +248,96 @@ where
                 "api key credential is invalid",
             ))
         })
+}
+
+#[cfg(test)]
+mod list_group_scoped_vendors_tests {
+    use super::list_group_scoped_vendors;
+    use crate::domain::{
+        AiModel, DecimalValue, ModelUpstreamRoute, ModelVendor, ModelVendorDefinition,
+        UpstreamAccountGroup, UpstreamAccountRoute,
+    };
+    use crate::infrastructure::InMemoryPricingCatalog;
+    use crate::ports::{AccountGroupModelAccess, VendorModelListEntry};
+
+    fn catalog() -> InMemoryPricingCatalog {
+        let mut catalog = InMemoryPricingCatalog::default();
+        catalog.add_vendor(ModelVendorDefinition::new("openai", ModelVendor::OpenAi, "OpenAI"));
+        catalog.add_model(AiModel::new("gpt-4o-mini", "GPT-4o mini", "openai", vec!["chat"]));
+        catalog.add_model(AiModel::new("gpt-4o", "GPT-4o", "openai", vec!["chat"]));
+        catalog.add_upstream_account_group(UpstreamAccountGroup::new(
+            10,
+            "standard-group",
+            "standard",
+            DecimalValue::parse("1.000000").unwrap(),
+            DecimalValue::parse("1.100000").unwrap(),
+        ));
+        catalog.add_upstream_account_route(
+            UpstreamAccountRoute::new("openai-supplier", 1001)
+                .with_account_group_binding(10, 100, 100)
+                .with_upstream_endpoint(Some("https://api.openai.com"), Some("cred:openai")),
+        );
+        for model in ["gpt-4o-mini", "gpt-4o"] {
+            catalog.add_model_upstream_route(ModelUpstreamRoute::new(
+                model,
+                "openai-supplier",
+                1001,
+                model,
+            ));
+        }
+        catalog
+    }
+
+    #[test]
+    fn vendors_exclude_blacklisted_models() {
+        let mut catalog = catalog();
+        catalog.set_account_group_model_access(AccountGroupModelAccess {
+            group_id: 10,
+            blacklist: vec![VendorModelListEntry {
+                vendor_code: "openai".to_owned(),
+                models: vec!["gpt-4o-mini".to_owned()],
+            }],
+            whitelist: Vec::new(),
+        });
+        let vendors = list_group_scoped_vendors(&catalog, 10);
+        assert_eq!(1, vendors.len());
+        assert_eq!(
+            vec!["gpt-4o"],
+            vendors[0]
+                .models
+                .iter()
+                .map(|model| model.id.as_str())
+                .collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn vendors_keep_whitelisted_models_only() {
+        let mut catalog = catalog();
+        catalog.set_account_group_model_access(AccountGroupModelAccess {
+            group_id: 10,
+            blacklist: Vec::new(),
+            whitelist: vec![VendorModelListEntry {
+                vendor_code: "openai".to_owned(),
+                models: vec!["gpt-4o-mini".to_owned()],
+            }],
+        });
+        let vendors = list_group_scoped_vendors(&catalog, 10);
+        assert_eq!(1, vendors.len());
+        assert_eq!(
+            vec!["gpt-4o-mini"],
+            vendors[0]
+                .models
+                .iter()
+                .map(|model| model.id.as_str())
+                .collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn vendors_unrestricted_groups_see_all_reachable_models() {
+        let vendors = list_group_scoped_vendors(&catalog(), 10);
+        assert_eq!(1, vendors.len());
+        assert_eq!(2, vendors[0].models.len());
+    }
 }

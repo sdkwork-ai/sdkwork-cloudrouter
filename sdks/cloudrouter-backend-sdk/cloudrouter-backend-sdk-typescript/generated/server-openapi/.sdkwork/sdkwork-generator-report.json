@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "87cb91715aad50c50849551fcab2a68468327bbc486fef3cc7c494af8f1a04ee",
+  "changeFingerprint": "96d22335ad9b2e17814c0f503b2824e34513bb15dc68bccd4057bef479ae0cce",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -214,6 +214,7 @@
           "src/types/upstream-supplier-endpoint.ts",
           "src/types/upstream-supplier-item-response.ts",
           "src/types/upstream-supplier-list-response.ts",
+          "src/types/upstream-supplier-model-list-entry.ts",
           "src/types/upstream-supplier-resource-collection-response.ts",
           "src/types/upstream-supplier-resource-collection.ts",
           "src/types/upstream-supplier-resource-list-response.ts",
@@ -386,10 +387,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 287,
-    "models": 258,
+    "totalFiles": 288,
+    "models": 259,
     "apis": 6,
-    "types": 260
+    "types": 261
   },
   "warnings": [
     {
@@ -432,12 +433,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 201,
+    "writtenFiles": 202,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "87cb91715aad50c50849551fcab2a68468327bbc486fef3cc7c494af8f1a04ee",
+    "changeFingerprint": "96d22335ad9b2e17814c0f503b2824e34513bb15dc68bccd4057bef479ae0cce",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -633,6 +634,7 @@
         "src/types/upstream-supplier-endpoint.ts",
         "src/types/upstream-supplier-item-response.ts",
         "src/types/upstream-supplier-list-response.ts",
+        "src/types/upstream-supplier-model-list-entry.ts",
         "src/types/upstream-supplier-resource-collection-response.ts",
         "src/types/upstream-supplier-resource-collection.ts",
         "src/types/upstream-supplier-resource-list-response.ts",
@@ -851,6 +853,7 @@
             "src/types/upstream-supplier-endpoint.ts",
             "src/types/upstream-supplier-item-response.ts",
             "src/types/upstream-supplier-list-response.ts",
+            "src/types/upstream-supplier-model-list-entry.ts",
             "src/types/upstream-supplier-resource-collection-response.ts",
             "src/types/upstream-supplier-resource-collection.ts",
             "src/types/upstream-supplier-resource-list-response.ts",

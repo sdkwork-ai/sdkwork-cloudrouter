@@ -1,8 +1,8 @@
 import type { ChangeEvent, FormEvent, ReactNode } from 'react';
-import { AlertCircle, Loader2, Search, X } from 'lucide-react';
+import { AlertCircle, Loader2, Plus, Search, Trash2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
-import type { UpstreamAccountGroup } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
+import type { UpstreamAccountGroup, UpstreamAccountGroupModelListEntry } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 
 export const inputClass = 'h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-white/5 dark:text-white';
 export const selectClass = inputClass;
@@ -443,4 +443,78 @@ const TAG_DOT_COLORS: Record<AccountGroupTag, string> = {
 export function matchesTagFilter(group: { tags?: string[] | null }, selected: string[]): boolean {
   if (selected.length === 0) return true;
   return selected.every((tag) => group.tags?.includes(tag));
+}
+
+type TranslationFunction = ReturnType<typeof useTranslation>['t'];
+
+/** 模型黑白名单空条目（结构：{vendorCode, models}，与账号分组一致） */
+export const emptyModelListEntry = (): UpstreamAccountGroupModelListEntry => ({ vendorCode: '', models: [] });
+
+/** 逗号/中文逗号/换行分隔的模型名解析 */
+export const parseModelNames = (value: string): string[] => value.split(/[,，\n]/).map((model) => model.trim()).filter(Boolean);
+
+/** 规范化模型列表：去空模型名、去空 vendor 条目 */
+export const normalizeModelList = (entries: UpstreamAccountGroupModelListEntry[]): UpstreamAccountGroupModelListEntry[] => entries
+  .map(({ vendorCode, models }) => ({ vendorCode: vendorCode.trim(), models: models.map((model) => model.trim()).filter(Boolean) }))
+  .filter((entry) => entry.vendorCode !== '');
+
+function updateAt<T>(items: T[], index: number, patch: Partial<T>): T[] {
+  return items.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item);
+}
+
+function removeAt<T>(items: T[], index: number): T[] {
+  return items.filter((_, itemIndex) => itemIndex !== index);
+}
+
+/**
+ * 模型黑白名单编辑器（账号分组与供应商抽屉共用）。
+ * danger=true 渲染为黑名单红色分区，否则为白名单绿色分区；
+ * keyPrefix 提供 i18n key 命名空间（accountGroup.access / supplier.modelList）。
+ */
+export function ModelAccessListEditor({
+  title,
+  hint,
+  entries,
+  vendors,
+  danger,
+  keyPrefix,
+  onEntriesChange,
+  t,
+}: {
+  title: string;
+  hint: string;
+  entries: UpstreamAccountGroupModelListEntry[];
+  vendors: { vendorCode: string; label: string }[];
+  danger: boolean;
+  keyPrefix: string;
+  onEntriesChange: (entries: UpstreamAccountGroupModelListEntry[]) => void;
+  t: TranslationFunction;
+}) {
+  const tone = danger
+    ? 'border-red-200 bg-red-50/40 dark:border-red-500/20 dark:bg-red-500/5'
+    : 'border-emerald-200 bg-emerald-50/40 dark:border-emerald-500/20 dark:bg-emerald-500/5';
+  const textTone = danger
+    ? 'text-red-700 dark:text-red-300'
+    : 'text-emerald-700 dark:text-emerald-300';
+  const label = (suffix: string) => `${keyPrefix}.${suffix}`;
+  return (
+    <div className={`grid gap-2 rounded-md border p-3 ${tone}`}>
+      <div className="flex items-center justify-between gap-2">
+        <span className={`text-xs font-semibold ${textTone}`}>{title}</span>
+        <button type="button" className={secondaryButtonClass} onClick={() => onEntriesChange([...entries, emptyModelListEntry()])}><Plus className="h-4 w-4" />{t('admin.upstream.common.actions.add')}</button>
+      </div>
+      <p className="text-xs text-slate-500 dark:text-slate-400">{hint}</p>
+      {entries.length === 0 ? <p className="py-2 text-center text-sm text-slate-500">{t(label('empty'))}</p> : null}
+      {entries.map((entry, index) => (
+        <div key={`${entry.vendorCode}-${index}`} className="grid gap-2 sm:grid-cols-[1fr_1fr_40px]">
+          <select aria-label={t(label('vendor'))} className={selectClass} value={entry.vendorCode} onChange={(event) => onEntriesChange(updateAt(entries, index, { vendorCode: event.currentTarget.value }))}>
+            <option value="">{t(label('selectVendor'))}</option>
+            {vendors.map((vendor) => <option key={vendor.vendorCode} value={vendor.vendorCode}>{vendor.label}</option>)}
+          </select>
+          <input aria-label={t(label('models'))} placeholder={t(label('modelsPlaceholder'))} className={inputClass} value={entry.models.join(', ')} onChange={(event) => onEntriesChange(updateAt(entries, index, { models: parseModelNames(event.currentTarget.value) }))} />
+          <button type="button" title={t('common.actions.delete')} className={dangerButtonClass} onClick={() => onEntriesChange(removeAt(entries, index))}><Trash2 className="h-4 w-4" /></button>
+        </div>
+      ))}
+    </div>
+  );
 }

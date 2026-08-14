@@ -62,6 +62,7 @@ export type {
   UpstreamSupplierEndpoint,
   UpstreamSupplierEndpointInput,
   UpstreamSupplierListResponse,
+  UpstreamSupplierModelListEntry,
   UpdatePaymentProviderRequest,
   VerifyUpstreamAccountRequest,
 } from '@sdkwork/cloudrouter-backend-sdk';

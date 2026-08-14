@@ -43,6 +43,7 @@ export function ResourcePicker({
   className,
   listClassName,
   flat = false,
+  fixedTab,
 }: {
   resources: UpstreamResourceCatalogItem[];
   resourceGroups: UpstreamResourceGroupCatalogItem[];
@@ -54,11 +55,19 @@ export function ResourcePicker({
   listClassName?: string;
   /** 扁平无边框变体，用于嵌入弹窗等平铺场景；默认 false */
   flat?: boolean;
+  /** 固定单视图（隐藏内部 Tab 栏），由外层提供 Tab；默认 null 使用内部 Tab */
+  fixedTab?: 'resources' | 'groups';
 }) {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<'resources' | 'groups'>('groups');
+  const [tab, setTab] = useState<'resources' | 'groups'>(fixedTab ?? 'groups');
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<ResourceTypeFilter>('all');
+
+  const activeTab = fixedTab ?? tab;
+  const setActiveTab = (next: 'resources' | 'groups') => {
+    if (fixedTab) return;
+    setTab(next);
+  };
 
   const selectedCount = selection.resourceCodes.length;
   const selectedGroupCount = selection.resourceGroupCodes.length;
@@ -140,22 +149,24 @@ export function ResourcePicker({
   return (
     <div className={`overflow-hidden ${flat ? '' : 'rounded-md border border-slate-200 dark:border-white/10'} ${className ?? ''}`}>
       <div className={`flex items-center justify-between gap-2 border-b border-slate-200 px-3 py-2 dark:border-white/10 ${flat ? '' : 'bg-slate-50/60 dark:bg-white/[0.03]'}`}>
-        <div className="flex gap-1">
-          <button
-            type="button"
-            onClick={() => setTab('groups')}
-            className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${tab === 'groups' ? 'bg-lobster-600 text-white' : 'text-slate-500 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:bg-white/10'}`}
-          >
-            {t('admin.upstream.supplier.resources.tab.groups')}
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('resources')}
-            className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${tab === 'resources' ? 'bg-lobster-600 text-white' : 'text-slate-500 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:bg-white/10'}`}
-          >
-            {t('admin.upstream.supplier.resources.tab.resources')}
-          </button>
-        </div>
+        {fixedTab ? null : (
+          <div className="flex gap-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab('groups')}
+              className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${activeTab === 'groups' ? 'bg-lobster-600 text-white' : 'text-slate-500 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:bg-white/10'}`}
+            >
+              {t('admin.upstream.supplier.resources.tab.groups')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('resources')}
+              className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${activeTab === 'resources' ? 'bg-lobster-600 text-white' : 'text-slate-500 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:bg-white/10'}`}
+            >
+              {t('admin.upstream.supplier.resources.tab.resources')}
+            </button>
+          </div>
+        )}
         {selectedCount + selectedGroupCount > 0 ? (
           <button type="button" onClick={clearSelection} className="inline-flex items-center gap-1 text-xs font-medium text-red-600 transition hover:text-red-700 dark:text-red-300">
             <X className="h-3.5 w-3.5" />
@@ -168,7 +179,7 @@ export function ResourcePicker({
           <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
           <input value={query} onChange={(event) => setQuery(event.currentTarget.value)} placeholder={t('admin.upstream.supplier.resources.search.placeholder')} className={`${inputClass} pl-9`} />
         </div>
-        {tab === 'resources' ? (
+        {activeTab === 'resources' ? (
           <div className="flex flex-wrap gap-1.5">
             {resourceTypes.map((type) => (
               <button
@@ -184,7 +195,7 @@ export function ResourcePicker({
         ) : null}
       </div>
       <div className={`overflow-x-hidden overflow-y-auto ${listClassName ?? 'max-h-64'}`}>
-        {tab === 'resources' ? (
+        {activeTab === 'resources' ? (
           vendorGroups.length === 0 ? (
             <p className="py-8 text-center text-sm text-slate-500">{t('admin.upstream.supplier.resources.empty')}</p>
           ) : (

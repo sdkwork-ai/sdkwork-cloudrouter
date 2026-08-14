@@ -185,6 +185,7 @@ export type { UpstreamSupplierEndpointInput } from './upstream-supplier-endpoint
 export type { UpstreamSupplierEndpointListResponse } from './upstream-supplier-endpoint-list-response';
 export type { UpstreamSupplierItemResponse } from './upstream-supplier-item-response';
 export type { UpstreamSupplierListResponse } from './upstream-supplier-list-response';
+export type { UpstreamSupplierModelListEntry } from './upstream-supplier-model-list-entry';
 export type { UpstreamSupplierResourceCollection } from './upstream-supplier-resource-collection';
 export type { UpstreamSupplierResourceCollectionResponse } from './upstream-supplier-resource-collection-response';
 export type { UpstreamSupplierResourceListResponse } from './upstream-supplier-resource-list-response';

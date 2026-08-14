@@ -630,6 +630,14 @@ pub struct UpstreamAccountGroupRow {
     pub model_whitelist_json: String,
 }
 
+/// 供应商级模型黑白名单（ai_upstream_supplier.model_blacklist/model_whitelist），
+/// JSON 列在快照构建时解析为 SupplierModelAccess。
+pub struct UpstreamSupplierModelAccessRow {
+    pub supplier_code: String,
+    pub model_blacklist_json: String,
+    pub model_whitelist_json: String,
+}
+
 pub struct GatewayAccessPolicyRow {
     pub id: i64,
     pub allowed_capabilities_json: String,

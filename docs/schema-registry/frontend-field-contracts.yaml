@@ -9976,6 +9976,52 @@ frontend_operations:
               id:
                 maxLength: 32
                 type: string
+              modelBlacklist:
+                description: Model blacklist of this supplier. Vendor + model entries the supplier is forbidden
+                  to serve. An entry with an empty models array forbids every model of the vendor.
+                  The blacklist wins over the whitelist.
+                items:
+                  additionalProperties: false
+                  name: UpstreamSupplierModelListEntry
+                  properties:
+                    models:
+                      items:
+                        maxLength: 256
+                        type: string
+                      maxItems: 200
+                      type: array
+                    vendorCode:
+                      maxLength: 64
+                      type: string
+                  required:
+                  - vendorCode
+                  - models
+                  type: object
+                maxItems: 100
+                type: array
+              modelWhitelist:
+                description: Model whitelist of this supplier. When non-empty, the supplier serves only
+                  matching vendor + model entries. An entry with an empty models array allows
+                  every model of the vendor.
+                items:
+                  additionalProperties: false
+                  name: UpstreamSupplierModelListEntry
+                  properties:
+                    models:
+                      items:
+                        maxLength: 256
+                        type: string
+                      maxItems: 200
+                      type: array
+                    vendorCode:
+                      maxLength: 64
+                      type: string
+                  required:
+                  - vendorCode
+                  - models
+                  type: object
+                maxItems: 100
+                type: array
               protocolCode:
                 maxLength: 128
                 type: string
@@ -10047,6 +10093,8 @@ frontend_operations:
             - adapterCode
             - protocolCode
             - protocols
+            - modelBlacklist
+            - modelWhitelist
             - websiteUrl
             - docsUrl
             - regionCode
@@ -10133,6 +10181,20 @@ frontend_operations:
           format: int32
           nullable: true
           type: integer
+        modelBlacklist:
+          description: Model blacklist of vendor + model entries for this supplier.
+          items:
+            $ref: '#/components/schemas/UpstreamSupplierModelListEntry'
+          maxItems: 100
+          nullable: true
+          type: array
+        modelWhitelist:
+          description: Model whitelist of vendor + model entries for this supplier.
+          items:
+            $ref: '#/components/schemas/UpstreamSupplierModelListEntry'
+          maxItems: 100
+          nullable: true
+          type: array
         protocols:
           items:
             $ref: '#/components/schemas/LlmProtocolConfig'
@@ -10277,6 +10339,20 @@ frontend_operations:
           format: int32
           nullable: true
           type: integer
+        modelBlacklist:
+          description: Model blacklist of vendor + model entries for this supplier.
+          items:
+            $ref: '#/components/schemas/UpstreamSupplierModelListEntry'
+          maxItems: 100
+          nullable: true
+          type: array
+        modelWhitelist:
+          description: Model whitelist of vendor + model entries for this supplier.
+          items:
+            $ref: '#/components/schemas/UpstreamSupplierModelListEntry'
+          maxItems: 100
+          nullable: true
+          type: array
         protocols:
           items:
             $ref: '#/components/schemas/LlmProtocolConfig'

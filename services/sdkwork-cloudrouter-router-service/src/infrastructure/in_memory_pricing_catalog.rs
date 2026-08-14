@@ -8,7 +8,9 @@ use crate::domain::{
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::ports::{AccountGroupModelAccess, PricingCatalog, UpstreamAccountRouteCatalog};
+use crate::ports::{
+    AccountGroupModelAccess, PricingCatalog, SupplierModelAccess, UpstreamAccountRouteCatalog,
+};
 
 #[derive(Debug, Default, Clone)]
 pub struct InMemoryPricingCatalog {
@@ -28,6 +30,7 @@ pub struct InMemoryPricingCatalog {
     upstream_account_group_metric_snapshots: Vec<UpstreamAccountGroupMetricSnapshot>,
     prices: Vec<ModelPrice>,
     account_group_model_access: HashMap<i64, AccountGroupModelAccess>,
+    supplier_model_access: HashMap<String, SupplierModelAccess>,
 }
 
 impl InMemoryPricingCatalog {
@@ -109,6 +112,11 @@ impl InMemoryPricingCatalog {
 
     pub fn add_price(&mut self, price: ModelPrice) {
         self.prices.push(price);
+    }
+
+    pub fn set_supplier_model_access(&mut self, access: SupplierModelAccess) {
+        self.supplier_model_access
+            .insert(access.supplier_code.clone(), access);
     }
 
     pub fn set_account_group_model_access(&mut self, access: AccountGroupModelAccess) {
@@ -337,6 +345,10 @@ impl UpstreamAccountRouteCatalog for InMemoryPricingCatalog {
 
     fn account_group_model_access(&self, group_id: i64) -> Option<AccountGroupModelAccess> {
         self.account_group_model_access.get(&group_id).cloned()
+    }
+
+    fn supplier_model_access(&self, supplier_code: &str) -> Option<SupplierModelAccess> {
+        self.supplier_model_access.get(supplier_code).cloned()
     }
 }
 

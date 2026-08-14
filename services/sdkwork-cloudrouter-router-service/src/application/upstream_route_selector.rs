@@ -1845,6 +1845,22 @@ pub fn model_access_forbidden_reason(
     requested_model: &str,
     access: &AccountGroupModelAccess,
 ) -> Option<&'static str> {
+    model_access_forbidden_reason_lists(
+        vendor_code,
+        requested_model,
+        &access.blacklist,
+        &access.whitelist,
+    )
+}
+
+/// 底层判定：黑名单命中返回 "blacklist"；白名单非空且未覆盖返回 "whitelist"。
+/// 分组级与供应商级黑白名单共用（两者条目结构与语义一致）。
+pub fn model_access_forbidden_reason_lists(
+    vendor_code: Option<&str>,
+    requested_model: &str,
+    blacklist: &[crate::ports::VendorModelListEntry],
+    whitelist: &[crate::ports::VendorModelListEntry],
+) -> Option<&'static str> {
     let entry_matches = |entry: &crate::ports::VendorModelListEntry| {
         vendor_code
             .map(|vendor| vendor == entry.vendor_code)
@@ -1855,10 +1871,10 @@ pub fn model_access_forbidden_reason(
                     .iter()
                     .any(|model| model.eq_ignore_ascii_case(requested_model)))
     };
-    if access.blacklist.iter().any(entry_matches) {
+    if blacklist.iter().any(entry_matches) {
         return Some("blacklist");
     }
-    if !access.whitelist.is_empty() && !access.whitelist.iter().any(entry_matches) {
+    if !whitelist.is_empty() && !whitelist.iter().any(entry_matches) {
         return Some("whitelist");
     }
     None
