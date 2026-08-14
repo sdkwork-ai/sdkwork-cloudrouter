@@ -127,6 +127,22 @@
         "coverageEvidence": [
           "../sdkwork-cloudrouter-edge-runtime/src/runtime.rs#all_one_in_one_in_process_upstreams_from_env"
         ]
+      },
+      {
+        "workspace": "sdkwork-rtc",
+        "sdkFamily": "sdkwork-rtc-backend-sdk",
+        "apiAuthority": "sdkwork-rtc-backend-api",
+        "surface": "backend-api",
+        "apiPrefix": "/backend/v3/api/rtc",
+        "runtimeMode": "same-origin-mounted",
+        "profileCoverage": [
+          "standalone"
+        ],
+        "cargoDependency": "sdkwork-api-rtc-assembly",
+        "embeddedExecutableExport": "sdkwork_api_rtc_assembly::assemble_backend_api_contribution_with_pool",
+        "coverageEvidence": [
+          "../sdkwork-cloudrouter-edge-runtime/src/runtime.rs#all_one_in_one_in_process_upstreams_from_env"
+        ]
       }
     ],
     "events": [],
