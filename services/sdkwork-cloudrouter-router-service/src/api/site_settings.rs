@@ -47,6 +47,8 @@ struct SiteSettingsUpdateRequest {
     logo: Option<Value>,
     icon: Option<Value>,
     favicon: Option<Value>,
+    official_account_qr_code: Option<Value>,
+    community_group_qr_code: Option<Value>,
     brand_color: Option<String>,
     accent_color: Option<String>,
     footer_copyright: Option<String>,
@@ -79,6 +81,8 @@ struct SiteSettingsResponse {
     logo: Value,
     icon: Value,
     favicon: Value,
+    official_account_qr_code: Value,
+    community_group_qr_code: Value,
     brand_color: String,
     accent_color: String,
     footer_copyright: String,
@@ -265,6 +269,14 @@ fn merge_update_request(
     }
     if let Some(value) = request.favicon {
         current.favicon = normalize_media_resource("favicon", value)?;
+    }
+    if let Some(value) = request.official_account_qr_code {
+        current.official_account_qr_code =
+            normalize_media_resource("officialAccountQrCode", value)?;
+    }
+    if let Some(value) = request.community_group_qr_code {
+        current.community_group_qr_code =
+            normalize_media_resource("communityGroupQrCode", value)?;
     }
     if let Some(value) = request.brand_color {
         current.brand_color = normalize_color_field("brandColor", &value)?;
@@ -468,6 +480,8 @@ fn to_response(settings: SiteSettings) -> SiteSettingsResponse {
         logo: settings.logo,
         icon: settings.icon,
         favicon: settings.favicon,
+        official_account_qr_code: settings.official_account_qr_code,
+        community_group_qr_code: settings.community_group_qr_code,
         brand_color: settings.brand_color,
         accent_color: settings.accent_color,
         footer_copyright: settings.footer_copyright,

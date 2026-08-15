@@ -1,11 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { BusinessStatePanel, copyTextToClipboard, readMediaResourceUrl, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
-import {
-  ensureSdkworkApiSuccess,
-  getCloudRouterAppSdkClient,
-  readApiRecord,
-  readString,
-} from '@sdkwork/cloudroutes-pc-commons/runtime';
+import { BusinessStatePanel, readMediaResourceUrl, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import { UserService, UserProfile } from './userService';
 
 import { useTranslation } from 'react-i18next';
@@ -39,80 +33,6 @@ function ProfileField({ label, value }: { label: string; value: string }) {
       <dt className="text-xs text-slate-500">{label}</dt>
       <dd className="mt-1 text-sm font-medium text-slate-800 dark:text-slate-200">{displayValue}</dd>
     </div>
-  );
-}
-
-function InviteCodeSection() {
-  const { t } = useTranslation();
-  const [inviteCode, setInviteCode] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
-
-  const loadInviteCode = useCallback(async (isActive: () => boolean = () => true) => {
-    setLoading(true);
-    try {
-      const result = await getCloudRouterAppSdkClient().iam.invite.create();
-      ensureSdkworkApiSuccess(result, 'Unable to load invite code');
-      const record = readApiRecord(result);
-      if (isActive()) {
-        setInviteCode(readString(record, 'inviteCode', '') || null);
-      }
-    } catch {
-      if (isActive()) {
-        setInviteCode(null);
-      }
-    } finally {
-      if (isActive()) {
-        setLoading(false);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    void loadInviteCode(() => active);
-    return () => {
-      active = false;
-    };
-  }, [loadInviteCode]);
-
-  const copyCode = async () => {
-    if (!inviteCode) {
-      return;
-    }
-    const result = await copyTextToClipboard(inviteCode);
-    if (result.ok) {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  return (
-    <ProfileSection title={t('console.user.inviteCode.title', '我的邀请码')}>
-      <p className="text-xs text-slate-500 dark:text-slate-400">
-        {t('console.user.inviteCode.description', '分享您的邀请码，新用户注册时输入即可与您绑定邀请关系。')}
-      </p>
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        {loading ? (
-          <span className="text-sm text-slate-400">{t('console.user.inviteCode.loading', '正在加载...')}</span>
-        ) : inviteCode ? (
-          <>
-            <code className="rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 font-mono text-sm font-semibold tracking-[0.2em] text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-slate-100">
-              {inviteCode}
-            </code>
-            <button
-              type="button"
-              onClick={() => void copyCode()}
-              className="inline-flex items-center rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10"
-            >
-              {copied ? t('console.user.inviteCode.copied', '已复制') : t('console.user.inviteCode.copy', '复制')}
-            </button>
-          </>
-        ) : (
-          <span className="text-sm text-slate-500">{t('console.user.inviteCode.unavailable', '邀请码暂不可用')}</span>
-        )}
-      </div>
-    </ProfileSection>
   );
 }
 
@@ -278,7 +198,6 @@ export function UserView() {
         </dl>
       </ProfileSection>
 
-      <InviteCodeSection />
     </div>
   );
 }

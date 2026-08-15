@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Terminal, Globe, AtSign, Briefcase, Mail, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useSiteBranding } from '../siteBranding';
 import { readMediaResourceUrl } from '../media-resource';
+import { useResolvedMediaResourceUrl } from '../drive-media';
 
 export function Footer() {
   const { t } = useTranslation();
@@ -11,6 +12,8 @@ export function Footer() {
   const displaySiteName = siteBranding.shortName || siteBranding.siteName;
   const description = siteBranding.description || t('footer.desc');
   const logoSource = readMediaResourceUrl(siteBranding.logo);
+  const officialAccountQrCodeSource = useResolvedMediaResourceUrl(siteBranding.officialAccountQrCode);
+  const communityGroupQrCodeSource = useResolvedMediaResourceUrl(siteBranding.communityGroupQrCode);
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -179,43 +182,47 @@ export function Footer() {
             {renderLinkList(companyLinks)}
           </div>
 
-          {/* QR codes: official account + community group */}
-          <div className="col-span-1 flex flex-col items-center text-center">
-            <div className="mb-4">
-              <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
-                {t('footer.qrcode.official')}
-              </h4>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                {t('footer.qrcode.official.desc')}
-              </p>
+          {/* QR codes: official account + community group (hidden until configured in admin site settings) */}
+          {officialAccountQrCodeSource ? (
+            <div className="col-span-1 flex flex-col items-center text-center">
+              <div className="mb-4">
+                <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
+                  {t('footer.qrcode.official')}
+                </h4>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  {t('footer.qrcode.official.desc')}
+                </p>
+              </div>
+              <div className="group relative rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition-all hover:border-lobster-300 hover:shadow-md dark:border-white/10 dark:bg-[#0a0a0a] dark:hover:border-lobster-500/40">
+                <img
+                  src={officialAccountQrCodeSource}
+                  alt={t('footer.qrcode.official')}
+                  className="h-28 w-28 rounded-lg object-cover"
+                  loading="lazy"
+                />
+              </div>
             </div>
-            <div className="group relative rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition-all hover:border-lobster-300 hover:shadow-md dark:border-white/10 dark:bg-[#0a0a0a] dark:hover:border-lobster-500/40">
-              <img
-                src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=A%20black%20and%20white%20QR%20code%20on%20clean%20white%20background%2C%20square%20barcode%20pattern%2C%20scannable%2C%20minimal%20professional%20marketing%20material&image_size=square_hd"
-                alt={t('footer.qrcode.official')}
-                className="h-28 w-28 rounded-lg object-cover"
-                loading="lazy"
-              />
+          ) : null}
+          {communityGroupQrCodeSource ? (
+            <div className="col-span-1 flex flex-col items-center text-center">
+              <div className="mb-4">
+                <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
+                  {t('footer.qrcode.group')}
+                </h4>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  {t('footer.qrcode.group.desc')}
+                </p>
+              </div>
+              <div className="group relative rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition-all hover:border-lobster-300 hover:shadow-md dark:border-white/10 dark:bg-[#0a0a0a] dark:hover:border-lobster-500/40">
+                <img
+                  src={communityGroupQrCodeSource}
+                  alt={t('footer.qrcode.group')}
+                  className="h-28 w-28 rounded-lg object-cover"
+                  loading="lazy"
+                />
+              </div>
             </div>
-          </div>
-          <div className="col-span-1 flex flex-col items-center text-center">
-            <div className="mb-4">
-              <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-white">
-                {t('footer.qrcode.group')}
-              </h4>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                {t('footer.qrcode.group.desc')}
-              </p>
-            </div>
-            <div className="group relative rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition-all hover:border-lobster-300 hover:shadow-md dark:border-white/10 dark:bg-[#0a0a0a] dark:hover:border-lobster-500/40">
-              <img
-                src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=A%20black%20and%20white%20QR%20code%20on%20clean%20white%20background%2C%20square%20barcode%20pattern%2C%20scannable%2C%20minimal%20professional%20community%20group&image_size=square_hd"
-                alt={t('footer.qrcode.group')}
-                className="h-28 w-28 rounded-lg object-cover"
-                loading="lazy"
-              />
-            </div>
-          </div>
+          ) : null}
         </div>
 
         {/* Bottom: copyright + socials (centered) */}

@@ -51,6 +51,7 @@ packages:
   - "../sdkwork-documents/sdks/sdkwork-documents-app-sdk/sdkwork-documents-app-sdk-typescript/src/index.ts"
   - "../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript"
   - "../sdkwork-drive/sdks/sdkwork-drive-backend-sdk/sdkwork-drive-backend-sdk-typescript/src/index.ts"
+  - "../sdkwork-drive/sdks/sdkwork-drive-sdk/sdkwork-drive-sdk-typescript"
   - "../sdkwork-messaging/sdks/sdkwork-messaging-app-sdk/sdkwork-messaging-app-sdk-typescript"
   - "../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground"
   - "../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-asset-config"

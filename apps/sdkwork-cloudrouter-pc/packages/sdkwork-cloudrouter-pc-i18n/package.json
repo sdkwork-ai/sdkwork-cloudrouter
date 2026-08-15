@@ -28,7 +28,8 @@
     "@sdkwork/partner-pc-admin-commission": "workspace:*",
     "@sdkwork/partner-pc-admin-withdrawal": "workspace:*",
     "@sdkwork/partner-pc-admin-stats": "workspace:*",
-    "@sdkwork/partner-pc-join": "workspace:*"
+    "@sdkwork/partner-pc-join": "workspace:*",
+    "@sdkwork/rtc-pc-admin-core": "workspace:*"
   },
   "devDependencies": {
     "@sdkwork/documents-pc-i18n": "workspace:*",

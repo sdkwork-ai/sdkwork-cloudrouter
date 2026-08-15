@@ -6,6 +6,8 @@ export interface AdminSiteSettingsResponse {
   accentColor: string;
   /** brandColor field on AdminSiteSettingsResponse. */
   brandColor: string;
+  /** Community group qr code field on admin site settings response. */
+  communityGroupQrCode?: MediaResource;
   /** customCss field on AdminSiteSettingsResponse. */
   customCss: string;
   /** description field on AdminSiteSettingsResponse. */
@@ -24,6 +26,8 @@ export interface AdminSiteSettingsResponse {
   icpRecordUrl: string;
   /** Logo field on admin site settings response. */
   logo: MediaResource;
+  /** Official account qr code field on admin site settings response. */
+  officialAccountQrCode?: MediaResource;
   /** policeRecordNumber field on AdminSiteSettingsResponse. */
   policeRecordNumber: string;
   /** policeRecordUrl field on AdminSiteSettingsResponse. */

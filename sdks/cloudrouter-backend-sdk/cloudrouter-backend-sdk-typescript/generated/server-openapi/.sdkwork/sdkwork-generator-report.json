@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "5255cf90c0f997ee58e47a87a262e903affccc358b997dd6474f6408d5724fb2",
+  "changeFingerprint": "e44ba50a06ddcc29dd28f52b744991495a32882ad7181264907a71eb0ee03971",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -67,11 +67,6 @@
           "src/types/admin-firewall-rule-create-request.ts",
           "src/types/admin-ip-limit-create-request.ts",
           "src/types/admin-model-limit-create-request.ts",
-          "src/types/admin-recharge-package-list-response.ts",
-          "src/types/admin-recharge-package.ts",
-          "src/types/admin-recharge-record-list-response.ts",
-          "src/types/admin-recharge-record-response.ts",
-          "src/types/admin-recharge-record.ts",
           "src/types/admin-recharge-settings.ts",
           "src/types/admin-record-log-item.ts",
           "src/types/admin-record-page.ts",
@@ -149,7 +144,6 @@
           "src/types/payment-provider-mutation-response.ts",
           "src/types/problem-detail.ts",
           "src/types/recharge-package-mutation-request.ts",
-          "src/types/recharge-settings-update-request.ts",
           "src/types/replace-upstream-account-group-members-request.ts",
           "src/types/replace-upstream-account-group-resources-request.ts",
           "src/types/replace-upstream-account-resources-request.ts",
@@ -387,10 +381,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 288,
-    "models": 259,
+    "totalFiles": 277,
+    "models": 248,
     "apis": 6,
-    "types": 261
+    "types": 250
   },
   "warnings": [
     {
@@ -433,12 +427,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 202,
+    "writtenFiles": 196,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "5255cf90c0f997ee58e47a87a262e903affccc358b997dd6474f6408d5724fb2",
+    "changeFingerprint": "e44ba50a06ddcc29dd28f52b744991495a32882ad7181264907a71eb0ee03971",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -487,11 +481,6 @@
         "src/types/admin-firewall-rule-create-request.ts",
         "src/types/admin-ip-limit-create-request.ts",
         "src/types/admin-model-limit-create-request.ts",
-        "src/types/admin-recharge-package-list-response.ts",
-        "src/types/admin-recharge-package.ts",
-        "src/types/admin-recharge-record-list-response.ts",
-        "src/types/admin-recharge-record-response.ts",
-        "src/types/admin-recharge-record.ts",
         "src/types/admin-recharge-settings.ts",
         "src/types/admin-record-log-item.ts",
         "src/types/admin-record-page.ts",
@@ -569,7 +558,6 @@
         "src/types/payment-provider-mutation-response.ts",
         "src/types/problem-detail.ts",
         "src/types/recharge-package-mutation-request.ts",
-        "src/types/recharge-settings-update-request.ts",
         "src/types/replace-upstream-account-group-members-request.ts",
         "src/types/replace-upstream-account-group-resources-request.ts",
         "src/types/replace-upstream-account-resources-request.ts",
@@ -706,11 +694,6 @@
             "src/types/admin-firewall-rule-create-request.ts",
             "src/types/admin-ip-limit-create-request.ts",
             "src/types/admin-model-limit-create-request.ts",
-            "src/types/admin-recharge-package-list-response.ts",
-            "src/types/admin-recharge-package.ts",
-            "src/types/admin-recharge-record-list-response.ts",
-            "src/types/admin-recharge-record-response.ts",
-            "src/types/admin-recharge-record.ts",
             "src/types/admin-recharge-settings.ts",
             "src/types/admin-record-log-item.ts",
             "src/types/admin-record-page.ts",
@@ -788,7 +771,6 @@
             "src/types/payment-provider-mutation-response.ts",
             "src/types/problem-detail.ts",
             "src/types/recharge-package-mutation-request.ts",
-            "src/types/recharge-settings-update-request.ts",
             "src/types/replace-upstream-account-group-members-request.ts",
             "src/types/replace-upstream-account-group-resources-request.ts",
             "src/types/replace-upstream-account-resources-request.ts",

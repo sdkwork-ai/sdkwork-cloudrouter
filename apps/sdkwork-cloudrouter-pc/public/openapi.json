@@ -27625,5 +27625,6 @@
     }
   ],
   "x-api-prefix": "/v1",
-  "x-router-product": "sdkwork-cloudrouter"
+  "x-router-product": "sdkwork-cloudrouter",
+  "x-sdkwork-int64-openai-compat": true
 }

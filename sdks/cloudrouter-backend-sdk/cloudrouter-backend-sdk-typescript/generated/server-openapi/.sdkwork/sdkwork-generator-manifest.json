@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "3279fe2b0b422c7d400d3dffd98f92cd2b6149fc45f96e1c79f4d56871532197"
+      "sha256": "86a497642bc505e4afa025c1a2a1c069780c52439b3d28c68d744dd47f3c1745"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -60,7 +60,7 @@
     },
     {
       "path": "src/api/billing.ts",
-      "sha256": "3a32beb1fd0272af7aaa5493034d45a389049419dfecc5037e52b5b52a3bf8b7"
+      "sha256": "19de01777d26644e342a8b568a55bc804e59f7f75086f41fd8037c820c216e8e"
     },
     {
       "path": "src/api/index.ts",
@@ -76,7 +76,7 @@
     },
     {
       "path": "src/api/recharges.ts",
-      "sha256": "ad77dfb63d12427b9200c6743a58685e60ef7c477ef6cdbd3a692bddb34d3702"
+      "sha256": "c814a256e46b40f2360dc9d358379642d9871918dc9f3d2449746340f3143446"
     },
     {
       "path": "src/api/storage.ts",
@@ -195,26 +195,6 @@
       "sha256": "5cdd8cb435cd01831eff2519c787a4da86e1d1785e07e161124c1a181deda325"
     },
     {
-      "path": "src/types/admin-recharge-package-list-response.ts",
-      "sha256": "872c8a9a960ab9444041ddd6b846d6398499103ca8a00b73a94a99321353053f"
-    },
-    {
-      "path": "src/types/admin-recharge-package.ts",
-      "sha256": "6fbb353db3c27c8b4761fb5269c80a0d5387a4b9fc1ddc2fa2dcfe15776e6b56"
-    },
-    {
-      "path": "src/types/admin-recharge-record-list-response.ts",
-      "sha256": "6fc053114bfe4373ec33f1f44b7f50783cba00318377681bede614f43c07acb6"
-    },
-    {
-      "path": "src/types/admin-recharge-record-response.ts",
-      "sha256": "bfdcd239dbc42389eb569736628112bcfa96debc93b2caaa6a0c5e4d0e7cdaf0"
-    },
-    {
-      "path": "src/types/admin-recharge-record.ts",
-      "sha256": "25a60c56fdc126f995ffa63ef7534c97be281dbfceadb8e02939de11909b03b3"
-    },
-    {
       "path": "src/types/admin-recharge-settings.ts",
       "sha256": "eeb1a536c2ca9ce21dd0886cb916975c7652c7d94495dee037690c5550631cd4"
     },
@@ -284,11 +264,11 @@
     },
     {
       "path": "src/types/admin-site-settings-response.ts",
-      "sha256": "ec0c6d7620ea256afe8f838c0771dae6dd32f0f433c32c275c0d4e2f790107ec"
+      "sha256": "3ff1d497665d661fd311487f4bc93dcb17bf5339e2697db1c13259447e3d434a"
     },
     {
       "path": "src/types/admin-site-settings-update-request.ts",
-      "sha256": "698a52a8faa60e11973b2916dea830f37aa1d61a2ed78f9c587f2bc9bc3f65e0"
+      "sha256": "90f2f131638d9029b64b6c1954ce02d706f17e3a61048b7ce9bac77988929402"
     },
     {
       "path": "src/types/admin-storage-default-bucket-list-response.ts",
@@ -424,7 +404,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "0c8a72299de720257b0a1618fc42943a96d31fd24d5faf9381c87623fd3b996c"
+      "sha256": "ae773544a275c0d00aff59b8c9d8a4ca255d6b152a09f64465313c988f87455a"
     },
     {
       "path": "src/types/installation-status-response.ts",
@@ -521,10 +501,6 @@
     {
       "path": "src/types/recharge-package-mutation-request.ts",
       "sha256": "8fe4a08f56994d346d118aa5a1163c2317fea89a93aa7515ed3787bf57a8b26b"
-    },
-    {
-      "path": "src/types/recharge-settings-update-request.ts",
-      "sha256": "6b181df8d6c3ac68476451a1e045565c36fafdbb01f23f57e75a1996afea1413"
     },
     {
       "path": "src/types/replace-upstream-account-group-members-request.ts",

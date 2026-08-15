@@ -162,6 +162,38 @@ async fn admin_marketing_route_mutates_owned_marketing_resources() {
         update_recharge_settings["data"]["currencyToCnyRates"]["USD"]
     );
 
+    let zero_points = request_json_with_status(
+        router.clone(),
+        signed_request(
+            "PUT",
+            "/backend/v3/api/recharges/settings",
+            r#"{"baseCurrencyCode":"CNY","basePointsPerCny":"0","currencyToCnyRates":{"CNY":"1","USD":"7"}}"#,
+        ),
+        StatusCode::BAD_REQUEST,
+    )
+    .await;
+    assert_eq!(40001, zero_points["code"].as_i64().unwrap());
+    assert!(zero_points["detail"]
+        .as_str()
+        .unwrap()
+        .contains("basePointsPerCny must be greater than zero"));
+
+    let zero_rate = request_json_with_status(
+        router.clone(),
+        signed_request(
+            "PUT",
+            "/backend/v3/api/recharges/settings",
+            r#"{"baseCurrencyCode":"CNY","basePointsPerCny":"10","currencyToCnyRates":{"CNY":"1","USD":"0.0"}}"#,
+        ),
+        StatusCode::BAD_REQUEST,
+    )
+    .await;
+    assert_eq!(40001, zero_rate["code"].as_i64().unwrap());
+    assert!(zero_rate["detail"]
+        .as_str()
+        .unwrap()
+        .contains("currencyToCnyRates must be greater than zero"));
+
     let update_package = request_json(
         router.clone(),
         signed_request(

@@ -29069,5 +29069,6 @@
   "x-api-prefix": "/v1",
   "x-router-product": "sdkwork-cloudrouter",
   "x-sdkwork-owner": "sdkwork-cloudrouter",
-  "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai"
+  "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+  "x-sdkwork-int64-openai-compat": true
 }

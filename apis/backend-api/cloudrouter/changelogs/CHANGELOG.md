@@ -1,5 +1,36 @@
 # Cloud Router Backend API Changelog
 
+## 0.14.0
+
+- `AdminRechargeSettings.basePointsPerCny`, `RechargeSettingsUpdateRequest.basePointsPerCny`,
+  and the `currencyToCnyRates` value pattern tighten from `{1,8}` to `{1,6}` fractional
+  digits, matching the backend `normalize_decimal_string` validation and the i128
+  fixed-point compute path (scale 6). `AdminRechargePackage.priceAmount` and
+  `RechargePackageMutationRequest.priceAmount` tighten from `{1,8}` to `{1,2}`,
+  matching the cents-based money storage. The frontend field contracts,
+  `generated/openapi` snapshots, and the `@sdkwork/cloudrouter-backend-sdk` TypeScript
+  package are regenerated from the same authority; no client payloads change shape
+  (values remain decimal strings).
+- Recharge settings now reject non-positive values: `basePointsPerCny` and every
+  `currencyToCnyRates` rate must be greater than zero (HTTP 400), aligning with the
+  withdrawal exchange rate's `1..1_000_000` range validation.
+- The recharge settings payload is promoted out of the `commerce_exchange_rule.remark`
+  JSON blob into structured storage: a `base_currency_code` column plus the
+  `commerce_exchange_currency_rate` child table (`rule_id`, `currency_code`, `rate`),
+  both SQL-enforced (3-letter uppercase code, positive decimal with at most 6
+  fractional digits). The `0011` and `0012` order database migrations add the
+  constraints, migrate existing JSON payloads, and clear the legacy blob from
+  `remark`; `remark` is now a plain free-text note.
+
+## 0.13.0
+
+- `AdminSiteSettingsResponse` and `AdminSiteSettingsUpdateRequest` gain the optional
+  `officialAccountQrCode` and `communityGroupQrCode` `MediaResource` fields: operators
+  configure the homepage footer QR codes through `site.settings.update` (URL-based
+  `external_url` media, same validation as `logo`/`icon`/`favicon`), and the portal
+  footer renders a QR card only when the field is configured. Values persist in the
+  `ops_config_snapshot` JSONB payload; no schema migration is required.
+
 ## 0.12.0
 
 - `AdminRechargePackage` gains the `discount` integer (1-100): the discount rate percentage, where `100` means no discount and `90` means the customer pays 90 percent of the price. The value is stored per package and exposed in the catalog; it does not affect the granted-points computation (`grantAmount`/`points` still derive from `priceAmount`).

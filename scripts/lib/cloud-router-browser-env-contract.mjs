@@ -67,6 +67,7 @@ export const CLOUD_ROUTER_BROWSER_DEVELOPMENT_DEFAULT_VITE_ENV = Object.freeze({
   VITE_CLOUDROUTER_OPEN_API_BASE_URL: '/v1',
   VITE_CLOUDROUTER_APP_API_BASE_URL: '/app/v3/api',
   VITE_CLOUDROUTER_BACKEND_API_BASE_URL: '/backend/v3/api',
+  VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL: 'http://127.0.0.1:3900',
   VITE_TOOL_API_ENABLED: 'false',
 });
 
@@ -84,6 +85,7 @@ export const CLOUD_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_ORDER = Object.freeze([
   'VITE_CLOUDROUTER_OPEN_API_BASE_URL',
   'VITE_CLOUDROUTER_APP_API_BASE_URL',
   'VITE_CLOUDROUTER_BACKEND_API_BASE_URL',
+  'VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL',
   'VITE_TOOL_API_ENABLED',
 ]);
 
@@ -139,6 +141,8 @@ export const CLOUD_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_COMMENTS = Object.freeze({
   VITE_CLOUDROUTER_OPEN_API_BASE_URL: '# @sdkwork/cloudrouter-open-sdk base URL.',
   VITE_CLOUDROUTER_APP_API_BASE_URL: '# @sdkwork/cloudrouter-app-sdk base URL.',
   VITE_CLOUDROUTER_BACKEND_API_BASE_URL: '# @sdkwork/cloudrouter-backend-sdk base URL.',
+  VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL:
+    '# @sdkwork/drive-admin-storage-sdk / drive backend base URL (sdkwork-drive standalone gateway).',
   VITE_TOOL_API_ENABLED: '# Browser gate for local tool/codegen routes.',
 });
 

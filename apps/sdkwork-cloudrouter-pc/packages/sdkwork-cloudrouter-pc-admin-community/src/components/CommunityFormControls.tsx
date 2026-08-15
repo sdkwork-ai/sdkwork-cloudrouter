@@ -50,6 +50,13 @@ export function CommunityFormError({ message }: { message: string }) {
   );
 }
 
+/** 表单字段 label 固定宽度（左侧布局），提示文案按同宽度缩进与控件对齐 */
+const fieldLabelClassName =
+  'w-28 shrink-0 text-sm font-medium text-slate-700 dark:text-slate-300';
+
+const fieldControlClassName =
+  'min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-white/20 dark:bg-white/5 dark:text-white';
+
 interface CommunityTextFieldProps {
   label: string;
   value: string;
@@ -70,20 +77,22 @@ export function CommunityTextField({
   onChange,
 }: CommunityTextFieldProps) {
   return (
-    <label className="block">
-      <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
-      <input
-        value={value}
-        type={type}
-        step={step}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-white/20 dark:bg-white/5 dark:text-white"
-      />
+    <div>
+      <label className="flex items-center gap-3">
+        <span className={fieldLabelClassName}>{label}</span>
+        <input
+          value={value}
+          type={type}
+          step={step}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          className={fieldControlClassName}
+        />
+      </label>
       {hint ? (
-        <span className="mt-1 block text-xs text-slate-400 dark:text-slate-500">{hint}</span>
+        <p className="ml-31 mt-1 text-xs text-slate-400 dark:text-slate-500">{hint}</p>
       ) : null}
-    </label>
+    </div>
   );
 }
 
@@ -105,19 +114,21 @@ export function CommunityTextAreaField({
   onChange,
 }: CommunityTextAreaFieldProps) {
   return (
-    <label className="block">
-      <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
-      <textarea
-        value={value}
-        rows={rows}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-white/20 dark:bg-white/5 dark:text-white"
-      />
+    <div>
+      <label className="flex items-start gap-3">
+        <span className={`${fieldLabelClassName} pt-2`}>{label}</span>
+        <textarea
+          value={value}
+          rows={rows}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          className={fieldControlClassName}
+        />
+      </label>
       {hint ? (
-        <span className="mt-1 block text-xs text-slate-400 dark:text-slate-500">{hint}</span>
+        <p className="ml-31 mt-1 text-xs text-slate-400 dark:text-slate-500">{hint}</p>
       ) : null}
-    </label>
+    </div>
   );
 }
 
@@ -137,12 +148,12 @@ export function CommunitySelectField<TValue extends string>({
   onChange,
 }: CommunitySelectFieldProps<TValue>) {
   return (
-    <label className="block">
-      <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
+    <label className="flex items-center gap-3">
+      <span className={fieldLabelClassName}>{label}</span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value as TValue | '')}
-        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-white"
+        className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-white"
       >
         {placeholder ? <option value="">{placeholder}</option> : null}
         {options.map((option) => (

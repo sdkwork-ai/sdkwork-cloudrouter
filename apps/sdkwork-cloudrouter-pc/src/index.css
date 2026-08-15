@@ -29,6 +29,9 @@
 @source "../../../../sdkwork-membership/apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-subscription/src";
 @source "../../../../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-payment/src";
 @source "../../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-order/src";
+@source "../../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-admin-orders/src";
+@source "../../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-admin-trade/src";
+@source "../../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-admin-core/src";
 @source "../../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/*/src/**";
 @source "../../../../sdkwork-assets/apps/sdkwork-assets-pc/packages/*/src/**";
 @source "../../../../sdkwork-image/apps/sdkwork-image-pc/packages/*/src/**";

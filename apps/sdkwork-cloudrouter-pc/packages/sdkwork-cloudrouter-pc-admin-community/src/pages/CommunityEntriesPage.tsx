@@ -145,48 +145,61 @@ export function CommunityEntriesPage() {
       error={error}
       onRefresh={refreshCurrent}
       actions={(
-        <input
-          value={searchQuery}
-          onChange={(event) => {
-            setSearchQuery(event.target.value);
-            setPage(1);
-          }}
-          placeholder={t('admin.community.entries.searchPlaceholder', 'Search entries...')}
-          className="w-56 rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-slate-700 dark:border-white/20 dark:bg-white/5 dark:text-slate-300"
-        />
+        <label className="flex items-center gap-2">
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            {t('admin.community.entries.searchLabel', 'Search')}
+          </span>
+          <input
+            value={searchQuery}
+            onChange={(event) => {
+              setSearchQuery(event.target.value);
+              setPage(1);
+            }}
+            placeholder={t('admin.community.entries.searchPlaceholder', 'Search entries...')}
+            className="w-56 rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-slate-700 dark:border-white/20 dark:bg-white/5 dark:text-slate-300"
+          />
+        </label>
       )}
     >
       <div className="flex shrink-0 flex-wrap items-center gap-3">
-        <select
-          value={kindFilter}
-          onChange={(event) => {
-            setKindFilter(event.target.value as CommunityEntryKindFilterValue);
-            setPage(1);
-          }}
-          className={selectClassName}
-          aria-label={t('admin.community.entries.kindFilter', 'Filter by kind')}
-        >
-          {kindOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {t(`admin.community.kind.${option.value}`, option.fallback)}
-            </option>
-          ))}
-        </select>
-        <select
-          value={stateFilter}
-          onChange={(event) => {
-            setStateFilter(event.target.value as CommunityEntryStateFilterValue);
-            setPage(1);
-          }}
-          className={selectClassName}
-          aria-label={t('admin.community.entries.stateFilter', 'Filter by review state')}
-        >
-          {stateOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {t(`admin.community.reviewState.${option.value}`, option.fallback)}
-            </option>
-          ))}
-        </select>
+        <label className="flex items-center gap-2">
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            {t('admin.community.entries.kindLabel', 'Kind')}
+          </span>
+          <select
+            value={kindFilter}
+            onChange={(event) => {
+              setKindFilter(event.target.value as CommunityEntryKindFilterValue);
+              setPage(1);
+            }}
+            className={selectClassName}
+          >
+            {kindOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {t(`admin.community.kind.${option.value}`, option.fallback)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            {t('admin.community.entries.stateLabel', 'State')}
+          </span>
+          <select
+            value={stateFilter}
+            onChange={(event) => {
+              setStateFilter(event.target.value as CommunityEntryStateFilterValue);
+              setPage(1);
+            }}
+            className={selectClassName}
+          >
+            {stateOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {t(`admin.community.reviewState.${option.value}`, option.fallback)}
+              </option>
+            ))}
+          </select>
+        </label>
         <span className="text-xs text-slate-400">
           {t('admin.community.entries.managementHint', 'All posts including drafts and rejected content.')}
         </span>

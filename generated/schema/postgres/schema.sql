@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.4.0.
--- Registry SHA-256: 3ff5b9782ea0271fe269a6cea5ecc908972a9b4ead3cbea6be839e4ad9a17db3.
+-- Registry SHA-256: 751ccc1cbc9bae7d55252dc9dfdfb66a76fa57310afa2a28f1aa2c9acb1203f1.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -1149,10 +1149,10 @@ CREATE TABLE IF NOT EXISTS ai_upstream_supplier (
     docs_url VARCHAR(512),
     website_url VARCHAR(512),
     default_vendor_code VARCHAR(64),
-    default_base_url VARCHAR(2048),
     supplier_type VARCHAR(32) NOT NULL DEFAULT 'official',
     adapter_code VARCHAR(64) NOT NULL,
     protocol_code VARCHAR(64) NOT NULL,
+    protocols JSONB NOT NULL DEFAULT '[]'::jsonb,
     owner_kind VARCHAR(32),
     region_code VARCHAR(64),
     environment INTEGER NOT NULL DEFAULT 1,

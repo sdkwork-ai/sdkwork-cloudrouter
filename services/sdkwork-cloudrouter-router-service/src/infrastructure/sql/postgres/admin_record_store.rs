@@ -100,7 +100,7 @@ SELECT
         )
     END AS error_type,
     COALESCE(NULLIF(t.error_message_masked, ''), '') AS error_message,
-    t.latency_ms AS latency_ms,
+    COALESCE(t.latency_ms, 0) AS latency_ms,
     COALESCE(t.ttft_ms, 0) AS ttft_ms,
     CASE WHEN COALESCE(t.streaming, false) THEN 1 ELSE 0 END AS is_stream,
     COALESCE(u.prompt_tokens, CAST(COALESCE(t.prompt_tokens, 0) AS TEXT)) AS prompt_tokens,
@@ -224,7 +224,7 @@ fn row_to_log(row: sqlx::postgres::PgRow) -> Result<AdminRecordLogItem, DomainEr
         error_code: string_cell(&row, "error_code"),
         error_type: string_cell(&row, "error_type"),
         error_message: string_cell(&row, "error_message"),
-        total_time: duration_label(required_latency_cell(&row, "latency_ms")?),
+        total_time: duration_label(integer_cell(&row, "latency_ms")),
         ttft: duration_label(integer_cell(&row, "ttft_ms")),
         is_stream: integer_cell(&row, "is_stream") != 0,
         input_tokens: integer_cell(&row, "prompt_tokens"),
@@ -301,27 +301,6 @@ fn string_cell(row: &sqlx::postgres::PgRow, column: &str) -> String {
 
 fn integer_cell(row: &sqlx::postgres::PgRow, column: &str) -> i64 {
     optional_integer_cell(row, column).unwrap_or(0)
-}
-
-fn required_latency_cell(row: &sqlx::postgres::PgRow, column: &str) -> Result<i64, DomainError> {
-    let value = optional_integer_cell(row, column).ok_or_else(|| {
-        if column == "latency_ms" {
-            DomainError::new("missing admin record latency_ms from database row")
-        } else {
-            DomainError::new(format!("missing admin record {column} from database row"))
-        }
-    })?;
-    if value < 0 {
-        if column == "latency_ms" {
-            return Err(DomainError::new(format!(
-                "invalid admin record latency_ms from database row: {value}"
-            )));
-        }
-        return Err(DomainError::new(format!(
-            "invalid admin record {column} from database row: {value}"
-        )));
-    }
-    Ok(value)
 }
 
 fn optional_integer_cell(row: &sqlx::postgres::PgRow, column: &str) -> Option<i64> {
@@ -437,6 +416,18 @@ mod tests {
         assert!(
             LIST_ADMIN_RECORD_LOGS.contains("AS user_agent"),
             "admin record Postgres SQL must expose a user_agent column for API serialization"
+        );
+    }
+
+    #[test]
+    fn list_logs_query_defaults_null_latency_to_zero() {
+        assert!(
+            LIST_ADMIN_RECORD_LOGS.contains("COALESCE(t.latency_ms, 0) AS latency_ms"),
+            "admin record Postgres SQL must project latency_ms with a zero default so traces without measured latency do not fail the page"
+        );
+        assert!(
+            !LIST_ADMIN_RECORD_LOGS.contains("t.latency_ms AS latency_ms"),
+            "admin record Postgres SQL must not project raw nullable latency_ms"
         );
     }
 

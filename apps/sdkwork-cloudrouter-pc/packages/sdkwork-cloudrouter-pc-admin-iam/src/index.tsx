@@ -402,7 +402,7 @@ const LazyIamOauthOfficialAccountCustomMenuAdmin = lazy(async () => {
       return (
         <SdkworkIamOauthOfficialAccountCustomMenuPage
           controller={controller}
-          onBack={() => navigate('/admin/iam/oauth/official-accounts')}
+          onClose={() => navigate('/admin/iam/oauth/official-accounts')}
           resourceAccountId={resourceAccountId}
         />
       );

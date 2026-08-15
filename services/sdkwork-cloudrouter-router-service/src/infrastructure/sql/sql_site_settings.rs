@@ -19,6 +19,8 @@ pub(crate) struct StoredSiteSettings {
     pub logo: Value,
     pub icon: Value,
     pub favicon: Value,
+    pub official_account_qr_code: Value,
+    pub community_group_qr_code: Value,
     pub brand_color: String,
     pub accent_color: String,
     pub footer_copyright: String,
@@ -57,6 +59,8 @@ impl From<SiteSettings> for StoredSiteSettings {
             logo: value.logo,
             icon: value.icon,
             favicon: value.favicon,
+            official_account_qr_code: value.official_account_qr_code,
+            community_group_qr_code: value.community_group_qr_code,
             brand_color: value.brand_color,
             accent_color: value.accent_color,
             footer_copyright: value.footer_copyright,
@@ -84,6 +88,8 @@ impl From<StoredSiteSettings> for SiteSettings {
             logo: value.logo,
             icon: value.icon,
             favicon: value.favicon,
+            official_account_qr_code: value.official_account_qr_code,
+            community_group_qr_code: value.community_group_qr_code,
             brand_color: value.brand_color,
             accent_color: value.accent_color,
             footer_copyright: value.footer_copyright,
@@ -189,6 +195,48 @@ mod tests {
             assert_eq!(
                 "https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11010502000000",
                 decoded.police_record_url
+            );
+        }
+    }
+
+    #[test]
+    fn settings_payload_round_trips_qr_codes() {
+        let settings = SiteSettings {
+            official_account_qr_code: serde_json::json!({
+                "kind": "image",
+                "source": "external_url",
+                "publicUrl": "https://example.com/official-account-qr.png"
+            }),
+            community_group_qr_code: serde_json::json!({
+                "kind": "image",
+                "source": "external_url",
+                "publicUrl": "https://example.com/community-group-qr.png"
+            }),
+            ..SiteSettings::default()
+        };
+
+        let payload = settings_payload(&settings).unwrap();
+        let snapshot_payload = settings_snapshot_payload(&settings).unwrap();
+
+        for decoded in [
+            settings_from_payload(&payload).unwrap(),
+            settings_from_payload(&snapshot_payload).unwrap(),
+        ] {
+            assert_eq!(
+                "https://example.com/official-account-qr.png",
+                decoded
+                    .official_account_qr_code
+                    .get("publicUrl")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or_default()
+            );
+            assert_eq!(
+                "https://example.com/community-group-qr.png",
+                decoded
+                    .community_group_qr_code
+                    .get("publicUrl")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or_default()
             );
         }
     }

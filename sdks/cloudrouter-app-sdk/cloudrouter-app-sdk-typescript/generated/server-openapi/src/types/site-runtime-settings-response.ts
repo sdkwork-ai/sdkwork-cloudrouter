@@ -6,6 +6,8 @@ export interface SiteRuntimeSettingsResponse {
   accentColor: string;
   /** Brand color field on site runtime settings response. */
   brandColor: string;
+  /** Community group qr code field on site runtime settings response. */
+  communityGroupQrCode?: MediaResource | null;
   /** Custom css field on site runtime settings response. */
   customCss: string;
   /** Description field on site runtime settings response. */
@@ -24,6 +26,8 @@ export interface SiteRuntimeSettingsResponse {
   icpRecordUrl: string;
   /** Logo field on site runtime settings response. */
   logo: MediaResource | null;
+  /** Official account qr code field on site runtime settings response. */
+  officialAccountQrCode?: MediaResource | null;
   /** Police record number field on site runtime settings response. */
   policeRecordNumber: string;
   /** Police record url field on site runtime settings response. */

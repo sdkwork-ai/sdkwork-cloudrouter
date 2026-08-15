@@ -798,6 +798,11 @@ fn normalize_decimal_string(
     let whole = whole.trim_start_matches('0');
     let whole = if whole.is_empty() { "0" } else { whole };
     let fraction = fraction.trim_end_matches('0');
+    if whole == "0" && fraction.is_empty() {
+        return Err(AdminMarketingCommandBuildError::BadRequest(format!(
+            "{field_name} must be greater than zero"
+        )));
+    }
     if fraction.is_empty() {
         Ok(whole.to_owned())
     } else {

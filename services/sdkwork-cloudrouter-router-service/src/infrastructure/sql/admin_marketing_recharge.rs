@@ -1,7 +1,5 @@
 use std::collections::BTreeMap;
 
-use serde::Deserialize;
-
 use crate::domain::{DomainError, DomainResult};
 use crate::ports::{AdminRechargePackageItem, AdminRechargeSettingsItem};
 
@@ -17,49 +15,37 @@ pub(crate) struct RechargeSettingsModel {
     pub currency_to_cny_rates: BTreeMap<String, String>,
 }
 
-#[derive(Debug, Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
-struct RechargeSettingsRemark {
-    #[serde(default)]
-    base_currency_code: Option<String>,
-    #[serde(default)]
-    currency_to_cny_rates: BTreeMap<String, String>,
-}
-
+/// Builds the canonical recharge settings model from the structured rule
+/// row (rate + base currency) and its child currency-rate rows. Missing
+/// values fall back to the platform defaults; malformed values are hard
+/// errors so configuration cannot silently degrade.
 pub(crate) fn parse_recharge_settings_model(
     rate: Option<&str>,
-    remark_json: Option<&str>,
+    base_currency_code: Option<&str>,
+    currency_to_cny_rates: Option<BTreeMap<String, String>>,
 ) -> DomainResult<RechargeSettingsModel> {
     let base_points_per_cny = rate
         .filter(|value| !value.trim().is_empty())
         .map(|value| canonical_decimal_string(value, 6, "recharge settings base points per cny"))
         .transpose()?
         .unwrap_or_else(|| DEFAULT_BASE_POINTS_PER_CNY.to_owned());
-    let remark_json = remark_json
-        .filter(|value| !value.trim().is_empty())
-        .map(str::to_owned)
-        .unwrap_or_else(default_recharge_remark_json);
-    let remark = serde_json::from_str::<RechargeSettingsRemark>(&remark_json).map_err(|error| {
-        DomainError::new(format!("invalid recharge settings remark json: {error}"))
-    })?;
-    let base_currency_code = remark
-        .base_currency_code
-        .unwrap_or_else(|| DEFAULT_BASE_CURRENCY_CODE.to_owned())
-        .trim()
-        .to_ascii_uppercase();
-    let mut currency_to_cny_rates = if remark.currency_to_cny_rates.is_empty() {
-        default_currency_to_cny_rates()
-    } else {
-        normalize_currency_rates(remark.currency_to_cny_rates)?
-    };
+    let normalized_rates = currency_to_cny_rates
+        .filter(|rates| !rates.is_empty())
+        .map(normalize_currency_rates)
+        .transpose()?
+        .unwrap_or_else(default_currency_to_cny_rates);
+    let mut currency_to_cny_rates = normalized_rates;
     currency_to_cny_rates
         .entry(DEFAULT_BASE_CURRENCY_CODE.to_owned())
         .or_insert_with(|| "1".to_owned());
-    if !base_currency_code.is_empty() {
-        currency_to_cny_rates
-            .entry(base_currency_code.clone())
-            .or_insert_with(|| "1".to_owned());
-    }
+    let base_currency_code = base_currency_code
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or(DEFAULT_BASE_CURRENCY_CODE)
+        .trim()
+        .to_ascii_uppercase();
+    currency_to_cny_rates
+        .entry(base_currency_code.clone())
+        .or_insert_with(|| "1".to_owned());
 
     Ok(RechargeSettingsModel {
         base_currency_code,
@@ -78,26 +64,11 @@ pub(crate) fn recharge_settings_to_item(
     }
 }
 
-pub(crate) fn serialize_recharge_settings_remark(
-    base_currency_code: &str,
-    currency_to_cny_rates: &BTreeMap<String, String>,
-) -> String {
-    serde_json::json!({
-        "baseCurrencyCode": base_currency_code,
-        "currencyToCnyRates": currency_to_cny_rates,
-    })
-    .to_string()
-}
-
 pub(crate) fn default_currency_to_cny_rates() -> BTreeMap<String, String> {
     BTreeMap::from([
         (DEFAULT_BASE_CURRENCY_CODE.to_owned(), "1".to_owned()),
         ("USD".to_owned(), DEFAULT_USD_TO_CNY_RATE.to_owned()),
     ])
-}
-
-pub(crate) fn default_recharge_remark_json() -> String {
-    serialize_recharge_settings_remark(DEFAULT_BASE_CURRENCY_CODE, &default_currency_to_cny_rates())
 }
 
 pub(crate) fn compute_grant_amount(

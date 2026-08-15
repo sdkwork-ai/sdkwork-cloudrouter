@@ -239,8 +239,8 @@ async fn list_referral_strategies(
                     reward_target AS reward_target,
                     trigger_event AS trigger_event,
                     max_rewards_per_inviter AS max_rewards_per_inviter,
-                    COALESCE(starts_at, '')::text AS starts_at,
-                    COALESCE(ends_at, '')::text AS ends_at,
+                    COALESCE(starts_at::text, '') AS starts_at,
+                    COALESCE(ends_at::text, '') AS ends_at,
                     updated_at::text AS updated_at,
                     COUNT(*) OVER() AS total
                 FROM ops_referral_strategy
@@ -264,8 +264,8 @@ async fn list_referral_strategies(
                     reward_target AS reward_target,
                     trigger_event AS trigger_event,
                     max_rewards_per_inviter AS max_rewards_per_inviter,
-                    COALESCE(starts_at, '')::text AS starts_at,
-                    COALESCE(ends_at, '')::text AS ends_at,
+                    COALESCE(starts_at::text, '') AS starts_at,
+                    COALESCE(ends_at::text, '') AS ends_at,
                     updated_at::text AS updated_at,
                     COUNT(*) OVER() AS total
                 FROM ops_referral_strategy
@@ -289,8 +289,8 @@ async fn list_referral_strategies(
                     reward_target AS reward_target,
                     trigger_event AS trigger_event,
                     max_rewards_per_inviter AS max_rewards_per_inviter,
-                    COALESCE(starts_at, '')::text AS starts_at,
-                    COALESCE(ends_at, '')::text AS ends_at,
+                    COALESCE(starts_at::text, '') AS starts_at,
+                    COALESCE(ends_at::text, '') AS ends_at,
                     updated_at::text AS updated_at,
                     COUNT(*) OVER() AS total
                 FROM ops_referral_strategy
@@ -355,8 +355,8 @@ async fn retrieve_referral_strategy(
             reward_target AS reward_target,
             trigger_event AS trigger_event,
             max_rewards_per_inviter AS max_rewards_per_inviter,
-            COALESCE(starts_at, '')::text AS starts_at,
-            COALESCE(ends_at, '')::text AS ends_at,
+            COALESCE(starts_at::text, '') AS starts_at,
+            COALESCE(ends_at::text, '') AS ends_at,
             updated_at::text AS updated_at
         FROM ops_referral_strategy
         WHERE tenant_id = $1

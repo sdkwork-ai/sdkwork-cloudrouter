@@ -20,4 +20,44 @@ describe('site settings compliance defaults', () => {
       policeRecordUrl: '',
     });
   });
+
+  it('maps configured QR code media resources from the backend record', () => {
+    expect(
+      toSiteSettings({
+        siteName: 'Router Operations',
+        officialAccountQrCode: {
+          kind: 'image',
+          source: 'external_url',
+          publicUrl: 'https://example.com/official-account-qr.png',
+        },
+        communityGroupQrCode: {
+          kind: 'image',
+          source: 'external_url',
+          publicUrl: 'https://example.com/community-group-qr.png',
+        },
+      }),
+    ).toMatchObject({
+      officialAccountQrCode: {
+        kind: 'image',
+        source: 'external_url',
+        publicUrl: 'https://example.com/official-account-qr.png',
+      },
+      communityGroupQrCode: {
+        kind: 'image',
+        source: 'external_url',
+        publicUrl: 'https://example.com/community-group-qr.png',
+      },
+    });
+  });
+
+  it('keeps QR code fields unset when the backend record has none', () => {
+    expect(DEFAULT_SITE_SETTINGS).toMatchObject({
+      officialAccountQrCode: undefined,
+      communityGroupQrCode: undefined,
+    });
+    expect(toSiteSettings({ siteName: 'Router Operations' })).toMatchObject({
+      officialAccountQrCode: undefined,
+      communityGroupQrCode: undefined,
+    });
+  });
 });

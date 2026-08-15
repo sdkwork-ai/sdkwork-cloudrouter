@@ -1295,6 +1295,12 @@ importers:
         specifier: ^5.8.2
         version: 5.8.3
 
+  ../sdkwork-drive/sdks/sdkwork-drive-sdk/sdkwork-drive-sdk-typescript:
+    dependencies:
+      '@sdkwork/sdk-common':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+
   ../sdkwork-feeds/sdks/sdkwork-feeds-sdk/sdkwork-feeds-sdk-typescript:
     dependencies:
       '@sdkwork/sdk-common':
@@ -3133,6 +3139,12 @@ importers:
       '@sdkwork/utils':
         specifier: workspace:*
         version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
+      i18next:
+        specifier: ^26.3.6
+        version: 26.3.6(typescript@6.0.3)
+      react-i18next:
+        specifier: ^17.0.11
+        version: 17.0.11(i18next@26.3.6(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3)
 
   ../sdkwork-rtc/apps/sdkwork-rtc-pc/packages/sdkwork-rtc-pc-admin-shell: {}
 
@@ -3617,6 +3629,9 @@ importers:
       '@sdkwork/drive-backend-sdk':
         specifier: workspace:*
         version: link:../../../sdkwork-drive/sdks/sdkwork-drive-backend-sdk/sdkwork-drive-backend-sdk-typescript
+      '@sdkwork/drive-sdk':
+        specifier: workspace:*
+        version: link:../../../sdkwork-drive/sdks/sdkwork-drive-sdk/sdkwork-drive-sdk-typescript
       '@sdkwork/generations-app-sdk':
         specifier: workspace:*
         version: link:../../../sdkwork-generations/sdks/sdkwork-generations-app-sdk/sdkwork-generations-app-sdk-typescript
@@ -3704,6 +3719,9 @@ importers:
       '@sdkwork/order-backend-sdk':
         specifier: workspace:*
         version: link:../../../sdkwork-order/sdks/sdkwork-order-backend-sdk/sdkwork-order-backend-sdk-typescript
+      '@sdkwork/order-pc-admin-orders':
+        specifier: workspace:*
+        version: link:../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-admin-orders
       '@sdkwork/order-pc-admin-trade':
         specifier: workspace:*
         version: link:../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-admin-trade
@@ -4285,6 +4303,12 @@ importers:
       '@sdkwork/cloudroutes-pc-commons':
         specifier: workspace:*
         version: link:../sdkwork-cloudroutes-pc-commons
+      '@sdkwork/drive-app-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript
+      '@sdkwork/ui-pc-react':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-ui/sdkwork-ui-pc-react
     devDependencies:
       '@types/react':
         specifier: ^19.0.0
@@ -4518,6 +4542,9 @@ importers:
       '@sdkwork/partner-pc-join':
         specifier: workspace:*
         version: link:../../../../../sdkwork-partner/apps/sdkwork-partner-pc/packages/sdkwork-partner-pc-join
+      '@sdkwork/rtc-pc-admin-core':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-rtc/apps/sdkwork-rtc-pc/packages/sdkwork-rtc-pc-admin-core
     devDependencies:
       '@sdkwork/documents-pc-i18n':
         specifier: workspace:*
@@ -4667,6 +4694,9 @@ importers:
       '@sdkwork/drive-app-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript
+      '@sdkwork/drive-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-drive/sdks/sdkwork-drive-sdk/sdkwork-drive-sdk-typescript
       '@sdkwork/generations-app-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-generations/sdks/sdkwork-generations-app-sdk/sdkwork-generations-app-sdk-typescript

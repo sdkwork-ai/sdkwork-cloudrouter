@@ -470,14 +470,26 @@ async fn seed_platform_catalog(pool: &PgPool) {
     sqlx::query(
         r#"
         INSERT INTO commerce_exchange_rule
-            (id, tenant_id, organization_id, rule_no, source_asset_type, target_asset_type, rate, status, remark, request_no, idempotency_key, created_at, updated_at)
+            (id, tenant_id, organization_id, rule_no, source_asset_type, target_asset_type, rate, status, base_currency_code, remark, request_no, idempotency_key, created_at, updated_at)
         VALUES
-            ('platform-rule-1', '100001', '0', 'CASH_TO_POINTS', 'cash', 'points', '10', 'active', '{"baseCurrencyCode":"CNY","currencyToCnyRates":{"CNY":"1.000000","USD":"7.000000"}}', 'platform-rule-seed', 'platform-rule-seed', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            ('platform-rule-1', '100001', '0', 'CASH_TO_POINTS', 'cash', 'points', '10', 'active', 'CNY', NULL, 'platform-rule-seed', 'platform-rule-seed', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         "#,
     )
     .execute(pool)
     .await
     .expect("seed platform exchange rule");
+    sqlx::query(
+        r#"
+        INSERT INTO commerce_exchange_currency_rate
+            (id, rule_id, currency_code, rate, created_at, updated_at)
+        VALUES
+            ('platform-rate-1-CNY', 'platform-rule-1', 'CNY', '1.000000', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+            ('platform-rate-1-USD', 'platform-rule-1', 'USD', '7.000000', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        "#,
+    )
+    .execute(pool)
+    .await
+    .expect("seed platform exchange currency rates");
 }
 
 fn split_statements(baseline: &str) -> Vec<String> {

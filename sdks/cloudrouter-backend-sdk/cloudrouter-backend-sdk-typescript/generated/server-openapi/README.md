@@ -73,8 +73,12 @@ const result = await client.ai.upstreamResourceCatalog.retrieve();
 ### billing
 
 ```typescript
-// List
-const result = await client.billing.rechargeRecords.list();
+// List referral stats
+const params = {
+  page: 1,
+  page_size: 2,
+};
+const result = await client.billing.referralStats.list(params);
 ```
 
 ### payments

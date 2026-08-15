@@ -1233,238 +1233,6 @@
         ],
         "type": "object"
       },
-      "AdminRechargePackage": {
-        "additionalProperties": false,
-        "description": "Admin recharge package schema exposed by Cloud Router.",
-        "properties": {
-          "bonusPoints": {
-            "description": "Bonus points field on admin recharge package.",
-            "format": "int64",
-            "pattern": "^[0-9]+$",
-            "type": "string",
-            "x-sdkwork-int64-string": true,
-            "x-sdkwork-rust-type": "i64"
-          },
-          "currencyCode": {
-            "description": "Currency code field on admin recharge package.",
-            "maxLength": 16,
-            "minLength": 3,
-            "type": "string"
-          },
-          "discount": {
-            "description": "Discount rate percentage: 100 means no discount, 90 means pay 90 percent of the price.",
-            "format": "int32",
-            "maximum": 100,
-            "minimum": 1,
-            "type": "integer"
-          },
-          "grantAmount": {
-            "description": "Grant amount field on admin recharge package.",
-            "format": "int64",
-            "pattern": "^[0-9]+$",
-            "type": "string",
-            "x-sdkwork-int64-string": true,
-            "x-sdkwork-rust-type": "i64"
-          },
-          "id": {
-            "description": "Id field on admin recharge package.",
-            "maxLength": 32,
-            "type": "string"
-          },
-          "name": {
-            "description": "Name field on admin recharge package.",
-            "maxLength": 200,
-            "type": "string"
-          },
-          "packageNo": {
-            "description": "Package no field on admin recharge package.",
-            "maxLength": 128,
-            "type": "string"
-          },
-          "points": {
-            "description": "Points field on admin recharge package.",
-            "format": "int64",
-            "pattern": "^[0-9]+$",
-            "type": "string",
-            "x-sdkwork-int64-string": true,
-            "x-sdkwork-rust-type": "i64"
-          },
-          "priceAmount": {
-            "description": "Price amount field on admin recharge package.",
-            "pattern": "^[0-9]+(\\.[0-9]{1,8})?$",
-            "type": "string"
-          },
-          "skuId": {
-            "description": "Sku id field on admin recharge package.",
-            "maxLength": 64,
-            "type": "string"
-          },
-          "status": {
-            "description": "Status field on admin recharge package.",
-            "enum": [
-              "active",
-              "inactive"
-            ],
-            "type": "string"
-          },
-          "updatedAt": {
-            "description": "Updated at field on admin recharge package.",
-            "maxLength": 64,
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "packageNo",
-          "name",
-          "skuId",
-          "priceAmount",
-          "currencyCode",
-          "bonusPoints",
-          "discount",
-          "grantAmount",
-          "points",
-          "status",
-          "updatedAt"
-        ],
-        "type": "object"
-      },
-      "AdminRechargePackageListResponse": {
-        "additionalProperties": false,
-        "description": "Admin recharge package list response schema exposed by Cloud Router.",
-        "name": "AdminRechargePackageListResponse",
-        "properties": {
-          "items": {
-            "description": "Items field on admin recharge package list response.",
-            "items": {
-              "$ref": "#/components/schemas/AdminRechargePackage"
-            },
-            "type": "array"
-          },
-          "pageInfo": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PageInfo"
-              }
-            ],
-            "description": "Page info field on admin recharge package list response."
-          }
-        },
-        "required": [
-          "items",
-          "pageInfo"
-        ],
-        "type": "object"
-      },
-      "AdminRechargeRecord": {
-        "additionalProperties": false,
-        "description": "Admin recharge record schema exposed by Cloud Router.",
-        "properties": {
-          "amount": {
-            "description": "Amount field on admin recharge record.",
-            "maxLength": 64,
-            "type": "string"
-          },
-          "id": {
-            "description": "Id field on admin recharge record.",
-            "maxLength": 32,
-            "type": "string"
-          },
-          "method": {
-            "description": "Method field on admin recharge record.",
-            "maxLength": 64,
-            "type": "string"
-          },
-          "status": {
-            "description": "Status field on admin recharge record.",
-            "maxLength": 64,
-            "type": "string"
-          },
-          "time": {
-            "description": "Time field on admin recharge record.",
-            "maxLength": 64,
-            "type": "string"
-          },
-          "tradeNo": {
-            "description": "Trade no field on admin recharge record.",
-            "maxLength": 128,
-            "type": "string"
-          },
-          "usdCredited": {
-            "description": "Usd credited field on admin recharge record.",
-            "maxLength": 64,
-            "type": "string"
-          },
-          "user": {
-            "description": "User field on admin recharge record.",
-            "maxLength": 320,
-            "type": "string"
-          },
-          "userId": {
-            "description": "User id field on admin recharge record.",
-            "maxLength": 32,
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "tradeNo",
-          "userId",
-          "user",
-          "amount",
-          "usdCredited",
-          "method",
-          "status",
-          "time"
-        ],
-        "type": "object"
-      },
-      "AdminRechargeRecordListResponse": {
-        "additionalProperties": false,
-        "description": "Admin recharge record list response schema exposed by Cloud Router.",
-        "name": "AdminRechargeRecordListResponse",
-        "properties": {
-          "items": {
-            "description": "Items field on admin recharge record list response.",
-            "items": {
-              "$ref": "#/components/schemas/AdminRechargeRecord"
-            },
-            "type": "array"
-          },
-          "pageInfo": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PageInfo"
-              }
-            ],
-            "description": "Page info field on admin recharge record list response."
-          }
-        },
-        "required": [
-          "items",
-          "pageInfo"
-        ],
-        "type": "object"
-      },
-      "AdminRechargeRecordResponse": {
-        "additionalProperties": false,
-        "description": "Admin recharge record response schema exposed by Cloud Router.",
-        "name": "AdminRechargeRecordResponse",
-        "properties": {
-          "item": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/AdminRechargeRecord"
-              }
-            ],
-            "description": "Item field on admin recharge record response."
-          }
-        },
-        "required": [
-          "item"
-        ],
-        "type": "object"
-      },
       "AdminRechargeSettings": {
         "additionalProperties": false,
         "description": "Admin recharge settings schema exposed by Cloud Router.",
@@ -1478,13 +1246,13 @@
           },
           "basePointsPerCny": {
             "description": "Base points per cny field on admin recharge settings.",
-            "pattern": "^[0-9]+(\\.[0-9]{1,8})?$",
+            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
             "type": "string"
           },
           "currencyToCnyRates": {
             "additionalProperties": {
               "description": "Currency to cny rates field on admin recharge settings.",
-              "pattern": "^[0-9]+(\\.[0-9]{1,8})?$",
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
               "type": "string"
             },
             "description": "Currency to cny rates field on admin recharge settings.",
@@ -2368,6 +2136,14 @@
             "description": "brandColor field on AdminSiteSettingsResponse.",
             "type": "string"
           },
+          "communityGroupQrCode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaResource"
+              }
+            ],
+            "description": "Community group qr code field on admin site settings response."
+          },
           "customCss": {
             "description": "customCss field on AdminSiteSettingsResponse.",
             "type": "string"
@@ -2415,6 +2191,14 @@
               }
             ],
             "description": "Logo field on admin site settings response."
+          },
+          "officialAccountQrCode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaResource"
+              }
+            ],
+            "description": "Official account qr code field on admin site settings response."
           },
           "policeRecordNumber": {
             "description": "policeRecordNumber field on AdminSiteSettingsResponse.",
@@ -2489,6 +2273,14 @@
             "description": "brandColor field on AdminSiteSettingsUpdateRequest.",
             "type": "string"
           },
+          "communityGroupQrCode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaResource"
+              }
+            ],
+            "description": "Community group qr code field on admin site settings update request."
+          },
           "customCss": {
             "description": "customCss field on AdminSiteSettingsUpdateRequest.",
             "type": "string"
@@ -2536,6 +2328,14 @@
               }
             ],
             "description": "Logo field on admin site settings update request."
+          },
+          "officialAccountQrCode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaResource"
+              }
+            ],
+            "description": "Official account qr code field on admin site settings update request."
           },
           "policeRecordNumber": {
             "description": "policeRecordNumber field on AdminSiteSettingsUpdateRequest.",
@@ -5924,60 +5724,6 @@
         "description": "Packages create result schema exposed by Cloud Router.",
         "x-operation-id": "packages.create"
       },
-      "PackagesListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by packages list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/AdminRechargePackageListResponse"
-                  }
-                ],
-                "description": "Data field on packages list result."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Packages list result schema exposed by Cloud Router.",
-        "x-operation-id": "packages.list"
-      },
-      "PackagesUpdateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by packages update result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Packages update result schema exposed by Cloud Router.",
-        "x-operation-id": "packages.update"
-      },
       "PageInfo": {
         "additionalProperties": false,
         "properties": {
@@ -6593,7 +6339,7 @@
           },
           "priceAmount": {
             "description": "Price amount field on recharge package mutation request.",
-            "pattern": "^[0-9]+(\\\\.[0-9]{1,8})?$",
+            "pattern": "^[0-9]+(\\\\.[0-9]{1,2})?$",
             "type": "string"
           },
           "status": {
@@ -6611,93 +6357,6 @@
           "bonusPoints",
           "discount",
           "status"
-        ],
-        "type": "object"
-      },
-      "RechargeRecordsListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by recharge records list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/AdminRechargeRecordListResponse"
-                  }
-                ],
-                "description": "Data field on recharge records list result."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Recharge records list result schema exposed by Cloud Router.",
-        "x-operation-id": "rechargeRecords.list"
-      },
-      "RechargeRecordsRetrieveResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by recharge records retrieve result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/AdminRechargeRecordResponse"
-                  }
-                ],
-                "description": "Data field on recharge records retrieve result."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Recharge records retrieve result schema exposed by Cloud Router.",
-        "x-operation-id": "rechargeRecords.retrieve"
-      },
-      "RechargeSettingsUpdateRequest": {
-        "additionalProperties": false,
-        "description": "Recharge settings update request schema exposed by Cloud Router.",
-        "name": "RechargeSettingsUpdateRequest",
-        "properties": {
-          "baseCurrencyCode": {
-            "description": "Base currency code field on recharge settings update request.",
-            "maxLength": 16,
-            "minLength": 3,
-            "type": "string"
-          },
-          "basePointsPerCny": {
-            "description": "Base points per cny field on recharge settings update request.",
-            "pattern": "^[0-9]+(\\\\.[0-9]{1,8})?$",
-            "type": "string"
-          },
-          "currencyToCnyRates": {
-            "additionalProperties": {
-              "description": "Currency to cny rates field on recharge settings update request.",
-              "pattern": "^[0-9]+(\\\\.[0-9]{1,8})?$",
-              "type": "string"
-            },
-            "description": "Currency to cny rates field on recharge settings update request.",
-            "type": "object"
-          }
-        },
-        "required": [
-          "baseCurrencyCode",
-          "basePointsPerCny",
-          "currencyToCnyRates"
         ],
         "type": "object"
       },
@@ -7335,33 +6994,6 @@
         ],
         "description": "Settings retrieve result schema exposed by Cloud Router.",
         "x-operation-id": "settings.retrieve"
-      },
-      "SettingsUpdateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by settings update result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Settings update result schema exposed by Cloud Router.",
-        "x-operation-id": "settings.update"
       },
       "SiteSettingsRetrieveResult": {
         "allOf": [
@@ -15005,184 +14637,6 @@
         ]
       }
     },
-    "/backend/v3/api/billing/recharges/records": {
-      "get": {
-        "description": "List. Reads recharges. Writes none. File targets none.",
-        "operationId": "rechargeRecords.list",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RechargeRecordsListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "List",
-        "tags": [
-          "billing"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "recharges"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "commerce",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-domain": "commerce",
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-resource": "rechargeRecords",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
-      }
-    },
-    "/backend/v3/api/billing/recharges/records/{orderNo}": {
-      "get": {
-        "description": "Retrieve. Reads recharges. Writes none. File targets none.",
-        "operationId": "rechargeRecords.retrieve",
-        "parameters": [
-          {
-            "description": "Order no path parameter.",
-            "in": "path",
-            "name": "orderNo",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RechargeRecordsRetrieveResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Retrieve",
-        "tags": [
-          "billing"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "recharges"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "commerce",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-domain": "commerce",
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-resource": "rechargeRecords",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
-      }
-    },
     "/backend/v3/api/billing/referral_strategies": {
       "get": {
         "description": "List referral strategies. Reads ops_referral_strategy. Writes none. File targets none.",
@@ -16284,119 +15738,6 @@
       }
     },
     "/backend/v3/api/recharges/packages": {
-      "get": {
-        "description": "List. Reads recharges. Writes none. File targets none.",
-        "operationId": "packages.list",
-        "parameters": [
-          {
-            "description": "Page query parameter.",
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Page size query parameter.",
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "maximum": 200,
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Status query parameter.",
-            "in": "query",
-            "name": "status",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PackagesListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "List",
-        "tags": [
-          "recharges"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "recharges"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "commerce",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-domain": "commerce",
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-resource": "packages",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
-      },
       "post": {
         "description": "Create. Reads recharges. Writes ops_audit_log. File targets none.",
         "operationId": "packages.create",
@@ -16580,111 +15921,6 @@
         "x-write-tables": [
           "ops_audit_log"
         ]
-      },
-      "patch": {
-        "description": "Update. Reads recharges. Writes ops_audit_log. File targets none.",
-        "operationId": "packages.update",
-        "parameters": [
-          {
-            "description": "Package id path parameter.",
-            "in": "path",
-            "name": "packageId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RechargePackageMutationRequest"
-              }
-            }
-          },
-          "description": "Typed request payload for update.",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PackagesUpdateResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Update",
-        "tags": [
-          "recharges"
-        ],
-        "x-contract-kind": "update",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "recharges"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "commerce",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-domain": "commerce",
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-resource": "packages",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [
-          "ops_audit_log"
-        ]
       }
     },
     "/backend/v3/api/recharges/settings": {
@@ -16769,101 +16005,6 @@
         "x-sdkwork-resource": "settings",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": []
-      },
-      "put": {
-        "description": "Update. Reads recharges. Writes ops_audit_log. File targets none.",
-        "operationId": "settings.update",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RechargeSettingsUpdateRequest"
-              }
-            }
-          },
-          "description": "Typed request payload for update.",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SettingsUpdateResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Update",
-        "tags": [
-          "recharges"
-        ],
-        "x-contract-kind": "update",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "recharges"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "commerce",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-domain": "commerce",
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-resource": "settings",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [
-          "ops_audit_log"
-        ]
       }
     },
     "/backend/v3/api/storage/default_buckets": {
@@ -21937,16 +21078,8 @@
       "name": "billing"
     },
     {
-      "description": "memberships operations exposed by Cloud Router.",
-      "name": "memberships"
-    },
-    {
       "description": "payments operations exposed by Cloud Router.",
       "name": "payments"
-    },
-    {
-      "description": "promotions operations exposed by Cloud Router.",
-      "name": "promotions"
     },
     {
       "description": "recharges operations exposed by Cloud Router.",

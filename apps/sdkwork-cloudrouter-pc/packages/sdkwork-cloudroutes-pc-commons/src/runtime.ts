@@ -40,6 +40,7 @@ export * from './load-error.ts';
 export * from './problem-message.ts';
 export * from './sdk-locale.ts';
 export * from './media-resource.ts';
+export * from './drive-media.ts';
 export * from './messaging-verification-service.ts';
 export * from './notificationService.ts';
 export * from './portal-auth.ts';

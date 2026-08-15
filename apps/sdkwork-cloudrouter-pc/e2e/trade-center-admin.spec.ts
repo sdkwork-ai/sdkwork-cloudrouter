@@ -7,6 +7,7 @@ const PERMISSION_SCOPE = [
   'commerce.orders.read',
   'commerce.orders.manage',
   'commerce.orders.review',
+  'commerce.orders.fulfill',
 ];
 
 function buildAdminSession(): Record<string, unknown> {

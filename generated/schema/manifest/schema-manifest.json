@@ -18221,6 +18221,11 @@
           "type": "string(64)"
         },
         {
+          "name": "protocols",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
           "name": "owner_kind",
           "source": "explicit",
           "type": "string(32)"

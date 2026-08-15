@@ -5449,6 +5449,9 @@ tables:
     protocol_code:
       type: string(64)
       constraints: NOT NULL
+    protocols:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
     owner_kind: string(32)
     region_code: string(64)
     environment:

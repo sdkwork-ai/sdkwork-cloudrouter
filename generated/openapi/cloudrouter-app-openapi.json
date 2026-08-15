@@ -4145,6 +4145,23 @@
             "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$",
             "type": "string"
           },
+          "communityGroupQrCode": {
+            "anyOf": [
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/MediaResource"
+                  }
+                ],
+                "description": "Community group qr code variant using media resource."
+              },
+              {
+                "description": "Null variant accepted by community group qr code.",
+                "type": "null"
+              }
+            ],
+            "description": "Community group qr code field on site runtime settings response."
+          },
           "customCss": {
             "description": "Custom css field on site runtime settings response.",
             "maxLength": 20000,
@@ -4225,6 +4242,23 @@
               }
             ],
             "description": "Logo field on site runtime settings response."
+          },
+          "officialAccountQrCode": {
+            "anyOf": [
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/MediaResource"
+                  }
+                ],
+                "description": "Official account qr code variant using media resource."
+              },
+              {
+                "description": "Null variant accepted by official account qr code.",
+                "type": "null"
+              }
+            ],
+            "description": "Official account qr code field on site runtime settings response."
           },
           "policeRecordNumber": {
             "description": "Police record number field on site runtime settings response.",

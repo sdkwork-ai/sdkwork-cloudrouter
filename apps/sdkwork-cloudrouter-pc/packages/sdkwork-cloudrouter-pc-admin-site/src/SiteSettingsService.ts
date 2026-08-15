@@ -11,10 +11,15 @@ import {
   type CloudRouterMediaResource,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 
-export type SiteSettingsForm = Omit<AdminSiteSettingsResponse, 'logo' | 'icon' | 'favicon'> & {
+export type SiteSettingsForm = Omit<
+  AdminSiteSettingsResponse,
+  'logo' | 'icon' | 'favicon' | 'officialAccountQrCode' | 'communityGroupQrCode'
+> & {
   logo?: CloudRouterMediaResource;
   icon?: CloudRouterMediaResource;
   favicon?: CloudRouterMediaResource;
+  officialAccountQrCode?: CloudRouterMediaResource;
+  communityGroupQrCode?: CloudRouterMediaResource;
 };
 
 export const DEFAULT_SITE_SETTINGS: SiteSettingsForm = {
@@ -24,6 +29,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsForm = {
   logo: undefined,
   icon: undefined,
   favicon: undefined,
+  officialAccountQrCode: undefined,
+  communityGroupQrCode: undefined,
   brandColor: '#0f172a',
   accentColor: '#e9583f',
   footerCopyright: 'Cloud Router. All rights reserved.',
@@ -62,6 +69,8 @@ export function toSiteSettings(record: Record<string, unknown>): SiteSettingsFor
     logo: readMediaResource(record.logo),
     icon: readMediaResource(record.icon),
     favicon: readMediaResource(record.favicon),
+    officialAccountQrCode: readMediaResource(record.officialAccountQrCode),
+    communityGroupQrCode: readMediaResource(record.communityGroupQrCode),
     brandColor: readString(record, 'brandColor', DEFAULT_SITE_SETTINGS.brandColor),
     accentColor: readString(record, 'accentColor', DEFAULT_SITE_SETTINGS.accentColor),
     footerCopyright: readString(record, 'footerCopyright', DEFAULT_SITE_SETTINGS.footerCopyright),
@@ -99,6 +108,8 @@ function toSiteSettingsUpdateRequest(form: SiteSettingsForm): AdminSiteSettingsU
     logo: toSdkMediaResource(form.logo, 'siteSettings.logo'),
     icon: toSdkMediaResource(form.icon, 'siteSettings.icon'),
     favicon: toSdkMediaResource(form.favicon, 'siteSettings.favicon'),
+    officialAccountQrCode: toSdkMediaResource(form.officialAccountQrCode, 'siteSettings.officialAccountQrCode'),
+    communityGroupQrCode: toSdkMediaResource(form.communityGroupQrCode, 'siteSettings.communityGroupQrCode'),
     brandColor: form.brandColor,
     accentColor: form.accentColor,
     footerCopyright: form.footerCopyright,

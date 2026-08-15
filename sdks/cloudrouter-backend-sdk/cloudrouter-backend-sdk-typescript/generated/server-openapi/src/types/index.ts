@@ -21,11 +21,6 @@ export type { AdminExchangeRuleListResponse } from './admin-exchange-rule-list-r
 export type { AdminFirewallRuleCreateRequest } from './admin-firewall-rule-create-request';
 export type { AdminIpLimitCreateRequest } from './admin-ip-limit-create-request';
 export type { AdminModelLimitCreateRequest } from './admin-model-limit-create-request';
-export type { AdminRechargePackage } from './admin-recharge-package';
-export type { AdminRechargePackageListResponse } from './admin-recharge-package-list-response';
-export type { AdminRechargeRecord } from './admin-recharge-record';
-export type { AdminRechargeRecordListResponse } from './admin-recharge-record-list-response';
-export type { AdminRechargeRecordResponse } from './admin-recharge-record-response';
 export type { AdminRechargeSettings } from './admin-recharge-settings';
 export type { AdminRecordLogItem } from './admin-record-log-item';
 export type { AdminRecordPage } from './admin-record-page';
@@ -112,8 +107,6 @@ export type { PaymentProviderMutationResponse } from './payment-provider-mutatio
 export type { ProblemDetail } from './problem-detail';
 
 export type { RechargePackageMutationRequest } from './recharge-package-mutation-request';
-
-export type { RechargeSettingsUpdateRequest } from './recharge-settings-update-request';
 
 export type { ReplaceUpstreamAccountGroupMembersRequest } from './replace-upstream-account-group-members-request';
 export type { ReplaceUpstreamAccountGroupResourcesRequest } from './replace-upstream-account-group-resources-request';

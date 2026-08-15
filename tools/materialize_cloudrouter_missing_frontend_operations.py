@@ -507,6 +507,20 @@ def materialize_missing_operations(root: Path, *, apply: bool) -> list[str]:
         return messages
 
     index_path = root / "docs" / "schema-registry" / "frontend-field-contracts" / "index.yaml"
+    snapshot_path = root / "docs" / "schema-registry" / "frontend-field-contracts.yaml"
+    if index_path.is_file():
+        _write_fragment_index(root, index_path, fragments, messages)
+    else:
+        _merge_snapshot_operations(snapshot_path, fragments, messages)
+    return messages
+
+
+def _write_fragment_index(
+    root: Path,
+    index_path: Path,
+    fragments: dict[str, list[dict[str, Any]]],
+    messages: list[str],
+) -> None:
     index_text = index_path.read_text(encoding="utf-8")
     for fragment_relative, entries in sorted(fragments.items()):
         fragment_path = root / "docs" / "schema-registry" / "frontend-field-contracts" / fragment_relative
@@ -535,10 +549,40 @@ def materialize_missing_operations(root: Path, *, apply: bool) -> list[str]:
         )
         fragment_line = f"- {fragment_relative.replace(chr(92), '/')}"
         if fragment_line not in index_text:
-            index_text = f"{index_text.rstrip()}\n{fragment_line}\n"
+            index_text = index_text.rstrip() + '\n' + fragment_line + '\n'
             messages.append(f"registered {fragment_line}")
     index_path.write_text(index_text, encoding="utf-8")
-    return messages
+
+
+def _merge_snapshot_operations(
+    snapshot_path: Path,
+    fragments: dict[str, list[dict[str, Any]]],
+    messages: list[str],
+) -> None:
+    """Merge materialized operations into the single-file contract snapshot,
+    preserving the document header and the existing operation order."""
+    payload = yaml.safe_load(snapshot_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"invalid frontend contract snapshot: {snapshot_path}")
+    current_entries = payload.get("frontend_operations", [])
+    if not isinstance(current_entries, list):
+        current_entries = []
+    merged_by_key = {
+        f"{entry.get('source')}#{entry.get('operation')}": entry
+        for entry in current_entries
+        if isinstance(entry, dict) and isinstance(entry.get("source"), str) and isinstance(entry.get("operation"), str)
+    }
+    for entries in fragments.values():
+        for entry in entries:
+            merged_by_key[f"{entry['source']}#{entry['operation']}"] = entry
+    payload["frontend_operations"] = list(merged_by_key.values())
+    snapshot_path.write_text(
+        yaml.safe_dump(payload, sort_keys=False, allow_unicode=True),
+        encoding="utf-8",
+    )
+    messages.append(f"merged {len(fragments)} fragment groups into {snapshot_path.name}")
+
+
 
 
 def main() -> int:

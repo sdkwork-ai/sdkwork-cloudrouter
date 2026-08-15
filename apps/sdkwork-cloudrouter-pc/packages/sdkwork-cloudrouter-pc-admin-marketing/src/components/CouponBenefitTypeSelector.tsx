@@ -23,6 +23,35 @@ const BENEFIT_OPTIONS: BenefitOption[] = [
   { kind: 'exchange', icon: Ticket },
 ];
 
+/** 卡片名称/目标账户/一句话说明的英文回退，防止资源缺失时渲染裸 key。 */
+const BENEFIT_LABEL_FALLBACKS: Record<CouponOfferCardKind, { name: string; account: string; desc: string }> = {
+  token_bank_credit: {
+    name: 'Token Bank Credit Coupon',
+    account: 'Token Bank',
+    desc: 'Grant Token Bank compute credit, with optional bonus.',
+  },
+  points_credit: {
+    name: 'Compute Credits Coupon',
+    account: 'Compute Credits',
+    desc: 'Grant Compute Credits on redemption.',
+  },
+  cash_credit: {
+    name: 'Cash Coupon',
+    account: 'Cash',
+    desc: 'Grant cash balance to the Cash account on redemption.',
+  },
+  subscription: {
+    name: 'Subscription Entitlement',
+    account: 'Subscription',
+    desc: 'Activate a limited subscription entitlement.',
+  },
+  exchange: {
+    name: 'Exchange Coupon',
+    account: 'Exchange Code',
+    desc: 'Users redeem a code to receive the selected benefit.',
+  },
+};
+
 /**
  * 券类型卡片选择器：图标 + 名称 + 目标账户标签 + 一句话说明，
  * 对齐行业（美团/淘宝）专业券创建体验。兑换券通过兑换码发放权益。
@@ -34,6 +63,7 @@ export function CouponBenefitTypeSelector({ value, onChange }: CouponBenefitType
       {BENEFIT_OPTIONS.map((option) => {
         const Icon = option.icon;
         const selected = option.kind === value;
+        const fallback = BENEFIT_LABEL_FALLBACKS[option.kind];
         return (
           <button
             key={option.kind}
@@ -57,14 +87,14 @@ export function CouponBenefitTypeSelector({ value, onChange }: CouponBenefitType
                 className={selected ? 'h-4 w-4 text-lobster-600' : 'h-4 w-4 text-slate-400 dark:text-slate-500'}
               />
               <span className="text-sm font-medium text-slate-800 dark:text-slate-100">
-                {t(`admin.marketing.coupon.form.benefit.${option.kind}`)}
+                {t(`admin.marketing.coupon.form.benefit.${option.kind}`, fallback.name)}
               </span>
               <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-white/10 dark:text-slate-400">
-                {t(`admin.marketing.coupon.form.benefit.account.${option.kind}`)}
+                {t(`admin.marketing.coupon.form.benefit.account.${option.kind}`, fallback.account)}
               </span>
             </span>
             <span className="text-xs leading-snug text-slate-400 dark:text-slate-500">
-              {t(`admin.marketing.coupon.form.benefit.desc.${option.kind}`)}
+              {t(`admin.marketing.coupon.form.benefit.desc.${option.kind}`, fallback.desc)}
             </span>
           </button>
         );

@@ -29,6 +29,8 @@ pub struct SiteSettings {
     pub logo: Value,
     pub icon: Value,
     pub favicon: Value,
+    pub official_account_qr_code: Value,
+    pub community_group_qr_code: Value,
     pub brand_color: String,
     pub accent_color: String,
     pub footer_copyright: String,
@@ -54,6 +56,8 @@ impl Default for SiteSettings {
             logo: empty_media_resource("image"),
             icon: empty_media_resource("image"),
             favicon: empty_media_resource("image"),
+            official_account_qr_code: empty_media_resource("image"),
+            community_group_qr_code: empty_media_resource("image"),
             brand_color: "#0f172a".to_owned(),
             accent_color: "#e9583f".to_owned(),
             footer_copyright: "Cloud Router. All rights reserved.".to_owned(),
@@ -80,6 +84,8 @@ impl SiteSettings {
         normalize_media_resource(&mut self.logo, "image");
         normalize_media_resource(&mut self.icon, "image");
         normalize_media_resource(&mut self.favicon, "image");
+        normalize_media_resource(&mut self.official_account_qr_code, "image");
+        normalize_media_resource(&mut self.community_group_qr_code, "image");
         normalize_color(&mut self.brand_color, "#0f172a");
         normalize_color(&mut self.accent_color, "#e9583f");
         normalize_optional_string(&mut self.footer_copyright);

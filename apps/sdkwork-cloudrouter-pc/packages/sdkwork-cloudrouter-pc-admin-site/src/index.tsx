@@ -1,16 +1,20 @@
 import React, { useCallback, useEffect, useId, useState } from 'react';
-import { Image, Loader2, Palette, RefreshCw, Save, Settings2 } from 'lucide-react';
+import { Image, Loader2, Palette, QrCode, RefreshCw, Save, Settings2, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { FileUpload, type FileUploadItem } from '@sdkwork/ui-pc-react';
 import { BusinessStatePanel, getLoadErrorMessage} from '@sdkwork/cloudroutes-pc-commons';
 import {
   readMediaResourceUrl,
   toExternalUrlMediaResource,
+  useResolvedMediaResourceUrl,
+  type CloudRouterMediaResource,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import {
   DEFAULT_SITE_SETTINGS,
   SiteSettingsService,
   type SiteSettingsForm,
 } from './SiteSettingsService';
+import { uploadQrCodeImage } from './qrCodeUpload';
 
 export { DEFAULT_SITE_SETTINGS, SiteSettingsService, toSiteSettings } from './SiteSettingsService';
 export type { SiteSettingsForm } from './SiteSettingsService';
@@ -93,6 +97,12 @@ export function CloudRouterSiteSettingsPage() {
   };
   const updateMediaField = (field: 'logo' | 'icon' | 'favicon', value: string) => {
     setForm((current) => ({ ...current, [field]: toExternalUrlMediaResource(value, 'image') }));
+  };
+  const updateQrCodeField = (
+    field: 'officialAccountQrCode' | 'communityGroupQrCode',
+    media: CloudRouterMediaResource | undefined,
+  ) => {
+    setForm((current) => ({ ...current, [field]: media }));
   };
   const logoSource = readMediaResourceUrl(form.logo);
   const iconSource = readMediaResourceUrl(form.icon);
@@ -185,6 +195,22 @@ export function CloudRouterSiteSettingsPage() {
         </section>
 
         <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
+          <SectionHeader icon={<QrCode className="h-5 w-5 text-lobster-500" />} title={t('admin.siteSettings.sections.qrCodes')} />
+          <div className="mt-5 grid grid-cols-1 gap-6">
+            <QrCodeField
+              label={t('admin.siteSettings.fields.officialAccountQrCode')}
+              onChange={(media) => updateQrCodeField('officialAccountQrCode', media)}
+              value={form.officialAccountQrCode}
+            />
+            <QrCodeField
+              label={t('admin.siteSettings.fields.communityGroupQrCode')}
+              onChange={(media) => updateQrCodeField('communityGroupQrCode', media)}
+              value={form.communityGroupQrCode}
+            />
+          </div>
+        </section>
+
+        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
           <SectionHeader icon={<Palette className="h-5 w-5 text-lobster-500" />} title={t('admin.siteSettings.sections.theme')} />
           <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
             <ColorField label={t('admin.siteSettings.fields.brandColor')} onChange={(value) => updateField('brandColor', value)} value={form.brandColor} />
@@ -231,6 +257,90 @@ function SectionDivider({ title }: { title: string }) {
       <div className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
       <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{title}</span>
       <div className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+    </div>
+  );
+}
+
+function QrCodeField({ label, value, onChange }: {
+  label: string;
+  value: CloudRouterMediaResource | undefined;
+  onChange: (media: CloudRouterMediaResource | undefined) => void;
+}) {
+  const { t } = useTranslation();
+  const previewUrl = useResolvedMediaResourceUrl(value);
+  const [items, setItems] = useState<FileUploadItem[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  const handleValueChange = (nextItems: FileUploadItem[]) => {
+    setItems(nextItems);
+    const nextFile = nextItems.find((item) => item.file);
+    if (!nextFile || uploading) {
+      return;
+    }
+    setUploading(true);
+    setItems((current) => current.map((item) =>
+      item.id === nextFile.id ? { ...item, status: 'uploading' as const, progress: 0 } : item));
+    uploadQrCodeImage(nextFile.file as File)
+      .then((media) => {
+        onChange(media);
+        setItems((current) => current.map((item) =>
+          item.id === nextFile.id ? { ...item, status: 'success' as const, progress: 100 } : item));
+      })
+      .catch((error) => {
+        setItems((current) => current.map((item) =>
+          item.id === nextFile.id
+            ? {
+                ...item,
+                status: 'error' as const,
+                error: getLoadErrorMessage(error, t('admin.siteSettings.errors.qrUploadFallback')),
+              }
+            : item));
+      })
+      .finally(() => setUploading(false));
+  };
+
+  const clear = () => {
+    onChange(undefined);
+    setItems([]);
+  };
+
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center justify-between gap-3">
+        <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
+        {value ? (
+          <button
+            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-red-600 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-red-400"
+            onClick={clear}
+            type="button"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            {t('admin.siteSettings.actions.clearQrCode')}
+          </button>
+        ) : null}
+      </div>
+      <div className="flex items-start gap-3">
+        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5">
+          {previewUrl ? (
+            <img alt={label} className="h-full w-full object-cover" src={previewUrl} />
+          ) : (
+            <QrCode className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <FileUpload
+            accept="image/*"
+            disabled={uploading}
+            maxFiles={1}
+            maxSize={10 * 1024 * 1024}
+            multiple={false}
+            onValueChange={handleValueChange}
+            replaceOnMax
+            value={items}
+            variant="image"
+          />
+        </div>
+      </div>
     </div>
   );
 }

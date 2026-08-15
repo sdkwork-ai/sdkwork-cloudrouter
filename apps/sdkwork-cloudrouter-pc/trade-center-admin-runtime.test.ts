@@ -17,6 +17,9 @@ test("trade center routes resolve to the tradeCenter module", () => {
   assert.equal(getActiveModuleFromPath("/admin/trade/shipments"), "tradeCenter");
   assert.equal(getActiveModuleFromPath("/admin/trade/refunds"), "tradeCenter");
   assert.equal(getActiveModuleFromPath("/admin/trade/withdrawals"), "tradeCenter");
+  assert.equal(getActiveModuleFromPath("/admin/trade/cancellations"), "tradeCenter");
+  assert.equal(getActiveModuleFromPath("/admin/trade/account-value-packages"), "tradeCenter");
+  assert.equal(getActiveModuleFromPath("/admin/trade/token-bank-plans"), "tradeCenter");
 });
 
 test("trade center sidebar menu covers orders, fulfillment, and funds", () => {
@@ -33,6 +36,7 @@ test("trade center sidebar menu covers orders, fulfillment, and funds", () => {
   assert.deepEqual(orderGroup.items.map((item) => item.path), [
     "/admin/trade/orders",
     "/admin/trade/after-sales",
+    "/admin/trade/cancellations",
   ]);
 
   assert.ok(fulfillmentGroup, "fulfillment group must exist");
@@ -42,6 +46,8 @@ test("trade center sidebar menu covers orders, fulfillment, and funds", () => {
   assert.deepEqual(fundsGroup.items.map((item) => item.path), [
     "/admin/trade/refunds",
     "/admin/trade/withdrawals",
+    "/admin/trade/account-value-packages",
+    "/admin/trade/token-bank-plans",
   ]);
 });
 
@@ -68,6 +74,9 @@ test("trade center sidebar highlights exactly one entry per path", () => {
     "/admin/trade/shipments",
     "/admin/trade/refunds",
     "/admin/trade/withdrawals",
+    "/admin/trade/cancellations",
+    "/admin/trade/account-value-packages",
+    "/admin/trade/token-bank-plans",
   ]) {
     const activeItems = allItems.filter((item) => isSidebarItemActive(path, item, menu));
     assert.equal(activeItems.length, 1, `exactly one active entry for ${path}`);

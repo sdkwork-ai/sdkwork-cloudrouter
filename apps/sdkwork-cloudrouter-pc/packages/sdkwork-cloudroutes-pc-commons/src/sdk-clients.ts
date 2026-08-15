@@ -25,6 +25,11 @@ import { SdkworkBackendClient as PromotionBackendClient } from '@sdkwork/promoti
 import { SdkworkBackendClient as PartnerBackendClient } from '@sdkwork/partner-backend-sdk';
 import { SdkworkAiClient, type SdkworkAiConfig } from '@sdkwork/cloudrouter-open-sdk';
 import {
+  createClient as createSdkworkDriveOpenClient,
+  type SdkworkCustomClient as SdkworkDriveOpenClient,
+  type SdkworkConfig as SdkworkDriveOpenConfig,
+} from '@sdkwork/drive-sdk';
+import {
   SdkworkAppClient as SdkworkGenerationsAppClient,
   type SdkworkAppConfig as SdkworkGenerationsAppConfig,
 } from '@sdkwork/generations-app-sdk';
@@ -484,6 +489,11 @@ export interface CloudRouterAiSdkClientOptions {
   timeout?: number;
 }
 
+export interface CloudRouterDriveOpenSdkClientOptions {
+  driveOpenBaseUrl?: string;
+  timeout?: number;
+}
+
 export type CloudRouterAppSdkClient = SdkworkAppClient;
 export type CloudRouterBackendSdkClient = SdkworkBackendClient;
 export type SdkworkAppbaseAppSdkClient = SdkworkAppbaseAppClient;
@@ -534,6 +544,7 @@ export type SdkworkPromotionBackendSdkClientOptions = CloudRouterBackendSdkClien
 export type SdkworkPartnerBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
 export type SdkworkPartnerAppSdkClientOptions = CloudRouterAppSdkClientOptions;
 export type CloudRouterAiSdkClient = SdkworkAiClient;
+export type CloudRouterDriveOpenSdkClient = SdkworkDriveOpenClient;
 
 type CloudRouterSdkRuntimeHost = typeof globalThis & {
   __SDKWORK_CLOUDROUTER_ROUTER_APP_SDK_CLIENT__?: CloudRouterAppSdkClient | null;
@@ -555,6 +566,7 @@ type CloudRouterSdkRuntimeHost = typeof globalThis & {
   __SDKWORK_PAYMENT_APP_SDK_CLIENT__?: SdkworkPaymentAppSdkClient | null;
   __SDKWORK_PROMOTION_APP_SDK_CLIENT__?: SdkworkPromotionAppSdkClient | null;
   __SDKWORK_CLOUDROUTER_ROUTER_AI_SDK_CLIENT__?: CloudRouterAiSdkClient | null;
+  __SDKWORK_CLOUDROUTER_ROUTER_DRIVE_OPEN_SDK_CLIENT__?: CloudRouterDriveOpenSdkClient | null;
 };
 
 type CloudRouterSdkClientWithHttp = {
@@ -602,6 +614,7 @@ let paymentAppClient: PaymentAppClient | null = null;
 let promotionAppClient: PromotionAppClient | null = null;
 let aiClient: SdkworkAiClient | null = null;
 let aiClientSessionKey: string | undefined;
+let driveOpenClient: SdkworkDriveOpenClient | null = null;
 let cloudRouterGlobalTokenManager: AuthTokenManager | null = null;
 let cloudRouterSessionAuthRedirectTarget: string | null = null;
 
@@ -768,6 +781,12 @@ export function createSdkworkPromotionAppSdkClient(
 
 export function createCloudRouterAiSdkClient(options: CloudRouterAiSdkClientOptions = {}): SdkworkAiClient {
   return new SdkworkAiClient(buildAiConfig(options));
+}
+
+export function createSdkworkDriveOpenSdkClient(
+  options: CloudRouterDriveOpenSdkClientOptions = {},
+): SdkworkDriveOpenClient {
+  return createSdkworkDriveOpenClient(buildDriveOpenConfig(options));
 }
 
 
@@ -1298,6 +1317,22 @@ export function getCloudRouterAiSdkClient(options: CloudRouterAiSdkClientOptions
   return aiClient;
 }
 
+export function getSdkworkDriveOpenSdkClient(
+  options: CloudRouterDriveOpenSdkClientOptions = {},
+): SdkworkDriveOpenClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkDriveOpenSdkClient(options);
+  }
+  const injected = readInjectedDriveOpenSdkClient();
+  if (injected) {
+    return injected;
+  }
+  if (!driveOpenClient) {
+    driveOpenClient = createSdkworkDriveOpenSdkClient();
+  }
+  return driveOpenClient;
+}
+
 export function resetCloudRouterSdkClients(): void {
   resetCloudRouterSdkClientCaches();
   syncCloudRouterGlobalTokenManagerFromStoredSession();
@@ -1330,6 +1365,7 @@ function resetCloudRouterSdkClientCaches(): void {
   promotionAppClient = null;
   aiClient = null;
   aiClientSessionKey = undefined;
+  driveOpenClient = null;
 }
 
 export function getCloudRouterGlobalTokenManager(): AuthTokenManager {
@@ -1795,6 +1831,18 @@ function buildAiConfig(options: CloudRouterAiSdkClientOptions): SdkworkAiConfig 
   };
 }
 
+function buildDriveOpenConfig(options: CloudRouterDriveOpenSdkClientOptions): SdkworkDriveOpenConfig {
+  return {
+    baseUrl: normalizeGeneratedSdkBaseUrl(
+      options.driveOpenBaseUrl
+        ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_DRIVE_OPEN_API_BASE_URL')
+        ?? DRIVE_OPEN_API_PREFIX,
+      DRIVE_OPEN_API_PREFIX,
+    ),
+    timeout: options.timeout,
+  };
+}
+
 function hasRuntimeOverrides(
   options:
     | CloudRouterAppSdkClientOptions
@@ -1952,6 +2000,10 @@ function readInjectedPromotionAppSdkClient(): SdkworkPromotionAppSdkClient | und
 
 function readInjectedAiSdkClient(): CloudRouterAiSdkClient | undefined {
   return (globalThis as CloudRouterSdkRuntimeHost).__SDKWORK_CLOUDROUTER_ROUTER_AI_SDK_CLIENT__ ?? undefined;
+}
+
+function readInjectedDriveOpenSdkClient(): CloudRouterDriveOpenSdkClient | undefined {
+  return (globalThis as CloudRouterSdkRuntimeHost).__SDKWORK_CLOUDROUTER_ROUTER_DRIVE_OPEN_SDK_CLIENT__ ?? undefined;
 }
 
 subscribeStoredAppSessionChange(() => {

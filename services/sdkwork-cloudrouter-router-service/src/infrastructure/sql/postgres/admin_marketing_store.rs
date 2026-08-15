@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use sdkwork_contract_service::{CommercePaymentStatus, CommerceRechargeStatus};
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
@@ -5,8 +7,8 @@ use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::admin_marketing_recharge::{
     canonical_decimal_string, parse_recharge_settings_model,
     recharge_package_item as build_recharge_package_item, recharge_package_name,
-    recharge_settings_to_item, recharge_sku_specs, serialize_recharge_settings_remark,
-    RechargePackageRecord, RechargeSettingsModel, RECHARGE_RULE_NO,
+    recharge_settings_to_item, recharge_sku_specs, RechargePackageRecord, RechargeSettingsModel,
+    RECHARGE_RULE_NO,
 };
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
@@ -638,8 +640,10 @@ async fn load_recharge_settings_model(
             .map(|item| string_cell(item, "rate"))
             .as_deref(),
         row.as_ref()
-            .map(|item| string_cell(item, "remark"))
+            .and_then(|item| optional_string_cell(item, "base_currency_code"))
             .as_deref(),
+        row.as_ref()
+            .and_then(|item| jsonb_string_map_cell(item, "currency_rates")),
     )
 }
 
@@ -651,21 +655,29 @@ async fn load_recharge_settings_row(
     let row = sqlx::query(
         r#"
         SELECT
-            rate,
-            remark
-        FROM commerce_exchange_rule
-        WHERE tenant_id = $1::text
-          AND organization_id = $2::text
-          AND LOWER(source_asset_type) = 'cash'
-          AND LOWER(target_asset_type) = 'points'
-          AND status = 'active'
+            rule.rate AS rate,
+            rule.base_currency_code AS base_currency_code,
+            COALESCE(
+                jsonb_object_agg(rate_row.currency_code, rate_row.rate)
+                    FILTER (WHERE rate_row.currency_code IS NOT NULL),
+                '{}'::jsonb
+            ) AS currency_rates
+        FROM commerce_exchange_rule rule
+        LEFT JOIN commerce_exchange_currency_rate rate_row
+            ON rate_row.rule_id = rule.id
+        WHERE rule.tenant_id = $1::text
+          AND rule.organization_id = $2::text
+          AND LOWER(rule.source_asset_type) = 'cash'
+          AND LOWER(rule.target_asset_type) = 'points'
+          AND rule.status = 'active'
+        GROUP BY rule.id
         ORDER BY
             CASE
-                WHEN rule_no = $3 THEN 0
+                WHEN rule.rule_no = $3 THEN 0
                 ELSE 1
             END ASC,
-            updated_at DESC,
-            id DESC
+            rule.updated_at DESC,
+            rule.id DESC
         LIMIT 1
         "#,
     )
@@ -995,21 +1007,29 @@ async fn load_recharge_settings_model_for_transaction(
     let row = sqlx::query(
         r#"
         SELECT
-            rate,
-            remark
-        FROM commerce_exchange_rule
-        WHERE tenant_id = $1::text
-          AND organization_id = $2::text
-          AND LOWER(source_asset_type) = 'cash'
-          AND LOWER(target_asset_type) = 'points'
-          AND status = 'active'
+            rule.rate AS rate,
+            rule.base_currency_code AS base_currency_code,
+            COALESCE(
+                jsonb_object_agg(rate_row.currency_code, rate_row.rate)
+                    FILTER (WHERE rate_row.currency_code IS NOT NULL),
+                '{}'::jsonb
+            ) AS currency_rates
+        FROM commerce_exchange_rule rule
+        LEFT JOIN commerce_exchange_currency_rate rate_row
+            ON rate_row.rule_id = rule.id
+        WHERE rule.tenant_id = $1::text
+          AND rule.organization_id = $2::text
+          AND LOWER(rule.source_asset_type) = 'cash'
+          AND LOWER(rule.target_asset_type) = 'points'
+          AND rule.status = 'active'
+        GROUP BY rule.id
         ORDER BY
             CASE
-                WHEN rule_no = $3 THEN 0
+                WHEN rule.rule_no = $3 THEN 0
                 ELSE 1
             END ASC,
-            updated_at DESC,
-            id DESC
+            rule.updated_at DESC,
+            rule.id DESC
         LIMIT 1
         "#,
     )
@@ -1024,8 +1044,10 @@ async fn load_recharge_settings_model_for_transaction(
             .map(|item| string_cell(item, "rate"))
             .as_deref(),
         row.as_ref()
-            .map(|item| string_cell(item, "remark"))
+            .and_then(|item| optional_string_cell(item, "base_currency_code"))
             .as_deref(),
+        row.as_ref()
+            .and_then(|item| jsonb_string_map_cell(item, "currency_rates")),
     )
 }
 
@@ -1572,10 +1594,6 @@ async fn upsert_recharge_settings(
     tx: &mut Transaction<'_, Postgres>,
     command: &RechargeSettingsUpdateCommand,
 ) -> DomainResult<crate::ports::AdminRechargeSettingsItem> {
-    let remark = serialize_recharge_settings_remark(
-        &command.base_currency_code,
-        &command.currency_to_cny_rates,
-    );
     let rule_id = format!(
         "exchange-rule-{}-{}-cash-points",
         command.subject.tenant_id, command.subject.organization_id
@@ -1583,13 +1601,14 @@ async fn upsert_recharge_settings(
     sqlx::query(
         r#"
         INSERT INTO commerce_exchange_rule
-            (id, tenant_id, organization_id, rule_no, source_asset_type, target_asset_type, rate, status, remark, request_no, idempotency_key, created_at, updated_at)
+            (id, tenant_id, organization_id, rule_no, source_asset_type, target_asset_type, rate, status, base_currency_code, remark, request_no, idempotency_key, created_at, updated_at)
         VALUES
-            ($1, $2::text, $3::text, $4, 'cash', 'points', $5, 'active', $6, $7, $8, $9::timestamptz, $9::timestamptz)
+            ($1, $2::text, $3::text, $4, 'cash', 'points', $5, 'active', $6, NULL, $7, $8, $9::timestamptz, $9::timestamptz)
         ON CONFLICT (tenant_id, organization_id, source_asset_type, target_asset_type) DO UPDATE SET
             rule_no = EXCLUDED.rule_no,
             rate = EXCLUDED.rate,
             status = EXCLUDED.status,
+            base_currency_code = EXCLUDED.base_currency_code,
             remark = EXCLUDED.remark,
             request_no = EXCLUDED.request_no,
             idempotency_key = EXCLUDED.idempotency_key,
@@ -1601,13 +1620,39 @@ async fn upsert_recharge_settings(
     .bind(command.subject.organization_id)
     .bind(RECHARGE_RULE_NO)
     .bind(&command.base_points_per_cny)
-    .bind(&remark)
+    .bind(&command.base_currency_code)
     .bind(&command.request_id)
     .bind(&command.request_id)
     .bind(&command.requested_at)
     .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to update recharge settings", error))?;
+
+    // Replace the child currency-rate rows so the stored set always matches
+    // the submitted configuration exactly.
+    sqlx::query("DELETE FROM commerce_exchange_currency_rate WHERE rule_id = $1")
+        .bind(&rule_id)
+        .execute(&mut **tx)
+        .await
+        .map_err(|error| store_error("failed to update recharge settings rates", error))?;
+    for (currency_code, rate) in &command.currency_to_cny_rates {
+        sqlx::query(
+            r#"
+            INSERT INTO commerce_exchange_currency_rate
+                (id, rule_id, currency_code, rate, created_at, updated_at)
+            VALUES
+                ($1, $2, $3, $4, $5::timestamptz, $5::timestamptz)
+            "#,
+        )
+        .bind(format!("{rule_id}-rate-{currency_code}"))
+        .bind(&rule_id)
+        .bind(currency_code)
+        .bind(rate)
+        .bind(&command.requested_at)
+        .execute(&mut **tx)
+        .await
+        .map_err(|error| store_error("failed to update recharge settings rates", error))?;
+    }
     Ok(recharge_settings_to_item(RechargeSettingsModel {
         base_currency_code: command.base_currency_code.clone(),
         base_points_per_cny: command.base_points_per_cny.clone(),
@@ -2042,6 +2087,26 @@ fn optional_string_cell(row: &sqlx::postgres::PgRow, column: &str) -> Option<Str
                 .ok()
                 .map(|value| value.to_string())
         })
+}
+
+/// Reads a JSON object column (e.g. `jsonb_object_agg`) as a string map.
+fn jsonb_string_map_cell(
+    row: &sqlx::postgres::PgRow,
+    column: &str,
+) -> Option<BTreeMap<String, String>> {
+    let value = row.try_get::<serde_json::Value, _>(column).ok()?;
+    let object = value.as_object()?;
+    Some(
+        object
+            .iter()
+            .map(|(key, value)| {
+                (
+                    key.clone(),
+                    value.as_str().unwrap_or_default().to_owned(),
+                )
+            })
+            .collect(),
+    )
 }
 
 fn list_total(rows: &[sqlx::postgres::PgRow]) -> i64 {

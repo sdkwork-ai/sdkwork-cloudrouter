@@ -7,6 +7,7 @@ import {
   type TradeAdminCapabilities,
   type TradeAdminLinkProps,
 } from '@sdkwork/order-pc-admin-trade';
+import { OrderAdminLinkProvider, type OrderAdminLinkProps } from '@sdkwork/order-pc-admin-orders';
 import {
   hasPortalPermission,
   readPortalPermissionScope,
@@ -36,6 +37,7 @@ function useTradeAdminCapabilities(): TradeAdminCapabilities {
   return useMemo(() => ({
     canManageOrders: hasPortalPermission('commerce.orders.manage', permissionScope),
     canReviewTrade: hasPortalPermission('commerce.orders.review', permissionScope),
+    canConfirmPayment: hasPortalPermission('commerce.orders.fulfill', permissionScope),
   }), [permissionScope]);
 }
 
@@ -72,11 +74,13 @@ export function TradeCenterHostElement() {
   const { i18n } = useTranslation();
   return (
     <TradeAdminLinkProvider linkComponent={SpaTradeLink}>
-      <SdkworkOrderTradeCenterAdminApp
-        sectionId={resolveTradeSectionFromPath(pathname)}
-        capabilities={capabilities}
-        locale={resolveOrderLocale(i18n.resolvedLanguage)}
-      />
+      <OrderAdminLinkProvider linkComponent={SpaTradeLink}>
+        <SdkworkOrderTradeCenterAdminApp
+          sectionId={resolveTradeSectionFromPath(pathname)}
+          capabilities={capabilities}
+          locale={resolveOrderLocale(i18n.resolvedLanguage)}
+        />
+      </OrderAdminLinkProvider>
     </TradeAdminLinkProvider>
   );
 }

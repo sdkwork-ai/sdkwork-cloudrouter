@@ -21,6 +21,7 @@ pub fn commerce_database_tables() -> Vec<&'static str> {
         "commerce_price_list_item",
         "commerce_recharge_package",
         "commerce_exchange_rule",
+        "commerce_exchange_currency_rate",
         "promotion_offer",
         "promotion_offer_version",
         "promotion_coupon_stock",

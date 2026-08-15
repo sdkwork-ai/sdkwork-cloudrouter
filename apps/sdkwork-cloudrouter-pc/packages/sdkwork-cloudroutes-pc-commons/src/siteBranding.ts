@@ -10,6 +10,8 @@ export interface SiteBranding {
   logo?: CloudRouterMediaResource;
   icon?: CloudRouterMediaResource;
   favicon?: CloudRouterMediaResource;
+  officialAccountQrCode?: CloudRouterMediaResource;
+  communityGroupQrCode?: CloudRouterMediaResource;
   brandColor: string;
   accentColor: string;
   footerCopyright: string;
@@ -33,6 +35,8 @@ export const DEFAULT_SITE_BRANDING: SiteBranding = {
   logo: undefined,
   icon: undefined,
   favicon: undefined,
+  officialAccountQrCode: undefined,
+  communityGroupQrCode: undefined,
   brandColor: '#0f172a',
   accentColor: '#e9583f',
   footerCopyright: 'Cloud Router. All rights reserved.',
@@ -150,6 +154,8 @@ function normalizeSiteBranding(record: ApiRecord): SiteBranding {
     logo: readMediaResource(record.logo),
     icon: readMediaResource(record.icon),
     favicon: readMediaResource(record.favicon),
+    officialAccountQrCode: readMediaResource(record.officialAccountQrCode),
+    communityGroupQrCode: readMediaResource(record.communityGroupQrCode),
     brandColor: normalizeColor(readString(record, 'brandColor'), DEFAULT_SITE_BRANDING.brandColor),
     accentColor: normalizeColor(readString(record, 'accentColor'), DEFAULT_SITE_BRANDING.accentColor),
     footerCopyright: readConfiguredString(record, 'footerCopyright', DEFAULT_SITE_BRANDING.footerCopyright).trim()

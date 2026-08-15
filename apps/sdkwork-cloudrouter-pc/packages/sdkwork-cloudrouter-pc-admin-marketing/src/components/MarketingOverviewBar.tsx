@@ -53,7 +53,7 @@ export function MarketingOverviewBar() {
     : [];
 
   return (
-    <div className="grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+    <div className="mb-4 grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
       {cards.map((card) => (
         <OverviewCard
           key={card.key}

@@ -4,13 +4,70 @@ Versioned incremental migrations for post-baseline schema changes. These files
 remain immutable after their checksums enter lifecycle history, including during
 pre-release baseline consolidation.
 
-Current migrations:
+Pre-release consolidation (2026-08-06) folded migrations `0002`–`0014` into the
+baseline `0001_cloudrouter_baseline.sql`; their files were removed from this
+directory. Their purpose is recorded under "Historical migrations" below so the
+development lifecycle history stays readable.
+
+## Current migrations
+
+- `0015_upstream_account_resource.up.sql` adds per-account resource and
+  resource-group bindings so each upstream account can scope which catalog
+  resources it serves, independently of account groups.
+- `0018_user_settings_console.up.sql` materializes the console user settings
+  tables backing the app settings surface (`/app/v3/api/iam/users/settings`):
+  per-user preferences and integration webhook endpoints.
+- `0019_organization_id_not_null_legacy_tables.up.sql` enforces
+  `organization_id NOT NULL DEFAULT` on tables created by earlier migrations
+  that predate the standard column contract.
+- `0020_upstream_account_group_default_flag.up.sql` adds the `is_default`
+  flag to `ai_upstream_account_group` with a partial unique index enforcing at
+  most one default group per tenant and organization, and promotes the seeded
+  `standard-group` to the default group. The API transaction clears the previous
+  default when a new one is set.
+- `0021_add_runtime_event_artifact_tables.up.sql` creates `ai_runtime_invocation_event`
+  and `ai_runtime_artifact` so the app runtime store contract (invocation
+  events and artifacts) is backed by real tables, closing the schema drift
+  where the store wrote tables that had no DDL or migration. The baseline
+  (0001) carries the same definitions for clean installs.
+- `0022_runtime_invocation_scope_sequence_guard.up.sql` closes the invocation
+  ordinal race: the scope key columns (`conversation_id`, `chat_turn_id`,
+  `agent_session_id`) become NOT NULL with an empty-string default so the
+  scoped sequence unique index guards every row.
+- `0023_ops_metric_snapshot_period_indexes.up.sql` adds period-range indexes
+  to `ops_metric_snapshot` so the admin monitor performance query is served by
+  an index; the baseline carries the same definitions for clean installs.
+- `0024_add_upstream_supplier_protocols.up.sql` adds the `protocols` JSONB
+  array to `ai_upstream_supplier` so a supplier can declare multiple LLM API
+  protocols.
+- `0025_upstream_account_group_model_lists.up.sql` adds model
+  blacklist/whitelist JSONB arrays to `ai_upstream_account_group` so a group
+  can declare per-vendor model access rules.
+- `0026_add_upstream_supplier_model_lists.up.sql` adds model
+  blacklist/whitelist JSONB arrays to `ai_upstream_supplier` with the same
+  field names as the group lists.
+- `0027_add_upstream_supplier_endpoint_vendors.up.sql` adds a `vendor_codes`
+  JSONB array to `ai_upstream_supplier_endpoint` so a relay station (endpoint)
+  can serve multiple official vendors at once.
+- `0028_add_upstream_supplier_default_base_url.up.sql` adds a
+  `default_base_url` column to `ai_upstream_supplier` so a supplier can declare
+  a fallback Base URL used when an invocation resource (e.g. image, video,
+  audio APIs) does not match any configured LLM API protocol endpoint. When
+  absent, routing falls back to the protocol endpoint Base URL.
+- `0029_api_key_group_binding_routing_strategy.up.sql` migrates legacy API key
+  account group bindings from `routing_strategy` `auto` (follow group default)
+  to the default business routing strategy.
+
+## Historical migrations
+
+Folded into the baseline (`0001_cloudrouter_baseline.sql`) during pre-release
+consolidation; the files no longer exist in this directory.
 
 - `0002_ai_request_trace_gateway_attribution.up.sql` is the historical migration
   recorded in existing development lifecycle history.
 - `0003_standardize_upstream_supplier_routing.up.sql` migrates the legacy
   provider/site/channel model to supplier/account aggregates. It is an
-  irreversible, forward-fix migration and requires human review before
+  irreversible, forward-fix migration that required human review before
   execution because its verified contract phase drops retired legacy tables.
 - `0004_add_chat_runtime_schema.up.sql` creates the user-scoped chat transcript,
   context snapshot, runtime invocation, and usage-link authority. It accepts
@@ -40,19 +97,6 @@ Current migrations:
   and `ops_referral_strategy` (marketing-center referral reward strategy
   configuration). Reward granting is a follow-up phase; relations carry a
   `reward_status` marker only.
-- `0021_add_runtime_event_artifact_tables.up.sql` creates `ai_runtime_invocation_event`
-  and `ai_runtime_artifact` so the app runtime store contract (invocation
-  events and artifacts) is backed by real tables, closing the schema drift
-  where the store wrote tables that had no DDL or migration. The baseline
-  (0001) carries the same definitions for clean installs.
-- `0023_ops_metric_snapshot_period_indexes.up.sql` adds period-range indexes
-  to `ops_metric_snapshot` so the admin monitor performance query is served by
-  an index; the baseline carries the same definitions for clean installs.
-- `0020_upstream_account_group_default_flag.up.sql` adds the `is_default`
-  flag to `ai_upstream_account_group` with a partial unique index enforcing at
-  most one default group per tenant and organization, and promotes the seeded
-  `standard-group` to the default group. The API transaction clears the previous
-  default when a new one is set.
 
 ## Naming
 
@@ -74,16 +118,6 @@ Example:
 - Do not replay the baseline over a non-empty shared schema or replace an applied
   migration with a folded-baseline revision. Repair drift through a reviewed
   forward migration while preserving lifecycle history.
-- If `0004` rejects a partial pre-launch chat schema, stop chat writes, inspect
-  drift against `database/contract/schema.yaml`, and use a reviewed forward-fix
-  or recreate the disposable pre-launch database. Do not bypass its shape
-  verification or mark the migration as applied manually.
-- If `0005` rejects legacy data, keep `0003` history intact, stop routing writes,
-  archive or reconcile the named rows, and rerun `0005`. Do not rename columns
-  manually or mark the repair migration as applied.
-- If `0007` rejects existing data, keep prior migration history intact and repair
-  the named rows under the owning service before rerunning it. Do not weaken the
-  contract or mark constraints valid without PostgreSQL validation.
 - After GA, **do not** change production schema only by regenerating the baseline; add an incremental migration and update the schema registry contract.
 - Run `pnpm db:plan` and `pnpm db:drift:check` before merge.
 - Production upgrades use controlled jobs (`deployments/kubernetes/cloud-router-migration-job.yaml`) with `SDKWORK_CLOUDROUTER_STARTUP_INSTALL_MODE=skip`.

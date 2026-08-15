@@ -45,7 +45,7 @@ const ConsoleIamOauthMenuPage = lazy(async () => {
       return (
         <SdkworkIamOauthOfficialAccountCustomMenuPage
           controller={controller}
-          onBack={() => navigate('/console')}
+          onClose={() => navigate('/console')}
           resourceAccountId={resourceAccountId}
         />
       );

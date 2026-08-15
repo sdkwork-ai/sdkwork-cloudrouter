@@ -69,14 +69,14 @@ export function CommunityCirclePicker({ value, onChange }: CommunityCirclePicker
   }
 
   return (
-    <label className="block">
-      <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+    <label className="flex items-center gap-3">
+      <span className="w-28 shrink-0 text-sm font-medium text-slate-700 dark:text-slate-300">
         {t('admin.community.circlePicker.label', 'Circle')}
       </span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full max-w-xs rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-white"
+        className="w-52 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-white"
       >
         {categories.map((category) => (
           <option key={category.id} value={category.id}>

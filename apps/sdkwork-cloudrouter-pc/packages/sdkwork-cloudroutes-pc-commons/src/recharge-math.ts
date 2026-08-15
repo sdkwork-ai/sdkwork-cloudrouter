@@ -154,15 +154,15 @@ export function normalizeDecimalString(
   if (!source) {
     return fallback;
   }
-  if (!/^\d+(?:\.\d+)?$/.test(source)) {
+  // Draft-level normalization must never crash mid-typing: accept editing
+  // intermediates like ".", "1.", or ".5" and clamp the fraction to `scale`
+  // digits instead of throwing. Truly invalid characters still throw.
+  if (!/^\d*\.?\d*$/.test(source)) {
     throw new Error('decimal value is invalid');
   }
-  const [wholeRaw = '0', fractionRaw = ''] = source.split('.');
-  if (fractionRaw.length > scale) {
-    throw new Error('decimal value exceeds precision');
-  }
+  const [wholeRaw = '', fractionRaw = ''] = source.split('.');
   const whole = wholeRaw.replace(/^0+(?=\d)/, '') || '0';
-  const fraction = fractionRaw.replace(/0+$/g, '');
+  const fraction = fractionRaw.slice(0, scale).replace(/0+$/g, '');
   return fraction ? `${whole}.${fraction}` : whole;
 }
 

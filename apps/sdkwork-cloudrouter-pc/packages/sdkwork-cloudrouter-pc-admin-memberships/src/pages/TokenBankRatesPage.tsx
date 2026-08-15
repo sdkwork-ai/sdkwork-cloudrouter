@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Save, Trash2 } from 'lucide-react';
-import { SdkworkSearchableSelect } from '@sdkwork/appbase-pc-react';
+import { SdkworkBaseDataCurrencySelect, SdkworkSearchableSelect } from '@sdkwork/appbase-pc-react';
 import { formatMoneyDigits } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 import {
   defaultRechargeSettings,
@@ -24,6 +24,9 @@ import {
 
 const WITHDRAWAL_SOURCE_ASSET = 'POINTS';
 const WITHDRAWAL_TARGET_ASSET = 'CASH';
+
+/** Accepts decimal editing intermediates (".", "1.", ".5") but rejects garbage. */
+const DECIMAL_INPUT_PATTERN = /^\d*\.?\d*$/;
 
 export function TokenBankRatesPage() {
   const { t, i18n } = useTranslation();
@@ -95,6 +98,9 @@ export function TokenBankRatesPage() {
   }, [loadConfiguration]);
 
   const handleCurrencyRateChange = useCallback((currencyCode: string, value: string) => {
+    if (!DECIMAL_INPUT_PATTERN.test(value.replace(/,/g, ''))) {
+      return;
+    }
     setSettingsDraft((current) => ({
       ...current,
       currencyToCnyRates: {
@@ -150,6 +156,11 @@ export function TokenBankRatesPage() {
         setSettingsError(validationError instanceof Error
           ? validationError.message
           : t('admin.commerce.memberships.tokenBankRates.saveError', 'Token Bank points and rates could not be saved'));
+        return;
+      }
+      if (Number(normalized.basePointsPerCny) <= 0
+          || Object.values(normalized.currencyToCnyRates).some((rate) => Number(rate) <= 0)) {
+        setSettingsError(t('admin.commerce.memberships.tokenBankRates.rates.positiveRequired', 'Points per unit and exchange rates must be greater than zero'));
         return;
       }
       const updated = await updateMembershipAdminRechargeSettings({
@@ -235,7 +246,12 @@ export function TokenBankRatesPage() {
                   <MembershipTextField
                     label={t('admin.commerce.memberships.tokenBankRates.basePointsPerUnit', 'Points per {{currencyCode}} unit', { currencyCode: normalizedDraft.baseCurrencyCode })}
                     value={normalizedDraft.basePointsPerCny}
-                    onChange={(value) => setSettingsDraft((current) => ({ ...current, basePointsPerCny: value }))}
+                    onChange={(value) => {
+                      if (!DECIMAL_INPUT_PATTERN.test(value.replace(/,/g, ''))) {
+                        return;
+                      }
+                      setSettingsDraft((current) => ({ ...current, basePointsPerCny: value }));
+                    }}
                     placeholder="10"
                   />
                 </div>
@@ -329,12 +345,19 @@ export function TokenBankRatesPage() {
                   {addCurrencyError ? (
                     <div className="mb-2 text-xs text-red-600 dark:text-red-400">{addCurrencyError}</div>
                   ) : null}
-                  <MembershipTextField
-                    label={t('admin.commerce.memberships.tokenBankRates.rates.addCurrency', 'Add currency')}
-                    value={newCurrencyCode}
-                    onChange={setNewCurrencyCode}
-                    placeholder="EUR"
-                  />
+                  <label className="block">
+                    <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {t('admin.commerce.memberships.tokenBankRates.rates.addCurrency', 'Add currency')}
+                    </span>
+                    <SdkworkBaseDataCurrencySelect
+                      clearable
+                      emptyText={t('admin.commerce.memberships.rechargeSettings.currencyEmpty', 'No matching currency')}
+                      onValueChange={setNewCurrencyCode}
+                      placeholder={t('admin.commerce.memberships.rechargeSettings.currencySearch', 'Search currency by code')}
+                      searchPlaceholder={t('admin.commerce.memberships.rechargeSettings.currencySearch', 'Search currency by code')}
+                      value={newCurrencyCode}
+                    />
+                  </label>
                 </div>
                 <button
                   type="button"

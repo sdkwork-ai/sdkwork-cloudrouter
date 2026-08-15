@@ -611,6 +611,10 @@ class CloudRouterGatewayOpenApiGenerator:
             "components": components,
             "x-api-prefix": "/v1",
             "x-router-product": "sdkwork-cloudrouter",
+            # OpenAI/Anthropic compatible gateway mirror: protocol-required JSON
+            # numbers for timestamps/bytes/seeds (all < 2^53) are exempt from the
+            # API_SPEC §13.6 int64-string closure (see API_SPEC §13.6 exemption).
+            "x-sdkwork-int64-openai-compat": True,
         }
         self._materialize_public_generic_payload_schemas(spec)
         self._normalize_open_object_extension_maps(components)

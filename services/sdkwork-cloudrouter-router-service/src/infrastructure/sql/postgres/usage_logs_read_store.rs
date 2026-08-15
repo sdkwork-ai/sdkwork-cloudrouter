@@ -230,7 +230,7 @@ fn row_to_usage_log(row: sqlx::postgres::PgRow) -> Result<UsageLogItem, DomainEr
         error_code: string_cell(&row, "error_code"),
         error_type: string_cell(&row, "error_type"),
         error_message: string_cell(&row, "error_message"),
-        total_time: duration_label(required_latency_cell(&row, "latency_ms")?),
+        total_time: duration_label(integer_cell(&row, "latency_ms")),
         ttft: duration_label(integer_cell(&row, "ttft_ms")),
         is_stream: integer_cell(&row, "is_stream") != 0,
         input_tokens: required_nonnegative_integer_cell(
@@ -312,10 +312,6 @@ fn string_cell(row: &sqlx::postgres::PgRow, column: &str) -> String {
 
 fn integer_cell(row: &sqlx::postgres::PgRow, column: &str) -> i64 {
     optional_integer_cell(row, column).unwrap_or(0)
-}
-
-fn required_latency_cell(row: &sqlx::postgres::PgRow, column: &str) -> Result<i64, DomainError> {
-    required_nonnegative_integer_cell(row, column, "usage log latency_ms")
 }
 
 fn required_nonnegative_integer_cell(

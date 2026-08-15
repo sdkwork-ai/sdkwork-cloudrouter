@@ -1187,6 +1187,10 @@
           "type": "string",
           "description": "brandColor field on AdminSiteSettingsResponse."
         },
+        "communityGroupQrCode": {
+          "$ref": "#/components/schemas/MediaResource",
+          "description": "communityGroupQrCode field on AdminSiteSettingsResponse."
+        },
         "customCss": {
           "type": "string",
           "description": "customCss field on AdminSiteSettingsResponse."
@@ -1222,6 +1226,10 @@
         "logo": {
           "$ref": "#/components/schemas/MediaResource",
           "description": "logo field on AdminSiteSettingsResponse."
+        },
+        "officialAccountQrCode": {
+          "$ref": "#/components/schemas/MediaResource",
+          "description": "officialAccountQrCode field on AdminSiteSettingsResponse."
         },
         "policeRecordNumber": {
           "type": "string",
@@ -1274,6 +1282,10 @@
           "type": "string",
           "description": "brandColor field on AdminSiteSettingsUpdateRequest."
         },
+        "communityGroupQrCode": {
+          "$ref": "#/components/schemas/MediaResource",
+          "description": "communityGroupQrCode field on AdminSiteSettingsUpdateRequest."
+        },
         "customCss": {
           "type": "string",
           "description": "customCss field on AdminSiteSettingsUpdateRequest."
@@ -1309,6 +1321,10 @@
         "logo": {
           "$ref": "#/components/schemas/MediaResource",
           "description": "logo field on AdminSiteSettingsUpdateRequest."
+        },
+        "officialAccountQrCode": {
+          "$ref": "#/components/schemas/MediaResource",
+          "description": "officialAccountQrCode field on AdminSiteSettingsUpdateRequest."
         },
         "policeRecordNumber": {
           "type": "string",

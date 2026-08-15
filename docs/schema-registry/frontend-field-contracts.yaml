@@ -2522,8 +2522,8 @@ frontend_operations:
                   including the default group.
                 items:
                   additionalProperties: false
-                  description: Account group binding with per-key routing strategy on
-                    app api key item.
+                  description: Account group binding with per-key routing strategy
+                    on app api key item.
                   properties:
                     accountGroup:
                       description: Account group field on app api key item group binding.
@@ -2544,8 +2544,8 @@ frontend_operations:
                       - quality_first
                       type: string
                     weight:
-                      description: Binding weight used to order groups sharing the same
-                        priority.
+                      description: Binding weight used to order groups sharing the
+                        same priority.
                       maximum: 10000
                       minimum: 0
                       type: integer
@@ -2718,8 +2718,8 @@ frontend_operations:
                 nullable: true
                 type: string
               weight:
-                description: Binding weight used to order groups sharing the same priority.
-                  Defaults to 100.
+                description: Binding weight used to order groups sharing the same
+                  priority. Defaults to 100.
                 maximum: 10000
                 minimum: 0
                 nullable: true
@@ -2871,8 +2871,8 @@ frontend_operations:
                 type: string
               type: array
             groupBindings:
-              description: Route binding group routing policies (priority order), including
-                the default group.
+              description: Route binding group routing policies (priority order),
+                including the default group.
               items:
                 additionalProperties: false
                 description: Account group binding with per-key routing strategy on
@@ -2884,8 +2884,8 @@ frontend_operations:
                     minLength: 1
                     type: string
                   priority:
-                    description: Binding attempt order within this API key; lower values
-                      are tried first.
+                    description: Binding attempt order within this API key; lower
+                      values are tried first.
                     minimum: 0
                     type: integer
                   routingStrategy:
@@ -3074,8 +3074,8 @@ frontend_operations:
                 nullable: true
                 type: string
               weight:
-                description: Binding weight used to order groups sharing the same priority.
-                  Defaults to 100.
+                description: Binding weight used to order groups sharing the same
+                  priority. Defaults to 100.
                 maximum: 10000
                 minimum: 0
                 nullable: true
@@ -3225,8 +3225,8 @@ frontend_operations:
                 type: string
               type: array
             groupBindings:
-              description: Route binding group routing policies (priority order), including
-                the default group.
+              description: Route binding group routing policies (priority order),
+                including the default group.
               items:
                 additionalProperties: false
                 description: Account group binding with per-key routing strategy on
@@ -3238,8 +3238,8 @@ frontend_operations:
                     minLength: 1
                     type: string
                   priority:
-                    description: Binding attempt order within this API key; lower values
-                      are tried first.
+                    description: Binding attempt order within this API key; lower
+                      values are tried first.
                     minimum: 0
                     type: integer
                   routingStrategy:
@@ -5160,6 +5160,10 @@ frontend_operations:
         brandColor:
           pattern: ^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$
           type: string
+        communityGroupQrCode:
+          anyOf:
+          - $ref: '#/components/schemas/MediaResource'
+          - type: 'null'
         customCss:
           maxLength: 20000
           type: string
@@ -5187,6 +5191,10 @@ frontend_operations:
           maxLength: 2048
           type: string
         logo:
+          anyOf:
+          - $ref: '#/components/schemas/MediaResource'
+          - type: 'null'
+        officialAccountQrCode:
           anyOf:
           - $ref: '#/components/schemas/MediaResource'
           - type: 'null'
@@ -7949,8 +7957,8 @@ frontend_operations:
                 maxLength: 32
                 type: string
               isDefault:
-                description: Whether this group is the single default group of
-                  the tenant and organization scope.
+                description: Whether this group is the single default group of the
+                  tenant and organization scope.
                 type: boolean
               modalities:
                 items:
@@ -7965,9 +7973,9 @@ frontend_operations:
                 type: array
               modelBlacklist:
                 description: Model blacklist of this group. Vendor + model entries
-                  the whole group is forbidden to serve. An entry with an empty
-                  models array forbids every model of the vendor. The blacklist
-                  wins over the whitelist.
+                  the whole group is forbidden to serve. An entry with an empty models
+                  array forbids every model of the vendor. The blacklist wins over
+                  the whitelist.
                 items:
                   additionalProperties: false
                   name: UpstreamAccountGroupModelListEntry
@@ -7988,9 +7996,9 @@ frontend_operations:
                 maxItems: 100
                 type: array
               modelWhitelist:
-                description: Model whitelist of this group. When non-empty, the
-                  group serves only matching vendor + model entries. An entry with
-                  an empty models array allows every model of the vendor.
+                description: Model whitelist of this group. When non-empty, the group
+                  serves only matching vendor + model entries. An entry with an empty
+                  models array allows every model of the vendor.
                 items:
                   additionalProperties: false
                   name: UpstreamAccountGroupModelListEntry
@@ -8181,10 +8189,9 @@ frontend_operations:
           nullable: true
           type: array
         modelBlacklist:
-          description: Model blacklist of this group. Vendor + model entries the
-            whole group is forbidden to serve. An entry with an empty models array
-            forbids every model of the vendor. The blacklist wins over the
-            whitelist.
+          description: Model blacklist of this group. Vendor + model entries the whole
+            group is forbidden to serve. An entry with an empty models array forbids
+            every model of the vendor. The blacklist wins over the whitelist.
           items:
             additionalProperties: false
             properties:
@@ -8205,9 +8212,9 @@ frontend_operations:
           nullable: true
           type: array
         modelWhitelist:
-          description: Model whitelist of this group. When non-empty, the group
-            serves only matching vendor + model entries. An entry with an empty
-            models array allows every model of the vendor.
+          description: Model whitelist of this group. When non-empty, the group serves
+            only matching vendor + model entries. An entry with an empty models array
+            allows every model of the vendor.
           items:
             additionalProperties: false
             properties:
@@ -8409,10 +8416,9 @@ frontend_operations:
           nullable: true
           type: array
         modelBlacklist:
-          description: Model blacklist of this group. Vendor + model entries the
-            whole group is forbidden to serve. An entry with an empty models array
-            forbids every model of the vendor. The blacklist wins over the
-            whitelist.
+          description: Model blacklist of this group. Vendor + model entries the whole
+            group is forbidden to serve. An entry with an empty models array forbids
+            every model of the vendor. The blacklist wins over the whitelist.
           items:
             additionalProperties: false
             properties:
@@ -8433,9 +8439,9 @@ frontend_operations:
           nullable: true
           type: array
         modelWhitelist:
-          description: Model whitelist of this group. When non-empty, the group
-            serves only matching vendor + model entries. An entry with an empty
-            models array allows every model of the vendor.
+          description: Model whitelist of this group. When non-empty, the group serves
+            only matching vendor + model entries. An entry with an empty models array
+            allows every model of the vendor.
           items:
             additionalProperties: false
             properties:
@@ -10164,9 +10170,10 @@ frontend_operations:
                 maxLength: 32
                 type: string
               modelBlacklist:
-                description: Model blacklist of this supplier. Vendor + model entries the supplier is forbidden
-                  to serve. An entry with an empty models array forbids every model of the vendor.
-                  The blacklist wins over the whitelist.
+                description: Model blacklist of this supplier. Vendor + model entries
+                  the supplier is forbidden to serve. An entry with an empty models
+                  array forbids every model of the vendor. The blacklist wins over
+                  the whitelist.
                 items:
                   additionalProperties: false
                   name: UpstreamSupplierModelListEntry
@@ -10187,9 +10194,9 @@ frontend_operations:
                 maxItems: 100
                 type: array
               modelWhitelist:
-                description: Model whitelist of this supplier. When non-empty, the supplier serves only
-                  matching vendor + model entries. An entry with an empty models array allows
-                  every model of the vendor.
+                description: Model whitelist of this supplier. When non-empty, the
+                  supplier serves only matching vendor + model entries. An entry with
+                  an empty models array allows every model of the vendor.
                 items:
                   additionalProperties: false
                   name: UpstreamSupplierModelListEntry
@@ -11141,64 +11148,53 @@ frontend_operations:
   - ai_resource_group
   - ops_audit_log
   - ops_config_snapshot
-- route: /admin/billing/recharges/records
+- route: /admin/recharges/exchangeRules
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: list
-  operation_id: rechargeRecords.list
+  operation_id: exchangeRules.list
   kind: read
   api_surface: backend
   api_method: GET
-  api_path: /backend/v3/api/billing/recharges/records
+  api_path: /backend/v3/api/billing/exchange_rules
   read_sources:
-  - recharges
+  - commerce_exchange_rule
   response_schema:
-    name: AdminRechargeRecordListResponse
+    name: AdminExchangeRuleListResponse
     schema:
       additionalProperties: false
-      name: AdminRechargeRecordListResponse
+      name: AdminExchangeRuleListResponse
       properties:
         items:
           items:
             additionalProperties: false
-            name: AdminRechargeRecord
+            name: AdminExchangeRule
             properties:
-              amount:
-                maxLength: 64
-                type: string
               id:
-                maxLength: 32
-                type: string
-              method:
-                maxLength: 64
-                type: string
-              status:
-                maxLength: 64
-                type: string
-              time:
-                maxLength: 64
-                type: string
-              tradeNo:
                 maxLength: 128
                 type: string
-              usdCredited:
-                maxLength: 64
+              rate:
+                pattern: ^[0-9]+(\.[0-9]{1,6})?$
                 type: string
-              user:
-                maxLength: 320
+              sourceAssetType:
+                enum:
+                - POINTS
+                - CASH
                 type: string
-              userId:
-                maxLength: 32
+              status:
+                enum:
+                - active
+                type: string
+              targetAssetType:
+                enum:
+                - POINTS
+                - CASH
                 type: string
             required:
             - id
-            - tradeNo
-            - userId
-            - user
-            - amount
-            - usdCredited
-            - method
+            - sourceAssetType
+            - targetAssetType
+            - rate
             - status
-            - time
             type: object
           type: array
         pageInfo:
@@ -11207,27 +11203,44 @@ frontend_operations:
       - items
       - pageInfo
       type: object
-  query_parameters: []
-- route: /admin/billing/recharges/records/{orderNo}
+  query_parameters:
+  - name: source_asset_type
+    type: string
+    required: false
+    maxLength: 32
+  - name: target_asset_type
+    type: string
+    required: false
+    maxLength: 32
+  - name: status
+    type: string
+    required: false
+    maxLength: 32
+  - name: page
+    schema:
+      type: integer
+      minimum: 1
+  - name: page_size
+    schema:
+      type: integer
+      minimum: 1
+      maximum: 200
+- route: /admin/recharges/settings
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: retrieve
-  operation_id: rechargeRecords.retrieve
+  operation_id: settings.retrieve
   kind: read
   api_surface: backend
   api_method: GET
-  api_path: /backend/v3/api/billing/recharges/records/{orderNo}
+  api_path: /backend/v3/api/recharges/settings
   read_sources:
   - recharges
   response_schema:
-    name: AdminRechargeRecordResponse
+    name: NoData
     schema:
       additionalProperties: false
-      name: AdminRechargeRecordResponse
-      properties:
-        item:
-          $ref: '#/components/schemas/AdminRechargeRecord'
-      required:
-      - item
+      name: NoData
+      properties: {}
       type: object
   query_parameters: []
 - route: /admin/marketing/referralStrategies
@@ -11796,307 +11809,87 @@ frontend_operations:
       type: integer
       minimum: 1
       maximum: 200
-- route: /admin/memberships/entitlements
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: memberships.entitlements.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/memberships/entitlements
-  read_sources:
-  - memberships
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters:
-  - name: page
-    schema:
-      type: integer
-      minimum: 1
-  - name: page_size
-    schema:
-      type: integer
-      minimum: 1
-      maximum: 200
-  - name: membership_id
-    type: string
-    required: false
-    maxLength: 128
-  - name: plan_id
-    type: string
-    required: false
-    maxLength: 128
-  - name: status
-    type: string
-    required: false
-    maxLength: 32
-- route: /admin/memberships/members
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: memberships.members.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/memberships/members
-  read_sources:
-  - memberships
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters:
-  - name: page
-    schema:
-      type: integer
-      minimum: 1
-  - name: page_size
-    schema:
-      type: integer
-      minimum: 1
-      maximum: 200
-  - name: user_id
-    type: string
-    required: false
-    maxLength: 128
-  - name: plan_id
-    type: string
-    required: false
-    maxLength: 128
-  - name: status
-    type: string
-    required: false
-    maxLength: 32
-- route: /admin/memberships/package_groups
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: memberships.packageGroups.management.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/memberships/package_groups
-  read_sources:
-  - memberships
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters:
-  - name: page
-    schema:
-      type: integer
-      minimum: 1
-  - name: page_size
-    schema:
-      type: integer
-      minimum: 1
-      maximum: 200
-  - name: status
-    type: string
-    required: false
-    maxLength: 32
-- route: /admin/memberships/package_groups
+- route: /admin/recharges/packages
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: create
-  operation_id: memberships.packageGroups.create
+  operation_id: packages.create
   kind: create
   api_surface: backend
   api_method: POST
-  api_path: /backend/v3/api/memberships/package_groups
+  api_path: /backend/v3/api/recharges/packages
   read_sources:
-  - memberships
+  - recharges
   response_schema:
-    name: NoData
+    name: AdminRechargeSettings
     schema:
       additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_schema:
-    name: MembershipPackageGroupMutationRequest
-    schema:
-      additionalProperties: false
-      name: MembershipPackageGroupMutationRequest
+      name: AdminRechargeSettings
       properties:
-        billingCycle:
-          maxLength: 32
-          minLength: 1
+        baseCurrencyCode:
+          maxLength: 16
+          minLength: 3
           type: string
-        code:
-          maxLength: 64
-          minLength: 1
+        basePointsPerCny:
+          pattern: ^[0-9]+(\.[0-9]{1,6})?$
           type: string
-        description:
-          maxLength: 512
-          type: string
-        durationDays:
-          pattern: ^[0-9]+$
-          type: string
-        name:
-          maxLength: 128
-          minLength: 1
-          type: string
-        sortWeight:
-          pattern: ^[0-9]+$
-          type: string
-        status:
-          enum:
-          - active
-          - inactive
-          - disabled
-          type: string
+        currencyToCnyRates:
+          additionalProperties:
+            pattern: ^[0-9]+(\.[0-9]{1,6})?$
+            type: string
+          type: object
       required:
-      - code
-      - name
-      - billingCycle
-      - durationDays
-      - status
-      type: object
-  request_body_required: true
-  write_tables:
-  - ops_audit_log
-- route: /admin/memberships/package_groups/{packageGroupId}
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: delete
-  operation_id: memberships.packageGroups.delete
-  kind: delete
-  api_surface: backend
-  api_method: DELETE
-  api_path: /backend/v3/api/memberships/package_groups/{packageGroupId}
-  read_sources:
-  - memberships
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  write_tables:
-  - ops_audit_log
-- route: /admin/memberships/packages
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: memberships.packages.management.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/memberships/packages
-  read_sources:
-  - memberships
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters:
-  - name: page
-    schema:
-      type: integer
-      minimum: 1
-  - name: page_size
-    schema:
-      type: integer
-      minimum: 1
-      maximum: 200
-  - name: plan_id
-    type: string
-    required: false
-    maxLength: 128
-  - name: status
-    type: string
-    required: false
-    maxLength: 32
-- route: /admin/memberships/packages
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: create
-  operation_id: memberships.packages.create
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/memberships/packages
-  read_sources:
-  - memberships
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
+      - baseCurrencyCode
+      - basePointsPerCny
+      - currencyToCnyRates
       type: object
   request_schema:
-    name: MembershipPackageMutationRequest
+    name: RechargePackageMutationRequest
     schema:
       additionalProperties: false
-      name: MembershipPackageMutationRequest
+      name: RechargePackageMutationRequest
       properties:
-        code:
-          maxLength: 64
-          minLength: 1
+        bonusPoints:
+          pattern: ^[0-9]+$
           type: string
         currencyCode:
           maxLength: 16
           minLength: 3
           type: string
-        durationDays:
-          pattern: ^[0-9]+$
-          type: string
-        name:
-          maxLength: 128
-          minLength: 1
-          type: string
-        packageGroupId:
-          maxLength: 128
-          minLength: 1
-          type: string
-        planId:
-          maxLength: 128
-          minLength: 1
-          type: string
+        discount:
+          description: 'Discount rate percentage: 100 means no discount, 90 means
+            pay 90 percent of the price.'
+          format: int32
+          maximum: 100
+          minimum: 1
+          type: integer
         priceAmount:
-          pattern: ^[0-9]+(\\.[0-9]{1,8})?$
+          pattern: ^[0-9]+(\\.[0-9]{1,2})?$
           type: string
         status:
           enum:
           - active
           - inactive
-          - disabled
           type: string
       required:
-      - code
-      - packageGroupId
-      - planId
-      - name
       - priceAmount
       - currencyCode
-      - durationDays
+      - bonusPoints
+      - discount
       - status
       type: object
   request_body_required: true
   write_tables:
   - ops_audit_log
-- route: /admin/memberships/packages/{packageId}
+- route: /admin/recharges/packages/{packageId}
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: delete
-  operation_id: memberships.packages.delete
+  operation_id: packages.delete
   kind: delete
   api_surface: backend
   api_method: DELETE
-  api_path: /backend/v3/api/memberships/packages/{packageId}
+  api_path: /backend/v3/api/recharges/packages/{packageId}
   read_sources:
-  - memberships
+  - recharges
   response_schema:
     name: NoData
     schema:
@@ -12106,473 +11899,76 @@ frontend_operations:
       type: object
   write_tables:
   - ops_audit_log
-- route: /admin/memberships/plans
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: memberships.plans.management.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/memberships/plans
-  read_sources:
-  - memberships
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters:
-  - name: page
-    schema:
-      type: integer
-      minimum: 1
-  - name: page_size
-    schema:
-      type: integer
-      minimum: 1
-      maximum: 200
-  - name: status
-    type: string
-    required: false
-    maxLength: 32
-- route: /admin/memberships/plans
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: create
-  operation_id: memberships.plans.create
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/memberships/plans
-  read_sources:
-  - memberships
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_schema:
-    name: MembershipPlanMutationRequest
-    schema:
-      additionalProperties: false
-      name: MembershipPlanMutationRequest
-      properties:
-        benefits:
-          items:
-            additionalProperties: true
-            type: object
-          type: array
-        code:
-          maxLength: 64
-          minLength: 1
-          type: string
-        name:
-          maxLength: 128
-          minLength: 1
-          type: string
-        rank:
-          pattern: ^[0-9]+$
-          type: string
-        status:
-          enum:
-          - active
-          - inactive
-          - disabled
-          type: string
-      required:
-      - code
-      - name
-      - status
-      type: object
-  request_body_required: true
-  write_tables:
-  - ops_audit_log
-- route: /admin/payments/attempts
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: payments.attempts.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/payments/attempts
-  read_sources:
-  - payments
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters: &id004
-  - name: page
-    schema:
-      type: integer
-      minimum: 1
-  - name: page_size
-    schema:
-      type: integer
-      minimum: 1
-      maximum: 200
-  - name: status
-    type: string
-    required: false
-    maxLength: 32
-  - name: provider_code
-    type: string
-    required: false
-    maxLength: 64
-  - name: provider_account_id
-    type: string
-    required: false
-    maxLength: 128
-  - name: method_code
-    type: string
-    required: false
-    maxLength: 64
-  - name: country_code
-    type: string
-    required: false
-    maxLength: 16
-  - name: currency_code
-    type: string
-    required: false
-    maxLength: 16
-  - name: order_id
-    type: string
-    required: false
-    maxLength: 128
-  - name: intent_id
-    type: string
-    required: false
-    maxLength: 128
-  - name: business_date
-    type: string
-    required: false
-    maxLength: 32
-- route: /admin/payments/channels
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: payments.channels.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/payments/channels
-  read_sources:
-  - payments
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters: *id004
-- route: /admin/payments/channels
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: create
-  operation_id: payments.channels.create
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/payments/channels
-  read_sources:
-  - payments
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_body_required: false
-  write_tables:
-  - ops_audit_log
-- route: /admin/payments/intents
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: payments.intents.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/payments/intents
-  read_sources:
-  - payments
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters: *id004
-- route: /admin/payments/intents/{paymentIntentId}
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: retrieve
-  operation_id: payments.intents.management.retrieve
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/payments/intents/{paymentIntentId}
-  read_sources:
-  - payments
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters: []
-- route: /admin/payments/methods
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: payments.methods.management.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/payments/methods
-  read_sources:
-  - payments
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters: *id004
-- route: /admin/payments/methods
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: create
-  operation_id: payments.methods.create
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/payments/methods
-  read_sources:
-  - payments
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_body_required: false
-  write_tables:
-  - ops_audit_log
-- route: /admin/payments/methods/{methodId}
+- route: /admin/recharges/exchangeRules
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: update
-  operation_id: payments.methods.update
+  operation_id: exchangeRules.update
   kind: update
   api_surface: backend
-  api_method: PATCH
-  api_path: /backend/v3/api/payments/methods/{methodId}
+  api_method: PUT
+  api_path: /backend/v3/api/billing/exchange_rules
   read_sources:
-  - payments
+  - commerce_exchange_rule
   response_schema:
-    name: NoData
+    name: AdminExchangeRule
     schema:
       additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_body_required: false
-  write_tables:
-  - ops_audit_log
-- route: /admin/payments/provider_accounts
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: payments.providerAccounts.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/payments/provider_accounts
-  read_sources:
-  - payments
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters: *id004
-- route: /admin/payments/provider_accounts
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: create
-  operation_id: payments.providerAccounts.create
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/payments/provider_accounts
-  read_sources:
-  - payments
-  idempotency_required: true
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_schema:
-    name: PaymentProviderAccountMutationRequest
-    schema:
-      additionalProperties: false
-      name: PaymentProviderAccountMutationRequest
+      name: AdminExchangeRule
       properties:
-        accountRole:
-          enum:
-          - merchant
-          - service_provider
-          type: string
-        certificateRef:
-          maxLength: 256
-          type: string
-        clientRequestNo:
+        id:
           maxLength: 128
           type: string
-        countryCode:
-          maxLength: 16
-          minLength: 2
+        rate:
+          pattern: ^[0-9]+(\.[0-9]{1,6})?$
           type: string
-        environment:
+        sourceAssetType:
           enum:
-          - sandbox
-          - production
-          type: string
-        merchantId:
-          maxLength: 128
-          minLength: 1
-          type: string
-        note:
-          maxLength: 512
-          type: string
-        providerCode:
-          maxLength: 64
-          minLength: 1
-          type: string
-        rotatedAt:
-          maxLength: 64
-          type: string
-        secretRef:
-          maxLength: 256
-          minLength: 1
-          type: string
-        settlementCurrency:
-          maxLength: 16
-          minLength: 3
+          - POINTS
+          - CASH
           type: string
         status:
           enum:
           - active
-          - inactive
-          - disabled
           type: string
-        webhookSecretRef:
-          maxLength: 256
+        targetAssetType:
+          enum:
+          - POINTS
+          - CASH
           type: string
       required:
-      - providerCode
-      - merchantId
-      - environment
-      - countryCode
-      - settlementCurrency
-      - secretRef
+      - id
+      - sourceAssetType
+      - targetAssetType
+      - rate
       - status
       type: object
-  request_body_required: true
-  write_tables:
-  - ops_audit_log
-- route: /admin/payments/provider_accounts/{providerAccountId}
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: update
-  operation_id: payments.providerAccounts.update
-  kind: update
-  api_surface: backend
-  api_method: PATCH
-  api_path: /backend/v3/api/payments/provider_accounts/{providerAccountId}
-  read_sources:
-  - payments
-  idempotency_required: true
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
   request_schema:
-    name: PaymentProviderAccountMutationRequest
+    name: ExchangeRuleMutationRequest
     schema:
       additionalProperties: false
-      name: PaymentProviderAccountMutationRequest
+      name: ExchangeRuleMutationRequest
       properties:
-        accountRole:
+        rate:
+          pattern: ^[0-9]+(\.[0-9]{1,6})?$
+          type: string
+        sourceAssetType:
           enum:
-          - merchant
-          - service_provider
-          type: string
-        certificateRef:
-          maxLength: 256
-          type: string
-        clientRequestNo:
-          maxLength: 128
-          type: string
-        countryCode:
-          maxLength: 16
-          minLength: 2
-          type: string
-        environment:
-          enum:
-          - sandbox
-          - production
-          type: string
-        merchantId:
-          maxLength: 128
-          minLength: 1
-          type: string
-        note:
-          maxLength: 512
-          type: string
-        providerCode:
-          maxLength: 64
-          minLength: 1
-          type: string
-        rotatedAt:
-          maxLength: 64
-          type: string
-        secretRef:
-          maxLength: 256
-          minLength: 1
-          type: string
-        settlementCurrency:
-          maxLength: 16
-          minLength: 3
+          - POINTS
+          - CASH
           type: string
         status:
           enum:
           - active
-          - inactive
-          - disabled
           type: string
-        webhookSecretRef:
-          maxLength: 256
+        targetAssetType:
+          enum:
+          - POINTS
+          - CASH
           type: string
       required:
-      - providerCode
-      - merchantId
-      - environment
-      - countryCode
-      - settlementCurrency
-      - secretRef
-      - status
+      - sourceAssetType
+      - targetAssetType
+      - rate
       type: object
   request_body_required: true
   write_tables:
@@ -12997,760 +12393,6 @@ frontend_operations:
       required:
       - reason
       type: object
-
-- route: /admin/payments/reconciliation_runs
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: payments.reconciliationRuns.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/payments/reconciliation_runs
-  read_sources:
-  - payments
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters: *id004
-- route: /admin/payments/reconciliation_runs
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: create
-  operation_id: payments.reconciliationRuns.create
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/payments/reconciliation_runs
-  read_sources:
-  - payments
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_body_required: false
-  write_tables:
-  - ops_audit_log
-- route: /admin/payments/route_rules
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: payments.routeRules.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/payments/route_rules
-  read_sources:
-  - payments
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters: *id004
-- route: /admin/payments/route_rules
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: create
-  operation_id: payments.routeRules.create
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/payments/route_rules
-  read_sources:
-  - payments
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_body_required: false
-  write_tables:
-  - ops_audit_log
-- route: /admin/payments/route_rules/{routeRuleId}
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: update
-  operation_id: payments.routeRules.update
-  kind: update
-  api_surface: backend
-  api_method: PATCH
-  api_path: /backend/v3/api/payments/route_rules/{routeRuleId}
-  read_sources:
-  - payments
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_body_required: false
-  write_tables:
-  - ops_audit_log
-- route: /admin/payments/webhook_events
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: payments.webhookEvents.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/payments/webhook_events
-  read_sources:
-  - payments
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters: *id004
-- route: /admin/promotions/codes
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: promotions.codes.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/promotions/codes
-  read_sources:
-  - promotions
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters: &id005
-  - name: page
-    schema:
-      type: integer
-      minimum: 1
-  - name: page_size
-    schema:
-      type: integer
-      minimum: 1
-      maximum: 200
-- route: /admin/promotions/coupon_ledger_entries
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: promotions.couponLedgerEntries.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/promotions/coupon_ledger_entries
-  read_sources:
-  - promotions
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters: *id005
-- route: /admin/promotions/coupon_stocks
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: promotions.couponStocks.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/promotions/coupon_stocks
-  read_sources:
-  - promotions
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters: *id005
-- route: /admin/promotions/coupon_stocks
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: create
-  operation_id: promotions.couponStocks.create
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/promotions/coupon_stocks
-  read_sources:
-  - promotions
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_body_required: false
-  write_tables:
-  - ops_audit_log
-- route: /admin/promotions/discount_applications
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: promotions.discountApplications.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/promotions/discount_applications
-  read_sources:
-  - promotions
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters: *id005
-- route: /admin/promotions/offers
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: promotions.offers.management.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/promotions/offers
-  read_sources:
-  - promotions
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters: *id005
-- route: /admin/promotions/offers
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: create
-  operation_id: promotions.offers.create
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/promotions/offers
-  read_sources:
-  - promotions
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_body_required: false
-  write_tables:
-  - ops_audit_log
-- route: /admin/promotions/offers/{offerId}
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: update
-  operation_id: promotions.offers.update
-  kind: update
-  api_surface: backend
-  api_method: PATCH
-  api_path: /backend/v3/api/promotions/offers/{offerId}
-  read_sources:
-  - promotions
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_body_required: false
-  write_tables:
-  - ops_audit_log
-- route: /admin/promotions/user_coupons
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: promotions.userCoupons.management.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/promotions/user_coupons
-  read_sources:
-  - promotions
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters: *id005
-- route: /admin/recharges/packages
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: packages.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/recharges/packages
-  read_sources:
-  - recharges
-  response_schema:
-    name: AdminRechargePackageListResponse
-    schema:
-      additionalProperties: false
-      name: AdminRechargePackageListResponse
-      properties:
-        items:
-          items:
-            additionalProperties: false
-            name: AdminRechargePackage
-            properties:
-              bonusPoints:
-                format: int64
-                pattern: ^[0-9]+$
-                type: string
-                x-sdkwork-int64-string: true
-                x-sdkwork-rust-type: i64
-              currencyCode:
-                maxLength: 16
-                minLength: 3
-                type: string
-              discount:
-                description: "Discount rate percentage: 100 means no discount, 90 means pay 90 percent of the price."
-                format: int32
-                maximum: 100
-                minimum: 1
-                type: integer
-              grantAmount:
-                format: int64
-                pattern: ^[0-9]+$
-                type: string
-                x-sdkwork-int64-string: true
-                x-sdkwork-rust-type: i64
-              id:
-                maxLength: 32
-                type: string
-              name:
-                maxLength: 200
-                type: string
-              packageNo:
-                maxLength: 128
-                type: string
-              points:
-                format: int64
-                pattern: ^[0-9]+$
-                type: string
-                x-sdkwork-int64-string: true
-                x-sdkwork-rust-type: i64
-              priceAmount:
-                pattern: ^[0-9]+(\.[0-9]{1,8})?$
-                type: string
-              skuId:
-                maxLength: 64
-                type: string
-              status:
-                enum:
-                - active
-                - inactive
-                type: string
-              updatedAt:
-                maxLength: 64
-                type: string
-            required:
-            - id
-            - packageNo
-            - name
-            - skuId
-            - priceAmount
-            - currencyCode
-            - bonusPoints
-            - discount
-            - grantAmount
-            - points
-            - status
-            - updatedAt
-            type: object
-          type: array
-        pageInfo:
-          $ref: '#/components/schemas/PageInfo'
-      required:
-      - items
-      - pageInfo
-      type: object
-  query_parameters:
-  - name: page
-    schema:
-      type: integer
-      minimum: 1
-  - name: page_size
-    schema:
-      type: integer
-      minimum: 1
-      maximum: 200
-  - name: status
-    type: string
-    required: false
-    maxLength: 32
-- route: /admin/recharges/packages
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: create
-  operation_id: packages.create
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/recharges/packages
-  read_sources:
-  - recharges
-  response_schema:
-    name: AdminRechargeSettings
-    schema:
-      additionalProperties: false
-      name: AdminRechargeSettings
-      properties:
-        baseCurrencyCode:
-          maxLength: 16
-          minLength: 3
-          type: string
-        basePointsPerCny:
-          pattern: ^[0-9]+(\.[0-9]{1,8})?$
-          type: string
-        currencyToCnyRates:
-          additionalProperties:
-            pattern: ^[0-9]+(\.[0-9]{1,8})?$
-            type: string
-          type: object
-      required:
-      - baseCurrencyCode
-      - basePointsPerCny
-      - currencyToCnyRates
-      type: object
-  request_schema:
-    name: RechargePackageMutationRequest
-    schema:
-      additionalProperties: false
-      name: RechargePackageMutationRequest
-      properties:
-        bonusPoints:
-          pattern: ^[0-9]+$
-          type: string
-        currencyCode:
-          maxLength: 16
-          minLength: 3
-          type: string
-        discount:
-          description: "Discount rate percentage: 100 means no discount, 90 means pay 90 percent of the price."
-          format: int32
-          maximum: 100
-          minimum: 1
-          type: integer
-        priceAmount:
-          pattern: ^[0-9]+(\\.[0-9]{1,8})?$
-          type: string
-        status:
-          enum:
-          - active
-          - inactive
-          type: string
-      required:
-      - priceAmount
-      - currencyCode
-      - bonusPoints
-      - discount
-      - status
-      type: object
-  request_body_required: true
-  write_tables:
-  - ops_audit_log
-- route: /admin/recharges/packages/{packageId}
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: delete
-  operation_id: packages.delete
-  kind: delete
-  api_surface: backend
-  api_method: DELETE
-  api_path: /backend/v3/api/recharges/packages/{packageId}
-  read_sources:
-  - recharges
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  write_tables:
-  - ops_audit_log
-- route: /admin/recharges/packages/{packageId}
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: update
-  operation_id: packages.update
-  kind: update
-  api_surface: backend
-  api_method: PATCH
-  api_path: /backend/v3/api/recharges/packages/{packageId}
-  read_sources:
-  - recharges
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_schema:
-    name: RechargePackageMutationRequest
-    schema:
-      additionalProperties: false
-      name: RechargePackageMutationRequest
-      properties:
-        bonusPoints:
-          pattern: ^[0-9]+$
-          type: string
-        currencyCode:
-          maxLength: 16
-          minLength: 3
-          type: string
-        discount:
-          description: "Discount rate percentage: 100 means no discount, 90 means pay 90 percent of the price."
-          format: int32
-          maximum: 100
-          minimum: 1
-          type: integer
-        priceAmount:
-          pattern: ^[0-9]+(\\.[0-9]{1,8})?$
-          type: string
-        status:
-          enum:
-          - active
-          - inactive
-          type: string
-      required:
-      - priceAmount
-      - currencyCode
-      - bonusPoints
-      - discount
-      - status
-      type: object
-  request_body_required: true
-  write_tables:
-  - ops_audit_log
-- route: /admin/recharges/settings
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: retrieve
-  operation_id: settings.retrieve
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/recharges/settings
-  read_sources:
-  - recharges
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  query_parameters: []
-- route: /admin/recharges/settings
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: update
-  operation_id: settings.update
-  kind: update
-  api_surface: backend
-  api_method: PUT
-  api_path: /backend/v3/api/recharges/settings
-  read_sources:
-  - recharges
-  response_schema:
-    name: NoData
-    schema:
-      additionalProperties: false
-      name: NoData
-      properties: {}
-      type: object
-  request_schema:
-    name: RechargeSettingsUpdateRequest
-    schema:
-      additionalProperties: false
-      name: RechargeSettingsUpdateRequest
-      properties:
-        baseCurrencyCode:
-          maxLength: 16
-          minLength: 3
-          type: string
-        basePointsPerCny:
-          pattern: ^[0-9]+(\\.[0-9]{1,8})?$
-          type: string
-        currencyToCnyRates:
-          additionalProperties:
-            pattern: ^[0-9]+(\\.[0-9]{1,8})?$
-            type: string
-          type: object
-      required:
-      - baseCurrencyCode
-      - basePointsPerCny
-      - currencyToCnyRates
-      type: object
-  request_body_required: true
-  write_tables:
-  - ops_audit_log
-- route: /admin/recharges/exchangeRules
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: list
-  operation_id: exchangeRules.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/billing/exchange_rules
-  read_sources:
-  - commerce_exchange_rule
-  response_schema:
-    name: AdminExchangeRuleListResponse
-    schema:
-      additionalProperties: false
-      name: AdminExchangeRuleListResponse
-      properties:
-        items:
-          items:
-            additionalProperties: false
-            name: AdminExchangeRule
-            properties:
-              id:
-                maxLength: 128
-                type: string
-              rate:
-                pattern: ^[0-9]+(\.[0-9]{1,6})?$
-                type: string
-              sourceAssetType:
-                enum:
-                - POINTS
-                - CASH
-                type: string
-              status:
-                enum:
-                - active
-                type: string
-              targetAssetType:
-                enum:
-                - POINTS
-                - CASH
-                type: string
-            required:
-            - id
-            - sourceAssetType
-            - targetAssetType
-            - rate
-            - status
-            type: object
-          type: array
-        pageInfo:
-          $ref: '#/components/schemas/PageInfo'
-      required:
-      - items
-      - pageInfo
-      type: object
-  query_parameters:
-  - name: source_asset_type
-    type: string
-    required: false
-    maxLength: 32
-  - name: target_asset_type
-    type: string
-    required: false
-    maxLength: 32
-  - name: status
-    type: string
-    required: false
-    maxLength: 32
-  - name: page
-    schema:
-      type: integer
-      minimum: 1
-  - name: page_size
-    schema:
-      type: integer
-      minimum: 1
-      maximum: 200
-- route: /admin/recharges/exchangeRules
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: update
-  operation_id: exchangeRules.update
-  kind: update
-  api_surface: backend
-  api_method: PUT
-  api_path: /backend/v3/api/billing/exchange_rules
-  read_sources:
-  - commerce_exchange_rule
-  response_schema:
-    name: AdminExchangeRule
-    schema:
-      additionalProperties: false
-      name: AdminExchangeRule
-      properties:
-        id:
-          maxLength: 128
-          type: string
-        rate:
-          pattern: ^[0-9]+(\.[0-9]{1,6})?$
-          type: string
-        sourceAssetType:
-          enum:
-          - POINTS
-          - CASH
-          type: string
-        status:
-          enum:
-          - active
-          type: string
-        targetAssetType:
-          enum:
-          - POINTS
-          - CASH
-          type: string
-      required:
-      - id
-      - sourceAssetType
-      - targetAssetType
-      - rate
-      - status
-      type: object
-  request_schema:
-    name: ExchangeRuleMutationRequest
-    schema:
-      additionalProperties: false
-      name: ExchangeRuleMutationRequest
-      properties:
-        rate:
-          pattern: ^[0-9]+(\.[0-9]{1,6})?$
-          type: string
-        sourceAssetType:
-          enum:
-          - POINTS
-          - CASH
-          type: string
-        status:
-          enum:
-          - active
-          type: string
-        targetAssetType:
-          enum:
-          - POINTS
-          - CASH
-          type: string
-      required:
-      - sourceAssetType
-      - targetAssetType
-      - rate
-      type: object
-  request_body_required: true
-  write_tables:
-  - ops_audit_log
 - route: /admin/monitor
   source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor/src/monitorService.ts
   operation: fetchAlerts
@@ -17390,6 +16032,8 @@ frontend_operations:
         brandColor:
           description: brandColor field on AdminSiteSettingsResponse.
           type: string
+        communityGroupQrCode:
+          $ref: '#/components/schemas/MediaResource'
         customCss:
           description: customCss field on AdminSiteSettingsResponse.
           type: string
@@ -17413,6 +16057,8 @@ frontend_operations:
           description: icpRecordUrl field on AdminSiteSettingsResponse.
           type: string
         logo:
+          $ref: '#/components/schemas/MediaResource'
+        officialAccountQrCode:
           $ref: '#/components/schemas/MediaResource'
         policeRecordNumber:
           description: policeRecordNumber field on AdminSiteSettingsResponse.
@@ -17487,6 +16133,8 @@ frontend_operations:
         brandColor:
           description: brandColor field on AdminSiteSettingsResponse.
           type: string
+        communityGroupQrCode:
+          $ref: '#/components/schemas/MediaResource'
         customCss:
           description: customCss field on AdminSiteSettingsResponse.
           type: string
@@ -17510,6 +16158,8 @@ frontend_operations:
           description: icpRecordUrl field on AdminSiteSettingsResponse.
           type: string
         logo:
+          $ref: '#/components/schemas/MediaResource'
+        officialAccountQrCode:
           $ref: '#/components/schemas/MediaResource'
         policeRecordNumber:
           description: policeRecordNumber field on AdminSiteSettingsResponse.
@@ -17572,6 +16222,8 @@ frontend_operations:
         brandColor:
           description: brandColor field on AdminSiteSettingsUpdateRequest.
           type: string
+        communityGroupQrCode:
+          $ref: '#/components/schemas/MediaResource'
         customCss:
           description: customCss field on AdminSiteSettingsUpdateRequest.
           type: string
@@ -17595,6 +16247,8 @@ frontend_operations:
           description: icpRecordUrl field on AdminSiteSettingsUpdateRequest.
           type: string
         logo:
+          $ref: '#/components/schemas/MediaResource'
+        officialAccountQrCode:
           $ref: '#/components/schemas/MediaResource'
         policeRecordNumber:
           description: policeRecordNumber field on AdminSiteSettingsUpdateRequest.
@@ -20663,4 +19317,3 @@ frontend_models:
   - ops_audit_log
   dependency_owned: true
   dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
-
