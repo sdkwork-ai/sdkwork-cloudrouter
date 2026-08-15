@@ -854,6 +854,33 @@ pub async fn router_with_postgres_shared_runtime(
     .map_err(|error| {
         ProductCatalogRouterError::Config(format!("log backend assembly bootstrap failed: {error}"))
     })?;
+    // Drive Admin Storage backend surface (`/backend/v3/api/drive/storage/*`)
+    // is dependency-owned. It enters through the drive API assembly entrypoint
+    // on the shared database pool — not through a direct `sdkwork-routes-*`
+    // import — per API_ASSEMBLY_SPEC §3/§6.1, and must be merged before the
+    // Web Framework layer is installed by the host. Like every cloudrouter
+    // admin surface it is gated behind the `cloudrouter.admin.access` subject
+    // boundary.
+    let drive_storage_assembly =
+        sdkwork_api_drive_assembly::assemble_backend_admin_storage_contribution_with_pool(
+            &database_pool,
+        )
+        .await
+        .map_err(|error| {
+            ProductCatalogRouterError::Config(format!(
+                "drive admin storage assembly bootstrap failed: {error}"
+            ))
+        })?;
+    let drive_storage_router = layer_with_admin_subject_boundary(
+        AdminSubjectBoundaryConfig {
+            subject_boundary: sdkwork_cloudrouter_http::AppSubjectBoundaryConfig::new(
+                trusted_subject_config.clone(),
+                app_session_config.clone(),
+            ),
+            access_checker: admin_access_checker.clone(),
+        },
+        drive_storage_assembly.router,
+    );
     Ok(router_with_product_catalog_and_runtime(
         catalog,
         AdminRouterRuntime {
@@ -898,6 +925,7 @@ pub async fn router_with_postgres_shared_runtime(
         },
     )
     .merge(log_assembly.router)
+    .merge(drive_storage_router)
     .layer(log_assembly.capture_layer))
 }
 

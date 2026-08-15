@@ -1,7 +1,7 @@
 import type { ApiKey } from '../apiKeyService';
 import { resolveCurrentGatewayEndpoints } from '../usage-details/toolProfiles';
 
-export type QuickImportTargetId = 'birdcoder' | 'cc-switch';
+export type QuickImportTargetId = 'birdcoder' | 'cc-switch' | 'deepseek-harness';
 
 /**
  * CC Switch manages providers per app; the import link must carry one of
@@ -93,6 +93,14 @@ export interface QuickImportTarget {
    * so it imports directly without a picker.
    */
   requiresAppSelection: boolean;
+  /**
+   * Whether import is manual-only. The desktop app registers its own protocol
+   * scheme (`scheme`) but does not yet accept the `v1/import` deep-link
+   * contract, so the flow skips the protocol probe and goes straight to the
+   * manual import dialog (config content + install banner). `scheme` still
+   * records the app's protocol for a future hand-off.
+   */
+  requiresManualImport?: boolean;
 }
 
 export const QUICK_IMPORT_TARGETS: QuickImportTarget[] = [
@@ -136,6 +144,28 @@ export const QUICK_IMPORT_TARGETS: QuickImportTarget[] = [
     homepageUrl: 'https://github.com/farion1231/cc-switch/releases',
     requiresAppSelection: true,
   },
+  {
+    id: 'deepseek-harness',
+    labelKey: 'console.apiKeys.quickImport.deepseekHarness',
+    fallbackLabel: 'Import to DeepSeek Harness',
+    summaryKey: 'console.apiKeys.quickImport.deepseekHarnessSummary',
+    fallbackSummary:
+      'DeepSeek Harness (dsh-desktop) provider config for the Cloud Router relay: an OpenAI-compatible `cloudrouter` route in ~/.dsh/settings.yaml plus its key in ~/.dsh/.credentials.yaml.',
+    stepsKey: 'console.apiKeys.quickImport.deepseekHarnessSteps',
+    fallbackSteps: [
+      'Download or copy the config content.',
+      'Merge the `llm-pi-ai:` block into ~/.dsh/settings.yaml.',
+      'Add the CLOUDROUTER_API_KEY line to ~/.dsh/.credentials.yaml.',
+      'Open DeepSeek Harness and pick the Cloud Router route in Settings → Models (use "Fetch available models" to populate its model list).',
+    ].join('\n'),
+    configPathKey: 'console.apiKeys.quickImport.deepseekHarnessConfigPath',
+    fallbackConfigPath: '~/.dsh/settings.yaml + ~/.dsh/.credentials.yaml',
+    fileName: 'deepseek-harness-settings.yaml',
+    scheme: 'dsh',
+    homepageUrl: 'https://github.com/sdkwork-ai/deepseek-harness-desktop/releases',
+    requiresAppSelection: false,
+    requiresManualImport: true,
+  },
 ];
 
 export interface QuickImportResult {
@@ -159,21 +189,10 @@ export function buildQuickImportResult(key: ApiKey, targetId: QuickImportTargetI
   if (!key.rawKey) {
     return null;
   }
-  const { anthropicBaseUrl } = resolveCurrentGatewayEndpoints();
-  const content = JSON.stringify(
-    {
-      env: {
-        // Absolute URL: relative bases (local/standalone dev) are unusable
-        // both inside the deeplink (CC Switch URL validation) and as Claude
-        // Code environment variables.
-        ANTHROPIC_BASE_URL: toAbsoluteGatewayUrl(anthropicBaseUrl),
-        ANTHROPIC_AUTH_TOKEN: key.rawKey,
-        ...(targetId === 'birdcoder' ? { SDKWORK_MANAGED: 'true' } : {}),
-      },
-    },
-    null,
-    2,
-  );
+  const content =
+    targetId === 'deepseek-harness'
+      ? buildDeepseekHarnessContent(key.rawKey)
+      : buildClaudeSettingsEnvContent(key.rawKey, targetId);
   return {
     targetId,
     keyId: key.id,
@@ -181,6 +200,71 @@ export function buildQuickImportResult(key: ApiKey, targetId: QuickImportTargetI
     maskedKey: key.maskedKey,
     content,
   };
+}
+
+/**
+ * Claude Code env config shared by Birdcoder and CC Switch: absolute gateway
+ * Anthropic base + the key as `ANTHROPIC_AUTH_TOKEN`, saved as
+ * `~/.claude/settings.json`. Birdcoder additionally marks the channel as
+ * SDKWork-managed (`SDKWORK_MANAGED`).
+ */
+function buildClaudeSettingsEnvContent(rawKey: string, targetId: QuickImportTargetId): string {
+  const { anthropicBaseUrl } = resolveCurrentGatewayEndpoints();
+  return JSON.stringify(
+    {
+      env: {
+        // Absolute URL: relative bases (local/standalone dev) are unusable
+        // both inside the deeplink (CC Switch URL validation) and as Claude
+        // Code environment variables.
+        ANTHROPIC_BASE_URL: toAbsoluteGatewayUrl(anthropicBaseUrl),
+        ANTHROPIC_AUTH_TOKEN: rawKey,
+        ...(targetId === 'birdcoder' ? { SDKWORK_MANAGED: 'true' } : {}),
+      },
+    },
+    null,
+    2,
+  );
+}
+
+/**
+ * The credential reference (environment-variable name) the imported provider
+ * route resolves at request time. The harness keeps keys out of
+ * settings.yaml; the console emits the matching entry for
+ * `~/.dsh/.credentials.yaml`.
+ */
+const DEEPSEEK_HARNESS_CREDENTIAL_KEY = 'CLOUDROUTER_API_KEY';
+
+/**
+ * DeepSeek Harness desktop (dsh-desktop) import content: an OpenAI-compatible
+ * `cloudrouter` route under `llm-pi-ai.providers` in `~/.dsh/settings.yaml`,
+ * plus its key in `~/.dsh/.credentials.yaml`. The credentials file is a
+ * strict key-only YAML mapping (any other content is rejected), so one
+ * document carries both halves with comments marking which file each belongs
+ * to — the user splits them on save.
+ */
+function buildDeepseekHarnessContent(rawKey: string): string {
+  const { openAiBaseUrl } = resolveCurrentGatewayEndpoints();
+  return [
+    '# DeepSeek Harness — Cloud Router relay provider.',
+    '# Merge the `llm-pi-ai:` block into ~/.dsh/settings.yaml',
+    '# (merge into the existing file when present).',
+    'llm-pi-ai:',
+    '  providers:',
+    '    cloudrouter:',
+    '      displayName: Cloud Router',
+    `      apiKeyEnv: ${DEEPSEEK_HARNESS_CREDENTIAL_KEY}`,
+    '      api: openai-completions',
+    `      baseURL: ${toAbsoluteGatewayUrl(openAiBaseUrl)}`,
+    '      # In Settings → Models, click "Fetch available models" to fill the model list.',
+    '',
+    `# Add the credential line below to ~/.dsh/.credentials.yaml (kept at 0600).`,
+    `${DEEPSEEK_HARNESS_CREDENTIAL_KEY}: ${yamlQuoteString(rawKey)}`,
+  ].join('\n');
+}
+
+/** Double-quoted YAML scalar (escapes `\` and `"`), safe for any gateway key. */
+function yamlQuoteString(value: string): string {
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
 /**

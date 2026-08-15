@@ -1,4 +1,13 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { Layers, Pencil } from 'lucide-react';
 import type { GroupPickerOption } from '@sdkwork/cloudroutes-pc-commons/components/GroupPicker';
@@ -115,8 +124,16 @@ export function GroupCellPopover({
     setPlacement({ top, left, flip, arrowLeft });
   }, []);
 
-  const handlePointerEnter = () => {
-    if (disabled) {
+  /**
+   * 编辑弹窗（GroupPicker dialog）渲染在触发器 span 子树内，其内部发生的
+   * hover/click 会冒泡到触发器；命中弹窗内部的事件不应再触发预览弹层，
+   * 否则会出现预览（z-200）盖在编辑弹窗（z-110）上方的层级错误。
+   */
+  const isInsideModalDialog = (target: EventTarget | null): boolean =>
+    target instanceof Element && target.closest('[role="dialog"]') !== null;
+
+  const handlePointerEnter = (event: ReactPointerEvent<HTMLSpanElement>) => {
+    if (disabled || isInsideModalDialog(event.target)) {
       return;
     }
     cancelHide();
@@ -141,9 +158,9 @@ export function GroupCellPopover({
     }, HIDE_DELAY_MS);
   };
 
-  /** 点击触发器：打开/关闭预览弹层（与悬停并存） */
-  const handleTriggerClick = () => {
-    if (disabled) {
+  /** 点击触发器：打开/关闭预览弹层（与悬停并存）；点击编辑弹窗内部不触发切换 */
+  const handleTriggerClick = (event: ReactMouseEvent<HTMLSpanElement>) => {
+    if (disabled || isInsideModalDialog(event.target)) {
       return;
     }
     cancelShow();

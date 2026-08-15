@@ -77,4 +77,83 @@ describe('GroupCellPopover + GroupPicker integration', () => {
       { timeout: 2000 },
     );
   });
+
+  it('hovering the trigger again while the edit dialog is open does not reopen the preview above the dialog', async () => {
+    const handlesRef: { current: Record<string, GroupPickerHandle | null> } = { current: {} };
+
+    render(
+      <GroupCellPopover
+        options={OPTIONS}
+        onEdit={() => {
+          handlesRef.current['k1']?.open();
+        }}
+        labels={{ title: 'Groups', empty: 'None', editHint: 'Edit groups' }}
+      >
+        <GroupPicker
+          ref={(handle) => {
+            handlesRef.current['k1'] = handle;
+          }}
+          disableTriggerOpen
+          options={OPTIONS}
+          value={['g1']}
+          onChange={vi.fn()}
+          triggerLabel="Group One"
+        />
+      </GroupCellPopover>,
+    );
+
+    // open preview, then open the edit dialog via the popover edit button
+    fireEvent.click(screen.getByText('Group One'));
+    await waitFor(() => {
+      expect(document.querySelector('[data-sdk-group-cell-popover-panel]')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByText('Edit groups'));
+    const dialog = await screen.findByRole('dialog', { name: 'Select groups' });
+    expect(document.querySelector('[data-sdk-group-cell-popover-panel]')).toBeNull();
+
+    // hover again over the dialog overlay (rendered inside the trigger subtree):
+    // the preview must stay closed instead of floating above the dialog.
+    // wait past the popover show delay to catch a delayed reopen
+    fireEvent.pointerEnter(dialog);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(document.querySelector('[data-sdk-group-cell-popover-panel]')).toBeNull();
+  });
+
+  it('clicking inside the edit dialog does not toggle the preview popover', async () => {
+    const handlesRef: { current: Record<string, GroupPickerHandle | null> } = { current: {} };
+
+    render(
+      <GroupCellPopover
+        options={OPTIONS}
+        onEdit={() => {
+          handlesRef.current['k1']?.open();
+        }}
+        labels={{ title: 'Groups', empty: 'None', editHint: 'Edit groups' }}
+      >
+        <GroupPicker
+          ref={(handle) => {
+            handlesRef.current['k1'] = handle;
+          }}
+          disableTriggerOpen
+          options={OPTIONS}
+          value={['g1']}
+          onChange={vi.fn()}
+          triggerLabel="Group One"
+        />
+      </GroupCellPopover>,
+    );
+
+    fireEvent.click(screen.getByText('Group One'));
+    await waitFor(() => {
+      expect(document.querySelector('[data-sdk-group-cell-popover-panel]')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByText('Edit groups'));
+    await screen.findByRole('dialog', { name: 'Select groups' });
+
+    // click on an option inside the dialog; the click bubbles through the
+    // trigger span and must not reopen the preview above the dialog
+    fireEvent.click(screen.getByText('Group Two'));
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(document.querySelector('[data-sdk-group-cell-popover-panel]')).toBeNull();
+  });
 });

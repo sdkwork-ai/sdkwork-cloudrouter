@@ -286,6 +286,11 @@ sdkwork_api_community_assembly = { package = "sdkwork-api-community-assembly", p
 # (`/backend/v3/api/rtc/*`) enters through the RTC API assembly contribution
 # (API_ASSEMBLY_SPEC §3/§6.1), never through a direct route-crate import.
 sdkwork_api_rtc_assembly = { package = "sdkwork-api-rtc-assembly", path = "../sdkwork-rtc/crates/sdkwork-api-rtc-assembly" }
+# SDKWork drive capability: the drive admin storage backend surface
+# (`/backend/v3/api/drive/storage/*`) enters through the drive API assembly
+# contribution (API_ASSEMBLY_SPEC §3/§6.1), never through a direct route-crate
+# import.
+sdkwork_api_drive_assembly = { package = "sdkwork-api-drive-assembly", path = "../sdkwork-drive/crates/sdkwork-api-drive-assembly" }
 sdkwork-web-bootstrap = { path = "../sdkwork-web-framework/crates/sdkwork-web-bootstrap" }
 
 # SDKWork web framework dependencies

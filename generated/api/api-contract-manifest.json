@@ -6268,6 +6268,240 @@
     },
     {
       "api_method": "GET",
+      "api_path": "/backend/v3/api/recharges/packages",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts#fetchMembershipAdminRechargePackages@/admin/memberships/rechargePackages",
+      "kind": "read",
+      "module": "pc-admin-memberships",
+      "openapi_exposed": true,
+      "operation": "fetchMembershipAdminRechargePackages",
+      "operation_id": "packages.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "recharges"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AdminRechargePackage",
+        "schema": {
+          "additionalProperties": true,
+          "name": "AdminRechargePackage",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/memberships/rechargePackages",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
+      "tag": "recharges",
+      "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/recharges/packages/{packageId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts#updateMembershipAdminRechargePackage@/admin/memberships/rechargePackages",
+      "kind": "update",
+      "module": "pc-admin-memberships",
+      "openapi_exposed": true,
+      "operation": "updateMembershipAdminRechargePackage",
+      "operation_id": "packages.update",
+      "path_params": [
+        "packageId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "recharges"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "RechargePackageMutationRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "RechargePackageMutationRequest",
+          "properties": {
+            "bonusPoints": {
+              "pattern": "^[0-9]+$",
+              "type": "string"
+            },
+            "currencyCode": {
+              "maxLength": 16,
+              "minLength": 3,
+              "type": "string"
+            },
+            "discount": {
+              "format": "int32",
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "priceAmount": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,2})?$",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "priceAmount",
+            "currencyCode",
+            "bonusPoints",
+            "discount",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminRechargePackage",
+        "schema": {
+          "additionalProperties": true,
+          "name": "AdminRechargePackage",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/memberships/rechargePackages",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
+      "tag": "recharges",
+      "write_tables": [
+        "recharges",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PUT",
+      "api_path": "/backend/v3/api/recharges/settings",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts#updateMembershipAdminRechargeSettings@/admin/memberships/rechargePackages",
+      "kind": "update",
+      "module": "pc-admin-memberships",
+      "openapi_exposed": true,
+      "operation": "updateMembershipAdminRechargeSettings",
+      "operation_id": "settings.update",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "recharges"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "RechargeSettingsUpdateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "RechargeSettingsUpdateRequest",
+          "properties": {
+            "baseCurrencyCode": {
+              "maxLength": 16,
+              "minLength": 3,
+              "type": "string"
+            },
+            "basePointsPerCny": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "type": "string"
+            },
+            "currencyToCnyRates": {
+              "additionalProperties": {
+                "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+                "type": "string"
+              },
+              "type": "object"
+            }
+          },
+          "required": [
+            "baseCurrencyCode",
+            "basePointsPerCny",
+            "currencyToCnyRates"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminRechargeSettings",
+        "schema": {
+          "additionalProperties": true,
+          "name": "AdminRechargeSettings",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/memberships/rechargePackages",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
+      "tag": "recharges",
+      "write_tables": [
+        "recharges",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "GET",
       "api_path": "/backend/v3/api/system/monitor/alerts",
       "api_surface": "backend",
       "file_targets": [],
@@ -24265,6 +24499,204 @@
       "write_tables": []
     },
     {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/billing/recharges/records/{orderNo}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "services/sdkwork-cloudrouter-router-service/src/api/admin_marketing.rs#fetchRechargeRecord@/admin/marketing/rechargeRecords/{orderNo}",
+      "kind": "read",
+      "module": "{orderNo}",
+      "openapi_exposed": true,
+      "operation": "fetchRechargeRecord",
+      "operation_id": "rechargeRecords.retrieve",
+      "path_params": [
+        "orderNo"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AdminRechargeRecord",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminRechargeRecord",
+          "properties": {
+            "amount": {
+              "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+              "type": "string"
+            },
+            "id": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "method": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "status": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "time": {
+              "format": "date-time",
+              "type": "string"
+            },
+            "tradeNo": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "usdCredited": {
+              "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+              "type": "string"
+            },
+            "user": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "userId": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "tradeNo",
+            "userId",
+            "user",
+            "amount",
+            "usdCredited",
+            "method",
+            "status",
+            "time"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/marketing/rechargeRecords/{orderNo}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "services/sdkwork-cloudrouter-router-service/src/api/admin_marketing.rs",
+      "tag": "billing",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/billing/recharges/records",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "services/sdkwork-cloudrouter-router-service/src/api/admin_marketing.rs#fetchRechargeRecords@/admin/marketing/rechargeRecords",
+      "kind": "read",
+      "module": "rechargeRecords",
+      "openapi_exposed": true,
+      "operation": "fetchRechargeRecords",
+      "operation_id": "rechargeRecords.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AdminRechargeRecord",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminRechargeRecord",
+          "properties": {
+            "amount": {
+              "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+              "type": "string"
+            },
+            "id": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "method": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "status": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "time": {
+              "format": "date-time",
+              "type": "string"
+            },
+            "tradeNo": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "usdCredited": {
+              "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+              "type": "string"
+            },
+            "user": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "userId": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "tradeNo",
+            "userId",
+            "user",
+            "amount",
+            "usdCredited",
+            "method",
+            "status",
+            "time"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/marketing/rechargeRecords",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "services/sdkwork-cloudrouter-router-service/src/api/admin_marketing.rs",
+      "tag": "billing",
+      "write_tables": []
+    },
+    {
       "api_method": "POST",
       "api_path": "/backend/v3/api/recharges/packages",
       "api_surface": "backend",
@@ -24745,24 +25177,24 @@
   "summary": {
     "api_method_counts": {
       "DELETE": 18,
-      "GET": 96,
-      "PATCH": 15,
+      "GET": 99,
+      "PATCH": 16,
       "POST": 52,
-      "PUT": 11
+      "PUT": 12
     },
     "api_surface_counts": {
       "app": 72,
-      "backend": 120
+      "backend": 125
     },
-    "operation_count": 192,
+    "operation_count": 197,
     "route_scope_counts": {
-      "admin": 120,
+      "admin": 125,
       "console": 30,
       "public": 42
     },
     "sdk_client_counts": {
       "SdkworkAppClient": 72,
-      "SdkworkBackendClient": 120
+      "SdkworkBackendClient": 125
     }
   }
 }

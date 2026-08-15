@@ -7003,6 +7003,7 @@ dependencies = [
  "anyhow",
  "axum 0.8.9",
  "getrandom 0.3.4",
+ "sdkwork-api-drive-assembly",
  "sdkwork-api-log-assembly",
  "sdkwork-cloudrouter-admin-analytics-repository-sqlx",
  "sdkwork-cloudrouter-admin-dashboard-repository-sqlx",

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import type { DriveUploaderUploadResult } from '@sdkwork/drive-app-sdk';
+import type { DriveUploaderBlobLike, DriveUploaderUploadResult } from '@sdkwork/drive-app-sdk';
+
+export type { DriveUploaderBlobLike };
 import type { CloudRouterMediaResource } from './media-resource.ts';
 import { readMediaResourceUrl } from './media-resource.ts';
 import { getSdkworkDriveOpenSdkClient } from './sdk-clients.ts';

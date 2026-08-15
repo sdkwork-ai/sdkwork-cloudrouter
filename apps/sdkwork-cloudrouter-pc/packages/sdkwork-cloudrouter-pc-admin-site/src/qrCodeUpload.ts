@@ -1,9 +1,9 @@
-import type { DriveUploaderBlobLike } from '@sdkwork/drive-app-sdk';
 import {
   attachDriveShareToken,
   getSdkworkDriveAppSdkClient,
   uploadResultToDriveMediaResource,
   type CloudRouterMediaResource,
+  type DriveUploaderBlobLike,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 
 const QR_CODE_APP_RESOURCE_TYPE = 'site-settings';

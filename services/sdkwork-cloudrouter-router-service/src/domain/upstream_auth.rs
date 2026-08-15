@@ -190,6 +190,11 @@ fn optional_string(object: &Map<String, Value>, field: &str) -> DomainResult<Opt
     let Some(value) = object.get(field) else {
         return Ok(None);
     };
+    if value.is_null() {
+        // Explicit JSON null means "not provided"; admin clients send null for
+        // optional fields (e.g. credentialParameter on bearer transport).
+        return Ok(None);
+    }
     let value = value
         .as_str()
         .map(str::trim)
@@ -278,6 +283,43 @@ mod tests {
         .unwrap_err();
 
         assert!(error.to_string().contains("credential-bearing header"));
+    }
+
+    #[test]
+    fn accepts_null_credential_parameter_for_bearer_transport() {
+        // Admin console sends `credentialParameter: null` for bearer methods;
+        // explicit null must mean "not provided", not an invalid value.
+        let canonical = canonical_upstream_runtime_auth_config(
+            "api_key",
+            &json!({
+                "credentialTransport": "bearer",
+                "credentialParameter": null,
+                "defaultHeaders": {}
+            }),
+        )
+        .unwrap();
+
+        assert_eq!(
+            canonical,
+            json!({"credentialTransport": "bearer", "defaultHeaders": {}})
+        );
+    }
+
+    #[test]
+    fn null_credential_parameter_is_still_required_for_header_transport() {
+        let error = canonical_upstream_runtime_auth_config(
+            "api_key",
+            &json!({
+                "credentialTransport": "header",
+                "credentialParameter": null,
+                "defaultHeaders": {}
+            }),
+        )
+        .unwrap_err();
+
+        assert!(error
+            .to_string()
+            .contains("credentialParameter is required for header transport"));
     }
 
     #[test]

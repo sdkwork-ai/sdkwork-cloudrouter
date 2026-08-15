@@ -53,7 +53,7 @@ sdkwork-database-sqlx.workspace = true
 sdkwork-database-repository.workspace = true
 sdkwork-iam-bootstrap.workspace = true
 sdkwork-iam-web-adapter.workspace = true
-sdkwork-cloudrouter-database-host = { path = "../../crates/sdkwork-cloudrouter-database-host" }
+sdkwork-cloudrouter-database-host = { workspace = true }
 sdkwork-utils-rust.workspace = true
 sdkwork-web-chain.workspace = true
 sdkwork-web-core.workspace = true

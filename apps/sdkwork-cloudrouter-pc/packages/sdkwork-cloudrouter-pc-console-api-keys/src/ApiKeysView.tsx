@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   AlertCircle,
   Bird,
+  Bot,
   Check,
   CheckSquare,
   ChevronLeft,
@@ -199,6 +200,14 @@ export function ApiKeysView() {
       return;
     }
     const target = resolveQuickImportTarget(targetId);
+    if (target.requiresManualImport) {
+      // DeepSeek Harness does not accept the `v1/import` deep-link contract
+      // yet: show the manual import dialog directly (config content + install
+      // banner) instead of probing its `dsh://` protocol.
+      setQuickImportAppUnavailable(true);
+      setQuickImportResult(result);
+      return;
+    }
     if (target.requiresAppSelection) {
       // CC Switch keeps a separate provider list per app; ask which app the
       // relay provider belongs to before building the import link.
@@ -847,9 +856,13 @@ export function ApiKeysView() {
                 onClick={() => selectQuickImportTarget(target.id)}
                 className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition-colors hover:bg-primary-50 hover:text-primary-700 dark:text-slate-200 dark:hover:bg-primary-500/10 dark:hover:text-primary-300"
               >
-                {target.id === 'birdcoder'
-                  ? <Bird className="h-4 w-4 shrink-0 text-lobster-500" />
-                  : <Repeat className="h-4 w-4 shrink-0 text-primary-500" />}
+                {target.id === 'birdcoder' ? (
+                  <Bird className="h-4 w-4 shrink-0 text-lobster-500" />
+                ) : target.id === 'deepseek-harness' ? (
+                  <Bot className="h-4 w-4 shrink-0 text-primary-500" />
+                ) : (
+                  <Repeat className="h-4 w-4 shrink-0 text-primary-500" />
+                )}
                 <span className="truncate">{t(target.labelKey, target.fallbackLabel)}</span>
               </button>
             ))}

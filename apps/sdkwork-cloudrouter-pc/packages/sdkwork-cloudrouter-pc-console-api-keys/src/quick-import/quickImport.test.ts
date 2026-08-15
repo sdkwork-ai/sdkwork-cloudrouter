@@ -4,7 +4,7 @@
 // 运行：pnpm --dir packages/sdkwork-cloudrouter-pc-console-api-keys exec vitest run src/quick-import/quickImport.test.ts --environment jsdom
 import { describe, expect, it, vi } from 'vitest';
 import type { ApiKey } from '../apiKeyService';
-import { buildQuickImportDeepLink } from './quickImport';
+import { buildQuickImportDeepLink, buildQuickImportResult } from './quickImport';
 
 vi.mock('../usage-details/toolProfiles', () => ({
   resolveCurrentGatewayEndpoints: () => ({
@@ -76,5 +76,32 @@ describe('buildQuickImportDeepLink modelsBaseUrl parameter', () => {
   it('returns null for keys without plaintext values', () => {
     const key = { ...sampleKey(), rawKey: null };
     expect(buildQuickImportDeepLink(key, 'birdcoder')).toBeNull();
+  });
+});
+
+describe('buildQuickImportResult for DeepSeek Harness', () => {
+  it('builds the settings.yaml route plus the credentials entry', () => {
+    const result = buildQuickImportResult(sampleKey(), 'deepseek-harness');
+    expect(result).not.toBeNull();
+    // settings.yaml half: `llm-pi-ai.providers.cloudrouter` OpenAI-compatible
+    // route pointing at the gateway /v1 base, key referenced via apiKeyEnv.
+    expect(result?.content).toContain('llm-pi-ai:');
+    expect(result?.content).toContain('cloudrouter:');
+    expect(result?.content).toContain('apiKeyEnv: CLOUDROUTER_API_KEY');
+    expect(result?.content).toContain('api: openai-completions');
+    expect(result?.content).toContain('baseURL: http://localhost:3000/v1');
+    // credentials.yaml half: the raw gateway key on the referenced env name.
+    expect(result?.content).toContain('CLOUDROUTER_API_KEY: "sk-raw-test-123"');
+  });
+
+  it('double-quotes gateway keys containing YAML-special characters', () => {
+    const key = { ...sampleKey(), rawKey: 'sk-a"b\\c:d' };
+    const result = buildQuickImportResult(key, 'deepseek-harness');
+    expect(result?.content).toContain('CLOUDROUTER_API_KEY: "sk-a\\"b\\\\c:d"');
+  });
+
+  it('returns null for keys without plaintext values', () => {
+    const key = { ...sampleKey(), rawKey: null };
+    expect(buildQuickImportResult(key, 'deepseek-harness')).toBeNull();
   });
 });

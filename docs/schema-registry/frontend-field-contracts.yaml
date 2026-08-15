@@ -16282,6 +16282,158 @@ frontend_operations:
   write_tables:
   - ops_config_snapshot
   - ops_audit_log
+- route: /admin/marketing/rechargeRecords
+  source: services/sdkwork-cloudrouter-router-service/src/api/admin_marketing.rs
+  operation: fetchRechargeRecords
+  operation_id: rechargeRecords.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/billing/recharges/records
+  read_sources:
+  - payments
+  response_schema:
+    name: AdminRechargeRecord
+    schema:
+      additionalProperties: false
+      name: AdminRechargeRecord
+      properties:
+        id: { type: string, maxLength: 64 }
+        tradeNo: { type: string, maxLength: 128 }
+        userId: { type: string, maxLength: 64 }
+        user: { type: string, maxLength: 256 }
+        amount: { type: string, pattern: '^-?[0-9]+(\.[0-9]+)?$' }
+        usdCredited: { type: string, pattern: '^-?[0-9]+(\.[0-9]+)?$' }
+        method: { type: string, maxLength: 64 }
+        status: { type: string, maxLength: 64 }
+        time: { type: string, format: date-time }
+      required: [id, tradeNo, userId, user, amount, usdCredited, method, status, time]
+      type: object
+  query_parameters:
+  - name: page
+    schema: { type: integer, minimum: 1 }
+  - name: page_size
+    schema: { type: integer, minimum: 1, maximum: 200 }
+- route: /admin/marketing/rechargeRecords/{orderNo}
+  source: services/sdkwork-cloudrouter-router-service/src/api/admin_marketing.rs
+  operation: fetchRechargeRecord
+  operation_id: rechargeRecords.retrieve
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/billing/recharges/records/{orderNo}
+  read_sources:
+  - payments
+  response_schema:
+    name: AdminRechargeRecord
+    schema:
+      additionalProperties: false
+      name: AdminRechargeRecord
+      properties:
+        id: { type: string, maxLength: 64 }
+        tradeNo: { type: string, maxLength: 128 }
+        userId: { type: string, maxLength: 64 }
+        user: { type: string, maxLength: 256 }
+        amount: { type: string, pattern: '^-?[0-9]+(\.[0-9]+)?$' }
+        usdCredited: { type: string, pattern: '^-?[0-9]+(\.[0-9]+)?$' }
+        method: { type: string, maxLength: 64 }
+        status: { type: string, maxLength: 64 }
+        time: { type: string, format: date-time }
+      required: [id, tradeNo, userId, user, amount, usdCredited, method, status, time]
+      type: object
+  query_parameters: []
+- route: /admin/memberships/rechargePackages
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
+  operation: fetchMembershipAdminRechargePackages
+  operation_id: packages.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/recharges/packages
+  read_sources:
+  - recharges
+  response_schema:
+    name: AdminRechargePackage
+    schema:
+      additionalProperties: true
+      name: AdminRechargePackage
+      properties: {}
+      type: object
+  query_parameters:
+  - name: page
+    schema: { type: integer, minimum: 1 }
+  - name: page_size
+    schema: { type: integer, minimum: 1, maximum: 200 }
+  - name: status
+    schema: { type: string, enum: [active, inactive] }
+- route: /admin/memberships/rechargePackages
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
+  operation: updateMembershipAdminRechargePackage
+  operation_id: packages.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/recharges/packages/{packageId}
+  read_sources:
+  - recharges
+  response_schema:
+    name: AdminRechargePackage
+    schema:
+      additionalProperties: true
+      name: AdminRechargePackage
+      properties: {}
+      type: object
+  request_schema:
+    name: RechargePackageMutationRequest
+    schema:
+      additionalProperties: false
+      name: RechargePackageMutationRequest
+      properties:
+        bonusPoints: { type: string, pattern: '^[0-9]+$' }
+        currencyCode: { type: string, minLength: 3, maxLength: 16 }
+        discount: { type: integer, format: int32, minimum: 1, maximum: 100 }
+        priceAmount: { type: string, pattern: '^[0-9]+(\.[0-9]{1,2})?$' }
+        status: { type: string, enum: [active, inactive] }
+      required: [priceAmount, currencyCode, bonusPoints, discount, status]
+      type: object
+  request_body_required: true
+  write_tables:
+  - recharges
+  - ops_audit_log
+- route: /admin/memberships/rechargePackages
+  source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts
+  operation: updateMembershipAdminRechargeSettings
+  operation_id: settings.update
+  kind: update
+  api_surface: backend
+  api_method: PUT
+  api_path: /backend/v3/api/recharges/settings
+  read_sources:
+  - recharges
+  response_schema:
+    name: AdminRechargeSettings
+    schema:
+      additionalProperties: true
+      name: AdminRechargeSettings
+      properties: {}
+      type: object
+  request_schema:
+    name: RechargeSettingsUpdateRequest
+    schema:
+      additionalProperties: false
+      name: RechargeSettingsUpdateRequest
+      properties:
+        baseCurrencyCode: { type: string, minLength: 3, maxLength: 16 }
+        basePointsPerCny: { type: string, pattern: '^[0-9]+(\.[0-9]{1,6})?$' }
+        currencyToCnyRates:
+          type: object
+          additionalProperties: { type: string, pattern: '^[0-9]+(\.[0-9]{1,6})?$' }
+      required: [baseCurrencyCode, basePointsPerCny, currencyToCnyRates]
+      type: object
+  request_body_required: true
+  write_tables:
+  - recharges
+  - ops_audit_log
 routes:
 - route: /
   dependency_owned: true
