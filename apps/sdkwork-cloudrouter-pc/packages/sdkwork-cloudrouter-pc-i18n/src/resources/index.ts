@@ -21,6 +21,7 @@ import { cloudRouterRtcAdminMessages } from '@sdkwork/cloudrouter-pc-admin-rtc/i
 import { rtcAdminMessages } from '@sdkwork/rtc-pc-admin-core/i18n';
 import { adminOrdersMessages } from '@sdkwork/order-pc-admin-orders/i18n';
 import { adminTradeMessages } from '@sdkwork/order-pc-admin-trade/i18n';
+import { messagingNotifyAdminMessages } from '@sdkwork/messaging-pc-admin-notify/i18n';
 import { logAdminI18n } from '@sdkwork/log-pc-admin-request-log/i18n';
 import { mergeI18nBundles } from './merge';
 import { adminAnalyticsRecordMessages } from './admin/analytics-record';
@@ -73,6 +74,7 @@ import { sharedCommonMessages } from './shared/common';
 import { sharedNavigationMessages } from './shared/navigation';
 
 export const resources = mergeI18nBundles([
+  messagingNotifyAdminMessages,
   adminAnalyticsRecordMessages,
   adminAuthSettingsMessages,
   adminBusinessManagementMessages,

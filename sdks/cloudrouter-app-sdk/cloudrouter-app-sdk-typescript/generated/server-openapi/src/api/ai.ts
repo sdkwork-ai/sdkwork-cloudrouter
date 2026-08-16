@@ -190,6 +190,7 @@ export interface AiPricingRatesListParams {
   vendorCode?: string;
   regionCode?: string;
   meterCode?: string;
+  currencyCode?: string;
   page?: number;
   pageSize?: number;
 }
@@ -210,6 +211,7 @@ export class AiPricingRatesApi {
       { name: 'vendor_code', value: params?.vendorCode, style: 'form', explode: true, allowReserved: false },
       { name: 'region_code', value: params?.regionCode, style: 'form', explode: true, allowReserved: false },
       { name: 'meter_code', value: params?.meterCode, style: 'form', explode: true, allowReserved: false },
+      { name: 'currency_code', value: params?.currencyCode, style: 'form', explode: true, allowReserved: false },
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);

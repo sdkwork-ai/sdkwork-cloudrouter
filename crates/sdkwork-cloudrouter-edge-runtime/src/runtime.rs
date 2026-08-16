@@ -1779,6 +1779,17 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
         .await
         .map_err(anyhow::Error::msg)?;
     let backend_router = backend_router.merge(iam_backend_assembly.router);
+    // Messaging backend surface (`/backend/v3/api/messaging/*`) is
+    // dependency-owned. It enters through the messaging API assembly
+    // contribution on the messaging database host (per-module lifecycle
+    // manifest) — not through a direct `sdkwork-routes-*` import — per
+    // API_ASSEMBLY_SPEC §3/§6.1, and must be merged before the Web Framework
+    // layer is installed by `finalize_all_in_one_route_surfaces`.
+    let messaging_backend_assembly =
+        sdkwork_api_messaging_assembly::assemble_backend_api_contribution()
+            .await
+            .map_err(anyhow::Error::msg)?;
+    let backend_router = backend_router.merge(messaging_backend_assembly.router);
     // Partner backend surface (`/backend/v3/api/partners/*`) is
     // dependency-owned. It enters through the partner API assembly entrypoint
     // on the shared commerce pool — not through a direct `sdkwork-routes-*`
@@ -3706,6 +3717,34 @@ gateway_invocation_body_max_bytes = 37
         let finalize_at = source
             .find("= finalize_all_in_one_route_surfaces(")
             .expect("framework finalize call after iam merge");
+        assert!(merge_at < finalize_at);
+    }
+
+    #[test]
+    fn all_in_one_backend_composes_messaging_backend_surface_through_assembly() {
+        let source = include_str!("runtime.rs");
+
+        // Dependency-owned messaging backend surface enters through the
+        // messaging API assembly contribution on the messaging database host
+        // (API_ASSEMBLY_SPEC §3/§6.1), never through a direct route-crate
+        // import.
+        assert!(source.contains(
+            "sdkwork_api_messaging_assembly::assemble_backend_api_contribution()"
+        ));
+        let forbidden_route_crate_import = ["sdkwork_routes_messaging", "_backend_api::"].concat();
+        assert!(
+            !source.contains(&forbidden_route_crate_import),
+            "messaging backend surface must not import the dependency route crate directly"
+        );
+        // The messaging backend router must be merged before the Web Framework
+        // layer is installed by `finalize_all_in_one_route_surfaces`; a merge
+        // after framework installation would leave it without request context.
+        let merge_at = source
+            .find(".merge(messaging_backend_assembly.router)")
+            .expect("messaging backend router merge before framework finalize");
+        let finalize_at = source
+            .find("= finalize_all_in_one_route_surfaces(")
+            .expect("framework finalize call after messaging merge");
         assert!(merge_at < finalize_at);
     }
 

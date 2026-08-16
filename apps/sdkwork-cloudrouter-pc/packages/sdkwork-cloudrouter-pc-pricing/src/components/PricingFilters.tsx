@@ -12,24 +12,29 @@ interface PricingFiltersProps {
   vendorCode: string;
   regionCode: string;
   meterCode: string;
+  currencyCode: string;
   vendors: readonly OfficialPricingValueFacet[];
   regions: readonly OfficialPricingRegionFacet[];
   meters: readonly OfficialPricingMeterFacet[];
+  currencies: readonly OfficialPricingValueFacet[];
   onSearchChange: (value: string) => void;
   onVendorChange: (value: string) => void;
   onRegionChange: (value: string) => void;
   onMeterChange: (value: string) => void;
+  onCurrencyChange: (value: string) => void;
   onClear: () => void;
 }
 
 export function PricingFilters(props: PricingFiltersProps) {
   const { t, i18n } = useTranslation();
-  const hasFilters = Boolean(props.searchQuery || props.vendorCode || props.regionCode || props.meterCode);
+  const hasFilters = Boolean(
+    props.searchQuery || props.vendorCode || props.regionCode || props.meterCode || props.currencyCode,
+  );
   const language = i18n.language;
 
   return (
     <div className="border-y border-slate-200 bg-white py-4 dark:border-white/10 dark:bg-[#0d0d0d]">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(16rem,1fr)_12rem_11rem_15rem_auto]">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(16rem,1fr)_11rem_10rem_11rem_7rem_auto]">
         <label className="relative block sm:col-span-2 xl:col-span-1">
           <span className="sr-only">{t('pricing.search')}</span>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
@@ -61,6 +66,13 @@ export function PricingFilters(props: PricingFiltersProps) {
           value={props.meterCode}
           options={props.meters.map((item) => ({ value: item.code, label: item.displayName || item.code, count: item.count }))}
           onChange={props.onMeterChange}
+        />
+        <FacetSelect
+          label={t('pricing.filters.currency')}
+          allLabel={t('pricing.filters.allCurrencies')}
+          value={props.currencyCode}
+          options={props.currencies.map((item) => ({ value: item.code, label: item.code, count: item.count }))}
+          onChange={props.onCurrencyChange}
         />
         <button
           type="button"

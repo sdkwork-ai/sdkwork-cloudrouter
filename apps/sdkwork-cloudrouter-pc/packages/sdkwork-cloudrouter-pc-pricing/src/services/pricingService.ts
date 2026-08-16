@@ -12,6 +12,7 @@ export async function fetchOfficialPricingRates(
       vendorCode: normalizeOptional(filters.vendorCode),
       regionCode: normalizeOptional(filters.regionCode),
       meterCode: normalizeOptional(filters.meterCode),
+      currencyCode: normalizeOptional(filters.currencyCode),
       page: filters.page,
       pageSize: filters.pageSize,
     },

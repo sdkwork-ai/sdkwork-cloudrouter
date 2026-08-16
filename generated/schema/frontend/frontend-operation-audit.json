@@ -4928,6 +4928,35 @@
     },
     {
       "api_method": "GET",
+      "api_path": "/app/v3/api/ai/models",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchCompareModels",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_model_vendor",
+        "ai_model",
+        "ai_model_capability",
+        "ai_model_pricing",
+        "ai_upstream_supplier",
+        "ai_upstream_account",
+        "ai_upstream_account_group",
+        "ai_upstream_account_group_member",
+        "ai_upstream_account_group_resource"
+      ],
+      "route": "/pricing",
+      "sdk_operations": [
+        {
+          "operation_id": "models.list",
+          "sdk_family": "sdkwork-models-app-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing/src/services/compareService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
       "api_path": "/app/v3/api/ai/pricing/rates",
       "api_surface": "app",
       "file_targets": [],
@@ -5689,8 +5718,8 @@
     }
   ],
   "summary": {
-    "operation_count": 310,
-    "source_file_count": 42,
+    "operation_count": 311,
+    "source_file_count": 43,
     "write_operation_count": 132
   }
 }

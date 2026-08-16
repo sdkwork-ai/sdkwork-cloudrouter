@@ -15,6 +15,7 @@ pub struct OfficialPricingCatalogQuery {
     pub vendor_code: Option<String>,
     pub region_code: Option<String>,
     pub meter_code: Option<String>,
+    pub currency_code: Option<String>,
     pub page_size: i64,
     pub offset: i64,
 }
@@ -26,6 +27,7 @@ pub struct OfficialPricingCatalogSnapshot {
     pub groups: Vec<OfficialPricingGroupFacet>,
     pub vendors: Vec<OfficialPricingValueFacet>,
     pub regions: Vec<OfficialPricingValueFacet>,
+    pub currencies: Vec<OfficialPricingValueFacet>,
     pub meters: Vec<OfficialPricingMeterFacet>,
     #[serde(skip_serializing)]
     pub total_items: i64,

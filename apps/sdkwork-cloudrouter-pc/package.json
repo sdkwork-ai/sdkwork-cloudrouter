@@ -13,6 +13,8 @@
     "../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript",
     "../../../sdkwork-iam/sdks/sdkwork-iam-backend-sdk/sdkwork-iam-backend-sdk-typescript",
     "../../../sdkwork-messaging/sdks/sdkwork-messaging-app-sdk/sdkwork-messaging-app-sdk-typescript",
+    "../../../sdkwork-messaging/sdks/sdkwork-messaging-backend-sdk/sdkwork-messaging-backend-sdk-typescript",
+    "../../../sdkwork-messaging/apps/sdkwork-messaging-pc/packages/sdkwork-messaging-pc-admin-notify",
     "../../../sdkwork-membership/sdks/sdkwork-membership-backend-sdk/sdkwork-membership-backend-sdk-typescript",
     "../../../sdkwork-payment/sdks/sdkwork-payment-backend-sdk/sdkwork-payment-backend-sdk-typescript",
     "../../../sdkwork-appbase/sdks/sdkwork-base-data-backend-sdk/sdkwork-base-data-backend-sdk-typescript",
@@ -275,7 +277,9 @@
     "tailwindcss-animate": "catalog:",
     "@sdkwork/base-data-backend-sdk": "workspace:*",
     "@sdkwork/order-pc-subscription": "workspace:*",
-    "@sdkwork/cloudrouter-pc-partner-join": "workspace:*"
+    "@sdkwork/cloudrouter-pc-partner-join": "workspace:*",
+    "@sdkwork/messaging-backend-sdk": "workspace:*",
+    "@sdkwork/messaging-pc-admin-notify": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "catalog:",

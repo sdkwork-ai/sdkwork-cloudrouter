@@ -2,6 +2,9 @@ schema:
   name: sdkwork-cloudrouter-frontend-field-contracts
   version: 0.2.0
   source: tools/hydrate_frontend_contract_relay_surfaces.py
+frontend_operation_sdk_authorities:
+  sdkwork-models-app-sdk:
+    manifest: ../sdkwork-models/sdks/sdkwork-models-app-sdk/sdk-manifest.json
 frontend_operations:
   - route: /console/settlements
     source: sdks/_route-manifests/app-api/sdkwork-routes-cloudrouter-app-api.route-manifest.json
@@ -270,6 +273,42 @@ frontend_operations:
       - name: end_time
         schema: { type: string, maxLength: 64 }
   - route: /pricing
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing/src/services/compareService.ts
+    operation: fetchCompareModels
+    operation_id: pricing.compare.models.get
+    kind: read
+    api_surface: app
+    api_method: GET
+    api_path: /app/v3/api/ai/models
+    sdk_domain: ai
+    sdk_operations:
+      - { sdk_family: sdkwork-models-app-sdk, operation_id: models.list }
+    query_parameters:
+      - name: q
+        schema: { type: string, maxLength: 256 }
+      - name: vendor_codes
+        schema: { type: string }
+      - name: page_size
+        schema: { type: integer, format: int32, minimum: 1, maximum: 200 }
+    openapi_exposed: false
+    read_sources:
+      - ai_model_vendor
+      - ai_model
+      - ai_model_capability
+      - ai_model_pricing
+      - ai_upstream_supplier
+      - ai_upstream_account
+      - ai_upstream_account_group
+      - ai_upstream_account_group_member
+      - ai_upstream_account_group_resource
+    response_schema:
+      name: NoData
+      schema:
+        additionalProperties: false
+        name: NoData
+        properties: {}
+        type: object
+  - route: /pricing
     source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing/src/services/pricingService.ts
     operation: fetchOfficialPricingRates
     operation_id: pricing.rates.list
@@ -483,6 +522,22 @@ frontend_operations:
                   x-sdkwork-int64-string: true
                   x-sdkwork-rust-type: i64
               required: [id, code, count]
+          currencies:
+            type: array
+            items:
+              additionalProperties: false
+              name: OfficialPricingValueFacet
+              type: object
+              properties:
+                id: { type: string }
+                code: { type: string }
+                count:
+                  type: string
+                  format: int64
+                  pattern: ^-?[0-9]+$
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
+              required: [id, code, count]
           meters:
             type: array
             items:
@@ -501,7 +556,7 @@ frontend_operations:
                   x-sdkwork-int64-string: true
                   x-sdkwork-rust-type: i64
               required: [id, code, displayName, unitCode, count]
-        required: [items, pageInfo, groups, vendors, regions, meters]
+        required: [items, pageInfo, groups, vendors, regions, currencies, meters]
         type: object
     query_parameters:
       - name: category
@@ -514,6 +569,8 @@ frontend_operations:
         schema: { type: string, maxLength: 160, pattern: '^[A-Za-z0-9._:/-]+$' }
       - name: meter_code
         schema: { type: string, maxLength: 160, pattern: '^[A-Za-z0-9._:/-]+$' }
+      - name: currency_code
+        schema: { type: string, maxLength: 3, pattern: '^[A-Z]{3}$' }
       - name: page
         schema: { type: integer, format: int32, minimum: 1 }
       - name: page_size
@@ -11944,6 +12001,41 @@ routes:
     dependency_sdk_family: sdkwork-community-backend-sdk
     required_tables: []
 frontend_models:
+  - route: /pricing
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing/src/services/compareService.ts
+    interface: CompareModelReferencePrice
+    fields:
+      - regionCode
+      - billingMeter
+      - unitPrice
+      - currency
+    data_sources:
+      - ai_model_pricing
+  - route: /pricing
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing/src/services/compareService.ts
+    interface: CompareModel
+    fields:
+      - key
+      - vendorCode
+      - modelId
+      - displayName
+      - vendor
+      - inputModalities
+      - outputModalities
+      - contextTokens
+      - maxOutputTokens
+      - supportsStreaming
+      - supportsTools
+      - supportsJsonSchema
+      - usageScopes
+      - prices
+      - prices.regionCode
+      - prices.billingMeter
+      - prices.unitPrice
+      - prices.currency
+    data_sources:
+      - ai_model
+      - ai_model_pricing
   - route: /console/dashboard
     source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/dashboardService.ts
     interface: ModalityDistribution

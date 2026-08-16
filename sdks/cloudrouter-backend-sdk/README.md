@@ -50,6 +50,7 @@ This SDK family is owner-only. Dependency-owned routes are consumed through decl
 | `sdkwork-community-backend-sdk` | `community-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
 | `sdkwork-log-backend-sdk` | `log-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
 | `sdkwork-drive-backend-sdk` | `drive-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `sdkwork-messaging-backend-sdk` | `messaging-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
 
 Package names:
 
@@ -83,6 +84,8 @@ Package names:
 - `typescript`: `@sdkwork/log-backend-sdk`
 - `sdkwork-drive-backend-sdk`
 - `typescript`: `@sdkwork/drive-backend-sdk`
+- `sdkwork-messaging-backend-sdk`
+- `typescript`: `@sdkwork/messaging-backend-sdk`
 
 Regenerate this SDK family from the project root:
 

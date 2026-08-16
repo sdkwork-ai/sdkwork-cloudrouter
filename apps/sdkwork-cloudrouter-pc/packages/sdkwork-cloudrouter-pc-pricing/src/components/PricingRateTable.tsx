@@ -1,20 +1,24 @@
 import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { humanizeCode, regionDisplayName, vendorDisplayName } from '../i18n/dataNames';
+import { compareKeyOf, groupRatesByModel, type ModelGroup } from '../types/compare';
 import type {
   OfficialPricingFormula,
   OfficialPricingRate,
-  OfficialPricingRateTier,
 } from '../types/pricing';
 
 interface PricingRateTableProps {
   items: readonly OfficialPricingRate[];
+  selectedKeys: ReadonlySet<string>;
+  onToggleSelection: (rate: OfficialPricingRate) => void;
 }
 
-export function PricingRateTable({ items }: PricingRateTableProps) {
+export function PricingRateTable({ items, selectedKeys, onToggleSelection }: PricingRateTableProps) {
   const { t, i18n } = useTranslation();
   const language = i18n.language;
+  const groups = useMemo(() => groupRatesByModel(items), [items]);
 
   return (
     <>
@@ -22,106 +26,202 @@ export function PricingRateTable({ items }: PricingRateTableProps) {
         <table className="w-full min-w-[1080px] table-fixed border-collapse text-left">
           <thead>
             <tr className="border-b border-slate-200 text-xs font-semibold text-slate-500 dark:border-white/10 dark:text-slate-400">
+              <th className="w-10 px-2 py-3">
+                <span className="sr-only">{t('pricing.compare.selectColumn')}</span>
+              </th>
               <th className="w-[17%] px-4 py-3">{t('pricing.table.product')}</th>
-              <th className="w-[11%] px-4 py-3">{t('pricing.table.provider')}</th>
-              <th className="w-[13%] px-4 py-3">{t('pricing.table.operation')}</th>
-              <th className="w-[13%] px-4 py-3">{t('pricing.table.meter')}</th>
-              <th className="w-[16%] px-4 py-3">{t('pricing.table.capabilities')}</th>
-              <th className="w-[14%] px-4 py-3">{t('pricing.table.price')}</th>
-              <th className="w-[16%] px-4 py-3">{t('pricing.table.rules')}</th>
+              <th className="w-[13%] px-4 py-3">{t('pricing.table.provider')}</th>
+              <th className="w-[12%] px-4 py-3">{t('pricing.table.operation')}</th>
+              <th className="w-[22%] px-4 py-3">{t('pricing.table.prices')}</th>
+              <th className="w-[17%] px-4 py-3">{t('pricing.table.capabilities')}</th>
+              <th className="w-[19%] px-4 py-3">{t('pricing.table.policy')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-            {items.map((rate) => (
-              <tr key={`${rate.rateCode}:${rate.vendorCode}:${rate.regionCode}`} className="align-top hover:bg-slate-50/70 dark:hover:bg-white/[0.025]">
-                <td className="px-4 py-4">
-                  <div className="break-words text-sm font-semibold text-slate-950 dark:text-white">{rate.resourceCode}</div>
-                  <div className="mt-1 break-words text-xs text-slate-500 dark:text-slate-400">{rate.productDisplayName}</div>
-                  {rate.catalogKey ? <div className="mt-1 break-all font-mono text-[11px] text-slate-400">{rate.catalogKey}</div> : null}
-                </td>
-                <td className="px-4 py-4">
-                  <div className="text-sm font-medium text-slate-800 dark:text-slate-200">{vendorDisplayName(rate.vendorCode, language)}</div>
-                  <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{regionDisplayName(rate.regionCode, language)}</div>
-                  {rate.providerCode !== rate.vendorCode ? <div className="mt-1 text-xs text-slate-400">{vendorDisplayName(rate.providerCode, language)}</div> : null}
-                </td>
-                <td className="px-4 py-4">
-                  <div className="text-sm text-slate-800 dark:text-slate-200">{rate.operationDisplayName || humanizeCode(rate.operationCode)}</div>
-                  <div className="mt-1 break-all font-mono text-[11px] text-slate-400">{rate.operationCode}</div>
-                </td>
-                <td className="px-4 py-4">
-                  <div className="text-sm font-medium text-slate-800 dark:text-slate-200">{rate.meterDisplayName || humanizeCode(rate.meterCode)}</div>
-                  <div className="mt-1 break-all font-mono text-[11px] text-slate-400">{rate.meterCode}</div>
-                  <PolicyBadge>{calculationLabel(rate.calculationMode, t)}</PolicyBadge>
-                </td>
-                <td className="px-4 py-4">
-                  <ModelCapabilities rate={rate} t={t} />
-                </td>
-                <td className="px-4 py-4">
-                  <PriceValue rate={rate} t={t} />
-                  <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">{timingLabel(rate.chargeTiming, t)}</div>
-                  <div className="mt-1 text-[11px] text-slate-400">{t('pricing.priceBook', { version: rate.priceBookVersion })}</div>
-                </td>
-                <td className="px-4 py-4">
-                  <RateRules rate={rate} t={t} />
-                  <div className="mt-3 flex items-center gap-3 text-[11px] text-slate-400">
-                    <span>{t('pricing.effective', { date: dateOnly(rate.effectiveFrom) })}</span>
-                    <a
-                      href={rate.sourceUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      title={t('pricing.source')}
-                      aria-label={t('pricing.source')}
-                      className="inline-flex items-center text-slate-500 hover:text-lobster-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lobster-500 dark:text-slate-400"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-                    </a>
-                  </div>
-                  <div className="mt-1 text-[11px] text-slate-400">{t('pricing.updated', { date: formatDate(rate.sourceObservedAt, i18n.language) })}</div>
-                </td>
-              </tr>
+            {groups.map((group) => (
+              <ModelRow key={group.key} group={group} language={language} selectedKeys={selectedKeys} onToggleSelection={onToggleSelection} t={t} />
             ))}
           </tbody>
         </table>
       </div>
 
       <div className="space-y-3 md:hidden">
-        {items.map((rate) => (
-          <article key={`${rate.rateCode}:${rate.vendorCode}:${rate.regionCode}`} className="rounded-md border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-[#0d0d0d]">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h2 className="break-words text-sm font-semibold text-slate-950 dark:text-white">{rate.resourceCode}</h2>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{rate.productDisplayName}</p>
-              </div>
-              <BillabilityBadge billability={rate.billability} t={t} />
-            </div>
-            <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
-              <RateDetail label={t('pricing.table.provider')} value={`${vendorDisplayName(rate.vendorCode, language)} / ${regionDisplayName(rate.regionCode, language)}`} />
-              <RateDetail label={t('pricing.table.operation')} value={rate.operationDisplayName || humanizeCode(rate.operationCode)} />
-              <RateDetail label={t('pricing.table.meter')} value={rate.meterDisplayName || humanizeCode(rate.meterCode)} />
-              <div>
-                <dt className="text-slate-400">{t('pricing.table.price')}</dt>
-                <dd className="mt-1"><PriceValue rate={rate} t={t} /></dd>
-              </div>
-            </dl>
-            <div className="mt-4 border-t border-slate-100 pt-3 dark:border-white/5">
-              <div className="text-xs text-slate-400">{t('pricing.table.capabilities')}</div>
-              <div className="mt-2"><ModelCapabilities rate={rate} t={t} /></div>
-            </div>
-            <div className="mt-4 border-t border-slate-100 pt-3 dark:border-white/5">
-              <RateRules rate={rate} t={t} />
-            </div>
-            <div className="mt-3 flex items-center justify-between gap-3 text-[11px] text-slate-400">
-              <span>{t('pricing.effective', { date: dateOnly(rate.effectiveFrom) })}</span>
-              <a href={rate.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-slate-500 hover:text-lobster-500">
-                {t('pricing.source')}
-                <ExternalLink className="h-3 w-3" aria-hidden="true" />
-              </a>
-            </div>
-          </article>
+        {groups.map((group) => (
+          <ModelCard key={group.key} group={group} language={language} selectedKeys={selectedKeys} onToggleSelection={onToggleSelection} t={t} />
         ))}
       </div>
     </>
   );
+}
+
+function ModelRow({
+  group,
+  language,
+  selectedKeys,
+  onToggleSelection,
+  t,
+}: {
+  group: ModelGroup;
+  language: string;
+  selectedKeys: ReadonlySet<string>;
+  onToggleSelection: (rate: OfficialPricingRate) => void;
+  t: TFunction;
+}) {
+  const rate = group.rates[0];
+  const regions = uniqueValues(group.rates, (entry) => entry.regionCode);
+  const operations = uniqueValues(group.rates, (entry) => entry.operationDisplayName || humanizeCode(entry.operationCode));
+  const modes = uniqueValues(group.rates, (entry) => entry.calculationMode);
+  const billabilities = uniqueValues(group.rates, (entry) => entry.billability);
+  const hasTiers = group.rates.some((entry) => entry.tiers.length > 0);
+  const hasFormula = group.rates.some((entry) => isPricingFormula(entry.formula));
+  return (
+    <tr className="align-top hover:bg-slate-50/70 dark:hover:bg-white/[0.025]">
+      <td className="px-2 py-4 text-center">
+        <input
+          type="checkbox"
+          checked={selectedKeys.has(group.key)}
+          onChange={() => onToggleSelection(rate)}
+          aria-label={t('pricing.compare.selectRow', { name: rate.productDisplayName })}
+          className="h-4 w-4 cursor-pointer rounded border-slate-300 accent-lobster-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lobster-500 dark:border-white/20"
+        />
+      </td>
+      <td className="px-4 py-4">
+        <div className="break-words text-sm font-semibold text-slate-950 dark:text-white">{rate.resourceCode}</div>
+        <div className="mt-1 break-words text-xs text-slate-500 dark:text-slate-400">{rate.productDisplayName}</div>
+        {rate.catalogKey ? <div className="mt-1 break-all font-mono text-[11px] text-slate-400">{rate.catalogKey}</div> : null}
+      </td>
+      <td className="px-4 py-4">
+        <div className="text-sm font-medium text-slate-800 dark:text-slate-200">{vendorDisplayName(rate.vendorCode, language)}</div>
+        <div className="mt-1 flex flex-wrap gap-1">
+          {regions.map((code) => (
+            <span key={code} className="inline-flex rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+              {regionDisplayName(code, language)}
+            </span>
+          ))}
+        </div>
+      </td>
+      <td className="px-4 py-4">
+        <div className="space-y-1 text-xs text-slate-700 dark:text-slate-200">
+          {operations.slice(0, 2).map((operation) => (
+            <div key={operation} className="break-words">{operation}</div>
+          ))}
+          {operations.length > 2 ? <div className="text-[11px] text-slate-400">{t('pricing.table.moreOperations', { count: operations.length - 2 })}</div> : null}
+        </div>
+      </td>
+      <td className="px-4 py-4">
+        <div className="space-y-1.5">
+          {group.rates.map((entry) => (
+            <div key={entry.rateCode} className="flex flex-wrap items-baseline gap-x-2 text-xs">
+              <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">{regionDisplayName(entry.regionCode, language)}</span>
+              <span className="text-slate-600 dark:text-slate-300">{entry.meterDisplayName || humanizeCode(entry.meterCode)}</span>
+              <span className="tabular-nums font-semibold text-slate-950 dark:text-white">{formatDecimal(entry.unitPrice)}</span>
+              <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">{entry.currencyCode}</span>
+              <span className="text-[10px] text-slate-400">
+                / {formatDecimal(entry.unitSize)} {unitLabel(entry.unitCode, t)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </td>
+      <td className="px-4 py-4">
+        <ModelCapabilities rate={rate} t={t} />
+      </td>
+      <td className="px-4 py-4">
+        <div className="flex flex-wrap gap-1.5">
+          <BillabilityBadge billability={billabilities[0] ?? 'unknown'} t={t} />
+          {modes.map((mode) => (
+            <PolicyBadge key={mode}>{calculationLabel(mode, t)}</PolicyBadge>
+          ))}
+          {hasTiers ? <PolicyBadge>{t('pricing.policy.tiers')}</PolicyBadge> : null}
+          {hasFormula ? <PolicyBadge>{t('pricing.policy.formula')}</PolicyBadge> : null}
+        </div>
+        <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('pricing.policy.rateCount', { count: group.rates.length })}</div>
+        <div className="mt-1 text-[11px] text-slate-400">{t('pricing.effective', { date: dateOnly(rate.effectiveFrom) })}</div>
+        <div className="mt-1 flex items-center gap-3 text-[11px] text-slate-400">
+          <span>{t('pricing.updated', { date: formatDate(rate.sourceObservedAt, language) })}</span>
+          <a
+            href={rate.sourceUrl}
+            target="_blank"
+            rel="noreferrer"
+            title={t('pricing.source')}
+            aria-label={t('pricing.source')}
+            className="inline-flex items-center text-slate-500 hover:text-lobster-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lobster-500 dark:text-slate-400"
+          >
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+          </a>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+function ModelCard({
+  group,
+  language,
+  selectedKeys,
+  onToggleSelection,
+  t,
+}: {
+  group: ModelGroup;
+  language: string;
+  selectedKeys: ReadonlySet<string>;
+  onToggleSelection: (rate: OfficialPricingRate) => void;
+  t: TFunction;
+}) {
+  const rate = group.rates[0];
+  const regions = uniqueValues(group.rates, (entry) => entry.regionCode);
+  return (
+    <article className="rounded-md border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-[#0d0d0d]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="break-words text-sm font-semibold text-slate-950 dark:text-white">{rate.resourceCode}</h2>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{rate.productDisplayName}</p>
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {regions.map((code) => (
+              <span key={code} className="inline-flex rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+                {regionDisplayName(code, language)}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <input
+            type="checkbox"
+            checked={selectedKeys.has(group.key)}
+            onChange={() => onToggleSelection(rate)}
+            aria-label={t('pricing.compare.selectRow', { name: rate.productDisplayName })}
+            className="h-4 w-4 cursor-pointer rounded border-slate-300 accent-lobster-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lobster-500 dark:border-white/20"
+          />
+          <BillabilityBadge billability={rate.billability} t={t} />
+        </div>
+      </div>
+      <div className="mt-4 space-y-1.5">
+        {group.rates.map((entry) => (
+          <div key={entry.rateCode} className="flex flex-wrap items-baseline gap-x-2 text-xs">
+            <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">{regionDisplayName(entry.regionCode, language)}</span>
+            <span className="text-slate-600 dark:text-slate-300">{entry.meterDisplayName || humanizeCode(entry.meterCode)}</span>
+            <span className="tabular-nums font-semibold text-slate-950 dark:text-white">{formatDecimal(entry.unitPrice)}</span>
+            <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">{entry.currencyCode}</span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 border-t border-slate-100 pt-3 dark:border-white/5">
+        <div className="text-xs text-slate-400">{t('pricing.table.capabilities')}</div>
+        <div className="mt-2"><ModelCapabilities rate={rate} t={t} /></div>
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-3 text-[11px] text-slate-400">
+        <span>{t('pricing.effective', { date: dateOnly(rate.effectiveFrom) })}</span>
+        <a href={rate.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-slate-500 hover:text-lobster-500">
+          {t('pricing.source')}
+          <ExternalLink className="h-3 w-3" aria-hidden="true" />
+        </a>
+      </div>
+    </article>
+  );
+}
+
+function uniqueValues<T>(rates: readonly OfficialPricingRate[], pick: (rate: OfficialPricingRate) => T): T[] {
+  return [...new Set(rates.map(pick))];
 }
 
 export function PricingPagination({
@@ -163,86 +263,6 @@ export function PricingPagination({
       >
         <ChevronRight className="h-4 w-4" aria-hidden="true" />
       </button>
-    </div>
-  );
-}
-
-function RateDetail({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0">
-      <dt className="text-slate-400">{label}</dt>
-      <dd className="mt-1 break-words font-medium text-slate-800 dark:text-slate-200">{value}</dd>
-    </div>
-  );
-}
-
-function PriceValue({ rate, t }: { rate: OfficialPricingRate; t: TFunction }) {
-  return (
-    <>
-      <div className="flex flex-wrap items-baseline gap-x-1 text-slate-950 dark:text-white">
-        <span className="text-base font-semibold tabular-nums">{formatDecimal(rate.unitPrice)}</span>
-        <span className="text-xs font-medium">{rate.currencyCode}</span>
-      </div>
-      <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-        / {formatDecimal(rate.unitSize)} {unitLabel(rate.unitCode, t)}
-      </div>
-    </>
-  );
-}
-
-function RateRules({ rate, t }: { rate: OfficialPricingRate; t: TFunction }) {
-  const formula = isPricingFormula(rate.formula) ? rate.formula : null;
-  return (
-    <div className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
-      <div className="flex flex-wrap gap-1.5">
-        <BillabilityBadge billability={rate.billability} t={t} />
-        <PolicyBadge>{calculationLabel(rate.calculationMode, t)}</PolicyBadge>
-      </div>
-      {rate.conditions.map((condition, index) => (
-        <div key={`${condition.dimensionCode}:${condition.operator}:${index}`} className="break-words">
-          <span className="font-medium text-slate-700 dark:text-slate-200">{humanizeCode(condition.dimensionCode)}</span>{' '}
-          <span className="text-slate-400">{condition.operator}</span>{' '}
-          <span>{humanizeConditionValue(condition.value)}</span>
-        </div>
-      ))}
-      {rate.minimumQuantity !== '0' ? <div>{t('pricing.minimum', { value: formatDecimal(rate.minimumQuantity) })}</div> : null}
-      {rate.quantityStep ? <div>{t('pricing.step', { value: formatDecimal(rate.quantityStep) })}</div> : null}
-      {rate.tiers.length > 0 ? <TierSummary tiers={rate.tiers} t={t} /> : null}
-      {formula ? (
-        <div>
-          <div className="font-medium text-slate-700 dark:text-slate-200">{t('pricing.formula', { code: formula.formulaCode })}</div>
-          <div className="mt-1 font-mono text-[11px] text-slate-500">
-            {t('pricing.formula.expression', {
-              constant: formatDecimal(formula.constantUnits),
-              coefficient: formatDecimal(formula.quantityCoefficient),
-            })}
-          </div>
-          {formula.terms.map((term) => (
-            <div key={term.termCode} className="mt-1 font-mono text-[11px] text-slate-500">
-              + {formatDecimal(term.coefficient)} x {humanizeCode(term.dimensionCode)}
-            </div>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function TierSummary({ tiers, t }: { tiers: readonly OfficialPricingRateTier[]; t: TFunction }) {
-  return (
-    <div>
-      <div className="font-medium text-slate-700 dark:text-slate-200">{t('pricing.tiers')}</div>
-      <div className="mt-1 space-y-1">
-        {tiers.map((tier) => (
-          <div key={tier.tierCode} className="text-[11px] text-slate-500 dark:text-slate-400">
-            {tier.upperBound
-              ? t('pricing.tier.range', { lower: formatDecimal(tier.lowerBound), upper: formatDecimal(tier.upperBound) })
-              : t('pricing.tier.openRange', { lower: formatDecimal(tier.lowerBound) })}
-            {': '}{formatDecimal(tier.unitPrice)} {tier.currencyCode} / {formatDecimal(tier.unitSize)}
-            {tier.flatAmount !== '0' ? ` ${t('pricing.tier.flat', { amount: `${formatDecimal(tier.flatAmount)} ${tier.currencyCode}` })}` : ''}
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
@@ -366,18 +386,6 @@ export function isPricingFormula(value: unknown): value is OfficialPricingFormul
   return Boolean(value && typeof value === 'object' && 'formulaCode' in value && 'terms' in value);
 }
 
-function humanizeConditionValue(value: string): string {
-  if (value.startsWith('[') || value.startsWith('{')) {
-    try {
-      const parsed = JSON.parse(value) as unknown;
-      if (Array.isArray(parsed)) return parsed.map(String).join(', ');
-    } catch {
-      return value;
-    }
-  }
-  return value;
-}
-
 function unitLabel(unitCode: string, t: TFunction): string {
   const normalized = unitCode.trim().toLowerCase();
   const knownUnits = new Set(['api_request', 'api_result', 'token', 'second', 'character', 'image', 'megapixel', 'unit']);
@@ -386,10 +394,6 @@ function unitLabel(unitCode: string, t: TFunction): string {
 
 function calculationLabel(mode: OfficialPricingRate['calculationMode'], t: TFunction): string {
   return t(`pricing.calculation.${mode}`);
-}
-
-function timingLabel(timing: OfficialPricingRate['chargeTiming'], t: TFunction): string {
-  return t(`pricing.timing.${timing}`);
 }
 
 function dateOnly(value: string): string {

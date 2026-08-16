@@ -7,6 +7,8 @@ import type { PageInfo } from './page-info';
 
 /** Official pricing catalog response schema exposed by Cloud Router. */
 export interface OfficialPricingCatalogResponse {
+  /** Currencies field on official pricing catalog response. */
+  currencies: OfficialPricingValueFacet[];
   /** Groups field on official pricing catalog response. */
   groups: OfficialPricingGroupFacet[];
   /** Items field on official pricing catalog response. */

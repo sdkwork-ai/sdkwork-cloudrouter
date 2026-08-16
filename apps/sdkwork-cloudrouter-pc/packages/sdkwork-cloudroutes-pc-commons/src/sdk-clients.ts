@@ -24,6 +24,7 @@ import { SdkworkBackendClient as PaymentBackendClient } from '@sdkwork/payment-b
 import { SdkworkBackendClient as BaseDataBackendClient } from '@sdkwork/base-data-backend-sdk';
 import { SdkworkBackendClient as PromotionBackendClient } from '@sdkwork/promotion-backend-sdk';
 import { SdkworkBackendClient as PartnerBackendClient } from '@sdkwork/partner-backend-sdk';
+import { SdkworkBackendClient as MessagingBackendClient } from '@sdkwork/messaging-backend-sdk';
 import { SdkworkAiClient, type SdkworkAiConfig } from '@sdkwork/cloudrouter-open-sdk';
 import {
   createClient as createSdkworkDriveOpenClient,
@@ -623,6 +624,7 @@ let paymentBackendClient: PaymentBackendClient | null = null;
 let baseDataBackendClient: BaseDataBackendClient | null = null;
 let promotionBackendClient: PromotionBackendClient | null = null;
 let partnerBackendClient: PartnerBackendClient | null = null;
+let messagingBackendClient: MessagingBackendClient | null = null;
 let partnerAppClient: PartnerAppClient | null = null;
 let accountAppClient: AccountAppClient | null = null;
 let catalogAppClient: CatalogAppClient | null = null;
@@ -744,6 +746,16 @@ export function createSdkworkPartnerBackendSdkClient(
 ): PartnerBackendClient {
   return attachCloudRouterSdkSessionAuthBoundary(
     new PartnerBackendClient(buildDependencyBackendConfig(options, 'VITE_SDKWORK_PARTNER_BACKEND_API_BASE_URL')),
+  );
+}
+
+export type SdkworkMessagingBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
+
+export function createSdkworkMessagingBackendSdkClient(
+  options: SdkworkMessagingBackendSdkClientOptions = {},
+): MessagingBackendClient {
+  return attachCloudRouterSdkSessionAuthBoundary(
+    new MessagingBackendClient(buildDependencyBackendConfig(options, 'VITE_SDKWORK_MESSAGING_BACKEND_API_BASE_URL')),
   );
 }
 
@@ -1114,6 +1126,18 @@ export function getSdkworkPartnerBackendSdkClient(
   return partnerBackendClient;
 }
 
+export function getSdkworkMessagingBackendSdkClient(
+  options: SdkworkMessagingBackendSdkClientOptions = {},
+): MessagingBackendClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkMessagingBackendSdkClient(options);
+  }
+  if (!messagingBackendClient) {
+    messagingBackendClient = createSdkworkMessagingBackendSdkClient();
+  }
+  return messagingBackendClient;
+}
+
 export type SdkworkDriveAdminStorageSdkClientOptions = CloudRouterBackendSdkClientOptions;
 
 /**
@@ -1375,6 +1399,7 @@ function resetCloudRouterSdkClientCaches(): void {
   baseDataBackendClient = null;
   promotionBackendClient = null;
   partnerBackendClient = null;
+  messagingBackendClient = null;
   accountAppClient = null;
   catalogAppClient = null;
   membershipAppClient = null;

@@ -4,11 +4,12 @@ import { IAM_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-iam/contr
 import { RTC_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-rtc/contribution';
 import { RTC_ADMIN_ROUTE_ELEMENTS } from '@sdkwork/cloudrouter-pc-admin-rtc';
 import { TRADE_ADMIN_ROUTE_RECORDS } from '@sdkwork/order-pc-admin-trade/contribution';
+import { MESSAGING_ADMIN_ROUTE_RECORDS } from '@sdkwork/messaging-pc-admin-notify/contribution';
 import { TradeCenterHostElement } from './tradeCenterHostElement.tsx';
 
 export type CloudRouterAdminRouteContribution = {
   path: string;
-  owner: 'sdkwork-cloudrouter' | 'sdkwork-models' | 'sdkwork-log' | 'sdkwork-partner' | 'sdkwork-rtc' | 'sdkwork-order';
+  owner: 'sdkwork-cloudrouter' | 'sdkwork-models' | 'sdkwork-log' | 'sdkwork-partner' | 'sdkwork-rtc' | 'sdkwork-order' | 'sdkwork-messaging';
   adminPackage: `@sdkwork/${string}`;
   backendSdkFamilies: readonly string[];
   requiredPermission: string;
@@ -69,6 +70,10 @@ const IamOauthOfficialAccountCustomMenuAdmin = lazyAdminRoute(() => import('@sdk
 const IamOauthScanLoginAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthScanLoginAdmin');
 const IamAccountBindingAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamAccountBindingAdmin');
 const IamAuditAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamAuditAdmin');
+const MessagingNotifyEmailChannel = lazyAdminRoute(() => import('@sdkwork/messaging-pc-admin-notify'), 'EmailChannelPage');
+const MessagingNotifySmsChannel = lazyAdminRoute(() => import('@sdkwork/messaging-pc-admin-notify'), 'SmsChannelPage');
+const MessagingNotifyEmailTemplates = lazyAdminRoute(() => import('@sdkwork/messaging-pc-admin-notify'), 'EmailTemplatesPage');
+const MessagingNotifySmsTemplates = lazyAdminRoute(() => import('@sdkwork/messaging-pc-admin-notify'), 'SmsTemplatesPage');
 
 /**
  * Lazy route elements for the IAM admin module; paths mirror
@@ -93,6 +98,17 @@ const IAM_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>> = {
   'iam/oauth/scan-login': <IamOauthScanLoginAdmin />,
   'iam/account-binding': <IamAccountBindingAdmin />,
   'iam/audit': <IamAuditAdmin />,
+};
+
+/**
+ * Lazy route elements for the messaging notify admin module; paths mirror
+ * `@sdkwork/messaging-pc-admin-notify` MESSAGING_ADMIN_ROUTE_RECORDS screens.
+ */
+const MESSAGING_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>> = {
+  'email-channel': <MessagingNotifyEmailChannel />,
+  'sms-channel': <MessagingNotifySmsChannel />,
+  'email-templates': <MessagingNotifyEmailTemplates />,
+  'sms-templates': <MessagingNotifySmsTemplates />,
 };
 
 export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRouteContribution[] = [
@@ -159,6 +175,18 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
       record.redirectTo
         ? <Navigate to={record.redirectTo} replace />
         : <TradeCenterHostElement />,
+    ),
+  ),
+  ...MESSAGING_ADMIN_ROUTE_RECORDS.map((record) =>
+    route(
+      record.path,
+      'sdkwork-messaging',
+      '@sdkwork/messaging-pc-admin-notify',
+      ['sdkwork-messaging-backend-sdk'],
+      record.requiredPermission,
+      record.redirectTo
+        ? <Navigate to={record.redirectTo} replace />
+        : MESSAGING_ADMIN_ROUTE_ELEMENTS[record.screen]!,
     ),
   ),
 ];

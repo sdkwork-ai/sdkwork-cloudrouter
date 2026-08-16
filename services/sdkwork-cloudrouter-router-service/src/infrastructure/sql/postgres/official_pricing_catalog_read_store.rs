@@ -171,6 +171,7 @@ WHERE ($1 = 'all' OR $1 = ANY(group_codes))
   AND ($3::text IS NULL OR vendor_code = $3)
   AND ($4::text IS NULL OR region_code = $4)
   AND ($5::text IS NULL OR meter_code = $5)
+  AND ($6::text IS NULL OR currency_code = $6)
 )
 "#;
 
@@ -183,7 +184,7 @@ const LOAD_RATES_SUFFIX: &str = r#"
 SELECT *
 FROM filtered
 ORDER BY product_display_name, resource_code, operation_code, meter_code, rate_code
-LIMIT $6 OFFSET $7
+LIMIT $7 OFFSET $8
 "#;
 
 const LOAD_FACETS_SUFFIX: &str = r#"
@@ -207,6 +208,7 @@ const LOAD_FACETS_SUFFIX: &str = r#"
       AND ($4::text IS NULL OR meter_code = $4)
 ), category_filtered AS (
     SELECT * FROM searched WHERE ($5 = 'all' OR $5 = ANY(group_codes))
+      AND ($6::text IS NULL OR currency_code = $6)
 )
 SELECT 'group' AS facet_kind, group_code AS code, '' AS display_name, '' AS unit_code,
        CAST(COUNT(*) AS TEXT) AS facet_count
@@ -218,6 +220,9 @@ FROM category_filtered GROUP BY vendor_code
 UNION ALL
 SELECT 'region', region_code, '', '', CAST(COUNT(*) AS TEXT)
 FROM category_filtered GROUP BY region_code
+UNION ALL
+SELECT 'currency', currency_code, '', '', CAST(COUNT(*) AS TEXT)
+FROM category_filtered GROUP BY currency_code
 UNION ALL
 SELECT 'meter', meter_code, MAX(meter_display_name), MAX(unit_code), CAST(COUNT(*) AS TEXT)
 FROM category_filtered GROUP BY meter_code
@@ -303,6 +308,7 @@ async fn load_catalog(
         .bind(query.vendor_code.as_deref())
         .bind(query.region_code.as_deref())
         .bind(query.meter_code.as_deref())
+        .bind(query.currency_code.as_deref())
         .fetch_one(pool)
         .await
         .map_err(sql_error)?;
@@ -315,6 +321,7 @@ async fn load_catalog(
         .bind(query.vendor_code.as_deref())
         .bind(query.region_code.as_deref())
         .bind(query.meter_code.as_deref())
+        .bind(query.currency_code.as_deref())
         .bind(query.page_size)
         .bind(query.offset)
         .fetch_all(pool)
@@ -392,6 +399,7 @@ async fn load_catalog(
         .bind(query.region_code.as_deref())
         .bind(query.meter_code.as_deref())
         .bind(&query.category)
+        .bind(query.currency_code.as_deref())
         .fetch_all(pool)
         .await
         .map_err(sql_error)?;
@@ -415,6 +423,11 @@ async fn load_catalog(
                 count,
             }),
             "region" => snapshot.regions.push(OfficialPricingValueFacet {
+                id: code.clone(),
+                code,
+                count,
+            }),
+            "currency" => snapshot.currencies.push(OfficialPricingValueFacet {
                 id: code.clone(),
                 code,
                 count,

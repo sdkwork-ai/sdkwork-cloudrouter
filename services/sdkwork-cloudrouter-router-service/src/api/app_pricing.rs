@@ -44,6 +44,7 @@ struct AppPricingQuery {
     vendor_code: Option<String>,
     region_code: Option<String>,
     meter_code: Option<String>,
+    currency_code: Option<String>,
     page: Option<i64>,
     page_size: Option<i64>,
 }
@@ -56,6 +57,7 @@ struct AppPricingResponse {
     groups: Vec<OfficialPricingGroupFacet>,
     vendors: Vec<OfficialPricingValueFacet>,
     regions: Vec<OfficialPricingValueFacet>,
+    currencies: Vec<OfficialPricingValueFacet>,
     meters: Vec<OfficialPricingMeterFacet>,
 }
 
@@ -108,6 +110,7 @@ async fn list_pricing_rates(
                 groups: snapshot.groups,
                 vendors: snapshot.vendors,
                 regions: snapshot.regions,
+                currencies: snapshot.currencies,
                 meters: snapshot.meters,
             },
         ),
@@ -143,12 +146,28 @@ fn validate_query(
             vendor_code: normalize_facet_code(query.vendor_code, "vendor_code")?,
             region_code: normalize_facet_code(query.region_code, "region_code")?,
             meter_code: normalize_facet_code(query.meter_code, "meter_code")?,
+            currency_code: normalize_currency_code(query.currency_code)?,
             page_size: pagination.page_size,
             offset: pagination.offset,
         },
         pagination.page_no,
         pagination.page_size,
     ))
+}
+
+fn normalize_currency_code(value: Option<String>) -> Result<Option<String>, String> {
+    let Some(value) = value else {
+        return Ok(None);
+    };
+    let value = value.trim();
+    if value.is_empty() {
+        return Ok(None);
+    }
+    let normalized = value.to_ascii_uppercase();
+    if normalized.len() != 3 || !normalized.chars().all(|character| character.is_ascii_alphabetic()) {
+        return Err("pricing currency_code must be an ISO 4217 code".to_owned());
+    }
+    Ok(Some(normalized))
 }
 
 fn normalize_facet_code(value: Option<String>, field: &str) -> Result<Option<String>, String> {
@@ -196,6 +215,26 @@ mod tests {
         .is_err());
         assert!(validate_query(AppPricingQuery {
             vendor_code: Some("vendor code".to_owned()),
+            ..AppPricingQuery::default()
+        })
+        .is_err());
+    }
+
+    #[test]
+    fn pricing_query_normalizes_currency_codes() {
+        let (query, _, _) = validate_query(AppPricingQuery {
+            currency_code: Some("cny".to_owned()),
+            ..AppPricingQuery::default()
+        })
+        .unwrap();
+        assert_eq!(Some("CNY".to_owned()), query.currency_code);
+        assert!(validate_query(AppPricingQuery {
+            currency_code: Some("US".to_owned()),
+            ..AppPricingQuery::default()
+        })
+        .is_err());
+        assert!(validate_query(AppPricingQuery {
+            currency_code: Some("US1".to_owned()),
             ..AppPricingQuery::default()
         })
         .is_err());

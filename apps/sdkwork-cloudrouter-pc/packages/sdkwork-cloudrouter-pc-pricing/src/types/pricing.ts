@@ -43,6 +43,7 @@ export interface PricingCatalogFilters {
   vendorCode?: string;
   regionCode?: string;
   meterCode?: string;
+  currencyCode?: string;
   page: number;
   pageSize: number;
 }

@@ -1,14 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Scale, X } from 'lucide-react';
 import { PricingCategoryNav } from '../components/PricingCategoryNav';
+import { PricingCompareDrawer } from '../components/PricingCompareDrawer';
 import { PricingFilters } from '../components/PricingFilters';
 import { PricingPagination, PricingRateTable } from '../components/PricingRateTable';
 import { PricingEmptyState, PricingErrorState, PricingLoadingState } from '../components/PricingState';
 import { fetchOfficialPricingRates } from '../services/pricingService';
-import type { OfficialPricingCatalogResponse, PricingCategoryCode } from '../types/pricing';
+import { compareKeyOf, rateCategory } from '../types/compare';
+import type { OfficialPricingCatalogResponse, OfficialPricingRate, PricingCategoryCode } from '../types/pricing';
 
 const DEFAULT_PAGE_SIZE = 40;
 const SEARCH_DEBOUNCE_MILLIS = 300;
+const MISMATCH_HINT_MILLIS = 4000;
 
 export function PricingPage() {
   const { t } = useTranslation();
@@ -18,11 +22,50 @@ export function PricingPage() {
   const [vendorCode, setVendorCode] = useState('');
   const [regionCode, setRegionCode] = useState('');
   const [meterCode, setMeterCode] = useState('');
+  const [currencyCode, setCurrencyCode] = useState('');
   const [page, setPage] = useState(1);
   const [reloadVersion, setReloadVersion] = useState(0);
   const [catalog, setCatalog] = useState<OfficialPricingCatalogResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
+  const [selectedRates, setSelectedRates] = useState<OfficialPricingRate[]>([]);
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [mismatchHint, setMismatchHint] = useState<string | null>(null);
+  const mismatchTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (mismatchTimerRef.current !== null) window.clearTimeout(mismatchTimerRef.current);
+    };
+  }, []);
+
+  const showMismatchHint = (categoryCode: PricingCategoryCode) => {
+    setMismatchHint(t('pricing.compare.mismatch', { category: t(`pricing.category.${categoryCode}`) }));
+    if (mismatchTimerRef.current !== null) window.clearTimeout(mismatchTimerRef.current);
+    mismatchTimerRef.current = window.setTimeout(() => setMismatchHint(null), MISMATCH_HINT_MILLIS);
+  };
+
+  const selectedKeys = useMemo(() => new Set(selectedRates.map(compareKeyOf)), [selectedRates]);
+  const selectionCategory = selectedRates.length > 0 ? rateCategory(selectedRates[0]) : null;
+
+  const toggleSelection = (rate: OfficialPricingRate) => {
+    const key = compareKeyOf(rate);
+    if (selectedKeys.has(key)) {
+      setSelectedRates((current) => current.filter((selected) => compareKeyOf(selected) !== key));
+      return;
+    }
+    const nextCategory = rateCategory(rate);
+    if (selectionCategory !== null && selectionCategory !== nextCategory) {
+      showMismatchHint(selectionCategory);
+      return;
+    }
+    setSelectedRates((current) => [...current, rate]);
+  };
+
+  const clearSelection = () => {
+    setSelectedRates([]);
+    setCompareOpen(false);
+  };
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -43,6 +86,7 @@ export function PricingPage() {
         vendorCode,
         regionCode,
         meterCode,
+        currencyCode,
         page,
         pageSize: DEFAULT_PAGE_SIZE,
       },
@@ -58,7 +102,7 @@ export function PricingPage() {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [category, meterCode, page, regionCode, reloadVersion, searchQuery, vendorCode]);
+  }, [category, currencyCode, meterCode, page, regionCode, reloadVersion, searchQuery, vendorCode]);
 
   const categoryCounts = useMemo(
     () => new Map((catalog?.groups ?? []).map((group) => [group.code, group.count])),
@@ -75,6 +119,7 @@ export function PricingPage() {
     setVendorCode('');
     setRegionCode('');
     setMeterCode('');
+    setCurrencyCode('');
     setPage(1);
   };
   const updateFilter = (setter: (value: string) => void) => (value: string) => {
@@ -109,15 +154,64 @@ export function PricingPage() {
             vendorCode={vendorCode}
             regionCode={regionCode}
             meterCode={meterCode}
+            currencyCode={currencyCode}
             vendors={catalog?.vendors ?? []}
             regions={catalog?.regions ?? []}
             meters={catalog?.meters ?? []}
+            currencies={catalog?.currencies ?? []}
             onSearchChange={setSearchInput}
             onVendorChange={updateFilter(setVendorCode)}
             onRegionChange={updateFilter(setRegionCode)}
             onMeterChange={updateFilter(setMeterCode)}
+            onCurrencyChange={updateFilter(setCurrencyCode)}
             onClear={clearFilters}
           />
+
+          {selectedRates.length > 0 ? (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-lobster-500/30 bg-lobster-500/[0.04] px-4 py-3 dark:border-lobster-500/25 dark:bg-lobster-500/[0.06]">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-lobster-500/10 text-lobster-500">
+                  <Scale className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-slate-900 dark:text-white">
+                    {t('pricing.compare.selected', { count: selectedRates.length })}
+                    {selectionCategory ? (
+                      <span className="ml-2 text-xs font-normal text-slate-500 dark:text-slate-400">
+                        {t(`pricing.category.${selectionCategory}`)}
+                      </span>
+                    ) : null}
+                  </p>
+                  <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">{t('pricing.compare.selectHint')}</p>
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                {mismatchHint ? (
+                  <span className="max-w-56 truncate rounded-md bg-amber-50 px-2.5 py-1.5 text-xs font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-300" role="status">
+                    {mismatchHint}
+                  </span>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-md border border-slate-300 px-3 text-sm font-medium text-slate-600 hover:border-slate-400 hover:text-slate-950 dark:border-white/10 dark:text-slate-300 dark:hover:text-white"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                  {t('pricing.compare.clear')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCompareOpen(true)}
+                  disabled={selectedRates.length < 2}
+                  title={selectedRates.length < 2 ? t('pricing.compare.selectMore') : undefined}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-md bg-lobster-500 px-4 text-sm font-semibold text-white transition-colors hover:bg-lobster-600 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lobster-500/50"
+                >
+                  <Scale className="h-4 w-4" aria-hidden="true" />
+                  {t('pricing.compare.start')}
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           <div className="mt-5">
             {loading ? <PricingLoadingState /> : null}
@@ -125,7 +219,11 @@ export function PricingPage() {
             {!loading && !failed && catalog?.items.length === 0 ? <PricingEmptyState /> : null}
             {!loading && !failed && catalog && catalog.items.length > 0 ? (
               <>
-                <PricingRateTable items={catalog.items} />
+                <PricingRateTable
+                  items={catalog.items}
+                  selectedKeys={selectedKeys}
+                  onToggleSelection={toggleSelection}
+                />
                 <PricingPagination
                   page={catalog.pageInfo.page ?? page}
                   totalPages={catalog.pageInfo.totalPages}
@@ -137,6 +235,15 @@ export function PricingPage() {
           </div>
         </section>
       </div>
+
+      <PricingCompareDrawer
+        open={compareOpen}
+        selections={selectedRates}
+        defaultRegion={regionCode}
+        onRemove={(key) => setSelectedRates((current) => current.filter((selected) => compareKeyOf(selected) !== key))}
+        onClear={clearSelection}
+        onClose={() => setCompareOpen(false)}
+      />
     </main>
   );
 }

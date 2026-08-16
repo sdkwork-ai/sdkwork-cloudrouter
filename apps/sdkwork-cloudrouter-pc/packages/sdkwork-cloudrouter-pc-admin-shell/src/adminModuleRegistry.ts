@@ -44,6 +44,10 @@ import {
 import { IAM_ADMIN_MENU, IAM_ADMIN_MODULE_DEF } from '@sdkwork/cloudrouter-pc-admin-iam/contribution';
 import { RTC_ADMIN_MENU, RTC_ADMIN_MODULE_DEF } from '@sdkwork/cloudrouter-pc-admin-rtc/contribution';
 import { TRADE_ADMIN_MENU, TRADE_ADMIN_MODULE_DEF } from '@sdkwork/order-pc-admin-trade/contribution';
+import {
+  MESSAGING_ADMIN_MENU,
+  MESSAGING_ADMIN_MODULE_DEF,
+} from '@sdkwork/messaging-pc-admin-notify/contribution';
 
 export type AdminModuleId =
   | 'home'
@@ -57,6 +61,7 @@ export type AdminModuleId =
   | 'paymentCenter'
   | 'storageCenter'
   | 'tradeCenter'
+  | 'notifyCenter'
   | 'operations';
 
 export interface AdminModuleDef {
@@ -116,6 +121,7 @@ export const ADMIN_MODULES: AdminModuleDef[] = [
   IAM_ADMIN_MODULE_DEF,
   RTC_ADMIN_MODULE_DEF,
   TRADE_ADMIN_MODULE_DEF,
+  MESSAGING_ADMIN_MODULE_DEF,
   moduleBlock({
     id: 'membershipCenter',
     nameKey: 'admin.header.membershipCenter',
@@ -214,6 +220,7 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
   IAM_ADMIN_MENU,
   RTC_ADMIN_MENU,
   TRADE_ADMIN_MENU,
+  MESSAGING_ADMIN_MENU,
   {
     moduleId: 'membershipCenter',
     groups: [

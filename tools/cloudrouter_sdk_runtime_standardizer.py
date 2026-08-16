@@ -391,6 +391,17 @@ SDK_DEPENDENCIES = {
                 "typescript": "@sdkwork/drive-backend-sdk",
             },
         },
+        {
+            "workspace": "sdkwork-messaging-backend-sdk",
+            "role": "messaging-backend-management-capability",
+            "required": True,
+            "dependencyMode": "consumer-sdk",
+            "apiPrefix": "/backend/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "@sdkwork/messaging-backend-sdk",
+            },
+        },
     ],
 }
 GENERATED_TEXT_FILE_EXTENSIONS = {

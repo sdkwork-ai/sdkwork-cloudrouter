@@ -2224,11 +2224,48 @@ importers:
         specifier: workspace:*
         version: link:../../../../sdkwork-utils/packages/sdkwork-utils-typescript
 
+  ../sdkwork-messaging/apps/sdkwork-messaging-pc/packages/sdkwork-messaging-pc-admin-notify:
+    dependencies:
+      '@sdkwork/messaging-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../../sdks/sdkwork-messaging-backend-sdk/sdkwork-messaging-backend-sdk-typescript
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.31.0(react@19.2.8)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+      react-i18next:
+        specifier: 'catalog:'
+        version: 17.0.11(i18next@26.3.6(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.8(react@19.2.8)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
   ../sdkwork-messaging/sdks/sdkwork-messaging-app-sdk/sdkwork-messaging-app-sdk-typescript:
     dependencies:
       '@sdkwork/sdk-common':
         specifier: workspace:*
         version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+
+  ../sdkwork-messaging/sdks/sdkwork-messaging-backend-sdk/sdkwork-messaging-backend-sdk-typescript:
+    dependencies:
+      '@sdkwork/sdk-common':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+      '@sdkwork/utils':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-utils/packages/sdkwork-utils-typescript
 
   ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog:
     dependencies:
@@ -3722,6 +3759,12 @@ importers:
       '@sdkwork/messaging-app-sdk':
         specifier: workspace:*
         version: link:../../../sdkwork-messaging/sdks/sdkwork-messaging-app-sdk/sdkwork-messaging-app-sdk-typescript
+      '@sdkwork/messaging-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../sdkwork-messaging/sdks/sdkwork-messaging-backend-sdk/sdkwork-messaging-backend-sdk-typescript
+      '@sdkwork/messaging-pc-admin-notify':
+        specifier: workspace:*
+        version: link:../../../sdkwork-messaging/apps/sdkwork-messaging-pc/packages/sdkwork-messaging-pc-admin-notify
       '@sdkwork/models-pc-admin-catalog':
         specifier: workspace:*
         version: link:../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog

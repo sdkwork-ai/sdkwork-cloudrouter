@@ -13,6 +13,7 @@ import { configureCloudRouterDomainServiceProviders } from '@sdkwork/cloudroutes
 import { configureCloudRouterLogBackendSdkClient } from './admin/logSdkHostWiring.ts';
 import { configureCloudRouterOrderBackendSdkClient } from './admin/orderSdkHostWiring.ts';
 import { configureCloudRouterPartnerBackendSdkClient } from './admin/partnerSdkHostWiring.ts';
+import { configureCloudRouterMessagingBackendSdkClient } from './admin/messagingSdkHostWiring.ts';
 import { DocumentsReferenceRuntimeProvider } from '@sdkwork/documents-pc-commons';
 import { initializeThemePreferences } from './themePreference.ts';
 import './index.css';
@@ -22,6 +23,7 @@ configureCloudRouterDomainServiceProviders();
 configureCloudRouterLogBackendSdkClient();
 configureCloudRouterOrderBackendSdkClient();
 configureCloudRouterPartnerBackendSdkClient();
+configureCloudRouterMessagingBackendSdkClient();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

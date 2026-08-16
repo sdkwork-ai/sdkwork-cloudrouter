@@ -3186,6 +3186,13 @@
         "description": "Official pricing catalog response schema exposed by Cloud Router.",
         "name": "OfficialPricingCatalogResponse",
         "properties": {
+          "currencies": {
+            "description": "Currencies field on official pricing catalog response.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingValueFacet"
+            },
+            "type": "array"
+          },
           "groups": {
             "description": "Groups field on official pricing catalog response.",
             "items": {
@@ -3236,6 +3243,7 @@
           "groups",
           "vendors",
           "regions",
+          "currencies",
           "meters"
         ],
         "type": "object"
@@ -6204,6 +6212,17 @@
             "schema": {
               "maxLength": 160,
               "pattern": "^[A-Za-z0-9._:/-]+$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Currency code query parameter.",
+            "in": "query",
+            "name": "currency_code",
+            "required": false,
+            "schema": {
+              "maxLength": 3,
+              "pattern": "^[A-Z]{3}$",
               "type": "string"
             }
           },

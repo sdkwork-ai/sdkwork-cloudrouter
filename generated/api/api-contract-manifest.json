@@ -23538,6 +23538,83 @@
     },
     {
       "api_method": "GET",
+      "api_path": "/app/v3/api/ai/models",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing/src/services/compareService.ts#fetchCompareModels@/pricing",
+      "kind": "read",
+      "module": "pc-pricing",
+      "openapi_exposed": false,
+      "operation": "fetchCompareModels",
+      "operation_id": "models.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 256,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "vendor_codes",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_model_vendor",
+        "ai_model",
+        "ai_model_capability",
+        "ai_model_pricing",
+        "ai_upstream_supplier",
+        "ai_upstream_account",
+        "ai_upstream_account_group",
+        "ai_upstream_account_group_member",
+        "ai_upstream_account_group_resource"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/pricing",
+      "route_scope": "public",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-app-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing/src/services/compareService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
       "api_path": "/app/v3/api/ai/pricing/rates",
       "api_surface": "app",
       "file_targets": [],
@@ -23612,6 +23689,16 @@
         },
         {
           "in": "query",
+          "name": "currency_code",
+          "required": false,
+          "schema": {
+            "maxLength": 3,
+            "pattern": "^[A-Z]{3}$",
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
           "name": "page",
           "required": false,
           "schema": {
@@ -23654,6 +23741,34 @@
           "additionalProperties": false,
           "name": "OfficialPricingCatalogResponse",
           "properties": {
+            "currencies": {
+              "items": {
+                "additionalProperties": false,
+                "name": "OfficialPricingValueFacet",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "code",
+                  "count"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
             "groups": {
               "items": {
                 "additionalProperties": false,
@@ -24185,6 +24300,7 @@
             "groups",
             "vendors",
             "regions",
+            "currencies",
             "meters"
           ],
           "type": "object"
@@ -28197,23 +28313,23 @@
   "summary": {
     "api_method_counts": {
       "DELETE": 20,
-      "GET": 105,
+      "GET": 106,
       "PATCH": 19,
       "POST": 55,
       "PUT": 12
     },
     "api_surface_counts": {
-      "app": 74,
+      "app": 75,
       "backend": 137
     },
-    "operation_count": 211,
+    "operation_count": 212,
     "route_scope_counts": {
       "admin": 137,
       "console": 31,
-      "public": 43
+      "public": 44
     },
     "sdk_client_counts": {
-      "SdkworkAppClient": 74,
+      "SdkworkAppClient": 75,
       "SdkworkBackendClient": 137
     }
   }

@@ -969,30 +969,36 @@ class FrontendOperationAudit:
         family: str,
         manifest_path: Path,
     ) -> str | None:
-        owner_manifest_path = self.root / "sdks" / "cloudrouter-backend-sdk" / "sdk-manifest.json"
-        if not owner_manifest_path.is_file():
-            return "Cloud Router backend SDK manifest is missing"
-        try:
-            owner_manifest = json.loads(owner_manifest_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as exc:
-            return f"Cloud Router backend SDK manifest is invalid: {exc}"
-        if not isinstance(owner_manifest, dict):
-            return "Cloud Router backend SDK manifest root must be a mapping"
-
-        owner_family = owner_manifest.get("sdkFamily") or owner_manifest.get("workspace")
-        if family == owner_family:
-            if manifest_path != owner_manifest_path.resolve():
-                return f"frontend operation SDK authority {family} must use the application-owned manifest"
-            return None
-        dependencies = owner_manifest.get("sdkDependencies", [])
-        declared_families = {
-            dependency.get("workspace")
-            for dependency in dependencies
-            if isinstance(dependency, dict) and isinstance(dependency.get("workspace"), str)
-        } if isinstance(dependencies, list) else set()
-        if family not in declared_families:
-            return f"frontend operation SDK authority {family} is not declared in cloudrouter-backend-sdk sdkDependencies"
-        return None
+        # The owner SDK is the Cloud Router SDK family that declares the
+        # authority as a dependency: app operations are owned by the app SDK,
+        # backend operations by the backend SDK.
+        for owner_name in ("cloudrouter-app-sdk", "cloudrouter-backend-sdk"):
+            owner_manifest_path = self.root / "sdks" / owner_name / "sdk-manifest.json"
+            if not owner_manifest_path.is_file():
+                continue
+            try:
+                owner_manifest = json.loads(owner_manifest_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if not isinstance(owner_manifest, dict):
+                continue
+            owner_family = owner_manifest.get("sdkFamily") or owner_manifest.get("workspace")
+            if family == owner_family:
+                if manifest_path != owner_manifest_path.resolve():
+                    return (
+                        f"frontend operation SDK authority {family} must use the "
+                        "application-owned manifest"
+                    )
+                return None
+            dependencies = owner_manifest.get("sdkDependencies", [])
+            declared_families = {
+                dependency.get("workspace")
+                for dependency in dependencies
+                if isinstance(dependency, dict) and isinstance(dependency.get("workspace"), str)
+            } if isinstance(dependencies, list) else set()
+            if family in declared_families:
+                return None
+        return f"frontend operation SDK authority {family} is not declared in Cloud Router SDK sdkDependencies"
 
     def _sdk_operation_families(self, source_operation: dict[str, Any] | None) -> list[str]:
         if not isinstance(source_operation, dict):
@@ -1012,6 +1018,8 @@ class FrontendOperationAudit:
     def _sdk_client_factory(self, family: str) -> str | None:
         if family == "cloudrouter-backend-sdk":
             return "getCloudRouterBackendSdkClient"
+        if family == "sdkwork-models-app-sdk":
+            return "getModelsAppSdkClient"
         if family == "sdkwork-log-backend-sdk":
             return "getLogBackendSdkClient"
         match = re.fullmatch(r"sdkwork-([a-z0-9-]+)-backend-sdk", family)
