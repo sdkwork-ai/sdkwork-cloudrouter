@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   useEffect,
   useImperativeHandle,
@@ -643,6 +644,8 @@ function TransferColumn({
   onSelect: (option: GroupPickerOption) => void;
   actionIcon?: ReactNode;
 }) {
+
+  const { t } = useTranslation();
   const searching = query.trim().length > 0;
   return (
     <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-white/10 dark:bg-[#1a1a1a]" data-sdk-group-picker-column>
@@ -685,7 +688,7 @@ function TransferColumn({
           <button
             type="button"
             onClick={() => onQueryChange('')}
-            aria-label="Clear search"
+            aria-label={t('commons.actions.clearSearch', 'Clear search')}
             className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-white/10 dark:hover:text-slate-200"
           >
             <X className="h-3 w-3" aria-hidden="true" />

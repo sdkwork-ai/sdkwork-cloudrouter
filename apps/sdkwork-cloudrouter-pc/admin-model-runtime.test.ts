@@ -100,9 +100,9 @@ function adminModel(overrides: Record<string, unknown> = {}): Record<string, unk
     supportsStreaming: true,
     supportsTools: true,
     supportsJsonSchema: true,
-                releaseStage: "1",
-                shelfState: "1",
-                routingState: "1",
+                releaseStage: 1,
+                shelfState: 1,
+                routingState: 1,
     replacementModel: null,
     ...overrides,
   };
@@ -262,8 +262,8 @@ test("admin model page groups rows by vendor code when persisted vendor ids diff
     "utf8",
   );
 
-  assert.match(source, /modelsForVendor\(models,\s*v\)/);
-  assert.match(source, /modelsForVendor\(models,\s*selectedVendor\)/);
+  assert.match(source, /loadVendorModels/);
+  assert.match(source, /vendorCode: vendor\.vendorCode/);
   assert.doesNotMatch(source, /models\.filter\(m => m\.vendorId === selectedVendorId/);
   assert.doesNotMatch(source, /models\.filter\(m => m\.vendorId === v\.id/);
 });
@@ -724,7 +724,7 @@ test("admin model service calls generated backend SDK paths and normalizes model
           ],
         };
       }
-      if (url === "/backend/v3/api/ai/models" && method === "GET") {
+      if (url.split("?")[0] === "/backend/v3/api/ai/models" && method === "GET") {
         return {
           items: [
             adminModel({
@@ -765,6 +765,9 @@ test("admin model service calls generated backend SDK paths and normalizes model
           vendorCodes: ["anthropic"],
           sourceHash: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
           meterCount: 20,
+          voiceCount: 1,
+          voiceBindingCount: 1,
+          videoProfileCount: 1,
           vendorCount: 1,
           familyCount: 1,
           modelCount: 1,
@@ -946,7 +949,7 @@ test("admin model service calls generated backend SDK paths and normalizes model
         vendorId: "vendor-3",
         model: "custom/model-v1",
         displayName: "Custom model v1",
-        type: "Embedding",
+        type: "embedding",
         regionPrices: [
           {
             regionCode: "global",
@@ -963,9 +966,9 @@ test("admin model service calls generated backend SDK paths and normalizes model
         supportsStreaming: false,
         supportsTools: false,
         supportsJsonSchema: false,
-        releaseStage: "1",
-        shelfState: "1",
-        routingState: "1",
+        releaseStage: 1,
+        shelfState: 1,
+        routingState: 1,
       });
       assert.deepEqual(JSON.parse(captured[6].body), {
         vendorId: "vendor-3",
@@ -1009,7 +1012,7 @@ test("admin model service initializes empty catalog through generated backend SD
       if (url === "/backend/v3/api/ai/model_vendors" && method === "GET") {
         return { items: [] };
       }
-      if (url === "/backend/v3/api/ai/models" && method === "GET") {
+      if (url.split("?")[0] === "/backend/v3/api/ai/models" && method === "GET") {
         return { items: [] };
       }
       if (url === "/backend/v3/api/ai/model_rankings?page_size=200" && method === "GET") {
@@ -1027,6 +1030,9 @@ test("admin model service initializes empty catalog through generated backend SD
           vendorCodes: ["openai"],
           sourceHash: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
           meterCount: 20,
+          voiceCount: 1,
+          voiceBindingCount: 1,
+          videoProfileCount: 1,
           vendorCount: 1,
           familyCount: 1,
           modelCount: 1,
@@ -1069,7 +1075,7 @@ test("admin model service initializes empty catalog through generated backend SD
         captured.map((request) => `${request.method} ${request.url}`),
         [
           "GET /backend/v3/api/ai/model_vendors",
-          "GET /backend/v3/api/ai/models",
+          "GET /backend/v3/api/ai/models?page=1&page_size=1",
           "GET /backend/v3/api/ai/model_rankings?page_size=200",
           "POST /backend/v3/api/ai/models/sync",
         ],
@@ -1101,7 +1107,7 @@ test("admin model service keeps initialized catalog rows when returned models ha
           ],
         };
       }
-      if (url === "/backend/v3/api/ai/models" && method === "GET") {
+      if (url.split("?")[0] === "/backend/v3/api/ai/models" && method === "GET") {
         return {
           items: [
             adminModel({
@@ -1132,7 +1138,7 @@ test("admin model service keeps initialized catalog rows when returned models ha
     async (captured) => {
       const catalog = await ModelService.fetchInitializedCatalog();
 
-      assert.equal(catalog.initialized, false);
+      assert.equal(catalog.initialized, true);
       assert.equal(catalog.vendors.length, 1);
       assert.equal(catalog.vendors[0].name, "OpenAI");
       assert.equal(catalog.models.length, 2);
@@ -1142,7 +1148,7 @@ test("admin model service keeps initialized catalog rows when returned models ha
         captured.map((request) => `${request.method} ${request.url}`),
         [
           "GET /backend/v3/api/ai/model_vendors",
-          "GET /backend/v3/api/ai/models",
+          "GET /backend/v3/api/ai/models?page=1&page_size=1",
           "GET /backend/v3/api/ai/model_rankings?page_size=200",
         ],
       );
@@ -1340,7 +1346,7 @@ test("admin model service triggers model ranking refresh through generated backe
       assert.deepEqual(JSON.parse(captured[0].body), {
         rankScope: "commercial-default",
         snapshotPeriod: "daily",
-        pageSize: "200",
+        limit: "200",
         lookbackDays: "7",
         refreshIntervalSeconds: "3600",
         cacheMaxAgeSeconds: "60",
@@ -1439,7 +1445,7 @@ test("admin model list remains usable when model ranking enhancement fails", asy
   await withBackendSdkFetch(
     (url, init) => {
       const method = init?.method ?? "GET";
-      if (url === "/backend/v3/api/ai/models" && method === "GET") {
+      if (url.split("?")[0] === "/backend/v3/api/ai/models" && method === "GET") {
         return {
           items: [
             adminModel(),
@@ -1512,7 +1518,7 @@ test("admin model list keeps backend calls when ranking summary is malformed", a
   await withBackendSdkFetch(
     (url, init) => {
       const method = init?.method ?? "GET";
-      if (url === "/backend/v3/api/ai/models" && method === "GET") {
+      if (url.split("?")[0] === "/backend/v3/api/ai/models" && method === "GET") {
         return {
           items: [
             adminModel({
@@ -1560,7 +1566,7 @@ test("admin model list preserves regional prices and rejects missing region pric
   await withBackendSdkFetch(
     (url, init) => {
       const method = init?.method ?? "GET";
-      if (url === "/backend/v3/api/ai/models" && method === "GET") {
+      if (url.split("?")[0] === "/backend/v3/api/ai/models" && method === "GET") {
         return {
           items: [
             adminModel({
@@ -1619,7 +1625,7 @@ test("admin model list preserves regional prices and rejects missing region pric
   await withBackendSdkFetch(
     (url, init) => {
       const method = init?.method ?? "GET";
-      if (url === "/backend/v3/api/ai/models" && method === "GET") {
+      if (url.split("?")[0] === "/backend/v3/api/ai/models" && method === "GET") {
         return {
           items: [
             adminModel({
@@ -1645,7 +1651,7 @@ test("admin model list preserves regional prices and rejects missing region pric
   await withBackendSdkFetch(
     (url, init) => {
       const method = init?.method ?? "GET";
-      if (url === "/backend/v3/api/ai/models" && method === "GET") {
+      if (url.split("?")[0] === "/backend/v3/api/ai/models" && method === "GET") {
         return {
           items: [
             adminModel({
@@ -1673,7 +1679,7 @@ test("admin model list keeps catalog rows when one pricing side is not available
   await withBackendSdkFetch(
     (url, init) => {
       const method = init?.method ?? "GET";
-      if (url === "/backend/v3/api/ai/models" && method === "GET") {
+      if (url.split("?")[0] === "/backend/v3/api/ai/models" && method === "GET") {
         return {
           items: [
             adminModel({
@@ -2136,6 +2142,9 @@ test("admin model catalog sync fails closed when backend returns malformed model
           vendorCodes: ["openai"],
           sourceHash: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
           meterCount: 20,
+          voiceCount: 1,
+          voiceBindingCount: 1,
+          videoProfileCount: 1,
           vendorCount: 1,
           familyCount: 1,
           modelCount: 1,
@@ -2172,6 +2181,9 @@ test("admin model catalog sync fails closed when governance metadata is missing"
           vendorCodes: ["openai"],
           sourceHash: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
           meterCount: 20,
+          voiceCount: 1,
+          voiceBindingCount: 1,
+          videoProfileCount: 1,
           vendorCount: 1,
           familyCount: 1,
           modelCount: 1,
@@ -2295,7 +2307,7 @@ test("admin model right pane stays as a paginated table list", () => {
     "data-admin-model-pagination",
     "const [page, setPage] = useState(1)",
     "const [pageSize, setPageSize] = useState(20)",
-    "const paginatedVendorModels = vendorModels.slice",
+    "const paginatedVendorModels = models",
     "paginatedVendorModels.map",
     "footer={(",
   ]) {
@@ -2318,7 +2330,7 @@ test("admin model table supports multi-select modality filtering before paginati
     "type ModelModalityFilter = Model['type']",
     "const modelModalityFilterOptions",
     "const [modalityFilters, setModalityFilters] = useState<ModelModalityFilter[]>([])",
-    "modalityFilters.includes(m.type)",
+    "modalityFilters.includes(option.value)",
     "[selectedVendorId, search, modalityFilters]",
     "data-admin-model-modality-filter",
     "data-admin-model-modality-filter-option",
@@ -2738,6 +2750,8 @@ test("admin model resource group service calls generated backend SDK resource gr
               model: "gpt-5",
               providerNativeModel: "gpt-5",
               status: "active",
+              method: null,
+              path: null,
             },
           ],
           pageInfo: {
@@ -2818,6 +2832,8 @@ test("admin model resource group service calls generated backend SDK resource gr
             model: "gpt-5",
             providerNativeModel: "gpt-5",
             status: "active",
+            method: null,
+            path: null,
             sortOrder: null,
             memberRole: "included",
           },
@@ -2895,6 +2911,8 @@ test("admin model resource group service calls generated backend SDK resource gr
         model: "gpt-5",
         providerNativeModel: "gpt-5",
         status: "active",
+        method: null,
+        path: null,
       });
       assert.equal(created.groupCode, "api.custom.chat");
       assert.equal(created.dynamic, false);

@@ -46,7 +46,7 @@ import { SdkworkBackendClient } from '@sdkwork/cloudrouter-backend-sdk';
 
 ## Regeneration Commands
 
-Run from `apps/sdkwork-cloudrouter`:
+Run from the repository root (`sdkwork-cloudrouter`):
 
 ```powershell
 python -B -m tools.api_contract_manifest

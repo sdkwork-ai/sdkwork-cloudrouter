@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { HelpCircle, X } from 'lucide-react';
 
 export type AdminResourceHelpContent = {
@@ -48,6 +49,7 @@ export interface AdminResourceHelpDialogProps {
 }
 
 export function AdminResourceHelpDialog({ closeLabel = 'Close', content, notesLabel = 'Notes', onClose }: AdminResourceHelpDialogProps) {
+  const { t } = useTranslation();
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
@@ -69,7 +71,7 @@ export function AdminResourceHelpDialog({ closeLabel = 'Close', content, notesLa
             {content.title}
           </h2>
           <button
-            aria-label="Close"
+            aria-label={t('commons.actions.close', 'Close')}
             className="grid h-9 w-9 place-items-center rounded-md text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10"
             onClick={onClose}
             type="button"

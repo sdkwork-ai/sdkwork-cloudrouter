@@ -29,7 +29,7 @@ Never hand-edit generated SDK output. Fix the manifest, OpenAPI generator, or `s
 
 ## Commands
 
-Run from `apps/sdkwork-cloudrouter`:
+Run from the repository root (`sdkwork-cloudrouter`):
 
 ```powershell
 python -B -m tools.api_contract_manifest

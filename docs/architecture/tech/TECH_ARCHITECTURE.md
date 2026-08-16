@@ -208,6 +208,10 @@ charge facts. Runtime pricing enters through the reusable
 provider-adapter accounting do not calculate amounts or unit conversion
 locally. `cloudrouter_account_rate_card` is the sole runtime subject-to-plan
 binding authority; account-group pricing columns are compatibility projections.
+The admin pricing management surface (`/admin/pricing/*`: pricing plans, rate
+cards, and pricing rules) operates these entities through the
+`@sdkwork/cloudrouter-backend-sdk` `pricing` family with full audit logging,
+so operators configure the billing engine without touching runtime code.
 `ai_metering_usage` remains a `legacy-compat` settlement input only during the
 bounded shadow-write window defined by `MIG-2026-0002`, whose hard runtime cutoff
 is 2026-10-31 23:59:59Z. Invocation events and runtime artifacts are persisted in the

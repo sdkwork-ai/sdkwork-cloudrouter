@@ -5408,6 +5408,7 @@ dependencies = [
  "sdkwork-iam-database-host",
  "sdkwork-models",
  "sdkwork-models-database-host",
+ "sdkwork-routes-cloudrouter-app-api",
  "sdkwork-web-bootstrap",
  "sdkwork-web-core",
  "serde_json",

@@ -163,7 +163,6 @@
     },
     {
 
-    {
       "capability": "admin-transaction-center",
       "targetCrate": "crates/sdkwork-cloudrouter-admin-transaction-center-repository-sqlx",
       "storePaths": [

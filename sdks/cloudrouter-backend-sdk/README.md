@@ -47,6 +47,8 @@ This SDK family is owner-only. Dependency-owned routes are consumed through decl
 | `sdkwork-payment-backend-sdk` | `payment-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
 | `sdkwork-promotion-backend-sdk` | `promotion-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
 | `sdkwork-partner-backend-sdk` | `partner-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `sdkwork-community-backend-sdk` | `community-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `sdkwork-log-backend-sdk` | `log-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
 | `sdkwork-drive-backend-sdk` | `drive-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
 
 Package names:
@@ -75,6 +77,10 @@ Package names:
 - `typescript`: `@sdkwork/promotion-backend-sdk`
 - `sdkwork-partner-backend-sdk`
 - `typescript`: `@sdkwork/partner-backend-sdk`
+- `sdkwork-community-backend-sdk`
+- `typescript`: `@sdkwork/community-backend-sdk`
+- `sdkwork-log-backend-sdk`
+- `typescript`: `@sdkwork/log-backend-sdk`
 - `sdkwork-drive-backend-sdk`
 - `typescript`: `@sdkwork/drive-backend-sdk`
 

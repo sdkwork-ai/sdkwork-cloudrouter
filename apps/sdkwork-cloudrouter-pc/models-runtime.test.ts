@@ -126,10 +126,10 @@ const TEST_ROUTE_MODELS: Model[] = [
 ];
 
 test("generated app model reference price contract includes regionCode", () => {
-  const appOpenApi = JSON.parse(readFileSync(new URL("../../generated/openapi/cloudrouter-app-openapi.json", import.meta.url), "utf8"));
+  const appOpenApi = JSON.parse(readFileSync(new URL("../../../sdkwork-models/apis/app-api/intelligence/openapi.json", import.meta.url), "utf8"));
   const referencePriceSchema = appOpenApi.components?.schemas?.AppModelCatalogReferencePrice;
   const appSdkReferencePriceType = readFileSync(
-    new URL("../../sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/src/index.ts/types/app-model-catalog-reference-price.ts", import.meta.url),
+    new URL("../../../sdkwork-models/sdks/sdkwork-models-app-sdk/sdkwork-models-app-sdk-typescript/generated/server-openapi/src/types/app-model-catalog-reference-price.ts", import.meta.url),
     "utf8",
   );
 
@@ -422,10 +422,10 @@ test("model catalog detail view derives copy route and sidebar rows", () => {
     introLabelKey: "models.data.openai/gpt-4o-mini.intro",
     modalityTone: "text",
   });
-  assert.match(detail.apiExample, /searchQuery: "openai\/gpt-4o-mini"/);
+  assert.match(detail.apiExample, /q: "openai\/gpt-4o-mini"/);
   assert.match(detail.apiExample, /client\.ai\.models\.list\(params\)/);
   assert.match(detail.apiExample, /SdkworkAppClient/);
-  assert.match(detail.apiExample, /@sdkwork\/cloudrouter-app-sdk/);
+  assert.match(detail.apiExample, /@sdkwork\/models-app-sdk/);
   assert.doesNotMatch(detail.apiExample, /CloudRouterClient/);
   assert.doesNotMatch(detail.apiExample, /@sdkwork\/cloudrouter-sdk/);
   assert.deepEqual(detail.useCases, [
@@ -479,7 +479,7 @@ test("model catalog detail API example serializes model ids as safe TypeScript s
   const unusualModelId = "vendor/weird'\\model\nnext";
   const detail = deriveModelCatalogDetailView(catalogModel({ id: unusualModelId }));
 
-  assert.equal(detail.apiExample.includes(`    searchQuery: ${JSON.stringify(unusualModelId)},`), true);
+  assert.equal(detail.apiExample.includes(`    q: ${JSON.stringify(unusualModelId)},`), true);
   assert.doesNotMatch(detail.apiExample, /model: 'vendor\/weird'/);
 });
 
@@ -1350,7 +1350,7 @@ test("model service loads the runtime catalog through the generated app SDK", as
       assert.equal(models[0].pricing.output, 5);
       assert.equal(models[0].pricing.cachedInput, 0.125);
       assert.equal(captured.every((request) => request.method === "GET"), true);
-      assert.deepEqual(requestedUrls, ["/app/v3/api/ai/models"]);
+      assert.deepEqual(requestedUrls, ["/app/v3/api/ai/models?page=1&page_size=20"]);
     },
   );
 });
@@ -1474,7 +1474,7 @@ test("model service sends sidebar filters through the generated app SDK query co
 
       assert.deepEqual(models, []);
       assert.deepEqual(captured.map((request) => `${request.method} ${request.url}`), [
-        "GET /app/v3/api/ai/models?page=3&page_size=200&billing_meter=llm_input_token&vendor_codes=openai%2Canthropic&modalities=text%2Cimage&capabilities=tools%2Cjson%20mode&categories=Recommended%2CProprietary&groups=enterprise%2Cvip&q=gpt",
+        "GET /app/v3/api/ai/models?page=3&page_size=200&q=gpt&billing_meter=llm_input_token&vendor_codes=openai%2Canthropic&modalities=text%2Cimage&capabilities=tools%2Cjson%20mode&categories=Recommended%2CProprietary&groups=enterprise%2Cvip",
       ]);
       assert.equal(captured.length, 1);
     },

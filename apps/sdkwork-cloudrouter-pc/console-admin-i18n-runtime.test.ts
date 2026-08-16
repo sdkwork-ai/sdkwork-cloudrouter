@@ -93,7 +93,7 @@ test("console and admin i18n resources have English values and matching language
 test("console dashboard i18n value units do not degrade to question marks", () => {
   const zh = collectI18nResourceTranslations("zh");
 
-  assert.equal(zh.get("console.dashboard.dashboardview.text.pointsValue"), "{{value}} 点");
+  assert.equal(zh.get("console.dashboard.dashboardview.text.pointsValue"), "{{value}} 算力额度");
   assert.equal(zh.get("console.dashboard.dashboardview.text.timesValue"), "{{value}} 次");
 });
 

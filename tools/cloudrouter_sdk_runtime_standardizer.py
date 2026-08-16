@@ -359,6 +359,28 @@ SDK_DEPENDENCIES = {
             },
         },
         {
+            "workspace": "sdkwork-community-backend-sdk",
+            "role": "community-backend-management-capability",
+            "required": True,
+            "dependencyMode": "consumer-sdk",
+            "apiPrefix": "/backend/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "@sdkwork/community-backend-sdk",
+            },
+        },
+        {
+            "workspace": "sdkwork-log-backend-sdk",
+            "role": "log-backend-management-capability",
+            "required": True,
+            "dependencyMode": "consumer-sdk",
+            "apiPrefix": "/backend/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "@sdkwork/log-backend-sdk",
+            },
+        },
+        {
             "workspace": "sdkwork-drive-backend-sdk",
             "role": "drive-backend-management-capability",
             "required": True,

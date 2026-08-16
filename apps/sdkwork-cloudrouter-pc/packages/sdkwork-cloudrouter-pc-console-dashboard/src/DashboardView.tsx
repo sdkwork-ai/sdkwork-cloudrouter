@@ -38,7 +38,7 @@ import {
 } from './dashboardService';
 
 import { useTranslation } from 'react-i18next';
-import { getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons';
+import { getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { formatMoney } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
 

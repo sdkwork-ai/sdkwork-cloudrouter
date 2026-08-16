@@ -27,8 +27,9 @@ Core product surfaces:
   billing, usage, routing, model discovery, playground workflows, and account
   operations.
 - **Admin Console**: gives operators backend management for users, providers,
-  channels, announcements, analytics, rate limits, cache, and commercial
-  operations.
+  channels, announcements, analytics, rate limits, cache, commercial
+  operations, and the billing/rating pricing engine (pricing plans, rate
+  cards, and pricing rules under the pricing management menu).
 - **Model Catalog and Pricing**: keeps model facts, vendor regions, pricing,
   and install-time catalog refreshes in a repeatable delivery flow.
 - **Generated SDK Surfaces**: provides generated app, backend, and

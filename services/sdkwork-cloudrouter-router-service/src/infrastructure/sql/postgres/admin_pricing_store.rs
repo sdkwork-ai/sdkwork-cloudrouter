@@ -19,6 +19,23 @@ const TARGET_TYPE_PRICING_RULE: i32 = 81;
 const FALLBACK_POLICY_FAIL_CLOSED: &str = "fail_closed";
 const ADMIN_METADATA_SOURCE: &str = "admin_pricing";
 
+#[derive(Debug, Clone, Copy)]
+struct AdminPricingAuditContext<'a> {
+    audit_log_uuid: &'a str,
+    request_id: &'a str,
+    subject: AdminPricingSubject,
+}
+
+impl<'a> AdminPricingAuditContext<'a> {
+    fn new(audit_log_uuid: &'a str, request_id: &'a str, subject: AdminPricingSubject) -> Self {
+        Self {
+            audit_log_uuid,
+            request_id,
+            subject,
+        }
+    }
+}
+
 pub struct PostgresAdminPricingStore {
     pool: PgPool,
 }
@@ -266,9 +283,11 @@ async fn create_pricing_plan(
     let plan_id = insert_pricing_plan_row(&mut tx, &command).await?;
     insert_audit_log_for_target_uuid(
         &mut tx,
-        &command.subject,
-        &command.audit_log_uuid,
-        &command.request_id,
+        AdminPricingAuditContext::new(
+            &command.audit_log_uuid,
+            &command.request_id,
+            command.subject,
+        ),
         "create",
         TARGET_TYPE_PRICING_PLAN,
         &plan_id.to_string(),
@@ -371,9 +390,11 @@ async fn update_pricing_plan(
     }
     insert_audit_log_for_target_uuid(
         &mut tx,
-        &command.subject,
-        &command.audit_log_uuid,
-        &command.request_id,
+        AdminPricingAuditContext::new(
+            &command.audit_log_uuid,
+            &command.request_id,
+            command.subject,
+        ),
         "update",
         TARGET_TYPE_PRICING_PLAN,
         &plan_id.to_string(),
@@ -516,9 +537,11 @@ async fn create_rate_card(
     let rate_card_id = insert_rate_card_row(&mut tx, &command, pricing_plan_id).await?;
     insert_audit_log_for_target_uuid(
         &mut tx,
-        &command.subject,
-        &command.audit_log_uuid,
-        &command.request_id,
+        AdminPricingAuditContext::new(
+            &command.audit_log_uuid,
+            &command.request_id,
+            command.subject,
+        ),
         "create",
         TARGET_TYPE_RATE_CARD,
         &rate_card_id.to_string(),
@@ -657,9 +680,11 @@ async fn update_rate_card(
     }
     insert_audit_log_for_target_uuid(
         &mut tx,
-        &command.subject,
-        &command.audit_log_uuid,
-        &command.request_id,
+        AdminPricingAuditContext::new(
+            &command.audit_log_uuid,
+            &command.request_id,
+            command.subject,
+        ),
         "update",
         TARGET_TYPE_RATE_CARD,
         &rate_card_id.to_string(),
@@ -750,9 +775,11 @@ async fn delete_rate_card(
     }
     insert_audit_log_for_target_uuid(
         &mut tx,
-        &command.subject,
-        &command.audit_log_uuid,
-        &command.request_id,
+        AdminPricingAuditContext::new(
+            &command.audit_log_uuid,
+            &command.request_id,
+            command.subject,
+        ),
         "delete",
         TARGET_TYPE_RATE_CARD,
         &rate_card_id.to_string(),
@@ -888,9 +915,11 @@ async fn create_pricing_rule(
     let rule_id = insert_pricing_rule_row(&mut tx, &command, pricing_plan_id).await?;
     insert_audit_log_for_target_uuid(
         &mut tx,
-        &command.subject,
-        &command.audit_log_uuid,
-        &command.request_id,
+        AdminPricingAuditContext::new(
+            &command.audit_log_uuid,
+            &command.request_id,
+            command.subject,
+        ),
         "create",
         TARGET_TYPE_PRICING_RULE,
         &rule_id.to_string(),
@@ -1017,9 +1046,11 @@ async fn update_pricing_rule(
     }
     insert_audit_log_for_target_uuid(
         &mut tx,
-        &command.subject,
-        &command.audit_log_uuid,
-        &command.request_id,
+        AdminPricingAuditContext::new(
+            &command.audit_log_uuid,
+            &command.request_id,
+            command.subject,
+        ),
         "update",
         TARGET_TYPE_PRICING_RULE,
         &rule_id.to_string(),
@@ -1116,9 +1147,11 @@ async fn delete_pricing_rule(
     }
     insert_audit_log_for_target_uuid(
         &mut tx,
-        &command.subject,
-        &command.audit_log_uuid,
-        &command.request_id,
+        AdminPricingAuditContext::new(
+            &command.audit_log_uuid,
+            &command.request_id,
+            command.subject,
+        ),
         "delete",
         TARGET_TYPE_PRICING_RULE,
         &rule_id.to_string(),
@@ -1196,9 +1229,7 @@ fn pricing_rule_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<AdminPrici
 
 async fn insert_audit_log_for_target_uuid(
     tx: &mut Transaction<'_, Postgres>,
-    subject: &AdminPricingSubject,
-    audit_log_uuid: &str,
-    request_id: &str,
+    context: AdminPricingAuditContext<'_>,
     action: &'static str,
     target_type: i32,
     target_uuid: &str,
@@ -1213,15 +1244,15 @@ async fn insert_audit_log_for_target_uuid(
         "#,
     )
     .bind(next_cloud_runtime_id("ops_audit_log")?)
-    .bind(audit_log_uuid)
-    .bind(subject.tenant_id)
-    .bind(subject.organization_id)
+    .bind(context.audit_log_uuid)
+    .bind(context.subject.tenant_id)
+    .bind(context.subject.organization_id)
     .bind(action)
     .bind(target_type)
     .bind(target_uuid)
-    .bind(request_id)
-    .bind(subject.operator_id)
-    .bind(subject.operator_type)
+    .bind(context.request_id)
+    .bind(context.subject.operator_id)
+    .bind(context.subject.operator_type)
     .bind(change_summary.to_string())
     .execute(&mut **tx)
     .await

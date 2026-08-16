@@ -296,7 +296,7 @@ export const adminMembershipsMessages = {
     'admin.commerce.memberships.plans.form.benefitKey': '权益键',
     'admin.commerce.memberships.plans.form.benefitType': '类型',
     'admin.commerce.memberships.plans.form.benefitType.quota': '配额',
-    'admin.commerce.memberships.plans.form.benefitType.points': '积分',
+    'admin.commerce.memberships.plans.form.benefitType.points': '算力额度',
     'admin.commerce.memberships.plans.form.benefitType.queue': '队列',
     'admin.commerce.memberships.plans.form.benefitType.feature': '功能',
     'admin.commerce.memberships.plans.form.benefitType.discount': '折扣',

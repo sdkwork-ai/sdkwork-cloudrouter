@@ -138,7 +138,7 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
 
   const languages = [
     { code: 'en-US', name: 'English' },
-    { code: 'zh-CN', name: '中文' },
+    { code: 'zh-CN', name: t('commons.navbar.language.zh', '中文') },
   ];
 
   const navLinks = [

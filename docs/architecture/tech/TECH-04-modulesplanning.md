@@ -65,6 +65,7 @@
 | `admin-record` | 请求、用量、审计 | ai/ops |
 | `admin-ratelimit` | 限流、熔断、风控 | ai/iam/ops |
 | `admin-monitor` | 实例、任务、缓存、告警 | ops |
+| `admin-pricing` | 价格计划、费率卡、定价规则（计费定价引擎管理面） | cloudrouter-billing（plans/rate cards/rules） |
 
 ## 3. 后端逻辑模块
 

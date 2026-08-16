@@ -1285,7 +1285,9 @@ pub(crate) fn stable_uuid(prefix: &str, parts: &[&str]) -> String {
         hasher.update(part.as_bytes());
     }
     let digest = format!("{:x}", hasher.finalize());
-    format!("{prefix}-{}", &digest[..40])
+    // uuid columns are VARCHAR(64); trim the hex suffix so `{prefix}-` fits.
+    let digest_chars = 40usize.min(64usize.saturating_sub(prefix.len() + 1));
+    format!("{prefix}-{}", &digest[..digest_chars])
 }
 
 pub(crate) fn release_stage_code(value: &str) -> i32 {
@@ -1653,7 +1655,7 @@ fn bundled_price_side_label(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::price_supplier_code;
+    use super::{price_supplier_code, stable_uuid};
 
     #[test]
     fn price_supplier_code_keeps_vendor_identity_separate_from_region() {
@@ -1673,5 +1675,30 @@ mod tests {
             None,
             price_supplier_code("minimax", "cn", "official", Some("model"))
         );
+    }
+
+    #[test]
+    fn stable_uuid_always_fits_varchar_64_uuid_columns() {
+        for prefix in [
+            "pricing-import",
+            "pricing-product",
+            "pricing-operation",
+            "pricing-meter",
+            "pricing-book",
+            "pricing-binding",
+            "pricing-rate",
+            "pricing-rate-binding",
+            "pricing-condition",
+            "pricing-rate-tier",
+            "pricing-rate-formula",
+            "pricing-rate-formula-term",
+            "cloudrouter-pricing-plan",
+            "cloudrouter-pricing-rule",
+            "cloudrouter-account-group-rate-card",
+            "payments-provider-update",
+        ] {
+            let uuid = stable_uuid(prefix, &["scope", "standard"]);
+            assert!(uuid.len() <= 64, "{prefix} produced {}-char uuid", uuid.len());
+        }
     }
 }

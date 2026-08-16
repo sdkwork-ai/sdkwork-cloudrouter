@@ -7670,7 +7670,7 @@
     },
     "/app/v3/api/iam/invites/validate": {
       "post": {
-        "description": "Validate invite code. Reads ops_referral_invite_code. Writes none. File targets none.",
+        "description": "Validate invite code. Reads ops_referral_invite_code. Writes ops_referral_invite_code, iam_user, iam_credential. File targets none.",
         "operationId": "invites.validate.create",
         "parameters": [],
         "requestBody": {
@@ -7755,7 +7755,11 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "invites.validate",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
-        "x-write-tables": []
+        "x-write-tables": [
+          "ops_referral_invite_code",
+          "iam_user",
+          "iam_credential"
+        ]
       }
     },
     "/app/v3/api/iam/users/settings": {

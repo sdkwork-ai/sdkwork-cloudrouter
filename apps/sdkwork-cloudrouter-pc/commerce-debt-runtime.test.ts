@@ -256,17 +256,17 @@ test('frontend field contract exposes standalone business centers and excludes r
   ]) {
     assert.doesNotMatch(
       contractSource,
-      new RegExp(`^- route: ${retiredPrefix.replaceAll('/', '\\/')}`, 'm'),
+      new RegExp(`^\s*- route: ${retiredPrefix.replaceAll('/', '\\/')}`, 'm'),
       `frontend_operations must not declare retired admin surface ${retiredPrefix}`,
     );
   }
 
-  assert.match(contractSource, /^- route: \/admin\/cache$/m);
-  assert.match(contractSource, /^- route: \/admin\/memberships\//m);
-  assert.match(contractSource, /^- route: \/admin\/marketing\//m);
-  assert.match(contractSource, /^- route: \/admin\/payments\/channels$/m);
-  assert.match(contractSource, /^- route: \/admin\/payments\//m);
-  assert.match(contractSource, /^- route: \/admin\/storage\//m);
+  assert.match(contractSource, /^\s*- route: \/admin\/cache$/m);
+  assert.match(contractSource, /^\s*- route: \/admin\/memberships\//m);
+  assert.match(contractSource, /^\s*- route: \/admin\/marketing\//m);
+  assert.match(contractSource, /^\s*- route: \/admin\/payments\/channels$/m);
+  assert.match(contractSource, /^\s*- route: \/admin\/payments\//m);
+  assert.match(contractSource, /^\s*- route: \/admin\/storage\//m);
 });
 
 test('backend SDK exposes system settings resources for admin control-plane pages', () => {

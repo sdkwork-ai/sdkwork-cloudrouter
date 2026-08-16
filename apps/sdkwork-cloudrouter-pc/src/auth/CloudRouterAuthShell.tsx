@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Moon, Sun, Terminal, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 type AuthThemeMode = 'dark' | 'light';
 
@@ -12,6 +13,7 @@ function usesNativeDesktopWindowControls(): boolean {
 }
 
 export function CloudRouterAuthShell({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const [themeMode, setThemeMode] = useState<AuthThemeMode>(() => {
     if (typeof window === 'undefined') {
       return 'dark';
@@ -104,10 +106,10 @@ export function CloudRouterAuthShell({ children }: { children: ReactNode }) {
                   </svg>
                 </button>
                 <button
-                  aria-label="Close window"
+                  aria-label={t('auth.shell.closeWindow', 'Close window')}
                   className="sdkwork-cloudrouter-auth-window-button sdkwork-cloudrouter-auth-window-button-danger"
                   onClick={handleClose}
-                  title="Close"
+                  title={t('auth.shell.close', 'Close')}
                   type="button"
                 >
                   <X size={14} />

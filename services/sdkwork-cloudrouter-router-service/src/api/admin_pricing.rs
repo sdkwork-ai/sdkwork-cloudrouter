@@ -257,7 +257,7 @@ async fn create_pricing_plan(
     };
     let plan_code = mutation
         .plan_code
-        .unwrap_or_else(|| String::new());
+        .unwrap_or_default();
     let command = CreateAdminPricingPlanCommand {
         subject,
         plan_uuid: match generate_entity_uuid(&state) {

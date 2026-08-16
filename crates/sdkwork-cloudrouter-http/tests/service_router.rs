@@ -2342,18 +2342,18 @@ async fn service_router_surface_openapi_documents_local_business_centers_only() 
         (
             "patch",
             "/backend/v3/api/payments/providers/{providerId}",
-            "payments.providers.update",
+            "providers.update",
         ),
         ("get", "/backend/v3/api/recharges/packages", "packages.list"),
         (
             "get",
-            "/backend/v3/api/storage/providers",
-            "oss.providers.list",
+            "/backend/v3/api/storage/usage",
+            "oss.usage.list",
         ),
         (
-            "post",
-            "/backend/v3/api/storage/buckets",
-            "oss.buckets.create",
+            "patch",
+            "/backend/v3/api/storage/default_buckets/{logicalScope}",
+            "defaultBuckets.update",
         ),
     ] {
         assert_openapi_operation(&backend_payload, method, path, operation_id);
@@ -2414,18 +2414,18 @@ async fn service_router_backend_openapi_documents_local_standalone_business_cent
         (
             "patch",
             "/backend/v3/api/payments/providers/{providerId}",
-            "payments.providers.update",
+            "providers.update",
         ),
         ("get", "/backend/v3/api/recharges/packages", "packages.list"),
         (
             "get",
-            "/backend/v3/api/storage/providers",
-            "oss.providers.list",
+            "/backend/v3/api/storage/usage",
+            "oss.usage.list",
         ),
         (
-            "post",
-            "/backend/v3/api/storage/buckets",
-            "oss.buckets.create",
+            "patch",
+            "/backend/v3/api/storage/default_buckets/{logicalScope}",
+            "defaultBuckets.update",
         ),
     ] {
         assert_openapi_operation(&backend_payload, method, path, operation_id);

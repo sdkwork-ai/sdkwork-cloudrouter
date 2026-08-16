@@ -1,7 +1,7 @@
 use std::future::Future;
 use std::pin::Pin;
 
-use serde::{Serialize, Serializer};
+use serde::Serialize;
 
 use crate::domain::DomainResult;
 
@@ -324,7 +324,7 @@ pub struct AdminPricingPlanItem {
     pub status: String,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
-    #[serde(serialize_with = "serialize_i64_as_string")]
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub version: i64,
 }
 
@@ -338,7 +338,7 @@ pub struct AdminRateCardItem {
     pub pricing_plan_id: String,
     pub plan_code: Option<String>,
     pub plan_name: Option<String>,
-    #[serde(serialize_with = "serialize_i64_as_string")]
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub priority: i64,
     pub effective_from: Option<String>,
     pub effective_to: Option<String>,
@@ -364,20 +364,13 @@ pub struct AdminPricingRuleItem {
     pub multiplier: String,
     pub markup_amount: String,
     pub unit_price_override: Option<String>,
-    #[serde(serialize_with = "serialize_i64_as_string")]
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub priority: i64,
     pub effective_from: Option<String>,
     pub effective_to: Option<String>,
     pub status: String,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
-}
-
-fn serialize_i64_as_string<S>(value: &i64, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    serializer.serialize_str(&value.to_string())
 }
 
 pub trait AdminPricingStore {

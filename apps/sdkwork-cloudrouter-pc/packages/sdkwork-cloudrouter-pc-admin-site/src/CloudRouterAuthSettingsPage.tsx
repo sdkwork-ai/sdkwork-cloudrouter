@@ -6,7 +6,7 @@ import type {
   AdminAuthWechatOfficial,
 } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import { useTranslation } from 'react-i18next';
-import { getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons';
+import { getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { BusinessStatePanel } from '@sdkwork/cloudroutes-pc-commons/components/BusinessState';
 import {
   fetchCloudRouterAuthSettings,
