@@ -127,3 +127,5 @@ Thumbs.db
 *.log
 .DS_Store
 Thumbs.db
+# Local development runtime logs
+cloudrouter-dev*.log

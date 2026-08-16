@@ -1,4 +1,11 @@
 # sdkwork-cloudrouter Check Result
+> **Superseded (2026-08-17):** this verification record is historical (last
+> verified 2026-05-03). The current verification entry points are the root
+> package scripts (`pnpm check`, `pnpm verify`), the guard chain in `tools/`,
+> and the verification sections of `docs/migrations/MIG-2026-0002`.
+> Retained as a historical record only.
+
+
 
 > **2026-06-20:** Course module removed from cloud-router. Entries below that reference `/courses`, `sdkwork-cloudrouter-pc-courses`, `content_course*`, or `[courses]` TOML are historical only. References to retired local documents packages such as `sdkwork-cloudrouter-pc-api-reference` and legacy local app-center typecheck commands are also historical only after the shared documents capability migration. See `docs/31-product-composition-model.md`.
 

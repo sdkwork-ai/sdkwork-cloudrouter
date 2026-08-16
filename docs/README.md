@@ -34,6 +34,9 @@ Generated SDK transport output, live credentials, private customer data, runtime
 | Production runbook | [../deployments/runbooks/production-operations.md](../deployments/runbooks/production-operations.md) |
 | Runbook index | [runbooks/README.md](runbooks/README.md) |
 | Commercial pricing | [commercial/PRICING.md](commercial/PRICING.md) |
+| Pricing and billing decision | [architecture/decisions/ADR-20260815-composable-pricing-and-billing.md](architecture/decisions/ADR-20260815-composable-pricing-and-billing.md) |
+| Pricing and billing migration | [migrations/MIG-2026-0002-composable-pricing-billing.md](migrations/MIG-2026-0002-composable-pricing-billing.md) |
+| Pricing reconciliation checker | [../tools/check_pricing_reconciliation.py](../tools/check_pricing_reconciliation.py) |
 | Service Level Agreement | [legal/SLA.md](legal/SLA.md) |
 | Edition tier matrix | [legal/TIER_MATRIX.md](legal/TIER_MATRIX.md) |
 
