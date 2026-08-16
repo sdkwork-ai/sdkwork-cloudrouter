@@ -297,22 +297,22 @@ impl ModelCatalogAdminStore for AiRoutingCacheInvalidatingAdminModelStore {
     fn delete_model<'a>(
         &'a self,
         command: DeleteAdminAiModelCommand,
-    ) -> AdminModelCommandFuture<'a, ()> {
+    ) -> AdminModelCommandFuture<'a, bool> {
         Box::pin(async move {
-            self.inner.delete_model(command).await?;
+            let deleted = self.inner.delete_model(command).await?;
             self.invalidator.invalidate_routing_facts().await?;
-            Ok(())
+            Ok(deleted)
         })
     }
 
     fn delete_model_mapping<'a>(
         &'a self,
         command: DeleteAdminModelMappingCommand,
-    ) -> AdminModelCommandFuture<'a, ()> {
+    ) -> AdminModelCommandFuture<'a, bool> {
         Box::pin(async move {
-            self.inner.delete_model_mapping(command).await?;
+            let deleted = self.inner.delete_model_mapping(command).await?;
             self.invalidator.invalidate_routing_facts().await?;
-            Ok(())
+            Ok(deleted)
         })
     }
 

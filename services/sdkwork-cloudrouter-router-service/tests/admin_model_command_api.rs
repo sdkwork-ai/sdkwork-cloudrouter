@@ -295,7 +295,8 @@ async fn admin_model_command_route_creates_lists_and_syncs_catalog_models() {
         signed_request("DELETE", "/backend/v3/api/ai/models/1", ""),
     )
     .await;
-    assert_eq!(Value::Null, delete_model);
+    assert_eq!(0, delete_model["code"].as_i64().unwrap());
+    assert_eq!(true, delete_model["data"]["deleted"].as_bool().unwrap());
 
     let models = request_json(
         router,
@@ -844,7 +845,7 @@ impl AdminModelStore for TestAdminModelStore {
     fn delete_model<'a>(
         &'a self,
         command: DeleteAdminAiModelCommand,
-    ) -> AdminModelCommandFuture<'a, ()> {
+    ) -> AdminModelCommandFuture<'a, bool> {
         Box::pin(async move {
             self.commands
                 .lock()
@@ -862,14 +863,14 @@ impl AdminModelStore for TestAdminModelStore {
                 );
             };
             model.deleted_at = Some(command.requested_at);
-            Ok(())
+            Ok(true)
         })
     }
 
     fn delete_model_mapping<'a>(
         &'a self,
         _command: DeleteAdminModelMappingCommand,
-    ) -> AdminModelCommandFuture<'a, ()> {
+    ) -> AdminModelCommandFuture<'a, bool> {
         Box::pin(async move {
             Err(
                 sdkwork_cloudrouter_router_service::domain::DomainError::not_found(

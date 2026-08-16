@@ -43,7 +43,11 @@ export function Playground({
 }: PlaygroundProps) {
   return (
     <div className="sdkwork-playground-host flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
+      {/* The creative (生成) tab calls the generations app API surface, which has
+          no backend anywhere yet (sdkwork-generations owns the contract but ships no
+          server crates). Hide the tab instead of surfacing 404s until the backend lands. */}
       <AgentsWorkbench
+        hiddenTabs={['creative']}
         overlayTopInset={overlayTopInset}
         showSidebarLogo={false}
       />

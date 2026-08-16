@@ -6878,6 +6878,7 @@ dependencies = [
  "sdkwork-api-account-assembly",
  "sdkwork-api-agents-assembly",
  "sdkwork-api-community-assembly",
+ "sdkwork-api-drive-assembly",
  "sdkwork-api-invoice-assembly",
  "sdkwork-api-membership-assembly",
  "sdkwork-api-models-assembly",

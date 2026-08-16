@@ -45,6 +45,7 @@ sdkwork_api_partner_assembly.workspace = true
 sdkwork_api_agents_assembly.workspace = true
 sdkwork_agents_database_host.workspace = true
 sdkwork_api_community_assembly.workspace = true
+sdkwork_api_drive_assembly.workspace = true
 sdkwork-database-lifecycle.workspace = true
 sdkwork-database-spi.workspace = true
 sdkwork-database-sqlx.workspace = true
